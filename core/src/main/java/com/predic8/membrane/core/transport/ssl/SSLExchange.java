@@ -14,7 +14,7 @@
 
 package com.predic8.membrane.core.transport.ssl;
 
-import com.predic8.membrane.core.rules.Proxy;
+import com.predic8.membrane.core.proxies.Proxy;
 
 import java.util.HashMap;
 import java.util.Map;

@@ -16,7 +16,7 @@ package com.predic8.membrane.core.http;
 import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.rules.*;
+import com.predic8.membrane.core.proxies.*;
 import org.apache.commons.httpclient.*;
 import org.apache.commons.httpclient.methods.*;
 import org.junit.jupiter.api.*;
@@ -45,6 +45,11 @@ public class MethodTest {
 		router.init();
 	}
 
+	@AfterAll
+	public static void tearDown() {
+		router.shutdown();
+	}
+
 	@Test
 	public void testDELETE() throws Exception {
 		HttpClient client = new HttpClient();
@@ -55,9 +60,6 @@ public class MethodTest {
 		assertTrue(status < 400);
 	}
 
-	@AfterAll
-	public static void tearDown() {
-		router.shutdown();
-	}
+
 
 }

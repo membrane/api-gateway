@@ -66,6 +66,12 @@ public class HTTPClientInterceptor extends AbstractInterceptor {
         } catch (UnknownHostException e) {
             setErrorResponse(exc, "Target host %s of API %s is unknown. DNS was unable to resolve host name.".formatted(URLUtil.getHost(getDestination(exc)), exc.getProxy().getName()) + PROXIES_HINT);
             return ABORT;
+        } catch (MalformedURLException e) {
+            log.error(e.getMessage());
+            ProblemDetails.internal(router.isProduction())
+                    .detail(e.getMessage())
+                    .buildAndSetResponse(exc);
+            return ABORT;
         }
     }
 

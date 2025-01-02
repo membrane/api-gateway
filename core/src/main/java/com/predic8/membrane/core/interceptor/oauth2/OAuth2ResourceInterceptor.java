@@ -28,8 +28,8 @@ import com.predic8.membrane.core.interceptor.authentication.session.SessionManag
 import com.predic8.membrane.core.interceptor.oauth2.authorizationservice.*;
 import com.predic8.membrane.core.interceptor.oauth2.tokengenerators.*;
 import com.predic8.membrane.core.interceptor.server.*;
+import com.predic8.membrane.core.proxies.*;
 import com.predic8.membrane.core.resolver.*;
-import com.predic8.membrane.core.rules.*;
 import com.predic8.membrane.core.util.*;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang3.StringUtils;

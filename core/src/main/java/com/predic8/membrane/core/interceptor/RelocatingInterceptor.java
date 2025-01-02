@@ -17,7 +17,7 @@ package com.predic8.membrane.core.interceptor;
 import com.googlecode.jatl.Html;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Request;
-import com.predic8.membrane.core.rules.ProxyRule;
+import com.predic8.membrane.core.proxies.ProxyRule;
 import com.predic8.membrane.core.ws.relocator.Relocator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

@@ -69,7 +69,7 @@ public abstract class AbstractSetterInterceptor extends AbstractInterceptor {
                             .title("Error evaluating expression!")
                             .extension("field", name)
                             .extension("value", value)
-                            .build(exchange);
+                            .buildAndSetResponse(exchange);
                     return Outcome.ABORT;
                 }
             }

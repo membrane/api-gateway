@@ -19,83 +19,62 @@ import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.interceptor.Interceptor.*;
 import com.predic8.membrane.core.interceptor.rest.*;
 import com.predic8.membrane.core.model.*;
-import com.predic8.membrane.core.rules.*;
+import com.predic8.membrane.core.proxies.*;
 
 import java.util.*;
 
-@MCElement(name="forgetfulExchangeStore")
+@MCElement(name = "forgetfulExchangeStore")
 public class ForgetfulExchangeStore implements ExchangeStore {
 
-	public void snap(AbstractExchange exchange, Flow flow) {
-	}
+    public void snap(AbstractExchange exchange, Flow flow) {}
 
-	public void addExchangesStoreListener(IExchangesStoreListener viewer) {
+    public void addExchangesStoreListener(IExchangesStoreListener viewer) {}
 
-	}
+    public AbstractExchange[] getExchanges(RuleKey ruleKey) {
+        return null;
+    }
 
-	public AbstractExchange[] getExchanges(RuleKey ruleKey) {
-		return null;
-	}
+    public StatisticCollector getStatistics(RuleKey ruleKey) {
+        return null;
+    }
 
-	public int getNumberOfExchanges(RuleKey ruleKey) {
-		return 0;
-	}
+    public void refreshExchangeStoreListeners() {}
 
-	public StatisticCollector getStatistics(RuleKey ruleKey) {
-		return null;
-	}
+    public void remove(AbstractExchange exchange) {}
 
-	public void refreshExchangeStoreListeners() {
+    public void removeAllExchanges(Proxy proxy) {}
 
-	}
+    public void removeExchangesStoreListener(IExchangesStoreListener viewer) {}
 
+    public Object[] getAllExchanges() {
+        return null;
+    }
 
-	public void remove(AbstractExchange exchange) {
+    public List<AbstractExchange> getAllExchangesAsList() {
+        return null;
+    }
 
-	}
+    public void removeAllExchanges(AbstractExchange[] exchanges) {}
 
-	public void removeAllExchanges(Proxy proxy) {
+    public AbstractExchange getExchangeById(long intParam) {
+        return null;
+    }
 
-	}
+    public List<? extends ClientStatistics> getClientStatistics() {
+        return null;
+    }
 
+    public void collect(ExchangeCollector collector) {}
 
-	public void removeExchangesStoreListener(IExchangesStoreListener viewer) {
+    public long getLastModified() {
+        return 0;
+    }
 
-	}
+    public void waitForModification(long lastKnownModification) {}
 
-	public Object[] getAllExchanges() {
-		return null;
-	}
-
-	public List<AbstractExchange> getAllExchangesAsList() {
-		return null;
-	}
-
-	public void removeAllExchanges(AbstractExchange[] exchanges) {
-
-	}
-
-	public AbstractExchange getExchangeById(long intParam) {
-		return null;
-	}
-
-	public List<? extends ClientStatistics> getClientStatistics() {
-		return null;
-	}
-
-	public void collect(ExchangeCollector collector) {}
-
-	public long getLastModified() {
-		return 0;
-	}
-
-	public void waitForModification(long lastKnownModification) {
-
-	}
-
-	@Override
-	public ExchangeQueryResult getFilteredSortedPaged(QueryParameter params, boolean useXForwardedForAsClientAddr) {
-		return null;
-	}
+    @Override
+    public ExchangeQueryResult getFilteredSortedPaged(QueryParameter params, boolean useXForwardedForAsClientAddr) {
+        return null;
+    }
 
 }

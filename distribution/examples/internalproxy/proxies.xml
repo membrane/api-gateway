@@ -15,15 +15,15 @@
 		</api>
 
 		<!-- An internalProxy is like a function or subroutine for an API. -->
-		<api name="express">
+		<internal name="express">
 			<static>Express processing!</static>
 			<return/>
-		</api>
+		</internal>
 
-		<api name="normal">
+		<internal name="normal">
 			<static>Normal processing!</static>
 			<return/>
-		</api>
+		</internal>
 
 	</router>
 

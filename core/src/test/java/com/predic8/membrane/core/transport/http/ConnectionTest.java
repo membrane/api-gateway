@@ -16,7 +16,7 @@ package com.predic8.membrane.core.transport.http;
 
 
 import com.predic8.membrane.core.*;
-import com.predic8.membrane.core.rules.*;
+import com.predic8.membrane.core.proxies.*;
 import org.junit.jupiter.api.*;
 
 import static org.junit.jupiter.api.Assertions.*;

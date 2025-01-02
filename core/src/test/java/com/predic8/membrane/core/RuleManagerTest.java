@@ -13,12 +13,12 @@
    limitations under the License. */
 package com.predic8.membrane.core;
 
-import com.predic8.membrane.core.rules.*;
+import com.predic8.membrane.core.proxies.*;
 import org.junit.jupiter.api.*;
 
 import java.net.*;
 
-import static com.predic8.membrane.util.TestUtil.*;
+import static com.predic8.membrane.test.TestUtil.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class RuleManagerTest {

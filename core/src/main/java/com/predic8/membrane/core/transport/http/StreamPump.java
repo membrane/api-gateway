@@ -14,7 +14,7 @@
 
 package com.predic8.membrane.core.transport.http;
 
-import com.predic8.membrane.core.rules.Proxy;
+import com.predic8.membrane.core.proxies.Proxy;
 import org.slf4j.*;
 
 import javax.net.ssl.*;
@@ -55,7 +55,7 @@ public class StreamPump implements Runnable {
 	protected StreamPumpStats stats;
 	// statistical members
 	protected AtomicLong bytesTransferred;
-	private String pumpName;
+	private final String pumpName;
 	private final long creationTime;
 	private final Proxy proxy;
 

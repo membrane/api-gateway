@@ -17,7 +17,7 @@ import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.rewrite.RewriteInterceptor.*;
-import com.predic8.membrane.core.rules.*;
+import com.predic8.membrane.core.proxies.*;
 import org.apache.commons.httpclient.*;
 import org.apache.commons.httpclient.methods.*;
 import org.apache.http.params.*;
@@ -43,7 +43,7 @@ public class RewriteInterceptorIntegrationTest {
 	}
 
 	@AfterAll
-	public static void tearDown() throws Exception {
+	public static void tearDown() {
 		router.shutdown();
 	}
 

@@ -16,7 +16,7 @@ package com.predic8.membrane.core.model;
 
 
 import com.predic8.membrane.core.exchange.AbstractExchange;
-import com.predic8.membrane.core.rules.Proxy;
+import com.predic8.membrane.core.proxies.Proxy;
 
 
 public interface IExchangesStoreListener{

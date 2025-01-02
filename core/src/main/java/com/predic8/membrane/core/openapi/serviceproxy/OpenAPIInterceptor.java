@@ -23,7 +23,7 @@ import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.openapi.*;
 import com.predic8.membrane.core.openapi.validators.*;
-import com.predic8.membrane.core.rules.*;
+import com.predic8.membrane.core.proxies.*;
 import io.swagger.v3.oas.models.*;
 import io.swagger.v3.oas.models.servers.*;
 import jakarta.mail.internet.*;

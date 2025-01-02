@@ -122,19 +122,19 @@ public class ProblemDetails {
     }
 
     public Response build() {
-        return build(null);
+        return createContent(createMap(), null);
     }
 
     /**
      * Does only log, when key in log is needed. The caller is responsible to do the log if
      * there is something interessting.
      */
-    public Response build(Exchange exchange) {
-        Response response = createContent(createMap(), exchange);
+    public void buildAndSetResponse(Exchange exchange) {
         if (exchange != null) {
-            exchange.setResponse(response);
+            exchange.setResponse(createContent(createMap(), exchange));
+            return;
         }
-        return response;
+        throw new RuntimeException("Should not happen!");
     }
 
     private @NotNull Map<String, Object> createMap() {

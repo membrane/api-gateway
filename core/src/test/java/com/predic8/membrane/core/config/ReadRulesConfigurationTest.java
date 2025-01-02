@@ -14,7 +14,7 @@
 package com.predic8.membrane.core.config;
 
 import com.predic8.membrane.core.Router;
-import com.predic8.membrane.core.rules.*;
+import com.predic8.membrane.core.proxies.*;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;

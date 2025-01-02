@@ -21,7 +21,7 @@ import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.interceptor.administration.*;
 import com.predic8.membrane.core.interceptor.rest.*;
 import com.predic8.membrane.core.resolver.*;
-import com.predic8.membrane.core.rules.*;
+import com.predic8.membrane.core.proxies.*;
 import com.predic8.membrane.core.util.*;
 import com.predic8.wsdl.*;
 import com.predic8.wstool.creator.*;

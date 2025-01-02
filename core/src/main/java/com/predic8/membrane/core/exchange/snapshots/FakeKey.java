@@ -15,7 +15,7 @@
 package com.predic8.membrane.core.exchange.snapshots;
 
 import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.rules.RuleKey;
+import com.predic8.membrane.core.proxies.RuleKey;
 
 public class FakeKey implements RuleKey {
 

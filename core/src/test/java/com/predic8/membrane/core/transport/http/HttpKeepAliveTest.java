@@ -14,29 +14,22 @@
 
 package com.predic8.membrane.core.transport.http;
 
+import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.proxies.*;
+import com.predic8.membrane.core.transport.http.client.*;
+import org.apache.commons.io.*;
+import org.junit.jupiter.api.*;
+
+import java.io.*;
+import java.net.*;
+import java.util.*;
+
+import static com.predic8.membrane.core.http.Header.KEEP_ALIVE;
+import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 import static org.junit.jupiter.api.Assertions.*;
-
-import java.io.IOException;
-import java.net.URISyntaxException;
-import java.util.HashSet;
-
-import org.apache.commons.io.IOUtils;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-
-import com.predic8.membrane.core.HttpRouter;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Header;
-import com.predic8.membrane.core.http.MimeType;
-import com.predic8.membrane.core.http.Request;
-import com.predic8.membrane.core.http.Response;
-import com.predic8.membrane.core.interceptor.AbstractInterceptor;
-import com.predic8.membrane.core.interceptor.Outcome;
-import com.predic8.membrane.core.rules.ServiceProxy;
-import com.predic8.membrane.core.rules.ServiceProxyKey;
-import com.predic8.membrane.core.transport.http.client.ConnectionConfiguration;
-import com.predic8.membrane.core.transport.http.client.HttpClientConfiguration;
 
 public class HttpKeepAliveTest {
 
@@ -65,7 +58,7 @@ public class HttpKeepAliveTest {
 	}
 
 	@AfterEach
-	public void tearDown() throws Exception {
+	public void tearDown() {
 		service1.shutdown();
 	}
 
@@ -74,8 +67,7 @@ public class HttpKeepAliveTest {
 		ConnectionConfiguration connection = new ConnectionConfiguration();
 		connection.setKeepAliveTimeout(defaultKeepAliveTimeout);
 		configuration.setConnection(connection);
-		HttpClient client = new HttpClient(configuration);
-		return client;
+        return new HttpClient(configuration);
 	}
 
 	private Exchange createExchange() throws IOException, URISyntaxException {
@@ -87,7 +79,7 @@ public class HttpKeepAliveTest {
 				buildExchange();
 	}
 
-	private int issueRequest(HttpClient client) throws IOException, Exception {
+	private int issueRequest(HttpClient client) throws Exception {
 		Exchange exchange = createExchange();
 		Response response = client.call(exchange).getResponse();
 		response.readBody();
@@ -110,9 +102,9 @@ public class HttpKeepAliveTest {
 
 		sp1.getInterceptors().add(0, new AbstractInterceptor() {
 			@Override
-			public Outcome handleResponse(Exchange exc) throws Exception {
-				exc.getResponse().getHeader().add(Header.KEEP_ALIVE, "max=2");
-				return Outcome.CONTINUE;
+			public Outcome handleResponse(Exchange exc) {
+				exc.getResponse().getHeader().add(KEEP_ALIVE, "max=2");
+				return CONTINUE;
 			}
 		});
 
@@ -131,9 +123,9 @@ public class HttpKeepAliveTest {
 
 		sp1.getInterceptors().add(0, new AbstractInterceptor() {
 			@Override
-			public Outcome handleResponse(Exchange exc) throws Exception {
-				exc.getResponse().getHeader().add(Header.KEEP_ALIVE, "max=2");
-				return Outcome.CONTINUE;
+			public Outcome handleResponse(Exchange exc) {
+				exc.getResponse().getHeader().add(KEEP_ALIVE, "max=2");
+				return CONTINUE;
 			}
 		});
 
@@ -158,9 +150,9 @@ public class HttpKeepAliveTest {
 
 		sp1.getInterceptors().add(0, new AbstractInterceptor() {
 			@Override
-			public Outcome handleResponse(Exchange exc) throws Exception {
-				exc.getResponse().getHeader().add(Header.KEEP_ALIVE, "timeout=1,max=2");
-				return Outcome.CONTINUE;
+			public Outcome handleResponse(Exchange exc) {
+				exc.getResponse().getHeader().add(KEEP_ALIVE, "timeout=1,max=2");
+				return CONTINUE;
 			}
 		});
 
@@ -185,9 +177,9 @@ public class HttpKeepAliveTest {
 
 		sp1.getInterceptors().add(0, new AbstractInterceptor() {
 			@Override
-			public Outcome handleResponse(Exchange exc) throws Exception {
-				exc.getResponse().getHeader().add(Header.KEEP_ALIVE, "max=2");
-				return Outcome.CONTINUE;
+			public Outcome handleResponse(Exchange exc) {
+				exc.getResponse().getHeader().add(KEEP_ALIVE, "max=2");
+				return CONTINUE;
 			}
 		});
 

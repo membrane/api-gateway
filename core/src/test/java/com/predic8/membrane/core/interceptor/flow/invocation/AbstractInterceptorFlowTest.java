@@ -19,7 +19,7 @@ package com.predic8.membrane.core.interceptor.flow.invocation;
 import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.openapi.serviceproxy.*;
-import com.predic8.membrane.core.rules.*;
+import com.predic8.membrane.core.proxies.*;
 import com.predic8.membrane.core.transport.http.*;
 import org.jetbrains.annotations.*;
 import org.junit.jupiter.api.*;
@@ -40,7 +40,7 @@ abstract class AbstractInterceptorFlowTest {
     }
 
     @AfterAll
-    static void tearDown() throws Exception {
+    static void tearDown() {
         router.shutdown();
     }
 

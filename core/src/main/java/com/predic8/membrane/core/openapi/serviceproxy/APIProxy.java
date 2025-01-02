@@ -18,7 +18,7 @@ package com.predic8.membrane.core.openapi.serviceproxy;
 
 import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.openapi.util.*;
-import com.predic8.membrane.core.rules.*;
+import com.predic8.membrane.core.proxies.*;
 import com.predic8.membrane.core.util.*;
 import io.swagger.v3.oas.models.servers.*;
 import org.slf4j.*;

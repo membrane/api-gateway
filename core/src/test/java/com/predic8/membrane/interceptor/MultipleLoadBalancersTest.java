@@ -14,29 +14,18 @@
 
 package com.predic8.membrane.interceptor;
 
-import static org.junit.jupiter.api.Assertions.*;
-
-import java.io.IOException;
-
-import org.apache.commons.httpclient.HttpClient;
-import org.apache.commons.httpclient.HttpVersion;
-import org.apache.commons.httpclient.methods.InputStreamRequestEntity;
-import org.apache.commons.httpclient.methods.PostMethod;
-import org.apache.http.params.HttpProtocolParams;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
-
-import com.predic8.membrane.core.HttpRouter;
+import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.http.Header;
-import com.predic8.membrane.core.http.MimeType;
-import com.predic8.membrane.core.interceptor.balancer.BalancerUtil;
-import com.predic8.membrane.core.interceptor.balancer.DispatchingStrategy;
-import com.predic8.membrane.core.interceptor.balancer.LoadBalancingInterceptor;
-import com.predic8.membrane.core.interceptor.balancer.RoundRobinStrategy;
-import com.predic8.membrane.core.rules.ServiceProxy;
-import com.predic8.membrane.core.rules.ServiceProxyKey;
-import com.predic8.membrane.core.services.DummyWebServiceInterceptor;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.interceptor.balancer.*;
+import com.predic8.membrane.core.proxies.*;
+import com.predic8.membrane.core.services.*;
+import org.apache.commons.httpclient.*;
+import org.apache.commons.httpclient.methods.*;
+import org.apache.http.params.*;
+import org.junit.jupiter.api.*;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 public class MultipleLoadBalancersTest {
 	private static MockService service1;
@@ -66,7 +55,7 @@ public class MultipleLoadBalancersTest {
 			service1.init();
 		}
 
-		public void close() throws IOException {
+		public void close() {
 			service1.shutdown();
 		}
 	}

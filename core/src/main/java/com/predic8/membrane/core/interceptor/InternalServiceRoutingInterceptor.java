@@ -17,8 +17,8 @@
 package com.predic8.membrane.core.interceptor;
 
 import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.rules.*;
-import com.predic8.membrane.core.rules.Proxy;
+import com.predic8.membrane.core.proxies.*;
+import com.predic8.membrane.core.proxies.Proxy;
 import org.jetbrains.annotations.*;
 import org.slf4j.*;
 
@@ -32,6 +32,7 @@ public class InternalServiceRoutingInterceptor extends AbstractInterceptor {
 
     private static final Logger log = LoggerFactory.getLogger(InternalServiceRoutingInterceptor.class.getName());
     public static final String REVERSE_INTERCEPTOR_LIST = "membrane.routing.back.interceptors";
+    public static final DispatchingInterceptor dispatchingInterceptor = new DispatchingInterceptor();
 
     private final FlowController flowController = new FlowController();
 
@@ -51,6 +52,7 @@ public class InternalServiceRoutingInterceptor extends AbstractInterceptor {
         } else if (outcome == ABORT) { // An interceptor returned ABORT, so shortcut flow and abort
             handleAbort(exchange);
         }
+
         exchange.setRule(currentProxy); // Restore current rule, so that the response interceptors of that rule could be invoked
         return outcome;
     }
@@ -83,7 +85,6 @@ public class InternalServiceRoutingInterceptor extends AbstractInterceptor {
 
         exchange.getDestinations().clear();
         exchange.getDestinations().add(getTargetAsUri(exchange, service));
-
 
         if (outcome == ABORT || outcome == RETURN) {
             return outcome;
@@ -166,9 +167,9 @@ public class InternalServiceRoutingInterceptor extends AbstractInterceptor {
         if (service.getTargetURL() != null) {
             return service.getTargetURL();
         }
-        if (service instanceof ServiceProxy sp) {
-            if (sp.getTarget().getHost() != null) {
-                return service.getTargetScheme() + "://" + sp.getTarget().getHost() + ":" + sp.getTarget().getPort() + exchange.getRequest().getUri();
+        if (service instanceof AbstractServiceProxy asp) {
+            if (asp.getTarget().getHost() != null) {
+                return service.getTargetScheme() + "://" + asp.getTarget().getHost() + ":" + asp.getTarget().getPort() + exchange.getRequest().getUri();
             }
         }
         return "/";

@@ -25,8 +25,8 @@ import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.interceptor.administration.*;
 import com.predic8.membrane.core.interceptor.rest.*;
-import com.predic8.membrane.core.rules.Proxy;
-import com.predic8.membrane.core.rules.*;
+import com.predic8.membrane.core.proxies.Proxy;
+import com.predic8.membrane.core.proxies.*;
 import com.predic8.membrane.core.transport.http.*;
 import org.apache.commons.io.*;
 import org.json.*;
@@ -113,7 +113,7 @@ public class ElasticSearchExchangeStore extends AbstractExchangeStore {
                     else
                         Thread.sleep(updateIntervalMs);
                 } catch (InterruptedException e) {
-                    e.printStackTrace();
+                    log.error(e.getMessage(),e);
                     break;
                 } catch(Exception e){
                     throw new RuntimeException(e);
@@ -146,7 +146,7 @@ public class ElasticSearchExchangeStore extends AbstractExchangeStore {
             try {
                 return IOUtils.toString(Runtime.getRuntime().exec("hostname").getInputStream());
             } catch (IOException e1) {
-                e1.printStackTrace();
+                log.error(e1.getMessage(),e1);
                 return "localhost";
             }
         }
@@ -192,7 +192,7 @@ public class ElasticSearchExchangeStore extends AbstractExchangeStore {
             value.put("issuer",documentPrefix);
             return mapper.writeValueAsString(value);
         } catch (IOException e) {
-            e.printStackTrace();
+            log.error(e.getMessage(),e);
             return "";
         }
     }
@@ -208,7 +208,7 @@ public class ElasticSearchExchangeStore extends AbstractExchangeStore {
             ((PropertyValueCollector) collector).getRespContentTypes().addAll(getPropertyValueArray("response.header.Content-Type.keyword"));
             ((PropertyValueCollector) collector).getServers().addAll(getPropertyValueArray("server.keyword"));
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error(e.getMessage(),e);
         }
 
     }
@@ -320,7 +320,7 @@ public class ElasticSearchExchangeStore extends AbstractExchangeStore {
         try {
             removeFromElasticSearchById(exchange.getId());
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error(e.getMessage(),e);
         }
     }
 
@@ -361,7 +361,7 @@ public class ElasticSearchExchangeStore extends AbstractExchangeStore {
                     .buildExchange();
             client.call(exc);
         }catch (Exception e){
-            e.printStackTrace();
+            log.error(e.getMessage(),e);
         }
     }
 
@@ -399,7 +399,7 @@ public class ElasticSearchExchangeStore extends AbstractExchangeStore {
                     .buildExchange();
             client.call(exc);
         }catch (Exception e){
-            e.printStackTrace();
+            log.error(e.getMessage(),e);
         }
     }
 
@@ -437,7 +437,7 @@ public class ElasticSearchExchangeStore extends AbstractExchangeStore {
             AbstractExchangeSnapshot[] snapshots = mapper.readValue(mapper.writeValueAsString(source), AbstractExchangeSnapshot[].class);
             return Stream.of(snapshots).map(AbstractExchangeSnapshot::toAbstractExchange).toArray(AbstractExchange[]::new);
         }catch (Exception e){
-            e.printStackTrace();
+            log.error(e.getMessage(),e);
             return new AbstractExchange[0];
         }
     }
@@ -613,12 +613,12 @@ public class ElasticSearchExchangeStore extends AbstractExchangeStore {
                     log.info("Elastic store mapping update completed");
                 }
             } catch (JSONException e) {
-                e.printStackTrace();
+                log.error(e.getMessage(),e);
                 log.error("There is an error while updating mapping for elastic search. Response from elastic search is below");
                 log.error(res.toString());
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error(e.getMessage(),e);
         }
     }
 

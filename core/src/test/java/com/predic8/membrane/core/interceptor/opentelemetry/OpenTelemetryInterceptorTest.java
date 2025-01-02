@@ -14,9 +14,9 @@
 package com.predic8.membrane.core.interceptor.opentelemetry;
 
 import com.predic8.membrane.core.HttpRouter;
-import com.predic8.membrane.core.rules.Proxy;
-import com.predic8.membrane.core.rules.ServiceProxy;
-import com.predic8.membrane.core.rules.ServiceProxyKey;
+import com.predic8.membrane.core.proxies.Proxy;
+import com.predic8.membrane.core.proxies.ServiceProxy;
+import com.predic8.membrane.core.proxies.ServiceProxyKey;
 import org.junit.jupiter.api.Test;
 
 import static com.predic8.membrane.core.RuleManager.RuleDefinitionSource.SPRING;

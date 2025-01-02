@@ -18,7 +18,7 @@ package com.predic8.membrane.core.openapi.serviceproxy;
 
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.lang.spel.*;
-import com.predic8.membrane.core.rules.*;
+import com.predic8.membrane.core.proxies.*;
 import org.slf4j.*;
 import org.springframework.expression.*;
 import org.springframework.expression.spel.*;

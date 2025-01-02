@@ -87,7 +87,7 @@ public class K8sHelperGenerator extends AbstractK8sGenerator {
                 "",
                 "package " + mainInfo.getAnnotation().outputPackage() + ";",
                 "",
-                "import com.predic8.membrane.core.rules.Proxy;",
+                "import com.predic8.membrane.core.proxies.Proxy;",
                 "import com.predic8.membrane.core.interceptor.Interceptor;",
                 "",
                 "import java.util.Map;",

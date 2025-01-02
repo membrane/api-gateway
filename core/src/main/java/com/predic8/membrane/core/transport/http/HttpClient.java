@@ -125,7 +125,7 @@ public class HttpClient implements AutoCloseable {
 
 	// TODO remove it and close it otherwise
 	@Override
-	protected void finalize() throws Throwable {
+	protected void finalize() {
 		close();
 	}
 
@@ -135,8 +135,11 @@ public class HttpClient implements AutoCloseable {
             return;
         }
 
-        if (!dest.startsWith("http"))
-            throw new MalformedURLException("The exchange's destination URL (" + dest + ") does not start with 'http'. Please specify a <target> within your <serviceProxy>.");
+        if (!dest.startsWith("http")) {
+            throw new MalformedURLException("""
+                    The exchange's destination URI %s does not start with 'http'. Specify a <target> within the API configuration or make sure the exchanges destinations list contains a valid URI.
+                    """.formatted(dest));
+		}
         String originalUri = req.getUri();
         try {
             req.setUri(HttpUtil.getPathAndQueryString(dest));
@@ -294,7 +297,10 @@ public class HttpClient implements AutoCloseable {
 				}
 
 				// java.net.SocketException: Software caused connection abort: socket write error
-			} catch (ConnectException e) {
+			} catch (MalformedURLException e) {
+				throw e; // Rethrow so the caller can handle it
+			}
+			catch (ConnectException e) {
 				exception = e;
 				log.info("Connection to {} refused.",  (target == null ? dest : target));
 			} catch(SocketException e){

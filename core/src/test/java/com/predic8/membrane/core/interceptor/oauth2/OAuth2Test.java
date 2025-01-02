@@ -20,7 +20,7 @@ import com.predic8.membrane.core.interceptor.jwt.*;
 import com.predic8.membrane.core.interceptor.misc.*;
 import com.predic8.membrane.core.interceptor.oauth2.tokengenerators.*;
 import com.predic8.membrane.core.interceptor.templating.*;
-import com.predic8.membrane.core.rules.*;
+import com.predic8.membrane.core.proxies.*;
 import com.predic8.membrane.core.transport.http.*;
 import org.json.*;
 import org.junit.jupiter.api.*;

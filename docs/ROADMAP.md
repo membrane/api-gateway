@@ -35,9 +35,6 @@
   - Is example embedded-java still running?
     - Update to Java 21 needed? 
 
-- Move Examples
-  - basic-xml-interceptor -> xml/basic-xml-interceptor
-  - StaxInterceptor -> xml/stax-interceptor
 
 
 - Is SessionResumptionTest still needed?
@@ -46,6 +43,23 @@
 - UnitTests: Use PackageScan for more or all
 - Make <log headerOnly="false"/> clearer! 
 
+### Examples
+- Rename Tests to *.ExampleTest
+- Move Examples
+  - basic-xml-interceptor -> xml/basic-xml-interceptor
+  - StaxInterceptor -> xml/stax-interceptor
+
+
 # Discussion
 
 - K8S stuff document or delete?
+
+# Other
+
+- Unfinshed or not referenced tests:
+  - AcmeAzureTableApiStorageEngineTest (Deleted)
+  - EtcdRequestTest (Deleted)
+  - ConcurrentConnectionLimitTest
+  - See UnitTests
+  - HttpTransportTest
+  - ...

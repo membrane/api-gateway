@@ -20,7 +20,7 @@ import com.predic8.membrane.core.exchange.AbstractExchange;
 import com.predic8.membrane.core.exchange.ExchangesUtil;
 import com.predic8.membrane.core.exchangestore.ClientStatistics;
 import com.predic8.membrane.core.interceptor.statistics.PropertyComparator;
-import com.predic8.membrane.core.rules.*;
+import com.predic8.membrane.core.proxies.*;
 
 public class ComparatorFactory {
 

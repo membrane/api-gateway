@@ -40,6 +40,7 @@ public class FlowTestInterceptors {
     public static final Interceptor RETURN = new ReturnInterceptor();
     public static final Interceptor ABORT = new AbortFlowTestInterceptor();
     public static final Interceptor EXCEPTION = new ExceptionTestInterceptor();
+    public static final Interceptor ECHO = new EchoInterceptor();
 
     public static IfInterceptor IF(String test, Interceptor... nestedInterceptors) {
         return new IfInterceptor() {{

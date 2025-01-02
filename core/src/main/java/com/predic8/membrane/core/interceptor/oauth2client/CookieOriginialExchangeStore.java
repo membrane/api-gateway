@@ -21,7 +21,7 @@ import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.exchange.snapshots.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.session.*;
-import com.predic8.membrane.core.rules.*;
+import com.predic8.membrane.core.proxies.*;
 import org.jetbrains.annotations.*;
 import org.slf4j.*;
 

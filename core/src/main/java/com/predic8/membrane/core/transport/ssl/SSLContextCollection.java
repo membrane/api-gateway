@@ -15,7 +15,7 @@
 package com.predic8.membrane.core.transport.ssl;
 
 import com.oracle.util.ssl.*;
-import com.predic8.membrane.core.rules.*;
+import com.predic8.membrane.core.proxies.*;
 import org.slf4j.*;
 
 import javax.annotation.*;

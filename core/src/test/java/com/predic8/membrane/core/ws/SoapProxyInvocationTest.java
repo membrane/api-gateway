@@ -21,12 +21,11 @@ import com.predic8.membrane.core.interceptor.schemavalidation.*;
 import com.predic8.membrane.core.interceptor.soap.*;
 import com.predic8.membrane.core.interceptor.templating.*;
 import com.predic8.membrane.core.openapi.serviceproxy.*;
-import com.predic8.membrane.core.rules.*;
+import com.predic8.membrane.core.proxies.*;
 import io.restassured.response.*;
 import org.jetbrains.annotations.*;
 import org.junit.jupiter.api.*;
 
-import java.io.*;
 import java.util.*;
 
 import static com.predic8.membrane.core.http.MimeType.*;
@@ -132,7 +131,7 @@ public class SoapProxyInvocationTest {
     }
 
     @AfterAll
-    public static void teardown() throws IOException {
+    public static void teardown() {
         gw.shutdown();
         backend.shutdown();
     }

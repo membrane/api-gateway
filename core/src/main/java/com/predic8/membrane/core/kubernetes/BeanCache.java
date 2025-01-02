@@ -19,7 +19,7 @@ import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.config.spring.k8s.Envelope;
 import com.predic8.membrane.core.config.spring.k8s.YamlLoader;
 import com.predic8.membrane.core.kubernetes.client.WatchAction;
-import com.predic8.membrane.core.rules.Proxy;
+import com.predic8.membrane.core.proxies.Proxy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

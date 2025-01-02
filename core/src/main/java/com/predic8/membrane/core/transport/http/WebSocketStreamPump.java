@@ -17,7 +17,7 @@ package com.predic8.membrane.core.transport.http;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.Interceptor;
 import com.predic8.membrane.core.interceptor.tunnel.WebSocketInterceptor;
-import com.predic8.membrane.core.rules.Proxy;
+import com.predic8.membrane.core.proxies.Proxy;
 import com.predic8.membrane.core.transport.ws.WebSocketFrame;
 import com.predic8.membrane.core.transport.ws.WebSocketFrameAssembler;
 import com.predic8.membrane.core.transport.ws.WebSocketInterceptorInterface;

@@ -18,7 +18,7 @@ import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.config.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.interceptor.authentication.session.CleanupThread.*;
-import com.predic8.membrane.core.rules.*;
+import com.predic8.membrane.core.proxies.*;
 import org.apache.commons.lang3.*;
 import org.jetbrains.annotations.*;
 
@@ -98,7 +98,7 @@ public class SessionManager extends AbstractXmlElement implements Cleaner {
 					Session other = sessions.get(sId);
 					return s == other;
 				}).toList();
-				remove.forEach(sId -> sessions.remove(sId));
+				remove.forEach(sessions::remove);
 			}
 		}
 	}

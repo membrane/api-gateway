@@ -17,7 +17,7 @@ import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.cloud.*;
 import com.predic8.membrane.core.cloud.ExponentialBackoff.*;
-import com.predic8.membrane.core.rules.*;
+import com.predic8.membrane.core.proxies.*;
 import org.slf4j.*;
 import org.springframework.beans.*;
 import org.springframework.context.*;

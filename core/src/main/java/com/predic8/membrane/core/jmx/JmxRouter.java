@@ -14,8 +14,8 @@
 package com.predic8.membrane.core.jmx;
 
 import com.predic8.membrane.core.Router;
-import com.predic8.membrane.core.rules.Proxy;
-import com.predic8.membrane.core.rules.ServiceProxy;
+import com.predic8.membrane.core.proxies.Proxy;
+import com.predic8.membrane.core.proxies.ServiceProxy;
 import org.springframework.jmx.export.annotation.ManagedAttribute;
 import org.springframework.jmx.export.annotation.ManagedResource;
 

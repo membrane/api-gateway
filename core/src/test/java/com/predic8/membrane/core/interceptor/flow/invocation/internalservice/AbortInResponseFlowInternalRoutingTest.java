@@ -14,7 +14,7 @@
 
 package com.predic8.membrane.core.interceptor.flow.invocation.internalservice;
 
-import com.predic8.membrane.core.rules.*;
+import com.predic8.membrane.core.proxies.*;
 import org.junit.jupiter.api.*;
 
 import static com.predic8.membrane.core.interceptor.flow.invocation.FlowTestInterceptors.*;

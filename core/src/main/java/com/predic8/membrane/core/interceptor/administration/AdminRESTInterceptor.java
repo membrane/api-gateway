@@ -21,8 +21,8 @@ import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.http.Response.*;
 import com.predic8.membrane.core.interceptor.rest.*;
 import com.predic8.membrane.core.interceptor.statistics.util.*;
-import com.predic8.membrane.core.rules.*;
-import com.predic8.membrane.core.rules.Proxy;
+import com.predic8.membrane.core.proxies.*;
+import com.predic8.membrane.core.proxies.Proxy;
 import org.slf4j.*;
 
 import java.io.*;

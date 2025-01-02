@@ -17,7 +17,7 @@ import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.interceptor.misc.*;
 import com.predic8.membrane.core.interceptor.templating.*;
-import com.predic8.membrane.core.rules.*;
+import com.predic8.membrane.core.proxies.*;
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.methods.*;
 import org.junit.jupiter.api.*;
@@ -50,7 +50,7 @@ public class ServiceInvocationTest {
 
 
 	@AfterEach
-	public void tearDown() throws Exception {
+	public void tearDown() {
 		router.shutdown();
 	}
 

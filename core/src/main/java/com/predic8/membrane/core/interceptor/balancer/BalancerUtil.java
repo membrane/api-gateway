@@ -16,7 +16,7 @@ package com.predic8.membrane.core.interceptor.balancer;
 
 import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.rules.*;
+import com.predic8.membrane.core.proxies.*;
 
 import java.util.*;
 

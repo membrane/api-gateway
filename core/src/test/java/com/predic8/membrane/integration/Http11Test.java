@@ -17,7 +17,7 @@ import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.soap.*;
-import com.predic8.membrane.core.rules.*;
+import com.predic8.membrane.core.proxies.*;
 import org.apache.commons.httpclient.*;
 import org.apache.commons.httpclient.methods.*;
 import org.apache.http.params.*;

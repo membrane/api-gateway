@@ -23,7 +23,7 @@ import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.Response.*;
 import com.predic8.membrane.core.openapi.serviceproxy.*;
 import com.predic8.membrane.core.openapi.serviceproxy.APIProxy.*;
-import com.predic8.membrane.core.rules.*;
+import com.predic8.membrane.core.proxies.*;
 import org.jetbrains.annotations.*;
 import org.slf4j.*;
 

@@ -18,7 +18,7 @@ import com.predic8.membrane.core.interceptor.Interceptor.*;
 import com.predic8.membrane.core.interceptor.rewrite.*;
 import com.predic8.membrane.core.interceptor.rewrite.RewriteInterceptor.*;
 import com.predic8.membrane.core.interceptor.xslt.*;
-import com.predic8.membrane.core.rules.*;
+import com.predic8.membrane.core.proxies.*;
 import org.apache.commons.httpclient.*;
 import org.apache.commons.httpclient.methods.*;
 import org.apache.http.params.*;
@@ -58,7 +58,7 @@ public class RESTBLZServiceIntegrationTest {
 	}
 
 	@AfterAll
-	static void tearDown() throws Exception {
+	static void tearDown() {
 		router.shutdown();
 	}
 

@@ -19,7 +19,7 @@ import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.Interceptor.*;
 import com.predic8.membrane.core.model.*;
-import com.predic8.membrane.core.rules.*;
+import com.predic8.membrane.core.proxies.*;
 import org.slf4j.*;
 
 import java.text.*;
@@ -96,7 +96,7 @@ public class LimitedMemoryExchangeStore extends AbstractExchangeStore {
 
 	}
 
-	private synchronized AbstractExchange snapInternal(AbstractExchange orig, Flow flow) throws Exception {
+	private synchronized AbstractExchange snapInternal(AbstractExchange orig, Flow flow) {
 		AbstractExchange exc = getExchangeById(orig.getId());
 
 		if (exc == null) {

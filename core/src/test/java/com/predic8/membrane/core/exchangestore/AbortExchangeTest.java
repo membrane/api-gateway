@@ -13,25 +13,19 @@
    limitations under the License. */
 package com.predic8.membrane.core.exchangestore;
 
-import com.predic8.io.IOUtil;
 import com.predic8.membrane.core.HttpRouter;
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.exchange.AbstractExchange;
 import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Body;
 import com.predic8.membrane.core.http.BodyUtil;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.ExchangeStoreInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
-import com.predic8.membrane.core.rules.ServiceProxy;
-import com.predic8.membrane.core.rules.ServiceProxyKey;
-import com.predic8.membrane.core.transport.http.ConnectionManager;
+import com.predic8.membrane.core.proxies.ServiceProxy;
+import com.predic8.membrane.core.proxies.ServiceProxyKey;
 import com.predic8.membrane.core.transport.http.HttpClient;
-import com.predic8.membrane.core.transport.http.HttpClientUtil;
-import com.predic8.membrane.core.transport.http.HttpServerHandler;
-import com.predic8.membrane.core.util.URIFactory;
 import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.*;
 
@@ -63,7 +57,7 @@ public class AbortExchangeTest {
                     int l = 0;
 
                     @Override
-                    public int read() throws IOException {
+                    public int read() {
                         if (l++ >= 2000000)
                             return -1;
                         return 0;
@@ -112,7 +106,10 @@ public class AbortExchangeTest {
     }
 
     private Response performRequest() throws Exception {
-        return new HttpClient().call(new Request.Builder().get("http://localhost:3031/").header("Connection", "close").buildExchange()).getResponse();
+        try (HttpClient hc = new HttpClient()) {
+            return hc.call(new Request.Builder().get("http://localhost:3031/").header("Connection", "close")
+                    .buildExchange()).getResponse();
+        }
     }
 
     @AfterEach

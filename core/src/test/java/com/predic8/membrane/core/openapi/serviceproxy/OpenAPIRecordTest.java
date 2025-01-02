@@ -19,7 +19,7 @@ package com.predic8.membrane.core.openapi.serviceproxy;
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Request;
-import com.predic8.membrane.core.rules.NullProxy;
+import com.predic8.membrane.core.proxies.NullProxy;
 import com.predic8.membrane.core.util.URIFactory;
 import org.junit.jupiter.api.BeforeEach;
 

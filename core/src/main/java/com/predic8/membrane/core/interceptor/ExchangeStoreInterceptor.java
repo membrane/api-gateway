@@ -18,7 +18,7 @@ import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.exchangestore.*;
 import com.predic8.membrane.core.interceptor.administration.*;
-import com.predic8.membrane.core.rules.*;
+import com.predic8.membrane.core.proxies.*;
 import org.springframework.beans.*;
 import org.springframework.context.*;
 
@@ -112,7 +112,7 @@ public class ExchangeStoreInterceptor extends AbstractInterceptor implements App
 	}
 
 	@Override
-	public void init() throws Exception {
+	public void init() {
 
 		//noinspection StatementWithEmptyBody
 		if (Objects.equals(exchangeStoreBeanId, BEAN_ID_ATTRIBUTE_CANNOT_BE_USED))

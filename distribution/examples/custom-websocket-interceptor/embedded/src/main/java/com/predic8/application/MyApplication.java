@@ -19,8 +19,8 @@ package com.predic8.application;
 import com.predic8.membrane.core.HttpRouter;
 import com.predic8.membrane.core.interceptor.tunnel.WebSocketInterceptor;
 import com.predic8.membrane.core.interceptor.websocket.custom.MyWebSocketLogInterceptor;
-import com.predic8.membrane.core.rules.ServiceProxy;
-import com.predic8.membrane.core.rules.ServiceProxyKey;
+import com.predic8.membrane.core.proxies.ServiceProxy;
+import com.predic8.membrane.core.proxies.ServiceProxyKey;
 
 public class MyApplication {
 

@@ -209,7 +209,7 @@ public class RewriteInterceptor extends AbstractInterceptor {
                     .title("The path does not follow the URI specification. Confirm the validity of the provided URL.")
                     .detail("Check the URL: " + destination)
                     .extension("component", "rewrite")
-                    .build(exc);
+                    .buildAndSetResponse(exc);
             return null;
         }
     }

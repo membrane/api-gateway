@@ -13,27 +13,20 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.balancer;
 
-import static com.predic8.membrane.core.util.URLParamUtil.createQueryString;
-import static org.junit.jupiter.api.Assertions.*;
-
-import java.io.IOException;
-import java.io.UnsupportedEncodingException;
-
-import org.apache.commons.httpclient.HttpClient;
-import org.apache.commons.httpclient.HttpException;
-import org.apache.commons.httpclient.HttpVersion;
-import org.apache.commons.httpclient.methods.InputStreamRequestEntity;
-import org.apache.commons.httpclient.methods.PostMethod;
-import org.apache.http.params.HttpProtocolParams;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.Test;
-
-import com.predic8.membrane.core.HttpRouter;
+import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.http.Header;
-import com.predic8.membrane.core.http.MimeType;
-import com.predic8.membrane.core.rules.ServiceProxy;
-import com.predic8.membrane.core.rules.ServiceProxyKey;
-import com.predic8.membrane.core.services.DummyWebServiceInterceptor;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.proxies.*;
+import com.predic8.membrane.core.services.*;
+import org.apache.commons.httpclient.*;
+import org.apache.commons.httpclient.methods.*;
+import org.apache.http.params.*;
+import org.junit.jupiter.api.*;
+
+import java.io.*;
+
+import static com.predic8.membrane.core.util.URLParamUtil.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class LoadBalancingWithClusterManagerTest {
 
@@ -94,7 +87,7 @@ public class LoadBalancingWithClusterManagerTest {
 	}
 
 	@AfterAll
-	public static void tearDown() throws Exception {
+	public static void tearDown() {
 		lb.shutdown();
 		node1.shutdown();
 		node2.shutdown();
@@ -147,15 +140,14 @@ public class LoadBalancingWithClusterManagerTest {
 		return post;
 	}
 
-	private void sendNotification(String cmd, int port) throws UnsupportedEncodingException, IOException,
-	HttpException {
+	private void sendNotification(String cmd, int port) throws IOException {
 		PostMethod post = new PostMethod("http://localhost:3012/clustermanager/"+cmd+"?"+
 				createQueryString("host", "localhost",
 						"port", String.valueOf(port)));
 		new HttpClient().executeMethod(post);
 	}
 
-	private int post(String req) throws IOException, HttpException {
+	private int post(String req) throws IOException {
 		return getClient().executeMethod(getPostMethod(req));
 	}
 

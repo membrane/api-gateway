@@ -16,8 +16,8 @@ package com.predic8.membrane.core.exchange;
 
 import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.rules.Proxy;
-import com.predic8.membrane.core.rules.*;
+import com.predic8.membrane.core.proxies.Proxy;
+import com.predic8.membrane.core.proxies.*;
 import com.predic8.membrane.core.transport.http.*;
 import com.predic8.membrane.core.util.*;
 import org.slf4j.*;

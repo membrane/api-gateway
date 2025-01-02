@@ -14,19 +14,15 @@
 
 package com.predic8.membrane.core.interceptor;
 
-import com.predic8.membrane.core.HttpRouter;
-import com.predic8.membrane.core.Router;
-import com.predic8.membrane.core.interceptor.misc.ReturnInterceptor;
-import com.predic8.membrane.core.interceptor.templating.StaticInterceptor;
-import com.predic8.membrane.core.rules.ServiceProxy;
-import com.predic8.membrane.core.rules.ServiceProxyKey;
-import org.apache.commons.httpclient.HttpClient;
-import org.apache.commons.httpclient.methods.GetMethod;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
+import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.interceptor.misc.*;
+import com.predic8.membrane.core.interceptor.templating.*;
+import com.predic8.membrane.core.proxies.*;
+import org.apache.commons.httpclient.*;
+import org.apache.commons.httpclient.methods.*;
+import org.junit.jupiter.api.*;
 
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class AdjustContentLengthTest {
 
@@ -38,6 +34,11 @@ public class AdjustContentLengthTest {
 		router.getRuleManager().addProxyAndOpenPortIfNew(createMonitorRule());
 		router.getRuleManager().addProxyAndOpenPortIfNew(createEndpointRule());
 		router.init();
+	}
+
+	@AfterAll
+	public static void tearDown() {
+		router.shutdown();
 	}
 
 	private static ServiceProxy createMonitorRule() {
@@ -65,19 +66,14 @@ public class AdjustContentLengthTest {
 		GetMethod monitoredRequest = getMonitoredRequest();
 		new HttpClient().executeMethod(monitoredRequest);
 
-		assertTrue(directRequest.getResponseContentLength() == directRequest
-				.getResponseBody().length);
-		assertTrue(monitoredRequest.getResponseContentLength() == monitoredRequest
-				.getResponseBody().length);
+        assertEquals(directRequest.getResponseContentLength(), directRequest
+                .getResponseBody().length);
+        assertEquals(monitoredRequest.getResponseContentLength(), monitoredRequest
+                .getResponseBody().length);
 
-		assertTrue(directRequest.getResponseContentLength() != monitoredRequest
-				.getResponseContentLength());
+        assertTrue(directRequest.getResponseContentLength() != monitoredRequest
+                .getResponseContentLength());
 
-	}
-
-	@AfterAll
-	public static void tearDown() throws Exception {
-		router.shutdown();
 	}
 
 	private GetMethod getDirectRequest() {
