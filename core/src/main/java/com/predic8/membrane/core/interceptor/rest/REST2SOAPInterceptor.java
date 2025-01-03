@@ -202,7 +202,7 @@ public class REST2SOAPInterceptor extends SOAPRESTHelper {
         if (types.isEmpty())
             return;
 
-        if (!isJson(types.getFirst()))
+        if (!isJson(types.getFirst().toString()))
             return;
 
         response.setBodyContent(xml2json(response.getBodyAsStreamDecoded(), properties));

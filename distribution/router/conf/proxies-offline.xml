@@ -33,7 +33,7 @@
 
 		<!-- Mock backend for MyAPI above -->
 		<api name="JSON Tempate" port="3000">
-			<log headerOnly="false"/><!-- See console for logs -->
+			<log/><!-- See console for logs -->
 			<template contentType="application/json">
 				{ "success": true }
 			</template>

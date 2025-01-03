@@ -12,36 +12,31 @@
 - Grafana Dashboard to import in examples/prometheus
   - Also provide the datasource config
   - Maybe the config can be included into the docker-compose setup
-- Example Tests without unzipping for every test
 - Refactor HttpClient
   - Replace finalize with try(...)
 
 # Version 6.0.0
 
 ## TODOs
-- Delete SSLProxy
-
 - If/setHeader
   - Write example with lots of samples in different languages
-
-
 - Delete interceptor/
-  - api-management
   - CBR - Replacement?
-  - Swagger-proxy
-    - OpenAPI supports Swagger 2.0
-
 - Check
   - Is example embedded-java still running?
-    - Update to Java 21 needed? 
-
-
-
+    - Update to Java 21 needed?
 - Is SessionResumptionTest still needed?
 - Document XPath Language of <if>
 - Restructure samples
-- UnitTests: Use PackageScan for more or all
 - Make <log headerOnly="false"/> clearer! 
+
+## Done
+- Example Tests without unzipping for every test
+- Delete interceptor
+  - api-management
+- Swagger-proxy
+  - OpenAPI supports Swagger 2.0
+- UnitTests: Use PackageScan for more or all
 
 ### Examples
 - Rename Tests to *.ExampleTest

@@ -176,7 +176,7 @@ public class KubernetesClientBuilder {
             ExceptionThrowingConsumer<Exchange> lastClient = client;
             LogInterceptor i = new LogInterceptor();
             i.setLevel(LogInterceptor.Level.WARN);
-            i.setHeaderOnly(false);
+            i.setBody(false);
             client = exchange -> {
                 i.handleRequest(exchange);
                 lastClient.accept(exchange);

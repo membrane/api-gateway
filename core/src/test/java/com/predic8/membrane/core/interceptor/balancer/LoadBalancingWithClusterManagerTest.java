@@ -14,18 +14,18 @@
 package com.predic8.membrane.core.interceptor.balancer;
 
 import com.predic8.membrane.core.*;
-import com.predic8.membrane.core.http.Header;
-import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.proxies.*;
 import com.predic8.membrane.core.services.*;
 import org.apache.commons.httpclient.*;
 import org.apache.commons.httpclient.methods.*;
-import org.apache.http.params.*;
 import org.junit.jupiter.api.*;
 
 import java.io.*;
 
+import static com.predic8.membrane.core.http.Header.*;
+import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.util.URLParamUtil.*;
+import static org.apache.http.params.CoreProtocolPNames.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class LoadBalancingWithClusterManagerTest {
@@ -36,7 +36,7 @@ public class LoadBalancingWithClusterManagerTest {
 	private static HttpRouter node3;
 
 	@Test
-	public void nodesTest() throws Exception {
+	void nodesTest() throws Exception {
 		node1 = new HttpRouter();
 		node2 = new HttpRouter();
 		node3 = new HttpRouter();
@@ -82,8 +82,6 @@ public class LoadBalancingWithClusterManagerTest {
 		assertEquals(2, service1.getCount());
 		assertEquals(4, service2.getCount());
 		assertEquals(2, service3.getCount());
-
-
 	}
 
 	@AfterAll
@@ -127,16 +125,15 @@ public class LoadBalancingWithClusterManagerTest {
 
 	private HttpClient getClient() {
 		HttpClient client = new HttpClient();
-		client.getParams().setParameter(HttpProtocolParams.PROTOCOL_VERSION, HttpVersion.HTTP_1_1);
+		client.getParams().setParameter(PROTOCOL_VERSION, HttpVersion.HTTP_1_1);
 		return client;
 	}
 
 	private PostMethod getPostMethod(String request) {
 		PostMethod post = new PostMethod("http://localhost:3017/axis2/services/BLZService");
 		post.setRequestEntity(new InputStreamRequestEntity(this.getClass().getResourceAsStream(request)));
-		post.setRequestHeader(Header.CONTENT_TYPE, MimeType.TEXT_XML_UTF8);
-		post.setRequestHeader(Header.SOAP_ACTION, "");
-
+		post.setRequestHeader(CONTENT_TYPE, TEXT_XML_UTF8);
+		post.setRequestHeader(SOAP_ACTION, "");
 		return post;
 	}
 

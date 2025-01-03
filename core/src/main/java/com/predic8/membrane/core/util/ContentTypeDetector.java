@@ -24,6 +24,7 @@ import java.util.*;
 import static com.predic8.membrane.core.Constants.*;
 import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.util.ContentTypeDetector.EffectiveContentType.*;
+import static com.predic8.membrane.core.util.ContentTypeDetector.EffectiveContentType.UNKNOWN;
 import static javax.xml.stream.XMLInputFactory.IS_REPLACING_ENTITY_REFERENCES;
 import static javax.xml.stream.XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES;
 import static javax.xml.stream.XMLStreamConstants.*;
@@ -47,6 +48,8 @@ public class ContentTypeDetector {
         SOAP,
         XML,
         JSON,
+        HTML,
+        TEXT,
         UNKNOWN
     }
 
@@ -55,12 +58,16 @@ public class ContentTypeDetector {
             "application/xml",
             "multipart/related");
 
+    private static final Set<String> contentTypesHTML = ImmutableSet.of(
+            "text/html");
+
     private static final Set<String> contentTypesJSON = ImmutableSet.of(
             APPLICATION_JSON,
             APPLICATION_X_JAVASCRIPT,
             TEXT_JAVASCRIPT,
             TEXT_X_JAVASCRIPT,
-            TEXT_X_JSON);
+            TEXT_X_JSON,
+            APPLICATION_PROBLEM_JSON);
 
     private static final XOPReconstitutor xopr = new XOPReconstitutor();
 
@@ -68,7 +75,7 @@ public class ContentTypeDetector {
         try {
             jakarta.mail.internet.ContentType t = m.getHeader().getContentTypeObject();
             if (t == null)
-                return EffectiveContentType.UNKNOWN;
+                return UNKNOWN;
 
             String type = t.getPrimaryType() + "/" + t.getSubType();
 
@@ -81,10 +88,22 @@ public class ContentTypeDetector {
                 return analyseXMLContent(m);
             }
 
-        } catch (Exception e) {
+            if (contentTypesHTML.contains(type)) {
+                return HTML;
+            }
+
+            if (t.getPrimaryType().equals("text")) {
+                return TEXT;
+            }
+
+            if (t.getSubType().endsWith("+json")) {
+                return JSON;
+            }
+
+        } catch (Exception ignore) {
             // do nothing
         }
-        return EffectiveContentType.UNKNOWN;
+        return UNKNOWN;
     }
 
     private static @NotNull EffectiveContentType analyseXMLContent(Message m) {

@@ -29,10 +29,28 @@ public class ContentTypeDetectorTest {
 	}
 
 	@Test
+	void problemJson() {
+		assertEquals(JSON, detectEffectiveContentType(ok().contentType(APPLICATION_PROBLEM_JSON).build()));
+	}
+
+	@Test
+	void plusJson() {
+		assertEquals(JSON, detectEffectiveContentType(ok().contentType("anything/anything+json").build()));
+	}
+
+	@Test
 	void xml() {
 		assertEquals(XML, detectEffectiveContentType(ok().
 				contentType(TEXT_XML_UTF8).
 				body("<foo/>").
+				build()));
+	}
+
+	@Test
+	void html() {
+		assertEquals(HTML, detectEffectiveContentType(ok().
+				contentType(TEXT_HTML).
+				body("<html/>").
 				build()));
 	}
 

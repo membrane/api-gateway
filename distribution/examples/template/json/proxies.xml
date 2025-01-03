@@ -59,7 +59,7 @@
 		-->
 		<api port="3000">
 			<request>
-				<log headerOnly="false"/>
+				<log/>
 			</request>
 			<return statusCode="200" />
 		</api>

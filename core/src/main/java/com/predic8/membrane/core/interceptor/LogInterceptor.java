@@ -18,146 +18,131 @@ import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 
-import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
+import static com.predic8.membrane.core.http.MimeType.*;
+import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static org.slf4j.LoggerFactory.*;
 
 /**
- * @description The log feature logs request and response messages to the log4j
- *              framework. The messages will appear either on the console or in
- *              a log file depending on the configuration of the
- *              <i>conf/log4j2.xml</i> file.
+ * @description The log feature logs request and response messages. The messages will appear either on the console or in
+ * a log file depending on the log configuration.
  * @topic 5. Monitoring, Logging and Statistics
  */
-@MCElement(name="log")
+@MCElement(name = "log")
 public class LogInterceptor extends AbstractInterceptor {
 
-	public enum Level {
-		TRACE, DEBUG, INFO, WARN, ERROR, FATAL
-	}
+    public enum Level {
+        TRACE, DEBUG, INFO, WARN, ERROR, FATAL
+    }
 
-	private boolean headerOnly = true;
-	private String category = LogInterceptor.class.getName();
-	private Level level = Level.INFO;
+    private boolean body = true;
+    private String category = LogInterceptor.class.getName();
+    private Level level = Level.INFO;
 
-	public LogInterceptor() {
-		name = "Log";
-	}
+    public LogInterceptor() {
+        name = "Log";
+    }
 
-	@Override
-	public Outcome handleRequest(Exchange exc) throws Exception {
-		log("==== Request ===");
-		logMessage(exc.getRequest());
-		return CONTINUE;
-	}
+    @Override
+    public Outcome handleRequest(Exchange exc) throws Exception {
+        log("==== Request ===");
+        logMessage(exc.getRequest());
+        return CONTINUE;
+    }
 
-	@Override
-	public Outcome handleResponse(Exchange exc) throws Exception {
-		log("==== Response ===");
-		logMessage(exc.getResponse());
-		return CONTINUE;
-	}
+    @Override
+    public Outcome handleResponse(Exchange exc) throws Exception {
+        log("==== Response ===");
+        logMessage(exc.getResponse());
+        return CONTINUE;
+    }
 
-	@Override
-	public void handleAbort(Exchange exc) {
-		try {
-			log("==== Request(Exchange aborted) ===");
-			logMessage(exc.getRequest());
-			log("==== Response(Exchange aborted) ===");
-			logMessage(exc.getResponse());
-		} catch (Exception e) {
-			throw new RuntimeException(e);
-		}
-	}
+    @Override
+    public void handleAbort(Exchange exc) {
+        try {
+            log("==== Request(Exchange aborted) ===");
+            logMessage(exc.getRequest());
+            log("==== Response(Exchange aborted) ===");
+            logMessage(exc.getResponse());
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
 
-	public boolean isHeaderOnly() {
-		return headerOnly;
-	}
+    public boolean isBody() {
+        return body;
+    }
 
-	/**
-	 * @default true
-	 * @description If set to true only the HTTP header will be logged.
-	 */
-	@MCAttribute
-	public void setHeaderOnly(boolean headerOnly) {
-		this.headerOnly = headerOnly;
-	}
+    /**
+     * @default true
+     * @description To turn off logging of message bodies set this attribute to false
+     */
+    @MCAttribute
+    public void setBody(boolean body) {
+        this.body = body;
+    }
 
-	public Level getLevel() {
-		return level;
-	}
+    public Level getLevel() {
+        return level;
+    }
 
-	/**
-	 * @default INFO
-	 * @description Sets the log level.
-	 * @example WARN
-	 */
-	@MCAttribute
-	public void setLevel(Level level) {
-		this.level = level;
-	}
+    /**
+     * @default INFO
+     * @description Sets the log level.
+     * @example WARN
+     */
+    @MCAttribute
+    public void setLevel(Level level) {
+        this.level = level;
+    }
 
-	private void logMessage(Message msg) throws Exception {
-		if (msg == null) {
-			log("no message");
-			log("================");
-			return;
-		}
+    private void logMessage(Message msg) throws Exception {
+        log(msg.getStartLine());
+        log("\nHeaders:\n" + msg.getHeader());
 
-		log(msg.getStartLine());
-		log("Headers:");
-		log(msg.getHeader().toString());
-		if (headerOnly) {
-			log("================");
-			return;
-		}
+        if (!body || msg.isBodyEmpty())
+            return;
 
-		log("Body:");
-		if (msg.isBodyEmpty()) {
-			log("empty");
-			log("================");
-			return;
-		}
+        String mt = msg.getHeader().getContentType();
+        if (isJson(mt) ||
+            isXML(mt) ||
+            isText(mt)) {
+            log(dumpBody(msg));
+        }
+    }
 
-		if (msg.isImage()) {
-			log("[binary image data]");
-			log("================");
-			return;
-		}
-		log(msg.getBodyAsStringDecoded());
-		log("================");
-	}
+    private static String dumpBody(Message msg) {
+        return "Body:\n{}\n".formatted(msg.getBodyAsStreamDecoded());
+    }
 
-	private void log(String msg) {
-		switch (level) {
-			case TRACE -> getLogger(category).trace(msg);
-			case DEBUG -> getLogger(category).debug(msg);
-			case INFO -> getLogger(category).info(msg);
-			case WARN -> getLogger(category).warn(msg);
-			case ERROR -> getLogger(category).error(msg);
-			case FATAL -> getLogger(category).error(msg);
-		}
-	}
+    private void log(String msg) {
+        switch (level) {
+            case TRACE -> getLogger(category).trace(msg);
+            case DEBUG -> getLogger(category).debug(msg);
+            case INFO -> getLogger(category).info(msg);
+            case WARN -> getLogger(category).warn(msg);
+            case ERROR, FATAL -> getLogger(category).error(msg);
+        }
+    }
 
-	@SuppressWarnings("unused")
-	public String getCategory() {
-		return category;
-	}
+    @SuppressWarnings("unused")
+    public String getCategory() {
+        return category;
+    }
 
-	/**
-	 * @default com.predic8.membrane.core.interceptor.LogInterceptor
-	 * @description Sets the category of the logged message.
-	 * @example Membrane
-	 */
-	@SuppressWarnings("unused")
-	@MCAttribute
-	public void setCategory(String category) {
-		this.category = category;
-	}
+    /**
+     * @default com.predic8.membrane.core.interceptor.LogInterceptor
+     * @description Sets the category of the logged message.
+     * @example Membrane
+     */
+    @SuppressWarnings("unused")
+    @MCAttribute
+    public void setCategory(String category) {
+        this.category = category;
+    }
 
-	@Override
-	public String getShortDescription() {
-		return "Logs the " + (headerOnly ? "headers of " : "") + "requests and responses" +
-				" using Log4J's " + level.toString() + " level.";
-	}
-
+    @Override
+    public String getShortDescription() {
+        return "Logs the " + (body ? "headers of " : "") + "requests and responses" +
+               " using Log4J's " + level.toString() + " level.";
+    }
 }

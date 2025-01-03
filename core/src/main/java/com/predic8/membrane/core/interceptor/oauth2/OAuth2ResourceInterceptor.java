@@ -572,7 +572,7 @@ public class OAuth2ResourceInterceptor extends AbstractInterceptor {
                 LogInterceptor logi = null;
                 if (log.isDebugEnabled()) {
                     logi = new LogInterceptor();
-                    logi.setHeaderOnly(false);
+                    logi.setBody(false);
                     logi.handleRequest(e);
                 }
 
@@ -621,7 +621,7 @@ public class OAuth2ResourceInterceptor extends AbstractInterceptor {
                         .buildExchange();
 
                 if (log.isDebugEnabled()) {
-                    logi.setHeaderOnly(false);
+                    logi.setBody(false);
                     logi.handleRequest(e2);
                 }
 

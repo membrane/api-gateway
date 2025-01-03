@@ -22,7 +22,7 @@
 
 		<api name="echo" port="2000">
 			<interceptor refid="headerAddInterceptor"/>
-			<log headerOnly="false"/>
+			<log/>
 			<return/>
     	</api>
 		

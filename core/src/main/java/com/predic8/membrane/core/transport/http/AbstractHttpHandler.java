@@ -89,8 +89,8 @@ public abstract class AbstractHttpHandler  {
 		boolean printStackTrace = transport.isPrintStackTrace();
 
 		return switch (ContentTypeDetector.detectEffectiveContentType(exchange.getRequest())) {
+			case JSON, HTML, TEXT -> createJSONErrorResponse( e, printStackTrace);
 			case XML ->  createXMLErrorResponse( e, printStackTrace);
-			case JSON -> createJSONErrorResponse( e, printStackTrace);
 			case SOAP -> createSOAPErrorResponse( e, printStackTrace);
 			case UNKNOWN -> HttpUtil.setHTMLErrorResponse(getResponseBuilder(e), getMessage(e, printStackTrace), getComment(printStackTrace));
 		};

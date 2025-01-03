@@ -23,3 +23,6 @@ Now if there is no message to set a header, an exception is thrown.
 
 - ConditionalInterceptor is renamed in IfInterceptor
 
+# Log
+
+- Instead of headerOnly="true" body="false"

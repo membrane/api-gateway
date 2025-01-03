@@ -13,24 +13,17 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.grease.strategies;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.http.Body;
-import com.predic8.membrane.core.http.Message;
-import com.predic8.membrane.core.http.MimeType;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.http.MediaType;
+import com.fasterxml.jackson.databind.*;
+import com.fasterxml.jackson.databind.node.*;
+import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.http.*;
+import org.slf4j.*;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.function.Consumer;
+import java.io.*;
+import java.util.*;
+import java.util.function.*;
+
+import static com.predic8.membrane.core.http.MimeType.isJson;
 
 @MCElement(name = "greaseJson", topLevel = false)
 public class JsonGrease extends Greaser {
@@ -62,7 +55,7 @@ public class JsonGrease extends Greaser {
 
     @Override
     protected boolean isApplicable(Message msg) {
-        return MimeType.isJson(MediaType.parseMediaType(msg.getHeader().getContentType()));
+        return isJson(msg.getHeader().getContentType());
     }
 
     @Override
