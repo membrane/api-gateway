@@ -15,6 +15,7 @@
 package com.predic8.membrane.examples.util;
 
 import org.junit.jupiter.api.*;
+import org.slf4j.*;
 
 import java.io.*;
 import java.util.*;
@@ -33,6 +34,8 @@ import static org.apache.commons.io.FileUtils.*;
  */
 public abstract class DistributionExtractingTestcase {
 
+    private static final Logger log = LoggerFactory.getLogger(DistributionExtractingTestcase.class.getName());
+
     public static final String MEMBRANE_LOG_LEVEL = "info";
 
     public static final String LOCALHOST_2000 = "http://localhost:2000";
@@ -48,27 +51,30 @@ public abstract class DistributionExtractingTestcase {
     protected String getExampleDirName() { return "dummy"; }
 
     @BeforeAll
-    public static void beforeAll() throws IOException, InterruptedException {
-        System.out.println("unzipping router distribution");
+    public static void beforeAll() throws Exception {
+        log.info("unzipping router distribution");
 
         File targetDir = getTargetDir();
 
         unzipDir = getUnzipDir(targetDir);
-
         unzip(getZipFile(targetDir), unzipDir);
 
         membraneHome = requireNonNull(unzipDir.listFiles((dir, name) -> name.startsWith("membrane-api-gateway")))[0];
-        //baseDir = getExampleDir(getExampleDirName());
 
         replaceLog4JConfig();
+    }
 
-        System.out.println("running test...");
+    @AfterAll
+    public static void done() {
+        log.info("cleaning up...");
+        recursiveDelete(unzipDir);
+        log.info("cleaning up... done");
     }
 
     @BeforeEach
-    public void init() throws IOException, InterruptedException {
+    public void init() {
         baseDir = getExampleDir(getExampleDirName());
-        System.out.println("running test..." + baseDir);
+        log.info("running test... in {}",baseDir);
     }
 
     private static File getTargetDir() throws IOException {
@@ -132,13 +138,6 @@ public abstract class DistributionExtractingTestcase {
 
     public File getMembraneHome() {
         return membraneHome;
-    }
-
-    @AfterAll
-    public static void done() {
-        System.out.println("cleaning up...");
-        recursiveDelete(unzipDir);
-        System.out.println("done.");
     }
 
     private static void recursiveDelete(File file) {

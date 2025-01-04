@@ -20,7 +20,7 @@ import static com.predic8.membrane.core.http.MimeType.*;
 import static io.restassured.RestAssured.*;
 import static org.hamcrest.Matchers.*;
 
-public class StaxExampleInterceptorTest extends DistributionExtractingTestcase {
+public class StaxInterceptorExampleTest extends DistributionExtractingTestcase {
 
     @Override
     protected String getExampleDirName() {
@@ -28,7 +28,7 @@ public class StaxExampleInterceptorTest extends DistributionExtractingTestcase {
     }
 
     @Test
-    public void test() throws Exception {
+    void test() throws Exception {
 
         compileCustomInterceptor();
 
@@ -43,6 +43,8 @@ public class StaxExampleInterceptorTest extends DistributionExtractingTestcase {
                 .body("bar.bar", equalTo("42"));
             // @formatter:on
         }
+        System.out.println(" = Finised" );
+
     }
 
     private void compileCustomInterceptor() throws Exception {

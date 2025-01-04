@@ -11,7 +11,7 @@
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
    See the License for the specific language governing permissions and
    limitations under the License. */
-package com.predic8.membrane.core.interceptor.misc;
+package com.predic8.membrane.core.interceptor.lang;
 
 import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.exchange.*;
@@ -28,9 +28,10 @@ public class SetPropertyInterceptor extends AbstractSetterInterceptor {
     }
 
     @Override
-    protected void setValue(Exchange exchange, Flow ignored, String eval) {
-        exchange.setProperty(name, eval);
+    protected void setValue(Exchange exchange, Flow flow, Object evaluatedValue) {
+        exchange.setProperty(name, evaluatedValue.toString());
     }
+
 
     @Override
     public String getDisplayName() {
@@ -39,6 +40,6 @@ public class SetPropertyInterceptor extends AbstractSetterInterceptor {
 
     @Override
     public String getShortDescription() {
-        return "Sets the value of the exchange property '%s' to %s.".formatted(name, value);
+        return "Sets the value of the exchange property '%s' to %s.".formatted(name, expression);
     }
 }

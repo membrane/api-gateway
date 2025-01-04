@@ -14,7 +14,7 @@
 package com.predic8.membrane.core;
 
 import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.interceptor.misc.*;
+import com.predic8.membrane.core.interceptor.flow.*;
 import com.predic8.membrane.core.openapi.serviceproxy.*;
 import com.predic8.membrane.core.proxies.*;
 import io.restassured.response.*;

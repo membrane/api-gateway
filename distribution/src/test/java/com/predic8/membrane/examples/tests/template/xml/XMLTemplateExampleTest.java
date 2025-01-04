@@ -12,41 +12,47 @@
    See the License for the specific language governing permissions and
    limitations under the License. */
 
-package com.predic8.membrane.examples.tests.template.json;
+package com.predic8.membrane.examples.tests.template.xml;
 
 import com.predic8.membrane.examples.util.*;
 import org.junit.jupiter.api.*;
 
+import java.io.*;
+
 import static com.predic8.membrane.core.http.MimeType.*;
 import static io.restassured.RestAssured.*;
+import static java.nio.file.Files.*;
 import static org.hamcrest.Matchers.*;
 
-public class JsonTemplateTest extends AbstractSampleMembraneStartStopTestcase {
+public class XMLTemplateExampleTest extends AbstractSampleMembraneStartStopTestcase {
 
     @Override
     protected String getExampleDirName() {
-        return "template/json";
+        return "template/xml";
     }
 
     @Test
-    void queryParamInputText() {
+    void xmlInputAndTemplate() throws IOException {
         given()
-            .get("http://localhost:2000/json-out?answer=42")
+            .contentType(APPLICATION_XML)
+            .body(readString(new File(baseDir + "/cities.xml").toPath()))
+            .post("http://localhost:2001")
         .then().assertThat()
-            .body("answer",equalTo(42));
+            .body("destinations.answer", equalToCompressingWhiteSpace("42"))
+            .body("destinations.destination[0]", equalToCompressingWhiteSpace("Hong Kong"))
+            .body("destinations.destination[1]", equalToCompressingWhiteSpace("Tokio"))
+            .body("destinations.destination[2]", equalToCompressingWhiteSpace("Berlin"));
     }
 
     @Test
-    void variables() {
+    void xPathAndText() {
         given()
-            .contentType(APPLICATION_JSON)
+            .contentType(APPLICATION_XML)
             .body("""
-                    {
-                      "city": "Bonn",
-                      "country": "Germany"
-                    }""")
-            .post("http://localhost:2000/json-in")
+                    <person firstname="Juan"/>""")
+            .post("http://localhost:2000")
         .then().assertThat()
-            .body(containsString("{\"city\": \"Bonn\"}"));
+            .body(containsString("Buenas Noches, Juansito!"));
+
     }
 }

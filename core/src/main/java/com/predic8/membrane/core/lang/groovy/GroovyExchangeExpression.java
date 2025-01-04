@@ -17,39 +17,26 @@ package com.predic8.membrane.core.lang.groovy;
 import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.lang.*;
+import com.predic8.membrane.core.interceptor.lang.*;
 
 import java.util.*;
 import java.util.function.*;
 
-import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.lang.ScriptingUtils.*;
 
-public class GroovyExchangeExpression implements ExchangeExpression {
+public class GroovyExchangeExpression extends AbstractExchangeExpression {
 
     private final Function<Map<String, Object>, Boolean> condition;
     private final Router router;
 
     public GroovyExchangeExpression(Router router, String source) {
+        super(source);
         this.router = router;
         condition = new GroovyLanguageSupport().compileExpression(router.getBackgroundInitializator(), null, source);
     }
 
     @Override
     public <T> T evaluate(Exchange exchange, Interceptor.Flow flow, Class<T> type) {
-        return type.cast(condition.apply(getParametersForGroovy(exchange, flow)));
-    }
-
-    private HashMap<String, Object> getParametersForGroovy(Exchange exc, Interceptor.Flow flow) {
-        return new HashMap<>() {{
-            put("Outcome", Outcome.class);
-            put("RETURN", RETURN);
-            put("CONTINUE", CONTINUE);
-            put("ABORT", ABORT);
-            put("spring", router.getBeanFactory());
-            put("exc", exc);
-            put("exchange", exc);
-            putAll(createParameterBindings(router.getUriFactory(), exc, flow, false));
-        }};
+        return type.cast(condition.apply(createParameterBindings(router, exchange, flow, false)));
     }
 }

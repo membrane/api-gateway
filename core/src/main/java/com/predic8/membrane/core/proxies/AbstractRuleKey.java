@@ -67,6 +67,10 @@ public abstract class AbstractRuleKey implements RuleKey {
         return port;
     }
 
+    public void setPort(int port) {
+        this.port = port;
+    }
+
     public boolean isHostWildcard() {
 
         return false;
@@ -74,10 +78,6 @@ public abstract class AbstractRuleKey implements RuleKey {
 
     public boolean isMethodWildcard() {
         return false;
-    }
-
-    public void setPort(int port) {
-        this.port = port;
     }
 
     public boolean isPathRegExp() {

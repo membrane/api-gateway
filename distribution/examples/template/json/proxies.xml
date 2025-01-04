@@ -41,8 +41,9 @@
 			-->
 			<response>
 				<template contentType="application/json">
-					{"city": "${city}"}
+					{"city": "${property.city}"}
 				</template>
+<!--				<setProperty name="city" value="${$.json}" language="jsonpath"/>-->
 
 				<xpathExtractor>
 					<property name="city" xpath="city"/>

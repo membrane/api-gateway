@@ -14,11 +14,12 @@
 
 package com.predic8.membrane.core.proxies;
 
-import java.util.regex.Pattern;
+import org.apache.commons.lang3.*;
+import org.slf4j.*;
 
-import org.apache.commons.lang3.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import java.util.regex.*;
+
+import static java.util.regex.Pattern.*;
 
 public class ServiceProxyKey extends AbstractRuleKey {
     private static final Logger log = LoggerFactory.getLogger(ServiceProxyKey.class.getName());
@@ -41,7 +42,6 @@ public class ServiceProxyKey extends AbstractRuleKey {
             hostPattern = spKey.getHostPattern();
         }
     }
-
 
     public ServiceProxyKey(int port) {
         this(port, null);
@@ -131,11 +131,11 @@ public class ServiceProxyKey extends AbstractRuleKey {
 
     public void setHost(String host) {
         this.host = host.trim();
-        this.isHostWildCard = "*".equals(this.host);
+        isHostWildCard = "*".equals(this.host);
         if (!isHostWildCard) {
             String pattern = createHostPattern(this.host);
             log.debug("Created host pattern match: {}", pattern);
-            this.hostPattern = Pattern.compile(pattern, Pattern.CASE_INSENSITIVE);
+            this.hostPattern = Pattern.compile(pattern, CASE_INSENSITIVE);
         } else {
             this.hostPattern = null;
         }

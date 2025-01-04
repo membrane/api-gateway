@@ -18,7 +18,10 @@ import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 
+import java.io.*;
+
 import static com.predic8.membrane.core.http.MimeType.*;
+import static com.predic8.membrane.core.interceptor.LogInterceptor.Level.INFO;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static org.slf4j.LoggerFactory.*;
 
@@ -36,33 +39,33 @@ public class LogInterceptor extends AbstractInterceptor {
 
     private boolean body = true;
     private String category = LogInterceptor.class.getName();
-    private Level level = Level.INFO;
+    private Level level = INFO;
+    private String label;
+    private boolean properties;
 
     public LogInterceptor() {
         name = "Log";
     }
 
     @Override
-    public Outcome handleRequest(Exchange exc) throws Exception {
-        log("==== Request ===");
-        logMessage(exc.getRequest());
+    public Outcome handleRequest(Exchange exc) {
+        log("==== Request %s ===".formatted(label));
+        logMessage(exc, exc.getRequest());
         return CONTINUE;
     }
 
     @Override
-    public Outcome handleResponse(Exchange exc) throws Exception {
-        log("==== Response ===");
-        logMessage(exc.getResponse());
+    public Outcome handleResponse(Exchange exc) {
+        log("==== Response %s ===".formatted(label));
+        logMessage(exc,exc.getResponse());
         return CONTINUE;
     }
 
     @Override
     public void handleAbort(Exchange exc) {
         try {
-            log("==== Request(Exchange aborted) ===");
-            logMessage(exc.getRequest());
-            log("==== Response(Exchange aborted) ===");
-            logMessage(exc.getResponse());
+            log("==== Response(Exchange aborted) %s ===".formatted(label));
+            logMessage(exc, exc.getResponse());
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -95,12 +98,22 @@ public class LogInterceptor extends AbstractInterceptor {
         this.level = level;
     }
 
-    private void logMessage(Message msg) throws Exception {
+    private void logMessage(Exchange exc, Message msg) {
+
+        log(dumpProperties(exc));
+
+        if (msg==null)
+            return;
         log(msg.getStartLine());
         log("\nHeaders:\n" + msg.getHeader());
 
-        if (!body || msg.isBodyEmpty())
+        try {
+            if (!body || msg.isBodyEmpty())
+                return;
+        } catch (IOException e) {
+            log("Error accessing body: " + e.getMessage());
             return;
+        }
 
         String mt = msg.getHeader().getContentType();
         if (isJson(mt) ||
@@ -110,8 +123,12 @@ public class LogInterceptor extends AbstractInterceptor {
         }
     }
 
+    private String dumpProperties(Exchange exc) {
+        return "Properties: " + exc.getProperties();
+    }
+
     private static String dumpBody(Message msg) {
-        return "Body:\n{}\n".formatted(msg.getBodyAsStreamDecoded());
+        return "Body:\n{%s}\n".formatted(msg.getBodyAsStringDecoded());
     }
 
     private void log(String msg) {
@@ -144,5 +161,35 @@ public class LogInterceptor extends AbstractInterceptor {
     public String getShortDescription() {
         return "Logs the " + (body ? "headers of " : "") + "requests and responses" +
                " using Log4J's " + level.toString() + " level.";
+    }
+
+    public String getLabel() {
+        return label;
+    }
+
+    /**
+     * @default ""
+     * @description Label to find the entry in the log
+     * @example "After Transformation"
+     */
+    @SuppressWarnings("unused")
+    @MCAttribute
+    public void setLabel(String label) {
+        this.label = label;
+    }
+
+    public boolean getProperties() {
+        return properties;
+    }
+
+    /**
+     * @default
+     * @description
+     * @example
+     */
+    @SuppressWarnings("unused")
+    @MCAttribute
+    public void setProperties(boolean properties) {
+        this.properties = properties;
     }
 }

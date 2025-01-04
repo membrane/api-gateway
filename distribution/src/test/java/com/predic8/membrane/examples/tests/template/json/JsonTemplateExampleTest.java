@@ -12,47 +12,41 @@
    See the License for the specific language governing permissions and
    limitations under the License. */
 
-package com.predic8.membrane.examples.tests.template.xml;
+package com.predic8.membrane.examples.tests.template.json;
 
 import com.predic8.membrane.examples.util.*;
 import org.junit.jupiter.api.*;
 
-import java.io.*;
-
 import static com.predic8.membrane.core.http.MimeType.*;
 import static io.restassured.RestAssured.*;
-import static java.nio.file.Files.*;
 import static org.hamcrest.Matchers.*;
 
-public class XMLTemplateTest extends AbstractSampleMembraneStartStopTestcase {
+public class JsonTemplateExampleTest extends AbstractSampleMembraneStartStopTestcase {
 
     @Override
     protected String getExampleDirName() {
-        return "template/xml";
+        return "template/json";
     }
 
     @Test
-    void xmlInputAndTemplate() throws IOException {
+    void queryParamInputText() {
         given()
-            .contentType(APPLICATION_XML)
-            .body(readString(new File(baseDir + "/cities.xml").toPath()))
-            .post("http://localhost:2001")
+            .get("http://localhost:2000/json-out?answer=42")
         .then().assertThat()
-            .body("destinations.answer", equalToCompressingWhiteSpace("42"))
-            .body("destinations.destination[0]", equalToCompressingWhiteSpace("Hong Kong"))
-            .body("destinations.destination[1]", equalToCompressingWhiteSpace("Tokio"))
-            .body("destinations.destination[2]", equalToCompressingWhiteSpace("Berlin"));
+            .body("answer",equalTo(42));
     }
 
     @Test
-    void xPathAndText() {
+    void variables() {
         given()
-            .contentType(APPLICATION_XML)
+            .contentType(APPLICATION_JSON)
             .body("""
-                    <person firstname="Juan"/>""")
-            .post("http://localhost:2000")
+                    {
+                      "city": "Bonn",
+                      "country": "Germany"
+                    }""")
+            .post("http://localhost:2000/json-in")
         .then().assertThat()
-            .body(containsString("Buenas Noches, Juansito!"));
-
+            .body(containsString("{\"city\": \"Bonn\"}"));
     }
 }

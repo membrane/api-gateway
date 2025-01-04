@@ -18,26 +18,23 @@ import com.fasterxml.jackson.databind.*;
 import com.jayway.jsonpath.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.interceptor.Interceptor.*;
-import com.predic8.membrane.core.lang.*;
+import com.predic8.membrane.core.interceptor.lang.*;
 import org.jetbrains.annotations.*;
 import org.slf4j.*;
 
 import java.io.*;
 import java.util.*;
 
-import static java.lang.Boolean.FALSE;
-import static java.lang.Boolean.TRUE;
+import static java.lang.Boolean.*;
 
-public class JsonpathExchangeExpression implements ExchangeExpression {
+public class JsonpathExchangeExpression extends AbstractExchangeExpression {
 
     private static final Logger log = LoggerFactory.getLogger(JsonpathExchangeExpression.class);
 
     private final ObjectMapper om = new ObjectMapper();
 
-    private final String source;
-
     public JsonpathExchangeExpression(String source) {
-        this.source = source;
+        super(source);
     }
 
     @Override
@@ -63,7 +60,7 @@ public class JsonpathExchangeExpression implements ExchangeExpression {
             }
             return null;
         } catch (Exception e) {
-            log.error("Error evaluating Jsonpath expression {}. Got message {}", source, e);
+            log.error("Error evaluating Jsonpath expression {}. Got message {}", expression , e);
             throw new RuntimeException("Error evaluating Jsonpath expression");
         }
     }
@@ -76,6 +73,6 @@ public class JsonpathExchangeExpression implements ExchangeExpression {
     }
 
     private Object execute(Exchange exchange, Flow flow) throws IOException {
-        return JsonPath.read(om.readValue(exchange.getMessage(flow).getBodyAsStream(), Map.class), source);
+        return JsonPath.read(om.readValue(exchange.getMessage(flow).getBodyAsStream(), Map.class), expression);
     }
 }

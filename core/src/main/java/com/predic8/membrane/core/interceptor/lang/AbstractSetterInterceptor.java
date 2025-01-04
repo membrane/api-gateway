@@ -12,66 +12,58 @@
    See the License for the specific language governing permissions and
    limitations under the License. */
 
-package com.predic8.membrane.core.interceptor.misc;
+package com.predic8.membrane.core.interceptor.lang;
 
 import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.lang.*;
-import com.predic8.membrane.core.lang.ExchangeExpression.*;
 import org.slf4j.*;
-
-import java.util.regex.*;
 
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
-import static com.predic8.membrane.core.lang.ExchangeExpression.Language.*;
+import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 
-public abstract class AbstractSetterInterceptor extends AbstractInterceptor {
+public abstract class AbstractSetterInterceptor extends AbstractLanguageInterceptor {
 
     private static final Logger log = LoggerFactory.getLogger(AbstractSetterInterceptor.class);
 
-    private Language language = SPEL;
-
     private boolean failOnError = true;
 
-    private final Pattern expressionPattern = Pattern.compile("\\$\\{(.*?)}");
-
     protected String name;
-    protected String value;
     protected boolean ifAbsent;
 
     @Override
     public void init(Router router) throws Exception {
         super.init(router);
+        exchangeExpression = new TemplateExchangeExpression(router,language,expression);
     }
 
     @Override
     public Outcome handleRequest(Exchange exc) {
-        return handleInternal(exc, exc.getRequest(), REQUEST);
+        return handleInternal(exc, REQUEST);
     }
 
     @Override
     public Outcome handleResponse(Exchange exc) {
-        return handleInternal(exc, exc.getResponse(), RESPONSE);
+        return handleInternal(exc, RESPONSE);
     }
 
-    private Outcome handleInternal(Exchange exchange, Message msg, Flow flow) {
-        if (shouldSetValue(exchange, flow)) {
-            try {
-                setValue(exchange, flow, evaluateExpression(exchange, msg));
-            } catch (Exception e) {
-                if (failOnError) {
-                    ProblemDetails.internal(getRouter().isProduction())
-                            .title("Error evaluating expression!")
-                            .extension("field", name)
-                            .extension("value", value)
-                            .buildAndSetResponse(exchange);
-                    return Outcome.ABORT;
-                }
+    private Outcome handleInternal(Exchange exchange, Flow flow) {
+        if (!shouldSetValue(exchange, flow))
+            return CONTINUE;
+
+        try {
+            setValue(exchange, flow, exchangeExpression.evaluate(exchange, flow, Object.class));
+        } catch (Exception e) {
+            if (failOnError) {
+                ProblemDetails.internal(getRouter().isProduction())
+                        .title("Error evaluating expression!")
+                        .extension("field", name)
+                        .extension("value", expression)
+                        .buildAndSetResponse(exchange);
+                return ABORT;
             }
         }
         return CONTINUE;
@@ -79,19 +71,7 @@ public abstract class AbstractSetterInterceptor extends AbstractInterceptor {
 
     protected abstract boolean shouldSetValue(Exchange exchange, Flow flow);
 
-    protected abstract void setValue(Exchange exchange, Flow flow, String evaluatedValue);
-
-    protected String evaluateExpression(Exchange exc, Message msg) {
-        return expressionPattern.matcher(value).replaceAll(m -> evaluateSingleExpression(exc, msg, m.group(1)));
-    }
-
-    protected String evaluateSingleExpression(Exchange exc, Message msg, String expression) {
-        String result = ExchangeExpression.getInstance(router, language, expression).evaluate(exc, REQUEST, String.class);
-        if (result != null)
-            return result;
-        log.debug("The expression {} evaluates to null or there is an error in the expression.", expression);
-        return "";
-    }
+    protected abstract void setValue(Exchange exchange, Flow flow, Object evaluatedValue);
 
     @MCAttribute
     public void setIfAbsent(boolean ifAbsent) {
@@ -113,25 +93,11 @@ public abstract class AbstractSetterInterceptor extends AbstractInterceptor {
 
     @MCAttribute
     public void setValue(String value) {
-        this.value = value;
+        this.expression = value;
     }
 
     public String getValue() {
-        return value;
-    }
-
-    public Language getLanguage() {
-        return language;
-    }
-
-    /**
-     * @description the language of the 'test' condition
-     * @default groovy
-     * @example SpEL, groovy, jsonpath, xpath
-     */
-    @MCAttribute
-    public void setLanguage(Language language) {
-        this.language = language;
+        return expression;
     }
 
     public boolean isFailOnError() {

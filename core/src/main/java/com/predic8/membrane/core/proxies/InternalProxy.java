@@ -26,7 +26,7 @@ import com.predic8.membrane.core.util.*;
 public class InternalProxy extends AbstractServiceProxy implements NotPortOpeningProxy {
 
     public InternalProxy() {
-        key = new AbstractRuleKey(0,null){};
+        key = new ServiceProxyKey(0){};
     }
 
     @Override

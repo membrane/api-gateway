@@ -62,7 +62,7 @@ public class ProblemDetails {
     }
 
     public static ProblemDetails gateway(boolean production) {
-        return problemDetails( "gateway", production).statusCode(500);
+        return problemDetails( "gateway", production).statusCode(500).title("Gateway error.");
     }
 
     public static ProblemDetails security(boolean production) {

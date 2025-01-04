@@ -17,7 +17,7 @@
 package com.predic8.membrane.core.openapi.serviceproxy;
 
 import com.predic8.membrane.core.*;
-import com.predic8.membrane.core.interceptor.misc.*;
+import com.predic8.membrane.core.interceptor.flow.*;
 import com.predic8.membrane.core.interceptor.templating.*;
 import com.predic8.membrane.core.proxies.*;
 import com.predic8.membrane.core.transport.http.*;
@@ -31,11 +31,12 @@ import static io.restassured.RestAssured.*;
 
 public class Swagger20Test {
 
-    Router router = new Router();
+    Router router;
 
     @BeforeEach
     public void setUp() throws Exception {
 
+        router = new Router();
         router.setTransport(new HttpTransport());
         router.setUriFactory(new URIFactory());
 

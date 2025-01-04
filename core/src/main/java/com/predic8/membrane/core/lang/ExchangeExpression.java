@@ -16,7 +16,7 @@ package com.predic8.membrane.core.lang;
 
 import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.interceptor.Interceptor.*;
+import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.lang.groovy.*;
 import com.predic8.membrane.core.lang.jsonpath.*;
 import com.predic8.membrane.core.lang.spel.*;
@@ -29,7 +29,7 @@ public interface ExchangeExpression {
 
     enum Language {GROOVY, SPEL, XPATH, JSONPATH}
 
-    <T> T evaluate(Exchange exchange, Flow flow, Class<T> type);
+    <T> T evaluate(Exchange exchange, Interceptor.Flow flow, Class<T> type);
 
     static ExchangeExpression getInstance(Router router, Language language, String source) {
         return switch (language) {

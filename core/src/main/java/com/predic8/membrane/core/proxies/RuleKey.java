@@ -48,6 +48,7 @@ public interface RuleKey {
 	 */
 	String getHost();
 
+
 	/**
 	 * When isMethodWildcard is set to true any value of the HTTP Host header will match
 	 *

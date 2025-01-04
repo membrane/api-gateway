@@ -12,7 +12,7 @@
    See the License for the specific language governing permissions and
    limitations under the License. */
 
-package com.predic8.membrane.core.interceptor.misc;
+package com.predic8.membrane.core.interceptor.lang;
 
 import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.*;
@@ -27,11 +27,13 @@ abstract class AbstractSetHeaderInterceptorTest {
     Exchange exchange;
     Message message;
     final AbstractSetterInterceptor interceptor = new SetHeaderInterceptor();
+    static Router router;
 
     protected abstract Language getLanguage();
 
     @BeforeEach
     void setUp() throws Exception {
+        router = new Router();
         exchange = new Exchange(null) {{
             setRequest(new Request.Builder().post("/boo")
                     .header("host", "localhost:8080")
@@ -49,17 +51,18 @@ abstract class AbstractSetHeaderInterceptorTest {
         }};
         message = exchange.getRequest();
         interceptor.setLanguage(getLanguage());
-        interceptor.setName("foo");
-        interceptor.init(new Router());
+        interceptor.setName("X-Bar");
+        interceptor.setValue("42");
     }
 
     protected void extracted(String expression, Object expected) throws Exception {
         interceptor.setValue(expression);
+        interceptor.init(router);
         interceptor.handleRequest(exchange);
-        assertEquals(expected, getHeader("foo"));
+        assertEquals(expected, getHeader("x-bar"));
     }
 
-    private String getHeader(String fieldname) {
+    protected String getHeader(String fieldname) {
         return exchange.getRequest().getHeader().getFirstValue(fieldname);
     }
 }

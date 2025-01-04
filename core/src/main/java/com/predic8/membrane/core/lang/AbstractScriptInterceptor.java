@@ -168,7 +168,7 @@ public abstract class AbstractScriptInterceptor extends AbstractInterceptor {
     }
 
     private HashMap<String, Object> getParameterBindings(Exchange exc, Flow flow, Message msg) {
-        HashMap<String, Object> binding = createParameterBindings(router.getUriFactory(), exc, flow, scriptAccessesJson && msg.isJSON());
+        HashMap<String, Object> binding = createParameterBindings(router, exc, flow, scriptAccessesJson && msg.isJSON());
         addOutcomeObjects(binding);
         binding.put("spring", router.getBeanFactory());
         return binding;

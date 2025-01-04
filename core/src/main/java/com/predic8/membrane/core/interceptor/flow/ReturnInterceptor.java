@@ -14,7 +14,7 @@
  *    limitations under the License.
  */
 
-package com.predic8.membrane.core.interceptor.misc;
+package com.predic8.membrane.core.interceptor.flow;
 
 import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.exchange.*;

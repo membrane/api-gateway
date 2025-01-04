@@ -31,6 +31,7 @@ import javax.annotation.concurrent.*;
 import java.io.*;
 import java.net.*;
 import java.nio.*;
+import java.util.*;
 
 import static com.predic8.membrane.core.exchange.Exchange.*;
 import static java.lang.Boolean.*;
@@ -286,8 +287,7 @@ public class HttpClient implements AutoCloseable {
 
 				if (!failOverOn5XX || !is5xx(responseStatusCode) || counter == maxRetries-1) {
 					applyKeepAliveHeader(response, con);
-					exc.getDestinations().clear();
-					exc.getDestinations().add(dest);
+					exc.setDestinations(List.of(dest));
 					con.setExchange(exc);
 					if (!usingHttp2)
 						response.addObserver(con);

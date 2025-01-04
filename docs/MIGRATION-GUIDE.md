@@ -26,3 +26,14 @@ Now if there is no message to set a header, an exception is thrown.
 # Log
 
 - Instead of headerOnly="true" body="false"
+
+# Internal API
+
+- exchange.destinations can now be set exchange.setDestination() with an immutable list
+  => no getDestinations().clear() anymore
+
+# Scripting 
+
+## Groovy
+
+Use $property.foo instead of $foo. Fields are not accessible just by name!

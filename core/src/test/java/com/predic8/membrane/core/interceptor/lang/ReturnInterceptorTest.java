@@ -12,10 +12,11 @@
    See the License for the specific language governing permissions and
    limitations under the License. */
 
-package com.predic8.membrane.core.interceptor.misc;
+package com.predic8.membrane.core.interceptor.lang;
 
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.interceptor.flow.*;
 import org.junit.jupiter.api.*;
 
 import java.net.*;

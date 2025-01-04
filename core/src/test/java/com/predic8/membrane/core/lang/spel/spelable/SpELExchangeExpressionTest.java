@@ -14,22 +14,49 @@
 
 package com.predic8.membrane.core.lang.spel.spelable;
 
+import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.lang.*;
+import com.predic8.membrane.core.lang.spel.*;
 import org.junit.jupiter.api.*;
 
 import java.net.*;
 
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
+import static com.predic8.membrane.core.lang.ExchangeExpression.Language.SPEL;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 class SpELExchangeExpressionTest {
 
     static Exchange exchange;
+    static SpELExchangeExpression excExpression;
+    static Interceptor.Flow flow;
 
     @BeforeAll
     static void setup() throws URISyntaxException {
-        exchange = Request.post("/foo").body("""
+        exchange = Request.post("/foo")
+                .header("foo","bar")
+                .body("""
                 <person id="7">
                     <name>John Doe</name>
                 </person>
                 """).buildExchange();
+        flow = REQUEST;
+    }
+
+    @Test
+    void simple() {
+        assertEquals("7", eval("7"));
+    }
+
+    @Test
+    void header() {
+        assertEquals("bar", eval("header.foo"));
+    }
+
+    String eval(String expression) {
+        return ExchangeExpression.getInstance(new Router(), SPEL, expression).evaluate(exchange,flow,String.class);
     }
 }

@@ -11,7 +11,7 @@
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
    See the License for the specific language governing permissions and
    limitations under the License. */
-package com.predic8.membrane.core.interceptor.misc;
+package com.predic8.membrane.core.interceptor.lang;
 
 import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.exchange.*;
@@ -29,8 +29,8 @@ public class SetHeaderInterceptor extends AbstractSetterInterceptor {
     }
 
     @Override
-    protected void setValue(Exchange exc, Flow flow, String eval) {
-        msgFromExchange(exc, flow).getHeader().setValue(name, eval);
+    protected void setValue(Exchange exc, Flow flow, Object value) {
+        msgFromExchange(exc, flow).getHeader().setValue(name, value.toString());
     }
 
     /**
@@ -53,6 +53,6 @@ public class SetHeaderInterceptor extends AbstractSetterInterceptor {
 
     @Override
     public String getShortDescription() {
-        return "Sets the value of the HTTP header '%s' to the expression: %s.".formatted( name, value);
+        return "Sets the value of the HTTP header '%s' to the expression: %s.".formatted( name, expression);
     }
 }

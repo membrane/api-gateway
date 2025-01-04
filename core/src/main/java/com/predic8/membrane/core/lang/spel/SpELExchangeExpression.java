@@ -13,31 +13,28 @@
    limitations under the License. */
 
 package com.predic8.membrane.core.lang.spel;
-
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.lang.*;
+import com.predic8.membrane.core.interceptor.lang.*;
 import org.jetbrains.annotations.*;
 import org.springframework.expression.*;
 import org.springframework.expression.spel.*;
 import org.springframework.expression.spel.standard.*;
 
-import static org.springframework.expression.spel.SpelCompilerMode.MIXED;
+import static org.springframework.expression.spel.SpelCompilerMode.*;
 
-public class SpELExchangeExpression implements ExchangeExpression {
+public class SpELExchangeExpression extends AbstractExchangeExpression {
 
-    private final Expression expression;
+    private final Expression spelExpression;
 
-    private final String source;
-
-    public SpELExchangeExpression(String source) {
-        this.source = source;
-        expression = new SpelExpressionParser(getSpelParserConfiguration()).parseExpression(source);
+    public SpELExchangeExpression(String expression) {
+        super(expression);
+        spelExpression = new SpelExpressionParser(getSpelParserConfiguration()).parseExpression(expression);
     }
 
     @Override
     public <T> T evaluate(Exchange exchange, Interceptor.Flow flow, Class<T> type) {
-        return type.cast(expression.getValue(new ExchangeEvaluationContext(exchange, exchange.getMessage(flow)), type));
+        return type.cast(spelExpression.getValue(new ExchangeEvaluationContext(exchange, exchange.getMessage(flow)), type));
     }
 
     private @NotNull SpelParserConfiguration getSpelParserConfiguration() {

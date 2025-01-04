@@ -105,6 +105,10 @@ public class SSLableProxy extends AbstractProxy {
 		this.sslInboundParser = sslInboundParser;
 	}
 
+	public SSLParser getSslInboundParser() {
+		return sslInboundParser;
+	}
+
 	public SSLContext getSslInboundContext() {
 		return sslInboundContext;
 	}

@@ -12,24 +12,25 @@
    See the License for the specific language governing permissions and
    limitations under the License. */
 
-package com.predic8.membrane.core.interceptor.misc;
+package com.predic8.membrane.core.interceptor.lang;
 
+import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import org.junit.jupiter.api.*;
 
 abstract class AbstractSetPropertyInterceptorTest {
 
+    Router router;
     Exchange exc;
-    final AbstractSetterInterceptor interceptor = new SetPropertyInterceptor();
+    AbstractSetterInterceptor interceptor;
 
     @BeforeEach
     void setUp() {
+        interceptor = new SetPropertyInterceptor();
+        router = new Router();
         exc = new Exchange(null);
         exc.setRequest(new Request());
         exc.setProperty("exists", "false");
-        interceptor.setName("exists");
     }
-
-
 }

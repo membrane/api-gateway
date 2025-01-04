@@ -17,18 +17,18 @@
 package com.predic8.membrane.core.lang;
 
 import com.fasterxml.jackson.databind.*;
+import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.util.*;
+import com.predic8.membrane.core.interceptor.Interceptor.*;
 import org.slf4j.*;
 
 import java.util.*;
 
-import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
-import static com.predic8.membrane.core.util.FileUtil.readInputStream;
-import static com.predic8.membrane.core.util.URLParamUtil.DuplicateKeyOrInvalidFormStrategy.MERGE_USING_COMMA;
-import static com.predic8.membrane.core.util.URLParamUtil.getParams;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
+import static com.predic8.membrane.core.util.FileUtil.*;
+import static com.predic8.membrane.core.util.URLParamUtil.DuplicateKeyOrInvalidFormStrategy.*;
+import static com.predic8.membrane.core.util.URLParamUtil.*;
 
 public class ScriptingUtils {
 
@@ -36,10 +36,13 @@ public class ScriptingUtils {
 
     private static final ObjectMapper om = new ObjectMapper();
 
-    public static HashMap<String, Object> createParameterBindings(URIFactory uriFactory, Exchange exc, Interceptor.Flow flow, boolean includeJsonObject) {
+    public static HashMap<String, Object> createParameterBindings(Router router, Exchange exc, Flow flow, boolean includeJsonObject) {
+
         Message msg = exc.getMessage(flow);
 
         HashMap<String, Object> parameters = new HashMap<>();
+
+        parameters.put("spring", router.getBeanFactory());
 
         // support both
         parameters.put("exc", exc);
@@ -49,7 +52,7 @@ public class ScriptingUtils {
 
         if (flow == REQUEST) {
             try {
-                parameters.put("params", getParams(uriFactory, exc, MERGE_USING_COMMA));
+                parameters.put("params", getParams(router.getUriFactory(), exc, MERGE_USING_COMMA));
             } catch (Exception e) {
                 log.info("Cannot parse query parameter from {}", exc.getRequest().getUri());
             }
@@ -58,6 +61,7 @@ public class ScriptingUtils {
         if (msg != null) {
             parameters.put("message", msg);
             parameters.put("header", msg.getHeader());
+            parameters.put("headers", msg.getHeader());
             if (includeJsonObject) {
                 try {
                     log.info("Parsing body as JSON for scripting plugins");
@@ -68,8 +72,9 @@ public class ScriptingUtils {
             }
         }
 
-        parameters.put("properties", exc.getProperties());
-
+        parameters.put("property", exc.getProperties());
+        parameters.put("properties", exc.getProperties()); // properties does not work in Groovy scripts!
+        parameters.put("props", exc.getProperties());
         return parameters;
     }
 }

@@ -12,7 +12,7 @@
    See the License for the specific language governing permissions and
    limitations under the License. */
 
-package com.predic8.membrane.core.interceptor.misc;
+package com.predic8.membrane.core.interceptor.lang;
 
 import org.junit.jupiter.api.*;
 
@@ -23,7 +23,9 @@ class SetPropertyInterceptorSpELTest extends AbstractSetPropertyInterceptorTest 
     @Test
     @DisplayName("Overwrite header when it is not absent")
     void simple() throws Exception {
+        interceptor.setName("exists");
         interceptor.setValue("true");
+        interceptor.init(router);
         interceptor.handleRequest(exc);
         assertEquals("true", exc.getProperty("exists"));
     }
@@ -31,8 +33,10 @@ class SetPropertyInterceptorSpELTest extends AbstractSetPropertyInterceptorTest 
     @Test
     @DisplayName("Only set if the header is absent")
     void onlyIfAbsent() throws Exception {
+        interceptor.setName("exists");
         interceptor.setValue("true");
         interceptor.setIfAbsent(true);
+        interceptor.init(router);
         interceptor.handleRequest(exc);
         assertEquals("false", exc.getProperty("exists"));
         interceptor.setName("doesNotExist");

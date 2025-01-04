@@ -34,9 +34,9 @@ import com.predic8.membrane.examples.tests.openapi.OpenAPIRewriteTest;
 import com.predic8.membrane.examples.tests.openapi.OpenAPIValidationSimpleTest;
 import com.predic8.membrane.examples.tests.openapi.OpenAPIValidationTest;
 import com.predic8.membrane.examples.tests.opentelemetry.OpenTelemetryTest;
-import com.predic8.membrane.examples.tests.template.json.JsonTemplateTest;
+import com.predic8.membrane.examples.tests.template.json.JsonTemplateExampleTest;
 import com.predic8.membrane.examples.tests.template.text.TextTemplateTest;
-import com.predic8.membrane.examples.tests.template.xml.XMLTemplateTest;
+import com.predic8.membrane.examples.tests.template.xml.XMLTemplateExampleTest;
 import com.predic8.membrane.examples.tests.validation.JSONSchemaValidationTest;
 import com.predic8.membrane.examples.tests.validation.SOAPProxyValidationTest;
 import com.predic8.membrane.examples.tests.validation.XMLValidationTest;
@@ -92,18 +92,18 @@ import org.junit.platform.suite.api.Suite;
 
         // Template
         TextTemplateTest.class,
-        JsonTemplateTest.class,
+        JsonTemplateExampleTest.class,
 
         // Security
         JsonProtectionTest.class,
         APIKeyTest.class,
         APIKeyRBACTest.class,
         APIKeyWithOpenAPITest.class,
-        XMLTemplateTest.class,
+        XMLTemplateExampleTest.class,
         //DefaultConfigAdminConsoleTest.class*/
 
         // XML
-        StaxExampleInterceptorTest.class,
+        StaxInterceptorExampleTest.class,
 
         // SOAP
         AddSoapHeaderTest.class,

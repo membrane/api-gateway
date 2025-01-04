@@ -8,10 +8,11 @@
 
 		<api port="2000">
 			<request>
-				<xpathExtractor>
-					<property name="fn" xpath="person/@firstname"/>
-				</xpathExtractor>
-				<template>Buenas Noches, ${fn}sito!</template>
+<!--				<xpathExtractor>-->
+<!--					<property name="fn" xpath="person/@firstname"/>-->
+<!--				</xpathExtractor>-->
+				<setProperty name="fn" value="${/person/@firstname}" language="xpath"/>
+				<template>Buenas Noches, ${property.fn}sito!</template>
 			</request>
 			<return statusCode="200" contentType="text/plain"/> <!-- To forward to backend use target below instead of return -->
 			<!--  <target host="YourBackendHost" port="YourBackendPort"/>-->

@@ -17,7 +17,7 @@ package com.predic8.membrane.core.lang.xpath;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.lang.*;
+import com.predic8.membrane.core.interceptor.lang.*;
 import org.slf4j.*;
 
 import javax.xml.namespace.*;
@@ -25,7 +25,7 @@ import javax.xml.xpath.*;
 
 import static com.predic8.membrane.core.util.XMLUtil.*;
 
-public class XPathExchangeExpression implements ExchangeExpression {
+public class XPathExchangeExpression extends AbstractExchangeExpression {
 
     private static final Logger log = LoggerFactory.getLogger(XPathExchangeExpression.class.getName());
 
@@ -34,6 +34,7 @@ public class XPathExchangeExpression implements ExchangeExpression {
     private final String xpath;
 
     public XPathExchangeExpression(String xpath) {
+        super(xpath);
         this.xpath = xpath;
     }
 
