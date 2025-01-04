@@ -15,6 +15,7 @@
 package com.predic8.membrane.examples.tests.template.json;
 
 import com.predic8.membrane.examples.util.*;
+import org.hamcrest.*;
 import org.junit.jupiter.api.*;
 
 import static com.predic8.membrane.core.http.MimeType.*;
@@ -30,14 +31,17 @@ public class JsonTemplateExampleTest extends AbstractSampleMembraneStartStopTest
 
     @Test
     void queryParamInputText() {
+        // @formatter:off
         given()
             .get("http://localhost:2000/json-out?answer=42")
         .then().assertThat()
             .body("answer",equalTo(42));
+        // @formatter:on
     }
 
     @Test
     void variables() {
+        // @formatter:off
         given()
             .contentType(APPLICATION_JSON)
             .body("""
@@ -47,6 +51,8 @@ public class JsonTemplateExampleTest extends AbstractSampleMembraneStartStopTest
                     }""")
             .post("http://localhost:2000/json-in")
         .then().assertThat()
-            .body(containsString("{\"city\": \"Bonn\"}"));
+            .statusCode(200)
+            .body("city", Matchers.equalTo("Bonn"));
+        // @formatter:on
     }
 }

@@ -35,7 +35,7 @@ import com.predic8.membrane.examples.tests.openapi.OpenAPIValidationSimpleTest;
 import com.predic8.membrane.examples.tests.openapi.OpenAPIValidationTest;
 import com.predic8.membrane.examples.tests.opentelemetry.OpenTelemetryTest;
 import com.predic8.membrane.examples.tests.template.json.JsonTemplateExampleTest;
-import com.predic8.membrane.examples.tests.template.text.TextTemplateTest;
+import com.predic8.membrane.examples.tests.template.text.TextTemplateExampleTest;
 import com.predic8.membrane.examples.tests.template.xml.XMLTemplateExampleTest;
 import com.predic8.membrane.examples.tests.validation.JSONSchemaValidationTest;
 import com.predic8.membrane.examples.tests.validation.SOAPProxyValidationTest;
@@ -91,7 +91,7 @@ import org.junit.platform.suite.api.Suite;
         OpenAPIRewriteTest.class,
 
         // Template
-        TextTemplateTest.class,
+        TextTemplateExampleTest.class,
         JsonTemplateExampleTest.class,
 
         // Security

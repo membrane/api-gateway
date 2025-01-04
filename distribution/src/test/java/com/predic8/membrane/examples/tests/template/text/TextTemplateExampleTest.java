@@ -20,7 +20,7 @@ import org.junit.jupiter.api.*;
 import static io.restassured.RestAssured.*;
 import static org.hamcrest.Matchers.*;
 
-public class TextTemplateTest extends AbstractSampleMembraneStartStopTestcase {
+public class TextTemplateExampleTest extends AbstractSampleMembraneStartStopTestcase {
 
     @Override
     protected String getExampleDirName() {
@@ -29,14 +29,17 @@ public class TextTemplateTest extends AbstractSampleMembraneStartStopTestcase {
 
     @Test
     void queryParamInputText() {
+        // @formatter:off
         given()
             .get("http://localhost:2000/text?name=Joe")
         .then().assertThat()
             .body(containsString("Hello Joe!"));
+        // @formatter:on
     }
 
     @Test
     void variables() {
+        // @formatter:off
         given()
             .get("http://localhost:2000/variables?a=1&b=foo")
         .then().assertThat()
@@ -45,5 +48,6 @@ public class TextTemplateTest extends AbstractSampleMembraneStartStopTestcase {
             .body(containsString("Message.version: 1.1"))
             .body(containsString("a : 1"))
             .body(containsString("b : foo"));
+        // @formatter:on
     }
 }

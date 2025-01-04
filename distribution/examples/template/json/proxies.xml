@@ -18,16 +18,13 @@
 			<return statusCode="200"/><!-- To forward to backend use target below instead of return -->
 			<!--  <target host="YourBackendHost" port="YourBackendPort"/>-->
 		</api>
-
-
+		
 		<!--
 		JSON input is converted to XML and directed to logger, the response is then converted back to JSON and returned.
 		-->
 		<api port="2000" method="POST">
-			<!--
-			The value of the "city" field of the incoming JSON is inserted into an XML document.
-			-->
 			<request>
+				<!-- Value of "city" field of the incoming JSON is inserted into XML -->
 				<template contentType="application/xml">
 					<![CDATA[
 						<city>${json.city}</city>
@@ -43,26 +40,16 @@
 				<template contentType="application/json">
 					{"city": "${property.city}"}
 				</template>
-<!--				<setProperty name="city" value="${$.json}" language="jsonpath"/>-->
-
-				<xpathExtractor>
-					<property name="city" xpath="city"/>
-				</xpathExtractor>
+				<setProperty name="city" value="${/city}" language="xpath"/><!-- Is executed first on the way back -->
 			</response>
-			<!--
-			Directs the traffic to the logger api.
-			-->
-			<target host="localhost" port="3000" />
+			<target host="localhost" port="3000" /><!-- Calls logger API below -->
 		</api>
 
-		<!--
-		Logs the incoming message to console.
-		-->
-		<api port="3000">
+		<api name="logger" port="3000">
 			<request>
-				<log/>
+				<log/><!-- Logs the incoming messages -->
 			</request>
-			<return statusCode="200" />
+			<return/>
 		</api>
 
 	</router>
