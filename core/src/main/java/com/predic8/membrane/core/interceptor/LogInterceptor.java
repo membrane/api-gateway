@@ -40,8 +40,9 @@ public class LogInterceptor extends AbstractInterceptor {
     private boolean body = true;
     private String category = LogInterceptor.class.getName();
     private Level level = INFO;
-    private String label;
+    private String label = "";
     private boolean properties;
+    private boolean exchange;
 
     public LogInterceptor() {
         name = "Log";
@@ -100,7 +101,11 @@ public class LogInterceptor extends AbstractInterceptor {
 
     private void logMessage(Exchange exc, Message msg) {
 
-        log(dumpProperties(exc));
+        if (exchange)
+            dump(exc);
+
+        if (properties)
+            dumpProperties(exc);
 
         if (msg==null)
             return;
@@ -123,8 +128,17 @@ public class LogInterceptor extends AbstractInterceptor {
         }
     }
 
-    private String dumpProperties(Exchange exc) {
-        return "Properties: " + exc.getProperties();
+    private void dumpProperties(Exchange exc) {
+        log("Properties: " + exc.getProperties());
+    }
+
+    private void dump(Exchange exc) {
+        log("""
+                
+                Exchange:
+                  Request URI: %s
+                  Destinations: %s
+                """.formatted(exc.getRequestURI(),exc.getDestinations()));
     }
 
     private static String dumpBody(Message msg) {
@@ -183,13 +197,27 @@ public class LogInterceptor extends AbstractInterceptor {
     }
 
     /**
-     * @default
-     * @description
+     * @default false
+     * @description Dump exchange properties
      * @example
      */
     @SuppressWarnings("unused")
     @MCAttribute
     public void setProperties(boolean properties) {
         this.properties = properties;
+    }
+
+    public boolean isExchange() {
+        return exchange;
+    }
+
+    /**
+     * @default false
+     * @description Dump exchange
+     * @example
+     */
+    @MCAttribute
+    public void setExchange(boolean exchange) {
+        this.exchange = exchange;
     }
 }

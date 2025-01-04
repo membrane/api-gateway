@@ -23,6 +23,7 @@ import com.predic8.membrane.core.interceptor.*;
 import org.slf4j.*;
 
 import java.io.*;
+import java.util.*;
 
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.util.HttpUtil.*;
@@ -118,5 +119,10 @@ public class ReturnInterceptor extends AbstractInterceptor {
 
     public String getContentType() {
         return contentType;
+    }
+
+    @Override
+    public EnumSet<Flow> getFlow() {
+        return Flow.Set.REQUEST;
     }
 }

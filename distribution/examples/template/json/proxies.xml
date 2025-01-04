@@ -18,7 +18,7 @@
 			<return statusCode="200"/><!-- To forward to backend use target below instead of return -->
 			<!--  <target host="YourBackendHost" port="YourBackendPort"/>-->
 		</api>
-		
+
 		<!--
 		JSON input is converted to XML and directed to logger, the response is then converted back to JSON and returned.
 		-->

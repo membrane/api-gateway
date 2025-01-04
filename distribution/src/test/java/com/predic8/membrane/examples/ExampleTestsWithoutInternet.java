@@ -51,7 +51,7 @@ import org.junit.platform.suite.api.Suite;
         OpenAPIConfigErrorTest.class,
 
         // Proxy
-        CBRTest.class,
+        CBRXPathExampleTest.class,
         ProxiesXMLOfflineTest.class,
         ProxiesXMLSecurityTest.class,
 

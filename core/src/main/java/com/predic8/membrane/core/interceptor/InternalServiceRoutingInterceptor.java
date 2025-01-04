@@ -83,8 +83,7 @@ public class InternalServiceRoutingInterceptor extends AbstractInterceptor {
 
         Outcome outcome = callInterceptors(exchange, service.getInterceptors());
 
-        exchange.getDestinations().clear();
-        exchange.getDestinations().add(getTargetAsUri(exchange, service));
+        exchange.setDestinations(List.of(getTargetAsUri(exchange, service)));
 
         if (outcome == ABORT || outcome == RETURN) {
             return outcome;

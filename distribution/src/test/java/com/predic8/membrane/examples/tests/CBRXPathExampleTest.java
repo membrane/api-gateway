@@ -14,14 +14,14 @@
 
 package com.predic8.membrane.examples.tests;
 
-import static com.predic8.membrane.test.AssertUtils.assertContains;
-import static com.predic8.membrane.test.AssertUtils.postAndAssert200;
-import static java.lang.Thread.sleep;
-
 import com.predic8.membrane.examples.util.*;
-import org.junit.jupiter.api.Test;
+import org.hamcrest.*;
+import org.junit.jupiter.api.*;
 
-public class CBRTest extends DistributionExtractingTestcase {
+import static com.predic8.membrane.core.http.MimeType.*;
+import static io.restassured.RestAssured.*;
+
+public class CBRXPathExampleTest extends DistributionExtractingTestcase {
 
 	@Override
 	protected String getExampleDirName() {
@@ -32,11 +32,29 @@ public class CBRTest extends DistributionExtractingTestcase {
 	public void test() throws Exception {
 
 		try(Process2 ignored = startServiceProxyScript()) {
-			sleep(200);
-			assertContains("Normal order received.", postAndAssert200(LOCALHOST_2000, readFile("order.xml")));
-			assertContains("Express order received.", postAndAssert200(LOCALHOST_2000, readFile("express.xml")));
-			assertContains("Order contains import items.", postAndAssert200(LOCALHOST_2000, readFile("import.xml")));
+			// @formatter:off
+			given()
+				.body(readFile("order.xml"))
+				.post(LOCALHOST_2000)
+			.then()
+				.statusCode(200)
+				.body(Matchers.containsString("Normal"));
+
+			given()
+				.contentType(APPLICATION_XML)
+				.body(readFile("express.xml"))
+				.post(LOCALHOST_2000)
+			.then()
+				.statusCode(200)
+				.body(Matchers.containsString("Express"));
+
+			given()
+				.body(readFile("import.xml"))
+				.post(LOCALHOST_2000)
+				.then()
+				.statusCode(200)
+				.body(Matchers.containsString("import"));
+			// @formatter:on
 		}
 	}
-
 }

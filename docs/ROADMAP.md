@@ -6,6 +6,7 @@
   - Ideas
     - <target ../> inside <if>
 - Routing with if instead of switch and cbr
+- <if>...<else>
 
 # Version 6.1.0
 
@@ -32,7 +33,7 @@
 - If/setHeader
   - Write example with lots of samples in different languages
 - Delete interceptor/
-  - CBR - Replacement?
+  - Gatekeeper
 - Check
   - Is example embedded-java still running?
     - Update to Java 21 needed?
@@ -41,14 +42,17 @@
 - Restructure samples
 - Make <log headerOnly="false"/> clearer!
 - proxies-2.xsd
+  - new Namespace e.g. https://membrane-api.io...
 - 2025
 - Rename ExampleTests to .*ExampleTests
 - Remove XPathExtractor
+- Call Example
 
 ## Done
 - Example Tests without unzipping for every test
 - Delete interceptor
   - api-management
+  - XPathCBR aka choose
 - Swagger-proxy
   - OpenAPI supports Swagger 2.0
 - UnitTests: Use PackageScan for more or all
