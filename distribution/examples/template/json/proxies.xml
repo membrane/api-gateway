@@ -32,9 +32,9 @@
 				</template>
 			</request>
 			<!--
-			The xpathExtractor extracts the "city" from the XML.
+			setProperty extracts the "city" from the XML.
 			The extracted value is placed inside a JSON template.
-			Note: Consider that the response flow is bottom to top.
+			Note: Consider that the response flow is going from bottom to top.
 			-->
 			<response>
 				<template contentType="application/json">

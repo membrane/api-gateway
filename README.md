@@ -605,19 +605,17 @@ This template will transform the JSON input into plain text:
 
 ### Transform XML into Text or JSON
 
-Using the `xpathExtractor` you can extract values from XML request or response bodies and store it in properties. The properties are then available as variables in the `template`
+Using `setProperty` you can extract values from XML request or response bodies and store it in properties. Then the properties are available as variables inside `template`.
 plugin.
 
 ```xml
 
 <api port="2000">
     <request>
-        <xpathExtractor>
-            <property name="fn" xpath="person/@firstname"/>
-        </xpathExtractor>
-        <template>Buenas Noches, ${fn}sito!</template>
+        <setProperty name="fn" value="${/person/@firstname}" language="xpath"/>
+        <template>Buenas Noches, ${property.fn}sito!</template>
     </request>
-    <return statusCode="200" contentType="text/plain"/>
+    <return/>
 </api>
 ```
 

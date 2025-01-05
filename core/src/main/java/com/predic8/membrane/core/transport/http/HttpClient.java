@@ -24,9 +24,10 @@ import com.predic8.membrane.core.transport.http.client.*;
 import com.predic8.membrane.core.transport.http2.*;
 import com.predic8.membrane.core.transport.ssl.*;
 import com.predic8.membrane.core.util.*;
+import org.jetbrains.annotations.*;
 import org.slf4j.*;
 
-import javax.annotation.*;
+import javax.annotation.Nullable;
 import javax.annotation.concurrent.*;
 import java.io.*;
 import java.net.*;
@@ -114,10 +115,13 @@ public class HttpClient implements AutoCloseable {
         conMgr = new ConnectionManager(configuration.getConnection().getKeepAliveTimeout(), timerManager);
 
         useHttp2 = configuration.isUseExperimentalHttp2();
+        http2ClientPool = getHttp2ClientPool( useHttp2,configuration);
+    }
+
+    private @org.jetbrains.annotations.Nullable Http2ClientPool getHttp2ClientPool(boolean useHttp2, @NotNull HttpClientConfiguration configuration) {
         if (useHttp2)
-            http2ClientPool = new Http2ClientPool(configuration.getConnection().getKeepAliveTimeout());
-        else
-            http2ClientPool = null;
+            return new Http2ClientPool(configuration.getConnection().getKeepAliveTimeout());
+        return null;
     }
 
     public void setStreamPumpStats(StreamPump.StreamPumpStats streamPumpStats) {
@@ -215,8 +219,9 @@ public class HttpClient implements AutoCloseable {
             try {
                 Connection con = getConnection(exc, counter, target);
                 boolean usingHttp2 = false;
-                Http2Client h2c = null;
+                
                 SSLProvider sslProvider = getOutboundSSLProvider(exc, target);
+                Http2Client h2c = null;
                 String sniServerName = getSNIServerName(exc);
                 if (con == null && useHttp2) {
                     h2c = http2ClientPool.reserveStream(target.host(), target.port(), sslProvider, sniServerName, proxy, proxySSLContext);
@@ -234,9 +239,11 @@ public class HttpClient implements AutoCloseable {
                         exc.setTargetConnection(con);
                     con.setKeepAttachedToExchange(usingHttp2 || exc.getRequest().isBindTargetConnectionToIncoming());
                 }
+                
                 if (proxy != null && sslProvider == null)
                     // if we use a proxy for a plain HTTP (=non-HTTPS) request, attach the proxy credentials.
                     exc.getRequest().getHeader().setProxyAuthorization(proxy.getCredentials());
+                
                 Response response;
 
                 if (usingHttp2) {
@@ -255,7 +262,7 @@ public class HttpClient implements AutoCloseable {
                         if (trackNodeStatus)
                             exc.setNodeStatusCode(counter, response.getStatusCode());
 
-                        newProtocol = upgradeProtocol(exc, response, newProtocol);
+                        newProtocol = upgradeProtocol(exc, response, newProtocol); // 3rd parameter is always null!
                     }
 
                     if (newProtocol != null) {
@@ -408,6 +415,7 @@ public class HttpClient implements AutoCloseable {
         return newProtocol;
     }
 
+    // TODO Inline method
     private String getSNIServerName(Exchange exc) {
         Object sniObject = exc.getProperty(SNI_SERVER_NAME);
         if (sniObject == null)

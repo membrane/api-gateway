@@ -34,21 +34,19 @@
 - If/setHeader
   - Write example with lots of samples in different languages
 - Delete interceptor/
-  - Gatekeeper
-  - XPathExtractor
-  - XPathInterceptor
+  - Gatekeeper?
 - Check
   - Is example embedded-java still running?
     - Update to Java 21 needed?
 - Is SessionResumptionTest still needed?
-- Document XPath Language of <if>
+- Document <if>,<call>,<destination>
 - Restructure samples
 - proxies-2.xsd
   - new Namespace e.g. https://membrane-api.io...
 - 2025
 - Rename ExampleTests to .*ExampleTests
-- Remove XPathExtractor
-- Call Example
+- Examples
+  - Call Example
 - Is still in use:
   - /xml/project.xml?
 - ProblemDetails
@@ -56,9 +54,9 @@
     - Return pd and check if answer contains pd.details ...
   - Return pretty to user
   - Should have right Content-Type
-- Look at inactive UnitTests
 - Rewrite ExampleTests with RestAssured:
   - Json2XmlExampleTest
+- Check AdminConsole
 
 ## Done
 - Call plugin
@@ -66,10 +64,14 @@
 - Delete interceptor
   - api-management
   - XPathCBR aka choose
+  - XPathExtractor
+  - XPathInterceptor
 - Swagger-proxy
   - OpenAPI supports Swagger 2.0
 - UnitTests: Use PackageScan for more or all
 - Make <log headerOnly="false"/> clearer!
+- Inactive UnitTests enabled
+
 
 ### Examples
 - Rename Tests to *.ExampleTest

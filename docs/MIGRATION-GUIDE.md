@@ -23,6 +23,9 @@ Now if there is no message to set a header, an exception is thrown.
 
 - ConditionalInterceptor is renamed in IfInterceptor
 
+# <xPAth> and <xPathExtractor>
+- Use `<setHeader>` or `<setProperty>` with language `xpath` instead.
+
 # Log
 
 - Instead of headerOnly="true" body="false"
