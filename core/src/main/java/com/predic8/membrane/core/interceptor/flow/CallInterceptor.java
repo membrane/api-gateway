@@ -15,14 +15,17 @@ package com.predic8.membrane.core.interceptor.flow;
 
 import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.interceptor.lang.*;
+import com.predic8.membrane.core.lang.*;
 import org.slf4j.*;
 
 import java.util.*;
 
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
+import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 
 @MCElement(name = "call")
@@ -43,24 +46,32 @@ public class CallInterceptor extends AbstractLanguageInterceptor {
     }
 
     @Override
-    public Outcome handleRequest(Exchange exc) throws Exception {
+    public Outcome handleRequest(Exchange exc) {
         if (url != null) {
-            exc.setDestinations(List.of(evaluateUrl(exc)));
+            try {
+                exc.setDestinations(List.of(exchangeExpression.evaluate(exc, REQUEST, String.class)));
+            } catch (ExchangeExpressionException e) {
+                e.provideDetails(ProblemDetails.internal(getRouter().isProduction())).buildAndSetResponse(exc);
+                return ABORT;
+            }
         }
         log.debug("Calling {}",exc.getDestinations());
-        Outcome outcome = hcInterceptor.handleRequest(exc);
-        log.debug("Outcome of call {}",outcome);
-        exc.getRequest().setBodyContent(exc.getResponse().getBody().getContent()); // TODO Optimize?
-        exc.getRequest().getHeader().setContentType(exc.getResponse().getHeader().getContentType());
+        Outcome outcome = null;
+        try {
+            outcome = hcInterceptor.handleRequest(exc);
+            exc.getRequest().setBodyContent(exc.getResponse().getBody().getContent()); // TODO Optimize?
+            exc.getRequest().getHeader().setContentType(exc.getResponse().getHeader().getContentType());
+            log.debug("Outcome of call {}",outcome);
+        } catch (Exception e) {
+            ProblemDetails.internal(router.isProduction())
+                    .detail("Internal call");
+            return ABORT;
+        }
         return CONTINUE;
     }
 
-    private String evaluateUrl(Exchange exc) {
-        return exchangeExpression.evaluate(exc, REQUEST, String.class);
-    }
-
     /**
-     * @default com.predic8.membrane.core.interceptor.LogInterceptor
+     * @default com.predic8.membrane.core.interceptor.log.LogInterceptor
      * @description Sets the category of the logged message.
      * @example Membrane
      */

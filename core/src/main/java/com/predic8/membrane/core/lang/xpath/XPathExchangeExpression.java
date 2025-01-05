@@ -18,12 +18,14 @@ import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.interceptor.lang.*;
+import com.predic8.membrane.core.lang.*;
 import org.slf4j.*;
 
 import javax.xml.namespace.*;
 import javax.xml.xpath.*;
 
 import static com.predic8.membrane.core.util.XMLUtil.*;
+import static javax.xml.xpath.XPathConstants.*;
 
 public class XPathExchangeExpression extends AbstractExchangeExpression {
 
@@ -31,11 +33,8 @@ public class XPathExchangeExpression extends AbstractExchangeExpression {
 
     private static final XPathFactory factory = XPathFactory.newInstance();
 
-    private final String xpath;
-
     public XPathExchangeExpression(String xpath) {
         super(xpath);
-        this.xpath = xpath;
     }
 
     @Override
@@ -44,20 +43,20 @@ public class XPathExchangeExpression extends AbstractExchangeExpression {
         try {
             if (type.isAssignableFrom(Boolean.class)) {
                 // XPath is not thread safe! Therefore every time the factory is called!
-                return evalutateAndCast(msg, XPathConstants.BOOLEAN, type);
+                return evalutateAndCast(msg, BOOLEAN, type);
             }
             if (type.isAssignableFrom(String.class)) {
-                return evalutateAndCast(msg, XPathConstants.STRING, type);
+                return evalutateAndCast(msg, STRING, type);
             }
-            return null; // TODO
-        } catch (XPathExpressionException xe) {
-            log.info("Error evaluating XPath: {}\n Error: {}\n ", xpath, xe.getMessage());
-            log.debug("Message: {}", msg.getBodyAsStringDecoded());
-            throw new RuntimeException("Error evaluating XPath " + xpath, xe);
+            throw  new RuntimeException("Should not Happen!");
+        } catch (XPathExpressionException xee) {
+            throw new ExchangeExpressionException(expression,xee)
+                    .localizedMessage(xee.getLocalizedMessage())
+                    .extension("xpath", expression);
         }
     }
 
     private <T> T evalutateAndCast(Message msg, QName xmlType, Class<T> expectedJavaType) throws XPathExpressionException {
-        return expectedJavaType.cast(factory.newXPath().evaluate(xpath, getInputSource(msg), xmlType));
+        return expectedJavaType.cast(factory.newXPath().evaluate(expression, getInputSource(msg), xmlType));
     }
 }

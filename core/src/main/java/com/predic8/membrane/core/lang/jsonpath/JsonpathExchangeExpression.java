@@ -19,6 +19,7 @@ import com.jayway.jsonpath.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.interceptor.Interceptor.*;
 import com.predic8.membrane.core.interceptor.lang.*;
+import com.predic8.membrane.core.lang.*;
 import org.jetbrains.annotations.*;
 import org.slf4j.*;
 
@@ -59,9 +60,13 @@ public class JsonpathExchangeExpression extends AbstractExchangeExpression {
                 return (T) FALSE;
             }
             return null;
-        } catch (Exception e) {
+        } catch (InvalidPathException ipe) {
+            throw new ExchangeExpressionException(expression, ipe)
+                    .localizedMessage(ipe.getLocalizedMessage());
+        }
+        catch (Exception e) {
             log.error("Error evaluating Jsonpath expression {}. Got message {}", expression , e);
-            throw new RuntimeException("Error evaluating Jsonpath expression");
+            throw new ExchangeExpressionException(expression, e);
         }
     }
 

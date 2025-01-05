@@ -12,16 +12,17 @@
    See the License for the specific language governing permissions and
    limitations under the License. */
 
-package com.predic8.membrane.core.interceptor;
+package com.predic8.membrane.core.interceptor.log;
 
 import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.interceptor.*;
 
 import java.io.*;
 
 import static com.predic8.membrane.core.http.MimeType.*;
-import static com.predic8.membrane.core.interceptor.LogInterceptor.Level.INFO;
+import static com.predic8.membrane.core.interceptor.log.LogInterceptor.Level.INFO;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static org.slf4j.LoggerFactory.*;
 
@@ -161,7 +162,7 @@ public class LogInterceptor extends AbstractInterceptor {
     }
 
     /**
-     * @default com.predic8.membrane.core.interceptor.LogInterceptor
+     * @default com.predic8.membrane.core.interceptor.log.LogInterceptor
      * @description Sets the category of the logged message.
      * @example Membrane
      */

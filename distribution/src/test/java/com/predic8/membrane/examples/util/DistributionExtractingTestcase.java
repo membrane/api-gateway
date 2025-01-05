@@ -24,7 +24,6 @@ import java.util.zip.*;
 import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.test.AssertUtils.*;
 import static java.io.File.*;
-import static java.lang.Thread.*;
 import static java.nio.charset.StandardCharsets.*;
 import static java.util.Objects.*;
 import static org.apache.commons.io.FileUtils.*;
@@ -57,7 +56,11 @@ public abstract class DistributionExtractingTestcase {
         File targetDir = getTargetDir();
 
         unzipDir = getUnzipDir(targetDir);
-        unzip(getZipFile(targetDir), unzipDir);
+
+        if (!unzipDir.exists()) {
+            createDir(unzipDir);
+            unzip(getZipFile(targetDir), unzipDir);
+        }
 
         membraneHome = requireNonNull(unzipDir.listFiles((dir, name) -> name.startsWith("membrane-api-gateway")))[0];
 
@@ -67,7 +70,7 @@ public abstract class DistributionExtractingTestcase {
     @AfterAll
     public static void done() {
         log.info("cleaning up...");
-        recursiveDelete(unzipDir);
+        //recursiveDelete(unzipDir);
         log.info("cleaning up... done");
     }
 
@@ -93,11 +96,10 @@ public abstract class DistributionExtractingTestcase {
     }
 
     private static File getUnzipDir(File targetDir) throws InterruptedException {
-        File dir = new File(targetDir, "examples-automatic");
-        if (dir.exists()) {
-            recursiveDelete(dir);
-            sleep(300);
-        }
+        return new File(targetDir, "examples-automatic");
+    }
+
+    private static File createDir(File dir) throws InterruptedException {
         if (!dir.mkdir())
             throw new RuntimeException("Could not mkdir " + dir.getAbsolutePath());
         return dir;

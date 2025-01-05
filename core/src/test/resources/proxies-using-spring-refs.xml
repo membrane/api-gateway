@@ -9,7 +9,7 @@
 	<router>
 
 		<serviceProxy name="Console" port="3022">
-			<spring:bean class="com.predic8.membrane.core.interceptor.LogInterceptor" />
+			<spring:bean class="com.predic8.membrane.core.interceptor.log.LogInterceptor" />
 			<spring:ref bean="l1" />
 			<spring:idref bean="l1" />
 			<interceptor refid="l1" />

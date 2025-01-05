@@ -16,6 +16,7 @@ package com.predic8.membrane.core.interceptor.flow;
 
 import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.lang.*;
@@ -23,6 +24,7 @@ import com.predic8.membrane.core.lang.ExchangeExpression.*;
 import org.slf4j.*;
 
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
+import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.lang.ExchangeExpression.Language.*;
 
@@ -55,7 +57,6 @@ public class IfInterceptor extends AbstractFlowInterceptor {
     @Override
     public void init(Router router) throws Exception {
         super.init(router);
-
         exchangeExpression = ExchangeExpression.getInstance(router, language, test);
     }
 
@@ -71,7 +72,16 @@ public class IfInterceptor extends AbstractFlowInterceptor {
 
     private Outcome handleInternal(Exchange exc, Flow flow) throws Exception {
 
-        boolean result = exchangeExpression.evaluate(exc, flow, Boolean.class);
+        boolean result;
+        try {
+             result = exchangeExpression.evaluate(exc, flow, Boolean.class);
+        } catch (ExchangeExpressionException e) {
+            e.provideDetails(ProblemDetails.internal(router.isProduction()))
+                    .detail("Error evaluating expression on exchange in if plugin.")
+                    .component("if")
+                    .buildAndSetResponse(exc);
+            return ABORT;
+        }
         if (log.isDebugEnabled())
             log.debug("Expression {} evaluated to {}.", test, result);
 

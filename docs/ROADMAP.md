@@ -27,28 +27,41 @@
 
 ## TODOs
 - Run ConfigSerializationTest from annot
-- List with all tests
+- List how to run all tests
+  - ConfigSerializationTest
   - Examples
     - ExampleUnitTests, Without, With
 - If/setHeader
   - Write example with lots of samples in different languages
 - Delete interceptor/
   - Gatekeeper
+  - XPathExtractor
+  - XPathInterceptor
 - Check
   - Is example embedded-java still running?
     - Update to Java 21 needed?
 - Is SessionResumptionTest still needed?
 - Document XPath Language of <if>
 - Restructure samples
-- Make <log headerOnly="false"/> clearer!
 - proxies-2.xsd
   - new Namespace e.g. https://membrane-api.io...
 - 2025
 - Rename ExampleTests to .*ExampleTests
 - Remove XPathExtractor
 - Call Example
+- Is still in use:
+  - /xml/project.xml?
+- ProblemDetails
+  - Test for production mode filter
+    - Return pd and check if answer contains pd.details ...
+  - Return pretty to user
+  - Should have right Content-Type
+- Look at inactive UnitTests
+- Rewrite ExampleTests with RestAssured:
+  - Json2XmlExampleTest
 
 ## Done
+- Call plugin
 - Example Tests without unzipping for every test
 - Delete interceptor
   - api-management
@@ -56,6 +69,7 @@
 - Swagger-proxy
   - OpenAPI supports Swagger 2.0
 - UnitTests: Use PackageScan for more or all
+- Make <log headerOnly="false"/> clearer!
 
 ### Examples
 - Rename Tests to *.ExampleTest

@@ -15,9 +15,11 @@ package com.predic8.membrane.core.interceptor.flow;
 
 import com.predic8.membrane.core.http.Request.*;
 import com.predic8.membrane.core.http.Response.*;
+import com.predic8.membrane.core.interceptor.*;
 import org.junit.jupiter.api.*;
 import org.springframework.expression.spel.*;
 
+import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 import static com.predic8.membrane.core.lang.ExchangeExpression.Language.*;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -25,12 +27,12 @@ public class IfInterceptorSpELTest extends ConditionalEvaluationTestContext {
 
     @Test
     void simpleRequestTrue() throws Exception {
-        assertTrue(eval("true", new Builder()));
+        assertEquals(CONTINUE,eval("true", new Builder()));
     }
 
     @Test
     void simpleResponseTrue() throws Exception {
-        assertTrue(eval("true", new ResponseBuilder()));
+        assertEquals(CONTINUE,eval("true", new ResponseBuilder()));
     }
 
     @Test
@@ -41,37 +43,37 @@ public class IfInterceptorSpELTest extends ConditionalEvaluationTestContext {
 
     @Test
     void hasHeader() throws Exception {
-        assertTrue(eval("headers['X-Foo-Bar'] == 'Baz'", new Builder().header("X-Foo-Bar", "Baz")));
+        assertEquals(CONTINUE,eval("headers['X-Foo-Bar'] == 'Baz'", new Builder().header("X-Foo-Bar", "Baz")));
     }
 
     @Test
     void property() throws Exception {
-        assertTrue(eval("properties['bar'] == '123'", new Builder()));
+        assertEquals(CONTINUE,eval("properties['bar'] == '123'", new Builder()));
     }
 
     @Test
     void isResponse() throws Exception {
-        assertTrue(eval("response != null", new ResponseBuilder()));
+        assertEquals(CONTINUE,eval("response != null", new ResponseBuilder()));
     }
 
     @Test
     void testBuiltInMethod() throws Exception {
-        assertTrue(eval("hasScope('test')", new Builder()));
+        assertEquals(CONTINUE,eval("hasScope('test')", new Builder()));
     }
 
     @Test
     void testBuiltInMethodOverload() throws Exception {
-        assertTrue(eval("hasScope()", new Builder()));
+        assertEquals(CONTINUE,eval("hasScope()", new Builder()));
     }
 
     @Test
     void testBuiltInMethodTypeHierarchy() throws Exception {
         //Inline List initializer in SpEL produces a RandomAccessList which should be assignable to List.
-        assertTrue(eval("hasScope({'test'})", new Builder()));
+        assertEquals(CONTINUE,eval("hasScope({'test'})", new Builder()));
     }
 
-    private static boolean eval(String condition, Object builder) throws Exception {
-        return performEval(condition, builder, SPEL);
+    private static Outcome eval(String condition, Object builder) throws Exception {
+        return performEval(condition, builder, SPEL,true);
     }
 }
 

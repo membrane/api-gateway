@@ -6,11 +6,13 @@
 
 	<router>
 
-		<api port="2020">
-			<switch>
-				<!-- In case of 'true' set destination to internalProxy -->
-				<case xPath="//order[@express='yes']" service="express" />
-			</switch>
+		<api port="2000">
+			<request>
+				<!-- If 'true' set destination to internal proxy 'express' -->
+				<if test="//order[@express='yes']" language="xpath">
+					<destination url="service://express"/>
+				</if>
+			</request>
 			<target url="service://normal" />
 		</api>
 

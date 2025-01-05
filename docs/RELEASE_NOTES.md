@@ -8,6 +8,7 @@
 - Ordered fields in ProblemDetails
 - Example Tests without unzipping for every test
 - New flow control. Not based on a stack of executed interceptors but on the definition in the apis.xml.
+- New Log plugin with more features and cleaner configuration. It can now dump the exchange and properties
 
 ## Scripting Languages
 

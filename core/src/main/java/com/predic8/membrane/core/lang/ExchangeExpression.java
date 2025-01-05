@@ -29,6 +29,17 @@ public interface ExchangeExpression {
 
     enum Language {GROOVY, SPEL, XPATH, JSONPATH}
 
+    /**
+     * Override this with the logic to evaluate the expression on the exchange
+     * Caller is responsible for exception handling. But caller can delegate it back to the
+     * fill() method.
+     * @param exchange
+     * @param flow
+     * @param type
+     * @return
+     * @param <T>
+     * @throws Exception
+     */
     <T> T evaluate(Exchange exchange, Interceptor.Flow flow, Class<T> type);
 
     static ExchangeExpression getInstance(Router router, Language language, String source) {
@@ -39,4 +50,5 @@ public interface ExchangeExpression {
             case JSONPATH -> new JsonpathExchangeExpression(source);
         };
     }
+
 }

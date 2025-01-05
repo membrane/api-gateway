@@ -22,7 +22,7 @@ import org.slf4j.*;
 import java.util.*;
 import java.util.regex.*;
 
-public class TemplateExchangeExpression implements ExchangeExpression {
+public class TemplateExchangeExpression extends AbstractExchangeExpression {
 
     private static final Logger log = LoggerFactory.getLogger(TemplateExchangeExpression.class);
 
@@ -34,12 +34,21 @@ public class TemplateExchangeExpression implements ExchangeExpression {
     private final List<Token> tokens;
 
     public TemplateExchangeExpression(Router router, Language language, String expression) {
+        super(expression);
         tokens = parseTokens(router,language, expression);
     }
 
     @Override
     public <T> T evaluate(Exchange exchange, Flow flow, Class<T> type) {
-        return (T) String.join("", tokens.stream().map(token -> token.eval(exchange,flow)).toList());
+        String result = "";
+        for(Token token : tokens) {
+            try {
+                result += token.eval(exchange, flow);
+            } catch (Exception e) {
+                throw new ExchangeExpressionException(token.toString(),e);
+            }
+        }
+        return (T)result;
     }
 
     protected static List<Token> parseTokens(Router router, Language language, String expression) {
@@ -62,7 +71,8 @@ public class TemplateExchangeExpression implements ExchangeExpression {
     }
 
     interface Token {
-        String eval(Exchange exchange, Flow flow);
+        String eval(Exchange exchange, Flow flow) throws Exception;
+        String getExpression();
     }
 
     static class Text implements Token {
@@ -75,6 +85,11 @@ public class TemplateExchangeExpression implements ExchangeExpression {
 
         @Override
         public String eval(Exchange exchange, Flow flow) {
+            return value;
+        }
+
+        @Override
+        public String getExpression() {
             return value;
         }
 
@@ -101,8 +116,13 @@ public class TemplateExchangeExpression implements ExchangeExpression {
         }
 
         @Override
-        public String eval(Exchange exchange, Flow flow) {
+        public String eval(Exchange exchange, Flow flow) throws Exception {
             return exchangeExpression.evaluate(exchange, flow, String.class);
+        }
+
+        @Override
+        public String getExpression() {
+            return exchangeExpression.toString();
         }
 
         @Override

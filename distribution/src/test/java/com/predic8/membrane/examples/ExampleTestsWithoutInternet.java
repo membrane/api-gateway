@@ -24,7 +24,7 @@ import com.predic8.membrane.examples.tests.loadbalancing.Loadbalancing1StaticTes
 import com.predic8.membrane.examples.tests.loadbalancing.Loadbalancing3ClientExampleTest;
 import com.predic8.membrane.examples.tests.loadbalancing.Loadbalancing5MultipleTest;
 import com.predic8.membrane.examples.tests.log.AccessLogTest;
-import com.predic8.membrane.examples.tests.message_transformation.Json2XmlTest;
+import com.predic8.membrane.examples.tests.message_transformation.Json2XmlExampleTest;
 import com.predic8.membrane.examples.tests.message_transformation.TransformationUsingJavascriptTest;
 import com.predic8.membrane.examples.tests.message_transformation.Xml2JsonTest;
 import com.predic8.membrane.examples.tests.oauth2.OAuth2APITest;
@@ -39,7 +39,7 @@ import com.predic8.membrane.examples.tests.template.text.TextTemplateExampleTest
 import com.predic8.membrane.examples.tests.template.xml.XMLTemplateExampleTest;
 import com.predic8.membrane.examples.tests.validation.JSONSchemaValidationTest;
 import com.predic8.membrane.examples.tests.validation.SOAPProxyValidationTest;
-import com.predic8.membrane.examples.tests.validation.XMLValidationTest;
+import com.predic8.membrane.examples.tests.validation.XMLValidationExampleTest;
 import org.junit.platform.suite.api.SelectClasses;
 import org.junit.platform.suite.api.Suite;
 
@@ -67,7 +67,7 @@ import org.junit.platform.suite.api.Suite;
 
         // Validation
         JSONSchemaValidationTest.class,
-        XMLValidationTest.class,
+        XMLValidationExampleTest.class,
         SampleSoapServiceTest.class,
         SOAPProxyValidationTest.class,
 
@@ -76,7 +76,7 @@ import org.junit.platform.suite.api.Suite;
 
         // Transformation
         Xml2JsonTest.class,
-        Json2XmlTest.class,
+        Json2XmlExampleTest.class,
         TransformationUsingJavascriptTest.class,
 
         // OAuth2

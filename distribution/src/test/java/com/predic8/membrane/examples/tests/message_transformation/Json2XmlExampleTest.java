@@ -21,7 +21,7 @@ import static com.predic8.membrane.test.AssertUtils.postAndAssert;
 import static java.lang.Thread.sleep;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class Json2XmlTest extends DistributionExtractingTestcase {
+public class Json2XmlExampleTest extends DistributionExtractingTestcase {
 
     @Override
     protected String getExampleDirName() {

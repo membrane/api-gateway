@@ -15,8 +15,11 @@ package com.predic8.membrane.core.interceptor.flow;
 
 import com.predic8.membrane.core.http.Request.*;
 import com.predic8.membrane.core.http.Response.*;
+import com.predic8.membrane.core.interceptor.*;
 import org.junit.jupiter.api.*;
 
+import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
+import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 import static com.predic8.membrane.core.lang.ExchangeExpression.Language.*;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -24,23 +27,23 @@ public class IfInterceptorXPathTest extends ConditionalEvaluationTestContext {
 
     @Test
     void simpleRequestTrue() throws Exception {
-        assertTrue(eval("true()", getRequest()));
+        assertEquals(CONTINUE,eval("true()", getRequest(),true));
     }
 
     @Test
     void simpleResponseTrue() throws Exception {
-        assertTrue(eval("true()", getResponse()));
+        assertEquals(CONTINUE,eval("true()", getResponse(),true));
     }
 
     @Test
     void attribute() throws Exception {
-        assertTrue(eval("/person/@id = 314", getRequest()));
+        assertEquals( CONTINUE,eval("/person/@id = 314", getRequest(),true));
     }
 
     @Test
-    void invalid() {
-        assertThrows(RuntimeException.class, () -> eval("foobar][", getRequest()));
-        assertThrows(RuntimeException.class, () -> eval("foobar][", getResponse()));
+    void invalid() throws Exception {
+        assertEquals(ABORT, eval("foobar][", getRequest(),false));
+        assertEquals(ABORT, eval("foobar][", getResponse(),false));
     }
 
     private static Builder getRequest() {
@@ -52,8 +55,8 @@ public class IfInterceptorXPathTest extends ConditionalEvaluationTestContext {
         return new ResponseBuilder().body("<foo/>");
     }
 
-    private static boolean eval(String condition, Object builder) throws Exception {
-        return performEval(condition, builder, XPATH);
+    private static Outcome eval(String condition, Object builder,boolean shouldCallNested) throws Exception {
+        return performEval(condition, builder, XPATH,shouldCallNested);
     }
 }
 

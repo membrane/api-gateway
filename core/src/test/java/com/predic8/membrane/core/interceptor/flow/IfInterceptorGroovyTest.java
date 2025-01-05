@@ -15,9 +15,11 @@ package com.predic8.membrane.core.interceptor.flow;
 
 import com.predic8.membrane.core.http.Request.*;
 import com.predic8.membrane.core.http.Response.*;
-import org.codehaus.groovy.control.*;
+import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.util.*;
 import org.junit.jupiter.api.*;
 
+import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.lang.ExchangeExpression.Language.*;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -25,49 +27,48 @@ public class IfInterceptorGroovyTest extends ConditionalEvaluationTestContext {
 
     @Test
     void simpleRequestTrue() throws Exception {
-        assertTrue(eval("true", new Builder()));
+        assertEquals(CONTINUE,eval("true", new Builder(),true));
     }
 
     @Test
     void simpleRequestFalse() throws Exception {
-        assertFalse(eval("false", new Builder()));
+        assertEquals(CONTINUE,eval("false", new Builder(),false));
     }
 
     @Test
     void simpleResponseTrue() throws Exception {
-        assertTrue(eval("true", new ResponseBuilder()));
+        assertEquals(CONTINUE,eval("true", new ResponseBuilder(),true));
     }
 
     @Test
-    void invalidGroovy() {
-        assertThrows(MultipleCompilationErrorsException.class, () -> eval("foobar;()", new Builder()));
-        assertThrows(MultipleCompilationErrorsException.class, () -> eval("foobar;()", new ResponseBuilder()));
+    void invalidGroovy() throws Exception {
+        assertThrows(ConfigurationException.class, () -> eval("foobar;()", new Builder(),false));
     }
 
     @Test
     void hasHeader() throws Exception {
-        assertTrue(eval("""
+        assertEquals(CONTINUE,eval("""
             header.getFirstValue("X-Foo-Bar").equals("Baz")
-            """, new Builder().header("X-Foo-Bar", "Baz")));
+            """, new Builder().header("X-Foo-Bar", "Baz"),true));
     }
 
     @Test
     void property() throws Exception {
-        assertTrue(eval("properties['bar'] == '123'", new Builder()));
+        assertEquals(CONTINUE,eval("properties['bar'] == '123'", new Builder(),true));
     }
 
     @Test
     void isFlowResponse() throws Exception {
-        assertTrue(eval("flow.isResponse()", new ResponseBuilder()));
+        assertEquals(CONTINUE,eval("flow.isResponse()", new ResponseBuilder(),true));
     }
 
     @Test
     void exchangeIsAvailable() throws Exception {
-        assertTrue(eval("exc != null", new Builder()));
-        assertTrue(eval("exchange != null", new Builder()));
+        assertEquals(CONTINUE,eval("exc != null", new Builder(),true));
+        assertEquals(CONTINUE,eval("exchange != null", new Builder(),true));
     }
 
-    private static boolean eval(String condition, Object builder) throws Exception {
-        return performEval(condition, builder, GROOVY);
+    private static Outcome eval(String condition, Object builder, boolean shouldCallNested) throws Exception {
+        return performEval(condition, builder, GROOVY,shouldCallNested);
     }
 }

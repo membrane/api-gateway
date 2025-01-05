@@ -34,6 +34,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
 
+import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class AbortExchangeTest {
@@ -63,7 +64,7 @@ public class AbortExchangeTest {
                         return 0;
                     }
                 }, true).build());
-                return Outcome.RETURN;
+                return RETURN;
             }
         });
         router.getRuleManager().addProxyAndOpenPortIfNew(sp2);
@@ -100,7 +101,7 @@ public class AbortExchangeTest {
         List<AbstractExchange> list = exchangeStore.getAllExchangesAsList();
         assertEquals(numberOfExchanges, list.size());
         for (AbstractExchange e : list) {
-            assertTrue(responsePresent == 0 ? e.getResponse().getBody().getLength() == 0 : list.get(0).getResponse().getBody().getLength() >= 1, "Exchange has " + (responsePresent == 1 ? "no " : "") + "response");
+            assertTrue(responsePresent == 0 ? e.getResponse().getBody().getLength() == 0 : list.getFirst().getResponse().getBody().getLength() >= 1, "Exchange has " + (responsePresent == 1 ? "no " : "") + "response");
         }
 
     }

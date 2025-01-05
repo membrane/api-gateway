@@ -21,7 +21,7 @@ import org.junit.jupiter.api.*;
 import static io.restassured.RestAssured.*;
 import static java.io.File.*;
 
-public class XMLValidationTest extends DistributionExtractingTestcase {
+public class XMLValidationExampleTest extends DistributionExtractingTestcase {
 
 	@Override
 	protected String getExampleDirName() {

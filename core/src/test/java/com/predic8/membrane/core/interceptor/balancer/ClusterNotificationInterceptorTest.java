@@ -18,6 +18,7 @@ import com.predic8.membrane.core.proxies.*;
 import org.apache.commons.codec.binary.*;
 import org.apache.commons.httpclient.*;
 import org.apache.commons.httpclient.methods.*;
+import org.jetbrains.annotations.*;
 import org.junit.jupiter.api.*;
 
 import javax.crypto.*;
@@ -122,9 +123,12 @@ public class ClusterNotificationInterceptorTest {
 	}
 
 	private GetMethod getSecurityTestMethod(long time) throws Exception {
-		String qParams = "cluster=c3&host=node1.clustera&port=3018&time=" + time + "&nonce=" + new SecureRandom().nextLong();
-		return new GetMethod("http://localhost:3002/clustermanager/up?data=" +
-				URLEncoder.encode(getEncryptedQueryString(qParams), UTF_8));
+        return new GetMethod("http://localhost:3002/clustermanager/up?data=" +
+				URLEncoder.encode(getEncryptedQueryString(getqParams(time)), UTF_8));
+	}
+
+	private static @NotNull String getqParams(long time) {
+		return "cluster=c3&host=node1.clustera&port=3018&time=" + time + "&nonce=" + new SecureRandom().nextLong();
 	}
 
 	private String getEncryptedQueryString(String qParams) throws Exception {

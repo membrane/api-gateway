@@ -14,8 +14,11 @@
 package com.predic8.membrane.core.interceptor.flow;
 
 import com.predic8.membrane.core.http.Request.*;
+import com.predic8.membrane.core.interceptor.*;
 import org.junit.jupiter.api.*;
 
+import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
+import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 import static com.predic8.membrane.core.lang.ExchangeExpression.Language.*;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -23,23 +26,23 @@ class IfInterceptorJsonpathTest extends ConditionalEvaluationTestContext {
 
     @Test
     void accessField() throws Exception {
-        assertTrue(eval("$.id", getRequest()));
-        assertTrue(eval("$.name", getRequest()));
+        assertEquals(CONTINUE,eval("$.id", getRequest(),true));
+        assertEquals( CONTINUE,eval("$.name", getRequest(),true));
     }
 
     @Test
     void accessFieldWithNullValue() throws Exception {
-        assertFalse(eval("$.email", getRequest()));
+        assertEquals( CONTINUE, eval("$.email", getRequest(),false));
     }
 
     @Test
     void accessNotExistingField() throws Exception {
-        assertFalse(eval("$.unknown", getRequest()));
+        assertEquals( CONTINUE,eval("$.unknown", getRequest(),false));
     }
 
     @Test
     void invalid() throws Exception {
-        assertFalse( eval("33foobar][", getRequest()));
+        assertEquals(ABORT, eval("$$33foobar][", getRequest(),false));
     }
 
     private static Builder getRequest() {
@@ -52,8 +55,8 @@ class IfInterceptorJsonpathTest extends ConditionalEvaluationTestContext {
             """);
     }
 
-    private static boolean eval(String condition, Object builder) throws Exception {
-        return performEval(condition, builder, JSONPATH);
+    private static Outcome eval(String condition, Object builder, boolean shouldCallNested) throws Exception {
+        return performEval(condition, builder, JSONPATH,shouldCallNested);
     }
 }
 

@@ -21,15 +21,13 @@ import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.lang.ExchangeExpression.*;
 import com.predic8.membrane.core.security.*;
 
-import java.util.*;
-
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.security.ApiKeySecurityScheme.In.*;
 import static java.util.List.*;
 
 class ConditionalEvaluationTestContext {
 
-    static boolean performEval(String condition, Object builder, Language lang) throws Exception {
+    static Outcome performEval(String condition, Object builder, Language lang, boolean shouldCallNested) throws Exception {
         var exc = new Exchange(null);
         var mockInt = new ConditionalEvaluationTestContext.MockInterceptor();
         var ifInt = new IfInterceptor();
@@ -43,18 +41,20 @@ class ConditionalEvaluationTestContext {
         ifInt.setTest(condition);
         ifInt.init(new HttpRouter());
 
+        Outcome outcome;
         if (builder instanceof Builder b) {
             exc.setRequest(b.build());
-            ifInt.handleRequest(exc);
+            outcome = ifInt.handleRequest(exc);
         } else if (builder instanceof ResponseBuilder b) {
             exc.setResponse(b.build());
-            ifInt.handleResponse(exc);
-            new FlowController().invokeResponseHandlers(exc, List.of(ifInt));
+            outcome = ifInt.handleResponse(exc);
         } else {
             throw new IllegalStateException("Unexpected value: " + builder);
         }
-
-        return mockInt.isCalled();
+        if (mockInt.isCalled() != shouldCallNested) {
+            throw new RuntimeException("Mock");
+        }
+        return outcome;
     }
 
     private static class MockInterceptor extends AbstractInterceptor {

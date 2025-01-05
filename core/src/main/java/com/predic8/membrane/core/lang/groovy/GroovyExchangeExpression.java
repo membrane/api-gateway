@@ -18,6 +18,8 @@ import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.interceptor.lang.*;
+import com.predic8.membrane.core.util.ConfigurationException;
+import org.codehaus.groovy.control.*;
 
 import java.util.*;
 import java.util.function.*;
@@ -32,7 +34,11 @@ public class GroovyExchangeExpression extends AbstractExchangeExpression {
     public GroovyExchangeExpression(Router router, String source) {
         super(source);
         this.router = router;
-        condition = new GroovyLanguageSupport().compileExpression(router.getBackgroundInitializator(), null, source);
+        try {
+            condition = new GroovyLanguageSupport().compileExpression(router.getBackgroundInitializator(), null, source);
+        } catch (MultipleCompilationErrorsException e) {
+            throw new ConfigurationException("Cannot compile Groovy Script: %s\n%s".formatted(e.getMessage(),e.getLocalizedMessage()));
+        }
     }
 
     @Override

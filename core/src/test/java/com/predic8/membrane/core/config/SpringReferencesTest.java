@@ -15,6 +15,7 @@ package com.predic8.membrane.core.config;
 
 import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.interceptor.log.*;
 import com.predic8.membrane.core.proxies.*;
 import org.junit.jupiter.api.*;
 

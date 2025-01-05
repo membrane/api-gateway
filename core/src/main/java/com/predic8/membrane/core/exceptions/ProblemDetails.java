@@ -46,9 +46,13 @@ public class ProblemDetails {
     private String type;
 
     private String title;
-
     private String detail;
 
+    /**
+     * Component like plugin
+     */
+    private String component;
+    
     private String instance;
     private final HashMap<String, Object> extensions = new LinkedHashMap<>();
     private Throwable exception;
@@ -105,6 +109,11 @@ public class ProblemDetails {
             this.detail = humanReadableExplanation;
         return this;
     }
+    
+    public ProblemDetails component(String component) {
+        this.component = component;
+        return this;
+    }
 
     public ProblemDetails instance(String instance) {
         this.instance = instance;
@@ -152,7 +161,7 @@ public class ProblemDetails {
             extensionsMap.putAll(extensions);
             if (exception != null) {
                 extensionsMap.put("message",exception.getMessage());
-                extensionsMap.put("stackTrace", exception.getStackTrace());
+                extensionsMap.put("stackTrace", getStackTrace());
             }
             extensionsMap.put("attention", """
                 Membrane is in development mode. For production set <router production="true"> to reduce details in error messages!""");
@@ -164,9 +173,21 @@ public class ProblemDetails {
         if (detail != null) {
             root.put("detail", detail);
         }
+        
+        if (component != null) {
+            root.put("component", component);
+        }
 
         root.putAll(extensionsMap);
         return root;
+    }
+
+    private @NotNull String getStackTrace() {
+        String stackTrace = "";
+        for (StackTraceElement element : exception.getStackTrace()) {
+            stackTrace += element.toString() + "\n";
+        }
+        return stackTrace;
     }
 
     private Response createContent(Map<String, Object> root, Exchange exchange) {
@@ -204,18 +225,21 @@ public class ProblemDetails {
 
     private static void mapToXmlElements(Map<String, Object> map, Document document, Element parent) {
         for (Map.Entry<String, Object> entry : map.entrySet()) {
+            Object value = entry.getValue();
+            if (value == null)
+                continue;
             Element element = document.createElement(entry.getKey());
-            if (entry.getValue() instanceof Map) {
-                mapToXmlElements((Map<String, Object>) entry.getValue(), document, element);
-            } else if (entry.getValue() instanceof Object[]) {
-                for (Object obj : (Object[]) entry.getValue()) {
+            if (value instanceof Map mv) {
+                mapToXmlElements(mv, document, element);
+            } else if (value instanceof Object[] oa) {
+                for (Object obj : oa) {
                     Element arrayElement = document.createElement(entry.getKey());
                     arrayElement.setTextContent(obj.toString());
                     parent.appendChild(arrayElement);
                 }
                 continue;
             } else {
-                element.setTextContent(entry.getValue().toString());
+                element.setTextContent(value.toString());
             }
             parent.appendChild(element);
         }
