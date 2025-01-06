@@ -14,69 +14,62 @@
 
 package com.predic8.membrane.core.transport.http;
 
-import org.apache.http.HttpResponse;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClientBuilder;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.proxies.*;
+import com.predic8.membrane.core.util.*;
+import org.apache.http.*;
+import org.apache.http.client.methods.*;
+import org.apache.http.impl.client.*;
+import org.junit.jupiter.api.*;
 
-import com.predic8.membrane.core.HttpRouter;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Request;
-import com.predic8.membrane.core.http.Response;
-import com.predic8.membrane.core.interceptor.AbstractInterceptor;
-import com.predic8.membrane.core.interceptor.Outcome;
-import com.predic8.membrane.core.rules.ServiceProxy;
-import com.predic8.membrane.core.rules.ServiceProxyKey;
-import com.predic8.membrane.core.util.URIFactory;
-
-import java.io.IOException;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class IllegalCharactersInURLTest {
 
-	private HttpRouter r;
+    private HttpRouter r;
 
-	@BeforeEach
-	public void init() throws Exception {
-		r = new HttpRouter();
-		r.setHotDeploy(false);
-		r.add(new ServiceProxy(new ServiceProxyKey(3027), "localhost", 3028));
-		ServiceProxy sp2 = new ServiceProxy(new ServiceProxyKey(3028), null, 80);
-		sp2.getInterceptors().add(new AbstractInterceptor() {
-			@Override
-			public Outcome handleRequest(Exchange exc) {
-				assertEquals("/foo{}", exc.getRequestURI());
-				exc.setResponse(Response.ok().build());
-				return Outcome.RETURN;
-			}
-		});
-		r.add(sp2);
-		r.start();
-	}
+    @BeforeEach
+    public void init() throws Exception {
+        r = new HttpRouter();
+        r.setHotDeploy(false);
+        r.add(new ServiceProxy(new ServiceProxyKey(3027), "localhost", 3028));
+        ServiceProxy sp2 = new ServiceProxy(new ServiceProxyKey(3028), null, 80);
+        sp2.getInterceptors().add(new AbstractInterceptor() {
+            @Override
+            public Outcome handleRequest(Exchange exc) {
+                assertEquals("/foo{}", exc.getRequestURI());
+                exc.setResponse(Response.ok().build());
+                return Outcome.RETURN;
+            }
+        });
+        r.add(sp2);
+        r.start();
+    }
 
-	@AfterEach
-	public void uninit() throws IOException {
-		r.shutdown();
-	}
+    @AfterEach
+    public void uninit() {
+        r.shutdown();
+    }
 
-	@Test
-	public void apacheHttpClient() {
-		assertThrows(IllegalArgumentException.class, () -> {
-			CloseableHttpClient hc = HttpClientBuilder.create().build();
-			HttpResponse res = hc.execute(new HttpGet("http://localhost:3027/foo{}"));
-			assertEquals(200, res.getStatusLine().getStatusCode());
-		});
-	}
+    @Test
+    public void apacheHttpClient() {
+        assertThrows(IllegalArgumentException.class, () -> {
+            try (CloseableHttpClient hc = HttpClientBuilder.create().build()) {
+                HttpResponse res = hc.execute(new HttpGet("http://localhost:3027/foo{}"));
+                assertEquals(200, res.getStatusLine().getStatusCode());
+            }
+        });
+    }
 
-	@Test
-	public void doit() throws Exception {
-		URIFactory uriFactory = new URIFactory(true);
-		Response res = new HttpClient().call(new Request.Builder().method("GET").url(uriFactory, "http://localhost:3027/foo{}").body("").buildExchange()).getResponse();
-		assertEquals(200, res.getStatusCode());
-	}
+    @Test
+    public void doit() throws Exception {
+        URIFactory uriFactory = new URIFactory(true);
+        try (HttpClient httpClient = new HttpClient()) {
+            Response res = httpClient.call(new Request.Builder().method("GET").url(uriFactory, "http://localhost:3027/foo{}").body("").buildExchange()).getResponse();
+            assertEquals(200, res.getStatusCode());
+        }
+    }
 }

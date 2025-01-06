@@ -21,10 +21,10 @@ import com.predic8.membrane.examples.env.ConsistentVersionNumbers;
 import com.predic8.membrane.examples.env.JavaLicenseInfoTest;
 import com.predic8.membrane.examples.tests.*;
 import com.predic8.membrane.examples.tests.loadbalancing.Loadbalancing1StaticTest;
-import com.predic8.membrane.examples.tests.loadbalancing.Loadbalancing3ClientTest;
+import com.predic8.membrane.examples.tests.loadbalancing.Loadbalancing3ClientExampleTest;
 import com.predic8.membrane.examples.tests.loadbalancing.Loadbalancing5MultipleTest;
 import com.predic8.membrane.examples.tests.log.AccessLogTest;
-import com.predic8.membrane.examples.tests.message_transformation.Json2XmlTest;
+import com.predic8.membrane.examples.tests.message_transformation.Json2XmlExampleTest;
 import com.predic8.membrane.examples.tests.message_transformation.TransformationUsingJavascriptTest;
 import com.predic8.membrane.examples.tests.message_transformation.Xml2JsonTest;
 import com.predic8.membrane.examples.tests.oauth2.OAuth2APITest;
@@ -34,12 +34,12 @@ import com.predic8.membrane.examples.tests.openapi.OpenAPIRewriteTest;
 import com.predic8.membrane.examples.tests.openapi.OpenAPIValidationSimpleTest;
 import com.predic8.membrane.examples.tests.openapi.OpenAPIValidationTest;
 import com.predic8.membrane.examples.tests.opentelemetry.OpenTelemetryTest;
-import com.predic8.membrane.examples.tests.template.json.JsonTemplateTest;
-import com.predic8.membrane.examples.tests.template.text.TextTemplateTest;
-import com.predic8.membrane.examples.tests.template.xml.XMLTemplateTest;
+import com.predic8.membrane.examples.tests.template.json.JsonTemplateExampleTest;
+import com.predic8.membrane.examples.tests.template.text.TextTemplateExampleTest;
+import com.predic8.membrane.examples.tests.template.xml.XMLTemplateExampleTest;
 import com.predic8.membrane.examples.tests.validation.JSONSchemaValidationTest;
 import com.predic8.membrane.examples.tests.validation.SOAPProxyValidationTest;
-import com.predic8.membrane.examples.tests.validation.XMLValidationTest;
+import com.predic8.membrane.examples.tests.validation.XMLValidationExampleTest;
 import org.junit.platform.suite.api.SelectClasses;
 import org.junit.platform.suite.api.Suite;
 
@@ -51,23 +51,23 @@ import org.junit.platform.suite.api.Suite;
         OpenAPIConfigErrorTest.class,
 
         // Proxy
-        CBRTest.class,
+        CBRXPathExampleTest.class,
         ProxiesXMLOfflineTest.class,
         ProxiesXMLSecurityTest.class,
 
        // Scripting
-        ConditionalInterceptorTest.class,
+        IfInterceptorTest.class,
         GroovyTest.class,
         JavascriptTest.class,
 
         // Load Balancing
         Loadbalancing1StaticTest.class,
-        Loadbalancing3ClientTest.class,
+        Loadbalancing3ClientExampleTest.class,
         Loadbalancing5MultipleTest.class,
 
         // Validation
         JSONSchemaValidationTest.class,
-        XMLValidationTest.class,
+        XMLValidationExampleTest.class,
         SampleSoapServiceTest.class,
         SOAPProxyValidationTest.class,
 
@@ -76,7 +76,7 @@ import org.junit.platform.suite.api.Suite;
 
         // Transformation
         Xml2JsonTest.class,
-        Json2XmlTest.class,
+        Json2XmlExampleTest.class,
         TransformationUsingJavascriptTest.class,
 
         // OAuth2
@@ -91,16 +91,24 @@ import org.junit.platform.suite.api.Suite;
         OpenAPIRewriteTest.class,
 
         // Template
-        TextTemplateTest.class,
-        JsonTemplateTest.class,
+        TextTemplateExampleTest.class,
+        JsonTemplateExampleTest.class,
 
         // Security
         JsonProtectionTest.class,
         APIKeyTest.class,
         APIKeyRBACTest.class,
         APIKeyWithOpenAPITest.class,
-        XMLTemplateTest.class,
+        XMLTemplateExampleTest.class,
         //DefaultConfigAdminConsoleTest.class*/
+
+        // XML
+        StaxInterceptorExampleTest.class,
+
+        // SOAP
+        AddSoapHeaderTest.class,
+
+        InternalProxyExampleTest.class
 })
-public class ExampleTestsWithoutInternet {
+class ExampleTestsWithoutInternet {
 }

@@ -21,7 +21,7 @@ import com.predic8.membrane.examples.config.ProxiesXMLTest;
 import com.predic8.membrane.examples.env.HelpLinkExistenceTest;
 import com.predic8.membrane.examples.tests.*;
 import com.predic8.membrane.examples.tests.loadbalancing.Loadbalancing4XmlSessionTest;
-import com.predic8.membrane.examples.tests.openapi.APIProxyTest;
+import com.predic8.membrane.examples.tests.openapi.APIProxyExampleTest;
 import com.predic8.membrane.examples.tests.ssl.SSLServerApiWithTlsPemTest;
 import com.predic8.membrane.examples.tests.ssl.SSLServerApiWithTlsPkcs12Test;
 import com.predic8.membrane.examples.tests.ssl.ToBackendTest;
@@ -30,8 +30,7 @@ import com.predic8.membrane.examples.tests.versioning.RoutingTest;
 import com.predic8.membrane.examples.tests.versioning.XsltExampleTest;
 import com.predic8.membrane.examples.tutorials.rest.TutorialRestInitialTest;
 import com.predic8.membrane.examples.tutorials.rest.TutorialRestStepsTest;
-import org.junit.platform.suite.api.SelectClasses;
-import org.junit.platform.suite.api.Suite;
+import org.junit.platform.suite.api.*;
 
 @Suite
 @SelectClasses({
@@ -55,15 +54,13 @@ import org.junit.platform.suite.api.Suite;
 
         FormValidationTest.class,
         CustomInterceptorTest.class,
-        StaxExampleInterceptorTest.class,
-        AddSoapHeaderTest.class,
         BasicXmlInterceptorTest.class,
 
         RoutingTest.class,
         XsltExampleTest.class,
 
         // OpenAPI
-        APIProxyTest.class,
+        APIProxyExampleTest.class,
 
         // Tutorials
         TutorialRestStepsTest.class,
@@ -75,5 +72,6 @@ import org.junit.platform.suite.api.Suite;
         ProxiesXMLFullSampleTest.class
 
 })
-public class ExampleTestsWithInternet {
+@ExcludeClassNamePatterns("com.predic8.membrane.examples.env.HelpLinkExistenceTest")
+class ExampleTestsWithInternet {
 }

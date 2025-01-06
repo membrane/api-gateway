@@ -14,25 +14,20 @@
 
 package com.predic8.membrane.core.interceptor.schemavalidation;
 
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.Router;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.interceptor.AbstractInterceptor;
-import com.predic8.membrane.core.interceptor.Outcome;
-import com.predic8.membrane.core.resolver.ResolverMap;
-import com.predic8.membrane.core.rules.Rule;
-import com.predic8.membrane.core.rules.SOAPProxy;
-import com.predic8.membrane.core.util.TextUtil;
+import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.resolver.*;
+import com.predic8.membrane.core.proxies.*;
+import com.predic8.membrane.core.util.*;
 import org.jetbrains.annotations.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.BeansException;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.ApplicationContextAware;
+import org.slf4j.*;
+import org.springframework.beans.*;
+import org.springframework.context.*;
 
-import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
-import static com.predic8.membrane.core.resolver.ResolverMap.combine;
+import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static com.predic8.membrane.core.resolver.ResolverMap.*;
 
 /**
  * Basically switches over {@link WSDLValidator}, {@link XMLSchemaValidator},
@@ -90,7 +85,7 @@ public class ValidatorInterceptor extends AbstractInterceptor implements Applica
 		}
 
 		if (validator == null) {
-			Rule parent = router.getParentProxy(this);
+			Proxy parent = router.getParentProxy(this);
 			if (parent instanceof SOAPProxy sp) {
 				wsdl = sp.getWsdl();
 				name = "SOAP Validator";
@@ -264,7 +259,7 @@ public class ValidatorInterceptor extends AbstractInterceptor implements Applica
 		if (failureHandler == null || failureHandler.equals("response"))
 			return null;
 		if (failureHandler.equals("log"))
-			return (message, exc) -> log.info("Validation failure: " + message);
+			return (message, exc) -> log.info("Validation failure: {}", message);
 		throw new IllegalArgumentException("Unknown failureHandler type: " + failureHandler);
 	}
 

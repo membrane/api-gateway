@@ -13,22 +13,26 @@
    limitations under the License. */
 package com.predic8.membrane.core.transport;
 
-import java.io.IOException;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.Vector;
-
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCChildElement;
-import com.predic8.membrane.core.Router;
+import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.interceptor.rewrite.ReverseProxyingInterceptor;
-import com.predic8.membrane.core.model.IPortChangeListener;
-import com.predic8.membrane.core.transport.ssl.SSLProvider;
-import com.predic8.membrane.core.util.TimerManager;
+import com.predic8.membrane.core.interceptor.rewrite.*;
+import com.predic8.membrane.core.model.*;
+import com.predic8.membrane.core.proxies.*;
+import com.predic8.membrane.core.transport.ssl.*;
+import com.predic8.membrane.core.util.*;
 
+import java.io.*;
+import java.util.*;
+
+/**
+ *
+ */
 public abstract class Transport {
+
+	/**
+	 * SSL and Non-SSL are mixed here, maybe split that in future
+	 */
 
 	protected Set<IPortChangeListener> menuListeners = new HashSet<>();
 
@@ -62,6 +66,7 @@ public abstract class Transport {
 			interceptors.add(new DispatchingInterceptor());
 			interceptors.add(new ReverseProxyingInterceptor());
 			interceptors.add(new UserFeatureInterceptor());
+			interceptors.add(new InternalServiceRoutingInterceptor());
 			interceptors.add(new HTTPClientInterceptor());
 		}
 
@@ -87,12 +92,15 @@ public abstract class Transport {
 		this.printStackTrace = printStackTrace;
 	}
 
-	public void closeAll() throws IOException {
+	public void closeAll() {
 		closeAll(true);
 	}
 
-	public void closeAll(boolean waitForCompletion) throws IOException {}
+	public void closeAll(boolean waitForCompletion) {}
+
 	public void openPort(String ip, int port, SSLProvider sslProvider, TimerManager timerManager) throws IOException {}
+
+	public void openPort(SSLableProxy proxy, TimerManager timerManager) throws IOException {}
 
 	public abstract boolean isOpeningPorts();
 

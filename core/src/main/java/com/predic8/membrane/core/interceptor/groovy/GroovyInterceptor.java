@@ -17,12 +17,15 @@ package com.predic8.membrane.core.interceptor.groovy;
 import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.lang.*;
 import com.predic8.membrane.core.lang.groovy.*;
-import com.predic8.membrane.core.rules.*;
+import com.predic8.membrane.core.util.ConfigurationException;
 import org.codehaus.groovy.control.*;
+import org.codehaus.groovy.control.messages.*;
 import org.slf4j.*;
 
+import java.io.*;
 import java.util.*;
 
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.*;
 import static com.predic8.membrane.core.util.TextUtil.*;
 import static org.apache.commons.text.StringEscapeUtils.*;
 
@@ -42,28 +45,28 @@ public class GroovyInterceptor extends AbstractScriptInterceptor {
     }
 
     @Override
+    public EnumSet<Flow> getFlow() {
+        return REQUEST_RESPONSE_ABORT;
+    }
+
+    @Override
     protected void initInternal() {
         try {
             script = new GroovyLanguageSupport().compileScript(router.getBackgroundInitializator(), null, src);
         } catch (MultipleCompilationErrorsException e) {
-            logScriptExceptionDuringInitialization(e);
-            throw new RuntimeException(e);
+            logGroovyError(e);
+            throw new ConfigurationException("Error in Groovy script initialization.");
         }
     }
 
-    private void logScriptExceptionDuringInitialization(Exception e) {
-        try {
-            Rule rule = getRule();
-            if (rule instanceof ServiceProxy sp) {
-                log.error("Exception in Groovy script in service proxy '" + sp.getName() + "' on port " + sp.getPort() + " with path " + (sp.getPath() != null ? sp.getPath().getValue() : "*"));
-            } else
-                log.error("Exception in Groovy script in service proxy '" + rule.getName() + "'");
-
-            log.error("There is possibly a syntax error in the groovy script (compilation error)");
-        } catch (NoSuchElementException e2) {
-            //ignore - logging should not break anything
-        } finally {
-            e.printStackTrace();
+    private void logGroovyError(MultipleCompilationErrorsException e) {
+        log.error("Error in Groovy script in API '{}' with source: {}", getProxy().getName(),src);
+        for(Message error : e.getErrorCollector().getErrors()) {
+            ByteArrayOutputStream bais = new ByteArrayOutputStream();
+            PrintWriter pw = new PrintWriter(bais);
+            error.write(pw);
+            pw.flush();
+            log.error("Error message: {}",bais);
         }
     }
 

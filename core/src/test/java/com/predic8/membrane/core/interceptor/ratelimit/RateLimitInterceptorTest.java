@@ -25,6 +25,7 @@ import org.jose4j.jwt.*;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.*;
 import org.junit.jupiter.params.provider.*;
+import org.slf4j.*;
 
 import java.net.*;
 import java.util.*;
@@ -41,12 +42,15 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class RateLimitInterceptorTest {
 
+	private static final Logger log = LoggerFactory.getLogger(RateLimitInterceptorTest.class.getName());
+
 	private final static ObjectMapper om = new ObjectMapper();
 
 	@Test
 	void setLimitDuration() {
-		RateLimitInterceptor interceptor = new RateLimitInterceptor();
-		interceptor.setRequestLimitDuration("PT10S");
+		RateLimitInterceptor interceptor = new RateLimitInterceptor() {{
+			setRequestLimitDuration("PT10S");
+		}};
 		assertEquals("PT10S",interceptor.getRequestLimitDuration());
 
 		interceptor.setRequestLimitDuration("PT10M");
@@ -62,9 +66,10 @@ public class RateLimitInterceptorTest {
 		Exchange exc1 = prepareRequest("aaa");
 		Exchange exc2 = prepareRequest("bbb");
 
-		RateLimitInterceptor interceptor = new RateLimitInterceptor(ofSeconds(10),3);
-		interceptor.setKeyExpression(expression);
-		interceptor.init();
+		RateLimitInterceptor interceptor = new RateLimitInterceptor(ofSeconds(10),3) {{
+			setKeyExpression(expression);
+			init();
+		}};
 
 		assertEquals(CONTINUE, interceptor.handleRequest(exc1));
 		assertEquals(CONTINUE, interceptor.handleRequest(exc2));
@@ -202,7 +207,7 @@ public class RateLimitInterceptorTest {
 						returns.incrementAndGet();
 					}
 				} catch (Exception e) {
-					e.printStackTrace();
+					log.error("Error calling handleRequest: ",e);
 				}
 			});
 			threads.add(t);

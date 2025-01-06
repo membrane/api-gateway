@@ -35,14 +35,14 @@ public class AuthorizationCodeFlow extends TokenRequest {
     @Override
     protected Response checkForMissingParameters() throws Exception {
         if(getCode() == null ||  getClientId() == null || getClientSecret() == null || getRedirectUri() == null)
-            return OAuth2Util.createParameterizedJsonErrorResponse(exc,jsonGen,"error","invalid_request");
+            return OAuth2Util.createParameterizedJsonErrorResponse(jsonGen,"error","invalid_request");
         return new NoResponse();
     }
 
     @Override
     protected Response processWithParameters() throws Exception {
         if(!authServer.getSessionFinder().hasSessionForCode(getCode()))
-            return OAuth2Util.createParameterizedJsonErrorResponse(exc, jsonGen,"error", "invalid_request");
+            return OAuth2Util.createParameterizedJsonErrorResponse(jsonGen,"error", "invalid_request");
         SessionManager.Session session = authServer.getSessionFinder().getSessionForCode(getCode());
         authServer.getSessionFinder().removeSessionForCode(getCode());
 
@@ -57,18 +57,18 @@ public class AuthorizationCodeFlow extends TokenRequest {
                 client = authServer.getClientList().getClient(getClientId());
             }
         } catch (Exception e) {
-            return OAuth2Util.createParameterizedJsonErrorResponse(exc,jsonGen, "error", "invalid_client");
+            return OAuth2Util.createParameterizedJsonErrorResponse(jsonGen, "error", "invalid_client");
         }
 
         if(!getClientSecret().equals(client.getClientSecret()))
-            return OAuth2Util.createParameterizedJsonErrorResponse(exc,jsonGen, "error", "unauthorized_client");
+            return OAuth2Util.createParameterizedJsonErrorResponse(jsonGen, "error", "unauthorized_client");
 
         if(!OAuth2Util.isAbsoluteUri(getRedirectUri()) || !getRedirectUri().equals(client.getCallbackUrl()))
-            return OAuth2Util.createParameterizedJsonErrorResponse(exc, jsonGen,"error", "invalid_request");
+            return OAuth2Util.createParameterizedJsonErrorResponse(jsonGen,"error", "invalid_request");
 
         String grantTypes = client.getGrantTypes();
         if (!grantTypes.contains(getGrantType())) {
-			return OAuth2Util.createParameterizedJsonErrorResponse(exc, jsonGen, "error", "invalid_grant_type");
+			return OAuth2Util.createParameterizedJsonErrorResponse(jsonGen, "error", "invalid_grant_type");
         }
         
         scope = getScope(session);

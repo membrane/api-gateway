@@ -13,32 +13,18 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.server;
 
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.Map;
-import java.util.Queue;
+import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.resolver.*;
+import com.predic8.membrane.core.proxies.*;
+import com.predic8.membrane.core.util.*;
+import com.predic8.membrane.core.ws.relocator.Relocator.*;
+import org.slf4j.*;
 
-import javax.annotation.concurrent.GuardedBy;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.MimeType;
-import com.predic8.membrane.core.http.Response;
-import com.predic8.membrane.core.interceptor.AbstractInterceptor;
-import com.predic8.membrane.core.interceptor.Outcome;
-import com.predic8.membrane.core.interceptor.WSDLInterceptor;
-import com.predic8.membrane.core.resolver.ResolverMap;
-import com.predic8.membrane.core.resolver.ResourceRetrievalException;
-import com.predic8.membrane.core.rules.Rule;
-import com.predic8.membrane.core.rules.SOAPProxy;
-import com.predic8.membrane.core.util.HttpUtil;
-import com.predic8.membrane.core.util.URLParamUtil;
-import com.predic8.membrane.core.util.URLUtil;
-import com.predic8.membrane.core.ws.relocator.Relocator.PathRewriter;
+import javax.annotation.concurrent.*;
+import java.util.*;
 
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 
@@ -92,7 +78,7 @@ public class WSDLPublisherInterceptor extends AbstractInterceptor {
 						path = Integer.toString(n);
 					}
 				}
-				path = "./" + URLUtil.getName(router.getUriFactory(), exc.getDestinations().get(0)) + "?xsd=" + path;
+				path = "./" + URLUtil.getName(router.getUriFactory(), exc.getDestinations().getFirst()) + "?xsd=" + path;
 			} catch (Exception e) {
 				throw new RuntimeException(e);
 			}
@@ -116,7 +102,7 @@ public class WSDLPublisherInterceptor extends AbstractInterceptor {
 					String doc = documents_to_process.poll();
 					if (doc == null)
 						break;
-					log.debug("WSDLPublisherInterceptor: processing " + doc);
+					log.debug("WSDLPublisherInterceptor: processing {}",doc);
 
 					exc.setResponse(WebServerInterceptor.createResponse(router.getResolverMap(), doc));
 					WSDLInterceptor wi = new WSDLInterceptor();
@@ -125,7 +111,7 @@ public class WSDLPublisherInterceptor extends AbstractInterceptor {
 					wi.handleResponse(exc);
 				}
 			} catch (ResourceRetrievalException e) {
-				log.error("Could not recursively load all documents referenced by '"+wsdl+"'.", e);
+				log.error("Could not recursively load all documents referenced by {}.", wsdl,e);
 			}
 		}
 	}
@@ -152,10 +138,10 @@ public class WSDLPublisherInterceptor extends AbstractInterceptor {
 	}
 
 	@Override
-	public void init() throws Exception {
+	public void init() {
 		// inherit wsdl="..." from SoapProxy
 		if (wsdl == null) {
-			Rule parent = router.getParentProxy(this);
+			Proxy parent = router.getParentProxy(this);
 			if (parent instanceof SOAPProxy) {
 				wsdl = ((SOAPProxy)parent).getWsdl();
 				setWsdl(wsdl);

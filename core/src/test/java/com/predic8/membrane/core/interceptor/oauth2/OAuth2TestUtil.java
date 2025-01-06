@@ -16,7 +16,7 @@ package com.predic8.membrane.core.interceptor.oauth2;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.oauth2.tokengenerators.BearerJwtTokenGenerator;
-import com.predic8.membrane.core.rules.NullRule;
+import com.predic8.membrane.core.proxies.NullProxy;
 
 import java.io.IOException;
 
@@ -26,22 +26,23 @@ public class OAuth2TestUtil {
 
     static String getMockClaims() throws IOException {
         ReusableJsonGenerator jsonGen = new ReusableJsonGenerator();
-        JsonGenerator gen = jsonGen.resetAndGet();
-        gen.writeStartObject();
+        try (JsonGenerator gen = jsonGen.resetAndGet()) {
+            gen.writeStartObject();
             gen.writeObjectFieldStart("userinfo");
-                gen.writeObjectField("email",null);
+            gen.writeObjectField("email", null);
             gen.writeEndObject();
             gen.writeObjectFieldStart("id_token");
-                gen.writeObjectField("sub",null);
-                gen.writeObjectField("email",null);
+            gen.writeObjectField("sub", null);
+            gen.writeObjectField("email", null);
             gen.writeEndObject();
-        gen.writeEndObject();
-        return jsonGen.getJson();
+            gen.writeEndObject();
+            return jsonGen.getJson();
+        }
     }
 
-    public static void makeExchangeValid(Exchange exc) throws Exception {
+    public static void makeExchangeValid(Exchange exc) {
         exc.setOriginalRequestUri(exc.getRequest().getUri());
-        exc.setRule(new NullRule());
+        exc.setRule(new NullProxy());
     }
 
     public static void useJWTForAccessTokensAndRefreshTokens(OAuth2AuthorizationServerInterceptor oasi) {

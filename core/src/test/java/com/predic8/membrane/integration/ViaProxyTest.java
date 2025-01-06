@@ -13,22 +13,14 @@
    limitations under the License. */
 package com.predic8.membrane.integration;
 
-import com.predic8.membrane.core.HttpRouter;
-import com.predic8.membrane.core.RuleManager.RuleDefinitionSource;
-import com.predic8.membrane.core.config.security.SSLParser;
-import com.predic8.membrane.core.rules.ProxyRule;
-import com.predic8.membrane.core.rules.ProxyRuleKey;
-import com.predic8.membrane.core.rules.ServiceProxy;
-import com.predic8.membrane.core.rules.ServiceProxyKey;
-import com.predic8.membrane.core.transport.http.client.ProxyConfiguration;
-import org.apache.commons.httpclient.HttpClient;
-import org.apache.commons.httpclient.methods.PostMethod;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
+import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.RuleManager.*;
+import com.predic8.membrane.core.config.security.*;
+import com.predic8.membrane.core.proxies.*;
+import com.predic8.membrane.core.transport.http.client.*;
+import org.junit.jupiter.api.*;
 
 import static io.restassured.RestAssured.*;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 
 
 public class ViaProxyTest {
@@ -62,7 +54,7 @@ public class ViaProxyTest {
 	}
 
 	@AfterAll
-	public static void tearDown() throws Exception {
+	public static void tearDown() {
 		router.shutdown();
 		proxyRouter.shutdown();
 	}

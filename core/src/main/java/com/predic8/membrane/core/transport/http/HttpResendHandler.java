@@ -14,54 +14,46 @@
 
 package com.predic8.membrane.core.transport.http;
 
-import java.io.IOException;
-import java.net.InetAddress;
+import com.predic8.membrane.core.exchange.*;
+import org.slf4j.*;
 
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.util.EndOfStreamException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import java.net.*;
 
 
 public class HttpResendHandler extends AbstractHttpHandler implements Runnable {
-	private static Logger log = LoggerFactory.getLogger(HttpResendHandler.class.getName());
+    private static final Logger log = LoggerFactory.getLogger(HttpResendHandler.class.getName());
 
-	public HttpResendHandler(Exchange exc, HttpTransport transport) {
-		super(transport);
-		exchange = new Exchange(exc, this);
+    public HttpResendHandler(Exchange exc, HttpTransport transport) {
+        super(transport);
+        exchange = new Exchange(exc, this);
 
-		srcReq = exc.getRequest();
-	}
-
-	public void run() {
-		try {
-			exchange.setRequest(srcReq);
-			try {
-				invokeHandlers();
-			} catch (AbortException e) {
-				exchange.finishExchange(true, exchange.getErrorMessage());
-				return;
-			}
-			exchange.setCompleted();
-			return;
-		} catch (IOException | EndOfStreamException e) {
-			log.warn("", e);
-		}
+        srcReq = exc.getRequest();
     }
 
-	@Override
-	public void shutdownInput() {
-		// do nothing
-	}
+    public void run() {
+        exchange.setRequest(srcReq);
+        try {
+            invokeHandlers();
+        } catch (AbortException e) {
+            exchange.finishExchange(true, exchange.getErrorMessage());
+            return;
+        }
+        exchange.setCompleted();
+    }
 
-	@Override
-	public InetAddress getLocalAddress() {
-		return null;
-	}
+    @Override
+    public void shutdownInput() {
+        // do nothing
+    }
 
-	@Override
-	public int getLocalPort() {
-		return 0;
-	}
+    @Override
+    public InetAddress getLocalAddress() {
+        return null;
+    }
+
+    @Override
+    public int getLocalPort() {
+        return 0;
+    }
 
 }

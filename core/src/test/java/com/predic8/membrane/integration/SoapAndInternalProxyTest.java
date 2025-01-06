@@ -13,52 +13,42 @@
    limitations under the License. */
 package com.predic8.membrane.integration;
 
-import com.google.common.collect.Lists;
-import com.predic8.membrane.core.HttpRouter;
-import com.predic8.membrane.core.Router;
-import com.predic8.membrane.core.config.Path;
+import com.google.common.collect.*;
+import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.config.*;
 import com.predic8.membrane.core.config.security.Certificate;
 import com.predic8.membrane.core.config.security.Key;
-import com.predic8.membrane.core.config.security.SSLParser;
-import com.predic8.membrane.core.config.security.Trust;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Request;
-import com.predic8.membrane.core.http.Response;
-import com.predic8.membrane.core.interceptor.AbstractInterceptor;
-import com.predic8.membrane.core.interceptor.Outcome;
-import com.predic8.membrane.core.interceptor.WSDLInterceptor;
-import com.predic8.membrane.core.interceptor.server.WSDLPublisherInterceptor;
-import com.predic8.membrane.core.interceptor.soap.SampleSoapServiceInterceptor;
-import com.predic8.membrane.core.rules.*;
-import com.predic8.membrane.core.transport.http.HttpClient;
-import org.bouncycastle.asn1.x500.X500Name;
+import com.predic8.membrane.core.config.security.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.interceptor.server.*;
+import com.predic8.membrane.core.interceptor.soap.*;
+import com.predic8.membrane.core.openapi.serviceproxy.*;
+import com.predic8.membrane.core.proxies.*;
+import com.predic8.membrane.core.transport.http.*;
+import org.bouncycastle.asn1.x500.*;
 import org.bouncycastle.asn1.x509.Extension;
-import org.bouncycastle.asn1.x509.GeneralName;
-import org.bouncycastle.asn1.x509.GeneralNames;
-import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
-import org.bouncycastle.cert.X509v3CertificateBuilder;
-import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import org.bouncycastle.openssl.jcajce.JcaPEMWriter;
-import org.bouncycastle.operator.ContentSigner;
-import org.bouncycastle.operator.OperatorCreationException;
-import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
-import org.junit.jupiter.api.Test;
+import org.bouncycastle.asn1.x509.*;
+import org.bouncycastle.cert.*;
+import org.bouncycastle.cert.jcajce.*;
+import org.bouncycastle.jce.provider.*;
+import org.bouncycastle.openssl.jcajce.*;
+import org.bouncycastle.operator.*;
+import org.bouncycastle.operator.jcajce.*;
+import org.jetbrains.annotations.*;
+import org.junit.jupiter.api.*;
 
-import javax.security.auth.x500.X500Principal;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.StringWriter;
-import java.math.BigInteger;
-import java.net.URISyntaxException;
-import java.nio.charset.StandardCharsets;
+import javax.security.auth.x500.*;
+import java.io.*;
+import java.math.*;
 import java.security.*;
-import java.security.cert.CertificateException;
-import java.security.cert.X509Certificate;
+import java.security.cert.*;
 import java.util.*;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.*;
 
-import static java.util.Objects.requireNonNull;
+import static java.nio.charset.StandardCharsets.*;
+import static java.util.Objects.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -109,23 +99,26 @@ public class SoapAndInternalProxyTest {
     }
 
     private void runCheck(boolean checkTrigger) throws Exception {
-        HttpClient hc = new HttpClient();
-        Response r1 = hc.call(new Request.Builder().get("http://localhost:3047/b?wsdl").buildExchange()).getResponse();
-        //r1.write(System.out, true);
-        assertTrue(r1.getBodyAsStringDecoded().contains("\"https://a.b.local/b\""));
+        try(HttpClient hc = new HttpClient()) {
+            Response r1 = hc.call(new Request.Builder().get("http://localhost:3047/b?wsdl").buildExchange()).getResponse();
+            //r1.write(System.out, true);
+            assertTrue(r1.getBodyAsStringDecoded().contains("\"https://a.b.local/b\""));
 
-        if (checkTrigger)
-            assertTrue(trigger.getAndSet(false));
+            if (checkTrigger)
+                assertTrue(trigger.getAndSet(false));
 
+            Response r2 = hc.call(new Request.Builder().post("http://localhost:3047/b").body(getBody()).buildExchange()).getResponse();
+            //r2.write(System.out,true);
 
-        String body = new String(requireNonNull(this.getClass().getResourceAsStream("/get-city.xml")).readAllBytes(), StandardCharsets.UTF_8);
+            assertTrue(r2.getBodyAsStringDecoded().contains("population"));
 
-        Response r2 = hc.call(new Request.Builder().post("http://localhost:3047/b").body(body).buildExchange()).getResponse();
-        //r2.write(System.out,true);
-        assertTrue(r2.getBodyAsStringDecoded().contains("population"));
+            if (checkTrigger)
+                assertTrue(trigger.getAndSet(false));
+        }
+    }
 
-        if (checkTrigger)
-            assertTrue(trigger.getAndSet(false));
+    private @NotNull String getBody() throws IOException {
+        return new String(requireNonNull(this.getClass().getResourceAsStream("/get-city.xml")).readAllBytes(), UTF_8);
     }
 
     private void generateKeyAndCert() throws NoSuchAlgorithmException, OperatorCreationException, CertificateException, IOException {
@@ -209,8 +202,8 @@ public class SoapAndInternalProxyTest {
         return sp;
     }
 
-    private Rule createInternalProxy(boolean useTLS) throws Exception {
-        InternalProxy internalProxy = new InternalProxy();
+    private Proxy createInternalProxy(boolean useTLS) throws Exception {
+        APIProxy internalProxy = new APIProxy();
         internalProxy.setName("int");
         AbstractServiceProxy.Target target = new AbstractServiceProxy.Target();
         if (useTLS) {
@@ -236,7 +229,7 @@ public class SoapAndInternalProxyTest {
         return internalProxy;
     }
 
-    private Rule createSoapProxy() {
+    private Proxy createSoapProxy() {
         SOAPProxy soapProxy = new SOAPProxy();
         soapProxy.setPort(3047);
         soapProxy.setWsdl("service:int/?wsdl");

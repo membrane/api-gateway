@@ -17,10 +17,9 @@
 package com.predic8.membrane.core.interceptor.flow.invocation;
 
 import com.predic8.membrane.core.*;
-import com.predic8.membrane.core.exchangestore.*;
 import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.interceptor.flow.invocation.testinterceptors.*;
-import com.predic8.membrane.core.rules.*;
+import com.predic8.membrane.core.openapi.serviceproxy.*;
+import com.predic8.membrane.core.proxies.*;
 import com.predic8.membrane.core.transport.http.*;
 import org.jetbrains.annotations.*;
 import org.junit.jupiter.api.*;
@@ -28,45 +27,52 @@ import org.junit.jupiter.api.*;
 import java.util.*;
 
 import static io.restassured.RestAssured.*;
+import static java.util.Collections.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 abstract class AbstractInterceptorFlowTest {
 
-    protected abstract List<Interceptor> interceptors();
+    private static Router router;
 
-    protected abstract String flow();
+    @BeforeAll
+    static void setUp() {
+        router = getRouter();
+    }
 
-    @Test
-    void runFlow() throws Exception {
-        Router router = getRouter();
-        ServiceProxy api = getServiceProxy();
-
-        List<Interceptor> i = api.getInterceptors();
-        i.addAll(interceptors());
-        i.add(new EchoTestInterceptor());
-        router.add(api);
-        router.init();
-        call();
+    @AfterAll
+    static void tearDown() {
         router.shutdown();
     }
 
-    private void call() {
-        assertEquals(flow(),given().post("http://localhost:2000").getBody().asString());
+    protected void assertFlow(String expected,Interceptor... interceptors) throws Exception {
+        setUpRouter(interceptors);
+        assertEquals(expected, given().post("http://localhost:2000").getBody().asString());
+    }
+
+    private void setUpRouter(Interceptor[] interceptors) throws Exception {
+        router.setRules(EMPTY_LIST);
+        router.add(getApiProxy(interceptors));
+        router.init();
+    }
+
+    private static @NotNull APIProxy getApiProxy(Interceptor[] interceptors) {
+        APIProxy api = getServiceProxy();
+        api.getInterceptors().addAll(Arrays.asList(interceptors));
+        api.getInterceptors().add(new EchoInterceptor());
+        return api;
     }
 
     @NotNull
-    private static ServiceProxy getServiceProxy() {
-        ServiceProxy api = new ServiceProxy();
+    private static APIProxy getServiceProxy() {
+        APIProxy api = new APIProxy();
         api.setKey(new ServiceProxyKey("*","*",null,2000));
         return api;
     }
 
     @NotNull
     private static Router getRouter() {
-        Router router = new Router();
-        router.setTransport(new HttpTransport());
-        router.setExchangeStore(new ForgetfulExchangeStore());
-        return router;
+        Router r = new Router();
+        r.setTransport(new HttpTransport());
+        return r;
     }
-
 }

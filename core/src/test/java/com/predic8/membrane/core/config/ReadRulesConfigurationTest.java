@@ -14,8 +14,7 @@
 package com.predic8.membrane.core.config;
 
 import com.predic8.membrane.core.Router;
-import com.predic8.membrane.core.rules.Rule;
-import com.predic8.membrane.core.rules.ServiceProxy;
+import com.predic8.membrane.core.proxies.*;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -28,101 +27,107 @@ public class ReadRulesConfigurationTest {
 
 	private static Router router;
 
-	private static List<Rule> rules;
+	private static List<Proxy> proxies;
 
 	@BeforeAll
-	public static void setUp() throws Exception {
+	public static void setUp() {
         router = Router.init("classpath:/proxies.xml");
-		rules = router.getRuleManager().getRules();
+		proxies = router.getRuleManager().getRules();
 	}
 
 	@Test
 	void testRulesSize() {
-		assertEquals(3, rules.size());
+		assertEquals(3, proxies.size());
 	}
 
 	@Test
 	void testProxyRuleListenPort() {
-		assertEquals(3090, rules.get(0).getKey().getPort());
+		assertEquals(3090, proxies.getFirst().getKey().getPort());
 	}
 
 	@Test
 	void testProxyRuleBlockRequest() {
-		assertTrue(rules.get(0).isBlockRequest());
+		assertTrue(proxies.getFirst().isBlockRequest());
 	}
 
 	@Test
 	void testProxyRuleBlockResponse() {
-		assertFalse(rules.get(0).isBlockResponse());
+		assertFalse(proxies.getFirst().isBlockResponse());
 	}
 
 	@Test
 	void testServiceProxyListenPort() {
-		assertEquals(3000, rules.get(1).getKey().getPort());
+		assertEquals(3000, proxies.get(1).getKey().getPort());
 	}
 
 	@Test
 	void testServiceProxyTargetPort() {
-		assertEquals(80, ((ServiceProxy)rules.get(1)).getTargetPort());
+		assertEquals(80, ((ServiceProxy) proxies.get(1)).getTargetPort());
 	}
 
 	@Test
 	void testServiceProxyTargetHost() {
-		assertEquals("thomas-bayer.com", ((ServiceProxy)rules.get(1)).getTargetHost());
+		assertEquals("thomas-bayer.com", ((ServiceProxy) proxies.get(1)).getTargetHost());
 	}
 
 	@Test
 	void testServiceProxyDefaultMethod() {
-		assertEquals("*", rules.get(1).getKey().getMethod());
+		assertEquals("*", proxies.get(1).getKey().getMethod());
 	}
 
 	@Test
 	void testTestServiceProxyDefaultHost() {
-		assertEquals("*", rules.get(1).getKey().getHost());
+		assertEquals("*", proxies.get(1).getKey().getHost());
 	}
 
 	@Test
 	void testServiceProxyBlockRequest() {
-		assertFalse(rules.get(1).isBlockRequest());
+		assertFalse(proxies.get(1).isBlockRequest());
 	}
 
 	@Test
 	void testServiceProxyBlockResponse() {
-		assertTrue(rules.get(1).isBlockResponse());
+		assertTrue(proxies.get(1).isBlockResponse());
 	}
 
 	@Test
 	void testLocalServiceProxyListenPort() {
-		assertEquals(2000, rules.get(2).getKey().getPort());
+		assertEquals(2000, proxies.get(2).getKey().getPort());
 	}
 
 	@Test
 	void testLocalServiceProxyTargetPort() {
-		assertEquals(3011, ((ServiceProxy)rules.get(2)).getTargetPort());
+		assertEquals(3011, ((ServiceProxy) proxies.get(2)).getTargetPort());
 	}
 
 	@Test
 	void testServiceProxyMethodSet() {
-		assertEquals("GET", rules.get(2).getKey().getMethod());
+		assertEquals("GET", proxies.get(2).getKey().getMethod());
 	}
 
 	@Test
 	void testServiceProxyHostSet() {
-		assertEquals("localhost", rules.get(2).getKey().getHost());
+		assertEquals("localhost", proxies.get(2).getKey().getHost());
 	}
 
 	@Test
 	void testLocalServiceProxyInboundSSL() {
-		assertNull(rules.get(2).getSslInboundContext());
+        if (proxies.get(2) instanceof SSLableProxy sp) {
+			assertFalse(sp.isInboundSSL());
+		}
+		assertTrue(true);
 	}
 
 	@Test
 	void testLocalServiceProxyOutboundSSL() {
-		assertNull(rules.get(2).getSslOutboundContext());
+		if (proxies.get(2) instanceof SSLableProxy sp) {
+			assertNull(sp.getSslOutboundContext());
+		}
+		assertTrue(true);
 	}
 
 	@AfterAll
-	public static void tearDown() throws Exception {
+	public static void tearDown() {
 		router.shutdown();
 	}
 

@@ -13,22 +13,25 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.oauth2client;
 
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.exchange.snapshots.AbstractExchangeSnapshot;
-import com.predic8.membrane.core.http.BodyCollectingMessageObserver;
-import com.predic8.membrane.core.interceptor.Interceptor;
-import com.predic8.membrane.core.interceptor.session.Session;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.exchange.snapshots.*;
+import com.predic8.membrane.core.interceptor.session.*;
 
-import java.io.IOException;
+import java.io.*;
+
+import static com.predic8.membrane.core.http.BodyCollectingMessageObserver.Strategy.*;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
 
 public abstract class OriginalExchangeStore {
     public abstract void store(Exchange exchange, Session session, String state, Exchange exchangeToStore) throws IOException;
 
     protected AbstractExchangeSnapshot getTrimmedAbstractExchangeSnapshot(Exchange exchangeToStore, int limit) throws IOException {
-        AbstractExchangeSnapshot excSnapshot = new AbstractExchangeSnapshot(exchangeToStore, Interceptor.Flow.REQUEST, null, BodyCollectingMessageObserver.Strategy.ERROR, limit);
+        AbstractExchangeSnapshot excSnapshot = new AbstractExchangeSnapshot(exchangeToStore, REQUEST, null, ERROR, limit);
         // trim the exchange as far as possible to save space
         excSnapshot.getRequest().getHeader().remove("Cookie");
         excSnapshot.setResponse(null);
+        FakeProxy p = excSnapshot.getRule();
+        System.out.println("p.getKey() = " + p.getKey());
         return excSnapshot;
     }
 

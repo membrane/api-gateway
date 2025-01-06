@@ -15,36 +15,31 @@
  */
 package com.predic8.membrane.plugin;
 
-import com.predic8.membrane.core.Router;
-import org.apache.maven.plugin.MojoFailureException;
+import com.predic8.membrane.core.*;
 
-import java.net.MalformedURLException;
-import java.util.concurrent.TimeUnit;
+import static java.lang.Long.*;
+import static java.util.concurrent.TimeUnit.*;
 
 class RouterFacade {
-	private final Router router;
+    private final Router router;
 
-	private RouterFacade(Router router) {
-		this.router = router;
-	}
+    private RouterFacade(Router router) {
+        this.router = router;
+    }
 
-	static RouterFacade createStarted(String proxiesPath) throws MojoFailureException {
-		try {
-			return new RouterFacade(Router.init(proxiesPath));
-		} catch (MalformedURLException e) {
-			throw new MojoFailureException("Failure", e);
-		}
-	}
+    static RouterFacade createStarted(String proxiesPath) {
+        return new RouterFacade(Router.init(proxiesPath));
+    }
 
-	void stop() {
-		router.stop();
-	}
+    void stop() {
+        router.stop();
+    }
 
-	void waitForFinish() {
-		try {
-			router.getBackgroundInitializator().awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
-		} catch (InterruptedException e) {
-			Thread.currentThread().interrupt();
-		}
-	}
+    void waitForFinish() {
+        try {
+            router.getBackgroundInitializator().awaitTermination(MAX_VALUE, NANOSECONDS);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+    }
 }

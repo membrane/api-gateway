@@ -13,18 +13,15 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.server;
 
-import com.predic8.membrane.core.HttpRouter;
-import com.predic8.membrane.core.rules.ServiceProxy;
-import com.predic8.membrane.core.rules.ServiceProxyKey;
-import com.predic8.membrane.test.WSDLTestUtil;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.MethodSource;
+import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.proxies.*;
+import com.predic8.membrane.test.*;
+import org.junit.jupiter.params.*;
+import org.junit.jupiter.params.provider.*;
 
-import java.io.IOException;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class WSDLPublisherTest {
 
@@ -48,7 +45,7 @@ public class WSDLPublisherTest {
 		router.init();
 	}
 
-	void after() throws IOException {
+	void after() {
 		router.shutdown();
 	}
 

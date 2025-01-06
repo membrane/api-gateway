@@ -13,32 +13,26 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.oauth2.client.b2c;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.predic8.membrane.core.HttpRouter;
-import com.predic8.membrane.core.config.Path;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Header;
-import com.predic8.membrane.core.http.Response;
-import com.predic8.membrane.core.interceptor.AbstractInterceptor;
-import com.predic8.membrane.core.interceptor.Outcome;
-import com.predic8.membrane.core.interceptor.oauth2.OAuth2AnswerParameters;
-import com.predic8.membrane.core.interceptor.oauth2.authorizationservice.MembraneAuthorizationService;
-import com.predic8.membrane.core.interceptor.oauth2client.FlowInitiator;
-import com.predic8.membrane.core.interceptor.oauth2client.LoginParameter;
-import com.predic8.membrane.core.interceptor.oauth2client.OAuth2Resource2Interceptor;
-import com.predic8.membrane.core.interceptor.oauth2client.RequireAuth;
-import com.predic8.membrane.core.interceptor.session.SessionManager;
-import com.predic8.membrane.core.rules.ServiceProxy;
-import com.predic8.membrane.core.rules.ServiceProxyKey;
-import org.jetbrains.annotations.NotNull;
+import com.fasterxml.jackson.databind.*;
+import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.config.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.interceptor.oauth2.*;
+import com.predic8.membrane.core.interceptor.oauth2.authorizationservice.*;
+import com.predic8.membrane.core.interceptor.oauth2client.*;
+import com.predic8.membrane.core.interceptor.session.*;
+import com.predic8.membrane.core.proxies.*;
+import org.jetbrains.annotations.*;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.function.Consumer;
+import java.util.*;
+import java.util.function.*;
 
-import static com.predic8.membrane.core.RuleManager.RuleDefinitionSource.MANUAL;
-import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
+import static com.predic8.membrane.core.RuleManager.RuleDefinitionSource.*;
+import static com.predic8.membrane.core.http.MimeType.*;
+import static com.predic8.membrane.core.http.Response.*;
+import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
 
 /**
  * A locally running Membrane with various B2C features to test (1 ServiceProxy per feature). Primarily:
@@ -133,8 +127,8 @@ public class B2CMembrane {
 
                 boolean isLoggedIn = oAuth2ResourceInterceptor.getSessionManager().getSession(exc).isVerified();
 
-                exc.setResponse(Response.ok("{\"success\":" + isLoggedIn + "}").header(Header.CONTENT_TYPE, APPLICATION_JSON).build());
-                return Outcome.RETURN;
+                exc.setResponse(ok("{\"success\":" + isLoggedIn + "}").header(Header.CONTENT_TYPE, APPLICATION_JSON).build());
+                return RETURN;
             }
         });
         sp.getInterceptors().add(oAuth2ResourceInterceptor);
@@ -158,7 +152,7 @@ public class B2CMembrane {
 
     private @NotNull MembraneAuthorizationService createMembraneAuthorizationService() {
         MembraneAuthorizationService auth = new MembraneAuthorizationService();
-        auth.setSrc("http://localhost:"+MockAuthorizationServer.SERVER_PORT +"/" + tc.tenantId.toString() + "/" + tc.susiFlowId + "/v2.0");
+        auth.setSrc("http://localhost:" + MockAuthorizationServer.SERVER_PORT + "/" + tc.tenantId + "/" + tc.susiFlowId + "/v2.0");
         auth.setClientId(tc.clientId);
         auth.setClientSecret(tc.clientSecret);
         auth.setScope("openid profile offline_access");
@@ -195,9 +189,9 @@ public class B2CMembrane {
 
         sp.getInterceptors().add(new AbstractInterceptor() {
             @Override
-            public Outcome handleRequest(Exchange exc) throws Exception {
-                exc.setResponse(Response.ok().body("You have been logged out.").build());
-                return Outcome.RETURN;
+            public Outcome handleRequest(Exchange exc) {
+                exc.setResponse(ok().body("You have been logged out.").build());
+                return RETURN;
             }
         });
 
@@ -231,8 +225,8 @@ public class B2CMembrane {
                 body.put("method", exc.getRequest().getMethod());
                 body.put("body", exc.getRequest().getBodyAsStringDecoded());
 
-                exc.setResponse(Response.ok(om.writeValueAsString(body)).build());
-                return Outcome.RETURN;
+                exc.setResponse(ok(om.writeValueAsString(body)).build());
+                return RETURN;
             }
         };
     }

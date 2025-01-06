@@ -13,27 +13,20 @@
    limitations under the License. */
 package com.predic8.membrane.core.transport.http;
 
-import static com.predic8.membrane.core.util.TextUtil.isNullOrEmpty;
-
-import java.io.*;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
-import java.net.Socket;
-import java.net.UnknownHostException;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.transport.http.client.*;
+import com.predic8.membrane.core.transport.ssl.*;
+import org.jetbrains.annotations.*;
+import org.slf4j.*;
 
 import javax.annotation.Nullable;
-import javax.net.ssl.SSLSocket;
+import javax.net.ssl.*;
+import java.io.*;
+import java.net.*;
 
-import com.predic8.membrane.core.Constants;
-import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.transport.http.client.ProxyConfiguration;
-import com.predic8.membrane.core.transport.http2.Http2Client;
-import com.predic8.membrane.core.transport.ssl.SSLContext;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.transport.ssl.SSLProvider;
+import static com.predic8.membrane.core.Constants.*;
+import static com.predic8.membrane.core.util.TextUtil.*;
 
 /**
  * A {@link Connection} is an outbound TCP/IP connection, possibly managed
@@ -51,7 +44,7 @@ import com.predic8.membrane.core.transport.ssl.SSLProvider;
  */
 public class Connection implements Closeable, MessageObserver, NonRelevantBodyObserver {
 
-	private static Logger log = LoggerFactory.getLogger(Connection.class.getName());
+	private static final Logger log = LoggerFactory.getLogger(Connection.class.getName());
 
 	public final ConnectionManager mgr;
 	public final String host;
@@ -59,8 +52,7 @@ public class Connection implements Closeable, MessageObserver, NonRelevantBodyOb
     private final String sniServerName;
 	private final ProxyConfiguration proxyConfiguration;
 	private final SSLProvider proxySSLProvider;
-	private final String[] applicationProtocols;
-	public Socket socket;
+    public Socket socket;
 	public InputStream in;
 	public OutputStream out;
 
@@ -72,13 +64,13 @@ public class Connection implements Closeable, MessageObserver, NonRelevantBodyOb
 	private Exchange exchange;
 	private boolean keepAttachedToExchange;
 
-	public static Connection open(String host, int port, String localHost, SSLProvider sslProvider, int connectTimeout) throws UnknownHostException, IOException {
+	public static Connection open(String host, int port, String localHost, SSLProvider sslProvider, int connectTimeout) throws IOException {
 		return open(host, port, localHost, sslProvider, null, connectTimeout);
 	}
 
 	public static Connection open(String host, int port, String localHost, SSLProvider sslProvider, ConnectionManager mgr,
 								  int connectTimeout, @Nullable String sniServername, @Nullable ProxyConfiguration proxy,
-								  @Nullable SSLProvider proxySSLProvider, @Nullable String[] applicationProtocols) throws UnknownHostException, IOException {
+								  @Nullable SSLProvider proxySSLProvider, @Nullable String[] applicationProtocols) throws IOException {
 		Connection con = new Connection(mgr, host, sslProvider, sniServername, proxy, proxySSLProvider, applicationProtocols);
 
 		String origHost = host;
@@ -113,7 +105,7 @@ public class Connection implements Closeable, MessageObserver, NonRelevantBodyOb
 			con.socket = origSSLProvider.createSocket(con.socket, origHost, origPort, connectTimeout, origSniServername, applicationProtocols);
 		}
 
-		log.debug("Opened connection on localPort: " + con.socket.getLocalPort());
+		log.debug("Opened connection on localPort: {}", con.socket.getLocalPort());
 		//Creating output stream before input stream is suggested.
 		con.out = new BufferedOutputStream(con.socket.getOutputStream(), 2048);
 		con.in = new BufferedInputStream(con.socket.getInputStream(), 2048);
@@ -121,7 +113,7 @@ public class Connection implements Closeable, MessageObserver, NonRelevantBodyOb
 		return con;
 	}
 
-	public static Connection open(String host, int port, String localHost, SSLProvider sslProvider, ConnectionManager mgr, int connectTimeout) throws UnknownHostException, IOException {
+	public static Connection open(String host, int port, String localHost, SSLProvider sslProvider, ConnectionManager mgr, int connectTimeout) throws IOException {
 		return open(host, port, localHost, sslProvider, mgr, connectTimeout, null, null, null, null);
 	}
 
@@ -132,8 +124,7 @@ public class Connection implements Closeable, MessageObserver, NonRelevantBodyOb
         this.sniServerName = sniServerName;
 		this.proxyConfiguration = proxy;
 		this.proxySSLProvider = proxySSLProvider;
-		this.applicationProtocols = applicationProtocols;
-	}
+    }
 
 	public boolean isSame(String host, int port) {
 		return socket != null && host.equals(this.host) && port == socket.getPort();
@@ -143,7 +134,7 @@ public class Connection implements Closeable, MessageObserver, NonRelevantBodyOb
 		if (socket == null)
 			return;
 
-		log.debug("Closing HTTP connection LocalPort: " + socket.getLocalPort());
+		log.debug("Closing HTTP connection LocalPort: {}", socket.getLocalPort());
 
 		try {
 			if (in != null)
@@ -329,34 +320,16 @@ public class Connection implements Closeable, MessageObserver, NonRelevantBodyOb
 	private void doTunnelHandshake(ProxyConfiguration proxy, Socket tunnel, String host, int port)
 			throws IOException {
 		if (log.isDebugEnabled())
-			log.debug("send 'CONNECT " + host + ":" + port + "' to " + proxy.getHost() + ((proxy.isAuthentication()) ? " authenticated" : "") );
+			log.debug("send 'CONNECT {}:{}' to {}", host, port, getHostString(proxy));
 		OutputStream out = tunnel.getOutputStream();
-		String msg = "CONNECT " + host + ":" + port + " HTTP/1.0\r\n"
-				+ "User-Agent: " + Constants.USERAGENT + "\r\n"
-				+ (proxy.isAuthentication() ? ("Proxy-Authorization: " + proxy.getCredentials() + "\r\n") : "")
-				+ "\r\n";
-		byte b[];
-		try {
-          /*
-           * We really do want ASCII7 -- the http protocol doesn't change
-           * with locale.
-           */
-			b = msg.getBytes("ASCII7");
-		} catch (UnsupportedEncodingException ignored) {
-          /*
-           * If ASCII7 isn't there, something serious is wrong, but
-           * Paranoia Is Good (tm)
-           */
-			b = msg.getBytes();
-		}
-		out.write(b);
+		out.write(createConnectMessage(proxy, host, port));
 		out.flush();
 
       /*
        * We need to store the reply so we can create a detailed
        * error message to the user.
        */
-		byte            reply[] = new byte[1024];
+		byte[] 			reply = new byte[1024];
 		int             replyLen = 0;
 		int             newlinesSeen = 0;
 		boolean         headerDone = false;     /* Done on first newline */
@@ -399,6 +372,32 @@ public class Connection implements Closeable, MessageObserver, NonRelevantBodyOb
 		}
 
       /* tunneling Handshake was successful! */
+	}
+
+	private static @NotNull String getHostString(ProxyConfiguration proxy) {
+		return proxy.getHost() + ((proxy.isAuthentication()) ? " authenticated" : "");
+	}
+
+	private static byte @NotNull [] createConnectMessage(ProxyConfiguration proxy, String host, int port) {
+		String msg = "CONNECT " + host + ":" + port + " HTTP/1.0\r\n"
+					 + "User-Agent: " + USERAGENT + "\r\n"
+					 + (proxy.isAuthentication() ? ("Proxy-Authorization: " + proxy.getCredentials() + "\r\n") : "")
+					 + "\r\n";
+		byte b[];
+		try {
+          /*
+           * We really do want ASCII7 -- the http protocol doesn't change
+           * with locale.
+           */
+			b = msg.getBytes("ASCII7");
+		} catch (UnsupportedEncodingException ignored) {
+          /*
+           * If ASCII7 isn't there, something serious is wrong, but
+           * Paranoia Is Good (tm)
+           */
+			b = msg.getBytes();
+		}
+		return b;
 	}
 
 	public SSLProvider getSslProvider() {

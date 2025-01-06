@@ -18,16 +18,16 @@ package com.predic8.membrane.core.openapi.serviceproxy;
 
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.lang.spel.*;
-import com.predic8.membrane.core.rules.*;
+import com.predic8.membrane.core.proxies.*;
 import org.slf4j.*;
 import org.springframework.expression.*;
-import org.springframework.expression.spel.SpelCompilerMode;
-import org.springframework.expression.spel.SpelParserConfiguration;
+import org.springframework.expression.spel.*;
 import org.springframework.expression.spel.standard.*;
 
 import java.util.*;
 
-import static java.util.Optional.ofNullable;
+import static java.util.Optional.*;
+import static org.springframework.expression.spel.SpelCompilerMode.*;
 
 public class APIProxyKey extends ServiceProxyKey {
 
@@ -35,13 +35,21 @@ public class APIProxyKey extends ServiceProxyKey {
 
     private final ArrayList<String> basePaths = new ArrayList<>();
 
-    private final SpelParserConfiguration spelConfig = new SpelParserConfiguration(SpelCompilerMode.IMMEDIATE, this.getClass().getClassLoader());
+    private final SpelParserConfiguration spelConfig = new SpelParserConfiguration(IMMEDIATE, this.getClass().getClassLoader());
+
+    /**
+     * For complex matches use SpEL
+     */
     private Expression testExpr;
 
     public APIProxyKey(RuleKey key, String test, boolean openAPI) {
         super(key);
         init(test, openAPI);
         setUsePathPattern(true);
+    }
+
+    public APIProxyKey(int port) {
+        this(null,"*",port,null,"*",null,true);
     }
 
     public APIProxyKey(String ip, String host, int port, String path, String method, String test, boolean openAPI) {
@@ -88,7 +96,10 @@ public class APIProxyKey extends ServiceProxyKey {
     private boolean testCondition(Exchange exc) {
         if (testExpr == null)
             return true;
-        Boolean result = testExpr.getValue(new ExchangeEvaluationContext(exc, exc.getRequest()), Boolean.class);
+        return isTrue(testExpr.getValue(new ExchangeEvaluationContext(exc, exc.getRequest()), Boolean.class));
+    }
+
+    private static boolean isTrue(Boolean result) {
         return result != null && result;
     }
 

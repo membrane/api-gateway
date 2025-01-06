@@ -13,25 +13,19 @@
    limitations under the License. */
 package com.predic8.membrane.core.exchangestore;
 
-import com.predic8.io.IOUtil;
 import com.predic8.membrane.core.HttpRouter;
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.exchange.AbstractExchange;
 import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Body;
 import com.predic8.membrane.core.http.BodyUtil;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.ExchangeStoreInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
-import com.predic8.membrane.core.rules.ServiceProxy;
-import com.predic8.membrane.core.rules.ServiceProxyKey;
-import com.predic8.membrane.core.transport.http.ConnectionManager;
+import com.predic8.membrane.core.proxies.ServiceProxy;
+import com.predic8.membrane.core.proxies.ServiceProxyKey;
 import com.predic8.membrane.core.transport.http.HttpClient;
-import com.predic8.membrane.core.transport.http.HttpClientUtil;
-import com.predic8.membrane.core.transport.http.HttpServerHandler;
-import com.predic8.membrane.core.util.URIFactory;
 import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.*;
 
@@ -40,6 +34,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
 
+import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class AbortExchangeTest {
@@ -63,13 +58,13 @@ public class AbortExchangeTest {
                     int l = 0;
 
                     @Override
-                    public int read() throws IOException {
+                    public int read() {
                         if (l++ >= 2000000)
                             return -1;
                         return 0;
                     }
                 }, true).build());
-                return Outcome.RETURN;
+                return RETURN;
             }
         });
         router.getRuleManager().addProxyAndOpenPortIfNew(sp2);
@@ -106,13 +101,16 @@ public class AbortExchangeTest {
         List<AbstractExchange> list = exchangeStore.getAllExchangesAsList();
         assertEquals(numberOfExchanges, list.size());
         for (AbstractExchange e : list) {
-            assertTrue(responsePresent == 0 ? e.getResponse().getBody().getLength() == 0 : list.get(0).getResponse().getBody().getLength() >= 1, "Exchange has " + (responsePresent == 1 ? "no " : "") + "response");
+            assertTrue(responsePresent == 0 ? e.getResponse().getBody().getLength() == 0 : list.getFirst().getResponse().getBody().getLength() >= 1, "Exchange has " + (responsePresent == 1 ? "no " : "") + "response");
         }
 
     }
 
     private Response performRequest() throws Exception {
-        return new HttpClient().call(new Request.Builder().get("http://localhost:3031/").header("Connection", "close").buildExchange()).getResponse();
+        try (HttpClient hc = new HttpClient()) {
+            return hc.call(new Request.Builder().get("http://localhost:3031/").header("Connection", "close")
+                    .buildExchange()).getResponse();
+        }
     }
 
     @AfterEach

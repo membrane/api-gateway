@@ -23,6 +23,8 @@ import java.nio.charset.*;
 
 import static com.predic8.membrane.core.Constants.*;
 import static com.predic8.membrane.core.http.Header.*;
+import static com.predic8.membrane.core.util.ContentTypeDetector.EffectiveContentType.*;
+import static com.predic8.membrane.core.util.ContentTypeDetector.detectEffectiveContentType;
 
 /**
  * A HTTP message (request or response).
@@ -184,10 +186,10 @@ public abstract class Message {
 		}
 
 		if (log.isDebugEnabled()) {
-			log.error("Message has no content length: " + this);
+			log.error("Message has no content length: {}",this);
 		}
 
-		if (this instanceof Request && ((Request)this).isOPTIONSRequest()) {
+		if (this instanceof Request req && (req.isOPTIONSRequest())) {
 			// OPTIONS without Transfer-Encoding and Content-Length has no body,
 			// see http://www.ietf.org/rfc/rfc2616.txt section 9.2
 			body = new EmptyBody();
@@ -309,39 +311,21 @@ public abstract class Message {
 	public abstract boolean shouldNotContainBody();
 
 	public boolean isImage() {
-		if (header.getContentType() == null)
-			return false;
-		return header.getContentType().contains("image");
+		return MimeType.isImage(getHeader().getContentType());
 	}
 
 	public boolean isXML() {
-		if (header.getContentType() == null)
-			return false;
-		return header.getContentType().toLowerCase().indexOf("xml") > 0;
+        return MimeType.isXML(getHeader().getContentType());
 	}
 
 	public boolean isJSON() {
-		if (header.getContentType() == null)
-			return false;
-		return header.getContentType().indexOf("json") > 0;
+		return MimeType.isJson(getHeader().getContentType());
 	}
 
 	public boolean isHTML() {
 		if (header.getContentType() == null)
 			return false;
-		return header.getContentType().indexOf("html") > 0;
-	}
-
-	public boolean isCSS() {
-		if (header.getContentType() == null)
-			return false;
-		return header.getContentType().indexOf("css") > 0;
-	}
-
-	public boolean isJavaScript() {
-		if (header.getContentType() == null)
-			return false;
-		return header.getContentType().indexOf("javascript") > 0;
+		return detectEffectiveContentType(this) == HTML;
 	}
 
 	public boolean isGzip() {

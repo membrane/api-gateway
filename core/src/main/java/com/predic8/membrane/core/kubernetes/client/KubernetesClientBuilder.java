@@ -22,7 +22,7 @@ import com.predic8.membrane.core.config.security.Key;
 import com.predic8.membrane.core.config.security.SSLParser;
 import com.predic8.membrane.core.config.security.Trust;
 import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.interceptor.LogInterceptor;
+import com.predic8.membrane.core.interceptor.log.LogInterceptor;
 import com.predic8.membrane.core.transport.http.HttpClient;
 import com.predic8.membrane.core.transport.http.HttpClientFactory;
 import com.predic8.membrane.core.transport.http.client.HttpClientConfiguration;
@@ -176,7 +176,7 @@ public class KubernetesClientBuilder {
             ExceptionThrowingConsumer<Exchange> lastClient = client;
             LogInterceptor i = new LogInterceptor();
             i.setLevel(LogInterceptor.Level.WARN);
-            i.setHeaderOnly(false);
+            i.setBody(false);
             client = exchange -> {
                 i.handleRequest(exchange);
                 lastClient.accept(exchange);

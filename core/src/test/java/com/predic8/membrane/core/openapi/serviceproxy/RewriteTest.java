@@ -20,16 +20,15 @@ import com.fasterxml.jackson.databind.*;
 import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.rules.*;
+import com.predic8.membrane.core.proxies.*;
 import com.predic8.membrane.core.util.*;
 import org.jetbrains.annotations.*;
 import org.junit.jupiter.api.*;
 
-import java.io.*;
 import java.net.*;
 import java.util.*;
 
-import static java.util.Collections.singletonList;
+import static java.util.Collections.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 class RewriteTest {
@@ -44,7 +43,7 @@ class RewriteTest {
     Exchange get = new Exchange(null);
 
     @BeforeEach
-    void setUp() throws IOException {
+    void setUp() {
         rewriteAll.host = "predic8.de";
         rewriteAll.port = 8080;
         rewriteAll.protocol = "https";
@@ -63,7 +62,7 @@ class RewriteTest {
         records = openAPIRecordFactory.create(singletonList(spec));
 
         get.setRequest(new Request.Builder().method("GET").build());
-        get.setRule(new NullRule());
+        get.setRule(new NullProxy());
         get.setOriginalHostHeader("api.predic8.de:80");
     }
 

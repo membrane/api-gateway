@@ -20,7 +20,7 @@ import com.predic8.membrane.core.exchange.AbstractExchange;
 import com.predic8.membrane.core.exchange.ExchangesUtil;
 import com.predic8.membrane.core.exchangestore.ClientStatistics;
 import com.predic8.membrane.core.interceptor.statistics.PropertyComparator;
-import com.predic8.membrane.core.rules.*;
+import com.predic8.membrane.core.proxies.*;
 
 public class ComparatorFactory {
 
@@ -28,7 +28,7 @@ public class ComparatorFactory {
         if ("statusCode".equals(propName)) {
             return new PropertyComparator<>(order, exc -> exc.getResponse().getStatusCode());
         } else if ("proxy".equals(propName)) {
-            return new PropertyComparator<>(order, exc -> exc.getRule().toString());
+            return new PropertyComparator<>(order, exc -> exc.getProxy().toString());
         } else if ("method".equals(propName)) {
             return new PropertyComparator<>(order, exc -> exc.getRequest().getMethod());
         } else if ("path".equals(propName)) {

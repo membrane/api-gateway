@@ -19,7 +19,7 @@ package com.predic8.membrane.core.openapi.serviceproxy;
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Request;
-import com.predic8.membrane.core.rules.NullRule;
+import com.predic8.membrane.core.proxies.NullProxy;
 import com.predic8.membrane.core.util.URIFactory;
 import org.junit.jupiter.api.BeforeEach;
 
@@ -34,7 +34,7 @@ class OpenAPIRecordTest {
         router.setBaseLocation("");
 
         get.setRequest(new Request.Builder().method("GET").build());
-        get.setRule(new NullRule());
+        get.setRule(new NullProxy());
         get.setOriginalHostHeader("api.predic8.de:80");
     }
 }

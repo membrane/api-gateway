@@ -1,0 +1,31 @@
+<spring:beans xmlns="http://membrane-soa.org/proxies/1/"
+			  xmlns:spring="http://www.springframework.org/schema/beans"
+			  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+			  xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.2.xsd
+					    http://membrane-soa.org/proxies/1/ http://membrane-soa.org/schemas/proxies-1.xsd">
+
+	<router>
+
+		<!-- Endpoint can accept request from old and new clients -->
+		<api port="2000">
+			<request>
+				<!-- If it is a request with the old namespace convert it to the new -->
+				<if test="//*[namespace-uri() = 'https://predic8.de/old']" language="XPath">
+					<transform xslt="convert-request-to-new-version.xslt"/>
+					<!-- Mark as converted -->
+					<setProperty name="converted" value="true"/>
+				</if>
+			</request>
+			<response>
+				<!-- When it was converted transform response body back to old -->
+				<if test="properties['converted'] == 'true'">
+					<transform xslt="convert-response-to-old-version.xslt"/>
+				</if>
+			</response>
+			<!-- SOAP service implementation for new version -->
+			<sampleSoapService/>
+		</api>
+
+	</router>
+
+</spring:beans>

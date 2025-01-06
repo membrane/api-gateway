@@ -13,53 +13,48 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.balancer;
 
-import static com.predic8.membrane.core.util.URLParamUtil.createQueryString;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.proxies.*;
+import org.apache.commons.codec.binary.*;
+import org.apache.commons.httpclient.*;
+import org.apache.commons.httpclient.methods.*;
+import org.jetbrains.annotations.*;
+import org.junit.jupiter.api.*;
 
-import java.net.URLEncoder;
-import java.security.SecureRandom;
+import javax.crypto.*;
+import javax.crypto.spec.*;
+import java.net.*;
+import java.security.*;
 
-import javax.crypto.Cipher;
-import javax.crypto.spec.SecretKeySpec;
-
-import org.apache.commons.codec.binary.Base64;
-import org.apache.commons.codec.binary.Hex;
-import org.apache.commons.httpclient.HttpClient;
-import org.apache.commons.httpclient.methods.GetMethod;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-
-import com.predic8.membrane.core.HttpRouter;
-import com.predic8.membrane.core.rules.Rule;
-import com.predic8.membrane.core.rules.ServiceProxy;
-import com.predic8.membrane.core.rules.ServiceProxyKey;
+import static com.predic8.membrane.core.util.URLParamUtil.*;
+import static java.nio.charset.StandardCharsets.*;
+import static javax.crypto.Cipher.ENCRYPT_MODE;
+import static org.apache.commons.codec.binary.Base64.encodeBase64;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class ClusterNotificationInterceptorTest {
 	private HttpRouter router;
 	private ClusterNotificationInterceptor interceptor;
-	private LoadBalancingInterceptor lbi;
 
 	@BeforeEach
 	public void setUp() throws Exception {
-		Rule rule = new ServiceProxy(new ServiceProxyKey("localhost", "*", ".*", 3002), "thomas-bayer.com", 80);
+		ServiceProxy proxy = new ServiceProxy(new ServiceProxyKey("localhost", "*", ".*", 3002), "thomas-bayer.com", 80);
 		router = new HttpRouter();
-		router.getRuleManager().addProxyAndOpenPortIfNew(rule);
+		router.getRuleManager().addProxyAndOpenPortIfNew(proxy);
 
 		interceptor = new ClusterNotificationInterceptor();
 		router.addUserFeatureInterceptor(interceptor);
 
-		lbi = new LoadBalancingInterceptor();
+		LoadBalancingInterceptor lbi = new LoadBalancingInterceptor();
 		lbi.setName("Default");
-		Rule rule2 = new ServiceProxy(new ServiceProxyKey("localhost", "*", ".*", 3003), "thomas-bayer.com", 80);
-		router.getRuleManager().addProxyAndOpenPortIfNew(rule2);
-		rule2.getInterceptors().add(lbi);
+		ServiceProxy proxy2 = new ServiceProxy(new ServiceProxyKey("localhost", "*", ".*", 3003), "thomas-bayer.com", 80);
+		router.getRuleManager().addProxyAndOpenPortIfNew(proxy2);
+		proxy2.getInterceptors().add(lbi);
 		router.init();
 	}
 
 	@AfterEach
-	public void tearDown() throws Exception {
+	public void tearDown() {
 		router.shutdown();
 	}
 
@@ -71,7 +66,7 @@ public class ClusterNotificationInterceptorTest {
 						"cluster","c1"));
 
 		assertEquals(204, new HttpClient().executeMethod(get));
-		assertEquals("node1.clustera", BalancerUtil.lookupBalancer(router, "Default").getAllNodesByCluster("c1").get(0).getHost());
+		assertEquals("node1.clustera", BalancerUtil.lookupBalancer(router, "Default").getAllNodesByCluster("c1").getFirst().getHost());
 
 	}
 
@@ -84,7 +79,7 @@ public class ClusterNotificationInterceptorTest {
 
 		assertEquals(204, new HttpClient().executeMethod(get));
 		assertEquals(1, BalancerUtil.lookupBalancer(router, "Default").getAllNodesByCluster("c1").size());
-		assertTrue(BalancerUtil.lookupBalancer(router, "Default").getAllNodesByCluster("c1").get(0).isTakeOut());
+		assertTrue(BalancerUtil.lookupBalancer(router, "Default").getAllNodesByCluster("c1").getFirst().isTakeOut());
 	}
 
 	@Test
@@ -96,7 +91,7 @@ public class ClusterNotificationInterceptorTest {
 
 		assertEquals(204, new HttpClient().executeMethod(get));
 		assertEquals(1, BalancerUtil.lookupBalancer(router, "Default").getAllNodesByCluster("c1").size());
-		assertEquals(false, BalancerUtil.lookupBalancer(router, "Default").getAllNodesByCluster("c1").get(0).isUp());
+        assertFalse(BalancerUtil.lookupBalancer(router, "Default").getAllNodesByCluster("c1").getFirst().isUp());
 	}
 
 	@Test
@@ -107,7 +102,7 @@ public class ClusterNotificationInterceptorTest {
 
 		assertEquals(204, new HttpClient().executeMethod(get));
 		assertEquals(1, BalancerUtil.lookupBalancer(router, "Default").getAllNodesByCluster("Default").size());
-		assertEquals("node1.clustera", BalancerUtil.lookupBalancer(router, "Default").getAllNodesByCluster("Default").get(0).getHost());
+		assertEquals("node1.clustera", BalancerUtil.lookupBalancer(router, "Default").getAllNodesByCluster("Default").getFirst().getHost());
 	}
 
 	@Test
@@ -128,15 +123,18 @@ public class ClusterNotificationInterceptorTest {
 	}
 
 	private GetMethod getSecurityTestMethod(long time) throws Exception {
-		String qParams = "cluster=c3&host=node1.clustera&port=3018&time=" + time + "&nonce=" + new SecureRandom().nextLong();
-		return new GetMethod("http://localhost:3002/clustermanager/up?data=" +
-				URLEncoder.encode(getEncryptedQueryString(qParams),"UTF-8"));
+        return new GetMethod("http://localhost:3002/clustermanager/up?data=" +
+				URLEncoder.encode(getEncryptedQueryString(getqParams(time)), UTF_8));
+	}
+
+	private static @NotNull String getqParams(long time) {
+		return "cluster=c3&host=node1.clustera&port=3018&time=" + time + "&nonce=" + new SecureRandom().nextLong();
 	}
 
 	private String getEncryptedQueryString(String qParams) throws Exception {
 		Cipher cipher = Cipher.getInstance("AES");
 
-		cipher.init(Cipher.ENCRYPT_MODE, new SecretKeySpec(Hex.decodeHex("6f488a642b740fb70c5250987a284dc0".toCharArray()), "AES"));
-		return new String(Base64.encodeBase64(cipher.doFinal(qParams.getBytes("UTF-8"))),"UTF-8");
+		cipher.init(ENCRYPT_MODE, new SecretKeySpec(Hex.decodeHex("6f488a642b740fb70c5250987a284dc0".toCharArray()), "AES"));
+		return new String(encodeBase64(cipher.doFinal(qParams.getBytes(UTF_8))), UTF_8);
 	}
 }

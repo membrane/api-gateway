@@ -14,12 +14,11 @@
 
 package com.predic8.membrane.core.exchangestore;
 
-import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.rest.*;
 import com.predic8.membrane.core.model.*;
-import com.predic8.membrane.core.rules.*;
+import com.predic8.membrane.core.proxies.*;
 import org.slf4j.*;
 
 import java.util.*;
@@ -33,7 +32,7 @@ public abstract class AbstractExchangeStore implements ExchangeStore {
 
 	private static final Logger log = LoggerFactory.getLogger(AbstractExchangeStore.class);
 
-	protected Set<IExchangesStoreListener> exchangesStoreListeners = new HashSet<>();
+	protected final Set<IExchangesStoreListener> exchangesStoreListeners = new HashSet<>();
 
 	public void addExchangesStoreListener(IExchangesStoreListener viewer) {
 		exchangesStoreListeners.add(viewer);
@@ -49,10 +48,10 @@ public abstract class AbstractExchangeStore implements ExchangeStore {
 		}
 	}
 
-	public void notifyListenersOnExchangeAdd(Rule rule, AbstractExchange exchange) {
+	public void notifyListenersOnExchangeAdd(Proxy proxy, AbstractExchange exchange) {
 		for (IExchangesStoreListener listener : exchangesStoreListeners) {
 			exchange.addExchangeStoreListener(listener);
-			listener.addExchange(rule, exchange);
+			listener.addExchange(proxy, exchange);
 		}
 	}
 
@@ -70,9 +69,6 @@ public abstract class AbstractExchangeStore implements ExchangeStore {
 
 	public List<? extends ClientStatistics> getClientStatistics() {
 		throw new UnsupportedOperationException("getClientStatistics must be implemented in the sub class.");
-	}
-
-	public void init(Router router) {
 	}
 
 	public synchronized void collect(ExchangeCollector collector) {
@@ -162,14 +158,14 @@ public abstract class AbstractExchangeStore implements ExchangeStore {
 	}
 
 	private static boolean filterExchanges(QueryParameter params, boolean useXForwardedForAsClientAddr, boolean noStatuscode, boolean noClient, boolean noServer, boolean noMethod, boolean noReqcontenttypn, boolean noRespcontenttype, boolean noSearch, int statuscode, String client, String server, String method, String reqcontenttype, String respcontenttype, String search, AbstractExchange e) {
-		return (!params.has("proxy") || e.getRule().toString().equals(params.getString("proxy"))) &&
-			   (noStatuscode || compareStatusCode(statuscode, e)) &&
-			   (noClient || getClientAddr(useXForwardedForAsClientAddr, e).equals(client)) &&
-			   (noServer || server.equals(e.getServer() == null ? "" : e.getServer())) &&
-			   (noMethod || e.getRequest().getMethod().equals(method)) &&
-			   (noReqcontenttypn || e.getRequestContentType().equals(reqcontenttype)) &&
-			   (noRespcontenttype || e.getResponseContentType().equals(respcontenttype)) &&
-			   (noSearch || bodyContains(search, e) || requestHeaderContains(search, e) || responseHeaderContains(search, e));
+		return (!params.has("proxy") || e.getProxy().toString().equals(params.getString("proxy"))) &&
+               (noStatuscode || compareStatusCode(statuscode, e)) &&
+               (noClient || getClientAddr(useXForwardedForAsClientAddr, e).equals(client)) &&
+               (noServer || server.equals(e.getServer() == null ? "" : e.getServer())) &&
+               (noMethod || e.getRequest().getMethod().equals(method)) &&
+               (noReqcontenttypn || e.getRequestContentType().equals(reqcontenttype)) &&
+               (noRespcontenttype || e.getResponseContentType().equals(respcontenttype)) &&
+               (noSearch || bodyContains(search, e) || requestHeaderContains(search, e) || responseHeaderContains(search, e));
 	}
 
 	private static boolean compareStatusCode(int statuscode, AbstractExchange e) {

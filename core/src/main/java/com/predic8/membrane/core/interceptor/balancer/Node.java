@@ -29,7 +29,7 @@ import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.config.AbstractXmlElement;
 import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.rules.StatisticCollector;
+import com.predic8.membrane.core.proxies.StatisticCollector;
 
 @MCElement(name="node", topLevel=false)
 public class Node extends AbstractXmlElement {

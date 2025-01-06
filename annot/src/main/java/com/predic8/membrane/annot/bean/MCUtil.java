@@ -13,37 +13,19 @@
    limitations under the License. */
 package com.predic8.membrane.annot.bean;
 
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.StringWriter;
-import java.lang.reflect.Method;
-import java.nio.charset.Charset;
-import java.security.InvalidParameterException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
+import com.predic8.membrane.annot.*;
+import org.slf4j.*;
+import org.springframework.beans.*;
+import org.springframework.context.support.*;
+import org.springframework.core.io.*;
 
-import javax.xml.stream.XMLOutputFactory;
-import javax.xml.stream.XMLStreamException;
-import javax.xml.stream.XMLStreamWriter;
+import javax.xml.stream.*;
+import java.io.*;
+import java.lang.reflect.*;
+import java.security.*;
+import java.util.*;
 
-import org.springframework.beans.BeanWrapperImpl;
-import org.springframework.context.support.FileSystemXmlApplicationContext;
-import org.springframework.core.io.FileSystemResource;
-import org.springframework.core.io.Resource;
-
-import com.predic8.membrane.annot.AnnotUtils;
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCChildElement;
-import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.annot.MCOtherAttributes;
-import com.predic8.membrane.annot.MCTextContent;
+import static java.nio.charset.StandardCharsets.*;
 
 /**
  * A utility class to deeply-clone/serizalize/deserialize {@link MCElement}-annotatated objects
@@ -57,7 +39,9 @@ import com.predic8.membrane.annot.MCTextContent;
  */
 public class MCUtil {
 
-	private static XMLOutputFactory xmlOutputFactory = XMLOutputFactory.newFactory();
+	private static final Logger log = LoggerFactory.getLogger(MCUtil.class.getName());
+
+	private static final XMLOutputFactory xmlOutputFactory = XMLOutputFactory.newFactory();
 
 	@SuppressWarnings("unchecked")
 	private static <T> T cloneInternal(T object, boolean deep) {
@@ -78,7 +62,7 @@ public class MCUtil {
 			if (object == null)
 				throw new InvalidParameterException("'object' must not be null.");
 
-			Class<? extends Object> clazz = object.getClass();
+			Class<?> clazz = object.getClass();
 
 			MCElement e = clazz.getAnnotation(MCElement.class);
 			if (e == null)
@@ -130,6 +114,7 @@ public class MCUtil {
 		try {
 			fsxacApplicationContext.refresh();
 		} catch (RuntimeException e) {
+			log.error(e.getMessage(), e);
 			System.err.println(xml);
 			throw e;
 		}
@@ -168,10 +153,9 @@ public class MCUtil {
 			if (MAGIC.equals(location)) {
 				return new FileSystemResource(MAGIC) {
 					@Override
-					public InputStream getInputStream() throws IOException {
-						return new ByteArrayInputStream(xml.getBytes(Charset.forName("UTF-8")));
-					};
-
+					public InputStream getInputStream() {
+						return new ByteArrayInputStream(xml.getBytes(UTF_8));
+					}
 				};
 			}
 			return super.getResource(location);
@@ -213,7 +197,7 @@ public class MCUtil {
 		if (object == null)
 			throw new InvalidParameterException("'object' must not be null.");
 
-		Class<? extends Object> clazz = object.getClass();
+		Class<?> clazz = object.getClass();
 
 		MCElement e = clazz.getAnnotation(MCElement.class);
 		if (e == null)
@@ -235,29 +219,27 @@ public class MCUtil {
 			if (a != null) {
 				Object value = src.getPropertyValue(propertyName);
 				String str;
-				if (value == null)
-					continue;
-				else if (value instanceof String)
-					str = (String)value;
-				else if (value instanceof Boolean)
-					str = ((Boolean)value).toString();
-				else if (value instanceof Integer)
-					str = ((Integer)value).toString();
-				else if (value instanceof Long)
-					str = ((Long)value).toString();
-				else if (value instanceof Enum<?>)
-					str = value.toString();
-				else {
-					MCElement el = value.getClass().getAnnotation(MCElement.class);
-					if (el != null) {
-						str = defineBean(sc, value, null, true);
-					} else {
-						str = "?";
-						sc.incomplete = true;
-					}
-				}
+                switch (value) {
+                    case null -> {
+                        continue;
+                    }
+                    case String s -> str = s;
+                    case Boolean b -> str = b.toString();
+                    case Integer i -> str = i.toString();
+                    case Long l -> str = l.toString();
+                    case Enum<?> anEnum -> str = value.toString();
+                    default -> {
+                        MCElement el = value.getClass().getAnnotation(MCElement.class);
+                        if (el != null) {
+                            str = defineBean(sc, value, null, true);
+                        } else {
+                            str = "?";
+                            sc.incomplete = true;
+                        }
+                    }
+                }
 
-				if (a.attributeName().length() > 0)
+				if (!a.attributeName().isEmpty())
 					propertyName = a.attributeName();
 
 				attributes.add(propertyName);
@@ -271,9 +253,8 @@ public class MCUtil {
 			MCOtherAttributes o = m.getAnnotation(MCOtherAttributes.class);
 			if (o != null) {
 				Object value = src.getPropertyValue(propertyName);
-				if (value instanceof Map<?,?>) {
-					Map<?,?> map = (Map<?, ?>) value;
-					for (Map.Entry<?,?> entry : map.entrySet()) {
+				if (value instanceof Map<?, ?> map) {
+                    for (Map.Entry<?,?> entry : map.entrySet()) {
 						Object key = entry.getKey();
 						Object val = entry.getValue();
 						if (!(key instanceof String) || !(val instanceof String)) {
@@ -308,8 +289,8 @@ public class MCUtil {
 				Object value = src.getPropertyValue(propertyName);
 				if (value == null) {
 					continue;
-				} else if (value instanceof String) {
-					xew.writeCharacters((String)value);
+				} else if (value instanceof String v) {
+					xew.writeCharacters(v);
 				} else {
 					xew.writeCharacters("?");
 					sc.incomplete = true;
@@ -328,8 +309,8 @@ public class MCUtil {
 
 			Object value = src.getPropertyValue(propertyName);
 			if (value != null) {
-				if (value instanceof Collection<?>) {
-					for (Object item : (Collection<?>)value)
+				if (value instanceof Collection<?> col) {
+					for (Object item : col)
 						addXML(item, null, xew, sc);
 				} else {
 					addXML(value, null, xew, sc);

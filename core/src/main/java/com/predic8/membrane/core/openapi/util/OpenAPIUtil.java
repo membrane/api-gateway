@@ -16,24 +16,22 @@
 
 package com.predic8.membrane.core.openapi.util;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import io.swagger.v3.core.util.Json31;
-import io.swagger.v3.oas.models.OpenAPI;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.fasterxml.jackson.databind.*;
+import io.swagger.v3.core.util.*;
+import io.swagger.v3.oas.models.*;
+import io.swagger.v3.parser.ObjectMapperFactory;
+import org.slf4j.*;
 
-import java.io.IOException;
-import java.util.regex.Pattern;
+import java.io.*;
 
-import static com.predic8.membrane.core.openapi.serviceproxy.APIProxy.X_MEMBRANE_ID;
-import static com.predic8.membrane.core.openapi.util.Utils.normalizeForId;
+import static com.predic8.membrane.core.openapi.serviceproxy.APIProxy.*;
+import static com.predic8.membrane.core.openapi.util.Utils.*;
 
 public class OpenAPIUtil {
 
     private static final Logger log = LoggerFactory.getLogger(OpenAPIUtil.class.getName());
 
-    private static final Pattern hostPortPattern = Pattern.compile("//(.*):(.*)/");
+    private static final ObjectMapper omYaml = ObjectMapperFactory.createYaml();
 
     public static String getIdFromAPI(OpenAPI api) {
         if (api.getInfo().getExtensions() != null) {
@@ -48,6 +46,15 @@ public class OpenAPIUtil {
         return "-v" + api.getInfo().getVersion();
     }
 
+    public static String getOpenAPIVersion(JsonNode node) {
+        if (isSwagger2(node)) {
+            return node.get("swagger").asText();
+        } else if (isOpenAPI3(node)) {
+            return node.get("openapi").asText();
+        }
+        log.info("Cannot detect OpenAPI version.");
+        return "?";
+    }
 
     public static boolean isOpenAPI3(JsonNode node) {
         return node.get("openapi") != null && node.get("openapi").asText().startsWith("3");
@@ -55,5 +62,9 @@ public class OpenAPIUtil {
 
     public static boolean isSwagger2(JsonNode node) {
         return node.get("swagger") != null && node.get("swagger").asText().startsWith("2");
+    }
+
+    public static JsonNode convert2Json(OpenAPI api) throws IOException {
+        return omYaml.readTree(Json31.mapper().writeValueAsBytes(api));
     }
 }
