@@ -18,14 +18,12 @@ package com.predic8.membrane.core.openapi.serviceproxy;
 
 import com.fasterxml.jackson.databind.*;
 import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.openapi.util.*;
 import com.predic8.membrane.core.util.*;
 import io.swagger.v3.oas.models.*;
 
-import java.io.IOException;
+import java.io.*;
 import java.net.*;
-
-import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPIRecordFactory.convert2Json;
-import static com.predic8.membrane.core.openapi.util.OpenAPIUtil.*;
 
 public class OpenAPIRecord {
 
@@ -54,9 +52,20 @@ public class OpenAPIRecord {
      */
     public OpenAPIRecord() {}
 
-    public OpenAPIRecord(OpenAPI api, OpenAPISpec spec) throws IOException {
+    public OpenAPIRecord(OpenAPI api, OpenAPISpec spec) {
         this.api = api;
-        this.node = convert2Json(api);
+        try {
+            this.node = OpenAPIUtil.convert2Json(api);
+        } catch (IOException e) {
+            throw new ConfigurationException("""
+                    Cannot convert OpenAPI to JSON.
+                    
+                    Caused by: %s
+                    
+                    OpenAPI:
+                    %s
+                    """.formatted(e.getMessage(),api));
+        }
         this.spec = spec;
         this.version = api.getSpecVersion().name();
     }

@@ -17,6 +17,7 @@ package com.predic8.membrane.core.transport.http;
 import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.model.*;
+import com.predic8.membrane.core.proxies.*;
 import com.predic8.membrane.core.transport.*;
 import com.predic8.membrane.core.transport.ssl.*;
 import com.predic8.membrane.core.util.*;
@@ -67,7 +68,7 @@ public class HttpTransport extends Transport {
 	 * Closes the corresponding server port. Note that connections might still be open and exchanges still running after
 	 * this method completes.
 	 */
-	public synchronized void closePort(IpPort p) throws IOException {
+	public synchronized void closePort(IpPort p) {
 	    Map<IpPort, HttpEndpointListener> mih = portListenerMapping.get(p.port());
 	    if (mih == null || mih.isEmpty()) {
 	        return;
@@ -75,15 +76,17 @@ public class HttpTransport extends Transport {
 		HttpEndpointListener plt = mih.get(p);
 		if (plt == null)
 			return;
-		log.info("Closing server port: " + p);
+		log.info("Closing server port: {}", p);
 
-		plt.closePort();
 		try {
+			plt.closePort();
 			plt.join();
 		} catch (InterruptedException e) {
 			Thread.currentThread().interrupt();
-		}
-		mih.remove(p);
+		} catch (IOException e) {
+            log.error("Error closing server port: {}", p.port());
+        }
+        mih.remove(p);
 		if (mih.isEmpty()) {
 		    portListenerMapping.remove(p.port());
 		}
@@ -92,11 +95,10 @@ public class HttpTransport extends Transport {
 		for (IPortChangeListener listener : menuListeners) {
 			listener.removePort(p.port());
 		}
-
 	}
 
 	@Override
-	public synchronized void closeAll(boolean waitForCompletion) throws IOException {
+	public synchronized void closeAll(boolean waitForCompletion) {
 
 		log.debug("Closing all network server sockets.");
 		List<IpPort> all = new ArrayList<>();
@@ -117,11 +119,10 @@ public class HttpTransport extends Transport {
 			executorService.shutdown();
 			try {
 				while (true) {
-					boolean onlyIdle = System.currentTimeMillis() - now <= forceSocketCloseOnHotDeployAfter;
-					closeConnections(onlyIdle);
+                    closeConnections(closeOnlyIdleConnections(now));
 					if (executorService.awaitTermination(5, SECONDS))
 						break;
-					log.warn("Still waiting for running exchanges to finish. (Set <transport forceSocketCloseOnHotDeployAfter=\"" + forceSocketCloseOnHotDeployAfter + "\"> to a lower value to forcibly close connections more quickly.");
+					log.warn("Still waiting for running exchanges to finish. (Set <transport forceSocketCloseOnHotDeployAfter=\"{}\"> to a lower value to forcibly close connections more quickly.",forceSocketCloseOnHotDeployAfter);
 				}
 			} catch (InterruptedException e) {
 				Thread.currentThread().interrupt();
@@ -129,7 +130,14 @@ public class HttpTransport extends Transport {
 		}
 	}
 
-	private void closeConnections(boolean onlyIdle) throws IOException {
+	/*
+	 * Close all connections after some time
+	 */
+	private boolean closeOnlyIdleConnections(long now) {
+		return System.currentTimeMillis() - now <= forceSocketCloseOnHotDeployAfter;
+	}
+
+	private void closeConnections(boolean onlyIdle) {
 		ArrayList<WeakReference<HttpEndpointListener>> remove = new ArrayList<>();
 		for (WeakReference<HttpEndpointListener> whel : stillRunning) {
 			HttpEndpointListener hel = whel.get();
@@ -151,7 +159,7 @@ public class HttpTransport extends Transport {
 	@Override
 	public synchronized void openPort(String ip, int port, SSLProvider sslProvider, @Nullable TimerManager timerManager) throws IOException {
 	    if (port == -1)
-	        throw new RuntimeException("The port-attribute is missing (probably on a <serviceProxy> element).");
+			throw new RuntimeException("The port-attribute is missing (probably on a <serviceProxy> element).");
 
 		Map<IpPort, HttpEndpointListener> mih = portListenerMapping.computeIfAbsent(port, k -> new HashMap<>());
 		IpPort p = new IpPort(ip, port);
@@ -175,6 +183,12 @@ public class HttpTransport extends Transport {
 		for (IPortChangeListener listener : menuListeners) {
 			listener.addPort(port);
 		}
+	}
+
+	@Override
+	public void openPort(SSLableProxy proxy, TimerManager timerManager) throws IOException {
+		TimerManager timerManager1 = getRouter() != null ? getRouter().getTimerManager() : null;
+		openPort(proxy.getKey().getIp(), proxy.getKey().getPort(), proxy.getSslInboundContext(), timerManager1);
 	}
 
 	@Override

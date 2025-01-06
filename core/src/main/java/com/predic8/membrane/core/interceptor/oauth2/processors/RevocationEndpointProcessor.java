@@ -43,7 +43,7 @@ public class RevocationEndpointProcessor extends EndpointProcessor {
         Map<String, String> params = URLParamUtil.getParams(uriFactory, exc, ERROR);
 
         if (!params.containsKey("token")) {
-            exc.setResponse(OAuth2Util.createParameterizedJsonErrorResponse(exc,jsonGen, "error", "invalid_request"));
+            exc.setResponse(OAuth2Util.createParameterizedJsonErrorResponse(jsonGen, "error", "invalid_request"));
             return Outcome.RETURN;
         }
 
@@ -75,14 +75,14 @@ public class RevocationEndpointProcessor extends EndpointProcessor {
         String paramClientId = params.get(ParamNames.CLIENT_ID);
         String paramClientSecret = params.get(ParamNames.CLIENT_SECRET);
         if((paramClientId != null && !client.getClientId().equals(paramClientId)) || (paramClientSecret != null && !client.getClientSecret().equals(paramClientSecret))){
-            exc.setResponse(OAuth2Util.createParameterizedJsonErrorResponse(exc, jsonGen, "error", "invalid_grant"));
+            exc.setResponse(OAuth2Util.createParameterizedJsonErrorResponse(jsonGen, "error", "invalid_grant"));
             return Outcome.RETURN;
         }
 
         try {
             authServer.getTokenGenerator().invalidateToken(params.get("token"), client.getClientId(), client.getClientSecret());
         } catch (Exception e) {
-            exc.setResponse(OAuth2Util.createParameterizedJsonErrorResponse(exc, jsonGen, "error", "invalid_grant"));
+            exc.setResponse(OAuth2Util.createParameterizedJsonErrorResponse(jsonGen, "error", "invalid_grant"));
             return Outcome.RETURN;
         }
         synchronized(session) {

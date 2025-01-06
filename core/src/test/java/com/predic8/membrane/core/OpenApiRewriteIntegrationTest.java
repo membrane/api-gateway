@@ -13,10 +13,10 @@
    limitations under the License. */
 package com.predic8.membrane.core;
 
-import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.interceptor.misc.*;
+import com.predic8.membrane.core.interceptor.flow.*;
+import com.predic8.membrane.core.interceptor.log.*;
 import com.predic8.membrane.core.openapi.serviceproxy.*;
-import com.predic8.membrane.core.rules.*;
+import com.predic8.membrane.core.proxies.*;
 import io.restassured.response.*;
 import org.jetbrains.annotations.*;
 import org.junit.jupiter.api.*;
@@ -37,13 +37,13 @@ public class OpenApiRewriteIntegrationTest {
     }
 
     @AfterAll
-    public static void tearDown() throws Exception {
+    public static void tearDown() {
         r.shutdown();
     }
 
     @NotNull
-    private static Rule getTargetProxy() throws Exception {
-        Rule targetProxy = new ServiceProxy(new ServiceProxyKey("localhost", "GET", ".*", 3000), null, 8000);
+    private static ServiceProxy getTargetProxy() throws Exception {
+        ServiceProxy targetProxy = new ServiceProxy(new ServiceProxyKey("localhost", "GET", ".*", 3000), null, 8000);
         targetProxy.getInterceptors().add(new ReturnInterceptor());
         targetProxy.init(r);
         return targetProxy;

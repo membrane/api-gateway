@@ -14,121 +14,67 @@
 
 package com.predic8.membrane.core.exchangestore;
 
-import java.util.List;
+import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.interceptor.Interceptor.*;
+import com.predic8.membrane.core.interceptor.rest.*;
+import com.predic8.membrane.core.model.*;
+import com.predic8.membrane.core.proxies.*;
 
-import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.Router;
-import com.predic8.membrane.core.exchange.AbstractExchange;
-import com.predic8.membrane.core.interceptor.Interceptor.Flow;
-import com.predic8.membrane.core.interceptor.rest.QueryParameter;
-import com.predic8.membrane.core.model.IExchangesStoreListener;
-import com.predic8.membrane.core.rules.Rule;
-import com.predic8.membrane.core.rules.RuleKey;
-import com.predic8.membrane.core.rules.StatisticCollector;
+import java.util.*;
 
-@MCElement(name="forgetfulExchangeStore")
+@MCElement(name = "forgetfulExchangeStore")
 public class ForgetfulExchangeStore implements ExchangeStore {
 
-	public void snap(AbstractExchange exchange, Flow flow) {
-	}
+    public void snap(AbstractExchange exchange, Flow flow) {}
 
-	public void addExchangesStoreListener(IExchangesStoreListener viewer) {
+    public void addExchangesStoreListener(IExchangesStoreListener viewer) {}
 
-	}
+    public AbstractExchange[] getExchanges(RuleKey ruleKey) {
+        return null;
+    }
 
-	public AbstractExchange[] getExchanges(RuleKey ruleKey) {
-		return null;
-	}
+    public StatisticCollector getStatistics(RuleKey ruleKey) {
+        return null;
+    }
 
-	public int getNumberOfExchanges(RuleKey ruleKey) {
-		return 0;
-	}
+    public void refreshExchangeStoreListeners() {}
 
-	public StatisticCollector getStatistics(RuleKey ruleKey) {
-		return null;
-	}
+    public void remove(AbstractExchange exchange) {}
 
+    public void removeAllExchanges(Proxy proxy) {}
 
-	public void notifyListenersOnExchangeAdd(Rule rule, AbstractExchange exchange) {
+    public void removeExchangesStoreListener(IExchangesStoreListener viewer) {}
 
-	}
+    public Object[] getAllExchanges() {
+        return null;
+    }
 
+    public List<AbstractExchange> getAllExchangesAsList() {
+        return null;
+    }
 
-	public void notifyListenersOnExchangeRemoval(AbstractExchange exchange) {
+    public void removeAllExchanges(AbstractExchange[] exchanges) {}
 
-	}
+    public AbstractExchange getExchangeById(long intParam) {
+        return null;
+    }
 
+    public List<? extends ClientStatistics> getClientStatistics() {
+        return null;
+    }
 
-	public void notifyListenersOnRuleAdd(Rule rule) {
+    public void collect(ExchangeCollector collector) {}
 
-	}
+    public long getLastModified() {
+        return 0;
+    }
 
+    public void waitForModification(long lastKnownModification) {}
 
-	public void notifyListenersOnRuleRemoval(Rule rule, int rulesLeft) {
-
-	}
-
-
-	public void refreshExchangeStoreListeners() {
-
-	}
-
-
-	public void remove(AbstractExchange exchange) {
-
-	}
-
-	public void removeAllExchanges(Rule rule) {
-
-	}
-
-
-	public void removeExchangesStoreListener(IExchangesStoreListener viewer) {
-
-	}
-
-	public Object[] getAllExchanges() {
-		return null;
-	}
-
-	public Object[] getLatExchanges(int count) {
-
-		return null;
-	}
-
-	public List<AbstractExchange> getAllExchangesAsList() {
-		return null;
-	}
-
-	public void removeAllExchanges(AbstractExchange[] exchanges) {
-
-	}
-
-	public AbstractExchange getExchangeById(long intParam) {
-		return null;
-	}
-
-	@Override
-	public void init(Router router) throws Exception {
-	}
-
-	public List<? extends ClientStatistics> getClientStatistics() {
-		return null;
-	}
-
-	public void collect(ExchangeCollector collector) {}
-
-	public long getLastModified() {
-		return 0;
-	}
-
-	public void waitForModification(long lastKnownModification) {
-
-	}
-
-	@Override
-	public ExchangeQueryResult getFilteredSortedPaged(QueryParameter params, boolean useXForwardedForAsClientAddr) throws Exception {
-		return null;
-	}
+    @Override
+    public ExchangeQueryResult getFilteredSortedPaged(QueryParameter params, boolean useXForwardedForAsClientAddr) {
+        return null;
+    }
 
 }

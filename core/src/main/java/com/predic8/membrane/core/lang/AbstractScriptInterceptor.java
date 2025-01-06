@@ -23,6 +23,7 @@ import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
 import org.graalvm.polyglot.*;
+import org.jetbrains.annotations.*;
 import org.slf4j.*;
 
 import java.io.*;
@@ -32,7 +33,9 @@ import java.util.function.*;
 import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 import static com.predic8.membrane.core.lang.ScriptingUtils.*;
+import static java.nio.charset.StandardCharsets.*;
 import static org.apache.commons.lang3.StringUtils.*;
 
 public abstract class AbstractScriptInterceptor extends AbstractInterceptor {
@@ -57,9 +60,11 @@ public abstract class AbstractScriptInterceptor extends AbstractInterceptor {
 
     public void init() throws IOException, ClassNotFoundException {
         if (router == null)
-            return;
-        if (src.isEmpty())
-            return;
+            throw new RuntimeException("ScriptInterceptors need router instance!");
+        if (src.isEmpty()) {
+            throw new RuntimeException("Script must have a src!");
+        }
+
         scriptAccessesJson = src.contains("json");
         initInternal();
     }
@@ -67,7 +72,7 @@ public abstract class AbstractScriptInterceptor extends AbstractInterceptor {
     protected abstract void initInternal() throws IOException, ClassNotFoundException;
 
     @SuppressWarnings("rawtypes")
-    protected Outcome runScript(Exchange exc, Flow flow) throws InterruptedException, IOException, ClassNotFoundException {
+    protected Outcome runScript(Exchange exc, Flow flow) throws IOException {
 
         Message msg = getMessage(exc, flow);
 
@@ -77,7 +82,7 @@ public abstract class AbstractScriptInterceptor extends AbstractInterceptor {
         }
         catch (Exception e) {
             handleScriptExecutionException(exc, e);
-            return RETURN;
+            return ABORT;
         }
 
         if (res instanceof Outcome outcome) {
@@ -94,6 +99,7 @@ public abstract class AbstractScriptInterceptor extends AbstractInterceptor {
         }
 
         if(res instanceof Map m) {
+            msg = createResponseAndToExchangeIfThereIsNone(exc, flow, msg);
             msg.getHeader().setContentType(APPLICATION_JSON);
             msg.setBodyContent(om.writeValueAsBytes(m));
             return CONTINUE;
@@ -103,8 +109,9 @@ public abstract class AbstractScriptInterceptor extends AbstractInterceptor {
             if (s.equals("undefined")) {
                 return CONTINUE;
             }
-            msg.getHeader().setContentType(TEXT_HTML);
-            msg.setBodyContent(om.writeValueAsBytes(s));
+            msg = createResponseAndToExchangeIfThereIsNone(exc, flow, msg);
+            msg.getHeader().setContentType(TEXT_HTML_UTF8);
+            msg.setBodyContent(s.getBytes(UTF_8));
             return CONTINUE;
         }
 
@@ -121,6 +128,26 @@ public abstract class AbstractScriptInterceptor extends AbstractInterceptor {
         }
 
         return CONTINUE;
+    }
+
+    /**
+     * If a script returns a String or a Map that should be interpreted as a successful message (200 OK) if there
+     * is not a message already.
+     * Design issue: Method does to things!
+     * @param exchange Current Exchange
+     * @param flow Flow
+     * @param msg Current Message
+     * @return Message message of the exchange or newly created Response message
+     */
+    private static @Nullable Message createResponseAndToExchangeIfThereIsNone(Exchange exchange, Flow flow, Message msg) {
+        if (msg != null)
+            return msg;
+        if (flow.isResponse()) {
+            var response = Response.ok().build();
+            exchange.setResponse(response);
+            return response;
+        }
+        return null;
     }
 
     protected void handleScriptExecutionException(Exchange exc, Exception e) {
@@ -141,19 +168,17 @@ public abstract class AbstractScriptInterceptor extends AbstractInterceptor {
     }
 
     private HashMap<String, Object> getParameterBindings(Exchange exc, Flow flow, Message msg) {
-        HashMap<String, Object> parameterBindings = createParameterBindings(router.getUriFactory(), exc, msg, flow, scriptAccessesJson && msg.isJSON());
-        addOutcomeObjects(parameterBindings);
-        parameterBindings.put("spring", router.getBeanFactory());
-        return parameterBindings;
+        HashMap<String, Object> binding = createParameterBindings(router, exc, flow, scriptAccessesJson && msg.isJSON());
+        addOutcomeObjects(binding);
+        binding.put("spring", router.getBeanFactory());
+        return binding;
     }
 
     @Override
     public void handleAbort(Exchange exc) {
         try {
             runScript(exc, Flow.ABORT);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-        } catch (IOException | ClassNotFoundException e) {
+        } catch (Exception  e) {
             log.error("",e);
         }
     }
@@ -162,7 +187,7 @@ public abstract class AbstractScriptInterceptor extends AbstractInterceptor {
         parameters.put("Outcome", Outcome.class);
         parameters.put("RETURN", RETURN);
         parameters.put("CONTINUE", CONTINUE);
-        parameters.put("ABORT", Outcome.ABORT);
+        parameters.put("ABORT", ABORT);
     }
 
     public String getSrc() {

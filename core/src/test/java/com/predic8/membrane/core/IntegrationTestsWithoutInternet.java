@@ -14,22 +14,16 @@
 
 package com.predic8.membrane.core;
 
-import com.predic8.membrane.core.config.SpringReferencesTest;
-import com.predic8.membrane.core.interceptor.LimitInterceptorTest;
-import com.predic8.membrane.core.interceptor.RegExReplaceInterceptorTest;
-import com.predic8.membrane.core.interceptor.rest.REST2SOAPInterceptorIntegrationTest;
-import com.predic8.membrane.core.interceptor.server.WSDLPublisherTest;
-import com.predic8.membrane.core.resolver.ResolverTest;
-import com.predic8.membrane.core.rules.ProxySSLTest;
-import com.predic8.membrane.core.rules.SOAPProxyIntegrationTest;
-import com.predic8.membrane.core.transport.ExceptionHandlingTest;
-import com.predic8.membrane.core.transport.http.BoundConnectionTest;
-import com.predic8.membrane.core.transport.http.IllegalCharactersInURLTest;
-import com.predic8.membrane.integration.Http10Test;
-import com.predic8.membrane.integration.Http11Test;
-import com.predic8.membrane.integration.SessionManager;
-import org.junit.platform.suite.api.SelectClasses;
-import org.junit.platform.suite.api.Suite;
+import com.predic8.membrane.core.config.*;
+import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.interceptor.rest.*;
+import com.predic8.membrane.core.interceptor.server.*;
+import com.predic8.membrane.core.proxies.*;
+import com.predic8.membrane.core.resolver.*;
+import com.predic8.membrane.core.transport.http.*;
+import com.predic8.membrane.integration.*;
+import com.predic8.membrane.integration.withoutinternet.*;
+import org.junit.platform.suite.api.*;
 
 @Suite
 @SelectClasses({
@@ -40,7 +34,6 @@ import org.junit.platform.suite.api.Suite;
         ExceptionHandlingTest.class,
         REST2SOAPInterceptorIntegrationTest.class,
         WSDLPublisherTest.class,
-        LimitInterceptorTest.class,
         SpringReferencesTest.class,
         SOAPProxyIntegrationTest.class,
         ResolverTest.class,

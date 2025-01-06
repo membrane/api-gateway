@@ -17,7 +17,9 @@
 package com.predic8.membrane.core.util;
 
 /**
- * Exception with text to display to user before terminating Membrane
+ * Exception with text to display to the user before terminating Membrane. Used when
+ * an configuration error makes it impossible to start Membrane. The exception is catched
+ * and Membrane exits.
  */
 public class ConfigurationException extends RuntimeException {
 

@@ -14,29 +14,24 @@
 
 package com.predic8.membrane.core.transport.http;
 
-import com.predic8.membrane.core.HttpRouter;
-import com.predic8.membrane.core.interceptor.groovy.GroovyInterceptor;
-import com.predic8.membrane.core.rules.ServiceProxy;
-import com.predic8.membrane.core.rules.ServiceProxyKey;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.proxies.*;
+import org.junit.jupiter.api.*;
 
-import java.net.HttpURLConnection;
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.List;
+import java.net.*;
+import java.util.*;
 import java.util.concurrent.*;
-import java.util.stream.IntStream;
+import java.util.stream.*;
 
+import static com.predic8.membrane.core.interceptor.flow.invocation.FlowTestInterceptors.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class ConcurrentConnectionLimitTest {
 
     private HttpRouter router;
     private ExecutorService executor;
-    private int concurrency = 500;
-    private int concurrentLimit;
+    private int concurrency = 100;
+    private int concurrentLimit = 10;
     private CountDownLatch countDownLatchStart = new CountDownLatch(concurrency);
     private CountDownLatch countDownLatchEnd = new CountDownLatch(concurrency);
     private int port = 3026;
@@ -46,13 +41,12 @@ public class ConcurrentConnectionLimitTest {
         executor = Executors.newFixedThreadPool(concurrency);
 
         router = new HttpRouter();
-        concurrentLimit = router.getTransport().getConcurrentConnectionLimitPerIp();
+        router.getTransport().setConcurrentConnectionLimitPerIp(concurrentLimit);
 
         ServiceProxy sp = new ServiceProxy(new ServiceProxyKey("*", "*", ".*", port), "", -1);
 
-        GroovyInterceptor gi = new GroovyInterceptor();
-        gi.setSrc("exc.setResponse(Response.ok(\"Response\").build())\nRETURN");
-        sp.getInterceptors().add(gi);
+        sp.getInterceptors().add(GROOVY("Thread.sleep(1000)"));
+        sp.getInterceptors().add(RETURN);
 
         router.getRuleManager().addProxyAndOpenPortIfNew(sp);
         router.init();
@@ -71,7 +65,6 @@ public class ConcurrentConnectionLimitTest {
             try {
                 Thread.currentThread().setName("Test Thread " + i);
                 countDownLatchStart.countDown();
-                System.out.println("start = " + countDownLatchStart.getCount());
                 countDownLatchStart.await();
                 HttpURLConnection con = (HttpURLConnection) new URL("http://localhost:" + port).openConnection();
                 int code = 429;
@@ -90,7 +83,6 @@ public class ConcurrentConnectionLimitTest {
                         }
                 }
                 countDownLatchEnd.countDown();
-                System.out.println("end = " + countDownLatchEnd.getCount());
                 countDownLatchEnd.await();
                 con.disconnect();
             } catch (Exception e) {

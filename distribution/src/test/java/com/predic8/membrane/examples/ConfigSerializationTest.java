@@ -13,26 +13,23 @@
    limitations under the License. */
 package com.predic8.membrane.examples;
 
-import com.predic8.beautifier.PlainBeautifierFormatter;
-import com.predic8.beautifier.XMLBeautifier;
-import com.predic8.membrane.annot.bean.MCUtil;
-import com.predic8.membrane.core.Router;
-import com.predic8.membrane.test.AssertUtils;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.MethodSource;
+import com.predic8.beautifier.*;
+import com.predic8.membrane.annot.bean.*;
+import com.predic8.membrane.core.*;
+import org.junit.jupiter.params.*;
+import org.junit.jupiter.params.provider.*;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.OutputStreamWriter;
-import java.io.StringReader;
+import java.io.*;
+import java.util.ArrayList;
 import java.util.*;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
+import static com.predic8.membrane.test.AssertUtils.*;
+import static java.nio.charset.StandardCharsets.*;
 import static java.util.Arrays.*;
-import static java.util.Objects.requireNonNull;
-import static org.apache.commons.io.FileUtils.readFileToString;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.xmlunit.matchers.CompareMatcher.isSimilarTo;
+import static java.util.Objects.*;
+import static org.apache.commons.io.FileUtils.*;
+import static org.hamcrest.MatcherAssert.*;
+import static org.xmlunit.matchers.CompareMatcher.*;
 
 /**
  * Tests {@link MCUtil#fromXML(Class, String)} and {@link MCUtil#toXML(Object)} on every
@@ -99,7 +96,7 @@ public class ConfigSerializationTest {
 
 			prettyPrint(xml);
 
-			AssertUtils.assertContainsNot("incomplete serialization", xml);
+			assertContainsNot("incomplete serialization", xml);
 
 			Router r2 = MCUtil.fromXML(Router.class, xml);
 

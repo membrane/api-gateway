@@ -17,7 +17,7 @@ package com.predic8.membrane.core.interceptor;
 import com.googlecode.jatl.Html;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Request;
-import com.predic8.membrane.core.rules.ProxyRule;
+import com.predic8.membrane.core.proxies.ProxyRule;
 import com.predic8.membrane.core.ws.relocator.Relocator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,7 +29,7 @@ import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 
 abstract public class RelocatingInterceptor extends AbstractInterceptor {
 
-	private static Logger log = LoggerFactory.getLogger(RelocatingInterceptor.class.getName());
+	private static final Logger log = LoggerFactory.getLogger(RelocatingInterceptor.class.getName());
 
 	protected String host;
 	protected String protocol;
@@ -39,23 +39,23 @@ abstract public class RelocatingInterceptor extends AbstractInterceptor {
 	@Override
 	public Outcome handleResponse(Exchange exc) throws Exception {
 
-		if (exc.getRule() instanceof ProxyRule) {
-			log.debug(name + " ProxyRule found: No relocating done!");
+		if (exc.getProxy() instanceof ProxyRule) {
+			log.debug("{} ProxyRule found: No relocating done!",name);
 			return CONTINUE;
 		}
 
 		if (!wasGetRequest(exc)) {
-			log.debug(name + " HTTP method wasn't GET: No relocating done!");
+			log.debug("{} HTTP method wasn't GET: No relocating done!",name);
 			return CONTINUE;
 		}
 
 		if (!hasContent(exc)) {
-			log.debug(name + " No Content: No relocating done!");
+			log.debug("{} No Content: No relocating done!",name);
 			return CONTINUE;
 		}
 
 		if (!exc.getResponse().isXML()) {
-			log.debug(name + " Body contains no XML: No relocating done!");
+			log.debug("{} Body contains no XML: No relocating done!",name);
 			return CONTINUE;
 		}
 
@@ -94,7 +94,7 @@ abstract public class RelocatingInterceptor extends AbstractInterceptor {
 
 		String locHost = exc.getOriginalHostHeaderHost();
 
-		log.debug("host " + locHost);
+		log.debug("host {}",locHost);
 
 		if (locHost == null) {
 			return "localhost";
@@ -115,7 +115,6 @@ abstract public class RelocatingInterceptor extends AbstractInterceptor {
 	}
 
 	public void setHost(String host) {
-		log.debug("host property set for" + name + ":" + host);
 		this.host = host;
 	}
 
@@ -124,7 +123,6 @@ abstract public class RelocatingInterceptor extends AbstractInterceptor {
 	}
 
 	public void setProtocol(String protocol) {
-		log.debug("protocol property set for " + name + ":" + protocol);
 		this.protocol = protocol;
 	}
 
@@ -134,10 +132,6 @@ abstract public class RelocatingInterceptor extends AbstractInterceptor {
 
 	public void setPort(String port) {
 		this.port = port;
-	}
-
-	public Relocator.PathRewriter getPathRewriter() {
-		return pathRewriter;
 	}
 
 	public void setPathRewriter(Relocator.PathRewriter pathRewriter) {

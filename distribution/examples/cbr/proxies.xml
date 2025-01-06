@@ -7,31 +7,35 @@
 	<router>
 	
 		<api port="2000" name="Router">
-			<switch>
-				<case xPath="//order[@express='yes']" service="Express" />
-				<case xPath="//order/items/item[@id='7']" service="ImportItems" />
-				<case xPath="//order" service="Order" />
-			</switch>
+			<request>
+				<!-- Attention: The last matching if will win!  -->
+				<if test="//order" language="xpath">
+					<destination url="service://order"/>
+				</if>
+				<if test="//order[@express='yes']" language="xpath">
+					<destination url="service://express"/>
+				</if>
+				<if test="//order/items/item[@id='7']" language="xpath">
+					<destination url="service://import-items"/>
+				</if>
+			</request>
 		</api>
 
 		<!-- Instead of returning a response you can forward to a remote target -->
-		<api name="ImportItems" port="3000">
-			<groovy>
-				Response.ok("Order contains import items.").build()			
-			</groovy>
+		<api name="import-items" port="3000">
+			<static>Order contains import items.</static>
+			<return/>
 		</api>
 	
-		<internalProxy name="Order">
-			<groovy>
-				Response.ok("Normal order received.").build()						
-			</groovy>
-		</internalProxy>
+		<api name="order">
+			<static>Normal order received.</static>
+			<return/>
+		</api>
 		
-		<internalProxy name="Express">
-			<groovy>
-				Response.ok("Express order received.").build()			
-			</groovy>
-		</internalProxy>
+		<api name="express">
+			<static>Express order received.</static>
+			<return/>
+		</api>
 
 	</router>
 	

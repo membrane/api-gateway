@@ -22,7 +22,6 @@ import com.predic8.membrane.core.openapi.*;
 import com.predic8.membrane.core.resolver.*;
 import com.predic8.membrane.core.util.*;
 import io.swagger.parser.*;
-import io.swagger.v3.core.util.Json31;
 import io.swagger.v3.oas.models.*;
 import io.swagger.v3.parser.*;
 import io.swagger.v3.parser.core.models.*;
@@ -52,7 +51,7 @@ public class OpenAPIRecordFactory {
         this.router = router;
     }
 
-    public Map<String, OpenAPIRecord> create(Collection<OpenAPISpec> specs) throws IOException {
+    public Map<String, OpenAPIRecord> create(Collection<OpenAPISpec> specs) {
         Map<String, OpenAPIRecord> apiRecords = new LinkedHashMap<>();
         for (OpenAPISpec spec : specs) {
             // Maybe a spec has both location and dir.
@@ -62,18 +61,18 @@ public class OpenAPIRecordFactory {
         return apiRecords;
     }
 
-    private void addOpenApisFromDirectory(Map<String, OpenAPIRecord> apiRecords, OpenAPISpec spec) throws IOException {
+    private void addOpenApisFromDirectory(Map<String, OpenAPIRecord> apiRecords, OpenAPISpec spec) {
         if (spec.dir == null)
             return;
 
-        log.info("Parsing specs from dir " + spec.dir);
+        log.info("Parsing specs from dir {}",spec.dir);
         File[] files = getOpenAPIFiles(spec.dir);
         if (files == null) {
             log.warn("Directory %s does not contain any OpenAPI documents.".formatted(spec.dir));
             return;
         }
         for (File file : files) {
-            log.info("Parsing spec " + file);
+            log.info("Parsing spec {}", file);
             OpenAPIRecord rec = create(spec, file);
             apiRecords.put(getUniqueId(apiRecords, rec), rec);
         }
@@ -84,7 +83,7 @@ public class OpenAPIRecordFactory {
             return;
 
         try {
-            log.info("Parsing spec " + spec.location);
+            log.info("Parsing spec {}",spec.location);
             OpenAPIRecord rec = create(spec);
             apiRecords.put(getUniqueId(apiRecords, rec), rec);
         } catch (Exception e) {
@@ -109,8 +108,8 @@ public class OpenAPIRecordFactory {
                         """, pe.getLocation(), pe.getMessage()));
             }
             if (root instanceof FileNotFoundException fnf) {
-                log.error("Cannot read OpenAPI specification from location " + spec.location);
-                log.error("Exception: " + fnf.getMessage());
+                log.error("Cannot read OpenAPI specification from location {}",spec.location);
+                log.error("Exception: {}",fnf.getMessage());
                 throw new ConfigurationException("Cannot read OpenAPI specification from location: " + spec.location);
             }
 
@@ -145,14 +144,10 @@ public class OpenAPIRecordFactory {
         return record;
     }
 
-    private OpenAPIRecord create(OpenAPISpec spec, File file) throws IOException {
+    private OpenAPIRecord create(OpenAPISpec spec, File file) {
         OpenAPIRecord record = new OpenAPIRecord(parseFileAsOpenAPI(file),  spec);
         setExtensionOnAPI(spec, record.api);
         return record;
-    }
-
-    public static JsonNode convert2Json(OpenAPI api) throws IOException {
-        return omYaml.readTree(Json31.mapper().writeValueAsBytes(api));
     }
 
     private OpenAPI getOpenAPI(OpenAPISpec spec) {

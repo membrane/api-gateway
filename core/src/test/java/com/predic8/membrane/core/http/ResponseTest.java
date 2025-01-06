@@ -25,7 +25,7 @@ import java.util.stream.*;
 
 import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.http.Response.*;
-import static com.predic8.membrane.util.TestUtil.*;
+import static com.predic8.membrane.test.TestUtil.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.junit.jupiter.params.provider.Arguments.*;
 
@@ -48,7 +48,7 @@ public class ResponseTest {
     private InputStream tempIn;
 
     @BeforeEach
-    public void setUp() throws Exception {
+    public void setUp() {
         in1 = getResourceAsStream(this,"response-unchunked-html.msg");
         in2 = getResourceAsStream(this,"response-unchunked-image.msg");
         in3 = getResourceAsStream(this,"response-chunked-html.msg");
@@ -278,7 +278,7 @@ public class ResponseTest {
         Response res = Response.noContent().build();
         res.read(getResourceAsStream(this,"response-no-content-length.txt"),true);
         assertFalse(res.isBodyEmpty());
-        assertTrue(res.getBody() instanceof Body);
+        assertInstanceOf(Body.class, res.getBody());
     }
 
     @Test
@@ -286,7 +286,7 @@ public class ResponseTest {
         Response res = Response.noContent().build();
         res.read(getResourceAsStream(this,"response-chunked.txt"),true);
         assertFalse(res.isBodyEmpty());
-        assertTrue(res.getBody() instanceof ChunkedBody);
+        assertInstanceOf(ChunkedBody.class, res.getBody());
     }
 
     @Test
@@ -294,7 +294,7 @@ public class ResponseTest {
         Response res = new Response();
         res.read(getResourceAsStream(this,"response-no-content.http"),true);
         assertTrue(res.isBodyEmpty());
-        assertTrue(res.getBody() instanceof EmptyBody);
+        assertInstanceOf(EmptyBody.class, res.getBody());
     }
 
     @Test
@@ -302,6 +302,6 @@ public class ResponseTest {
         Response res = new Response();
         res.read(getResourceAsStream(this,"response-205-reset.http"),true);
         assertTrue(res.isBodyEmpty());
-        assertTrue(res.getBody() instanceof EmptyBody);
+        assertInstanceOf(EmptyBody.class, res.getBody());
     }
 }

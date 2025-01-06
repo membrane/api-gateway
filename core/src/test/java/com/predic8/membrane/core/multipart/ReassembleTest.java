@@ -17,7 +17,7 @@ package com.predic8.membrane.core.multipart;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.xmlcontentfilter.*;
 import com.predic8.membrane.core.util.*;
-import com.predic8.membrane.core.util.ContentTypeDetector.ContentType;
+import com.predic8.membrane.core.util.ContentTypeDetector.EffectiveContentType;
 import jakarta.mail.internet.*;
 import org.apache.commons.io.*;
 import org.apache.commons.lang3.*;
@@ -84,7 +84,7 @@ public class ReassembleTest {
 
 	@Test
 	public void testContentTypeDetector() throws IOException {
-		assertEquals(ContentType.SOAP, ContentTypeDetector.detect(getResponse()).getEffectiveContentType());
+		assertEquals(EffectiveContentType.SOAP, ContentTypeDetector.detectEffectiveContentType(getResponse()));
 	}
 
 }

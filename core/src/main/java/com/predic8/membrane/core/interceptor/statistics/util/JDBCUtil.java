@@ -13,19 +13,14 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.statistics.util;
 
-import java.sql.Connection;
-import java.sql.DatabaseMetaData;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.Set;
-import java.util.TreeSet;
-import java.util.UUID;
-import java.util.regex.Pattern;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.exchangestore.*;
 
-import com.predic8.membrane.core.exchange.AbstractExchange;
-import com.predic8.membrane.core.exchange.ExchangesUtil;
-import com.predic8.membrane.core.exchangestore.FileExchangeStore;
+import java.sql.*;
+import java.util.*;
+import java.util.regex.*;
+
+import static java.lang.String.*;
 
 public class JDBCUtil {
 
@@ -176,7 +171,7 @@ public class JDBCUtil {
 		}
 		prepSt.setInt(++ startIndex, exc.getResponse().getStatusCode());
 		prepSt.setString(++ startIndex, ExchangesUtil.getTime(exc));
-		prepSt.setString(++ startIndex, exc.getRule().toString());
+		prepSt.setString(++ startIndex, exc.getProxy().toString());
 		prepSt.setString(++ startIndex, exc.getRequest().getMethod());
 		prepSt.setString(++ startIndex, exc.getRequest().getUri());
 		prepSt.setString(++ startIndex, exc.getRemoteAddr());
@@ -213,7 +208,7 @@ public class JDBCUtil {
 		DatabaseMetaData meta = con.getMetaData();
 		String [] types= {"TABLE"};
 		ResultSet rs = meta.getTables("", null, "%", types);
-		Set tables=new TreeSet(String.CASE_INSENSITIVE_ORDER);
+		Set<String> tables= new TreeSet<>(CASE_INSENSITIVE_ORDER);
 		while (rs.next()) {
 			tables.add(rs.getString(3));
 		}

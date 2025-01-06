@@ -34,8 +34,8 @@ public class RequestReferenceTest {
     OpenAPIValidator validator;
 
     @BeforeEach
-    void setUp() {
-        OpenAPIRecord apiRecord = new OpenAPIRecord(parseOpenAPI(getResourceAsStream(this, "/openapi/specs/oas31/request-reference.yaml")), null, new OpenAPISpec());
+    void setUp() throws Exception {
+        OpenAPIRecord apiRecord = new OpenAPIRecord(parseOpenAPI(getResourceAsStream(this, "/openapi/specs/oas31/request-reference.yaml")), new OpenAPISpec());
         validator = new OpenAPIValidator(new URIFactory(), apiRecord);
     }
 
@@ -69,6 +69,6 @@ public class RequestReferenceTest {
 
         assertEquals(expectedErrorSize, errors.size());
         if(errors.hasErrors())
-            assertEquals(errMsg, errors.getErrors().get(0).getMessage());
+            assertEquals(errMsg, errors.getErrors().getFirst().getMessage());
     }
 }

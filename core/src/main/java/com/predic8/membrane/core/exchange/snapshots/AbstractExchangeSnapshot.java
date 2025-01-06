@@ -51,7 +51,7 @@ public class AbstractExchangeSnapshot {
     List<String> destinations;
     String remoteAddr;
     String remoteAddrIp;
-    FakeRule rule;
+    FakeProxy rule;
     String server;
 
     long id;
@@ -105,7 +105,7 @@ public class AbstractExchangeSnapshot {
         setRemoteAddr(source.getRemoteAddr());
         setRemoteAddrIp(source.getRemoteAddrIp());
         setId(source.getId());
-        setRule(new FakeRule(source.getRule()));
+        setRule(new FakeProxy(source.getProxy()));
         setServer(source.getServer());
 
         return (T)this;
@@ -249,11 +249,11 @@ public class AbstractExchangeSnapshot {
         this.remoteAddrIp = remoteAddrIp;
     }
 
-    public FakeRule getRule() {
+    public FakeProxy getRule() {
         return rule;
     }
 
-    public void setRule(FakeRule rule) {
+    public void setRule(FakeProxy rule) {
         this.rule = rule;
     }
 

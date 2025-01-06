@@ -13,83 +13,87 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor;
 
-import java.io.IOException;
+import com.predic8.membrane.core.*;
+import org.junit.jupiter.api.*;
+
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 
-import org.apache.commons.httpclient.HttpClient;
-import org.apache.commons.httpclient.HttpException;
-import org.apache.commons.httpclient.methods.GetMethod;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
+import static io.restassured.RestAssured.*;
+import static java.util.Arrays.*;
 
-import com.predic8.membrane.core.Router;
+class UserFeatureTest {
 
-public class UserFeatureTest {
-
+	public static final String MOCK_1 = "mock1";
+	public static final String MOCK_3 = "mock3";
+	public static final String MOCK_4 = "mock4";
+	public static final String MOCK_7 = "mock7";
+	public static final String MOCK_5 = "mock5";
+	public static final String MOCK_6 = "mock6";
+	public static final String MOCK_2 = "mock2";
 	private static Router router;
 
-	static List<String> labels, inverseLabels;
+	static List<String> labels, inverseLabels, inversAbortLabels;
 
 	@BeforeAll
-	public static void setUp() throws Exception {
+	static void setUp() {
 		router = Router.init("classpath:/userFeature/proxies.xml");
 		MockInterceptor.clear();
+	}
 
-		labels = new ArrayList<>(Arrays.asList("Mock1", "Mock3", "Mock4", "Mock7"));
-		inverseLabels = new ArrayList<>(Arrays.asList("Mock7", "Mock6", "Mock5", "Mock4", "Mock2", "Mock1"));
+	@BeforeEach
+	void beforeEach() {
+		MockInterceptor.clear();
+		labels = new ArrayList<>(asList(MOCK_1, MOCK_3, MOCK_4, MOCK_7));
+		inverseLabels = new ArrayList<>(asList(MOCK_7, MOCK_6, MOCK_5, MOCK_4, MOCK_2, MOCK_1));
+		inversAbortLabels = new ArrayList<>(asList(MOCK_7, MOCK_4, MOCK_1));
 	}
 
 	@AfterAll
-	public static void tearDown() throws Exception {
+	static void tearDown() throws Exception {
 		router.shutdown();
 	}
 
-	private void callService(String s) throws HttpException, IOException {
-		HttpClient httpClient = new HttpClient();
-		httpClient.executeMethod(new GetMethod("http://localhost:3030/" + s + "/"));
-		httpClient.getHttpConnectionManager().closeIdleConnections(0);
+	private void callService(String s) {
+		given()
+			.get("http://localhost:3030/%s/".formatted(s))
+			.then().log();
 	}
 
-
 	@Test
-	public void testInvocation() throws Exception {
+	void testInvocation() throws Exception {
 		callService("ok");
 		MockInterceptor.assertContent(labels, inverseLabels, new ArrayList<>());
 	}
 
 	@Test
-	public void testAbort() throws Exception {
+	void testAbort() throws Exception {
 		callService("abort");
-		MockInterceptor.assertContent(labels, new ArrayList<>(), inverseLabels);
+		MockInterceptor.assertContent(labels, new ArrayList<>(), inversAbortLabels);
 	}
 
 	@Test
-	public void testFailInRequest() throws Exception {
-		labels.add("Mock8");
+	void testFailInRequest() throws Exception {
+		labels.add("mock8");
 
 		callService("failinrequest");
-		MockInterceptor.assertContent(labels, new ArrayList<>(), inverseLabels);
+		MockInterceptor.assertContent(labels, new ArrayList<>(), inversAbortLabels);
 	}
 
 	@Test
-	public void testFailInResponse() throws Exception {
-		labels.add("Mock9");
+	void testFailInResponse() throws Exception {
+		labels.add("mock9");
 
 		callService("failinresponse");
-		MockInterceptor.assertContent(labels, Arrays.asList("Mock9"), inverseLabels);
+		MockInterceptor.assertContent(labels, List.of("mock9"), inversAbortLabels);
 	}
 
 	@Test
-	public void testFailInAbort() throws Exception {
-		labels.add("Mock10");
-		inverseLabels.add(0, "Mock10");
+	void testFailInAbort() throws Exception {
+		labels.add("mock10");
+		inversAbortLabels.add(0, "mock10");
 
 		callService("failinabort");
-		MockInterceptor.assertContent(labels, new ArrayList<>(), inverseLabels);
+		MockInterceptor.assertContent(labels, new ArrayList<>(), inversAbortLabels);
 	}
-
-
 }

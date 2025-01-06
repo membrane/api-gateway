@@ -17,17 +17,16 @@ package com.predic8.membrane.core.lang.spel;
 import com.fasterxml.jackson.databind.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.lang.spel.functions.BuiltInFunctionResolver;
+import com.predic8.membrane.core.lang.spel.functions.*;
 import com.predic8.membrane.core.lang.spel.spelable.*;
-import com.predic8.membrane.core.util.URIFactory;
-import com.predic8.membrane.core.util.URLParamUtil;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.predic8.membrane.core.util.*;
+import org.slf4j.*;
 import org.springframework.expression.spel.support.*;
+
 import java.io.*;
 import java.util.*;
 
-import static com.predic8.membrane.core.util.URLParamUtil.DuplicateKeyOrInvalidFormStrategy.ERROR;
+import static com.predic8.membrane.core.util.URLParamUtil.DuplicateKeyOrInvalidFormStrategy.*;
 
 public class ExchangeEvaluationContext extends StandardEvaluationContext {
     private static final Logger log = LoggerFactory.getLogger(ExchangeEvaluationContext.class);
@@ -36,8 +35,13 @@ public class ExchangeEvaluationContext extends StandardEvaluationContext {
 
     private final Exchange exchange;
     private final Message message;
+
+    // Avoid the common plural error
     private final SpELLablePropertyAware headers;
+
+    // Avoid the common plural error
     private final SpELLablePropertyAware properties;
+
     private SpELLablePropertyAware params;
     private String path;
     private String method;
@@ -51,30 +55,30 @@ public class ExchangeEvaluationContext extends StandardEvaluationContext {
         this(exc, exc.getRequest());
     }
 
-    public ExchangeEvaluationContext(Exchange exc, Message message) {
+    public ExchangeEvaluationContext(Exchange exchange, Message message) {
         super();
 
         this.message = message;
-        exchange = exc;
-        properties = new SpELProperties(exc.getProperties());
+        this.exchange = exchange;
+        properties = new SpELProperties(exchange.getProperties());
         headers = new SpELHeader(message.getHeader());
 
-        Request request = exc.getRequest();
+        Request request = exchange.getRequest();
         if (request != null) {
             path = request.getUri();
             method = request.getMethod();
             try {
-                params = new SpELMap<>(URLParamUtil.getParams(new URIFactory(), exc, ERROR));
+                params = new SpELMap<>(URLParamUtil.getParams(new URIFactory(), exchange, ERROR));
             } catch (Exception e) {
                 log.warn("Error parsing query parameters: {}", e.getMessage());
             }
-            this.request = new SpELMessageWrapper(exc.getRequest());
+            this.request = new SpELMessageWrapper(exchange.getRequest());
         }
 
-        Response response = exc.getResponse();
+        Response response = exchange.getResponse();
         if (response != null) {
-            this.response = new SpELMessageWrapper(exc.getResponse());
-            this.statusCode = exc.getResponse().getStatusCode();
+            this.response = new SpELMessageWrapper(exchange.getResponse());
+            this.statusCode = exchange.getResponse().getStatusCode();
         }
 
         setRootObject(this);
@@ -84,12 +88,25 @@ public class ExchangeEvaluationContext extends StandardEvaluationContext {
         setMethodResolvers(List.of(new BuiltInFunctionResolver()));
     }
 
-
     public SpELLablePropertyAware getProperties() {
         return properties;
     }
 
+    /**
+     * Also get a property with property.fieldname
+     */
+    public SpELLablePropertyAware getProperty() {
+        return properties;
+    }
+
     public SpELLablePropertyAware getHeaders() {
+        return headers;
+    }
+
+    /**
+     * Also get headers with header.fieldname
+     */
+    public SpELLablePropertyAware getHeader() {
         return headers;
     }
 

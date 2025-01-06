@@ -17,8 +17,10 @@ package com.predic8.membrane.core.exchange;
 import com.predic8.membrane.core.exchangestore.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.interceptor.Interceptor.*;
 import com.predic8.membrane.core.model.*;
-import com.predic8.membrane.core.rules.*;
+import com.predic8.membrane.core.proxies.*;
+import com.predic8.membrane.core.proxies.Proxy;
 import org.slf4j.*;
 
 import java.io.*;
@@ -42,7 +44,7 @@ public abstract class AbstractExchange {
 	private final Set<IExchangeViewerListener> exchangeViewerListeners = new HashSet<>();
 	private final Set<IExchangesStoreListener> exchangesStoreListeners = new HashSet<>();
 
-	protected Rule rule;
+	protected Proxy proxy;
 
 	protected Map<String, Object> properties = new HashMap<>();
 
@@ -80,7 +82,7 @@ public abstract class AbstractExchange {
 		properties = new HashMap<>(original.properties);
 		originalRequestUri = original.originalRequestUri;
 		destinations.addAll(original.getDestinations());
-		rule = original.getRule();
+		proxy = original.getProxy();
 	}
 
 	public void setStatus(ExchangeState state) {
@@ -129,12 +131,12 @@ public abstract class AbstractExchange {
 		}
 	}
 
-	public Rule getRule() {
-		return rule;
+	public Proxy getProxy() {
+		return proxy;
 	}
 
-	public void setRule(Rule rule) {
-		this.rule = rule;
+	public void setRule(Proxy proxy) {
+		this.proxy = proxy;
 	}
 
 	public void addExchangeViewerListener(IExchangeViewerListener viewer) {
@@ -183,10 +185,6 @@ public abstract class AbstractExchange {
 		for (IExchangesStoreListener listener : exchangesStoreListeners) {
 			listener.setExchangeStopped(this);
 		}
-	}
-
-	public void finishExchange(boolean refresh) {
-		finishExchange(refresh, "");
 	}
 
 	public void finishExchange(boolean refresh, String errmsg) {
@@ -297,20 +295,20 @@ public abstract class AbstractExchange {
 	}
 
 	public String getServer() {
-		if (getRule() instanceof ProxyRule) {
+		if (getProxy() instanceof ProxyRule) {
 			try {
 				if (getRequest().isCONNECTRequest()) {
 					return getRequest().getHeader().getHost();
 				}
 
-				return new URL(getOriginalRequestUri()).getHost();
-			} catch (MalformedURLException e) {
+				return new URI(getOriginalRequestUri()).getHost();
+			} catch (URISyntaxException e) {
 				log.error("", e);
 			}
 			return getOriginalRequestUri();
 		}
-		if (getRule() instanceof AbstractServiceProxy) {
-			return ((AbstractServiceProxy) getRule()).getTargetHost();
+		if (getProxy() instanceof AbstractServiceProxy) {
+			return ((AbstractServiceProxy) getProxy()).getTargetHost();
 		}
 		return "";
 	}
@@ -320,7 +318,7 @@ public abstract class AbstractExchange {
 		if (length != -1)
 			return length;
 
-		if (length == -1 && getResponse().getBody().isRead()) {
+		if (getResponse().getBody().isRead()) {
 			try {
 				return  getResponse().getBody().getLength();
 			} catch (IOException e) {
@@ -397,15 +395,6 @@ public abstract class AbstractExchange {
 		return "[time:" + DateFormat.getDateInstance().format(time.getTime()) + (request != null ? ",requestURI:"+ request.getUri() : "") + "]";
 	}
 
-	public void pushInterceptorToStack(Interceptor i) {
-		interceptorStack.add(i);
-	}
-
-	public Interceptor popInterceptorFromStack() {
-		int s = interceptorStack.size();
-		return s == 0 ? null : interceptorStack.remove(s-1);
-	}
-
 	public int getHeapSizeEstimation() {
 		if (estimatedHeapSize == -1)
 			estimatedHeapSize = estimateHeapSize();
@@ -436,7 +425,7 @@ public abstract class AbstractExchange {
 		copy.setOriginalRequestUri(source.getOriginalRequestUri());
 		copy.setTime(source.getTime());
 		copy.setErrorMessage(source.getErrorMessage());
-		copy.setRule(source.getRule());
+		copy.setRule(source.getProxy());
 		copy.setProperties(new HashMap<>(source.getProperties()));
 		copy.setStatus(source.getStatus());
 		copy.setForceToStop(source.isForcedToStop());
@@ -450,17 +439,6 @@ public abstract class AbstractExchange {
 		copy.setInterceptorStack(new ArrayList<>(source.getInterceptorStack()));
 
 		return copy;
-	}
-
-	public String getPublicUrl(){
-		String xForwardedProto = getRequest().getHeader().getFirstValue(Header.X_FORWARDED_PROTO);
-		boolean isHTTPS = xForwardedProto != null ? "https".equals(xForwardedProto) : getRule().getSslInboundContext() != null;
-		String publicURL = (isHTTPS ? "https://" : "http://") + getRequest().getHeader().getHost().replaceFirst(".*:", "");
-		RuleKey key = getRule().getKey();
-		if (!key.isPathRegExp() && key.getPath() != null)
-			publicURL += key.getPath();
-
-		return publicURL;
 	}
 
 	/**
@@ -480,7 +458,7 @@ public abstract class AbstractExchange {
 		this.properties = properties;
 	}
 
-	public abstract <T extends AbstractExchange> T createSnapshot(Runnable bodyUpdatedCallback, BodyCollectingMessageObserver.Strategy strategy, long limit) throws Exception;
+	public abstract <T extends AbstractExchange> T createSnapshot(Runnable bodyUpdatedCallback, BodyCollectingMessageObserver.Strategy strategy, long limit);
 
 	public ArrayList<Interceptor> getInterceptorStack() {
 		return interceptorStack;
@@ -490,5 +468,17 @@ public abstract class AbstractExchange {
 		this.interceptorStack = interceptorStack;
 	}
 
-
+	/**
+	 * Gets the message for the flow.
+	 * ADR: The flow is not stored in the Exchange cause it is not a property of the exchange. The flow is a
+	 * property of the context where a exchange is used e.g. a plugin in &lt;abort&gt; is executed in the
+	 * RESPONSE flow even when outside it happens in an ABORT flow.
+	 * @param flow
+	 * @return Message
+	 */
+	public Message getMessage(Flow flow) {
+		if (flow.isRequest())
+			return request;
+		return response; // RESPONSE and ABORT flow both work on the response
+	}
 }

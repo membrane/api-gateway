@@ -14,24 +14,24 @@
 
 package com.predic8.membrane.core.transport.ssl;
 
-import com.predic8.membrane.core.rules.Rule;
+import com.predic8.membrane.core.proxies.Proxy;
 
 import java.util.HashMap;
 import java.util.Map;
 
 public class SSLExchange {
-    protected Rule rule;
+    protected Proxy proxy;
     protected String remoteAddrIp;
     protected Map<String, Object> properties = new HashMap<>();
     protected TLSError error;
     private int remotePort;
 
-    public Rule getRule() {
-        return rule;
+    public Proxy getRule() {
+        return proxy;
     }
 
-    public void setRule(Rule rule) {
-        this.rule = rule;
+    public void setRule(Proxy proxy) {
+        this.proxy = proxy;
     }
 
     public String getRemoteAddrIp() {

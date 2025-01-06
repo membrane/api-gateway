@@ -6,11 +6,11 @@
 
 	<router>
 
-		<serviceProxy port="2000">
+		<api port="2000">
 			<target host="api.predic8.de" port="443">
 				<ssl/>
 			</target>
-		</serviceProxy>
+		</api>
 		
 	</router>
 

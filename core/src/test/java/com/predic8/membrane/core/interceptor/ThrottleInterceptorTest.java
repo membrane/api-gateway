@@ -13,6 +13,9 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor;
 
+import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
+import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
+import static java.lang.System.currentTimeMillis;
 import static org.junit.jupiter.api.Assertions.*;
 
 import org.junit.jupiter.api.Test;
@@ -27,34 +30,34 @@ public class ThrottleInterceptorTest {
 		final ThrottleInterceptor i = new ThrottleInterceptor();
 		final Exchange exc = new Exchange(null);
 
-		long t = System.currentTimeMillis();
+		long t = currentTimeMillis();
 		i.handleRequest(exc);
-		assertTrue(System.currentTimeMillis()-t < 2000);
+		assertTrue(currentTimeMillis() - t < 200);
 
-		t = System.currentTimeMillis();
-		i.setDelay(3000);
+		t = currentTimeMillis();
+		i.setDelay(300);
 		i.handleRequest(exc);
-		assertTrue(System.currentTimeMillis()-t > 2000);
+		assertTrue(currentTimeMillis() - t > 200);
 
 		i.setDelay(0);
 
 		i.setMaxThreads(3);
-		assertEquals(Outcome.CONTINUE, i.handleRequest(exc));
+		assertEquals(CONTINUE, i.handleRequest(exc));
 
-		assertEquals(Outcome.ABORT, i.handleRequest(exc));
+		assertEquals(ABORT, i.handleRequest(exc));
 		assertEquals(503, exc.getResponse().getStatusCode());
 
 		i.handleResponse(exc);
-		assertEquals(Outcome.CONTINUE, i.handleRequest(exc));
+		assertEquals(CONTINUE, i.handleRequest(exc));
 
-		i.setBusyDelay(3000);
-		t = System.currentTimeMillis();
-		assertEquals(Outcome.ABORT, i.handleRequest(exc));
-		assertTrue(System.currentTimeMillis()-t > 2000);
+		i.setBusyDelay(300);
+		t = currentTimeMillis();
+		assertEquals(ABORT, i.handleRequest(exc));
+		assertTrue(currentTimeMillis() - t > 200);
 
 		Thread thread1 = new Thread(() -> {
             try {
-                success = (Outcome.CONTINUE == i.handleRequest(exc));
+                success = (CONTINUE == i.handleRequest(exc));
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
@@ -62,7 +65,7 @@ public class ThrottleInterceptorTest {
 
 		thread1.start();
 
-		Thread.sleep(1000);
+		Thread.sleep(100);
 		i.handleResponse(exc);
 
 		thread1.join();

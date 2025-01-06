@@ -13,23 +13,18 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.balancer;
 
+import com.google.common.collect.*;
+import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.interceptor.*;
+import org.slf4j.*;
+
 import java.io.*;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
-import com.predic8.membrane.core.Router;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import com.google.common.collect.Lists;
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCChildElement;
-import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Message;
-import com.predic8.membrane.core.http.Response;
-import com.predic8.membrane.core.interceptor.AbstractInterceptor;
-import com.predic8.membrane.core.interceptor.Outcome;
+import static com.predic8.membrane.core.interceptor.Outcome.*;
 
 /**
  * @description Performs load-balancing between several nodes. Nodes sharing session state may be bundled into a cluster.
@@ -81,7 +76,7 @@ public class LoadBalancingInterceptor extends AbstractInterceptor {
 			//2) All destinations got disabled externally (through Membrane maintenance API). See class EmptyNodeListException.
 			log.error("No Node found.");
 			exc.setResponse(Response.internalServerError().build());
-			return Outcome.ABORT;
+			return ABORT;
 		}
 
 		dispatchedNode.incCounter();
@@ -96,7 +91,7 @@ public class LoadBalancingInterceptor extends AbstractInterceptor {
 
 		setFailOverNodes(exc, dispatchedNode);
 
-		return Outcome.CONTINUE;
+		return CONTINUE;
 	}
 	
 	@Override
@@ -108,7 +103,6 @@ public class LoadBalancingInterceptor extends AbstractInterceptor {
 
 	@Override
 	public Outcome handleResponse(Exchange exc) throws Exception {
-		
 		if(nodeOnlineChecker != null){
 			nodeOnlineChecker.handle(exc);
 		}
@@ -124,7 +118,7 @@ public class LoadBalancingInterceptor extends AbstractInterceptor {
 		updateDispatchedNode(exc);
 		strategy.done(exc);
 
-		return Outcome.CONTINUE;
+		return CONTINUE;
 	}
 
 	/**
@@ -160,9 +154,9 @@ public class LoadBalancingInterceptor extends AbstractInterceptor {
 
 		Session s = getSession(sessionId);
 		if (s == null)
-			log.debug("no session found for id " + sessionId);
+			log.debug("no session found for id {}",sessionId);
 		if (s == null || s.getNode().isDown()) {
-			log.debug("assigning new node for session id " + sessionId
+			log.debug("assigning new node for session id {}",sessionId
 					+ (s != null ? " (old node was " + s.getNode() + ")" : ""));
 			balancer.addSession2Cluster(sessionId, BalancerUtil.getSingleClusterNameOrDefault(balancer), strategy.dispatch(this, exc));
 		}
@@ -188,7 +182,7 @@ public class LoadBalancingInterceptor extends AbstractInterceptor {
 	 * @default Default
 	 */
 	@MCAttribute
-	public void setName(String name) throws Exception {
+	public void setName(String name) {
 		balancer.setName(name);
 	}
 
@@ -308,7 +302,7 @@ public class LoadBalancingInterceptor extends AbstractInterceptor {
 	}
 
 	@Override
-	public void init() throws Exception {
+	public void init() {
 		for (Cluster c : balancer.getClusters())
 			for (Node n : c.getNodes())
 				c.nodeUp(n);

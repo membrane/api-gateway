@@ -80,7 +80,7 @@
         Log and return the request as response
         -->
 		<api name="echo" port="3000">
-			<log headerOnly="false"/>
+			<log/>
 			<return/>
 		</api>
 

@@ -18,19 +18,16 @@ package com.predic8.membrane.core.openapi.serviceproxy;
 
 import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.openapi.util.*;
-import com.predic8.membrane.core.rules.*;
-import com.predic8.membrane.core.util.URI;
+import com.predic8.membrane.core.proxies.*;
 import com.predic8.membrane.core.util.*;
 import io.swagger.v3.oas.models.servers.*;
 import org.slf4j.*;
 
-import java.io.*;
 import java.net.*;
 import java.util.*;
 
 /**
  * @description The api proxy extends the serviceProxy with API related functions like OpenAPI support.
- *
  * @topic 2. Proxies
  */
 @MCElement(name = "api")
@@ -49,17 +46,11 @@ public class APIProxy extends ServiceProxy {
     private String id;
     private ApiDescription description;
 
-    protected Map<String,OpenAPIRecord> apiRecords = new LinkedHashMap<>();
+    protected Map<String, OpenAPIRecord> apiRecords = new LinkedHashMap<>();
 
     protected Map<String, OpenAPIRecord> basePaths;
 
-    protected ValidationStatisticsCollector statisticCollector = new ValidationStatisticsCollector();
-
-    @Override
-    protected AbstractProxy getNewInstance() {
-        return new APIProxy();
-    }
-
+    protected final ValidationStatisticsCollector statisticCollector = new ValidationStatisticsCollector();
 
     protected List<OpenAPISpec> specs = new ArrayList<>();
 
@@ -76,13 +67,13 @@ public class APIProxy extends ServiceProxy {
     }
 
     @Override
-    public void init() throws Exception {
+    public void init() {
         key = new APIProxyKey(key, test, !specs.isEmpty());
         super.init();
         initOpenAPI();
     }
 
-    private void initOpenAPI() throws IOException, ClassNotFoundException, URISyntaxException {
+    private void initOpenAPI() {
         if (specs.isEmpty())
             return;
 
@@ -104,25 +95,27 @@ public class APIProxy extends ServiceProxy {
      */
     void checkForDuplicatePaths() {
 
-        Map<String,List<OpenAPIRecord>> paths = new HashMap<>();
+        Map<String, List<OpenAPIRecord>> paths = new HashMap<>();
 
         apiRecords.values().forEach(rec -> {
             for (Server server : rec.api.getServers()) {
-                URI uri;
-                try {
-                    uri = new URIFactory(true).create(server.getUrl());
-                } catch (URISyntaxException e) {
-                    throw new RuntimeException(e);
-                }
-
-                String path = uri.getPath();
-
+                String path = getUriPath(server);
                 if (paths.containsKey(path)) {
                     List<OpenAPIRecord> l = paths.get(path);
                     // Check if the path is not from the same API. One OpenAPI can have several server.urls with the same path.
                     if (!l.contains(rec)) {
                         log.error("Several OpenAPI documents of the API {} share the same path {}. Make sure that the values of info.servers.url in the OpenAPI documents are unique.", name, path);
-                        throw new DuplicatePathException(path);
+                        throw new ConfigurationException("""
+                            ================================================================================================
+        
+                            Configuration Error: Several OpenAPI Documents share the same path!
+        
+                            An API routes and validates requests according to the path of the OpenAPI's servers.url fields.
+                            Within one API the same path should be used only by one OpenAPI. Change the paths or place
+                            openapi-elements into separate APIs.
+        
+                            Shared path: %s
+                            %n""".formatted(path));
                     }
                 }
 
@@ -135,13 +128,21 @@ public class APIProxy extends ServiceProxy {
         });
     }
 
+    private static String getUriPath(Server server) {
+        try {
+            return new URIFactory(true).create(server.getUrl()).getPath();
+        } catch (URISyntaxException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     private void configureBasePaths() {
         ((APIProxyKey) key).addBasePaths(new ArrayList<>(basePaths.keySet()));
     }
 
     private Map<String, OpenAPIRecord> getOpenAPIMap() {
         Map<String, OpenAPIRecord> paths = new HashMap<>();
-        apiRecords.forEach((id,rec) -> rec.api.getServers().forEach(server -> {
+        apiRecords.forEach((id, rec) -> rec.api.getServers().forEach(server -> {
             String url = server.getUrl();
             if (rec.spec.getRewrite() != null && rec.spec.getRewrite().basePath != null) {
                 url = rec.spec.getRewrite().basePath;

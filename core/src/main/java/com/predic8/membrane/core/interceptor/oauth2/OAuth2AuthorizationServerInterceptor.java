@@ -28,7 +28,7 @@ import com.predic8.membrane.core.interceptor.oauth2.processors.*;
 import com.predic8.membrane.core.interceptor.oauth2.tokengenerators.BearerTokenGenerator;
 import com.predic8.membrane.core.interceptor.oauth2.tokengenerators.JwtGenerator;
 import com.predic8.membrane.core.interceptor.oauth2.tokengenerators.TokenGenerator;
-import com.predic8.membrane.core.rules.Rule;
+import com.predic8.membrane.core.proxies.Proxy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.predic8.membrane.annot.Required;
@@ -37,7 +37,7 @@ import java.util.HashSet;
 
 @MCElement(name = "oauth2authserver")
 public class OAuth2AuthorizationServerInterceptor extends AbstractInterceptor {
-    private static Logger log = LoggerFactory.getLogger(OAuth2AuthorizationServerInterceptor.class.getName());
+    private static final Logger log = LoggerFactory.getLogger(OAuth2AuthorizationServerInterceptor.class.getName());
 
     private String issuer;
     private String location;
@@ -72,7 +72,7 @@ public class OAuth2AuthorizationServerInterceptor extends AbstractInterceptor {
     @Override
     public void init(Router router) throws Exception {
         name = "OAuth 2 Authorization Server";
-        setFlow(Flow.Set.REQUEST_RESPONSE);
+        setFlow(Flow.Set.REQUEST_RESPONSE_ABORT);
 
         this.setRouter(router);
         basePath = computeBasePath();
@@ -410,12 +410,12 @@ public class OAuth2AuthorizationServerInterceptor extends AbstractInterceptor {
     }
 
     public String computeBasePath() {
-        Rule rule = getRule();
-        if (rule == null)
+        Proxy proxy = getProxy();
+        if (proxy == null)
             return "";
-        if (rule.getKey().getPath() == null || rule.getKey().isPathRegExp())
+        if (proxy.getKey().getPath() == null || proxy.getKey().isPathRegExp())
             return "";
-        return rule.getKey().getPath();
+        return proxy.getKey().getPath();
     }
 
     public String getBasePath() {

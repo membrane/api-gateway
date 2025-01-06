@@ -13,14 +13,12 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor;
 
-import java.io.IOException;
-
-import org.apache.commons.httpclient.HttpClient;
-import org.apache.commons.httpclient.HttpException;
-import org.apache.commons.httpclient.methods.GetMethod;
+import com.predic8.membrane.core.*;
+import org.apache.commons.httpclient.*;
+import org.apache.commons.httpclient.methods.*;
 import org.junit.jupiter.api.*;
 
-import com.predic8.membrane.core.Router;
+import java.io.*;
 
 public class InternalInvocationTest {
 
@@ -33,7 +31,7 @@ public class InternalInvocationTest {
 	}
 
 	@Test
-	public void testFullChain() throws Exception {
+	void testFullChain() throws Exception {
 		callService(3028);
 
 		MockInterceptor.assertContent(
@@ -43,7 +41,7 @@ public class InternalInvocationTest {
 	}
 
 	@Test
-	public void testReturnedChain() throws Exception {
+	void returnedChain() throws Exception {
 		callService(3029);
 
 		MockInterceptor.assertContent(

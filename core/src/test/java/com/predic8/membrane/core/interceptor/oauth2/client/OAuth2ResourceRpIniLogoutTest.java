@@ -28,8 +28,8 @@ import com.predic8.membrane.core.interceptor.oauth2client.LoginParameter;
 import com.predic8.membrane.core.interceptor.oauth2client.OAuth2Resource2Interceptor;
 import com.predic8.membrane.core.interceptor.oauth2client.rf.FormPostGenerator;
 import com.predic8.membrane.core.interceptor.session.InMemorySessionManager;
-import com.predic8.membrane.core.rules.ServiceProxy;
-import com.predic8.membrane.core.rules.ServiceProxyKey;
+import com.predic8.membrane.core.proxies.ServiceProxy;
+import com.predic8.membrane.core.proxies.ServiceProxyKey;
 import com.predic8.membrane.core.util.URIFactory;
 import com.predic8.membrane.core.util.URLParamUtil;
 import org.jetbrains.annotations.NotNull;
@@ -53,6 +53,7 @@ import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
+import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class OAuth2ResourceRpIniLogoutTest {
@@ -64,8 +65,7 @@ public class OAuth2ResourceRpIniLogoutTest {
     private final String serverHost = "localhost";
     private final int clientPort = 31337;
     private HttpRouter oauth2Resource;
-    private OAuth2Resource2Interceptor oAuth2Resource2Interceptor;
-    private AtomicBoolean isLoggedOutAtOP = new AtomicBoolean(false);
+    private final AtomicBoolean isLoggedOutAtOP = new AtomicBoolean(false);
     private RsaJsonWebKey rsaJsonWebKey;
     private String jwksResponse;
 
@@ -180,22 +180,7 @@ public class OAuth2ResourceRpIniLogoutTest {
         ServiceProxy sp = new ServiceProxy(new ServiceProxyKey(serverPort), null, 99999);
 
 
-        WellknownFile wkf = new WellknownFile();
-
-        wkf.setIssuer(getServerAddress());
-        wkf.setAuthorizationEndpoint(getServerAddress() + "/auth");
-        wkf.setTokenEndpoint(getServerAddress() + "/token");
-        wkf.setUserinfoEndpoint(getServerAddress() + "/userinfo");
-        wkf.setRevocationEndpoint(getServerAddress() + "/revoke");
-        wkf.setEndSessionEndpoint(getServerAddress() + "/end-session");
-        wkf.setJwksUri(getServerAddress() + "/certs");
-        wkf.setSupportedResponseTypes("code token");
-        wkf.setSupportedSubjectType("public");
-        wkf.setSupportedIdTokenSigningAlgValues("RS256");
-        wkf.setSupportedScopes("openid email profile");
-        wkf.setSupportedTokenEndpointAuthMethods("client_secret_post");
-        wkf.setSupportedClaims("sub email username");
-        wkf.setSupportedResponseModes(Set.of("query", "fragment", "form_post"));
+        WellknownFile wkf = getWellknownFile();
         wkf.init(new HttpRouter());
 
         sp.getInterceptors().add(new AbstractInterceptor() {
@@ -243,19 +228,83 @@ public class OAuth2ResourceRpIniLogoutTest {
 
                 if (exc.getResponse() == null)
                     exc.setResponse(Response.notFound().build());
-                return Outcome.RETURN;
+                return RETURN;
             }
         });
 
         return sp;
     }
 
+    private @NotNull WellknownFile getWellknownFile() {
+        WellknownFile wkf = new WellknownFile();
+
+        wkf.setIssuer(getServerAddress());
+        wkf.setAuthorizationEndpoint(getServerAddress() + "/auth");
+        wkf.setTokenEndpoint(getServerAddress() + "/token");
+        wkf.setUserinfoEndpoint(getServerAddress() + "/userinfo");
+        wkf.setRevocationEndpoint(getServerAddress() + "/revoke");
+        wkf.setEndSessionEndpoint(getServerAddress() + "/end-session");
+        wkf.setJwksUri(getServerAddress() + "/certs");
+        wkf.setSupportedResponseTypes("code token");
+        wkf.setSupportedSubjectType("public");
+        wkf.setSupportedIdTokenSigningAlgValues("RS256");
+        wkf.setSupportedScopes("openid email profile");
+        wkf.setSupportedTokenEndpointAuthMethods("client_secret_post");
+        wkf.setSupportedClaims("sub email username");
+        wkf.setSupportedResponseModes(Set.of("query", "fragment", "form_post"));
+        return wkf;
+    }
+
     private ServiceProxy getConfiguredOAuth2Resource() {
 
         ServiceProxy sp = new ServiceProxy(new ServiceProxyKey(clientPort), null, 99999);
 
+        OAuth2Resource2Interceptor oAuth2ResourceInterceptor = getoAuth2Resource2Interceptor();
+
+        sp.getInterceptors().add(new AbstractInterceptor() {
+            @Override
+            public Outcome handleRequest(Exchange exc) throws Exception {
+                if (exc.getRequest().getUri().equals("/after-logout")) {
+                    exc.setResponse(Response.ok("logged out!").build());
+                    return RETURN;
+                }
+                return Outcome.CONTINUE;
+            }
+        });
+        sp.getInterceptors().add(new AbstractInterceptor() {
+            @Override
+            public Outcome handleRequest(Exchange exc) throws Exception {
+                if (!exc.getRequest().getUri().contains("is-logged-in"))
+                    return Outcome.CONTINUE;
+
+                boolean isLoggedIn = oAuth2ResourceInterceptor.getSessionManager().getSession(exc).isVerified();
+
+                exc.setResponse(Response.ok("{\"success\":" + isLoggedIn + "}").header(Header.CONTENT_TYPE, APPLICATION_JSON).build());
+                return RETURN;
+            }
+        });
+        sp.getInterceptors().add(oAuth2ResourceInterceptor);
+        sp.getInterceptors().add(new AbstractInterceptor() {
+            @Override
+            public Outcome handleRequest(Exchange exc) throws Exception {
+                OAuth2AnswerParameters answer = OAuth2AnswerParameters.deserialize(String.valueOf(exc.getProperty(Exchange.OAUTH2)));
+                String accessToken = answer.getAccessToken();
+                Map<String, String> body = Map.of(
+                        "accessToken", accessToken,
+                        "path", exc.getRequestURI(),
+                        "method", exc.getRequest().getMethod(),
+                        "body", exc.getRequest().getBodyAsStringDecoded()
+                );
+
+                exc.setResponse(Response.ok(om.writeValueAsString(body)).build());
+                return RETURN;
+            }
+        });
+        return sp;
+    }
+
+    private @NotNull OAuth2Resource2Interceptor getoAuth2Resource2Interceptor() {
         OAuth2Resource2Interceptor oAuth2ResourceInterceptor = new OAuth2Resource2Interceptor();
-        this.oAuth2Resource2Interceptor = oAuth2ResourceInterceptor;
         oAuth2ResourceInterceptor.setSessionManager(new InMemorySessionManager());
         MembraneAuthorizationService auth = new MembraneAuthorizationService();
         auth.setSrc(getServerAddress());
@@ -278,46 +327,6 @@ public class OAuth2ResourceRpIniLogoutTest {
                 withOutValue,
                 withValue
         ));
-
-        sp.getInterceptors().add(new AbstractInterceptor() {
-            @Override
-            public Outcome handleRequest(Exchange exc) throws Exception {
-                if (exc.getRequest().getUri().equals("/after-logout")) {
-                    exc.setResponse(Response.ok("logged out!").build());
-                    return Outcome.RETURN;
-                }
-                return Outcome.CONTINUE;
-            }
-        });
-        sp.getInterceptors().add(new AbstractInterceptor() {
-            @Override
-            public Outcome handleRequest(Exchange exc) throws Exception {
-                if (!exc.getRequest().getUri().contains("is-logged-in"))
-                    return Outcome.CONTINUE;
-
-                boolean isLoggedIn = oAuth2ResourceInterceptor.getSessionManager().getSession(exc).isVerified();
-
-                exc.setResponse(Response.ok("{\"success\":" + isLoggedIn + "}").header(Header.CONTENT_TYPE, APPLICATION_JSON).build());
-                return Outcome.RETURN;
-            }
-        });
-        sp.getInterceptors().add(oAuth2ResourceInterceptor);
-        sp.getInterceptors().add(new AbstractInterceptor() {
-            @Override
-            public Outcome handleRequest(Exchange exc) throws Exception {
-                OAuth2AnswerParameters answer = OAuth2AnswerParameters.deserialize(String.valueOf(exc.getProperty(Exchange.OAUTH2)));
-                String accessToken = answer.getAccessToken();
-                Map<String, String> body = Map.of(
-                        "accessToken", accessToken,
-                        "path", exc.getRequestURI(),
-                        "method", exc.getRequest().getMethod(),
-                        "body", exc.getRequest().getBodyAsStringDecoded()
-                );
-
-                exc.setResponse(Response.ok(om.writeValueAsString(body)).build());
-                return Outcome.RETURN;
-            }
-        });
-        return sp;
+        return oAuth2ResourceInterceptor;
     }
 }

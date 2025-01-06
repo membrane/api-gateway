@@ -14,19 +14,13 @@
 
 package com.predic8.membrane.core.exchangestore;
 
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Vector;
+import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.interceptor.Interceptor.*;
+import com.predic8.membrane.core.model.*;
+import com.predic8.membrane.core.proxies.*;
 
-import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.exchange.AbstractExchange;
-import com.predic8.membrane.core.interceptor.Interceptor.Flow;
-import com.predic8.membrane.core.model.IExchangesStoreListener;
-import com.predic8.membrane.core.rules.Rule;
-import com.predic8.membrane.core.rules.RuleKey;
-import com.predic8.membrane.core.rules.StatisticCollector;
+import java.util.*;
 
 /**
  * TODO: thread-safety
@@ -37,10 +31,10 @@ import com.predic8.membrane.core.rules.StatisticCollector;
 @MCElement(name="memoryExchangeStore")
 public class MemoryExchangeStore extends AbstractExchangeStore {
 
-	private Map<RuleKey, List<AbstractExchange>> exchangesMap = new HashMap<>();
+	private final Map<RuleKey, List<AbstractExchange>> exchangesMap = new HashMap<>();
 
 	//for synchronization purposes choose Vector class
-	private List<AbstractExchange> totals = new Vector<>();
+	private final List<AbstractExchange> totals = new Vector<>();
 
 	public void snap(AbstractExchange exc, Flow flow) {
 		// TODO: [fix me] this is for Membrane Monitor's legacy logic
@@ -53,14 +47,14 @@ public class MemoryExchangeStore extends AbstractExchangeStore {
 		} else {
 			List<AbstractExchange> list = new Vector<>();
 			list.add(exc);
-			exchangesMap.put(exc.getRule().getKey(), list);
+			exchangesMap.put(exc.getProxy().getKey(), list);
 		}
 
 		totals.add(exc);
 
 		for (IExchangesStoreListener listener : exchangesStoreListeners) {
 			exc.addExchangeStoreListener(listener);
-			listener.addExchange(exc.getRule(), exc);
+			listener.addExchange(exc.getProxy(), exc);
 		}
 	}
 
@@ -72,13 +66,13 @@ public class MemoryExchangeStore extends AbstractExchangeStore {
 		}
 	}
 
-	public void removeAllExchanges(Rule rule) {
-		AbstractExchange[] exchanges = getExchanges(rule.getKey());
+	public void removeAllExchanges(Proxy proxy) {
+		AbstractExchange[] exchanges = getExchanges(proxy.getKey());
 
-		exchangesMap.remove(rule.getKey());
+		exchangesMap.remove(proxy.getKey());
 		totals.removeAll(Arrays.asList(exchanges));
 		for (IExchangesStoreListener listener : exchangesStoreListeners) {
-			listener.removeExchanges(rule, exchanges);
+			listener.removeExchanges(proxy, exchanges);
 		}
 	}
 
@@ -87,7 +81,7 @@ public class MemoryExchangeStore extends AbstractExchangeStore {
 		if (exchangesList == null) {
 			return new AbstractExchange[0];
 		}
-		return exchangesList.toArray(new AbstractExchange[exchangesList.size()]);
+		return exchangesList.toArray(new AbstractExchange[0]);
 	}
 
 	public int getNumberOfExchanges(RuleKey ruleKey) {
@@ -132,11 +126,11 @@ public class MemoryExchangeStore extends AbstractExchangeStore {
 	}
 
 	private List<AbstractExchange> getKeyList(AbstractExchange exc) {
-		return exchangesMap.get(exc.getRule().getKey());
+		return exchangesMap.get(exc.getProxy().getKey());
 	}
 
 	private boolean isKeyInStore(AbstractExchange exc) {
-		return exchangesMap.containsKey(exc.getRule().getKey());
+		return exchangesMap.containsKey(exc.getProxy().getKey());
 	}
 
 	private void removeWithoutNotify(AbstractExchange exc) {
@@ -146,7 +140,7 @@ public class MemoryExchangeStore extends AbstractExchangeStore {
 
 		getKeyList(exc).remove(exc);
 		if (getKeyList(exc).isEmpty()) {
-			exchangesMap.remove(exc.getRule().getKey());
+			exchangesMap.remove(exc.getProxy().getKey());
 		}
 		totals.remove(exc);
 		exc.informExchangeViewerOnRemoval();

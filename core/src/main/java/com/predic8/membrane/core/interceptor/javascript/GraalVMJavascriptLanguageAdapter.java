@@ -17,7 +17,9 @@
 package com.predic8.membrane.core.interceptor.javascript;
 
 import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.lang.javascript.*;
+import org.graalvm.polyglot.*;
 
 public class GraalVMJavascriptLanguageAdapter extends LanguageAdapter {
 
@@ -26,11 +28,24 @@ public class GraalVMJavascriptLanguageAdapter extends LanguageAdapter {
         languageSupport = new GraalVMJavascriptSupport();
     }
 
-    protected String prepareScript(String script) {
+    @Override
+    public ProblemDetails getProblemDetails(Exception e) {
+        ProblemDetails pd = ProblemDetails.internal(router.isProduction());
+        if (e instanceof PolyglotException pe) {
+            pd.extension("column",  pe.getSourceLocation().getStartColumn());
+            pd.extension("line",  pe.getSourceLocation().getStartLine() - preScriptLineLength );
+            pd.extension("message",  pe.getMessage());
+        }
+        return pd;
+    }
+
+    protected String getPreScript() {
         return """
                 var FileClass = Java.type("java.io.File");
                 var Request = Java.type("com.predic8.membrane.core.http.Request");
                 var Response = Java.type("com.predic8.membrane.core.http.Response");
-                """ + script;
+                """;
     }
+
+
 }

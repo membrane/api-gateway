@@ -17,7 +17,7 @@
         <soapProxy port="2010" wsdl="service:wsdl/?wsdl">
         </soapProxy>
 
-        <internalProxy name="wsdl">
+        <api name="wsdl">
             <sampleSoapService/>
             <!--
 
@@ -30,7 +30,7 @@
                 </ssl>
             </target>
             -->
-        </internalProxy>
+        </api>
 
     </router>
 

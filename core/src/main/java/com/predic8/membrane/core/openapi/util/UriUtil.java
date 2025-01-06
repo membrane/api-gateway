@@ -46,16 +46,6 @@ public class UriUtil {
         return path;
     }
 
-    private static Map<String, String> splitQueryString(String qs) {
-        Map<String, String> qparams = new HashMap<>();
-        String[] pairs = qs.split("&");
-        for (String pair : pairs) {
-            String[] kv = pair.split("=");
-            qparams.put(kv[0], kv[1]);
-        }
-        return qparams;
-    }
-
     public static String getUrlWithoutPath(URL url) {
         StringBuilder urlWithoutPath = new StringBuilder();
 
@@ -108,7 +98,7 @@ public class UriUtil {
         return !((Objects.equals(port, "80") && scheme.equals("http")) || (Objects.equals(port, "443") && scheme.equals("https")));
     }
 
-    public static String getPathFromURL(URIFactory factory, String str) throws URISyntaxException {
-        return factory.create(str).getPath();
+    public static String getPathFromURL(URIFactory factory, String url) throws URISyntaxException {
+        return factory.create(url).getPath();
     }
 }

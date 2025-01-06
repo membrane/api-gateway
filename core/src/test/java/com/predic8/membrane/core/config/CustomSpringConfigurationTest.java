@@ -13,26 +13,24 @@
    limitations under the License. */
 package com.predic8.membrane.core.config;
 
-import static org.junit.jupiter.api.Assertions.*;
-
-import java.io.File;
-import java.util.List;
-
-import com.predic8.membrane.core.Router;
+import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchangestore.*;
 import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.interceptor.acl.AccessControlInterceptor;
-import com.predic8.membrane.core.interceptor.authentication.BasicAuthenticationInterceptor;
+import com.predic8.membrane.core.interceptor.acl.*;
+import com.predic8.membrane.core.interceptor.authentication.*;
 import com.predic8.membrane.core.interceptor.balancer.*;
-import com.predic8.membrane.core.interceptor.cbr.XPathCBRInterceptor;
-import com.predic8.membrane.core.interceptor.rest.REST2SOAPInterceptor;
-import com.predic8.membrane.core.interceptor.rewrite.RewriteInterceptor;
-import com.predic8.membrane.core.interceptor.schemavalidation.ValidatorInterceptor;
-import com.predic8.membrane.core.interceptor.server.WebServerInterceptor;
+import com.predic8.membrane.core.interceptor.rest.*;
+import com.predic8.membrane.core.interceptor.rewrite.*;
+import com.predic8.membrane.core.interceptor.schemavalidation.*;
+import com.predic8.membrane.core.interceptor.server.*;
 import com.predic8.membrane.core.interceptor.statistics.*;
-import com.predic8.membrane.core.interceptor.xslt.XSLTInterceptor;
-import jdk.jshell.spi.ExecutionControl;
+import com.predic8.membrane.core.interceptor.xslt.*;
 import org.junit.jupiter.api.*;
+
+import java.io.*;
+import java.util.*;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 @SuppressWarnings("unused")
 public class CustomSpringConfigurationTest {
@@ -41,7 +39,7 @@ public class CustomSpringConfigurationTest {
 
 	@SuppressWarnings("ResultOfMethodCallIgnored")
 	@BeforeEach
-	public void setUp() throws Exception {
+	public void setUp() {
 		new File("target/temp").mkdirs();
 		router = Router.init("src/test/resources/custom-spring-beans.xml");
 	}
@@ -84,10 +82,6 @@ public class CustomSpringConfigurationTest {
 		//
 		// assertSOAPMessageValidatorInterceptor((SoapValidatorInterceptor)inters.get(13));
 		//
-		// assertXPathCBRInterceptor((XPathCBRInterceptor)inters.get(14));
-		//
-		// assertXPathCBRInterceptor((RegExReplaceInterceptor)inters.get(15));
-		//
 		// assertCountInterceptor((CountInterceptor)inters.get(16));
 		//
 		// assertAccessControlInterceptor((AccessControlInterceptor)inters.get(17));
@@ -96,7 +90,7 @@ public class CustomSpringConfigurationTest {
 
 		// assertBasicAuthenticationInterceptor((BasicAuthenticationInterceptor)
 		// backbones.get(1));
-		assertTrue(((HTTPClientInterceptor)inters.get(inters.size()-1)).isAdjustHostHeader());
+		assertTrue(((HTTPClientInterceptor)inters.getLast()).isAdjustHostHeader());
 	}
 
 	private void assertCountInterceptor(CountInterceptor i) {
@@ -108,12 +102,6 @@ public class CustomSpringConfigurationTest {
 		assertEquals("Hello", i.getReplace());
 	}
 
-	private void assertXPathCBRInterceptor(XPathCBRInterceptor i) {
-		assertEquals("//convert", i.getCases().get(0)
-				.getXPath());
-		assertEquals("http://www.thomas-bayer.com/axis2/", i.getCases().get(0).getUrl());
-	}
-
 	private void assertSOAPMessageValidatorInterceptor(ValidatorInterceptor i) {
 		assertEquals(
 				"http://www.predic8.com:8080/material/ArticleService?wsdl",
@@ -121,12 +109,12 @@ public class CustomSpringConfigurationTest {
 	}
 
 	private void assertREST2SOAPInterceptor(REST2SOAPInterceptor i) {
-		assertEquals("/bank/.*", i.getMappings().get(0).regex);
-		assertEquals("", i.getMappings().get(0).soapAction);
+		assertEquals("/bank/.*", i.getMappings().getFirst().regex);
+		assertEquals("", i.getMappings().getFirst().soapAction);
 		assertEquals("/axis2/services/BLZService",
-				i.getMappings().get(0).soapURI);
-		assertEquals("request.xsl", i.getMappings().get(0).requestXSLT);
-		assertEquals("response.xsl", i.getMappings().get(0).responseXSLT);
+				i.getMappings().getFirst().soapURI);
+		assertEquals("request.xsl", i.getMappings().getFirst().requestXSLT);
+		assertEquals("response.xsl", i.getMappings().getFirst().responseXSLT);
 	}
 
 	private void assertWSDLInterceptor(WSDLInterceptor i) {
@@ -154,8 +142,8 @@ public class CustomSpringConfigurationTest {
 		assertEquals("http://chat.predic8.com/", ext.getNamespace());
 		assertEquals("session", ext.getLocalName());
 
-		assertEquals("localhost", i.getEndpoints().get(0).getHost());
-		assertEquals(3011, i.getEndpoints().get(0).getPort());
+		assertEquals("localhost", i.getEndpoints().getFirst().getHost());
+		assertEquals(3011, i.getEndpoints().getFirst().getPort());
 
 		assertEquals(10,
 				((ByThreadStrategy) i.getDispatchingStrategy())
@@ -188,8 +176,8 @@ public class CustomSpringConfigurationTest {
 	}
 
 	private void assertRewriterInterceptor(RewriteInterceptor i) {
-		assertEquals("^/bank/", i.getMappings().get(0).from);
-		assertEquals("^/axis2/", i.getMappings().get(0).to);
+		assertEquals("^/bank/", i.getMappings().getFirst().from);
+		assertEquals("^/axis2/", i.getMappings().getFirst().to);
 	}
 
 	private void assertXsltInterceptor(XSLTInterceptor i) {
@@ -212,7 +200,7 @@ public class CustomSpringConfigurationTest {
 	}
 
 	@AfterEach
-	public void tearDown() throws Exception {
+	public void tearDown() {
 		router.shutdown();
 	}
 

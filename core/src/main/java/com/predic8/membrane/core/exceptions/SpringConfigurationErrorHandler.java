@@ -15,7 +15,7 @@
 package com.predic8.membrane.core.exceptions;
 
 import com.predic8.membrane.core.interceptor.ratelimit.*;
-import com.predic8.membrane.core.rules.*;
+import com.predic8.membrane.core.proxies.*;
 import com.predic8.membrane.core.transport.*;
 import com.predic8.membrane.core.util.*;
 import org.apache.commons.lang3.exception.*;
@@ -74,14 +74,14 @@ public class SpringConfigurationErrorHandler {
 
         System.err.printf("""
                 %s
-                        
+                
                 Membrane is configured to open port %d. But this port is already in"
                 use by a different program. To start Membrane do one of the following:
-                        
+                
                 1. Find and stop the program that is occupying the port. Then restart Membrane.
-                        
+                
                 %s
-                        
+                
                 2. Configure Membrane to use a different port. Probably in the conf/proxies.xml
                 file. Then restart Membrane.
                 %n""", STARS, poe.getPort(), getHowToFindPort());
@@ -115,9 +115,9 @@ public class SpringConfigurationErrorHandler {
     private static void handleConfigurationException(ConfigurationException ce) {
         System.err.printf("""
                 %s
-                            
+                
                 %s
-                            
+                
                 giving up.
                 %n""", STARS, ce.getMessage());
     }
@@ -137,26 +137,26 @@ public class SpringConfigurationErrorHandler {
 
         System.err.printf("""
                 %s
-                        
+                
                 soapProxy Configuration Error
                 =============================
-                        
+                
                 The WSDL:
-                        
+                
                 %s
-                        
+                
                 contains definitions for the following services:
-                        
+                
                 %s
-                        
+                
                 A <soapProxy> can only be configured with one single service. But you can deploy the same
                 WSDL several times with different services.
-                        
+                
                 %s
-                        
+                
                 Each <soapProxy> will expose a different service.
-                        
-                        
+                
+                
                 %n""", STARS, e.getSoapProxy().getWsdl(), e.getServices(), sample);
     }
 

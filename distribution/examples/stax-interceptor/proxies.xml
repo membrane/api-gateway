@@ -19,17 +19,15 @@
 	<spring:bean id="staxInterceptor" class="com.predic8.StaxConverterInterceptor" />
 
 	<router>
-	
-		
-		<serviceProxy name="echo" port="2000">
+
+		<api name="echo" port="2000">
 			<request>
 				<interceptor refid="staxInterceptor"/>
 			</request>
-			<log headerOnly="false"/>
-			<groovy>
-				Response.ok("Look at the output of Membrane!\n").build()
-			</groovy>
-    	</serviceProxy>
+			<beautifier />
+			<echo/>
+    	</api>
+
 	</router>
 	
 </spring:beans>

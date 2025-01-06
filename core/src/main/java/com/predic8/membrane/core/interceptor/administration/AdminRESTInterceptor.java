@@ -21,7 +21,8 @@ import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.http.Response.*;
 import com.predic8.membrane.core.interceptor.rest.*;
 import com.predic8.membrane.core.interceptor.statistics.util.*;
-import com.predic8.membrane.core.rules.*;
+import com.predic8.membrane.core.proxies.*;
+import com.predic8.membrane.core.proxies.Proxy;
 import org.slf4j.*;
 
 import java.io.*;
@@ -260,8 +261,8 @@ public class AdminRESTInterceptor extends RESTInterceptor {
 			gen.writeNullField("respContentLength");
 		}
 		gen.writeStringField("time", ExchangesUtil.getTime(exc));
-		gen.writeStringField("proxy", exc.getRule().toString());
-		gen.writeNumberField("listenPort", exc.getRule().getKey().getPort());
+		gen.writeStringField("proxy", exc.getProxy().toString());
+		gen.writeNumberField("listenPort", exc.getProxy().getKey().getPort());
 		if (exc.getRequest() != null) {
 			gen.writeStringField("method", exc.getRequest().getMethod());
 			gen.writeStringField("path", exc.getRequest().getUri());
@@ -316,12 +317,12 @@ public class AdminRESTInterceptor extends RESTInterceptor {
 	}
 
 	private int getServerPort(AbstractExchange exc) {
-		return exc.getRule()instanceof AbstractServiceProxy?((AbstractServiceProxy) exc.getRule()).getTargetPort():-1;
+		return exc.getProxy()instanceof AbstractServiceProxy?((AbstractServiceProxy) exc.getProxy()).getTargetPort():-1;
 	}
 
 	private List<AbstractServiceProxy> getServiceProxies() {
 		List<AbstractServiceProxy> rules = new LinkedList<>();
-		for (Rule r : router.getRuleManager().getRules()) {
+		for (Proxy r : router.getRuleManager().getRules()) {
 			if (!(r instanceof AbstractServiceProxy)) continue;
 			rules.add((AbstractServiceProxy) r);
 		}

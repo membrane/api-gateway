@@ -20,8 +20,8 @@ import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
-import com.predic8.membrane.core.rules.ServiceProxy;
-import com.predic8.membrane.core.rules.ServiceProxyKey;
+import com.predic8.membrane.core.proxies.ServiceProxy;
+import com.predic8.membrane.core.proxies.ServiceProxyKey;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -36,7 +36,7 @@ public class AzureDnsApiSimulator {
     private final int port;
     private HttpRouter router;
 
-    private Map<String, List<Map<String, String>>> tableStorage = new HashMap<>();
+    private final Map<String, List<Map<String, String>>> tableStorage = new HashMap<>();
 
     public AzureDnsApiSimulator(int port) {
         this.port = port;
@@ -51,7 +51,7 @@ public class AzureDnsApiSimulator {
         sp.getInterceptors().add(new AbstractInterceptor() {
             @Override
             public Outcome handleRequest(Exchange exc) throws Exception {
-                log.info("got request {}" + exc.getRequestURI());
+                log.info("got request {}", exc.getRequestURI());
 
                 if (missingHeaders(exc)) {
                     exc.setResponse(Response.badRequest().build());

@@ -13,50 +13,65 @@
    limitations under the License. */
 package com.predic8.membrane.core.transport.http;
 
-import java.net.MalformedURLException;
-import java.net.URL;
+import com.predic8.membrane.core.util.*;
 
-import com.predic8.membrane.core.util.HttpUtil;
+import java.net.*;
+import java.net.URI;
 
 public record HostColonPort(boolean useSSL, String host, int port) {
 
-	public HostColonPort(boolean useSSL, String hostAndPort) {
-		this(useSSL, hostPart(hostAndPort), portPart(hostAndPort,  useSSL ? 443 : 80));
-	}
+    public HostColonPort(boolean useSSL, String hostAndPort) {
+        this(useSSL, hostPart(hostAndPort), portPart(hostAndPort, useSSL ? 443 : 80));
+    }
 
-	public HostColonPort(String host, int port) {
-		this(false, host, port);
-	}
+    public HostColonPort(String host, int port) {
+        this(false, host, port);
+    }
 
-	public HostColonPort(URL url) throws MalformedURLException {
-		this(url.getProtocol().endsWith("s"), url.getHost(), HttpUtil.getPort(url));
-	}
+    public HostColonPort(URL url) throws MalformedURLException {
+        this(url.getProtocol().endsWith("s"), url.getHost(), HttpUtil.getPort(url));
+    }
 
-	public String getProtocol() {
-		// TODO shouldn't this check useSSL instead?
-		return (isHttpsPort() ? "https" : "http");
-	}
+    public String getProtocol() {
+        // TODO shouldn't this check useSSL instead?
+        return (isHttpsPort() ? "https" : "http");
+    }
 
-	public String getUrl() {
-		return "%s://%s".formatted(getProtocol(), this);
-	}
+    public URL toURL() throws URISyntaxException, MalformedURLException {
+        return new URI(getProtocol(), this.toString(), null).toURL();
+//		return new URI("%s://%s".formatted(getProtocol(), this)).toURL();
+    }
 
-	@Override
-	public String toString() {
-		return host + ":" + port;
-	}
+    public String getUrl() {
+        return "%s://%s".formatted(getProtocol(), this);
+    }
 
-	private boolean isHttpsPort() {
-		return port == 443 || port == 8443;
-	}
+    public URI toURI() throws URISyntaxException {
+        return new URI(this.getProtocol(),null, this.host, this.port, null, null,null);
+    }
 
-	private static String hostPart(String addr) {
-		var colon = addr.indexOf(":");
-		return (colon > -1 ? addr.substring(0, colon) : addr);
-	}
+    public static HostColonPort fromURI(String uri) throws URISyntaxException, MalformedURLException {
+        var url = new URI(uri).toURL();
+        var isSSL = "https".equals(url.getProtocol());
+        return new HostColonPort(isSSL, url.getHost(), HttpUtil.getPort(url));
+    }
 
-	private static int portPart(String addr, int defaultValue) {
-		var colon = addr.indexOf(":");
-		return (colon > -1 ? Integer.parseInt(addr.substring(colon + 1)) : defaultValue);
-	}
+    @Override
+    public String toString() {
+        return host + ":" + port;
+    }
+
+    private boolean isHttpsPort() {
+        return port == 443 || port == 8443;
+    }
+
+    private static String hostPart(String addr) {
+        var colon = addr.indexOf(":");
+        return (colon > -1 ? addr.substring(0, colon) : addr);
+    }
+
+    private static int portPart(String addr, int defaultValue) {
+        var colon = addr.indexOf(":");
+        return (colon > -1 ? Integer.parseInt(addr.substring(colon + 1)) : defaultValue);
+    }
 }
