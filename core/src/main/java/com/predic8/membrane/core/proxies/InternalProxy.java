@@ -27,7 +27,7 @@ import org.apache.commons.lang3.StringUtils;
 public class InternalProxy extends AbstractServiceProxy implements NotPortOpeningProxy {
 
     public InternalProxy() {
-        key = new AbstractRuleKey(-1,null) {
+        key = new AbstractRuleKey(0,null) {
             @Override
             public String toString() {
                 return StringUtils.defaultIfEmpty(getPath(), "") + ":" + port;

@@ -11,11 +11,11 @@ import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.joining;
 
 /**
- * Provides infos about a proxy e.g. for startup infos
+ * Provides infos about a proxy e.g., for startup infos
  */
-public class RuleDisplayInfo {
+public class ProxyDisplayInfo {
 
-    private static final Logger log = LoggerFactory.getLogger(RuleDisplayInfo.class.getName());
+    private static final Logger log = LoggerFactory.getLogger(ProxyDisplayInfo.class.getName());
 
     public static void logInfosAboutStartedProxies(RuleManager manager) {
         log.info("Started {} API{}:", manager.getRules().size(), (manager.getRules().size() > 1 ? "s" : ""));

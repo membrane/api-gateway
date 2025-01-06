@@ -325,7 +325,7 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
 			running = true;
 		}
 
-		RuleDisplayInfo.logInfosAboutStartedProxies(ruleManager);
+		ProxyDisplayInfo.logInfosAboutStartedProxies(ruleManager);
         log.info("{} {} up and running!", PRODUCT_NAME, VERSION);
 	}
 
