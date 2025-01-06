@@ -23,6 +23,7 @@ import com.predic8.membrane.core.interceptor.administration.*;
 import com.predic8.membrane.core.jmx.*;
 import com.predic8.membrane.core.kubernetes.*;
 import com.predic8.membrane.core.kubernetes.client.*;
+import com.predic8.membrane.core.openapi.*;
 import com.predic8.membrane.core.openapi.serviceproxy.*;
 import com.predic8.membrane.core.resolver.*;
 import com.predic8.membrane.core.rules.*;
@@ -222,12 +223,6 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
 		timerManager.shutdown();
 	}
 
-	public void shutdownAll() throws IOException{
-		for(String s : this.getBeanFactory().getBeanNamesForType(Router.class)){
-			((Router) this.getBeanFactory().getBean(s)).shutdown();
-		}
-	}
-
 	/**
 	 * Closes all ports (if any were opened), but does not wait for running exchanges to complete.
 	 *
@@ -277,7 +272,7 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
 	@Override
 	public void start() {
 		try {
-			if (transport == null && beanFactory != null && beanFactory.getBeansOfType(Transport.class).values().size() > 0)
+			if (transport == null && beanFactory != null && !beanFactory.getBeansOfType(Transport.class).values().isEmpty())
 				throw new RuntimeException("unclaimed transport detected. - please migrate to 4.0");
 			if (exchangeStore == null)
 				exchangeStore = new LimitedMemoryExchangeStore();
@@ -311,6 +306,19 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
 
 					Shared path: %s
 					%n""", e.getPath());
+			System.exit(1);
+		} catch (OpenAPIParsingException e) {
+			System.err.printf("""
+					================================================================================================
+					
+					Configuration Error: Could not read or parse OpenAPI Document
+					
+					Reason: %s
+					
+					Location: %s
+					
+					Have a look at the proxies.xml file.
+					""", e.getMessage(), e.getLocation());
 			System.exit(1);
 		} catch (Exception e) {
 			throw new RuntimeException(e);

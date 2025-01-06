@@ -133,64 +133,6 @@ public class HttpUtil {
 		return buf.toString();
 	}
 
-	public static Response createSOAPValidationErrorResponse(String message) {
-		Response response = new Response();
-		response.setStatusCode(400);
-		response.setStatusMessage("Bad request");
-		response.setHeader(createHeaders(TEXT_XML_UTF8));
-		response.setBodyContent(getFaultSOAPBody(message).getBytes(UTF_8));
-		return response;
-	}
-
-	private static String getFaultSOAPBody(String text) {
-		return getFaultSOAPBody("Message validation failed!", text);
-	}
-
-	public static String getFaultSOAPBody(String title, String text) {
-
-        return """
-                <soapenv:Envelope xmlns:soapenv="%s">
-                <soapenv:Body>
-                <soapenv:Fault>
-                <faultcode>soapenv:Server</faultcode>
-                <faultstring>%s</faultstring>
-                <detail>%s</detail>
-                </soapenv:Fault>
-                </soapenv:Body>
-                </soapenv:Envelope>"""
-				.formatted(SOAP11_NS, escapeXml11(title), escapeXml11(text))
-				.replace("\n", CRLF);
-	}
-
-	public static String getFaultSOAP12Body(String title, String text) {
-
-
-		return """
-				<soapenv:Envelope xmlns:soapenv="%s">
-				<soapenv:Body>
-				<soapenv:Fault>
-				<soapenv:Code>
-				<soapenv:Value>soapenv:Receiver</soapenv:Value>
-				</soapenv:Code>
-				<soapenv:Reason><soapenv:Text xml:lang="en-US">%s</soapenv:Text></soapenv:Reason>
-				<soapenv:Detail><Text>%s</Text></soapenv:Detail>
-				</soapenv:Fault>
-				</soapenv:Body>
-				</soapenv:Envelope>"""
-				.formatted(SOAP12_NS, escapeXml11(title), escapeXml11(text))
-				.replace("\n", CRLF);
-	}
-
-//	public static Response createResponse(int code, String msg, byte[] body, String contentType, String... headers) {
-//		Response res = new Response();
-//		res.setStatusCode(code);
-//		res.setStatusMessage(msg);
-//		res.setHeader(createHeaders(contentType, headers));
-//
-//		if (body != null) res.setBodyContent(body);
-//		return res;
-//	}
-
 	public static Header createHeaders(String contentType, String... headers) {
 		Header header = new Header();
 		if (contentType != null ) header.setContentType(contentType);

@@ -22,6 +22,8 @@ import org.slf4j.*;
 
 import java.io.*;
 
+import static com.predic8.membrane.core.http.MimeType.*;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static java.nio.charset.StandardCharsets.*;
 
@@ -34,15 +36,15 @@ import static java.nio.charset.StandardCharsets.*;
 public class XMLProtectionInterceptor extends AbstractInterceptor {
 
 	private static final Logger log = LoggerFactory.getLogger(XMLProtectionInterceptor.class.getName());
+	public static final String X_PROTECTION = "X-Protection";
 
-	private int maxAttibuteCount = 1000;
+	private int maxAttributeCount = 1000;
 	private int maxElementNameLength = 1000;
 	private boolean removeDTD = true;
 
-
 	public XMLProtectionInterceptor() {
 		name = "XML Protection";
-		setFlow(Flow.Set.REQUEST);
+		setFlow(REQUEST);
 	}
 
 	@Override
@@ -70,14 +72,22 @@ public class XMLProtectionInterceptor extends AbstractInterceptor {
 	}
 
 	private void setFailResponse(Exchange exc) {
-		exc.setResponse(Response.badRequest("Invalid XML features used in request.").build());
+		exc.setResponse(Response.badRequest().body("""
+				<error>
+				  <title>XML protection failed!</title>
+				  <message>Request was rejected by XML protection. Please check XML.</message>
+				</error>
+				""")
+				.header(X_PROTECTION, "Content violates XML security policy")
+				.contentType(APPLICATION_XML)
+				.build());
 	}
 
 	private boolean protectXML(Exchange exc) throws Exception {
 		ByteArrayOutputStream stream = new ByteArrayOutputStream();
 
 		XMLProtector protector = new XMLProtector(new OutputStreamWriter(stream, getCharset(exc)),
-				removeDTD, maxElementNameLength, maxAttibuteCount);
+				removeDTD, maxElementNameLength, maxAttributeCount);
 
 		if (!protector.protect(new InputStreamReader(exc.getRequest().getBodyAsStreamDecoded(), getCharset(exc) )))
 			return false;
@@ -101,8 +111,8 @@ public class XMLProtectionInterceptor extends AbstractInterceptor {
 	 * @default 1000
 	 */
 	@MCAttribute
-	public void setMaxAttibuteCount(int maxAttibuteCount) {
-		this.maxAttibuteCount = maxAttibuteCount;
+	public void setMaxAttributeCount(int maxAttributeCount) {
+		this.maxAttributeCount = maxAttributeCount;
 	}
 
 	/**

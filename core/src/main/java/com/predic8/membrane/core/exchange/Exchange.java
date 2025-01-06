@@ -164,7 +164,7 @@ public class Exchange extends AbstractExchange {
 	/**
 	 * Returns the relative original URI.
 	 * <p>
-	 * "original" meaning "as recieved by Membrane's transport".
+	 * "original" meaning "as received by Membrane's transport".
 	 * <p>
 	 * To be used, for example, when generating self-referring web pages.
 	 */

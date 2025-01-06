@@ -14,19 +14,16 @@
 
 package com.predic8.membrane.core.interceptor.flow;
 
-import java.util.EnumSet;
+import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.interceptor.*;
 
-import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.interceptor.Interceptor;
-import com.predic8.membrane.core.interceptor.Outcome;
-
-import static com.predic8.membrane.core.interceptor.Interceptor.Flow.RESPONSE;
-import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
+import static com.predic8.membrane.core.interceptor.Outcome.*;
 
 /**
  * @description Interceptors are usually applied to requests and responses. By nesting interceptors into a
- *              &lt;response&gt; Element you can limit their applictaion to responses only.
+ *              &lt;response&gt; Element you can limit their application to responses only.
  */
 @MCElement(name="response", topLevel=false)
 public class ResponseInterceptor extends AbstractFlowInterceptor {

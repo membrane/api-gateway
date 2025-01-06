@@ -13,37 +13,28 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.soap;
 
-import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Response;
-import com.predic8.membrane.core.interceptor.AbstractInterceptor;
-import com.predic8.membrane.core.interceptor.Outcome;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
+import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.interceptor.*;
+import org.w3c.dom.*;
 
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.parsers.*;
 import javax.xml.stream.*;
-import javax.xml.stream.events.StartElement;
-import javax.xml.stream.events.XMLEvent;
-import javax.xml.transform.TransformerException;
-import java.io.FileNotFoundException;
-import java.io.InputStream;
-import java.io.StringWriter;
-import java.net.URISyntaxException;
-import java.util.HashMap;
-import java.util.Objects;
-import java.util.regex.Pattern;
+import javax.xml.stream.events.*;
+import javax.xml.transform.*;
+import java.io.*;
+import java.util.*;
+import java.util.regex.*;
 
-import static com.predic8.membrane.core.Constants.SOAP11_NS;
-import static com.predic8.membrane.core.http.Header.CONTENT_TYPE;
+import static com.predic8.membrane.core.Constants.*;
+import static com.predic8.membrane.core.http.Header.*;
 import static com.predic8.membrane.core.http.MimeType.*;
-import static com.predic8.membrane.core.http.Response.ok;
-import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
-import static com.predic8.membrane.core.openapi.util.Utils.getResourceAsStream;
-import static com.predic8.membrane.core.util.XMLUtil.xml2string;
-import static javax.xml.stream.XMLStreamConstants.START_ELEMENT;
+import static com.predic8.membrane.core.http.Response.*;
+import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static com.predic8.membrane.core.openapi.util.Utils.*;
+import static com.predic8.membrane.core.util.XMLUtil.*;
+import static javax.xml.stream.XMLStreamConstants.*;
 
 @MCElement(name = "sampleSoapService")
 public class SampleSoapServiceInterceptor extends AbstractInterceptor {
@@ -65,7 +56,7 @@ public class SampleSoapServiceInterceptor extends AbstractInterceptor {
         if (isWSDLRequest(exc)) {
             exc.setResponse(createWSDLResponse(exc));
         } else if(!exc.getRequest().isPOSTRequest()) {
-            exc.setResponse(createMethodNotAllowedSOAPFault());
+            exc.setResponse(createMethodNotAllowedSOAPFault(exc.getRequest().getMethod()));
         } else {
             try {
                 exc.setResponse(createGetCityResponse(exc));
@@ -77,15 +68,15 @@ public class SampleSoapServiceInterceptor extends AbstractInterceptor {
     }
 
     private static Response createResourceNotFoundSOAPFault() throws Exception {
-        return ok(getSoapFault("Resource Not Found", "404", "Cannot parse SOAP message. Request should contain e.g. <name>Bonn</name>")).contentType(APPLICATION_XML).build();
+        return ok(getSoapFault("Resource Not Found", "404", "Cannot parse SOAP message. Request should contain e.g. <name>Bonn</name>")).contentType(TEXT_XML).build();
     }
 
     private static Response createGetCityResponse(Exchange exc) throws Exception {
         return ok(getResponse(getCity(exc))).contentType(TEXT_XML).build();
     }
 
-    private static Response createMethodNotAllowedSOAPFault() throws Exception {
-        return ok(getSoapFault("Method Not Allowed", "405", "Use POST to access the service.")).contentType(APPLICATION_XML).build();
+    private static Response createMethodNotAllowedSOAPFault(String method) throws Exception {
+        return ok(getSoapFault("Method %s not allowed".formatted(method), "405", "Use POST to access the service.")).contentType(TEXT_XML).build();
     }
 
     private Response createWSDLResponse(Exchange exc) throws XMLStreamException, FileNotFoundException {
@@ -176,8 +167,8 @@ public class SampleSoapServiceInterceptor extends AbstractInterceptor {
         return exc.getInboundProtocol() + "://" + exc.getRequest().getHeader().getHost() + getPathWithoutParam(exc.getOriginalRequestUri());
     }
 
-    static String getPathWithoutParam(String exc) {
-        return exc.replaceAll("\\?.*$", "");
+    static String getPathWithoutParam(String uri) {
+        return uri.replaceAll("\\?.*$", "");
     }
 
 

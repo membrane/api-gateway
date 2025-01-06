@@ -1,0 +1,69 @@
+### Valid POST request with simple query
+POST http://localhost:2000
+Content-Type: application/json
+
+{
+  "query": "query { products { id name price } }"
+}
+
+### Fail because an extension was added
+POST http://localhost:2000
+Content-Type: application/json
+
+{
+  "query": "query { products { id name price } }",
+  "extensions": {
+    "persistedQuery": {
+      "version": 1,
+      "sha256Hash": "invalid"
+    }
+  }
+}
+
+### Fail because invalid method was used
+PUT http://localhost:2000
+Content-Type: application/json
+
+{
+  "query": "query { products { id name } }"
+}
+
+### Fail because recursion is too deep
+POST http://localhost:2000
+Content-Type: application/json
+
+{
+  "query": "query { categories { products { category { products { category { products { id } } } } } } }"
+}
+
+### Pass because recursion depth is just right
+POST http://localhost:2000
+Content-Type: application/json
+
+{
+  "query": "query { categories { products { category { products { id } } } } }"
+}
+
+### Fail because query is nested too deeply
+POST http://localhost:2000
+Content-Type: application/json
+
+{
+  "query": "query { categories { products { category { products { vendor { products { category { id name products { id } } } } } } } } }"
+}
+
+### Fail because we exceeded the mutation limit
+POST http://localhost:2000
+Content-Type: application/json
+
+{
+  "query": "mutation { addProduct(name: \"Apple\", price: 1.99) { id } addProduct(name: \"Orange\", price: 2.99) { id } addProduct(name: \"Banana\", price: 3.99) { id } addProduct(name: \"Grape\", price: 4.99) { id } addProduct(name: \"Mango\", price: 5.99) { id } addProduct(name: \"Pear\", price: 6.99) { id } }"
+}
+
+### Pass because we are just on the limit of mutations
+POST http://localhost:2000
+Content-Type: application/json
+
+{
+  "query": "mutation { addProduct1: addProduct(name: \"Apple\", price: 1.99) { id } addProduct2: addProduct(name: \"Orange\", price: 2.99) { id } addProduct3: addProduct(name: \"Banana\", price: 3.99) { id } addProduct4: addProduct(name: \"Grape\", price: 4.99) { id } addProduct5: addProduct(name: \"Mango\", price: 5.99) { id } }"
+}

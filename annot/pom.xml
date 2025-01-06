@@ -23,7 +23,7 @@
 		<groupId>org.membrane-soa</groupId>
 		<artifactId>service-proxy-parent</artifactId>
 		<relativePath>../pom.xml</relativePath>
-		<version>5.7.5-SNAPSHOT</version>
+		<version>5.8.1-SNAPSHOT</version>
 	</parent>
 
 	<dependencies>
@@ -34,6 +34,16 @@
 		<dependency>
 			<groupId>org.springframework</groupId>
 			<artifactId>spring-context</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.junit.jupiter</groupId>
+			<artifactId>junit-jupiter-api</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.junit.jupiter</groupId>
+			<artifactId>junit-jupiter-engine</artifactId>
+			<scope>test</scope>
 		</dependency>
 	</dependencies>
 

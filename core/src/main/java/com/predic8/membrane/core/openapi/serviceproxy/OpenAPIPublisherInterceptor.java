@@ -24,6 +24,7 @@ import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.util.*;
 import groovy.text.*;
+import io.swagger.v3.core.util.Json31;
 import io.swagger.v3.oas.models.*;
 import io.swagger.v3.parser.*;
 import org.slf4j.*;
@@ -115,6 +116,7 @@ public class OpenAPIPublisherInterceptor extends AbstractInterceptor {
     }
 
     private Outcome returnNoFound(Exchange exc, String id) {
+        // Do not log. Too common!
         exc.setResponse(ProblemDetails.openapi(false)
                 .statusCode(404)
                 .addSubType("wrong-id")
@@ -137,6 +139,7 @@ public class OpenAPIPublisherInterceptor extends AbstractInterceptor {
 
         // No id specified
         if (!m.matches()) {
+            // Do not log! Too common.
             exc.setResponse(ProblemDetails.openapi(false)
                     .statusCode(404)
                     .addSubType("wrong-id")

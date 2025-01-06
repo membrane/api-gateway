@@ -48,7 +48,7 @@ public class APIKeyTest extends AbstractSampleMembraneStartStopTestcase {
     @Test
     public void successKeyHeader() {
         given()
-            .header("X-Api-Key", "P8MBR")
+            .header("X-Api-Key", "demokey")
         .when()
             .get("http://localhost:2000")
         .then().assertThat()
@@ -58,32 +58,10 @@ public class APIKeyTest extends AbstractSampleMembraneStartStopTestcase {
     @Test
     public void successQueryKey() {
         given()
-            .queryParam("api-key", "P8MBR")
+            .queryParam("api-key", "demokey")
         .when()
             .get("http://localhost:2000")
         .then().assertThat()
             .statusCode(200);
-    }
-
-    @Test
-    public void normalScope() {
-        given()
-            .header("X-Key", "123456789")
-        .when()
-            .get("http://localhost:3000")
-        .then().assertThat()
-            .statusCode(200)
-            .body(equalTo("Only for finance or accounting!"));
-    }
-
-    @Test
-    public void conditionalScope() {
-        given()
-            .header("X-Key", "key_321_abc")
-        .when()
-            .get("http://localhost:3000")
-        .then().assertThat()
-            .statusCode(200)
-            .body(equalTo("Only for admins!"));
     }
 }

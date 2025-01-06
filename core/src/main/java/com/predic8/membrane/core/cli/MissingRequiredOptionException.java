@@ -1,4 +1,4 @@
-/* Copyright 2012 predic8 GmbH, www.predic8.com
+/* Copyright 2024 predic8 GmbH, www.predic8.com
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -11,21 +11,19 @@
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
    See the License for the specific language governing permissions and
    limitations under the License. */
+package com.predic8.membrane.core.cli;
 
-package com.predic8.membrane.core.interceptor.schemavalidation;
+import org.apache.commons.cli.MissingOptionException;
 
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Message;
-import com.predic8.membrane.core.interceptor.Outcome;
+public class MissingRequiredOptionException extends MissingOptionException {
+    private final CliCommand command;
 
-public interface IValidator {
-	/**
-	 * @param source "request" or "response"
-	 */
-	public Outcome validateMessage(Exchange exc, Message msg, String source) throws Exception;
+    public MissingRequiredOptionException(String message, CliCommand command) {
+        super(message);
+        this.command = command;
+    }
 
-	public long getValid();
-
-	public long getInvalid();
-
+    public CliCommand getCommand() {
+      return command;
+    }
 }

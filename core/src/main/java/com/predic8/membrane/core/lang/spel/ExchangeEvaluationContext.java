@@ -66,7 +66,7 @@ public class ExchangeEvaluationContext extends StandardEvaluationContext {
             try {
                 params = new SpELMap<>(URLParamUtil.getParams(new URIFactory(), exc, ERROR));
             } catch (Exception e) {
-                log.warn("Error parsing query parameters", e);
+                log.warn("Error parsing query parameters: {}", e.getMessage());
             }
             this.request = new SpELMessageWrapper(exc.getRequest());
         }

@@ -16,17 +16,18 @@
 
 package com.predic8.membrane.core.openapi.util;
 
-import com.predic8.membrane.core.transport.http.*;
-import io.swagger.parser.*;
-import io.swagger.v3.oas.models.*;
-import org.junit.jupiter.api.*;
+import io.swagger.parser.OpenAPIParser;
+import io.swagger.v3.oas.models.OpenAPI;
+import org.junit.jupiter.api.Test;
 
-import java.io.*;
+import java.io.IOException;
 
 import static com.predic8.membrane.core.openapi.util.OpenAPIUtil.*;
-import static com.predic8.membrane.core.openapi.util.TestUtils.*;
-import static com.predic8.membrane.core.util.FileUtil.*;
-import static org.junit.jupiter.api.Assertions.*;
+import static com.predic8.membrane.core.openapi.util.TestUtils.getResourceAsStream;
+import static com.predic8.membrane.core.openapi.util.TestUtils.getYAMLResource;
+import static com.predic8.membrane.core.util.FileUtil.readInputStream;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class OpenAPIUtilTest {
 
@@ -53,16 +54,5 @@ public class OpenAPIUtilTest {
     @Test
     void isSwagger2Test() throws IOException {
         assertTrue(isSwagger2(getYAMLResource(this,"/openapi/specs/fruitshop-swagger-2.0.json")));
-    }
-
-    @Test
-    void getOpenAPIVersionTest() throws IOException {
-        assertEquals("3.0.2", getOpenAPIVersion(getYAMLResource(this,"/openapi/specs/array.yml")));
-        assertEquals("2.0", getOpenAPIVersion(getYAMLResource(this,"/openapi/specs/fruitshop-swagger-2.0.json")));
-    }
-
-    @Test
-    void parseSwaggersInfoServerTest() throws Exception {
-        assertEquals(new HostColonPort("10.20.9.4",44564), OpenAPIUtil.parseSwaggersInfoServer("//10.20.9.4:44564/"));
     }
 }

@@ -72,6 +72,7 @@ public class OpenAPIPublisher {
 
         // No id specified
         if (!m.matches()) {
+            // Do not log! Too common!
             exc.setResponse(ProblemDetails.openapi(false)
                     .statusCode(404)
                     .addSubType("wrong-id")
@@ -128,6 +129,7 @@ public class OpenAPIPublisher {
     }
 
     private Outcome returnNoFound(Exchange exc, String id) {
+        // Do not log. Too common.
         exc.setResponse(ProblemDetails.openapi(false)
                 .statusCode(404)
                 .addSubType("wrong-id")
@@ -143,7 +145,7 @@ public class OpenAPIPublisher {
         return RETURN;
     }
 
-    private Template createTemplate(String filePath) throws ClassNotFoundException, IOException, URISyntaxException {
+    private Template createTemplate(String filePath) throws ClassNotFoundException, IOException {
         return new StreamingTemplateEngine().createTemplate(new InputStreamReader(Objects.requireNonNull(getResourceAsStream(this, filePath))));
     }
 

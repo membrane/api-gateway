@@ -16,17 +16,20 @@
 
 package com.predic8.membrane.core.openapi.serviceproxy;
 
-import com.fasterxml.jackson.databind.*;
-import com.fasterxml.jackson.databind.node.*;
-import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.openapi.util.*;
-import com.predic8.membrane.core.util.*;
-import org.slf4j.*;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.predic8.membrane.annot.MCAttribute;
+import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.openapi.util.UriUtil;
+import com.predic8.membrane.core.util.URIFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.net.*;
+import java.net.URISyntaxException;
 
-import static java.util.Objects.*;
+import static java.util.Objects.requireNonNullElse;
 
 /**
  * @description
@@ -43,11 +46,7 @@ public class Rewrite {
     String basePath;
 
     public JsonNode rewrite(OpenAPIRecord rec, Exchange exc, URIFactory uriFactory) throws URISyntaxException {
-        if (rec.isVersion3()) {
-            return rewriteOpenAPI3(exc, uriFactory, rec.node);
-        }
-
-        return rewriteSwagger2(exc, rec.node);
+        return rewriteOpenAPI3(exc, uriFactory, rec.node);
     }
 
     private JsonNode rewriteOpenAPI3(Exchange exc, URIFactory uriFactory, JsonNode node) throws URISyntaxException {

@@ -15,6 +15,7 @@
 package com.predic8.membrane.core.exceptions;
 
 import com.predic8.membrane.core.interceptor.ratelimit.*;
+import com.predic8.membrane.core.rules.*;
 import com.predic8.membrane.core.transport.*;
 import com.predic8.membrane.core.util.*;
 import org.apache.commons.lang3.exception.*;
@@ -38,12 +39,39 @@ public class SpringConfigurationErrorHandler {
             handleConfigurationException(ee);
         } else if (root instanceof PortOccupiedException poe) {
             handlePortOccupiedException(poe);
+        } else if (root instanceof SOAPProxyMultipleServicesException mse) {
+            handleSOAPProxyMultipleServicesException(mse);
         } else {
             e.printStackTrace();
         }
     }
 
     private static void handlePortOccupiedException(PortOccupiedException poe) {
+
+        if (poe.getPort() < 1024) {
+            System.err.printf("""
+                %s
+        
+                Membrane is configured to open port %d, but the port cannot be opened.
+                Please check:
+        
+                a) The port %d is lower than 1024. Opening it might require root or superuser rights.
+                b) The port is already in use by another program.
+        
+                To resolve this issue, you can:
+        
+                1. Configure Membrane to use a different port. Update the port in the `conf/proxies.xml` file,
+                   then restart Membrane.
+                2. Find and stop the program that is occupying the port. Then restart Membrane.
+                
+                %s
+                
+                3. Run Membrane with superuser permissions or use the `setcap` command.
+        
+                %n""", STARS, poe.getPort(), poe.getPort(), getHowToFindPort());
+            return;
+        }
+
         System.err.printf("""
                 %s
                         
@@ -57,15 +85,17 @@ public class SpringConfigurationErrorHandler {
                 2. Configure Membrane to use a different port. Probably in the conf/proxies.xml
                 file. Then restart Membrane.
                 %n""", STARS, poe.getPort(), getHowToFindPort());
+
     }
 
     private static String getHowToFindPort() {
         return switch (getOS()) {
-                case WINDOWS -> getHowToFindPortWindows();
-                case LINUX, MAC -> getHowToFindPortLinux();
-                case UNKNOWN -> "";
+            case WINDOWS -> getHowToFindPortWindows();
+            case LINUX, MAC -> getHowToFindPortLinux();
+            case UNKNOWN -> "";
         };
     }
+
     private static String getHowToFindPortLinux() {
         return """
                 e.g.:
@@ -84,24 +114,63 @@ public class SpringConfigurationErrorHandler {
 
     private static void handleConfigurationException(ConfigurationException ce) {
         System.err.printf("""
-            %s
-            
-            %s
-            
-            giving up.
-            %n""", STARS, ce.getMessage());
+                %s
+                            
+                %s
+                            
+                giving up.
+                %n""", STARS, ce.getMessage());
+    }
+
+    private static void handleSOAPProxyMultipleServicesException(SOAPProxyMultipleServicesException e) {
+
+        String sample = "";
+        for (String service : e.getServices()) {
+            sample += """
+                    <soapProxy wsdl="%s" serviceName="%s">
+                    ...
+                    </soapProxy>
+                    
+                    """.formatted(e.getSoapProxy().getWsdl(), service);
+        }
+
+
+        System.err.printf("""
+                %s
+                        
+                soapProxy Configuration Error
+                =============================
+                        
+                The WSDL:
+                        
+                %s
+                        
+                contains definitions for the following services:
+                        
+                %s
+                        
+                A <soapProxy> can only be configured with one single service. But you can deploy the same
+                WSDL several times with different services.
+                        
+                %s
+                        
+                Each <soapProxy> will expose a different service.
+                        
+                        
+                %n""", STARS, e.getSoapProxy().getWsdl(), e.getServices(), sample);
     }
 
     private static void handlePropertyBatchUpdateException(Logger log, PropertyBatchUpdateException pbue) {
-        for(Exception ie : pbue.getPropertyAccessExceptions()) {
+        for (Exception ie : pbue.getPropertyAccessExceptions()) {
             if (ie instanceof MethodInvocationException mie) {
                 PropertyChangeEvent pce = mie.getPropertyChangeEvent();
 
                 //noinspection SwitchStatementWithTooFewBranches
                 switch (requireNonNull(pce).getPropertyName()) {
-                    case "requestLimitDuration" -> RateLimitErrorHandling.handleRequestLimitDurationConfigurationException(log, pce);
+                    case "requestLimitDuration" ->
+                            RateLimitErrorHandling.handleRequestLimitDurationConfigurationException(log, pce);
                     default -> log.error("""
-                            Invalid value %s for property %s.""".formatted(pce.getNewValue(),pce.getPropertyName()));
+                            Invalid value %s for property %s.""".formatted(pce.getNewValue(), pce.getPropertyName()));
 
                 }
             }

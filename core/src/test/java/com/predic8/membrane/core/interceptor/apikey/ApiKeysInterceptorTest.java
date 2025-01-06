@@ -24,6 +24,7 @@ import com.predic8.membrane.core.security.SecurityScheme;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
+import java.net.*;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -96,8 +97,8 @@ public class ApiKeysInterceptorTest {
     }
 
     @Test
-    void handleRequestWithKeyRequiredWithoutApiKey() {
-        Exchange exc = new Request.Builder().buildExchange();
+    void handleRequestWithKeyRequiredWithoutApiKey() throws URISyntaxException {
+        Exchange exc = new Request.Builder().get("/").buildExchange();
         assertEquals(RETURN, akiWithProp.handleRequest(exc));
         assertNull(exc.getProperty(SCOPES));
         assertEquals(401, exc.getResponse().getStatusCode());
