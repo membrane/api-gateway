@@ -19,19 +19,18 @@ import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.flow.*;
-import com.predic8.membrane.core.rules.*;
-import org.slf4j.*;
+import com.predic8.membrane.core.proxies.*;
 
 import java.util.*;
 
-import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.REQUEST_RESPONSE;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 
 public class AbstractInterceptor implements Interceptor {
 
 	protected String name = this.getClass().getName();
 
-	private EnumSet<Flow> flow = REQUEST_RESPONSE;
+	private EnumSet<Flow> flow = REQUEST_RESPONSE_ABORT;
 
 	protected Router router;
 
@@ -63,9 +62,18 @@ public class AbstractInterceptor implements Interceptor {
 		this.flow = flow;
 	}
 
-
 	public EnumSet<Flow> getFlow() {
 		return flow;
+	}
+
+	@Override
+	public boolean handlesRequests() {
+		return flow.contains(Flow.REQUEST);
+	}
+
+	@Override
+	public boolean handlesResponses() {
+		return flow.contains(Flow.RESPONSE);
 	}
 
 	@Override
@@ -100,7 +108,7 @@ public class AbstractInterceptor implements Interceptor {
 		init();
 	}
 
-	public <T extends Rule> T getRule(){
+	public <T extends Proxy> T getProxy(){
 		return (T)getRouter()
 				.getRuleManager()
 				.getRules()
@@ -128,13 +136,7 @@ public class AbstractInterceptor implements Interceptor {
 	public static Message getMessage(Exchange exc, Interceptor.Flow flow) {
 		return switch (flow) {
 			case REQUEST -> exc.getRequest();
-			case RESPONSE, ABORT -> {
-				if (exc.getResponse() != null)
-					yield exc.getResponse();
-				Response response = Response.ok().build();
-				exc.setResponse(response);
-				yield response;
-			}
+			case RESPONSE, ABORT ->  exc.getResponse();
 		};
 	}
 }

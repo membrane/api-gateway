@@ -14,7 +14,7 @@
 package com.predic8.membrane.core.interceptor.oauth2client.rf;
 
 import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.interceptor.LogInterceptor;
+import com.predic8.membrane.core.interceptor.log.LogInterceptor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -25,7 +25,7 @@ public class LogHelper {
     public LogHelper() {
         if (log.isDebugEnabled()) {
             logi = new LogInterceptor();
-            logi.setHeaderOnly(false);
+            logi.setBody(false);
         }
     }
 

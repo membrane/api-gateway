@@ -13,53 +13,50 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.rewrite;
 
-import com.predic8.membrane.core.HttpRouter;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Request;
-import com.predic8.membrane.core.interceptor.rewrite.RewriteInterceptor.Mapping;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.exceptions.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.interceptor.rewrite.RewriteInterceptor.*;
+import org.junit.jupiter.api.*;
 
-import java.net.URISyntaxException;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class RewriterTest {
 
     private RewriteInterceptor rewriter;
 
     @BeforeEach
-    public void setUp() throws Exception {
+    void setUp() throws Exception {
         rewriter = new RewriteInterceptor();
         List<Mapping> mappings = new ArrayList<>();
-        mappings.add( new Mapping("/hello/(.*)", "/$1", null));
+        mappings.add(new Mapping("/hello/(.*)", "/$1", null));
         rewriter.setMappings(mappings);
 
         rewriter.init(new HttpRouter());
     }
 
     @Test
-    void testRewriteWithoutTarget() throws Exception {
-        assertThrows(URISyntaxException.class, () -> {
-            Exchange exc = new Exchange(null);
-            Request req = new Request();
-            req.setUri("/%");
-            exc.setRequest(req);
+    void rewriteWithoutTarget() throws Exception {
+        Exchange exc = new Exchange(null) {{
+            setRequest(new Request() {{
+                setUri("/%");
+            }});
+            getDestinations().add("/%");
+        }};
+        rewriter.handleRequest(exc);
 
-            exc.getDestinations().add("/%");
+        assertEquals(400, exc.getResponse().getStatusCode());
 
-            rewriter.handleRequest(exc);
+        var pd = ProblemDetails.parse(exc.getResponse());
+        assertEquals("https://membrane-api.io/error/user/path", pd.getType());
 
-            System.out.println("uri: " + exc.getRequest().getUri());
-            System.out.println("dest: " + exc.getDestinations().get(0));
-        });
     }
 
     @Test
-    void testRewriteWithoutTarget2() throws Exception {
+    void rewriteWithoutTarget2() throws Exception {
         Exchange exc = new Exchange(null);
         Request req = new Request();
         req.setUri("/%25");
@@ -70,11 +67,11 @@ public class RewriterTest {
         rewriter.handleRequest(exc);
 
         assertEquals("/%25", exc.getRequest().getUri());
-        assertEquals("/%25", exc.getDestinations().get(0));
+        assertEquals("/%25", exc.getDestinations().getFirst());
     }
 
     @Test
-    void testRewriteWithoutTarget3() throws Exception {
+    void rewriteWithoutTarget3() throws Exception {
         Exchange exc = new Exchange(null);
         Request req = new Request();
         req.setUri("/hello/%25");
@@ -85,6 +82,6 @@ public class RewriterTest {
         rewriter.handleRequest(exc);
 
         assertEquals("/%25", exc.getRequest().getUri());
-        assertEquals("/%25", exc.getDestinations().get(0));
+        assertEquals("/%25", exc.getDestinations().getFirst());
     }
 }

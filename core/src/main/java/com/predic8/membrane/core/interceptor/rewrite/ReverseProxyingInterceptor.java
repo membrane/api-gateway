@@ -16,14 +16,13 @@ package com.predic8.membrane.core.interceptor.rewrite;
 
 import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.rules.*;
 import com.predic8.membrane.core.ws.relocator.*;
 import org.slf4j.*;
 
 import java.net.*;
 
+import static com.predic8.membrane.core.http.Header.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.util.URLUtil.*;
 
@@ -48,7 +47,7 @@ public class ReverseProxyingInterceptor extends AbstractInterceptor {
 	public Outcome handleRequest(Exchange exc) throws Exception {
 		if (exc.getRequest() == null)
 			return CONTINUE;
-		String destination = exc.getRequest().getHeader().getFirstValue(Header.DESTINATION);
+		String destination = exc.getRequest().getHeader().getFirstValue(DESTINATION);
 		if (destination == null)
 			return CONTINUE;
 		if (!destination.contains("://"))
@@ -60,12 +59,12 @@ public class ReverseProxyingInterceptor extends AbstractInterceptor {
 		if (exc.getDestinations().isEmpty()) {
 			// just remove the schema/hostname/port. this is illegal (by the spec),
 			// but most clients understand it
-			exc.getRequest().getHeader().setValue(Header.DESTINATION, new URL(destination).getFile());
+			exc.getRequest().getHeader().setValue(DESTINATION, new URL(destination).getFile());
 			return CONTINUE;
 		}
-		URL target = new URL(exc.getDestinations().get(0));
+		URL target = new URL(exc.getDestinations().getFirst());
 		// rewrite to our schema, host and port
-		exc.getRequest().getHeader().setValue(Header.DESTINATION,
+		exc.getRequest().getHeader().setValue(DESTINATION,
 				Relocator.getNewLocation(destination, target.getProtocol(),
 						target.getHost(), getPortFromURL(target), exc.getHandler().getContextPath(exc)));
 		return CONTINUE;
@@ -78,24 +77,24 @@ public class ReverseProxyingInterceptor extends AbstractInterceptor {
 	public Outcome handleResponse(Exchange exc) throws Exception {
 		if (exc.getResponse() == null)
 			return CONTINUE;
-		String location = exc.getResponse().getHeader().getFirstValue(Header.LOCATION);
+		String location = exc.getResponse().getHeader().getFirstValue(LOCATION);
 		if (location == null)
 			return CONTINUE;
 		if (!location.contains("://"))
 			return CONTINUE; // local redirect (illegal by spec)
 		// do not rewrite, if the server did a redirect to some other hostname/port
 		// (in which case we have to hope the hostname/port is valid on the client)
-		if (!isSameSchemeHostAndPort(location, exc.getDestinations().get(0)))
+		if (!isSameSchemeHostAndPort(location, exc.getDestinations().getFirst()))
 			return CONTINUE;
 		// if we cannot determine the hostname we have been reached with (e.g. HTTP/1.0)
 		if (exc.getOriginalHostHeaderHost() == null) {
 			// just remove the schema/hostname/port. this is illegal (by the spec),
 			// but most clients understand it
-			exc.getResponse().getHeader().setValue(Header.LOCATION, new URL(location).getFile());
+			exc.getResponse().getHeader().setValue(LOCATION, new URL(location).getFile());
 			return CONTINUE;
 		}
 		// rewrite to our schema, host and port
-		exc.getResponse().getHeader().setValue(Header.LOCATION,
+		exc.getResponse().getHeader().setValue(LOCATION,
 				Relocator.getNewLocation(location, getProtocol(exc),
 						exc.getOriginalHostHeaderHost(), getPort(exc), exc.getHandler().getContextPath(exc)));
 		return CONTINUE;
@@ -115,7 +114,7 @@ public class ReverseProxyingInterceptor extends AbstractInterceptor {
 		} catch (MalformedURLException e) {
 			if (e.getMessage().startsWith("unknown protocol:"))
 				return false;
-			log.warn("Location: " + location + " Location2: " + location2, e); // TODO: fix these cases
+			log.warn("Location 1: {} Location 2: {}", location, location2, e); // TODO: fix these cases
 			return false;
 		}
 	}
@@ -125,8 +124,6 @@ public class ReverseProxyingInterceptor extends AbstractInterceptor {
 	}
 
 	private String getProtocol(Exchange exc) {
-		Rule r = exc.getRule();
-		return r instanceof AbstractServiceProxy && r.getSslInboundContext() != null ? "https" : "http";
+		return exc.getProxy().getProtocol();
 	}
-
 }

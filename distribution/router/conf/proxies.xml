@@ -46,9 +46,9 @@
 			</rewriter> 
 			<response>
 				<beautifier/>
-				<log headerOnly="false"/> <!-- See console for logs -->
+				<log/> <!-- See console for logs -->
 				<xml2Json/>
-				<log headerOnly="false"/> 
+				<log/>
 			</response>
 			<target url="https://api.predic8.de"/>
 		</api>

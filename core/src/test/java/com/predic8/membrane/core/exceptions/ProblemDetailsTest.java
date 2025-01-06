@@ -14,7 +14,10 @@ package com.predic8.membrane.core.exceptions;
 import com.fasterxml.jackson.core.*;
 import com.fasterxml.jackson.databind.*;
 import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.util.*;
 import org.junit.jupiter.api.*;
+
+import java.util.*;
 
 import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
 import static com.predic8.membrane.core.http.MimeType.*;
@@ -34,8 +37,11 @@ public class ProblemDetailsTest {
 
         JsonNode json = om.readTree(r.getBodyAsStringDecoded());
 
-        assertEquals("https://membrane-api.io/error/user/catastrophy",json.get("type").asText());
         assertEquals("Something happened!",json.get("title").asText());
+        assertEquals("https://membrane-api.io/error/user/catastrophy",json.get("type").asText());
+
+        // Assert Order
+        assertIterableEquals(List.of("title","type","attention"), CollectionsUtil.toList( json.fieldNames()));
     }
 
     @Test

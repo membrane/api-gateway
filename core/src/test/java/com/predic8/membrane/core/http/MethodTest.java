@@ -13,21 +13,15 @@
    limitations under the License. */
 package com.predic8.membrane.core.http;
 
+import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.proxies.*;
+import org.apache.commons.httpclient.*;
+import org.apache.commons.httpclient.methods.*;
+import org.junit.jupiter.api.*;
+
 import static org.junit.jupiter.api.Assertions.*;
-
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.interceptor.AbstractInterceptor;
-import com.predic8.membrane.core.interceptor.Outcome;
-import org.apache.commons.httpclient.HttpClient;
-import org.apache.commons.httpclient.methods.DeleteMethod;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
-
-import com.predic8.membrane.core.HttpRouter;
-import com.predic8.membrane.core.rules.ServiceProxy;
-import com.predic8.membrane.core.rules.ServiceProxyKey;
-import com.predic8.membrane.core.rules.Rule;
 
 public class MethodTest {
 
@@ -35,8 +29,8 @@ public class MethodTest {
 
 	@BeforeAll
 	public static void setUp() throws Exception {
-		Rule rule = new ServiceProxy(new ServiceProxyKey("localhost", "*", ".*", 4000), "predic8.de", 80);
-		rule.getInterceptors().add(new AbstractInterceptor() {
+		ServiceProxy proxy = new ServiceProxy(new ServiceProxyKey("localhost", "*", ".*", 4000), "predic8.de", 80);
+		proxy.getInterceptors().add(new AbstractInterceptor() {
 			@Override
 			public Outcome handleRequest(Exchange exc) throws Exception {
 				if (exc.getRequest().getMethod().equals("DELETE")) {
@@ -47,8 +41,13 @@ public class MethodTest {
 			}
 		});
 		router = new HttpRouter();
-		router.getRuleManager().addProxyAndOpenPortIfNew(rule);
+		router.getRuleManager().addProxyAndOpenPortIfNew(proxy);
 		router.init();
+	}
+
+	@AfterAll
+	public static void tearDown() {
+		router.shutdown();
 	}
 
 	@Test
@@ -61,9 +60,6 @@ public class MethodTest {
 		assertTrue(status < 400);
 	}
 
-	@AfterAll
-	public static void tearDown() throws Exception {
-		router.shutdown();
-	}
+
 
 }

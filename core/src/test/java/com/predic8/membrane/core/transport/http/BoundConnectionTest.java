@@ -15,24 +15,17 @@
 package com.predic8.membrane.core.transport.http;
 
 
+import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.proxies.*;
+import com.predic8.membrane.core.util.*;
+import org.junit.jupiter.api.*;
+
+import java.io.*;
+
 import static org.junit.jupiter.api.Assertions.*;
-
-import java.io.IOException;
-
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-
-import com.predic8.membrane.core.HttpRouter;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Header;
-import com.predic8.membrane.core.http.Request;
-import com.predic8.membrane.core.http.Response;
-import com.predic8.membrane.core.interceptor.AbstractInterceptor;
-import com.predic8.membrane.core.interceptor.Outcome;
-import com.predic8.membrane.core.rules.ServiceProxy;
-import com.predic8.membrane.core.rules.ServiceProxyKey;
-import com.predic8.membrane.core.util.EndOfStreamException;
 
 public class BoundConnectionTest {
 
@@ -101,16 +94,16 @@ public class BoundConnectionTest {
 			assertTrue(authenticatedConnection2Hash != authenticatedConnectionHash);
 
 			doExchange(c, true); // this reuses the bound targetConnection1
-			assertTrue(connectionHash == authenticatedConnectionHash);
+            assertEquals(connectionHash, authenticatedConnectionHash);
 
 			doExchange(c, false); // this reuses the bound targetConnection1 (now even without the "Authorization" header)
-			assertTrue(connectionHash == authenticatedConnectionHash);
+            assertEquals(connectionHash, authenticatedConnectionHash);
 
 			doExchange(c, false); // this reuses the bound targetConnection1 (now even without the "Authorization" header)
-			assertTrue(connectionHash == authenticatedConnectionHash);
+            assertEquals(connectionHash, authenticatedConnectionHash);
 
 			doExchange(c2, false);  // this reuses the bound targetConnection2
-			assertTrue(connectionHash == authenticatedConnection2Hash);
+            assertEquals(connectionHash, authenticatedConnection2Hash);
 		} finally {
 			if (c != null)
 				c.close();

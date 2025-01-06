@@ -1,30 +1,31 @@
 # Building Membrane API Gateway
 
 ### What you need
-* Java JDK 17
+* Java JDK 21
 * Apache Maven
 * git
 
-Check the JAVA Version.
-
-	java -version
-	openjdk version "18.0.2" 2022-07-19
-
 ### Building
 
-	git clone https://github.com/membrane/service-proxy
-	cd service-proxy
-	mvn install
+You can skip the tests for speed.
+
+```sh
+git clone https://github.com/membrane/service-proxy
+cd api-gateway
+mvn install -DskipTests
+```
 
 NOTE: For a Release Checkout use
 
-        git clone --branch v4.0.19 https://github.com/membrane/service-proxy
-before checking out, or
+git clone --branch v5.X.X https://github.com/membrane/api-gateway
 
-        git checkout v4.0.19
-after checking out.
-
+```sh
 After the build find the distribution and the WAR at:
+```
 
-	../distribution/target/membrane-service-proxy-X.X.X.zip
-	../war/target/service-proxy-war-X.X.X.war
+After building you'll find the distribution here:
+
+```sh
+../distribution/target/membrane-service-proxy-X.X.X.zip
+../war/target/service-proxy-war-X.X.X.war
+```

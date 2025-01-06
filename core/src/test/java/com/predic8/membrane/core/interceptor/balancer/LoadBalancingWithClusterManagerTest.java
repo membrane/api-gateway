@@ -13,27 +13,20 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.balancer;
 
-import static com.predic8.membrane.core.util.URLParamUtil.createQueryString;
+import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.proxies.*;
+import com.predic8.membrane.core.services.*;
+import org.apache.commons.httpclient.*;
+import org.apache.commons.httpclient.methods.*;
+import org.junit.jupiter.api.*;
+
+import java.io.*;
+
+import static com.predic8.membrane.core.http.Header.*;
+import static com.predic8.membrane.core.http.MimeType.*;
+import static com.predic8.membrane.core.util.URLParamUtil.*;
+import static org.apache.http.params.CoreProtocolPNames.*;
 import static org.junit.jupiter.api.Assertions.*;
-
-import java.io.IOException;
-import java.io.UnsupportedEncodingException;
-
-import org.apache.commons.httpclient.HttpClient;
-import org.apache.commons.httpclient.HttpException;
-import org.apache.commons.httpclient.HttpVersion;
-import org.apache.commons.httpclient.methods.InputStreamRequestEntity;
-import org.apache.commons.httpclient.methods.PostMethod;
-import org.apache.http.params.HttpProtocolParams;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.Test;
-
-import com.predic8.membrane.core.HttpRouter;
-import com.predic8.membrane.core.http.Header;
-import com.predic8.membrane.core.http.MimeType;
-import com.predic8.membrane.core.rules.ServiceProxy;
-import com.predic8.membrane.core.rules.ServiceProxyKey;
-import com.predic8.membrane.core.services.DummyWebServiceInterceptor;
 
 public class LoadBalancingWithClusterManagerTest {
 
@@ -43,7 +36,7 @@ public class LoadBalancingWithClusterManagerTest {
 	private static HttpRouter node3;
 
 	@Test
-	public void nodesTest() throws Exception {
+	void nodesTest() throws Exception {
 		node1 = new HttpRouter();
 		node2 = new HttpRouter();
 		node3 = new HttpRouter();
@@ -89,12 +82,10 @@ public class LoadBalancingWithClusterManagerTest {
 		assertEquals(2, service1.getCount());
 		assertEquals(4, service2.getCount());
 		assertEquals(2, service3.getCount());
-
-
 	}
 
 	@AfterAll
-	public static void tearDown() throws Exception {
+	public static void tearDown() {
 		lb.shutdown();
 		node1.shutdown();
 		node2.shutdown();
@@ -134,28 +125,26 @@ public class LoadBalancingWithClusterManagerTest {
 
 	private HttpClient getClient() {
 		HttpClient client = new HttpClient();
-		client.getParams().setParameter(HttpProtocolParams.PROTOCOL_VERSION, HttpVersion.HTTP_1_1);
+		client.getParams().setParameter(PROTOCOL_VERSION, HttpVersion.HTTP_1_1);
 		return client;
 	}
 
 	private PostMethod getPostMethod(String request) {
 		PostMethod post = new PostMethod("http://localhost:3017/axis2/services/BLZService");
 		post.setRequestEntity(new InputStreamRequestEntity(this.getClass().getResourceAsStream(request)));
-		post.setRequestHeader(Header.CONTENT_TYPE, MimeType.TEXT_XML_UTF8);
-		post.setRequestHeader(Header.SOAP_ACTION, "");
-
+		post.setRequestHeader(CONTENT_TYPE, TEXT_XML_UTF8);
+		post.setRequestHeader(SOAP_ACTION, "");
 		return post;
 	}
 
-	private void sendNotification(String cmd, int port) throws UnsupportedEncodingException, IOException,
-	HttpException {
+	private void sendNotification(String cmd, int port) throws IOException {
 		PostMethod post = new PostMethod("http://localhost:3012/clustermanager/"+cmd+"?"+
 				createQueryString("host", "localhost",
 						"port", String.valueOf(port)));
 		new HttpClient().executeMethod(post);
 	}
 
-	private int post(String req) throws IOException, HttpException {
+	private int post(String req) throws IOException {
 		return getClient().executeMethod(getPostMethod(req));
 	}
 

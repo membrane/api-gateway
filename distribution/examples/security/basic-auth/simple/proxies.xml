@@ -9,6 +9,7 @@
 		<api port="2000">
 			<basicAuthentication>
 				<user name="alice" password="membrane" />
+				<user name="bob" password="membrane2025" />
 			</basicAuthentication>
 			<target url="https://api.predic8.de"/>
 		</api>

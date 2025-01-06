@@ -154,9 +154,7 @@
 
             <request >
                 <json2Xml/>
-                <xpathExtractor>
-                    <property name="fn" xpath="person/@firstname"/>
-                </xpathExtractor>
+                <setProperty name="fn" value="${/person/@firstname}" language="xpath"/>
                 <clusterNotification validateSignature="true"
                                      keyHex="6f488a642b740fb70c5250987a284dc0" timeout="5000" />
                 <javascript>
@@ -169,9 +167,7 @@
                 <transform xslt="../examples/xslt/customer2person.xsl" />
                 <soapStackTraceFilter />
                 <xmlContentFilter xPath="//book/reviews" />
-                <groovy>
-                    exc.getResponse().setBodyContent("Example".getBytes())
-                </groovy>
+                <static>Example</static>
             </response>
             <template contentType="application/json" pretty="yes">
                 { "answer": ${params.answer} }
@@ -180,7 +176,6 @@
             <target host="localhost" port="2001" >
                 <ssl/>
             </target>
-
         </api>
 
         <soapProxy port="2004" wsdl="https://www.predic8.de/city-service?wsdl">

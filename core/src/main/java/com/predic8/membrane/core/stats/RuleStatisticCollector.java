@@ -15,8 +15,8 @@
 package com.predic8.membrane.core.stats;
 
 import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.rules.StatisticCollector;
-import com.predic8.membrane.core.rules.TimeCollector;
+import com.predic8.membrane.core.proxies.StatisticCollector;
+import com.predic8.membrane.core.proxies.TimeCollector;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -26,8 +26,8 @@ public class RuleStatisticCollector {
     /**
      * Map<Status Code, StatisticCollector>
      */
-    private ConcurrentHashMap<Integer, StatisticCollector> statusCodes = new ConcurrentHashMap<>();
-    private ConcurrentHashMap<Integer, TimeCollector> timeCollector = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<Integer, StatisticCollector> statusCodes = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<Integer, TimeCollector> timeCollector = new ConcurrentHashMap<>();
 
     private StatisticCollector getStatisticCollectorByStatusCode(int code) {
         StatisticCollector sc = statusCodes.get(code);

@@ -39,7 +39,7 @@ public class RefreshTokenFlow extends TokenRequest {
     @Override
     protected Response checkForMissingParameters() throws Exception {
         if(getRefreshToken() == null || getClientId() == null || getClientSecret() == null)
-            return OAuth2Util.createParameterizedJsonErrorResponse(exc,jsonGen,"error","invalid_request");
+            return OAuth2Util.createParameterizedJsonErrorResponse(jsonGen,"error","invalid_request");
         return new NoResponse();
     }
 
@@ -47,7 +47,7 @@ public class RefreshTokenFlow extends TokenRequest {
     protected Response processWithParameters() throws Exception {
 
         if(!verifyClientThroughParams())
-            return OAuth2Util.createParameterizedJsonErrorResponse(exc,jsonGen,"error","unauthorized_client");
+            return OAuth2Util.createParameterizedJsonErrorResponse(jsonGen,"error","unauthorized_client");
 
         String username;
         Map<String, Object> additionalClaims;
@@ -55,7 +55,7 @@ public class RefreshTokenFlow extends TokenRequest {
             username = authServer.getRefreshTokenGenerator().getUsername(getRefreshToken());
             additionalClaims = authServer.getRefreshTokenGenerator().getAdditionalClaims(getRefreshToken());
         }catch(NoSuchElementException ex){
-            return OAuth2Util.createParameterizedJsonErrorResponse(exc, jsonGen,"error", "invalid_request");
+            return OAuth2Util.createParameterizedJsonErrorResponse(jsonGen,"error", "invalid_request");
         }
 
         params.put(ParamNames.USERNAME,username);
@@ -64,7 +64,7 @@ public class RefreshTokenFlow extends TokenRequest {
             if (authServer.getRefreshTokenGenerator().supportsRevocation())
                 authServer.getRefreshTokenGenerator().invalidateToken(getRefreshToken(), getClientId(), getClientSecret());
         }catch(NoSuchElementException ex){
-            return OAuth2Util.createParameterizedJsonErrorResponse(exc, jsonGen,"error", "invalid_grant");
+            return OAuth2Util.createParameterizedJsonErrorResponse(jsonGen,"error", "invalid_grant");
         }
 
         // TODO check if scope is "narrower" than before
@@ -75,12 +75,12 @@ public class RefreshTokenFlow extends TokenRequest {
                 client = authServer.getClientList().getClient(getClientId());
             }
         } catch (Exception e) {
-            return OAuth2Util.createParameterizedJsonErrorResponse(exc,jsonGen, "error", "invalid_client");
+            return OAuth2Util.createParameterizedJsonErrorResponse(jsonGen, "error", "invalid_client");
         }
         
         String grantTypes = client.getGrantTypes();
         if (!grantTypes.contains(getGrantType())) {
-			return OAuth2Util.createParameterizedJsonErrorResponse(exc, jsonGen, "error", "invalid_grant_type");
+			return OAuth2Util.createParameterizedJsonErrorResponse(jsonGen, "error", "invalid_grant_type");
         }
         
         scope = getScope();

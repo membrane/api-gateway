@@ -146,15 +146,15 @@ class OpenAPIRecordFactoryTest {
     }
 
     @Test
-    void getUniqueIdNoCollision() {
-        assertEquals("customers-api-v1-0",  factory.getUniqueId(new HashMap<>(), new OpenAPIRecord(getApi("/openapi/specs/customers.yml"),null,null)));
+    void getUniqueIdNoCollision() throws IOException {
+        assertEquals("customers-api-v1-0",  factory.getUniqueId(new HashMap<>(), new OpenAPIRecord(getApi("/openapi/specs/customers.yml"),null)));
     }
 
     @Test
-    void getUniqueIdCollision() {
+    void getUniqueIdCollision() throws IOException {
         HashMap<String, OpenAPIRecord> recs = new HashMap<>();
         recs.put("customers-api-v1-0",new OpenAPIRecord());
-        assertEquals("customers-api-v1-0-0",  factory.getUniqueId(recs, new OpenAPIRecord(getApi("/openapi/specs/customers.yml"),null,null)));
+        assertEquals("customers-api-v1-0-0",  factory.getUniqueId(recs, new OpenAPIRecord(getApi("/openapi/specs/customers.yml"),null)));
     }
 
     private OpenAPI getApi(String pfad) {

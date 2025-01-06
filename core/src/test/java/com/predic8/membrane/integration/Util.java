@@ -14,33 +14,29 @@
 
 package com.predic8.membrane.integration;
 
-import com.predic8.membrane.core.HttpRouter;
-import com.predic8.membrane.core.RuleManager;
-import com.predic8.membrane.core.interceptor.Interceptor;
-import com.predic8.membrane.core.rules.AbstractServiceProxy;
-import com.predic8.membrane.core.rules.Rule;
-import com.predic8.membrane.core.rules.ServiceProxy;
-import com.predic8.membrane.core.rules.ServiceProxyKey;
+import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.proxies.*;
 
-import java.util.Arrays;
+import java.util.*;
 
 public class Util {
-    public static HttpRouter basicRouter(Rule... rules){
+    public static HttpRouter basicRouter(Proxy... proxies){
         HttpRouter router = new HttpRouter();
         router.getTransport().setForceSocketCloseOnHotDeployAfter(1000);
         router.setHotDeploy(false);
 
-        Arrays.stream(rules).forEach(rule -> router.getRuleManager().addProxy(rule, RuleManager.RuleDefinitionSource.MANUAL));
+        Arrays.stream(proxies).forEach(rule -> router.getRuleManager().addProxy(rule, RuleManager.RuleDefinitionSource.MANUAL));
 
         router.start();
         return router;
     }
 
-    public static Rule createServiceProxy(int listenPort, Interceptor... interceptors){
+    public static Proxy createServiceProxy(int listenPort, Interceptor... interceptors){
         return createServiceProxy(listenPort,null,interceptors);
     }
 
-    public static Rule createServiceProxy(int listenPort, AbstractServiceProxy.Target target, Interceptor... interceptors){
+    public static Proxy createServiceProxy(int listenPort, AbstractServiceProxy.Target target, Interceptor... interceptors){
         if (target == null)
             target = new AbstractServiceProxy.Target(null, -1);
 

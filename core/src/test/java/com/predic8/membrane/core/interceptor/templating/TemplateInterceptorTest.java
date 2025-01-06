@@ -126,33 +126,32 @@ public class TemplateInterceptorTest {
         exchange.setProperty("baz",7);
 
         invokeInterceptor(exchange, """
-<% for(h in header.allHeaderFields) { %>
-   <%= h.headerName %> : <%= h.value %>
-<% } %>
-Exchange: <%= exc %>
-Flow: <%= flow %>
-Message.version: <%= message.version %>
-Body: <%= message.body %>
-Properties: <%= properties.baz %>
-<% for(p in props) { %>
-   Key: <%= p.key %> : <%= p.value %>
-<% } %>
-Old: <%= baz %> Exchange property as variable (Deprecated!)
-New: <%= props.baz %> Exchange property new style
-Query Params:
-A: <%= params.a %>
-B: <%= params.b %>
-
-<% for(p in params) { %>
-    <%= p.key %> : <%= p.value %>
-<% } %>
+                <% for(h in header.allHeaderFields) { %>
+                   <%= h.headerName %> : <%= h.value %>
+                <% } %>
+                Exchange: <%= exc %>
+                Flow: <%= flow %>
+                Message.version: <%= message.version %>
+                Body: <%= message.body %>
+                Properties: <%= property.baz %>
+                <% for(p in property) { %>
+                   Key: <%= p.key %> : <%= p.value %>
+                <% } %>
+                New: <%= property.baz %>
+                Query Params:
+                A: <%= params.a %>
+                B: <%= params.b %>
+                
+                <% for(p in params) { %>
+                    <%= p.key %> : <%= p.value %>
+                <% } %>
                 """, APPLICATION_JSON);
         
         String body = exchange.getRequest().getBodyAsStringDecoded();
+        System.out.println("body = " + body);
         assertTrue(body.contains("/foo"));
         assertTrue(body.contains("Flow: REQUEST"));
         assertTrue(body.contains("Body: vlinder"));
-        assertTrue(body.contains("Old: 7"));
         assertTrue(body.contains("New: 7"));
         assertTrue(body.contains("A: 1"));
         assertTrue(body.contains("B: 2"));
@@ -204,10 +203,9 @@ B: <%= params.b %>
 
     @Test
     void innerTagTest() throws Exception {
-        ti.setTextTemplate("${title}");
+        ti.setTextTemplate("${property.title}");
         ti.init(router);
         ti.handleRequest(exc);
-
         assertEquals("minister", exc.getRequest().getBodyAsStringDecoded());
     }
 

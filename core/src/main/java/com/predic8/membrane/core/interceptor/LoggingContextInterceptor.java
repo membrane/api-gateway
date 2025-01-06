@@ -24,13 +24,13 @@ public class LoggingContextInterceptor extends AbstractInterceptor{
     private final String proxyName = "proxyName";
 
     @Override
-    public Outcome handleRequest(Exchange exc) throws Exception {
-        ThreadContext.put(proxyName, exc.getRule().getName());
+    public Outcome handleRequest(Exchange exc) {
+        ThreadContext.put(proxyName, exc.getProxy().getName());
         return CONTINUE;
     }
 
     @Override
-    public Outcome handleResponse(Exchange exc) throws Exception {
+    public Outcome handleResponse(Exchange exc) {
         ThreadContext.remove(proxyName);
         return CONTINUE;
     }

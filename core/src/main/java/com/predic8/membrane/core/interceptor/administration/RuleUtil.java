@@ -15,16 +15,16 @@
 package com.predic8.membrane.core.interceptor.administration;
 
 import com.predic8.membrane.core.*;
-import com.predic8.membrane.core.rules.*;
+import com.predic8.membrane.core.proxies.*;
 
 public class RuleUtil {
-	public static String getRuleIdentifier(Rule rule) {
-		return rule.toString() + (rule.getKey().getPort() == -1 ? "" : ":" + rule.getKey().getPort());
+	public static String getRuleIdentifier(Proxy proxy) {
+		return proxy.toString() + (proxy.getKey().getPort() == -1 ? "" : ":" + proxy.getKey().getPort());
 	}
 
-	public static Rule findRuleByIdentifier(Router router, String name) {
-		for (Rule rule : router.getRuleManager().getRules()) {
-			if ( name.equals(getRuleIdentifier(rule))) return rule;
+	public static Proxy findRuleByIdentifier(Router router, String name) {
+		for (Proxy proxy : router.getRuleManager().getRules()) {
+			if ( name.equals(getRuleIdentifier(proxy))) return proxy;
 		}
 		return null;
 	}

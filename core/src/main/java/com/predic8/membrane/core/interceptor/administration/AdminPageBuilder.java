@@ -21,7 +21,8 @@ import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.interceptor.Interceptor.*;
 import com.predic8.membrane.core.interceptor.balancer.*;
 import com.predic8.membrane.core.interceptor.flow.*;
-import com.predic8.membrane.core.rules.*;
+import com.predic8.membrane.core.proxies.*;
+import com.predic8.membrane.core.proxies.Proxy;
 import com.predic8.membrane.core.transport.http.*;
 import com.predic8.membrane.core.util.*;
 import org.apache.commons.text.*;
@@ -93,7 +94,7 @@ public class AdminPageBuilder extends Html {
 		return super.href(makeRelative(value));
 	}
 
-	public String createPage() throws Exception {
+	public String createPage() {
 		start("!DOCTYPE html");
 		html();
 		createHead();
@@ -118,7 +119,7 @@ public class AdminPageBuilder extends Html {
 		return 0;
 	}
 
-	protected void createTabContent() throws Exception {
+	protected void createTabContent() {
 	}
 
 
@@ -398,7 +399,7 @@ public class AdminPageBuilder extends Html {
 		end();
 	}
 
-	protected void createStatusCodesTable(Map<Integer, StatisticCollector> statusCodes) {
+	protected void createStatusCodesTable(final Map<Integer, StatisticCollector> statusCodes) {
 		table().attr("cellpadding", "0", "cellspacing", "0", "border", "0", "class", "display", "id", "statuscode-table");
 		thead();
 		tr();
@@ -555,7 +556,7 @@ public class AdminPageBuilder extends Html {
 
 	private List<ProxyRule> getProxyRules() {
 		List<ProxyRule> rules = new LinkedList<>();
-		for (Rule r : router.getRuleManager().getRules()) {
+		for (Proxy r : router.getRuleManager().getRules()) {
 			if (!(r instanceof ProxyRule)) continue;
 			rules.add((ProxyRule) r);
 		}
@@ -565,7 +566,7 @@ public class AdminPageBuilder extends Html {
 	private Map<String, StatisticCollector> getStatistics() {
 		Map<String, StatisticCollector> res = new TreeMap<>();
 		HashMap<StatisticCollector,String> backendConnections = new HashMap<>();
-		for (Rule r : router.getRuleManager().getRules()) {
+		for (Proxy r : router.getRuleManager().getRules()) {
 			if (!(r instanceof AbstractProxy)) continue;
 			StatisticCollector sc = new StatisticCollector(true);
 			for (StatisticCollector s : r.getStatisticCollector().getStatisticsByStatusCodes().values())
@@ -636,7 +637,7 @@ public class AdminPageBuilder extends Html {
 			String iid = "i" + id;
 			div().id("i"+id);
 			createHelpIcon(i, id);
-			if (shortDescription.length() > 0 && !longDescription.equals(shortDescription)) {
+			if (!shortDescription.isEmpty() && !longDescription.equals(shortDescription)) {
 				createExpandIcon(i, id);
 			}
 			end();
@@ -645,7 +646,7 @@ public class AdminPageBuilder extends Html {
 			div().classAttr("name");
 			text(i.getDisplayName());
 			end();
-			if (shortDescription.length() > 0) {
+			if (!shortDescription.isEmpty()) {
 				div().style("padding-top: 4px;");
 				String sid = "s" + id;
 				div().id(sid);
@@ -689,8 +690,7 @@ public class AdminPageBuilder extends Html {
 							"  });\r\n" +
 							"});\r\n" +
 							"</script>\r\n" +
-							"\r\n" +
-							"");
+							"\r\n");
 				}
 				end();
 				end();
@@ -731,8 +731,7 @@ public class AdminPageBuilder extends Html {
 				"  {\r\n" +
 				"    jQuery(\"#"+iid+"\").hide();\r\n" +
 				"  });\r\n" +
-				"});\r\n" +
-				"");
+				"});\r\n");
 		end();
 	}
 
@@ -786,7 +785,7 @@ public class AdminPageBuilder extends Html {
 		list.add(new AbstractInterceptor() { // fake interceptor so that both stacks end with the same size
 			@Override
 			public EnumSet<Flow> getFlow() {
-				return Flow.Set.REQUEST_RESPONSE;
+				return Flow.Set.REQUEST_RESPONSE_ABORT;
 			}});
 		// build left and right stacks
 		for (Interceptor i : list) {

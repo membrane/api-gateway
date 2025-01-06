@@ -21,7 +21,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.core.config.security.SSLParser;
-import com.predic8.membrane.core.resolver.ResolverMap;
 import com.predic8.membrane.core.transport.ssl.StaticSSLContext;
 import com.predic8.membrane.core.transport.ssl.SSLContext;
 import org.slf4j.Logger;
@@ -38,8 +37,8 @@ import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.interceptor.balancer.Balancer;
 import com.predic8.membrane.core.interceptor.balancer.LoadBalancingInterceptor;
 import com.predic8.membrane.core.interceptor.balancer.Node;
-import com.predic8.membrane.core.rules.ServiceProxy;
-import com.predic8.membrane.core.rules.ServiceProxyKey;
+import com.predic8.membrane.core.proxies.ServiceProxy;
+import com.predic8.membrane.core.proxies.ServiceProxyKey;
 
 @MCElement(name = "etcdBasedConfigurator")
 public class EtcdBasedConfigurator implements ApplicationContextAware, Lifecycle, DisposableBean {

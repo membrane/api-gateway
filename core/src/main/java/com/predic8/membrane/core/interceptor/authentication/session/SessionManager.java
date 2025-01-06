@@ -13,25 +13,17 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.authentication.session;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-import java.util.stream.Collectors;
+import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.config.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.interceptor.authentication.session.CleanupThread.*;
+import com.predic8.membrane.core.proxies.*;
+import org.apache.commons.lang3.*;
+import org.jetbrains.annotations.*;
 
-import javax.xml.stream.XMLStreamReader;
-
-import com.github.fge.jsonschema.core.keyword.syntax.checkers.common.ExclusiveMaximumSyntaxChecker;
-import org.apache.commons.lang3.StringUtils;
-
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.Router;
-import com.predic8.membrane.core.config.AbstractXmlElement;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Request;
-import com.predic8.membrane.core.interceptor.authentication.session.CleanupThread.Cleaner;
+import javax.xml.stream.*;
+import java.util.*;
 
 /**
  * @explanation <p>
@@ -53,12 +45,12 @@ public class SessionManager extends AbstractXmlElement implements Cleaner {
 	private String domain;
 
 	// TODO: bind session also to remote IP (for public Membrane release)
-	HashMap<String, Session> sessions = new HashMap<>();
+	protected final HashMap<String, Session> sessions = new HashMap<>();
 	protected final static String SESSION_ID = "SESSION_ID";
 	protected final static String SESSION = "SESSION";
 
 	@Override
-	protected void parseAttributes(XMLStreamReader token) throws Exception {
+	protected void parseAttributes(XMLStreamReader token) {
 		cookieName = token.getAttributeValue("", "cookieName");
 		timeout = Long.parseLong(StringUtils.defaultIfEmpty(token.getAttributeValue("", "timeout"), "300000"));
 		domain = token.getAttributeValue("", "domain");
@@ -106,7 +98,7 @@ public class SessionManager extends AbstractXmlElement implements Cleaner {
 					Session other = sessions.get(sId);
 					return s == other;
 				}).toList();
-				remove.forEach(sId -> sessions.remove(sId));
+				remove.forEach(sessions::remove);
 			}
 		}
 	}
@@ -214,15 +206,27 @@ public class SessionManager extends AbstractXmlElement implements Cleaner {
 		synchronized (sessions) {
 			sessions.put(id, s);
 		}
-		String cookieValue = id + "; " +
-				(domain != null ? "Domain=" + domain + "; " : "") +
-				"Path=/" +
-				(exc.getRule().getSslInboundContext() != null ? "; Secure" : "");
+		String cookieValue = getCookieValue(exc, id);
+
 		exc.setProperty(SESSION_ID, cookieValue);
 		exc.setProperty(SESSION, s);
 		if (exc.getResponse() != null)
 			exc.getResponse().getHeader().addCookieSession(cookieName, cookieValue);
 		return s;
+	}
+
+	// TODO is that all for the value or is there something missing?
+	protected @NotNull String getCookieValue(Exchange exc, String value) {
+		return value + "; " +
+			   (domain != null ? "Domain=" + domain + "; " : "") +
+			   "Path=/" + getSecureString(exc);
+	}
+
+	protected static @NotNull String getSecureString(Exchange exc) {
+		Proxy proxy = exc.getProxy();
+		if (!(proxy instanceof SSLableProxy sp))
+			return "";
+		return sp.isInboundSSL() ? "; Secure" : "";
 	}
 
 	public void cleanup() {

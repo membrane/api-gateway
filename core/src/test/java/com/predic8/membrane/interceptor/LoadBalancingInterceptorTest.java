@@ -22,8 +22,8 @@ import com.predic8.membrane.core.interceptor.HTTPClientInterceptor;
 import com.predic8.membrane.core.interceptor.Interceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.balancer.*;
-import com.predic8.membrane.core.rules.ServiceProxy;
-import com.predic8.membrane.core.rules.ServiceProxyKey;
+import com.predic8.membrane.core.proxies.ServiceProxy;
+import com.predic8.membrane.core.proxies.ServiceProxyKey;
 import com.predic8.membrane.core.services.DummyWebServiceInterceptor;
 import com.predic8.membrane.core.util.URIFactory;
 import com.predic8.membrane.core.util.URLUtil;
@@ -120,7 +120,7 @@ public class LoadBalancingInterceptorTest {
 	}
 
 	@AfterEach
-	public void tearDown() throws Exception {
+	public void tearDown() {
 		service1.shutdown();
 		service2.shutdown();
 		balancer.shutdown();

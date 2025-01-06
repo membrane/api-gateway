@@ -14,39 +14,25 @@
 
 package com.predic8.membrane.core.interceptor.opentelemetry;
 
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCChildElement;
-import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Header;
-import com.predic8.membrane.core.http.HeaderField;
-import com.predic8.membrane.core.interceptor.AbstractInterceptor;
-import com.predic8.membrane.core.interceptor.InterceptorFlowController;
-import com.predic8.membrane.core.interceptor.Outcome;
-import com.predic8.membrane.core.interceptor.opentelemetry.exporter.OtelExporter;
-import com.predic8.membrane.core.interceptor.opentelemetry.exporter.OtlpExporter;
-import com.predic8.membrane.core.openapi.serviceproxy.APIProxy;
-import com.predic8.membrane.core.openapi.serviceproxy.OpenAPIRecord;
-import com.predic8.membrane.core.rules.Rule;
-import io.opentelemetry.api.OpenTelemetry;
-import io.opentelemetry.api.trace.Span;
-import io.opentelemetry.api.trace.StatusCode;
-import io.opentelemetry.api.trace.Tracer;
-import io.opentelemetry.context.Context;
-import io.opentelemetry.context.Scope;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.interceptor.opentelemetry.exporter.*;
+import com.predic8.membrane.core.openapi.serviceproxy.*;
+import io.opentelemetry.api.*;
+import io.opentelemetry.api.trace.*;
+import io.opentelemetry.context.*;
+import org.slf4j.*;
 
-import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
-import static com.predic8.membrane.core.interceptor.opentelemetry.HTTPTraceContextUtil.getContextFromRequestHeader;
-import static com.predic8.membrane.core.interceptor.opentelemetry.HTTPTraceContextUtil.setContextInHeader;
-import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPIInterceptor.OPENAPI_RECORD;
-import static io.opentelemetry.api.common.AttributeKey.stringKey;
-import static io.opentelemetry.api.common.Attributes.of;
-import static io.opentelemetry.api.trace.SpanKind.INTERNAL;
-import static io.opentelemetry.api.trace.StatusCode.ERROR;
-import static io.opentelemetry.api.trace.StatusCode.OK;
-import static io.opentelemetry.context.Context.current;
+import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static com.predic8.membrane.core.interceptor.opentelemetry.HTTPTraceContextUtil.*;
+import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPIInterceptor.*;
+import static io.opentelemetry.api.common.AttributeKey.*;
+import static io.opentelemetry.api.common.Attributes.*;
+import static io.opentelemetry.api.trace.SpanKind.*;
+import static io.opentelemetry.api.trace.StatusCode.*;
+import static io.opentelemetry.context.Context.*;
 
 
 @MCElement(name = "openTelemetry")
@@ -61,7 +47,7 @@ public class OpenTelemetryInterceptor extends AbstractInterceptor {
     private static final Logger log = LoggerFactory.getLogger(OpenTelemetryInterceptor.class);
 
     @Override
-    public void init() throws Exception {
+    public void init() {
         otel = OpenTelemetryConfigurator.openTelemetry("Membrane", exporter, getSampleRate());
         tracer = otel.getTracer("MEMBRANE-TRACER");
 
@@ -83,14 +69,10 @@ public class OpenTelemetryInterceptor extends AbstractInterceptor {
     }
 
     @Override
-    public Outcome handleRequest(Exchange exc) throws Exception {
+    public Outcome handleRequest(Exchange exc) {
         startMembraneScope(exc, getExtractContext(exc), getSpanName(exc)); // Params in Methode
         var span = getExchangeSpan(exc);
         setSpanHttpHeaderAttributes(exc.getRequest().getHeader(), span);
-
-//        span.addEvent("Request", of(
-//                stringKey("Request Header"), exc.getRequest().getHeader().toString()
-//        ));
 
         if (logBody) {
             span.addEvent("Request", of(
@@ -102,12 +84,12 @@ public class OpenTelemetryInterceptor extends AbstractInterceptor {
     }
 
     @Override
-    public Outcome handleResponse(Exchange exc) throws Exception {
+    public Outcome handleResponse(Exchange exc) {
         var span = getExchangeSpan(exc);
         span.setStatus(getOtelStatusCode(exc));
         span.setAttribute("http.status_code", exc.getResponse().getStatusCode());
         setSpanHttpHeaderAttributes(exc.getResponse().getHeader(), span);
-        if (exc.getRule() instanceof APIProxy) {
+        if (exc.getProxy() instanceof APIProxy) {
             setSpanOpenAPIAttributes(exc, span);
         }
 
@@ -149,7 +131,7 @@ public class OpenTelemetryInterceptor extends AbstractInterceptor {
     }
 
     private String getProxyName(Exchange exc) {
-        var r = exc.getRule();
+        var r = exc.getProxy();
         return r.getName().isEmpty() ?
                r.getKey().getHost() + r.getKey().getPort()
                : r.getName();

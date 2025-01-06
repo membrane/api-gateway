@@ -13,34 +13,24 @@
    limitations under the License. */
 package com.predic8.membrane.core.resolver;
 
-import java.io.File;
-import java.io.IOException;
-import java.security.InvalidParameterException;
-import java.util.ArrayList;
-import java.util.List;
+import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.interceptor.schemavalidation.*;
+import com.predic8.membrane.core.interceptor.server.*;
+import com.predic8.membrane.core.proxies.*;
+import com.predic8.schema.*;
+import com.predic8.wsdl.*;
+import org.junit.jupiter.api.*;
+import org.junit.jupiter.params.*;
+import org.junit.jupiter.params.provider.*;
 
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
+import java.io.*;
+import java.security.*;
+import java.util.*;
 
-import com.predic8.membrane.core.HttpRouter;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.interceptor.AbstractInterceptor;
-import com.predic8.membrane.core.interceptor.Outcome;
-import com.predic8.membrane.core.interceptor.schemavalidation.XMLSchemaValidator;
-import com.predic8.membrane.core.interceptor.server.WebServerInterceptor;
-import com.predic8.membrane.core.rules.ServiceProxy;
-import com.predic8.membrane.core.rules.ServiceProxyKey;
-import com.predic8.schema.Schema;
-import com.predic8.wsdl.Definitions;
-import com.predic8.wsdl.WSDLParser;
-import com.predic8.wsdl.WSDLParserContext;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.MethodSource;
-
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class ResolverTest {
 
@@ -150,7 +140,7 @@ public class ResolverTest {
 	 * Sets wsdlLocation and xsdLocation, given the current test parameters
 	 * @return whether the current test parameters is supported
 	 */
-	private boolean setupLocations(BasisUrlType basisUrlType) throws IOException {
+	private boolean setupLocations(BasisUrlType basisUrlType) {
 		switch (basisUrlType) {
 		case BUNDLE:
 			return false;
@@ -164,7 +154,7 @@ public class ResolverTest {
 			String current = new File(".").getAbsolutePath().replaceAll("\\\\", "/");
 			if (current.endsWith("."))
 				current = current.substring(0, current.length()-1);
-			if (current.substring(1, 3).equals(":/"))
+			if (current.startsWith(":/", 1))
 				current = current.substring(2);
 			wsdlLocation = "file://" + current + "src/test/resources/resolver/a.wsdl";
 			xsdLocation = "file://" + current + "src/test/resources/resolver/2.xsd";
@@ -204,7 +194,7 @@ public class ResolverTest {
 				current3 = new File(".").getAbsolutePath().replaceAll("\\\\", "/");
 				if (current3.endsWith("."))
 					current3 = current3.substring(0, current3.length()-1);
-				if (current3.substring(1, 3).equals(":/"))
+				if (current3.startsWith(":/", 1))
 					current3 = current3.substring(2);
 				current3 = current3 + "src/test/resources";
 			} else {
@@ -258,9 +248,9 @@ public class ResolverTest {
 
 		sp.getInterceptors().add(new AbstractInterceptor() {
 			@Override
-			public Outcome handleRequest(Exchange exc) throws Exception {
+			public Outcome handleRequest(Exchange exc) {
 				hit = true;
-				return Outcome.CONTINUE;
+				return CONTINUE;
 			}
 		});
 
@@ -278,7 +268,7 @@ public class ResolverTest {
 	}
 
 	@AfterAll
-	public static void teardown() throws IOException {
+	public static void teardown() {
 		router.shutdown();
 	}
 

@@ -13,66 +13,39 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor;
 
-import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.rules.Rule;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.exchange.*;
+import org.slf4j.*;
 
-import static com.predic8.membrane.core.util.URLUtil.getHost;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.*;
 
 /**
  * Handles features that are user-configured in proxies.xml .
- * <p>
- * Not that we do not implement handleResponse() as this will be
- * automatically done by the stack-unwinding in {@link InterceptorFlowController}.
  */
 @MCElement(name="userFeature")
 public class UserFeatureInterceptor extends AbstractInterceptor {
 
 	private static final Logger log = LoggerFactory.getLogger(UserFeatureInterceptor.class.getName());
-	private static final InterceptorFlowController flowController = new InterceptorFlowController();
+
+	private static final FlowController flowController = new FlowController();
 
 	public UserFeatureInterceptor() {
 		name = "User Feature";
-		setFlow(Flow.Set.REQUEST);
+		setFlow(REQUEST_RESPONSE_ABORT); // ?
 	}
 
 	@Override
-	public Outcome handleRequest(Exchange exc) throws Exception {
-		Rule predecessorRule = exc.getRule();
-		Outcome outcome = flowController.invokeRequestHandlers(exc, predecessorRule.getInterceptors());
-
-		while (isTargetInternalAndContinue(exc, outcome)) {
-			log.debug("routing to serviceProxy with name: " + getServiceProxyName(exc));
-
-			// rule matching
-			String destination = exc.getDestinations().get(0);
-			Rule newRule = getRuleByDest(destination);
-			if (newRule == null)
-				throw new Exception("No proxy found for destination " + destination);
-			RuleMatchingInterceptor.assignRule(exc, newRule);
-			// dispatching
-			exc.getDestinations().clear();
-			exc.getDestinations().add(DispatchingInterceptor.getForwardingDestination(router.getUriFactory(),exc));
-			// user feature
-			outcome = flowController.invokeRequestHandlers(exc, newRule.getInterceptors());
-		}
-		exc.setRule(predecessorRule);
-		return outcome;
+	public Outcome handleRequest(Exchange exc) {
+        return flowController.invokeRequestHandlers(exc, exc.getProxy().getInterceptors());
 	}
 
-	private String getServiceProxyName(Exchange exc) {
-		return exc.getDestinations().get(0).substring(8);
+	@Override
+	public Outcome handleResponse(Exchange exc) throws Exception {
+        return flowController.invokeResponseHandlers(exc, exc.getProxy().getInterceptors());
 	}
 
-	private boolean isTargetInternalAndContinue(Exchange exc, Outcome outcome) {
-		return outcome == Outcome.CONTINUE
-				&& exc.getDestinations().get(0).startsWith("service:");
+	@Override
+	public void handleAbort(Exchange exc) {
+        flowController.invokeAbortHandlers(exc, exc.getProxy().getInterceptors(), exc.getProxy().getInterceptors().size());
 	}
-
-	private Rule getRuleByDest(String dest) {
-		return router.getRuleManager().getRuleByName(getHost(dest));
-	}
-
 }

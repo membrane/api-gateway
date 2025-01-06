@@ -11,18 +11,23 @@
 
 package com.predic8.membrane.core.exceptions;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.ObjectWriter;
-import com.predic8.membrane.core.http.Response;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.fasterxml.jackson.core.*;
+import com.fasterxml.jackson.core.type.*;
+import com.fasterxml.jackson.databind.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.*;
+import org.jetbrains.annotations.*;
+import org.slf4j.*;
+import org.w3c.dom.*;
 
+import javax.xml.parsers.*;
+import javax.xml.transform.*;
+import javax.xml.transform.dom.*;
+import javax.xml.transform.stream.*;
+import java.io.*;
 import java.util.*;
 
-import static com.predic8.membrane.core.http.MimeType.APPLICATION_PROBLEM_JSON;
-import static com.predic8.membrane.core.http.MimeType.TEXT_PLAIN;
+import static com.predic8.membrane.core.http.MimeType.*;
 
 
 /**
@@ -41,9 +46,13 @@ public class ProblemDetails {
     private String type;
 
     private String title;
-
     private String detail;
 
+    /**
+     * Component like plugin
+     */
+    private String component;
+    
     private String instance;
     private final HashMap<String, Object> extensions = new LinkedHashMap<>();
     private Throwable exception;
@@ -57,7 +66,7 @@ public class ProblemDetails {
     }
 
     public static ProblemDetails gateway(boolean production) {
-        return problemDetails( "gateway", production).statusCode(500);
+        return problemDetails( "gateway", production).statusCode(500).title("Gateway error.");
     }
 
     public static ProblemDetails security(boolean production) {
@@ -100,6 +109,11 @@ public class ProblemDetails {
             this.detail = humanReadableExplanation;
         return this;
     }
+    
+    public ProblemDetails component(String component) {
+        this.component = component;
+        return this;
+    }
 
     public ProblemDetails instance(String instance) {
         this.instance = instance;
@@ -116,46 +130,124 @@ public class ProblemDetails {
         return this;
     }
 
+    public Response build() {
+        return createContent(createMap(), null);
+    }
+
     /**
      * Does only log, when key in log is needed. The caller is responsible to do the log if
      * there is something interessting.
      */
-    public Response build() {
+    public void buildAndSetResponse(Exchange exchange) {
+        if (exchange != null) {
+            exchange.setResponse(createContent(createMap(), exchange));
+            return;
+        }
+        throw new RuntimeException("Should not happen!");
+    }
+
+    private @NotNull Map<String, Object> createMap() {
         Map<String, Object> root = new LinkedHashMap<>();
+        Map<String, Object> extensionsMap = new LinkedHashMap<>();
 
         if (production) {
             String logKey = UUID.randomUUID().toString();
-            log.warn("logKey={}\ntype={}\ntitle={}\n,detail={}\n,extension={},.", logKey, type, title, detail, extensions);
+            log.warn("logKey={}\ntype={}\ntitle={}\n,detail={}\n,extension={},.", logKey, type, title, detail, extensionsMap);
 
             type = "internal";
             title = "An internal error occurred.";
             detail = "Details can be found in the Membrane log searching for key: %s.".formatted(logKey);
         } else {
+            extensionsMap.putAll(extensions);
             if (exception != null) {
-                root.put("message",exception.getMessage());
-                root.put("stackTrace", exception.getStackTrace());
+                extensionsMap.put("message",exception.getMessage());
+                extensionsMap.put("stackTrace", getStackTrace());
             }
-            root.put("attention", """
-                Membrane is running in development mode. For production set <router production="true"> to reduce the details in error message!""");
-            root.putAll(extensions);
+            extensionsMap.put("attention", """
+                Membrane is in development mode. For production set <router production="true"> to reduce details in error messages!""");
         }
 
-        root.put("type", "https://membrane-api.io/error/" + type);
         root.put("title", title);
+        root.put("type", "https://membrane-api.io/error/" + type);
 
         if (detail != null) {
             root.put("detail", detail);
         }
+        
+        if (component != null) {
+            root.put("component", component);
+        }
 
+        root.putAll(extensionsMap);
+        return root;
+    }
+
+    private @NotNull String getStackTrace() {
+        String stackTrace = "";
+        for (StackTraceElement element : exception.getStackTrace()) {
+            stackTrace += element.toString() + "\n";
+        }
+        return stackTrace;
+    }
+
+    private Response createContent(Map<String, Object> root, Exchange exchange) {
         Response.ResponseBuilder builder = Response.statusCode(statusCode);
         try {
-            builder.body(ow.writeValueAsBytes(root));
-            builder.contentType(APPLICATION_PROBLEM_JSON);
+            if (exchange != null && exchange.getRequest().isXML())
+                createXMLContent(root, builder);
+            else
+                createJson(root, builder);
         } catch (Exception e) {
-            builder.body("Type: %s\n Title: %s\n Extensions: %s".formatted(type, title, extensions).getBytes());
+            builder.body("Title: %s\nType: %s\n%s".formatted(type, title, root).getBytes());
             builder.contentType(TEXT_PLAIN);
         }
         return builder.build();
+    }
+
+    private static void createXMLContent(Map<String, Object> root, Response.ResponseBuilder builder) throws Exception {
+        builder.body(convertMapToXml(root));
+        builder.contentType(APPLICATION_XML);
+    }
+
+    public static String convertMapToXml(Map<String, Object> map) throws Exception {
+        Document document = DocumentBuilderFactory.newInstance().newDocumentBuilder().newDocument();
+        Element root = document.createElement("problem-details");
+        document.appendChild(root);
+        mapToXmlElements(map, document, root);
+        return document2string(document);
+    }
+
+    private static String document2string(Document document) throws TransformerException {
+        StringWriter writer = new StringWriter();
+        TransformerFactory.newInstance().newTransformer().transform(new DOMSource(document), new StreamResult(writer));
+        return writer.toString();
+    }
+
+    private static void mapToXmlElements(Map<String, Object> map, Document document, Element parent) {
+        for (Map.Entry<String, Object> entry : map.entrySet()) {
+            Object value = entry.getValue();
+            if (value == null)
+                continue;
+            Element element = document.createElement(entry.getKey());
+            if (value instanceof Map mv) {
+                mapToXmlElements(mv, document, element);
+            } else if (value instanceof Object[] oa) {
+                for (Object obj : oa) {
+                    Element arrayElement = document.createElement(entry.getKey());
+                    arrayElement.setTextContent(obj.toString());
+                    parent.appendChild(arrayElement);
+                }
+                continue;
+            } else {
+                element.setTextContent(value.toString());
+            }
+            parent.appendChild(element);
+        }
+    }
+
+    private static void createJson(Map<String, Object> root, Response.ResponseBuilder builder) throws JsonProcessingException {
+        builder.body(ow.writeValueAsBytes(root));
+        builder.contentType(APPLICATION_PROBLEM_JSON);
     }
 
     public static ProblemDetails parse(Response r) throws JsonProcessingException {

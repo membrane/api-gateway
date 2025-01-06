@@ -1,6 +1,6 @@
 # Content Based Routing using XPath
 
-Using the switch interceptor Membrane allows you to route XML messages based on XPath expressions.
+Using the if plugin with the jsonpath or xpath language you can route messages based on their content.
 
 
 ## Running the Example
@@ -42,7 +42,3 @@ Express order received.
 curl -d @import.xml localhost:2000
 Order contains import items.
 ```
-
----
-See:
-- [switch](https://membrane-soa.org/api-gateway-doc/current/configuration/reference/switch.htm) reference

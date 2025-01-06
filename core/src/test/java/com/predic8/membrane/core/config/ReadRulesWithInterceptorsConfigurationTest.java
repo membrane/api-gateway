@@ -13,65 +13,60 @@
    limitations under the License. */
 package com.predic8.membrane.core.config;
 
+import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.proxies.*;
+import org.junit.jupiter.api.*;
+
+import java.util.*;
+
 import static org.junit.jupiter.api.Assertions.*;
-import static org.junit.jupiter.api.Assertions.*;
-
-import java.util.List;
-
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
-
-import com.predic8.membrane.core.Router;
-import com.predic8.membrane.core.interceptor.Interceptor;
-import com.predic8.membrane.core.interceptor.SpringInterceptor;
-import com.predic8.membrane.core.rules.Rule;
 
 public class ReadRulesWithInterceptorsConfigurationTest {
 
 	private static Router router;
 
-	private static List<Rule> rules;
+	private static List<Proxy> proxies;
 
 	@BeforeAll
-	public static void setUp() throws Exception {
+	public static void setUp() {
 		router = Router.init("src/test/resources/ref.proxies.xml");
-		rules = router.getRuleManager().getRules();
+		proxies = router.getRuleManager().getRules();
 	}
 
 	@Test
-	public void testRulesSize() throws Exception {
-		assertEquals(2, rules.size());
+	public void testRulesSize() {
+		assertEquals(2, proxies.size());
 	}
 
 	@Test
-	public void testRuleInterceptorSize() throws Exception {
-		Rule rule = rules.get(0);
-		assertEquals(1, rule.getInterceptors().size());
+	public void testRuleInterceptorSize() {
+		Proxy proxy = proxies.get(0);
+		assertEquals(1, proxy.getInterceptors().size());
 	}
 
 	@Test
-	public void testRuleInterceptorsHaveRouterReference() throws Exception {
-		List<Interceptor> interceptors = rules.get(0).getInterceptors();
+	public void testRuleInterceptorsHaveRouterReference() {
+		List<Interceptor> interceptors = proxies.get(0).getInterceptors();
 		for (Interceptor itsp : interceptors) {
 			assertNotNull(itsp.getRouter());
 		}
 	}
 
 	@Test
-	public void testRuleInterceptorIDs() throws Exception {
-		List<Interceptor> interceptors = rules.get(0).getInterceptors();
-		assertEquals("accessControlInterceptor", ((SpringInterceptor) interceptors.get(0)).getRefId());
+	public void testRuleInterceptorIDs() {
+		List<Interceptor> interceptors = proxies.getFirst().getInterceptors();
+		assertEquals("accessControlInterceptor", ((SpringInterceptor) interceptors.getFirst()).getRefId());
 	}
 
 	@Test
-	public void testRuleInterceptorDisplayNames() throws Exception {
-		List<Interceptor> interceptors = rules.get(0).getInterceptors();
-		assertEquals("Access Control List Interceptor", interceptors.get(0).getDisplayName());
+	public void testRuleInterceptorDisplayNames() {
+		List<Interceptor> interceptors = proxies.getFirst().getInterceptors();
+		assertEquals("Access Control List Interceptor", interceptors.getFirst().getDisplayName());
 	}
 
 	@AfterAll
-	public static void tearDown() throws Exception {
+	public static void tearDown() {
 		router.shutdown();
 	}
 

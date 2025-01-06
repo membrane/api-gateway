@@ -54,7 +54,7 @@ public class EmptyEndpointProcessor extends EndpointProcessor {
                 return startOAuth2Flow(exc, s);
             }
         }
-        exc.setResponse(OAuth2Util.createParameterizedJsonErrorResponse(exc,jsonGen, "error", "consent_required"));
+        exc.setResponse(OAuth2Util.createParameterizedJsonErrorResponse(jsonGen, "error", "consent_required"));
         return Outcome.RETURN;
     }
 
@@ -67,7 +67,7 @@ public class EmptyEndpointProcessor extends EndpointProcessor {
         }
         if(getResponseType(s).equals("id_token token"))
             return new IdTokenTokenFlow(authServer,exc,s).getResponse();
-        exc.setResponse(OAuth2Util.createParameterizedJsonErrorResponse(exc,jsonGen, "error", "unsupported_response_type"));
+        exc.setResponse(OAuth2Util.createParameterizedJsonErrorResponse(jsonGen, "error", "unsupported_response_type"));
         return Outcome.RETURN;
     }
 

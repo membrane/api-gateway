@@ -97,9 +97,7 @@
 	
 		<serviceProxy name="ReturnedChain1" port="3029">
 			<interceptor refid="Mock3" />
-			<groovy>
-				exc.echo()
-			</groovy>		
+			<echo/>
 			<interceptor refid="Mock4" />
 			<target url="service:ReturnedChain2" />
 		</serviceProxy>

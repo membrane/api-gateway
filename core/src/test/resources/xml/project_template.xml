@@ -2,7 +2,7 @@
 <project
         title="Sample Project"
         date="01.01.2000"
-        author="${title}"
+        author="${property.title}"
 >
 
     <part type="all">
@@ -10,7 +10,7 @@
     </part>
 
     <part type="all">
-        <title>${title}</title>
+        <title>${property.title}</title>
         <item>Stuff about project</item>
         <item/>
         <item>More introductory stuff about project</item>

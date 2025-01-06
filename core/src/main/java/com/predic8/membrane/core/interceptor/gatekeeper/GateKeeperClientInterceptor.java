@@ -60,7 +60,7 @@ public class GateKeeperClientInterceptor extends AbstractInterceptor {
     @Override
     public Outcome handleRequest(Exchange exc) throws Exception {
 
-        String ruleName = exc.getRule().getName();
+        String ruleName = exc.getProxy().getName();
         String clientIP = exc.getRemoteAddrIp();
 
 

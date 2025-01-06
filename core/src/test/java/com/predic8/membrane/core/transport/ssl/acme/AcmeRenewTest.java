@@ -21,7 +21,7 @@ import com.predic8.membrane.core.config.security.acme.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.rules.*;
+import com.predic8.membrane.core.proxies.*;
 import com.predic8.membrane.core.transport.http.*;
 import com.predic8.membrane.core.transport.ssl.*;
 import org.bouncycastle.jce.provider.*;
@@ -30,6 +30,7 @@ import org.junit.jupiter.api.*;
 import java.io.*;
 import java.security.*;
 
+import static com.predic8.membrane.core.exchange.Exchange.SSL_CONTEXT;
 import static com.predic8.membrane.core.http.Response.ok;
 import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
 import static org.junit.jupiter.api.Assertions.*;
@@ -96,20 +97,21 @@ public class AcmeRenewTest {
                 Thread.sleep(100);
             }
 
-            HttpClient hc = new HttpClient();
             Exchange e = new Request.Builder().get("https://localhost:3051/").buildExchange();
-            SSLParser sslParser1 = new SSLParser();
-            Trust trust = new Trust();
-            Certificate certificate = new Certificate();
-            certificate.setContent(sim.getCA().getCertificate());
-            trust.setCertificateList(ImmutableList.of(certificate));
-            sslParser1.setTrust(trust);
-            e.setProperty(Exchange.SSL_CONTEXT, new StaticSSLContext(sslParser1, router.getResolverMap(), router.getBaseLocation()));
-            hc.call(e);
+            try (HttpClient hc = new HttpClient()) {
+                SSLParser sslParser1 = new SSLParser();
+                Trust trust = new Trust();
+                Certificate certificate = new Certificate();
+                certificate.setContent(sim.getCA().getCertificate());
+                trust.setCertificateList(ImmutableList.of(certificate));
+                sslParser1.setTrust(trust);
+                e.setProperty(SSL_CONTEXT, new StaticSSLContext(sslParser1, router.getResolverMap(), router.getBaseLocation()));
+                hc.call(e);
+            }
 
             assertEquals(234, e.getResponse().getStatusCode());
         } finally {
-            router.stop();
+            router.stop(); // TODO use shutdown in AfterAll
         }
 
     }

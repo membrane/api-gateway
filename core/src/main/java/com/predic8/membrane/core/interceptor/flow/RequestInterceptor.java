@@ -24,42 +24,30 @@ import static com.predic8.membrane.core.interceptor.Outcome.*;
 
 /**
  * @description Interceptors are usually applied to requests and responses. By nesting interceptors into a
- *              &lt;request&gt; Element you can limit their application to requests only.
+ * &lt;request&gt; Element you can limit their application to requests only.
  */
-@MCElement(name="request", topLevel=false)
+@MCElement(name = "request", topLevel = false)
 public class RequestInterceptor extends AbstractFlowInterceptor {
 
-	private static final Logger log = LoggerFactory.getLogger(RequestInterceptor.class);
+    private static final Logger log = LoggerFactory.getLogger(RequestInterceptor.class);
 
-	public RequestInterceptor() {
-		name = "Request Interceptor";
-		setFlow(REQUEST);
-	}
+    public RequestInterceptor() {
+        name = "Request Interceptor";
+        setFlow(REQUEST);
+    }
 
-	@Override
-	public Outcome handleRequest(Exchange exc) throws Exception {
+    @Override
+    public Outcome handleRequest(Exchange exc) throws Exception {
+        for (Interceptor i : getInterceptors()) {
+            if (!i.handlesRequests())
+                continue;
+            log.debug("Invoking handler: {} on exchange: {}", i.getDisplayName(), exc);
+            Outcome o = i.handleRequest(exc);
 
-		for (Interceptor i : getInterceptors()) {
-			if (!i.getFlow().contains(Flow.REQUEST))
-				continue;
-
-			if (log.isDebugEnabled())
-				log.debug("Invoking request handler: " + i.getDisplayName() + " on exchange: " + exc);
-
-			// If nested interceptors are push to the stack make sure, that when they are popped
-			// they will not be executed in the response phase. See also ConditionalInterceptor (if-element)
-			exc.setProperty("requestOnly",true);
-			Outcome o;
-			try {
-				o = i.handleRequest(exc);
-			} finally {
-				// Reset the property for everything that is outside this request interceptor
-				exc.setProperty("requestOnly",false);
-			}
-
-			if (o != CONTINUE)
-				return o;
-		}
-		return CONTINUE;
-	}
+            // Get out on RETURN and ABORT
+            if (o != CONTINUE)
+                return o;
+        }
+        return CONTINUE;
+    }
 }

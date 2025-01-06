@@ -14,17 +14,12 @@
 
 package com.predic8.membrane.core;
 
-import java.util.ArrayList;
-import java.util.List;
+import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.transport.*;
+import com.predic8.membrane.core.transport.http.*;
+import com.predic8.membrane.core.transport.http.client.*;
 
-import com.predic8.membrane.core.interceptor.DispatchingInterceptor;
-import com.predic8.membrane.core.interceptor.HTTPClientInterceptor;
-import com.predic8.membrane.core.interceptor.Interceptor;
-import com.predic8.membrane.core.interceptor.RuleMatchingInterceptor;
-import com.predic8.membrane.core.interceptor.UserFeatureInterceptor;
-import com.predic8.membrane.core.transport.Transport;
-import com.predic8.membrane.core.transport.http.HttpTransport;
-import com.predic8.membrane.core.transport.http.client.ProxyConfiguration;
+import java.util.*;
 
 public class HttpRouter extends Router {
 
@@ -33,19 +28,20 @@ public class HttpRouter extends Router {
 	}
 
 	public HttpRouter(ProxyConfiguration proxyConfiguration) {
-		transport = createTransport(proxyConfiguration);
+		transport = createTransport();
 		resolverMap.getHTTPSchemaResolver().getHttpClientConfig().setProxy(proxyConfiguration);
 	}
 
 	/**
 	 * Same as the default config from monitor-beans.xml
 	 */
-	private Transport createTransport(ProxyConfiguration proxyConfiguration) {
+	private Transport createTransport() {
 		Transport transport = new HttpTransport();
 		List<Interceptor> interceptors = new ArrayList<>();
 		interceptors.add(new RuleMatchingInterceptor());
 		interceptors.add(new DispatchingInterceptor());
 		interceptors.add(new UserFeatureInterceptor());
+		interceptors.add(new InternalServiceRoutingInterceptor());
 		HTTPClientInterceptor httpClientInterceptor = new HTTPClientInterceptor();
 		interceptors.add(httpClientInterceptor);
 		transport.setInterceptors(interceptors);

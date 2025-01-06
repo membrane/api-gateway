@@ -16,7 +16,7 @@ package com.predic8.membrane.core.openapi.serviceproxy;
 import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.rules.*;
+import com.predic8.membrane.core.proxies.*;
 import org.slf4j.*;
 
 import java.util.*;
@@ -68,10 +68,10 @@ public class ApiDocsInterceptor extends AbstractInterceptor {
                 ));
     }
 
-    protected void setSpecRewrites(Rule rule) {
-        var key = rule.getKey();
+    protected void setSpecRewrites(Proxy proxy) {
+        var key = proxy.getKey();
         //noinspection OptionalGetWithoutIsPresent
-        getOpenAPIInterceptor(rule).get().getApiProxy().getSpecs().forEach(spec -> {
+        getOpenAPIInterceptor(proxy).get().getApiProxy().getSpecs().forEach(spec -> {
             if (spec.getRewrite() != null) {
                 setIfNull(spec.getRewrite(), Rewrite::getPort, Rewrite::setPort, key.getPort());
                 setIfNull(spec.getRewrite(), Rewrite::getHost, Rewrite::setHost, key.getHost());
@@ -86,8 +86,8 @@ public class ApiDocsInterceptor extends AbstractInterceptor {
         });
     }
 
-    private Stream<Map.Entry<String, OpenAPIRecord>> getRecordEntryStreamOrEmpty(Rule rule) {
-        return getOpenAPIInterceptor(rule)
+    private Stream<Map.Entry<String, OpenAPIRecord>> getRecordEntryStreamOrEmpty(Proxy proxy) {
+        return getOpenAPIInterceptor(proxy)
                 .map(ApiDocsInterceptor::getRecordEntryStream)
                 .orElse(Stream.empty());
     }
@@ -97,12 +97,12 @@ public class ApiDocsInterceptor extends AbstractInterceptor {
                 .map(entry -> Map.entry(entry.getKey(), entry.getValue()));
     }
 
-    private boolean hasOpenAPIInterceptor(Rule rule) {
-        return rule.getInterceptors().stream().anyMatch(OpenAPIInterceptor.class::isInstance);
+    private boolean hasOpenAPIInterceptor(Proxy proxy) {
+        return proxy.getInterceptors().stream().anyMatch(OpenAPIInterceptor.class::isInstance);
     }
 
-    static Optional<OpenAPIInterceptor> getOpenAPIInterceptor(Rule rule) {
-        return rule.getInterceptors().stream()
+    static Optional<OpenAPIInterceptor> getOpenAPIInterceptor(Proxy proxy) {
+        return proxy.getInterceptors().stream()
                 .filter(OpenAPIInterceptor.class::isInstance)
                 .map(ic -> (OpenAPIInterceptor) ic) // Previous line checks type, so cast should be fine
                 .findFirst();

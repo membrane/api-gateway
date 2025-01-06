@@ -14,15 +14,15 @@
 
 package com.predic8.membrane.examples.util;
 
-import java.io.*;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.TimeoutException;
-import java.util.stream.Stream;
+import org.slf4j.*;
 
-import static com.predic8.membrane.core.util.OSUtil.isWindows;
-import static java.lang.Thread.currentThread;
-import static java.lang.Thread.sleep;
+import java.io.*;
+import java.util.*;
+import java.util.concurrent.*;
+import java.util.stream.*;
+
+import static com.predic8.membrane.core.util.OSUtil.*;
+import static java.lang.Thread.*;
 
 /**
  * Starts a shell script (Windows batch file or Linux shell script) or
@@ -35,6 +35,8 @@ import static java.lang.Thread.sleep;
  * Note that ProcessStuff is not synchronized, only ProcessStuff.watchers.
  */
 public class Process2 implements AutoCloseable {
+
+	private static final Logger log = LoggerFactory.getLogger(Process2.class.getName());
 
 	@Override
 	public void close() {
@@ -133,7 +135,7 @@ public class Process2 implements AutoCloseable {
 						watcher.outputLine(error, l);
 				}
 			} catch (Exception e) {
-				e.printStackTrace();
+				log.error(e.getMessage(), e);
 			}
 		}
 	}
@@ -144,7 +146,7 @@ public class Process2 implements AutoCloseable {
 
 	private Process2(File exampleDir, String id, String startCommand, List<ConsoleWatcher> consoleWatchers, String waitAfterStartFor) throws IOException, InterruptedException {
 
-		System.out.println("exampleDir = " + exampleDir + ", id = " + id + ", startCommand = " + startCommand + ", consoleWatchers = " + consoleWatchers + ", waitAfterStartFor = " + waitAfterStartFor);
+		log.info("exampleDir = {}, id = {}, startCommand = {}, consoleWatchers = {}, waitAfterStartFor = {}", exampleDir,id,startCommand,consoleWatchers,waitAfterStartFor);
 
 		if (!exampleDir.exists())
 			throw new RuntimeException("Example dir " + exampleDir.getAbsolutePath() + " does not exist.");
@@ -217,7 +219,7 @@ public class Process2 implements AutoCloseable {
 				throw new RuntimeException(new TimeoutException());
 			try {
 				//noinspection BusyWait
-				sleep(200);
+				sleep(10);
 			} catch (InterruptedException e) {
 				currentThread().interrupt();
 			}

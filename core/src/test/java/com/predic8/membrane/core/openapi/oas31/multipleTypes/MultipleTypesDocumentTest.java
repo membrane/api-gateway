@@ -34,8 +34,8 @@ public class MultipleTypesDocumentTest {
     OpenAPIValidator validator;
 
     @BeforeEach
-    void setUp() {
-        OpenAPIRecord apiRecord = new OpenAPIRecord(parseOpenAPI(getResourceAsStream(this, "/openapi/specs/oas31/multiple-types-document.yaml")),null, new OpenAPISpec());
+    void setUp() throws Exception {
+        OpenAPIRecord apiRecord = new OpenAPIRecord(parseOpenAPI(getResourceAsStream(this, "/openapi/specs/oas31/multiple-types-document.yaml")), new OpenAPISpec());
         validator = new OpenAPIValidator(new URIFactory(), apiRecord);
     }
 

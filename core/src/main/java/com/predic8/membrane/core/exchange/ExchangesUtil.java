@@ -14,8 +14,8 @@
 
 package com.predic8.membrane.core.exchange;
 
-import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
+import java.time.*;
+import java.time.format.*;
 
 import static com.predic8.membrane.core.Constants.*;
 
@@ -54,7 +54,6 @@ public class ExchangesUtil {
 			return N_A;
 		return exc.getResponseContentType();
 	}
-
 
 	public static String getTimeDifference(AbstractExchange exc) {
 		return "" + (exc.getTimeResReceived() - exc.getTimeReqSent());

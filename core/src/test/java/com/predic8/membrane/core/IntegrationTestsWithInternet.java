@@ -13,18 +13,13 @@
    limitations under the License. */
 package com.predic8.membrane.core;
 
-import com.predic8.membrane.core.exchangestore.LimitedMemoryExchangeStoreIntegrationTest;
-import com.predic8.membrane.core.http.LargeBodyTest;
-import com.predic8.membrane.core.http.MethodTest;
-import com.predic8.membrane.core.interceptor.AdjustContentLengthTest;
-import com.predic8.membrane.core.interceptor.RegExReplaceInterceptorTest;
-import com.predic8.membrane.core.rules.UnavailableSoapProxyTest;
-import com.predic8.membrane.integration.ProxySSLConnectionMethodTest;
-import com.predic8.membrane.integration.SoapAndInternalProxyTest;
-import com.predic8.membrane.integration.ViaProxyTest;
-import com.predic8.membrane.interceptor.LoadBalancingInterceptorTest;
-import org.junit.platform.suite.api.SelectClasses;
-import org.junit.platform.suite.api.Suite;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.proxies.*;
+import com.predic8.membrane.integration.*;
+import com.predic8.membrane.integration.withinternet.*;
+import com.predic8.membrane.interceptor.*;
+import org.junit.platform.suite.api.*;
 
 @Suite
 @SelectClasses({
@@ -36,7 +31,8 @@ import org.junit.platform.suite.api.Suite;
         LimitedMemoryExchangeStoreIntegrationTest.class,
         UnavailableSoapProxyTest.class,
         LargeBodyTest.class,
-        SoapAndInternalProxyTest.class
+        SoapAndInternalProxyTest.class,
+//        SessionInterceptorTest.class // Fix?
 })
 public class IntegrationTestsWithInternet {
 }

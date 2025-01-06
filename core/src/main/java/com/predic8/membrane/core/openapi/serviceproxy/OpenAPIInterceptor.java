@@ -16,38 +16,31 @@
 
 package com.predic8.membrane.core.openapi.serviceproxy;
 
-import com.predic8.membrane.core.Router;
-import com.predic8.membrane.core.exceptions.ProblemDetails;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Response;
-import com.predic8.membrane.core.interceptor.AbstractInterceptor;
-import com.predic8.membrane.core.interceptor.Outcome;
-import com.predic8.membrane.core.openapi.OpenAPIParsingException;
-import com.predic8.membrane.core.openapi.OpenAPIValidator;
-import com.predic8.membrane.core.openapi.validators.ValidationErrors;
-import com.predic8.membrane.core.rules.RuleKey;
-import io.swagger.v3.oas.models.OpenAPI;
-import io.swagger.v3.oas.models.servers.Server;
-import jakarta.mail.internet.ParseException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.exceptions.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.openapi.*;
+import com.predic8.membrane.core.openapi.validators.*;
+import com.predic8.membrane.core.proxies.*;
+import io.swagger.v3.oas.models.*;
+import io.swagger.v3.oas.models.servers.*;
+import jakarta.mail.internet.*;
+import org.slf4j.*;
 
-import java.io.IOException;
-import java.net.URL;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.io.*;
+import java.net.*;
+import java.util.*;
 
-import static com.predic8.membrane.core.exchange.Exchange.SNI_SERVER_NAME;
-import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON_UTF8;
-import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
-import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
+import static com.predic8.membrane.core.exchange.Exchange.*;
+import static com.predic8.membrane.core.http.MimeType.*;
+import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.openapi.serviceproxy.APIProxy.*;
-import static com.predic8.membrane.core.openapi.util.UriUtil.getUrlWithoutPath;
+import static com.predic8.membrane.core.openapi.util.UriUtil.*;
 import static com.predic8.membrane.core.openapi.util.Utils.*;
-import static com.predic8.membrane.core.openapi.validators.ValidationErrors.Direction.REQUEST;
-import static com.predic8.membrane.core.openapi.validators.ValidationErrors.Direction.RESPONSE;
-import static java.util.Comparator.comparing;
+import static com.predic8.membrane.core.openapi.validators.ValidationErrors.Direction.*;
+import static java.util.Comparator.*;
 import static java.util.stream.Collectors.*;
 
 
@@ -68,18 +61,18 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
     }
 
     @Override
-    public Outcome handleRequest(Exchange exc) throws Exception {
+    public Outcome handleRequest(Exchange exc) {
         String basePath = getMatchingBasePath(exc);
         // No matching API found
         if (basePath == null) {
             // Do not log: 404 is too common
             exc.setResponse(ProblemDetails.user(false)
-                            .statusCode(404)
-                            .addSubType("not-found")
-                            .title("No matching API found!")
-                            .detail("There is no API on the path %s deployed. Please check the path.".formatted(exc.getOriginalRequestUri()))
-                            .extension("path",exc.getOriginalRequestUri())
-                            .build());
+                    .statusCode(404)
+                    .addSubType("not-found")
+                    .title("No matching API found!")
+                    .detail("There is no API on the path %s deployed. Please check the path.".formatted(exc.getOriginalRequestUri()))
+                    .extension("path", exc.getOriginalRequestUri())
+                    .build());
             return RETURN;
         }
 
@@ -95,7 +88,8 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
 
             if (!errors.isEmpty()) {
                 apiProxy.statisticCollector.collect(errors);
-                return returnErrors(exc, errors, REQUEST, validationDetails(rec.api));
+                createErrorResponse(exc, errors, REQUEST, validationDetails(rec.api));
+                return RETURN;
             }
         } catch (OpenAPIParsingException e) {
             String detail = "Could not parse OpenAPI with title %s. Check syntax and references.".formatted(rec.api.getInfo().getTitle());
@@ -105,8 +99,7 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
                     .exception(e)
                     .build());
             return RETURN;
-        }
-        catch (Throwable t /* On purpose! Catch absolutely all */) {
+        } catch (Throwable t /* On purpose! Catch absolutely all */) {
             final String LOG_MESSAGE = "Message could not be validated against OpenAPI cause of an error during validation. Please check the OpenAPI with title %s.";
             log.error(LOG_MESSAGE.formatted(rec.api.getInfo().getTitle()));
             log.error(t.getMessage(),t);
@@ -128,7 +121,7 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
     }
 
     @Override
-    public Outcome handleResponse(Exchange exc) throws Exception {
+    public Outcome handleResponse(Exchange exc) {
 
         OpenAPIRecord rec = (OpenAPIRecord) exc.getProperty(OPENAPI_RECORD);
 
@@ -138,7 +131,8 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
             if (errors != null && errors.hasErrors()) {
                 exc.getResponse().setStatusCode(500); // A validation error in the response is a server error!
                 apiProxy.statisticCollector.collect(errors);
-                return returnErrors(exc, errors, RESPONSE, validationDetails(rec.api));
+                createErrorResponse(exc, errors, RESPONSE, validationDetails(rec.api));
+                return RETURN;
             }
         } catch (OpenAPIParsingException e) {
             String detail = "Could not parse OpenAPI with title %s. Check syntax and references.".formatted(rec.api.getInfo().getTitle());
@@ -148,9 +142,8 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
                     .exception(e)
                     .build());
             return RETURN;
-        }
-        catch (Throwable t /* On Purpose! Catch absolutely all */) {
-            log.error(t.getMessage(),t);
+        } catch (Throwable t /* On Purpose! Catch absolutely all */) {
+            log.error(t.getMessage(), t);
             exc.setResponse(ProblemDetails.internal(router.isProduction())
                     .detail("Message could not be validated against OpenAPI cause of an error during validation. Please check the OpenAPI with title %s.".formatted(rec.api.getInfo().getTitle()))
                     .exception(t)
@@ -175,7 +168,7 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
         if (!shouldValidate(rec.getApi(), REQUESTS))
             return errors;
 
-        return new OpenAPIValidator(router.getUriFactory(), rec ).validate(getOpenapiValidatorRequest(exc));
+        return new OpenAPIValidator(router.getUriFactory(), rec).validate(getOpenapiValidatorRequest(exc));
     }
 
     private ValidationErrors validateResponse(OpenAPIRecord rec, Exchange exc) throws IOException, ParseException {
@@ -228,6 +221,7 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
 
     private static URL getServerUrlFromOpenAPI(OpenAPIRecord rec, Server server) {
         try {
+            // It is always OpenAPI 3 or newer cause the parser transforms v2 to v3
             return new URL(server.getUrl());
         } catch (Exception e) {
             throw new RuntimeException("Cannot parse server address from OpenAPI " + server.getUrl());
@@ -287,8 +281,8 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
     public String buildSwaggerUrl(OpenAPI api) {
         String protocol = "";
         String host = !Objects.equals(getKey().getHost(), "*") ? getKey().getHost() : "localhost";
-        if(!(host.contains("http://") || host.contains("https://"))) {
-            protocol = router.getParentProxy(this).getSslInboundContext() != null ? "https://" : "http://";
+        if (!(host.contains("http://") || host.contains("https://"))) {
+            protocol = router.getParentProxy(this).getProtocol();
         }
         String path = getKey().getPath() != null ? getKey().getPath() : "";
         int port = getKey().getPort();
@@ -320,9 +314,10 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
             """.formatted(props.get("security"), props.get("requests"), props.get("responses"), props.get("details"));
     }
 
-    private Outcome returnErrors(Exchange exc, ValidationErrors errors, ValidationErrors.Direction direction, boolean validationDetails) {
-        exc.setResponse(Response.ResponseBuilder.newInstance().status(errors.get(0).getContext().getStatusCode(), "Bad Request").body(getErrorMessage(errors, direction, validationDetails)).contentType(APPLICATION_JSON_UTF8).build());
-        return RETURN;
+    private void createErrorResponse(Exchange exc, ValidationErrors errors, ValidationErrors.Direction direction, boolean validationDetails) {
+        exc.setResponse(Response.ResponseBuilder.newInstance()
+                .status(errors.get(0).getContext().getStatusCode(), "Bad Request")
+                .body(getErrorMessage(errors, direction, validationDetails)).contentType(APPLICATION_JSON_UTF8).build());
     }
 
     private byte[] getErrorMessage(ValidationErrors errors, ValidationErrors.Direction direction, boolean validationDetails) {

@@ -14,16 +14,16 @@
 package com.predic8.membrane.core.interceptor.apikey.extractors;
 
 import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.Request;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
+import com.predic8.membrane.core.http.*;
+import org.junit.jupiter.api.*;
 
-import java.net.URISyntaxException;
-import java.util.Optional;
+import java.net.*;
 
-import static java.util.Optional.empty;
+import static com.predic8.membrane.core.security.ApiKeySecurityScheme.In.*;
+import static java.util.Optional.*;
 import static org.junit.jupiter.api.Assertions.*;
 
+@SuppressWarnings("OptionalGetWithoutIsPresent")
 class ApiKeyQueryParamExtractorTest {
 
     static final String API_KEY = "123456789";
@@ -39,12 +39,18 @@ class ApiKeyQueryParamExtractorTest {
 
     @Test
     void defaultParameterName() throws URISyntaxException {
-        assertEquals(Optional.of(API_KEY), aqeDefault.extract(getExchange("foo/bar?api-Key=" + API_KEY)));
+        LocationNameValue lnv = aqeDefault.extract(getExchange("foo/bar?api-Key=" + API_KEY)).get();
+        assertEquals(API_KEY, lnv.key());
+        assertEquals("api-key", lnv.name());
+        assertEquals(QUERY, lnv.location());
     }
 
     @Test
     void extractKey() throws URISyntaxException {
-        assertEquals(Optional.of(API_KEY), aqe.extract(getExchange("foo/bar?ApiKey=" + API_KEY)));
+        LocationNameValue lnv = aqe.extract(getExchange("foo/bar?ApiKey=" + API_KEY)).get();
+        assertEquals(API_KEY, lnv.key());
+        assertEquals("ApiKey", lnv.name());
+        assertEquals(QUERY, lnv.location());
     }
 
     @Test
@@ -54,7 +60,10 @@ class ApiKeyQueryParamExtractorTest {
 
     @Test
     void extractKeyRandomCase() throws URISyntaxException {
-        assertEquals(Optional.of(API_KEY), aqe.extract(getExchange("foo/bar?apikey=" + API_KEY)));
+        LocationNameValue lnv = aqe.extract(getExchange("foo/bar?aPiKey=123")).get();
+        assertEquals("123", lnv.key());
+        assertEquals("ApiKey", lnv.name());
+        assertEquals(QUERY, lnv.location());
     }
 
     private static Exchange getExchange(String API_KEY) throws URISyntaxException {

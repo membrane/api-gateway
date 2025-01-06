@@ -19,7 +19,7 @@ import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
-import com.predic8.membrane.core.rules.AbstractServiceProxy.Target;
+import com.predic8.membrane.core.proxies.AbstractServiceProxy.Target;
 import com.predic8.membrane.core.transport.http.HttpClient;
 import com.predic8.membrane.core.util.URIFactory;
 import org.slf4j.Logger;
@@ -43,7 +43,7 @@ public class ShadowingInterceptor extends AbstractInterceptor {
     private List<Target> targets = new ArrayList<>();
 
     @Override
-    public Outcome handleRequest(Exchange exc) throws Exception {
+    public Outcome handleRequest(Exchange exc) {
         // Copy the request headers to ensure we maintain original request details for use in the cloned requests.
         Header copiedHeader = new Header(exc.getRequest().getHeader());
         exc.getRequest().getBody().getObservers().add(new MessageObserver() {
@@ -68,25 +68,26 @@ public class ShadowingInterceptor extends AbstractInterceptor {
     }
 
     public void cloneRequestAndSend(AbstractBody completeBody, Exchange mainExchange, Header copiedHeader) {
-        ExecutorService executor = newCachedThreadPool();
-        for (Target shadowTarget : targets) {
-            Exchange newExchange;
-            try {
-                newExchange = buildExchange(completeBody, mainExchange, shadowTarget, copiedHeader);
-            } catch (Exception e) {
-                log.error("Error creating request for target {}", shadowTarget, e);
-                continue;
-            }
-
-            executor.submit(() -> {
+        try(ExecutorService executor = newCachedThreadPool()) {
+            for (Target shadowTarget : targets) {
+                Exchange newExchange;
                 try {
-                    Exchange res = performCall(newExchange);
-                    if (res.getResponse().getStatusCode() >= 500)
-                        log.info("{} returned StatusCode {}", res.getDestinations().get(0), res.getResponse().getStatusCode());
+                    newExchange = buildExchange(completeBody, mainExchange, shadowTarget, copiedHeader);
                 } catch (Exception e) {
-                    log.error("Error performing call for target {}", shadowTarget, e);
+                    log.error("Error creating request for target {}", shadowTarget, e);
+                    continue;
                 }
-            });
+
+                executor.submit(() -> {
+                    try {
+                        Exchange res = performCall(newExchange);
+                        if (res.getResponse().getStatusCode() >= 500)
+                            log.info("{} returned StatusCode {}", res.getDestinations().getFirst(), res.getResponse().getStatusCode());
+                    } catch (Exception e) {
+                        log.error("Error performing call for target {}", shadowTarget, e);
+                    }
+                });
+            }
         }
     }
 
