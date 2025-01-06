@@ -11,10 +11,9 @@
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
    See the License for the specific language governing permissions and
    limitations under the License. */
-package com.predic8.membrane.interceptor.ws_addressing;
+package com.predic8.membrane.core.interceptor.soap.ws_addressing;
 
 import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.interceptor.soap.ws_addressing.*;
 import org.apache.commons.io.output.ByteArrayOutputStream;
 import org.junit.jupiter.api.*;
 

@@ -24,10 +24,11 @@ import com.predic8.membrane.core.http.Request;
 
 import java.io.IOException;
 
+/**
+ * Implementation of the defacto standard "X-HTTP-Method-Override" header
+ */
 @MCElement(name="methodOverride")
 public class MethodOverrideInterceptor extends AbstractInterceptor {
-
-
 
     @Override
     public Outcome handleRequest(Exchange exc) throws Exception {

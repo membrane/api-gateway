@@ -1,0 +1,15 @@
+<S:Envelope xmlns:S="http://www.w3.org/2003/05/soap-envelope"
+            xmlns:wsa="http://schemas.xmlsoap.org/ws/2004/08/addressing"
+            xmlns:go="https://membrane-api.io/order">
+    <S:Header>
+        <wsa:MessageID>91530f81-3025-48f6-8018-eaa7955e1db8</wsa:MessageID>
+        <wsa:ReplyTo>
+            <wsa:Address>https://membrane-api.io/order</wsa:Address>
+        </wsa:ReplyTo>
+        <wsa:To S:mustUnderstand="1">mailto:dummy@membrane-api.io</wsa:To>
+        <wsa:Action>https://membrane-api.io/order</wsa:Action>
+    </S:Header>
+    <S:Body>
+        <go:getOrder/>
+    </S:Body>
+</S:Envelope>

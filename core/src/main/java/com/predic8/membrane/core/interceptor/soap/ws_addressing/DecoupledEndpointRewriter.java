@@ -11,23 +11,17 @@
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
    See the License for the specific language governing permissions and
    limitations under the License. */
-package com.predic8.membrane.core.interceptor.ws_addressing;
+package com.predic8.membrane.core.interceptor.soap.ws_addressing;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
+import com.predic8.membrane.core.exchange.*;
+import org.w3c.dom.*;
+import org.xml.sax.*;
 
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.transform.TransformerException;
-import javax.xml.transform.TransformerFactory;
-import javax.xml.transform.dom.DOMSource;
-import javax.xml.transform.stream.StreamResult;
-
-import org.w3c.dom.Document;
-import org.xml.sax.SAXException;
-
-import com.predic8.membrane.core.exchange.Exchange;
+import javax.xml.parsers.*;
+import javax.xml.transform.*;
+import javax.xml.transform.dom.*;
+import javax.xml.transform.stream.*;
+import java.io.*;
 
 public class DecoupledEndpointRewriter {
 	private static final String ADDRESSING_URI = "http://www.w3.org/2005/08/addressing";

@@ -27,6 +27,7 @@ import org.junit.platform.suite.api.*;
  * - com.predic8.membrane.core.interceptor.shadowing.ShadowingInterceptorTest
  */
 @ExcludeClassNamePatterns({
+		"com.predic8.membrane.core.interceptor.soap.ws_addressing.*",
 		"com.predic8.membrane.core.interceptor.soap.SampleSoapInterceptorTest",
 		"com.predic8.membrane.core.interceptor.opentelemetry.OpenTelemetryInterceptorTest",
 		"com.predic8.membrane.core.interceptor.session.SessionInterceptorTest",

@@ -22,6 +22,7 @@ import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.proxies.*;
 import com.predic8.membrane.core.proxies.Proxy;
 import com.predic8.membrane.core.util.functionalInterfaces.*;
+import org.jetbrains.annotations.*;
 
 import java.io.*;
 import java.net.*;
@@ -49,9 +50,9 @@ public class RuleResolver implements SchemaResolver {
 
         if (!(proxy instanceof AbstractProxy p))
             throw new RuntimeException("Rule with name '" + ruleName + "' is not of type AbstractProxy");
-        FlowController interceptorFlowController = new FlowController();
+        FlowController flowController = new FlowController();
         try {
-            String pathAndQuery = "/" + url.substring(8).split("/", 2)[1];
+            String pathAndQuery = getPathAndQuery(url);
             Exchange exchange = new Request.Builder().get(pathAndQuery).buildExchange();
             RuleMatchingInterceptor.assignRule(exchange, p);
             List<Interceptor> additionalInterceptors = new ArrayList<>();
@@ -65,11 +66,15 @@ public class RuleResolver implements SchemaResolver {
                 additionalInterceptors.add(httpClientInterceptor);
             }
 
-            interceptorFlowController.invokeRequestHandlers(exchange, Stream.concat(p.getInterceptors().stream(), additionalInterceptors.stream()).collect(Collectors.toList()));
+            flowController.invokeRequestHandlers(exchange, Stream.concat(p.getInterceptors().stream(), additionalInterceptors.stream()).collect(Collectors.toList()));
             return exchange.getResponse().getBodyAsStream();
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+    }
+
+    private static @NotNull String getPathAndQuery(String url) {
+        return "/" + url.substring(8).split("/", 2)[1];
     }
 
     public URL toUrl(String scheme, String host, int port) {

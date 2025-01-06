@@ -34,13 +34,17 @@
 - If/setHeader
   - Write example with lots of samples in different languages
 - Delete interceptor/
-  - Gatekeeper?
+   - Gatekeeper?
+   - MethodOverrideInterceptor (keep)
+   - SPDYInterceptor (?)
+   - WADLInterceptor (keep)
+   - WsaEndpointRewriterInterceptor (keep)
 - Check
   - Is example embedded-java still running?
     - Update to Java 21 needed?
 - Is SessionResumptionTest still needed?
 - Document <if>,<call>,<destination>
-- Restructure samples
+- Restructure samples (TB)
 - proxies-2.xsd
   - new Namespace e.g. https://membrane-api.io...
 - 2025
@@ -52,20 +56,22 @@
 - ProblemDetails
   - Test for production mode filter
     - Return pd and check if answer contains pd.details ...
-  - Return pretty to user
-  - Should have right Content-Type
-- Rewrite ExampleTests with RestAssured:
+- Rewrite ExampleTests with RestAssured: (BT)
   - Json2XmlExampleTest
 - Check AdminConsole
 
 ## Done
 - Call plugin
 - Example Tests without unzipping for every test
-- Delete interceptor
+- Deleted interceptors
   - api-management
+    - ApiKeyCheckerInterceptor, AuthHead2BodyInterceptor
   - XPathCBR aka choose
   - XPathExtractor
   - XPathInterceptor
+  - CacheInterceptor
+  - DecoupledEndpointRewriterInterceptor
+  - TestServiceInterceptor
 - Swagger-proxy
   - OpenAPI supports Swagger 2.0
 - UnitTests: Use PackageScan for more or all

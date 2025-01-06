@@ -1,4 +1,4 @@
-/* Copyright 2015 predic8 GmbH, www.predic8.com
+/* Copyright 2012 predic8 GmbH, www.predic8.com
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -11,19 +11,24 @@
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
    See the License for the specific language governing permissions and
    limitations under the License. */
-package com.predic8.membrane.core.interceptor.cache;
+package com.predic8.membrane.core.interceptor.soap.ws_addressing;
 
-import java.io.Serializable;
+import java.util.HashMap;
+import java.util.Map;
 
-import com.predic8.membrane.core.http.Request;
-import com.predic8.membrane.core.http.Response;
+public class DecoupledEndpointRegistry {
+	private final Map<String, String> registry = new HashMap<>();
 
-abstract class Node implements Serializable {
-	private static final long serialVersionUID = 1L;
-
-	public boolean canSatisfy(Request request) {
-		return true; // TODO
+	public synchronized void register(String id, String url) {
+		registry.put(id, url);
 	}
 
-	public abstract Response toResponse(Request request);
+	public synchronized String lookup(String id) {
+		return registry.get(id);
+	}
+
+	@Override
+	public synchronized String toString() {
+		return "DecoupledEndpointRegistry: " + registry.toString();
+	}
 }

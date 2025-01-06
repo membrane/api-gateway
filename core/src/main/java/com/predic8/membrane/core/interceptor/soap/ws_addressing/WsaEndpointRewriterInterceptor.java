@@ -11,7 +11,7 @@
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
    See the License for the specific language governing permissions and
    limitations under the License. */
-package com.predic8.membrane.core.interceptor.ws_addressing;
+package com.predic8.membrane.core.interceptor.soap.ws_addressing;
 
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
@@ -19,12 +19,13 @@ import com.predic8.membrane.core.interceptor.Outcome;
 
 import java.io.ByteArrayOutputStream;
 
-public class DecoupledEndpointRewriterInterceptor extends AbstractInterceptor {
+public class WsaEndpointRewriterInterceptor extends AbstractInterceptor {
 	@Override
 	public Outcome handleRequest(Exchange exc) throws Exception {
 		ByteArrayOutputStream output = new ByteArrayOutputStream();
 
-		new DecoupledEndpointRewriter(getRegistry()).rewriteToElement(exc.getRequest().getBodyAsStreamDecoded(), output, exc);
+		new WsaEndpointRewriter(getRegistry()).rewriteEndpoint(exc.getRequest().getBodyAsStreamDecoded(), output, 2020, exc);
+
 		exc.getRequest().setBodyContent(output.toByteArray());
 
 		return Outcome.CONTINUE;
@@ -33,4 +34,10 @@ public class DecoupledEndpointRewriterInterceptor extends AbstractInterceptor {
 	private DecoupledEndpointRegistry getRegistry() {
 		return getRouter().getBeanFactory().getBean(DecoupledEndpointRegistry.class);
 	}
+
+	@Override
+	public Outcome handleResponse(Exchange exc) throws Exception {
+		return Outcome.CONTINUE;
+	}
+
 }

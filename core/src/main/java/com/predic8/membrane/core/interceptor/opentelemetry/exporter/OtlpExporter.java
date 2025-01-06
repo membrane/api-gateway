@@ -14,21 +14,18 @@
 
 package com.predic8.membrane.core.interceptor.opentelemetry.exporter;
 
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCChildElement;
-import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.http.HeaderField;
-import com.predic8.membrane.core.interceptor.addHeader;
-import io.opentelemetry.exporter.otlp.http.trace.OtlpHttpSpanExporter;
-import io.opentelemetry.exporter.otlp.trace.OtlpGrpcSpanExporter;
-import io.opentelemetry.sdk.trace.export.SpanExporter;
+import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.interceptor.opentelemetry.*;
+import io.opentelemetry.exporter.otlp.http.trace.*;
+import io.opentelemetry.exporter.otlp.trace.*;
+import io.opentelemetry.sdk.trace.export.*;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.TimeUnit;
+import java.util.*;
+import java.util.concurrent.*;
 
 import static com.predic8.membrane.core.interceptor.opentelemetry.exporter.OtlpExporter.OtlpType.*;
-import static java.lang.String.format;
+import static java.lang.String.*;
 
 /*
  * Otlp Implementation for the OpenTelemetry protocol

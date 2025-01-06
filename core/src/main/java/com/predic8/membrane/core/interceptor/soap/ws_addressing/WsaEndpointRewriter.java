@@ -11,27 +11,25 @@
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
    See the License for the specific language governing permissions and
    limitations under the License. */
-package com.predic8.membrane.core.interceptor.ws_addressing;
+package com.predic8.membrane.core.interceptor.soap.ws_addressing;
 
-import java.io.InputStream;
-import java.io.OutputStream;
+import com.predic8.membrane.core.exchange.*;
 
-import javax.xml.namespace.QName;
-import javax.xml.stream.XMLEventFactory;
-import javax.xml.stream.XMLEventReader;
-import javax.xml.stream.XMLEventWriter;
-import javax.xml.stream.XMLInputFactory;
-import javax.xml.stream.XMLOutputFactory;
-import javax.xml.stream.XMLStreamException;
-import javax.xml.stream.events.EndElement;
-import javax.xml.stream.events.StartElement;
-import javax.xml.stream.events.XMLEvent;
+import javax.xml.namespace.*;
+import javax.xml.stream.*;
+import javax.xml.stream.events.*;
+import java.io.*;
 
-import com.predic8.membrane.core.exchange.Exchange;
-
-
+/**
+ * Unfinished! Almost done!
+ */
 public class WsaEndpointRewriter {
 	private static final String ADDRESSING_URI = "http://www.w3.org/2005/08/addressing";
+	private static final String ADDRESSING_URI_OLD = "http://schemas.xmlsoap.org/ws/2004/08/addressing";
+
+	public static final QName WSA_ADDRESS_QNAME = new QName(ADDRESSING_URI, "Address");
+	public static final QName WSA_ADDRESS_OLD_QNAME = new QName(ADDRESSING_URI_OLD, "Address");
+
 
 	private final XMLInputFactory inputFactory = XMLInputFactory.newInstance();
 	private final XMLEventFactory eventFactory = XMLEventFactory.newInstance();
@@ -57,7 +55,8 @@ public class WsaEndpointRewriter {
 						while (e.isStartElement() || !isReplyTo(e.asEndElement())) {
 							if (e.isStartElement() && isAddress(e.asStartElement())) {
 								url = parser.getElementText();
-								addRewrittenAddressElement(eventWriter, url, port, e.asStartElement());
+								// Unfinised here the URL Rewrite
+								addRewrittenAddressElement(eventWriter, "Should be rewritten! Not implemented yet!", port, e.asStartElement());
 
 								continue skip;
 							}
@@ -92,7 +91,8 @@ public class WsaEndpointRewriter {
 	}
 
 	private boolean isMessageId(StartElement startElement) {
-		return startElement.getName().equals(new QName(ADDRESSING_URI, "MessageID"));
+		return startElement.getName().equals(new QName(ADDRESSING_URI, "MessageID")) ||
+			   startElement.getName().equals(new QName(ADDRESSING_URI_OLD, "MessageID"));
 	}
 
 	private void addRewrittenAddressElement(XMLEventWriter writer, String address, int port, StartElement startElement) throws XMLStreamException {
@@ -105,14 +105,16 @@ public class WsaEndpointRewriter {
 	}
 
 	private boolean isReplyTo(StartElement startElement) {
-		return startElement.getName().equals(new QName(ADDRESSING_URI, "ReplyTo"));
+		return startElement.getName().equals(new QName(ADDRESSING_URI, "ReplyTo")) ||
+			   startElement.getName().equals(new QName(ADDRESSING_URI_OLD, "ReplyTo"));
 	}
 
 	private boolean isReplyTo(EndElement endElement) {
-		return endElement.getName().equals(new QName(ADDRESSING_URI, "ReplyTo"));
+		return endElement.getName().equals(new QName(ADDRESSING_URI, "ReplyTo")) ||
+			   endElement.getName().equals(new QName(ADDRESSING_URI_OLD, "ReplyTo"));
 	}
 
 	private boolean isAddress(StartElement startElement) {
-		return startElement.getName().equals(new QName(ADDRESSING_URI, "Address"));
+		return startElement.getName().equals(WSA_ADDRESS_QNAME) || startElement.getName().equals(WSA_ADDRESS_OLD_QNAME);
 	}
 }

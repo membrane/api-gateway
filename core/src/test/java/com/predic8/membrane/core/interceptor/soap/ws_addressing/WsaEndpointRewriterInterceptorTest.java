@@ -11,21 +11,17 @@
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
    See the License for the specific language governing permissions and
    limitations under the License. */
-package com.predic8.membrane.interceptor.ws_addressing;
+package com.predic8.membrane.core.interceptor.soap.ws_addressing;
+
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.util.*;
+import org.junit.jupiter.api.*;
+
+import java.io.*;
 
 import static org.junit.jupiter.api.Assertions.*;
-
-import java.io.InputStream;
-
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.api.Test;
-
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Body;
-import com.predic8.membrane.core.interceptor.Outcome;
-import com.predic8.membrane.core.interceptor.soap.ws_addressing.WsaEndpointRewriterInterceptor;
-import com.predic8.membrane.core.util.MessageUtil;
 
 @Disabled
 public class WsaEndpointRewriterInterceptorTest {

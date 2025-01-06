@@ -28,6 +28,8 @@ import org.junit.jupiter.api.*;
 import java.util.concurrent.atomic.*;
 
 import static com.predic8.membrane.core.http.Header.*;
+import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
+import static java.lang.Integer.MAX_VALUE;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class LimitedMemoryExchangeStoreIntegrationTest {
@@ -51,12 +53,12 @@ public class LimitedMemoryExchangeStoreIntegrationTest {
             @Override
             public Outcome handleRequest(Exchange exc) {
                 exc.setResponse(Response.ok().body("").build());
-                return Outcome.RETURN;
+                return RETURN;
             }
         });
         router = new HttpRouter();
 
-        ((HTTPClientInterceptor) router.getTransport().getInterceptors().get(3)).setHttpClientConfig(hcc);
+        getHttpClientInterceptor(router).setHttpClientConfig(hcc);
 
         router.getRuleManager().addProxyAndOpenPortIfNew(proxy);
         router.init();
@@ -72,12 +74,16 @@ public class LimitedMemoryExchangeStoreIntegrationTest {
         router2 = new HttpRouter();
         router2.setExchangeStore(lmes);
 
-        ((HTTPClientInterceptor) router2.getTransport().getInterceptors().get(3)).setHttpClientConfig(hcc);
+        getHttpClientInterceptor(router2).setHttpClientConfig(hcc);
 
         router2.getTransport().getInterceptors().add(3, new ExchangeStoreInterceptor(lmes));
 
         router2.getRuleManager().addProxyAndOpenPortIfNew(proxy1);
         router2.init();
+    }
+
+    private static HTTPClientInterceptor getHttpClientInterceptor(Router router) {
+        return (HTTPClientInterceptor) router.getTransport().getInterceptors().stream().filter(i -> i instanceof HTTPClientInterceptor).findFirst().orElseThrow();
     }
 
     @BeforeEach
@@ -110,7 +116,7 @@ public class LimitedMemoryExchangeStoreIntegrationTest {
 
     @Test
     public void large() throws Exception {
-        long len = Integer.MAX_VALUE + 1L;
+        long len = MAX_VALUE + 1L;
 
         Exchange e = new Request.Builder().post("http://localhost:3046/foo").body(len, new LargeBodyTest.ConstantInputStream(len)).buildExchange();
         try (HttpClient hc = new HttpClient(hcc)) {
@@ -124,7 +130,7 @@ public class LimitedMemoryExchangeStoreIntegrationTest {
 
     @Test
     public void largeChunked() throws Exception {
-        long len = Integer.MAX_VALUE + 1L;
+        long len = MAX_VALUE + 1L;
 
         Exchange e = new Request.Builder().post("http://localhost:3046/foo").body(len, new LargeBodyTest.ConstantInputStream(len)).header(TRANSFER_ENCODING, CHUNKED).buildExchange();
         try(HttpClient hc = new HttpClient(hcc)) {

@@ -24,6 +24,6 @@ public @interface MCElement {
 	String name();
 	String id() default "";
 	boolean mixed() default false;
-	boolean topLevel() default true;
+	boolean topLevel() default true;  // TODO document
 	String configPackage() default "";
 }
