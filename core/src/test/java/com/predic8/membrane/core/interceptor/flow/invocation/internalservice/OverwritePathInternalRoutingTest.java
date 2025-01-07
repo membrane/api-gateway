@@ -32,7 +32,7 @@ public class OverwritePathInternalRoutingTest extends AbstractInternalServiceRou
             api.getTarget().setUrl("service://a/overwritten-path");
         });
 
-        api(api -> {
+        internal(api -> {
             api.setName("a");
             api.add(captureRoutingTestInterceptor);
             api.add(B,RETURN);

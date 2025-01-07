@@ -30,7 +30,7 @@ public class AbortInResponseFlowInternalRoutingTest extends AbstractInternalServ
             api.getTarget().setUrl("service:a");
         });
 
-        api(api -> {
+        internal(api -> {
             api.setName("a");
             api.add(B, RESPONSE(C,ABORT,D), E,RETURN);
         });
