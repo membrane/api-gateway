@@ -32,7 +32,7 @@ public class SimpleInternalRoutingTest extends AbstractInternalServiceRoutingInt
             api.getTarget().setUrl("service:a");
         });
 
-        api(api -> {
+        internal(api -> {
             api.setName("a");
             api.add(B,RETURN);
         });

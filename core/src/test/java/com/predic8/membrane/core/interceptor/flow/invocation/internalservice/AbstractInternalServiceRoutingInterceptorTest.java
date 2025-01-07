@@ -20,6 +20,7 @@ import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.openapi.serviceproxy.*;
+import com.predic8.membrane.core.proxies.InternalProxy;
 import org.junit.jupiter.api.*;
 
 import java.util.*;
@@ -58,14 +59,26 @@ abstract class AbstractInternalServiceRoutingInterceptorTest {
         router.getRuleManager().addProxyAndOpenPortIfNew(api);
     }
 
-    protected String call() {
-        return given().post("http://localhost:2000/original-path").getBody().asString();
-    }
-
     protected static class TestAPIProxy extends APIProxy {
         public void add(Interceptor... i) {
             getInterceptors().addAll(Arrays.asList(i));
         }
+    }
+
+    public void internal(Consumer<TestInternalProxy> c) throws Exception {
+        TestInternalProxy api = new TestInternalProxy();
+        c.accept(api);
+        router.getRuleManager().addProxyAndOpenPortIfNew(api);
+    }
+
+    protected static class TestInternalProxy extends InternalProxy {
+        public void add(Interceptor... i) {
+            getInterceptors().addAll(Arrays.asList(i));
+        }
+    }
+
+    protected String call() {
+        return given().post("http://localhost:2000/original-path").getBody().asString();
     }
 
     protected static class CaptureRoutingTestInterceptor extends AbstractInterceptor {

@@ -32,7 +32,7 @@ public class KeepPathInternalRoutingTest extends AbstractInternalServiceRoutingI
             api.getTarget().setUrl("service://a");
         });
 
-        api(api -> {
+        internal(api -> {
             api.setName("a");
             api.add(captureRoutingTestInterceptor);
             api.add(B,RETURN);
