@@ -4,11 +4,11 @@ import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.exchangestore.ForgetfulExchangeStore;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
-import com.predic8.membrane.core.interceptor.LogInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.authentication.session.StaticUserDataProvider;
-import com.predic8.membrane.core.interceptor.flow.ConditionalInterceptor;
-import com.predic8.membrane.core.interceptor.misc.ReturnInterceptor;
+import com.predic8.membrane.core.interceptor.flow.IfInterceptor;
+import com.predic8.membrane.core.interceptor.flow.ReturnInterceptor;
+import com.predic8.membrane.core.interceptor.log.LogInterceptor;
 import com.predic8.membrane.core.interceptor.oauth2.ClaimList;
 import com.predic8.membrane.core.interceptor.oauth2.Client;
 import com.predic8.membrane.core.interceptor.oauth2.OAuth2AuthorizationServerInterceptor;
@@ -19,22 +19,23 @@ import com.predic8.membrane.core.interceptor.oauth2client.OAuth2Resource2Interce
 import com.predic8.membrane.core.interceptor.oauth2client.SessionOriginalExchangeStore;
 import com.predic8.membrane.core.interceptor.session.InMemorySessionManager;
 import com.predic8.membrane.core.interceptor.templating.StaticInterceptor;
-import com.predic8.membrane.core.rules.Rule;
-import com.predic8.membrane.core.rules.ServiceProxy;
-import com.predic8.membrane.core.rules.ServiceProxyKey;
+import com.predic8.membrane.core.proxies.SSLableProxy;
+import com.predic8.membrane.core.proxies.ServiceProxy;
+import com.predic8.membrane.core.proxies.ServiceProxyKey;
 import com.predic8.membrane.core.transport.http.HttpTransport;
 import io.restassured.response.Response;
 import org.jetbrains.annotations.NotNull;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static com.predic8.membrane.core.interceptor.LogInterceptor.Level.DEBUG;
-import static com.predic8.membrane.core.interceptor.flow.ConditionalInterceptor.LanguageType.SPEL;
-import static com.predic8.membrane.core.oauth2.OAuth2AuthFlowClient.*;
+import static com.predic8.membrane.core.interceptor.log.LogInterceptor.Level.DEBUG;
+import static com.predic8.membrane.core.lang.ExchangeExpression.Language.SPEL;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -113,8 +114,8 @@ public class OAuth2RedirectTest {
         assertEquals(firstUrlHit.get(), interceptorChainHit.get(), "Is interceptor chain correctly continued?");
     }
 
-    private static ConditionalInterceptor createConditionalInterceptorWithReturnMessage(String test, String returnMessage) {
-        return new ConditionalInterceptor() {{
+    private static IfInterceptor createConditionalInterceptorWithReturnMessage(String test, String returnMessage) {
+        return new IfInterceptor() {{
             setLanguage(SPEL);
             setTest(test);
             setInterceptors(List.of(new StaticInterceptor() {{
@@ -123,7 +124,7 @@ public class OAuth2RedirectTest {
         }};
     }
 
-    private static Router startProxyRule(Rule azureRule) throws Exception {
+    private static Router startProxyRule(SSLableProxy azureRule) throws Exception {
         Router router = new Router();
         router.setExchangeStore(new ForgetfulExchangeStore());
         router.setTransport(new HttpTransport());
@@ -132,8 +133,8 @@ public class OAuth2RedirectTest {
         return router;
     }
 
-    private static @NotNull Rule getNginxRule() {
-        Rule nginxRule = new ServiceProxy(new ServiceProxyKey("localhost", "*", ".*", 2001), "localhost", 80);
+    private static @NotNull SSLableProxy getNginxRule() {
+        SSLableProxy nginxRule = new ServiceProxy(new ServiceProxyKey("localhost", "*", ".*", 2001), "localhost", 80);
         nginxRule.getInterceptors().add(new AbstractInterceptor() {
             @Override
             public Outcome handleRequest(Exchange exc) {
@@ -147,8 +148,8 @@ public class OAuth2RedirectTest {
         return nginxRule;
     }
 
-    private static @NotNull Rule getMembraneRule() {
-        Rule membraneRule = new ServiceProxy(new ServiceProxyKey("localhost", "*", ".*", 2000), "localhost", 2001);
+    private static @NotNull SSLableProxy getMembraneRule() {
+        SSLableProxy membraneRule = new ServiceProxy(new ServiceProxyKey("localhost", "*", ".*", 2000), "localhost", 2001);
         membraneRule.getInterceptors().add(new AbstractInterceptor() {
             @Override
             public Outcome handleRequest(Exchange exc) {
@@ -178,8 +179,8 @@ public class OAuth2RedirectTest {
         return membraneRule;
     }
 
-    private static @NotNull Rule getAzureRule() {
-        Rule azureRule = new ServiceProxy(new ServiceProxyKey("localhost", "*", ".*", 2002), "localhost", 80);
+    private static @NotNull SSLableProxy getAzureRule() {
+        SSLableProxy azureRule = new ServiceProxy(new ServiceProxyKey("localhost", "*", ".*", 2002), "localhost", 80);
         azureRule.getInterceptors().add(new LogInterceptor() {{
             setLevel(DEBUG);
         }});
