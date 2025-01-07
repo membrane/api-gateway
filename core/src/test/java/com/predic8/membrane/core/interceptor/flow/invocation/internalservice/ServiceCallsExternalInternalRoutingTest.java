@@ -32,7 +32,7 @@ public class ServiceCallsExternalInternalRoutingTest extends AbstractInternalSer
             a.getTarget().setUrl("service://b");
         });
 
-        api(b -> {
+        internal(b -> {
             b.setName("b");
             b.add(B);
             b.getTarget().setHost("localhost");  // Test also!

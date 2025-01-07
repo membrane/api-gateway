@@ -32,19 +32,19 @@ public class ServiceCallsServiceInternalRoutingTest extends AbstractInternalServ
             a.getTarget().setUrl("service://b");
         });
 
-        api(b -> {
+        internal(b -> {
             b.setName("b");
             b.add(B);
             b.getTarget().setUrl("service://c");
         });
 
-        api(c -> {
+        internal(c -> {
             c.setName("c");
             c.add(C);
             c.getTarget().setUrl("service://d");
         });
 
-        api(d -> {
+        internal(d -> {
             d.setName("d");
             d.add(D,RETURN);
         });

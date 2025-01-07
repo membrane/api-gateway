@@ -321,11 +321,13 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
 
         startJmx();
 
-        synchronized (lock) {
-            running = true;
-        }
+		synchronized (lock) {
+			running = true;
+		}
+
+		ProxyDisplayInfo.logInfosAboutStartedProxies(ruleManager);
         log.info("{} {} up and running!", PRODUCT_NAME, VERSION);
-    }
+	}
 
     private void startJmx() {
         if (getBeanFactory() != null) {

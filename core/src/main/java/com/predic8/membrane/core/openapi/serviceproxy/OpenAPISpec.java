@@ -24,7 +24,7 @@ import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPISpec.YesNoOp
  * @description Reads an OpenAPI description and deploys an API with the information of it.
  */
 @MCElement(name = "openapi", topLevel = false)
-public class OpenAPISpec {
+public class OpenAPISpec implements Cloneable {
 
     public String location;
     public String dir;
@@ -33,6 +33,17 @@ public class OpenAPISpec {
     public YesNoOpenAPIOption validationDetails = ASINOPENAPI;
     public YesNoOpenAPIOption validateSecurity = ASINOPENAPI;
     private Rewrite rewrite = new Rewrite();
+
+    @Override
+    public OpenAPISpec clone() {
+        try {
+            OpenAPISpec clone = (OpenAPISpec) super.clone();
+            clone.rewrite = this.rewrite.clone();
+            return clone;
+        } catch (CloneNotSupportedException e) {
+            throw new AssertionError("Should never happen", e);
+        }
+    }
 
     public OpenAPISpec() {
     }
