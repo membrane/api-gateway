@@ -35,7 +35,7 @@ import static java.util.Objects.requireNonNullElse;
  * @description
  */
 @MCElement(name = "rewrite", topLevel = false)
-public class Rewrite {
+public class Rewrite implements Cloneable {
 
     private static final Logger log = LoggerFactory.getLogger(Rewrite.class.getName());
 
@@ -44,6 +44,15 @@ public class Rewrite {
     String host;
 
     String basePath;
+
+    @Override
+    public Rewrite clone() {
+        try {
+            return (Rewrite) super.clone();
+        } catch (CloneNotSupportedException e) {
+            throw new AssertionError("Should never happen", e);
+        }
+    }
 
     public JsonNode rewrite(OpenAPIRecord rec, Exchange exc, URIFactory uriFactory) throws URISyntaxException {
         return rewriteOpenAPI3(exc, uriFactory, rec.node);

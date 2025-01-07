@@ -17,11 +17,11 @@ public class ProxyDisplayInfo {
     public static void logInfosAboutStartedProxies(RuleManager manager) {
         log.info("Started {} API{}:", manager.getRules().size(), (manager.getRules().size() > 1 ? "s" : ""));
         manager.getRules().forEach(proxy ->
-                log.info("  {} {}{}{}", proxyDisplayName(proxy), proxyCustomName(proxy), getProxyKeyDisplayName(proxy), additionalProxyDisplayName(proxy))
+                log.info("  {} {}{}{}", proxyDisplayName(proxy), proxyCustomName(proxy), getProxyKeyDisplayName(proxy), additionalProxyInfo(proxy))
         );
     }
 
-    private static String additionalProxyDisplayName(Proxy proxy) {
+    private static String additionalProxyInfo(Proxy proxy) {
         if (proxy instanceof APIProxy a) {
             Map<String,OpenAPIRecord> recs = a.getApiRecords();
             if (!recs.isEmpty()) {
@@ -62,7 +62,7 @@ public class ProxyDisplayInfo {
         return specs.entrySet().stream()
                 .map(e -> " ".repeat(INDENT) + "- \"%s\" @ %s".formatted(
                         e.getKey(),
-                        Optional.ofNullable(e.getValue().getSpec().getLocation()).orElse("(location not set)")
+                        e.getValue().getSpec().getLocation()
                 ))
                 .collect(joining("\n"));
     }
