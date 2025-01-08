@@ -28,7 +28,10 @@ import static com.predic8.membrane.core.http.MimeType.APPLICATION_X_WWW_FORM_URL
 import static com.predic8.membrane.core.http.MimeType.APPLICATION_X_WWW_FORM_URLENCODED_CONTENT_TYPE;
 import static com.predic8.membrane.test.AssertUtils.getAndAssert;
 import static com.predic8.membrane.test.AssertUtils.getAndAssert200;
+import static io.restassured.RestAssured.given;
 import static java.util.Arrays.asList;
+import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.CoreMatchers.equalTo;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -68,15 +71,31 @@ public class OAuth2Test {
         setUp(proxies);
 
         getAndAssert200("http://localhost:2001" + clientBasePath);
-        AssertUtils.postAndAssert(200, "http://localhost:2000" + serverBasePath + "/login/", getWWWFormEncodedContentTypeHeader(), "target=&username=john&password=password");
-        assertEquals("Hello john.", getAndAssert200("http://localhost:2000" + serverBasePath + "/"));
-    }
+        // Access client page
+        given()
+                .when()
+                .get("http://localhost:2001" + clientBasePath)
+                .then()
+                .statusCode(200);
 
-    private String[] getWWWFormEncodedContentTypeHeader() {
-        String[] headers = new String[2];
-        headers[0] = "Content-Type";
-        headers[1] = APPLICATION_X_WWW_FORM_URLENCODED;
-        return headers;
+        // Login
+        given()
+                .contentType(APPLICATION_X_WWW_FORM_URLENCODED)
+                .formParam("target", "")
+                .formParam("username", "john")
+                .formParam("password", "password")
+                .when()
+                .post("http://localhost:2000" + serverBasePath + "/login/")
+                .then()
+                .statusCode(200);
+
+        // Access protected resource
+        given()
+                .when()
+                .get("http://localhost:2000" + serverBasePath + "/")
+                .then()
+                .statusCode(200)
+                .body(equalTo("Hello john."));
     }
 
     @ParameterizedTest(name = "{0}")
@@ -87,9 +106,31 @@ public class OAuth2Test {
             String clientBasePath) throws Exception {
         setUp(proxies);
 
-        getAndAssert200("http://localhost:2001" + clientBasePath);
-        assertTrue(AssertUtils.postAndAssert(200, "http://localhost:2000" + serverBasePath + "/login/", getWWWFormEncodedContentTypeHeader(), "target=&username=john&password=wrongPassword").contains("Invalid password."));
-        getAndAssert(400, "http://localhost:2000" + serverBasePath + "/");
+        // Access client page
+        given()
+                .when()
+                .get("http://localhost:2001" + clientBasePath)
+                .then()
+                .statusCode(200);
+
+        // Attempt login with wrong password
+        given()
+                .contentType(APPLICATION_X_WWW_FORM_URLENCODED)
+                .formParam("target", "")
+                .formParam("username", "john")
+                .formParam("password", "wrongPassword")
+                .when()
+                .post("http://localhost:2000" + serverBasePath + "/login/")
+                .then()
+                .statusCode(200)
+                .body(containsString("Invalid password."));
+
+        // Attempt to access protected resource
+        given()
+                .when()
+                .get("http://localhost:2000" + serverBasePath + "/")
+                .then()
+                .statusCode(400);
     }
 
     @ParameterizedTest(name = "{0}")
@@ -100,9 +141,30 @@ public class OAuth2Test {
             String clientBasePath) throws Exception {
         setUp(proxies);
 
-        getAndAssert200("http://localhost:2001" + clientBasePath);
-        assertTrue(AssertUtils.postAndAssert(200, "http://localhost:2000" + serverBasePath + "/login/", "target=&username=john&password=password").contains("Invalid password."));
-        getAndAssert(400, "http://localhost:2000" + serverBasePath + "/");
+        // Access client page
+        given()
+                .when()
+                .get("http://localhost:2001" + clientBasePath)
+                .then()
+                .statusCode(200);
+
+        // Attempt login without content-type header
+        given()
+                .formParam("target", "")
+                .formParam("username", "john")
+                .formParam("password", "password")
+                .when()
+                .post("http://localhost:2000" + serverBasePath + "/login/")
+                .then()
+                .statusCode(200)
+                .body(containsString("Invalid password."));
+
+        // Attempt to access protected resource
+        given()
+                .when()
+                .get("http://localhost:2000" + serverBasePath + "/")
+                .then()
+                .statusCode(400);
     }
 
     @ParameterizedTest(name = "{0}")
@@ -113,7 +175,11 @@ public class OAuth2Test {
             String clientBasePath) throws Exception {
         setUp(proxies);
 
-        getAndAssert(400, "http://localhost:2000" + serverBasePath + "/oauth2/auth");
+        given()
+                .when()
+                .get("http://localhost:2000" + serverBasePath + "/oauth2/auth")
+                .then()
+                .statusCode(400);
     }
 
     @ParameterizedTest(name = "{0}")
@@ -124,8 +190,15 @@ public class OAuth2Test {
             String clientBasePath) throws Exception {
         setUp(proxies);
 
+        // Perform login first
         testGoodLoginRequest(proxies, serverBasePath, clientBasePath);
-        getAndAssert200("http://localhost:2001" + clientBasePath + "/login/logout");
+
+        // Then logout
+        given()
+                .when()
+                .get("http://localhost:2001" + clientBasePath + "/login/logout")
+                .then()
+                .statusCode(200);
     }
 
     @AfterEach

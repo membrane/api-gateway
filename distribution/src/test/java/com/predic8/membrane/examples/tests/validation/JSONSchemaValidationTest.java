@@ -15,9 +15,12 @@
 package com.predic8.membrane.examples.tests.validation;
 
 import com.predic8.membrane.examples.util.*;
+import io.restassured.http.ContentType;
 import org.junit.jupiter.api.*;
 
 import static com.predic8.membrane.test.AssertUtils.*;
+import static io.restassured.RestAssured.given;
+import static io.restassured.http.ContentType.JSON;
 import static java.io.File.*;
 import static java.lang.Thread.sleep;
 
@@ -32,9 +35,25 @@ public class JSONSchemaValidationTest extends DistributionExtractingTestcase {
 	public void test() throws Exception {
 		try(Process2 ignored = startServiceProxyScript()) {
 			for (int port : new int[] { 2000, 2001 }) {
-				sleep(1000);
-				postAndAssert(200, "http://localhost:" + port + "/",readFileFromBaseDir("good" + port + ".json"));
-				postAndAssert(400, "http://localhost:" + port + "/",readFileFromBaseDir("bad" + port + ".json"));
+				// @formatter:off
+                // Test good JSON
+				given()
+					.contentType(JSON)
+					.body(readFileFromBaseDir("good" + port + ".json"))
+				.when()
+					.post("http://localhost:" + port + "/")
+				.then()
+					.statusCode(200);
+
+				// Test bad JSON
+				given()
+					.contentType(JSON)
+				.body(readFileFromBaseDir("bad" + port + ".json"))
+					.when()
+				.post("http://localhost:" + port + "/")
+					.then()
+					.statusCode(400);
+				// @formatter:on
 			}
 		}
 	}

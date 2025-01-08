@@ -13,12 +13,13 @@
    limitations under the License. */
 package com.predic8.membrane.examples.tests.message_transformation;
 
-import com.predic8.membrane.examples.util.*;
+import com.predic8.membrane.examples.util.BufferLogger;
+import com.predic8.membrane.examples.util.DistributionExtractingTestcase;
+import com.predic8.membrane.examples.util.Process2;
 import org.junit.jupiter.api.Test;
 
-import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
-import static com.predic8.membrane.test.AssertUtils.postAndAssert;
-import static java.lang.Thread.sleep;
+import static io.restassured.RestAssured.given;
+import static io.restassured.http.ContentType.JSON;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class Json2XmlExampleTest extends DistributionExtractingTestcase {
@@ -31,10 +32,16 @@ public class Json2XmlExampleTest extends DistributionExtractingTestcase {
     @Test
     public void test() throws Exception {
         BufferLogger logger = new BufferLogger();
-        try(Process2 ignored = new Process2.Builder().in(baseDir).script("service-proxy").waitForMembrane().withWatcher(logger).start()) {
-            sleep(1000);
-            postAndAssert(200,"http://localhost:2000/", new String[]{"Content-Type", APPLICATION_JSON}, readFileFromBaseDir("customers.json"));
-            sleep(500);
+        try (Process2 ignored = new Process2.Builder().in(baseDir).script("service-proxy").waitForMembrane().withWatcher(logger).start()) {
+            // @formatter:off
+            given()
+                .contentType(JSON)
+                .body(readFileFromBaseDir("customers.json"))
+            .when()
+                .post("http://localhost:2000/")
+            .then()
+                .statusCode(200);
+            // @formatter:on
             assertTrue(logger.toString().contains("<count>269</count>"));
         }
     }

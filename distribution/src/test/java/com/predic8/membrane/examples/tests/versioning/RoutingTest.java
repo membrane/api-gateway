@@ -1,4 +1,4 @@
-/* Copyright 2012 predic8 GmbH, www.predic8.com
+/* Copyright 2024 predic8 GmbH, www.predic8.com
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -13,17 +13,17 @@
    limitations under the License. */
 package com.predic8.membrane.examples.tests.versioning;
 
-import static com.predic8.membrane.test.AssertUtils.assertContains;
-import static com.predic8.membrane.test.AssertUtils.postAndAssert;
-import static java.lang.Thread.sleep;
+import com.predic8.membrane.examples.util.BufferLogger;
+import com.predic8.membrane.examples.util.DistributionExtractingTestcase;
+import com.predic8.membrane.examples.util.Process2;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 
-import com.predic8.membrane.examples.util.BufferLogger;
-import org.junit.jupiter.api.*;
-
-import com.predic8.membrane.examples.util.DistributionExtractingTestcase;
-import com.predic8.membrane.examples.util.Process2;
+import static io.restassured.RestAssured.given;
+import static io.restassured.http.ContentType.XML;
+import static org.hamcrest.CoreMatchers.containsString;
 
 public class RoutingTest extends DistributionExtractingTestcase {
 
@@ -54,20 +54,56 @@ public class RoutingTest extends DistributionExtractingTestcase {
         }
 
         try(Process2 ignored1 = startServiceProxyScript()) {
-            try( Process2 ignored2 = new Process2.Builder().in(baseDir).waitAfterStartFor("ContactService v11 and v20 up.")
+            try(Process2 ignored2 = new Process2.Builder().in(baseDir).waitAfterStartFor("ContactService v11 and v20 up.")
                     .executable("java -jar ./target/routing-maven-1.0-SNAPSHOT.jar").start()) {
-                sleep(2000); // wait for Endpoints to start
-
+                // @formatter:off
                 // directly talk to versioned endpoints
-                assertContains("1.1", postAndAssert(200, "http://localhost:3024/ContactService/v11", CONTENT_TYPE_TEXT_XML_HEADER, request_v11));
-                assertContains("2.0", postAndAssert(200, "http://localhost:3024/ContactService/v20", CONTENT_TYPE_TEXT_XML_HEADER, request_v20));
+                given()
+                        .contentType(XML)
+                        .body(request_v11)
+                        .when()
+                        .post("http://localhost:3024/ContactService/v11")
+                        .then()
+                        .statusCode(200)
+                        .body(containsString("1.1"));
+
+                given()
+                        .contentType(XML)
+                        .body(request_v20)
+                        .when()
+                        .post("http://localhost:3024/ContactService/v20")
+                        .then()
+                        .statusCode(200)
+                        .body(containsString("2.0"));
 
                 // talk to wrong endpoint
-                postAndAssert(500, "http://localhost:3024/ContactService/v20", CONTENT_TYPE_TEXT_XML_HEADER, request_v11);
+                given()
+                        .contentType(XML)
+                        .body(request_v11)
+                        .when()
+                        .post("http://localhost:3024/ContactService/v20")
+                        .then()
+                        .statusCode(500);
 
                 // talk to proxy
-                assertContains("1.1", postAndAssert(200, "http://localhost:3025/ContactService", CONTENT_TYPE_TEXT_XML_HEADER, request_v11));
-                assertContains("2.0", postAndAssert(200, "http://localhost:3025/ContactService", CONTENT_TYPE_TEXT_XML_HEADER, request_v20));
+                given()
+                        .contentType(XML)
+                        .body(request_v11)
+                        .when()
+                        .post("http://localhost:3025/ContactService")
+                        .then()
+                        .statusCode(200)
+                        .body(containsString("1.1"));
+
+                given()
+                        .contentType(XML)
+                        .body(request_v20)
+                        .when()
+                        .post("http://localhost:3025/ContactService")
+                        .then()
+                        .statusCode(200)
+                        .body(containsString("2.0"));
+                // @formatter:on
             }
         }
     }

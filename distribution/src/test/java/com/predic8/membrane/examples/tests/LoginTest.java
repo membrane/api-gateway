@@ -21,6 +21,9 @@ import com.predic8.membrane.core.interceptor.authentication.session.totp.OtpProv
 
 import static com.predic8.membrane.core.http.MimeType.APPLICATION_X_WWW_FORM_URLENCODED;
 import static com.predic8.membrane.test.AssertUtils.*;
+import static io.restassured.RestAssured.given;
+import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 public class LoginTest extends DistributionExtractingTestcase {
 
@@ -31,28 +34,51 @@ public class LoginTest extends DistributionExtractingTestcase {
 
 	@Test
 	public void test() throws Exception {
-		try (Process2 ignored =startServiceProxyScript()) {
-			String form = getAndAssert200("http://localhost:2000/");
-			assertContains("Username:", form);
-			assertContains("Password:", form);
+		try (Process2 ignored = startServiceProxyScript()) {
+			// @formatter:off
+			// Check login form
+			given().when()
+				.get("http://localhost:2000/")
+			.then()
+				.statusCode(200)
+				.body(containsString("Username:"))
+				.body(containsString("Password:"));
 
-			form = postAndAssert(200, "http://localhost:2000/login/",
-					new String[] { "Content-Type", "application/x-www-form-urlencoded" },
-					"username=john&password=password");
-			assertContains("token:", form);
+			// Submit login credentials
+			given()
+				.contentType(APPLICATION_X_WWW_FORM_URLENCODED)
+				.formParam("username", "john")
+				.formParam("password", "password")
+			.when()
+				.post("http://localhost:2000/login/")
+			.then()
+				.statusCode(200)
+				.body(containsString("token:"));
 
-			form = postAndAssert(200, "http://localhost:2000/login/",
-					new String[] { "Content-Type", APPLICATION_X_WWW_FORM_URLENCODED },
-					"token=" + getToken());
+			// Submit token
+			given()
+				.contentType(APPLICATION_X_WWW_FORM_URLENCODED)
+				.formParam("token", getToken())
+			.when()
+				.post("http://localhost:2000/login/")
+			.then()
+				.statusCode(200)
+				.body(containsString("This page has moved to"));
 
-			// successful login?
-			assertContains("This page has moved to", form);
+			// Access protected page
+			given().when()
+				.get("http://localhost:2000/")
+			.then()
+				.statusCode(200)
+				.body(containsString("predic8.com"));
 
-			// access the "protected" page
-			assertContains("predic8.com", getAndAssert200("http://localhost:2000/"));
-
-			// logout
-			assertContains("Username:", getAndAssert200("http://localhost:2000/login/logout"));
+			// Logout
+			given().when()
+				.get("http://localhost:2000/login/logout")
+			.then()
+				.statusCode(200)
+				.body(containsString("Username:"));
+			// @formatter:on
 		}
 	}
 
