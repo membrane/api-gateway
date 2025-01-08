@@ -70,32 +70,31 @@ public class OAuth2Test {
             String clientBasePath) throws Exception {
         setUp(proxies);
 
-        getAndAssert200("http://localhost:2001" + clientBasePath);
+        // @formatter:off
         // Access client page
-        given()
-                .when()
-                .get("http://localhost:2001" + clientBasePath)
-                .then()
-                .statusCode(200);
+        given().when()
+            .get("http://localhost:2001/" + clientBasePath)
+        .then()
+            .statusCode(200);
 
         // Login
         given()
-                .contentType(APPLICATION_X_WWW_FORM_URLENCODED)
-                .formParam("target", "")
-                .formParam("username", "john")
-                .formParam("password", "password")
-                .when()
-                .post("http://localhost:2000" + serverBasePath + "/login/")
-                .then()
-                .statusCode(200);
+            .contentType(APPLICATION_X_WWW_FORM_URLENCODED)
+            .formParam("target", "")
+            .formParam("username", "john")
+            .formParam("password", "password")
+        .when()
+            .post("http://localhost:2000" + serverBasePath + "/login/")
+        .then()
+            .statusCode(200);
 
         // Access protected resource
-        given()
-                .when()
-                .get("http://localhost:2000" + serverBasePath + "/")
-                .then()
-                .statusCode(200)
-                .body(equalTo("Hello john."));
+        given().when()
+            .get("http://localhost:2000" + serverBasePath + "/")
+        .then()
+            .statusCode(200)
+            .body(equalTo("Hello john."));
+        // @formatter:on
     }
 
     @ParameterizedTest(name = "{0}")
@@ -106,31 +105,31 @@ public class OAuth2Test {
             String clientBasePath) throws Exception {
         setUp(proxies);
 
+        // @formatter:off
         // Access client page
-        given()
-                .when()
-                .get("http://localhost:2001" + clientBasePath)
-                .then()
-                .statusCode(200);
+        given().when()
+            .get("http://localhost:2001" + clientBasePath)
+        .then()
+            .statusCode(200);
 
         // Attempt login with wrong password
         given()
-                .contentType(APPLICATION_X_WWW_FORM_URLENCODED)
-                .formParam("target", "")
-                .formParam("username", "john")
-                .formParam("password", "wrongPassword")
-                .when()
-                .post("http://localhost:2000" + serverBasePath + "/login/")
-                .then()
-                .statusCode(200)
-                .body(containsString("Invalid password."));
+            .contentType(APPLICATION_X_WWW_FORM_URLENCODED)
+            .formParam("target", "")
+            .formParam("username", "john")
+            .formParam("password", "wrongPassword")
+        .when()
+            .post("http://localhost:2000" + serverBasePath + "/login/")
+        .then()
+            .statusCode(200)
+            .body(containsString("Invalid password."));
 
         // Attempt to access protected resource
-        given()
-                .when()
-                .get("http://localhost:2000" + serverBasePath + "/")
-                .then()
-                .statusCode(400);
+        given().when()
+            .get("http://localhost:2000" + serverBasePath + "/")
+        .then()
+            .statusCode(400);
+        // @formatter:on
     }
 
     @ParameterizedTest(name = "{0}")
@@ -141,45 +140,45 @@ public class OAuth2Test {
             String clientBasePath) throws Exception {
         setUp(proxies);
 
+        // @formatter:off
         // Access client page
-        given()
-                .when()
-                .get("http://localhost:2001" + clientBasePath)
-                .then()
-                .statusCode(200);
+        given().when()
+            .get("http://localhost:2001" + clientBasePath)
+        .then()
+            .statusCode(200);
 
         // Attempt login without content-type header
         given()
-                .formParam("target", "")
-                .formParam("username", "john")
-                .formParam("password", "password")
-                .when()
-                .post("http://localhost:2000" + serverBasePath + "/login/")
-                .then()
-                .statusCode(200)
-                .body(containsString("Invalid password."));
+            .formParam("target", "")
+            .formParam("username", "john")
+            .formParam("password", "password")
+        .when()
+            .post("http://localhost:2000" + serverBasePath + "/login/")
+        .then()
+            .statusCode(200)
+            .body(containsString("Invalid password."));
 
         // Attempt to access protected resource
-        given()
-                .when()
-                .get("http://localhost:2000" + serverBasePath + "/")
-                .then()
-                .statusCode(400);
+        given().when()
+            .get("http://localhost:2000" + serverBasePath + "/")
+        .then()
+            .statusCode(400);
+        // @formatter:on
     }
 
     @ParameterizedTest(name = "{0}")
     @MethodSource("data")
     public void testBypassingAuthorizationService(
             String proxies,
-            String serverBasePath,
-            String clientBasePath) throws Exception {
+            String serverBasePath) throws Exception {
         setUp(proxies);
 
-        given()
-                .when()
-                .get("http://localhost:2000" + serverBasePath + "/oauth2/auth")
-                .then()
-                .statusCode(400);
+        // @formatter:off
+        given().when()
+            .get("http://localhost:2000" + serverBasePath + "/oauth2/auth")
+        .then()
+            .statusCode(400);
+        // @formatter:on
     }
 
     @ParameterizedTest(name = "{0}")
@@ -190,15 +189,16 @@ public class OAuth2Test {
             String clientBasePath) throws Exception {
         setUp(proxies);
 
+        // @formatter:off
         // Perform login first
         testGoodLoginRequest(proxies, serverBasePath, clientBasePath);
 
         // Then logout
-        given()
-                .when()
-                .get("http://localhost:2001" + clientBasePath + "/login/logout")
-                .then()
-                .statusCode(200);
+        given().when()
+            .get("http://localhost:2001" + clientBasePath + "/login/logout")
+        .then()
+            .statusCode(200);
+        // @formatter:on
     }
 
     @AfterEach
