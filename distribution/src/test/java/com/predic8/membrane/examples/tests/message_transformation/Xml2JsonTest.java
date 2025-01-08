@@ -14,10 +14,15 @@
 package com.predic8.membrane.examples.tests.message_transformation;
 
 import com.predic8.membrane.examples.util.*;
+import io.restassured.http.ContentType;
 import org.junit.jupiter.api.*;
 
 import static com.predic8.membrane.test.AssertUtils.*;
+import static io.restassured.RestAssured.given;
+import static io.restassured.http.ContentType.XML;
 import static java.lang.Thread.*;
+import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class Xml2JsonTest extends DistributionExtractingTestcase {
@@ -31,10 +36,16 @@ public class Xml2JsonTest extends DistributionExtractingTestcase {
     public void test() throws Exception {
         BufferLogger logger = new BufferLogger();
         try(Process2 ignored = startServiceProxyScript(logger)) {
-            sleep(2000);
-            postAndAssert(200, LOCALHOST_2000, CONTENT_TYPE_APP_XML_HEADER, readFileFromBaseDir("jobs.xml"));
-            sleep(100);
-            assertTrue(logger.contains("{\"jobs\":{\"job\":"));
+            // @formatter:off
+            given()
+                .contentType(XML)
+                .body(readFileFromBaseDir("jobs.xml"))
+            .when()
+                .post(LOCALHOST_2000)
+.then()
+                    .statusCode(200);
+            // @formatter:on
+            assertThat(logger.toString(), containsString("{\"jobs\":{\"job\":"));
         }
     }
 }
