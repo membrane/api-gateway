@@ -31,8 +31,8 @@ public class SpELHeader implements SpELLablePropertyAware {
         if (v != null)
             return new TypedValue(v);
         v = header.getFirstValue(camelToKebab(name));
-        if (v != null)
-            return new TypedValue(v);
-        return new TypedValue("");
+
+        // return v even if it is null
+        return new TypedValue(v);
     }
 }

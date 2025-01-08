@@ -56,7 +56,7 @@ import org.junit.platform.suite.api.Suite;
         ProxiesXMLSecurityTest.class,
 
        // Scripting
-        IfInterceptorTest.class,
+        IfInterceptorExampleTest.class,
         GroovyTest.class,
         JavascriptTest.class,
 
@@ -68,7 +68,7 @@ import org.junit.platform.suite.api.Suite;
         // Validation
         JSONSchemaValidationTest.class,
         XMLValidationExampleTest.class,
-        SampleSoapServiceTest.class,
+        SampleSoapServiceExampleTest.class,
         SOAPProxyValidationTest.class,
 
         // Logging

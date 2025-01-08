@@ -56,6 +56,10 @@ public class ScriptingUtils {
             } catch (Exception e) {
                 log.info("Cannot parse query parameter from {}", exc.getRequest().getUri());
             }
+        } else if (flow == RESPONSE) {
+            Response response = exc.getResponse();
+            parameters.put("response", response);
+            parameters.put("statusCode", response.getStatusCode());
         }
 
         if (msg != null) {

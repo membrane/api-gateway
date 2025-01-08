@@ -26,7 +26,7 @@ import java.net.*;
 
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
 import static com.predic8.membrane.core.lang.ExchangeExpression.Language.SPEL;
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.*;
 
 class SpELExchangeExpressionTest {
 
@@ -36,8 +36,9 @@ class SpELExchangeExpressionTest {
 
     @BeforeAll
     static void setup() throws URISyntaxException {
-        exchange = Request.post("/foo")
+        exchange = Request.post("/foo?city=Paris")
                 .header("foo","bar")
+                .header("x-baz","42")
                 .body("""
                 <person id="7">
                     <name>John Doe</name>
@@ -52,11 +53,55 @@ class SpELExchangeExpressionTest {
     }
 
     @Test
-    void header() {
+    void headerDot() {
         assertEquals("bar", eval("header.foo"));
+    }
+
+    @Test
+    void headerBracket() {
+        assertEquals("bar", eval("header['foo']"));
+    }
+
+    @Test
+    void headerDotUnknown() {
+        assertNull(eval("header.unknown"));
+    }
+
+    @Test
+    void headerEquals() {
+        assertTrue(evalBoolean("header.foo == 'bar'"));
+    }
+
+    @Test
+    void headerNotNull() {
+        assertTrue(evalBoolean("header.foo != null"));
+    }
+
+    @Test
+    void headerDash() {
+        assertEquals("42", eval("header['x-baz']"));
+    }
+
+    @Test
+    void param() {
+        assertEquals("Paris", eval("param.city"));
+    }
+
+    @Test
+    void params() {
+        assertEquals("Paris", eval("params.city"));
+    }
+
+    @Test
+    void unknownParam() {
+        assertEquals("", eval("params.unknown"));
     }
 
     String eval(String expression) {
         return ExchangeExpression.getInstance(new Router(), SPEL, expression).evaluate(exchange,flow,String.class);
+    }
+
+    boolean evalBoolean(String expression) {
+        return ExchangeExpression.getInstance(new Router(), SPEL, expression).evaluate(exchange,flow,Boolean.class);
     }
 }

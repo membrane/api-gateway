@@ -53,5 +53,4 @@ public class XMLUtil {
     public static @NotNull InputSource getInputSource(Message msg) {
         return new InputSource(new InputStreamReader(msg.getBodyAsStreamDecoded()));
     }
-
 }

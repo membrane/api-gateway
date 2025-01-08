@@ -16,7 +16,7 @@ package com.predic8.membrane.core.lang.spel.functions;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jayway.jsonpath.JsonPath;
 import com.predic8.membrane.core.interceptor.AbstractInterceptorWithSession;
-import com.predic8.membrane.core.lang.spel.ExchangeEvaluationContext;
+import com.predic8.membrane.core.lang.spel.SpELExchangeEvaluationContext;
 import com.predic8.membrane.core.security.SecurityScheme;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -46,7 +46,7 @@ public class BuiltInFunctions {
 
     private static final ObjectMapper objectMapper = new ObjectMapper();
 
-    public static Object jsonPath(String jsonPath, ExchangeEvaluationContext ctx) {
+    public static Object jsonPath(String jsonPath, SpELExchangeEvaluationContext ctx) {
         try {
             return JsonPath.read(objectMapper.readValue(ctx.getMessage().getBodyAsStringDecoded(), Map.class), jsonPath);
         } catch (Exception ignored) {
@@ -54,45 +54,53 @@ public class BuiltInFunctions {
         }
     }
 
-    public static boolean weight(double weightInPercent, ExchangeEvaluationContext ignored) {
+    public static boolean weight(double weightInPercent, SpELExchangeEvaluationContext ignored) {
         return Math.max(0, Math.min(1, weightInPercent / 100.0)) > ThreadLocalRandom.current().nextDouble();
     }
 
-    public static boolean isLoggedIn(String beanName, ExchangeEvaluationContext ctx) {
+    public static boolean isLoggedIn(String beanName, SpELExchangeEvaluationContext ctx) {
         try {
             return ((AbstractInterceptorWithSession) requireNonNull(ctx.getExchange().getHandler().getTransport().getRouter().getBeanFactory()).getBean(beanName))
                     .getSessionManager().getSession(ctx.getExchange()).isVerified();
         } catch (Exception e) {
-            log.info("Failed to resolve bean with name '" + beanName + "'");
+            log.info("Failed to resolve bean with name '{}'", beanName);
             return false;
         }
     }
 
-    public static boolean isBearerAuthorization(ExchangeEvaluationContext ctx) {
+    public static boolean isBearerAuthorization(SpELExchangeEvaluationContext ctx) {
         return ctx.getExchange().getRequest().getHeader().contains(AUTHORIZATION)
                 && ctx.getExchange().getRequest().getHeader().getFirstValue(AUTHORIZATION).startsWith("Bearer");
     }
 
-    public static boolean hasScope(String scope, ExchangeEvaluationContext ctx) {
+    public static boolean hasScope(String scope, SpELExchangeEvaluationContext ctx) {
         return scopesContainsByPredicate(ctx, it -> it.contains(scope));
     }
 
-    public static boolean hasScope(ExchangeEvaluationContext ctx) {
+    public static boolean hasScope(SpELExchangeEvaluationContext ctx) {
         return scopesContainsByPredicate(ctx, it -> !it.isEmpty());
     }
 
     @SuppressWarnings({"SlowListContainsAll"})
-    public static boolean hasScope(List<String> scopes, ExchangeEvaluationContext ctx) {
+    public static boolean hasScope(List<String> scopes, SpELExchangeEvaluationContext ctx) {
         return scopesContainsByPredicate(ctx, it -> it.containsAll(scopes));
     }
 
     @SuppressWarnings("unchecked")
-    private static Boolean scopesContainsByPredicate(ExchangeEvaluationContext ctx, Predicate<List<String>> predicate) {
+    private static Boolean scopesContainsByPredicate(SpELExchangeEvaluationContext ctx, Predicate<List<String>> predicate) {
         return predicate.test(Optional.ofNullable((List<SecurityScheme>) ctx.getExchange().getProperty(SECURITY_SCHEMES))
                 .map(list -> list.stream()
                         .map(SecurityScheme::getScopes)
                         .flatMap(Collection::stream)
                         .toList())
                 .orElse(emptyList()));
+    }
+
+    public static boolean isXML(SpELExchangeEvaluationContext ctx) {
+        return ctx.getMessage().isXML();
+    }
+
+    public static boolean isJSON(SpELExchangeEvaluationContext ctx) {
+        return ctx.getMessage().isJSON();
     }
 }

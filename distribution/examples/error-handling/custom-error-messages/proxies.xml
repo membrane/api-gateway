@@ -1,0 +1,112 @@
+<spring:beans xmlns:spring="http://www.springframework.org/schema/beans"
+              xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+              xmlns="http://membrane-soa.org/proxies/1/" xmlns:lang="http://www.springframework.org/schema/lang"
+              xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.2.xsd
+					    http://membrane-soa.org/proxies/1/ http://membrane-soa.org/schemas/proxies-1.xsd http://www.springframework.org/schema/lang http://www.springframework.org/schema/lang/spring-lang.xsd">
+
+    <router>
+
+        <api port="2000">
+            <path>/service</path>
+            <response>
+                <beautifier/>
+                <if test="not isXML()">
+                    <if test="statusCode >= 400"><!-- Case C.) -->
+                        <template contentType="application/xml"><![CDATA[
+                            <error>
+                                <code>70000</code>
+                                <statusCode>${statusCode}</statusCode>
+                                <message>Ordinary Error!</message>
+                            </error>]]>
+                        </template>
+                    </if>
+                </if>
+                <if test="isXML()">
+                    <if test="//*[local-name() = 'Fault' and namespace-uri() = 'http://schemas.xmlsoap.org/soap/envelope/']" language="xpath"><!-- Case E.) -->
+                        <template contentType="application/xml"><![CDATA[
+                            <error>
+                                <code>20000</code>
+                                <statusCode>${statusCode}</statusCode>
+                                <message>SOAP Fault!</message>
+                                <fault>${property.faultstring}</fault>
+                            </error>]]>
+                        </template>
+                        <setProperty name="faultstring" value="${//faultstring}" language="xpath"/>
+                    </if>
+                    <if test="statusCode >= 400"><!-- Case D.) -->
+                        <if test="/*[not(local-name() = 'Envelope')]" language="xpath">
+                            <template contentType="application/xml"><![CDATA[
+                                <error>
+                                    <code>20000</code>
+                                    <statusCode>${statusCode}</statusCode>
+                                    <message>${property.description}!</message>
+                                </error>]]>
+                            </template>
+                            <setProperty name="description" value="${/failure/description}" language="xpath"/>
+                        </if>
+                    </if>
+                </if>
+            </response>
+            <abort>
+                <if test="statusCode == 502"><!-- Case G.) -->
+                    <template contentType="application/xml"><![CDATA[
+                          <error>
+                            <code>10000</code>
+                            <message>Failed to establish backend connection!</message>
+                          </error>]]>
+                    </template>
+                </if>
+                <!-- Case A.) -->
+                <if test="header['X-Protection'] != null">
+                    <template contentType="application/xml"><![CDATA[
+                          <error>
+                            <code>40000</code>
+                            <message>"XML Protection: Invalid XML!"</message>
+                        </error>]]>
+                    </template>
+                </if>
+                <!-- Case B.) -->
+                <if test="header['X-Validation-Error-Source'] != null">
+                    <template contentType="application/xml"><![CDATA[
+                          <error>
+                            <code>30000</code>
+                            <message>WSDL validation of ${headers.getFirstValue('X-Validation-Error-Source')} failed!</message>
+                        </error>]]>
+                    </template>
+                </if>
+            </abort>
+
+            <request>
+                <!-- XML protection -->
+                <if test="param.case == 'a'">
+                    <xmlProtection removeDTD="false" maxElementNameLength="100" maxAttributeCount="10" />
+                </if>
+                <!-- WSDL validation -->
+                <if test="param.case == 'b'">
+                    <validator wsdl="cities.wsdl" skipFaults="true"/>
+                </if>
+                <if test="param.case == 'c'">
+                    <template contentType="text/plain">Ordinary error!</template>
+                    <return statusCode="500"/>
+                </if>
+                <if test="param.case == 'd'">
+                    <template contentType="application/xml"><![CDATA[
+                    <failure>
+                        <description>XML Fehler Meldung vom Backend!</description>
+                    </failure>]]>
+                    </template>
+                    <return statusCode="500"/>
+                </if>
+                <if test="param.case == 'g'">
+                    <!-- Simulate gateway error -->
+                    <call url="http://unbekannt"/>
+                </if>
+            </request>
+
+            <!-- SOAP Service Mock for Debugging -->
+            <sampleSoapService/>
+        </api>
+
+    </router>
+
+</spring:beans>

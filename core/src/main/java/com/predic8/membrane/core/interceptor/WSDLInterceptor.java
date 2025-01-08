@@ -51,7 +51,7 @@ public class WSDLInterceptor extends RelocatingInterceptor {
 
     public WSDLInterceptor() {
         name = "WSDL Rewriting Interceptor";
-        setFlow(RESPONSE_ABORT);
+        setFlow(RESPONSE_ABORT); // TODO Only Response
     }
 
     @Override
@@ -66,15 +66,11 @@ public class WSDLInterceptor extends RelocatingInterceptor {
         log.debug("Changing endpoint address in WSDL");
 
         ByteArrayOutputStream stream = new ByteArrayOutputStream();
-
         Relocator relocator = getRelocator(exc, stream);
-
         relocator.relocate(new InputStreamReader(exc.getResponse().getBodyAsStreamDecoded(), exc.getResponse().getCharset()));
-
         if (relocator.isWsdlFound()) {
             registerWSDL(exc);
         }
-
         exc.getResponse().setBodyContent(stream.toByteArray());
     }
 
@@ -132,7 +128,6 @@ public class WSDLInterceptor extends RelocatingInterceptor {
     private String getCompletePath(URL url) {
         if (url.getQuery() == null)
             return url.getPath();
-
         return url.getPath() + "?" + url.getQuery();
     }
 

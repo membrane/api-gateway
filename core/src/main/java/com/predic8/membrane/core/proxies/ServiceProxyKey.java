@@ -21,6 +21,9 @@ import java.util.regex.*;
 
 import static java.util.regex.Pattern.*;
 
+/**
+ * Adds HTTP specific stuff like Method
+ */
 public class ServiceProxyKey extends AbstractRuleKey {
     private static final Logger log = LoggerFactory.getLogger(ServiceProxyKey.class.getName());
 

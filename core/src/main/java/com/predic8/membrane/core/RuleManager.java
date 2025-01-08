@@ -18,10 +18,11 @@ import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.exchangestore.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.model.*;
-import com.predic8.membrane.core.proxies.*;
 import com.predic8.membrane.core.proxies.Proxy;
+import com.predic8.membrane.core.proxies.*;
 import com.predic8.membrane.core.transport.http.*;
 import com.predic8.membrane.core.transport.ssl.*;
+import com.predic8.membrane.core.util.*;
 import org.jetbrains.annotations.*;
 import org.slf4j.*;
 
@@ -172,8 +173,8 @@ public class RuleManager {
         String version = request.getVersion();
 
         AbstractHttpHandler handler = exc.getHandler();
-        int port = handler.isMatchLocalPort() ? handler.getLocalPort() : -1;
-        String localIP = handler.getLocalAddress().getHostAddress();
+        int port = getPort(handler);
+        String localIP = getLocalIP(handler);
 
         for (Proxy proxy : proxies) {
             RuleKey key = proxy.getKey();
@@ -188,7 +189,15 @@ public class RuleManager {
                 continue;
             if (!key.matchesHostHeader(hostHeader))
                 continue;
-            if (key.getPort() != -1 && port != -1 && key.getPort() != port)
+            // If there is a port, internal proxies must not match
+            if (proxy instanceof NotPortOpeningProxy) {
+                if (port != -1)
+                    continue;
+                String serviceName = URLUtil.getHost(exc.getDestinations().getFirst());
+                if (!proxy.getName().equals(serviceName))
+                    continue;
+            }
+            if (!(proxy instanceof InternalProxy) && key.getPort() != -1 && port != -1 && key.getPort() != port)
                 continue;
             if (!key.getMethod().equals(method) && !key.isMethodWildcard())
                 continue;
@@ -197,11 +206,25 @@ public class RuleManager {
             if (!key.complexMatch(exc))
                 continue;
 
+
+
             if (log.isDebugEnabled())
-                log.debug("Matching Rule found for RuleKey {} {} {} {} {}", hostHeader, method, uri, port, localIP);
+                log.debug("Matching Rule {} found for RuleKey {} {} {} {} {}",proxy, hostHeader, method, uri, port, localIP);
             return proxy;
         }
         return findProxyRule(exc);
+    }
+
+    private static String getLocalIP(AbstractHttpHandler handler) {
+        if (handler == null)
+            return null;
+        return handler.getLocalAddress().getHostAddress();
+    }
+
+    private static int getPort(AbstractHttpHandler handler) {
+        if (handler == null)
+            return -1;
+        return handler.isMatchLocalPort() ? handler.getLocalPort() : -1;
     }
 
     private Proxy findProxyRule(Exchange exc) {
@@ -213,11 +236,12 @@ public class RuleManager {
                 if (!proxy.getKey().getIp().equals(exc.getHandler().getLocalAddress().toString()))
                     continue;
 
-
-            if (proxy.getKey().getPort() == -1 || exc.getHandler().getLocalPort() == -1 || proxy.getKey().getPort() == exc.getHandler().getLocalPort()) {
-                if (log.isDebugEnabled())
-                    log.debug("proxy rule found: {}", proxy);
-                return proxy;
+            if (exc.getHandler() != null) {
+                if (proxy.getKey().getPort() == -1 || exc.getHandler().getLocalPort() == -1 || proxy.getKey().getPort() == exc.getHandler().getLocalPort()) {
+                    if (log.isDebugEnabled())
+                        log.debug("proxy rule found: {}", proxy);
+                    return proxy;
+                }
             }
         }
         log.debug("No rule found for incoming request");

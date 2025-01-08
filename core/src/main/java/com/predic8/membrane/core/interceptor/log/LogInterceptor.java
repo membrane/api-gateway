@@ -22,8 +22,8 @@ import com.predic8.membrane.core.interceptor.*;
 import java.io.*;
 
 import static com.predic8.membrane.core.http.MimeType.*;
-import static com.predic8.membrane.core.interceptor.log.LogInterceptor.Level.INFO;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static com.predic8.membrane.core.interceptor.log.LogInterceptor.Level.*;
 import static org.slf4j.LoggerFactory.*;
 
 /**
@@ -51,14 +51,15 @@ public class LogInterceptor extends AbstractInterceptor {
 
     @Override
     public Outcome handleRequest(Exchange exc) {
-        log("==== Request %s ===".formatted(label));
+        writeLog("==== Request %s ===".formatted(label));
         logMessage(exc, exc.getRequest());
         return CONTINUE;
+
     }
 
     @Override
     public Outcome handleResponse(Exchange exc) {
-        log("==== Response %s ===".formatted(label));
+        writeLog("==== Response %s ===".formatted(label));
         logMessage(exc,exc.getResponse());
         return CONTINUE;
     }
@@ -66,8 +67,8 @@ public class LogInterceptor extends AbstractInterceptor {
     @Override
     public void handleAbort(Exchange exc) {
         try {
-            log("==== Response(Exchange aborted) %s ===".formatted(label));
-            logMessage(exc, exc.getResponse());
+            writeLog("==== Response(Exchange aborted) %s ===".formatted(label));
+           logMessage(exc, exc.getResponse());
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -110,14 +111,14 @@ public class LogInterceptor extends AbstractInterceptor {
 
         if (msg==null)
             return;
-        log(msg.getStartLine());
-        log("\nHeaders:\n" + msg.getHeader());
+        writeLog(msg.getStartLine());
+        writeLog("\nHeaders:\n" + msg.getHeader());
 
         try {
             if (!body || msg.isBodyEmpty())
                 return;
         } catch (IOException e) {
-            log("Error accessing body: " + e.getMessage());
+            writeLog("Error accessing body: " + e.getMessage());
             return;
         }
 
@@ -125,28 +126,33 @@ public class LogInterceptor extends AbstractInterceptor {
         if (isJson(mt) ||
             isXML(mt) ||
             isText(mt)) {
-            log(dumpBody(msg));
+            writeLog(dumpBody(msg));
         }
     }
 
     private void dumpProperties(Exchange exc) {
-        log("Properties: " + exc.getProperties());
+        writeLog("Properties: " + exc.getProperties());
     }
 
     private void dump(Exchange exc) {
-        log("""
+        writeLog("""
                 
+                Exchange:
+                  Request URI:
+                """);
+        writeLog(exc.getRequestURI());
+        writeLog("""
                 Exchange:
                   Request URI: %s
                   Destinations: %s
-                """.formatted(exc.getRequestURI(),exc.getDestinations()));
+                """.formatted(exc.getRequestURI(),exc.getDestinations().toString()));
     }
 
     private static String dumpBody(Message msg) {
         return "Body:\n{%s}\n".formatted(msg.getBodyAsStringDecoded());
     }
 
-    private void log(String msg) {
+    private void writeLog(String msg) {
         switch (level) {
             case TRACE -> getLogger(category).trace(msg);
             case DEBUG -> getLogger(category).debug(msg);

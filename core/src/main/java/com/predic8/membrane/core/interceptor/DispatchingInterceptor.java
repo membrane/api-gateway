@@ -85,8 +85,9 @@ public class DispatchingInterceptor extends AbstractInterceptor {
             }
             return p.getTargetURL();
         }
-        if (p.getTargetHost() != null)
+        if (p.getTargetHost() != null) {
             return new URL(p.getTargetScheme(), p.getTargetHost(), p.getTargetPort(), exc.getRequest().getUri()).toString();
+        }
 
         // That's fine. Maybe it is a <soapProxy> without a target
         return null;

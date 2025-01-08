@@ -17,7 +17,10 @@ package com.predic8.membrane.core.lang.spel;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.interceptor.lang.*;
+import com.predic8.membrane.core.lang.*;
 import org.jetbrains.annotations.*;
+import org.slf4j.*;
+import org.springframework.core.convert.*;
 import org.springframework.expression.*;
 import org.springframework.expression.spel.*;
 import org.springframework.expression.spel.standard.*;
@@ -25,6 +28,8 @@ import org.springframework.expression.spel.standard.*;
 import static org.springframework.expression.spel.SpelCompilerMode.*;
 
 public class SpELExchangeExpression extends AbstractExchangeExpression {
+
+    private static final Logger log = LoggerFactory.getLogger(SpELExchangeExpression.class);
 
     private final Expression spelExpression;
 
@@ -35,7 +40,18 @@ public class SpELExchangeExpression extends AbstractExchangeExpression {
 
     @Override
     public <T> T evaluate(Exchange exchange, Interceptor.Flow flow, Class<T> type) {
-        return type.cast(spelExpression.getValue(new ExchangeEvaluationContext(exchange, exchange.getMessage(flow)), type));
+        try {
+            return type.cast(spelExpression.getValue(new SpELExchangeEvaluationContext(exchange, exchange.getMessage(flow)), type));
+        } catch (SpelEvaluationException see) {
+            log.error(see.getLocalizedMessage());
+            ExchangeExpressionException eee = new ExchangeExpressionException(expression, see);
+            if (see.getCause() instanceof ConverterNotFoundException cnfe) {
+                eee.extension("sourceType", cnfe.getSourceType())
+                        .extension("targetType", cnfe.getTargetType());
+            }
+            eee.stacktrace(false);
+            throw eee.message(see.getLocalizedMessage());
+        }
     }
 
     private @NotNull SpelParserConfiguration getSpelParserConfiguration() {

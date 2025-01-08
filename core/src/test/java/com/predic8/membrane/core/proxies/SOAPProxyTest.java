@@ -20,9 +20,9 @@ import com.predic8.membrane.core.transport.http.*;
 import io.restassured.response.*;
 import org.junit.jupiter.api.*;
 
-import static com.predic8.membrane.core.http.MimeType.TEXT_XML;
-import static io.restassured.RestAssured.given;
-import static org.hamcrest.Matchers.equalTo;
+import static com.predic8.membrane.core.http.MimeType.*;
+import static io.restassured.RestAssured.*;
+import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class SOAPProxyTest {
@@ -98,7 +98,4 @@ public class SOAPProxyTest {
         proxy.setWsdl("classpath:/ws/cities-2-services.wsdl");
         assertThrows(IllegalArgumentException.class, () ->router.init());
     }
-
-
-
 }

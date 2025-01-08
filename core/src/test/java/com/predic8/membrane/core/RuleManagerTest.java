@@ -13,6 +13,8 @@
    limitations under the License. */
 package com.predic8.membrane.core;
 
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.proxies.*;
 import org.junit.jupiter.api.*;
 
@@ -27,6 +29,7 @@ public class RuleManagerTest {
 	ProxyRule proxy3013;
 	ServiceProxy forwardBlz;
 	ServiceProxy forwardBlzPOST;
+	InternalProxy internal;
 
 	MockRouter router;
 
@@ -44,8 +47,14 @@ public class RuleManagerTest {
 		forwardBlzPOST = new ServiceProxy(new ServiceProxyKey("localhost", "POST", ".*", 3015), "thomas-bayer.com", 80);
 		forwardBlzPOST.init(router);
 
+		internal = new InternalProxy() {{
+			name = "order";
+		}};
+		internal.init(router);
+
 		manager.addProxyAndOpenPortIfNew(forwardBlz);
 		manager.addProxyAndOpenPortIfNew(forwardBlzPOST);
+		manager.addProxy(internal, RuleManager.RuleDefinitionSource.MANUAL);
 	}
 
 	@AfterEach
@@ -55,8 +64,7 @@ public class RuleManagerTest {
 
 	@Test
 	void getRules() {
-		assertFalse(manager.getRules().isEmpty());
-		assertEquals(3, manager.getRules().size());
+		assertEquals(4, manager.getRules().size());
 	}
 
 	@Test
@@ -75,9 +83,26 @@ public class RuleManagerTest {
 	}
 
 	@Test
+	void internalUnknown() throws URISyntaxException {
+		Exchange exc = Request.get("/ignored").buildExchange();
+		exc.getDestinations().add("service://unknown");
+		assertInstanceOf(NullProxy.class, manager.getMatchingRule(exc));
+	}
+
+	@Test
+	void internal() throws URISyntaxException {
+		assertEquals("order", manager.getMatchingRule(Request.get("service://order").buildExchange()).getName());
+	}
+
+	@Test
+	void internalWithPath() throws URISyntaxException {
+		assertEquals("order", manager.getMatchingRule(Request.get("service://order/path").buildExchange()).getName());
+	}
+
+	@Test
 	void testRemoveRule() {
 		manager.removeRule(proxy3013);
-		assertEquals(2, manager.getRules().size());
+		assertEquals(3, manager.getRules().size());
 		assertFalse(manager.getRules().contains(proxy3013));
 	}
 

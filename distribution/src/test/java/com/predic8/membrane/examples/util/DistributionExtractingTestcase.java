@@ -70,7 +70,7 @@ public abstract class DistributionExtractingTestcase {
     @AfterAll
     public static void done() {
         log.info("cleaning up...");
-        //recursiveDelete(unzipDir);
+        recursiveDelete(unzipDir);
         log.info("cleaning up... done");
     }
 
@@ -95,14 +95,13 @@ public abstract class DistributionExtractingTestcase {
         return files[0];
     }
 
-    private static File getUnzipDir(File targetDir) throws InterruptedException {
+    private static File getUnzipDir(File targetDir) {
         return new File(targetDir, "examples-automatic");
     }
 
-    private static File createDir(File dir) throws InterruptedException {
+    private static void createDir(File dir) {
         if (!dir.mkdir())
             throw new RuntimeException("Could not mkdir " + dir.getAbsolutePath());
-        return dir;
     }
 
     private static void replaceLog4JConfig() throws IOException {

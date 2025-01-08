@@ -92,8 +92,7 @@ public class RateLimitInterceptor extends AbstractInterceptor {
     }
 
     @Override
-    public Outcome handleRequest(Exchange exc) throws Exception {
-
+    public Outcome handleRequest(Exchange exc) {
         try {
             if (!strategy.isRequestLimitReached(getKey(exc)))
                 return CONTINUE;
@@ -106,7 +105,7 @@ public class RateLimitInterceptor extends AbstractInterceptor {
             return RETURN;
         }
 
-        log.info(getKey(exc) + " limit: " + getRequestLimit() + " duration: " + getRequestLimitDuration() + " is exceeded. (clientIp: " + exc.getRemoteAddrIp()+")");
+        log.info("{} limit: {} duration: {} is exceeded. (clientIp: {})",getKey(exc),getRequestLimit(),getRequestLimitDuration(),exc.getRemoteAddrIp());
         exc.setResponse(ProblemDetails.user(false)
                         .statusCode(429)
                         .addSubType("rate-limiter")
@@ -133,7 +132,7 @@ public class RateLimitInterceptor extends AbstractInterceptor {
             return getClientIp(exc);
         }
 
-        String result = expression.getValue(new ExchangeEvaluationContext(exc, exc.getRequest()), String.class);
+        String result = expression.getValue(new SpELExchangeEvaluationContext(exc, exc.getRequest()), String.class);
         if (result != null)
             return result;
 
@@ -191,7 +190,7 @@ public class RateLimitInterceptor extends AbstractInterceptor {
                 log.debug("More than 1 entry in X-Forwarded-For. Using ip address {}", ip);
                 return ip;
             }
-            String ff = xForwardedFor.get(0);
+            String ff = xForwardedFor.getFirst();
             log.debug("Using entry {} in X-Forwarded-For", ff);
             return ff;
         }
