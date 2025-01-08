@@ -15,10 +15,15 @@
 package com.predic8.membrane.examples.tests.openapi;
 
 import com.predic8.membrane.examples.util.*;
+import io.restassured.http.ContentType;
 import org.junit.jupiter.api.*;
 import org.skyscreamer.jsonassert.*;
 
 import static com.predic8.membrane.test.AssertUtils.*;
+import static io.restassured.RestAssured.given;
+import static io.restassured.http.ContentType.JSON;
+import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.CoreMatchers.equalTo;
 
 public class OpenAPIValidationSimpleTest extends DistributionExtractingTestcase {
 
@@ -54,8 +59,29 @@ public class OpenAPIValidationSimpleTest extends DistributionExtractingTestcase 
 	public void test() throws Exception {
 
 		try(Process2 ignored = startServiceProxyScript()) {
-			assertContains("success", postAndAssert(201, LOCALHOST_2000 + "/persons", CONTENT_TYPE_APP_JSON_HEADER, createPersonValid));
-			JSONAssert.assertEquals(validationResult, postAndAssert(400, LOCALHOST_2000 + "/persons", CONTENT_TYPE_APP_JSON_HEADER, createPersonInvalid), true);
+			// @formatter:off
+			// Test valid person creation
+			given()
+				.contentType(JSON)
+				.body(createPersonValid)
+			.when()
+				.post(LOCALHOST_2000 + "/persons")
+			.then()
+				.statusCode(201)
+				.body(containsString("success"));
+
+			// Test invalid person creation
+			String response =given()
+				.contentType(JSON)
+				.body(createPersonInvalid)
+			.when()
+				.post(LOCALHOST_2000 + "/persons")
+			.then()
+				.statusCode(400)
+				.extract().response().asString();
+			// @formatter:on
+
+			JSONAssert.assertEquals(validationResult, response, false);
 		}
 	}
 }

@@ -73,7 +73,9 @@ public class OpenAPIRecordFactory {
         }
         for (File file : files) {
             log.info("Parsing spec {}", file);
-            OpenAPIRecord rec = create(spec, file);
+            OpenAPISpec fileSpec = spec.clone();
+            fileSpec.setLocation(spec.dir + "/" + file.getName());
+            OpenAPIRecord rec = create(fileSpec, file);
             apiRecords.put(getUniqueId(apiRecords, rec), rec);
         }
     }

@@ -15,9 +15,14 @@
 package com.predic8.membrane.examples.tests;
 
 import com.predic8.membrane.examples.util.*;
+import io.restassured.http.ContentType;
 import org.junit.jupiter.api.*;
 
 import static com.predic8.membrane.test.AssertUtils.*;
+import static io.restassured.RestAssured.given;
+import static io.restassured.http.ContentType.XML;
+import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class BasicXmlInterceptorTest extends DistributionExtractingTestcase {
@@ -37,8 +42,17 @@ public class BasicXmlInterceptorTest extends DistributionExtractingTestcase {
 
         logger = new BufferLogger();
         try(Process2 ignored = startServiceProxyScript(logger)) {
-            postAndAssert(200, LOCALHOST_2000, CONTENT_TYPE_APP_XML_HEADER, readFileFromBaseDir("example.xml"));
-            assertTrue(logger.contains("<date>"));
+            // @formatter:off
+            given()
+                .contentType(XML)
+                .body(readFileFromBaseDir("example.xml"))
+            .when()
+                .post(LOCALHOST_2000)
+            .then()
+                .statusCode(200);
+            // @formatter:on
+
+            assertThat(logger.toString(), containsString("<date>"));
         }
     }
 }
