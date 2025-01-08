@@ -14,44 +14,28 @@
 
 package com.predic8.membrane.test;
 
-import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.*;
 import org.apache.http.*;
-import org.apache.http.auth.AuthScope;
-import org.apache.http.auth.AuthState;
-import org.apache.http.auth.Credentials;
-import org.apache.http.auth.UsernamePasswordCredentials;
-import org.apache.http.client.CredentialsProvider;
-import org.apache.http.client.HttpClient;
+import org.apache.http.auth.*;
+import org.apache.http.client.*;
 import org.apache.http.client.methods.*;
-import org.apache.http.client.utils.HttpClientUtils;
-import org.apache.http.conn.ssl.NoopHostnameVerifier;
-import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
-import org.apache.http.entity.StringEntity;
-import org.apache.http.impl.auth.BasicScheme;
-import org.apache.http.impl.client.BasicCookieStore;
-import org.apache.http.impl.client.BasicCredentialsProvider;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClientBuilder;
-import org.apache.http.protocol.HttpContext;
-import org.apache.http.util.EntityUtils;
+import org.apache.http.client.utils.*;
+import org.apache.http.conn.ssl.*;
+import org.apache.http.entity.*;
+import org.apache.http.impl.auth.*;
+import org.apache.http.impl.client.*;
+import org.apache.http.protocol.*;
+import org.apache.http.util.*;
 
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.TrustManager;
-import javax.net.ssl.X509TrustManager;
-import java.io.Closeable;
-import java.io.File;
-import java.io.IOException;
-import java.security.KeyManagementException;
-import java.security.NoSuchAlgorithmException;
-import java.security.SecureRandom;
-import java.security.cert.X509Certificate;
+import javax.net.ssl.*;
+import java.io.*;
+import java.security.*;
+import java.security.cert.*;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.apache.commons.io.FileUtils.writeStringToFile;
-import static org.apache.http.client.protocol.HttpClientContext.CREDS_PROVIDER;
-import static org.apache.http.client.protocol.HttpClientContext.TARGET_AUTH_STATE;
-import static org.apache.http.protocol.HttpCoreContext.HTTP_TARGET_HOST;
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static java.nio.charset.StandardCharsets.*;
+import static org.apache.commons.io.FileUtils.*;
+import static org.apache.http.client.protocol.HttpClientContext.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class AssertUtils {
 
@@ -83,32 +67,19 @@ public class AssertUtils {
 
     public static String getAndAssert(int expectedHttpStatusCode, String url, String[] header) throws ParseException, IOException {
         HttpGet get = new HttpGet(url);
-        try {
-            HttpResponse res = invokeAndAssertInternal(expectedHttpStatusCode, url, header, get);
-            HttpEntity entity = res.getEntity();
+
+        if (header != null)
+            for (int i = 0; i < header.length; i += 2)
+                get.addHeader(header[i], header[i + 1]);
+
+        try (CloseableHttpResponse res1 = hc.execute(get)) {
+            try {
+                assertEquals(expectedHttpStatusCode, res1.getStatusLine().getStatusCode());
+            } catch (AssertionError e) {
+                throw new AssertionError(e.getMessage() + " while fetching " + url);
+            }
+            HttpEntity entity = res1.getEntity();
             return entity == null ? "" : EntityUtils.toString(entity);
-        } finally {
-            get.releaseConnection();
-        }
-
-    }
-
-    public static HttpResponse getAndAssertWithResponse(int expectedHttpStatusCode, String url, String[] header) throws ParseException, IOException {
-        HttpGet get = new HttpGet(url);
-        try {
-            return invokeAndAssertInternal(expectedHttpStatusCode, url, header, get);
-        } finally {
-            get.releaseConnection();
-        }
-    }
-
-    public static HttpResponse invokeAndAssertInternal(int expectedHttpStatusCode, String url, String[] header, HttpGet get) throws IOException {
-        if (header != null) for (int i = 0; i < header.length; i += 2) get.addHeader(header[i], header[i + 1]);
-        try (CloseableHttpResponse res = hc.execute(get)) {
-            assertEquals(expectedHttpStatusCode, res.getStatusLine().getStatusCode());
-            return res;
-        } catch (AssertionError e) {
-            throw new AssertionError(e.getMessage() + " while fetching " + url);
         }
     }
 
@@ -117,9 +88,10 @@ public class AssertUtils {
     }
 
     public static String assertStatusCode(int expectedHttpStatusCode, HttpUriRequest request) throws IOException {
-        HttpResponse res = hc.execute(request);
-        assertEquals(expectedHttpStatusCode, res.getStatusLine().getStatusCode());
-        return EntityUtils.toString(res.getEntity());
+        try(CloseableHttpResponse res = hc.execute(request)) {
+            assertEquals(expectedHttpStatusCode, res.getStatusLine().getStatusCode());
+            return EntityUtils.toString(res.getEntity());
+        }
     }
 
     public static String postAndAssert(int expectedHttpStatusCode, String url, String body) throws IOException {
@@ -138,11 +110,15 @@ public class AssertUtils {
         for (int i = 0; i < headers.length; i += 2)
             requestBase.setHeader(headers[i], headers[i + 1]);
         requestBase.setEntity(new StringEntity(body));
-        try {
-            return assertStatusCode(expectedHttpStatusCode, requestBase);
-        } finally {
-            requestBase.releaseConnection();
+
+        try (CloseableHttpResponse res = hc.execute(requestBase)) {
+            assertEquals(expectedHttpStatusCode, res.getStatusLine().getStatusCode());
+            return EntityUtils.toString(res.getEntity());
         }
+
+//		finally {
+//			requestBase.releaseConnection();
+//		}
     }
 
     public static void disableHTTPAuthentication() {
