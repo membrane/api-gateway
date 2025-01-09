@@ -1,29 +1,29 @@
 ### Case A.) XML Protection
 
-POST http://localhost:2000/services/v1?case=a
+POST http://localhost:2000/service?case=a
 Content-Type: text/xml
 
 <foo a="1" b="2" c="3" d="4" e="5" f="6" g="7" h="8" i="10" j="to much"/>
 
 ### Case B.) Trigger WSDL Validator
 
-POST http://localhost:2000/services?case=b
+POST http://localhost:2000/service?case=b
 Content-Type: text/xml
 
 <wrong/>
 
 ### Case C.) Ordinary error
 
-GET http://localhost:2000/services?case=c
+GET http://localhost:2000/service?case=c
 
 ### Case D.) XML error
 
-GET http://localhost:2000/services?case=d
+GET http://localhost:2000/service?case=d
 
 
 ### Case E.) Trigger SOAP Fault
 
-POST http://localhost:2000/services
+POST http://localhost:2000/service
 Content-Type: text/xml
 
 <s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/" xmlns:cs="https://predic8.de/cities">
@@ -35,7 +35,7 @@ Content-Type: text/xml
 </s:Envelope>
 
 ### Case F.) SOAP Response
-POST http://localhost:2000/services
+POST http://localhost:2000/service
 Content-Type: text/xml
 
 <s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/" xmlns:cs="https://predic8.de/cities">
@@ -48,4 +48,4 @@ Content-Type: text/xml
 
 ### Case G.) Gateway error / Backend not reachable 502
 
-GET http://localhost:2000/services?case=g
+GET http://localhost:2000/service?case=g

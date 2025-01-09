@@ -6,7 +6,7 @@
 
     <router>
 
-        <api port="2000" name="demo">
+        <api port="2000">
             <path>/service</path>
             <response>
                 <beautifier/>
