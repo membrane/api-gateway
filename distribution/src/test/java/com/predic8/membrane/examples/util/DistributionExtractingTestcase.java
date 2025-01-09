@@ -39,9 +39,8 @@ public abstract class DistributionExtractingTestcase {
 
     public static final String LOCALHOST_2000 = "http://localhost:2000";
 
-    public static  final String[] CONTENT_TYPE_APP_XML_HEADER = {"Content-Type", APPLICATION_XML};
-    public static  final String[] CONTENT_TYPE_TEXT_XML_HEADER = {"Content-Type", TEXT_XML};
-    public static  final String[] CONTENT_TYPE_APP_JSON_HEADER = {"Content-Type", APPLICATION_JSON};
+     public static  final String[] CONTENT_TYPE_TEXT_XML_HEADER = {"Content-Type", TEXT_XML};
+    public static final String START_SCRIPT = "membrane";
 
     private static File unzipDir;
     private static File membraneHome;
@@ -191,11 +190,11 @@ public abstract class DistributionExtractingTestcase {
     }
 
     protected Process2 startServiceProxyScript() throws IOException, InterruptedException {
-        return startServiceProxyScript(null, "service-proxy");
+        return startServiceProxyScript(null, START_SCRIPT);
     }
 
     protected Process2 startServiceProxyScript(ConsoleWatcher watch) throws IOException, InterruptedException {
-        return startServiceProxyScript(watch,"service-proxy");
+        return startServiceProxyScript(watch, START_SCRIPT);
     }
 
     protected Process2 startServiceProxyScript(ConsoleWatcher watch, String script) throws IOException, InterruptedException {
