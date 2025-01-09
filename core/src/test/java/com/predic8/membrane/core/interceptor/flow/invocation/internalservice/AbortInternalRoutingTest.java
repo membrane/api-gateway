@@ -32,7 +32,7 @@ public class AbortInternalRoutingTest extends AbstractInternalServiceRoutingInte
             api.getTarget().setUrl("service:a");
         });
 
-        api(api -> {
+        internal(api -> {
             api.setName("a");
             api.add(B, ABORT(C), D, ABORT);
         });
