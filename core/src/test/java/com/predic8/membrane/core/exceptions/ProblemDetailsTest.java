@@ -75,7 +75,7 @@ public class ProblemDetailsTest {
         JsonNode json = om.readTree(getResponseWithDetailsAndExtensions(true).getBodyAsStringDecoded());
         assertEquals(3,json.size());
         assertEquals("https://membrane-api.io/error/internal",json.get("type").asText());
-        assertEquals("An internal error occurred.",json.get("title").asText());
+        assertEquals("An error occurred.",json.get("title").asText());
         assertTrue(json.get("detail").asText().contains("can be found in the Membrane log"));
     }
 
@@ -108,7 +108,7 @@ public class ProblemDetailsTest {
 
         assertEquals(3,json.size());
         assertEquals("https://membrane-api.io/error/internal",json.get("type").asText());
-        assertEquals("An internal error occurred.",json.get("title").asText());
+        assertEquals("An error occurred.",json.get("title").asText());
         assertTrue(json.get("detail").asText().contains("can be found in the Membrane log"));
     }
 

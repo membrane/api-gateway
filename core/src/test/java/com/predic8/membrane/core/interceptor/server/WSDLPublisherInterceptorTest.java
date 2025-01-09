@@ -23,7 +23,9 @@ import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-public class WSDLPublisherTest {
+public class WSDLPublisherInterceptorTest {
+
+	private HttpRouter router;
 
 	static List<Object[]> getPorts() {
 		return Arrays.asList(new Object[][] {
@@ -31,8 +33,6 @@ public class WSDLPublisherTest {
 				{ "classpath:/validation/ArticleService.wsdl", 3025 },
 		});
 	}
-
-	private HttpRouter router;
 
 	void before(String wsdlLocation, int port) throws Exception {
 		router = new HttpRouter();
@@ -57,6 +57,4 @@ public class WSDLPublisherTest {
 		assertEquals(5, WSDLTestUtil.countWSDLandXSDs("http://localhost:" + port + "/articles/?wsdl"));
 		after();
 	}
-
-
 }

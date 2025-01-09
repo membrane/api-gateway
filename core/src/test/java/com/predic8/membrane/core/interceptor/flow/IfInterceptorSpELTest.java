@@ -13,17 +13,35 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.flow;
 
+import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.http.Request.*;
 import com.predic8.membrane.core.http.Response.*;
 import com.predic8.membrane.core.interceptor.*;
+import org.jetbrains.annotations.*;
 import org.junit.jupiter.api.*;
 import org.springframework.expression.spel.*;
 
-import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
+import static com.predic8.membrane.core.http.MimeType.*;
+import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.lang.ExchangeExpression.Language.*;
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
 public class IfInterceptorSpELTest extends ConditionalEvaluationTestContext {
+
+    static Router router;
+
+    @BeforeAll
+    static void setup() {
+        router = new Router();
+    }
+
+    @AfterAll
+    static void teardown() {
+        router.shutdown();
+    }
 
     @Test
     void simpleRequestTrue() throws Exception {
@@ -44,6 +62,21 @@ public class IfInterceptorSpELTest extends ConditionalEvaluationTestContext {
     @Test
     void hasHeader() throws Exception {
         assertEquals(CONTINUE,eval("headers['X-Foo-Bar'] == 'Baz'", new Builder().header("X-Foo-Bar", "Baz")));
+    }
+
+    @Test
+    void headerNotNull() throws Exception {
+        assertEquals(CONTINUE,eval("headers['X-Foo-Bar'] != null", new Builder().header("X-Foo-Bar", "Baz")));
+    }
+
+    @Test
+    void headerNullTrue() throws Exception {
+        assertEquals(CONTINUE,performEval("headers['X-Does-Not-Exist'] == null", new Builder().header("X-Foo-Bar", "Baz"),SPEL, true));
+    }
+
+    @Test
+    void headerNullFalse() throws Exception {
+        assertEquals(CONTINUE,performEval("headers['X-Foo-Bar'] == null", new Builder().header("X-Foo-Bar", "Baz"),SPEL,false));
     }
 
     @Test
@@ -70,6 +103,29 @@ public class IfInterceptorSpELTest extends ConditionalEvaluationTestContext {
     void testBuiltInMethodTypeHierarchy() throws Exception {
         //Inline List initializer in SpEL produces a RandomAccessList which should be assignable to List.
         assertEquals(CONTINUE,eval("hasScope({'test'})", new Builder()));
+    }
+
+    @Test
+    void isXMLTrue() throws Exception {
+        Exchange exc = Request.post("/foo").contentType(APPLICATION_XML).buildExchange();
+        verify(createMock(exc), atLeastOnce()).handleRequest(exc);
+    }
+
+    @Test
+    void isXMLFalse() throws Exception {
+        Exchange exc = Request.post("/foo").contentType(TEXT_PLAIN).buildExchange();
+        verify(createMock(exc), never()).handleRequest(exc);
+    }
+
+    private static @NotNull Interceptor createMock(Exchange exc) throws Exception {
+        Interceptor mi = mock(Interceptor.class);
+        when(mi.handlesRequests()).thenReturn(true);
+        IfInterceptor i = new IfInterceptor();
+        i.setTest("isXML()");
+        i.getInterceptors().add(mi);
+        i.init(router);
+        i.handleRequest(exc);
+        return mi;
     }
 
     private static Outcome eval(String condition, Object builder) throws Exception {

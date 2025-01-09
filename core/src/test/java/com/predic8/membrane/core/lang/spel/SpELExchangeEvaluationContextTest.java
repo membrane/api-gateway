@@ -25,7 +25,7 @@ import java.net.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.http.MediaType.*;
 
-public class ExchangeEvaluationContextTest {
+public class SpELExchangeEvaluationContextTest {
 
     Exchange exc;
 
@@ -52,7 +52,7 @@ public class ExchangeEvaluationContextTest {
 
     String keyExpression(String spel) {
         Expression expression = new SpelExpressionParser().parseExpression(spel);
-        return expression.getValue(new ExchangeEvaluationContext(exc, exc.getRequest()), String.class);
+        return expression.getValue(new SpELExchangeEvaluationContext(exc, exc.getRequest()), String.class);
     }
 
     @Test

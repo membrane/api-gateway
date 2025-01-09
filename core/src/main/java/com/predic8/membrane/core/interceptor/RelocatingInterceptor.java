@@ -81,10 +81,8 @@ abstract public class RelocatingInterceptor extends AbstractInterceptor {
 		if ("".equals(port)) {
 			return -1;
 		}
-
 		if (port != null)
 			return Integer.parseInt(port);
-
 		return exc.getHandler().getLocalPort();
 	}
 
@@ -106,7 +104,6 @@ abstract public class RelocatingInterceptor extends AbstractInterceptor {
 	protected String getLocationProtocol() {
 		if (protocol != null)
 			return protocol;
-
 		return "http";
 	}
 

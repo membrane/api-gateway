@@ -30,8 +30,7 @@ import org.junit.platform.suite.api.*;
         ProxySSLConnectionMethodTest.class,
         LimitedMemoryExchangeStoreIntegrationTest.class,
         UnavailableSoapProxyTest.class,
-        LargeBodyTest.class,
-        SoapAndInternalProxyTest.class,
+        LargeBodyTest.class
 //        SessionInterceptorTest.class // Fix?
 })
 public class IntegrationTestsWithInternet {

@@ -51,8 +51,9 @@ public class XPathExchangeExpression extends AbstractExchangeExpression {
             throw  new RuntimeException("Should not Happen!");
         } catch (XPathExpressionException xee) {
             throw new ExchangeExpressionException(expression,xee)
-                    .localizedMessage(xee.getLocalizedMessage())
-                    .extension("xpath", expression);
+                    .message(xee.getLocalizedMessage())
+                    .body(msg.getBodyAsStringDecoded())
+                    .stacktrace(false);
         }
     }
 

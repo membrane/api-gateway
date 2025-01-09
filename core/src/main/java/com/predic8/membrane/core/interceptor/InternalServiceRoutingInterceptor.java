@@ -76,19 +76,14 @@ public class InternalServiceRoutingInterceptor extends AbstractInterceptor {
      */
     private @Nullable Outcome routeService(Exchange exchange) throws Exception {
         AbstractServiceProxy service = getRuleByDest(exchange);
-
         RuleMatchingInterceptor.assignRule(exchange, service);
-
         updateRequestPath(exchange);
-
         Outcome outcome = callInterceptors(exchange, service.getInterceptors());
-
-        exchange.setDestinations(List.of(getTargetAsUri(exchange, service)));
-
+        exchange.getDestinations().clear();
+        exchange.getDestinations().add(getTargetAsUri(exchange, service));
         if (outcome == ABORT || outcome == RETURN) {
             return outcome;
         }
-
         if (isTargetInternal(exchange)) {
             return routeService(exchange); // Service calls service, so continue recursively
         }

@@ -9,7 +9,6 @@
     <router>
 
         <api port="2000" name="All Interceptors">
-
             <openapi location="fruitshop-api.yml" />
             <openapi location="security-api-v1.yml"
                      validateRequests="yes"

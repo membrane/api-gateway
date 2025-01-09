@@ -19,9 +19,11 @@ import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.proxies.*;
 import com.predic8.membrane.core.proxies.Proxy;
+import com.predic8.membrane.core.proxies.*;
 import com.predic8.membrane.core.util.functionalInterfaces.*;
+import org.jetbrains.annotations.*;
+import org.slf4j.*;
 
 import java.io.*;
 import java.net.*;
@@ -30,28 +32,48 @@ import java.util.stream.*;
 
 public class RuleResolver implements SchemaResolver {
 
-    final Router router;
+    private static final Logger log = LoggerFactory.getLogger(RuleResolver.class);
 
+    private static final FlowController flowController = new FlowController(); // TODO use one central singleton
+
+    final Router router;
     public RuleResolver(Router router) {
         this.router = router;
     }
 
     @Override
-    public InputStream resolve(String url) {
-        String ruleName = url.substring(8).split("/")[0];
-        Proxy proxy = router.getRuleManager().getRuleByName(ruleName);
+    public InputStream resolve(String urlString) {
+        log.debug("Resolving from {}", urlString);
+        URI uri = URI.create(urlString);
+        String proxyName = uri.getHost();
+        Proxy proxy = router.getRuleManager().getRuleByName(proxyName);
 
         if (proxy == null)
-            throw new RuntimeException("Rule with name '" + ruleName + "' not found");
+            throw new RuntimeException("Rule with name '" + proxyName + "' not found");
 
         if (!proxy.isActive())
-            throw new RuntimeException("Rule with name '" + ruleName + "' not active");
+            throw new RuntimeException("Rule with name '" + proxyName + "' not active");
+
+        if (proxy instanceof InternalProxy ip) {
+            log.debug("Resolving from internal proxy {}",ip);
+            try {
+                Exchange exc = Request.get("?wsdl").buildExchange();
+                exc.getDestinations().clear();
+                exc.getDestinations().add(urlString);
+                exc.setRule(proxy);
+                InternalServiceRoutingInterceptor isri = new InternalServiceRoutingInterceptor();
+                isri.init(router);
+                isri.handleRequest(exc);
+            } catch (Exception e) {
+                log.debug(e.getMessage(),e);
+                throw new RuntimeException(e);
+            }
+        }
 
         if (!(proxy instanceof AbstractProxy p))
-            throw new RuntimeException("Rule with name '" + ruleName + "' is not of type AbstractProxy");
-        FlowController interceptorFlowController = new FlowController();
+            throw new RuntimeException("Rule with name '" + proxyName + "' is not of type AbstractProxy");
         try {
-            String pathAndQuery = "/" + url.substring(8).split("/", 2)[1];
+            String pathAndQuery = getPathAndQuery(uri); // url.substring(8).split("/", 2)[1];
             Exchange exchange = new Request.Builder().get(pathAndQuery).buildExchange();
             RuleMatchingInterceptor.assignRule(exchange, p);
             List<Interceptor> additionalInterceptors = new ArrayList<>();
@@ -65,11 +87,26 @@ public class RuleResolver implements SchemaResolver {
                 additionalInterceptors.add(httpClientInterceptor);
             }
 
-            interceptorFlowController.invokeRequestHandlers(exchange, Stream.concat(p.getInterceptors().stream(), additionalInterceptors.stream()).collect(Collectors.toList()));
+            additionalInterceptors.clear(); // TODO !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+            flowController.invokeRequestHandlers(exchange, Stream.concat(p.getInterceptors().stream(), additionalInterceptors.stream()).toList());
             return exchange.getResponse().getBodyAsStream();
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+    }
+
+    private static @NotNull String getPathAndQuery(URI uri) {
+        if (uri.getQuery().isEmpty())
+            return uri.getPath();
+        return uri.getPath() + "?" + uri.getQuery();
+    }
+
+    protected static String getRuleName(String url) {
+        URI uri = URI.create(url);
+        if (!uri.getScheme().equals("service"))
+            throw new RuntimeException("Not a service URL!");
+        return uri.getHost();
     }
 
     public URL toUrl(String scheme, String host, int port) {

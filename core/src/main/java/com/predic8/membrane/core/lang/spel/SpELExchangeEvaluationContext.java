@@ -28,8 +28,8 @@ import java.util.*;
 
 import static com.predic8.membrane.core.util.URLParamUtil.DuplicateKeyOrInvalidFormStrategy.*;
 
-public class ExchangeEvaluationContext extends StandardEvaluationContext {
-    private static final Logger log = LoggerFactory.getLogger(ExchangeEvaluationContext.class);
+public class SpELExchangeEvaluationContext extends StandardEvaluationContext {
+    private static final Logger log = LoggerFactory.getLogger(SpELExchangeEvaluationContext.class);
 
     private static  final ObjectMapper om = new ObjectMapper();
 
@@ -51,11 +51,11 @@ public class ExchangeEvaluationContext extends StandardEvaluationContext {
     private SpELMessageWrapper request;
     private SpELMessageWrapper response;
 
-    public ExchangeEvaluationContext(Exchange exc) {
+    public SpELExchangeEvaluationContext(Exchange exc) {
         this(exc, exc.getRequest());
     }
 
-    public ExchangeEvaluationContext(Exchange exchange, Message message) {
+    public SpELExchangeEvaluationContext(Exchange exchange, Message message) {
         super();
 
         this.message = message;
@@ -108,6 +108,10 @@ public class ExchangeEvaluationContext extends StandardEvaluationContext {
      */
     public SpELLablePropertyAware getHeader() {
         return headers;
+    }
+
+    public SpELLablePropertyAware getParam() {
+        return params;
     }
 
     public SpELLablePropertyAware getParams() {

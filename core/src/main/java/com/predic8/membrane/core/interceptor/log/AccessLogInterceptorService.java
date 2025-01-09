@@ -17,7 +17,7 @@ package com.predic8.membrane.core.interceptor.log;
 
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Message;
-import com.predic8.membrane.core.lang.spel.ExchangeEvaluationContext;
+import com.predic8.membrane.core.lang.spel.SpELExchangeEvaluationContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
@@ -155,7 +155,7 @@ public class AccessLogInterceptorService {
     private Function<AdditionalVariable, AbstractMap.SimpleEntry<String, String>> additionalPatternToMapEntry(Exchange exc) {
         return additionalPattern -> new AbstractMap.SimpleEntry<>(
                 additionalPattern.getName(),
-                safe(() ->  additionalPattern.getExpression().getValue(new ExchangeEvaluationContext(exc)),
+                safe(() ->  additionalPattern.getExpression().getValue(new SpELExchangeEvaluationContext(exc)),
                     additionalPattern.getDefaultValue()
                 )
         );

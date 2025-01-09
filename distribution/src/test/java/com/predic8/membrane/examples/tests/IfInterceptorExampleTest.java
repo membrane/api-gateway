@@ -13,21 +13,19 @@
    limitations under the License. */
 package com.predic8.membrane.examples.tests;
 
-import com.predic8.membrane.examples.util.AbstractSampleMembraneStartStopTestcase;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.Arguments;
-import org.junit.jupiter.params.provider.MethodSource;
+import com.predic8.membrane.examples.util.*;
+import io.restassured.response.*;
+import org.junit.jupiter.params.*;
+import org.junit.jupiter.params.provider.*;
 
-import java.io.ByteArrayOutputStream;
-import java.io.PrintStream;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.stream.Stream;
+import java.io.*;
+import java.util.*;
+import java.util.stream.*;
 
-import static io.restassured.RestAssured.given;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static io.restassured.RestAssured.*;
+import static org.junit.jupiter.api.Assertions.*;
 
-public class IfInterceptorTest extends AbstractSampleMembraneStartStopTestcase {
+public class IfInterceptorExampleTest extends AbstractSampleMembraneStartStopTestcase {
 
     @Override
     protected String getExampleDirName() {
@@ -47,12 +45,13 @@ public class IfInterceptorTest extends AbstractSampleMembraneStartStopTestcase {
         try {
             switch (method) {
                 case "GET":
-                    given()
+                ExtractableResponse<Response> r=    given()
                         .headers(parseHeader(headers))
                     .when()
                         .get("http://localhost:2000" + params)
                     .then()
-                        .statusCode(expectedStatus);
+                        .statusCode(expectedStatus)
+                        .extract();
                     break;
 
                 case "POST":
@@ -68,7 +67,6 @@ public class IfInterceptorTest extends AbstractSampleMembraneStartStopTestcase {
                 default:
                     throw new IllegalArgumentException("Unsupported method: " + method);
             }
-
             assertTrue(outContent.toString().contains(expectedOutput), "Expected output not found in console");
         } finally {
             System.setOut(originalOut);
@@ -94,5 +92,4 @@ public class IfInterceptorTest extends AbstractSampleMembraneStartStopTestcase {
         String[] parts = header.split(":", 2);
         return Map.of(parts[0], parts[1]);
     }
-
 }

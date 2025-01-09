@@ -21,6 +21,7 @@ import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.interceptor.rewrite.*;
 import com.predic8.membrane.core.interceptor.server.*;
 import com.predic8.membrane.core.interceptor.soap.*;
+import com.predic8.membrane.core.openapi.util.*;
 import com.predic8.membrane.core.resolver.*;
 import com.predic8.membrane.core.transport.http.client.*;
 import com.predic8.membrane.core.util.*;
@@ -38,12 +39,22 @@ import static com.predic8.membrane.core.Constants.*;
 
 /**
  * @description <p>
- * A SOAP proxy can be deployed on front of a SOAP Web Service. It conceals the server and offers the same
- * interface as the target server to its clients.
+ * A SOAP proxy automatically configures itself using a WSDL description. It reads the WSDL to extract:
+ *
+ * - The &lt;soap:address/&gt; for target, port, and path.
+ *
+ * The proxy sits in front of a SOAP Web Service, masking it while providing the same interface to clients
+ * as the target server. The proxy serves the WSDL to gateway clients, with the WSDL address pointing to the proxy
+ * instead of the backend. This ensures that client requests using the WSDL are routed through the API Gateway.
+ *
+ * Additionally, the SOAP proxy:
+ * - Can validate requests against the WSDL
+ * - Provides a simple service explorer
+ *
  * </p>
- * @explanation If the WSDL referenced by the <i>wsdl</i> attribute is not available at startup, the &lt;soapProxy&gt;
- * will become inactive. Through the admin console, reinitialization attempts can be triggered and, by
- * default, the {@link Router} also periodically triggers such attempts.
+ * @explanation If the WSDL specified by the <i>wsdl</i> attribute is unavailable at startup, the &lt;soapProxy&gt;
+ * becomes inactive. Reinitialization can be triggered via the admin console or automatically by the
+ * {@link Router}, which periodically attempts to restore the proxy.
  * @topic 2. Proxies
  */
 @MCElement(name = "soapProxy")
@@ -71,7 +82,6 @@ public class SOAPProxy extends AbstractServiceProxy {
         if (wsdl == null) {
             return;
         }
-
         resolverMap = router.getResolverMap();
         if (httpClientConfig != null) {
             HTTPSchemaResolver httpSR = new HTTPSchemaResolver(router.getHttpClientFactory());
@@ -79,28 +89,21 @@ public class SOAPProxy extends AbstractServiceProxy {
             resolverMap = resolverMap.clone();
             resolverMap.addSchemaResolver(httpSR);
         }
-
         configure();
         super.init();
     }
 
     protected void configure() {
-
         parseWSDL();
-        // remove previously added interceptors
+        // remove previously added interceptors TODO Why, What?
         for (; automaticallyAddedInterceptorCount > 0; automaticallyAddedInterceptorCount--)
             interceptors.removeFirst();
 
-
         // add interceptors (in reverse order) to position 0.
         addWebServiceExplorer();
-        boolean hasPublisher = addWSDLPublisher();
-        WSDLInterceptor wsdlInterceptor = getInterceptorOfType(WSDLInterceptor.class);
-        boolean hasRewriter = addWSDLInterceptor(wsdlInterceptor);
-
-        if (hasRewriter && !hasPublisher)
-            log.warn("A <soapProxy> contains a <wsdlRewriter>, but no <wsdlPublisher>. Probably you want to insert a <wsdlPublisher> just after the <wsdlRewriter>. (Or, if this is a valid use case, please notify us at " + PRODUCT_CONTACT_EMAIL + ".)");
-
+        addWSDLPublisherInterceptor();
+        addWSDLInterceptor();
+        renameMe();
         if (targetPath != null) {
             RewriteInterceptor ri = new RewriteInterceptor();
             ri.setMappings(Lists.newArrayList(new RewriteInterceptor.Mapping("^" + Pattern.quote(key.getPath()), Matcher.quoteReplacement(targetPath), "rewrite")));
@@ -112,17 +115,11 @@ public class SOAPProxy extends AbstractServiceProxy {
     void parseWSDL() {
         Definitions definitions = getWsdlParser().parse(getWsdlParserContext());
         Service service = getService(definitions);
-
         setProxyName(service, definitions);
-
         String location = getLocation(service);
-
         try {
-
             URL url = new URL(location);
-
             setTarget(url);
-
             if (key.getPath() == null) {
                 key.setUsePathPattern(true);
                 key.setPathRegExp(false);
@@ -137,9 +134,7 @@ public class SOAPProxy extends AbstractServiceProxy {
             if (location.startsWith("https")) {
                 target.setSslParser(new SSLParser());
             }
-
             ((ServiceProxyKey) key).setMethod("*"); // GET and POST are used for SOAP
-
         } catch (MalformedURLException e) {
             throw new IllegalArgumentException("WSDL endpoint location '" + location + "' is not an URL.", e);
         }
@@ -173,11 +168,13 @@ public class SOAPProxy extends AbstractServiceProxy {
         List<Service> services = definitions.getServices();
         if (services.size() == 1)
             return services.getFirst();
-
         if (serviceName == null) {
             throw new SOAPProxyMultipleServicesException(this, getServiceNames(services));
         }
+        return getServiceByName(services,serviceName);
+    }
 
+    private Service getServiceByName(List<Service> services, String serviceName) {
         return services.stream()
                 .filter(s -> s.getName().equals(serviceName))
                 .findFirst()
@@ -192,14 +189,19 @@ public class SOAPProxy extends AbstractServiceProxy {
 
     private void setTarget(URL url) {
         if (wsdl.startsWith("service:")) {
-            target.setUrl(wsdl.substring(0, wsdl.indexOf('/')));
-        } else {
-            target.setHost(url.getHost());
-            if (url.getPort() != -1)
-                target.setPort(url.getPort());
-            else
-                target.setPort(url.getDefaultPort());
+            try {
+                target.setUrl(UriUtil.getPathFromURL( router.getUriFactory(),wsdl)); // TODO
+            } catch (URISyntaxException e) {
+                throw new RuntimeException(e);
+            }
+            return;
         }
+        target.setHost(url.getHost());
+        target.setPort(getPort(url));
+    }
+
+    private int getPort(URL url) {
+        return url.getPort() != -1 ? url.getPort() : url.getDefaultPort();
     }
 
     private void setProxyName(Service service, Definitions definitions) {
@@ -248,21 +250,20 @@ public class SOAPProxy extends AbstractServiceProxy {
 
     private int automaticallyAddedInterceptorCount;
 
-
-
-    private boolean addWSDLInterceptor(WSDLInterceptor wsdlInterceptor) {
-        boolean hasRewriter = wsdlInterceptor != null;
-        if (!hasRewriter) {
-            wsdlInterceptor = new WSDLInterceptor();
+    private void addWSDLInterceptor() {
+        if (getWsdlInterceptor() == null) {
+            WSDLInterceptor wsdlInterceptor = new WSDLInterceptor();
             interceptors.addFirst(wsdlInterceptor);
             automaticallyAddedInterceptorCount++;
         }
-        renameMe(wsdlInterceptor);
-        return hasRewriter;
     }
 
-    private void renameMe(WSDLInterceptor wsdlInterceptor) {
+    private @Nullable WSDLInterceptor getWsdlInterceptor() {
+        return getInterceptorOfType(WSDLInterceptor.class);
+    }
 
+    private void renameMe() {
+        WSDLInterceptor wsdlInterceptor = getWsdlInterceptor();
         if (key.getPath() == null)
             return;
 
@@ -281,7 +282,6 @@ public class SOAPProxy extends AbstractServiceProxy {
             }
             return path2;
         });
-
     }
 
     private @NotNull String getReplacementName(String keyPath) {
@@ -301,19 +301,21 @@ public class SOAPProxy extends AbstractServiceProxy {
         automaticallyAddedInterceptorCount++;
     }
 
-    private boolean addWSDLPublisher() {
-        boolean hasPublisher = getInterceptorOfType(WSDLPublisherInterceptor.class) != null;
-        if (!hasPublisher) {
+    private void addWSDLPublisherInterceptor() {
+        if (!hasWSDLPublisherInterceptor()) {
             WSDLPublisherInterceptor wp = new WSDLPublisherInterceptor();
             wp.setWsdl(wsdl);
             interceptors.addFirst(wp);
             automaticallyAddedInterceptorCount++;
         }
-        return hasPublisher;
+    }
+
+    private boolean hasWSDLPublisherInterceptor() {
+        return getInterceptorOfType(WSDLPublisherInterceptor.class) != null;
     }
 
 
-
+    // TODO push up to AbstractServiceProxy?
     @SuppressWarnings("unchecked")
     private <T extends Interceptor> T getInterceptorOfType(Class<T> class1) {
         for (Interceptor i : interceptors)

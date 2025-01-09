@@ -13,7 +13,7 @@
    limitations under the License. */
 package com.predic8.membrane.core.lang.spel.functions;
 
-import com.predic8.membrane.core.lang.spel.ExchangeEvaluationContext;
+import com.predic8.membrane.core.lang.spel.SpELExchangeEvaluationContext;
 import org.springframework.core.convert.TypeDescriptor;
 import org.springframework.expression.EvaluationContext;
 import org.springframework.expression.TypedValue;
@@ -55,7 +55,7 @@ public class ReflectiveMethodHandler {
 
     private static ArrayList<TypeDescriptor> getParameterTypeDescriptors(List<TypeDescriptor> types) {
         return new ArrayList<>(types) {{
-            add(getTypeDescriptor(ExchangeEvaluationContext.class));
+            add(getTypeDescriptor(SpELExchangeEvaluationContext.class));
         }};
     }
 

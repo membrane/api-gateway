@@ -27,7 +27,6 @@ homeNotSet() {
   fi 
 }
 
-
 if  [ "$MEMBRANE_HOME" ]  
 	then homeSet
 	else homeNotSet

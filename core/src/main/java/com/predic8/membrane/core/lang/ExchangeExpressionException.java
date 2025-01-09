@@ -19,11 +19,22 @@ import java.util.*;
 
 public class ExchangeExpressionException extends RuntimeException {
 
-    private String expression;
-    private String localizedMessage;
-    private Map<String,Object> extensions = new HashMap<>();
+    private final String expression;
+    private final Map<String, Object> extensions = new HashMap<>();
 
-    public ExchangeExpressionException( String expression, Throwable cause) {
+    /**
+     * User provided message. Overrides the message from the exception
+     */
+    private String message;
+
+    private boolean statcktrace = true;
+
+    /*
+     * Body that cause the error
+     */
+    private String body;
+
+    public ExchangeExpressionException(String expression, Throwable cause) {
         super(cause);
         this.expression = expression;
     }
@@ -35,19 +46,20 @@ public class ExchangeExpressionException extends RuntimeException {
     public ProblemDetails provideDetails(ProblemDetails pd) {
         if (pd == null)
             pd = ProblemDetails.internal(true);
-        pd.extension("message", getMessage())
-                .extension("expression", expression)
-                .extension("localizedMessage", localizedMessage);
-        for (Map.Entry<String,Object> entry : extensions.entrySet()) {
+        if (message != null) {
+            pd.extension("message", message);
+        } else {
+            pd.extension("message", getMessage());
+        }
+        pd.extension("expression", expression)
+            .stacktrace(statcktrace);
+        for (Map.Entry<String, Object> entry : extensions.entrySet()) {
             pd.extension(entry.getKey(), entry.getValue());
         }
+        if (body != null)
+            pd.extension("body", body.length() > 1024 ? body.substring(0, 1024) : body);
         pd.exception(this);
         return pd;
-    }
-
-    public ExchangeExpressionException localizedMessage(String localizedMessage) {
-        this.localizedMessage = localizedMessage;
-        return this;
     }
 
     public ExchangeExpressionException extension(String key, Object value) {
@@ -62,6 +74,21 @@ public class ExchangeExpressionException extends RuntimeException {
 
     public ExchangeExpressionException column(String column) {
         extensions.put("column", column);
+        return this;
+    }
+
+    public ExchangeExpressionException message(String message) {
+        this.message = message;
+        return this;
+    }
+
+    public ExchangeExpressionException stacktrace(boolean stacktrace) {
+        this.statcktrace = stacktrace;
+        return this;
+    }
+
+    public ExchangeExpressionException body(String body) {
+        this.body = body;
         return this;
     }
 }

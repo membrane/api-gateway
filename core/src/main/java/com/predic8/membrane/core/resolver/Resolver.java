@@ -25,13 +25,13 @@ public interface Resolver {
 	 * Returns the InputStream for the requested URL.
 	 * @throws ResourceRetrievalException if the resource identified by the URL does not exist.
 	 */
-	public InputStream resolve(String url) throws ResourceRetrievalException;
+	InputStream resolve(String url) throws ResourceRetrievalException;
 
 	/**
 	 * Calls the consumer when the InputStream for the requested URL changes.
 	 * @throws ResourceRetrievalException if the resource identified by the URL does not exist.
 	 */
-	public void observeChange(String url, ExceptionThrowingConsumer<InputStream> consumer) throws ResourceRetrievalException;
+	void observeChange(String url, ExceptionThrowingConsumer<InputStream> consumer) throws ResourceRetrievalException;
 
 	/**
 	 * Returns the list of child resources of the resource identified by the URL.
@@ -41,7 +41,7 @@ public interface Resolver {
 	 * @throws FileNotFoundException if the resource identified by the URL does not exist.
 	 * @return null if the resolver does not support this functionality.
 	 */
-	public List<String> getChildren(String url) throws FileNotFoundException;
+	List<String> getChildren(String url) throws FileNotFoundException;
 
 	/**
 	 * Returns the modification date of the resource.
@@ -49,5 +49,5 @@ public interface Resolver {
 	 * @throws FileNotFoundException if the resource identified by the URL does not exist.
 	 * @return 0 if the resolver does not support this functionality.
 	 */
-	public long getTimestamp(String url) throws FileNotFoundException;
+	long getTimestamp(String url) throws FileNotFoundException;
 }
