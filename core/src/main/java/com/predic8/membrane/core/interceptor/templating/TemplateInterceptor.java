@@ -62,9 +62,11 @@ public class TemplateInterceptor extends StaticInterceptor {
         catch (TemplateExecutionException e) {
             log.warn("Groovy template error: {}",e.getMessage());
             exc.setResponse(ProblemDetails.gateway( router.isProduction())
+                    .extension("message",e.getLocalizedMessage())
                     .extension("line", e.getLineNumber()) // Has no getLocalizedMessage
-                    .detail(e.getMessage())
+                    .detail("Error during Groovy template rendering.")
                     .exception(e)
+                    .stacktrace(false)
                     .build());
             return ABORT;
         }

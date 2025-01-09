@@ -96,7 +96,7 @@ public class APIProxyKey extends ServiceProxyKey {
     private boolean testCondition(Exchange exc) {
         if (testExpr == null)
             return true;
-        return isTrue(testExpr.getValue(new ExchangeEvaluationContext(exc, exc.getRequest()), Boolean.class));
+        return isTrue(testExpr.getValue(new SpELExchangeEvaluationContext(exc, exc.getRequest()), Boolean.class));
     }
 
     private static boolean isTrue(Boolean result) {

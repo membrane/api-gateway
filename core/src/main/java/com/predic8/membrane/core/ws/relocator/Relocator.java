@@ -70,7 +70,6 @@ public class Relocator {
 					return fac.createAttribute(replace, value);
 				}
 				if (value.startsWith("http"))
-
 					return fac.createAttribute(replace, getNewLocation(value, protocol, host, port, contextPath));
 			}
 			return atr;
@@ -107,7 +106,6 @@ public class Relocator {
 
 	public void relocate(InputStreamReader isr) throws Exception {
 		XMLEventReader parser = XMLInputFactory.newInstance().createXMLEventReader(isr);
-
 		while (parser.hasNext()) {
 			writer.add(getEvent(parser));
 		}
@@ -136,10 +134,10 @@ public class Relocator {
 	}
 
 	private XMLEvent replace(XMLEvent event, String attribute) {
-		StartElement startElement = event.asStartElement();
-		return fac.createStartElement(startElement.getName(),
-				new ReplaceIterator(fac, attribute, startElement.getAttributes()),
-				startElement.getNamespaces());
+		StartElement start = event.asStartElement();
+		return fac.createStartElement(start.getName(),
+				new ReplaceIterator(fac, attribute, start.getAttributes()),
+				start.getNamespaces());
 	}
 
 	public boolean isWsdlFound() {

@@ -47,6 +47,15 @@ public class CallInterceptor extends AbstractLanguageInterceptor {
 
     @Override
     public Outcome handleRequest(Exchange exc) {
+       return handleInternal(exc);
+    }
+
+    @Override
+    public Outcome handleResponse(Exchange exc) {
+       return handleInternal(exc);
+    }
+
+    private Outcome handleInternal(Exchange exc) {
         if (url != null) {
             try {
                 exc.setDestinations(List.of(exchangeExpression.evaluate(exc, REQUEST, String.class)));
@@ -56,18 +65,21 @@ public class CallInterceptor extends AbstractLanguageInterceptor {
             }
         }
         log.debug("Calling {}",exc.getDestinations());
-        Outcome outcome = null;
         try {
-            outcome = hcInterceptor.handleRequest(exc);
+            Outcome outcome = hcInterceptor.handleRequest(exc);
+            if (outcome == ABORT) {
+                log.warn("Aborting. Error calling {}",exc.getDestinations());
+                return ABORT;
+            }
             exc.getRequest().setBodyContent(exc.getResponse().getBody().getContent()); // TODO Optimize?
             exc.getRequest().getHeader().setContentType(exc.getResponse().getHeader().getContentType());
             log.debug("Outcome of call {}",outcome);
+            return CONTINUE;
         } catch (Exception e) {
             ProblemDetails.internal(router.isProduction())
                     .detail("Internal call");
             return ABORT;
         }
-        return CONTINUE;
     }
 
     /**

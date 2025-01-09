@@ -62,7 +62,7 @@ public class JsonpathExchangeExpression extends AbstractExchangeExpression {
             return null;
         } catch (InvalidPathException ipe) {
             throw new ExchangeExpressionException(expression, ipe)
-                    .localizedMessage(ipe.getLocalizedMessage());
+                    .message(ipe.getLocalizedMessage());
         }
         catch (Exception e) {
             log.error("Error evaluating Jsonpath expression {}. Got message {}", expression , e);

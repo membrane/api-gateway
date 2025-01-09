@@ -72,6 +72,7 @@ public class XMLProtectionInterceptor extends AbstractInterceptor {
 	}
 
 	private void setFailResponse(Exchange exc) {
+		// TODO Problem Details
 		exc.setResponse(Response.badRequest().body("""
 				<error>
 				  <title>XML protection failed!</title>

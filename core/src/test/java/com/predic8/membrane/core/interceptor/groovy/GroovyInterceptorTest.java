@@ -23,6 +23,7 @@ import org.springframework.context.*;
 import java.util.*;
 
 import static com.predic8.membrane.core.http.MimeType.*;
+import static com.predic8.membrane.core.http.Response.ok;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -134,6 +135,8 @@ public class GroovyInterceptorTest {
 
 	@Test
 	void returnMap() throws Exception {
+		exc.setResponse(ok().build());
+
 		GroovyInterceptor i = new GroovyInterceptor() {{
 			src = "[id:7, name: 'Roller', desc: 'äöüÄÖÜ']";
 		}};
@@ -179,6 +182,7 @@ public class GroovyInterceptorTest {
 
 	@Test
 	void returnString() throws Exception {
+		exc.setResponse(ok().build());
 		GroovyInterceptor i = new GroovyInterceptor() {{
 			src = "'Some String'";
 		}};

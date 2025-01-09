@@ -25,7 +25,7 @@ import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.containsString;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-public class SampleSoapServiceTest extends AbstractSampleMembraneStartStopTestcase {
+public class SampleSoapServiceExampleTest extends AbstractSampleMembraneStartStopTestcase {
 
     @Override
     protected String getExampleDirName() {

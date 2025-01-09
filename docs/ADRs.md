@@ -39,4 +39,10 @@ e.g. setHeader should return in not production mode details about the error. But
 ## Internal Proxy?
 
 - <api name=""/> opens port 80 / Do we need internal 
+
+# setHeader returns null
+
+ <setHeader value="headers['unknown'] ...> should set null.
+
+ - Makes handling less easy if it is null
  

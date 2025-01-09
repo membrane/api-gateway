@@ -1,4 +1,4 @@
-/* Copyright 2013 predic8 GmbH, www.predic8.com
+/* Copyright 2025 predic8 GmbH, www.predic8.com
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -11,16 +11,24 @@
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
    See the License for the specific language governing permissions and
    limitations under the License. */
-
 package com.predic8.membrane.core.resolver;
 
-import java.util.List;
+import org.junit.jupiter.api.*;
 
-public interface SchemaResolver extends Resolver {
-	/**
-	 * @return The list of schemas this resolver can handle ('http', 'https').
-	 *         If the list contains null, this resolver will be used as the
-	 *         default resolver by its {@link ResolverMap}.
-	 */
-	List<String> getSchemas();
+import static org.junit.jupiter.api.Assertions.*;
+
+class RuleResolverTest {
+
+    @Test
+    void ruleName() {
+        assertEquals("foo", RuleResolver.getRuleName("service://foo"));
+        assertEquals("foo", RuleResolver.getRuleName("service://foo/b"));
+        assertEquals("foo", RuleResolver.getRuleName("service://foo/b/c"));
+    }
+
+    @Test
+    void invalidUrl() {
+        assertThrows( Exception.class, () -> RuleResolver.getRuleName("wrong://foo"));
+    }
+
 }

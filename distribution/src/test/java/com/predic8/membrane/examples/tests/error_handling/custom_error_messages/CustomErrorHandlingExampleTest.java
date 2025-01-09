@@ -1,4 +1,4 @@
-/* Copyright 2013 predic8 GmbH, www.predic8.com
+/* Copyright 2025 predic8 GmbH, www.predic8.com
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -11,17 +11,20 @@
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
    See the License for the specific language governing permissions and
    limitations under the License. */
-package com.predic8.contactservice;
+package com.predic8.membrane.examples.tests.error_handling.custom_error_messages;
 
-import jakarta.xml.ws.Endpoint;
+import com.predic8.membrane.examples.util.*;
+import org.junit.jupiter.api.*;
 
-import com.predic8.contactservice.v11.ContactService11;
-import com.predic8.contactservice.v20.ContactService20;
+public class CustomErrorHandlingExampleTest extends AbstractSampleMembraneStartStopTestcase {
 
-public class Launcher {
-    public static void main(String[] args) {
-          Endpoint.publish("http://localhost:8080/ContactService/v11", new ContactService11());
-          Endpoint.publish("http://localhost:8080/ContactService/v20", new ContactService20());
-          System.out.println("ContactService v11 and v20 up.");
+    @Override
+    protected String getExampleDirName() {
+        return "error-handling/custom-error-messages";
+    }
+
+    @Test
+    void caseA() {
+
     }
 }

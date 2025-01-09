@@ -81,6 +81,11 @@ public class IfInterceptor extends AbstractFlowInterceptor {
                     .component("if")
                     .buildAndSetResponse(exc);
             return ABORT;
+        } catch (NullPointerException npe) {
+            // Expression evaluated to null and can't be converted to boolean
+            // We assume that null is false
+            log.debug("Expression {} returned null and is therefore interpreted as false",test);
+            result = false;
         }
         if (log.isDebugEnabled())
             log.debug("Expression {} evaluated to {}.", test, result);

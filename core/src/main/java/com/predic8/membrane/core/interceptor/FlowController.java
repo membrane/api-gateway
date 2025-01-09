@@ -103,6 +103,8 @@ public class FlowController {
         boolean aborted = false;
         for (int i = pos - 1; i >= 0; i--) {
             Interceptor interceptor = interceptors.get(i);
+            if (!interceptor.handlesResponses())
+                continue;
             if (!aborted) {
                 if (interceptor.handleResponse(exchange) == ABORT) {
                     aborted = true;

@@ -210,6 +210,8 @@ public class SoapProxyInvocationTest {
                 .contentType(TEXT_XML)
                 .body("Envelope.Body.Fault.faultcode", equalTo("s11:Client"))
                 .body("Envelope.Body.Fault.faultstring", equalTo("Message validation failed!"));
+
+
     }
 
 }

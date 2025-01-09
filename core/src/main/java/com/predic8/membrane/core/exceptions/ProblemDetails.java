@@ -57,6 +57,11 @@ public class ProblemDetails {
     private final HashMap<String, Object> extensions = new LinkedHashMap<>();
     private Throwable exception;
 
+    /**
+     * Include stacktrace. If the stacktrace does not provide any details set this value to false
+     */
+    private boolean stacktrace = true;
+
     public static ProblemDetails user(boolean production) {
         return problemDetails("user", production).statusCode(400);
     }
@@ -130,6 +135,11 @@ public class ProblemDetails {
         return this;
     }
 
+    public ProblemDetails stacktrace(boolean stacktrace) {
+        this.stacktrace = stacktrace;
+        return this;
+    }
+
     public Response build() {
         return createContent(createMap(), null);
     }
@@ -155,13 +165,15 @@ public class ProblemDetails {
             log.warn("logKey={}\ntype={}\ntitle={}\n,detail={}\n,extension={},.", logKey, type, title, detail, extensionsMap);
 
             type = "internal";
-            title = "An internal error occurred.";
+            title = "An error occurred.";
             detail = "Details can be found in the Membrane log searching for key: %s.".formatted(logKey);
         } else {
             extensionsMap.putAll(extensions);
             if (exception != null) {
                 extensionsMap.put("message",exception.getMessage());
-                extensionsMap.put("stackTrace", getStackTrace());
+                if (stacktrace) {
+                    extensionsMap.put("stackTrace", getStackTrace());
+                }
             }
             extensionsMap.put("attention", """
                 Membrane is in development mode. For production set <router production="true"> to reduce details in error messages!""");
@@ -182,6 +194,7 @@ public class ProblemDetails {
         return root;
     }
 
+    @SuppressWarnings("StringConcatenationInLoop")
     private @NotNull String getStackTrace() {
         String stackTrace = "";
         for (StackTraceElement element : exception.getStackTrace()) {
