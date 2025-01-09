@@ -130,6 +130,13 @@
 			<artifactId>google-api-client</artifactId>
 		</dependency>
 
+		<dependency>
+			<groupId>org.postgresql</groupId>
+			<artifactId>postgresql</artifactId>
+			<version>42.6.0</version>
+		</dependency>
+
+
 		<!--
             Still needed for com.github.fge.jsonschema.library.format JSON Schema dependency.
             Can be deleted if a newer version of the JSON Schema lib will be migrated to Jakarta Mail.

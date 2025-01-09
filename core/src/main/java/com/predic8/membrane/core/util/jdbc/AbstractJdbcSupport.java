@@ -2,8 +2,6 @@ package com.predic8.membrane.core.util.jdbc;
 
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.core.Router;
-import com.predic8.membrane.core.interceptor.apikey.stores.ApiKeyStore;
-import com.predic8.membrane.core.interceptor.authentication.session.UserDataProvider;
 import com.predic8.membrane.core.util.ConfigurationException;
 
 import javax.sql.DataSource;

@@ -5,7 +5,9 @@ import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.util.jdbc.AbstractJdbcSupport;
 import org.jetbrains.annotations.NotNull;
+import org.postgresql.ds.PGSimpleDataSource;
 
+import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -13,6 +15,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 @MCElement(name = "databaseApiKeyStore", topLevel = false)
 public class DatabaseApiKeyStore extends AbstractJdbcSupport implements ApiKeyStore {
@@ -49,8 +52,9 @@ public class DatabaseApiKeyStore extends AbstractJdbcSupport implements ApiKeySt
     }
 
     private void checkApiKey(String apiKey, Connection connection) throws SQLException, UnauthorizedApiKeyException {
-        try (PreparedStatement stmt = connection.prepareStatement("SELECT * FROM %s WHERE key = ?".formatted(keyTable.getName()))) {
-            stmt.setString(1, apiKey);
+        String query = "SELECT * FROM %s WHERE key = ?".formatted(keyTable.getName());
+        try (PreparedStatement stmt = connection.prepareStatement(query)) {
+            stmt.setObject(1, UUID.fromString(apiKey));
             try (ResultSet rs = stmt.executeQuery()) {
                 if (!rs.next()) {
                     throw new UnauthorizedApiKeyException();
@@ -58,6 +62,7 @@ public class DatabaseApiKeyStore extends AbstractJdbcSupport implements ApiKeySt
             }
         }
     }
+
 
     @MCChildElement(order = 0)
     public void setKeyTable(KeyTable keyTable) {
