@@ -36,9 +36,9 @@ public class DatabaseApiKeyStore extends AbstractJdbcSupport implements ApiKeySt
     }
 
     private @NotNull Optional<List<String>> fetchScopes(String apiKey, Connection connection) throws SQLException {
-        try (PreparedStatement getScopesStmt = connection.prepareStatement("SELECT * FROM " + keyTable.getName() + "," + scopeTable.getName() + " WHERE key.id=key_id AND key.key = ?")) {
-            getScopesStmt.setString(1, apiKey);
-            try (ResultSet rs = getScopesStmt.executeQuery()) {
+        try (PreparedStatement stmt = connection.prepareStatement("SELECT * FROM %s,%s WHERE key.id=key_id AND key.key = ?".formatted(keyTable.getName(), scopeTable.getName()))) {
+            stmt.setString(1, apiKey);
+            try (ResultSet rs = stmt.executeQuery()) {
                 List<String> scopes = new ArrayList<>();
                 while (rs.next()) {
                     scopes.add(rs.getString("scope"));
@@ -49,9 +49,9 @@ public class DatabaseApiKeyStore extends AbstractJdbcSupport implements ApiKeySt
     }
 
     private void checkApiKey(String apiKey, Connection connection) throws SQLException, UnauthorizedApiKeyException {
-        try (PreparedStatement checkApiKeyStmt = connection.prepareStatement("SELECT * FROM " + keyTable.getName() + " WHERE key = ?")) {
-            checkApiKeyStmt.setString(1, apiKey);
-            try (ResultSet rs = checkApiKeyStmt.executeQuery()) {
+        try (PreparedStatement stmt = connection.prepareStatement("SELECT * FROM %s WHERE key = ?".formatted(keyTable.getName()))) {
+            stmt.setString(1, apiKey);
+            try (ResultSet rs = stmt.executeQuery()) {
                 if (!rs.next()) {
                     throw new UnauthorizedApiKeyException();
                 }
