@@ -47,9 +47,8 @@ public class RuleManagerTest {
 		forwardBlzPOST = new ServiceProxy(new ServiceProxyKey("localhost", "POST", ".*", 3015), "thomas-bayer.com", 80);
 		forwardBlzPOST.init(router);
 
-		internal = new InternalProxy() {{
-			name = "order";
-		}};
+		internal = new InternalProxy();
+		internal.setName("order");
 		internal.init(router);
 
 		manager.addProxyAndOpenPortIfNew(forwardBlz);

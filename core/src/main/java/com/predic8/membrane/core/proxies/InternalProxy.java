@@ -14,8 +14,8 @@
 package com.predic8.membrane.core.proxies;
 
 import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.util.*;
-import org.apache.commons.lang3.StringUtils;
 
 /**
  * @description <p>Internal proxy that can only be invoked by other proxies within the gateway. An internal
@@ -27,17 +27,14 @@ import org.apache.commons.lang3.StringUtils;
 public class InternalProxy extends AbstractServiceProxy implements NotPortOpeningProxy {
 
     public InternalProxy() {
-        key = new AbstractRuleKey(0,null) {
-            @Override
-            public String toString() {
-                return StringUtils.defaultIfEmpty(getPath(), "") + ":" + port;
-            }
-        };
+        key = new InternalProxyKey();
     }
 
     @Override
-    public void init() {
-        super.init();
+    public void init(Router router) throws Exception {
+        super.init(router);
+        ((InternalProxyKey)key).setServiceName(getName());
+
         if(key.getPort() != 0) {
             throw new ConfigurationException("""
                     Internal proxy with name %s was configured to open port %s. A internal proxy is never exposed to the outside. Configuration
