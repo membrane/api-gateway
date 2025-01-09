@@ -11,10 +11,10 @@
             <response>
                 <beautifier/>
                 <if test="not isXML()">
-                    <if test="statusCode >= 400"><!-- Case C.) -->
+                    <if test="statusCode >= 400">
                         <template contentType="application/xml"><![CDATA[
                             <error>
-                                <code>70000</code>
+                                <case>c</case>
                                 <statusCode>${statusCode}</statusCode>
                                 <message>Ordinary Error!</message>
                             </error>]]>
@@ -22,10 +22,10 @@
                     </if>
                 </if>
                 <if test="isXML()">
-                    <if test="//*[local-name() = 'Fault' and namespace-uri() = 'http://schemas.xmlsoap.org/soap/envelope/']" language="xpath"><!-- Case E.) -->
+                    <if test="//*[local-name() = 'Fault' and namespace-uri() = 'http://schemas.xmlsoap.org/soap/envelope/']" language="xpath">
                         <template contentType="application/xml"><![CDATA[
                             <error>
-                                <code>20000</code>
+                                <case>e</case>
                                 <statusCode>${statusCode}</statusCode>
                                 <message>SOAP Fault!</message>
                                 <fault>${property.faultstring}</fault>
@@ -33,11 +33,11 @@
                         </template>
                         <setProperty name="faultstring" value="${//faultstring}" language="xpath"/>
                     </if>
-                    <if test="statusCode >= 400"><!-- Case D.) -->
+                    <if test="statusCode >= 400">
                         <if test="/*[not(local-name() = 'Envelope')]" language="xpath">
                             <template contentType="application/xml"><![CDATA[
                                 <error>
-                                    <code>20000</code>
+                                    <case>d</case>
                                     <statusCode>${statusCode}</statusCode>
                                     <message>${property.description}!</message>
                                 </error>]]>
@@ -48,28 +48,26 @@
                 </if>
             </response>
             <abort>
-                <if test="statusCode == 502"><!-- Case G.) -->
+                <if test="statusCode == 502">
                     <template contentType="application/xml"><![CDATA[
                           <error>
-                            <code>10000</code>
+                            <case>g</case>
                             <message>Failed to establish backend connection!</message>
                           </error>]]>
                     </template>
                 </if>
-                <!-- Case A.) -->
                 <if test="header['X-Protection'] != null">
                     <template contentType="application/xml"><![CDATA[
                           <error>
-                            <code>40000</code>
+                            <case>a</case>
                             <message>"XML Protection: Invalid XML!"</message>
                         </error>]]>
                     </template>
                 </if>
-                <!-- Case B.) -->
                 <if test="header['X-Validation-Error-Source'] != null">
                     <template contentType="application/xml"><![CDATA[
                           <error>
-                            <code>30000</code>
+                            <case>b</case>
                             <message>WSDL validation of ${headers.getFirstValue('X-Validation-Error-Source')} failed!</message>
                         </error>]]>
                     </template>
