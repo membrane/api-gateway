@@ -1,19 +1,19 @@
-package com.predic8.membrane.core.interceptor.authentication.session;
+package com.predic8.membrane.core.util.jdbc;
 
+import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.core.Router;
+import com.predic8.membrane.core.interceptor.apikey.stores.ApiKeyStore;
+import com.predic8.membrane.core.interceptor.authentication.session.UserDataProvider;
 import com.predic8.membrane.core.util.ConfigurationException;
 
 import javax.sql.DataSource;
 import java.util.Map;
 
-public abstract class AbstractJdbcUserDataProvider implements UserDataProvider {
+public abstract class AbstractJdbcSupport {
 
     private DataSource datasource;
-    private String tableName;
     private Router router;
-    public abstract Map<String, String> verify(Map<String, String> postData);
 
-    @Override
     public void init(Router router) {
         this.router = router;
         getDatasourceIfNull();
@@ -28,7 +28,9 @@ public abstract class AbstractJdbcUserDataProvider implements UserDataProvider {
         DataSource[] datasources = beans.values().toArray(new DataSource[0]);
         if (datasources.length == 0) {
             datasource = datasources[0];
-        } else if (datasources.length > 1) {
+            return;
+        }
+        if (datasources.length > 1) {
             throw new ConfigurationException("""
                 More than one DataSource found in your Membrane configuration. Please specify the DataSource name explicitly.
                 Sample configuration:
@@ -38,16 +40,28 @@ public abstract class AbstractJdbcUserDataProvider implements UserDataProvider {
                     <spring:property name="username" value="yourUsername" />
                     <spring:property name="password" value="yourPassword" />
                 </spring:bean>
+                
+                 <router>
+                    <api port="yourPort" />
+                        <apiKey>
+                            <databaseApiKeyStore datasource="yourDataSource">
+                                <keyTable>key</keyTable>
+                                <scopeTable>scope</scopeTable>
+                            </databaseApiKeyStore>
+                        </apiKey>
+                    </api>
+                </router>
             """);
         } else
             throw new RuntimeException("No datasource found - specifiy a DataSource bean in your Membrane configuration");
     }
 
-    public DataSource getDatasource() {
-        return datasource;
-    }
-
+    @MCAttribute
     public void setDatasource(DataSource datasource) {
         this.datasource = datasource;
+    }
+
+    public DataSource getDatasource() {
+        return datasource;
     }
 }
