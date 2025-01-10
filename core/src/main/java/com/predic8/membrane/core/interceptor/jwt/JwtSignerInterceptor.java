@@ -12,6 +12,9 @@
  */
 package com.predic8.membrane.core.interceptor.jwt;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.exchange.Exchange;
@@ -32,11 +35,15 @@ import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.config.security.Blob;
 import com.predic8.membrane.core.interceptor.session.JwtSessionManager;
 
+import java.io.IOException;
+
 @MCElement(name = "jwtSigner")
 public class JwtSignerInterceptor extends AbstractInterceptor {
 
     private JwtSessionManager.Jwk jwk;
     private RsaJsonWebKey rsaJsonWebKey;
+
+    private final ObjectMapper om = new ObjectMapper();
 
     @Override
     public void init(Router router) throws Exception {
@@ -44,18 +51,18 @@ public class JwtSignerInterceptor extends AbstractInterceptor {
     }
 
     @Override
-    public Outcome handleRequest(Exchange exc) {
+    public Outcome handleRequest(Exchange exc) throws IOException {
        return handleInternal(exc.getRequest());
     }
 
     @Override
-    public Outcome handleResponse(Exchange exc) {
+    public Outcome handleResponse(Exchange exc) throws IOException {
         return handleInternal(exc.getResponse());
     }
 
-    private Outcome handleInternal(Message msg) {
+    private Outcome handleInternal(Message msg) throws IOException {
         JsonWebSignature jws = new JsonWebSignature();
-        jws.setPayload(msg.getBodyAsStringDecoded());
+        jws.setPayload(prepareJwtPayload(msg));
         jws.setKey(rsaJsonWebKey.getRsaPrivateKey());
         jws.setAlgorithmHeaderValue(AlgorithmIdentifiers.RSA_USING_SHA256);
         jws.setKeyIdHeaderValue(rsaJsonWebKey.getKeyId());
@@ -65,6 +72,14 @@ public class JwtSignerInterceptor extends AbstractInterceptor {
         } catch (JoseException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    private String prepareJwtPayload(Message msg) throws IOException {
+        ObjectNode jsonBody = (ObjectNode) om.readTree(msg.getBodyAsStream());
+        long epoch = System.currentTimeMillis();
+        jsonBody.put("iat", epoch);
+        jsonBody.put("exp", epoch + 300000);
+        return jsonBody.toString();
     }
 
     public JwtSessionManager.Jwk getJwk() {
