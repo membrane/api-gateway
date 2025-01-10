@@ -230,8 +230,8 @@ public class SecurityValidator {
             if (scheme1 instanceof ApiKeySecurityScheme apiKeySecurityScheme) {
                 schemeIsInRequest.set(true);
                 if (securityScheme.getName() != null) {
-                    if (!securityScheme.getName().equalsIgnoreCase(apiKeySecurityScheme.name)) {
-                        return Optional.of(new ValidationError(ctx, "Name of api-key is %s but should be %s".formatted(apiKeySecurityScheme.name, securityScheme.getName())));
+                    if (!securityScheme.getName().equalsIgnoreCase(apiKeySecurityScheme.parameterName)) {
+                        return Optional.of(new ValidationError(ctx, "Name of api-key is %s but should be %s".formatted(apiKeySecurityScheme.parameterName, securityScheme.getName())));
                     }
                 }
                 if (securityScheme.getIn() != null) {

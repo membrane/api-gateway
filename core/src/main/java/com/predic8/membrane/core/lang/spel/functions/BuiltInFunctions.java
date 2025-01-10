@@ -77,6 +77,11 @@ public class BuiltInFunctions {
         return getSchemeScopes(all(), ctx);
     }
 
+    /**
+     * @param securityScheme Name of the scheme like http, apiKey, oauth2. See: SecurityScheme.getName()
+     * @param ctx
+     * @return
+     */
     public static List<String> scopes(String securityScheme, SpELExchangeEvaluationContext ctx) {
         return getSchemeScopes(name(securityScheme), ctx);
     }
@@ -114,7 +119,7 @@ public class BuiltInFunctions {
     }
 
     private static Predicate<SecurityScheme> name(String name) {
-        return scheme -> scheme.getClass().getSimpleName().equals(name);
+        return scheme -> scheme.getName().equalsIgnoreCase(name);
     }
 
     public static boolean isXML(SpELExchangeEvaluationContext ctx) {

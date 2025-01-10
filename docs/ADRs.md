@@ -46,3 +46,8 @@ e.g. setHeader should return in not production mode details about the error. But
 
  - Makes handling less easy if it is null
  
+# Internal Property Names
+
+- Should start with "membrane."
+- All lowercase
+- See: SecuritySchemes
