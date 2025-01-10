@@ -22,7 +22,7 @@ import static io.restassured.RestAssured.*;
 import static org.hamcrest.Matchers.*;
 
 @Disabled("We need to replace BLZ Service")
-public class ProxiesXMLSoapTest extends AbstractSampleMembraneStartStopTestcase {
+public class ProxiesXMLSoapExampleTest extends AbstractSampleMembraneStartStopTestcase {
 
     @Override
     protected String getExampleDirName() {

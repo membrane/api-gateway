@@ -69,10 +69,12 @@
   - new Namespace e.g. https://membrane-api.io...
 - 2025
 - Check AdminConsole
-- Check that handlers define their flows
+- Check that interceptors define their flows
 - Proxy.init() and init(router) make it clear what to call! 
 - Test in proxies.xml internal with port
 - Look at ignored tests
+- Dependencies
+  - Log4J, where, what
 
 ## Done
 - Call plugin
@@ -90,6 +92,7 @@
 - ProblemDetails
   - Test for production mode filter
     - Return pd and check if answer contains pd.details ...
+
 
 ### Examples
 - Rename Tests to *.ExampleTest
