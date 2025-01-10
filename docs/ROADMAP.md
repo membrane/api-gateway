@@ -25,12 +25,13 @@
 - log, print or message that writes to log. 
 - Examples
   - soap/secured-wsdl
-    - Check if we offer the sampleSoapService at www.predic8.de
     - Rewrite the example to use it
     - Readme
     - ExampleTest
   - REST / JSON API Versioning test
     - like examples/versioning/soap-xslt but much simpler with json
+- JdbcUserDataProvider
+  - Migrate to PreparedStatement
 
 # Version 6.0.0
 
@@ -58,8 +59,6 @@
   
 ### Features
 
-- Call of internal should be possible
-
 
 ### Internal
 - XMLProtectionInterceptor.setFailResponse => Use ProblemDetails
@@ -69,13 +68,11 @@
 - proxies-2.xsd
   - new Namespace e.g. https://membrane-api.io...
 - 2025
-- ProblemDetails
-  - Test for production mode filter
-    - Return pd and check if answer contains pd.details ...
-  - Return pretty to user
-  - Should have right Content-Type
 - Check AdminConsole
 - Check that handlers define their flows
+- Proxy.init() and init(router) make it clear what to call! 
+- Test in proxies.xml internal with port
+- Look at ignored tests
 
 ## Done
 - Call plugin
@@ -90,11 +87,11 @@
 - UnitTests: Use PackageScan for more or all
 - Make <log headerOnly="false"/> clearer!
 - Inactive UnitTests enabled
-
+- ProblemDetails
+  - Test for production mode filter
+    - Return pd and check if answer contains pd.details ...
 
 ### Examples
-- Implement
-  - CustomErrorHandlingExampleTest
 - Rename Tests to *.ExampleTest
 - Move Examples
   - basic-xml-interceptor -> xml/basic-xml-interceptor
@@ -118,6 +115,8 @@
 - Wenn Exception/Abort passiert sofort Response mit Error setzen.
 
 - Should AbstractHttpHandler and Http2ExchangeHandler have a common interface?
+- What are nodeExceptions in Exchange? And nodeStatusCodes?
+- Do we need RuleExchangeListener in RuleManager?
 
 # Other
 
