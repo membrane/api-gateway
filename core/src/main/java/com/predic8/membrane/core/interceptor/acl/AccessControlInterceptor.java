@@ -100,6 +100,10 @@ public class AccessControlInterceptor extends AbstractInterceptor {
 		this.useXForwardedForAsClientAddr = useXForwardedForAsClientAddr;
 	}
 
+	public boolean isUseXForwardedForAsClientAddr() {
+		return useXForwardedForAsClientAddr;
+	}
+
 	/**
 	 * @description Location of the ACL file.
 	 * @example acl/acl.xml

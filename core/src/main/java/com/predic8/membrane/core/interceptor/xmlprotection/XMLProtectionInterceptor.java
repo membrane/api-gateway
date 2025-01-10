@@ -109,6 +109,10 @@ public class XMLProtectionInterceptor extends AbstractInterceptor {
 		this.maxAttributeCount = maxAttributeCount;
 	}
 
+	public int getMaxAttributeCount() {
+		return maxAttributeCount;
+	}
+
 	/**
 	 * @description If an incoming request exceeds this limit, it will be discarded.
 	 * @default 1000
@@ -118,6 +122,10 @@ public class XMLProtectionInterceptor extends AbstractInterceptor {
 		this.maxElementNameLength = maxElementNameLength;
 	}
 
+	public int getMaxElementNameLength() {
+		return maxElementNameLength;
+	}
+
 	/**
 	 * @description Whether to remove the DTD from incoming requests.
 	 * @default true
@@ -125,6 +133,10 @@ public class XMLProtectionInterceptor extends AbstractInterceptor {
 	@MCAttribute
 	public void setRemoveDTD(boolean removeDTD) {
 		this.removeDTD = removeDTD;
+	}
+
+	public boolean isRemoveDTD() {
+		return removeDTD;
 	}
 
 	@Override

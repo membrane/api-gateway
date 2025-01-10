@@ -32,6 +32,8 @@ import static org.hamcrest.MatcherAssert.*;
 import static org.xmlunit.matchers.CompareMatcher.*;
 
 /**
+ * TODO: Do we still need this test?
+ *
  * Tests {@link MCUtil#fromXML(Class, String)} and {@link MCUtil#toXML(Object)} on every
  * proxies.xml file found in the "examples" directory.
  * <p>
@@ -64,6 +66,7 @@ public class ConfigSerializationTest {
 			"validation", // throws error because openapi parser does not provide port information
 			"validation-simple", // throws error because openapi parser does not provide port information
 			"template", // template serialization fails
+			"internalproxy", // InternalProxyKey is not an AbstractProxyKey
 			"greasing"); // greaser interceptor has a child element of type List, this seems to confuse the parser
 
 	public static List<Object[]> getPorts() {
