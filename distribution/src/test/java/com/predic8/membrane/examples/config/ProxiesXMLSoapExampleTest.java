@@ -21,7 +21,6 @@ import static com.predic8.membrane.core.http.MimeType.*;
 import static io.restassured.RestAssured.*;
 import static org.hamcrest.Matchers.*;
 
-@Disabled("We need to replace BLZ Service")
 public class ProxiesXMLSoapExampleTest extends AbstractSampleMembraneStartStopTestcase {
 
     @Override
@@ -32,44 +31,41 @@ public class ProxiesXMLSoapExampleTest extends AbstractSampleMembraneStartStopTe
     @BeforeEach
     void startMembrane() throws Exception {
         process = new Process2.Builder().in(baseDir).script("service-proxy").parameters("-c conf/proxies-soap.xml").waitForMembrane().start();
-
-        // Dump HTTP
-        // RestAssured.filters(new RequestLoggingFilter(), new ResponseLoggingFilter());
     }
 
     @Test
     void getWebServicesExplorer2000() {
-        get(LOCALHOST_2000 + "/blz-service")
+        get(LOCALHOST_2000 + "/city-service")
         .then().assertThat()
             .statusCode(200)
             .contentType(TEXT_HTML)
-            .body("html.head.title",containsString("BLZService"));
+            .body("html.head.title",containsString("CityService"));
     }
 
     @Test
     void getWebServicesExplorer2001() {
-        get("http://localhost:2001/blz-service")
+        get("http://localhost:2001/city-service")
                 .then().assertThat()
                 .statusCode(200)
                 .contentType(TEXT_HTML)
-                .body("html.head.title",containsString("BLZService"));
+                .body("html.head.title",containsString("CityService"));
     }
 
     @Test
     void getWSDL2000() {
-        get("http://localhost:2000/blz-service?wsdl")
+        get("http://localhost:2000/city-service?wsdl")
                 .then().assertThat()
                 .statusCode(200)
                 .contentType(TEXT_XML)
-                .body("definitions.documentation.",containsString("BLZService"));
+                .body("definitions.service.@name", equalTo("CityService"));
     }
 
     @Test
     void getWSDL2001() {
-        get("http://localhost:2001/blz-service?wsdl")
+        get("http://localhost:2001/city-service?wsdl")
                 .then().assertThat()
                 .statusCode(200)
                 .contentType(TEXT_XML)
-                .body("definitions.documentation.",containsString("BLZService"));
+                .body("definitions.service.@name", equalTo("CityService"));
     }
 }
