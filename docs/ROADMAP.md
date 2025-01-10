@@ -85,6 +85,7 @@
   - JSONValidator
 
 ## Done
+- Proxy.init() and init(router) make it clear what to call!
 - Call plugin
 - Example Tests without unzipping for every test
 - Delete interceptor
