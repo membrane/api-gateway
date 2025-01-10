@@ -5,7 +5,7 @@
 					    http://membrane-soa.org/proxies/1/ http://membrane-soa.org/schemas/proxies-1.xsd">
 
     <spring:bean class="com.predic8.membrane.core.interceptor.apikey.stores.ApiKeyFileStore">
-        <spring:property name="location" value="./demo-keys.txt" />
+        <spring:property name="location" value="./keys.txt" />
     </spring:bean>
 
     <router>
@@ -14,23 +14,33 @@
             <apiKey required="true">
                 <queryParamExtractor name="api-key"/>
             </apiKey>
-            <response>
-                <jwtSigner>
-                    <jwk location="hello.jwk"/>
-                </jwtSigner>
+            <request>
+                <setProperty name="scopes" value="${scopes}"/>
                 <template>
                     {
-                        "scopes": "${property.scopes}",
-                        "aud": "order"
+                        "sub": "user@example.com",
+                        "aud": "order",
+                        "scope": "${property.scopes}"
                     }
                 </template>
-                <setProperty name="scopes" value="${scopes}"/>
-            </response>
-            <return />
+                <jwtSigner>
+                    <jwk location="key.json"/>
+                </jwtSigner>
+            </request>
+            <target url="service://validator" />
         </api>
 
-        <api port="2001" name="order">
-            <!-- validate, check scope  -->
+        <api port="2001" name="validator">
+            <request>
+                <setHeader name="Authorization" value="Bearer ${request.body.toString}" />
+                <jwtAuth expectedAud="order">
+                    <jwks>
+                        <jwk location="key.json" />
+                    </jwks>
+                </jwtAuth>
+            </request>
+            <template>${property.jwt.get("scope")}</template>
+            <return />
         </api>
 
     </router>

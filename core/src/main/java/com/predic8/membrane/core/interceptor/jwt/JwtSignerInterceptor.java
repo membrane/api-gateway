@@ -76,9 +76,9 @@ public class JwtSignerInterceptor extends AbstractInterceptor {
 
     private String prepareJwtPayload(Message msg) throws IOException {
         ObjectNode jsonBody = (ObjectNode) om.readTree(msg.getBodyAsStream());
-        long epoch = System.currentTimeMillis();
+        long epoch = System.currentTimeMillis() / 1000;
         jsonBody.put("iat", epoch);
-        jsonBody.put("exp", epoch + 300000);
+        jsonBody.put("exp", epoch + 300);
         return jsonBody.toString();
     }
 
