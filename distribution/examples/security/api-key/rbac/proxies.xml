@@ -23,6 +23,8 @@
                 <headerExtractor name="X-Key" />
             </apiKey>
 
+            <setProperty name="scopes" value="${scopes()}" />
+
             <if test="hasScope('admin')" language="SpEL">
                 <!-- Use target, see above -->
                 <template>
@@ -34,7 +36,10 @@
 
             <if test="hasScope({'finance','accounting'})" language="SpEL">
                 <!-- Use target, see above -->
-                <template>Only for finance or accounting!</template>
+                <template>
+                    Only for finance or accounting!
+                    Caller scopes: ${property.scopes}
+                </template>
                 <return />
             </if>
 
