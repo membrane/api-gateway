@@ -92,11 +92,6 @@ public class SpELExchangeEvaluationContext extends StandardEvaluationContext {
 
         // Enables Membrane functions in SpEL scripts like 'hasScopes("admin")'
         setMethodResolvers(List.of(new BuiltInFunctionResolver()));
-
-        if (exchange.getProperties().get(SECURITY_SCHEMES) != null) {
-            List<SecurityScheme> ss = (List<SecurityScheme>) exchange.getProperties().get(SECURITY_SCHEMES);
-            scopes = String.join(" ",  ss.get(0).getScopes());
-        }
     }
 
     public SpELLablePropertyAware getProperties() {
