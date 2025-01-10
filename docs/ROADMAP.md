@@ -6,7 +6,14 @@
   - Ideas
     - <target ../> inside <if>
 - Routing with if instead of switch and cbr
-- <if>...<else>
+- <choose>
+     <case test=""> // If this matches execute only nested
+        <..interceptors>
+     </case> 
+     <case test=""></case> // Only evaluate if first did not match
+     <case test=""></case>
+     <otherwise></otherwise>
+  </choose>
 
 # Version 6.1.0
 
