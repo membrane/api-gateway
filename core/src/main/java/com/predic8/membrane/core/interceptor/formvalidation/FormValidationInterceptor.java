@@ -123,7 +123,7 @@ public class FormValidationInterceptor extends AbstractInterceptor {
 
 	private void setErrorResponse(Exchange exc, Map<String, String> propMap, Field f) {
 		exc.setResponse(Response.badRequest(
-				"Parameter "+f.name+"="+propMap.get(f.name)+" didn't match "+f.regex+"").build());
+				"Parameter "+f.name+"="+propMap.get(f.name)+" didn't match "+f.regex).build());
 	}
 
 	private void logMappings() {

@@ -58,15 +58,13 @@ public class BasicAuthSecurityValidationTest {
         user.setPassword("secret");
         users.add(user);
         baInterceptor.setUsers(users);
-        baInterceptor.init(new Router());
+        baInterceptor.init(router);
     }
 
     @Test
     void noAuthHeader() throws Exception {
-
         Exchange exc = Request.get("/v1/foo").buildExchange();
         exc.setOriginalRequestUri("/v1/foo");
-
         assertEquals(ABORT, baInterceptor.handleRequest(exc));  // TODO Should we return RETURN instead. How is it in OAuth2?
     }
 

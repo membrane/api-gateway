@@ -13,19 +13,18 @@
 
 package com.predic8.membrane.core.interceptor.antivirus;
 
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.Router;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Response;
-import com.predic8.membrane.core.interceptor.AbstractInterceptor;
-import com.predic8.membrane.core.interceptor.Outcome;
-import fi.solita.clamav.ClamAVClient;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.interceptor.*;
+import fi.solita.clamav.*;
+import org.apache.commons.io.*;
+import org.slf4j.*;
 
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
+
+import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
+import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
 
 /**
  * @description Delegates virus checks to an external Virus Scanner.
@@ -51,17 +50,17 @@ public class ClamAntiVirusInterceptor extends AbstractInterceptor {
     }
 
     @Override
-    public void init(Router router) throws Exception {
-        super.init(router);
+    public void init() {
+        super.init();
         client = new ClamAVClient(getHost(), Integer.parseInt(getPort()));
-        log.info("Using clamav daemon on [" + getHost() + ":" + getPort() + "]");
+        log.info("Using clamav daemon on [{}:{}]",getHost(),getPort());
     }
 
     @Override
-    public Outcome handleResponse(Exchange exc) throws Exception {
+    public Outcome handleResponse(Exchange exc) {
         try {
             if (isNotMalicious(getHeaders(exc)) && isNotMalicious(getBody(exc)))
-                return Outcome.CONTINUE;
+                return CONTINUE;
         }catch(Exception ignored){
             // happens only when daemon is not available and then we also want a gateway timeout
         }
@@ -73,8 +72,9 @@ public class ClamAntiVirusInterceptor extends AbstractInterceptor {
     }
 
     private Outcome gatewayTimeout(Exchange exc) {
+        // PD!
         exc.setResponse(Response.badGateway("Could not reach clamav daemon on [" + getHost() + ":" + getPort() + "]").build());
-        return Outcome.RETURN;
+        return RETURN;
     }
 
     public boolean isNotMalicious(String str) throws IOException {
@@ -84,7 +84,7 @@ public class ClamAntiVirusInterceptor extends AbstractInterceptor {
     }
 
     private InputStream toInputStream(String str) {
-        return org.apache.commons.io.IOUtils.toInputStream(str);
+        return IOUtils.toInputStream(str);
     }
 
     private String getHeaders(Exchange exc) {

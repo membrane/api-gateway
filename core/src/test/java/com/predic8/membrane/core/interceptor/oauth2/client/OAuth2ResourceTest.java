@@ -49,7 +49,6 @@ public abstract class OAuth2ResourceTest {
     private final String serverHost = "localhost";
     private final int clientPort = 31337;
     private HttpRouter oauth2Resource;
-    private OAuth2Resource2Interceptor oAuth2Resource2Interceptor;
 
     private String getServerAddress() {
         return "http://" + serverHost + ":" + serverPort;
@@ -263,7 +262,6 @@ public abstract class OAuth2ResourceTest {
 
         ServiceProxy sp = new ServiceProxy(new ServiceProxyKey(serverPort), null, 99999);
 
-
         WellknownFile wkf = getWellknownFile();
         wkf.init(new HttpRouter());
 
@@ -330,7 +328,6 @@ public abstract class OAuth2ResourceTest {
         ServiceProxy sp = new ServiceProxy(new ServiceProxyKey(clientPort), null, 99999);
 
         OAuth2Resource2Interceptor oAuth2ResourceInterceptor = new OAuth2Resource2Interceptor();
-        this.oAuth2Resource2Interceptor = oAuth2ResourceInterceptor;
         configureSessionManager(oAuth2ResourceInterceptor);
         MembraneAuthorizationService auth = new MembraneAuthorizationService();
         auth.setSrc(getServerAddress());

@@ -19,7 +19,6 @@ import com.floreysoft.jmte.token.*;
 import com.google.common.cache.*;
 import com.google.common.collect.*;
 import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
@@ -47,6 +46,7 @@ import java.util.concurrent.*;
 import static com.predic8.membrane.core.Constants.*;
 import static com.predic8.membrane.core.http.Header.*;
 import static com.predic8.membrane.core.http.MimeType.*;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.REQUEST_RESPONSE_ABORT_FLOW;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.util.URLParamUtil.DuplicateKeyOrInvalidFormStrategy.*;
 import static java.nio.charset.StandardCharsets.*;
@@ -154,13 +154,16 @@ public class OAuth2ResourceInterceptor extends AbstractInterceptor {
     }
 
     @Override
-    public void init(Router router) throws Exception {
+    public void init() {
+        super.init();
         name = "OAuth 2 Client";
-        setFlow(Flow.Set.REQUEST_RESPONSE_ABORT_FLOW);
+        setFlow(REQUEST_RESPONSE_ABORT_FLOW);
 
-        super.init(router);
-
-        auth.init(router);
+        try {
+            auth.init(router);
+        } catch (Exception e) {
+            throw new ConfigurationException("Could not init Authentication Service in OAuth2ResourceInterceptor");
+        }
         statistics = new OAuth2Statistics();
         uriFactory = router.getUriFactory();
         if (sessionManager == null)
@@ -171,7 +174,11 @@ public class OAuth2ResourceInterceptor extends AbstractInterceptor {
         if (loginLocation != null) {
             wsi = new WebServerInterceptor();
             wsi.setDocBase(loginLocation);
-            router.getResolverMap().resolve(ResolverMap.combine(router.getBaseLocation(), wsi.getDocBase(), "./index.html")).close();
+            try {
+                router.getResolverMap().resolve(ResolverMap.combine(router.getBaseLocation(), wsi.getDocBase(), "./index.html")).close();
+            } catch (IOException e) {
+                throw new ConfigurationException("Could not resolve /index.html in OAuth2ResourceInterceptor");
+            }
             wsi.init(router);
         }
 

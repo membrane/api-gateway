@@ -15,11 +15,10 @@
 package com.predic8.membrane.core.interceptor.schemavalidation;
 
 import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.resolver.*;
 import com.predic8.membrane.core.proxies.*;
+import com.predic8.membrane.core.resolver.*;
 import com.predic8.membrane.core.util.*;
 import org.jetbrains.annotations.*;
 import org.slf4j.*;
@@ -62,12 +61,18 @@ public class ValidatorInterceptor extends AbstractInterceptor implements Applica
 	}
 
 	@Override
-	public void init() throws Exception {
-		validator = getMessageValidator();
-		validator.init();
-		name = validator.getName();
+	public void init() {
+		resourceResolver = router.getResolverMap();
+        try {
+			validator = getMessageValidator();
+            validator.init();
+        } catch (Exception e) {
+			log.error(e.getMessage(), e);
+            throw new ConfigurationException("Cannot create message validator.");
+        }
+        name = validator.getName();
 		if (skipFaults && wsdl == null)
-			throw new Exception("validator/@skipFaults only makes sense with validator/@wsdl");
+			throw new ConfigurationException("validator/@skipFaults only makes sense with validator/@wsdl");
 	}
 
 	private MessageValidator getMessageValidator() throws Exception {
@@ -209,11 +214,7 @@ public class ValidatorInterceptor extends AbstractInterceptor implements Applica
 		this.serviceName = serviceName;
 	}
 
-	@Override
-	public void init(Router router) throws Exception {
-		resourceResolver = router.getResolverMap();
-		super.init(router);
-	}
+
 
 	public void setResourceResolver(ResolverMap resourceResolver) {
 		this.resourceResolver = resourceResolver;

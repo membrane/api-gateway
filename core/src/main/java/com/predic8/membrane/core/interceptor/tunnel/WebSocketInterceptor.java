@@ -13,18 +13,18 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.tunnel;
 
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCChildElement;
-import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.Router;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.interceptor.AbstractInterceptor;
-import com.predic8.membrane.core.interceptor.Outcome;
-import com.predic8.membrane.core.transport.ws.WebSocketInterceptorInterface;
-import com.predic8.membrane.core.util.URLUtil;
+import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.transport.ws.*;
+import com.predic8.membrane.core.util.*;
+import org.slf4j.*;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.net.*;
+import java.util.*;
+
+import static com.predic8.membrane.core.exchange.Exchange.ALLOW_WEBSOCKET;
+import static java.lang.Boolean.TRUE;
 
 /**
  * @description Allow HTTP protocol upgrades to the <a
@@ -35,25 +35,33 @@ import java.util.List;
  */
 @MCElement(name = "webSocket")
 public class WebSocketInterceptor extends AbstractInterceptor {
+
+	protected static final Logger log = LoggerFactory.getLogger(WebSocketInterceptor.class);
+
 	private String url;
 	private String pathQuery;
 	private List<WebSocketInterceptorInterface> interceptors = new ArrayList<>();
 
 	@Override
-	public void init(Router router) throws Exception {
-		name = "WebSocket Interceptor";
-		this.router = router;
+	public void init() {
+		super.init();
+        try {
+            pathQuery = url == null ? null : URLUtil.getPathQuery(getRouter().getUriFactory(), url);
+        } catch (URISyntaxException e) {
+			log.error(e.getMessage(), e);
+            throw new ConfigurationException("Could not parse " + url);
+        }
+    }
+
+	@Override
+	public String getDisplayName() {
+		return "WebSocket Interceptor";
 	}
 
 	@Override
-	public void init() throws Exception {
-		pathQuery = url == null ? null : URLUtil.getPathQuery(getRouter().getUriFactory(), url);
-	}
-
-	@Override
-	public Outcome handleRequest(Exchange exc) throws Exception {
+	public Outcome handleRequest(Exchange exc) {
 		if ("websocket".equalsIgnoreCase(exc.getRequest().getHeader().getFirstValue("Upgrade"))) {
-			exc.setProperty(Exchange.ALLOW_WEBSOCKET, Boolean.TRUE);
+			exc.setProperty(ALLOW_WEBSOCKET, TRUE);
 			if (url != null) {
 				exc.getRequest().setUri(pathQuery);
 				exc.getDestinations().set(0, url);

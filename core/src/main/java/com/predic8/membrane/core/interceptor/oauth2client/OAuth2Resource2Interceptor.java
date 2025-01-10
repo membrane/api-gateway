@@ -15,7 +15,6 @@ package com.predic8.membrane.core.interceptor.oauth2client;
 
 import com.fasterxml.jackson.databind.*;
 import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.exchange.snapshots.*;
 import com.predic8.membrane.core.http.*;
@@ -75,22 +74,20 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
     private boolean onlyRefreshToken = false;
 
     @Override
-    public void init() throws Exception {
+    public void init() {
         super.init();
+        name = "OAuth 2 Client";
+        setFlow(Flow.Set.REQUEST_RESPONSE_ABORT_FLOW);
 
         if (originalExchangeStore == null) {
             originalExchangeStore = new CookieOriginialExchangeStore();
         }
-    }
 
-    @Override
-    public void init(Router router) throws Exception {
-        name = "OAuth 2 Client";
-        setFlow(Flow.Set.REQUEST_RESPONSE_ABORT_FLOW);
-
-        super.init(router);
-
-        auth.init(router);
+        try {
+            auth.init(router);
+        } catch (Exception e) {
+            throw new ConfigurationException("Could not init auth in OAuth2Resource2Interceptor");
+        }
         statistics = new OAuth2Statistics();
         uriFactory = router.getUriFactory();
 
@@ -98,9 +95,12 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
         accessTokenRevalidator.init(auth, statistics);
         accessTokenRefresher.init(auth, onlyRefreshToken);
         sessionAuthorizer.init(auth, router, statistics);
+
         oAuth2CallbackRequestHandler.init(uriFactory, auth, originalExchangeStore, accessTokenRevalidator,
                 sessionAuthorizer, publicUrlManager, callbackPath, onlyRefreshToken);
         tokenAuthenticator.init(sessionAuthorizer, statistics, accessTokenRevalidator, auth);
+
+
     }
 
     @Override

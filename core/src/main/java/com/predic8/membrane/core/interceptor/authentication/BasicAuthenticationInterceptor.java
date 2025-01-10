@@ -16,7 +16,6 @@ package com.predic8.membrane.core.interceptor.authentication;
 
 import com.google.common.collect.*;
 import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.interceptor.*;
@@ -26,7 +25,7 @@ import com.predic8.membrane.core.util.*;
 
 import java.util.*;
 
-import static com.predic8.membrane.core.Constants.PRODUCT_NAME;
+import static com.predic8.membrane.core.Constants.*;
 import static com.predic8.membrane.core.exchange.Exchange.*;
 import static com.predic8.membrane.core.http.Header.*;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.*;
@@ -129,7 +128,8 @@ public class BasicAuthenticationInterceptor extends AbstractInterceptor {
 	}
 
 	@Override
-	public void init(Router router) {
+	public void init() {
+		super.init();
 		//to not alter the interface of "BasicAuthenticationInterceptor" in the config file the "name" attribute is renamed to "username" in code
 		if (userDataProvider instanceof StaticUserDataProvider)
 			for(User user : getUsers()){

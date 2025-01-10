@@ -47,7 +47,6 @@ public class AbstractInterceptor implements Interceptor {
 	}
 
 	public void handleAbort(Exchange exchange) {
-		// do nothing
 	}
 
 	public String getDisplayName() {
@@ -99,11 +98,9 @@ public class AbstractInterceptor implements Interceptor {
 	/**
 	 * Called after parsing is complete and this has been added to the object tree (whose root is Router).
 	 */
-	public void init() throws Exception {
-		// do nothing here - override in subclasses.
-	}
+	public void init() {}
 
-	public void init(Router router) throws Exception {
+    public final void init(Router router) {
 		this.router = router;
 		init();
 	}

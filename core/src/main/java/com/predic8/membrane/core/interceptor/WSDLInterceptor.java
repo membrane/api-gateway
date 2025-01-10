@@ -15,7 +15,6 @@
 package com.predic8.membrane.core.interceptor;
 
 import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.transport.http.*;
@@ -55,8 +54,8 @@ public class WSDLInterceptor extends RelocatingInterceptor {
     }
 
     @Override
-    public void init(Router router) throws Exception {
-        super.init(router);
+    public void init() {
+        super.init();
         hc = router.getHttpClientFactory().createClient(null);
     }
 

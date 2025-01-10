@@ -91,5 +91,5 @@ public interface Interceptor {
      */
 	String getHelpId();
 
-	void init(Router router) throws Exception;
+	void init(Router router);
 }

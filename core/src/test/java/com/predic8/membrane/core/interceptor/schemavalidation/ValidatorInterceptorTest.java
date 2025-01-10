@@ -14,12 +14,14 @@
 
 package com.predic8.membrane.core.interceptor.schemavalidation;
 
+import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.resolver.*;
 import com.predic8.membrane.core.util.*;
 import org.apache.commons.io.*;
+import org.jetbrains.annotations.*;
 import org.junit.jupiter.api.*;
 
 import java.io.*;
@@ -46,7 +48,7 @@ public class ValidatorInterceptorTest {
 	public static final String E_MAIL_SERVICE_WSDL = "classpath:/validation/XWebEmailValidation.wsdl.xml";
 
 	@BeforeEach
-	public void setUp() throws Exception {
+	public void setUp() {
 		requestTB = MessageUtil.getPostRequest("http://thomas-bayer.com");
 		requestXService = MessageUtil.getPostRequest("http://ws.xwebservices.com");
 		exc = new Exchange(null);
@@ -137,20 +139,23 @@ public class ValidatorInterceptorTest {
 		return IOUtils.toByteArray(requireNonNull(this.getClass().getResourceAsStream(fileName)));
 	}
 
-	private ValidatorInterceptor createSchemaValidatorInterceptor(String schema) throws Exception {
-		ValidatorInterceptor interceptor = new ValidatorInterceptor();
-		interceptor.setResourceResolver(new ResolverMap());
+	private ValidatorInterceptor createSchemaValidatorInterceptor(String schema) {
+		ValidatorInterceptor interceptor = createValidatorInterceptor();
 		interceptor.setSchema(schema);
-		interceptor.init();
+		interceptor.init(new Router());
 		return interceptor;
 	}
 
-	private ValidatorInterceptor createValidatorInterceptor(String wsdl) throws Exception {
+	private ValidatorInterceptor createValidatorInterceptor(String wsdl) {
+		ValidatorInterceptor interceptor = createValidatorInterceptor();
+		interceptor.setWsdl(wsdl);
+		interceptor.init(new Router());
+		return interceptor;
+	}
+
+	private static @NotNull ValidatorInterceptor createValidatorInterceptor() {
 		ValidatorInterceptor interceptor = new ValidatorInterceptor();
 		interceptor.setResourceResolver(new ResolverMap());
-		interceptor.setWsdl(wsdl);
-		interceptor.init();
 		return interceptor;
 	}
-
 }

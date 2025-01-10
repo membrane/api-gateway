@@ -14,41 +14,27 @@
 package com.predic8.membrane.core.interceptor.authentication.xen;
 
 import com.bornium.security.oauth2openid.Constants;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Lists;
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCChildElement;
-import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.annot.MCTextContent;
-import com.predic8.membrane.core.Router;
-import com.predic8.membrane.core.config.security.Blob;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.interceptor.AbstractInterceptor;
-import com.predic8.membrane.core.interceptor.Outcome;
-import com.predic8.membrane.core.interceptor.authentication.session.UserDataProvider;
-import org.jose4j.json.JsonUtil;
-import org.jose4j.jwk.JsonWebKey;
-import org.jose4j.jwk.RsaJsonWebKey;
-import org.jose4j.jwk.RsaJwkGenerator;
-import org.jose4j.jws.AlgorithmIdentifiers;
-import org.jose4j.jws.JsonWebSignature;
-import org.jose4j.jwt.JwtClaims;
-import org.jose4j.jwt.MalformedClaimException;
-import org.jose4j.jwt.NumericDate;
-import org.jose4j.jwt.consumer.InvalidJwtException;
-import org.jose4j.jwt.consumer.JwtConsumer;
-import org.jose4j.jwt.consumer.JwtConsumerBuilder;
-import org.jose4j.keys.resolvers.JwksVerificationKeyResolver;
-import org.jose4j.lang.JoseException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import com.predic8.membrane.annot.Required;
+import com.google.common.collect.*;
+import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.config.security.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.interceptor.authentication.session.*;
+import com.predic8.membrane.core.util.*;
+import org.jose4j.json.*;
+import org.jose4j.jwk.*;
+import org.jose4j.jws.*;
+import org.jose4j.jwt.*;
+import org.jose4j.jwt.consumer.*;
+import org.jose4j.keys.resolvers.*;
+import org.jose4j.lang.*;
+import org.slf4j.*;
 
-import java.math.BigInteger;
-import java.security.SecureRandom;
-import java.util.Map;
-import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
+import java.math.*;
+import java.security.*;
+import java.util.*;
+import java.util.concurrent.*;
 
 @MCElement(name = "xenAuthentication")
 public class XenAuthenticationInterceptor extends AbstractInterceptor {
@@ -61,10 +47,14 @@ public class XenAuthenticationInterceptor extends AbstractInterceptor {
     private XenSessionManager sessionManager;
 
     @Override
-    public void init(Router router) throws Exception {
-        super.init(router);
+    public void init() {
+        super.init();
         userDataProvider.init(router);
-        sessionManager.init(router);
+        try {
+            sessionManager.init(router);
+        } catch (Exception e) {
+            throw new ConfigurationException("Could not generate session manager " + e);
+        }
     }
 
     @Override
@@ -118,8 +108,8 @@ public class XenAuthenticationInterceptor extends AbstractInterceptor {
 
     @MCElement(name = "inMemorySessionManager", topLevel = false)
     public static class InMemorySessionManager implements XenSessionManager {
-        private Map<String, String> ourSessionIds = new ConcurrentHashMap<>();
-        private Map<String, String> xenSessionIds = new ConcurrentHashMap<>();
+        private final Map<String, String> ourSessionIds = new ConcurrentHashMap<>();
+        private final Map<String, String> xenSessionIds = new ConcurrentHashMap<>();
 
         public void init(Router router) throws Exception {
         }

@@ -17,7 +17,6 @@ package com.predic8.membrane.core.interceptor.schemavalidation;
 import com.fasterxml.jackson.core.*;
 import com.fasterxml.jackson.databind.*;
 import com.github.fge.jackson.*;
-import com.github.fge.jsonschema.core.exceptions.*;
 import com.github.fge.jsonschema.core.report.*;
 import com.github.fge.jsonschema.main.*;
 import com.predic8.membrane.core.exchange.*;
@@ -25,15 +24,20 @@ import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.interceptor.schemavalidation.ValidatorInterceptor.*;
 import com.predic8.membrane.core.resolver.*;
+import com.predic8.membrane.core.util.*;
+import org.slf4j.*;
 
 import java.io.*;
 import java.nio.charset.*;
 import java.util.*;
 import java.util.concurrent.atomic.*;
 
+import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 import static java.nio.charset.StandardCharsets.*;
 
 public class JSONValidator extends AbstractMessageValidator {
+
+	private static final Logger log = LoggerFactory.getLogger(JSONValidator.class);
 
 	private JsonSchema schema;
 	private final ResolverMap resourceResolver;
@@ -43,7 +47,7 @@ public class JSONValidator extends AbstractMessageValidator {
 	private final AtomicLong valid = new AtomicLong();
 	private final AtomicLong invalid = new AtomicLong();
 
-	public JSONValidator(ResolverMap resourceResolver, String jsonSchema, ValidatorInterceptor.FailureHandler failureHandler) throws IOException {
+	public JSONValidator(ResolverMap resourceResolver, String jsonSchema, ValidatorInterceptor.FailureHandler failureHandler) {
 		this.resourceResolver = resourceResolver;
 		this.jsonSchema = jsonSchema;
 		this.failureHandler = failureHandler;
@@ -55,7 +59,8 @@ public class JSONValidator extends AbstractMessageValidator {
 	}
 
 	@Override
-	public void init() throws IOException {
+	public void init() {
+		super.init();
 		createValidators();
 	}
 
@@ -94,7 +99,7 @@ public class JSONValidator extends AbstractMessageValidator {
 			}
 			exc.setProperty("error", message.toString());
 			invalid.incrementAndGet();
-			return Outcome.ABORT;
+			return ABORT;
 		}
 
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
@@ -121,17 +126,18 @@ public class JSONValidator extends AbstractMessageValidator {
 		}
 
 		invalid.incrementAndGet();
-		return Outcome.ABORT;
+		return ABORT;
 	}
 
 
-	private void createValidators() throws IOException {
+	private void createValidators() {
 		JsonSchemaFactory factory = JsonSchemaFactory.byDefault();
-		JsonNode schemaNode = JsonLoader.fromReader(new InputStreamReader(resourceResolver.resolve(jsonSchema)));
 		try {
+			JsonNode schemaNode = JsonLoader.fromReader(new InputStreamReader(resourceResolver.resolve(jsonSchema)));
 			schema = factory.getJsonSchema(schemaNode);
-		} catch (ProcessingException e) {
-			throw new IOException(e);
+		} catch (Exception e) {
+			log.error(e.getMessage(), e);
+			throw new ConfigurationException("Cannot create JSON Schema Validator for Schema: " + jsonSchema);
 		}
 	}
 

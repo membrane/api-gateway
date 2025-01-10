@@ -13,20 +13,14 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.oauth2client;
 
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCChildElement;
-import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.annot.Required;
-import com.predic8.membrane.core.Router;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Header;
-import com.predic8.membrane.core.interceptor.AbstractInterceptor;
-import com.predic8.membrane.core.interceptor.Outcome;
-import com.predic8.membrane.core.interceptor.jwt.Jwks;
-import com.predic8.membrane.core.interceptor.jwt.JwtAuthInterceptor;
+import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.interceptor.jwt.*;
+import com.predic8.membrane.core.util.*;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 import static com.predic8.membrane.core.http.Header.*;
 import static com.predic8.membrane.core.interceptor.oauth2client.OAuth2Resource2Interceptor.*;
@@ -42,13 +36,15 @@ public class RequireAuth extends AbstractInterceptor {
     private String scope = null;
 
     @Override
-    public void init(Router router) throws Exception {
-        super.init(router);
-
+    public void init() {
         var jwks = new Jwks();
         jwks.setJwks(new ArrayList<>());
         // TODO init dependency
-        jwks.setJwksUris(oauth2.getAuthService().getJwksEndpoint());
+        try {
+            jwks.setJwksUris(oauth2.getAuthService().getJwksEndpoint());
+        } catch (Exception e) {
+            throw new ConfigurationException("Could not set jwks Uris");
+        }
         jwks.setAuthorizationService(oauth2.getAuthService());
 
 

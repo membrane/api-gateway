@@ -24,6 +24,7 @@ import com.predic8.membrane.core.interceptor.WSDLInterceptor;
 import com.predic8.membrane.core.proxies.AbstractServiceProxy;
 import com.predic8.membrane.core.proxies.Proxy;
 import com.predic8.membrane.core.util.*;
+import org.jetbrains.annotations.*;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
@@ -32,8 +33,7 @@ import org.xml.sax.SAXParseException;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
-import java.net.MalformedURLException;
-import java.net.URL;
+import java.net.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -65,8 +65,7 @@ public class TestServiceInterceptor extends AbstractInterceptor {
 	}
 
 	@Override
-	public void init(final Router router) throws Exception {
-		super.init(router);
+	public void init() {
 		wi.init(router);
 
 		Proxy r = router.getParentProxy(this);
@@ -74,9 +73,9 @@ public class TestServiceInterceptor extends AbstractInterceptor {
 			final Path path = ((AbstractServiceProxy) r).getPath();
 			if (path != null) {
 				if (path.isRegExp())
-					throw new Exception("<testService> may not be used together with <path isRegExp=\"true\">.");
+					throw new ConfigurationException("<testService> may not be used together with <path isRegExp=\"true\">.");
 				final String keyPath = path.getValue();
-				final String name = URLUtil.getName(router.getUriFactory(), keyPath);
+				final String name = getName(router, keyPath);
 				wi.setPathRewriter(path2 -> {
 					try {
 						if (path2.contains("://")) {
@@ -94,6 +93,14 @@ public class TestServiceInterceptor extends AbstractInterceptor {
 		}
 
 	}
+
+	private static @NotNull String getName(Router router, String keyPath) {
+        try {
+            return URLUtil.getName(router.getUriFactory(), keyPath);
+        } catch (URISyntaxException e) {
+            throw new ConfigurationException("Could not get name from " + keyPath);
+        }
+    }
 
 	@Override
 	public Outcome handleRequest(Exchange exc) throws Exception {

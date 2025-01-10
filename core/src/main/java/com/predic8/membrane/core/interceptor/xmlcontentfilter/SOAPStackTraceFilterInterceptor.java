@@ -22,6 +22,7 @@ import org.slf4j.*;
 import javax.xml.xpath.*;
 
 import static com.predic8.membrane.core.Constants.*;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.REQUEST_RESPONSE_ABORT_FLOW;
 import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 
@@ -43,18 +44,20 @@ import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 public class SOAPStackTraceFilterInterceptor extends AbstractInterceptor {
 
 	private static final Logger LOG = LoggerFactory.getLogger(SOAPStackTraceFilterInterceptor.class);
-	private static final String XPATH = ""
-			+ "//*[local-name()='Fault' and namespace-uri()='" + SOAP11_NS + "']//*[local-name()='stackTrace' or local-name()='stacktrace'] | "
-			+ "//*[local-name()='Fault' and namespace-uri()='" + SOAP11_NS + "']//*[local-name()='faultstring' and contains(., '.java:')] | "
-			+ "//*[local-name()='Fault' and namespace-uri()='" + SOAP11_NS + "']//*[local-name()='exception' and namespace-uri()='http://jax-ws.dev.java.net/']/message |"
-			+ "//*[local-name()='Fault' and namespace-uri()='" + SOAP11_NS + "']//detail/Exception";
+	private static final String XPATH =
+			"""
+			//*[local-name()='Fault' and namespace-uri()='%s']//*[local-name()='stackTrace' or local-name()='stacktrace'] | 
+			//*[local-name()='Fault' and namespace-uri()='%s']//*[local-name()='faultstring' and contains(., '.java:')] | 
+			//*[local-name()='Fault' and namespace-uri()='%s']//*[local-name()='exception' and namespace-uri()='http://jax-ws.dev.java.net/']/message |
+			//*[local-name()='Fault' and namespace-uri()='%s']//detail/Exception
+			""".formatted(SOAP11_NS,SOAP11_NS,SOAP11_NS,SOAP11_NS);
 
 	private final XMLContentFilter xmlContentFilter;
 
 	public SOAPStackTraceFilterInterceptor() throws XPathExpressionException {
 		this.xmlContentFilter = new XMLContentFilter(XPATH);
 		setDisplayName("SOAP StackTrace Filter");
-		setFlow(Flow.Set.REQUEST_RESPONSE_ABORT_FLOW);
+		setFlow(REQUEST_RESPONSE_ABORT_FLOW);
 	}
 
 	@Override

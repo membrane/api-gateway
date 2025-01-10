@@ -68,8 +68,8 @@ public class APIProxy extends ServiceProxy {
 
     @Override
     public void init() {
-        key = new APIProxyKey(key, test, !specs.isEmpty());
         super.init();
+        key = new APIProxyKey(key, test, !specs.isEmpty());
         initOpenAPI();
     }
 

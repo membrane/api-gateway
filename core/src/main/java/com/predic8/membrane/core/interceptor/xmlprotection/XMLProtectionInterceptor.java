@@ -129,8 +129,7 @@ public class XMLProtectionInterceptor extends AbstractInterceptor {
 
 	@Override
 	public String getShortDescription() {
-		return "Protects agains XML attacks.";
+		return "Protects against XML attacks.";
 	}
 
 }
-

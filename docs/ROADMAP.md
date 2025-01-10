@@ -80,6 +80,9 @@
 - Proxy.init() and init(router) make it clear what to call! 
 - Test in proxies.xml internal with port
 - Look at ignored tests
+- Interceptor init() and init(Router router)
+- ProblemDetails
+  - JSONValidator
 
 ## Done
 - Call plugin

@@ -14,16 +14,10 @@
 
 package com.predic8.membrane.core.interceptor;
 
-import com.predic8.membrane.annot.MCChildElement;
-import org.springframework.beans.BeansException;
-import com.predic8.membrane.annot.Required;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.ApplicationContextAware;
-
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.Router;
-import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.exchange.*;
+import org.springframework.beans.*;
+import org.springframework.context.*;
 
 @MCElement(name="interceptor")
 public class SpringInterceptor extends AbstractInterceptor implements ApplicationContextAware {
@@ -87,8 +81,8 @@ public class SpringInterceptor extends AbstractInterceptor implements Applicatio
 	}
 
 	@Override
-	public void init(Router router) throws Exception {
-		super.init(router);
+	public void init() {
+		super.init();
 		if (refid != null)
 			i = (Interceptor) ac.getBean(refid);
 		i.init(router);

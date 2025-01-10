@@ -115,7 +115,7 @@ public class AccessControlInterceptor extends AbstractInterceptor {
 	}
 
 	@Override
-	public void init() throws Exception {
+	public void init() {
 		accessControl = parse(file, router);
 	}
 

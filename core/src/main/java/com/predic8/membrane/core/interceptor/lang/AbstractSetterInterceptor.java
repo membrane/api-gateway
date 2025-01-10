@@ -15,15 +15,14 @@
 package com.predic8.membrane.core.interceptor.lang;
 
 import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.interceptor.*;
 import org.slf4j.*;
 
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
-import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
+import static com.predic8.membrane.core.interceptor.Outcome.*;
 
 public abstract class AbstractSetterInterceptor extends AbstractLanguageInterceptor {
 
@@ -35,8 +34,8 @@ public abstract class AbstractSetterInterceptor extends AbstractLanguageIntercep
     protected boolean ifAbsent;
 
     @Override
-    public void init(Router router) throws Exception {
-        super.init(router);
+    public void init() {
+        super.init();
         exchangeExpression = new TemplateExchangeExpression(router,language,expression);
     }
 

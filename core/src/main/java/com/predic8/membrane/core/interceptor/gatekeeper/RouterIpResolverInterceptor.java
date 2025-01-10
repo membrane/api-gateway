@@ -13,30 +13,21 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.gatekeeper;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.collect.ImmutableMap;
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCChildElement;
-import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.Router;
-import com.predic8.membrane.core.config.security.SSLParser;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Request;
-import com.predic8.membrane.core.http.Response;
-import com.predic8.membrane.core.interceptor.AbstractInterceptor;
-import com.predic8.membrane.core.interceptor.Outcome;
-import com.predic8.membrane.core.transport.http.HttpClient;
-import com.predic8.membrane.core.transport.http.HttpServerHandler;
-import com.predic8.membrane.core.transport.http.client.HttpClientConfiguration;
-import com.predic8.membrane.core.transport.ssl.SSLContext;
-import com.predic8.membrane.core.transport.ssl.StaticSSLContext;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.fasterxml.jackson.databind.*;
+import com.google.common.collect.*;
+import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.config.security.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.transport.http.*;
+import com.predic8.membrane.core.transport.http.client.*;
+import com.predic8.membrane.core.transport.ssl.*;
+import org.slf4j.*;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+
+import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 
 /**
  * Checks, whether the exchange's remoteIp is one of the routers.
@@ -51,7 +42,7 @@ public class RouterIpResolverInterceptor extends AbstractInterceptor {
     private final Logger LOG = LoggerFactory.getLogger(RouterIpResolverInterceptor.class);
 
     private List<String> routerIps = new ArrayList<>();
-    private ObjectMapper om = new ObjectMapper();
+    private final ObjectMapper om = new ObjectMapper();
     private HttpClientConfiguration httpClientConfiguration;
     private SSLParser sslParser;
     private HttpClient httpClient;
@@ -120,19 +111,18 @@ public class RouterIpResolverInterceptor extends AbstractInterceptor {
     }
 
     @Override
-    public void init(Router router) throws Exception {
-        super.init(router);
-
+    public void init() {
+        super.init();
         httpClient = router.getHttpClientFactory().createClient(httpClientConfiguration);
         if (sslParser != null)
             sslContext = new StaticSSLContext(sslParser, router.getResolverMap(), router.getBaseLocation());
     }
 
     @Override
-    public Outcome handleRequest(Exchange exc) throws Exception {
+    public Outcome handleRequest(Exchange exc) {
         String remoteIp = exc.getRemoteAddrIp();
         if (!routerIps.contains(remoteIp))
-            return Outcome.CONTINUE;
+            return CONTINUE;
 
         try {
             int port = ((HttpServerHandler) exc.getHandler()).getSourceSocket().getPort();
@@ -154,7 +144,7 @@ public class RouterIpResolverInterceptor extends AbstractInterceptor {
                 return errorOutcome;
             }
 
-            return Outcome.CONTINUE;
+            return CONTINUE;
         } catch (Exception e) {
             LOG.error("", e);
             return errorOutcome;

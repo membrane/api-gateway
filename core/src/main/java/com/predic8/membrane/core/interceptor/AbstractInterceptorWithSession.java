@@ -13,21 +13,30 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor;
 
-import com.predic8.membrane.annot.MCChildElement;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.interceptor.session.SessionManager;
-import com.predic8.membrane.core.interceptor.session.JwtSessionManager;
+import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.interceptor.session.*;
+import com.predic8.membrane.core.util.*;
+import org.slf4j.*;
 
 public abstract class AbstractInterceptorWithSession extends AbstractInterceptor {
+
+    private static final Logger log = LoggerFactory.getLogger(AbstractInterceptorWithSession.class);
 
     SessionManager sessionManager;
 
     @Override
-    public void init() throws Exception {
+    public void init() {
+        super.init();
         if(sessionManager == null){
             sessionManager = new JwtSessionManager();
         }
-        sessionManager.init(this.router);
+        try {
+            sessionManager.init(this.router);
+        } catch (Exception e) {
+            log.error(e.getMessage(), e);
+            throw new ConfigurationException("Could not init session manager");
+        }
     }
 
     /**
@@ -64,7 +73,7 @@ public abstract class AbstractInterceptorWithSession extends AbstractInterceptor
         return sessionManager;
     }
 
-    @MCChildElement(order = 0)
+    @MCChildElement()
     public void setSessionManager(SessionManager sessionManager) {
         this.sessionManager = sessionManager;
     }
