@@ -25,7 +25,10 @@
 
             <if test="hasScope('admin')" language="SpEL">
                 <!-- Use target, see above -->
-                <template>Only for admins!</template>
+                <template>
+                    Only for admins!
+                    Caller scopes: ${property.scopes}
+                </template>
                 <return />
             </if>
 
