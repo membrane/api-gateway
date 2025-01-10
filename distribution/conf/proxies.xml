@@ -4,35 +4,33 @@
               xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.2.xsd
 					    http://membrane-soa.org/proxies/1/ http://membrane-soa.org/schemas/proxies-1.xsd">
 
+    <spring:bean class="com.predic8.membrane.core.interceptor.apikey.stores.ApiKeyFileStore">
+        <spring:property name="location" value="./demo-keys.txt" />
+    </spring:bean>
+
     <router>
 
         <api port="2000" name="hello">
+            <apiKey required="true">
+                <queryParamExtractor name="api-key"/>
+            </apiKey>
             <response>
                 <jwtSigner>
-                        <jwk>
-                            {
-                            "p": "2HPpxhaMfnQCzGvxSweyiZVxniJmhZXQb-7mQo3PAgrDpwHj1RmEVc1Jd4QRy7q0ZOXd-BXhDC3j6vHRUO0qZNihPU0ryHzywd0DpNmbCxu3c16E_13IcPtiqGh2shFt_LYJvWjcaFnIxQ8sqYa92tJf4DPOCZy6FlVAsmdFI8M",
-                            "kty": "RSA",
-                            "q": "uj_9cP2_mcC1xW3BXm0YQMFrv23ysQKa29XQUYgUzguw-CaWfZ_Agf1txTOK3rwNdSxNgRIW1pUmGXCNmzYHmqJbV17TpCtF3ZL1D-0IbQZrl_YQlXNgU6mkX85laZxvhkve-STEUQDygqYAsayygPy8ASt38uhLA1r3aJPwyh8",
-                            "d": "KMFcnZih9wgz6qwoFWKu3qnKS4ONjB98NTUXRTvHsRREL0rLmrC-jSqeyLrs77qBQphxfuRjwTbF-lAF9DLXJKKXij64zEetfR4RO3uaYofkLX-hJ5KcN3KotLoOf85nd0P8aX5ivtnsLjM_JYgid3s21D3klV6qSMmClG8p8ArFrINd73piHDnETSrwpWW6VYSyujpi-ncU5R4IA7rdf5c8LwSJS8D4IJ8tfsVHPba7hmf1y41-NuFBmXhzqpkWm2RtPKmu59WoiNNxS0jUZUNDAUiwFSVL1Y49EVmmy72_tuJrwY92Z6zkeR3JkS_QZ2FKSgx7wflvJ9DqaH3rvQ",
-                            "e": "AQAB",
-                            "use": "sig",
-                            "kid": "membrane",
-                            "qi": "uk-D0xGp-DGlp6rarBsXqT1Mj-ouOQnMRxvdPlYW4ASmOQ9WYpjbFcT4uFt1-IBDY4dQ-QVEhnQO98GKG3Ltir6I_e1rDhKYuaCb6IRbjjvFsmqOXJDQTROA2afq4mIC5x09Ary7cQ4okcfzxNEovEGvQyV7ve6pLjsffGyc__E",
-                            "dp": "zhXe2KmTbrqKB5QmkydrB6_wE33xWvL_F_O_7FIUbH9PNW2JPNYkt4TTlCV8xBqpsv9hTdmXAf-XZ5SBlKmamZXgPvuA2kyM3aPO2mANTJBBJGkz--eQ9nGCx5FeocASlm_D6kEyyW_ixiziey49CWEPw-nPHDvKuYTGKpZEr_0",
-                            "alg": "RS256",
-                            "dq": "KiSCh0eTTAnz10lfYKtUuopJhBYvvOe2_Jkjut8MvhadI3kvwhscpw0eAmoIOR_Z97Jfkx3xtvomlckG8aDHFbE488sMHnCALYOsGb9rkafLPqY52Gcz25peDCOahMwV3BBc0okENsP9G5zOOWW3OkJ1k9ovGPKAzrCNnMcky8c",
-                            "n": "nXpSqottOeqFcHZfzmocXaZURXUvvFYojSxtXz2MyiF_EKmxr_rTm9uIkiFhtbOcpC6cJZS5u-gE95ASLQVJsYKTecNHmnVc-PmPdNnbWul55oyuSYBllG1W2oEZAf2qJLqrwW9B5s3UcTE1urXQz-RxrPd8EnaJ6mnLp7MPKC43Fv4HM1WNS4Z7hrPhtu_yR8Gz8Uuh3L-B_LGVovOS59-GdDZoSBJxsY9Bow0gmacj2Y_Fs-duL4m3BrWD_lF8aokI6GpmegN4IFKx8we-zWHKsYKRsK8RwTz8SMWAFjMNnsMf_uws-OpX_mJjzcZyC2rvUtkZbjOXEsupj2cynQ"
-                            }
-                        </jwk>
+                    <jwk location="hello.jwk"/>
                 </jwtSigner>
                 <template>
                     {
-                        "scopes": "foo, bar"
+                        "scopes": "${property.scopes}",
+                        "aud": "order"
                     }
                 </template>
+                <setProperty name="scopes" value="${scopes}"/>
             </response>
             <return />
+        </api>
+
+        <api port="2001" name="order">
+            <!-- validate, check scope  -->
         </api>
 
     </router>
