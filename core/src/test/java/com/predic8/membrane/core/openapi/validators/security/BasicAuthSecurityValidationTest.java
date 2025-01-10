@@ -58,7 +58,7 @@ public class BasicAuthSecurityValidationTest {
         user.setPassword("secret");
         users.add(user);
         baInterceptor.setUsers(users);
-
+        baInterceptor.init(new Router());
     }
 
     @Test

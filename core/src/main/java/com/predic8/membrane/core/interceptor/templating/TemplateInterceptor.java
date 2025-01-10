@@ -123,7 +123,7 @@ public class TemplateInterceptor extends StaticInterceptor {
             try (InputStreamReader reader = new InputStreamReader(getRouter().getResolverMap()
                     .resolve(ResolverMap.combine(router.getBaseLocation(), location)))) {
 
-                // @TODO If a file is XML or not is detected based on the Extension. That should
+                // If a file is XML or not is detected based on the Extension.
                 if (FilenameUtils.getExtension(getLocation()).equals("xml")) {
                     template = new XmlTemplateEngine().createTemplate(reader);
                     setContentType(APPLICATION_XML);

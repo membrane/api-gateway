@@ -28,6 +28,7 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.*;
 
 import static java.lang.Boolean.*;
+import static java.lang.System.currentTimeMillis;
 
 public class HttpEndpointListener extends Thread {
 
@@ -52,7 +53,7 @@ public class HttpEndpointListener extends Thread {
 
         public ClientInfo() {
             count = new AtomicInteger();
-            lastUse = System.currentTimeMillis();
+            lastUse = currentTimeMillis();
         }
 
         public int get() {
@@ -61,13 +62,13 @@ public class HttpEndpointListener extends Thread {
 
         public void decrementAndGet() {
             count.decrementAndGet();
-            lastUse = System.currentTimeMillis();
+            lastUse = currentTimeMillis();
         }
 
         public boolean compareAndSet(int expected, int update) {
             boolean b = count.compareAndSet(expected, update);
             // TODO: fix this for timezone switch (and wherever System.currentTimeMillis() is used)
-            lastUse = System.currentTimeMillis();
+            lastUse = currentTimeMillis();
             return b;
         }
     }
@@ -89,7 +90,7 @@ public class HttpEndpointListener extends Thread {
                         if (v.count.get() > 0)
                             continue;
                         // TODO: set count to -1 to signalize that removal is in progress
-                        if (System.currentTimeMillis() - v.lastUse < 10 * 60 * 1000)
+                        if (currentTimeMillis() - v.lastUse < 10 * 60 * 1000)
                             continue;
                         values.remove(v);
                     }
@@ -260,10 +261,6 @@ public class HttpEndpointListener extends Thread {
 
     public HttpTransport getTransport() {
         return transport;
-    }
-
-    public boolean isClosed() {
-        return closed;
     }
 
     public SSLProvider getSslProvider() {

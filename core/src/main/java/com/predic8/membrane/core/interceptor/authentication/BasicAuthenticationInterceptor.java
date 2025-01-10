@@ -17,8 +17,8 @@ package com.predic8.membrane.core.interceptor.authentication;
 import com.google.common.collect.*;
 import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.interceptor.authentication.session.*;
 import com.predic8.membrane.core.interceptor.authentication.session.StaticUserDataProvider.*;
@@ -26,7 +26,7 @@ import com.predic8.membrane.core.util.*;
 
 import java.util.*;
 
-import static com.predic8.membrane.core.Constants.*;
+import static com.predic8.membrane.core.Constants.PRODUCT_NAME;
 import static com.predic8.membrane.core.exchange.Exchange.*;
 import static com.predic8.membrane.core.http.Header.*;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.*;
@@ -47,16 +47,14 @@ public class BasicAuthenticationInterceptor extends AbstractInterceptor {
 
 	public BasicAuthenticationInterceptor() {
 		name = "Basic Authenticator";
-		setFlow(REQUEST);
+		setFlow(REQUEST_FLOW);
 	}
 
 	@Override
-	public Outcome handleRequest(Exchange exc) throws Exception {
-
+	public Outcome handleRequest(Exchange exc) {
 		if (hasNoAuthorizationHeader(exc) || !validUser(exc)) {
 			return deny(exc);
 		}
-
 		return CONTINUE;
 	}
 
@@ -82,9 +80,12 @@ public class BasicAuthenticationInterceptor extends AbstractInterceptor {
 	}
 
 	private Outcome deny(Exchange exc) {
-		exc.setResponse(Response.unauthorized("").
-				header(HttpUtil.createHeaders(null, "WWW-Authenticate", "Basic realm=\"" + PRODUCT_NAME + " Authentication\"")).
-				build());
+		ProblemDetails.security(router.isProduction())
+						.statusCode(401)
+						.title("Unauthorized")
+				.component(getDisplayName())
+						.buildAndSetResponse(exc);
+		exc.getResponse().setHeader(HttpUtil.createHeaders(null, "WWW-Authenticate", "Basic realm= %s Authentication".formatted(PRODUCT_NAME)));
 		return ABORT;
 	}
 
@@ -128,7 +129,7 @@ public class BasicAuthenticationInterceptor extends AbstractInterceptor {
 	}
 
 	@Override
-	public void init(Router router) throws Exception {
+	public void init(Router router) {
 		//to not alter the interface of "BasicAuthenticationInterceptor" in the config file the "name" attribute is renamed to "username" in code
 		if (userDataProvider instanceof StaticUserDataProvider)
 			for(User user : getUsers()){

@@ -785,7 +785,7 @@ public class AdminPageBuilder extends Html {
 		list.add(new AbstractInterceptor() { // fake interceptor so that both stacks end with the same size
 			@Override
 			public EnumSet<Flow> getFlow() {
-				return Flow.Set.REQUEST_RESPONSE_ABORT;
+				return Flow.Set.REQUEST_RESPONSE_ABORT_FLOW;
 			}});
 		// build left and right stacks
 		for (Interceptor i : list) {

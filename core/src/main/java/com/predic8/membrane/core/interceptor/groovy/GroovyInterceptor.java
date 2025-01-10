@@ -46,7 +46,7 @@ public class GroovyInterceptor extends AbstractScriptInterceptor {
 
     @Override
     public EnumSet<Flow> getFlow() {
-        return REQUEST_RESPONSE_ABORT;
+        return REQUEST_RESPONSE_ABORT_FLOW;
     }
 
     @Override

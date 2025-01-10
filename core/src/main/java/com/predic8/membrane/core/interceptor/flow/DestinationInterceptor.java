@@ -70,6 +70,6 @@ public class DestinationInterceptor extends AbstractInterceptor {
 
     @Override
     public EnumSet<Flow> getFlow() {
-        return Flow.Set.REQUEST;
+        return Flow.Set.REQUEST_FLOW;
     }
 }

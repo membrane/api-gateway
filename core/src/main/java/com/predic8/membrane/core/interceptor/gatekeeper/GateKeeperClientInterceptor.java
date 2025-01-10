@@ -40,13 +40,13 @@ public class GateKeeperClientInterceptor extends AbstractInterceptor {
 
     public GateKeeperClientInterceptor() {
         name = "gatekeeper";
-        setFlow(Flow.Set.REQUEST);
+        setFlow(Flow.Set.REQUEST_FLOW);
     }
 
     public GateKeeperClientInterceptor(String url) {
         this.url = url;
         name = "gatekeeper";
-        setFlow(Flow.Set.REQUEST);
+        setFlow(Flow.Set.REQUEST_FLOW);
     }
 
     @Override

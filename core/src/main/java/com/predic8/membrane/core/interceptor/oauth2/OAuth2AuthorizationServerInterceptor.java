@@ -72,7 +72,7 @@ public class OAuth2AuthorizationServerInterceptor extends AbstractInterceptor {
     @Override
     public void init(Router router) throws Exception {
         name = "OAuth 2 Authorization Server";
-        setFlow(Flow.Set.REQUEST_RESPONSE_ABORT);
+        setFlow(Flow.Set.REQUEST_RESPONSE_ABORT_FLOW);
 
         this.setRouter(router);
         basePath = computeBasePath();

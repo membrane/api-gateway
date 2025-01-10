@@ -50,7 +50,7 @@ public class HTTPClientInterceptor extends AbstractInterceptor {
 
     public HTTPClientInterceptor() {
         name = "HTTPClient";
-        setFlow(REQUEST);
+        setFlow(REQUEST_FLOW);
     }
 
     @Override

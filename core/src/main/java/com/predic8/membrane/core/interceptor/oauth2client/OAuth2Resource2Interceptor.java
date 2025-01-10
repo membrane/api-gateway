@@ -86,7 +86,7 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
     @Override
     public void init(Router router) throws Exception {
         name = "OAuth 2 Client";
-        setFlow(Flow.Set.REQUEST_RESPONSE_ABORT);
+        setFlow(Flow.Set.REQUEST_RESPONSE_ABORT_FLOW);
 
         super.init(router);
 

@@ -43,7 +43,7 @@ public class XMLProtectionInterceptor extends AbstractInterceptor {
 
 	public XMLProtectionInterceptor() {
 		name = "XML Protection";
-		setFlow(REQUEST);
+		setFlow(REQUEST_FLOW);
 	}
 
 	@Override
@@ -55,7 +55,7 @@ public class XMLProtectionInterceptor extends AbstractInterceptor {
 		}
 
 		if (!exc.getRequest().isXML()) {
-			String msg = ("Content-Type {} was not XML.").formatted(exc.getRequest().getHeader().getContentType());
+			String msg = ("Content-Type %s was not XML.").formatted(exc.getRequest().getHeader().getContentType());
 			log.warn(msg);
 			ProblemDetails.user(router.isProduction())
 					.title("Request discarded by xmlProtection")

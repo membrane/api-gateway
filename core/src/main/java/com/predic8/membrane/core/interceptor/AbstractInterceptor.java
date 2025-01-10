@@ -30,7 +30,7 @@ public class AbstractInterceptor implements Interceptor {
 
 	protected String name = this.getClass().getName();
 
-	private EnumSet<Flow> flow = REQUEST_RESPONSE_ABORT;
+	private EnumSet<Flow> flow = REQUEST_RESPONSE_ABORT_FLOW;
 
 	protected Router router;
 
