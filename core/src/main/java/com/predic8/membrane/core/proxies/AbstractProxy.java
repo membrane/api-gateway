@@ -62,7 +62,7 @@ public abstract class AbstractProxy implements Proxy {
     }
 
     public String getName() {
-        return StringUtils.defaultIfEmpty(name, getKey().toString());
+        return StringUtils.defaultIfEmpty(name, getKey() != null ? getKey().toString() : "");
     }
 
     public RuleKey getKey() {
