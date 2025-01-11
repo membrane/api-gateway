@@ -24,7 +24,7 @@ docker run -d --name jaeger -e COLLECTOR_OTLP_ENABLED=true -p 16686:16686 -p 431
 5. Open `localhost:16686` in the browser to access the Jaeger UI.
 6. Select Membrane as the service and click on `Find Traces`.
 A span created by Membrane should be visible in [Jaeger UI](http://localhost:16686).
-![sample](./resources/otel_sample.png)
+![sample](resources/otel_sample.png)
 7. Examine the printed header fields on the console. You will see headers called `traceparent`, these denote which spans were involved in the request.
 
 **HOW IT IS DONE**
