@@ -1,8 +1,8 @@
 <spring:beans xmlns:spring="http://www.springframework.org/schema/beans"
               xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-              xmlns="http://membrane-soa.org/proxies/1/"
+              xmlns="http://membrane-soa.org/proxies/1/" xmlns:lang="http://www.springframework.org/schema/lang"
               xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.2.xsd
-					    http://membrane-soa.org/proxies/1/ http://membrane-soa.org/schemas/proxies-1.xsd">
+					    http://membrane-soa.org/proxies/1/ http://membrane-soa.org/schemas/proxies-1.xsd http://www.springframework.org/schema/lang http://www.springframework.org/schema/lang/spring-lang.xsd">
 
     <router>
 
@@ -34,7 +34,6 @@
             </response>
             <return />
         </api>
-
     </router>
 
 </spring:beans>
