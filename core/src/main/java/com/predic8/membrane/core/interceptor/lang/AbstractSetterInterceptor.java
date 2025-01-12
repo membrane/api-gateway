@@ -26,6 +26,7 @@ import org.slf4j.*;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
 import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static com.predic8.membrane.core.lang.ExchangeExpression.Language.SPEL;
 
 public abstract class AbstractSetterInterceptor extends AbstractLanguageInterceptor {
 
@@ -39,10 +40,11 @@ public abstract class AbstractSetterInterceptor extends AbstractLanguageIntercep
     @Override
     public void init(Router router) throws Exception {
         super.init(router);
-        switch (language) {
-            // SpEL comes with its own templating
-            case SPEL -> exchangeExpression = new SpELExchangeExpression(expression, new SpELExchangeExpression.DollarBracketTemplateParserContext());
-            default -> exchangeExpression = new TemplateExchangeExpression(router,language,expression);
+        // SpEL comes with its own templating
+        if (language == SPEL) {
+            exchangeExpression = new SpELExchangeExpression(expression, new SpELExchangeExpression.DollarBracketTemplateParserContext());
+        } else {
+            exchangeExpression = new TemplateExchangeExpression(router, language, expression);
         }
     }
 

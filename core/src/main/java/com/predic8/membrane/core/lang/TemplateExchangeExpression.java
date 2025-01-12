@@ -39,15 +39,15 @@ public class TemplateExchangeExpression extends AbstractExchangeExpression {
 
     @Override
     public <T> T evaluate(Exchange exchange, Flow flow, Class<T> type) {
-        String result = "";
+        StringBuilder line = new StringBuilder();
         for(Token token : tokens) {
             try {
-                result += token.eval(exchange, flow);
+                line.append(token.eval(exchange, flow));
             } catch (Exception e) {
                 throw new ExchangeExpressionException(token.toString(),e);
             }
         }
-        return (T)result;
+        return (T) line.toString();
     }
 
     protected static List<Token> parseTokens(Router router, Language language, String expression) {

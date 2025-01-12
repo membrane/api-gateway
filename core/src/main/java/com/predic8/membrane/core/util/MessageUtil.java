@@ -16,8 +16,8 @@ package com.predic8.membrane.core.util;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.schemavalidation.*;
 import org.xml.sax.*;
-import org.xml.sax.helpers.*;
 
+import javax.xml.parsers.*;
 import javax.xml.transform.*;
 import javax.xml.transform.sax.*;
 import java.io.*;
@@ -47,7 +47,7 @@ public class MessageUtil {
 	}
 
 	public static Source getSOAPBody(InputStream stream) throws Exception {
-		return new SAXSource(new SOAPXMLFilter(XMLReaderFactory.createXMLReader()), new InputSource(stream));
+		return new SAXSource(new SOAPXMLFilter(SAXParserFactory.newInstance().newSAXParser().getXMLReader()), new InputSource(stream));
 	}
 
 	public static Request getGetRequest(String uri) {
