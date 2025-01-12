@@ -15,9 +15,11 @@ package com.predic8.membrane.core.interceptor.log;
 
 import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.interceptor.lang.*;
+import com.predic8.membrane.core.lang.*;
 import org.slf4j.*;
 
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
@@ -33,6 +35,7 @@ public class PrintInterceptor extends AbstractLanguageInterceptor {
     @Override
     public void init(Router router) throws Exception {
         super.init(router);
+        exchangeExpression = TemplateExchangeExpression.newInstance(router, language, line);
     }
 
     @Override
@@ -48,8 +51,16 @@ public class PrintInterceptor extends AbstractLanguageInterceptor {
     }
 
     private void handleInternal(Exchange exc, Flow flow) {
-        String s = exchangeExpression.evaluate(exc, flow, String.class);
-        log.info(s);
+        try {
+            String s = exchangeExpression.evaluate(exc, flow, String.class);
+            log.info(s);
+        } catch (ExchangeExpressionException e) {
+            e.provideDetails(ProblemDetails.internal(router.isProduction()))
+                    .detail("Error evaluating expression on exchange.")
+                    .component("print")
+                    .buildAndSetResponse(exc);
+            // If print fails we still continue
+        }
     }
 
     public String getLine() {

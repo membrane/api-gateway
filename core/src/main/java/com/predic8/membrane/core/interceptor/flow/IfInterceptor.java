@@ -69,7 +69,6 @@ public class IfInterceptor extends AbstractFlowInterceptor {
     }
 
     private Outcome handleInternal(Exchange exc, Flow flow) throws Exception {
-
         boolean result;
         try {
              result = exchangeExpression.evaluate(exc, flow, Boolean.class);

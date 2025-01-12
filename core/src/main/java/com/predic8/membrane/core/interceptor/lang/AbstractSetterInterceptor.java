@@ -20,13 +20,11 @@ import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.lang.*;
-import com.predic8.membrane.core.lang.spel.*;
 import org.slf4j.*;
 
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
 import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
-import static com.predic8.membrane.core.lang.ExchangeExpression.Language.SPEL;
 
 public abstract class AbstractSetterInterceptor extends AbstractLanguageInterceptor {
 
@@ -40,12 +38,7 @@ public abstract class AbstractSetterInterceptor extends AbstractLanguageIntercep
     @Override
     public void init(Router router) throws Exception {
         super.init(router);
-        // SpEL comes with its own templating
-        if (language == SPEL) {
-            exchangeExpression = new SpELExchangeExpression(expression, new SpELExchangeExpression.DollarBracketTemplateParserContext());
-        } else {
-            exchangeExpression = new TemplateExchangeExpression(router, language, expression);
-        }
+        exchangeExpression = TemplateExchangeExpression.newInstance(router, language, expression);
     }
 
     @Override
@@ -62,19 +55,27 @@ public abstract class AbstractSetterInterceptor extends AbstractLanguageIntercep
         if (!shouldSetValue(exchange, flow))
             return CONTINUE;
 
+        String msg;
         try {
             setValue(exchange, flow, exchangeExpression.evaluate(exchange, flow, Object.class));
-        } catch (Exception e) {
-            if (failOnError) {
-                ProblemDetails.internal(getRouter().isProduction())
-                        .title("Error evaluating expression!")
-                        .extension("field", name)
-                        .extension("value", expression)
-                        .buildAndSetResponse(exchange);
-                return ABORT;
-            }
+            return CONTINUE;
+        } catch (ExchangeExpressionException e) {
+            msg = e.getLocalizedMessage();
         }
-        return CONTINUE;
+        catch (Exception e) {
+            msg = e.getMessage();
+        }
+        if (!failOnError)
+            return CONTINUE;
+        ProblemDetails.internal(getRouter().isProduction())
+                .title("Error evaluating expression!")
+                .detail(msg)
+                .extension("field", name)
+                .extension("value", expression)
+                .component(getDisplayName())
+                .stacktrace(false)
+                .buildAndSetResponse(exchange);
+        return ABORT;
     }
 
     protected abstract boolean shouldSetValue(Exchange exchange, Flow flow);

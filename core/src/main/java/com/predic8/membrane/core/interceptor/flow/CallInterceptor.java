@@ -43,7 +43,7 @@ public class CallInterceptor extends AbstractLanguageInterceptor {
         super.init(router);
         hcInterceptor = new HTTPClientInterceptor();
         hcInterceptor.init(router);
-        exchangeExpression = new TemplateExchangeExpression(router, language, url);
+        exchangeExpression = TemplateExchangeExpression.newInstance(router, language, url);
     }
 
     @Override
@@ -80,6 +80,7 @@ public class CallInterceptor extends AbstractLanguageInterceptor {
                 return ABORT;
             }
             exc.getRequest().setBodyContent(exc.getResponse().getBody().getContent()); // TODO Optimize?
+            copyHeadersFromResponseToRequest(exc);
             exc.getRequest().getHeader().setContentType(exc.getResponse().getHeader().getContentType());
             log.debug("Outcome of call {}",outcome);
             return CONTINUE;
@@ -88,6 +89,15 @@ public class CallInterceptor extends AbstractLanguageInterceptor {
                     .detail("Internal call");
             return ABORT;
         }
+    }
+
+    private static void copyHeadersFromResponseToRequest(Exchange exc) {
+        Arrays.stream(exc.getResponse().getHeader().getAllHeaderFields()).forEach(headerField -> {
+            // Filter out, what is definitely not needed like Server:,
+            if (headerField.getHeaderName().getName().equalsIgnoreCase("Server"))
+                return;
+            exc.getRequest().getHeader().add(headerField);
+        });
     }
 
     /**

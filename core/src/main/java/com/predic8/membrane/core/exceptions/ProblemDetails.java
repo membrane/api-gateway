@@ -171,9 +171,6 @@ public class ProblemDetails {
             extensionsMap.putAll(extensions);
             if (exception != null) {
                 extensionsMap.put("message",exception.getMessage());
-                if (component != null) {
-                    root.put("component", component);
-                }
                 if (stacktrace) {
                     extensionsMap.put("stackTrace", getStackTrace());
                 }
@@ -184,6 +181,10 @@ public class ProblemDetails {
 
         root.put("title", title);
         root.put("type", "https://membrane-api.io/error/" + type);
+
+        if (!production && component != null) {
+            root.put("component", component);
+        }
 
         if (detail != null) {
             root.put("detail", detail);

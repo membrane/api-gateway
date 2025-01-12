@@ -103,4 +103,8 @@ public class BuiltInFunctions {
     public static boolean isJSON(SpELExchangeEvaluationContext ctx) {
         return ctx.getMessage().isJSON();
     }
+
+    public static String base64Encode(String s,SpELExchangeEvaluationContext ctx) {
+        return java.util.Base64.getEncoder().encodeToString(s.getBytes());
+    }
 }

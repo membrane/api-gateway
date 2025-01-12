@@ -13,19 +13,19 @@
    limitations under the License. */
 package com.predic8.membrane.core.lang.spel.functions;
 
-import com.predic8.membrane.core.http.Request;
-import com.predic8.membrane.core.lang.spel.SpELExchangeEvaluationContext;
-import com.predic8.membrane.core.security.ApiKeySecurityScheme;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.lang.spel.*;
+import com.predic8.membrane.core.security.*;
+import org.junit.jupiter.api.*;
 
-import java.net.URISyntaxException;
-import java.util.List;
+import java.net.*;
+import java.util.*;
 
-import static com.predic8.membrane.core.exchange.Exchange.SECURITY_SCHEMES;
-import static com.predic8.membrane.core.http.Header.AUTHORIZATION;
-import static com.predic8.membrane.core.security.ApiKeySecurityScheme.In.HEADER;
-import static java.util.List.of;
+import static com.predic8.membrane.core.exchange.Exchange.*;
+import static com.predic8.membrane.core.http.Header.*;
+import static com.predic8.membrane.core.lang.spel.functions.BuiltInFunctions.*;
+import static com.predic8.membrane.core.security.ApiKeySecurityScheme.In.*;
+import static java.util.List.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class BuiltInFunctionsTest {
@@ -111,5 +111,10 @@ public class BuiltInFunctionsTest {
             }
         }
         return ((double) executedCount / 1000000);
+    }
+
+    @Test
+    void testBase64Encode() {
+        assertEquals("YWxpc2U6Zmxvd2VyMjU=", base64Encode("alise:flower25",ctx));
     }
 }

@@ -30,6 +30,7 @@
     - like examples/versioning/soap-xslt but much simpler with json
 - JdbcUserDataProvider
   - Migrate to PreparedStatement
+- <target url="http://localhost:2000/${params.product}/>
 
 # Version 6.0.0
 
