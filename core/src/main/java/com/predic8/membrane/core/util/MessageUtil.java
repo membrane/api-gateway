@@ -13,21 +13,18 @@
    limitations under the License. */
 package com.predic8.membrane.core.util;
 
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.zip.GZIPInputStream;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.interceptor.schemavalidation.*;
+import org.xml.sax.*;
+import org.xml.sax.helpers.*;
 
-import javax.xml.transform.Source;
-import javax.xml.transform.sax.SAXSource;
+import javax.xml.transform.*;
+import javax.xml.transform.sax.*;
+import java.io.*;
+import java.util.zip.*;
 
-import org.xml.sax.InputSource;
-import org.xml.sax.helpers.XMLReaderFactory;
-
-import com.predic8.membrane.core.Constants;
-import com.predic8.membrane.core.http.Message;
-import com.predic8.membrane.core.http.Request;
-import com.predic8.membrane.core.interceptor.schemavalidation.SOAPXMLFilter;
+import static com.predic8.membrane.core.Constants.*;
+import static com.predic8.membrane.core.http.Request.*;
 
 public class MessageUtil {
 
@@ -54,19 +51,19 @@ public class MessageUtil {
 	}
 
 	public static Request getGetRequest(String uri) {
-		Request req = getStandartRequest(Request.METHOD_GET);
+		Request req = getStandartRequest(METHOD_GET);
 		req.setUri(uri);
 		return req;
 	}
 
 	public static Request getPostRequest(String uri) {
-		Request req = getStandartRequest(Request.METHOD_POST);
+		Request req = getStandartRequest(METHOD_POST);
 		req.setUri(uri);
 		return req;
 	}
 
 	public static Request getDeleteRequest(String uri) {
-		Request req = getStandartRequest(Request.METHOD_DELETE);
+		Request req = getStandartRequest(METHOD_DELETE);
 		req.setUri(uri);
 		return req;
 	}
@@ -74,7 +71,7 @@ public class MessageUtil {
 	private static Request getStandartRequest(String method) {
 		Request request = new Request();
 		request.setMethod(method);
-		request.setVersion(Constants.HTTP_VERSION_11);
+		request.setVersion(HTTP_VERSION_11);
 
 		return request;
 	}

@@ -70,6 +70,7 @@ public class HTTPClientInterceptor extends AbstractInterceptor {
             log.error(e.getMessage());
             ProblemDetails.internal(router.isProduction())
                     .detail(e.getMessage())
+                    .extension("proxy", exc.getProxy().getName())
                     .buildAndSetResponse(exc);
             return ABORT;
         }

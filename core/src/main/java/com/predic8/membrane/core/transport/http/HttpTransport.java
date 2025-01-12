@@ -99,7 +99,6 @@ public class HttpTransport extends Transport {
 
 	@Override
 	public synchronized void closeAll(boolean waitForCompletion) {
-
 		log.debug("Closing all network server sockets.");
 		List<IpPort> all = new ArrayList<>();
 		for (Map<IpPort, HttpEndpointListener> v : portListenerMapping.values()) {

@@ -5,8 +5,6 @@
 - One API that calls multiple Backends
   - Ideas
     - <target ../> inside <if>
-- Routing with if instead of switch and cbr
-- <if>...<else>
 
 # Version 6.1.0
 
