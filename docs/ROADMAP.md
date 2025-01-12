@@ -40,8 +40,6 @@
 - Run ConfigSerializationTest from annot
 - List how to run all tests
   - ConfigSerializationTest
-  - Examples
-    - ExampleUnitTests, Without, With
 - Is SessionResumptionTest still needed?
 
 ### Examples / Documentation
@@ -69,7 +67,6 @@
 - 2025
 - Check AdminConsole
 - Check that interceptors define their flows
-- Proxy.init() and init(router) make it clear what to call! 
 - Test in proxies.xml internal with port
 - Look at ignored tests
 - Dependencies
@@ -78,6 +75,7 @@
   - handle should not throw Exception
 
 ## Done
+- Proxy.init() and init(router) make it clear what to call!
 - Call plugin
 - Example Tests without unzipping for every test
 - Delete interceptor
