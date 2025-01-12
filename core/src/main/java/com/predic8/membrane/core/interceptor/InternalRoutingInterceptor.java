@@ -28,9 +28,9 @@ import java.util.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.util.URLUtil.*;
 
-public class InternalServiceRoutingInterceptor extends AbstractInterceptor {
+public class InternalRoutingInterceptor extends AbstractInterceptor {
 
-    private static final Logger log = LoggerFactory.getLogger(InternalServiceRoutingInterceptor.class.getName());
+    private static final Logger log = LoggerFactory.getLogger(InternalRoutingInterceptor.class.getName());
     public static final String REVERSE_INTERCEPTOR_LIST = "membrane.routing.back.interceptors";
 
     @Override
@@ -164,5 +164,10 @@ public class InternalServiceRoutingInterceptor extends AbstractInterceptor {
             }
         }
         return "/";
+    }
+
+    @Override
+    public String getDisplayName() {
+        return "Internal routing";
     }
 }

@@ -73,6 +73,10 @@
   - Log4J, where, what
 - Interceptor Interface:
   - handle should not throw Exception
+- AdminConsole
+  - DisplayName: make all lower
+- Cleaup:
+  - LoggingContextInterceptor? Ask CG
 
 ## Done
 - Proxy.init() and init(router) make it clear what to call!

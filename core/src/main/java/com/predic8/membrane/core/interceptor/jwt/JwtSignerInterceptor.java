@@ -12,25 +12,16 @@
  */
 package com.predic8.membrane.core.interceptor.jwt;
 
-import com.predic8.membrane.annot.MCChildElement;
-import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Message;
-import com.predic8.membrane.core.interceptor.AbstractInterceptor;
-import com.predic8.membrane.core.interceptor.Outcome;
-import org.jose4j.json.JsonUtil;
-import org.jose4j.jwk.JsonWebKey;
-import org.jose4j.jwk.RsaJsonWebKey;
-import org.jose4j.jws.AlgorithmIdentifiers;
-import org.jose4j.jws.JsonWebSignature;
-import org.jose4j.lang.JoseException;
-import org.json.JSONObject;
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCChildElement;
-import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.Router;
-import com.predic8.membrane.core.config.security.Blob;
-import com.predic8.membrane.core.interceptor.session.JwtSessionManager;
+import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.interceptor.session.*;
+import org.jose4j.json.*;
+import org.jose4j.jwk.*;
+import org.jose4j.jws.*;
+import org.jose4j.lang.*;
 
 @MCElement(name = "jwtSigner")
 public class JwtSignerInterceptor extends AbstractInterceptor {
@@ -74,5 +65,10 @@ public class JwtSignerInterceptor extends AbstractInterceptor {
     @MCChildElement
     public void setJwk(JwtSessionManager.Jwk jwk) {
         this.jwk = jwk;
+    }
+
+    @Override
+    public String getDisplayName() {
+        return "jwtSigner";
     }
 }

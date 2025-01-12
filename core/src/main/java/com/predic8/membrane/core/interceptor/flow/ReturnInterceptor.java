@@ -123,6 +123,7 @@ public class ReturnInterceptor extends AbstractInterceptor {
 
     @Override
     public EnumSet<Flow> getFlow() {
-        return Flow.Set.REQUEST;
+        // To draw the whole box in adminConsole flow view
+        return Flow.Set.REQUEST_RESPONSE_ABORT;
     }
 }

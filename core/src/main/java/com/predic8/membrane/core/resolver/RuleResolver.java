@@ -59,7 +59,7 @@ public class RuleResolver implements SchemaResolver {
                 exc.getDestinations().clear();
                 exc.getDestinations().add(urlString);
                 exc.setRule(proxy);
-                InternalServiceRoutingInterceptor isri = new InternalServiceRoutingInterceptor();
+                InternalRoutingInterceptor isri = new InternalRoutingInterceptor();
                 isri.init(router);
                 isri.handleRequest(exc);
             } catch (Exception e) {

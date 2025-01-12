@@ -114,4 +114,14 @@ public class CallInterceptor extends AbstractLanguageInterceptor {
     public String getUrl() {
         return url;
     }
+
+    @Override
+    public String getDisplayName() {
+        return "call";
+    }
+
+    @Override
+    public String getShortDescription() {
+        return "Calls %s".formatted(url);
+    }
 }

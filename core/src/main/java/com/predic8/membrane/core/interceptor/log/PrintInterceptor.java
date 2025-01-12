@@ -71,4 +71,14 @@ public class PrintInterceptor extends AbstractLanguageInterceptor {
     public void setLine(String line) {
         this.line = line;
     }
+
+    @Override
+    public String getDisplayName() {
+        return "print";
+    }
+
+    @Override
+    public String getShortDescription() {
+        return "prints \"%s\"".formatted(line);
+    }
 }
