@@ -20,7 +20,8 @@ import com.predic8.membrane.core.interceptor.*;
 import org.slf4j.*;
 
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.*;
-import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
+import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 
 /**
  * @description Interceptors are usually applied to requests and responses. By nesting interceptors into a
@@ -38,6 +39,9 @@ public class RequestInterceptor extends AbstractFlowInterceptor {
 
     @Override
     public Outcome handleRequest(Exchange exc) {
+        // The behaviour here differs from FlowController. Here after RETURN
+        // the previous interceptors inside <request> should not execute
+        // handleResponse().
         for (Interceptor i : getInterceptors()) {
             if (!i.handlesRequests())
                 continue;
