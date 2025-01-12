@@ -46,8 +46,6 @@ public class IfInterceptor extends AbstractFlowInterceptor {
     private String test;
     private Language language = SPEL;
 
-    private final FlowController flowController = new FlowController();
-
     private ExchangeExpression exchangeExpression;
 
     public IfInterceptor() {
@@ -94,8 +92,8 @@ public class IfInterceptor extends AbstractFlowInterceptor {
             return CONTINUE;
 
         return switch (flow) {
-            case REQUEST -> flowController.invokeRequestHandlers(exc, getInterceptors());
-            case RESPONSE -> flowController.invokeResponseHandlers(exc, getInterceptors());
+            case REQUEST -> getFlowController().invokeRequestHandlers(exc, getInterceptors());
+            case RESPONSE -> getFlowController().invokeResponseHandlers(exc, getInterceptors());
             default -> throw new RuntimeException("Should never happen");
         };
     }

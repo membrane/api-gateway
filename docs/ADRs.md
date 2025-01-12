@@ -46,3 +46,7 @@ e.g. setHeader should return in not production mode details about the error. But
 
  - Makes handling less easy if it is null
  
+
+# Other
+
+- Use conventional commits

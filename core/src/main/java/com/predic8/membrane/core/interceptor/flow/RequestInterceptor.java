@@ -37,16 +37,20 @@ public class RequestInterceptor extends AbstractFlowInterceptor {
     }
 
     @Override
-    public Outcome handleRequest(Exchange exc) throws Exception {
+    public Outcome handleRequest(Exchange exc) {
         for (Interceptor i : getInterceptors()) {
             if (!i.handlesRequests())
                 continue;
             log.debug("Invoking handler: {} on exchange: {}", i.getDisplayName(), exc);
-            Outcome o = i.handleRequest(exc);
-
-            // Get out on RETURN and ABORT
-            if (o != CONTINUE)
-                return o;
+            try {
+                Outcome o = i.handleRequest(exc);
+                // Get out on RETURN and ABORT
+                if (o != CONTINUE)
+                    return o;
+            } catch (Exception e) {
+                createProblemDetails( "request", i, exc, e);
+                return ABORT;
+            }
         }
         return CONTINUE;
     }

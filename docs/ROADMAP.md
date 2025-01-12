@@ -73,6 +73,8 @@
 - Look at ignored tests
 - Dependencies
   - Log4J, where, what
+- Interceptor Interface:
+  - handle should not throw Exception
 
 ## Done
 - Call plugin

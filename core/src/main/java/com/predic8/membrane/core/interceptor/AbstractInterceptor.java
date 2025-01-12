@@ -133,6 +133,10 @@ public class AbstractInterceptor implements Interceptor {
 		return router;
 	}
 
+	public FlowController getFlowController() {
+		return router.getFlowController();
+	}
+
 	public static Message getMessage(Exchange exc, Interceptor.Flow flow) {
 		return switch (flow) {
 			case REQUEST -> exc.getRequest();

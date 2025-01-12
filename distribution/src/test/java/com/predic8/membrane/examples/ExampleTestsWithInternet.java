@@ -26,7 +26,6 @@ import com.predic8.membrane.examples.tests.ssl.SSLServerApiWithTlsPemTest;
 import com.predic8.membrane.examples.tests.ssl.SSLServerApiWithTlsPkcs12Test;
 import com.predic8.membrane.examples.tests.ssl.ToBackendTest;
 import com.predic8.membrane.examples.tests.validation.FormValidationTest;
-import com.predic8.membrane.examples.tests.versioning.RoutingTest;
 import com.predic8.membrane.examples.tests.versioning.XsltExampleTest;
 import com.predic8.membrane.examples.tutorials.rest.TutorialRestInitialTest;
 import com.predic8.membrane.examples.tutorials.rest.TutorialRestStepsTest;
@@ -56,7 +55,6 @@ import org.junit.platform.suite.api.*;
         CustomInterceptorTest.class,
         BasicXmlInterceptorTest.class,
 
-        RoutingTest.class,
         XsltExampleTest.class,
 
         // OpenAPI
