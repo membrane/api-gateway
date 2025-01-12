@@ -28,6 +28,14 @@ import static com.predic8.membrane.core.http.Request.*;
 
 public class MessageUtil {
 
+	private static final SAXParserFactory saxParserFactory;
+
+	static {
+		saxParserFactory = SAXParserFactory.newInstance();
+		saxParserFactory.setNamespaceAware(true);
+		saxParserFactory.setValidating(false);
+	}
+
 	public static InputStream getContentAsStream(Message res) throws IOException {
 		if (res.isGzip()) {
 			return new GZIPInputStream(res.getBodyAsStream());
@@ -46,8 +54,12 @@ public class MessageUtil {
 		return res.getBody().getContent();
 	}
 
-	public static Source getSOAPBody(InputStream stream) throws Exception {
-		return new SAXSource(new SOAPXMLFilter(SAXParserFactory.newInstance().newSAXParser().getXMLReader()), new InputSource(stream));
+	public static Source getSOAPBody(InputStream stream) {
+		try {
+            return new SAXSource(new SOAPXMLFilter(saxParserFactory.newSAXParser().getXMLReader()), new InputSource(stream));
+		} catch (ParserConfigurationException | SAXException e) {
+			throw new RuntimeException("Error initializing SAXSource", e);
+		}
 	}
 
 	public static Request getGetRequest(String uri) {
