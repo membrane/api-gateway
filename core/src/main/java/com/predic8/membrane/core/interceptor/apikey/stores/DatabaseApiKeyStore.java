@@ -40,7 +40,7 @@ public class DatabaseApiKeyStore extends AbstractJdbcSupport implements ApiKeySt
 
     private @NotNull Optional<List<String>> fetchScopes(String apiKey, Connection connection) throws SQLException {
         try (PreparedStatement stmt = connection.prepareStatement("SELECT * FROM %s,%s WHERE key.id=key_id AND key.key = ?".formatted(keyTable.getName(), scopeTable.getName()))) {
-            stmt.setString(1, apiKey);
+            stmt.setObject(1, UUID.fromString(apiKey));
             try (ResultSet rs = stmt.executeQuery()) {
                 List<String> scopes = new ArrayList<>();
                 while (rs.next()) {
