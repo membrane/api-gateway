@@ -18,6 +18,8 @@ import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.interceptor.Interceptor.*;
 import com.predic8.membrane.core.lang.spel.*;
 
+import org.jetbrains.annotations.*;
+
 import org.slf4j.*;
 
 import java.util.*;
@@ -51,6 +53,24 @@ public class TemplateExchangeExpression extends AbstractExchangeExpression {
 
     @Override
     public <T> T evaluate(Exchange exchange, Flow flow, Class<T> type) {
+        if (tokens.isEmpty()) {
+            return null;
+        }
+        if (tokens.size() == 1) {
+            return evaluateToObject(exchange, flow);
+        }
+        return evaluateToString(exchange, flow);
+    }
+
+    private <T> T evaluateToObject(Exchange exchange, Flow flow) {
+        try {
+            return (T) tokens.getFirst().eval(exchange, flow);
+        } catch (Exception e) {
+            throw new ExchangeExpressionException(tokens.getFirst().toString(),e);
+        }
+    }
+
+    private <T> @NotNull T evaluateToString(Exchange exchange, Flow flow) {
         StringBuilder line = new StringBuilder();
         for(Token token : tokens) {
             try {
@@ -82,7 +102,7 @@ public class TemplateExchangeExpression extends AbstractExchangeExpression {
     }
 
     interface Token {
-        String eval(Exchange exchange, Flow flow) throws Exception;
+        Object eval(Exchange exchange, Flow flow) throws Exception;
         String getExpression();
     }
 
@@ -127,7 +147,7 @@ public class TemplateExchangeExpression extends AbstractExchangeExpression {
         }
 
         @Override
-        public String eval(Exchange exchange, Flow flow) throws Exception {
+        public Object eval(Exchange exchange, Flow flow) throws Exception {
             return exchangeExpression.evaluate(exchange, flow, String.class);
         }
 
