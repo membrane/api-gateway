@@ -39,6 +39,11 @@ public class OAuth2SecurityScheme extends AbstractSecurityScheme {
         this.flow = flow;
     }
 
+    @Override
+    public String getName() {
+        return "oauth2";
+    }
+
     public enum Flow {
         IMPLICIT("implicit"), PASSWORD("password"), CLIENT_CREDENTIALS("clientCredentials"), AUTHORIZATION_CODE("authorizationCode");
 

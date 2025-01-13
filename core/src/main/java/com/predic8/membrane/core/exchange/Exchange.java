@@ -39,14 +39,12 @@ public class Exchange extends AbstractExchange {
 
 	public static final String /*PROPERTY_*/SSL_CONTEXT = "SSL_CONTEXT";
 
-	public static final String API_KEY = "API_KEY";
-
 	public static final String OAUTH2 = "oauth2";
 
-	public static final String SNI_SERVER_NAME = "SNI_SERVER_NAME";
-
-	public static final String WS_ORIGINAL_EXCHANGE = "WS_ORIGINAL_EXCHANGE";
-	public static final String SECURITY_SCHEMES = "SECURITY_SCHEMES";
+	// Property names
+	public static final String SNI_SERVER_NAME = "membrane.sni.server.name";
+	public static final String WS_ORIGINAL_EXCHANGE = "membrane.ws.original.exchange";
+	public static final String SECURITY_SCHEMES = "membrane.security.schemes";
 
 	private static final Logger log = LoggerFactory.getLogger(Exchange.class.getName());
 

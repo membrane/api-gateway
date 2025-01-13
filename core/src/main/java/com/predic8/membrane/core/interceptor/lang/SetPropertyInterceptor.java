@@ -22,14 +22,14 @@ public class SetPropertyInterceptor extends AbstractSetterInterceptor {
     @Override
     protected boolean shouldSetValue(Exchange exchange, Flow ignored) {
         if (ifAbsent) {
-            return exchange.getProperty(name) == null;
+            return exchange.getProperty(fieldName) == null;
         }
         return true;
     }
 
     @Override
     protected void setValue(Exchange exchange, Flow flow, Object evaluatedValue) {
-        exchange.setProperty(name, evaluatedValue.toString());
+        exchange.setProperty(fieldName, evaluatedValue.toString());
     }
 
 
@@ -40,6 +40,6 @@ public class SetPropertyInterceptor extends AbstractSetterInterceptor {
 
     @Override
     public String getShortDescription() {
-        return "Sets the value of the exchange property '%s' to %s.".formatted(name, expression);
+        return "Sets the value of the exchange property '%s' to %s.".formatted(fieldName, expression);
     }
 }

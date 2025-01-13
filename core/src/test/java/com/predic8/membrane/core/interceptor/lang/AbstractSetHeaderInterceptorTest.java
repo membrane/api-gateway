@@ -51,7 +51,7 @@ abstract class AbstractSetHeaderInterceptorTest {
         }};
         message = exchange.getRequest();
         interceptor.setLanguage(getLanguage());
-        interceptor.setName("X-Bar");
+        interceptor.setFieldName("X-Bar");
         interceptor.setValue("42");
     }
 

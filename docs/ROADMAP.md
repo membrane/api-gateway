@@ -71,6 +71,7 @@
 - Proxy.init() and init(router) make it clear what to call! 
 - Test in proxies.xml internal with port
 - Look at ignored tests
+- Exchange property name constants: See Exchange
 - Dependencies
   - Log4J, where, what
 
