@@ -149,6 +149,10 @@ public class StaticInterceptor extends AbstractInterceptor {
 
     @Override
     public String getShortDescription() {
-        return formatAsHtml(textTemplate);
+        String s = "Pretty print: %s<br/>".formatted(pretty);
+        if (contentType != null) {
+            s += "Content-Type: %s<br/>".formatted(contentType);
+        }
+        return s + formatAsHtml(textTemplate);
     }
 }

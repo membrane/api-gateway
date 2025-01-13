@@ -46,7 +46,8 @@ public class DestinationInterceptor extends AbstractInterceptor {
 
     @Override
     public Outcome handleRequest(Exchange exc) {
-        exc.setDestinations(List.of(url));
+        exc.getDestinations().clear();
+        exc.getDestinations().add(url);
         exc.setOriginalRequestUri(url);
         log.debug("Set destination to: {}", url);
         return CONTINUE;

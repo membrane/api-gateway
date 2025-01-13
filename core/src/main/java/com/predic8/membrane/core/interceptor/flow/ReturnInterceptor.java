@@ -123,6 +123,6 @@ public class ReturnInterceptor extends AbstractInterceptor {
 
     @Override
     public EnumSet<Flow> getFlow() {
-        return Flow.Set.REQUEST_FLOW;
+        return Flow.Set.REQUEST_RESPONSE_ABORT;
     }
 }

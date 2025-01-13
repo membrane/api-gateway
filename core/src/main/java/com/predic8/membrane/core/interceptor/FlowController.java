@@ -13,6 +13,8 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor;
 
+import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.interceptor.Interceptor.*;
 import com.predic8.membrane.core.transport.http.*;
@@ -20,6 +22,8 @@ import org.slf4j.*;
 
 import java.util.*;
 
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.RESPONSE;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 
 /**
@@ -52,6 +56,12 @@ public class FlowController {
 
     private static final Logger log = LoggerFactory.getLogger(FlowController.class);
 
+    private final Router router;
+
+    public FlowController(Router router) {
+        this.router = router;
+    }
+
     // TODO Still needed check
     public static final String ABORTION_REASON = "abortionReason";
 
@@ -61,7 +71,7 @@ public class FlowController {
      * abort flow back.
      */
     public Outcome invokeRequestHandlers(Exchange exchange, List<Interceptor> interceptors) {
-
+        Flow flow = REQUEST;
         for (int i = 0; i < interceptors.size(); i++) {
             Interceptor interceptor = interceptors.get(i);
             if (!interceptor.handlesRequests())
@@ -71,16 +81,24 @@ public class FlowController {
                 Outcome o = interceptor.handleRequest(exchange);
                 if (o == RETURN) {
                     log.debug("Interceptor returned RETURN. Returning!");
+                    flow = RESPONSE;
                     invokeResponseHandlers(exchange, interceptors, i);
                     return RETURN;
                 }
                 if (o == ABORT) {
                     log.debug("Interceptor returned ABORT. Aborting!");
+                    flow = Flow.ABORT;
                     invokeAbortHandlers(exchange, interceptors, i);
                     return ABORT;
                 }
-            } catch (Throwable t) {
-                log.warn("Exception thrown handling request interceptors. Aborting!", t);
+            } catch (Exception e) {
+                String msg = "Aborting! Exception caused by %s during %s flow.".formatted(interceptor.getDisplayName(),flow);
+                log.warn(msg, e);
+                ProblemDetails.internal(router.isProduction())
+                        .detail(msg)
+                        .component(interceptor.getDisplayName())
+                        .exception(e)
+                        .buildAndSetResponse(exchange);
                 invokeAbortHandlers(exchange, interceptors, i);
                 return ABORT;
             }
