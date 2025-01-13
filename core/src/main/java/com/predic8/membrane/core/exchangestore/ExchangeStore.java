@@ -14,30 +14,22 @@
 
 package com.predic8.membrane.core.exchangestore;
 
-import java.util.List;
+import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.interceptor.Interceptor.*;
+import com.predic8.membrane.core.interceptor.rest.*;
+import com.predic8.membrane.core.model.*;
+import com.predic8.membrane.core.proxies.*;
 
-
-import com.predic8.membrane.core.Router;
-import com.predic8.membrane.core.exchange.AbstractExchange;
-import com.predic8.membrane.core.interceptor.Interceptor.Flow;
-import com.predic8.membrane.core.interceptor.rest.QueryParameter;
-import com.predic8.membrane.core.model.IExchangesStoreListener;
-import com.predic8.membrane.core.rules.Rule;
-import com.predic8.membrane.core.rules.RuleKey;
-import com.predic8.membrane.core.rules.StatisticCollector;
+import java.util.*;
 
 public interface ExchangeStore {
 
+	void addExchangesStoreListener(IExchangesStoreListener viewer);
 
-	public void addExchangesStoreListener(IExchangesStoreListener viewer);
+	void removeExchangesStoreListener(IExchangesStoreListener viewer);
 
-	public void removeExchangesStoreListener(IExchangesStoreListener viewer);
-
-	public void refreshExchangeStoreListeners();
-
-	public void notifyListenersOnExchangeAdd(Rule rule, AbstractExchange exchange);
-
-	public void notifyListenersOnExchangeRemoval(AbstractExchange exchange);
+	void refreshExchangeStoreListeners();
 
 	/**
 	 * Adds the current state of the exchange to the store.
@@ -47,31 +39,29 @@ public interface ExchangeStore {
 	 * <p>
 	 * If flow==REQUEST, the request is added. Elsewise, the response is added (if present).
 	 */
-	public void snap(AbstractExchange exchange, Flow flow);
+	void snap(AbstractExchange exchange, Flow flow);
 
-	public void remove(AbstractExchange exchange);
+	void remove(AbstractExchange exchange);
 
-	public void removeAllExchanges(Rule rule);
+	void removeAllExchanges(Proxy proxy);
 
-	public void removeAllExchanges(AbstractExchange[] exchanges);
+	void removeAllExchanges(AbstractExchange[] exchanges);
 
-	public AbstractExchange[] getExchanges(RuleKey ruleKey);
+	AbstractExchange[] getExchanges(RuleKey ruleKey);
 
-	public int getNumberOfExchanges(RuleKey ruleKey);
+	StatisticCollector getStatistics(RuleKey ruleKey);
 
-	public StatisticCollector getStatistics(RuleKey ruleKey);
+	Object[] getAllExchanges();
 
-	public Object[] getAllExchanges();
+	List<AbstractExchange> getAllExchangesAsList();
 
-	public List<AbstractExchange> getAllExchangesAsList();
+	AbstractExchange getExchangeById(long id);
 
-	public AbstractExchange getExchangeById(long id);
+	default void init(Router router) {}
 
-	public void init(Router router) throws Exception;
+	List<? extends ClientStatistics> getClientStatistics();
 
-	public List<? extends ClientStatistics> getClientStatistics();
-
-	public void collect(ExchangeCollector col);
+	void collect(ExchangeCollector col);
 
 	long getLastModified();
 	/**

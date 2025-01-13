@@ -22,7 +22,6 @@ import org.w3c.dom.*;
 import javax.xml.parsers.*;
 import javax.xml.stream.*;
 import javax.xml.stream.events.*;
-import javax.xml.transform.*;
 import java.io.*;
 import java.util.*;
 import java.util.regex.*;
@@ -55,14 +54,16 @@ public class SampleSoapServiceInterceptor extends AbstractInterceptor {
     public Outcome handleRequest(Exchange exc) throws Exception {
         if (isWSDLRequest(exc)) {
             exc.setResponse(createWSDLResponse(exc));
-        } else if(!exc.getRequest().isPOSTRequest()) {
+            return RETURN;
+        }
+        if (!exc.getRequest().isPOSTRequest()) {
             exc.setResponse(createMethodNotAllowedSOAPFault(exc.getRequest().getMethod()));
-        } else {
-            try {
-                exc.setResponse(createGetCityResponse(exc));
-            } catch (Exception e) {
-                exc.setResponse(createResourceNotFoundSOAPFault());
-            }
+            return RETURN;
+        }
+        try {
+            exc.setResponse(createGetCityResponse(exc));
+        } catch (Exception e) {
+            exc.setResponse(createResourceNotFoundSOAPFault());
         }
         return RETURN;
     }
@@ -81,11 +82,10 @@ public class SampleSoapServiceInterceptor extends AbstractInterceptor {
 
     private Response createWSDLResponse(Exchange exc) throws XMLStreamException, FileNotFoundException {
         return ok().header(CONTENT_TYPE, TEXT_XML_UTF8)
-                   .body(setWsdlServer(
-                           getResourceAsStream(this,"/wsdl/city.wsdl"),exc)
-                   ).build();
+                .body(setWsdlServer(
+                        getResourceAsStream(this, "/wsdl/city.wsdl"), exc)
+                ).build();
     }
-
 
     static boolean isWSDLRequest(Exchange exc) {
         return WSDL_PATH_PARAM.matcher(exc.getRequest().getUri()).matches();
@@ -106,19 +106,19 @@ public class SampleSoapServiceInterceptor extends AbstractInterceptor {
 
     public static String getSoapFault(String faultString, String code, String errorMessage) {
         return """
-        <s11:Envelope xmlns:s11="http://schemas.xmlsoap.org/soap/envelope/">
-            <s11:Body>
-                <s11:Fault>
-                    <faultcode>s11:Client</faultcode>
-                    <faultstring>%s</faultstring>
-                    <detail>
-                        <errorcode>%s</errorcode>
-                        <errormessage>%s</errormessage>
-                    </detail>
-                </s11:Fault>
-            </s11:Body>
-        </s11:Envelope>
-    """.formatted(faultString, code, errorMessage);
+                    <s11:Envelope xmlns:s11="http://schemas.xmlsoap.org/soap/envelope/">
+                        <s11:Body>
+                            <s11:Fault>
+                                <faultcode>s11:Client</faultcode>
+                                <faultstring>%s</faultstring>
+                                <detail>
+                                    <errorcode>%s</errorcode>
+                                    <errormessage>%s</errormessage>
+                                </detail>
+                            </s11:Fault>
+                        </s11:Body>
+                    </s11:Envelope>
+                """.formatted(faultString, code, errorMessage);
     }
 
     public static String getElementAsString(InputStream is, String localName) throws Exception {
@@ -171,8 +171,7 @@ public class SampleSoapServiceInterceptor extends AbstractInterceptor {
         return uri.replaceAll("\\?.*$", "");
     }
 
-
-    public static String getResponse(String city) throws ParserConfigurationException, TransformerException {
+    public static String getResponse(String city) {
         try {
             return xml2string(createResponse(city));
         } catch (Exception e) {
@@ -225,6 +224,6 @@ public class SampleSoapServiceInterceptor extends AbstractInterceptor {
         return DocumentBuilderFactory.newInstance().newDocumentBuilder();
     }
 
-    public record City(String name, int population, String country) {}
-
+    public record City(String name, int population, String country) {
+    }
 }

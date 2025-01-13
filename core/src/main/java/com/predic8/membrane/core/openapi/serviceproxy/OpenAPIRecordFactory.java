@@ -43,7 +43,7 @@ public class OpenAPIRecordFactory {
 
     private static final Logger log = LoggerFactory.getLogger(OpenAPIRecordFactory.class.getName());
 
-    private final ObjectMapper omYaml = ObjectMapperFactory.createYaml();
+    private static final ObjectMapper omYaml = ObjectMapperFactory.createYaml();
 
     private final Router router;
 
@@ -51,7 +51,7 @@ public class OpenAPIRecordFactory {
         this.router = router;
     }
 
-    public Map<String, OpenAPIRecord> create(Collection<OpenAPISpec> specs) throws IOException {
+    public Map<String, OpenAPIRecord> create(Collection<OpenAPISpec> specs) {
         Map<String, OpenAPIRecord> apiRecords = new LinkedHashMap<>();
         for (OpenAPISpec spec : specs) {
             // Maybe a spec has both location and dir.
@@ -61,19 +61,21 @@ public class OpenAPIRecordFactory {
         return apiRecords;
     }
 
-    private void addOpenApisFromDirectory(Map<String, OpenAPIRecord> apiRecords, OpenAPISpec spec) throws IOException {
+    private void addOpenApisFromDirectory(Map<String, OpenAPIRecord> apiRecords, OpenAPISpec spec) {
         if (spec.dir == null)
             return;
 
-        log.info("Parsing specs from dir " + spec.dir);
+        log.info("Parsing specs from dir {}",spec.dir);
         File[] files = getOpenAPIFiles(spec.dir);
         if (files == null) {
             log.warn("Directory %s does not contain any OpenAPI documents.".formatted(spec.dir));
             return;
         }
         for (File file : files) {
-            log.info("Parsing spec " + file);
-            OpenAPIRecord rec = create(spec, file);
+            log.info("Parsing spec {}", file);
+            OpenAPISpec fileSpec = spec.clone();
+            fileSpec.setLocation(spec.dir + "/" + file.getName());
+            OpenAPIRecord rec = create(fileSpec, file);
             apiRecords.put(getUniqueId(apiRecords, rec), rec);
         }
     }
@@ -83,7 +85,7 @@ public class OpenAPIRecordFactory {
             return;
 
         try {
-            log.info("Parsing spec " + spec.location);
+            log.info("Parsing spec {}",spec.location);
             OpenAPIRecord rec = create(spec);
             apiRecords.put(getUniqueId(apiRecords, rec), rec);
         } catch (Exception e) {
@@ -108,8 +110,8 @@ public class OpenAPIRecordFactory {
                         """, pe.getLocation(), pe.getMessage()));
             }
             if (root instanceof FileNotFoundException fnf) {
-                log.error("Cannot read OpenAPI specification from location " + spec.location);
-                log.error("Exception: " + fnf.getMessage());
+                log.error("Cannot read OpenAPI specification from location {}",spec.location);
+                log.error("Exception: {}",fnf.getMessage());
                 throw new ConfigurationException("Cannot read OpenAPI specification from location: " + spec.location);
             }
 
@@ -139,36 +141,64 @@ public class OpenAPIRecordFactory {
     }
 
     private OpenAPIRecord create(OpenAPISpec spec) throws IOException {
-        OpenAPIRecord record = new OpenAPIRecord(getOpenAPI( spec), getSpec( spec), spec);
+        OpenAPIRecord record = new OpenAPIRecord(getOpenAPI(spec), spec);
         setExtensionOnAPI(spec, record.api);
         return record;
     }
 
-    private OpenAPIRecord create(OpenAPISpec spec, File file) throws IOException {
-        OpenAPIRecord record = new OpenAPIRecord(parseFileAsOpenAPI(file), getSpec(file), spec);
+    private OpenAPIRecord create(OpenAPISpec spec, File file) {
+        OpenAPIRecord record = new OpenAPIRecord(parseFileAsOpenAPI(file),  spec);
         setExtensionOnAPI(spec, record.api);
         return record;
     }
 
-    private OpenAPI getOpenAPI( OpenAPISpec spec) {
+    private OpenAPI getOpenAPI(OpenAPISpec spec) {
         String path = resolve(spec.location);
+        try {
+            JsonNode node = omYaml.readTree(getInputStreamForLocation(spec.location));
+            OpenAPI openAPI = new OpenAPIParser().readLocation(path, null, getParseOptions()).getOpenAPI();
 
-        OpenAPI openAPI = new OpenAPIParser().readLocation( path,
-                null, getParseOptions()).getOpenAPI();
-
-        if (openAPI != null)
+            addConversionNoticeIfSwagger2(openAPI, node);
             return openAPI;
-
-        throw new OpenAPIParsingException("Could not read and parse OpenAPI.", path); // Is handled and turned into a nice Exception further up
+        } catch (IOException e) {
+            throw new OpenAPIParsingException("Could not read OpenAPI file: " + e.getMessage(), path);
+        }
     }
 
+    private InputStream getInputStreamForLocation(String location) throws ResourceRetrievalException {
+        return router.getResolverMap().resolve(ResolverMap.combine(router.getBaseLocation(), location));
+    }
+
+    private OpenAPI parseFileAsOpenAPI(File oaFile) {
+        try {
+            JsonNode node = omYaml.readTree(oaFile);
+            OpenAPI api = new OpenAPIParser().readContents(
+                    readInputStream(new FileInputStream(oaFile)),
+                    null,
+                    getParseOptions()
+            ).getOpenAPI();
+
+            addConversionNoticeIfSwagger2(api, node);
+            return api;
+        } catch (IOException e) {
+            throw new OpenAPIParsingException("Could not read OpenAPI file: " + e.getMessage(), oaFile.getPath());
+        }
+    }
+
+    private void addConversionNoticeIfSwagger2(OpenAPI api, JsonNode node) {
+        if (!isSwagger2(node) || api.getInfo() == null) {
+            return;
+        }
+
+        StringBuilder builder = new StringBuilder();
+        builder.append(api.getInfo().getDescription());
+        if (api.getInfo().getDescription() != null) builder.append("\n\n");
+        builder.append("***Note:*** *This OpenAPI description was converted from Swagger 2 to OAS 3 by Membrane API Gateway!*");
+        api.getInfo().setDescription(builder.toString());
+    }
+    
     private String resolve(String filepath) {
         return ResolverMap.combine(router.getBaseLocation(), filepath);
-    }
-
-    private OpenAPI parseFileAsOpenAPI(File oaFile) throws FileNotFoundException {
-        return new OpenAPIParser().readContents(readInputStream(new FileInputStream(oaFile)),
-                null, getParseOptions()).getOpenAPI();
     }
 
     private static @NotNull ParseOptions getParseOptions() {
@@ -179,18 +209,6 @@ public class OpenAPIRecordFactory {
         parseOptions.setResolve(true);
 
         return parseOptions;
-    }
-
-    private InputStream getInputStreamForLocation(String location) throws ResourceRetrievalException {
-        return router.getResolverMap().resolve(ResolverMap.combine(router.getBaseLocation(), location));
-    }
-
-    private JsonNode getSpec( OpenAPISpec spec) throws IOException {
-        return omYaml.readTree(getInputStreamForLocation( spec.location));
-    }
-
-    private JsonNode getSpec(File file) throws IOException {
-        return omYaml.readTree(file);
     }
 
     private void setExtensionOnAPI(OpenAPISpec spec, OpenAPI api) {

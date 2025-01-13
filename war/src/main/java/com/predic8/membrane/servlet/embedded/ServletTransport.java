@@ -14,14 +14,8 @@
 
 package com.predic8.membrane.servlet.embedded;
 
-import java.io.IOException;
-
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.annot.MCMain;
-import com.predic8.membrane.core.transport.Transport;
-import com.predic8.membrane.core.transport.ssl.SSLProvider;
-import com.predic8.membrane.core.util.TimerManager;
+import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.transport.*;
 
 @MCMain(
 		outputPackage="com.predic8.membrane.servlet.config.spring",
@@ -42,12 +36,7 @@ public class ServletTransport extends Transport {
 	}
 
 	@Override
-	public void openPort(String ip, int port, SSLProvider sslProvider, TimerManager timerManager) throws IOException {
-		// do nothing
-	}
-
-	@Override
-	public void closeAll() throws IOException {
+	public void closeAll() {
 		// do nothing
 	}
 

@@ -97,6 +97,11 @@ class UtilsTest {
         assertEquals("", getPathFromURL("http://localhost:4567"));
     }
 
+    @Test
+    void getPathFromServiceURL() throws URISyntaxException {
+        assertEquals("/foo", getPathFromURL("internal://localhost:4567/foo"));
+    }
+
     private String getPathFromURL(String s) throws URISyntaxException {
         return UriUtil.getPathFromURL(new URIFactory(), s);
     }
@@ -247,9 +252,7 @@ class UtilsTest {
         Exchange exc = new Exchange(null);
         exc.setResponse(noContent().build());
 
-        assertDoesNotThrow(() -> {
-            assertNull(Utils.getOpenapiValidatorResponse(exc).getMediaType());
-        });
+        assertDoesNotThrow(() -> assertNull(Utils.getOpenapiValidatorResponse(exc).getMediaType()));
     }
 
     @Test

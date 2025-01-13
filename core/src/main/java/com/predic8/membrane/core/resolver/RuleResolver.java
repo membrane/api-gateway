@@ -14,78 +14,102 @@
 
 package com.predic8.membrane.core.resolver;
 
-import com.google.common.collect.Lists;
-import com.predic8.membrane.core.Router;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Request;
+import com.google.common.collect.*;
+import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.rules.*;
-import com.predic8.membrane.core.util.functionalInterfaces.ExceptionThrowingConsumer;
+import com.predic8.membrane.core.proxies.Proxy;
+import com.predic8.membrane.core.proxies.*;
+import com.predic8.membrane.core.util.functionalInterfaces.*;
+import org.jetbrains.annotations.*;
+import org.slf4j.*;
 
-import java.io.FileNotFoundException;
-import java.io.InputStream;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
+import java.io.*;
+import java.net.*;
+import java.util.*;
+import java.util.stream.*;
 
 public class RuleResolver implements SchemaResolver {
 
-    final Router router;
+    private static final Logger log = LoggerFactory.getLogger(RuleResolver.class);
 
+    private static final FlowController flowController = new FlowController(); // TODO use one central singleton
+
+    final Router router;
     public RuleResolver(Router router) {
         this.router = router;
     }
 
     @Override
-    public InputStream resolve(String url) throws ResourceRetrievalException {
-        String ruleName = url.substring(8).split("/")[0];
-        Rule rule = router.getRuleManager().getRuleByName(ruleName);
+    public InputStream resolve(String urlString) {
+        log.debug("Resolving from {}", urlString);
+        URI uri = URI.create(urlString);
+        String proxyName = uri.getHost();
+        Proxy proxy = router.getRuleManager().getRuleByName(proxyName);
 
-        if(rule == null)
-            throw new RuntimeException("Rule with name '" + ruleName + "' not found");
+        if (proxy == null)
+            throw new RuntimeException("Rule with name '" + proxyName + "' not found");
 
-        if(!rule.isActive())
-            throw new RuntimeException("Rule with name '" + ruleName + "' not active");
+        if (!proxy.isActive())
+            throw new RuntimeException("Rule with name '" + proxyName + "' not active");
 
-        if(!(rule instanceof AbstractProxy))
-            throw new RuntimeException("Rule with name '" + ruleName + "' is not of type AbstractProxy");
+        if (proxy instanceof InternalProxy ip) {
+            log.debug("Resolving from internal proxy {}",ip);
+            try {
+                Exchange exc = Request.get("?wsdl").buildExchange();
+                exc.getDestinations().clear();
+                exc.getDestinations().add(urlString);
+                exc.setRule(proxy);
+                InternalServiceRoutingInterceptor isri = new InternalServiceRoutingInterceptor();
+                isri.init(router);
+                isri.handleRequest(exc);
+            } catch (Exception e) {
+                log.debug(e.getMessage(),e);
+                throw new RuntimeException(e);
+            }
+        }
 
-        AbstractProxy p = (AbstractProxy) rule;
-        InterceptorFlowController interceptorFlowController = new InterceptorFlowController();
+        if (!(proxy instanceof AbstractProxy p))
+            throw new RuntimeException("Rule with name '" + proxyName + "' is not of type AbstractProxy");
         try {
-            String pathAndQuery = "/" + url.substring(8).split("/", 2)[1];
+            String pathAndQuery = getPathAndQuery(uri); // url.substring(8).split("/", 2)[1];
             Exchange exchange = new Request.Builder().get(pathAndQuery).buildExchange();
             RuleMatchingInterceptor.assignRule(exchange, p);
             List<Interceptor> additionalInterceptors = new ArrayList<>();
 
-            if(p instanceof AbstractServiceProxy || p instanceof InternalProxy) {
-                if (p instanceof AbstractServiceProxy) {
-                    AbstractServiceProxy asp = (AbstractServiceProxy) p;
-                    exchange.setDestinations(Stream.of(toUrl(asp.getTargetSSL() != null ? "https" : "http", asp.getHost(), asp.getTargetPort()).toString() + pathAndQuery).collect(Collectors.toList()));
-                    exchange.getRequest().getHeader().setHost(asp.getHost());
-                }
-                if (p instanceof InternalProxy) {
-                    InternalProxy ip = (InternalProxy) p;
-                    exchange.setDestinations(Stream.of(toUrl(ip.getTarget()).toString() + pathAndQuery).collect(Collectors.toList()));
-                    exchange.getRequest().getHeader().setHost(ip.getTarget().getHost());
-                }
+            if (p instanceof AbstractServiceProxy asp) {
+                exchange.setDestinations(Stream.of(toUrl(asp.getTargetSSL() != null ? "https" : "http", asp.getHost(), asp.getTargetPort()).toString() + pathAndQuery).collect(Collectors.toList()));
+                exchange.getRequest().getHeader().setHost(asp.getHost());
 
                 HTTPClientInterceptor httpClientInterceptor = new HTTPClientInterceptor();
                 httpClientInterceptor.init(router);
                 additionalInterceptors.add(httpClientInterceptor);
             }
 
-            interceptorFlowController.invokeHandlers(exchange, Stream.concat(p.getInterceptors().stream(), additionalInterceptors.stream()).collect(Collectors.toList()));
+            additionalInterceptors.clear(); // TODO !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+            flowController.invokeRequestHandlers(exchange, Stream.concat(p.getInterceptors().stream(), additionalInterceptors.stream()).toList());
             return exchange.getResponse().getBodyAsStream();
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }
 
-    public URL toUrl(String scheme, String host, int port){
+    private static @NotNull String getPathAndQuery(URI uri) {
+        if (uri.getQuery().isEmpty())
+            return uri.getPath();
+        return uri.getPath() + "?" + uri.getQuery();
+    }
+
+    protected static String getRuleName(String url) {
+        URI uri = URI.create(url);
+        if (!uri.getScheme().equals("internal"))
+            throw new RuntimeException("Not a service URL!");
+        return uri.getHost();
+    }
+
+    public URL toUrl(String scheme, String host, int port) {
         try {
             return new URL(scheme + "://" + host + ":" + port);
         } catch (MalformedURLException e) {
@@ -93,22 +117,18 @@ public class RuleResolver implements SchemaResolver {
         }
     }
 
-    public URL toUrl(AbstractServiceProxy.Target t){
-        return toUrl(t.getSslParser() != null ? "https" : "http", t.getHost(), t.getPort());
-    }
-
     @Override
-    public void observeChange(String url, ExceptionThrowingConsumer<InputStream> consumer) throws ResourceRetrievalException {
+    public void observeChange(String url, ExceptionThrowingConsumer<InputStream> consumer) {
         throw new RuntimeException("Not implemented");
     }
 
     @Override
-    public List<String> getChildren(String url) throws FileNotFoundException {
+    public List<String> getChildren(String url) {
         return null;
     }
 
     @Override
-    public long getTimestamp(String url) throws FileNotFoundException {
+    public long getTimestamp(String url) {
         return 0;
     }
 

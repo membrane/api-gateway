@@ -13,24 +13,18 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.rest;
 
-import com.predic8.membrane.core.HttpRouter;
-import com.predic8.membrane.core.interceptor.rest.REST2SOAPInterceptor.Mapping;
-import com.predic8.membrane.core.interceptor.soap.SampleSoapServiceInterceptor;
-import com.predic8.membrane.core.rules.Rule;
-import com.predic8.membrane.core.rules.ServiceProxy;
-import com.predic8.membrane.core.rules.ServiceProxyKey;
-import org.apache.commons.httpclient.HttpClient;
-import org.apache.commons.httpclient.HttpVersion;
-import org.apache.commons.httpclient.methods.GetMethod;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
+import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.interceptor.rest.REST2SOAPInterceptor.*;
+import com.predic8.membrane.core.interceptor.soap.*;
+import com.predic8.membrane.core.proxies.*;
+import org.apache.commons.httpclient.*;
+import org.apache.commons.httpclient.methods.*;
+import org.junit.jupiter.api.*;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
-import static org.apache.http.params.CoreProtocolPNames.PROTOCOL_VERSION;
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.apache.http.params.CoreProtocolPNames.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class REST2SOAPInterceptorIntegrationTest {
 
@@ -38,11 +32,11 @@ public class REST2SOAPInterceptorIntegrationTest {
 
 	@BeforeAll
 	public static void setUp() throws Exception {
-		Rule rule = new ServiceProxy(new ServiceProxyKey("localhost", "*",
+		ServiceProxy proxy = new ServiceProxy(new ServiceProxyKey("localhost", "*",
 				".*", 3004), "", 0);
 		router = new HttpRouter();
-		router.getRuleManager().addProxyAndOpenPortIfNew(rule);
-		var interceptors = rule.getInterceptors();
+		router.getRuleManager().addProxyAndOpenPortIfNew(proxy);
+		var interceptors = proxy.getInterceptors();
 
 		REST2SOAPInterceptor rest2SoapInt = new REST2SOAPInterceptor();
 		rest2SoapInt.setMappings(getMappings());
@@ -54,7 +48,7 @@ public class REST2SOAPInterceptorIntegrationTest {
 	}
 
 	@AfterAll
-	public static void tearDown() throws Exception {
+	public static void tearDown() {
 		router.shutdown();
 	}
 

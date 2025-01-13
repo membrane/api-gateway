@@ -18,7 +18,7 @@ import java.util.ArrayList;
 
 public class CleanupThread extends Thread {
 	public interface Cleaner {
-		public void cleanup();
+		void cleanup();
 	}
 
 	private final ArrayList<WeakReference<Cleaner>> cleaners = new ArrayList<>();

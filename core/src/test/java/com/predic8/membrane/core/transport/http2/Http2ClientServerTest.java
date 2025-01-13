@@ -13,35 +13,23 @@
    limitations under the License. */
 package com.predic8.membrane.core.transport.http2;
 
-import com.predic8.membrane.core.HttpRouter;
-import com.predic8.membrane.core.config.security.KeyStore;
-import com.predic8.membrane.core.config.security.SSLParser;
-import com.predic8.membrane.core.config.security.TrustStore;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Request;
-import com.predic8.membrane.core.http.Response;
-import com.predic8.membrane.core.interceptor.AbstractInterceptor;
-import com.predic8.membrane.core.interceptor.Outcome;
-import com.predic8.membrane.core.rules.ServiceProxy;
-import com.predic8.membrane.core.rules.ServiceProxyKey;
-import com.predic8.membrane.core.transport.http.AbstractHttpHandler;
-import com.predic8.membrane.core.transport.http.HttpClient;
-import com.predic8.membrane.core.transport.http.HttpServerHandler;
-import com.predic8.membrane.core.transport.http.client.ConnectionConfiguration;
-import com.predic8.membrane.core.transport.http.client.HttpClientConfiguration;
-import com.predic8.membrane.core.util.URIFactory;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.config.security.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.proxies.*;
+import com.predic8.membrane.core.transport.http.*;
+import com.predic8.membrane.core.transport.http.client.*;
+import com.predic8.membrane.core.util.*;
+import org.junit.jupiter.api.*;
 
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
-import java.util.function.Consumer;
+import java.util.concurrent.*;
+import java.util.function.*;
 
-import static com.predic8.membrane.core.transport.http.HttpClient.HTTP2;
-import static com.predic8.membrane.core.transport.http2.StreamState.CLOSED;
+import static com.predic8.membrane.core.transport.http.HttpClient.*;
+import static com.predic8.membrane.core.transport.http2.StreamState.*;
+import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class Http2ClientServerTest {
@@ -52,7 +40,7 @@ public class Http2ClientServerTest {
     private HttpRouter router;
 
     @BeforeEach
-    public void setup() throws Exception {
+    public void setup() {
         SSLParser sslParser = new SSLParser();
         sslParser.setUseExperimentalHttp2(true);
         sslParser.setEndpointIdentificationAlgorithm("");
@@ -67,7 +55,7 @@ public class Http2ClientServerTest {
         sp.setSslInboundParser(sslParser);
         sp.getInterceptors().add(new AbstractInterceptor() {
             @Override
-            public Outcome handleRequest(Exchange exc) throws Exception {
+            public Outcome handleRequest(Exchange exc) {
                 handler = exc.getHandler();
                 if (requestAsserter != null)
                     requestAsserter.accept(exc.getRequest());
@@ -97,7 +85,7 @@ public class Http2ClientServerTest {
     }
 
     @AfterEach
-    public void done() throws Throwable {
+    public void done() {
         hc.close();
         router.stop();
     }
@@ -152,25 +140,27 @@ public class Http2ClientServerTest {
             }
         };
 
-        ExecutorService es = Executors.newFixedThreadPool(2);
-        Exchange e[] = new Exchange[2];
-        for (int i = 0; i < 2; i++) {
-            if (i == 1)
-                cdl1.await();
-            e[i] = new Request.Builder().get("https://localhost:3049").buildExchange();
-            int j = i;
-            es.submit(() -> {
-                Thread.currentThread().setName("Requestor "  + j);
-                try {
-                    hc.call(e[j]);
-                } catch (Exception ex) {
-                    ex.printStackTrace();
-                }
-            });
-        }
+        Exchange[] e;
+        try (ExecutorService es = Executors.newFixedThreadPool(2)) {
+            e = new Exchange[2];
+            for (int i = 0; i < 2; i++) {
+                if (i == 1)
+                    cdl1.await();
+                e[i] = new Request.Builder().get("https://localhost:3049").buildExchange();
+                int j = i;
+                es.submit(() -> {
+                    Thread.currentThread().setName("Requestor " + j);
+                    try {
+                        hc.call(e[j]);
+                    } catch (Exception ex) {
+                        ex.printStackTrace();
+                    }
+                });
+            }
 
-        es.shutdown();
-        es.awaitTermination(20, TimeUnit.SECONDS);
+            es.shutdown();
+            es.awaitTermination(20, SECONDS);
+        }
 
         for (int i = 0; i < 2; i++) {
             assertNotNull(e[i].getProperty(HTTP2));

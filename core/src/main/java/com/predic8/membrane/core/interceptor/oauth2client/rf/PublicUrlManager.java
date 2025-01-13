@@ -13,19 +13,15 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.oauth2client.rf;
 
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.interceptor.oauth2.authorizationservice.AuthorizationService;
-import com.predic8.membrane.core.rules.RuleKey;
+import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.interceptor.oauth2.*;
+import com.predic8.membrane.core.interceptor.oauth2.authorizationservice.*;
+import com.predic8.membrane.core.proxies.*;
 
-import javax.annotation.concurrent.GuardedBy;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.stream.Collectors;
-
-import static com.predic8.membrane.core.http.Header.X_FORWARDED_PROTO;
+import javax.annotation.concurrent.*;
+import java.util.*;
+import java.util.stream.*;
 
 @MCElement(name = "publicURL")
 public class PublicUrlManager {
@@ -76,22 +72,18 @@ public class PublicUrlManager {
     }
 
     public String getPublicURL(Exchange exc) throws Exception {
-        String xForwardedProto = exc.getRequest().getHeader().getFirstValue(X_FORWARDED_PROTO);
-        boolean isHTTPS = xForwardedProto != null ? "https".equals(xForwardedProto) : exc.getRule().getSslInboundContext() != null;
-        String publicURL = (isHTTPS ? "https://" : "http://") + exc.getOriginalHostHeader();
-        RuleKey key = exc.getRule().getKey();
+        String publicURL = OAuth2Util.getPublicURL(exc);
+
+        RuleKey key = exc.getProxy().getKey();
         if (!key.isPathRegExp() && key.getPath() != null) publicURL += key.getPath();
         publicURL = normalizePublicURL(publicURL);
 
         synchronized (publicURLs) {
             if (publicURLs.contains(publicURL)) return publicURL;
-            if (!initPublicURLsOnTheFly) return publicURLs.get(0);
+            if (!initPublicURLsOnTheFly) return publicURLs.getFirst();
         }
 
-        String newURL = null;
-        if (initPublicURLsOnTheFly) newURL = addPublicURL(publicURL);
-
-        if (firstInitWhenDynamicAuthorizationService && newURL != null)
+        if (firstInitWhenDynamicAuthorizationService && addPublicURL(publicURL) != null)
             auth.dynamicRegistration(getPublicURLs().stream().map(url -> url + callbackPath).collect(Collectors.toList()));
 
         return publicURL;

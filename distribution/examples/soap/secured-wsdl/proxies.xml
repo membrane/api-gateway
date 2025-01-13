@@ -14,10 +14,10 @@
              internal Proxy where you can use any authentication that is needed.
         -->
 
-        <soapProxy port="2010" wsdl="service:wsdl/?wsdl">
+        <soapProxy port="2010" wsdl="internal://wsdl-proxy/?wsdl">
         </soapProxy>
 
-        <internalProxy name="wsdl">
+        <internal name="wsdl-proxy">
             <sampleSoapService/>
             <!--
 
@@ -30,7 +30,7 @@
                 </ssl>
             </target>
             -->
-        </internalProxy>
+        </internal>
 
     </router>
 

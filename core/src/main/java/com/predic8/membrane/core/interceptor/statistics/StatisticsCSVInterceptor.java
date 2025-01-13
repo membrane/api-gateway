@@ -43,7 +43,7 @@ public class StatisticsCSVInterceptor extends AbstractInterceptor {
 	private static final Map<String, String> fileNames = new HashMap<>();
 
 	// the file name of the log file; at the same time a lock guarding the lock file
-	private String fileName;
+	private String fileName = "";
 
 	public StatisticsCSVInterceptor() {
 		name = "CSV Logging";
@@ -51,7 +51,7 @@ public class StatisticsCSVInterceptor extends AbstractInterceptor {
 
 	@Override
 	public Outcome handleResponse(Exchange exc) throws Exception {
-		log.debug("logging statistics to " + new File(fileName).getAbsolutePath());
+		log.debug("logging statistics to {}", new File(fileName).getAbsolutePath());
 		writeExchange(exc);
 		return CONTINUE;
 	}
@@ -63,7 +63,7 @@ public class StatisticsCSVInterceptor extends AbstractInterceptor {
 
 				writeCSV(ExchangesUtil.getStatusCode(exc), w);
 				writeCSV(ExchangesUtil.getTime(exc), w);
-				writeCSV(exc.getRule().toString(), w);
+				writeCSV(exc.getProxy().toString(), w);
 				writeCSV(exc.getRequest().getMethod(), w);
 				writeCSV(exc.getRequest().getUri(), w);
 				writeCSV(exc.getRemoteAddr(), w);
@@ -100,7 +100,7 @@ public class StatisticsCSVInterceptor extends AbstractInterceptor {
 	private void createCSVFile() throws Exception {
 		synchronized (fileName) {
 			File csvFile = new File(fileName);
-			log.debug("creating csv file at " + csvFile.getAbsolutePath());
+			log.debug("creating csv file at {}", csvFile.getAbsolutePath());
 
 			if (csvFile.getParentFile() != null) {
 
@@ -128,7 +128,7 @@ public class StatisticsCSVInterceptor extends AbstractInterceptor {
 	}
 
 	private void writeNewLine(OutputStreamWriter w) throws IOException {
-		w.append(System.getProperty("line.separator"));
+		w.append(System.lineSeparator());
 	}
 
 	private void writeHeaders() throws Exception {

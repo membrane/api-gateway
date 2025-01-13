@@ -22,5 +22,5 @@ public interface SchemaResolver extends Resolver {
 	 *         If the list contains null, this resolver will be used as the
 	 *         default resolver by its {@link ResolverMap}.
 	 */
-	public List<String> getSchemas();
+	List<String> getSchemas();
 }

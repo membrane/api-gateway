@@ -60,16 +60,24 @@ public class OpenAPIPublisherInterceptor extends AbstractInterceptor {
     private final Template swaggerUiHtmlTemplate;
     private final Template apiOverviewHtmlTemplate;
 
-    public OpenAPIPublisherInterceptor(Map<String, OpenAPIRecord> apis) throws IOException, ClassNotFoundException, URISyntaxException {
+    public OpenAPIPublisherInterceptor(Map<String, OpenAPIRecord> apis) {
         name = "OpenAPI Publisher";
         this.apis = apis;
-        swaggerUiHtmlTemplate = createTemplate("/openapi/swagger-ui.html");
+        swaggerUiHtmlTemplate = createHTMLPageTemplate("/openapi/swagger-ui.html");
         checkServerPaths();
-        apiOverviewHtmlTemplate = createTemplate("/openapi/overview.html");
+        apiOverviewHtmlTemplate = createHTMLPageTemplate("/openapi/overview.html");
     }
 
-    private Template createTemplate(String filePath) throws ClassNotFoundException, IOException {
-        return new StreamingTemplateEngine().createTemplate(new InputStreamReader(Objects.requireNonNull(getResourceAsStream(this, filePath))));
+    private Template createHTMLPageTemplate(String filePath) {
+        try {
+            return new StreamingTemplateEngine().createTemplate(new InputStreamReader(Objects.requireNonNull(getResourceAsStream(this, filePath))));
+        } catch (Exception e) {
+            throw new ConfigurationException("""
+                    Could not create Swagger UI or overview page template from: %s
+                    
+                    Caused by: %s
+                    """.formatted(filePath,e.getMessage()));
+        }
     }
 
     @Override
@@ -223,7 +231,7 @@ public class OpenAPIPublisherInterceptor extends AbstractInterceptor {
 
         apis.values().stream()
                 .filter(this::hasPathMatchingAllRequests)
-                .forEach(apiRecord -> log.warn("API '" + apiRecord.api.getInfo().getTitle() + "' contains URLs with '/' matching all requests. This might cause routing to the wrong API!"));
+                .forEach(apiRecord -> log.warn("API {} contains URLs with '/' matching all requests. This might cause routing to the wrong API!",apiRecord.api.getInfo().getTitle()));
 
     }
 

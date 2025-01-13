@@ -23,7 +23,7 @@ public class RuleExchangeAccessor implements ExchangeAccessor {
 	public Object get(AbstractExchange exc) {
 		if (exc == null)
 			return "";
-		return exc.getRule().toString();
+		return exc.getProxy().toString();
 	}
 
 	public String getId() {

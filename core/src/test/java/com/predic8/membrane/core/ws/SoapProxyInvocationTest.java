@@ -16,17 +16,16 @@ package com.predic8.membrane.core.ws;
 import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.config.*;
 import com.predic8.membrane.core.interceptor.flow.*;
-import com.predic8.membrane.core.interceptor.misc.*;
+import com.predic8.membrane.core.interceptor.lang.*;
 import com.predic8.membrane.core.interceptor.schemavalidation.*;
 import com.predic8.membrane.core.interceptor.soap.*;
 import com.predic8.membrane.core.interceptor.templating.*;
 import com.predic8.membrane.core.openapi.serviceproxy.*;
-import com.predic8.membrane.core.rules.*;
+import com.predic8.membrane.core.proxies.*;
 import io.restassured.response.*;
 import org.jetbrains.annotations.*;
 import org.junit.jupiter.api.*;
 
-import java.io.*;
 import java.util.*;
 
 import static com.predic8.membrane.core.http.MimeType.*;
@@ -111,7 +110,7 @@ public class SoapProxyInvocationTest {
         aServiceAPI.setPort(2001);
         aServiceAPI.getInterceptors().add(new ResponseInterceptor() {{
             setInterceptors(List.of(new SetHeaderInterceptor() {{
-                setName("AService");
+                setFieldName("AService");
                 setValue("123");
             }}));
         }});
@@ -132,7 +131,7 @@ public class SoapProxyInvocationTest {
     }
 
     @AfterAll
-    public static void teardown() throws IOException {
+    public static void teardown() {
         gw.shutdown();
         backend.shutdown();
     }
@@ -194,7 +193,7 @@ public class SoapProxyInvocationTest {
                 .post("http://localhost:2000/services/b");  // This service is not selected!
 
         System.out.println("res.prettyPrint() = " + res.prettyPrint());
-
+        
         res.then().statusCode(404)
                 .contentType(APPLICATION_PROBLEM_JSON)
                 .body("title", equalTo("Wrong path or method"));
@@ -206,13 +205,13 @@ public class SoapProxyInvocationTest {
                 .body(SERVICE_A_INVALID_REQUEST)
                 .contentType(TEXT_XML)
                 .post("http://localhost:2000/services/a");
-        
-        System.out.println("res.body().asString() = " + res.body().asString());
 
         res.then().statusCode(400)
                 .contentType(TEXT_XML)
                 .body("Envelope.Body.Fault.faultcode", equalTo("s11:Client"))
                 .body("Envelope.Body.Fault.faultstring", equalTo("Message validation failed!"));
+
+
     }
 
 }

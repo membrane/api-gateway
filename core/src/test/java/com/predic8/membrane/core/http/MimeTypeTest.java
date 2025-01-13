@@ -30,13 +30,13 @@ public class MimeTypeTest {
     @ParameterizedTest
     @ValueSource(strings = {"zip", "octet-stream"})
     void isBinarySubtypes(String subtype) {
-        assertTrue(MimeType.isBinary("foo/" + subtype), subtype);
+        assertTrue(isBinary("foo/" + subtype), subtype);
     }
 
     @ParameterizedTest
     @ValueSource(strings = {"audio", "image", "video"})
     void isBinaryPrimaryTypes(String primary) {
-        assertTrue(MimeType.isBinary(primary + "/foo"), primary);
+        assertTrue(isBinary(primary + "/foo"), primary);
     }
 
     @ParameterizedTest
@@ -74,8 +74,34 @@ public class MimeTypeTest {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {"application/json", "application/json-foo", "application/JSON-foo"})
+    @ValueSource(strings = {"application/json", "application/json-foo", "application/JSON-foo", APPLICATION_PROBLEM_JSON, "foo/foo+json"})
     void isJson(String type) {
-        assertTrue(MimeType.isJson(MediaType.valueOf(type)));
+        assertTrue(MimeType.isJson(type));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"text/html"})
+    void isHtml(String type) {
+        assertTrue(MimeType.isHtml(type));
+    }
+
+    @Test
+    void nullString() {
+        assertFalse(isBinary((String)null));
+        assertFalse(MimeType.isXML((String) null));
+        assertFalse( isText((String)null));
+        assertFalse(MimeType.isJson((String) null));
+        assertFalse(MimeType.isImage((String) null));
+        assertFalse(MimeType.isHtml((String) null));
+    }
+
+    @Test
+    void nullMediaType() {
+        assertFalse(isBinary((jakarta.activation.MimeType) null));
+        assertFalse(MimeType.isXML((jakarta.activation.MimeType) null));
+        assertFalse( isText((jakarta.activation.MimeType)null));
+        assertFalse(MimeType.isJson((jakarta.activation.MimeType) null));
+        assertFalse(MimeType.isImage((jakarta.activation.MimeType) null));
+        assertFalse(MimeType.isHtml((jakarta.activation.MimeType) null));
     }
 }

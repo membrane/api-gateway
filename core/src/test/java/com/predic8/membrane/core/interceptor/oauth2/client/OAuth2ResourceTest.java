@@ -22,8 +22,9 @@ import com.predic8.membrane.core.interceptor.oauth2.*;
 import com.predic8.membrane.core.interceptor.oauth2.authorizationservice.*;
 import com.predic8.membrane.core.interceptor.oauth2client.*;
 import com.predic8.membrane.core.interceptor.oauth2client.rf.*;
-import com.predic8.membrane.core.rules.*;
+import com.predic8.membrane.core.proxies.*;
 import com.predic8.membrane.core.util.*;
+import org.jetbrains.annotations.*;
 import org.junit.jupiter.api.*;
 import org.slf4j.*;
 
@@ -177,7 +178,7 @@ public abstract class OAuth2ResourceTest {
 
         Exchange excCallResource = new Request.Builder().get(getClientAddress() + "/malicious").buildExchange();
         LOG.debug("getting " + excCallResource.getDestinations().get(0));
-        excCallResource = browser.apply(excCallResource); // will be aborted
+        browser.apply(excCallResource); // will be aborted
 
         browser.clearCookies(); // send the auth link to some helpless (other) user
 
@@ -263,21 +264,7 @@ public abstract class OAuth2ResourceTest {
         ServiceProxy sp = new ServiceProxy(new ServiceProxyKey(serverPort), null, 99999);
 
 
-        WellknownFile wkf = new WellknownFile();
-
-        wkf.setIssuer(getServerAddress());
-        wkf.setAuthorizationEndpoint(getServerAddress() + "/auth");
-        wkf.setTokenEndpoint(getServerAddress() + "/token");
-        wkf.setUserinfoEndpoint(getServerAddress() + "/userinfo");
-        wkf.setRevocationEndpoint(getServerAddress() + "/revoke");
-        wkf.setJwksUri(getServerAddress() + "/certs");
-        wkf.setSupportedResponseTypes("code token");
-        wkf.setSupportedSubjectType("public");
-        wkf.setSupportedIdTokenSigningAlgValues("RS256");
-        wkf.setSupportedScopes("openid email profile");
-        wkf.setSupportedTokenEndpointAuthMethods("client_secret_post");
-        wkf.setSupportedClaims("sub email username");
-        wkf.setSupportedResponseModes(Set.of("query", "fragment", "form_post"));
+        WellknownFile wkf = getWellknownFile();
         wkf.init(new HttpRouter());
 
         sp.getInterceptors().add(new AbstractInterceptor() {
@@ -317,6 +304,25 @@ public abstract class OAuth2ResourceTest {
         });
 
         return sp;
+    }
+
+    private @NotNull WellknownFile getWellknownFile() {
+        WellknownFile wkf = new WellknownFile();
+
+        wkf.setIssuer(getServerAddress());
+        wkf.setAuthorizationEndpoint(getServerAddress() + "/auth");
+        wkf.setTokenEndpoint(getServerAddress() + "/token");
+        wkf.setUserinfoEndpoint(getServerAddress() + "/userinfo");
+        wkf.setRevocationEndpoint(getServerAddress() + "/revoke");
+        wkf.setJwksUri(getServerAddress() + "/certs");
+        wkf.setSupportedResponseTypes("code token");
+        wkf.setSupportedSubjectType("public");
+        wkf.setSupportedIdTokenSigningAlgValues("RS256");
+        wkf.setSupportedScopes("openid email profile");
+        wkf.setSupportedTokenEndpointAuthMethods("client_secret_post");
+        wkf.setSupportedClaims("sub email username");
+        wkf.setSupportedResponseModes(Set.of("query", "fragment", "form_post"));
+        return wkf;
     }
 
     private ServiceProxy getConfiguredOAuth2Resource() {

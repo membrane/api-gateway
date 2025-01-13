@@ -38,7 +38,7 @@ public class AdminConsoleInterceptor extends AbstractInterceptor {
 
 	// these are the interceptors this interceptor consists of
 	private final List<Interceptor> interceptors = Arrays.asList(new Interceptor[] { r, rai, dapi, wsi });
-	private final InterceptorFlowController flowController = new InterceptorFlowController();
+	private final FlowController flowController = new FlowController();
 
 	private boolean useXForwardedForAsClientAddr = false;
 

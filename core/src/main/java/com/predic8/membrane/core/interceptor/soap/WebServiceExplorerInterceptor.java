@@ -21,7 +21,7 @@ import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.interceptor.administration.*;
 import com.predic8.membrane.core.interceptor.rest.*;
 import com.predic8.membrane.core.resolver.*;
-import com.predic8.membrane.core.rules.*;
+import com.predic8.membrane.core.proxies.*;
 import com.predic8.membrane.core.util.*;
 import com.predic8.wsdl.*;
 import com.predic8.wstool.creator.*;
@@ -132,7 +132,7 @@ public class WebServiceExplorerInterceptor extends RESTInterceptor {
 
 	private Service getService(Definitions d) {
 		
-		if (getRule() instanceof SOAPProxy sp) {
+		if (getProxy() instanceof SOAPProxy sp) {
 			String serviceName = sp.getServiceName();
 			System.out.println("serviceName = " + serviceName);
 			if (serviceName != null) {
@@ -142,7 +142,7 @@ public class WebServiceExplorerInterceptor extends RESTInterceptor {
 		
 		if (d.getServices().size() != 1)
 			throw new IllegalArgumentException("WSDL needs to have exactly one service for SOAPUIInterceptor to work.");
-		return d.getServices().get(0);
+		return d.getServices().getFirst();
 	}
 
 	private String getClientURL(Exchange exc) {
@@ -153,8 +153,8 @@ public class WebServiceExplorerInterceptor extends RESTInterceptor {
 			if (host != null) {
 				if (host.contains(":"))
 					host = host.substring(0, host.indexOf(":"));
-				boolean https = exc.getRule().getSslInboundContext() != null;
-				uri = new URL(https ? "https" : "http", host, exc.getHandler().getLocalPort(), uri).toString();
+
+				uri = new URL(exc.getProxy().getProtocol(), host, exc.getHandler().getLocalPort(), uri).toString();
 			}
 			return uri;
 		} catch (MalformedURLException e) {

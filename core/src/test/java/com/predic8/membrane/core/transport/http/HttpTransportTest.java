@@ -14,22 +14,15 @@
 
 package com.predic8.membrane.core.transport.http;
 
-import java.io.IOException;
+import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.exchangestore.*;
+import com.predic8.membrane.core.resolver.*;
+import com.predic8.membrane.core.transport.ssl.*;
+import org.junit.jupiter.api.*;
 
-import com.predic8.membrane.core.Statistics;
-import com.predic8.membrane.core.exchangestore.ExchangeStore;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-
-import com.predic8.membrane.core.Router;
-import com.predic8.membrane.core.RuleManager;
-import com.predic8.membrane.core.resolver.HTTPSchemaResolver;
-import com.predic8.membrane.core.resolver.ResolverMap;
-import com.predic8.membrane.core.transport.ssl.SSLProvider;
+import java.io.*;
 
 import static org.junit.jupiter.api.Assertions.*;
-
 import static org.mockito.Mockito.*;
 
 @SuppressWarnings("javadoc")
@@ -59,20 +52,20 @@ public class HttpTransportTest {
 	}
 
 	@AfterEach
-	public void after() throws IOException {
+	public void after() {
 		transport.closeAll();
 	}
 
 	@Test
-	public final void testCloseAllBoolean() throws IOException {
+	public final void testCloseAllBoolean() {
 		transport.closeAll(false);
 		transport.closeAll(true);
 	}
 
 	@Test
 	public final void testOpenPortOK_NoSSL() throws IOException {
-		transport.openPort("localhost", 80, null, null);
-		transport.openPort("127.0.0.1", 80, null, null);
+		transport.openPort("localhost", 3000, null, null);
+		transport.openPort("127.0.0.1", 3001, null, null);
 	}
 
 	@Test

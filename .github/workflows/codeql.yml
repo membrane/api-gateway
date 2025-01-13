@@ -31,7 +31,7 @@ jobs:
       uses: actions/setup-java@v3
       with:
         distribution: 'temurin'
-        java-version: 17
+        java-version: 21
     - name: Initialize CodeQL
       uses: github/codeql-action/init@v3
       with:
@@ -57,6 +57,6 @@ jobs:
            rm -r core/src/test |
            rm -r distribution/src/test
     - name: Perform CodeQL Analysis
-      uses: github/codeql-action/analyze@v2
+      uses: github/codeql-action/analyze@v3
       with:
         category: "/language:${{matrix.language}}"

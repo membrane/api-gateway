@@ -17,12 +17,16 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.MimeType;
 import com.predic8.membrane.core.http.Response;
+import com.predic8.membrane.core.proxies.*;
+import org.jetbrains.annotations.*;
 
 import java.io.IOException;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
+
+import static com.predic8.membrane.core.http.Header.X_FORWARDED_PROTO;
 
 public class OAuth2Util {
 
@@ -45,7 +49,7 @@ public class OAuth2Util {
         return uri.contains("://");
     }
 
-    public static Response createParameterizedJsonErrorResponse(Exchange exc, ReusableJsonGenerator jsonGen, String... params) throws IOException {
+    public static Response createParameterizedJsonErrorResponse(final ReusableJsonGenerator jsonGen, String... params) throws IOException {
         if (params.length % 2 != 0)
             throw new IllegalArgumentException("The number of strings passed as params is not even");
 
@@ -65,5 +69,20 @@ public class OAuth2Util {
                 .contentType(MimeType.APPLICATION_JSON_UTF8)
                 .dontCache()
                 .build();
+    }
+
+    public static @NotNull String getPublicURL(Exchange exc) {
+        return (isHTTPS(exc.getProxy(), getxForwardedProto(exc)) ? "https://" : "http://") + exc.getOriginalHostHeader();
+    }
+
+    private static boolean isHTTPS(Proxy proxy, String xForwardedProto) {
+        if (!(proxy instanceof SSLableProxy sp)) {
+            return false;
+        }
+        return xForwardedProto != null ? "https".equals(xForwardedProto) : sp.isInboundSSL();
+    }
+
+    private static String getxForwardedProto(Exchange exc) {
+        return exc.getRequest().getHeader().getFirstValue(X_FORWARDED_PROTO);
     }
 }

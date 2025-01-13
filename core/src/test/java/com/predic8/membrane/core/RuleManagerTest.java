@@ -13,21 +13,23 @@
    limitations under the License. */
 package com.predic8.membrane.core;
 
-import com.predic8.membrane.core.rules.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.proxies.*;
 import org.junit.jupiter.api.*;
 
-import java.io.*;
-import java.net.UnknownHostException;
+import java.net.*;
 
-import static com.predic8.membrane.util.TestUtil.assembleExchange;
+import static com.predic8.membrane.test.TestUtil.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class RuleManagerTest {
 
 	RuleManager manager;
-	Rule proxy3013;
-	Rule forwardBlz;
-	Rule forwardBlzPOST;
+	ProxyRule proxy3013;
+	ServiceProxy forwardBlz;
+	ServiceProxy forwardBlzPOST;
+	InternalProxy internal;
 
 	MockRouter router;
 
@@ -45,66 +47,75 @@ public class RuleManagerTest {
 		forwardBlzPOST = new ServiceProxy(new ServiceProxyKey("localhost", "POST", ".*", 3015), "thomas-bayer.com", 80);
 		forwardBlzPOST.init(router);
 
+		internal = new InternalProxy();
+		internal.setName("order");
+		internal.init(router);
+
 		manager.addProxyAndOpenPortIfNew(forwardBlz);
 		manager.addProxyAndOpenPortIfNew(forwardBlzPOST);
+		manager.addProxy(internal, RuleManager.RuleDefinitionSource.MANUAL);
 	}
 
 	@AfterEach
-	public void tearDown() throws IOException {
+	public void tearDown() {
 		router.shutdown();
 	}
 
 	@Test
-	public void testGetRules() {
-		assertFalse(manager.getRules().isEmpty());
-		assertEquals(3, manager.getRules().size());
+	void getRules() {
+		assertEquals(4, manager.getRules().size());
 	}
 
 	@Test
-	public void testExists() {
+	void exists() {
 		assertTrue(manager.exists(proxy3013.getKey()));
 	}
 
 	@Test
-	public void testGetMatchingRuleForwardBlz() throws UnknownHostException {
+	void getMatchingRuleForwardBlz() throws UnknownHostException {
 		assertEquals(forwardBlz, manager.getMatchingRule(assembleExchange("localhost", "POST", "/axis2/services/blzservice", "1.1", 3014, "127.0.0.1")));
 	}
 
 	@Test
-	public void testGetMatchingRuleForwardBlzPOST() throws UnknownHostException {
+	void getMatchingRuleForwardBlzPOST() throws UnknownHostException {
 		assertEquals(forwardBlz, manager.getMatchingRule(assembleExchange("localhost", "POST", "/axis2/services/blzservice", "1.1", 3014, "127.0.0.1")));
 	}
 
 	@Test
-	public void testRemoveRule() {
+	void internalUnknown() throws URISyntaxException {
+		Exchange exc = Request.get("/ignored").buildExchange();
+		exc.getDestinations().add("internal://unknown");
+		assertInstanceOf(NullProxy.class, manager.getMatchingRule(exc));
+	}
+
+	@Test
+	void internal() throws URISyntaxException {
+		assertEquals("order", manager.getMatchingRule(Request.get("internal://order").buildExchange()).getName());
+	}
+
+	@Test
+	void internalWithPath() throws URISyntaxException {
+		assertEquals("order", manager.getMatchingRule(Request.get("internal://order/path").buildExchange()).getName());
+	}
+
+	@Test
+	void testRemoveRule() {
 		manager.removeRule(proxy3013);
-		assertEquals(2, manager.getRules().size());
+		assertEquals(3, manager.getRules().size());
 		assertFalse(manager.getRules().contains(proxy3013));
 	}
 
 	@Test
-	public void testRemoveAllRules() {
+	void removeAllRules() {
 		manager.removeAllRules();
 		assertTrue(manager.getRules().isEmpty());
 	}
 
 	@Test
-	public void testIsAnyRuleWithPort() {
+	void isAnyRuleWithPort() {
 		assertFalse(manager.isAnyRuleWithPort(1234));
 		assertTrue(manager.isAnyRuleWithPort(3013));
 		assertTrue(manager.isAnyRuleWithPort(3014));
 		assertTrue(manager.isAnyRuleWithPort(3015));
-	}
-
-	@Test
-	public void testRuleUp() {
-		manager.ruleUp(forwardBlz);
-		assertEquals(forwardBlz, manager.getRules().get(0));
-	}
-
-	@Test
-	public void testRuleDown() {
-		manager.ruleDown(forwardBlz);
-		assertEquals(forwardBlz, manager.getRules().get(2));
 	}
 }

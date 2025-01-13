@@ -54,13 +54,13 @@ public class AuthWithSessionRequest extends ParameterizedRequest {
             return clearSessionAndRedirectToAuthEndpoint(exc);
 
         if (getPrompt().equals("none") && !authServer.getSessionManager().getOrCreateSession(exc).isAuthorized())
-            return OAuth2Util.createParameterizedJsonErrorResponse(exc, jsonGen, "error", "login_required");
+            return OAuth2Util.createParameterizedJsonErrorResponse(jsonGen, "error", "login_required");
         return new NoResponse();
     }
 
     @Override
     protected Response getResponse() throws Exception {
-        return OAuth2Util.createParameterizedJsonErrorResponse(exc, jsonGen, "error", "login_required");
+        return OAuth2Util.createParameterizedJsonErrorResponse(jsonGen, "error", "login_required");
     }
 
     private Response clearSessionAndRedirectToAuthEndpoint(Exchange exc) {

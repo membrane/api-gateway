@@ -14,23 +14,19 @@
 
 package com.predic8.membrane.core.interceptor;
 
-import java.util.*;
+import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.exchangestore.*;
+import com.predic8.membrane.core.interceptor.administration.*;
+import com.predic8.membrane.core.proxies.*;
+import org.springframework.beans.*;
+import org.springframework.context.*;
+
 import java.util.Set;
+import java.util.*;
 
-import org.springframework.beans.BeansException;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.ApplicationContextAware;
-
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.exchangestore.ExchangeStore;
-import com.predic8.membrane.core.interceptor.administration.AdminConsoleInterceptor;
-import com.predic8.membrane.core.rules.AbstractServiceProxy;
-import com.predic8.membrane.core.rules.Rule;
-
-import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.ABORT;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 
 /**
@@ -54,7 +50,7 @@ public class ExchangeStoreInterceptor extends AbstractInterceptor implements App
 		name = "  Store Interceptor";
 	}
 
-	public ExchangeStoreInterceptor(ExchangeStore exchangeStore) throws Exception {
+	public ExchangeStoreInterceptor(ExchangeStore exchangeStore) {
 		this();
 		setExchangeStore(exchangeStore);
 	}
@@ -65,12 +61,12 @@ public class ExchangeStoreInterceptor extends AbstractInterceptor implements App
 	}
 
 	@Override
-	public Outcome handleRequest(Exchange exc) throws Exception {
+	public Outcome handleRequest(Exchange exc) {
 		return handle(exc, REQUEST);
 	}
 
 	@Override
-	public Outcome handleResponse(final Exchange exc) throws Exception {
+	public Outcome handleResponse(final Exchange exc) {
 		return handle(exc, RESPONSE);
 	}
 
@@ -80,12 +76,10 @@ public class ExchangeStoreInterceptor extends AbstractInterceptor implements App
 	}
 
 	protected Outcome handle(Exchange exc, Flow flow) {
-		if (serviceProxiesContainingAdminConsole.contains(exc.getRule())) {
+		if (serviceProxiesContainingAdminConsole.contains(exc.getProxy())) {
 			return CONTINUE;
 		}
-
 		store.snap(exc, flow);
-
 		return CONTINUE;
 	}
 
@@ -118,7 +112,7 @@ public class ExchangeStoreInterceptor extends AbstractInterceptor implements App
 	}
 
 	@Override
-	public void init() throws Exception {
+	public void init() {
 
 		//noinspection StatementWithEmptyBody
 		if (Objects.equals(exchangeStoreBeanId, BEAN_ID_ATTRIBUTE_CANNOT_BE_USED))
@@ -134,7 +128,7 @@ public class ExchangeStoreInterceptor extends AbstractInterceptor implements App
 	}
 
 	private void searchAdminConsole() {
-		for (Rule r : router.getRuleManager().getRules()) {
+		for (Proxy r : router.getRuleManager().getRules()) {
 			if (!(r instanceof AbstractServiceProxy)) continue;
 
 			for (Interceptor i : r.getInterceptors()) {

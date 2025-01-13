@@ -14,98 +14,82 @@
 
 package com.predic8.membrane.core.http;
 
-import com.google.common.io.Resources;
-import com.predic8.membrane.core.Constants;
-import com.predic8.membrane.core.HttpRouter;
+import com.google.common.io.*;
+import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.config.security.KeyStore;
-import com.predic8.membrane.core.config.security.SSLParser;
-import com.predic8.membrane.core.config.security.TrustStore;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.interceptor.AbstractInterceptor;
-import com.predic8.membrane.core.interceptor.HTTPClientInterceptor;
-import com.predic8.membrane.core.interceptor.Interceptor;
-import com.predic8.membrane.core.interceptor.Outcome;
-import com.predic8.membrane.core.rules.ServiceProxy;
-import com.predic8.membrane.core.rules.ServiceProxyKey;
-import com.predic8.membrane.core.transport.http.HttpClient;
-import com.predic8.membrane.core.transport.http.HttpServerHandler;
-import com.predic8.membrane.core.transport.http.client.HttpClientConfiguration;
-import okhttp3.Call;
-import okhttp3.OkHttpClient;
-import org.apache.commons.httpclient.methods.GetMethod;
-import org.junit.jupiter.api.Test;
+import com.predic8.membrane.core.config.security.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.proxies.*;
+import com.predic8.membrane.core.transport.http.*;
+import com.predic8.membrane.core.transport.http.client.*;
+import okhttp3.*;
+import org.apache.commons.httpclient.methods.*;
+import org.junit.jupiter.api.*;
 
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.TrustManager;
-import javax.net.ssl.X509TrustManager;
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.net.ServerSocket;
-import java.net.Socket;
-import java.net.URL;
-import java.nio.charset.StandardCharsets;
-import java.security.KeyManagementException;
-import java.security.NoSuchAlgorithmException;
-import java.security.cert.X509Certificate;
-import java.util.concurrent.atomic.AtomicReference;
+import javax.net.ssl.*;
+import java.io.*;
+import java.net.*;
+import java.security.*;
+import java.security.cert.*;
+import java.util.concurrent.atomic.*;
 
-import static com.google.common.io.Resources.getResource;
-import static com.predic8.membrane.core.transport.http2.Http2ServerHandler.HTTP2;
+import static com.google.common.io.Resources.*;
+import static com.predic8.membrane.core.Constants.*;
+import static com.predic8.membrane.core.transport.http2.Http2ServerHandler.*;
+import static java.nio.charset.StandardCharsets.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class ChunkedBodyTest {
     @Test
-    public void testReadChunkSize() throws Exception {
-        String s = "3d2F" + Constants.CRLF;
+    void testReadChunkSize() throws Exception {
+        String s = "3d2F" + CRLF;
         assertEquals(15663, ChunkedBody.readChunkSize(new ByteArrayInputStream(s.getBytes())));
     }
 
     @Test
-    public void testReadChunkSizeWithExtension() throws Exception {
-        String s = "3d2F" + Constants.CRLF + ";gfgfgfg" + Constants.CRLF;
+    void testReadChunkSizeWithExtension() throws Exception {
+        String s = "3d2F" + CRLF + ";gfgfgfg" + CRLF;
         assertEquals(15663, ChunkedBody.readChunkSize(new ByteArrayInputStream(s.getBytes())));
     }
 
     @Test
-    public void testReadChunkSizeWithExtensionValue() throws Exception {
-        String s = "3d2F" + Constants.CRLF + ";gfgf=gfg" + Constants.CRLF;
+    void testReadChunkSizeWithExtensionValue() throws Exception {
+        String s = "3d2F" + CRLF + ";gfgf=gfg" + CRLF;
         assertEquals(15663, ChunkedBody.readChunkSize(new ByteArrayInputStream(s.getBytes())));
     }
 
     @Test
-    public void testReadTrailer() throws Exception {
+    void testReadTrailer() throws Exception {
         try (ServerSocket ss = new ServerSocket(3058)) {
-            Thread t = new Thread() {
-                @Override
-                public void run() {
-                    try {
-                        try (Socket s = ss.accept()) {
-                            URL resource = getResource("chunked-response-with-trailer.txt");
-                            String cont = Resources.toString(resource, StandardCharsets.US_ASCII);
-                            cont = cont.replaceAll("\n", "").replaceAll("\r", "").replaceAll("\\\\n", "\n").replaceAll("\\\\r", "\r");
-                            s.getOutputStream().write(cont.getBytes(StandardCharsets.US_ASCII));
-                            s.getOutputStream().flush();
-                        }
-                    } catch (IOException e) {
-                        e.printStackTrace();
+            Thread t = new Thread(() -> {
+                try {
+                    try (Socket s = ss.accept()) {
+                        URL resource = getResource("chunked-response-with-trailer.txt");
+                        String cont = Resources.toString(resource, US_ASCII);
+                        cont = cont.replaceAll("\n", "").replaceAll("\r", "").replaceAll("\\\\n", "\n").replaceAll("\\\\r", "\r");
+                        s.getOutputStream().write(cont.getBytes(US_ASCII));
+                        s.getOutputStream().flush();
                     }
+                } catch (IOException e) {
+                    e.printStackTrace();
                 }
-            };
+            });
             t.start();
 
-            HttpClient hc = new HttpClient();
-            Exchange e = hc.call(new Request.Builder().get("http://localhost:3058").buildExchange());
-
+            Exchange e;
+            try (HttpClient hc = new HttpClient()) {
+                e = hc.call(new Request.Builder().get("http://localhost:3058").buildExchange());
+            }
             e.getResponse().getBodyAsStringDecoded(); // read body
 
-            Header trailer = e.getResponse().getBody().getTrailer();
-            assertEquals("Mon, 12 Dec 2022 09:28:00 GMT", trailer.getFirstValue("Expires"));
+            assertEquals("Mon, 12 Dec 2022 09:28:00 GMT", e.getResponse().getBody().getTrailer().getFirstValue("Expires"));
         }
     }
 
 
     @Test
-    public void testWriteTrailer() throws IOException {
+    void testWriteTrailer() throws IOException {
         HttpRouter router = setupRouter(false, false);
         try {
             org.apache.commons.httpclient.HttpClient hc = new org.apache.commons.httpclient.HttpClient();
@@ -122,7 +106,7 @@ public class ChunkedBodyTest {
     }
 
     @Test
-    public void testReadWriteTrailerHttp2() throws IOException {
+    void testReadWriteTrailerHttp2() throws IOException {
         HttpRouter router = setupRouter(false, true);
         HttpRouter router2 = setupRouter(true, false);
         try {
@@ -139,8 +123,9 @@ public class ChunkedBodyTest {
             router.stop();
         }
     }
+
     @Test
-    public void testWriteTrailerHttp2() throws IOException, NoSuchAlgorithmException, KeyManagementException {
+    void testWriteTrailerHttp2() throws IOException, NoSuchAlgorithmException, KeyManagementException {
         HttpRouter router = setupRouter(true, false);
         try {
             X509TrustManager trustAll = new X509TrustManager() {
@@ -157,7 +142,7 @@ public class ChunkedBodyTest {
                     return new X509Certificate[]{};
                 }
             };
-            TrustManager[] trustAllCerts = new TrustManager[]{ trustAll };
+            TrustManager[] trustAllCerts = new TrustManager[]{trustAll};
 
 
             SSLContext sslContext = SSLContext.getInstance("SSL");
@@ -169,10 +154,10 @@ public class ChunkedBodyTest {
                     .build();
             for (int i = 0; i < 2; i++) {
                 Call call = hc.newCall(new okhttp3.Request.Builder().url("https://localhost:3060").build());
-                okhttp3.Response res = call.execute();
-
-                assertEquals("predic8DeveloperNetwork", res.body().string());
-                assertEquals("Mon, 12 Dec 2022 09:28:00 GMT", res.trailers().get("Expires"));
+                try (okhttp3.Response res = call.execute()) {
+                    assertEquals("predic8DeveloperNetwork", res.body().string());
+                    assertEquals("Mon, 12 Dec 2022 09:28:00 GMT", res.trailers().get("Expires"));
+                }
             }
             hc.dispatcher().executorService().shutdown();
             hc.connectionPool().evictAll();
@@ -226,13 +211,13 @@ public class ChunkedBodyTest {
                         throw new RuntimeException("HTTP/2 is being used.");
 
                     Response r = Response.ok().build();
-                    String cont = Resources.toString(getResource("chunked-body-with-trailer.txt"), StandardCharsets.US_ASCII);
+                    String cont = Resources.toString(getResource("chunked-body-with-trailer.txt"), US_ASCII);
                     cont = cont.replaceAll("\n", "").replaceAll("\r", "").replaceAll("\\\\n", "\n").replaceAll("\\\\r", "\r");
                     r.getHeader().removeFields("Content-Length");
                     r.getHeader().setValue("Transfer-Encoding", "chunked");
                     r.getHeader().setValue("Content-Type", "text/plain");
                     r.getHeader().setValue("Trailer", "Expires");
-                    r.setBody(new ChunkedBody(new ByteArrayInputStream(cont.getBytes(StandardCharsets.US_ASCII))));
+                    r.setBody(new ChunkedBody(new ByteArrayInputStream(cont.getBytes(US_ASCII))));
                     exc.setResponse(r);
                     return Outcome.RETURN;
                 }

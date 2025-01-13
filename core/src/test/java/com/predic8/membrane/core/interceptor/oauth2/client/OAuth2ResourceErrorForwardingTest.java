@@ -30,11 +30,11 @@ import com.predic8.membrane.core.interceptor.oauth2client.OAuth2Resource2Interce
 import com.predic8.membrane.core.interceptor.oauth2client.RequireAuth;
 import com.predic8.membrane.core.interceptor.oauth2client.rf.FormPostGenerator;
 import com.predic8.membrane.core.interceptor.session.InMemorySessionManager;
-import com.predic8.membrane.core.rules.ServiceProxy;
-import com.predic8.membrane.core.rules.ServiceProxyKey;
-import com.predic8.membrane.core.util.URI;
+import com.predic8.membrane.core.proxies.ServiceProxy;
+import com.predic8.membrane.core.proxies.ServiceProxyKey;
 import com.predic8.membrane.core.util.URIFactory;
 import com.predic8.membrane.core.util.URLParamUtil;
+import org.jetbrains.annotations.*;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -42,12 +42,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.math.BigInteger;
-import java.security.SecureRandom;
 import java.util.*;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static com.predic8.membrane.core.RuleManager.RuleDefinitionSource.MANUAL;
@@ -128,21 +123,7 @@ public class OAuth2ResourceErrorForwardingTest {
         ServiceProxy sp = new ServiceProxy(new ServiceProxyKey(serverPort), null, 99999);
 
 
-        WellknownFile wkf = new WellknownFile();
-
-        wkf.setIssuer(getServerAddress());
-        wkf.setAuthorizationEndpoint(getServerAddress() + "/auth");
-        wkf.setTokenEndpoint(getServerAddress() + "/token");
-        wkf.setUserinfoEndpoint(getServerAddress() + "/userinfo");
-        wkf.setRevocationEndpoint(getServerAddress() + "/revoke");
-        wkf.setJwksUri(getServerAddress() + "/certs");
-        wkf.setSupportedResponseTypes("code token");
-        wkf.setSupportedSubjectType("public");
-        wkf.setSupportedIdTokenSigningAlgValues("RS256");
-        wkf.setSupportedScopes("openid email profile");
-        wkf.setSupportedTokenEndpointAuthMethods("client_secret_post");
-        wkf.setSupportedClaims("sub email username");
-        wkf.setSupportedResponseModes(Set.of("query", "fragment", "form_post"));
+        WellknownFile wkf = getWellknownFile();
         wkf.init(new HttpRouter());
 
         sp.getInterceptors().add(new AbstractInterceptor() {
@@ -168,37 +149,30 @@ public class OAuth2ResourceErrorForwardingTest {
         return sp;
     }
 
+    private @NotNull WellknownFile getWellknownFile() {
+        WellknownFile wkf = new WellknownFile();
+
+        wkf.setIssuer(getServerAddress());
+        wkf.setAuthorizationEndpoint(getServerAddress() + "/auth");
+        wkf.setTokenEndpoint(getServerAddress() + "/token");
+        wkf.setUserinfoEndpoint(getServerAddress() + "/userinfo");
+        wkf.setRevocationEndpoint(getServerAddress() + "/revoke");
+        wkf.setJwksUri(getServerAddress() + "/certs");
+        wkf.setSupportedResponseTypes("code token");
+        wkf.setSupportedSubjectType("public");
+        wkf.setSupportedIdTokenSigningAlgValues("RS256");
+        wkf.setSupportedScopes("openid email profile");
+        wkf.setSupportedTokenEndpointAuthMethods("client_secret_post");
+        wkf.setSupportedClaims("sub email username");
+        wkf.setSupportedResponseModes(Set.of("query", "fragment", "form_post"));
+        return wkf;
+    }
+
     private ServiceProxy getConfiguredOAuth2Resource() {
 
         ServiceProxy sp = new ServiceProxy(new ServiceProxyKey(clientPort), null, 99999);
 
-        OAuth2Resource2Interceptor oAuth2ResourceInterceptor = new OAuth2Resource2Interceptor();
-        oAuth2ResourceInterceptor.setSessionManager(new InMemorySessionManager());
-        oAuth2ResourceInterceptor.setAfterErrorUrl("/error");
-        MembraneAuthorizationService auth = new MembraneAuthorizationService();
-        auth.setSrc(getServerAddress());
-        auth.setClientId("2343243242");
-        auth.setClientSecret("3423233123123");
-        auth.setScope("openid profile");
-        oAuth2ResourceInterceptor.setAuthService(auth);
-
-        oAuth2ResourceInterceptor.setLogoutUrl("/logout");
-
-        var withOutValue = new LoginParameter();
-        withOutValue.setName("login_hint");
-
-        var withValue = new LoginParameter();
-        withValue.setName("foo");
-        withValue.setValue("bar");
-
-        oAuth2ResourceInterceptor.setLoginParameters(List.of(
-                withOutValue,
-                withValue
-        ));
-
-        var aud = new RequireAuth();
-        aud.setExpectedAud("asdf");
-        aud.setOauth2(oAuth2ResourceInterceptor);
+        OAuth2Resource2Interceptor oAuth2ResourceInterceptor = getoAuth2Resource2Interceptor();
 
 
         sp.getInterceptors().add(new AbstractInterceptor() {
@@ -231,6 +205,37 @@ public class OAuth2ResourceErrorForwardingTest {
             }
         });
         return sp;
+    }
+
+    private @NotNull OAuth2Resource2Interceptor getoAuth2Resource2Interceptor() {
+        OAuth2Resource2Interceptor oAuth2ResourceInterceptor = new OAuth2Resource2Interceptor();
+        oAuth2ResourceInterceptor.setSessionManager(new InMemorySessionManager());
+        oAuth2ResourceInterceptor.setAfterErrorUrl("/error");
+        MembraneAuthorizationService auth = new MembraneAuthorizationService();
+        auth.setSrc(getServerAddress());
+        auth.setClientId("2343243242");
+        auth.setClientSecret("3423233123123");
+        auth.setScope("openid profile");
+        oAuth2ResourceInterceptor.setAuthService(auth);
+
+        oAuth2ResourceInterceptor.setLogoutUrl("/logout");
+
+        var withOutValue = new LoginParameter();
+        withOutValue.setName("login_hint");
+
+        var withValue = new LoginParameter();
+        withValue.setName("foo");
+        withValue.setValue("bar");
+
+        oAuth2ResourceInterceptor.setLoginParameters(List.of(
+                withOutValue,
+                withValue
+        ));
+
+        var aud = new RequireAuth();
+        aud.setExpectedAud("asdf");
+        aud.setOauth2(oAuth2ResourceInterceptor);
+        return oAuth2ResourceInterceptor;
     }
 
     private ServiceProxy getErrorCaptor() {

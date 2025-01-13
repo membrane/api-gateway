@@ -14,24 +14,16 @@
 
 package com.predic8.membrane.core.exchange;
 
-import com.predic8.membrane.core.TerminateException;
+import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.http.Response.ResponseBuilder;
-import com.predic8.membrane.core.interceptor.Outcome;
-import com.predic8.membrane.core.transport.http.AbstractHttpHandler;
-import com.predic8.membrane.core.transport.http.Connection;
-import com.predic8.membrane.core.util.HttpUtil;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.predic8.membrane.core.proxies.Proxy;
+import com.predic8.membrane.core.proxies.*;
+import com.predic8.membrane.core.transport.http.*;
+import com.predic8.membrane.core.util.*;
+import org.slf4j.*;
 
-import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.util.HashMap;
-import java.util.Map;
-
-import static com.predic8.membrane.core.http.Header.*;
-import static com.predic8.membrane.core.interceptor.Outcome.*;
+import java.net.*;
+import java.util.*;
 
 public class Exchange extends AbstractExchange {
 
@@ -47,14 +39,12 @@ public class Exchange extends AbstractExchange {
 
 	public static final String /*PROPERTY_*/SSL_CONTEXT = "SSL_CONTEXT";
 
-	public static final String API_KEY = "API_KEY";
-
 	public static final String OAUTH2 = "oauth2";
 
-	public static final String SNI_SERVER_NAME = "SNI_SERVER_NAME";
-
-	public static final String WS_ORIGINAL_EXCHANGE = "WS_ORIGINAL_EXCHANGE";
-	public static final String SECURITY_SCHEMES = "SECURITY_SCHEMES";
+	// Property names
+	public static final String SNI_SERVER_NAME = "membrane.sni.server.name";
+	public static final String WS_ORIGINAL_EXCHANGE = "membrane.ws.original.exchange";
+	public static final String SECURITY_SCHEMES = "membrane.security.schemes";
 
 	private static final Logger log = LoggerFactory.getLogger(Exchange.class.getName());
 
@@ -96,7 +86,7 @@ public class Exchange extends AbstractExchange {
 	}
 
 	public void blockRequestIfNeeded() throws TerminateException {
-		if (getRule().isBlockRequest()) {
+		if (getProxy().isBlockRequest()) {
 			synchronized (getRequest()) {
 				setStopped();
 				block(getRequest());
@@ -105,7 +95,7 @@ public class Exchange extends AbstractExchange {
 	}
 
 	public void blockResponseIfNeeded() throws TerminateException {
-		if (getRule().isBlockResponse()) {
+		if (getProxy().isBlockResponse()) {
 			synchronized (getResponse()) {
 				setStopped();
 				block(getResponse());
@@ -158,13 +148,13 @@ public class Exchange extends AbstractExchange {
 	}
 
 	public void collectStatistics() {
-		rule.getStatisticCollector().collect(this);
+		proxy.getStatisticCollector().collect(this);
 	}
 
 	/**
 	 * Returns the relative original URI.
 	 * <p>
-	 * "original" meaning "as recieved by Membrane's transport".
+	 * "original" meaning "as received by Membrane's transport".
 	 * <p>
 	 * To be used, for example, when generating self-referring web pages.
 	 */
@@ -178,20 +168,6 @@ public class Exchange extends AbstractExchange {
 			}
 		}
 		return getOriginalRequestUri();
-	}
-
-	public Outcome echo() throws IOException {
-		ResponseBuilder builder = Response.ok();
-		byte[] content = getRequest().getBody().getContent();
-		builder.body(content);
-		String contentType = getRequest().getHeader().getContentType();
-		if (contentType != null)
-			builder.header(CONTENT_TYPE, contentType);
-		String contentEncoding = getRequest().getHeader().getContentEncoding();
-		if (contentEncoding != null)
-			builder.header(CONTENT_ENCODING, contentEncoding);
-		setResponse(builder.build());
-		return RETURN;
 	}
 
 	public Map<String, String> getStringProperties() {
@@ -235,7 +211,7 @@ public class Exchange extends AbstractExchange {
 	}
 
 	@Override
-	public AbstractExchange createSnapshot(Runnable bodyUpdatedCallback, BodyCollectingMessageObserver.Strategy strategy, long limit) {
+	public Exchange createSnapshot(Runnable bodyUpdatedCallback, BodyCollectingMessageObserver.Strategy strategy, long limit) {
 		Exchange exc = updateCopy(this, new Exchange(null), bodyUpdatedCallback, strategy, limit);
 		exc.setId(this.getId());
 		return exc;
@@ -262,7 +238,10 @@ public class Exchange extends AbstractExchange {
 	}
 
 	public String getInboundProtocol() {
-		if (getRule().getSslInboundContext() == null)
+		Proxy rule = getProxy();
+		if (!(rule instanceof SSLableProxy sp))
+			return "http";
+		if (sp.getSslInboundContext() == null)
 			return "http";
 		else
 			return "https";

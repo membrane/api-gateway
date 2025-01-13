@@ -15,31 +15,31 @@
 package com.predic8.membrane.examples;
 
 import com.predic8.membrane.errorhandling.OpenAPIConfigErrorTest;
-import com.predic8.membrane.examples.config.ProxiesXMLOfflineTest;
-import com.predic8.membrane.examples.config.ProxiesXMLSecurityTest;
+import com.predic8.membrane.examples.config.ProxiesXMLOfflineExampleTest;
+import com.predic8.membrane.examples.config.ProxiesXMLSecurityExampleTest;
 import com.predic8.membrane.examples.env.ConsistentVersionNumbers;
 import com.predic8.membrane.examples.env.JavaLicenseInfoTest;
 import com.predic8.membrane.examples.tests.*;
-import com.predic8.membrane.examples.tests.loadbalancing.Loadbalancing1StaticTest;
-import com.predic8.membrane.examples.tests.loadbalancing.Loadbalancing3ClientTest;
-import com.predic8.membrane.examples.tests.loadbalancing.Loadbalancing5MultipleTest;
-import com.predic8.membrane.examples.tests.log.AccessLogTest;
-import com.predic8.membrane.examples.tests.message_transformation.Json2XmlTest;
-import com.predic8.membrane.examples.tests.message_transformation.TransformationUsingJavascriptTest;
-import com.predic8.membrane.examples.tests.message_transformation.Xml2JsonTest;
-import com.predic8.membrane.examples.tests.oauth2.OAuth2APITest;
-import com.predic8.membrane.examples.tests.oauth2.OAuth2CredentialsTest;
-import com.predic8.membrane.examples.tests.oauth2.OAuth2MembraneTest;
-import com.predic8.membrane.examples.tests.openapi.OpenAPIRewriteTest;
-import com.predic8.membrane.examples.tests.openapi.OpenAPIValidationSimpleTest;
-import com.predic8.membrane.examples.tests.openapi.OpenAPIValidationTest;
-import com.predic8.membrane.examples.tests.opentelemetry.OpenTelemetryTest;
-import com.predic8.membrane.examples.tests.template.json.JsonTemplateTest;
-import com.predic8.membrane.examples.tests.template.text.TextTemplateTest;
-import com.predic8.membrane.examples.tests.template.xml.XMLTemplateTest;
-import com.predic8.membrane.examples.tests.validation.JSONSchemaValidationTest;
-import com.predic8.membrane.examples.tests.validation.SOAPProxyValidationTest;
-import com.predic8.membrane.examples.tests.validation.XMLValidationTest;
+import com.predic8.membrane.examples.tests.loadbalancing.Loadbalancing1StaticExampleTest;
+import com.predic8.membrane.examples.tests.loadbalancing.Loadbalancing3ClientExampleTest;
+import com.predic8.membrane.examples.tests.loadbalancing.Loadbalancing5MultipleExampleTest;
+import com.predic8.membrane.examples.tests.log.AccessLogExampleTest;
+import com.predic8.membrane.examples.tests.message_transformation.Json2XmlExampleTest;
+import com.predic8.membrane.examples.tests.message_transformation.TransformationUsingJavascriptExampleTest;
+import com.predic8.membrane.examples.tests.message_transformation.Xml2JsonExampleTest;
+import com.predic8.membrane.examples.tests.oauth2.OAuth2APIExampleTest;
+import com.predic8.membrane.examples.tests.oauth2.OAuth2CredentialsExampleTest;
+import com.predic8.membrane.examples.tests.oauth2.OAuth2MembraneExampleTest;
+import com.predic8.membrane.examples.tests.openapi.OpenAPIRewriteExampleTest;
+import com.predic8.membrane.examples.tests.openapi.OpenAPIValidationSimpleExampleTest;
+import com.predic8.membrane.examples.tests.openapi.OpenAPIValidationExampleTest;
+import com.predic8.membrane.examples.tests.opentelemetry.OpenTelemetryExampleTest;
+import com.predic8.membrane.examples.tests.template.json.JsonTemplateExampleTest;
+import com.predic8.membrane.examples.tests.template.text.TextTemplateExampleTest;
+import com.predic8.membrane.examples.tests.template.xml.XMLTemplateExampleTest;
+import com.predic8.membrane.examples.tests.validation.JSONSchemaValidationExampleTest;
+import com.predic8.membrane.examples.tests.validation.SOAPProxyValidationExampleTest;
+import com.predic8.membrane.examples.tests.validation.XMLValidationExampleTest;
 import org.junit.platform.suite.api.SelectClasses;
 import org.junit.platform.suite.api.Suite;
 
@@ -51,56 +51,65 @@ import org.junit.platform.suite.api.Suite;
         OpenAPIConfigErrorTest.class,
 
         // Proxy
-        CBRTest.class,
-        ProxiesXMLOfflineTest.class,
-        ProxiesXMLSecurityTest.class,
+        CBRXPathExampleTest.class,
+        ProxiesXMLOfflineExampleTest.class,
+        ProxiesXMLSecurityExampleTest.class,
 
        // Scripting
-        ConditionalInterceptorTest.class,
-        GroovyTest.class,
-        JavascriptTest.class,
+        IfInterceptorExampleTest.class,
+        GroovyExampleTest.class,
+        JavascriptExampleTest.class,
 
         // Load Balancing
-        Loadbalancing1StaticTest.class,
-        Loadbalancing3ClientTest.class,
-        Loadbalancing5MultipleTest.class,
+        Loadbalancing1StaticExampleTest.class,
+        Loadbalancing3ClientExampleTest.class,
+        Loadbalancing5MultipleExampleTest.class,
 
         // Validation
-        JSONSchemaValidationTest.class,
-        XMLValidationTest.class,
-        SampleSoapServiceTest.class,
-        SOAPProxyValidationTest.class,
+        JSONSchemaValidationExampleTest.class,
+        XMLValidationExampleTest.class,
+        SampleSoapServiceExampleTest.class,
+        SOAPProxyValidationExampleTest.class,
 
         // Logging
-        AccessLogTest.class,
+        AccessLogExampleTest.class,
 
         // Transformation
-        Xml2JsonTest.class,
-        Json2XmlTest.class,
-        TransformationUsingJavascriptTest.class,
+        Xml2JsonExampleTest.class,
+        Json2XmlExampleTest.class,
+        TransformationUsingJavascriptExampleTest.class,
 
         // OAuth2
-        OAuth2APITest.class,
-        OAuth2MembraneTest.class,
-        OAuth2CredentialsTest.class,
+        OAuth2APIExampleTest.class,
+        OAuth2MembraneExampleTest.class,
+        OAuth2CredentialsExampleTest.class,
 
         // OpenAPI
-        OpenAPIValidationSimpleTest.class,
-        OpenAPIValidationTest.class,
-        OpenTelemetryTest.class,
-        OpenAPIRewriteTest.class,
+        OpenAPIValidationSimpleExampleTest.class,
+        OpenAPIValidationExampleTest.class,
+        OpenTelemetryExampleTest.class,
+        OpenAPIRewriteExampleTest.class,
 
         // Template
-        TextTemplateTest.class,
-        JsonTemplateTest.class,
+        TextTemplateExampleTest.class,
+        JsonTemplateExampleTest.class,
 
         // Security
-        JsonProtectionTest.class,
-        APIKeyTest.class,
-        APIKeyRBACTest.class,
-        APIKeyWithOpenAPITest.class,
-        XMLTemplateTest.class,
+        JsonProtectionExampleTest.class,
+        APIKeyExampleTest.class,
+        APIKeyRBACExampleTest.class,
+        APIKeyWithOpenAPIExampleTest.class,
+
+        XMLTemplateExampleTest.class,
         //DefaultConfigAdminConsoleTest.class*/
+
+        // XML
+        StaxInterceptorExampleTest.class,
+
+        // SOAP
+        AddSoapHeaderExampleTest.class,
+
+        InternalProxyExampleTest.class
 })
-public class ExampleTestsWithoutInternet {
+class ExampleTestsWithoutInternet {
 }

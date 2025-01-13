@@ -18,12 +18,12 @@ package com.predic8.membrane.core.openapi.serviceproxy;
 
 import com.fasterxml.jackson.databind.*;
 import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.openapi.util.*;
 import com.predic8.membrane.core.util.*;
 import io.swagger.v3.oas.models.*;
 
+import java.io.*;
 import java.net.*;
-
-import static com.predic8.membrane.core.openapi.util.OpenAPIUtil.*;
 
 public class OpenAPIRecord {
 
@@ -43,7 +43,7 @@ public class OpenAPIRecord {
     OpenAPISpec spec;
 
     /**
-     * Version of the OpenAPI standard e.g. 2.0, 3.0.1
+     * Version of the OpenAPI standard e.g. 3.0.1, 3.1.0
      */
     String version;
 
@@ -52,29 +52,22 @@ public class OpenAPIRecord {
      */
     public OpenAPIRecord() {}
 
-    public OpenAPIRecord(OpenAPI api, JsonNode node, OpenAPISpec spec) {
+    public OpenAPIRecord(OpenAPI api, OpenAPISpec spec) {
         this.api = api;
-        this.node = node;
-        this.spec = spec;
-
-        // If used without a node. Version is read from JSON cause JSON
-        // supports any version number like 3.1.0 or 3.0.9. For
-        // getSpecVerison() there are just a number of enum constants.
-        if (node != null) {
-            this.version = getOpenAPIVersion(node);
-        } else {
-            this.version = api.getSpecVersion().name();
+        try {
+            this.node = OpenAPIUtil.convert2Json(api);
+        } catch (IOException e) {
+            throw new ConfigurationException("""
+                    Cannot convert OpenAPI to JSON.
+                    
+                    Caused by: %s
+                    
+                    OpenAPI:
+                    %s
+                    """.formatted(e.getMessage(),api));
         }
-
-
-    }
-
-    public boolean isVersion2() {
-        return version.startsWith("2");
-    }
-
-    public boolean isVersion3() {
-        return version.startsWith("3");
+        this.spec = spec;
+        this.version = api.getSpecVersion().name();
     }
 
     public JsonNode rewriteOpenAPI(Exchange exc, URIFactory uriFactory) throws URISyntaxException {

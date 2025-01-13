@@ -18,7 +18,7 @@ import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.interceptor.rewrite.RewriteInterceptor.*;
-import com.predic8.membrane.core.rules.*;
+import com.predic8.membrane.core.proxies.*;
 import com.predic8.membrane.core.util.*;
 import org.junit.jupiter.api.*;
 
@@ -62,7 +62,7 @@ public class RewriteInterceptorTest {
 		exc.setRequest(MessageUtil.getGetRequest("/buy/banana/3"));
 		assertEquals(CONTINUE, di.handleRequest(exc));
 		assertEquals(CONTINUE, rewriter.handleRequest(exc));
-		assertEquals("/buy?item=banana&amount=3", exc.getDestinations().get(0));
+		assertEquals("/buy?item=banana&amount=3", exc.getDestinations().getFirst());
 	}
 
 	@Test
@@ -72,7 +72,7 @@ public class RewriteInterceptorTest {
 
 		assertEquals(CONTINUE, di.handleRequest(exc));
 		assertEquals(CONTINUE, rewriter.handleRequest(exc));
-		assertEquals("http://www.predic8.de:80/buy?item=banana&amount=3", exc.getDestinations().get(0));
+		assertEquals("http://www.predic8.de:80/buy?item=banana&amount=3", exc.getDestinations().getFirst());
 	}
 
 	@Test
@@ -80,7 +80,7 @@ public class RewriteInterceptorTest {
 		exc.setRequest(MessageUtil.getGetRequest("https://api.predic8.de/store/products/"));
 		assertEquals(CONTINUE, di.handleRequest(exc));
 		assertEquals(CONTINUE, rewriter.handleRequest(exc));
-		assertEquals("https://api.predic8.de/shop/v2/products/", exc.getDestinations().get(0));
+		assertEquals("https://api.predic8.de/shop/v2/products/", exc.getDestinations().getFirst());
 	}
 
 	@Test
@@ -90,8 +90,6 @@ public class RewriteInterceptorTest {
 
 		assertEquals(CONTINUE, di.handleRequest(exc));
 		assertEquals(RETURN, rewriter.handleRequest(exc));
-
-		System.out.println("exc = " + exc.getResponse());
 
 		JsonNode json = om.readTree(exc.getResponse().getBodyAsStream());
 

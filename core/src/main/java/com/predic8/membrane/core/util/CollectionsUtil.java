@@ -21,4 +21,12 @@ public class CollectionsUtil {
     public static <T> List<T> concat(List<T> l1, List<T> l2) {
         return Stream.of(l1,l2).filter(Objects::nonNull).flatMap(Collection::stream).toList();
     }
+
+    public static <T> List<T> toList(Iterator<T> iterator) {
+        List<T> list = new ArrayList<>();
+        while (iterator.hasNext()) {
+            list.add(iterator.next());
+        }
+        return list;
+    }
 }

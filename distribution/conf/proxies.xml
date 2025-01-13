@@ -1,26 +1,47 @@
 <spring:beans xmlns:spring="http://www.springframework.org/schema/beans"
               xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-              xmlns="http://membrane-soa.org/proxies/1/"
+              xmlns="http://membrane-soa.org/proxies/1/" xmlns:lang="http://www.springframework.org/schema/lang"
               xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.2.xsd
-					    http://membrane-soa.org/proxies/1/ http://membrane-soa.org/schemas/proxies-1.xsd">
+					    http://membrane-soa.org/proxies/1/ http://membrane-soa.org/schemas/proxies-1.xsd http://www.springframework.org/schema/lang http://www.springframework.org/schema/lang/spring-lang.xsd">
+
+    <spring:bean class="com.predic8.membrane.core.interceptor.apikey.stores.ApiKeyFileStore">
+        <spring:property name="location" value="./keys.txt" />
+    </spring:bean>
 
     <router>
 
-        <api port="2000">
-            <path>/shop/v2</path>
-            <target host="api.predic8.de">
-                <ssl/>
-            </target>
+        <api port="2000" name="hello">
+            <apiKey required="true">
+                <queryParamExtractor name="api-key"/>
+            </apiKey>
+            <request>
+                <setProperty name="scopes" value="${scopes}"/>
+                <template>
+                    {
+                        "sub": "user@example.com",
+                        "aud": "order",
+                        "scope": "${property.scopes}"
+                    }
+                </template>
+                <jwtSigner>
+                    <jwk location="key.json"/>
+                </jwtSigner>
+            </request>
+            <target url="service://validator" />
         </api>
 
-        <soapProxy  wsdl="../../core/src/test/resources/ws/cities.wsdl">
-            <validator/>
-        </soapProxy>
-
-        <api port="2001">
-            <sampleSoapService/>
+        <api port="2001" name="validator">
+            <request>
+                <setHeader name="Authorization" value="Bearer ${request.body.toString}" />
+                <jwtAuth expectedAud="order">
+                    <jwks>
+                        <jwk location="key.json" />
+                    </jwks>
+                </jwtAuth>
+            </request>
+            <template>${property.jwt.get("scope")}</template>
+            <return />
         </api>
-
     </router>
 
 </spring:beans>

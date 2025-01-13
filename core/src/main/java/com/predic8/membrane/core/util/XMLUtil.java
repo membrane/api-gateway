@@ -13,7 +13,10 @@
    limitations under the License. */
 package com.predic8.membrane.core.util;
 
+import com.predic8.membrane.core.http.*;
+import org.jetbrains.annotations.*;
 import org.w3c.dom.*;
+import org.xml.sax.*;
 
 import javax.xml.namespace.*;
 import javax.xml.transform.*;
@@ -42,4 +45,12 @@ public class XMLUtil {
         return new QName(qName.getNamespaceURI(), qName.getLocalPart(), qName.getPrefix());
     }
 
+    /**
+     * For XML processing sometimes an InputSource is needed.
+     * @param msg
+     * @return InputSource of the message body
+     */
+    public static @NotNull InputSource getInputSource(Message msg) {
+        return new InputSource(new InputStreamReader(msg.getBodyAsStreamDecoded()));
+    }
 }

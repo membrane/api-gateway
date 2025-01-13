@@ -16,7 +16,6 @@
 
 package com.predic8.membrane.core.openapi.util;
 
-import com.predic8.membrane.core.transport.http.*;
 import io.swagger.parser.*;
 import io.swagger.v3.oas.models.*;
 import org.junit.jupiter.api.*;
@@ -59,10 +58,5 @@ public class OpenAPIUtilTest {
     void getOpenAPIVersionTest() throws IOException {
         assertEquals("3.0.2", getOpenAPIVersion(getYAMLResource(this,"/openapi/specs/array.yml")));
         assertEquals("2.0", getOpenAPIVersion(getYAMLResource(this,"/openapi/specs/fruitshop-swagger-2.0.json")));
-    }
-
-    @Test
-    void parseSwaggersInfoServerTest() throws Exception {
-        assertEquals(new HostColonPort("10.20.9.4",44564), OpenAPIUtil.parseSwaggersInfoServer("//10.20.9.4:44564/"));
     }
 }
