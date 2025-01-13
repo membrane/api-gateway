@@ -23,14 +23,14 @@ public class SetHeaderInterceptor extends AbstractSetterInterceptor {
     @Override
     protected boolean shouldSetValue(Exchange exc, Flow flow) {
         if (ifAbsent) {
-            return !msgFromExchange(exc, flow).getHeader().contains(name);
+            return !msgFromExchange(exc, flow).getHeader().contains(fieldName);
         }
         return true;
     }
 
     @Override
     protected void setValue(Exchange exc, Flow flow, Object value) {
-        msgFromExchange(exc, flow).getHeader().setValue(name, value.toString());
+        msgFromExchange(exc, flow).getHeader().setValue(fieldName, value.toString());
     }
 
     /**
@@ -53,6 +53,6 @@ public class SetHeaderInterceptor extends AbstractSetterInterceptor {
 
     @Override
     public String getShortDescription() {
-        return "Sets the value of the HTTP header '%s' to the expression: %s.".formatted( name, expression);
+        return "Sets the value of the HTTP header '%s' to the expression: %s.".formatted(fieldName, expression);
     }
 }

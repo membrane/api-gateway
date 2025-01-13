@@ -96,8 +96,8 @@ import org.junit.platform.suite.api.Suite;
 
         // Security
         JsonProtectionTest.class,
-        APIKeyTest.class,
-        APIKeyRBACTest.class,
+        APIKeySimpleExampleTest.class,
+        APIKeyRBACExampleTest.class,
         APIKeyWithOpenAPITest.class,
         XMLTemplateExampleTest.class,
         //DefaultConfigAdminConsoleTest.class*/

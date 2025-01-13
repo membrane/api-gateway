@@ -23,4 +23,8 @@ public abstract class HttpSecurityScheme extends AbstractSecurityScheme {
         return new BearerHttpSecurityScheme();
     }
 
+    @Override
+    public String getName() {
+        return "http";
+    }
 }

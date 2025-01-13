@@ -17,51 +17,35 @@ import com.predic8.membrane.examples.util.AbstractSampleMembraneStartStopTestcas
 import org.junit.jupiter.api.Test;
 
 import static io.restassured.RestAssured.given;
-import static io.restassured.RestAssured.when;
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 
-public class APIKeyTest extends AbstractSampleMembraneStartStopTestcase {
+public class APIKeyRBACExampleTest extends AbstractSampleMembraneStartStopTestcase {
 
     @Override
     protected String getExampleDirName() {
-        return "security/api-key/simple";
+        return "security/api-key/rbac";
     }
 
     @Test
-    public void notAuthenticated() {
-        when()
-            .get("http://localhost:2000")
-        .then().assertThat()
-            .statusCode(401);
-    }
-
-    @Test
-    public void notAuthorized() {
+    public void normalScope() {
         given()
-            .header("X-Api-Key", "98765")
+            .header("X-Key", "123456789")
         .when()
-            .get("http://localhost:2000")
+            .get("http://localhost:3000")
         .then().assertThat()
-            .statusCode(403);
+            .statusCode(200)
+            .body(containsString("Caller scopes: accounting,finance"));
     }
 
     @Test
-    public void successKeyHeader() {
+    public void conditionalScope() {
         given()
-            .header("X-Api-Key", "demokey")
+            .header("X-Key", "key_321_abc")
         .when()
-            .get("http://localhost:2000")
+            .get("http://localhost:3000")
         .then().assertThat()
-            .statusCode(200);
-    }
-
-    @Test
-    public void successQueryKey() {
-        given()
-            .queryParam("api-key", "demokey")
-        .when()
-            .get("http://localhost:2000")
-        .then().assertThat()
-            .statusCode(200);
+            .statusCode(200)
+            .body(containsString("Caller scopes: admin"));
     }
 }
