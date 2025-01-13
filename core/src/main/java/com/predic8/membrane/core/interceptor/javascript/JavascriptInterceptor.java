@@ -14,12 +14,15 @@
 package com.predic8.membrane.core.interceptor.javascript;
 
 import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.exceptions.*;
+import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.lang.*;
 import org.slf4j.*;
 
 import java.io.*;
 
 import static com.predic8.membrane.core.util.TextUtil.*;
+import static org.apache.commons.lang3.StringUtils.trim;
 import static org.apache.commons.text.StringEscapeUtils.*;
 
 /**
@@ -58,5 +61,23 @@ public class JavascriptInterceptor extends AbstractScriptInterceptor {
                :<br/><pre style="overflow-x:auto">""" +
                escapeHtml4(src.stripIndent()) +
                "</pre>";
+    }
+
+    protected void handleScriptExecutionException(Exchange exc, Exception e) {
+        log.warn("Error executing {} script: {}", name , e.getMessage());
+        log.warn("Script: {}", src);
+
+        ProblemDetails pd = adapter.getProblemDetails(e);
+
+        pd.title("Error executing script.");
+
+        if (!router.isProduction()) {
+            pd.extension("message", e.getMessage())
+                    .extension("source", trim(src));
+        } else {
+            pd.detail("See logs for details.");
+        }
+
+        exc.setResponse(pd.build());
     }
 }

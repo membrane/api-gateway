@@ -17,7 +17,10 @@
 package com.predic8.membrane.core.interceptor.javascript;
 
 import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.lang.javascript.*;
+
+import javax.script.*;
 
 public class RhinoJavascriptLanguageAdapter extends LanguageAdapter {
 
@@ -26,10 +29,19 @@ public class RhinoJavascriptLanguageAdapter extends LanguageAdapter {
         languageSupport = new RhinoJavascriptLanguageSupport();
     }
 
-    /**
-     * new java.lang.String(s) is needed to avoid ambiguity.
-     */
-    protected String prepareScript(String script) {
+    @Override
+    public ProblemDetails getProblemDetails(Exception e) {
+        ProblemDetails pd = ProblemDetails.internal(router.isProduction());
+        if (e.getCause() instanceof ScriptException se) {
+            pd.extension("column",  se.getColumnNumber() + 1);
+            pd.extension("line",  se.getLineNumber() - preScriptLineLength + 1);
+            pd.extension("message",  se.getMessage());
+        }
+        return pd;
+    }
+
+    @Override
+    protected String getPreScript() {
         return """
             var imports = new JavaImporter(com.predic8.membrane.core.interceptor.Outcome, com.predic8.membrane.core.http)
             var console = {};
@@ -41,9 +53,12 @@ public class RhinoJavascriptLanguageAdapter extends LanguageAdapter {
               json=JSON.parse(message.getBodyAsStringDecoded());
             }
             with(imports) {
-            """
-               + script +
-            """ 
+            """;
+    }
+
+    @Override
+    protected String getPostScript() {
+        return """ 
             };
             """;
     }

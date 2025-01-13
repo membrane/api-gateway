@@ -22,12 +22,14 @@ import org.junit.jupiter.api.*;
 
 import java.io.*;
 
+import static com.predic8.membrane.core.http.MimeType.TEXT_XML;
 import static com.predic8.membrane.core.util.SOAPUtil.FaultCode.Server;
 import static com.predic8.membrane.test.AssertUtils.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class SOAPFaultTest {
-	Router r = new Router();
+	public static final String ARTICLE_SERVICE_WSDL = "src/test/resources/validation/ArticleService.wsdl";
+	final Router r = new Router();
 
 	@Test
 	public void testValidateFaults() throws Exception {
@@ -55,13 +57,13 @@ public class SOAPFaultTest {
 
 	private Exchange getExchangeCP(String path) throws IOException {
 		Exchange exc = new Exchange(null);
-		exc.setResponse(Response.ok().contentType("text/xml").body(getClass().getClassLoader().getResourceAsStream(path), true).build());
+		exc.setResponse(Response.ok().contentType(TEXT_XML).body(getClass().getClassLoader().getResourceAsStream(path), true).build());
 		return exc;
 	}
 
 	private ValidatorInterceptor createValidatorInterceptor(boolean skipFaults) throws Exception {
 		ValidatorInterceptor i = new ValidatorInterceptor();
-		i.setWsdl("src/test/resources/validation/ArticleService.xml");
+		i.setWsdl(ARTICLE_SERVICE_WSDL);
 		i.setSkipFaults(skipFaults);
 		i.init(r);
 		return i;

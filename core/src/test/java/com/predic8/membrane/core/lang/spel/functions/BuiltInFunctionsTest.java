@@ -14,8 +14,9 @@
 package com.predic8.membrane.core.lang.spel.functions;
 
 import com.predic8.membrane.core.http.Request;
-import com.predic8.membrane.core.lang.spel.ExchangeEvaluationContext;
+import com.predic8.membrane.core.lang.spel.SpELExchangeEvaluationContext;
 import com.predic8.membrane.core.security.ApiKeySecurityScheme;
+import com.predic8.membrane.core.security.BasicHttpSecurityScheme;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -30,15 +31,18 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class BuiltInFunctionsTest {
 
-    static ExchangeEvaluationContext ctx;
+    static SpELExchangeEvaluationContext ctx;
 
     @BeforeAll
     static void init() throws URISyntaxException {
         var exc = Request.get("foo").buildExchange();
-        exc.setProperty(SECURITY_SCHEMES, List.of(new ApiKeySecurityScheme(HEADER, "X-Api-Key").scopes("demo", "test")));
+        exc.setProperty(SECURITY_SCHEMES, List.of(
+                new ApiKeySecurityScheme(HEADER, "X-Api-Key").scopes("demo", "test"),
+                new BasicHttpSecurityScheme().scopes("foo", "bar")
+        ));
         exc.getRequest().setBodyContent("""
                 {"name":"John"}""".getBytes());
-        ctx = new ExchangeEvaluationContext(exc);
+        ctx = new SpELExchangeEvaluationContext(exc);
     }
 
     @Test
@@ -48,7 +52,7 @@ public class BuiltInFunctionsTest {
     }
 
     @Test
-    void testRate() throws Exception {
+    void testRate() {
         assertEquals(0.01, calculateRate(1), 0.05);
         assertEquals(0.5, calculateRate(50), 0.05);
         assertEquals(0.001, calculateRate(0.1), 0.005);
@@ -71,39 +75,49 @@ public class BuiltInFunctionsTest {
 
     @Test
     public void testNotContainsScopes() {
-        assertFalse(BuiltInFunctions.hasScope(of("foo"), ctx));
+        assertFalse(BuiltInFunctions.hasScope(of("quux"), ctx));
     }
 
     @Test
     public void testNullScopes() throws URISyntaxException {
         var exc2 = Request.get("foo").buildExchange();
-        ExchangeEvaluationContext ctxWithoutScopes = new ExchangeEvaluationContext(exc2);
+        SpELExchangeEvaluationContext ctxWithoutScopes = new SpELExchangeEvaluationContext(exc2);
         assertFalse(BuiltInFunctions.hasScope(ctxWithoutScopes));
         assertFalse(BuiltInFunctions.hasScope(of("foo"), ctxWithoutScopes));
     }
 
     @Test
+    public void testGetAllScopes() {
+        assertEquals(List.of("test", "demo", "bar", "foo"), BuiltInFunctions.scopes(ctx));
+    }
+
+    @Test
+    public void testGetSchemeSpecificScopes() {
+        assertEquals(List.of("bar", "foo"), BuiltInFunctions.scopes("http", ctx));
+    }
+
+    @Test
     public void testHasBearerAuth() throws URISyntaxException {
         var exc2 = Request.get("foo").header(AUTHORIZATION, "Bearer 8w458934pj5u9843").buildExchange();
-        ExchangeEvaluationContext ctxWithoutScopes = new ExchangeEvaluationContext(exc2);
+        SpELExchangeEvaluationContext ctxWithoutScopes = new SpELExchangeEvaluationContext(exc2);
         assertTrue(BuiltInFunctions.isBearerAuthorization(ctxWithoutScopes));
     }
 
     @Test
     public void testHasOtherAuth() throws URISyntaxException {
         var exc2 = Request.get("foo").header(AUTHORIZATION, "Other 8w458934pj5u9843").buildExchange();
-        ExchangeEvaluationContext ctxWithoutScopes = new ExchangeEvaluationContext(exc2);
+        SpELExchangeEvaluationContext ctxWithoutScopes = new SpELExchangeEvaluationContext(exc2);
         assertFalse(BuiltInFunctions.isBearerAuthorization(ctxWithoutScopes));
     }
 
     @Test
     public void testHasNoAuth() throws URISyntaxException {
         var exc2 = Request.get("foo").buildExchange();
-        ExchangeEvaluationContext ctxWithoutScopes = new ExchangeEvaluationContext(exc2);
+        SpELExchangeEvaluationContext ctxWithoutScopes = new SpELExchangeEvaluationContext(exc2);
         assertFalse(BuiltInFunctions.isBearerAuthorization(ctxWithoutScopes));
     }
 
-    public double calculateRate(double weightInPercent) throws Exception {
+    public double calculateRate(double weightInPercent) {
         int executedCount = 0;
         for (int i = 0; i < 1000000; i++) {
             if (BuiltInFunctions.weight(weightInPercent, null)) {

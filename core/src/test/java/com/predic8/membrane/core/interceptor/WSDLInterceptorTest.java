@@ -65,14 +65,9 @@ public class WSDLInterceptorTest {
 
 		XMLEventReader parser = getParser();
 
-		StartElement element = getElement(parser, WSDL11_ADDRESS_SOAP11);
-		String locationAttr = getLocationAttributeFor(element);
-
-		assertTrue(locationAttr.startsWith("https://"));
-		assertTrue(getLocationAttributeFor(
-				getElement(getParser(), WSDL11_ADDRESS_SOAP12)).startsWith("https://"));
-		assertTrue(getLocationAttributeFor(
-				getElement(getParser(), WSDL11_ADDRESS_HTTP)).startsWith("https://"));
+        assertTrue(getLocationAttributeFor(getElement(parser, WSDL11_ADDRESS_SOAP11)).startsWith("https://"));
+		assertTrue(getLocationAttributeFor(getElement(getParser(), WSDL11_ADDRESS_SOAP12)).startsWith("https://"));
+		assertTrue(getLocationAttributeFor(getElement(getParser(), WSDL11_ADDRESS_HTTP)).startsWith("https://"));
 	}
 
 	@Test

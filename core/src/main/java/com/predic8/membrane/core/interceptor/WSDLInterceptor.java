@@ -14,27 +14,23 @@
 
 package com.predic8.membrane.core.interceptor;
 
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.Router;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Request;
-import com.predic8.membrane.core.http.Response;
-import com.predic8.membrane.core.transport.http.HttpClient;
-import com.predic8.membrane.core.util.MessageUtil;
-import com.predic8.membrane.core.ws.relocator.Relocator;
+import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.transport.http.*;
+import com.predic8.membrane.core.util.*;
+import com.predic8.membrane.core.ws.relocator.*;
 import org.jetbrains.annotations.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.slf4j.*;
 
-import javax.xml.namespace.QName;
+import javax.xml.namespace.*;
 import java.io.*;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.net.URLDecoder;
+import java.net.*;
 
 import static com.predic8.membrane.core.Constants.*;
-import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.RESPONSE;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.*;
+import static java.nio.charset.StandardCharsets.*;
 
 /**
  * @description <p>The <i>wsdlRewriter</i> rewrites endpoint addresses of services and XML Schema locations in WSDL documents.</p>
@@ -55,7 +51,7 @@ public class WSDLInterceptor extends RelocatingInterceptor {
 
     public WSDLInterceptor() {
         name = "WSDL Rewriting Interceptor";
-        setFlow(RESPONSE);
+        setFlow(RESPONSE_ABORT); // TODO Only Response
     }
 
     @Override
@@ -70,15 +66,11 @@ public class WSDLInterceptor extends RelocatingInterceptor {
         log.debug("Changing endpoint address in WSDL");
 
         ByteArrayOutputStream stream = new ByteArrayOutputStream();
-
         Relocator relocator = getRelocator(exc, stream);
-
         relocator.relocate(new InputStreamReader(exc.getResponse().getBodyAsStreamDecoded(), exc.getResponse().getCharset()));
-
         if (relocator.isWsdlFound()) {
             registerWSDL(exc);
         }
-
         exc.getResponse().setBodyContent(stream.toByteArray());
     }
 
@@ -106,11 +98,7 @@ public class WSDLInterceptor extends RelocatingInterceptor {
         buf.append(registryWSDLRegisterURL);
         buf.append("?wsdl=");
 
-        try {
-            buf.append(URLDecoder.decode(getWSDLURL(exc), "US-ASCII"));
-        } catch (UnsupportedEncodingException e) {
-            // ignored
-        }
+        buf.append(URLDecoder.decode(getWSDLURL(exc), US_ASCII));
 
         callRegistry(buf.toString());
 
@@ -140,7 +128,6 @@ public class WSDLInterceptor extends RelocatingInterceptor {
     private String getCompletePath(URL url) {
         if (url.getQuery() == null)
             return url.getPath();
-
         return url.getPath() + "?" + url.getQuery();
     }
 

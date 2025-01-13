@@ -21,8 +21,8 @@ import org.junit.jupiter.api.*;
 import com.predic8.membrane.core.HttpRouter;
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.exchangestore.MemoryExchangeStore;
-import com.predic8.membrane.core.rules.ProxyRule;
-import com.predic8.membrane.core.rules.ProxyRuleKey;
+import com.predic8.membrane.core.proxies.ProxyRule;
+import com.predic8.membrane.core.proxies.ProxyRuleKey;
 import com.predic8.membrane.test.AssertUtils;
 
 public class ProxySSLConnectionMethodTest {
@@ -38,7 +38,7 @@ public class ProxySSLConnectionMethodTest {
 	}
 
 	@AfterEach
-	public void tearDown() throws Exception {
+	public void tearDown() {
 		router.shutdown();
 	}
 

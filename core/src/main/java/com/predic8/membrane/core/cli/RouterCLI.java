@@ -14,25 +14,23 @@
 
 package com.predic8.membrane.core.cli;
 
-import com.predic8.membrane.core.HttpRouter;
-import com.predic8.membrane.core.Router;
+import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exceptions.*;
-import com.predic8.membrane.core.openapi.serviceproxy.APIProxy;
-import com.predic8.membrane.core.openapi.serviceproxy.OpenAPISpec;
+import com.predic8.membrane.core.openapi.serviceproxy.*;
 import com.predic8.membrane.core.resolver.*;
-import com.predic8.membrane.core.util.URIFactory;
 import org.apache.commons.cli.*;
+import org.jetbrains.annotations.*;
 import org.slf4j.*;
 import org.springframework.beans.factory.xml.*;
 
 import java.io.*;
-import java.util.List;
+import java.util.*;
 
 import static com.predic8.membrane.core.Constants.*;
 import static com.predic8.membrane.core.config.spring.TrackingFileSystemXmlApplicationContext.*;
-import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPISpec.YesNoOpenAPIOption.YES;
+import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPISpec.YesNoOpenAPIOption.*;
 import static com.predic8.membrane.core.util.OSUtil.*;
-import static java.lang.Integer.parseInt;
+import static java.lang.Integer.*;
 
 public class RouterCLI {
 
@@ -45,56 +43,59 @@ public class RouterCLI {
             System.exit(0);
         }
 
-        Router router = null;
-        try {
-            if (commandLine.getCommand().getName().equals("oas")) {
-                router = initRouterByOpenApiSpec(commandLine);
-            } else {
-                router = initRouterByConfig(commandLine);
-            }
-        } catch (InvalidConfigurationException e) {
-            log.error("Fatal error: " + e.getMessage());
-            System.exit(1);
-        }
-        catch (Exception ex) {
-            SpringConfigurationErrorHandler.handleRootCause(ex,log);
-            System.exit(1);
-        }
-
         // Dry run
         if (commandLine.noCommand() && commandLine.getCommand().isOptionSet("t")) {
             System.exit(0);
         }
 
         try {
-            if (router != null)
-                router.waitFor();
+            getRouter(commandLine).waitFor();
         } catch (InterruptedException e) {
             // do nothing
         }
     }
 
+    private static @NotNull Router getRouter(MembraneCommandLine commandLine) {
+        try {
+            if (commandLine.getCommand().getName().equals("oas")) {
+                return initRouterByOpenApiSpec(commandLine);
+            } else {
+                return initRouterByConfig(commandLine);
+            }
+        } catch (InvalidConfigurationException e) {
+            log.error("Fatal error: {}", e.getMessage());
+        }
+        catch (Exception ex) {
+            SpringConfigurationErrorHandler.handleRootCause(ex,log);
+        }
+        System.exit(1);
+        // Will never be reached
+        return null;
+    }
+
     private static Router initRouterByOpenApiSpec(MembraneCommandLine commandLine) throws Exception {
         Router router = new HttpRouter();
-        router.setUriFactory(new URIFactory());
+        router.getRuleManager().addProxyAndOpenPortIfNew(getApiProxy(commandLine));
+        router.init();
+        return router;
+    }
 
+    private static @NotNull APIProxy getApiProxy(MembraneCommandLine commandLine) {
+        APIProxy api = new APIProxy();
+        api.setPort(commandLine.getCommand().isOptionSet("p") ?
+                parseInt(commandLine.getCommand().getOptionValue("p")) : 2000);
+        api.setSpecs(List.of(getOpenAPISpec(commandLine)));
+        return api;
+    }
+
+    private static @NotNull OpenAPISpec getOpenAPISpec(MembraneCommandLine commandLine) {
         OpenAPISpec spec = new OpenAPISpec();
-
         spec.location = commandLine.getCommand().getOptionValue("l");
-
         if (commandLine.getCommand().isOptionSet("v"))
             spec.setValidateRequests(YES);
         if (commandLine.getCommand().isOptionSet("V"))
             spec.setValidateResponses(YES);
-
-        APIProxy api = new APIProxy();
-        api.setPort(commandLine.getCommand().isOptionSet("p") ?
-                parseInt(commandLine.getCommand().getOptionValue("p")) : 2000);
-        api.setSpecs(List.of(spec));
-        router.getRuleManager().addProxyAndOpenPortIfNew(api);
-
-        router.init();
-        return router;
+        return spec;
     }
 
     private static Router initRouterByConfig(MembraneCommandLine commandLine) throws InvalidConfigurationException, IOException {

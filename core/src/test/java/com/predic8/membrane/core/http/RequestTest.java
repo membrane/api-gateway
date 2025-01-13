@@ -22,7 +22,7 @@ import java.net.*;
 
 import static com.predic8.membrane.core.http.Request.*;
 import static com.predic8.membrane.core.util.StringTestUtil.*;
-import static com.predic8.membrane.util.TestUtil.*;
+import static com.predic8.membrane.test.TestUtil.*;
 import static java.nio.charset.StandardCharsets.*;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -41,7 +41,7 @@ public class RequestTest {
 	private InputStream tempIn;
 
 	@BeforeEach
-	public void setUp() throws Exception {
+	public void setUp() {
 		inPost = getResourceAsStream(this,"request-post.msg");
 		inChunked = getResourceAsStream(this,"request-chunked-soap.msg");
 	}

@@ -6,24 +6,26 @@
 
 	<router>
 
-		<api port="2020">
-			<switch>
-				<!-- In case of 'true' set destination to internalProxy -->
-				<case xPath="//order[@express='yes']" service="express" />
-			</switch>
-			<target url="service:normal" />
+		<api port="2000">
+			<request>
+				<!-- If 'true' set destination to internal proxy 'express' -->
+				<if test="//order[@express='yes']" language="xpath">
+					<destination url="internal://express"/>
+				</if>
+			</request>
+			<target url="internal://normal" />
 		</api>
 
 		<!-- An internalProxy is like a function or subroutine for an API. -->
-		<internalProxy name="express">
+		<internal name="express">
 			<static>Express processing!</static>
 			<return/>
-		</internalProxy>
+		</internal>
 
-		<internalProxy name="normal">
+		<internal name="normal">
 			<static>Normal processing!</static>
 			<return/>
-		</internalProxy>
+		</internal>
 
 	</router>
 

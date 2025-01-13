@@ -13,37 +13,31 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.soap;
 
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.MimeType;
-import com.predic8.membrane.core.http.Request;
-import com.predic8.membrane.core.rules.ServiceProxy;
-import com.predic8.membrane.core.rules.ServiceProxyKey;
-import org.apache.commons.io.IOUtils;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.CsvSource;
-import org.w3c.dom.Document;
-import org.w3c.dom.Node;
-import org.xml.sax.InputSource;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.proxies.*;
+import org.junit.jupiter.api.*;
+import org.junit.jupiter.params.*;
+import org.junit.jupiter.params.provider.*;
+import org.slf4j.*;
+import org.w3c.dom.*;
+import org.xml.sax.*;
 
-import javax.xml.namespace.NamespaceContext;
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.xpath.XPath;
-import javax.xml.xpath.XPathConstants;
-import javax.xml.xpath.XPathFactory;
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.Iterator;
-import java.util.Objects;
+import javax.xml.namespace.*;
+import javax.xml.parsers.*;
+import javax.xml.xpath.*;
+import java.io.*;
+import java.util.*;
 
+import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.interceptor.soap.SampleSoapServiceInterceptor.*;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static java.util.Objects.requireNonNull;
+import static org.apache.commons.io.IOUtils.*;
+import static org.junit.jupiter.api.Assertions.*;
 
-public class SampleSoapInterceptorTest {
+class SampleSoapInterceptorTest {
+
+    private static final Logger log = LoggerFactory.getLogger(SampleSoapInterceptorTest.class.getName());
 
     private static SampleSoapServiceInterceptor service;
     private static final Exchange exc = new Exchange(null);
@@ -51,15 +45,15 @@ public class SampleSoapInterceptorTest {
     private static ServiceProxy serviceProxy;
 
     @BeforeAll
-    public static void setUp() throws IOException {
+    static void setUp() {
         service = new SampleSoapServiceInterceptor();
         serviceProxy = new ServiceProxy(new ServiceProxyKey("localhost", ".*", ".*", 3011), "thomas-bayer.com", 80);
     }
 
     @Test
-    public void notFoundTest() throws Exception {
-        exc.setRequest(new Request.Builder().contentType(MimeType.TEXT_XML).post("/foo")
-                .body(IOUtils.toByteArray(Objects.requireNonNull(this.getClass().getResourceAsStream("/soap-sample/wrong-request.xml")))).build());
+    void notFoundTest() throws Exception {
+        exc.setRequest(new Request.Builder().contentType(TEXT_XML).post("/foo")
+                .body(toByteArray(requireNonNull(this.getClass().getResourceAsStream("/soap-sample/wrong-request.xml")))).build());
         service.handleRequest(exc);
         assertEquals(SampleSoapServiceInterceptor.getSoapFault("Resource Not Found", "404", "Cannot parse SOAP message. Request should contain e.g. <name>Bonn</name>"), exc.getResponse().getBody().toString());
         // System.out.println(exc.getResponse().getBody().toString());
@@ -72,19 +66,18 @@ public class SampleSoapInterceptorTest {
             "/foo?wSdL, true",
             "/foo?w-sdl, false"
     })
-    public void isWsdlTest(String path, boolean expected) throws Exception {
+    void isWsdlTest(String path, boolean expected) throws Exception {
         exc.setRequest(new Request.Builder().get(path).build());
         assertEquals(expected, isWSDLRequest(exc));
     }
 
     @Test
-    public void wsdlTest() throws Exception {
-        exc.setRequest(new Request.Builder().contentType(MimeType.TEXT_XML).get("/bar?wsdl").header("Host", "Host").build());
+    void wsdlTest() throws Exception {
+        exc.setRequest(new Request.Builder().contentType(TEXT_XML).get("/bar?wsdl").header("Host", "apollo").build());
         exc.setRule(serviceProxy);
         exc.setOriginalRequestUri("/foo");
         service.handleRequest(exc);
-        // System.out.println(exc.getResponse().getBody().toString());
-        assertTrue(exc.getResponse().getBody().toString().contains("Host"));
+        assertTrue(exc.getResponse().getBody().toString().contains("http://apollo/foo"));
     }
 
     @ParameterizedTest
@@ -94,42 +87,42 @@ public class SampleSoapInterceptorTest {
             "/foo?wSdL, /foo",
             "/foo?w-sdl, /foo"
     })
-    public void getPathWithoutParamTest(String path, String expected) throws Exception {
+    void getPathWithoutParamTest(String path, String expected) {
         assertEquals(getPathWithoutParam(path), expected);
     }
 
 
     @Test
-    public void methodTest() throws Exception {
-        exc.setRequest(new Request.Builder().contentType(MimeType.TEXT_XML).get("/foo").build());
+    void methodTest() throws Exception {
+        exc.setRequest(new Request.Builder().contentType(TEXT_XML).get("/foo").build());
         service.handleRequest(exc);
         assertTrue(exc.getResponse().getBodyAsStringDecoded().contains("Use POST to access the service."));
     }
 
 
     private void testValidRequest(String requestFileName, String country, String population) throws Exception {
-        InputStream requestStream = getClass().getResourceAsStream("/soap-sample/" + requestFileName);
-        exc.setRequest(new Request.Builder().contentType(MimeType.TEXT_XML).body(IOUtils.toByteArray(Objects.requireNonNull(requestStream))).post("/foo").build());
-        service.handleRequest(exc);
-
-        String responseXML = exc.getResponse().getBody().toString();
-        System.out.println(exc.getResponse().getBody().toString());
-
-        assertTrue(compareXmlStrings(responseXML, country, population));
+        try(InputStream requestStream = getClass().getResourceAsStream("/soap-sample/" + requestFileName)) {
+            exc.setRequest(new Request.Builder()
+                    .contentType(TEXT_XML)
+                    .body(toByteArray(requireNonNull(requestStream)))
+                    .post("/foo").build());
+            service.handleRequest(exc);
+            assertTrue(compareXmlStrings(exc.getResponse().getBody().toString(), country, population));
+        }
     }
 
     @Test
-    public void validRequest1Test() throws Exception {
+    void validRequest1Test() throws Exception {
         testValidRequest("soap-request-bonn.xml", "Germany", "327000");
     }
 
     @Test
-    public void validRequest2Test() throws Exception {
+    void validRequest2Test() throws Exception {
         testValidRequest("soap-request-london.xml", "England", "8980000");
     }
 
     @Test
-    public void validRequest3Test() throws Exception {
+    void validRequest3Test() throws Exception {
         testValidRequest("soap-request-new-york.xml", "USA", "8460000");
     }
 
@@ -185,7 +178,7 @@ public class SampleSoapInterceptorTest {
 
 
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("Error comparing XML: ",e);
             return false;
         }
     }

@@ -13,37 +13,28 @@
    limitations under the License. */
 package com.predic8.membrane.core.transport.ssl.acme;
 
-import com.google.common.collect.ImmutableList;
-import com.predic8.membrane.core.HttpRouter;
+import com.google.common.collect.*;
+import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.config.security.Certificate;
-import com.predic8.membrane.core.config.security.SSLParser;
-import com.predic8.membrane.core.config.security.Trust;
-import com.predic8.membrane.core.config.security.acme.Acme;
-import com.predic8.membrane.core.config.security.acme.MemoryStorage;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Request;
-import com.predic8.membrane.core.http.Response;
-import com.predic8.membrane.core.interceptor.AbstractInterceptor;
-import com.predic8.membrane.core.interceptor.AcmeHttpChallengeInterceptor;
-import com.predic8.membrane.core.interceptor.Outcome;
-import com.predic8.membrane.core.rules.ServiceProxy;
-import com.predic8.membrane.core.rules.ServiceProxyKey;
-import com.predic8.membrane.core.transport.http.HttpClient;
-import com.predic8.membrane.core.transport.ssl.AcmeSSLContext;
-import com.predic8.membrane.core.transport.ssl.StaticSSLContext;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import com.predic8.membrane.core.config.security.*;
+import com.predic8.membrane.core.config.security.acme.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.proxies.*;
+import com.predic8.membrane.core.transport.http.*;
+import com.predic8.membrane.core.transport.ssl.*;
+import org.bouncycastle.jce.provider.*;
+import org.junit.jupiter.api.*;
 
-import java.io.IOException;
-import java.security.Security;
-import java.util.Arrays;
+import java.io.*;
+import java.security.*;
+import java.util.*;
 
-import static com.predic8.membrane.core.transport.ssl.acme.Authorization.AUTHORIZATION_STATUS_PENDING;
-import static com.predic8.membrane.core.transport.ssl.acme.Authorization.AUTHORIZATION_STATUS_VALID;
-import static com.predic8.membrane.core.transport.ssl.acme.Order.ORDER_STATUS_PROCESSING;
-import static com.predic8.membrane.core.transport.ssl.acme.Order.ORDER_STATUS_READY;
+import static com.predic8.membrane.core.http.Response.*;
+import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static com.predic8.membrane.core.transport.ssl.acme.Authorization.*;
+import static com.predic8.membrane.core.transport.ssl.acme.Order.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class AcmeStepTest {
@@ -83,9 +74,9 @@ public class AcmeStepTest {
         sp1.setHost("localhost example.com");
         sp1.getInterceptors().add(new AbstractInterceptor() {
             @Override
-            public Outcome handleRequest(Exchange exc) throws Exception {
-                exc.setResponse(Response.ok().status(234, "Successful test.").build());
-                return Outcome.RETURN;
+            public Outcome handleRequest(Exchange exc) {
+                exc.setResponse(ok().status(234, "Successful test.").build());
+                return RETURN;
             }
         });
         sp1.setSslInboundParser(sslParser);
@@ -121,9 +112,7 @@ public class AcmeStepTest {
 
                 long wait = 100;
                 while (AUTHORIZATION_STATUS_PENDING.equals(auth.getStatus())) {
-                    Thread.sleep(wait);
-                    if (wait < 300 * 1000)
-                        wait *= 2;
+                    wait = waitAndCompute(wait);
                     auth = acmeClient.getAuth(accountUrl, authorization);
                 }
 
@@ -137,11 +126,9 @@ public class AcmeStepTest {
             String csr = acmeClient.generateCSR(hosts, key.getPrivateKey());
             ol = new OrderAndLocation(acmeClient.finalizeOrder(accountUrl, ol.getOrder().getFinalize(), csr), ol.getLocation());
 
-            long wait = 100;
+            long wait = 50;
             while (ORDER_STATUS_READY.equals(ol.getOrder().getStatus()) || ORDER_STATUS_PROCESSING.equals(ol.getOrder().getStatus())) {
-                Thread.sleep(wait);
-                if (wait < 300 * 1000)
-                    wait *= 2;
+                wait = waitAndCompute(wait);
                 ol = acmeClient.getOrder(accountUrl, ol.getLocation());
             }
 
@@ -153,7 +140,7 @@ public class AcmeStepTest {
             // ---
 
             while (!acmeSSLContext.isReady()) {
-                Thread.sleep(100);
+                Thread.sleep(10);
             }
 
             HttpClient hc = new HttpClient();
@@ -169,9 +156,16 @@ public class AcmeStepTest {
 
             assertEquals(234, e.getResponse().getStatusCode());
         } finally {
-            router.stop();
+            router.stop(); // TODO shutdown router in AfterAll
         }
 
+    }
+
+    private static long waitAndCompute(long wait) throws InterruptedException {
+        Thread.sleep(wait);
+        if (wait < 500)
+            wait *= 2;
+        return wait;
     }
 
 }

@@ -13,19 +13,16 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.balancer;
 
-import static com.predic8.membrane.core.util.ByteUtil.getByteArrayData;
-import static org.junit.jupiter.api.Assertions.*;
-
-import java.io.IOException;
-
 import com.predic8.membrane.core.*;
-import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.rules.ServiceProxy;
-import com.predic8.membrane.core.rules.ServiceProxyKey;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
+import com.predic8.membrane.core.proxies.*;
+import org.junit.jupiter.api.*;
+
+import java.io.*;
+
+import static com.predic8.membrane.core.util.ByteUtil.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class ClusterBalancerTest {
 
@@ -77,19 +74,19 @@ public class ClusterBalancerTest {
 		lb.handleRequest(exc);
 
 		assertEquals(1, BalancerUtil.getSessions(r, "Default", "Default").size());
-		assertEquals(stickyDestination, exc.getDestinations().get(0));
+		assertEquals(stickyDestination, exc.getDestinations().getFirst());
 
 		BalancerUtil.takeout(r, "Default", "Default", "localhost", s.getNode().getPort());
 		assertEquals(1, BalancerUtil.getAvailableNodesByCluster(r, "Default", "Default").size());
-		assertFalse(stickyDestination.equals(BalancerUtil.getAvailableNodesByCluster(r, "Default", "Default").get(0)));
+        assertNotEquals(stickyDestination, BalancerUtil.getAvailableNodesByCluster(r, "Default", "Default").getFirst());
 
 		lb.handleRequest(exc);
-		assertEquals(stickyDestination, exc.getDestinations().get(0));
+		assertEquals(stickyDestination, exc.getDestinations().getFirst());
 
 		BalancerUtil.down(r, "Default", "Default", "localhost", s.getNode().getPort());
 		lb.handleRequest(exc);
 
-		assertFalse(stickyDestination.equals(exc.getDestinations().get(0)));
+        assertNotEquals(stickyDestination, exc.getDestinations().getFirst());
 	}
 
 	@Test

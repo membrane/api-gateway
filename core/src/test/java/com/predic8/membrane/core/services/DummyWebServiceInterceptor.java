@@ -13,28 +13,27 @@
    limitations under the License. */
 package com.predic8.membrane.core.services;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.interceptor.*;
+import org.slf4j.*;
 
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Response;
-import com.predic8.membrane.core.interceptor.AbstractInterceptor;
-import com.predic8.membrane.core.interceptor.Outcome;
+import java.util.concurrent.atomic.*;
 
-import java.util.concurrent.atomic.AtomicLong;
+import static com.predic8.membrane.core.http.MimeType.*;
+import static com.predic8.membrane.core.http.Response.*;
+import static com.predic8.membrane.core.interceptor.Outcome.*;
 
 public class DummyWebServiceInterceptor extends AbstractInterceptor {
 
-	private static Logger log = LoggerFactory.getLogger(DummyWebServiceInterceptor.class.getName());
+	private static final Logger log = LoggerFactory.getLogger(DummyWebServiceInterceptor.class.getName());
 
-    private AtomicLong counter = new AtomicLong();
+    private final AtomicLong counter = new AtomicLong();
 
 	@Override
-	public Outcome handleRequest(Exchange exc) throws Exception {
-		exc.setResponse(Response.ok().contentType("text/html").body("<aaa></aaa>".getBytes()).build());
-        long count = counter.incrementAndGet();
-        log.debug("handle request "+count);
-		return Outcome.RETURN;
+	public Outcome handleRequest(Exchange exc) {
+		exc.setResponse(ok().contentType(TEXT_XML).body("<aaa></aaa>".getBytes()).build());
+        log.debug("handle request {}", counter.incrementAndGet());
+		return RETURN;
 	}
 
    public long getCount() {

@@ -13,33 +13,24 @@
 
 package com.predic8.membrane.core.interceptor.oauth2.authorizationservice;
 
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.predic8.membrane.annot.MCChildElement;
-import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.Router;
-import com.predic8.membrane.core.config.security.SSLParser;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Header;
-import com.predic8.membrane.core.http.MimeType;
-import com.predic8.membrane.core.http.Request;
-import com.predic8.membrane.core.http.Response;
-import com.predic8.membrane.core.interceptor.Interceptor;
-import com.predic8.membrane.core.interceptor.InterceptorFlowController;
-import com.predic8.membrane.core.interceptor.Outcome;
-import com.predic8.membrane.core.interceptor.oauth2.Client;
-import com.predic8.membrane.core.interceptor.oauth2.ReusableJsonGenerator;
-import com.predic8.membrane.core.transport.http.AbortException;
-import com.predic8.membrane.core.transport.http.HttpClient;
-import com.predic8.membrane.core.transport.http.client.HttpClientConfiguration;
-import com.predic8.membrane.core.transport.ssl.SSLContext;
-import com.predic8.membrane.core.transport.ssl.StaticSSLContext;
-import com.predic8.membrane.core.util.Util;
+import com.fasterxml.jackson.core.*;
+import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.config.security.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.interceptor.oauth2.*;
+import com.predic8.membrane.core.transport.http.*;
+import com.predic8.membrane.core.transport.http.client.*;
+import com.predic8.membrane.core.transport.ssl.*;
+import com.predic8.membrane.core.util.*;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
+import java.io.*;
+import java.util.*;
+
+import static com.predic8.membrane.core.exchange.Exchange.SSL_CONTEXT;
+import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 
 @MCElement(name="registration")
 public class DynamicRegistration {
@@ -49,7 +40,7 @@ public class DynamicRegistration {
     private List<Interceptor> interceptors = new ArrayList<>();
     private SSLParser sslParser;
     private SSLContext sslContext;
-    private InterceptorFlowController flowController = new InterceptorFlowController();
+    private final FlowController flowController = new FlowController();
     private HttpClient client;
     private HttpClientConfiguration httpClientConfiguration;
 
@@ -72,9 +63,7 @@ public class DynamicRegistration {
                 .body(getRegistrationBody(callbackUris))
                 .buildExchange();
 
-        Response response = doRequest(exc);
-
-        HashMap<String, String> json = Util.parseSimpleJSONResponse(response);
+        HashMap<String, String> json = Util.parseSimpleJSONResponse(doRequest(exc));
 
         if(!json.containsKey("client_id") || !json.containsKey("client_secret"))
             throw new RuntimeException("Registration endpoint didn't return clientId/clientSecret");
@@ -84,15 +73,15 @@ public class DynamicRegistration {
 
     private Response doRequest(Exchange exc) throws Exception {
         if (sslContext != null)
-            exc.setProperty(Exchange.SSL_CONTEXT, sslContext);
+            exc.setProperty(SSL_CONTEXT, sslContext);
 
-        if(flowController.invokeRequestHandlers(exc,interceptors) != Outcome.CONTINUE)
+        if(flowController.invokeRequestHandlers(exc,interceptors) != CONTINUE)
             throw new RuntimeException("Registration interceptorchain (request) had a problem");
 
         Response response = client.call(exc).getResponse();
 
         try{
-            flowController.invokeResponseHandlers(exc);
+            flowController.invokeResponseHandlers(exc, interceptors);
         } catch (AbortException e){
             throw new RuntimeException("Registration interceptorchain (response) had a problem");
         }

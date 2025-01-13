@@ -113,7 +113,6 @@ public class Utils {
 
     public static boolean isValidDate(String s) {
         try {
-            //noinspection ResultOfMethodCallIgnored
             java.time.LocalDate.parse(s, dateFormat);
             return datePattern.matcher(s).matches(); // Because 2022-1-19 is fine with DateFormat
         } catch (Exception e) {
@@ -127,7 +126,6 @@ public class Utils {
 
     public static boolean isValidDateTime(String s) {
         try {
-            //noinspection ResultOfMethodCallIgnored
             LocalDate.parse(s, dateTimeFormat);
             return true;
         } catch (Exception e) {
@@ -232,13 +230,11 @@ public class Utils {
      */
     public static InputStream getResourceAsStream(Object obj, String location) throws FileNotFoundException {
         try {
-            InputStream inputStream = obj.getClass().getResourceAsStream(new URI(location).getPath());
-
-            if (inputStream == null) {
+            InputStream is = obj.getClass().getResourceAsStream(new URI(location).getPath());
+            if (is == null) {
                 throw new FileNotFoundException("Resource " + location + " not found");
             }
-
-            return inputStream;
+            return is;
         } catch (URISyntaxException e) {
             LOG.error(e.getMessage());
             throw new RuntimeException(e);

@@ -19,8 +19,8 @@ import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.lang.*;
 import com.predic8.membrane.core.resolver.*;
+import groovy.lang.*;
 import groovy.text.*;
 import org.apache.commons.io.*;
 import org.jetbrains.annotations.*;
@@ -30,6 +30,7 @@ import java.util.*;
 
 import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static com.predic8.membrane.core.lang.ScriptingUtils.*;
 import static java.nio.charset.StandardCharsets.*;
 
 /**
@@ -59,12 +60,34 @@ public class TemplateInterceptor extends StaticInterceptor {
             msg.setBodyContent(fillAndGetBytes(exc,msg,flow));
         }
         catch (TemplateExecutionException e) {
-            log.warn(e.getMessage(),e);
-            exc.setResponse(ProblemDetails.gateway( router.isProduction()).addSubType("template").exception(e).build());
+            log.warn("Groovy template error: {}",e.getMessage());
+            exc.setResponse(ProblemDetails.gateway( router.isProduction())
+                    .extension("message",e.getLocalizedMessage())
+                    .extension("line", e.getLineNumber()) // Has no getLocalizedMessage
+                    .detail("Error during Groovy template rendering.")
+                    .exception(e)
+                    .stacktrace(false)
+                    .build());
+            return ABORT;
+        }
+        catch (GroovyRuntimeException e) {
+            log.warn("Groovy error executing template: {}",e.getMessage());
+            exc.setResponse(ProblemDetails.gateway( router.isProduction())
+                    .addSubType("template")
+                    .detail(e.getMessage())
+                    .extension("location", e.getLocalizedMessage()) // Line, column
+                    .exception(e)
+                    .build());
+            return ABORT;
         }
         catch (Exception e) {
-            log.info(e.getMessage(),e);
-            exc.setResponse(ProblemDetails.internal(router.isProduction()).exception(e).build());
+            log.warn(e.getMessage(),e);
+            exc.setResponse(ProblemDetails.internal(router.isProduction())
+                    .addSubType("template")
+                    .detail(e.getMessage())
+                    .exception(e)
+                    .build());
+            return ABORT;
         }
 
         // Setting Content-Type must come at the end, cause before we want to know what the original type was.
@@ -74,7 +97,6 @@ public class TemplateInterceptor extends StaticInterceptor {
 
     @SuppressWarnings("RedundantThrows") // Declaration of exception is needed. However, Groovy does not declare it.
     private String fillTemplate(Exchange exc, Message msg, Flow flow) throws TemplateExecutionException {
-
         String payload = template.make(getVariableBinding(exc, msg, flow)).toString();
         if (isOfMediaType(APPLICATION_JSON,contentType) && pretty) {
             return prettifyJson(payload);
@@ -83,11 +105,7 @@ public class TemplateInterceptor extends StaticInterceptor {
     }
 
     private @NotNull HashMap<String, Object> getVariableBinding(Exchange exc, Message msg, Flow flow) {
-        HashMap<String, Object> binding = ScriptingUtils.createParameterBindings(router.getUriFactory(), exc, msg, flow, scriptAccessesJson && msg.isJSON());
-        binding.put("props", binding.get("properties"));
-        binding.remove("properties");
-        binding.putAll(exc.getProperties()); // To be compatible with old Version
-        return binding;
+        return createParameterBindings(router, exc, flow, scriptAccessesJson && msg.isJSON());
     }
 
     private byte[] fillAndGetBytes(Exchange exc, Message msg, Flow flow) throws TemplateExecutionException {

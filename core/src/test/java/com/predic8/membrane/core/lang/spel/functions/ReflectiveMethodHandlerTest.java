@@ -14,7 +14,7 @@
 package com.predic8.membrane.core.lang.spel.functions;
 
 import com.predic8.membrane.core.http.Request;
-import com.predic8.membrane.core.lang.spel.ExchangeEvaluationContext;
+import com.predic8.membrane.core.lang.spel.SpELExchangeEvaluationContext;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -34,14 +34,14 @@ public class ReflectiveMethodHandlerTest {
 
     static final TypeDescriptor INT_TYPE_DESC = getTypeDescriptor(Integer.class);
     static final TypeDescriptor FLOAT_TYPE_DESC = getTypeDescriptor(Float.class);
-    static final TypeDescriptor CONTEXT_DESC = getTypeDescriptor(ExchangeEvaluationContext.class);
+    static final TypeDescriptor CONTEXT_DESC = getTypeDescriptor(SpELExchangeEvaluationContext.class);
     static ReflectiveMethodHandler rmh;
-    static ExchangeEvaluationContext ctx;
+    static SpELExchangeEvaluationContext ctx;
 
     @BeforeAll
     static void init() throws URISyntaxException {
         rmh = new ReflectiveMethodHandler(TestFunctions.class);
-        ctx = new ExchangeEvaluationContext(Request.get("foo").buildExchange());
+        ctx = new SpELExchangeEvaluationContext(Request.get("foo").buildExchange());
     }
 
     @Test
@@ -87,7 +87,7 @@ public class ReflectiveMethodHandlerTest {
     @Test
     void testGetExistingFunction() throws NoSuchMethodException {
         assertEquals(
-                getMethod("add", Float.class, Float.class, ExchangeEvaluationContext.class),
+                getMethod("add", Float.class, Float.class, SpELExchangeEvaluationContext.class),
                 rmh.getFunction("add", of(FLOAT_TYPE_DESC, FLOAT_TYPE_DESC, CONTEXT_DESC))
         );
     }
@@ -121,23 +121,23 @@ public class ReflectiveMethodHandlerTest {
 
     private static class TestFunctions{
 
-        public static String test(ExchangeEvaluationContext ignored) {
+        public static String test(SpELExchangeEvaluationContext ignored) {
             return "Hello World!";
         }
 
-        public static String hello(String name, ExchangeEvaluationContext ignored) {
+        public static String hello(String name, SpELExchangeEvaluationContext ignored) {
             return "Hello " + name;
         }
 
-        public static Integer add(Integer a, Integer b, ExchangeEvaluationContext ignored) {
+        public static Integer add(Integer a, Integer b, SpELExchangeEvaluationContext ignored) {
             return a + b;
         }
 
-        public static Integer add(Float a, Float b, ExchangeEvaluationContext ignored) {
+        public static Integer add(Float a, Float b, SpELExchangeEvaluationContext ignored) {
             return (int) (a + b);
         }
 
-        public static String getRequestUri(ExchangeEvaluationContext ctx) {
+        public static String getRequestUri(SpELExchangeEvaluationContext ctx) {
             return ctx.getExchange().getRequest().getUri();
         }
 

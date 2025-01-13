@@ -13,58 +13,50 @@
    limitations under the License. */
 package com.predic8.membrane.examples.tests.versioning;
 
-import com.predic8.membrane.examples.util.DistributionExtractingTestcase;
-import com.predic8.membrane.examples.util.Process2;
-import com.predic8.membrane.examples.util.BufferLogger;
+import com.predic8.membrane.examples.util.*;
+import org.hamcrest.*;
 import org.junit.jupiter.api.*;
 
-import java.io.IOException;
+import java.io.*;
 
-import static com.predic8.membrane.test.AssertUtils.*;
-import static java.lang.Thread.sleep;
+import static io.restassured.RestAssured.*;
 
 public class XsltExampleTest extends DistributionExtractingTestcase {
 
-    String request_v11;
-    String request_v20;
+    String request_old;
+    String request_new;
 
     @BeforeEach
     void setup() throws IOException {
-        request_v11 = readFileFromBaseDir("request_v11.xml");
-        request_v20 = readFileFromBaseDir("request_v20.xml");
+        request_old = readFileFromBaseDir("request-old.xml");
+        request_new = readFileFromBaseDir("request-new.xml");
     }
 
     @Override
     protected String getExampleDirName() {
-        return "versioning/xslt";
+        return "versioning/soap-xslt";
     }
 
     @Test
     public void test() throws Exception {
-        replaceInFile2("proxies.xml", "8080", "3027");
-        replaceInFile2("proxies.xml", "2000", "3028");
-        replaceInFile2("src/main/java/com/predic8/contactservice/Launcher.java", "8080", "3027");
 
-        BufferLogger logger = new BufferLogger();
-        try(Process2 mvn = new Process2.Builder().in(baseDir).executable("mvn clean compile assembly:single").withWatcher(logger).start()) {
-            int exitCode = mvn.waitForExit(60000);
-            if (exitCode != 0)
-                throw new RuntimeException("Maven exited with code " + exitCode + ": " + logger);
-        }
+        try (Process2 ignored1 = startServiceProxyScript()) {
+            // @formatter:off
+            given()
+                .body(request_new)
+                .post("http://localhost:2000/city-service")
+            .then()
+                .statusCode(200)
+                .body("Envelope.Body.getCityResponse.population", Matchers.equalTo("327000"));
 
-        try(Process2 ignored = new Process2.Builder().in(baseDir).waitAfterStartFor("ContactService v20 up.")
-                .executable("java -jar ./target/xslt-maven-1.0-SNAPSHOT.jar").start()) {
-            sleep(2000);
-            assertContains("404", postAndAssert(404, "http://localhost:3027/ContactService/v11", CONTENT_TYPE_TEXT_XML_HEADER, request_v11));
-
-            try(Process2 ignored1 = startServiceProxyScript()) {
-                sleep(1000); // wait for Endpoints to start
-
-                // talk to proxy
-                assertContains("Hello John", postAndAssert(200, "http://localhost:3028/ContactService/v20", CONTENT_TYPE_TEXT_XML_HEADER, request_v11));
-                assertContains("Hello John", postAndAssert(200, "http://localhost:3028/ContactService/v20", CONTENT_TYPE_TEXT_XML_HEADER, request_v20));
-
-            }
+            given()
+                .body(request_old)
+                .post("http://localhost:2000/city-service")
+            .then()
+                .statusCode(200)
+                .body("Envelope.Body.getCityResponse.country", Matchers.equalTo("Germany"));
+            // @formatter:on
         }
     }
+
 }

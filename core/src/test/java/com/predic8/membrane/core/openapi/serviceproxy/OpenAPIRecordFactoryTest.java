@@ -13,18 +13,23 @@
    limitations under the License. */
 package com.predic8.membrane.core.openapi.serviceproxy;
 
-import com.predic8.membrane.core.*;
-import io.swagger.parser.*;
-import io.swagger.v3.oas.models.*;
-import org.junit.jupiter.api.*;
+import com.predic8.membrane.core.Router;
+import io.swagger.parser.OpenAPIParser;
+import io.swagger.v3.oas.models.OpenAPI;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
-import java.io.*;
-import java.util.*;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
 
-import static com.predic8.membrane.core.http.MimeType.*;
-import static com.predic8.membrane.core.openapi.util.TestUtils.*;
-import static com.predic8.membrane.core.util.FileUtil.*;
-import static io.swagger.v3.oas.models.SpecVersion.*;
+import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
+import static com.predic8.membrane.core.openapi.util.TestUtils.getResourceAsStream;
+import static com.predic8.membrane.core.util.FileUtil.readInputStream;
+import static io.swagger.v3.oas.models.SpecVersion.V30;
+import static io.swagger.v3.oas.models.SpecVersion.V31;
 import static org.junit.jupiter.api.Assertions.*;
 
 class OpenAPIRecordFactoryTest {
@@ -58,6 +63,29 @@ class OpenAPIRecordFactoryTest {
         assertNotNull(rec);
         assertEquals("Fruit Shop API Swagger 2", rec.api.getInfo().getTitle());
         assertEquals(V30, rec.api.getSpecVersion());
+    }
+
+    @Test
+    void swagger2ConversionNoticeAdded() throws IOException {
+        OpenAPIRecord rec = getOpenAPIRecord("fruitshop-swagger-2.0.json", "fruit-shop-api-swagger-2-v1-0-0");
+        String description = rec.api.getInfo().getDescription();
+        assertTrue(description.contains("Membrane API Gateway"));
+    }
+
+    @Test
+    void swagger2ConversionNoticeAddedWithExistingDescription() throws IOException {
+        OpenAPIRecord rec = getOpenAPIRecord("fruitshop-swagger-2.0.json", "fruit-shop-api-swagger-2-v1-0-0");
+        String description = rec.api.getInfo().getDescription();
+        assertTrue(description.startsWith("This is a showcase"));
+        assertTrue(description.contains("Membrane API Gateway"));
+    }
+
+    @Test
+    void openapi3NoConversionNoticeAdded() throws IOException {
+        OpenAPIRecord rec = getOpenAPIRecord("fruitshop-api-v2-openapi-3.yml", "fruit-shop-api-v2-0-0");
+        assertFalse("OpenAPI description was converted to OAS 3 from Swagger 2 by Membrane API Gateway.".contains(
+                rec.api.getInfo().getDescription()
+        ));
     }
 
     @Test
@@ -109,7 +137,6 @@ class OpenAPIRecordFactoryTest {
                 .getSchema().getProperties().get("email");
     }
 
-    // @TODO
     private static OpenAPIRecord getOpenAPIRecord(String fileName, String id) throws IOException {
         return factory.create(new ArrayList<>() {{
             add(new OpenAPISpec() {{
@@ -119,15 +146,15 @@ class OpenAPIRecordFactoryTest {
     }
 
     @Test
-    void getUniqueIdNoCollision() {
-        assertEquals("customers-api-v1-0",  factory.getUniqueId(new HashMap<>(), new OpenAPIRecord(getApi("/openapi/specs/customers.yml"),null,null)));
+    void getUniqueIdNoCollision() throws IOException {
+        assertEquals("customers-api-v1-0",  factory.getUniqueId(new HashMap<>(), new OpenAPIRecord(getApi("/openapi/specs/customers.yml"),null)));
     }
 
     @Test
-    void getUniqueIdCollision() {
+    void getUniqueIdCollision() throws IOException {
         HashMap<String, OpenAPIRecord> recs = new HashMap<>();
         recs.put("customers-api-v1-0",new OpenAPIRecord());
-        assertEquals("customers-api-v1-0-0",  factory.getUniqueId(recs, new OpenAPIRecord(getApi("/openapi/specs/customers.yml"),null,null)));
+        assertEquals("customers-api-v1-0-0",  factory.getUniqueId(recs, new OpenAPIRecord(getApi("/openapi/specs/customers.yml"),null)));
     }
 
     private OpenAPI getApi(String pfad) {

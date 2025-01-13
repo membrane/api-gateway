@@ -14,10 +14,10 @@
 
 package com.predic8.membrane.core.interceptor;
 
-import java.util.EnumSet;
+import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.exchange.*;
 
-import com.predic8.membrane.core.Router;
-import com.predic8.membrane.core.exchange.Exchange;
+import java.util.*;
 
 /**
  * TODO describe in short what an interceptor is.
@@ -32,8 +32,8 @@ public interface Interceptor {
 
 		public static class Set {
 			public static final EnumSet<Flow> REQUEST = EnumSet.of(Flow.REQUEST);
-			public static final EnumSet<Flow> RESPONSE = EnumSet.of(Flow.RESPONSE, Flow.ABORT);
-			public static final EnumSet<Flow> REQUEST_RESPONSE = EnumSet.of(Flow.REQUEST, Flow.RESPONSE, Flow.ABORT);
+			public static final EnumSet<Flow> RESPONSE_ABORT = EnumSet.of(Flow.RESPONSE, Flow.ABORT);
+			public static final EnumSet<Flow> REQUEST_RESPONSE_ABORT = EnumSet.of(Flow.REQUEST, Flow.RESPONSE, Flow.ABORT);
 		}
 
 		public boolean isRequest() {
@@ -49,8 +49,8 @@ public interface Interceptor {
 		}
 	}
 
-	Outcome handleRequest(Exchange exc) throws Exception;
-	Outcome handleResponse(Exchange exc) throws Exception;
+	Outcome handleRequest(Exchange exchange) throws Exception;
+	Outcome handleResponse(Exchange exchange) throws Exception;
 
 	/**
 	 * Called when any {@link #handleRequest(Exchange)} or
@@ -69,6 +69,16 @@ public interface Interceptor {
 
 	void setFlow(EnumSet<Flow> flow);
 	EnumSet<Flow> getFlow();
+
+	/**
+	 * If interceptor can handle messages in the request flow.
+	 */
+	boolean handlesRequests();
+
+	/**
+	 * If interceptor can handle messages in the response flow.
+	 */
+	boolean handlesResponses();
 
 	String getShortDescription();
 	String getLongDescription();

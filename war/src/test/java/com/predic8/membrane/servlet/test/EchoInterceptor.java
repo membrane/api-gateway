@@ -17,7 +17,11 @@ import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
+import org.jetbrains.annotations.*;
 
+import java.io.*;
+
+import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static java.nio.charset.StandardCharsets.*;
 
 @MCMain(outputPackage="com.predic8.membrane.servlet.test.config.spring",
@@ -28,11 +32,11 @@ public class EchoInterceptor extends AbstractInterceptor {
 
 	@Override
 	public Outcome handleRequest(Exchange exc) throws Exception {
-		Outcome outcome = exc.echo();
-		exc.getResponse().getHeader().removeFields(Header.CONTENT_LENGTH);
-		String body = exc.getRequest().getUri() + "\n" + new String(exc.getRequest().getBody().getContent(), UTF_8);
-		exc.getResponse().setBodyContent(body.getBytes(UTF_8));
-		return outcome;
+		exc.setResponse(Response.ok().body(getBody(exc)).build());
+		return RETURN;
 	}
 
+	private static @NotNull String getBody(Exchange exc) throws IOException {
+		return exc.getRequest().getUri() + "\n" + new String(exc.getRequest().getBody().getContent(), UTF_8);
+	}
 }

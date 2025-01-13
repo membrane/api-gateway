@@ -54,8 +54,7 @@ public class WSDLTestUtil {
 
 	public static int countWSDLandXSDs(String url) throws ParseException, XMLStreamException, IOException {
 		int sum = 1;
-		List<String> xsds = WSDLTestUtil.getXSDs(AssertUtils.getAndAssert200(url));
-		for (String xsd : xsds)
+        for (String xsd : WSDLTestUtil.getXSDs(AssertUtils.getAndAssert200(url)))
 			sum += countWSDLandXSDs(new URL(new URL(url), xsd).toString());
 		return sum;
 	}

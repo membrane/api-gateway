@@ -11,14 +11,14 @@ Route requests to internal proxies for reusable functionality across multiple AP
 3. **Execute the following requests** (alternatively, use the `requests.http` file):
 - **Normal Processing**:
   ```bash
-  curl http://localhost:2020
+  curl http://localhost:2000
   ```
   Response: `Normal processing!`
 
 
 - **Express Processing**:
   ```bash
-  curl -X POST -d @express.xml http://localhost:2020
+  curl -X POST -d @express.xml http://localhost:2000
   ```
   Response: `Express processing!`
 
@@ -29,11 +29,13 @@ In this instance, we use internal proxies to encapsulate our plugins in separate
 this makes them reusable and cleans up our APIs:
 
 ```xml
-<api port="2020">
-    <switch>
-        <case xPath="//order[@express='yes']" service="express" />
-    </switch>
-    <target url="service:normal" />
+<api port="2000">
+  <request>
+    <if test="//order[@express='yes']" language="xpath">
+      <destination url="internal://express"/>
+    </if>
+  </request>
+  <target url="internal://normal" />
 </api>
 ```
 

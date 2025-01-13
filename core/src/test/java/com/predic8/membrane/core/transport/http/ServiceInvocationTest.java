@@ -13,27 +13,20 @@
    limitations under the License. */
 package com.predic8.membrane.core.transport.http;
 
-import java.io.IOException;
-
-import com.predic8.membrane.core.interceptor.misc.ReturnInterceptor;
-import com.predic8.membrane.core.interceptor.templating.StaticInterceptor;
-import com.predic8.membrane.core.rules.InternalProxy;
+import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.interceptor.flow.*;
+import com.predic8.membrane.core.interceptor.templating.*;
+import com.predic8.membrane.core.proxies.*;
 import org.apache.commons.httpclient.HttpClient;
-import org.apache.commons.httpclient.HttpException;
-import org.apache.commons.httpclient.methods.InputStreamRequestEntity;
-import org.apache.commons.httpclient.methods.PostMethod;
-import org.apache.commons.httpclient.methods.StringRequestEntity;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.apache.commons.httpclient.methods.*;
+import org.junit.jupiter.api.*;
 
-import com.predic8.membrane.core.HttpRouter;
-import com.predic8.membrane.core.http.Header;
-import com.predic8.membrane.core.http.MimeType;
-import com.predic8.membrane.core.http.Request;
-import com.predic8.membrane.core.interceptor.MockInterceptor;
-import com.predic8.membrane.core.rules.ServiceProxy;
-import com.predic8.membrane.core.rules.ServiceProxyKey;
+import java.io.*;
+
+import static com.predic8.membrane.core.http.Header.*;
+import static com.predic8.membrane.core.http.MimeType.*;
+import static com.predic8.membrane.core.http.Request.*;
 
 public class ServiceInvocationTest {
 
@@ -50,20 +43,20 @@ public class ServiceInvocationTest {
 		callService();
 
 		MockInterceptor.assertContent(
-				new String[] {"process", "log", "transport-log" },
-				new String[] {"transport-log", "log", "process" },
-				new String[] {});
+				new String[] {"process", "log", "transport-log" }, // requests
+				new String[] {"transport-log", "log", "process" }, // responses
+				new String[] {}); // aborts
 	}
 
 
 	@AfterEach
-	public void tearDown() throws Exception {
+	public void tearDown() {
 		router.shutdown();
 	}
 
 	private ServiceProxy createFirstRule() {
-		ServiceProxy rule = new ServiceProxy(new ServiceProxyKey("localhost", Request.METHOD_POST, "*", 2000), "localhost", 80);
-		rule.setTargetURL("service:log");
+		ServiceProxy rule = new ServiceProxy(new ServiceProxyKey("localhost", METHOD_POST, "*", 2000), "localhost", 80);
+		rule.getTarget().setUrl("internal:log");
 		rule.getInterceptors().add(new MockInterceptor("process"));
 		return rule;
 	}
@@ -91,7 +84,7 @@ public class ServiceInvocationTest {
 	private PostMethod createPostMethod() {
 		PostMethod post = new PostMethod("http://localhost:2000");
 		post.setRequestEntity(new StringRequestEntity("Ping"));
-		post.setRequestHeader(Header.CONTENT_TYPE, MimeType.TEXT_PLAIN_UTF8);
+		post.setRequestHeader(CONTENT_TYPE, TEXT_PLAIN_UTF8);
 		return post;
 	}
 

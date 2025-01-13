@@ -14,7 +14,6 @@
 package com.predic8.membrane.core.openapi.oas31;
 
 import com.predic8.membrane.core.openapi.*;
-import com.predic8.membrane.core.openapi.model.*;
 import com.predic8.membrane.core.openapi.serviceproxy.*;
 import com.predic8.membrane.core.openapi.validators.*;
 import com.predic8.membrane.core.util.*;
@@ -26,7 +25,7 @@ import org.junit.jupiter.params.provider.*;
 import java.util.stream.*;
 
 import static com.predic8.membrane.core.http.MimeType.*;
-import static com.predic8.membrane.core.openapi.model.Request.post;
+import static com.predic8.membrane.core.openapi.model.Request.*;
 import static com.predic8.membrane.core.openapi.util.TestUtils.*;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -35,8 +34,8 @@ public class ConstValueTest {
     OpenAPIValidator validator;
 
     @BeforeEach
-    void setUp() {
-        OpenAPIRecord apiRecord = new OpenAPIRecord(parseOpenAPI(getResourceAsStream(this, "/openapi/specs/oas31/const-value.yaml")), null, new OpenAPISpec());
+    void setUp() throws Exception {
+        OpenAPIRecord apiRecord = new OpenAPIRecord(parseOpenAPI(getResourceAsStream(this, "/openapi/specs/oas31/const-value.yaml")), new OpenAPISpec());
         validator = new OpenAPIValidator(new URIFactory(), apiRecord);
     }
 

@@ -15,7 +15,7 @@ package com.predic8.membrane.api;
 
 import com.predic8.membrane.core.HttpRouter;
 import com.predic8.membrane.core.openapi.serviceproxy.APIProxy;
-import com.predic8.membrane.core.rules.ServiceProxyKey;
+import com.predic8.membrane.core.proxies.ServiceProxyKey;
 
 /**
  * A basic example on how to embed Membrane service proxy into Java programs.

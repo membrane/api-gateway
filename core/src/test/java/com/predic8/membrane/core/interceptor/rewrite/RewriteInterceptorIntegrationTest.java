@@ -13,43 +13,37 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.rewrite;
 
-import static org.junit.jupiter.api.Assertions.*;
-
+import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.http.Header;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.interceptor.rewrite.RewriteInterceptor.*;
+import com.predic8.membrane.core.proxies.*;
 import org.apache.commons.httpclient.*;
 import org.apache.commons.httpclient.methods.*;
-import org.apache.http.params.HttpProtocolParams;
+import org.apache.http.params.*;
+import org.junit.jupiter.api.*;
 
-import com.predic8.membrane.core.HttpRouter;
-import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.http.Header;
-import com.predic8.membrane.core.interceptor.rewrite.RewriteInterceptor.Mapping;
-import com.predic8.membrane.core.rules.*;
-import com.predic8.membrane.core.rules.Rule;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class RewriteInterceptorIntegrationTest {
 
 	private static HttpRouter router;
 
-	private static RewriteInterceptor  interceptor;
-
-	@BeforeAll
+    @BeforeAll
 	public static void setUp() throws Exception {
 
-		interceptor = new RewriteInterceptor();
+        RewriteInterceptor interceptor = new RewriteInterceptor();
 		interceptor.getMappings().add(new Mapping("/blz-service\\?wsdl", "/axis2/services/BLZService?wsdl", null));
 
-		Rule rule = new ServiceProxy(new ServiceProxyKey("localhost", "POST", ".*", 3006), "thomas-bayer.com", 80);
-		rule.getInterceptors().add(interceptor);
+		ServiceProxy proxy = new ServiceProxy(new ServiceProxyKey("localhost", "POST", ".*", 3006), "thomas-bayer.com", 80);
+		proxy.getInterceptors().add(interceptor);
 
 		router = new HttpRouter();
-		router.getRuleManager().addProxyAndOpenPortIfNew(rule);
+		router.getRuleManager().addProxyAndOpenPortIfNew(proxy);
 	}
 
 	@AfterAll
-	public static void tearDown() throws Exception {
+	public static void tearDown() {
 		router.shutdown();
 	}
 

@@ -19,6 +19,8 @@ import org.slf4j.*;
 
 import java.io.*;
 
+import static java.lang.System.currentTimeMillis;
+
 /**
  * A message body (streaming, if possible). Use a subclass of {@link ChunkedBody} instead, if
  * "Transfer-Encoding: chunked" is set on the input.
@@ -51,7 +53,7 @@ public class Body extends AbstractBody {
 		this(in, -1);
 	}
 
-	public Body(InputStream in, long length) throws IOException {
+	public Body(InputStream in, long length) {
 		this.inputStream = in;
 		this.length = length;
 	}
@@ -171,11 +173,10 @@ public class Body extends AbstractBody {
 	@Override
 	protected byte[] getRawLocal() throws IOException {
 		if (chunks.isEmpty()) {
-			log.debug("Chunks list is empty: " + hashCode());
-			log.debug("At time: " + System.currentTimeMillis());
+			log.debug("Chunks list is empty: {}", hashCode());
+			log.debug("At time: {}", currentTimeMillis());
 			return new byte[0];
 		}
-
 		return getContent();
 	}
 }

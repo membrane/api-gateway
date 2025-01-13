@@ -34,9 +34,9 @@ public class MultipleTypesComplexTest {
     OpenAPIValidator validator;
 
     @BeforeEach
-    void setUp() {
+    void setUp() throws Exception {
         validator = new OpenAPIValidator(new URIFactory(),
-                new OpenAPIRecord(parseOpenAPI(getResourceAsStream(this, "/openapi/specs/oas31/multiple-types-complex.yaml")), null, new OpenAPISpec()));
+                new OpenAPIRecord(parseOpenAPI(getResourceAsStream(this, "/openapi/specs/oas31/multiple-types-complex.yaml")), new OpenAPISpec()));
     }
 
     static Stream<Arguments> requestBodyProvider() {

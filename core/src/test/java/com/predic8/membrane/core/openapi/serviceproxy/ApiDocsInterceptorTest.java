@@ -22,10 +22,7 @@ import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.transport.http.HttpTransport;
 import com.predic8.membrane.core.util.URIFactory;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.api.*;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -53,17 +50,18 @@ class ApiDocsInterceptorTest {
         router = new Router();
         router.setUriFactory(new URIFactory());
 
-        OpenAPISpec spec = new OpenAPISpec();
-        spec.location = "src/test/resources/openapi/specs/fruitshop-api-v2-openapi-3.yml";
         exc.setRequest(new Request.Builder().get("/foo").build());
         exc.setOriginalRequestUri("/foo");
+
+        OpenAPISpec spec = new OpenAPISpec();
+        spec.location = "src/test/resources/openapi/specs/fruitshop-api-v2-openapi-3.yml";
         rule = createProxy(router, spec);
+
         router.setExchangeStore(new ForgetfulExchangeStore());
 
         router.setTransport(new HttpTransport());
         router.add(rule);
         router.init();
-
 
         interceptor = new ApiDocsInterceptor();
         interceptor.init(router);
@@ -72,6 +70,11 @@ class ApiDocsInterceptorTest {
     @AfterEach
     void tearDown() {
         router.stop();
+    }
+
+    @AfterAll
+    void tearDownAll() {
+        router.shutdown();
     }
 
     @Test
@@ -127,12 +130,12 @@ class ApiDocsInterceptorTest {
         interceptor.setSpecRewrites(rule);
         Rewrite rewrite = getRewrite();
         assertEquals(2000, rewrite.getPort());
-        assertEquals("", rewrite.getHost());
+        assertNull(rewrite.getHost());
     }
 
     @Test
     void rewriterSetSpecRewritesTest() {
-        getOpenAPIInterceptor(rule).get().getApiProxy().getSpecs().get(0).setRewrite(new Rewrite() {{
+        getOpenAPIInterceptor(rule).get().getApiProxy().getSpecs().getFirst().setRewrite(new Rewrite() {{
             setPort(3000);
             setHost("localhost");
             setBasePath("/foo");
@@ -145,7 +148,7 @@ class ApiDocsInterceptorTest {
     }
 
     private Rewrite getRewrite() {
-        return getOpenAPIInterceptor(rule).get().getApiProxy().getSpecs().get(0).getRewrite();
+        return getOpenAPIInterceptor(rule).get().getApiProxy().getSpecs().getFirst().getRewrite();
     }
 
     private void checkHasValidProblemJSON(Exchange exc) throws IOException {

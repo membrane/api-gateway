@@ -23,6 +23,7 @@ import org.springframework.context.*;
 import java.util.*;
 
 import static com.predic8.membrane.core.http.MimeType.*;
+import static com.predic8.membrane.core.http.Response.ok;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -47,13 +48,14 @@ public class GroovyInterceptorTest {
 	}
 
 	@Test
-	public void testRequest() throws Exception {
+	void requestSetProperty() throws Exception {
 
-		GroovyInterceptor i = new GroovyInterceptor();
-		i.setSrc("""
+		GroovyInterceptor i = new GroovyInterceptor() {{
+			src = """
 				exc.setProperty('foo', 'bar')
 				def b = spring.getBean('abc')
-				CONTINUE""");
+				CONTINUE""";
+		}};
 		i.init(router);
 
 		assertEquals(CONTINUE, i.handleRequest(exc));
@@ -62,12 +64,13 @@ public class GroovyInterceptorTest {
 	}
 
 	@Test
-	public void testHeader() throws Exception {
+	void header() throws Exception {
 
-		GroovyInterceptor i = new GroovyInterceptor();
-		i.setSrc("""
+		GroovyInterceptor i = new GroovyInterceptor() {{
+			src = """
 			header.add('Baz','Bar');
-			CONTINUE""");
+			CONTINUE""";
+		}};
 		i.init(router);
 
 		assertEquals(CONTINUE, i.handleRequest(exc));
@@ -75,15 +78,15 @@ public class GroovyInterceptorTest {
 	}
 
 	@Test
-	public void testRequestObj() throws Exception {
+	void requestObj() throws Exception {
 
 		exc.getRequest().setBodyContent("ABC".getBytes());
 
-		GroovyInterceptor i = new GroovyInterceptor();
-		i.setSrc("""
-				print message.bodyAsStringDecoded
+		GroovyInterceptor i = new GroovyInterceptor() {{
+			src = """
 				header.add('body',message.bodyAsStringDecoded);
-				CONTINUE""");
+				CONTINUE""";
+		}};
 		i.init(router);
 
 		assertEquals(CONTINUE, i.handleRequest(exc));
@@ -91,16 +94,16 @@ public class GroovyInterceptorTest {
 	}
 
 	@Test
-	public void testProperties() throws Exception {
+	void properties() throws Exception {
 
 		exc.getProperties().put("answer","42");
 
-		GroovyInterceptor i = new GroovyInterceptor();
-		i.setSrc("""
-				print properties['answer']
+		GroovyInterceptor i = new GroovyInterceptor() {{
+			src = """
 				properties['thing']='towel'
 				header.add('answer',properties['answer']);
-				CONTINUE""");
+				CONTINUE""";
+		}};
 		i.init(router);
 
 		assertEquals(CONTINUE, i.handleRequest(exc));
@@ -109,9 +112,10 @@ public class GroovyInterceptorTest {
 	}
 
 	@Test
-	public void request() throws Exception {
-		GroovyInterceptor i = new GroovyInterceptor();
-		i.setSrc("new Request.Builder().body('EFG').build()");
+	void request() throws Exception {
+		GroovyInterceptor i = new GroovyInterceptor() {{
+			src = "new Request.Builder().body('EFG').build()";
+		}};
 		i.init(router);
 
 		assertEquals(CONTINUE, i.handleRequest(exc));
@@ -120,8 +124,9 @@ public class GroovyInterceptorTest {
 
 	@Test
 	public void response() throws Exception {
-		GroovyInterceptor i = new GroovyInterceptor();
-		i.setSrc("Response.ok().body('ABCD').build()");
+		GroovyInterceptor i = new GroovyInterceptor() {{
+			src = "Response.ok().body('ABCD').build()";
+		}};
 		i.init(router);
 
 		assertEquals(RETURN, i.handleRequest(exc));
@@ -129,10 +134,12 @@ public class GroovyInterceptorTest {
 	}
 
 	@Test
-	public void returnMap() throws Exception {
-		GroovyInterceptor i = new GroovyInterceptor();
-		i.setSrc("""
-				[id:7, name: 'Roller', desc: 'äöüÄÖÜ']""");
+	void returnMap() throws Exception {
+		exc.setResponse(ok().build());
+
+		GroovyInterceptor i = new GroovyInterceptor() {{
+			src = "[id:7, name: 'Roller', desc: 'äöüÄÖÜ']";
+		}};
 		i.init(router);
 
 		assertEquals(CONTINUE, i.handleResponse(exc));
@@ -151,8 +158,6 @@ public class GroovyInterceptorTest {
 
 		GroovyInterceptor i = new GroovyInterceptor();
 		i.setSrc("""
-				print json
-				print json['id']
 				header.add('id','id-'+json['id']);
 				header.add('city',json.city);""");
 		i.init(router);
@@ -160,5 +165,29 @@ public class GroovyInterceptorTest {
 		assertEquals(CONTINUE, i.handleRequest(exc));
 		assertEquals("id-7", exc.getRequest().getHeader().getFirstValue("id"));
 		assertEquals("Bonn", exc.getRequest().getHeader().getFirstValue("city"));
+	}
+
+	/**
+	 * Makes sure that https://github.com/membrane/api-gateway/issues/761 is staying fixed.
+	 */
+	@Test
+	void shouldNotSetEmptyResponseInResponseFlowWhenGetResponseEqualsNull() throws Exception {
+		GroovyInterceptor i = new GroovyInterceptor() {{
+			src = "// do nothing";
+		}};
+		i.init(router);
+		i.handleAbort(exc);
+		assertNull(exc.getResponse());
+	}
+
+	@Test
+	void returnString() throws Exception {
+		exc.setResponse(ok().build());
+		GroovyInterceptor i = new GroovyInterceptor() {{
+			src = "'Some String'";
+		}};
+		i.init(router);
+		i.handleResponse(exc);
+		assertEquals("Some String",exc.getResponse().getBodyAsStringDecoded());
 	}
 }

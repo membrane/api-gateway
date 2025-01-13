@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+    <soap:Body>
+        <soap:Fault>
+            <faultcode>soap:Server</faultcode>
+            <faultstring>Internal Server Error</faultstring>
+            <detail>
+                <exception>
+                    <message>java.lang.NullPointerException</message>
+                    <stacktrace>
+                        java.lang.NullPointerException<br/>
+                        at com.example.service.MyService.process(MyService.java:45)<br/>
+                        at com.example.service.MyService.doWork(MyService.java:30)<br/>
+                        at com.example.app.Main.run(Main.java:15)<br/>
+                        at com.example.app.Main.main(Main.java:8)<br/>
+                    </stacktrace>
+                </exception>
+            </detail>
+        </soap:Fault>
+    </soap:Body>
+</soap:Envelope>

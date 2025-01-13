@@ -16,26 +16,20 @@
 
 package com.predic8.membrane.core.openapi.serviceproxy;
 
-import com.predic8.membrane.core.HttpRouter;
-import com.predic8.membrane.core.Router;
-import com.predic8.membrane.core.interceptor.misc.ReturnInterceptor;
-import com.predic8.membrane.core.util.URIFactory;
-import io.swagger.v3.oas.models.OpenAPI;
-import io.swagger.v3.oas.models.Operation;
-import io.swagger.v3.oas.models.PathItem;
-import io.swagger.v3.oas.models.media.Content;
-import io.swagger.v3.oas.models.media.JsonSchema;
-import io.swagger.v3.oas.models.parameters.RequestBody;
+import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.interceptor.flow.*;
+import com.predic8.membrane.core.util.*;
+import io.swagger.v3.oas.models.*;
+import io.swagger.v3.oas.models.media.*;
+import io.swagger.v3.oas.models.parameters.*;
 import org.junit.jupiter.api.*;
 
-import java.io.*;
 import java.util.*;
 
-import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPISpec.YesNoOpenAPIOption.YES;
-import static io.restassured.RestAssured.given;
-import static org.hamcrest.Matchers.containsString;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPISpec.YesNoOpenAPIOption.*;
+import static io.restassured.RestAssured.*;
+import static org.hamcrest.Matchers.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class OpenAPI31ReferencesTest {
 
@@ -66,7 +60,7 @@ public class OpenAPI31ReferencesTest {
     }
 
     @AfterAll
-    public static void shutdown() throws IOException {
+    public static void shutdown() {
         router.shutdown();
     }
 
@@ -75,7 +69,7 @@ public class OpenAPI31ReferencesTest {
         OpenAPI openAPI = api.apiRecords.get("demo-v1-0-0").getApi();
         PathItem pathItem = openAPI.getPaths().get("/users");
         assertNotNull(pathItem);
-        Operation operation = pathItem.readOperations().get(0);
+        Operation operation = pathItem.readOperations().getFirst();
         assertNotNull(operation);
         assertEquals("Demo", operation.getDescription());
         RequestBody requestBody = operation.getRequestBody();
@@ -84,7 +78,7 @@ public class OpenAPI31ReferencesTest {
         assertNotNull(content);
         JsonSchema schema = (JsonSchema) content.get("application/json").getSchema();
         assertNotNull(schema);
-        assertEquals("email", schema.getRequired().get(0));
+        assertEquals("email", schema.getRequired().getFirst());
         assertEquals(Set.of("email","id","createdAt"), schema.getProperties().keySet());
     }
 

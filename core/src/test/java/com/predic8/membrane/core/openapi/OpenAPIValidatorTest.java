@@ -18,16 +18,14 @@ package com.predic8.membrane.core.openapi;
 
 import com.predic8.membrane.core.openapi.model.*;
 import com.predic8.membrane.core.openapi.serviceproxy.*;
-import com.predic8.membrane.core.openapi.util.*;
 import com.predic8.membrane.core.openapi.validators.*;
 import com.predic8.membrane.core.util.*;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
-import static com.predic8.membrane.core.openapi.util.TestUtils.getResourceAsStream;
-import static com.predic8.membrane.core.openapi.util.TestUtils.parseOpenAPI;
-import static com.predic8.membrane.core.openapi.validators.ValidationContext.ValidatedEntityType.METHOD;
-import static com.predic8.membrane.core.openapi.validators.ValidationContext.ValidatedEntityType.PATH;
+import java.io.*;
+
+import static com.predic8.membrane.core.openapi.util.TestUtils.*;
+import static com.predic8.membrane.core.openapi.validators.ValidationContext.ValidatedEntityType.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 class OpenAPIValidatorTest {
@@ -35,8 +33,8 @@ class OpenAPIValidatorTest {
     OpenAPIValidator validator;
 
     @BeforeEach
-    public void setUp() {
-        OpenAPIRecord rec = new OpenAPIRecord(parseOpenAPI(getResourceAsStream(this,"/openapi/specs/customers.yml")),null,new OpenAPISpec());
+    public void setUp() throws IOException {
+        OpenAPIRecord rec = new OpenAPIRecord(parseOpenAPI(getResourceAsStream(this,"/openapi/specs/customers.yml")),new OpenAPISpec());
         validator = new OpenAPIValidator(new URIFactory(), rec);
     }
 

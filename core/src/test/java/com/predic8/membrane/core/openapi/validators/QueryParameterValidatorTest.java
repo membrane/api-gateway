@@ -18,11 +18,10 @@ import io.swagger.v3.oas.models.parameters.*;
 import io.swagger.v3.oas.models.security.*;
 import org.junit.jupiter.api.*;
 
-import java.net.*;
 import java.util.*;
 
 import static io.swagger.v3.oas.models.security.SecurityScheme.In.*;
-import static io.swagger.v3.oas.models.security.SecurityScheme.Type.APIKEY;
+import static io.swagger.v3.oas.models.security.SecurityScheme.Type.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 class QueryParameterValidatorTest extends AbstractValidatorTest{
@@ -35,7 +34,7 @@ class QueryParameterValidatorTest extends AbstractValidatorTest{
     }
 
     @BeforeEach
-    public void setUp() throws URISyntaxException {
+    public void setUp() throws Exception {
         super.setUp();
         queryParameterValidator = new QueryParameterValidator(validator.getApi(),validator.getApi().getPaths().get("/cities"));
     }

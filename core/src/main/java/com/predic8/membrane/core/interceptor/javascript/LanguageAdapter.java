@@ -17,6 +17,7 @@
 package com.predic8.membrane.core.interceptor.javascript;
 
 import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.lang.*;
 import com.predic8.membrane.core.util.*;
 import org.slf4j.*;
@@ -30,10 +31,25 @@ public abstract  class LanguageAdapter {
     private static final Logger log = LoggerFactory.getLogger(JavascriptInterceptor.class);
 
     protected LanguageSupport languageSupport;
-    protected Router router;
+    final protected Router router;
+
+    protected static int preScriptLineLength;
 
     public LanguageAdapter(Router router) {
         this.router = router;
+        preScriptLineLength = Math.toIntExact(getPreScript().lines().count());
+    }
+
+    protected String getPreScript() {
+        return "";
+    }
+
+    protected String getPostScript() {
+        return "";
+    }
+
+    protected String prepareScript(String script) {
+        return getPreScript() + script + getPostScript();
     }
 
     public static LanguageAdapter instance(Router router) {
@@ -53,7 +69,7 @@ public abstract  class LanguageAdapter {
         }
         throw new ConfigurationException("""
             Fatal Error: No Javascript Engine!
-                    
+            
             Membrane is configured to use Javascript, maybe in the proxies.xml file.
             The needed Javascript engine is not shipped with Membrane to spare size
             and to avoid security risks. However you can easiliy install an engine.
@@ -66,7 +82,7 @@ public abstract  class LanguageAdapter {
             
             2.) Drop the JAR-file into MEMBRANE_HOME/libs
             3.) Start Membrane.
-                   
+            
             But you can also use the old Rhino Engine:
             
             https://repo1.maven.org/maven2/org/mozilla/rhino-engine/""");
@@ -76,5 +92,6 @@ public abstract  class LanguageAdapter {
         return languageSupport.compileScript(router.getBackgroundInitializator(), router.getBeanFactory().getClassLoader(), prepareScript(script));
     }
 
-    protected abstract String prepareScript(String src);
+    public abstract ProblemDetails getProblemDetails(Exception e);
+
 }

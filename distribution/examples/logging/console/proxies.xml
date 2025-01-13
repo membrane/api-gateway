@@ -7,7 +7,7 @@
 	<router>
 
 		<serviceProxy port="2000">
-			<log headerOnly="false"/>
+			<log/>
 			<target host="api.predic8.de">
 				<ssl/>
 			</target>

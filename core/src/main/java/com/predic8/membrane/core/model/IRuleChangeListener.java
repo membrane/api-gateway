@@ -14,19 +14,17 @@
 
 package com.predic8.membrane.core.model;
 
-import com.predic8.membrane.core.rules.Rule;
+import com.predic8.membrane.core.proxies.Proxy;
 
 
 public interface IRuleChangeListener {
 
-	public void ruleAdded(Rule rule);
+	void ruleAdded(Proxy proxy);
 
-	public void ruleRemoved(Rule rule, int rulesLeft);
+	void ruleRemoved(Proxy proxy, int rulesLeft);
 
-	public void ruleUpdated(Rule rule);
+	void ruleUpdated(Proxy proxy);
 
-	public void rulePositionsChanged();
-
-	public void batchUpdate(int size);
+	void batchUpdate(int size);
 
 }

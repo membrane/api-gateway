@@ -18,7 +18,7 @@ import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.Request.*;
 import com.predic8.membrane.core.http.Response.*;
 import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.interceptor.flow.ConditionalInterceptor.*;
+import com.predic8.membrane.core.lang.ExchangeExpression.*;
 import com.predic8.membrane.core.security.*;
 
 import static com.predic8.membrane.core.interceptor.Outcome.*;
@@ -27,31 +27,34 @@ import static java.util.List.*;
 
 class ConditionalEvaluationTestContext {
 
-    static boolean performEval(String condition, Object builder, LanguageType lang) throws Exception {
+    static Outcome performEval(String condition, Object builder, Language lang, boolean shouldCallNested) throws Exception {
         var exc = new Exchange(null);
         var mockInt = new ConditionalEvaluationTestContext.MockInterceptor();
-        var condInt = new ConditionalInterceptor();
+        var ifInt = new IfInterceptor();
 
         new ApiKeySecurityScheme(HEADER,"x-api-key").scopes("test", "main").add(exc);
 
-        condInt.setLanguage(lang);
-        condInt.setInterceptors(of(mockInt));
-        condInt.setTest(condition);
-        condInt.init(new HttpRouter());
+        exc.setProperty("bar", "123");
 
+        ifInt.setLanguage(lang);
+        ifInt.setInterceptors(of(mockInt));
+        ifInt.setTest(condition);
+        ifInt.init(new HttpRouter());
+
+        Outcome outcome;
         if (builder instanceof Builder b) {
             exc.setRequest(b.build());
-            condInt.handleRequest(exc);
+            outcome = ifInt.handleRequest(exc);
         } else if (builder instanceof ResponseBuilder b) {
-            exc.pushInterceptorToStack(mockInt);
             exc.setResponse(b.build());
-            condInt.handleResponse(exc);
-            new InterceptorFlowController().invokeResponseHandlers(exc);
+            outcome = ifInt.handleResponse(exc);
         } else {
             throw new IllegalStateException("Unexpected value: " + builder);
         }
-
-        return mockInt.isCalled();
+        if (mockInt.isCalled() != shouldCallNested) {
+            throw new RuntimeException("Mock");
+        }
+        return outcome;
     }
 
     private static class MockInterceptor extends AbstractInterceptor {
