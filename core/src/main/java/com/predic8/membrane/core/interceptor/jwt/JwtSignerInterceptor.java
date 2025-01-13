@@ -12,33 +12,36 @@
  */
 package com.predic8.membrane.core.interceptor.jwt;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.core.Router;
+import com.predic8.membrane.core.exceptions.ProblemDetails;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Message;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
+import com.predic8.membrane.core.interceptor.session.JwtSessionManager;
 import org.jose4j.json.JsonUtil;
-import org.jose4j.jwk.JsonWebKey;
 import org.jose4j.jwk.RsaJsonWebKey;
 import org.jose4j.jws.AlgorithmIdentifiers;
 import org.jose4j.jws.JsonWebSignature;
 import org.jose4j.lang.JoseException;
-import org.json.JSONObject;
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCChildElement;
-import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.Router;
-import com.predic8.membrane.core.config.security.Blob;
-import com.predic8.membrane.core.interceptor.session.JwtSessionManager;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 
-@MCElement(name = "jwtSigner")
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.RESPONSE;
+import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
+import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
+
+@MCElement(name = "jwtSign")
 public class JwtSignerInterceptor extends AbstractInterceptor {
+
+    protected static final Logger log = LoggerFactory.getLogger("JwtSignerInterceptor");
 
     private JwtSessionManager.Jwk jwk;
     private RsaJsonWebKey rsaJsonWebKey;
@@ -52,25 +55,43 @@ public class JwtSignerInterceptor extends AbstractInterceptor {
 
     @Override
     public Outcome handleRequest(Exchange exc) throws IOException {
-       return handleInternal(exc.getRequest());
+       return handleInternal(exc, REQUEST);
     }
 
     @Override
     public Outcome handleResponse(Exchange exc) throws IOException {
-        return handleInternal(exc.getResponse());
+        return handleInternal(exc, RESPONSE);
     }
 
-    private Outcome handleInternal(Message msg) throws IOException {
-        JsonWebSignature jws = new JsonWebSignature();
-        jws.setPayload(prepareJwtPayload(msg));
-        jws.setKey(rsaJsonWebKey.getRsaPrivateKey());
-        jws.setAlgorithmHeaderValue(AlgorithmIdentifiers.RSA_USING_SHA256);
-        jws.setKeyIdHeaderValue(rsaJsonWebKey.getKeyId());
+    private Outcome handleInternal(Exchange exc, Flow flow) {
         try {
-            msg.setBodyContent(jws.getCompactSerialization().getBytes());
-            return Outcome.CONTINUE;
+            JsonWebSignature jws = new JsonWebSignature();
+            jws.setPayload(prepareJwtPayload(exc.getMessage(flow)));
+            jws.setKey(rsaJsonWebKey.getRsaPrivateKey());
+            jws.setAlgorithmHeaderValue(AlgorithmIdentifiers.RSA_USING_SHA256);
+            jws.setKeyIdHeaderValue(rsaJsonWebKey.getKeyId());
+            exc.getMessage(flow).setBodyContent(jws.getCompactSerialization().getBytes());
+            return CONTINUE;
         } catch (JoseException e) {
-            throw new RuntimeException(e);
+            log.error("Error during attempt to sign JWT payload: {}", e.getLocalizedMessage());
+            ProblemDetails.gateway(router.isProduction())
+                    .component(getDisplayName())
+                    .extension("message", e.getLocalizedMessage())
+                    .detail("Error during attempt to sign JWT payload.")
+                    .exception(e)
+                    .stacktrace(false)
+                    .buildAndSetResponse(exc);
+            return ABORT;
+        } catch (IOException e) {
+            log.error("Error during attempt to parse JWT payload: {}", e.getLocalizedMessage());
+            ProblemDetails.gateway(router.isProduction())
+                    .component(getDisplayName())
+                    .extension("message", e.getLocalizedMessage())
+                    .detail("Error during attempt to parse JWT payload.")
+                    .exception(e)
+                    .stacktrace(false)
+                    .buildAndSetResponse(exc);
+            return ABORT;
         }
     }
 

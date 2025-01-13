@@ -31,7 +31,7 @@ public abstract class AbstractSetterInterceptor extends AbstractLanguageIntercep
 
     private boolean failOnError = true;
 
-    protected String name; // TODO rename shadows name from AbstractInterceptor
+    protected String fieldName; // TODO rename shadows name from AbstractInterceptor
     protected boolean ifAbsent;
 
     @Override
@@ -60,8 +60,8 @@ public abstract class AbstractSetterInterceptor extends AbstractLanguageIntercep
             if (failOnError) {
                 ProblemDetails.internal(getRouter().isProduction())
                         .title("Error evaluating expression!")
-                        .component(getName())
-                        .extension("field", name)
+                        .component(getFieldName())
+                        .extension("field", fieldName)
                         .extension("value", expression)
                         .buildAndSetResponse(exchange);
                 return ABORT;
@@ -84,12 +84,12 @@ public abstract class AbstractSetterInterceptor extends AbstractLanguageIntercep
     }
 
     @MCAttribute
-    public void setName(String name) {
-        this.name = name;
+    public void setFieldName(String fieldName) {
+        this.fieldName = fieldName;
     }
 
-    public String getName() {
-        return name;
+    public String getFieldName() {
+        return fieldName;
     }
 
     @MCAttribute
