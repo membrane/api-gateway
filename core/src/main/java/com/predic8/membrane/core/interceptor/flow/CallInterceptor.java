@@ -97,6 +97,7 @@ public class CallInterceptor extends AbstractLanguageInterceptor {
      */
     @SuppressWarnings("unused")
     @MCAttribute
+    @Required
     public void setUrl(String url) {
         this.url = url;
     }

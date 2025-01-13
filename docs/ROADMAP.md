@@ -60,7 +60,6 @@
 
 ### Internal
 - XMLProtectionInterceptor.setFailResponse => Use ProblemDetails
-- Rename service:// to internal://
 - Delete interceptor/
   - Gatekeeper?
 - proxies-2.xsd
@@ -74,8 +73,13 @@
 - Exchange property name constants: See Exchange
 - Dependencies
   - Log4J, where, what
+- Merge log with print
+  <log message="${header.foo}/>
+  default: message="${header}\n${body}"
+- Remove etcd stuff 
 
 ## Done
+- Rename service:// to internal://
 - Call plugin
 - Example Tests without unzipping for every test
 - Delete interceptor
@@ -102,13 +106,9 @@
 
 # Discussion
 
-- K8S stuff document or delete?
-- Excpetion Handling
-  - throw Exception in Interceptor handle?
-- Interceptor
-  - init() and init(router)
-    - Which one to call or both?
-
+- ${} or #{} for expressions
+  - Possible conflict with spring property placeholder configurer
+  - Conflict with SpEL on startup? Are #{} replaced?
 - For ADRs
   - Response Flow guarantee there is a response 
   - Request Flow guarantee there is a request
@@ -118,6 +118,7 @@
 
 - Should AbstractHttpHandler and Http2ExchangeHandler have a common interface?
 - What are nodeExceptions in Exchange? And nodeStatusCodes?
+  - From Loadbalancer
 - Do we need RuleExchangeListener in RuleManager?
 
 # Other
