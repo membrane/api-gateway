@@ -14,6 +14,7 @@ package com.predic8.membrane.core.interceptor.jwt;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.Router;
@@ -22,6 +23,7 @@ import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Message;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
+import com.predic8.membrane.core.interceptor.apikey.ApiKeysInterceptor;
 import com.predic8.membrane.core.interceptor.session.JwtSessionManager;
 import org.jose4j.json.JsonUtil;
 import org.jose4j.jwk.RsaJsonWebKey;
@@ -39,12 +41,13 @@ import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 
 @MCElement(name = "jwtSign")
-public class JwtSignerInterceptor extends AbstractInterceptor {
+public class JwtSignInterceptor extends AbstractInterceptor {
 
-    protected static final Logger log = LoggerFactory.getLogger("JwtSignerInterceptor");
+    private static final Logger log = LoggerFactory.getLogger(JwtSignInterceptor.class);
 
     private JwtSessionManager.Jwk jwk;
     private RsaJsonWebKey rsaJsonWebKey;
+    private int expiryTime = 300;
 
     private final ObjectMapper om = new ObjectMapper();
 
@@ -54,12 +57,12 @@ public class JwtSignerInterceptor extends AbstractInterceptor {
     }
 
     @Override
-    public Outcome handleRequest(Exchange exc) throws IOException {
+    public Outcome handleRequest(Exchange exc) {
        return handleInternal(exc, REQUEST);
     }
 
     @Override
-    public Outcome handleResponse(Exchange exc) throws IOException {
+    public Outcome handleResponse(Exchange exc) {
         return handleInternal(exc, RESPONSE);
     }
 
@@ -99,7 +102,7 @@ public class JwtSignerInterceptor extends AbstractInterceptor {
         ObjectNode jsonBody = (ObjectNode) om.readTree(msg.getBodyAsStream());
         long epoch = System.currentTimeMillis() / 1000;
         jsonBody.put("iat", epoch);
-        jsonBody.put("exp", epoch + 300);
+        jsonBody.put("exp", epoch + expiryTime);
         return jsonBody.toString();
     }
 
@@ -110,5 +113,14 @@ public class JwtSignerInterceptor extends AbstractInterceptor {
     @MCChildElement
     public void setJwk(JwtSessionManager.Jwk jwk) {
         this.jwk = jwk;
+    }
+
+    public int getExpiryTime() {
+        return expiryTime;
+    }
+
+    @MCAttribute
+    public void setExpiryTime(int expiryTime) {
+        this.expiryTime = expiryTime;
     }
 }

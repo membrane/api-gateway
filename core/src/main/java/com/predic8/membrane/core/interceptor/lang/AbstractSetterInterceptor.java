@@ -31,7 +31,7 @@ public abstract class AbstractSetterInterceptor extends AbstractLanguageIntercep
 
     private boolean failOnError = true;
 
-    protected String fieldName; // TODO rename shadows name from AbstractInterceptor
+    protected String fieldName;
     protected boolean ifAbsent;
 
     @Override
@@ -60,7 +60,7 @@ public abstract class AbstractSetterInterceptor extends AbstractLanguageIntercep
             if (failOnError) {
                 ProblemDetails.internal(getRouter().isProduction())
                         .title("Error evaluating expression!")
-                        .component(getFieldName())
+                        .component(getDisplayName())
                         .extension("field", fieldName)
                         .extension("value", expression)
                         .buildAndSetResponse(exchange);
