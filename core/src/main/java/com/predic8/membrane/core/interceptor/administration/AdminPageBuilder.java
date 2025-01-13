@@ -408,18 +408,20 @@ public class AdminPageBuilder extends Html {
         end();
         end();
         tbody();
-        for (Map.Entry<Integer, StatisticCollector> codes : statusCodes.entrySet()) {
-            StatisticCollector statisticCollector = codes.getValue();
-            tr().style("text-align: right;");
-            td().style("text-align:left;").text("" + codes.getKey()).end();
-            createTds(
-                    "" + statisticCollector.getCount(),
-                    statisticCollector.getMinTime(),
-                    statisticCollector.getMaxTime(),
-                    statisticCollector.getAvgTime(),
-                    statisticCollector.getBytesSent(),
-                    statisticCollector.getBytesReceived());
-            end();
+        synchronized (statusCodes) {
+            for (Map.Entry<Integer, StatisticCollector> codes : statusCodes.entrySet()) {
+                StatisticCollector statisticCollector = codes.getValue();
+                tr().style("text-align: right;");
+                td().style("text-align:left;").text("" + codes.getKey()).end();
+                createTds(
+                        "" + statisticCollector.getCount(),
+                        statisticCollector.getMinTime(),
+                        statisticCollector.getMaxTime(),
+                        statisticCollector.getAvgTime(),
+                        statisticCollector.getBytesSent(),
+                        statisticCollector.getBytesReceived());
+                end();
+            }
         }
         end();
         end();
