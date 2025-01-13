@@ -23,6 +23,7 @@ public class DatabaseApiKeyStorePerformanceTest {
     @BeforeEach
     void setUp() throws SQLException {
         databaseApiKeyStore = createDatabaseApiKeyStore();
+        clearTables();
         createTables();
     }
 
@@ -30,7 +31,7 @@ public class DatabaseApiKeyStorePerformanceTest {
         DatabaseApiKeyStore apiKeyStore = new DatabaseApiKeyStore();
         keyTable = new KeyTable();
         scopeTable = new ScopeTable();
-        keyTable.setName("key");
+        keyTable.setName("apikey");
         scopeTable.setName("scope");
         apiKeyStore.setKeyTable(keyTable);
         apiKeyStore.setScopeTable(scopeTable);
@@ -57,53 +58,82 @@ public class DatabaseApiKeyStorePerformanceTest {
 
     private void testAllApiKeys() throws SQLException, UnauthorizedApiKeyException {
         try (Connection connection = createConnection();
-             ResultSet rs = connection.prepareStatement("SELECT key FROM %s".formatted(keyTable)).executeQuery()) {
+             ResultSet rs = connection.prepareStatement("SELECT key_value FROM %s".formatted(keyTable.getName())).executeQuery()) {
             while (rs.next()) {
-                assertNotNull(databaseApiKeyStore.getScopes(rs.getString("key")));
+                assertNotNull(databaseApiKeyStore.getScopes(rs.getString("key_value")));
             }
         }
     }
 
     private void createTables() throws SQLException {
         try (Connection connection = createConnection();
-             Statement statement = connection.createStatement()) {
-            statement.executeUpdate("""
-                    CREATE TABLE %s (
-                        id SERIAL PRIMARY KEY,
-                        key UUID NOT NULL
-                    );
-                    """.formatted(keyTable.getName()));
-            statement.executeUpdate("""
-                    CREATE TABLE %s (
-                        id SERIAL PRIMARY KEY,
-                        key_id INT REFERENCES %s (id),
-                        scope VARCHAR(255) NOT NULL
-                    );
-                    """.formatted(scopeTable.getName()));
+             Statement stmt = connection.createStatement()) {
+
+            if (!doesTableExist(connection, keyTable.getName())) {
+                stmt.executeUpdate("""
+                        CREATE TABLE %s (
+                            id INT NOT NULL PRIMARY KEY GENERATED ALWAYS AS IDENTITY (START WITH 1, INCREMENT BY 1),
+                            key_value VARCHAR(255) NOT NULL
+                        )
+                        """.formatted(keyTable.getName()));
+            }
+
+            if (!doesTableExist(connection, scopeTable.getName())) {
+                stmt.executeUpdate("""
+                        CREATE TABLE %s (
+                            id INT NOT NULL PRIMARY KEY GENERATED ALWAYS AS IDENTITY (START WITH 1, INCREMENT BY 1),
+                            key_id INT NOT NULL REFERENCES %s (id),
+                            scope VARCHAR(255) NOT NULL
+                        )
+                        """.formatted(scopeTable.getName(), keyTable.getName()));
+            }
         }
-        System.out.println("Tables created");
+        System.out.println("Tables created or already exist");
         insertValues();
+    }
+
+    private boolean doesTableExist(Connection connection, String tableName) throws SQLException {
+        try (ResultSet rs = connection.getMetaData().getTables(null, "APP", tableName.toUpperCase(), null)) {
+            return rs.next();
+        }
+
+    }
+
+    private void clearTables() throws SQLException {
+        try (Connection connection = createConnection()) {
+            Statement stmt = connection.createStatement();
+            stmt.executeUpdate("DROP TABLE %s".formatted(scopeTable.getName()));
+            stmt.executeUpdate("DROP TABLE %s".formatted(keyTable.getName()));
+        }
+        System.out.println("clear tables");
     }
 
     private void insertValues() throws SQLException {
         try (Connection connection = createConnection();
              PreparedStatement apiKeyStmt = connection.prepareStatement("""
-                     INSERT INTO %s (key) VALUES (?)
-                     """.formatted(keyTable.getName()));
+                 INSERT INTO %s (key_value) VALUES (?)
+                 """.formatted(keyTable.getName()), Statement.RETURN_GENERATED_KEYS);
              PreparedStatement scopeStmt = connection.prepareStatement("""
-                     INSERT INTO %s (key_id, scope) VALUES (?, ?)
-                     """.formatted(scopeTable.getName()));
+                 INSERT INTO %s (key_id, scope) VALUES (?, ?)
+                 """.formatted(scopeTable.getName()));
         ) {
             for (int i = 0; i < USERS; i++) {
                 String apiKey = UUID.randomUUID().toString();
                 apiKeyStmt.setString(1, apiKey);
                 apiKeyStmt.executeUpdate();
 
-                scopeStmt.setString(1, "scope" + i);
-                scopeStmt.setString(2, apiKey);
-                scopeStmt.executeUpdate();
+                try (ResultSet generatedKeys = apiKeyStmt.getGeneratedKeys()) {
+                    if (generatedKeys.next()) {
+                        int keyId = generatedKeys.getInt(1); // Get the generated ID
+
+                        scopeStmt.setInt(1, keyId);
+                        scopeStmt.setString(2, "scope" + i);
+                        scopeStmt.executeUpdate();
+                    }
+                }
             }
         }
         System.out.println("Values inserted");
     }
+
 }
