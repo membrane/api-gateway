@@ -18,26 +18,31 @@ public class ApiKeySecurityScheme extends AbstractSecurityScheme {
     /**
      * Name of the header, query or cookie parameter
      */
-   public String name;
+    public String parameterName;
 
-   public enum In { HEADER, QUERY, COOKIE }
+    public enum In {HEADER, QUERY, COOKIE}
 
-   public In in;
+    public In in;
 
     /**
-     *
-     * @param in Location of the key
-     * @param name Name of the header, query or cookie parameter
+     * @param in   Location of the key
+     * @param parameterName Name of the header, query or cookie parameter
      */
-    public ApiKeySecurityScheme(In in, String name) {
-        this.name = name;
+    public ApiKeySecurityScheme(In in, String parameterName) {
+        this.parameterName = parameterName;
         this.in = in;
     }
 
     @Override
+    public String getName() {
+        return "apiKey";
+    }
+
+
+    @Override
     public String toString() {
         return "ApiKeySecurityScheme{" +
-               "name='" + name + '\'' +
+               "name='" + parameterName + '\'' +
                '}';
     }
 }

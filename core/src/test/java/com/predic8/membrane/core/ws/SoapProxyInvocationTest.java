@@ -110,7 +110,7 @@ public class SoapProxyInvocationTest {
         aServiceAPI.setPort(2001);
         aServiceAPI.getInterceptors().add(new ResponseInterceptor() {{
             setInterceptors(List.of(new SetHeaderInterceptor() {{
-                setName("AService");
+                setFieldName("AService");
                 setValue("123");
             }}));
         }});
