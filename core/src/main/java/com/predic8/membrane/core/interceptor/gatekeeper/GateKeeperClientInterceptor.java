@@ -17,7 +17,6 @@ import com.fasterxml.jackson.databind.*;
 import com.google.common.cache.*;
 import com.google.common.collect.*;
 import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
@@ -36,22 +35,22 @@ public class GateKeeperClientInterceptor extends AbstractInterceptor {
     private HttpClientConfiguration httpClientConfiguration;
 
     private HttpClient httpClient;
-    private ObjectMapper om =  new ObjectMapper();
+    private final ObjectMapper om =  new ObjectMapper();
 
     public GateKeeperClientInterceptor() {
         name = "gatekeeper";
-        setFlow(Flow.Set.REQUEST);
+        setFlow(Flow.Set.REQUEST_FLOW);
     }
 
     public GateKeeperClientInterceptor(String url) {
         this.url = url;
         name = "gatekeeper";
-        setFlow(Flow.Set.REQUEST);
+        setFlow(Flow.Set.REQUEST_FLOW);
     }
 
     @Override
-    public void init(Router router) throws Exception {
-        super.init(router);
+    public void init() {
+        super.init();
         httpClient = router.getHttpClientFactory().createClient(httpClientConfiguration);
     }
 

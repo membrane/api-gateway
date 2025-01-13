@@ -14,7 +14,6 @@
 package com.predic8.membrane.core.interceptor.administration;
 
 import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.interceptor.rewrite.*;
@@ -58,8 +57,8 @@ public class AdminConsoleInterceptor extends AbstractInterceptor {
 	}
 
 	@Override
-	public void init(Router router) throws Exception {
-		super.init(router);
+	public void init( {
+		super.init();
 		rewriteInterceptor.init(router);
 		rai.setUseXForwardedForAsClientAddr(useXForwardedForAsClientAddr);
 		rai.init(router);

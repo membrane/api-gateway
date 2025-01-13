@@ -5,6 +5,15 @@
 - One API that calls multiple Backends
   - Ideas
     - <target ../> inside <if>
+- Routing with if instead of switch and cbr
+- <choose>
+     <case test=""> // If this matches execute only nested
+        <..interceptors>
+     </case> 
+     <case test=""></case> // Only evaluate if first did not match
+     <case test=""></case>
+     <otherwise></otherwise>
+  </choose>
 
 # Version 6.1.0
 
@@ -69,6 +78,13 @@
 - Check that interceptors define their flows
 - Test in proxies.xml internal with port
 - Look at ignored tests
+- Interceptor init() and init(Router router)
+- ProblemDetails
+  - JSONValidator
+- In com.predic8.membrane.core.interceptor.oauth2.authorizationservice.AuthorizationService 
+  - Remove throws: 
+    - public abstract String getJwksEndpoint() throws Exception; 
+- Exchange property name constants: See Exchange
 - Dependencies
   - Log4J, where, what
 - Interceptor Interface:
@@ -78,8 +94,14 @@
 - Cleaup:
   - LoggingContextInterceptor? Ask CG
 
+- Merge log with print
+  <log message="${header.foo}/>
+  default: message="${header}\n${body}"
+- Remove etcd stuff 
+
 ## Done
 - Proxy.init() and init(router) make it clear what to call!
+- Rename service:// to internal://
 - Call plugin
 - Example Tests without unzipping for every test
 - Delete interceptor
@@ -95,7 +117,6 @@
 - ProblemDetails
   - Test for production mode filter
     - Return pd and check if answer contains pd.details ...
-
 
 ### Examples
 - Rename Tests to *.ExampleTest

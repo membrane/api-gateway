@@ -14,7 +14,6 @@
 package com.predic8.membrane.core.interceptor.flow;
 
 import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.interceptor.*;
@@ -27,7 +26,7 @@ import java.util.*;
 
 import static com.predic8.membrane.core.http.Header.*;
 import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
-import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
+import static com.predic8.membrane.core.interceptor.Outcome.*;
 
 @MCElement(name = "call")
 public class CallInterceptor extends AbstractLanguageInterceptor {
@@ -47,8 +46,8 @@ public class CallInterceptor extends AbstractLanguageInterceptor {
     );
 
     @Override
-    public void init(Router router) throws Exception {
-        super.init(router);
+    public void init() {
+        super.init();
         hcInterceptor = new HTTPClientInterceptor();
         hcInterceptor.init(router);
         exchangeExpression = TemplateExchangeExpression.newInstance(router, language, url);
@@ -117,6 +116,7 @@ public class CallInterceptor extends AbstractLanguageInterceptor {
      */
     @SuppressWarnings("unused")
     @MCAttribute
+    @Required
     public void setUrl(String url) {
         this.url = url;
     }

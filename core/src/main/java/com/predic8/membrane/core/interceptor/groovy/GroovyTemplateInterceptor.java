@@ -15,7 +15,6 @@
 package com.predic8.membrane.core.interceptor.groovy;
 
 import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
@@ -59,8 +58,8 @@ public class GroovyTemplateInterceptor extends AbstractInterceptor {
     }
 
     @Override
-    public void init(Router router) throws Exception {
-        super.init(router);
+    public void init() {
+        super.init();
         groovyInterceptor = new GroovyInterceptor();
         groovyInterceptor.setSrc(createGroovyScript());
         groovyInterceptor.init(router);

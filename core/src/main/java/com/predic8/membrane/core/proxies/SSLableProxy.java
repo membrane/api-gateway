@@ -80,7 +80,9 @@ public class SSLableProxy extends AbstractProxy {
 	 */
 	@MCAttribute
 	public void setPort(int port) {
-		((AbstractRuleKey)key).setPort(port);
+		if (!(key instanceof AbstractRuleKey ark))
+			return;
+		ark.setPort(port);
 	}
 
 	public String getIp() {

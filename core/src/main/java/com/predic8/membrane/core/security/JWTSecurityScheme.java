@@ -29,4 +29,10 @@ public class JWTSecurityScheme extends AbstractSecurityScheme {
             }
         }
     }
+
+
+    @Override
+    public String getName() {
+        return "jwt";
+    }
 }

@@ -39,8 +39,8 @@ public abstract class AbstractFlowInterceptor extends AbstractInterceptor {
 	}
 
 	@Override
-	public void init(Router router) throws Exception {
-		super.init(router);
+	public void init() {
+		super.init();
 		for (Interceptor i : interceptors)
 			i.init(router);
 	}

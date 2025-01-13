@@ -26,6 +26,7 @@ import static com.predic8.membrane.core.http.Header.*;
 import static com.predic8.membrane.core.lang.spel.functions.BuiltInFunctions.*;
 import static com.predic8.membrane.core.security.ApiKeySecurityScheme.In.*;
 import static java.util.List.*;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 public class BuiltInFunctionsTest {
@@ -35,7 +36,10 @@ public class BuiltInFunctionsTest {
     @BeforeAll
     static void init() throws URISyntaxException {
         var exc = Request.get("foo").buildExchange();
-        exc.setProperty(SECURITY_SCHEMES, List.of(new ApiKeySecurityScheme(HEADER, "X-Api-Key").scopes("demo", "test")));
+        exc.setProperty(SECURITY_SCHEMES, List.of(
+                new ApiKeySecurityScheme(HEADER, "X-Api-Key").scopes("demo", "test"),
+                new BasicHttpSecurityScheme().scopes("foo", "bar")
+        ));
         exc.getRequest().setBodyContent("""
                 {"name":"John"}""".getBytes());
         ctx = new SpELExchangeEvaluationContext(exc);
@@ -71,7 +75,7 @@ public class BuiltInFunctionsTest {
 
     @Test
     public void testNotContainsScopes() {
-        assertFalse(BuiltInFunctions.hasScope(of("foo"), ctx));
+        assertFalse(BuiltInFunctions.hasScope(of("quux"), ctx));
     }
 
     @Test
@@ -80,6 +84,16 @@ public class BuiltInFunctionsTest {
         SpELExchangeEvaluationContext ctxWithoutScopes = new SpELExchangeEvaluationContext(exc2);
         assertFalse(BuiltInFunctions.hasScope(ctxWithoutScopes));
         assertFalse(BuiltInFunctions.hasScope(of("foo"), ctxWithoutScopes));
+    }
+
+    @Test
+    public void testGetAllScopes() {
+        assertEquals(List.of("test", "demo", "bar", "foo"), BuiltInFunctions.scopes(ctx));
+    }
+
+    @Test
+    public void testGetSchemeSpecificScopes() {
+        assertEquals(List.of("bar", "foo"), BuiltInFunctions.scopes("http", ctx));
     }
 
     @Test

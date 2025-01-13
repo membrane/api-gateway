@@ -29,7 +29,7 @@ public class UserFeatureInterceptor extends AbstractInterceptor {
 
 	public UserFeatureInterceptor() {
 		name = "User Feature";
-		setFlow(REQUEST_RESPONSE_ABORT); // ?
+		setFlow(REQUEST_RESPONSE_ABORT_FLOW); // ?
 	}
 
 	@Override

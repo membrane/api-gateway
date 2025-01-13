@@ -14,46 +14,48 @@
 
 package com.predic8.membrane.examples;
 
-import com.predic8.membrane.examples.config.GettingStartedTest;
-import com.predic8.membrane.examples.config.ProxiesXMLFullSampleTest;
+import com.predic8.membrane.examples.config.GettingStartedExampleTest;
+import com.predic8.membrane.examples.config.ProxiesXMLFullExampleTest;
 import com.predic8.membrane.examples.config.ProxiesXMLSoapExampleTest;
-import com.predic8.membrane.examples.config.ProxiesXMLTest;
+import com.predic8.membrane.examples.config.ProxiesXMLExampleTest;
 import com.predic8.membrane.examples.env.HelpLinkExistenceTest;
 import com.predic8.membrane.examples.tests.*;
-import com.predic8.membrane.examples.tests.loadbalancing.Loadbalancing4XmlSessionTest;
+import com.predic8.membrane.examples.tests.loadbalancing.Loadbalancing4XmlSessionExampleTest;
 import com.predic8.membrane.examples.tests.openapi.APIProxyExampleTest;
+
 import com.predic8.membrane.examples.tests.ssl.SSLServerApiWithTlsPemTest;
 import com.predic8.membrane.examples.tests.ssl.SSLServerApiWithTlsPkcs12Test;
 import com.predic8.membrane.examples.tests.ssl.ToBackendTest;
 import com.predic8.membrane.examples.tests.validation.FormValidationTest;
+
 import com.predic8.membrane.examples.tests.versioning.XsltExampleTest;
-import com.predic8.membrane.examples.tutorials.rest.TutorialRestInitialTest;
-import com.predic8.membrane.examples.tutorials.rest.TutorialRestStepsTest;
+import com.predic8.membrane.examples.tutorials.rest.TutorialRestInitialExampleTest;
+import com.predic8.membrane.examples.tutorials.rest.TutorialRestStepsExampleTest;
 import org.junit.platform.suite.api.*;
 
 @Suite
 @SelectClasses({
-        GettingStartedTest.class,  // See: https://membrane-api.io/getting-started
+        GettingStartedExampleTest.class,  // See: https://membrane-api.io/getting-started
         HelpLinkExistenceTest.class,
 
-        ACLTest.class,
-        BasicAuthTest.class,
-        FileExchangeStoreTest.class,
-        Loadbalancing4XmlSessionTest.class,
-        LoggingCSVTest.class,
-        LoggingJDBCTest.class,
-        LoggingTest.class,
-        LoginTest.class,
-        RewriterTest.class,
-        SSLServerApiWithTlsPkcs12Test.class,
-        SSLServerApiWithTlsPemTest.class,
-        ToBackendTest.class,
-        ThrottleTest.class,
-        XSLTTest.class,
+        ACLExampleTest.class,
+        BasicAuthExampleTest.class,
+        FileExchangeStoreExampleTest.class,
+        Loadbalancing4XmlSessionExampleTest.class,
+        LoggingCSVExampleTest.class,
+        LoggingJDBCExampleTest.class,
+        LoggingExampleTest.class,
+        LoginExampleTest.class,
+        RewriterExampleTest.class,
+        SSLServerApiWithTlsPkcs12ExampleTest.class,
+        SSLServerApiWithTlsPemExampleTest.class,
+        ToBackendExampleTest.class,
+        ThrottleExampleTest.class,
+        XSLTExampleTest.class,
 
-        FormValidationTest.class,
-        CustomInterceptorTest.class,
-        BasicXmlInterceptorTest.class,
+        FormValidationExampleTest.class,
+        CustomInterceptorExampleTest.class,
+        BasicXmlInterceptorExampleTest.class,
 
         XsltExampleTest.class,
 
@@ -61,13 +63,13 @@ import org.junit.platform.suite.api.*;
         APIProxyExampleTest.class,
 
         // Tutorials
-        TutorialRestStepsTest.class,
-        TutorialRestInitialTest.class,
+        TutorialRestStepsExampleTest.class,
+        TutorialRestInitialExampleTest.class,
 
         // Configuration
-        ProxiesXMLTest.class,
+        ProxiesXMLExampleTest.class,
         ProxiesXMLSoapExampleTest.class,
-        ProxiesXMLFullSampleTest.class
+        ProxiesXMLFullExampleTest.class
 
 })
 @ExcludeClassNamePatterns("com.predic8.membrane.examples.env.HelpLinkExistenceTest")

@@ -100,12 +100,12 @@ public class ReverseProxyingInterceptor extends AbstractInterceptor {
 		return CONTINUE;
 	}
 
-	private boolean isSameSchemeHostAndPort(String location2, String location) {
+	private boolean isSameSchemeHostAndPort(String location1, String location2) {
 		try {
-			if (location.startsWith("/") || location2.startsWith("/"))
+			if (location1.startsWith("/") || location2.startsWith("/"))
 				return false; // no host info available
 			URL loc2 = new URL(location2);
-			URL loc1 = new URL(location);
+			URL loc1 = new URL(location1);
 			if (loc2.getProtocol() != null && !loc2.getProtocol().equals(loc1.getProtocol()))
 				return false;
 			if (loc2.getHost() != null && !loc2.getHost().equals(loc1.getHost()))
@@ -114,7 +114,7 @@ public class ReverseProxyingInterceptor extends AbstractInterceptor {
 		} catch (MalformedURLException e) {
 			if (e.getMessage().startsWith("unknown protocol:"))
 				return false;
-			log.warn("Location 1: {} Location 2: {}", location, location2, e); // TODO: fix these cases
+			log.warn("Location 1: {} Location 2: {}", location1, location2, e);
 			return false;
 		}
 	}

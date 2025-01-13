@@ -20,6 +20,7 @@ import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.interceptor.lang.*;
 import com.predic8.membrane.core.lang.*;
+
 import org.slf4j.*;
 
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
@@ -31,12 +32,6 @@ public class PrintInterceptor extends AbstractLanguageInterceptor {
     private static final Logger log = LoggerFactory.getLogger(PrintInterceptor.class.getName());
 
     String line;
-
-    @Override
-    public void init(Router router) throws Exception {
-        super.init(router);
-        exchangeExpression = TemplateExchangeExpression.newInstance(router, language, line);
-    }
 
     @Override
     public Outcome handleRequest(Exchange exc) {

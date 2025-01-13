@@ -35,6 +35,7 @@ e.g. setHeader should return in not production mode details about the error. But
 ## More
 
 - WADL remove?
+- When error case is known do not log stacktraces
 
 ## Internal Proxy?
 
@@ -45,8 +46,29 @@ e.g. setHeader should return in not production mode details about the error. But
  <setHeader value="headers['unknown'] ...> should set null.
 
  - Makes handling less easy if it is null
- 
+
 
 # Other
 
 - Use conventional commits
+
+# Use double brace initialization?
+
+{{}}
+
+See: https://stackoverflow.com/questions/1958636/what-is-double-brace-initialization-in-java
+
+# Initialization
+
+Init first proxies and than their interceptors
+
+Should implementations of init() in subclasses of Interceptor call init() on super? 
+- Otherwise so initialization is missing out.
+# Internal Property Names
+
+- Should start with "membrane."
+- All lowercase
+- See: SecuritySchemes
+
+# Keep K8S
+
