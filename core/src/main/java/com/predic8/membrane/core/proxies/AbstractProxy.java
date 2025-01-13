@@ -30,7 +30,6 @@ public abstract class AbstractProxy implements Proxy {
     private static final Logger log = LoggerFactory.getLogger(AbstractProxy.class.getName());
 
     protected String name = "";
-
     protected RuleKey key;
 
     protected volatile boolean blockRequest;
@@ -112,7 +111,7 @@ public abstract class AbstractProxy implements Proxy {
     /**
      * Called after parsing is complete and this has been added to the object tree (whose root is Router).
      */
-    public void init(Router router) throws Exception {
+    public final void init(Router router) {
         this.router = router;
         try {
             init(); // Extension point for subclasses

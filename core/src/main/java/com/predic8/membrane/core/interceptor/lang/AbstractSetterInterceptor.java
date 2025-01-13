@@ -15,15 +15,17 @@
 package com.predic8.membrane.core.interceptor.lang;
 
 import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.lang.*;
+import com.predic8.membrane.core.lang.spel.*;
 import org.slf4j.*;
 
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
-import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
+import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static com.predic8.membrane.core.lang.ExchangeExpression.Language.*;
 
 public abstract class AbstractSetterInterceptor extends AbstractLanguageInterceptor {
 
@@ -35,9 +37,14 @@ public abstract class AbstractSetterInterceptor extends AbstractLanguageIntercep
     protected boolean ifAbsent;
 
     @Override
-    public void init(Router router) throws Exception {
+    public void init() {
         super.init(router);
-        exchangeExpression = new TemplateExchangeExpression(router,language,expression);
+        // SpEL comes with its own templating
+        if (language == SPEL) {
+            exchangeExpression = new SpELExchangeExpression(expression, new SpELExchangeExpression.DollarBracketTemplateParserContext());
+        } else {
+            exchangeExpression = new TemplateExchangeExpression(router, language, expression);
+        }
     }
 
     @Override
@@ -83,7 +90,7 @@ public abstract class AbstractSetterInterceptor extends AbstractLanguageIntercep
         return ifAbsent;
     }
 
-    @MCAttribute
+    @MCAttribute(attributeName = "name")
     public void setFieldName(String fieldName) {
         this.fieldName = fieldName;
     }

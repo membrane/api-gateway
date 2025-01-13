@@ -14,7 +14,6 @@
 package com.predic8.membrane.core.proxies;
 
 import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.util.*;
 
 /**
@@ -31,8 +30,7 @@ public class InternalProxy extends AbstractServiceProxy implements NotPortOpenin
     }
 
     @Override
-    public void init(Router router) throws Exception {
-        super.init(router);
+    public void init() {
         ((InternalProxyKey)key).setServiceName(getName());
 
         if(key.getPort() != 0) {

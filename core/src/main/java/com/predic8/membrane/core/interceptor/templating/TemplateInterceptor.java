@@ -20,6 +20,7 @@ import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.resolver.*;
+import com.predic8.membrane.core.util.*;
 import groovy.lang.*;
 import groovy.text.*;
 import org.apache.commons.io.*;
@@ -113,7 +114,8 @@ public class TemplateInterceptor extends StaticInterceptor {
     }
 
     @Override
-    public void init() throws Exception {
+    public void init() {
+        super.init();
         if (this.getLocation() != null && (getTextTemplate() != null && !getTextTemplate().isBlank())) {
             throw new IllegalStateException("On <" + getName() + ">, ./text() and ./@location cannot be set at the same time.");
         }
@@ -123,7 +125,7 @@ public class TemplateInterceptor extends StaticInterceptor {
             try (InputStreamReader reader = new InputStreamReader(getRouter().getResolverMap()
                     .resolve(ResolverMap.combine(router.getBaseLocation(), location)))) {
 
-                // @TODO If a file is XML or not is detected based on the Extension. That should
+                // If a file is XML or not is detected based on the Extension.
                 if (FilenameUtils.getExtension(getLocation()).equals("xml")) {
                     template = new XmlTemplateEngine().createTemplate(reader);
                     setContentType(APPLICATION_XML);
@@ -132,14 +134,19 @@ public class TemplateInterceptor extends StaticInterceptor {
                     template = new StreamingTemplateEngine().createTemplate(reader);
                 }
                 return;
+            } catch (Exception e) {
+                throw new ConfigurationException("Could not create template from " + location,e);
             }
         }
         if(!textTemplate.isBlank()){
             scriptAccessesJson = textTemplate.contains("json");
-            template = new StreamingTemplateEngine().createTemplate(this.getTextTemplate());
+            try {
+                template = new StreamingTemplateEngine().createTemplate(this.getTextTemplate());
+            } catch (Exception e) {
+                throw new ConfigurationException("Could not create template from " + textTemplate,e);
+            }
             return;
         }
-
         throw new IllegalStateException("You have to set either ./@location or ./text()");
     }
 

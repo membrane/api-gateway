@@ -289,7 +289,7 @@ public class ChunkedBody extends AbstractBody {
     @Override
     public int getLength() throws IOException {
         if (wasStreamed())
-            return (int) lengthStreamed; // TODO: refactor into long
+            return (int) lengthStreamed;
         return super.getLength();
     }
 

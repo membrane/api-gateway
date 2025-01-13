@@ -24,6 +24,8 @@ import org.apache.http.conn.ssl.*;
 import org.apache.http.entity.*;
 import org.apache.http.impl.auth.*;
 import org.apache.http.impl.client.*;
+import org.apache.http.impl.cookie.RFC2109SpecProvider;
+import org.apache.http.impl.cookie.RFC6265CookieSpecProvider;
 import org.apache.http.protocol.*;
 import org.apache.http.util.*;
 
@@ -39,7 +41,10 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class AssertUtils {
 
-    private static CloseableHttpClient hc = HttpClientBuilder.create().build();
+    private static CloseableHttpClient hc = HttpClientBuilder.create()
+            .setDefaultCookieSpecRegistry(l -> {
+                return new RFC6265CookieSpecProvider();
+            }).build();
 
     public static void assertContains(String needle, String haystack) {
         if (haystack.contains(needle))

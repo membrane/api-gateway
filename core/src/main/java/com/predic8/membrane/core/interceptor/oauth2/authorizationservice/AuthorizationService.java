@@ -76,13 +76,12 @@ public abstract class AuthorizationService {
         return supportsDynamicRegistration;
     }
 
-
     public void init(Router router) throws Exception {
         log = LoggerFactory.getLogger(this.getClass().getName());
 
         if (isUseJWTForClientAuth()) {
             JWSSigner = new JWSSigner(PEMSupport.getInstance().parseKey(getSslParser().getKey().getPrivate().get(router.getResolverMap(), router.getBaseLocation())),
-                    getSslParser().getKey().getCertificates().get(0).get(router.getResolverMap(), router.getBaseLocation()));
+                    getSslParser().getKey().getCertificates().getFirst().get(router.getResolverMap(), router.getBaseLocation()));
         }
 
         setHttpClient(router.getHttpClientFactory().createClient(getHttpClientConfiguration()));

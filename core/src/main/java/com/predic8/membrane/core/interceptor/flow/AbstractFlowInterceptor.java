@@ -15,7 +15,6 @@
 package com.predic8.membrane.core.interceptor.flow;
 
 import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.interceptor.*;
 
 import java.util.*;
@@ -34,8 +33,8 @@ public abstract class AbstractFlowInterceptor extends AbstractInterceptor {
 	}
 
 	@Override
-	public void init(Router router) throws Exception {
-		super.init(router);
+	public void init() {
+		super.init();
 		for (Interceptor i : interceptors)
 			i.init(router);
 	}

@@ -49,7 +49,7 @@ public class Body extends AbstractBody {
 	private final long length;
 	private long streamedLength;
 
-	public Body(InputStream in) throws IOException {
+	public Body(InputStream in) {
 		this(in, -1);
 	}
 
@@ -166,7 +166,7 @@ public class Body extends AbstractBody {
 	@Override
 	public int getLength() throws IOException {
 		if (wasStreamed())
-			return (int)streamedLength; // TODO: refactor length to long
+			return (int)streamedLength;
 		return super.getLength();
 	}
 

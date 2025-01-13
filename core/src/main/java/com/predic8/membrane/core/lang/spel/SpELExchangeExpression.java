@@ -16,12 +16,12 @@ package com.predic8.membrane.core.lang.spel;
 
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.interceptor.lang.*;
 import com.predic8.membrane.core.lang.*;
 import org.jetbrains.annotations.*;
 import org.slf4j.*;
 import org.springframework.core.convert.*;
 import org.springframework.expression.*;
+import org.springframework.expression.common.*;
 import org.springframework.expression.spel.*;
 import org.springframework.expression.spel.standard.*;
 
@@ -33,9 +33,16 @@ public class SpELExchangeExpression extends AbstractExchangeExpression {
 
     private final Expression spelExpression;
 
-    public SpELExchangeExpression(String expression) {
+    /**
+     * Creates an expression "expr" or a templated "..${expr}...${expr}...", depending on
+     * the second parameter.
+     *
+     * @param expression
+     * @param parserContext null or one with configuration of prefix and suffix e.g. ${ and }
+     */
+    public SpELExchangeExpression(String expression, TemplateParserContext parserContext) {
         super(expression);
-        spelExpression = new SpelExpressionParser(getSpelParserConfiguration()).parseExpression(expression);
+        spelExpression = new SpelExpressionParser(getSpelParserConfiguration()).parseExpression( expression, parserContext );
     }
 
     @Override
@@ -56,5 +63,11 @@ public class SpELExchangeExpression extends AbstractExchangeExpression {
 
     private @NotNull SpelParserConfiguration getSpelParserConfiguration() {
         return new SpelParserConfiguration(MIXED, this.getClass().getClassLoader());
+    }
+
+    public static class DollarBracketTemplateParserContext extends TemplateParserContext {
+        public DollarBracketTemplateParserContext() {
+            super("${","}");
+        }
     }
 }

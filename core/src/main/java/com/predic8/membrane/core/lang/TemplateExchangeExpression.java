@@ -11,12 +11,11 @@
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
    See the License for the specific language governing permissions and
    limitations under the License. */
-package com.predic8.membrane.core.interceptor.lang;
+package com.predic8.membrane.core.lang;
 
 import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.interceptor.Interceptor.*;
-import com.predic8.membrane.core.lang.*;
 import org.slf4j.*;
 
 import java.util.*;
@@ -40,15 +39,15 @@ public class TemplateExchangeExpression extends AbstractExchangeExpression {
 
     @Override
     public <T> T evaluate(Exchange exchange, Flow flow, Class<T> type) {
-        String result = "";
+        StringBuilder line = new StringBuilder();
         for(Token token : tokens) {
             try {
-                result += token.eval(exchange, flow);
+                line.append(token.eval(exchange, flow));
             } catch (Exception e) {
                 throw new ExchangeExpressionException(token.toString(),e);
             }
         }
-        return (T)result;
+        return (T) line.toString();
     }
 
     protected static List<Token> parseTokens(Router router, Language language, String expression) {

@@ -69,7 +69,7 @@ public class ScriptingUtils {
             if (includeJsonObject) {
                 try {
                     log.info("Parsing body as JSON for scripting plugins");
-                    parameters.put("json",om.readValue(readInputStream(msg.getBodyAsStream()),Map.class));  // @Todo not with Javascript
+                    parameters.put("json",om.readValue(readInputStream(msg.getBodyAsStream()),Map.class));
                 } catch (Exception e) {
                     log.warn("Can't parse body as JSON", e);
                 }

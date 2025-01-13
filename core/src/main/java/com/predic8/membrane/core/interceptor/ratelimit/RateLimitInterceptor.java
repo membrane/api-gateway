@@ -88,7 +88,7 @@ public class RateLimitInterceptor extends AbstractInterceptor {
     public RateLimitInterceptor(Duration requestLimitDuration, int requestLimit) {
         strategy = new LazyRateLimit(requestLimitDuration, requestLimit);
         name = "RateLimiter";
-        setFlow(REQUEST);
+        setFlow(REQUEST_FLOW);
     }
 
     @Override
@@ -120,7 +120,7 @@ public class RateLimitInterceptor extends AbstractInterceptor {
     }
 
     @Override
-    public void init() throws Exception {
+    public void init() {
         super.init();
         if (keyExpression == null || keyExpression.isBlank())
             return;

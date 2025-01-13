@@ -9,19 +9,15 @@
 
 		<serviceProxy port="8080">
 
-			<headerFilter>
-				<exclude>X-Authenticated-Login</exclude>
-			</headerFilter>
-
-			<oauth2Resource publicURL="http://localhost:8080/">
+			<oauth2Resource2>
 				<github
 					clientId="Enter client ID from Github here"
 					clientSecret="Enter client Secret from Github here" />
-			</oauth2Resource>
+			</oauth2Resource2>
 
 			<!-- this will act as the secret resource to make the example simple. See below in the comments for an alternative -->
 			<groovy>
-				def email = exc.request.header.getFirstValue("X-Authenticated-Login")
+				def email = exc.properties.oauth2.userinfo.username
 				exc.response = Response.ok("Hello " + email + ".").build()
 				RETURN
 			</groovy>
