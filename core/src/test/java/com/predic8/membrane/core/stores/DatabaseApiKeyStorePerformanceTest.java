@@ -4,11 +4,10 @@ import com.predic8.membrane.core.interceptor.apikey.stores.DatabaseApiKeyStore;
 import com.predic8.membrane.core.interceptor.apikey.stores.KeyTable;
 import com.predic8.membrane.core.interceptor.apikey.stores.ScopeTable;
 import com.predic8.membrane.core.interceptor.apikey.stores.UnauthorizedApiKeyException;
+import org.apache.derby.jdbc.EmbeddedDataSource;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.postgresql.ds.PGSimpleDataSource;
 
-import javax.sql.DataSource;
 import java.sql.*;
 import java.util.UUID;
 
@@ -16,7 +15,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 public class DatabaseApiKeyStorePerformanceTest {
     DatabaseApiKeyStore databaseApiKeyStore;
-    PGSimpleDataSource dataSource;
+    EmbeddedDataSource dataSource;
     KeyTable keyTable;
     ScopeTable scopeTable;
     static final int USERS = 10;
@@ -24,13 +23,11 @@ public class DatabaseApiKeyStorePerformanceTest {
     @BeforeEach
     void setUp() throws SQLException {
         databaseApiKeyStore = createDatabaseApiKeyStore();
-        clearTables();
         createTables();
     }
 
     private DatabaseApiKeyStore createDatabaseApiKeyStore() {
         DatabaseApiKeyStore apiKeyStore = new DatabaseApiKeyStore();
-        apiKeyStore.setDatasource(createDataSource());
         keyTable = new KeyTable();
         scopeTable = new ScopeTable();
         keyTable.setName("key");
@@ -40,14 +37,14 @@ public class DatabaseApiKeyStorePerformanceTest {
         return apiKeyStore;
     }
 
-    private DataSource createDataSource() {
-        dataSource = new PGSimpleDataSource();
-        dataSource.setServerName("localhost");
-        dataSource.setPortNumber(5432);
-        dataSource.setDatabaseName("postgres");
-        dataSource.setUser("user");
-        dataSource.setPassword("password");
-        return dataSource;
+    private Connection createConnection() throws SQLException {
+        if (dataSource == null) {
+            dataSource = new EmbeddedDataSource();
+            dataSource.setDatabaseName("test");
+            dataSource.setCreateDatabase("create");
+            databaseApiKeyStore.setDatasource(dataSource);
+        }
+        return dataSource.getConnection();
     }
 
     @Test
@@ -55,11 +52,12 @@ public class DatabaseApiKeyStorePerformanceTest {
         long startTime = System.currentTimeMillis();
         testAllApiKeys();
         long endTime = System.currentTimeMillis();
-        System.out.println("performance " + (endTime - startTime) + " ms");
+        System.out.println("Performance: " + (endTime - startTime) + " ms");
     }
 
     private void testAllApiKeys() throws SQLException, UnauthorizedApiKeyException {
-        try (Connection connection = dataSource.getConnection(); ResultSet rs = connection.prepareStatement("SELECT key FROM key").executeQuery()) {
+        try (Connection connection = createConnection();
+             ResultSet rs = connection.prepareStatement("SELECT key FROM %s".formatted(keyTable)).executeQuery()) {
             while (rs.next()) {
                 assertNotNull(databaseApiKeyStore.getScopes(rs.getString("key")));
             }
@@ -67,39 +65,45 @@ public class DatabaseApiKeyStorePerformanceTest {
     }
 
     private void createTables() throws SQLException {
-        try (Connection connection = dataSource.getConnection()) {
-            try (Statement stmt = connection.createStatement()) {
-                stmt.executeUpdate("CREATE TABLE IF NOT EXISTS key (" + "id SERIAL PRIMARY KEY, " + "key UUID NOT NULL)");
-                stmt.executeUpdate("CREATE TABLE IF NOT EXISTS scope (" + "id SERIAL PRIMARY KEY, " + "key_id INT REFERENCES key(id), " + "scope VARCHAR(255) NOT NULL);");
-            }
+        try (Connection connection = createConnection();
+             Statement statement = connection.createStatement()) {
+            statement.executeUpdate("""
+                    CREATE TABLE %s (
+                        id SERIAL PRIMARY KEY,
+                        key UUID NOT NULL
+                    );
+                    """.formatted(keyTable.getName()));
+            statement.executeUpdate("""
+                    CREATE TABLE %s (
+                        id SERIAL PRIMARY KEY,
+                        key_id INT REFERENCES %s (id),
+                        scope VARCHAR(255) NOT NULL
+                    );
+                    """.formatted(scopeTable.getName()));
         }
-        System.out.println("create tables");
+        System.out.println("Tables created");
         insertValues();
     }
 
-    private void clearTables() throws SQLException {
-        try (Connection connection = dataSource.getConnection(); Statement stmt = connection.createStatement()) {
-            stmt.executeUpdate("DROP TABLE IF EXISTS %s;".formatted(scopeTable.getName()));
-            stmt.executeUpdate("DROP TABLE IF EXISTS %s;".formatted(keyTable.getName()));
-        }
-        System.out.println("clear tables");
-    }
-
     private void insertValues() throws SQLException {
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement apiKeyStmt = connection.prepareStatement("INSERT INTO %s (key) VALUES (?)".formatted(keyTable.getName()));
-             PreparedStatement scopeStmt = connection.prepareStatement("INSERT INTO %s (key_id, scope) SELECT id, ? FROM key WHERE key = ?".formatted(scopeTable.getName()))
+        try (Connection connection = createConnection();
+             PreparedStatement apiKeyStmt = connection.prepareStatement("""
+                     INSERT INTO %s (key) VALUES (?)
+                     """.formatted(keyTable.getName()));
+             PreparedStatement scopeStmt = connection.prepareStatement("""
+                     INSERT INTO %s (key_id, scope) VALUES (?, ?)
+                     """.formatted(scopeTable.getName()));
         ) {
             for (int i = 0; i < USERS; i++) {
                 String apiKey = UUID.randomUUID().toString();
-                apiKeyStmt.setObject(1, UUID.fromString(apiKey));
+                apiKeyStmt.setString(1, apiKey);
                 apiKeyStmt.executeUpdate();
 
                 scopeStmt.setString(1, "scope" + i);
-                scopeStmt.setObject(2, UUID.fromString(apiKey));
+                scopeStmt.setString(2, apiKey);
                 scopeStmt.executeUpdate();
             }
         }
-        System.out.println("insert values");
+        System.out.println("Values inserted");
     }
 }
