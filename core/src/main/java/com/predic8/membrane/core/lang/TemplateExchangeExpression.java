@@ -16,10 +16,13 @@ package com.predic8.membrane.core.lang;
 import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.interceptor.Interceptor.*;
+import com.predic8.membrane.core.lang.spel.*;
 import org.slf4j.*;
 
 import java.util.*;
 import java.util.regex.*;
+
+import static com.predic8.membrane.core.lang.ExchangeExpression.Language.SPEL;
 
 public class TemplateExchangeExpression extends AbstractExchangeExpression {
 
@@ -32,7 +35,15 @@ public class TemplateExchangeExpression extends AbstractExchangeExpression {
 
     private final List<Token> tokens;
 
-    public TemplateExchangeExpression(Router router, Language language, String expression) {
+    public static ExchangeExpression newInstance(Router router, Language language, String expression) {
+        // SpEL comes with its own templating
+        if (language == SPEL) {
+            return new SpELExchangeExpression(expression, new SpELExchangeExpression.DollarBracketTemplateParserContext());
+        }
+        return new TemplateExchangeExpression(router, language, expression);
+    }
+
+    protected TemplateExchangeExpression(Router router, Language language, String expression) {
         super(expression);
         tokens = parseTokens(router,language, expression);
     }

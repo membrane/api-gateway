@@ -14,20 +14,16 @@
 
 package com.predic8.membrane.core.interceptor.registration;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.Router;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Request;
-import com.predic8.membrane.core.http.Response;
-import com.predic8.membrane.core.interceptor.AbstractInterceptor;
-import com.predic8.membrane.core.interceptor.Outcome;
-import com.predic8.membrane.core.interceptor.authentication.session.JdbcUserDataProvider;
-import com.predic8.membrane.core.interceptor.registration.entity.User;
+import com.fasterxml.jackson.databind.*;
+import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.interceptor.authentication.session.*;
+import com.predic8.membrane.core.interceptor.registration.entity.*;
 
-import java.io.IOException;
-import java.sql.Connection;
-import java.sql.ResultSet;
+import java.io.*;
+import java.sql.*;
 
 /**
  * @description Allows account registration (!Experimental!)
@@ -37,8 +33,8 @@ public class RegistrationInterceptor extends AbstractInterceptor {
     private JdbcUserDataProvider userDataProvider;
 
     @Override
-    public void init(Router router) throws Exception {
-        super.init(router);
+    public void init() {
+        super.init();
         userDataProvider = router.getBeanFactory().getBean(JdbcUserDataProvider.class);
         userDataProvider.init(router);
     }

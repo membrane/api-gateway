@@ -29,17 +29,12 @@
 	<router>
 		<serviceProxy name="Membrane Resource service" port="2001">
 
-			<headerFilter>
-				<exclude>X-Authenticated-Username</exclude>
-			</headerFilter>
-
-			<oauth2Resource publicURL="http://localhost:2001/">
+			<oauth2Resource2>
 				<membrane src="http://localhost:2000" clientId="abc" clientSecret="def" scope="username profile profile2" claims="username" claimsIdt="sub" />
-			</oauth2Resource>
+			</oauth2Resource2>
 
 			<groovy>
-				def name = exc.request.header.getFirstValue("X-Authenticated-Username")
-				exc.response = Response.ok("Hello " + name + ".").build()
+				exc.response = Response.ok("Hello " + exc.properties.oauth2.userinfo.username + ".").build()
 				RETURN
 			</groovy>
 
@@ -49,13 +44,9 @@
 	<router>
 		<serviceProxy name="Race condition client" port="2002">
 
-			<headerFilter>
-				<exclude>X-Authenticated-Username</exclude>
-			</headerFilter>
-
-			<oauth2Resource publicURL="http://localhost:2002/">
+			<oauth2Resource2>
 				<membrane src="http://localhost:2000" clientId="abc" clientSecret="def" scope="username profile profile2" claims="username" claimsIdt="sub" />
-			</oauth2Resource>
+			</oauth2Resource2>
 
 			<groovy>
 				if(exc.request.uri.equals("/test1")){

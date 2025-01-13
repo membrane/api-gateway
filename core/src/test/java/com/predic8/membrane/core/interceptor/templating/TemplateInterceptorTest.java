@@ -195,7 +195,7 @@ public class TemplateInterceptorTest {
 
     @Test
     void notFoundTemplateException() {
-        assertThrows(ResourceRetrievalException.class, () -> {
+        assertThrows(ConfigurationException.class, () -> {
             ti.setLocation("./not_existent_file");
             ti.init(router);
         });

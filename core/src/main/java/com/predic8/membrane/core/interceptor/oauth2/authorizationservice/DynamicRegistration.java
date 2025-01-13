@@ -35,16 +35,17 @@ import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 @MCElement(name="registration")
 public class DynamicRegistration {
 
-    ReusableJsonGenerator jsonGenerator = new ReusableJsonGenerator();
+    private final ReusableJsonGenerator jsonGenerator = new ReusableJsonGenerator();
 
     private List<Interceptor> interceptors = new ArrayList<>();
     private SSLParser sslParser;
     private SSLContext sslContext;
-    private final FlowController flowController = new FlowController();
     private HttpClient client;
     private HttpClientConfiguration httpClientConfiguration;
+    private Router router;
 
     public void init(Router router) throws Exception {
+        this.router = router;
         if (sslParser != null)
             sslContext = new StaticSSLContext(sslParser, router.getResolverMap(), router.getBaseLocation());
         for(Interceptor i : interceptors)
@@ -75,13 +76,13 @@ public class DynamicRegistration {
         if (sslContext != null)
             exc.setProperty(SSL_CONTEXT, sslContext);
 
-        if(flowController.invokeRequestHandlers(exc,interceptors) != CONTINUE)
+        if(router.getFlowController().invokeRequestHandlers(exc,interceptors) != CONTINUE)
             throw new RuntimeException("Registration interceptorchain (request) had a problem");
 
         Response response = client.call(exc).getResponse();
 
         try{
-            flowController.invokeResponseHandlers(exc, interceptors);
+            router.getFlowController().invokeResponseHandlers(exc, interceptors);
         } catch (AbortException e){
             throw new RuntimeException("Registration interceptorchain (response) had a problem");
         }
@@ -92,14 +93,15 @@ public class DynamicRegistration {
     }
 
     private String getRegistrationBody(List<String> callbackUris) throws IOException {
-        JsonGenerator jsonGen = jsonGenerator.resetAndGet();
-        jsonGen.writeStartObject();
-        jsonGen.writeArrayFieldStart("redirect_uris");
-        for (String callbackUri : callbackUris)
-            jsonGen.writeString(callbackUri);
-        jsonGen.writeEndArray();
-        jsonGen.writeEndObject();
-        return jsonGenerator.getJson();
+        try(JsonGenerator jg = jsonGenerator.resetAndGet()) {
+            jg.writeStartObject();
+            jg.writeArrayFieldStart("redirect_uris");
+            for (String callbackUri : callbackUris)
+                jg.writeString(callbackUri);
+            jg.writeEndArray();
+            jg.writeEndObject();
+            return jsonGenerator.getJson();
+        }
     }
 
     public SSLParser getSslParser() {

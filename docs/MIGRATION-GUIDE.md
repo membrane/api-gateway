@@ -42,3 +42,9 @@ Now if there is no message to set a header, an exception is thrown.
 ## Groovy
 
 Use $property.foo instead of $foo. Fields are not accessible just by name!
+
+## OAuth2Resource removal
+
+Rename `<oauth2Resource>` to `<oauth2Resource2>`.
+
+Remove the `publicURL` attribute from it: It will be automatically computed from the incoming `Host` header.

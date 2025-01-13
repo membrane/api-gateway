@@ -28,4 +28,9 @@ public class ExceptionTestInterceptor extends AbstractInterceptor {
         exc.setResponse(ok().body(exc.getRequest().getBody().getContent()).build());
         throw new RuntimeException();
     }
+
+    @Override
+    public String getDisplayName() {
+        return "ExceptionTestInterceptor";
+    }
 }
