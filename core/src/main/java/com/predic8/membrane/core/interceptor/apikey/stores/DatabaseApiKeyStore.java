@@ -13,7 +13,6 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.UUID;
 
 @MCElement(name = "databaseApiKeyStore", topLevel = false)
 public class DatabaseApiKeyStore extends AbstractJdbcSupport implements ApiKeyStore {

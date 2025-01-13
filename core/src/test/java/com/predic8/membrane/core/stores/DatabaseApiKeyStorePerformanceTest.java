@@ -10,15 +10,18 @@ import org.junit.jupiter.api.Test;
 
 import java.sql.*;
 import java.util.UUID;
+import java.util.logging.Logger;
 
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 public class DatabaseApiKeyStorePerformanceTest {
+
+    private static final Logger logger = Logger.getLogger(DatabaseApiKeyStorePerformanceTest.class.getName());
     DatabaseApiKeyStore databaseApiKeyStore;
     EmbeddedDataSource dataSource;
     KeyTable keyTable;
     ScopeTable scopeTable;
-    static final int USERS = 10;
+    static final int USERS = 10000;
 
     @BeforeEach
     void setUp() throws SQLException {
@@ -88,7 +91,6 @@ public class DatabaseApiKeyStorePerformanceTest {
                         """.formatted(scopeTable.getName(), keyTable.getName()));
             }
         }
-        System.out.println("Tables created or already exist");
         insertValues();
     }
 
@@ -105,7 +107,7 @@ public class DatabaseApiKeyStorePerformanceTest {
             stmt.executeUpdate("DROP TABLE %s".formatted(scopeTable.getName()));
             stmt.executeUpdate("DROP TABLE %s".formatted(keyTable.getName()));
         }
-        System.out.println("clear tables");
+        logger.info("Tables cleared.");
     }
 
     private void insertValues() throws SQLException {
@@ -133,7 +135,7 @@ public class DatabaseApiKeyStorePerformanceTest {
                 }
             }
         }
-        System.out.println("Values inserted");
+       logger.info("Values inserted.");
     }
 
 }
