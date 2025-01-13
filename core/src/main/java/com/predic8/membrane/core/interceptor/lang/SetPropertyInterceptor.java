@@ -29,7 +29,7 @@ public class SetPropertyInterceptor extends AbstractSetterInterceptor {
 
     @Override
     protected void setValue(Exchange exchange, Flow flow, Object evaluatedValue) {
-        exchange.setProperty(fieldName, evaluatedValue.toString());
+        exchange.setProperty(fieldName, evaluatedValue);
     }
 
 
