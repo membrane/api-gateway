@@ -21,9 +21,9 @@ class RuleResolverTest {
 
     @Test
     void ruleName() {
-        assertEquals("foo", RuleResolver.getRuleName("service://foo"));
-        assertEquals("foo", RuleResolver.getRuleName("service://foo/b"));
-        assertEquals("foo", RuleResolver.getRuleName("service://foo/b/c"));
+        assertEquals("foo", RuleResolver.getRuleName("internal://foo"));
+        assertEquals("foo", RuleResolver.getRuleName("internal://foo/b"));
+        assertEquals("foo", RuleResolver.getRuleName("internal://foo/b/c"));
     }
 
     @Test

@@ -99,6 +99,7 @@ import org.junit.platform.suite.api.Suite;
         APIKeyExampleTest.class,
         APIKeyRBACExampleTest.class,
         APIKeyWithOpenAPIExampleTest.class,
+
         XMLTemplateExampleTest.class,
         //DefaultConfigAdminConsoleTest.class*/
 

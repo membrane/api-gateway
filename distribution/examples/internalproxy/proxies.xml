@@ -10,10 +10,10 @@
 			<request>
 				<!-- If 'true' set destination to internal proxy 'express' -->
 				<if test="//order[@express='yes']" language="xpath">
-					<destination url="service://express"/>
+					<destination url="internal://express"/>
 				</if>
 			</request>
-			<target url="service://normal" />
+			<target url="internal://normal" />
 		</api>
 
 		<!-- An internalProxy is like a function or subroutine for an API. -->

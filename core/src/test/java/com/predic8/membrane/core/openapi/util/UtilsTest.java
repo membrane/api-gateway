@@ -99,7 +99,7 @@ class UtilsTest {
 
     @Test
     void getPathFromServiceURL() throws URISyntaxException {
-        assertEquals("/foo", getPathFromURL("service://localhost:4567/foo"));
+        assertEquals("/foo", getPathFromURL("internal://localhost:4567/foo"));
     }
 
     private String getPathFromURL(String s) throws URISyntaxException {

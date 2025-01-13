@@ -20,7 +20,7 @@ import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.openapi.serviceproxy.*;
-import com.predic8.membrane.core.proxies.InternalProxy;
+import com.predic8.membrane.core.proxies.*;
 import org.junit.jupiter.api.*;
 
 import java.util.*;
@@ -49,7 +49,7 @@ abstract class AbstractInternalServiceRoutingInterceptorTest {
     }
 
     @AfterEach
-    void tearDown() throws Exception {
+    void tearDown() {
         router.shutdown();
     }
 
@@ -68,6 +68,7 @@ abstract class AbstractInternalServiceRoutingInterceptorTest {
     public void internal(Consumer<TestInternalProxy> c) throws Exception {
         TestInternalProxy api = new TestInternalProxy();
         c.accept(api);
+        api.setKey(new InternalProxyKey());
         router.getRuleManager().addProxyAndOpenPortIfNew(api);
     }
 

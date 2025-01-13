@@ -10,13 +10,13 @@
 			<request>
 				<!-- Attention: The last matching if will win!  -->
 				<if test="//order" language="xpath">
-					<destination url="service://order"/>
+					<destination url="internal://order"/>
 				</if>
 				<if test="//order[@express='yes']" language="xpath">
-					<destination url="service://express"/>
+					<destination url="internal://express"/>
 				</if>
 				<if test="//order/items/item[@id='7']" language="xpath">
-					<destination url="service://import-items"/>
+					<destination url="internal://import-items"/>
 				</if>
 			</request>
 		</api>

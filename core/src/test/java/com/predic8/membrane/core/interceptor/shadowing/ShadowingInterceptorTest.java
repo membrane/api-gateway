@@ -82,7 +82,7 @@ class ShadowingInterceptorTest {
         interceptorProxy.setInterceptors(List.of(
                 shadowingInterceptor,
                 new SetHeaderInterceptor() {{
-                    setName("foo");
+                    setFieldName("foo");
                     setValue("bar");
                 }},
                 new ReturnInterceptor()

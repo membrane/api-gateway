@@ -47,9 +47,8 @@ public class RuleManagerTest {
 		forwardBlzPOST = new ServiceProxy(new ServiceProxyKey("localhost", "POST", ".*", 3015), "thomas-bayer.com", 80);
 		forwardBlzPOST.init(router);
 
-		internal = new InternalProxy() {{
-			name = "order";
-		}};
+		internal = new InternalProxy();
+		internal.setName("order");
 		internal.init(router);
 
 		manager.addProxyAndOpenPortIfNew(forwardBlz);
@@ -85,18 +84,18 @@ public class RuleManagerTest {
 	@Test
 	void internalUnknown() throws URISyntaxException {
 		Exchange exc = Request.get("/ignored").buildExchange();
-		exc.getDestinations().add("service://unknown");
+		exc.getDestinations().add("internal://unknown");
 		assertInstanceOf(NullProxy.class, manager.getMatchingRule(exc));
 	}
 
 	@Test
 	void internal() throws URISyntaxException {
-		assertEquals("order", manager.getMatchingRule(Request.get("service://order").buildExchange()).getName());
+		assertEquals("order", manager.getMatchingRule(Request.get("internal://order").buildExchange()).getName());
 	}
 
 	@Test
 	void internalWithPath() throws URISyntaxException {
-		assertEquals("order", manager.getMatchingRule(Request.get("service://order/path").buildExchange()).getName());
+		assertEquals("order", manager.getMatchingRule(Request.get("internal://order/path").buildExchange()).getName());
 	}
 
 	@Test

@@ -19,9 +19,17 @@ import java.util.*;
 
 public interface SecurityScheme {
 
+    /**
+     * Name of the scheme
+     * Use of OpenAPI names is encouraged: "apiKey", "http", "mutualTLS", "oauth2", "openIdConnect"
+     * See: https://swagger.io/specification/#security-scheme-object
+     * @return
+     */
+    String getName();
+
     void add(Exchange exchange);
 
-     boolean hasScope(String scope);
+    boolean hasScope(String scope);
 
-     Set<String> getScopes();
+    Set<String> getScopes();
 }
