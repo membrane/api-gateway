@@ -60,14 +60,14 @@ public class XMLSchemaValidator extends AbstractXMLSchemaValidator {
         try {
             ss = new StreamSource(resolver.resolve(location));
         } catch (ResourceRetrievalException e) {
-            throw new ConfigurationException("Cannot resolve schema from %s".formatted(location));
+            throw new ConfigurationException("Cannot resolve schema from %s.".formatted(location),e);
         }
         ss.setSystemId(location);
         Validator validator;
         try {
             validator = sf.newSchema(ss).newValidator();
         } catch (SAXException e) {
-            throw new ConfigurationException("Cannot parse schema from %s".formatted(location));
+            throw new ConfigurationException("Cannot parse schema from %s.".formatted(location),e);
         }
         validator.setResourceResolver(resolver.toLSResourceResolver());
 		validator.setErrorHandler(new SchemaValidatorErrorHandler());

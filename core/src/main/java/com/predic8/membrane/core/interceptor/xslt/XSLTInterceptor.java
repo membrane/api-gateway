@@ -19,6 +19,7 @@ import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.multipart.*;
 import com.predic8.membrane.core.util.*;
+import org.slf4j.*;
 
 import javax.xml.transform.stream.*;
 import java.util.*;
@@ -34,6 +35,8 @@ import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
  */
 @MCElement(name="transform")
 public class XSLTInterceptor extends AbstractInterceptor {
+
+	private static final Logger log = LoggerFactory.getLogger(XSLTInterceptor.class.getName());
 
 	private String xslt;
 	private volatile XSLTTransformer xsltTransformer;
@@ -68,7 +71,7 @@ public class XSLTInterceptor extends AbstractInterceptor {
         try {
             xsltTransformer = new XSLTTransformer(xslt, router, getConcurrency());
         } catch (Exception e) {
-            throw new ConfigurationException("Could not create XSLT transformer");
+            throw new ConfigurationException("Could not create XSLT transformer",e);
         }
     }
 

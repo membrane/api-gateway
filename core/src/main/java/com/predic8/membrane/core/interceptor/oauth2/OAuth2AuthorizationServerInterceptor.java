@@ -90,8 +90,7 @@ public class OAuth2AuthorizationServerInterceptor extends AbstractInterceptor {
             tokenGenerator.init(router);
             refreshTokenGenerator.init(router);
         } catch (Exception e) {
-            log.error(e.getMessage(),e);
-            throw new ConfigurationException("Could not create token generators.");
+            throw new ConfigurationException("Could not create token generators.",e);
         }
 
         addSupportedAuthorizationGrants();
@@ -99,15 +98,13 @@ public class OAuth2AuthorizationServerInterceptor extends AbstractInterceptor {
         try {
             getWellknownFile().init(router,this);
         } catch (IOException e) {
-            log.error(e.getMessage(),e);
-            throw new ConfigurationException("Could not create Well-known file.");
+            throw new ConfigurationException("Could not create Well-known file.",e);
         }
 
         try {
             getConsentPageFile().init(router,getConsentFile());
         } catch (IOException e) {
-            log.error(e.getMessage(),e);
-            throw new ConfigurationException("Could not create Consent Page file.");
+            throw new ConfigurationException("Could not create Consent Page file.",e);
         }
         if (userDataProvider == null)
             throw new ConfigurationException("No userDataProvider configured. - Cannot work without one.");

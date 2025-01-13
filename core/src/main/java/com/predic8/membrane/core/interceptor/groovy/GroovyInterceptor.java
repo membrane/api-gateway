@@ -55,7 +55,7 @@ public class GroovyInterceptor extends AbstractScriptInterceptor {
             script = new GroovyLanguageSupport().compileScript(router.getBackgroundInitializator(), null, src);
         } catch (MultipleCompilationErrorsException e) {
             logGroovyError(e);
-            throw new ConfigurationException("Error in Groovy script initialization.");
+            throw new ConfigurationException("Error in Groovy script initialization.",e);
         }
     }
 

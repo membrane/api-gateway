@@ -21,6 +21,7 @@ import com.predic8.membrane.core.transport.http.*;
 
 import java.net.*;
 
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.REQUEST_FLOW;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 
 @MCElement(name="tokenValidator")
@@ -33,7 +34,7 @@ public class OAuth2TokenValidatorInterceptor extends AbstractInterceptor {
     @Override
     public void init() {
         super.init();
-        setFlow(Flow.Set.REQUEST_FLOW);
+        setFlow(REQUEST_FLOW);
         name = "OAuth2 Token Validator";
         client = router.getHttpClientFactory().createClient(null);
     }
@@ -51,7 +52,7 @@ public class OAuth2TokenValidatorInterceptor extends AbstractInterceptor {
                 return CONTINUE;
         }
         setResponseToBadRequest(exc);
-        return Outcome.RETURN;
+        return RETURN;
     }
 
     private boolean callExchangeAndCheckFor200(Exchange e) throws Exception {
@@ -59,7 +60,6 @@ public class OAuth2TokenValidatorInterceptor extends AbstractInterceptor {
     }
 
     private void setResponseToBadRequest(Exchange exc) {
-        new Response();
         exc.setResponse(Response.badRequest().build());
     }
 

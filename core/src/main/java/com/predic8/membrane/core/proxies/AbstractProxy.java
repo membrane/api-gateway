@@ -30,7 +30,6 @@ public abstract class AbstractProxy implements Proxy {
     private static final Logger log = LoggerFactory.getLogger(AbstractProxy.class.getName());
 
     protected String name = "";
-
     protected RuleKey key;
 
     protected volatile boolean blockRequest;

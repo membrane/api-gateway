@@ -53,7 +53,7 @@ public class XenAuthenticationInterceptor extends AbstractInterceptor {
         try {
             sessionManager.init(router);
         } catch (Exception e) {
-            throw new ConfigurationException("Could not generate session manager " + e);
+            throw new ConfigurationException("Could not generate session manager.",e);
         }
     }
 

@@ -37,7 +37,7 @@ public class GroovyExchangeExpression extends AbstractExchangeExpression {
         try {
             condition = new GroovyLanguageSupport().compileExpression(router.getBackgroundInitializator(), null, source);
         } catch (MultipleCompilationErrorsException e) {
-            throw new ConfigurationException("Cannot compile Groovy Script: %s\n%s".formatted(e.getMessage(),e.getLocalizedMessage()));
+            throw new ConfigurationException("Cannot compile Groovy Script.",e);
         }
     }
 

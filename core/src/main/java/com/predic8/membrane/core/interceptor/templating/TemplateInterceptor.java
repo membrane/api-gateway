@@ -135,8 +135,7 @@ public class TemplateInterceptor extends StaticInterceptor {
                 }
                 return;
             } catch (Exception e) {
-                log.error(e.getMessage(),e);
-                throw new ConfigurationException("Could not create template from " + location);
+                throw new ConfigurationException("Could not create template from " + location,e);
             }
         }
         if(!textTemplate.isBlank()){
@@ -144,8 +143,7 @@ public class TemplateInterceptor extends StaticInterceptor {
             try {
                 template = new StreamingTemplateEngine().createTemplate(this.getTextTemplate());
             } catch (Exception e) {
-                log.error(e.getMessage(),e);
-                throw new ConfigurationException("Could not create template from " + textTemplate);
+                throw new ConfigurationException("Could not create template from " + textTemplate,e);
             }
             return;
         }

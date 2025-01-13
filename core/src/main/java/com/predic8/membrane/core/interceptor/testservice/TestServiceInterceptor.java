@@ -98,7 +98,7 @@ public class TestServiceInterceptor extends AbstractInterceptor {
         try {
             return URLUtil.getName(router.getUriFactory(), keyPath);
         } catch (URISyntaxException e) {
-            throw new ConfigurationException("Could not get name from " + keyPath);
+            throw new ConfigurationException("Could not get name from " + keyPath,e);
         }
     }
 

@@ -84,7 +84,7 @@ public class BasicAuthenticationInterceptor extends AbstractInterceptor {
 						.title("Unauthorized")
 				.component(getDisplayName())
 						.buildAndSetResponse(exc);
-		exc.getResponse().setHeader(HttpUtil.createHeaders(null, "WWW-Authenticate", "Basic realm= %s Authentication".formatted(PRODUCT_NAME)));
+		exc.getResponse().setHeader(HttpUtil.createHeaders(null, "WWW-Authenticate", "Basic realm=\"%s Authentication\"".formatted(PRODUCT_NAME)));
 		return ABORT;
 	}
 

@@ -136,8 +136,7 @@ public class JSONValidator extends AbstractMessageValidator {
 			JsonNode schemaNode = JsonLoader.fromReader(new InputStreamReader(resourceResolver.resolve(jsonSchema)));
 			schema = factory.getJsonSchema(schemaNode);
 		} catch (Exception e) {
-			log.error(e.getMessage(), e);
-			throw new ConfigurationException("Cannot create JSON Schema Validator for Schema: " + jsonSchema);
+			throw new ConfigurationException("Cannot create JSON Schema Validator for Schema: %s".formatted(jsonSchema),e);
 		}
 	}
 

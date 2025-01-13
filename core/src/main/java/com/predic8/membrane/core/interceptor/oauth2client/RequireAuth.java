@@ -19,6 +19,7 @@ import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.interceptor.jwt.*;
 import com.predic8.membrane.core.util.*;
+import org.slf4j.*;
 
 import java.util.*;
 
@@ -27,6 +28,8 @@ import static com.predic8.membrane.core.interceptor.oauth2client.OAuth2Resource2
 
 @MCElement(name = "requireAuth")
 public class RequireAuth extends AbstractInterceptor {
+
+    private static final Logger log = LoggerFactory.getLogger(RequireAuth.class.getName());
 
     private String expectedAud;
     private OAuth2Resource2Interceptor oauth2;
@@ -43,11 +46,9 @@ public class RequireAuth extends AbstractInterceptor {
         try {
             jwks.setJwksUris(oauth2.getAuthService().getJwksEndpoint());
         } catch (Exception e) {
-            throw new ConfigurationException("Could not set jwks Uris");
+            throw new ConfigurationException("Could not set jwks Uris.",e);
         }
         jwks.setAuthorizationService(oauth2.getAuthService());
-
-
         jwtAuth = new JwtAuthInterceptor();
         jwtAuth.setJwks(jwks);
         jwtAuth.setExpectedAud(expectedAud);

@@ -34,8 +34,7 @@ public abstract class AbstractInterceptorWithSession extends AbstractInterceptor
         try {
             sessionManager.init(this.router);
         } catch (Exception e) {
-            log.error(e.getMessage(), e);
-            throw new ConfigurationException("Could not init session manager");
+            throw new ConfigurationException("Could not init session manager.",e);
         }
     }
 

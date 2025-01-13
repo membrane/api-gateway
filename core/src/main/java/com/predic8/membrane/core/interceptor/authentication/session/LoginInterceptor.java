@@ -125,7 +125,7 @@ public class LoginInterceptor extends AbstractInterceptor {
 		try {
 			loginDialog.init(router);
 		} catch (Exception e) {
-			throw new ConfigurationException("Could not create login dialog.");
+			throw new ConfigurationException("Could not create login dialog.",e);
 		}
 		new CleanupThread(sessionManager, accountBlocker).start();
 	}

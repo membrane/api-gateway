@@ -13,11 +13,11 @@
 				<exclude>X-Authenticated-Email</exclude>
 			</headerFilter>
 
-			<oauth2Resource publicURL="http://localhost:8080/">
+			<oauth2Resource2 publicURL="http://localhost:8080/">
 				<google
 					clientId="Enter client ID from Google here"
 					clientSecret="Enter client Secret from Google here" />
-			</oauth2Resource>
+			</oauth2Resource2>
 
 			<!-- this will act as the secret resource to make the example simple. See below in the comments for an alternative -->
 			<groovy>

@@ -37,8 +37,7 @@ public class JwtSignerInterceptor extends AbstractInterceptor {
         try {
             rsaJsonWebKey = new RsaJsonWebKey(JsonUtil.parseJson(jwk.get(router.getResolverMap(), router.getBaseLocation())));
         } catch (Exception e) {
-            log.error(e.getMessage(),e);
-            throw new ConfigurationException("Could not init RSA JSON Web Key");
+            throw new ConfigurationException("Could not init RSA JSON Web Key",e);
         }
     }
 

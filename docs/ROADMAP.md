@@ -83,6 +83,9 @@
 - Interceptor init() and init(Router router)
 - ProblemDetails
   - JSONValidator
+- In com.predic8.membrane.core.interceptor.oauth2.authorizationservice.AuthorizationService 
+  - Remove throws: 
+    - public abstract String getJwksEndpoint() throws Exception; 
 
 ## Done
 - Proxy.init() and init(router) make it clear what to call!

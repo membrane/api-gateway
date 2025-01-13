@@ -82,11 +82,10 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
         if (originalExchangeStore == null) {
             originalExchangeStore = new CookieOriginialExchangeStore();
         }
-
         try {
             auth.init(router);
         } catch (Exception e) {
-            throw new ConfigurationException("Could not init auth in OAuth2Resource2Interceptor");
+            throw new ConfigurationException("Could not init auth in OAuth2Resource2Interceptor",e);
         }
         statistics = new OAuth2Statistics();
         uriFactory = router.getUriFactory();

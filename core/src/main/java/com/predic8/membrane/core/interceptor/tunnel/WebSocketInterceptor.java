@@ -48,8 +48,7 @@ public class WebSocketInterceptor extends AbstractInterceptor {
         try {
             pathQuery = url == null ? null : URLUtil.getPathQuery(getRouter().getUriFactory(), url);
         } catch (URISyntaxException e) {
-			log.error(e.getMessage(), e);
-            throw new ConfigurationException("Could not parse " + url);
+            throw new ConfigurationException("Could not parse " + url,e);
         }
     }
 

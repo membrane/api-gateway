@@ -67,12 +67,11 @@ public class ValidatorInterceptor extends AbstractInterceptor implements Applica
 			validator = getMessageValidator();
             validator.init();
         } catch (Exception e) {
-			log.error(e.getMessage(), e);
-            throw new ConfigurationException("Cannot create message validator.");
+            throw new ConfigurationException("Cannot create message validator.",e);
         }
         name = validator.getName();
 		if (skipFaults && wsdl == null)
-			throw new ConfigurationException("validator/@skipFaults only makes sense with validator/@wsdl");
+			throw new ConfigurationException("validator/@skipFaults only makes sense with validator/@wsdl.");
 	}
 
 	private MessageValidator getMessageValidator() throws Exception {

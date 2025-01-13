@@ -47,8 +47,7 @@ public class JavascriptInterceptor extends AbstractScriptInterceptor {
         try {
             script = adapter.compileScript(src);
         } catch (Exception e) {
-            log.error(e.getMessage(), e);
-            throw new ConfigurationException("Could not compile: \n" + src);
+            throw new ConfigurationException("Could not compile: \n" + src,e);
         }
     }
 

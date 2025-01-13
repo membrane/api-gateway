@@ -42,7 +42,7 @@ public class SpringConfigurationErrorHandler {
         } else if (root instanceof SOAPProxyMultipleServicesException mse) {
             handleSOAPProxyMultipleServicesException(mse);
         } else {
-            e.printStackTrace();
+            log.error(e.getMessage(), e);
         }
     }
 
@@ -113,13 +113,17 @@ public class SpringConfigurationErrorHandler {
     }
 
     private static void handleConfigurationException(ConfigurationException ce) {
+        var reason = "";
+        if (ce.getReason() != null) {
+            reason = "\nReason: " + ce.getReason();
+        }
         System.err.printf("""
                 %s
                 
                 %s
-                
+                %s
                 giving up.
-                %n""", STARS, ce.getMessage());
+                %n""", STARS, ce.getMessage(),reason);
     }
 
     private static void handleSOAPProxyMultipleServicesException(SOAPProxyMultipleServicesException e) {
