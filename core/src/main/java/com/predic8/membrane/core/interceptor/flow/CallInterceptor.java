@@ -25,9 +25,9 @@ import org.slf4j.*;
 
 import java.util.*;
 
-import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
+import static com.predic8.membrane.core.http.Header.*;
 import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
-import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 
 @MCElement(name = "call")
 public class CallInterceptor extends AbstractLanguageInterceptor {
@@ -37,6 +37,14 @@ public class CallInterceptor extends AbstractLanguageInterceptor {
     private static HTTPClientInterceptor hcInterceptor;
 
     private String url;
+
+    /**
+     * These headers are filtered out from the response of a called resource
+     * and are not added to the current message.
+     */
+    private static final List<String> REMOVE_HEADERS = List.of(
+            SERVER, TRANSFER_ENCODING, CONTENT_ENCODING
+    );
 
     @Override
     public void init(Router router) throws Exception {
@@ -66,7 +74,7 @@ public class CallInterceptor extends AbstractLanguageInterceptor {
     private @NotNull Outcome doCall(Exchange exc) {
         if (url != null) {
             try {
-                exc.setDestinations(List.of(exchangeExpression.evaluate(exc, REQUEST, String.class)));
+                exc.setDestinations(List.of(exchangeExpression.evaluate(exc, Flow.REQUEST, String.class)));
             } catch (ExchangeExpressionException e) {
                 e.provideDetails(ProblemDetails.internal(getRouter().isProduction())).buildAndSetResponse(exc);
                 return ABORT;
@@ -91,11 +99,13 @@ public class CallInterceptor extends AbstractLanguageInterceptor {
         }
     }
 
-    private static void copyHeadersFromResponseToRequest(Exchange exc) {
+    static void copyHeadersFromResponseToRequest(Exchange exc) {
         Arrays.stream(exc.getResponse().getHeader().getAllHeaderFields()).forEach(headerField -> {
-            // Filter out, what is definitely not needed like Server:,
-            if (headerField.getHeaderName().getName().equalsIgnoreCase("Server"))
-                return;
+            // Filter out, what is definitely not needed like Server:
+            for (String rmHeader : REMOVE_HEADERS) {
+                if (headerField.getHeaderName().getName().equalsIgnoreCase(rmHeader))
+                    return;
+            }
             exc.getRequest().getHeader().add(headerField);
         });
     }
