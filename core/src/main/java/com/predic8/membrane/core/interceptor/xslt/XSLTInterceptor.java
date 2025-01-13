@@ -13,18 +13,18 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.xslt;
 
-import java.util.Map;
+import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.multipart.*;
+import com.predic8.membrane.core.util.*;
+import org.slf4j.*;
 
-import javax.xml.transform.stream.StreamSource;
+import javax.xml.transform.stream.*;
+import java.util.*;
 
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Message;
-import com.predic8.membrane.core.interceptor.AbstractInterceptor;
-import com.predic8.membrane.core.interceptor.Outcome;
-import com.predic8.membrane.core.multipart.XOPReconstitutor;
-import com.predic8.membrane.core.util.TextUtil;
+import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 
 /**
  * @description <p>
@@ -35,6 +35,8 @@ import com.predic8.membrane.core.util.TextUtil;
  */
 @MCElement(name="transform")
 public class XSLTInterceptor extends AbstractInterceptor {
+
+	private static final Logger log = LoggerFactory.getLogger(XSLTInterceptor.class.getName());
 
 	private String xslt;
 	private volatile XSLTTransformer xsltTransformer;
@@ -47,13 +49,13 @@ public class XSLTInterceptor extends AbstractInterceptor {
 	@Override
 	public Outcome handleRequest(Exchange exc) throws Exception {
 		transformMsg(exc.getRequest(), xslt, exc.getStringProperties());
-		return Outcome.CONTINUE;
+		return CONTINUE;
 	}
 
 	@Override
 	public Outcome handleResponse(Exchange exc) throws Exception {
 		transformMsg(exc.getResponse(), xslt, exc.getStringProperties());
-		return Outcome.CONTINUE;
+		return CONTINUE;
 	}
 
 	private void transformMsg(Message msg, String ss, Map<String, String> parameter) throws Exception {
@@ -64,9 +66,14 @@ public class XSLTInterceptor extends AbstractInterceptor {
 	}
 
 	@Override
-	public void init() throws Exception {
-		xsltTransformer = new XSLTTransformer(xslt, router, getConcurrency());
-	}
+	public void init() {
+		super.init();
+        try {
+            xsltTransformer = new XSLTTransformer(xslt, router, getConcurrency());
+        } catch (Exception e) {
+            throw new ConfigurationException("Could not create XSLT transformer",e);
+        }
+    }
 
 	private static int getConcurrency() {
 		return Runtime.getRuntime().availableProcessors() * 2;
@@ -93,11 +100,10 @@ public class XSLTInterceptor extends AbstractInterceptor {
 
 	@Override
 	public String getLongDescription() {
-        String sb = TextUtil.removeFinalChar(getShortDescription()) +
-                " using the stylesheet at " +
-                TextUtil.linkURL(xslt) +
-                " .";
-		return sb;
+        return TextUtil.removeFinalChar(getShortDescription()) +
+               " using the stylesheet at " +
+               TextUtil.linkURL(xslt) +
+               " .";
 	}
 
 }

@@ -17,9 +17,9 @@ import com.predic8.membrane.core.http.*;
 
 public abstract class AbstractMessageValidator implements MessageValidator {
 
-    public static String REQUEST = "request";
-    public static String RESPONSE = "response";
-    public static String UNKNOWN = "unknown";
+    public static final String REQUEST = "request";
+    public static final String RESPONSE = "response";
+    public static final String UNKNOWN = "unknown";
 
     protected String getSourceOfError(Message msg) {
         if (msg instanceof Request)
@@ -30,7 +30,7 @@ public abstract class AbstractMessageValidator implements MessageValidator {
     }
 
     @Override
-    public void init() throws Exception {
+    public void init() {
 
     }
 }

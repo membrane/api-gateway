@@ -14,7 +14,6 @@
 package com.predic8.membrane.core.interceptor.flow;
 
 import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.interceptor.*;
@@ -39,8 +38,8 @@ public class CallInterceptor extends AbstractLanguageInterceptor {
     private String url;
 
     @Override
-    public void init(Router router) throws Exception {
-        super.init(router);
+    public void init() {
+        super.init();
         hcInterceptor = new HTTPClientInterceptor();
         hcInterceptor.init(router);
         exchangeExpression = new TemplateExchangeExpression(router, language, url);

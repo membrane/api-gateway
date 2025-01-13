@@ -15,7 +15,6 @@ package com.predic8.membrane.core.interceptor.balancer;
 
 import com.google.common.collect.*;
 import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
@@ -51,12 +50,15 @@ public class LoadBalancingInterceptor extends AbstractInterceptor {
 	}
 
 	@Override
-	public void init(Router router) throws Exception {
-		super.init(router);
-
+	public void init() {
+		super.init();
 		strategy.init(router);
 		if (nodeOnlineChecker != null)
 			nodeOnlineChecker.init(router);
+
+		for (Cluster c : balancer.getClusters())
+			for (Node n : c.getNodes())
+				c.nodeUp(n);
 	}
 
 	@Override
@@ -299,12 +301,5 @@ public class LoadBalancingInterceptor extends AbstractInterceptor {
 	@Override
 	public String getShortDescription() {
 		return "Performs load-balancing between <a href=\"/admin/balancers\">several nodes</a>.";
-	}
-
-	@Override
-	public void init() {
-		for (Cluster c : balancer.getClusters())
-			for (Node n : c.getNodes())
-				c.nodeUp(n);
 	}
 }

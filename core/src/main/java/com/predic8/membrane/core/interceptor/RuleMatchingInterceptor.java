@@ -23,7 +23,7 @@ import org.slf4j.*;
 
 import static com.predic8.membrane.core.exchange.Exchange.SSL_CONTEXT;
 import static com.predic8.membrane.core.http.Header.X_FORWARDED_FOR;
-import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.REQUEST;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.REQUEST_FLOW;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 
 @SuppressWarnings("unused")
@@ -37,7 +37,7 @@ public class RuleMatchingInterceptor extends AbstractInterceptor {
 
 	public RuleMatchingInterceptor() {
 		name = "Rule Matching Interceptor";
-		setFlow(REQUEST);
+		setFlow(REQUEST_FLOW);
 	}
 
 	@Override

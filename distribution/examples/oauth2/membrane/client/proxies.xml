@@ -11,9 +11,9 @@
             <log/>
 
             <!-- Protects a resource with OAuth2 - blocks on invalid login -->
-            <oauth2Resource publicURL="http://localhost:2000/">
+            <oauth2Resource2 publicURL="http://localhost:2000/">
                 <membrane src="http://localhost:8000" clientId="abc" clientSecret="def" scope="openid profile" claims="username" claimsIdt="sub" />
-            </oauth2Resource>
+            </oauth2Resource2>
 
             <!-- Use the information from the authentication server and pass it to the resource server (optional) -->
             <groovy>

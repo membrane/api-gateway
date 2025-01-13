@@ -33,7 +33,7 @@ public class RequestInterceptor extends AbstractFlowInterceptor {
 
     public RequestInterceptor() {
         name = "Request Interceptor";
-        setFlow(REQUEST);
+        setFlow(REQUEST_FLOW);
     }
 
     @Override

@@ -13,30 +13,28 @@
 
 package com.predic8.membrane.core.interceptor.oauth2.tokenvalidation;
 
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.Router;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Header;
-import com.predic8.membrane.core.http.Request;
-import com.predic8.membrane.core.http.Response;
-import com.predic8.membrane.core.interceptor.AbstractInterceptor;
-import com.predic8.membrane.core.interceptor.Outcome;
-import com.predic8.membrane.core.transport.http.HttpClient;
-import com.predic8.membrane.annot.Required;
+import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.transport.http.*;
 
-import java.net.URISyntaxException;
+import java.net.*;
+
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.REQUEST_FLOW;
+import static com.predic8.membrane.core.interceptor.Outcome.*;
 
 @MCElement(name="tokenValidator")
 public class OAuth2TokenValidatorInterceptor extends AbstractInterceptor {
 
     private String endpoint;
 
-    HttpClient client;
+    private HttpClient client;
 
     @Override
-    public void init(Router router) throws Exception {
-        setFlow(Flow.Set.REQUEST);
+    public void init() {
+        super.init();
+        setFlow(REQUEST_FLOW);
         name = "OAuth2 Token Validator";
         client = router.getHttpClientFactory().createClient(null);
     }
@@ -51,10 +49,10 @@ public class OAuth2TokenValidatorInterceptor extends AbstractInterceptor {
     public Outcome handleRequest(Exchange exc) throws Exception {
         synchronized (client){
             if(callExchangeAndCheckFor200(buildAccessTokenValidationExchange(exc)))
-                return Outcome.CONTINUE;
+                return CONTINUE;
         }
         setResponseToBadRequest(exc);
-        return Outcome.RETURN;
+        return RETURN;
     }
 
     private boolean callExchangeAndCheckFor200(Exchange e) throws Exception {
@@ -62,7 +60,7 @@ public class OAuth2TokenValidatorInterceptor extends AbstractInterceptor {
     }
 
     private void setResponseToBadRequest(Exchange exc) {
-        exc.setResponse(new Response().badRequest().build());
+        exc.setResponse(Response.badRequest().build());
     }
 
     private Exchange buildAccessTokenValidationExchange(Exchange exc) throws URISyntaxException {

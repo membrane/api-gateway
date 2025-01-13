@@ -156,7 +156,8 @@ public class CacheInterceptor extends AbstractInterceptor {
 	}
 
 	@Override
-	public void init(Router router) throws Exception {
+	public void init() {
+		super.init();
 		store.init(router);
 	}
 
@@ -187,7 +188,7 @@ public class CacheInterceptor extends AbstractInterceptor {
 
 	@Override
 	public Outcome handleRequest(Exchange exc) throws Exception {
-		String dest = exc.getDestinations().get(0);
+		String dest = exc.getDestinations().getFirst();
 		Node node = store.get(dest);
 		if (node != null && node.canSatisfy(exc.getRequest())) {
 			exc.setResponse(node.toResponse(exc.getRequest()));
@@ -209,13 +210,13 @@ public class CacheInterceptor extends AbstractInterceptor {
 		try {
 			if (canCache(exc.getRequest(), false)) {
 				if (canCache(exc.getResponse(), true)) {
-					String dest = exc.getDestinations().get(0);
+					String dest = exc.getDestinations().getFirst();
 					switch (exc.getResponse().getStatusCode()) {
 						case 200 -> store.put(dest, new PositiveNode(exc));
 						case 401, 404 -> store.put(dest, new NegativeNode(exc));
 						case 301, 302, 307 -> store.put(dest, new PositiveNode(exc));
 						default ->
-								log.warn("Could not cache HTTP response because of its status code " + exc.getResponse().getStatusCode() + ".");
+								log.warn("Could not cache HTTP response because of its status code {}.",exc.getResponse().getStatusCode());
 					}
 				}
 			}
@@ -239,7 +240,7 @@ public class CacheInterceptor extends AbstractInterceptor {
 		return super.handleResponse(exc);
 	}
 
-	private boolean force = true;
+	private final boolean force = true;
 
 	private final HashSet<String> allowedRequestHeaders = new HashSet<>();
 	private final HashSet<String> allowedResponseHeaders = new HashSet<>();

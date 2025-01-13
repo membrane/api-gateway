@@ -49,7 +49,7 @@ public class AccessLogInterceptor extends AbstractInterceptor {
     }
 
     @Override
-    public void init() throws Exception {
+    public void init() {
         super.init();
 
         accessLogInterceptorService = new AccessLogInterceptorService(
@@ -61,7 +61,7 @@ public class AccessLogInterceptor extends AbstractInterceptor {
     }
 
     @Override
-    public Outcome handleResponse(Exchange exc) throws Exception {
+    public Outcome handleResponse(Exchange exc) {
         accessLogInterceptorService.handleAccessLogging(exc);
         return CONTINUE;
     }

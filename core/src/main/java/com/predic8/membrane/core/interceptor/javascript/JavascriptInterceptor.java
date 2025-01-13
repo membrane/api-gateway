@@ -17,12 +17,11 @@ import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.lang.*;
+import com.predic8.membrane.core.util.*;
 import org.slf4j.*;
 
-import java.io.*;
-
 import static com.predic8.membrane.core.util.TextUtil.*;
-import static org.apache.commons.lang3.StringUtils.trim;
+import static org.apache.commons.lang3.StringUtils.*;
 import static org.apache.commons.text.StringEscapeUtils.*;
 
 /**
@@ -41,12 +40,15 @@ public class JavascriptInterceptor extends AbstractScriptInterceptor {
         name = "Javascript";
     }
 
-    protected void initInternal() throws IOException, ClassNotFoundException {
+    protected void initInternal() {
         // For tests to set an adapter from outside.
         if (adapter == null)
             adapter = LanguageAdapter.instance(router);
-
-        script = adapter.compileScript(src);
+        try {
+            script = adapter.compileScript(src);
+        } catch (Exception e) {
+            throw new ConfigurationException("Could not compile: \n" + src,e);
+        }
     }
 
     @Override
