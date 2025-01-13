@@ -19,7 +19,7 @@ public class DatabaseApiKeyStorePerformanceTest {
     PGSimpleDataSource dataSource;
     KeyTable keyTable;
     ScopeTable scopeTable;
-    static final int USER = 10;
+    static final int USERS = 10;
 
     @BeforeEach
     void setUp() throws SQLException {
@@ -86,26 +86,20 @@ public class DatabaseApiKeyStorePerformanceTest {
     }
 
     private void insertValues() throws SQLException {
-        for (int i = 0; i < USER; i++) {
-            String apiKey = UUID.randomUUID().toString();
-            insertApiKey(apiKey);
-            insertScope(apiKey, "scope" + i);
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement apiKeyStmt = connection.prepareStatement("INSERT INTO %s (key) VALUES (?)".formatted(keyTable.getName()));
+             PreparedStatement scopeStmt = connection.prepareStatement("INSERT INTO %s (key_id, scope) SELECT id, ? FROM key WHERE key = ?".formatted(scopeTable.getName()))
+        ) {
+            for (int i = 0; i < USERS; i++) {
+                String apiKey = UUID.randomUUID().toString();
+                apiKeyStmt.setObject(1, UUID.fromString(apiKey));
+                apiKeyStmt.executeUpdate();
+
+                scopeStmt.setString(1, "scope" + i);
+                scopeStmt.setObject(2, UUID.fromString(apiKey));
+                scopeStmt.executeUpdate();
+            }
         }
         System.out.println("insert values");
-    }
-
-    private void insertApiKey(String apiKey) throws SQLException {
-        try (Connection connection = dataSource.getConnection(); PreparedStatement stmt = connection.prepareStatement("INSERT INTO %s (key) VALUES (?)".formatted(keyTable.getName()))) {
-            stmt.setObject(1, UUID.fromString(apiKey));
-            stmt.executeUpdate();
-        }
-    }
-
-    private void insertScope(String apiKey, String scope) throws SQLException {
-        try (Connection connection = dataSource.getConnection(); PreparedStatement stmt = connection.prepareStatement("INSERT INTO %s (key_id, scope) SELECT id, ? FROM key WHERE key = ?".formatted(scopeTable.getName()))) {
-            stmt.setString(1, scope);
-            stmt.setObject(2, UUID.fromString(apiKey));
-            stmt.executeUpdate();
-        }
     }
 }
