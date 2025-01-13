@@ -15,7 +15,6 @@ package com.predic8.membrane.core.interceptor.antivirus;
 
 import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
 import fi.solita.clamav.*;
 import org.apache.commons.io.*;
@@ -23,8 +22,8 @@ import org.slf4j.*;
 
 import java.io.*;
 
-import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
-import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
+import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
+import static com.predic8.membrane.core.interceptor.Outcome.*;
 
 /**
  * @description Delegates virus checks to an external Virus Scanner.
@@ -72,8 +71,11 @@ public class ClamAntiVirusInterceptor extends AbstractInterceptor {
     }
 
     private Outcome gatewayTimeout(Exchange exc) {
-        // PD!
-        exc.setResponse(Response.badGateway("Could not reach clamav daemon on [" + getHost() + ":" + getPort() + "]").build());
+        internal(router.isProduction())
+                .title("Could not reach clamav daemon!")
+                .detail("Could not reach clamav daemon on %s:%s".formatted(host,port))
+                .component(getDisplayName())
+                .buildAndSetResponse(exc);
         return RETURN;
     }
 
