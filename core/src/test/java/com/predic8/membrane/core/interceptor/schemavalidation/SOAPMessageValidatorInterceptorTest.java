@@ -45,7 +45,7 @@ public class SOAPMessageValidatorInterceptorTest {
 	public static final String INLINE_ANYTYPE_WSDL = "src/test/resources/validation/inline-anytype.wsdl";
 
 	@BeforeAll
-	public static void setUp() throws Exception {
+	public static void setUp() {
 		requestTB = MessageUtil.getPostRequest("http://thomas-bayer.com");
 		requestXService = MessageUtil.getPostRequest("http://ws.xwebservices.com");
 		exc = new Exchange(null);
@@ -91,7 +91,6 @@ public class SOAPMessageValidatorInterceptorTest {
 		assertEquals(ABORT, getOutcome(requestXService, createValidatorInterceptor(E_MAIL_SERVICE_WSDL), "/validation/invalidEmail3.xml"));
 	}
 
-	@Disabled(value="This is a problem in the soa-model dependency.")
 	@Test
 	public void testInlineSchemaWithAnyType() throws Exception {
 		assertEquals(ABORT, getOutcome(requestXService, createValidatorInterceptor(INLINE_ANYTYPE_WSDL), "/validation/invalidEmail3.xml"));
