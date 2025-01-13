@@ -93,7 +93,7 @@ public class SoapAndInternalProxyTest {
         ServiceProxy sp = new ServiceProxy();
         sp.setPort(3047);
         AbstractServiceProxy.Target target = new AbstractServiceProxy.Target();
-        target.setUrl("service://int");
+        target.setUrl("internal://int");
         sp.setTarget(target);
 
         WSDLInterceptor e = new WSDLInterceptor();

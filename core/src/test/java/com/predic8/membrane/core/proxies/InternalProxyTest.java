@@ -40,7 +40,7 @@ class InternalProxyTest {
             key.setPath("/to-external");
             interceptors.add(C);
             target = new Target() {{
-                url = "service://to-external";
+                url = "internal://to-external";
             }};
         }});
 
@@ -54,7 +54,7 @@ class InternalProxyTest {
             key = new APIProxyKey(2000);
             key.setUsePathPattern(false);
             target = new Target() {{
-                url = "service://a";
+                url = "internal://a";
             }};
         }});
 
@@ -62,7 +62,7 @@ class InternalProxyTest {
             name = "a";
             interceptors.add(A);
             target = new Target() {{
-                url = "service://b";
+                url = "internal://b";
             }};
         }});
 

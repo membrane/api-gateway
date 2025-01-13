@@ -122,7 +122,7 @@ public class InternalServiceRoutingInterceptor extends AbstractInterceptor {
     }
 
     private boolean isTargetInternal(Exchange exc) {
-        return exc.getDestinations().getFirst().startsWith("service:");
+        return exc.getDestinations().getFirst().startsWith("internal:");
     }
 
     private AbstractServiceProxy getRuleByDest(Exchange exchange) {

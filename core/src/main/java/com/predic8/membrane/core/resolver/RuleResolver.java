@@ -104,7 +104,7 @@ public class RuleResolver implements SchemaResolver {
 
     protected static String getRuleName(String url) {
         URI uri = URI.create(url);
-        if (!uri.getScheme().equals("service"))
+        if (!uri.getScheme().equals("internal"))
             throw new RuntimeException("Not a service URL!");
         return uri.getHost();
     }
