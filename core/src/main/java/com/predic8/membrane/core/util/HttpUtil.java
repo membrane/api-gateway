@@ -30,6 +30,7 @@ import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.util.Util.splitStringByComma;
 import static java.nio.charset.StandardCharsets.*;
 import static java.util.Collections.emptyList;
+import static java.util.Locale.US;
 import static org.apache.commons.text.StringEscapeUtils.*;
 
 public class HttpUtil {
@@ -62,12 +63,12 @@ public class HttpUtil {
 	 * @TODO Rewrite with DateTime
 	 */
 	public static DateFormat createGMTDateFormat() {
-		SimpleDateFormat gmtDateFormat = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss z", Locale.US);
+		SimpleDateFormat gmtDateFormat = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss z", US);
 		gmtDateFormat.setTimeZone(TimeZone.getTimeZone("GMT"));
 		return gmtDateFormat;
 	}
 
-	public static String readLine(InputStream in) throws IOException, EndOfStreamException {
+	public static String readLine(InputStream in) throws IOException {
 
 		StringBuilder line = new StringBuilder(128);
 
@@ -157,11 +158,7 @@ public class HttpUtil {
 		return uri;
 	}
 
-	public static int getPort(String hostAndPort) {
-		return Integer.parseInt(hostAndPort.split(":")[1]);
-	}
-
-	public static int getPort(URL url) throws MalformedURLException {
+	public static int getPort(URL url) {
 		int port = url.getPort();
 		if (port == -1) {
 			port = url.getDefaultPort();

@@ -13,40 +13,28 @@
 
 package com.predic8.membrane.core.interceptor.oauth2.client;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.predic8.membrane.core.HttpRouter;
-import com.predic8.membrane.core.config.Path;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Header;
-import com.predic8.membrane.core.http.Request;
-import com.predic8.membrane.core.http.Response;
-import com.predic8.membrane.core.interceptor.AbstractInterceptor;
-import com.predic8.membrane.core.interceptor.Outcome;
-import com.predic8.membrane.core.interceptor.oauth2.OAuth2AnswerParameters;
-import com.predic8.membrane.core.interceptor.oauth2.WellknownFile;
-import com.predic8.membrane.core.interceptor.oauth2.authorizationservice.MembraneAuthorizationService;
-import com.predic8.membrane.core.interceptor.oauth2client.LoginParameter;
-import com.predic8.membrane.core.interceptor.oauth2client.OAuth2Resource2Interceptor;
-import com.predic8.membrane.core.interceptor.oauth2client.RequireAuth;
-import com.predic8.membrane.core.interceptor.oauth2client.rf.FormPostGenerator;
-import com.predic8.membrane.core.interceptor.session.InMemorySessionManager;
-import com.predic8.membrane.core.proxies.ServiceProxy;
-import com.predic8.membrane.core.proxies.ServiceProxyKey;
-import com.predic8.membrane.core.util.URIFactory;
-import com.predic8.membrane.core.util.URLParamUtil;
+import com.fasterxml.jackson.databind.*;
+import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.config.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.interceptor.oauth2.*;
+import com.predic8.membrane.core.interceptor.oauth2.authorizationservice.*;
+import com.predic8.membrane.core.interceptor.oauth2client.*;
+import com.predic8.membrane.core.interceptor.oauth2client.rf.*;
+import com.predic8.membrane.core.interceptor.session.*;
+import com.predic8.membrane.core.proxies.*;
+import com.predic8.membrane.core.util.*;
 import org.jetbrains.annotations.*;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.junit.jupiter.api.*;
 
-import java.io.IOException;
+import java.io.*;
 import java.util.*;
-import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.atomic.*;
 
-import static com.predic8.membrane.core.RuleManager.RuleDefinitionSource.MANUAL;
-import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
+import static com.predic8.membrane.core.RuleManager.RuleDefinitionSource.*;
+import static com.predic8.membrane.core.http.MimeType.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class OAuth2ResourceErrorForwardingTest {
@@ -55,10 +43,9 @@ public class OAuth2ResourceErrorForwardingTest {
     private final int limit = 500;
     protected HttpRouter mockAuthServer;
     protected ObjectMapper om = new ObjectMapper();
-    Logger LOG = LoggerFactory.getLogger(OAuth2ResourceErrorForwardingTest.class);
     int serverPort = 3062;
-    private String serverHost = "localhost";
-    private int clientPort = 31337;
+    private final String serverHost = "localhost";
+    private final int clientPort = 31337;
     private HttpRouter oauth2Resource;
     private final AtomicReference<String> error = new AtomicReference<>();
     private final AtomicReference<String> errorDescription = new AtomicReference<>();
@@ -121,7 +108,6 @@ public class OAuth2ResourceErrorForwardingTest {
     private ServiceProxy getMockAuthServiceProxy() throws IOException {
 
         ServiceProxy sp = new ServiceProxy(new ServiceProxyKey(serverPort), null, 99999);
-
 
         WellknownFile wkf = getWellknownFile();
         wkf.init(new HttpRouter());

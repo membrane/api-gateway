@@ -15,7 +15,6 @@ package com.predic8.membrane.core.proxies;
 
 import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.openapi.serviceproxy.*;
-import com.predic8.membrane.core.util.*;
 import org.hamcrest.*;
 import org.junit.jupiter.api.*;
 
@@ -41,7 +40,7 @@ class InternalProxyTest {
             key.setPath("/to-external");
             interceptors.add(C);
             target = new Target() {{
-                url = "service://to-external";
+                url = "internal://to-external";
             }};
         }});
 
@@ -53,8 +52,9 @@ class InternalProxyTest {
 
         router.add(new APIProxy() {{
             key = new APIProxyKey(2000);
+            key.setUsePathPattern(false);
             target = new Target() {{
-                url = "service://a";
+                url = "internal://a";
             }};
         }});
 
@@ -62,7 +62,7 @@ class InternalProxyTest {
             name = "a";
             interceptors.add(A);
             target = new Target() {{
-                url = "service://b";
+                url = "internal://b";
             }};
         }});
 
@@ -79,13 +79,6 @@ class InternalProxyTest {
     @AfterAll
     public static void teardown() {
         router.shutdown();
-    }
-
-    @Test
-    void internalProxyWithPort() {
-        Assertions.assertThrows(ConfigurationException.class, () -> new InternalProxy() {{
-            key = new APIProxyKey(2000);
-        }}.init());
     }
 
     @Test

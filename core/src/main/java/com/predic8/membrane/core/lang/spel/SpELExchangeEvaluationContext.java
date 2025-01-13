@@ -19,6 +19,7 @@ import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.lang.spel.functions.*;
 import com.predic8.membrane.core.lang.spel.spelable.*;
+import com.predic8.membrane.core.security.*;
 import com.predic8.membrane.core.util.*;
 import org.slf4j.*;
 import org.springframework.expression.spel.support.*;
@@ -27,6 +28,8 @@ import java.io.*;
 import java.util.*;
 
 import static com.predic8.membrane.core.util.URLParamUtil.DuplicateKeyOrInvalidFormStrategy.*;
+
+import static com.predic8.membrane.core.exchange.Exchange.SECURITY_SCHEMES;
 
 public class SpELExchangeEvaluationContext extends StandardEvaluationContext {
     private static final Logger log = LoggerFactory.getLogger(SpELExchangeEvaluationContext.class);
@@ -48,8 +51,11 @@ public class SpELExchangeEvaluationContext extends StandardEvaluationContext {
 
     private int statusCode;
 
+    private String scopes;
+
     private SpELMessageWrapper request;
     private SpELMessageWrapper response;
+
 
     public SpELExchangeEvaluationContext(Exchange exc) {
         this(exc, exc.getRequest());
@@ -142,6 +148,14 @@ public class SpELExchangeEvaluationContext extends StandardEvaluationContext {
 
     public SpELMessageWrapper getResponse() {
         return response;
+    }
+
+    public String getScopes() {
+        return scopes;
+    }
+
+    public void setScopes(String scopes) {
+        this.scopes = scopes;
     }
 
     public SpELMap<String, Object> getJson() throws IOException {

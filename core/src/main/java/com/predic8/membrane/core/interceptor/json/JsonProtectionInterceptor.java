@@ -63,7 +63,8 @@ public class JsonProtectionInterceptor extends AbstractInterceptor {
     }
 
     @Override
-    public void init() throws Exception {
+    public void init() {
+        super.init();
         if (maxStringLength < maxKeyLength)
             maxKeyLength = maxStringLength;
     }
@@ -114,7 +115,7 @@ public class JsonProtectionInterceptor extends AbstractInterceptor {
     }
 
     @Override
-    public Outcome handleRequest(Exchange exc) throws Exception {
+    public Outcome handleRequest(Exchange exc) {
         if ("GET".equals(exc.getRequest().getMethod()))
             return CONTINUE;
         try {
@@ -195,8 +196,8 @@ public class JsonProtectionInterceptor extends AbstractInterceptor {
                         throw new JsonProtectionException("Invalid JSON Document.",
                                                             parser.currentLocation().getLineNr(),
                                                             parser.currentLocation().getColumnNr());
-                    contexts.remove(contexts.size() - 1);
-                    currentContext = contexts.isEmpty() ? null : contexts.get(contexts.size() - 1);
+                    contexts.removeLast();
+                    currentContext = contexts.isEmpty() ? null : contexts.getLast();
                     break;
                 case ID_STRING:
                     if (parser.getValueAsString().length() > maxStringLength)

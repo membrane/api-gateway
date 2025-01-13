@@ -18,7 +18,7 @@ import org.junit.platform.suite.api.*;
 @Suite
 @SelectPackages({"com.predic8.membrane.core"})
 /**
- * @TODO Fis:
+ * @TODO Fix:
  * - com.predic8.membrane.core.interceptor.soap.SampleSoapInterceptorTest
  * - com.predic8.membrane.core.interceptor.opentelemetry.OpenTelemetryInterceptorTest
  * - com.predic8.membrane.core.interceptor.rewrite.RewriteInterceptorIntegrationTest   // Rewrite as UnitTest with sampleSOAPService
@@ -32,7 +32,6 @@ import org.junit.platform.suite.api.*;
 		"com.predic8.membrane.core.interceptor.session.SessionInterceptorTest",
 		"com.predic8.membrane.core.interceptor.balancer.NodeOnlineCheckerTest",
 		"com.predic8.membrane.core.interceptor.tunnel.WebsocketStompTest",
-		"com.predic8.membrane.core.interceptor.rest.RESTBLZServiceIntegrationTest",
 		"com.predic8.membrane.core.interceptor.oauth2client.OAuth2Resource2InterceptorTest",
 		"com.predic8.membrane.core.interceptor.shadowing.ShadowingInterceptorTest",
 		"com.predic8.membrane.core.interceptor.rewrite.RewriteInterceptorIntegrationTest",
@@ -45,6 +44,10 @@ import org.junit.platform.suite.api.*;
 })
 public class UnitTests {
     /*
+     * Uncomment below to speed up test execution!
+     *
+     */
+	/*
 	 * @BeforeClass public static void forbidScreenOutput() { PrintStream ps =
 	 * new PrintStream(new OutputStream() {
 	 *

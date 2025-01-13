@@ -6,7 +6,14 @@
   - Ideas
     - <target ../> inside <if>
 - Routing with if instead of switch and cbr
-- <if>...<else>
+- <choose>
+     <case test=""> // If this matches execute only nested
+        <..interceptors>
+     </case> 
+     <case test=""></case> // Only evaluate if first did not match
+     <case test=""></case>
+     <otherwise></otherwise>
+  </choose>
 
 # Version 6.1.0
 
@@ -25,12 +32,13 @@
 - log, print or message that writes to log. 
 - Examples
   - soap/secured-wsdl
-    - Check if we offer the sampleSoapService at www.predic8.de
     - Rewrite the example to use it
     - Readme
     - ExampleTest
   - REST / JSON API Versioning test
     - like examples/versioning/soap-xslt but much simpler with json
+- JdbcUserDataProvider
+  - Migrate to PreparedStatement
 
 # Version 6.0.0
 
@@ -58,8 +66,6 @@
   
 ### Features
 
-- Call of internal should be possible
-
 
 ### Internal
 - XMLProtectionInterceptor.setFailResponse => Use ProblemDetails
@@ -69,15 +75,28 @@
 - proxies-2.xsd
   - new Namespace e.g. https://membrane-api.io...
 - 2025
-- ProblemDetails
-  - Test for production mode filter
-    - Return pd and check if answer contains pd.details ...
-  - Return pretty to user
-  - Should have right Content-Type
 - Check AdminConsole
-- Check that handlers define their flows
+- Check that interceptors define their flows
+- Proxy.init() and init(router) make it clear what to call! 
+- Test in proxies.xml internal with port
+- Look at ignored tests
+- Interceptor init() and init(Router router)
+- ProblemDetails
+  - JSONValidator
+- In com.predic8.membrane.core.interceptor.oauth2.authorizationservice.AuthorizationService 
+  - Remove throws: 
+    - public abstract String getJwksEndpoint() throws Exception; 
+- Exchange property name constants: See Exchange
+- Dependencies
+  - Log4J, where, what
+- Merge log with print
+  <log message="${header.foo}/>
+  default: message="${header}\n${body}"
+- Remove etcd stuff 
 
 ## Done
+- Proxy.init() and init(router) make it clear what to call!
+- Rename service:// to internal://
 - Call plugin
 - Example Tests without unzipping for every test
 - Delete interceptor
@@ -90,11 +109,11 @@
 - UnitTests: Use PackageScan for more or all
 - Make <log headerOnly="false"/> clearer!
 - Inactive UnitTests enabled
-
+- ProblemDetails
+  - Test for production mode filter
+    - Return pd and check if answer contains pd.details ...
 
 ### Examples
-- Implement
-  - CustomErrorHandlingExampleTest
 - Rename Tests to *.ExampleTest
 - Move Examples
   - basic-xml-interceptor -> xml/basic-xml-interceptor
@@ -118,6 +137,8 @@
 - Wenn Exception/Abort passiert sofort Response mit Error setzen.
 
 - Should AbstractHttpHandler and Http2ExchangeHandler have a common interface?
+- What are nodeExceptions in Exchange? And nodeStatusCodes?
+- Do we need RuleExchangeListener in RuleManager?
 
 # Other
 

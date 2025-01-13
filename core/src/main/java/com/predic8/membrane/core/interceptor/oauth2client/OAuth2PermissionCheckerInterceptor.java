@@ -65,7 +65,8 @@ public class OAuth2PermissionCheckerInterceptor extends AbstractInterceptor {
     }
 
     @Override
-    public void init() throws Exception {
+    public void init() {
+        super.init();
         valueChecker = createChecker(expression);
     }
 

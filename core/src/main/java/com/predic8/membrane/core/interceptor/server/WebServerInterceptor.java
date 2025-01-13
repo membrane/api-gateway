@@ -66,7 +66,7 @@ public class WebServerInterceptor extends AbstractInterceptor {
     }
 
     @Override
-    public void init() throws Exception {
+    public void init() {
         super.init();
         normalizeDocBase();
     }
@@ -80,6 +80,7 @@ public class WebServerInterceptor extends AbstractInterceptor {
             try {
                 this.docBase = getAbsolutePathWithSchemePrefix(docBase);
             } catch (Exception e) {
+                log.error(e.getMessage(), e);
             }
             docBaseIsNormalized = true;
         }
@@ -89,9 +90,9 @@ public class WebServerInterceptor extends AbstractInterceptor {
     public Outcome handleRequest(Exchange exc) throws Exception {
         normalizeDocBase();
 
-        String uri = router.getUriFactory().create(exc.getDestinations().get(0)).getPath();
+        String uri = router.getUriFactory().create(exc.getDestinations().getFirst()).getPath();
 
-        log.debug("request: " + uri);
+        log.debug("request: {}", uri);
 
         if (escapesPath(uri) || escapesPath(router.getUriFactory().create(uri).getPath())) {
             exc.setResponse(Response.badRequest().body("").build());
@@ -231,8 +232,6 @@ public class WebServerInterceptor extends AbstractInterceptor {
     @Required
     @MCAttribute
     public void setDocBase(String docBase) {
-        //if(!docBase.endsWith("/"))
-        //	docBase = docBase + "/";
         this.docBase = docBase;
         docBaseIsNormalized = false;
     }
@@ -246,7 +245,7 @@ public class WebServerInterceptor extends AbstractInterceptor {
         }
 
 
-        String newPath = router.getResolverMap().combine(router.getBaseLocation(), path);
+        String newPath = ResolverMap.combine(router.getBaseLocation(), path);
         if (newPath.endsWith(File.separator + File.separator))
             newPath = newPath.substring(0, newPath.length() - 1);
         if (!newPath.endsWith("/"))

@@ -20,6 +20,7 @@ import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.interceptor.schemavalidation.ValidatorInterceptor.*;
 import com.predic8.membrane.core.multipart.*;
 import com.predic8.membrane.core.resolver.*;
+import com.predic8.membrane.core.util.*;
 import com.predic8.schema.Schema;
 import org.jetbrains.annotations.*;
 import org.slf4j.*;
@@ -39,10 +40,10 @@ import static com.predic8.membrane.core.interceptor.Outcome.*;
 
 public abstract class AbstractXMLSchemaValidator extends AbstractMessageValidator {
 
-	private static Logger log = LoggerFactory.getLogger(AbstractXMLSchemaValidator.class.getName());
+	private static final Logger log = LoggerFactory.getLogger(AbstractXMLSchemaValidator.class.getName());
 
 	private ArrayBlockingQueue<List<Validator>> validators;
-	protected XOPReconstitutor xopr;
+	protected final XOPReconstitutor xopr;
 	protected final String location;
 	protected final ResolverMap resolver;
 	protected final ValidatorInterceptor.FailureHandler failureHandler;
@@ -63,7 +64,8 @@ public abstract class AbstractXMLSchemaValidator extends AbstractMessageValidato
 		xopr = new XOPReconstitutor();
 	}
 
-	public void init() throws Exception {
+	public void init() {
+		super.init();
 		int concurrency = Runtime.getRuntime().availableProcessors() * 2;
 		validators = new ArrayBlockingQueue<>(concurrency);
 		for (int i = 0; i < concurrency; i++)
@@ -80,9 +82,7 @@ public abstract class AbstractXMLSchemaValidator extends AbstractMessageValidato
 				for (Validator validator: vals) {
 					SchemaValidatorErrorHandler handler = (SchemaValidatorErrorHandler)validator.getErrorHandler();
 					try {
-
                         validator.validate(getMessageBody(xopr.reconstituteIfNecessary(msg)));
-
 						if (handler.noErrors()) {
 							valid.incrementAndGet();
 							return CONTINUE;
@@ -117,22 +117,26 @@ public abstract class AbstractXMLSchemaValidator extends AbstractMessageValidato
 		return ABORT;
 	}
 
-	protected List<Validator> createValidators() throws Exception {
+	protected List<Validator> createValidators() {
 		SchemaFactory sf = SchemaFactory.newInstance(XSD_NS);
 		sf.setResourceResolver(resolver.toLSResourceResolver());
 		List<Validator> validators = new ArrayList<>();
 		for (Schema schema : getSchemas()) {
-			log.debug("Creating validator for schema: " + schema);
+			log.debug("Creating validator for schema: {}", schema);
             validators.add(getValidator(schema, sf));
 		}
 		return validators;
 	}
 
-	private @NotNull Validator getValidator(Schema schema, SchemaFactory sf) throws SAXException {
-		Validator validator = sf.newSchema(getStreamSource(schema)).newValidator();
-		validator.setResourceResolver(resolver.toLSResourceResolver());
-		validator.setErrorHandler(new SchemaValidatorErrorHandler());
-		return validator;
+	private @NotNull Validator getValidator(Schema schema, SchemaFactory sf) {
+        try {
+			Validator validator = sf.newSchema(getStreamSource(schema)).newValidator();
+			validator.setResourceResolver(resolver.toLSResourceResolver());
+			validator.setErrorHandler(new SchemaValidatorErrorHandler());
+			return validator;
+        } catch (SAXException e) {
+            throw new ConfigurationException("Cannot read schema %s.".formatted(schema.getName()),e);
+        }
 	}
 
 	private @NotNull StreamSource getStreamSource(Schema schema) {

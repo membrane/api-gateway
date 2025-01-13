@@ -22,15 +22,12 @@ import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.interceptor.authentication.session.SessionManager.*;
-import com.predic8.membrane.core.interceptor.oauth2.*;
 import com.predic8.membrane.core.interceptor.server.*;
 import com.predic8.membrane.core.resolver.*;
 import com.predic8.membrane.core.util.URI;
 import com.predic8.membrane.core.util.*;
 import org.apache.commons.lang3.*;
-
-import org.apache.commons.text.*;
-import org.apache.commons.text.StringEscapeUtils;
+import org.jetbrains.annotations.*;
 import org.slf4j.*;
 
 import java.io.*;
@@ -40,7 +37,6 @@ import java.util.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.interceptor.oauth2.ConsentPageFile.*;
 import static com.predic8.membrane.core.interceptor.oauth2.OAuth2Util.*;
-
 import static com.predic8.membrane.core.util.URLParamUtil.DuplicateKeyOrInvalidFormStrategy.*;
 import static java.nio.charset.StandardCharsets.*;
 import static org.apache.commons.text.StringEscapeUtils.*;
@@ -73,7 +69,7 @@ public class LoginDialog {
 			String message) {
 		this.basePath = basePath;
 		this.path = path;
-		if (basePath.length() > 0)
+		if (!basePath.isEmpty())
 			if ((basePath.endsWith("/") ? 1 : 0) + (path.startsWith("/") ? 1 : 0) != 1)
 				throw new RuntimeException("Login dialog is configured with basePath='\" + basePath + \"' and path='" + path +
 						"'. Please ensure that basePath ends with a '/' xOR path starts with a '/'. (Concatenation '" + basePath + path + "' looks weird.)')");
@@ -88,12 +84,22 @@ public class LoginDialog {
 		wsi.setDocBase(dialogLocation);
 	}
 
-	public void init(Router router) throws Exception {
+	public void init(Router router) {
 		uriFactory = router.getUriFactory();
 		wsi.init(router);
-		router.getResolverMap().resolve(ResolverMap.combine(router.getBaseLocation(), wsi.getDocBase(), "index.html")).close();
-
-	}
+        try {
+			// This is only a check if index.html is present
+            router.getResolverMap().resolve(ResolverMap.combine(router.getBaseLocation(), wsi.getDocBase(), "index.html")).close();
+        } catch (ResourceRetrievalException e) {
+            throw new ConfigurationException("""
+					Cannot access index.html at:
+					Location base: %s
+					Doc base: %s
+					""".formatted( router.getBaseLocation(), wsi.getDocBase()),e);
+        } catch (IOException e) {
+			log.error("Cannot close {}",e.getMessage());
+        }
+    }
 
 	public boolean isLoginRequest(Exchange exc) {
 		URI uri = uriFactory.createWithoutException(exc.getRequest().getUri());
@@ -196,7 +202,7 @@ public class LoginDialog {
                         else {
                             String target = params.get("target");
                             if (StringUtils.isEmpty(target))
-                                target = basePath + (basePath.endsWith("/") ? "" : "/");
+                                target = getTargetPath(basePath);
                             exc.setResponse(Response.redirectWithout300(target).build());
                         }
 
@@ -235,7 +241,7 @@ public class LoginDialog {
                             accountBlocker.unblock(s.getUserName());
                         String target = URLParamUtil.getParams(uriFactory, exc, ERROR).get("target");
                         if (StringUtils.isEmpty(target))
-                            target = basePath + (basePath.endsWith("/") ? "" : "/");
+                            target = getTargetPath(basePath);
 
                         if (this.message != null)
                             exc.setResponse(Response.redirectWithout300(target, message).build());
@@ -250,6 +256,10 @@ public class LoginDialog {
             }
             default -> wsi.handleRequest(exc);
         }
+	}
+
+	private @NotNull String getTargetPath(String basePath) {
+		return basePath + (basePath.endsWith("/") ? "" : "/");
 	}
 
 	private void processConsentPageResult(Exchange exc, Session s) throws Exception {
@@ -272,7 +282,7 @@ public class LoginDialog {
 	private void redirectAfterConsent(Exchange exc) throws Exception {
 		String target = URLParamUtil.getParams(uriFactory, exc, ERROR).get("target");
 		if (StringUtils.isEmpty(target))
-		    target = basePath + (basePath.endsWith("/") ? "" : "/");
+		    target = getTargetPath(basePath);
 		exc.setResponse(Response.redirectWithout300(target).build());
 	}
 
@@ -323,11 +333,11 @@ public class LoginDialog {
 		return result;
 	}
 
-	private String[] prepareClaimsFromSession(Session s) throws UnsupportedEncodingException {
+	private String[] prepareClaimsFromSession(Session s) {
 		return prepareStringArray(decodeClaimsFromSession(s));
 	}
 
-	private String[] prepareScopesFromSession(Session s) throws UnsupportedEncodingException {
+	private String[] prepareScopesFromSession(Session s) {
 		return prepareStringArray(decodeScopesFromSession(s));
 	}
 

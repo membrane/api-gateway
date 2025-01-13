@@ -29,12 +29,16 @@ import com.predic8.membrane.core.interceptor.oauth2.tokengenerators.BearerTokenG
 import com.predic8.membrane.core.interceptor.oauth2.tokengenerators.JwtGenerator;
 import com.predic8.membrane.core.interceptor.oauth2.tokengenerators.TokenGenerator;
 import com.predic8.membrane.core.proxies.Proxy;
+import com.predic8.membrane.core.util.*;
+import org.jose4j.lang.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.predic8.membrane.annot.Required;
 
+import java.io.*;
 import java.util.HashSet;
 
+@SuppressWarnings("LoggingSimilarMessage")
 @MCElement(name = "oauth2authserver")
 public class OAuth2AuthorizationServerInterceptor extends AbstractInterceptor {
     private static final Logger log = LoggerFactory.getLogger(OAuth2AuthorizationServerInterceptor.class.getName());
@@ -50,7 +54,6 @@ public class OAuth2AuthorizationServerInterceptor extends AbstractInterceptor {
     private boolean issueNonSpecIdTokens = false;
     private boolean issueNonSpecRefreshTokens = false;
 
-    private Router router;
     private UserDataProvider userDataProvider;
     private SessionManager sessionManager = new SessionManager();
     private AccountBlocker accountBlocker;
@@ -70,9 +73,10 @@ public class OAuth2AuthorizationServerInterceptor extends AbstractInterceptor {
     private ConsentPageFile consentPageFile = new ConsentPageFile();
 
     @Override
-    public void init(Router router) throws Exception {
+    public void init() {
+        super.init();
         name = "OAuth 2 Authorization Server";
-        setFlow(Flow.Set.REQUEST_RESPONSE_ABORT);
+        setFlow(Flow.Set.REQUEST_RESPONSE_ABORT_FLOW);
 
         this.setRouter(router);
         basePath = computeBasePath();
@@ -82,18 +86,32 @@ public class OAuth2AuthorizationServerInterceptor extends AbstractInterceptor {
         if (refreshTokenConfig != null)
             refreshTokenGenerator = refreshTokenConfig.tokenGenerator;
 
-        tokenGenerator.init(router);
-        refreshTokenGenerator.init(router);
+        try {
+            tokenGenerator.init(router);
+            refreshTokenGenerator.init(router);
+        } catch (Exception e) {
+            throw new ConfigurationException("Could not create token generators.",e);
+        }
 
         addSupportedAuthorizationGrants();
-        getWellknownFile().init(router,this);
-        getConsentPageFile().init(router,getConsentFile());
+
+        try {
+            getWellknownFile().init(router,this);
+        } catch (IOException e) {
+            throw new ConfigurationException("Could not create Well-known file.",e);
+        }
+
+        try {
+            getConsentPageFile().init(router,getConsentFile());
+        } catch (IOException e) {
+            throw new ConfigurationException("Could not create Consent Page file.",e);
+        }
         if (userDataProvider == null)
-            throw new Exception("No userDataProvider configured. - Cannot work without one.");
+            throw new ConfigurationException("No userDataProvider configured. - Cannot work without one.");
         if (getClientList() == null)
-            throw new Exception("No clientList configured. - Cannot work without one.");
+            throw new ConfigurationException("No clientList configured. - Cannot work without one.");
         if (getClaimList() == null)
-            throw new Exception("No scopeList configured. - Cannot work without one");
+            throw new ConfigurationException("No scopeList configured. - Cannot work without one");
         if(getLocation() == null) {
             log.warn("===========================================================================================");
             log.warn("IMPORTANT: No location configured - Authorization code and implicit flows are not available");
@@ -107,11 +125,16 @@ public class OAuth2AuthorizationServerInterceptor extends AbstractInterceptor {
             loginViewDisabled = true;
         }
         if(getPath() == null)
-            throw new Exception("No path configured. - Cannot work without one");
+            throw new ConfigurationException("No path configured. - Cannot work without one");
         userDataProvider.init(router);
         getClientList().init(router);
         getClaimList().init(router);
-        jwtGenerator = new JwtGenerator();
+        try {
+            jwtGenerator = new JwtGenerator();
+        } catch (JoseException e) {
+            log.error(e.getMessage(),e);
+            throw new ConfigurationException("Could not generate JwtGenerator");
+        }
         sessionManager.init(router);
         statistics = new OAuth2Statistics();
         addDefaultProcessors();
@@ -232,11 +255,6 @@ public class OAuth2AuthorizationServerInterceptor extends AbstractInterceptor {
     @MCChildElement(order = 5)
     public void setTokenGenerator(TokenGenerator tokenGenerator) {
         this.tokenGenerator = tokenGenerator;
-    }
-
-    @Override
-    public Router getRouter() {
-        return router;
     }
 
     public void setRouter(Router router) {

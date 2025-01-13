@@ -18,9 +18,11 @@ import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.multipart.*;
 import com.predic8.membrane.core.resolver.*;
+import com.predic8.membrane.core.util.*;
 import com.predic8.schema.Schema;
 import org.apache.commons.text.*;
 import org.slf4j.*;
+import org.xml.sax.*;
 
 import javax.xml.transform.*;
 import javax.xml.transform.stream.*;
@@ -33,7 +35,7 @@ import static java.nio.charset.StandardCharsets.*;
 public class XMLSchemaValidator extends AbstractXMLSchemaValidator {
 	private static final Logger log = LoggerFactory.getLogger(XMLSchemaValidator.class.getName());
 
-	public XMLSchemaValidator(ResolverMap resourceResolver, String location, ValidatorInterceptor.FailureHandler failureHandler) throws Exception {
+	public XMLSchemaValidator(ResolverMap resourceResolver, String location, ValidatorInterceptor.FailureHandler failureHandler) {
 		super(resourceResolver, location, failureHandler);
 		init();
 	}
@@ -49,15 +51,25 @@ public class XMLSchemaValidator extends AbstractXMLSchemaValidator {
 	}
 
 	@Override
-	protected List<Validator> createValidators() throws Exception {
+	protected List<Validator> createValidators() {
 		SchemaFactory sf = SchemaFactory.newInstance(Constants.XSD_NS);
 		sf.setResourceResolver(resolver.toLSResourceResolver());
 		List<Validator> validators = new ArrayList<>();
-		log.debug("Creating validator for schema: " + location);
-		StreamSource ss = new StreamSource(resolver.resolve(location));
-		ss.setSystemId(location);
-		Validator validator = sf.newSchema(ss).newValidator();
-		validator.setResourceResolver(resolver.toLSResourceResolver());
+		log.debug("Creating validator for schema: {}", location);
+        StreamSource ss;
+        try {
+            ss = new StreamSource(resolver.resolve(location));
+        } catch (ResourceRetrievalException e) {
+            throw new ConfigurationException("Cannot resolve schema from %s.".formatted(location),e);
+        }
+        ss.setSystemId(location);
+        Validator validator;
+        try {
+            validator = sf.newSchema(ss).newValidator();
+        } catch (SAXException e) {
+            throw new ConfigurationException("Cannot parse schema from %s.".formatted(location),e);
+        }
+        validator.setResourceResolver(resolver.toLSResourceResolver());
 		validator.setErrorHandler(new SchemaValidatorErrorHandler());
 		validators.add(validator);
 		return validators;

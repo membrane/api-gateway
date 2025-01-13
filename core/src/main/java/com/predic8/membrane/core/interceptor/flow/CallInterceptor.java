@@ -14,19 +14,19 @@
 package com.predic8.membrane.core.interceptor.flow;
 
 import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.interceptor.lang.*;
 import com.predic8.membrane.core.lang.*;
+import org.jetbrains.annotations.*;
 import org.slf4j.*;
 
 import java.util.*;
 
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
 import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
-import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
+import static com.predic8.membrane.core.interceptor.Outcome.*;
 
 @MCElement(name = "call")
 public class CallInterceptor extends AbstractLanguageInterceptor {
@@ -38,8 +38,8 @@ public class CallInterceptor extends AbstractLanguageInterceptor {
     private String url;
 
     @Override
-    public void init(Router router) throws Exception {
-        super.init(router);
+    public void init() {
+        super.init();
         hcInterceptor = new HTTPClientInterceptor();
         hcInterceptor.init(router);
         exchangeExpression = new TemplateExchangeExpression(router, language, url);
@@ -56,6 +56,13 @@ public class CallInterceptor extends AbstractLanguageInterceptor {
     }
 
     private Outcome handleInternal(Exchange exc) {
+        List<String> oldDest = exc.getDestinations();
+        Outcome outcome = doCall(exc);
+        exc.setDestinations(oldDest);
+        return outcome;
+    }
+
+    private @NotNull Outcome doCall(Exchange exc) {
         if (url != null) {
             try {
                 exc.setDestinations(List.of(exchangeExpression.evaluate(exc, REQUEST, String.class)));
@@ -64,11 +71,11 @@ public class CallInterceptor extends AbstractLanguageInterceptor {
                 return ABORT;
             }
         }
-        log.debug("Calling {}",exc.getDestinations());
+        log.debug("Calling {}", exc.getDestinations());
         try {
             Outcome outcome = hcInterceptor.handleRequest(exc);
             if (outcome == ABORT) {
-                log.warn("Aborting. Error calling {}",exc.getDestinations());
+                log.warn("Aborting. Error calling {}", exc.getDestinations());
                 return ABORT;
             }
             exc.getRequest().setBodyContent(exc.getResponse().getBody().getContent()); // TODO Optimize?
@@ -89,6 +96,7 @@ public class CallInterceptor extends AbstractLanguageInterceptor {
      */
     @SuppressWarnings("unused")
     @MCAttribute
+    @Required
     public void setUrl(String url) {
         this.url = url;
     }

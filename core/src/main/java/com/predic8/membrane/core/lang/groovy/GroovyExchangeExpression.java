@@ -17,7 +17,7 @@ package com.predic8.membrane.core.lang.groovy;
 import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.interceptor.lang.*;
+import com.predic8.membrane.core.lang.*;
 import com.predic8.membrane.core.util.ConfigurationException;
 import org.codehaus.groovy.control.*;
 
@@ -37,7 +37,7 @@ public class GroovyExchangeExpression extends AbstractExchangeExpression {
         try {
             condition = new GroovyLanguageSupport().compileExpression(router.getBackgroundInitializator(), null, source);
         } catch (MultipleCompilationErrorsException e) {
-            throw new ConfigurationException("Cannot compile Groovy Script: %s\n%s".formatted(e.getMessage(),e.getLocalizedMessage()));
+            throw new ConfigurationException("Cannot compile Groovy Script.",e);
         }
     }
 

@@ -64,13 +64,13 @@ public class GraphQLProtectionInterceptor extends AbstractInterceptor {
     }
 
     @Override
-    public void init() throws Exception {
+    public void init() {
         super.init();
         validator = new GraphQLoverHttpValidator( allowExtensions, allowedMethods,  maxRecursion,  maxDepth,  maxMutations,  router);
     }
 
     @Override
-    public Outcome handleRequest(Exchange exc) throws Exception {
+    public Outcome handleRequest(Exchange exc) {
         try {
             validator.validate(exc);
         } catch (GraphQLOverHttpValidationException e) {

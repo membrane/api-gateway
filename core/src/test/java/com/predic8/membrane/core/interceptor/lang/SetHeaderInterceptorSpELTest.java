@@ -94,7 +94,7 @@ class SetHeaderInterceptorSpELTest extends AbstractSetHeaderInterceptorTest {
     @DisplayName("Only set if the header is absent")
     void onlyIfAbsent() {
         exchange.getRequest().getHeader().add("X-FOO", "0");
-        interceptor.setName("X-FOO");
+        interceptor.setFieldName("X-FOO");
         interceptor.setValue("42");
         interceptor.setIfAbsent(true);
         interceptor.handleRequest(exchange);
@@ -105,7 +105,7 @@ class SetHeaderInterceptorSpELTest extends AbstractSetHeaderInterceptorTest {
     @DisplayName("Only set if the header is absent with different casing")
     void onlyIfAbsentCaseDiff() {
         exchange.getRequest().getHeader().add("X-FOO", "0");
-        interceptor.setName("x-fOo");
+        interceptor.setFieldName("x-fOo");
         interceptor.setValue("42");
         interceptor.setIfAbsent(true);
         interceptor.handleRequest(exchange);
@@ -116,7 +116,7 @@ class SetHeaderInterceptorSpELTest extends AbstractSetHeaderInterceptorTest {
     @DisplayName("Overwrite header when it is not absent")
     void notIfAbsent() throws Exception {
         exchange.getRequest().getHeader().add("X-FOO", "0");
-        interceptor.setName("X-FOO");
+        interceptor.setFieldName("X-FOO");
         interceptor.setValue("42");
         interceptor.setIfAbsent(false);
         interceptor.init(router);
@@ -128,7 +128,7 @@ class SetHeaderInterceptorSpELTest extends AbstractSetHeaderInterceptorTest {
     @DisplayName("Do not overwrite existing header.")
     void ifAbsent() throws Exception {
         exchange.getRequest().getHeader().add("X-FOO", "0");
-        interceptor.setName("X-FOO");
+        interceptor.setFieldName("X-FOO");
         interceptor.setValue("42");
         interceptor.setIfAbsent(true);
         interceptor.init(router);
@@ -140,7 +140,7 @@ class SetHeaderInterceptorSpELTest extends AbstractSetHeaderInterceptorTest {
     @DisplayName("Overwrite header when it is not absent with different casing")
     void notIfAbsentCaseDiff() throws Exception {
         exchange.getRequest().getHeader().add("X-FOO", "0");
-        interceptor.setName("x-fOo");
+        interceptor.setFieldName("x-fOo");
         interceptor.setValue("42");
         interceptor.init(router);
         interceptor.handleRequest(exchange);
