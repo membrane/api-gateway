@@ -15,6 +15,7 @@ package com.predic8.membrane.core.interceptor.balancer;
 
 import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.proxies.*;
+import org.apache.commons.codec.*;
 import org.apache.commons.codec.binary.*;
 import org.apache.commons.httpclient.*;
 import org.apache.commons.httpclient.methods.*;
@@ -27,6 +28,7 @@ import java.net.*;
 import java.security.*;
 
 import static com.predic8.membrane.core.util.URLParamUtil.*;
+import static java.lang.System.currentTimeMillis;
 import static java.nio.charset.StandardCharsets.*;
 import static javax.crypto.Cipher.ENCRYPT_MODE;
 import static org.apache.commons.codec.binary.Base64.encodeBase64;
@@ -59,7 +61,7 @@ public class ClusterNotificationInterceptorTest {
 	}
 
 	@Test
-	public void testUpEndpoint() throws Exception {
+	void upEndpoint() throws Exception {
 		GetMethod get = new GetMethod("http://localhost:3002/clustermanager/up?"+
 				createQueryString("host", "node1.clustera",
 						"port", "3018",
@@ -71,7 +73,7 @@ public class ClusterNotificationInterceptorTest {
 	}
 
 	@Test
-	public void testTakeOutEndpoint() throws Exception {
+	void takeOutEndpoint() throws Exception {
 		GetMethod get = new GetMethod("http://localhost:3002/clustermanager/takeout?"+
 				createQueryString("host", "node1.clustera",
 						"port", "3018",
@@ -83,7 +85,7 @@ public class ClusterNotificationInterceptorTest {
 	}
 
 	@Test
-	public void testDownEndpoint() throws Exception {
+	void testDownEndpoint() throws Exception {
 		GetMethod get = new GetMethod("http://localhost:3002/clustermanager/down?"+
 				createQueryString("host", "node1.clustera",
 						"port", "3018",
@@ -95,7 +97,7 @@ public class ClusterNotificationInterceptorTest {
 	}
 
 	@Test
-	public void testDefaultCluster() throws Exception {
+	void testDefaultCluster() throws Exception {
 		GetMethod get = new GetMethod("http://localhost:3002/clustermanager/up?"+
 				createQueryString("host", "node1.clustera",
 						"port", "3018"));
@@ -106,18 +108,18 @@ public class ClusterNotificationInterceptorTest {
 	}
 
 	@Test
-	public void testSecurity() throws Exception {
+	void testSecurity() throws Exception {
 		interceptor.setValidateSignature(true);
 		interceptor.setKeyHex("6f488a642b740fb70c5250987a284dc0");
 
 		assertEquals(204, new HttpClient().executeMethod(getSecurityTestMethod(5004)));
 
-		interceptor.setTimeout(3018);
-		GetMethod get = getSecurityTestMethod(System.currentTimeMillis());
+		interceptor.setTimeout(50);
+		GetMethod get = getSecurityTestMethod(currentTimeMillis());
 		assertEquals(204, new HttpClient().executeMethod(get));
 		assertEquals(204, new HttpClient().executeMethod(get));
 
-		Thread.sleep(6000);
+		Thread.sleep(100);
 		assertEquals(403, new HttpClient().executeMethod(get));
 
 	}
@@ -132,9 +134,12 @@ public class ClusterNotificationInterceptorTest {
 	}
 
 	private String getEncryptedQueryString(String qParams) throws Exception {
-		Cipher cipher = Cipher.getInstance("AES");
+        return new String(encodeBase64(getCipher().doFinal(qParams.getBytes(UTF_8))), UTF_8);
+	}
 
+	private static @NotNull Cipher getCipher() throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, DecoderException {
+		Cipher cipher = Cipher.getInstance("AES");
 		cipher.init(ENCRYPT_MODE, new SecretKeySpec(Hex.decodeHex("6f488a642b740fb70c5250987a284dc0".toCharArray()), "AES"));
-		return new String(encodeBase64(cipher.doFinal(qParams.getBytes(UTF_8))), UTF_8);
+		return cipher;
 	}
 }

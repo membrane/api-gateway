@@ -18,11 +18,14 @@ import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.lang.*;
+import com.predic8.membrane.core.lang.spel.*;
 import org.slf4j.*;
 
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
 import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static com.predic8.membrane.core.lang.ExchangeExpression.Language.*;
 
 public abstract class AbstractSetterInterceptor extends AbstractLanguageInterceptor {
 
@@ -30,13 +33,18 @@ public abstract class AbstractSetterInterceptor extends AbstractLanguageIntercep
 
     private boolean failOnError = true;
 
-    protected String name;
+    protected String fieldName;
     protected boolean ifAbsent;
 
     @Override
     public void init() {
-        super.init();
-        exchangeExpression = new TemplateExchangeExpression(router,language,expression);
+        super.init(router);
+        // SpEL comes with its own templating
+        if (language == SPEL) {
+            exchangeExpression = new SpELExchangeExpression(expression, new SpELExchangeExpression.DollarBracketTemplateParserContext());
+        } else {
+            exchangeExpression = new TemplateExchangeExpression(router, language, expression);
+        }
     }
 
     @Override
@@ -59,7 +67,8 @@ public abstract class AbstractSetterInterceptor extends AbstractLanguageIntercep
             if (failOnError) {
                 ProblemDetails.internal(getRouter().isProduction())
                         .title("Error evaluating expression!")
-                        .extension("field", name)
+                        .component(getDisplayName())
+                        .extension("field", fieldName)
                         .extension("value", expression)
                         .buildAndSetResponse(exchange);
                 return ABORT;
@@ -81,13 +90,13 @@ public abstract class AbstractSetterInterceptor extends AbstractLanguageIntercep
         return ifAbsent;
     }
 
-    @MCAttribute
-    public void setName(String name) {
-        this.name = name;
+    @MCAttribute(attributeName = "name")
+    public void setFieldName(String fieldName) {
+        this.fieldName = fieldName;
     }
 
-    public String getName() {
-        return name;
+    public String getFieldName() {
+        return fieldName;
     }
 
     @MCAttribute

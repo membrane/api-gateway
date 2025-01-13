@@ -85,7 +85,6 @@ public class ApiKeysInterceptor extends AbstractInterceptor {
             try {
                 var k = key.get();
                 new ApiKeySecurityScheme(k.location(), k.name()).scopes(getScopes(k.key())).add(exc);
-
             } catch (UnauthorizedApiKeyException e) {
                 if (!required) {return CONTINUE;}
                 log.warn("The provided API {} key is invalid.",key.get());
@@ -93,6 +92,7 @@ public class ApiKeysInterceptor extends AbstractInterceptor {
                                 .statusCode(403)
                                 .addSubType(TYPE_4XX)
                                 .title(TITLE_4XX)
+                                .component(getDisplayName())
                                 .detail("The provided API key is invalid.")
                                 .build());
                 return RETURN;

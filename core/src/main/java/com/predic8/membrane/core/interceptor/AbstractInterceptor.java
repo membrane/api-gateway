@@ -110,9 +110,9 @@ public class AbstractInterceptor implements Interceptor {
 				.getRuleManager()
 				.getRules()
 				.stream()
-				.filter(rule -> rule
+				.filter(proxy -> proxy
 						.getInterceptors() != null)
-				.filter(rule -> rule
+				.filter(proxy -> proxy
 						.getInterceptors()
 						.stream().anyMatch(this::hasSameReferenceAs))
 				.findAny()

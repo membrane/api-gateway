@@ -45,7 +45,7 @@ public interface ExchangeExpression {
     static ExchangeExpression getInstance(Router router, Language language, String source) {
         return switch (language) {
             case GROOVY -> new GroovyExchangeExpression(router, source);
-            case SPEL -> new SpELExchangeExpression(source);
+            case SPEL -> new SpELExchangeExpression(source,null);
             case XPATH -> new XPathExchangeExpression(source);
             case JSONPATH -> new JsonpathExchangeExpression(source);
         };

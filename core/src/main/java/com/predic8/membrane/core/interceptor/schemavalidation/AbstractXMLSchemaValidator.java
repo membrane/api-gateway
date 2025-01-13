@@ -82,9 +82,7 @@ public abstract class AbstractXMLSchemaValidator extends AbstractMessageValidato
 				for (Validator validator: vals) {
 					SchemaValidatorErrorHandler handler = (SchemaValidatorErrorHandler)validator.getErrorHandler();
 					try {
-
                         validator.validate(getMessageBody(xopr.reconstituteIfNecessary(msg)));
-
 						if (handler.noErrors()) {
 							valid.incrementAndGet();
 							return CONTINUE;

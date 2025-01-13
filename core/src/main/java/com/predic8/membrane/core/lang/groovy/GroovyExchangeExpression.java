@@ -17,7 +17,7 @@ package com.predic8.membrane.core.lang.groovy;
 import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.interceptor.lang.*;
+import com.predic8.membrane.core.lang.*;
 import com.predic8.membrane.core.util.ConfigurationException;
 import org.codehaus.groovy.control.*;
 

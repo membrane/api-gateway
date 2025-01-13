@@ -32,10 +32,10 @@ this makes them reusable and cleans up our APIs:
 <api port="2000">
   <request>
     <if test="//order[@express='yes']" language="xpath">
-      <destination url="service://express"/>
+      <destination url="internal://express"/>
     </if>
   </request>
-  <target url="service://normal" />
+  <target url="internal://normal" />
 </api>
 ```
 

@@ -73,6 +73,19 @@ public class BuiltInFunctions {
                 && ctx.getExchange().getRequest().getHeader().getFirstValue(AUTHORIZATION).startsWith("Bearer");
     }
 
+    public static List<String> scopes(SpELExchangeEvaluationContext ctx) {
+        return getSchemeScopes(all(), ctx);
+    }
+
+    /**
+     * @param securityScheme Name of the scheme like http, apiKey, oauth2. See: SecurityScheme.getName()
+     * @param ctx
+     * @return
+     */
+    public static List<String> scopes(String securityScheme, SpELExchangeEvaluationContext ctx) {
+        return getSchemeScopes(name(securityScheme), ctx);
+    }
+
     public static boolean hasScope(String scope, SpELExchangeEvaluationContext ctx) {
         return scopesContainsByPredicate(ctx, it -> it.contains(scope));
     }
@@ -86,14 +99,27 @@ public class BuiltInFunctions {
         return scopesContainsByPredicate(ctx, it -> it.containsAll(scopes));
     }
 
-    @SuppressWarnings("unchecked")
     private static Boolean scopesContainsByPredicate(SpELExchangeEvaluationContext ctx, Predicate<List<String>> predicate) {
-        return predicate.test(Optional.ofNullable((List<SecurityScheme>) ctx.getExchange().getProperty(SECURITY_SCHEMES))
+        return predicate.test(getSchemeScopes(all(), ctx));
+    }
+
+    @SuppressWarnings("unchecked")
+    private static List<String> getSchemeScopes(Predicate<SecurityScheme> predicate, SpELExchangeEvaluationContext ctx) {
+        return Optional.ofNullable((List<SecurityScheme>) ctx.getExchange().getProperty(SECURITY_SCHEMES))
                 .map(list -> list.stream()
+                        .filter(predicate)
                         .map(SecurityScheme::getScopes)
                         .flatMap(Collection::stream)
                         .toList())
-                .orElse(emptyList()));
+                .orElse(emptyList());
+    }
+
+    private static Predicate<SecurityScheme> all() {
+        return ignored -> true;
+    }
+
+    private static Predicate<SecurityScheme> name(String name) {
+        return scheme -> scheme.getName().equalsIgnoreCase(name);
     }
 
     public static boolean isXML(SpELExchangeEvaluationContext ctx) {
