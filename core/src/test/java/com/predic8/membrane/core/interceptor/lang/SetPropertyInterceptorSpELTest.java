@@ -43,4 +43,13 @@ class SetPropertyInterceptorSpELTest extends AbstractSetPropertyInterceptorTest 
         interceptor.handleRequest(exc);
         assertEquals("true", exc.getProperty("doesNotExist"));
     }
+
+    @Test
+    void empty() throws Exception {
+        interceptor.setFieldName("order");
+        interceptor.setValue("");
+        interceptor.init(router);
+        interceptor.handleRequest(exc);
+        assertEquals("", exc.getProperty("order"));
+    }
 }
