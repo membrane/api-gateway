@@ -113,6 +113,7 @@
   - Test for production mode filter
     - Return pd and check if answer contains pd.details ...
 
+
 ### Examples
 - Rename Tests to *.ExampleTest
 - Move Examples
@@ -122,13 +123,9 @@
 
 # Discussion
 
-- K8S stuff document or delete?
-- Excpetion Handling
-  - throw Exception in Interceptor handle?
-- Interceptor
-  - init() and init(router)
-    - Which one to call or both?
-
+- ${} or #{} for expressions
+  - Possible conflict with spring property placeholder configurer
+  - Conflict with SpEL on startup? Are #{} replaced?
 - For ADRs
   - Response Flow guarantee there is a response 
   - Request Flow guarantee there is a request

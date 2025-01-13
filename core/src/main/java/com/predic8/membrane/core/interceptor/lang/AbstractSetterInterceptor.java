@@ -38,7 +38,7 @@ public abstract class AbstractSetterInterceptor extends AbstractLanguageIntercep
 
     @Override
     public void init() {
-        super.init(router);
+        super.init();
         // SpEL comes with its own templating
         if (language == SPEL) {
             exchangeExpression = new SpELExchangeExpression(expression, new SpELExchangeExpression.DollarBracketTemplateParserContext());
