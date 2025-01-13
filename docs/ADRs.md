@@ -46,7 +46,12 @@ e.g. setHeader should return in not production mode details about the error. But
  <setHeader value="headers['unknown'] ...> should set null.
 
  - Makes handling less easy if it is null
- 
+
+
+# Other
+
+- Use conventional commits
+
 # Use double brace initialization?
 
 {{}}
@@ -66,3 +71,4 @@ Should implementations of init() in subclasses of Interceptor call init() on sup
 - See: SecuritySchemes
 
 # Keep K8S
+

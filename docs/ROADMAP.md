@@ -39,6 +39,7 @@
     - like examples/versioning/soap-xslt but much simpler with json
 - JdbcUserDataProvider
   - Migrate to PreparedStatement
+- <target url="http://localhost:2000/${params.product}/>
 
 # Version 6.0.0
 
@@ -48,8 +49,6 @@
 - Run ConfigSerializationTest from annot
 - List how to run all tests
   - ConfigSerializationTest
-  - Examples
-    - ExampleUnitTests, Without, With
 - Is SessionResumptionTest still needed?
 
 ### Examples / Documentation
@@ -77,7 +76,6 @@
 - 2025
 - Check AdminConsole
 - Check that interceptors define their flows
-- Proxy.init() and init(router) make it clear what to call! 
 - Test in proxies.xml internal with port
 - Look at ignored tests
 - Interceptor init() and init(Router router)
@@ -89,6 +87,13 @@
 - Exchange property name constants: See Exchange
 - Dependencies
   - Log4J, where, what
+- Interceptor Interface:
+  - handle should not throw Exception
+- AdminConsole
+  - DisplayName: make all lower
+- Cleaup:
+  - LoggingContextInterceptor? Ask CG
+
 - Merge log with print
   <log message="${header.foo}/>
   default: message="${header}\n${body}"

@@ -17,8 +17,8 @@
 package com.predic8.membrane.core.interceptor;
 
 import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.proxies.*;
 import com.predic8.membrane.core.proxies.Proxy;
+import com.predic8.membrane.core.proxies.*;
 import org.jetbrains.annotations.*;
 import org.slf4j.*;
 
@@ -28,13 +28,10 @@ import java.util.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.util.URLUtil.*;
 
-public class InternalServiceRoutingInterceptor extends AbstractInterceptor {
+public class InternalRoutingInterceptor extends AbstractInterceptor {
 
-    private static final Logger log = LoggerFactory.getLogger(InternalServiceRoutingInterceptor.class.getName());
+    private static final Logger log = LoggerFactory.getLogger(InternalRoutingInterceptor.class.getName());
     public static final String REVERSE_INTERCEPTOR_LIST = "membrane.routing.back.interceptors";
-    public static final DispatchingInterceptor dispatchingInterceptor = new DispatchingInterceptor();
-
-    private final FlowController flowController = new FlowController();
 
     @Override
     public Outcome handleRequest(Exchange exchange) throws Exception {
@@ -45,7 +42,7 @@ public class InternalServiceRoutingInterceptor extends AbstractInterceptor {
 
         Outcome outcome = routeService(exchange);
         if (outcome == RETURN) { // An interceptor returned RETURN, so shortcut flow and return
-            outcome = flowController.invokeResponseHandlers(exchange, getBackInterceptors(exchange));
+            outcome = getFlowController().invokeResponseHandlers(exchange, getBackInterceptors(exchange));
             if (outcome == CONTINUE) {
                 outcome = RETURN; // Signal that the flow reversed, even when during response flow an interceptor returns CONTINUE
             }
@@ -59,12 +56,12 @@ public class InternalServiceRoutingInterceptor extends AbstractInterceptor {
 
     @Override
     public void handleAbort(Exchange exc) {
-        flowController.invokeAbortHandlers(exc, getBackInterceptors(exc));
+        getFlowController().invokeAbortHandlers(exc, getBackInterceptors(exc));
     }
 
     @Override
     public Outcome handleResponse(Exchange exc) throws Exception {
-        return flowController.invokeResponseHandlers(exc, getBackInterceptors(exc));
+        return getFlowController().invokeResponseHandlers(exc, getBackInterceptors(exc));
     }
 
     /**
@@ -167,5 +164,10 @@ public class InternalServiceRoutingInterceptor extends AbstractInterceptor {
             }
         }
         return "/";
+    }
+
+    @Override
+    public String getDisplayName() {
+        return "Internal routing";
     }
 }

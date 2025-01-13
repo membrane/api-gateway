@@ -17,6 +17,7 @@ package com.predic8.membrane.core.lang.spel;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.lang.*;
+import com.predic8.membrane.core.util.*;
 import org.jetbrains.annotations.*;
 import org.slf4j.*;
 import org.springframework.core.convert.*;
@@ -42,7 +43,33 @@ public class SpELExchangeExpression extends AbstractExchangeExpression {
      */
     public SpELExchangeExpression(String expression, TemplateParserContext parserContext) {
         super(expression);
-        spelExpression = new SpelExpressionParser(getSpelParserConfiguration()).parseExpression( expression, parserContext );
+        String errorMessage;
+        String posLine = "";
+        try {
+            spelExpression = new SpelExpressionParser(getSpelParserConfiguration()).parseExpression( expression, parserContext );
+            return;
+        } catch (ParseException e) {
+            var pos = e.getPosition();
+            posLine = " ".repeat(pos) + "^";
+            errorMessage = e.getLocalizedMessage();
+        }
+        catch (Exception e) {
+            errorMessage = e.getMessage();
+        }
+        throw new ConfigurationException("""
+                    Configuration Error!
+                    
+                    The expression:
+                    
+                    %s
+                    %s
+                    
+                    caused:
+                    
+                    %s
+                    """.formatted(expression, posLine, errorMessage));
+
+                                         
     }
 
     @Override

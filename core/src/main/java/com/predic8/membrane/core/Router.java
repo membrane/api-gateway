@@ -84,6 +84,7 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
     private String baseLocation;
 
     protected RuleManager ruleManager = new RuleManager();
+    protected final FlowController flowController;
     protected ExchangeStore exchangeStore = new ForgetfulExchangeStore();
     protected Transport transport;
     protected ResolverMap resolverMap;
@@ -120,6 +121,7 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
         ruleManager.setRouter(this);
         resolverMap = new ResolverMap(timerManager, httpClientFactory, kubernetesClientFactory);
         resolverMap.addRuleResolver(this);
+        flowController = new FlowController(this);
     }
 
     public Collection<Proxy> getRules() {
@@ -134,20 +136,19 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
     }
 
     public static Router init(String configFileName) {
-        log.debug("loading spring config from classpath: {}", configFileName);
         return init(configFileName, Router.class.getClassLoader());
     }
 
     public static Router init(String resource, ClassLoader classLoader) {
         log.debug("loading spring config: {}", resource);
 
-        TrackingFileSystemXmlApplicationContext beanFactory =
+        TrackingFileSystemXmlApplicationContext bf =
                 new TrackingFileSystemXmlApplicationContext(new String[]{resource}, false);
-        beanFactory.setClassLoader(classLoader);
-        beanFactory.refresh();
-        beanFactory.start();
+        bf.setClassLoader(classLoader);
+        bf.refresh();
+        bf.start();
 
-        return beanFactory.getBean("router",Router.class);
+        return bf.getBean("router",Router.class);
     }
 
     @SuppressWarnings("NullableProblems")
@@ -605,5 +606,9 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
 
     public HttpClientFactory getHttpClientFactory() {
         return httpClientFactory;
+    }
+
+    public FlowController getFlowController() {
+        return flowController;
     }
 }

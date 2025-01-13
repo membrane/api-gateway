@@ -15,11 +15,11 @@
 package com.predic8.membrane.examples.tests;
 
 import com.predic8.membrane.examples.util.*;
-import org.hamcrest.*;
 import org.junit.jupiter.api.*;
 
 import static com.predic8.membrane.core.http.MimeType.*;
 import static io.restassured.RestAssured.*;
+import static org.hamcrest.Matchers.*;
 
 public class CBRXPathExampleTest extends DistributionExtractingTestcase {
 
@@ -38,7 +38,7 @@ public class CBRXPathExampleTest extends DistributionExtractingTestcase {
 				.post(LOCALHOST_2000)
 			.then()
 				.statusCode(200)
-				.body(Matchers.containsString("Normal"));
+				.body(containsString("Normal"));
 
 			given()
 				.contentType(APPLICATION_XML)
@@ -46,14 +46,14 @@ public class CBRXPathExampleTest extends DistributionExtractingTestcase {
 				.post(LOCALHOST_2000)
 			.then()
 				.statusCode(200)
-				.body(Matchers.containsString("Express"));
+				.body(containsString("Express"));
 
 			given()
 				.body(readFile("import.xml"))
 				.post(LOCALHOST_2000)
 				.then()
 				.statusCode(200)
-				.body(Matchers.containsString("import"));
+				.body(containsString("import"));
 			// @formatter:on
 		}
 	}

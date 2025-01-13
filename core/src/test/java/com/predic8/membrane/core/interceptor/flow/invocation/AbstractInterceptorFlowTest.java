@@ -49,6 +49,11 @@ abstract class AbstractInterceptorFlowTest {
         assertEquals(expected, given().post("http://localhost:2000").getBody().asString());
     }
 
+    protected String getResponse(Interceptor... interceptors) throws Exception {
+        setUpRouter(interceptors);
+        return given().post("http://localhost:2000").getBody().asString();
+    }
+
     private void setUpRouter(Interceptor[] interceptors) throws Exception {
         router.setRules(EMPTY_LIST);
         router.add(getApiProxy(interceptors));
