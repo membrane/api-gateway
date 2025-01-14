@@ -19,9 +19,7 @@ import com.predic8.membrane.core.interceptor.oauth2.tokengenerators.BearerTokenG
 import com.predic8.membrane.core.interceptor.oauth2client.OAuth2Resource2Interceptor;
 import com.predic8.membrane.core.interceptor.oauth2client.SessionOriginalExchangeStore;
 import com.predic8.membrane.core.interceptor.session.InMemorySessionManager;
-import com.predic8.membrane.core.interceptor.templating.StaticInterceptor;
 import com.predic8.membrane.core.interceptor.templating.TemplateInterceptor;
-import com.predic8.membrane.core.lang.ExchangeExpression;
 import com.predic8.membrane.core.proxies.SSLableProxy;
 import com.predic8.membrane.core.proxies.ServiceProxy;
 import com.predic8.membrane.core.proxies.ServiceProxyKey;
@@ -44,25 +42,25 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class OAuth2RedirectTest {
 
-    static Router azureRouter;
-    static Router membraneRouter;
-    static Router nginxRouter;
+    static Router authorizationServerRouter;
+    static Router oauth2ResourceRouter;
+    static Router backendRouter;
     static AtomicReference<String> firstUrlHit = new AtomicReference<>();
     static AtomicReference<String> targetUrlHit = new AtomicReference<>();
     static AtomicReference<String> interceptorChainHit = new AtomicReference<>();
 
     @BeforeEach
     void init() throws Exception {
-        azureRouter = startProxyRule(getAzureRule());
-        membraneRouter = startProxyRule(getMembraneRule());
-        nginxRouter = startProxyRule(getNginxRule());
+        authorizationServerRouter = startProxyRule(getAuthorizationServerRule());
+        oauth2ResourceRouter = startProxyRule(getOAuth2ResourceRule());
+        backendRouter = startProxyRule(getBackendRule());
     }
 
     @AfterEach
     void shutdown() throws IOException {
-        azureRouter.shutdown();
-        membraneRouter.shutdown();
-        nginxRouter.shutdown();
+        authorizationServerRouter.shutdown();
+        oauth2ResourceRouter.shutdown();
+        backendRouter.shutdown();
     }
 
     @Test
@@ -150,7 +148,7 @@ public class OAuth2RedirectTest {
         return router;
     }
 
-    private static @NotNull SSLableProxy getNginxRule() {
+    private static @NotNull SSLableProxy getBackendRule() {
         SSLableProxy nginxRule = new ServiceProxy(new ServiceProxyKey("localhost", "*", ".*", 2001), "localhost", 80);
         nginxRule.getInterceptors().add(new AbstractInterceptor() {
             @Override
@@ -165,7 +163,7 @@ public class OAuth2RedirectTest {
         return nginxRule;
     }
 
-    private static @NotNull SSLableProxy getMembraneRule() {
+    private static @NotNull SSLableProxy getOAuth2ResourceRule() {
         SSLableProxy membraneRule = new ServiceProxy(new ServiceProxyKey("localhost", "*", ".*", 2000), "localhost", 2001);
         membraneRule.getInterceptors().add(new AbstractInterceptor() {
             @Override
@@ -196,7 +194,7 @@ public class OAuth2RedirectTest {
         return membraneRule;
     }
 
-    private static @NotNull SSLableProxy getAzureRule() {
+    private static @NotNull SSLableProxy getAuthorizationServerRule() {
         SSLableProxy azureRule = new ServiceProxy(new ServiceProxyKey("localhost", "*", ".*", 2002), "localhost", 80);
         azureRule.getInterceptors().add(new LogInterceptor() {{
             setLevel(DEBUG);
