@@ -17,6 +17,7 @@ package com.predic8.membrane.core.lang.spel;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.lang.*;
+import com.predic8.membrane.core.util.*;
 import org.jetbrains.annotations.*;
 import org.slf4j.*;
 import org.springframework.core.convert.*;

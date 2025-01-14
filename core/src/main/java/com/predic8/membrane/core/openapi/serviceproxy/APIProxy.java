@@ -68,8 +68,8 @@ public class APIProxy extends ServiceProxy {
 
     @Override
     public void init() {
-        key = new APIProxyKey(key, test, !specs.isEmpty());
         super.init();
+        key = new APIProxyKey(key, test, !specs.isEmpty());
         initOpenAPI();
     }
 
@@ -104,7 +104,6 @@ public class APIProxy extends ServiceProxy {
                     List<OpenAPIRecord> l = paths.get(path);
                     // Check if the path is not from the same API. One OpenAPI can have several server.urls with the same path.
                     if (!l.contains(rec)) {
-                        log.error("Several OpenAPI documents of the API {} share the same path {}. Make sure that the values of info.servers.url in the OpenAPI documents are unique.", name, path);
                         throw new ConfigurationException("""
                             ================================================================================================
         

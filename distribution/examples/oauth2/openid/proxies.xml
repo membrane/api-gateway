@@ -9,9 +9,9 @@
         <serviceProxy name="Membrane Resource service" port="2000">
 
             <!-- Protects a resource with OAuth2 - blocks on invalid login -->
-            <oauth2Resource>
+            <oauth2Resource2>
                 <membrane subject="sub" src="https://accounts.google.com" clientId="YOUR CLIENT ID HERE" clientSecret="YOUR CLIENT SECRET HERE" scope="openid email profile" claims="name" claimsIdt="email" />
-            </oauth2Resource>
+            </oauth2Resource2>
 
             <!-- Use the information from the authentication server and pass it to the resource server (optional) -->
             <groovy>

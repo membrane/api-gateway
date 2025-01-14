@@ -23,7 +23,18 @@ package com.predic8.membrane.core.util;
  */
 public class ConfigurationException extends RuntimeException {
 
+    private Exception exception;
+
     public ConfigurationException(String message) {
         super(message);
+    }
+
+    public ConfigurationException(String message, Exception exception) {
+        super(message);
+        this.exception = exception;
+    }
+
+    public String getReason() {
+        return exception.getMessage();
     }
 }

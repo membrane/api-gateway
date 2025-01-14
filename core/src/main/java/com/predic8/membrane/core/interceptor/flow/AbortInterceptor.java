@@ -14,7 +14,6 @@
 package com.predic8.membrane.core.interceptor.flow;
 
 import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.interceptor.*;
 import org.slf4j.*;
@@ -36,7 +35,7 @@ public class AbortInterceptor extends AbstractFlowInterceptor {
 
     public AbortInterceptor() {
         name = "Abort";
-        setFlow(RESPONSE_ABORT);
+        setFlow(RESPONSE_ABORT_FLOW);
     }
 
     @Override
@@ -48,12 +47,7 @@ public class AbortInterceptor extends AbstractFlowInterceptor {
                 try {
                     interceptor.handleResponse(exchange);
                 } catch (Exception e) {
-                    log.error("{} interceptor caused an error in abort plugin. Message: {} \n{}",interceptor, e.getMessage(),e);
-                    ProblemDetails.internal(router.isProduction())
-                            .detail("Error in abort plugin")
-                            .component("abort")
-                            .exception(e)
-                            .buildAndSetResponse(exchange);
+                    createProblemDetails("abort", interceptor, exchange, e);
                 }
             }
         }

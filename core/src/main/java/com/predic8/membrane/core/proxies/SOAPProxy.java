@@ -79,6 +79,7 @@ public class SOAPProxy extends AbstractServiceProxy {
 
     @Override
     public void init() {
+        super.init();
         if (wsdl == null) {
             return;
         }
@@ -90,7 +91,6 @@ public class SOAPProxy extends AbstractServiceProxy {
             resolverMap.addSchemaResolver(httpSR);
         }
         configure();
-        super.init();
     }
 
     protected void configure() {

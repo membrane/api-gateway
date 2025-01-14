@@ -149,7 +149,7 @@ public class LogInterceptor extends AbstractInterceptor {
     }
 
     private static String dumpBody(Message msg) {
-        return "Body:\n{%s}\n".formatted(msg.getBodyAsStringDecoded());
+        return "Body:\n%s\n".formatted(msg.getBodyAsStringDecoded());
     }
 
     private void writeLog(String msg) {

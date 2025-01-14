@@ -14,7 +14,6 @@
 package com.predic8.membrane.core.interceptor.administration;
 
 import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.interceptor.rewrite.*;
@@ -31,27 +30,25 @@ import static com.predic8.membrane.core.http.Header.*;
 @MCElement(name="adminConsole")
 public class AdminConsoleInterceptor extends AbstractInterceptor {
 
-	private final RewriteInterceptor r = new RewriteInterceptor();
+	private final RewriteInterceptor rewriteInterceptor = new RewriteInterceptor();
 	private final DynamicAdminPageInterceptor dapi = new DynamicAdminPageInterceptor();
 	private final AdminRESTInterceptor rai = new AdminRESTInterceptor();
 	private final WebServerInterceptor wsi = new WebServerInterceptor();
 
 	// these are the interceptors this interceptor consists of
-	private final List<Interceptor> interceptors = Arrays.asList(new Interceptor[] { r, rai, dapi, wsi });
-	private final FlowController flowController = new FlowController();
+	private final List<Interceptor> interceptors = Arrays.asList(new Interceptor[] {rewriteInterceptor, rai, dapi, wsi });
 
 	private boolean useXForwardedForAsClientAddr = false;
 
 	public AdminConsoleInterceptor() {
 		name = "Administration";
-
-		r.getMappings().add(new RewriteInterceptor.Mapping("^/?$", "/admin", "redirect"));
+		rewriteInterceptor.getMappings().add(new RewriteInterceptor.Mapping("^/?$", "/admin", "redirect"));
 		wsi.setDocBase("classpath:/com/predic8/membrane/core/interceptor/administration/docBase");
 	}
 
 	@Override
-	public Outcome handleRequest(Exchange exc) throws Exception {
-		Outcome result = flowController.invokeRequestHandlers(exc, interceptors);
+	public Outcome handleRequest(Exchange exc) {
+		Outcome result = getFlowController().invokeRequestHandlers(exc, interceptors);
 
 		if (exc.getRequest().getHeader().getFirstValue(X_REQUESTED_WITH) != null && exc.getResponse() != null)
 			exc.getResponse().getHeader().add(EXPIRES, "-1");
@@ -60,9 +57,9 @@ public class AdminConsoleInterceptor extends AbstractInterceptor {
 	}
 
 	@Override
-	public void init(Router router) throws Exception {
-		super.init(router);
-		r.init(router);
+	public void init( {
+		super.init();
+		rewriteInterceptor.init(router);
 		rai.setUseXForwardedForAsClientAddr(useXForwardedForAsClientAddr);
 		rai.init(router);
 		dapi.setUseXForwardedForAsClientAddr(useXForwardedForAsClientAddr);

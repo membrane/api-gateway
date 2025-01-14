@@ -19,9 +19,9 @@ import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.http.Request.*;
 import com.predic8.membrane.core.http.Response.*;
 import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.util.*;
 import org.jetbrains.annotations.*;
 import org.junit.jupiter.api.*;
-import org.springframework.expression.spel.*;
 
 import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
@@ -55,8 +55,8 @@ public class IfInterceptorSpELTest extends ConditionalEvaluationTestContext {
 
     @Test
     void invalidSpEL() {
-        assertThrows(SpelParseException.class, () -> eval("foobar][", new Builder()));
-        assertThrows(SpelParseException.class, () -> eval("foobar][", new ResponseBuilder()));
+        assertThrows(ConfigurationException.class, () -> eval("foobar][", new Builder()));
+        assertThrows(ConfigurationException.class, () -> eval("foobar][", new ResponseBuilder()));
     }
 
     @Test

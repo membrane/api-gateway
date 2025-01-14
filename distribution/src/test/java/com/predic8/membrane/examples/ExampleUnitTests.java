@@ -13,13 +13,13 @@
    limitations under the License. */
 package com.predic8.membrane.examples;
 
-import com.predic8.membrane.examples.tests.integration.OAuth2Test;
+import com.predic8.membrane.examples.tests.integration.OAuth2ExampleTest;
 import org.junit.platform.suite.api.SelectClasses;
 import org.junit.platform.suite.api.Suite;
 
 @Suite
 @SelectClasses({
 	ConfigSerializationTest.class,
-	OAuth2Test.class
+	OAuth2ExampleTest.class
 })
 public class ExampleUnitTests {}

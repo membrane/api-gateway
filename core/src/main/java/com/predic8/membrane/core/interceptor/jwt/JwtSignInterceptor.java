@@ -12,33 +12,26 @@
  */
 package com.predic8.membrane.core.interceptor.jwt;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCChildElement;
-import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.Router;
-import com.predic8.membrane.core.exceptions.ProblemDetails;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Message;
-import com.predic8.membrane.core.interceptor.AbstractInterceptor;
-import com.predic8.membrane.core.interceptor.Outcome;
-import com.predic8.membrane.core.interceptor.apikey.ApiKeysInterceptor;
-import com.predic8.membrane.core.interceptor.session.JwtSessionManager;
-import org.jose4j.json.JsonUtil;
-import org.jose4j.jwk.RsaJsonWebKey;
-import org.jose4j.jws.AlgorithmIdentifiers;
-import org.jose4j.jws.JsonWebSignature;
-import org.jose4j.lang.JoseException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.fasterxml.jackson.databind.*;
+import com.fasterxml.jackson.databind.node.*;
+import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.exceptions.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.interceptor.session.*;
+import com.predic8.membrane.core.util.*;
+import org.jose4j.json.*;
+import org.jose4j.jwk.*;
+import org.jose4j.jws.*;
+import org.jose4j.lang.*;
+import org.slf4j.*;
 
-import java.io.IOException;
+import java.io.*;
 
-import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
-import static com.predic8.membrane.core.interceptor.Interceptor.Flow.RESPONSE;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
 import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
-import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
+import static com.predic8.membrane.core.interceptor.Outcome.*;
 
 @MCElement(name = "jwtSign")
 public class JwtSignInterceptor extends AbstractInterceptor {
@@ -52,8 +45,15 @@ public class JwtSignInterceptor extends AbstractInterceptor {
     private final ObjectMapper om = new ObjectMapper();
 
     @Override
-    public void init(Router router) throws Exception {
-        rsaJsonWebKey = new RsaJsonWebKey(JsonUtil.parseJson(jwk.get(router.getResolverMap(), router.getBaseLocation())));
+    public void init() {
+        super.init();
+        try {
+            rsaJsonWebKey = new RsaJsonWebKey(JsonUtil.parseJson(jwk.get(router.getResolverMap(), router.getBaseLocation())));
+        } catch (JoseException e) {
+            throw new ConfigurationException("Cannot create RSA JSON Web Key",e);
+        } catch (IOException e) {
+            throw new ConfigurationException("Cannot parse JWK",e);
+        }
     }
 
     @Override

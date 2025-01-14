@@ -15,7 +15,6 @@
 package com.predic8.membrane.core.interceptor.lang;
 
 import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.interceptor.*;
@@ -38,8 +37,8 @@ public abstract class AbstractSetterInterceptor extends AbstractLanguageIntercep
     protected boolean ifAbsent;
 
     @Override
-    public void init(Router router) throws Exception {
-        super.init(router);
+    public void init() {
+        super.init();
         // SpEL comes with its own templating
         if (language == SPEL) {
             exchangeExpression = new SpELExchangeExpression(expression, new SpELExchangeExpression.DollarBracketTemplateParserContext());
@@ -62,20 +61,24 @@ public abstract class AbstractSetterInterceptor extends AbstractLanguageIntercep
         if (!shouldSetValue(exchange, flow))
             return CONTINUE;
 
+        String msg;
         try {
             setValue(exchange, flow, exchangeExpression.evaluate(exchange, flow, Object.class));
-        } catch (Exception e) {
-            if (failOnError) {
-                ProblemDetails.internal(getRouter().isProduction())
-                        .title("Error evaluating expression!")
-                        .component(getDisplayName())
-                        .extension("field", fieldName)
-                        .extension("value", expression)
-                        .buildAndSetResponse(exchange);
-                return ABORT;
-            }
+            return CONTINUE;
+        catch (Exception e) {
+            msg = e.getMessage();
         }
-        return CONTINUE;
+        if (!failOnError)
+            return CONTINUE;
+        ProblemDetails.internal(getRouter().isProduction())
+                .title("Error evaluating expression!")
+                .detail(msg)
+                .extension("field", name)
+                .extension("value", expression)
+                .component(getDisplayName())
+                .stacktrace(false)
+                .buildAndSetResponse(exchange);
+        return ABORT;
     }
 
     protected abstract boolean shouldSetValue(Exchange exchange, Flow flow);
@@ -91,7 +94,7 @@ public abstract class AbstractSetterInterceptor extends AbstractLanguageIntercep
         return ifAbsent;
     }
 
-    @MCAttribute
+    @MCAttribute(attributeName = "name")
     public void setFieldName(String fieldName) {
         this.fieldName = fieldName;
     }

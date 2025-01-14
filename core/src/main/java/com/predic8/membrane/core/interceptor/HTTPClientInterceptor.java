@@ -14,7 +14,6 @@
 package com.predic8.membrane.core.interceptor;
 
 import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.transport.http.*;
@@ -50,7 +49,7 @@ public class HTTPClientInterceptor extends AbstractInterceptor {
 
     public HTTPClientInterceptor() {
         name = "HTTPClient";
-        setFlow(REQUEST);
+        setFlow(REQUEST_FLOW);
     }
 
     @Override
@@ -89,9 +88,8 @@ public class HTTPClientInterceptor extends AbstractInterceptor {
     }
 
     @Override
-    public void init(Router router) throws Exception {
-        super.init(router);
-
+    public void init() {
+        super.init();
         hc = router.getHttpClientFactory().createClient(httpClientConfig);
         hc.setStreamPumpStats(getRouter().getStatistics().getStreamPumpStats());
     }
