@@ -44,7 +44,7 @@ public abstract class AbstractSetterInterceptor extends AbstractLanguageIntercep
         if (language == SPEL) {
             exchangeExpression = new SpELExchangeExpression(expression, new SpELExchangeExpression.DollarBracketTemplateParserContext());
         } else {
-            exchangeExpression = new TemplateExchangeExpression(router, language, expression);
+            exchangeExpression = TemplateExchangeExpression.newInstance(router, language, expression);
         }
     }
 

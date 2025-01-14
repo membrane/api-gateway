@@ -14,6 +14,7 @@
 
 package com.predic8.membrane.core.interceptor.schemavalidation;
 
+import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
@@ -37,6 +38,8 @@ public class ValidatorInterceptorTest {
 
 	private static Exchange exc;
 
+	private static Router router;
+
 	public static final String ARTICLE_SERVICE_WSDL = "classpath:/validation/ArticleService.wsdl";
 
 	public static final String ARTICLE_SERVICE_BOM_WSDL = "classpath:/validation/ArticleService-bom.xml";
@@ -45,11 +48,13 @@ public class ValidatorInterceptorTest {
 
 	public static final String E_MAIL_SERVICE_WSDL = "classpath:/validation/XWebEmailValidation.wsdl.xml";
 
+
 	@BeforeAll
 	public static void setUp() throws Exception {
 		requestTB = MessageUtil.getPostRequest("http://thomas-bayer.com");
 		requestXService = MessageUtil.getPostRequest("http://ws.xwebservices.com");
 		exc = new Exchange(null);
+		router = new Router();
 	}
 
 	@Test
@@ -141,7 +146,7 @@ public class ValidatorInterceptorTest {
 		ValidatorInterceptor interceptor = new ValidatorInterceptor();
 		interceptor.setResourceResolver(new ResolverMap());
 		interceptor.setSchema(schema);
-		interceptor.init();
+		interceptor.init(router);
 		return interceptor;
 	}
 
@@ -149,7 +154,7 @@ public class ValidatorInterceptorTest {
 		ValidatorInterceptor interceptor = new ValidatorInterceptor();
 		interceptor.setResourceResolver(new ResolverMap());
 		interceptor.setWsdl(wsdl);
-		interceptor.init();
+		interceptor.init(router);
 		return interceptor;
 	}
 
