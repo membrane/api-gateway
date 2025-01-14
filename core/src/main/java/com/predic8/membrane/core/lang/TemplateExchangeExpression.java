@@ -16,7 +16,6 @@ package com.predic8.membrane.core.lang;
 import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.interceptor.Interceptor.*;
-
 import com.predic8.membrane.core.lang.spel.*;
 
 import org.slf4j.*;
@@ -24,7 +23,7 @@ import org.slf4j.*;
 import java.util.*;
 import java.util.regex.*;
 
-import static com.predic8.membrane.core.lang.ExchangeExpression.Language.SPEL;
+import static com.predic8.membrane.core.lang.ExchangeExpression.Language.*;
 
 public class TemplateExchangeExpression extends AbstractExchangeExpression {
 
@@ -52,15 +51,36 @@ public class TemplateExchangeExpression extends AbstractExchangeExpression {
 
     @Override
     public <T> T evaluate(Exchange exchange, Flow flow, Class<T> type) {
+        if (tokens.isEmpty()) {
+            return null;
+        }
+        if (tokens.size() == 1) {
+            if (type.getName().equals(String.class.getName())) {
+                return type.cast(evaluateToString(exchange, flow));
+            }
+            return type.cast(evaluateToObject(exchange, flow));
+        }
+        return type.cast( evaluateToString(exchange, flow));
+    }
+
+    private Object evaluateToObject(Exchange exchange, Flow flow) {
+        try {
+            return tokens.getFirst().eval(exchange, flow,Object.class);
+        } catch (Exception e) {
+            throw new ExchangeExpressionException(tokens.getFirst().toString(),e);
+        }
+    }
+
+    private String evaluateToString(Exchange exchange, Flow flow) {
         StringBuilder line = new StringBuilder();
         for(Token token : tokens) {
             try {
-                line.append(token.eval(exchange, flow));
+                line.append(token.eval(exchange, flow, String.class));
             } catch (Exception e) {
                 throw new ExchangeExpressionException(token.toString(),e);
             }
         }
-        return (T) line.toString();
+        return line.toString();
     }
 
     protected static List<Token> parseTokens(Router router, Language language, String expression) {
@@ -83,7 +103,7 @@ public class TemplateExchangeExpression extends AbstractExchangeExpression {
     }
 
     interface Token {
-        String eval(Exchange exchange, Flow flow) throws Exception;
+        <T> T eval(Exchange exchange, Flow flow, Class<T>  type);
         String getExpression();
     }
 
@@ -96,8 +116,8 @@ public class TemplateExchangeExpression extends AbstractExchangeExpression {
         }
 
         @Override
-        public String eval(Exchange exchange, Flow flow) {
-            return value;
+        public <T> T eval(Exchange exchange, Flow flow, Class<T>  type) {
+            return type.cast(value);
         }
 
         @Override
@@ -128,8 +148,8 @@ public class TemplateExchangeExpression extends AbstractExchangeExpression {
         }
 
         @Override
-        public String eval(Exchange exchange, Flow flow) throws Exception {
-            return exchangeExpression.evaluate(exchange, flow, String.class);
+        public <T> T eval(Exchange exchange, Flow flow, Class<T>  type) {
+            return exchangeExpression.evaluate(exchange, flow, type);
         }
 
         @Override

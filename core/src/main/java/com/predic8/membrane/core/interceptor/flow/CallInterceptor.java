@@ -29,7 +29,7 @@ import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 
 @MCElement(name = "call")
-public class CallInterceptor extends AbstractLanguageInterceptor {
+public class CallInterceptor extends AbstractExchangeExpressionInterceptor {
 
     private static final Logger log = LoggerFactory.getLogger(CallInterceptor.class.getName());
 
@@ -50,7 +50,6 @@ public class CallInterceptor extends AbstractLanguageInterceptor {
         super.init();
         hcInterceptor = new HTTPClientInterceptor();
         hcInterceptor.init(router);
-        exchangeExpression = TemplateExchangeExpression.newInstance(router, language, url);
     }
 
     @Override
