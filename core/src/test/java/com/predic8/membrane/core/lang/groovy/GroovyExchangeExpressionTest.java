@@ -22,6 +22,7 @@ import java.util.*;
 import static com.predic8.membrane.core.lang.ExchangeExpression.Language.*;
 import static org.junit.jupiter.api.Assertions.*;
 
+@SuppressWarnings("rawtypes")
 class GroovyExchangeExpressionTest extends AbstractExchangeExpressionTest {
 
     @Override

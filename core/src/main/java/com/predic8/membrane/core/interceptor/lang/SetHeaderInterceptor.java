@@ -15,11 +15,11 @@ package com.predic8.membrane.core.interceptor.lang;
 
 import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.*;
 
 @MCElement(name = "setHeader")
 public class SetHeaderInterceptor extends AbstractSetterInterceptor {
 
+    @SuppressWarnings("rawtypes")
     @Override
     protected Class getExpressionReturnType() {
         return String.class;
@@ -28,27 +28,14 @@ public class SetHeaderInterceptor extends AbstractSetterInterceptor {
     @Override
     protected boolean shouldSetValue(Exchange exc, Flow flow) {
         if (ifAbsent) {
-            return !msgFromExchange(exc, flow).getHeader().contains(fieldName);
+            return !exc.getMessage(flow).getHeader().contains(fieldName);
         }
         return true;
     }
 
     @Override
     protected void setValue(Exchange exc, Flow flow, Object value) {
-        msgFromExchange(exc, flow).getHeader().setValue(fieldName, value.toString());
-    }
-
-    /**
-     * TOOO this is duplicated and can be found somewhere else
-     * @param exc
-     * @param flow
-     * @return
-     */
-    private Message msgFromExchange(Exchange exc, Flow flow) {
-        return switch (flow) {
-            case REQUEST -> exc.getRequest();
-            case RESPONSE, ABORT -> exc.getResponse();
-        };
+        exc.getMessage(flow).getHeader().setValue(fieldName, value.toString());
     }
 
     @Override

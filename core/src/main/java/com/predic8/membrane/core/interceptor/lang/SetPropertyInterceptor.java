@@ -19,6 +19,7 @@ import com.predic8.membrane.core.exchange.*;
 @MCElement(name = "setProperty")
 public class SetPropertyInterceptor extends AbstractSetterInterceptor {
 
+    @SuppressWarnings("rawtypes")
     @Override
     protected Class getExpressionReturnType() {
         return Object.class;

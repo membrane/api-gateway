@@ -41,7 +41,7 @@ public class JsonpathExchangeExpression extends AbstractExchangeExpression {
     public <T> T evaluate(Exchange exchange, Flow flow, Class<T> type) {
         try {
             Object o = execute(exchange, flow);
-            if (type.getName() == "java.lang.Object" || type.isInstance(o)) {
+            if (type.getName().equals("java.lang.Object") || type.isInstance(o)) {
                 return type.cast(o);
             }
             if (type.isAssignableFrom(Boolean.class)) {
@@ -52,7 +52,7 @@ public class JsonpathExchangeExpression extends AbstractExchangeExpression {
             }
             if (type.isAssignableFrom(String.class)) {
                 if (o instanceof List l) {
-                    return type.cast(l.get(0).toString());
+                    return type.cast(l.getFirst().toString());
                 }
                 if (o instanceof JSONAware ja) {
                     return type.cast(ja.toJSONString());

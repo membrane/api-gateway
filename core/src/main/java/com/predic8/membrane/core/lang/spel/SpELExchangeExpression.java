@@ -39,7 +39,7 @@ public class SpELExchangeExpression extends AbstractExchangeExpression {
      * Creates an expression "expr" or a templated "..${expr}...${expr}...", depending on
      * the second parameter.
      *
-     * @param expression
+     * @param expression SpEL expression
      * @param parserContext null or one with configuration of prefix and suffix e.g. ${ and }
      */
     public SpELExchangeExpression(String expression, TemplateParserContext parserContext) {
