@@ -18,6 +18,7 @@ import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.interceptor.lang.*;
 
 import java.io.*;
 
@@ -32,18 +33,17 @@ import static org.slf4j.LoggerFactory.*;
  * @topic 5. Monitoring, Logging and Statistics
  */
 @MCElement(name = "log")
-public class LogInterceptor extends AbstractInterceptor {
+public class LogInterceptor extends AbstractLanguageInterceptor {
 
     public enum Level {
         TRACE, DEBUG, INFO, WARN, ERROR, FATAL
     }
 
-    private boolean body = true;
-    private String category = LogInterceptor.class.getName();
     private Level level = INFO;
+    private String category = LogInterceptor.class.getName();
+
     private String label = "";
-    private boolean properties;
-    private boolean exchange;
+    private boolean body = true;
 
     public LogInterceptor() {
         name = "Log";
@@ -103,12 +103,6 @@ public class LogInterceptor extends AbstractInterceptor {
 
     private void logMessage(Exchange exc, Message msg) {
 
-        if (exchange)
-            dump(exc);
-
-        if (properties)
-            dumpProperties(exc);
-
         if (msg==null)
             return;
         writeLog(msg.getStartLine());
@@ -129,25 +123,6 @@ public class LogInterceptor extends AbstractInterceptor {
             writeLog(dumpBody(msg));
         }
     }
-
-    private void dumpProperties(Exchange exc) {
-        writeLog("Properties: " + exc.getProperties());
-    }
-
-    private void dump(Exchange exc) {
-        writeLog("""
-                
-                Exchange:
-                  Request URI:
-                """);
-        writeLog(exc.getRequestURI());
-        writeLog("""
-                Exchange:
-                  Request URI: %s
-                  Destinations: %s
-                """.formatted(exc.getRequestURI(),exc.getDestinations().toString()));
-    }
-
     private static String dumpBody(Message msg) {
         return "Body:\n%s\n".formatted(msg.getBodyAsStringDecoded());
     }
@@ -199,32 +174,19 @@ public class LogInterceptor extends AbstractInterceptor {
         this.label = label;
     }
 
-    public boolean getProperties() {
-        return properties;
+    @Override
+    public String getDisplayName() {
+        return "Log";
     }
 
     /**
-     * @default false
-     * @description Dump exchange properties
-     * @example
+     * Message to write into the log. Can be an expression.
      */
-    @SuppressWarnings("unused")
-    @MCAttribute
-    public void setProperties(boolean properties) {
-        this.properties = properties;
+    public void setMessage(String message) {
+        expression = message;
     }
 
-    public boolean isExchange() {
-        return exchange;
-    }
-
-    /**
-     * @default false
-     * @description Dump exchange
-     * @example
-     */
-    @MCAttribute
-    public void setExchange(boolean exchange) {
-        this.exchange = exchange;
+    public String getMessage() {
+        return expression;
     }
 }

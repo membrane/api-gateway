@@ -28,7 +28,7 @@ import static com.predic8.membrane.core.interceptor.Outcome.*;
 
 import static com.predic8.membrane.core.lang.ExchangeExpression.Language.*;
 
-public abstract class AbstractSetterInterceptor extends AbstractLanguageInterceptor {
+public abstract class AbstractSetterInterceptor extends AbstractExchangeExpressionInterceptor {
 
     private static final Logger log = LoggerFactory.getLogger(AbstractSetterInterceptor.class);
 
@@ -36,17 +36,6 @@ public abstract class AbstractSetterInterceptor extends AbstractLanguageIntercep
 
     protected String fieldName;
     protected boolean ifAbsent;
-
-    @Override
-    public void init() {
-        super.init();
-        // SpEL comes with its own templating
-        if (language == SPEL) {
-            exchangeExpression = new SpELExchangeExpression(expression, new SpELExchangeExpression.DollarBracketTemplateParserContext());
-        } else {
-            exchangeExpression = TemplateExchangeExpression.newInstance(router, language, expression);
-        }
-    }
 
     @Override
     public Outcome handleRequest(Exchange exc) {
