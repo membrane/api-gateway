@@ -62,6 +62,7 @@ public class ValidatorInterceptor extends AbstractInterceptor implements Applica
 
 	@Override
 	public void init() {
+		super.init();
 		resourceResolver = router.getResolverMap();
         try {
 			validator = getMessageValidator();

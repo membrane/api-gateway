@@ -25,7 +25,7 @@ import org.slf4j.*;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
 import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
-import static com.predic8.membrane.core.lang.ExchangeExpression.Language.SPEL;
+import static com.predic8.membrane.core.lang.ExchangeExpression.Language.*;
 
 public abstract class AbstractSetterInterceptor extends AbstractLanguageInterceptor {
 
@@ -43,7 +43,7 @@ public abstract class AbstractSetterInterceptor extends AbstractLanguageIntercep
         if (language == SPEL) {
             exchangeExpression = new SpELExchangeExpression(expression, new SpELExchangeExpression.DollarBracketTemplateParserContext());
         } else {
-            exchangeExpression = new TemplateExchangeExpression(router, language, expression);
+            exchangeExpression = TemplateExchangeExpression.newInstance(router, language, expression);
         }
     }
 
@@ -61,24 +61,20 @@ public abstract class AbstractSetterInterceptor extends AbstractLanguageIntercep
         if (!shouldSetValue(exchange, flow))
             return CONTINUE;
 
-        String msg;
         try {
             setValue(exchange, flow, exchangeExpression.evaluate(exchange, flow, Object.class));
-            return CONTINUE;
-        catch (Exception e) {
-            msg = e.getMessage();
+        } catch (Exception e) {
+            if (failOnError) {
+                ProblemDetails.internal(getRouter().isProduction())
+                        .title("Error evaluating expression!")
+                        .component(getDisplayName())
+                        .extension("field", fieldName)
+                        .extension("value", expression)
+                        .buildAndSetResponse(exchange);
+                return ABORT;
+            }
         }
-        if (!failOnError)
-            return CONTINUE;
-        ProblemDetails.internal(getRouter().isProduction())
-                .title("Error evaluating expression!")
-                .detail(msg)
-                .extension("field", name)
-                .extension("value", expression)
-                .component(getDisplayName())
-                .stacktrace(false)
-                .buildAndSetResponse(exchange);
-        return ABORT;
+        return CONTINUE;
     }
 
     protected abstract boolean shouldSetValue(Exchange exchange, Flow flow);

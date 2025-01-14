@@ -57,7 +57,7 @@ public class AdminConsoleInterceptor extends AbstractInterceptor {
 	}
 
 	@Override
-	public void init( {
+	public void init() {
 		super.init();
 		rewriteInterceptor.init(router);
 		rai.setUseXForwardedForAsClientAddr(useXForwardedForAsClientAddr);
