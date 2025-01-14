@@ -7,6 +7,7 @@ import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.authentication.session.StaticUserDataProvider;
 import com.predic8.membrane.core.interceptor.flow.IfInterceptor;
+import com.predic8.membrane.core.interceptor.flow.ResponseInterceptor;
 import com.predic8.membrane.core.interceptor.flow.ReturnInterceptor;
 import com.predic8.membrane.core.interceptor.log.LogInterceptor;
 import com.predic8.membrane.core.interceptor.oauth2.ClaimList;
@@ -19,6 +20,8 @@ import com.predic8.membrane.core.interceptor.oauth2client.OAuth2Resource2Interce
 import com.predic8.membrane.core.interceptor.oauth2client.SessionOriginalExchangeStore;
 import com.predic8.membrane.core.interceptor.session.InMemorySessionManager;
 import com.predic8.membrane.core.interceptor.templating.StaticInterceptor;
+import com.predic8.membrane.core.interceptor.templating.TemplateInterceptor;
+import com.predic8.membrane.core.lang.ExchangeExpression;
 import com.predic8.membrane.core.proxies.SSLableProxy;
 import com.predic8.membrane.core.proxies.ServiceProxy;
 import com.predic8.membrane.core.proxies.ServiceProxyKey;
@@ -82,7 +85,11 @@ public class OAuth2RedirectTest {
         // Step 8: Redirect back to client
         String callbackUrl = OAuth2.step8redirectToClient();
         // Step 9: Exchange Code for Token & continue original request.·
-        OAuth2.step9exchangeCodeForToken(callbackUrl);
+        OAuth2.step9exchangeCodeForToken(
+                callbackUrl,
+                "GET / application/x-www-form-urlencoded; charset=ISO-8859-1 / "
+                // method is 'GET', Content-Type is x-www, body is empty
+        );
 
         assertEquals(firstUrlHit.get(), targetUrlHit.get(), "Check that URL survived encoding.");
         assertEquals(firstUrlHit.get(), interceptorChainHit.get(), "Is interceptor chain correctly continued?");
@@ -108,7 +115,11 @@ public class OAuth2RedirectTest {
         // Step 8: Redirect back to client
         String callbackUrl = OAuth2.step8redirectToClient();
         // Step 9: Exchange Code for Token & continue original request.·
-        OAuth2.step9exchangeCodeForToken(callbackUrl);
+        OAuth2.step9exchangeCodeForToken(
+                callbackUrl,
+                "POST / text/x-json; charset=ISO-8859-1 / [true]"
+                // method is POST, Content-Type text/x-json, body is '[true]'
+        );
 
         assertTrue(targetUrlHit.get().startsWith(firstUrlHit.get() + "&oa2redirect"), "Check that URL survived encoding.");
         assertEquals(firstUrlHit.get(), interceptorChainHit.get(), "Is interceptor chain correctly continued?");
@@ -118,9 +129,15 @@ public class OAuth2RedirectTest {
         return new IfInterceptor() {{
             setLanguage(SPEL);
             setTest(test);
-            setInterceptors(List.of(new StaticInterceptor() {{
-                setTextTemplate(returnMessage);
-            }}));
+            setInterceptors(List.of(
+                new ResponseInterceptor() {{
+                    setInterceptors(List.of(
+                        new TemplateInterceptor() {{
+                            setTextTemplate(returnMessage);
+                        }}
+                    ));
+                }}
+            ));
         }};
     }
 
@@ -142,8 +159,8 @@ public class OAuth2RedirectTest {
                 return Outcome.CONTINUE;
             }
         });
-        nginxRule.getInterceptors().add(createConditionalInterceptorWithReturnMessage("method == 'POST'", "POST"));
-        nginxRule.getInterceptors().add(createConditionalInterceptorWithReturnMessage("method == 'GET'", "GET"));
+        nginxRule.getInterceptors().add(createConditionalInterceptorWithReturnMessage("method == 'POST'", "POST / ${exc.request.header.getFirstValue('Content-Type')} / ${exc.request.body}"));
+        nginxRule.getInterceptors().add(createConditionalInterceptorWithReturnMessage("method == 'GET'", "GET / ${exc.request.header.getFirstValue('Content-Type')} / ${exc.request.body}"));
         nginxRule.getInterceptors().add(new ReturnInterceptor());
         return nginxRule;
     }

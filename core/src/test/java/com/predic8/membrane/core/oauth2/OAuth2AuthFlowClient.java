@@ -1,5 +1,6 @@
 package com.predic8.membrane.core.oauth2;
 
+import io.restassured.filter.log.LogDetail;
 import io.restassured.response.Response;
 import org.jetbrains.annotations.NotNull;
 
@@ -7,8 +8,12 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static io.restassured.RestAssured.given;
+import static io.restassured.filter.log.LogDetail.BODY;
+import static org.apache.http.HttpHeaders.CONTENT_TYPE;
 import static org.apache.http.HttpHeaders.LOCATION;
+import static org.hamcrest.Matchers.is;
 import static org.hamcrest.text.MatchesPattern.matchesPattern;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class OAuth2AuthFlowClient {
 
@@ -38,6 +43,8 @@ public class OAuth2AuthFlowClient {
         Response response =
                 given()
                     .redirects().follow(false)
+                    .headers(CONTENT_TYPE, "text/x-json")
+                    .body("[true]")
                 .when()
                     .post(CLIENT_URL)
                 .then()
@@ -141,15 +148,16 @@ public class OAuth2AuthFlowClient {
                 .extract().response().getHeader(LOCATION);
     }
 
-    void step9exchangeCodeForToken(String location) {
+    void step9exchangeCodeForToken(String location, String expectedBody) {
         given()
             .redirects().follow(false)
             .cookies(memCookies)
         .when()
             .post(location)
         .then()
+            .log().ifValidationFails(BODY)
             .statusCode(200)
-            .extract().response();
+            .assertThat().body(is(expectedBody));
     }
     // @formatter:on
 }
