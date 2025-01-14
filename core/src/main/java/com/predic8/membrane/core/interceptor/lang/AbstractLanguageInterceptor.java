@@ -16,7 +16,6 @@ package com.predic8.membrane.core.interceptor.lang;
 
 import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.lang.*;
 import com.predic8.membrane.core.lang.ExchangeExpression.*;
 
 import static com.predic8.membrane.core.lang.ExchangeExpression.Language.*;
@@ -29,8 +28,6 @@ public abstract class AbstractLanguageInterceptor extends AbstractInterceptor {
     protected Language language = SPEL;
 
     protected String expression;
-
-    protected ExchangeExpression exchangeExpression;
 
     public Language getLanguage() {
         return language;
