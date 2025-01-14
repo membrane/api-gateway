@@ -16,9 +16,10 @@ package com.predic8.membrane.core.lang.groovy;
 
 import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.interceptor.Interceptor;
 import com.predic8.membrane.core.lang.*;
 import com.predic8.membrane.core.util.ConfigurationException;
+import groovy.lang.*;
 import org.codehaus.groovy.control.*;
 
 import java.util.*;
@@ -28,14 +29,14 @@ import static com.predic8.membrane.core.lang.ScriptingUtils.*;
 
 public class GroovyExchangeExpression extends AbstractExchangeExpression {
 
-    private final Function<Map<String, Object>, Boolean> condition;
+    private final Function<Map<String, Object>, Object> script;
     private final Router router;
 
     public GroovyExchangeExpression(Router router, String source) {
         super(source);
         this.router = router;
         try {
-            condition = new GroovyLanguageSupport().compileExpression(router.getBackgroundInitializator(), null, source);
+            script = new GroovyLanguageSupport().compileScript(router.getBackgroundInitializator(), null, source);
         } catch (MultipleCompilationErrorsException e) {
             throw new ConfigurationException("Cannot compile Groovy Script.",e);
         }
@@ -43,6 +44,27 @@ public class GroovyExchangeExpression extends AbstractExchangeExpression {
 
     @Override
     public <T> T evaluate(Exchange exchange, Interceptor.Flow flow, Class<T> type) {
-        return type.cast(condition.apply(createParameterBindings(router, exchange, flow, false)));
+        Object o = null;
+        try {
+            o = script.apply(createParameterBindings(router, exchange, flow, false));
+        } catch (MissingPropertyException mpe) {
+            if (type.getName().equals(Object.class.getName())) {
+                return null;
+            }
+            if (type.isAssignableFrom(String.class)) {
+                return type.cast("");
+            }
+        }
+        if (type.getName().equals(String.class.getName())) {
+            if (o == null) {
+                return type.cast("");
+            }
+            if (type.isInstance(o))
+                return type.cast(o);
+        }
+        if (o == null) {
+            return null;
+        }
+        return type.cast(o);
     }
 }

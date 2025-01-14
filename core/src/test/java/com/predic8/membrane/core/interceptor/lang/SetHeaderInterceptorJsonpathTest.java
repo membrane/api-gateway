@@ -55,7 +55,7 @@ class SetHeaderInterceptorJsonpathTest extends AbstractSetHeaderInterceptorTest 
     }
 
     @Test
-    void jsonPath() throws Exception {
+    void jsonPath() {
         interceptor.setValue("${$.name}");
         interceptor.init(router);
         interceptor.handleRequest(exchange);
@@ -64,7 +64,7 @@ class SetHeaderInterceptorJsonpathTest extends AbstractSetHeaderInterceptorTest 
 
     @Test
     @DisplayName("Only set if the header is absent")
-    void onlyIfAbsent() throws Exception {
+    void onlyIfAbsent() {
         exchange.getRequest().getHeader().add("X-FOO", "0");
         interceptor.setFieldName("X-FOO");
         interceptor.setValue("42");
@@ -87,7 +87,7 @@ class SetHeaderInterceptorJsonpathTest extends AbstractSetHeaderInterceptorTest 
 
     @Test
     @DisplayName("Overwrite header when it is not absent")
-    void notIfAbsent() throws Exception {
+    void notIfAbsent() {
         exchange.getRequest().getHeader().add("X-FOO", "0");
         interceptor.setFieldName("X-FOO");
         interceptor.setValue("42");
@@ -98,12 +98,33 @@ class SetHeaderInterceptorJsonpathTest extends AbstractSetHeaderInterceptorTest 
 
     @Test
     @DisplayName("Overwrite header when it is not absent with different casing")
-    void notIfAbsentCaseDiff() throws Exception {
+    void notIfAbsentCaseDiff() {
         exchange.getRequest().getHeader().add("X-FOO", "0");
         interceptor.setFieldName("x-fOo");
         interceptor.setValue("42");
         interceptor.init(router);
         interceptor.handleRequest(exchange);
         assertEquals("42", getHeader("x-FoO"));
+    }
+
+    @Test
+    void list() {
+        interceptor.setFieldName("tags");
+        interceptor.setValue("${.tags}");
+        interceptor.init(router);
+        interceptor.handleRequest(exchange);
+        var tags = getHeader("tags");
+        System.out.println(tags);
+    }
+
+    @Test
+    void map() {
+        interceptor.setFieldName("map");
+        interceptor.setValue("${.map}");
+        interceptor.init(router);
+        interceptor.handleRequest(exchange);
+        var s = getHeader("map");
+        Assertions.assertTrue(s.contains("3141592"));
+        assertTrue(s.contains("Manaus"));
     }
 }

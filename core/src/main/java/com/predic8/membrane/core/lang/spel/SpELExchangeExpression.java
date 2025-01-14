@@ -43,13 +43,53 @@ public class SpELExchangeExpression extends AbstractExchangeExpression {
      */
     public SpELExchangeExpression(String expression, TemplateParserContext parserContext) {
         super(expression);
-        spelExpression = new SpelExpressionParser(getSpelParserConfiguration()).parseExpression( expression, parserContext );
+        String errorMessage;
+        String posLine = "";
+        try {
+            spelExpression = new SpelExpressionParser(getSpelParserConfiguration()).parseExpression( expression, parserContext );
+            return;
+        } catch (ParseException e) {
+            var pos = e.getPosition();
+            posLine = " ".repeat(pos) + "^";
+            errorMessage = e.getLocalizedMessage();
+        }
+        catch (Exception e) {
+            errorMessage = e.getMessage();
+        }
+        throw new ConfigurationException("""
+                    The expression:
+                    
+                    %s
+                    %s
+                    
+                    caused:
+                    
+                    %s
+                    """.formatted(expression, posLine, errorMessage));
     }
 
     @Override
     public <T> T evaluate(Exchange exchange, Interceptor.Flow flow, Class<T> type) {
         try {
-            return type.cast(spelExpression.getValue(new SpELExchangeEvaluationContext(exchange, exchange.getMessage(flow)), type));
+            Object o = spelExpression.getValue(new SpELExchangeEvaluationContext(exchange, exchange.getMessage(flow)),Object.class);
+            if (o == null) {
+                return null;
+            }
+            if (o instanceof SpELLablePropertyAware spa) {
+                return type.cast( spa.getValue());
+            }
+            if (type.getName().equals("java.lang.String")) {
+                return type.cast(o.toString());
+            }
+            if (type.getName().equals("java.lang.Object")) {
+                if (o instanceof String s) {
+                    if (s.isEmpty())
+                        return null;
+                }
+            }
+            if (type.isInstance(o))
+                return type.cast(o);
+            throw new RuntimeException("Cannot cast!");
         } catch (SpelEvaluationException see) {
             log.error(see.getLocalizedMessage());
             ExchangeExpressionException eee = new ExchangeExpressionException(expression, see);

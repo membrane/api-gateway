@@ -11,7 +11,7 @@
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
    See the License for the specific language governing permissions and
    limitations under the License. */
-package com.predic8.membrane.core.lang.jsonpath;
+package com.predic8.membrane.core.lang.groovy;
 
 import com.predic8.membrane.core.lang.*;
 import com.predic8.membrane.core.lang.ExchangeExpression.*;
@@ -19,37 +19,40 @@ import org.junit.jupiter.api.*;
 
 import java.util.*;
 
-import static com.predic8.membrane.core.lang.ExchangeExpression.Language.JSONPATH;
+import static com.predic8.membrane.core.lang.ExchangeExpression.Language.*;
 import static org.junit.jupiter.api.Assertions.*;
 
-class JsonpathExchangeExpressionTest extends AbstractExchangeExpressionTest {
+class GroovyExchangeExpressionTest extends AbstractExchangeExpressionTest {
 
     @Override
     protected Language getLanguage() {
-        return JSONPATH;
+        return GROOVY;
     }
 
     @Test
-    void field() {
-        assertEquals("747", evalString("$.id"));
+    void string() {
+        assertEquals("Jelly Fish", evalString("header.getFirstValue('name')"));
     }
 
     @Test
-    void accessNonExistingProperty() {
-        assertNull(evalString("$.unknown"));
+    void accessNonExistingPropertyAsObject() {
+        assertNull(evalObject("property.unknown"));
+    }
+
+    @Test
+    void accessNonExistingPropertyAsString() {
+        assertEquals("",evalString("property.unknown"));
     }
 
     @Test
     void truth() {
-        assertTrue(evalBool("$.id"));
-        assertTrue(evalBool("$.fish"));
-        assertFalse(evalBool("$.insect"));
-        assertFalse(evalBool("$.wings"));
+        assertTrue(evalBool("property.wet"));
+        assertFalse(evalBool("property['can-fly']"));
     }
 
     @Test
     void list() {
-        Object o = evalObject("$.tags");
+        Object o = evalObject("property.tags");
         if (!(o instanceof List l)) {
             fail();
             return;
@@ -61,7 +64,7 @@ class JsonpathExchangeExpressionTest extends AbstractExchangeExpressionTest {
 
     @Test
     void map() {
-        Object o = evalObject("$.world");
+        Object o = evalObject("property.world");
         if (!(o instanceof Map m)) {
             fail();
             return;
@@ -69,6 +72,4 @@ class JsonpathExchangeExpressionTest extends AbstractExchangeExpressionTest {
         assertEquals("US",m.get("country"));
         assertEquals("Europe",m.get("continent"));
     }
-
-
 }

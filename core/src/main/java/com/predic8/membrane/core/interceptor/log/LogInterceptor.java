@@ -19,6 +19,7 @@ import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.interceptor.lang.*;
+import com.predic8.membrane.core.lang.*;
 
 import java.io.*;
 
@@ -33,7 +34,7 @@ import static org.slf4j.LoggerFactory.*;
  * @topic 5. Monitoring, Logging and Statistics
  */
 @MCElement(name = "log")
-public class LogInterceptor extends AbstractLanguageInterceptor {
+public class LogInterceptor extends AbstractExchangeExpressionInterceptor {
 
     public enum Level {
         TRACE, DEBUG, INFO, WARN, ERROR, FATAL
@@ -51,16 +52,14 @@ public class LogInterceptor extends AbstractLanguageInterceptor {
 
     @Override
     public Outcome handleRequest(Exchange exc) {
-        writeLog("==== Request %s ===".formatted(label));
-        logMessage(exc, exc.getRequest());
+        logMessage(exc, Flow.REQUEST);
         return CONTINUE;
 
     }
 
     @Override
     public Outcome handleResponse(Exchange exc) {
-        writeLog("==== Response %s ===".formatted(label));
-        logMessage(exc,exc.getResponse());
+        logMessage(exc,Flow.RESPONSE);
         return CONTINUE;
     }
 
@@ -68,7 +67,7 @@ public class LogInterceptor extends AbstractLanguageInterceptor {
     public void handleAbort(Exchange exc) {
         try {
             writeLog("==== Response(Exchange aborted) %s ===".formatted(label));
-           logMessage(exc, exc.getResponse());
+           logMessage(exc, Flow.ABORT);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -101,7 +100,20 @@ public class LogInterceptor extends AbstractLanguageInterceptor {
         this.level = level;
     }
 
-    private void logMessage(Exchange exc, Message msg) {
+    private void logMessage(Exchange exc, Flow flow) {
+
+        if(getMessage() != null) {
+            try {
+                writeLog(exchangeExpression.evaluate(exc,flow,String.class));
+            } catch (ExchangeExpressionException e) {
+                getLogger(category).warn("Problems evaluating {} expression: {}",getMessage(),  e.getMessage());
+            }
+            return;
+        }
+
+        writeLog("==== %s %s ===".formatted(flow,label));
+
+        Message msg = exc.getMessage(flow);
 
         if (msg==null)
             return;
@@ -182,6 +194,7 @@ public class LogInterceptor extends AbstractLanguageInterceptor {
     /**
      * Message to write into the log. Can be an expression.
      */
+    @MCAttribute
     public void setMessage(String message) {
         expression = message;
     }
