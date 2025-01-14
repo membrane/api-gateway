@@ -77,6 +77,9 @@ public class SpELExchangeExpression extends AbstractExchangeExpression {
                 return null;
             }
             if (o instanceof SpELLablePropertyAware spa) {
+                if (type.getName().equals(String.class.getName())) {
+                    return type.cast(spa.getValue().toString());
+                }
                 return type.cast( spa.getValue());
             }
             if (type.getName().equals("java.lang.String")) {

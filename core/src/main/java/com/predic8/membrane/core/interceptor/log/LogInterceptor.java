@@ -101,8 +101,7 @@ public class LogInterceptor extends AbstractExchangeExpressionInterceptor {
     }
 
     private void logMessage(Exchange exc, Flow flow) {
-
-        if(getMessage() != null) {
+        if(getMessage() != null && !getMessage().isEmpty()) {
             try {
                 writeLog(exchangeExpression.evaluate(exc,flow,String.class));
             } catch (ExchangeExpressionException e) {
