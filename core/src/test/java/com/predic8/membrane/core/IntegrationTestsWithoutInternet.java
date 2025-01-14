@@ -20,6 +20,7 @@ import com.predic8.membrane.core.interceptor.rest.REST2SOAPInterceptorIntegratio
 import com.predic8.membrane.core.interceptor.server.WSDLPublisherInterceptorTest;
 import com.predic8.membrane.core.proxies.ProxySSLTest;
 import com.predic8.membrane.core.proxies.SOAPProxyIntegrationTest;
+import com.predic8.membrane.core.oauth2.OAuth2RedirectTest;
 import com.predic8.membrane.core.resolver.ResolverTest;
 import com.predic8.membrane.core.transport.http.BoundConnectionTest;
 import com.predic8.membrane.core.transport.http.IllegalCharactersInURLTest;
