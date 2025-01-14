@@ -50,7 +50,7 @@ class SetHeaderInterceptorJsonpathTest extends AbstractSetHeaderInterceptorTest 
 
     @ParameterizedTest
     @MethodSource("cases")
-    void withoutExpressionOnlyConstant(Object expected, String expression) throws Exception {
+    void withoutExpressionOnlyConstant(Object expected, String expression) {
         extracted(expression, expected);
     }
 
