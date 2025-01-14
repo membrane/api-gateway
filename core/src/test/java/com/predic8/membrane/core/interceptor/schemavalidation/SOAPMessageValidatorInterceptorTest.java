@@ -95,7 +95,6 @@ public class SOAPMessageValidatorInterceptorTest {
 		assertEquals(ABORT, getOutcome(requestXService, createValidatorInterceptor(E_MAIL_SERVICE_WSDL), "/validation/invalidEmail3.xml"));
 	}
 
-	@Disabled(value="This is a problem in the soa-model dependency.")
 	@Test
 	public void testInlineSchemaWithAnyType() throws Exception {
 		assertEquals(ABORT, getOutcome(requestXService, createValidatorInterceptor(INLINE_ANYTYPE_WSDL), "/validation/invalidEmail3.xml"));
