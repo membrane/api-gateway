@@ -24,12 +24,6 @@ import static org.junit.jupiter.api.Assertions.*;
 public class MessageBytesTest {
 
     @Test
-    @Disabled // See implemtation of method
-    void isNull() {
-        assertTrue(MessageBytes.newInstance().isNull());
-    }
-
-    @Test
     void equalsTestWithString() {
         String message = "äöüÄÖÜß";
 

@@ -43,33 +43,7 @@ public class SpELExchangeExpression extends AbstractExchangeExpression {
      */
     public SpELExchangeExpression(String expression, TemplateParserContext parserContext) {
         super(expression);
-        String errorMessage;
-        String posLine = "";
-        try {
-            spelExpression = new SpelExpressionParser(getSpelParserConfiguration()).parseExpression( expression, parserContext );
-            return;
-        } catch (ParseException e) {
-            var pos = e.getPosition();
-            posLine = " ".repeat(pos) + "^";
-            errorMessage = e.getLocalizedMessage();
-        }
-        catch (Exception e) {
-            errorMessage = e.getMessage();
-        }
-        throw new ConfigurationException("""
-                    Configuration Error!
-                    
-                    The expression:
-                    
-                    %s
-                    %s
-                    
-                    caused:
-                    
-                    %s
-                    """.formatted(expression, posLine, errorMessage));
-
-                                         
+        spelExpression = new SpelExpressionParser(getSpelParserConfiguration()).parseExpression( expression, parserContext );
     }
 
     @Override
