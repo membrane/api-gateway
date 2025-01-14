@@ -17,7 +17,13 @@ package com.predic8.membrane.core.interceptor.lang;
 import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.lang.*;
 import org.junit.jupiter.api.*;
+
+import java.net.*;
+import java.util.*;
+
+import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
 
 abstract class AbstractSetPropertyInterceptorTest {
 
@@ -25,12 +31,27 @@ abstract class AbstractSetPropertyInterceptorTest {
     Exchange exc;
     AbstractSetterInterceptor interceptor;
 
+    protected abstract ExchangeExpression.Language getLanguage();
+
     @BeforeEach
-    void setUp() {
+    void setUp() throws URISyntaxException {
         interceptor = new SetPropertyInterceptor();
+        interceptor.setLanguage(getLanguage());
         router = new Router();
-        exc = new Exchange(null);
-        exc.setRequest(new Request());
+        exc = Request.get("/dummy")
+                .contentType(APPLICATION_JSON)
+                .body("""
+                        {
+                            "animal": "fish",
+                            "color": "blue",
+                            "countries": {
+                                "de": "Germany",
+                                "fr": "France"
+                            }
+                        }
+                        """)
+                .buildExchange();
         exc.setProperty("exists", "false");
+        exc.setProperty("map", Map.of("pi", "3151", "city", "Berlin", "plant", "Jupiter"));
     }
 }

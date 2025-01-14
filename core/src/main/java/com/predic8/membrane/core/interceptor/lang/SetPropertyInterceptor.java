@@ -19,6 +19,12 @@ import com.predic8.membrane.core.exchange.*;
 @MCElement(name = "setProperty")
 public class SetPropertyInterceptor extends AbstractSetterInterceptor {
 
+    @SuppressWarnings("rawtypes")
+    @Override
+    protected Class getExpressionReturnType() {
+        return Object.class;
+    }
+
     @Override
     protected boolean shouldSetValue(Exchange exchange, Flow ignored) {
         if (ifAbsent) {
@@ -29,9 +35,8 @@ public class SetPropertyInterceptor extends AbstractSetterInterceptor {
 
     @Override
     protected void setValue(Exchange exchange, Flow flow, Object evaluatedValue) {
-        exchange.setProperty(fieldName, evaluatedValue.toString());
+        exchange.setProperty(fieldName, evaluatedValue);
     }
-
 
     @Override
     public String getDisplayName() {
