@@ -35,4 +35,9 @@ public class SpELHeader implements SpELLablePropertyAware {
         // return v even if it is null
         return new TypedValue(v);
     }
+
+    @Override
+    public Object getValue() {
+        return header;
+    }
 }

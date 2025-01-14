@@ -21,6 +21,11 @@ import com.predic8.membrane.core.http.*;
 public class SetHeaderInterceptor extends AbstractSetterInterceptor {
 
     @Override
+    protected Class getExpressionReturnType() {
+        return String.class;
+    }
+
+    @Override
     protected boolean shouldSetValue(Exchange exc, Flow flow) {
         if (ifAbsent) {
             return !msgFromExchange(exc, flow).getHeader().contains(fieldName);

@@ -93,11 +93,11 @@
   - DisplayName: make all lower
 - Cleaup:
   - LoggingContextInterceptor? Ask CG
-
 - Merge log with print
   <log message="${header.foo}/>
   default: message="${header}\n${body}"
 - Remove etcd stuff 
+- Rewrite RatelimitInterceptor to use AbstractLanguageInterceptor
 
 ## Done
 - Proxy.init() and init(router) make it clear what to call!

@@ -20,6 +20,11 @@ import com.predic8.membrane.core.exchange.*;
 public class SetPropertyInterceptor extends AbstractSetterInterceptor {
 
     @Override
+    protected Class getExpressionReturnType() {
+        return Object.class;
+    }
+
+    @Override
     protected boolean shouldSetValue(Exchange exchange, Flow ignored) {
         if (ifAbsent) {
             return exchange.getProperty(fieldName) == null;
@@ -31,7 +36,6 @@ public class SetPropertyInterceptor extends AbstractSetterInterceptor {
     protected void setValue(Exchange exchange, Flow flow, Object evaluatedValue) {
         exchange.setProperty(fieldName, evaluatedValue);
     }
-
 
     @Override
     public String getDisplayName() {

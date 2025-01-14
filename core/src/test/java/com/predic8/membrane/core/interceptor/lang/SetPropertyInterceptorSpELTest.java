@@ -14,15 +14,25 @@
 
 package com.predic8.membrane.core.interceptor.lang;
 
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.lang.*;
 import org.junit.jupiter.api.*;
 
+import java.util.*;
+
+import static com.predic8.membrane.core.lang.ExchangeExpression.Language.SPEL;
 import static org.junit.jupiter.api.Assertions.*;
 
 class SetPropertyInterceptorSpELTest extends AbstractSetPropertyInterceptorTest {
 
+    @Override
+    protected ExchangeExpression.Language getLanguage() {
+        return SPEL;
+    }
+
     @Test
     @DisplayName("Overwrite header when it is not absent")
-    void simple() throws Exception {
+    void simple() {
         interceptor.setFieldName("exists");
         interceptor.setValue("true");
         interceptor.init(router);
@@ -32,7 +42,7 @@ class SetPropertyInterceptorSpELTest extends AbstractSetPropertyInterceptorTest 
 
     @Test
     @DisplayName("Only set if the header is absent")
-    void onlyIfAbsent() throws Exception {
+    void onlyIfAbsent() {
         interceptor.setFieldName("exists");
         interceptor.setValue("true");
         interceptor.setIfAbsent(true);
@@ -45,11 +55,29 @@ class SetPropertyInterceptorSpELTest extends AbstractSetPropertyInterceptorTest 
     }
 
     @Test
-    void empty() throws Exception {
+    void empty() {
         interceptor.setFieldName("order");
         interceptor.setValue("");
         interceptor.init(router);
         interceptor.handleRequest(exc);
-        assertEquals("", exc.getProperty("order"));
+        assertEquals(null, exc.getProperty("order"));
+    }
+
+    @Test
+    void header() {
+        interceptor.setFieldName("header");
+        interceptor.setValue("${header}");
+        interceptor.init(router);
+        interceptor.handleRequest(exc);
+        assertInstanceOf(Header.class, exc.getProperty("header"));
+    }
+
+    @Test
+    void map() {
+        interceptor.setFieldName("m");
+        interceptor.setValue("${property.map}");
+        interceptor.init(router);
+        interceptor.handleRequest(exc);
+        assertInstanceOf(Map.class, exc.getProperty("m"));
     }
 }

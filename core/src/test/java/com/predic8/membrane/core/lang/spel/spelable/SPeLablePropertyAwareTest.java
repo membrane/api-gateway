@@ -38,4 +38,9 @@ class SPeLablePropertyAwareTest implements SpELLablePropertyAware {
     public TypedValue read(EvaluationContext context, Object target, String name) {
         return null;
     }
+
+    @Override
+    public Object getValue() {
+        return null;
+    }
 }

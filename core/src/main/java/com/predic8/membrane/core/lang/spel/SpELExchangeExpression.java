@@ -17,6 +17,7 @@ package com.predic8.membrane.core.lang.spel;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.lang.*;
+import com.predic8.membrane.core.lang.spel.spelable.*;
 import com.predic8.membrane.core.util.*;
 import org.jetbrains.annotations.*;
 import org.slf4j.*;
@@ -57,8 +58,6 @@ public class SpELExchangeExpression extends AbstractExchangeExpression {
             errorMessage = e.getMessage();
         }
         throw new ConfigurationException("""
-                    Configuration Error!
-                    
                     The expression:
                     
                     %s
@@ -68,14 +67,30 @@ public class SpELExchangeExpression extends AbstractExchangeExpression {
                     
                     %s
                     """.formatted(expression, posLine, errorMessage));
-
-                                         
     }
 
     @Override
     public <T> T evaluate(Exchange exchange, Interceptor.Flow flow, Class<T> type) {
         try {
-            return type.cast(spelExpression.getValue(new SpELExchangeEvaluationContext(exchange, exchange.getMessage(flow)), type));
+            Object o = spelExpression.getValue(new SpELExchangeEvaluationContext(exchange, exchange.getMessage(flow)),Object.class);
+            if (o == null) {
+                return null;
+            }
+            if (o instanceof SpELLablePropertyAware spa) {
+                return type.cast( spa.getValue());
+            }
+            if (type.getName().equals("java.lang.String")) {
+                return type.cast(o.toString());
+            }
+            if (type.getName().equals("java.lang.Object")) {
+                if (o instanceof String s) {
+                    if (s.isEmpty())
+                        return null;
+                }
+            }
+            if (type.isInstance(o))
+                return type.cast(o);
+            throw new RuntimeException("Cannot cast!");
         } catch (SpelEvaluationException see) {
             log.error(see.getLocalizedMessage());
             ExchangeExpressionException eee = new ExchangeExpressionException(expression, see);
