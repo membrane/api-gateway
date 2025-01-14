@@ -165,6 +165,8 @@ public class MembraneAuthorizationService extends AuthorizationService {
 
         // without checks
         tokenEndpoint = (String) json.get("token_endpoint");
+        if (tokenEndpoint == null)
+            throw new RuntimeException("No token_endpoint could be detected.");
         userInfoEndpoint = (String) json.get("userinfo_endpoint");
         authorizationEndpoint = (String) json.get("authorization_endpoint");
         revocationEndpoint = (String) json.get("revocation_endpoint");

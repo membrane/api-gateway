@@ -31,7 +31,6 @@ public abstract class OriginalExchangeStore {
         excSnapshot.getRequest().getHeader().remove("Cookie");
         excSnapshot.setResponse(null);
         FakeProxy p = excSnapshot.getRule();
-        System.out.println("p.getKey() = " + p.getKey());
         return excSnapshot;
     }
 
