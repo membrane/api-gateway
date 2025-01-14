@@ -13,31 +13,43 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.oauth2client.rf;
 
-import com.fasterxml.jackson.core.*;
-import com.fasterxml.jackson.core.type.*;
-import com.fasterxml.jackson.databind.*;
-import com.predic8.membrane.core.exceptions.*;
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.exchange.snapshots.*;
-import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.interceptor.oauth2.*;
-import com.predic8.membrane.core.interceptor.oauth2.authorizationservice.*;
-import com.predic8.membrane.core.interceptor.oauth2client.*;
-import com.predic8.membrane.core.interceptor.oauth2client.rf.token.*;
-import com.predic8.membrane.core.interceptor.session.*;
-import com.predic8.membrane.core.util.*;
-import org.slf4j.*;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.predic8.membrane.core.exceptions.ProblemDetails;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.exchange.snapshots.AbstractExchangeSnapshot;
+import com.predic8.membrane.core.http.Header;
+import com.predic8.membrane.core.http.Request;
+import com.predic8.membrane.core.http.Response;
+import com.predic8.membrane.core.interceptor.oauth2.OAuth2AnswerParameters;
+import com.predic8.membrane.core.interceptor.oauth2.ParamNames;
+import com.predic8.membrane.core.interceptor.oauth2.authorizationservice.AuthorizationService;
+import com.predic8.membrane.core.interceptor.oauth2client.OriginalExchangeStore;
+import com.predic8.membrane.core.interceptor.oauth2client.rf.token.AccessTokenRevalidator;
+import com.predic8.membrane.core.interceptor.oauth2client.rf.token.TokenResponseHandler;
+import com.predic8.membrane.core.interceptor.session.Session;
+import com.predic8.membrane.core.util.URIFactory;
+import com.predic8.membrane.core.util.URLParamUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.math.*;
-import java.security.*;
-import java.util.*;
+import java.math.BigInteger;
+import java.security.SecureRandom;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Map;
 
-import static com.predic8.membrane.core.Constants.*;
-import static com.predic8.membrane.core.http.Header.*;
-import static com.predic8.membrane.core.http.MimeType.*;
+import static com.predic8.membrane.core.Constants.USERAGENT;
+import static com.predic8.membrane.core.http.Header.ACCEPT;
+import static com.predic8.membrane.core.http.Header.USER_AGENT;
+import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
+import static com.predic8.membrane.core.http.MimeType.APPLICATION_X_WWW_FORM_URLENCODED;
 import static com.predic8.membrane.core.interceptor.oauth2client.rf.JsonUtils.isJson;
-import static com.predic8.membrane.core.interceptor.oauth2client.rf.StateManager.*;
-import static com.predic8.membrane.core.interceptor.oauth2client.temp.OAuth2Constants.*;
+import static com.predic8.membrane.core.interceptor.oauth2client.rf.StateManager.csrfTokenMatches;
+import static com.predic8.membrane.core.interceptor.oauth2client.rf.StateManager.getSecurityTokenFromState;
+import static com.predic8.membrane.core.interceptor.oauth2client.temp.OAuth2Constants.OA2REDIRECT;
+import static java.util.Arrays.stream;
+import static java.util.List.of;
 
 public class OAuth2CallbackRequestHandler {
     private static final Logger log = LoggerFactory.getLogger(OAuth2CallbackRequestHandler.class);
@@ -135,7 +147,7 @@ public class OAuth2CallbackRequestHandler {
                 }
             }
 
-            doRedirect(exc, originalRequest, session);
+            continueOriginalExchange(exc, originalRequest, session);
 
             originalExchangeStore.postProcess(exc);
             return true;
@@ -197,16 +209,24 @@ public class OAuth2CallbackRequestHandler {
         });
     }
 
-    private static void doRedirect(Exchange exc, AbstractExchangeSnapshot originalRequest, Session session) throws JsonProcessingException {
-        if (originalRequest.getRequest().getMethod().equals("GET")) {
-            exc.setResponse(Response.redirect(originalRequest.getOriginalRequestUri(), false).build());
-        } else {
+    private static void continueOriginalExchange(Exchange exc, AbstractExchangeSnapshot originalRequest, Session session) throws Exception {
+        Exchange ogExc = (Exchange) originalRequest.toAbstractExchange();
+        if (originalRequest.getRequest().getMethod().equals("POST")) {
             String oa2redirect = new BigInteger(130, new SecureRandom()).toString(32);
-
             session.put(OAuthUtils.oa2redictKeyNameInSession(oa2redirect), new ObjectMapper().writeValueAsString(originalRequest));
+            String delimiter = ogExc.getOriginalRequestUri().contains("?") ? "&" : "?";
 
-            String delimiter = originalRequest.getOriginalRequestUri().contains("?") ? "&" : "?";
-            exc.setResponse(Response.redirect(originalRequest.getOriginalRequestUri() + delimiter + OA2REDIRECT + "=" + oa2redirect, false).build());
+            String ogDest = ogExc.getDestinations().get(0);
+            ogExc.setDestinations(new ArrayList<>(of(ogDest + delimiter + OA2REDIRECT + "=" + oa2redirect)));
         }
+        Header h = exc.getRequest().getHeader();
+        exc.setRequest(ogExc.getRequest());
+        stream(h.getAllHeaderFields()).toList().forEach(header -> exc.getRequest().getHeader().add(header));
+        exc.setOriginalRequestUri(ogExc.getOriginalRequestUri());
+        exc.setOriginalHostHeader(ogExc.getOriginalHostHeader());
+        exc.setDestinations(ogExc.getDestinations());
+        exc.setRemoteAddr(ogExc.getRemoteAddr());
+        exc.setRemoteAddrIp(ogExc.getRemoteAddrIp());
+        exc.getProperties().putAll(ogExc.getProperties());
     }
 }

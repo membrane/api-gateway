@@ -16,6 +16,7 @@ package com.predic8.membrane.core.interceptor.ws_addressing;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
+import org.springframework.context.*;
 
 import java.io.ByteArrayOutputStream;
 
@@ -32,12 +33,10 @@ public class WsaEndpointRewriterInterceptor extends AbstractInterceptor {
 	}
 
 	private DecoupledEndpointRegistry getRegistry() {
-		return getRouter().getBeanFactory().getBean(DecoupledEndpointRegistry.class);
+		ApplicationContext beanFactory = getRouter().getBeanFactory();
+		if (beanFactory == null) {
+			return new DecoupledEndpointRegistry();
+		}
+		return beanFactory.getBean(DecoupledEndpointRegistry.class);
 	}
-
-	@Override
-	public Outcome handleResponse(Exchange exc) throws Exception {
-		return Outcome.CONTINUE;
-	}
-
 }

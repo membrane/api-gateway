@@ -13,25 +13,17 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.ws_addressing;
 
-import java.io.InputStream;
-import java.io.OutputStream;
+import com.predic8.membrane.core.exchange.*;
 
-import javax.xml.namespace.QName;
-import javax.xml.stream.XMLEventFactory;
-import javax.xml.stream.XMLEventReader;
-import javax.xml.stream.XMLEventWriter;
-import javax.xml.stream.XMLInputFactory;
-import javax.xml.stream.XMLOutputFactory;
-import javax.xml.stream.XMLStreamException;
-import javax.xml.stream.events.EndElement;
-import javax.xml.stream.events.StartElement;
-import javax.xml.stream.events.XMLEvent;
-
-import com.predic8.membrane.core.exchange.Exchange;
+import javax.xml.namespace.*;
+import javax.xml.stream.*;
+import javax.xml.stream.events.*;
+import java.io.*;
 
 
 public class WsaEndpointRewriter {
-	private static final String ADDRESSING_URI = "http://www.w3.org/2005/08/addressing";
+	private static final String ADDRESSING_URI_2005_08 = "http://www.w3.org/2005/08/addressing";
+	private static final String ADDRESSING_URI_2004_08 = "http://schemas.xmlsoap.org/ws/2004/08/addressing";
 
 	private final XMLInputFactory inputFactory = XMLInputFactory.newInstance();
 	private final XMLEventFactory eventFactory = XMLEventFactory.newInstance();
@@ -92,7 +84,8 @@ public class WsaEndpointRewriter {
 	}
 
 	private boolean isMessageId(StartElement startElement) {
-		return startElement.getName().equals(new QName(ADDRESSING_URI, "MessageID"));
+		return startElement.getName().equals(new QName(ADDRESSING_URI_2005_08, "MessageID"))
+				|| startElement.getName().equals(new QName(ADDRESSING_URI_2004_08, "MessageID"));
 	}
 
 	private void addRewrittenAddressElement(XMLEventWriter writer, String address, int port, StartElement startElement) throws XMLStreamException {
@@ -105,14 +98,14 @@ public class WsaEndpointRewriter {
 	}
 
 	private boolean isReplyTo(StartElement startElement) {
-		return startElement.getName().equals(new QName(ADDRESSING_URI, "ReplyTo"));
+		return startElement.getName().equals(new QName(ADDRESSING_URI_2005_08, "ReplyTo"));
 	}
 
 	private boolean isReplyTo(EndElement endElement) {
-		return endElement.getName().equals(new QName(ADDRESSING_URI, "ReplyTo"));
+		return endElement.getName().equals(new QName(ADDRESSING_URI_2005_08, "ReplyTo"));
 	}
 
 	private boolean isAddress(StartElement startElement) {
-		return startElement.getName().equals(new QName(ADDRESSING_URI, "Address"));
+		return startElement.getName().equals(new QName(ADDRESSING_URI_2005_08, "Address"));
 	}
 }

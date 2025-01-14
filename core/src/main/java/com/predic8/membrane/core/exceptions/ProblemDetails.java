@@ -170,6 +170,8 @@ public class ProblemDetails {
         } else {
             extensionsMap.putAll(extensions);
             if (exception != null) {
+                if (extensionsMap.containsKey("message"))
+                    log.error("Overriding ProblemDetails extensionsMap 'message' entry. Please notify Membrane developers.", new RuntimeException());
                 extensionsMap.put("message",exception.getMessage());
                 if (stacktrace) {
                     extensionsMap.put("stackTrace", getStackTrace());

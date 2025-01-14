@@ -60,10 +60,7 @@
 						 requestXSLT="request.xsl" 
 						 responseXSLT="response.xsl" />
 			</rest2Soap>			
-	   		<validator wsdl="http://www.predic8.com/material/ArticleService?wsdl" />
-			<switch>
-				<case xPath="//convert" url="http://www.thomas-bayer.com/axis2/" />
-			</switch>
+	   		<validator wsdl="classpath://wsdl/city.wsdl" />
 			<regExReplacer regex="Hallo" replace="Hello" />
 			<counter name="Node 1"/>
 			<accessControl file="acl/acl.xml"/>
@@ -107,8 +104,7 @@
 	<wadlRewriter id="wadlRewriter" />
 	<statisticsCSV file="target/temp/stat.csv" />
 	<groovy>exc.setProperty('foo', 'bar');CONTINUE</groovy>
-	<throttle id="throttle" delay="1000" maxThreads="5" busyDelay="3000"/>		
-	<log headerOnly="true" category="membrane" level="INFO"/>
+	<throttle id="throttle" delay="1000" maxThreads="5" busyDelay="3000"/>
 <!-- 
 	<statisticsJDBC postMethodOnly="false" soapOnly="true" dataSource="dataSource" />
 -->
@@ -119,10 +115,7 @@
 				 requestXSLT="examples/rest2soap/blz-httpget2soap-request.xsl" 
 				 responseXSLT="examples/rest2soap/strip-soap-envelope.xsl" />
 	</rest2Soap>			
-  	<validator wsdl="http://www.predic8.com:8080/material/ArticleService?wsdl" />	
-	<switch>
-		<case xPath="//convert" url="http://www.thomas-bayer.com/axis2/" />
-	</switch>
+  	<validator wsdl="classpath://wsdl/city.wsdl" />
 	<regExReplacer regex="Hallo" replace="Hello" />
 	<counter name="Node 1"/>
 	
