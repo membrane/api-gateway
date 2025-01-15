@@ -115,11 +115,11 @@ public class EmptyEndpointProcessor extends EndpointProcessor {
         return builder.toString().trim().split(" ");
     }
 
-    private String getClaimDescriptions(String[] claims) throws UnsupportedEncodingException {
+    private String getClaimDescriptions(String[] claims) {
         return createDescription(claims, param -> ClaimRenamer.convert(param), claimParam -> authServer.getConsentPageFile().convertClaim(ClaimRenamer.convert(claimParam)));
     }
 
-    private String getScopeDescriptions(String[] scopes) throws UnsupportedEncodingException {
+    private String getScopeDescriptions(String[] scopes) {
         return createDescription(scopes, param -> {
             if (param.equals("openid"))
                 return "";

@@ -40,7 +40,7 @@ public class Xml2JsonInterceptorTest {
     }
 
     @Test
-    public void invalidXml() throws Exception {
+    public void invalidXml() {
         assertThrows(RuntimeException.class, () -> getJsonRootFromStream(processThroughInterceptor(fillAndGetExchange(
                 new ByteArrayInputStream("5".getBytes(UTF_8))))));
     }
@@ -78,15 +78,15 @@ public class Xml2JsonInterceptorTest {
         return new ObjectMapper().readTree(stream);
     }
 
-    private Request createRequestFromBytes(byte[] bytes) throws IOException {
+    private Request createRequestFromBytes(byte[] bytes) {
         return new Request.Builder().contentType(MimeType.TEXT_XML).body(bytes).build();
     }
 
-    private Response createResponseFromBytes(byte[] bytes) throws IOException {
+    private Response createResponseFromBytes(byte[] bytes) {
         return new Response.ResponseBuilder().contentType(MimeType.TEXT_XML).body(bytes).build();
     }
 
-    private InputStream processThroughInterceptor(Exchange exc) throws Exception {
+    private InputStream processThroughInterceptor(Exchange exc) {
         Outcome outcome = interceptor.handleRequest(exc);
         if (outcome == Outcome.ABORT) {
             throw new RuntimeException("Aborted");
