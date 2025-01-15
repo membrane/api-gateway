@@ -1,3 +1,16 @@
+/* Copyright 2025 predic8 GmbH, www.predic8.com
+
+   Licensed under the Apache License, Version 2.0 (the "License");
+   you may not use this file except in compliance with the License.
+   You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License. */
 package com.predic8.membrane.core.interceptor.flow.choice;
 
 import com.predic8.membrane.annot.MCChildElement;
@@ -8,6 +21,7 @@ import com.predic8.membrane.core.interceptor.Interceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.flow.AbstractFlowInterceptor;
 import com.predic8.membrane.core.lang.ExchangeExpressionException;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -23,7 +37,6 @@ import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 @MCElement(name = "choose")
 public class ChoiceInterceptor extends AbstractFlowInterceptor {
 
-    private static final Logger log = LoggerFactory.getLogger(ChoiceInterceptor.class);
     private final List<Case> cases = new ArrayList<>();
     private Otherwise otherwise;
 
@@ -50,18 +63,23 @@ public class ChoiceInterceptor extends AbstractFlowInterceptor {
     }
 
     private Outcome handleInternal(Exchange exc, Flow flow) {
-        Case choice = null;
-        for (Case c : cases) {
-            if (evaluateCase(c, exc, flow)) {
-                choice = c;
-                break;
-            }
-        }
+        Case choice = findTrueCase(exc, flow);
 
         if (choice == null)
             return invokeInterceptorsAndReturn(otherwise.getInterceptors(), exc, flow);
 
         return invokeInterceptorsAndReturn(choice.getInterceptors(), exc, flow);
+    }
+
+    private @Nullable Case findTrueCase(Exchange exc, Flow flow) {
+        Case choice = null;
+        for (Case c : cases) {
+            if (c.evaluate(exc, flow, router)) {
+                choice = c;
+                break;
+            }
+        }
+        return choice;
     }
 
     private Outcome invokeInterceptorsAndReturn(List<Interceptor> interceptors, Exchange exc, Flow flow) {
@@ -80,38 +98,21 @@ public class ChoiceInterceptor extends AbstractFlowInterceptor {
         }
     }
 
-    private boolean evaluateCase(Case c, Exchange exc, Flow flow) {
-        try {
-            boolean result = c.getExchangeExpression().evaluate(exc, flow, Boolean.class);
-            if (log.isDebugEnabled())
-                log.debug("Expression {} evaluated to {}.", c.getTest(), result);
-            return result;
-        } catch (ExchangeExpressionException e) {
-            e.provideDetails(ProblemDetails.internal(router.isProduction()))
-                    .detail("Error evaluating expression on exchange in if plugin.")
-                    .component("if")
-                    .buildAndSetResponse(exc);
-            throw new ExchangeExpressionException("Error evaluating expression on exchange in if plugin.", e);
-        } catch (NullPointerException npe) {
-            // Expression evaluated to null and can't be converted to boolean
-            // We assume that null is false
-            log.debug("Expression {} returned null and is therefore interpreted as false", c.getTest());
-            return false;
-        }
-    }
-
-    @MCChildElement
     public void setCases(List<Case> cases) {
         this.cases.addAll(cases);
     }
 
-    @MCChildElement
+    @MCChildElement(order = 1)
     public void setOtherwise(Otherwise otherwise) {
         this.otherwise = otherwise;
     }
 
-    @MCChildElement(allowForeign = true)
+    @MCChildElement(order = 2, allowForeign = true)
     public void setInterceptors(List<Interceptor> interceptors) {
-        // We use <case> and <otherwise> child elements to set interceptors, not child interceptors.
+        /*
+        We use <case> and <otherwise> child elements to set interceptors, not child interceptors.
+        Therefore, we have to overwrite this so interceptors cannot be added through direct child elements.
+         */
+
     }
 }
