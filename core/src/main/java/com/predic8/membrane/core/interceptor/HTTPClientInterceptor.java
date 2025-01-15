@@ -76,6 +76,7 @@ public class HTTPClientInterceptor extends AbstractInterceptor {
                     .component(getDisplayName())
                     .exception(e)
                     .extension("proxy", exc.getProxy().getName())
+                    .stacktrace(true)
                     .buildAndSetResponse(exc);
             return ABORT;
         }

@@ -55,6 +55,7 @@ public class CertsEndpointProcessor extends EndpointProcessor {
         } catch (IOException e) {
             log.error(e.getMessage(), e);
             ProblemDetails.internal(true)
+                    .component(this.getClass().getSimpleName())
                     .exception(e)
                     .stacktrace(true)
                     .buildAndSetResponse(exc);

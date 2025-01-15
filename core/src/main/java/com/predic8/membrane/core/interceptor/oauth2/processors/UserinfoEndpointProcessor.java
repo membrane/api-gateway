@@ -42,6 +42,7 @@ public class UserinfoEndpointProcessor extends EndpointProcessor {
         } catch (Exception e) {
             log.error(e.getMessage(), e);
             ProblemDetails.internal(true)
+                    .component(this.getClass().getSimpleName())
                     .exception(e)
                     .stacktrace(true)
                     .buildAndSetResponse(exc);

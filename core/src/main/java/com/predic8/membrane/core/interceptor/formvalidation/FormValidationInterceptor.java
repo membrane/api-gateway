@@ -116,7 +116,8 @@ public class FormValidationInterceptor extends AbstractInterceptor {
         } catch (Exception e) {
 			ProblemDetails.internal(router.isProduction())
 					.component(getDisplayName())
-					.detail("Could not parse Query parameters!")
+					.detail("Could not parse query parameters!")
+					.extension("uri", exc.getRequest().getUri())
 					.exception(e)
 					.stacktrace(false)
 					.buildAndSetResponse(exc);

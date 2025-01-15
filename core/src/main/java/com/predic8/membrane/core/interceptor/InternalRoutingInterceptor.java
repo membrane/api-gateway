@@ -78,7 +78,7 @@ public class InternalRoutingInterceptor extends AbstractInterceptor {
         } catch (Exception e) {
             ProblemDetails.internal(router.isProduction())
                     .component(getDisplayName())
-                    .detail("Could not invoke response handler chain.")
+                    .detail("Error in response handler chain.")
                     .exception(e)
                     .stacktrace(true)
                     .buildAndSetResponse(exc);

@@ -55,7 +55,7 @@ public class XMLProtectionInterceptor extends AbstractInterceptor {
 					.component(getDisplayName())
 					.detail("Error inspecting body!")
 					.exception(e)
-					.stacktrace(false)
+					.stacktrace(true)
 					.buildAndSetResponse(exc);
 			return ABORT;
         }
