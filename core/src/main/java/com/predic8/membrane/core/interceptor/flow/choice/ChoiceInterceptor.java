@@ -98,8 +98,16 @@ public class ChoiceInterceptor extends AbstractFlowInterceptor {
         }
     }
 
+    public List<Case> getCases() {
+        return cases;
+    }
+
     public void setCases(List<Case> cases) {
         this.cases.addAll(cases);
+    }
+
+    public Otherwise getOtherwise() {
+        return otherwise;
     }
 
     @MCChildElement(order = 1)
