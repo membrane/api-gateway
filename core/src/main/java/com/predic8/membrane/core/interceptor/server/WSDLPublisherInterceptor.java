@@ -14,6 +14,7 @@
 package com.predic8.membrane.core.interceptor.server;
 
 import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
@@ -154,7 +155,21 @@ public class WSDLPublisherInterceptor extends AbstractInterceptor {
     }
 
     @Override
-    public Outcome handleRequest(final Exchange exc) throws Exception {
+    public Outcome handleRequest(final Exchange exc) {
+        try {
+            return handleRequestInternal(exc);
+        } catch (Exception e) {
+            ProblemDetails.internal(router.isProduction())
+                    .component(getDisplayName())
+                    .detail("Could not return WSDL document!")
+                    .exception(e)
+                    .stacktrace(false)
+                    .buildAndSetResponse(exc);
+            return ABORT;
+        }
+    }
+
+    private Outcome handleRequestInternal(final Exchange exc) throws Exception {
         if (!exc.getRequest().isGETRequest())
             return CONTINUE;
 

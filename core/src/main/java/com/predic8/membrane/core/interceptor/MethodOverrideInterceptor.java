@@ -17,6 +17,7 @@
 package com.predic8.membrane.core.interceptor;
 
 import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.EmptyBody;
 import com.predic8.membrane.core.http.Header;
@@ -27,17 +28,26 @@ import java.io.IOException;
 @MCElement(name="methodOverride")
 public class MethodOverrideInterceptor extends AbstractInterceptor {
 
-
-
     @Override
-    public Outcome handleRequest(Exchange exc) throws Exception {
+    public Outcome handleRequest(Exchange exc) {
         String methodHeader = exc.getRequest().getHeader().getFirstValue(Header.X_HTTP_METHOD_OVERRIDE);
         if(methodHeader == null)
             return Outcome.CONTINUE;
 
-        switch(methodHeader){
-            case "GET": handleGet(exc);
-                        break;
+        try {
+            switch(methodHeader){
+                case "GET": handleGet(exc);
+                    break;
+            }
+        } catch (IOException e) {
+            ProblemDetails.internal(router.isProduction())
+                    .component(getDisplayName())
+                    .detail("Could change request override method.")
+                    .extension("method", methodHeader)
+                    .exception(e)
+                    .stacktrace(true)
+                    .buildAndSetResponse(exc);
+            return Outcome.ABORT;
         }
 
         exc.getRequest().getHeader().removeFields(Header.X_HTTP_METHOD_OVERRIDE);

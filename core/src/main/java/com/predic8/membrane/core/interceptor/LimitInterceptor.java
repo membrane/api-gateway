@@ -48,12 +48,12 @@ public class LimitInterceptor extends AbstractInterceptor {
 	}
 
 	@Override
-	public Outcome handleRequest(Exchange exc) throws Exception {
+	public Outcome handleRequest(Exchange exc) {
 		return handleMessage(exc, exc.getRequest());
 	}
 
 	@Override
-	public Outcome handleResponse(Exchange exc) throws Exception {
+	public Outcome handleResponse(Exchange exc) {
 		return handleMessage(exc, exc.getResponse());
 	}
 
@@ -75,7 +75,7 @@ public class LimitInterceptor extends AbstractInterceptor {
 		this.maxBodyLength = maxBodyLength;
 	}
 
-	private Outcome handleMessage(Exchange exc, Message msg) throws IOException {
+	private Outcome handleMessage(Exchange exc, Message msg) {
 		if (maxBodyLength == -1)
 			return CONTINUE;
 

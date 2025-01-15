@@ -15,6 +15,7 @@ package com.predic8.membrane.core.interceptor.formvalidation;
 
 import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.config.*;
+import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
@@ -105,12 +106,23 @@ public class FormValidationInterceptor extends AbstractInterceptor {
 	}
 
 	@Override
-	public Outcome handleRequest(Exchange exc) throws Exception {
+	public Outcome handleRequest(Exchange exc) {
 
 		logMappings();
 
-		Map<String, String> propMap = URLParamUtil.getParams(router.getUriFactory(), exc, ERROR);
-		for (Field f : fields) {
+        Map<String, String> propMap;
+        try {
+            propMap = URLParamUtil.getParams(router.getUriFactory(), exc, ERROR);
+        } catch (Exception e) {
+			ProblemDetails.internal(router.isProduction())
+					.component(getDisplayName())
+					.detail("Could not parse Query parameters!")
+					.exception(e)
+					.stacktrace(false)
+					.buildAndSetResponse(exc);
+			return ABORT;
+        }
+        for (Field f : fields) {
 			if ( !propMap.containsKey(f.name) ) continue;
 
 			if ( !f.matchesSubstring(propMap.get(f.name)) ) {

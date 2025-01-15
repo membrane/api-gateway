@@ -14,6 +14,7 @@
 package com.predic8.membrane.core.interceptor.authentication.session;
 
 import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
@@ -23,6 +24,8 @@ import com.predic8.membrane.core.util.*;
 import org.slf4j.*;
 
 import java.util.*;
+
+import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 
 /**
  * @description <p>
@@ -140,10 +143,20 @@ public class LoginInterceptor extends AbstractInterceptor {
 	}
 
 	@Override
-	public Outcome handleRequest(Exchange exc) throws Exception {
+	public Outcome handleRequest(Exchange exc) {
 		if (loginDialog.isLoginRequest(exc)) {
-			loginDialog.handleLoginRequest(exc);
-			return Outcome.RETURN;
+            try {
+                loginDialog.handleLoginRequest(exc);
+            } catch (Exception e) {
+				ProblemDetails.user(router.isProduction())
+						.component(getDisplayName())
+						.detail("Could not handle login request.!")
+						.exception(e)
+						.stacktrace(false)
+						.buildAndSetResponse(exc);
+				return ABORT;
+            }
+            return Outcome.RETURN;
 		}
 		Session s = sessionManager.getSession(exc);
         if (s != null && s.isPreAuthorized()) {
@@ -171,7 +184,7 @@ public class LoginInterceptor extends AbstractInterceptor {
 	}
 
 	@Override
-	public Outcome handleResponse(Exchange exc) throws Exception {
+	public Outcome handleResponse(Exchange exc) {
 		Header header = exc.getResponse().getHeader();
 		header.setNoCacheResponseHeaders();
 		return super.handleResponse(exc);

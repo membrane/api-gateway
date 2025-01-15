@@ -15,6 +15,7 @@ package com.predic8.membrane.core.interceptor.rest;
 
 import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.config.*;
+import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
@@ -153,7 +154,7 @@ public class REST2SOAPInterceptor extends SOAPRESTHelper {
     }
 
     @Override
-    public Outcome handleRequest(Exchange exc) throws Exception {
+    public Outcome handleRequest(Exchange exc) {
         log.debug("uri: {}",getURI(exc));
         String uri = getURI(exc);
 
@@ -161,15 +162,40 @@ public class REST2SOAPInterceptor extends SOAPRESTHelper {
         if (mapping == null)
             return CONTINUE;
 
-        transformAndReplaceBody(exc.getRequest(), mapping.requestXSLT,
-                getRequestXMLSource(exc), exc.getStringProperties());
+        try {
+            transformAndReplaceBody(exc.getRequest(), mapping.requestXSLT,
+                    getRequestXMLSource(exc), exc.getStringProperties());
+        } catch (Exception e) {
+            ProblemDetails.user(router.isProduction())
+                    .component(getDisplayName())
+                    .detail("Could not covert REST to SOAP!")
+                    .exception(e)
+                    .stacktrace(true)
+                    .buildAndSetResponse(exc);
+            return ABORT;
+        }
+
         modifyRequest(exc, mapping);
 
         return CONTINUE;
     }
 
     @Override
-    public Outcome handleResponse(Exchange exc) throws Exception {
+    public Outcome handleResponse(Exchange exc) {
+        try {
+            return handleResponseInternal(exc);
+        } catch (Exception e) {
+            ProblemDetails.user(router.isProduction())
+                    .component(getDisplayName())
+                    .detail("Could not covert SOAP to REST!")
+                    .exception(e)
+                    .stacktrace(true)
+                    .buildAndSetResponse(exc);
+            return ABORT;
+        }
+    }
+
+    public Outcome handleResponseInternal(Exchange exc) throws Exception {
         Mapping mapping = getRESTURL(exc);
         log.debug("restURL: {}",mapping);
         if (getRESTURL(exc) == null)

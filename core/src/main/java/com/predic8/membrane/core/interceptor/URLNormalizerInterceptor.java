@@ -43,7 +43,7 @@ public class URLNormalizerInterceptor extends AbstractInterceptor {
 	}
 
 	@Override
-	public Outcome handleRequest(Exchange exc) throws Exception {
+	public Outcome handleRequest(Exchange exc) {
 		String uri = exc.getRequestURI();
 		if (uri.contains("/./")) {
 			StringBuilder sb = new StringBuilder(uri.length());

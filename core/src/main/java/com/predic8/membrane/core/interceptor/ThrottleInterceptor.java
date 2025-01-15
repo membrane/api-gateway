@@ -42,37 +42,44 @@ public class ThrottleInterceptor extends AbstractInterceptor {
 	}
 
 	@Override
-	public Outcome handleRequest(Exchange exc) throws Exception {
+	public Outcome handleRequest(Exchange exc) {
 		if ( delay > 0 ) {
-			log.debug("delaying for "+delay+"ms");
-			Thread.sleep(delay);
+			log.debug("delaying for {} ms",delay);
+			sleep(delay);
 		}
 		if ( maxThreads > 0 && threads >= maxThreads ) {
-			log.debug("Max thread limit of "+maxThreads+" reached. Waiting "+busyDelay+"ms");
-			Thread.sleep(busyDelay);
+			log.debug("Max thread limit of {} reached. Waiting {}ms",maxThreads, busyDelay );
+			sleep(busyDelay);
 			if ( threads >= maxThreads ) {
-				log.info("Max thread limit of " +maxThreads+ " reached. Server Busy.");
+				log.info("Max thread limit of {} reached. Server Busy.",maxThreads);
 				exc.setResponse(Response.serviceUnavailable("Server busy.").build());
 				return Outcome.ABORT;
 			}
 		}
 		increaseThreads();
-		log.debug("thread count increased: "+threads);
+		log.debug("thread count increased: {}",threads);
 		return Outcome.CONTINUE;
+	}
+
+	private void sleep(long delay) {
+		try {
+			Thread.sleep(delay);
+		} catch (InterruptedException ignored) {
+		}
 	}
 
 
 	@Override
-	public Outcome handleResponse(Exchange exc) throws Exception {
+	public Outcome handleResponse(Exchange exc) {
 		decreaseThreads();
-		log.debug("thread count decreased: "+threads);
+		log.debug("thread count decreased: {}",threads);
 		return Outcome.CONTINUE;
 	}
 
 	@Override
 	public void handleAbort(Exchange exchange) {
 		decreaseThreads();
-		log.debug("thread count decreased: "+threads);
+		log.debug("thread count decreased: {}",threads);
 	}
 
 

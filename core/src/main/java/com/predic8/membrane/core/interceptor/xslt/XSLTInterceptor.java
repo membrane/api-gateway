@@ -14,6 +14,7 @@
 package com.predic8.membrane.core.interceptor.xslt;
 
 import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
@@ -24,6 +25,7 @@ import org.slf4j.*;
 import javax.xml.transform.stream.*;
 import java.util.*;
 
+import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 
 /**
@@ -47,15 +49,35 @@ public class XSLTInterceptor extends AbstractInterceptor {
 	}
 
 	@Override
-	public Outcome handleRequest(Exchange exc) throws Exception {
-		transformMsg(exc.getRequest(), xslt, exc.getStringProperties());
-		return CONTINUE;
+	public Outcome handleRequest(Exchange exc) {
+        try {
+            transformMsg(exc.getRequest(), xslt, exc.getStringProperties());
+        } catch (Exception e) {
+			ProblemDetails.user(router.isProduction())
+					.component(getDisplayName())
+					.detail("Error transforming request!")
+					.exception(e)
+					.stacktrace(false)
+					.buildAndSetResponse(exc);
+			return ABORT;
+        }
+        return CONTINUE;
 	}
 
 	@Override
-	public Outcome handleResponse(Exchange exc) throws Exception {
-		transformMsg(exc.getResponse(), xslt, exc.getStringProperties());
-		return CONTINUE;
+	public Outcome handleResponse(Exchange exc) {
+        try {
+            transformMsg(exc.getResponse(), xslt, exc.getStringProperties());
+        } catch (Exception e) {
+			ProblemDetails.user(router.isProduction())
+					.component(getDisplayName())
+					.detail("Error transforming response!")
+					.exception(e)
+					.stacktrace(false)
+					.buildAndSetResponse(exc);
+			return ABORT;
+        }
+        return CONTINUE;
 	}
 
 	private void transformMsg(Message msg, String ss, Map<String, String> parameter) throws Exception {

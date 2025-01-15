@@ -15,7 +15,9 @@
 package com.predic8.membrane.core.interceptor.schemavalidation;
 
 import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.proxies.*;
 import com.predic8.membrane.core.resolver.*;
@@ -24,6 +26,8 @@ import org.jetbrains.annotations.*;
 import org.slf4j.*;
 import org.springframework.beans.*;
 import org.springframework.context.*;
+
+import java.io.*;
 
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.resolver.ResolverMap.*;
@@ -105,20 +109,42 @@ public class ValidatorInterceptor extends AbstractInterceptor implements Applica
 	}
 
 	@Override
-	public Outcome handleRequest(Exchange exc) throws Exception {
-		if (exc.getRequest().isBodyEmpty())
-			return CONTINUE;
-
-		return validator.validateMessage(exc, exc.getRequest());
+	public Outcome handleRequest(Exchange exc) {
+		return handleInternal(exc,exc.getRequest());
 	}
 
 	@Override
-	public Outcome handleResponse(Exchange exc) throws Exception {
-		if (exc.getResponse().isBodyEmpty())
-			return CONTINUE;
-
-		return validator.validateMessage(exc, exc.getResponse());
+	public Outcome handleResponse(Exchange exc) {
+		return handleInternal(exc, exc.getResponse());
 	}
+
+	private Outcome handleInternal(Exchange exc, Message message) {
+        try {
+            if (message.isBodyEmpty())
+                return CONTINUE;
+        } catch (IOException e) {
+			ProblemDetails.internal(router.isProduction())
+					.component(getDisplayName())
+					.detail("Could not read message body")
+					.exception(e)
+					.stacktrace(true)
+					.buildAndSetResponse(exc);
+			return Outcome.ABORT;
+        }
+
+        try {
+            return validator.validateMessage(exc, message);
+        } catch (Exception e) {
+			ProblemDetails.internal(router.isProduction())
+					.component(getDisplayName())
+					.detail("Could not validate message")
+					.extension("class", message.getClass())
+					.exception(e)
+					.stacktrace(true)
+					.buildAndSetResponse(exc);
+			return Outcome.ABORT;
+        }
+    }
 
 	/**
      * @description The WSDL (URL or file) to validate against.

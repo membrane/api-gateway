@@ -26,7 +26,7 @@ public abstract class EndpointProcessor {
     ReusableJsonGenerator jsonGen = new ReusableJsonGenerator();
 
     public abstract boolean isResponsible(Exchange exc);
-    public abstract Outcome process(Exchange exc) throws Exception;
+    public abstract Outcome process(Exchange exc);
 
     public EndpointProcessor(OAuth2AuthorizationServerInterceptor authServer){
         this.authServer = authServer;

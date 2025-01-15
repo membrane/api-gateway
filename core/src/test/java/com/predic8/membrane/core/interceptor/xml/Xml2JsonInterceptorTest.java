@@ -14,30 +14,35 @@
 package com.predic8.membrane.core.interceptor.xml;
 
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.predic8.membrane.core.Constants;
-import com.predic8.membrane.core.exchange.Exchange;
+import com.fasterxml.jackson.databind.*;
+import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.transport.ws.interceptors.WebSocketLogInterceptor;
-import groovy.json.StringEscapeUtils;
-import org.apache.commons.io.IOUtils;
-import org.junit.jupiter.api.Test;
-import org.xml.sax.SAXParseException;
+import com.predic8.membrane.core.interceptor.*;
+import org.apache.commons.io.*;
+import org.junit.jupiter.api.*;
 
 import java.io.*;
-import java.nio.charset.StandardCharsets;
 
+import static java.nio.charset.StandardCharsets.*;
 import static org.junit.jupiter.api.Assertions.*;
-import static org.junit.jupiter.api.Assertions.*;
 
 
+@SuppressWarnings({"UnnecessaryUnicodeEscape", "SpellCheckingInspection"})
 public class Xml2JsonInterceptorTest {
+
+    static Xml2JsonInterceptor interceptor;
+
+    @BeforeAll
+    static void setup() {
+        interceptor = new Xml2JsonInterceptor();
+        interceptor.init(new Router());
+    }
 
     @Test
     public void invalidXml() throws Exception {
-        assertThrows(SAXParseException.class, () -> getJsonRootFromStream(processThroughInterceptor(fillAndGetExchange(
-                new ByteArrayInputStream("5".getBytes(StandardCharsets.UTF_8))))));
+        assertThrows(RuntimeException.class, () -> getJsonRootFromStream(processThroughInterceptor(fillAndGetExchange(
+                new ByteArrayInputStream("5".getBytes(UTF_8))))));
     }
 
     @Test
@@ -62,7 +67,6 @@ public class Xml2JsonInterceptorTest {
 
     }
 
-
     @Test
     public void validTestxml2jsonResponse() throws Exception {
         //\u00fc\u00f6\u00fc\u00f6\u00fc\u00f6 = ������
@@ -83,13 +87,16 @@ public class Xml2JsonInterceptorTest {
     }
 
     private InputStream processThroughInterceptor(Exchange exc) throws Exception {
-        new Xml2JsonInterceptor().handleRequest(exc);
+        Outcome outcome = interceptor.handleRequest(exc);
+        if (outcome == Outcome.ABORT) {
+            throw new RuntimeException("Aborted");
+        }
         return exc.getRequest().getBodyAsStream();
     }
 
     private InputStream processThroughInterceptorResponse(InputStream stream) throws Exception {
         Exchange exc = fillAndGetExchange(stream);
-        new Xml2JsonInterceptor().handleResponse(exc);
+        interceptor.handleResponse(exc);
         return exc.getResponse().getBodyAsStream();
     }
 

@@ -19,6 +19,7 @@ import com.googlecode.jatl.Html;
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.annot.Required;
+import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.http.MimeType;
@@ -30,10 +31,13 @@ import java.io.StringWriter;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 
+import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
+import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
+
 @MCElement(name="counter")
 public class CountInterceptor extends AbstractInterceptor {
 
-	private static Logger log = LoggerFactory.getLogger(CountInterceptor.class.getName());
+	private static final Logger log = LoggerFactory.getLogger(CountInterceptor.class.getName());
 
 	private int counter;
 
@@ -42,10 +46,21 @@ public class CountInterceptor extends AbstractInterceptor {
 	}
 
 	@Override
-	public Outcome handleRequest(Exchange exc) throws Exception {
-		log.debug(""+ (++counter) +". request received.");
-		exc.setResponse(Response.ok().header(Header.CONTENT_TYPE, MimeType.TEXT_HTML_UTF8).body(getPage()).build());
-		return Outcome.RETURN;
+	public Outcome handleRequest(Exchange exc) {
+		log.debug("{} request received.",++counter);
+        try {
+            exc.setResponse(Response.ok().header(Header.CONTENT_TYPE, MimeType.TEXT_HTML_UTF8).body(getPage()).build());
+        } catch (UnknownHostException e) {
+			ProblemDetails.internal(router.isProduction())
+					.component(getDisplayName())
+					.detail("Could not serve page")
+					.extension("counter", counter)
+					.exception(e)
+					.stacktrace(true)
+					.buildAndSetResponse(exc);
+			return ABORT;
+        }
+        return RETURN;
 	}
 
 	private String getPage() throws UnknownHostException {

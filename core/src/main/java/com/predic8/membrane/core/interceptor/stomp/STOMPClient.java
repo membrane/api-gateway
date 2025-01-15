@@ -16,12 +16,17 @@ package com.predic8.membrane.core.interceptor.stomp;
 
 import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.config.security.*;
+import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.transport.http.*;
 import com.predic8.membrane.core.transport.http.client.*;
 import com.predic8.membrane.core.transport.ssl.*;
+
+import java.io.*;
+
+import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 
 @MCElement(name="stompClient")
 public class STOMPClient extends AbstractInterceptor {
@@ -95,7 +100,21 @@ public class STOMPClient extends AbstractInterceptor {
 	}
 
 	@Override
-	public Outcome handleRequest(Exchange exc) throws Exception {
+	public Outcome handleRequest(Exchange exc) {
+        try {
+            return handleRequestInternal(exc);
+        } catch (IOException e) {
+			ProblemDetails.user(router.isProduction())
+					.component(getDisplayName())
+					.detail("Error in STOMP client!")
+					.exception(e)
+					.stacktrace(false)
+					.buildAndSetResponse(exc);
+			return ABORT;
+        }
+    }
+
+	public Outcome handleRequestInternal(Exchange exc) throws IOException {
 		String login = exc.getRequest().getHeader().getFirstValue("login");
 		String passcode = exc.getRequest().getHeader().getFirstValue("passcode");
 		String host = exc.getRequest().getHeader().getFirstValue("host");

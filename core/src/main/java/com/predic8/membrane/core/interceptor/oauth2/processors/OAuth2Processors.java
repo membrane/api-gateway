@@ -29,7 +29,7 @@ public class OAuth2Processors {
         return this;
     }
 
-    public Outcome runProcessors(Exchange exc) throws Exception {
+    public Outcome runProcessors(Exchange exc) {
         for(EndpointProcessor excProc : processors){
             if(excProc.isResponsible(exc)) {
                 Outcome result = excProc.process(exc);

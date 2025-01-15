@@ -105,7 +105,7 @@ public class Response extends Message {
 			}
 		}
 
-		public ResponseBuilder body(final InputStream stream, boolean closeStreamWhenDone) throws IOException {
+		public ResponseBuilder body(final InputStream stream, boolean closeStreamWhenDone) {
 			// use chunking, since Content-Length is not known
 			res.getHeader().removeFields(CONTENT_LENGTH);
 			res.getHeader().setValue(TRANSFER_ENCODING, CHUNKED);
@@ -161,7 +161,7 @@ public class Response extends Message {
 		}
 	}
 
-	public static ResponseBuilder ok(String msg) throws Exception {
+	public static ResponseBuilder ok(String msg) {
 		return ok().contentType(TEXT_HTML_UTF8).body(msg);
 	}
 
@@ -342,9 +342,7 @@ public class Response extends Message {
 	}
 
 	@Override
-	public void parseStartLine(InputStream in) throws IOException,
-	EndOfStreamException {
-
+	public void parseStartLine(InputStream in) throws IOException {
 		String line;
 		try {
 			line = readLine(in);

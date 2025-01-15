@@ -14,6 +14,7 @@
 package com.predic8.membrane.core.interceptor.ntlm;
 
 import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
@@ -63,7 +64,7 @@ public class NtlmInterceptor extends AbstractInterceptor {
     }
 
     @Override
-    public Outcome handleResponse(Exchange exc) throws Exception {
+    public Outcome handleResponse(Exchange exc) {
         String originalRequestUrl = buildRequestUrl(exc);
         Connection stableConnection = exc.getTargetConnection();
 
@@ -87,14 +88,32 @@ public class NtlmInterceptor extends AbstractInterceptor {
         String domain = getNTLMRetriever().fetchDomain(exc) != null ? getNTLMRetriever().fetchDomain(exc) : null;
         String workstation = getNTLMRetriever().fetchWorkstation(exc) != null ? getNTLMRetriever().fetchWorkstation(exc) : null;
 
-        Exchange resT1 = httpClient.call(createT1MessageRequest(stableConnection, originalRequestUrl));
-        prepareStreamByEmptyingIt(resT1);
-
-        Exchange authenticationResult = httpClient.call(createT3MessageRequest(stableConnection, originalRequestUrl, user, pass, domain, workstation, resT1));
+        Exchange authenticationResult;
+        try {
+            authenticationResult = authenticate(stableConnection, originalRequestUrl, user, pass, domain, workstation);
+        } catch (Exception e) {
+            ProblemDetails.internal(router.isProduction())
+                    .component(getDisplayName())
+                    .detail("Could not authenticate!")
+                    .extension("domain", domain)
+                    .extension("workstation", workstation)
+                    .extension("originalRequestUrl", originalRequestUrl)
+                    .exception(e)
+                    .stacktrace(true)
+                    .buildAndSetResponse(exc);
+            return Outcome.ABORT;
+        }
 
         exc.setResponse(authenticationResult.getResponse());
         exc.setTargetConnection(stableConnection);
         return CONTINUE;
+    }
+
+    private Exchange authenticate(Connection stableConnection, String originalRequestUrl, String user, String pass, String domain, String workstation) throws Exception {
+        Exchange resT1 = httpClient.call(createT1MessageRequest(stableConnection, originalRequestUrl));
+        prepareStreamByEmptyingIt(resT1);
+
+        return httpClient.call(createT3MessageRequest(stableConnection, originalRequestUrl, user, pass, domain, workstation, resT1));
     }
 
     private Exchange createT3MessageRequest(Connection stableConnection, String originalRequestUrl, String user, String pass, String domain, String workstation, Exchange resT1) throws URISyntaxException, NTLMEngineException {

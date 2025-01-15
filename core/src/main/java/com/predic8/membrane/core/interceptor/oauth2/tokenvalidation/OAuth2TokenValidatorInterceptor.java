@@ -14,6 +14,7 @@
 package com.predic8.membrane.core.interceptor.oauth2.tokenvalidation;
 
 import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
@@ -46,10 +47,19 @@ public class OAuth2TokenValidatorInterceptor extends AbstractInterceptor {
     }
 
     @Override
-    public Outcome handleRequest(Exchange exc) throws Exception {
+    public Outcome handleRequest(Exchange exc) {
         synchronized (client){
-            if(callExchangeAndCheckFor200(buildAccessTokenValidationExchange(exc)))
-                return CONTINUE;
+            try {
+                if(callExchangeAndCheckFor200(buildAccessTokenValidationExchange(exc)))
+                    return CONTINUE;
+            } catch (Exception e) {
+                ProblemDetails.internal(router.isProduction())
+                        .component(getDisplayName())
+                        .exception(e)
+                        .stacktrace(true)
+                        .buildAndSetResponse(exc);
+                return Outcome.ABORT;
+            }
         }
         setResponseToBadRequest(exc);
         return RETURN;

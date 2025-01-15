@@ -32,7 +32,7 @@ public class MethodTest {
 		ServiceProxy proxy = new ServiceProxy(new ServiceProxyKey("localhost", "*", ".*", 4000), "predic8.de", 80);
 		proxy.getInterceptors().add(new AbstractInterceptor() {
 			@Override
-			public Outcome handleRequest(Exchange exc) throws Exception {
+			public Outcome handleRequest(Exchange exc) {
 				if (exc.getRequest().getMethod().equals("DELETE")) {
 					exc.setResponse(Response.ok().build());
 					return Outcome.RETURN;

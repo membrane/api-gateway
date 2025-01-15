@@ -59,7 +59,7 @@ public class ProxyTest {
         ProxyRule rule = new ProxyRule(new ProxyRuleKey(3055));
         rule.getInterceptors().add(new AbstractInterceptor() {
             @Override
-            public Outcome handleRequest(Exchange exc) throws Exception {
+            public Outcome handleRequest(Exchange exc) {
                 lastMethod.set(exc.getRequest().getMethod());
                 return super.handleRequest(exc);
             }
@@ -69,7 +69,7 @@ public class ProxyTest {
         ServiceProxy sp = new ServiceProxy(new ServiceProxyKey(3056), null, 0);
         sp.getInterceptors().add(new AbstractInterceptor() {
             @Override
-            public Outcome handleRequest(Exchange exc) throws Exception {
+            public Outcome handleRequest(Exchange exc) {
                 exc.setResponse(Response.ok("secret1").build());
                 return Outcome.RETURN;
             }
@@ -84,7 +84,7 @@ public class ProxyTest {
         sp2.setSslInboundParser(sslParser);
         sp2.getInterceptors().add(new AbstractInterceptor() {
             @Override
-            public Outcome handleRequest(Exchange exc) throws Exception {
+            public Outcome handleRequest(Exchange exc) {
                 exc.setResponse(Response.ok("secret2").build());
                 return Outcome.RETURN;
             }

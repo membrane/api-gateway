@@ -19,6 +19,8 @@ import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 
+import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
+
 /**
  * @description Shutdown interceptor.
  * @explanation <p>
@@ -45,7 +47,7 @@ public class ShutdownInterceptor extends AbstractInterceptor {
     }
 
     @Override
-    public Outcome handleRequest(Exchange exc) throws Exception {
+    public Outcome handleRequest(Exchange exc) {
         if (getRouter().isRunning()) {
             exc.setResponse(Response.ok("Router shutdown procedure was started.").build());
             new Thread(() -> {
@@ -59,7 +61,7 @@ public class ShutdownInterceptor extends AbstractInterceptor {
         } else {
             exc.setResponse(Response.serviceUnavailable("Router is not started.").build());
         }
-        return Outcome.RETURN;
+        return RETURN;
     }
 
     @Override

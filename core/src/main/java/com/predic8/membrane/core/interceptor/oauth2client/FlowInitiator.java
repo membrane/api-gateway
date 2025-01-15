@@ -13,21 +13,17 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.oauth2client;
 
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCChildElement;
-import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.HeaderField;
-import com.predic8.membrane.core.http.HeaderName;
-import com.predic8.membrane.core.http.Response;
-import com.predic8.membrane.core.interceptor.AbstractInterceptor;
-import com.predic8.membrane.core.interceptor.Outcome;
-import com.predic8.membrane.core.interceptor.session.Session;
-import com.predic8.membrane.core.util.URIFactory;
-import com.predic8.membrane.core.util.URLParamUtil;
+import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.exceptions.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.interceptor.session.*;
+import com.predic8.membrane.core.util.*;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
+
+import static com.predic8.membrane.core.interceptor.Outcome.*;
 
 @MCElement(name = "flowInitiator")
 public class FlowInitiator extends AbstractInterceptor {
@@ -75,7 +71,21 @@ public class FlowInitiator extends AbstractInterceptor {
     }
 
     @Override
-    public Outcome handleRequest(Exchange exc) throws Exception {
+    public Outcome handleRequest(Exchange exc) {
+        try {
+            return oauth2.handleRequestInternal(exc);
+        } catch (Exception e) {
+            ProblemDetails.user(router.isProduction())
+                    .component(getDisplayName())
+                    .detail("Error initiating OAuth2 flow!")
+                    .exception(e)
+                    .stacktrace(false)
+                    .buildAndSetResponse(exc);
+            return ABORT;
+        }
+    }
+
+    public Outcome handleRequestInternal(Exchange exc) throws Exception {
         List<HeaderField> values = null;
         if (logoutBeforeFlow) {
             // remove session
