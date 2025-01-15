@@ -70,7 +70,7 @@ public class ChoiceInterceptor extends AbstractFlowInterceptor {
     private @Nullable Case findTrueCase(Exchange exc, Flow flow) {
         try {
             for (Case c : cases) {
-                if (c.evaluate(exc, flow, router)) return c;
+                if (c.evaluate(exc, flow)) return c;
             }
         } catch (ExchangeExpressionException e) {
             handleExpressionProblemDetails(e, exc);

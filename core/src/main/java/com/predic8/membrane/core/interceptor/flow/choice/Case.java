@@ -44,17 +44,10 @@ public class Case extends InterceptorContainer {
         exchangeExpression = ExchangeExpression.getInstance(router, language, test);
     }
 
-    boolean evaluate(Exchange exc, Flow flow, Router router) throws ExchangeExpressionException {
-        try {
-            boolean result = exchangeExpression.evaluate(exc, flow, Boolean.class);
-            log.debug("Expression {} evaluated to {}.", test, result);
-            return result;
-        } catch (NullPointerException npe) {
-            // Expression evaluated to null and can't be converted to boolean
-            // We assume that null is false
-            log.debug("Expression {} returned null and is therefore interpreted as false", test);
-            return false;
-        }
+    boolean evaluate(Exchange exc, Flow flow) {
+        boolean result = exchangeExpression.evaluate(exc, flow, Boolean.class);
+        log.debug("Expression {} evaluated to {}.", test, result);
+        return result;
     }
 
     public ExchangeExpression getExchangeExpression() {
