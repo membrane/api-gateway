@@ -14,13 +14,39 @@
 package com.predic8.membrane.core.interceptor.flow.choice;
 
 import com.predic8.membrane.annot.MCChildElement;
+import com.predic8.membrane.core.Router;
+import com.predic8.membrane.core.exceptions.ProblemDetails;
+import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.Interceptor;
+import com.predic8.membrane.core.interceptor.Interceptor.Flow;
+import com.predic8.membrane.core.interceptor.Outcome;
+import com.predic8.membrane.core.lang.ExchangeExpressionException;
 
 import java.util.List;
 
 abstract class InterceptorContainer {
 
     private List<Interceptor> interceptors;
+
+    Outcome invokeFlow(Exchange exc, Flow flow, Router router) {
+        try {
+            return switch (flow) {
+                case REQUEST -> router.getFlowController().invokeRequestHandlers(exc, interceptors);
+                case RESPONSE -> router.getFlowController().invokeResponseHandlers(exc, interceptors);
+                default -> throw new RuntimeException("Should never happen");
+            };
+        } catch (Exception e) {
+            handleInvocationProblemDetails(exc, e, router);
+            throw new ExchangeExpressionException("Error evaluating expression on exchange in if plugin.", e);
+        }
+    }
+
+    private void handleInvocationProblemDetails(Exchange exc, Exception e, Router router) {
+        ProblemDetails.internal(router.isProduction())
+            .detail("Error invoking plugin: " + e.getLocalizedMessage())
+            .component(e.getClass().getSimpleName())
+            .buildAndSetResponse(exc);
+    }
 
     public List<Interceptor> getInterceptors() {
         return interceptors;

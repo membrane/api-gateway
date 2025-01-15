@@ -20,7 +20,9 @@ import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.exceptions.ProblemDetails;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.Interceptor;
+import com.predic8.membrane.core.interceptor.Interceptor.Flow;
 import com.predic8.membrane.core.lang.ExchangeExpression;
+import com.predic8.membrane.core.lang.ExchangeExpression.Language;
 import com.predic8.membrane.core.lang.ExchangeExpressionException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,25 +37,18 @@ public class Case extends InterceptorContainer {
     private static final Logger log = LoggerFactory.getLogger(Case.class);
 
     private String test;
-    private ExchangeExpression.Language language = SPEL;
+    private Language language = SPEL;
     private ExchangeExpression exchangeExpression;
 
     public void init(Router router) {
         exchangeExpression = ExchangeExpression.getInstance(router, language, test);
     }
 
-    boolean evaluate(Exchange exc, Interceptor.Flow flow, Router router) {
+    boolean evaluate(Exchange exc, Flow flow, Router router) throws ExchangeExpressionException {
         try {
             boolean result = exchangeExpression.evaluate(exc, flow, Boolean.class);
-            if (log.isDebugEnabled())
-                log.debug("Expression {} evaluated to {}.", test, result);
+            log.debug("Expression {} evaluated to {}.", test, result);
             return result;
-        } catch (ExchangeExpressionException e) {
-            e.provideDetails(ProblemDetails.internal(router.isProduction()))
-                    .detail("Error evaluating expression on exchange in if plugin.")
-                    .component("if")
-                    .buildAndSetResponse(exc);
-            throw new ExchangeExpressionException("Error evaluating expression on exchange in if plugin.", e);
         } catch (NullPointerException npe) {
             // Expression evaluated to null and can't be converted to boolean
             // We assume that null is false
@@ -66,7 +61,7 @@ public class Case extends InterceptorContainer {
         return exchangeExpression;
     }
 
-    public ExchangeExpression.Language getLanguage() {
+    public Language getLanguage() {
         return language;
     }
 
@@ -76,7 +71,7 @@ public class Case extends InterceptorContainer {
      * @example SpEL, groovy, jsonpath, xpath
      */
     @MCAttribute
-    public void setLanguage(ExchangeExpression.Language language) {
+    public void setLanguage(Language language) {
         this.language = language;
     }
 
