@@ -147,7 +147,7 @@ public class LimitInterceptor extends AbstractInterceptor {
 		@Override
 		public long skip(long n) throws IOException {
 			long l = is.skip(n);
-			if (l == -1)
+			if (l == -1) // Is always false
 				return l;
 			pos += l;
 			checkPosition();
