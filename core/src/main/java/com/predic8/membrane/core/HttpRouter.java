@@ -41,7 +41,7 @@ public class HttpRouter extends Router {
 		interceptors.add(new RuleMatchingInterceptor());
 		interceptors.add(new DispatchingInterceptor());
 		interceptors.add(new UserFeatureInterceptor());
-		interceptors.add(new InternalServiceRoutingInterceptor());
+		interceptors.add(new InternalRoutingInterceptor());
 		HTTPClientInterceptor httpClientInterceptor = new HTTPClientInterceptor();
 		interceptors.add(httpClientInterceptor);
 		transport.setInterceptors(interceptors);

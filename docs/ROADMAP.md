@@ -39,6 +39,7 @@
     - like examples/versioning/soap-xslt but much simpler with json
 - JdbcUserDataProvider
   - Migrate to PreparedStatement
+- <target url="http://localhost:2000/${params.product}/>
 
 # Version 6.0.0
 
@@ -48,8 +49,6 @@
 - Run ConfigSerializationTest from annot
 - List how to run all tests
   - ConfigSerializationTest
-  - Examples
-    - ExampleUnitTests, Without, With
 - Is SessionResumptionTest still needed?
 
 ### Examples / Documentation
@@ -77,7 +76,6 @@
 - 2025
 - Check AdminConsole
 - Check that interceptors define their flows
-- Proxy.init() and init(router) make it clear what to call! 
 - Test in proxies.xml internal with port
 - Look at ignored tests
 - Interceptor init() and init(Router router)
@@ -89,10 +87,17 @@
 - Exchange property name constants: See Exchange
 - Dependencies
   - Log4J, where, what
+- Interceptor Interface:
+  - handle should not throw Exception
+- AdminConsole
+  - DisplayName: make all lower
+- Cleaup:
+  - LoggingContextInterceptor? Ask CG
 - Merge log with print
   <log message="${header.foo}/>
   default: message="${header}\n${body}"
 - Remove etcd stuff 
+- Rewrite RatelimitInterceptor to use AbstractLanguageInterceptor
 
 ## Done
 - Proxy.init() and init(router) make it clear what to call!
@@ -113,6 +118,7 @@
   - Test for production mode filter
     - Return pd and check if answer contains pd.details ...
 
+
 ### Examples
 - Rename Tests to *.ExampleTest
 - Move Examples
@@ -122,13 +128,9 @@
 
 # Discussion
 
-- K8S stuff document or delete?
-- Excpetion Handling
-  - throw Exception in Interceptor handle?
-- Interceptor
-  - init() and init(router)
-    - Which one to call or both?
-
+- ${} or #{} for expressions
+  - Possible conflict with spring property placeholder configurer
+  - Conflict with SpEL on startup? Are #{} replaced?
 - For ADRs
   - Response Flow guarantee there is a response 
   - Request Flow guarantee there is a request

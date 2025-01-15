@@ -10,6 +10,61 @@
 
     <router>
 
+        <api port="2000">
+            <path>/products</path>
+            <request>
+                <call url="https://api.predic8.de/shop/v2/products"/>
+                <setProperty name="products" value="${$.products}" language="jsonpath"/>
+            </request>
+            <response>
+                <template>
+                    ${property.products}
+                </template>
+            </response>
+            <log/>
+            <return/>
+        </api>
+
+        <api port="2000">
+            <path>/places</path>
+            <request>
+                <setHeader name="Authorization" value="Basic YWxpY2U6Zmxvd2VyMjU="/>
+                <!-- Request token -->
+                <call url="http://localhost:2001/login"/>
+            </request>
+            <target url="http://localhost:2002"/>
+        </api>
+
+        <!-- Login and get a token -->
+        <api port="2001">
+            <path>/login</path>
+            <basicAuthentication>
+                <user username="alice" password="flower25"/>
+            </basicAuthentication>
+            <response>
+                <setHeader name="x-token" value="123"/>
+            </response>
+            <return/>
+        </api>
+
+        <!-- Secured by simple token-->
+        <api port="2002">
+            <path>/places</path>
+            <request>
+                <if test="header['x-token'] != '123'">
+                    <static>Unauthorized!</static>
+                    <return statusCode="401"/>
+                </if>
+            </request>
+            <static>
+                {
+                    "places": "Tokio", "Delhi", "Berlin"
+                }
+            </static>
+            <return/>
+        </api>
+
+        <!--
         <api port="2000" name="hello">
             <apiKey required="true">
                 <queryParamExtractor name="api-key"/>
@@ -23,9 +78,9 @@
                         "scope": "${property.scopes}"
                     }
                 </template>
-                <jwtSigner>
+                <jwtSign>
                     <jwk location="key.json"/>
-                </jwtSigner>
+                </jwtSign>
             </request>
             <target url="service://validator" />
         </api>
@@ -42,6 +97,7 @@
             <template>${property.jwt.get("scope")}</template>
             <return />
         </api>
+        -->
     </router>
 
 </spring:beans>

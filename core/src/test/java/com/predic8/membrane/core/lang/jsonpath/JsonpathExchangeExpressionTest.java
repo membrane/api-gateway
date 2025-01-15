@@ -13,56 +13,62 @@
    limitations under the License. */
 package com.predic8.membrane.core.lang.jsonpath;
 
-import com.predic8.membrane.core.*;
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.interceptor.Interceptor.*;
 import com.predic8.membrane.core.lang.*;
+import com.predic8.membrane.core.lang.ExchangeExpression.*;
 import org.junit.jupiter.api.*;
 
-import java.net.*;
+import java.util.*;
 
-import static com.predic8.membrane.core.http.Request.*;
-import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
+import static com.predic8.membrane.core.lang.ExchangeExpression.Language.JSONPATH;
 import static org.junit.jupiter.api.Assertions.*;
 
-class JsonpathExchangeExpressionTest {
+class JsonpathExchangeExpressionTest extends AbstractExchangeExpressionTest {
 
-    JsonpathExchangeExpression expression;
-    static Router router;
-    static Exchange exchange;
-    static Flow flow;
-
-    @BeforeAll
-    static void setUp() throws URISyntaxException {
-        router = new Router();
-        exchange = get("/foo").body("""
-                {
-                    "id": 747,
-                    "name": "Jelly Fish"
-                }
-                """).buildExchange();
-        flow = REQUEST;
-    }
-
-    @AfterEach
-    void tearDown() {
-        router.shutdown();
+    @Override
+    protected Language getLanguage() {
+        return JSONPATH;
     }
 
     @Test
     void field() {
-        assertEquals("747", eval("$.id")); // TODO null ok?
-
+        assertEquals("747", evalString("$.id"));
     }
 
     @Test
     void accessNonExistingProperty() {
-        assertNull(eval("$.unknown")); // TODO null ok?
-
+        assertNull(evalString("$.unknown"));
     }
 
-    String eval(String expression) {
-        return ExchangeExpression.getInstance(router, ExchangeExpression.Language.JSONPATH,expression)
-                .evaluate(exchange,flow, String.class);
+    @Test
+    void truth() {
+        assertTrue(evalBool("$.id"));
+        assertTrue(evalBool("$.fish"));
+        assertFalse(evalBool("$.insect"));
+        assertFalse(evalBool("$.wings"));
     }
+
+    @Test
+    void list() {
+        Object o = evalObject("$.tags");
+        if (!(o instanceof List l)) {
+            fail();
+            return;
+        }
+        assertEquals(2, l.size());
+        assertEquals("animal", l.get(0));
+        assertEquals("water", l.get(1));
+    }
+
+    @Test
+    void map() {
+        Object o = evalObject("$.world");
+        if (!(o instanceof Map m)) {
+            fail();
+            return;
+        }
+        assertEquals("US",m.get("country"));
+        assertEquals("Europe",m.get("continent"));
+    }
+
+
 }
