@@ -1,4 +1,4 @@
-package com.predic8.membrane.core.stores;
+package com.predic8.membrane.evaluation;
 
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.interceptor.apikey.stores.JDBCApiKeyStore;
@@ -19,6 +19,9 @@ import java.util.logging.Logger;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+/**
+ * To test the performance of API key lookups in a database
+ */
 public class JDBCApiKeyStorePerformanceTest {
 
     private static final Logger LOGGER = Logger.getLogger(JDBCApiKeyStorePerformanceTest.class.getName());
