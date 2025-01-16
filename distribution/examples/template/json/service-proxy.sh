@@ -56,7 +56,7 @@ full_version=${version_line#*version \"}
 full_version=${full_version%%\"*}
 current_version=${full_version%%.*}
 
-if expr "'$current_version" \>= "'$required_version" > /dev/null; then
+if test "$current_version" -ge $required_version; then
     start_membrane
     exit 0
 else
