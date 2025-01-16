@@ -13,32 +13,24 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.rest;
 
-import java.io.StringWriter;
-import java.lang.reflect.Method;
-import java.net.MalformedURLException;
-import java.security.InvalidParameterException;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import com.fasterxml.jackson.core.*;
+import com.predic8.membrane.core.exceptions.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.interceptor.administration.*;
+import org.slf4j.*;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import com.fasterxml.jackson.core.JsonFactory;
-import com.fasterxml.jackson.core.JsonGenerator;
-
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Header;
-import com.predic8.membrane.core.http.MimeType;
-import com.predic8.membrane.core.http.Response;
-import com.predic8.membrane.core.interceptor.AbstractInterceptor;
-import com.predic8.membrane.core.interceptor.Outcome;
-import com.predic8.membrane.core.interceptor.administration.Mapping;
-import com.predic8.membrane.core.util.URLParamUtil;
+import java.io.*;
+import java.lang.reflect.*;
+import java.security.*;
+import java.util.regex.*;
 
 import static com.predic8.membrane.core.http.Header.*;
 import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
-import static com.predic8.membrane.core.util.URLParamUtil.DuplicateKeyOrInvalidFormStrategy.ERROR;
-import static com.predic8.membrane.core.util.URLParamUtil.getParams;
+import static com.predic8.membrane.core.util.URLParamUtil.DuplicateKeyOrInvalidFormStrategy.*;
+import static com.predic8.membrane.core.util.URLParamUtil.*;
 
 public abstract class RESTInterceptor extends AbstractInterceptor {
 
@@ -48,14 +40,25 @@ public abstract class RESTInterceptor extends AbstractInterceptor {
 	private final JsonFactory jsonFactory = new JsonFactory(); // thread-safe after configuration
 
 	@Override
-	public Outcome handleRequest(Exchange exc) throws Exception {
+	public Outcome handleRequest(Exchange exc) {
 		log.debug("request: " + exc.getOriginalRequestUri());
 
 		exc.setTimeReqSent(System.currentTimeMillis());
 
-		Outcome o = dispatchRequest(exc);
+        Outcome o = null;
+        try {
+            o = dispatchRequest(exc);
+        } catch (Exception e) {
+			ProblemDetails.internal(router.isProduction())
+					.component(getDisplayName())
+					.detail("Error dispatching request!")
+					.exception(e)
+					.stacktrace(true)
+					.buildAndSetResponse(exc);
+            return ABORT;
+        }
 
-		exc.setReceived();
+        exc.setReceived();
 		exc.setTimeResReceived(System.currentTimeMillis());
 
 		return o;

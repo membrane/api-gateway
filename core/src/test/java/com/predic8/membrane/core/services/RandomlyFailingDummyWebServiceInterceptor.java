@@ -28,9 +28,9 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 public class RandomlyFailingDummyWebServiceInterceptor extends AbstractInterceptor {
 
-	private static Log log = LogFactory.getLog(RandomlyFailingDummyWebServiceInterceptor.class.getName());
+	private static final Log log = LogFactory.getLog(RandomlyFailingDummyWebServiceInterceptor.class.getName());
 
-    private AtomicLong counter = new AtomicLong();
+    private final AtomicLong counter = new AtomicLong();
     private final double successChance;
 
     /**
@@ -46,7 +46,7 @@ public class RandomlyFailingDummyWebServiceInterceptor extends AbstractIntercept
     }
 
     @Override
-	public Outcome handleRequest(Exchange exc) throws Exception {
+	public Outcome handleRequest(Exchange exc) {
         long count = counter.incrementAndGet();
         log.debug("handle request " + count);
 

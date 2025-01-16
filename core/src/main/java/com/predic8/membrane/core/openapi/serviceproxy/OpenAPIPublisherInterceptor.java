@@ -77,7 +77,7 @@ public class OpenAPIPublisherInterceptor extends AbstractInterceptor {
     }
 
     @Override
-    public Outcome handleRequest(Exchange exc) throws Exception {
+    public Outcome handleRequest(Exchange exc) {
 
         if (exc.getRequest().getUri().matches(valueOf(PATTERN_UI))) {
             return handleSwaggerUi(exc);
@@ -86,8 +86,17 @@ public class OpenAPIPublisherInterceptor extends AbstractInterceptor {
         if (!exc.getRequest().getUri().startsWith("/api-doc"))
             return CONTINUE;
 
-
-        return handleOverviewOpenAPIDoc(exc);
+        try {
+            return handleOverviewOpenAPIDoc(exc);
+        } catch (Exception e) {
+            ProblemDetails.internal(router.isProduction())
+                    .component(getDisplayName())
+                    .detail("Error handling OpenAPI overview!")
+                    .exception(e)
+                    .stacktrace(true)
+                    .buildAndSetResponse(exc);
+            return ABORT;
+        }
     }
 
     private Outcome handleOverviewOpenAPIDoc(Exchange exc) throws IOException, URISyntaxException {

@@ -53,12 +53,12 @@ public class Json2XmlInterceptor extends AbstractInterceptor {
     private static final String ROOT = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>";
 
     @Override
-    public Outcome handleRequest(Exchange exc) throws Exception {
+    public Outcome handleRequest(Exchange exc) {
         return handleInternal(exc.getRequest());
     }
 
     @Override
-    public Outcome handleResponse(Exchange exc) throws Exception {
+    public Outcome handleResponse(Exchange exc) {
         return handleInternal(exc.getResponse());
     }
 

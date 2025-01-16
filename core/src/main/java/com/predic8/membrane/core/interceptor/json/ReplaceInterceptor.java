@@ -31,19 +31,19 @@ import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 @MCElement(name="replace")
 public class ReplaceInterceptor extends AbstractInterceptor {
 
-    private static Logger log = LoggerFactory.getLogger(ReplaceInterceptor.class);
+    private static final Logger log = LoggerFactory.getLogger(ReplaceInterceptor.class);
 
     private String jsonPath;
 
     private String with;
 
     @Override
-    public Outcome handleRequest(Exchange exc) throws Exception {
+    public Outcome handleRequest(Exchange exc) {
         return handleInternal(exc.getRequestContentType(), exc.getRequest());
     }
 
     @Override
-    public Outcome handleResponse(Exchange exc) throws Exception {
+    public Outcome handleResponse(Exchange exc) {
         return handleInternal(exc.getResponseContentType(), exc.getResponse());
     }
 

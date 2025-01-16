@@ -58,7 +58,7 @@ public class XenAuthenticationInterceptor extends AbstractInterceptor {
     }
 
     @Override
-    public Outcome handleRequest(Exchange exc) throws Exception {
+    public Outcome handleRequest(Exchange exc) {
         XenCredentialAccessor.XenLoginData login = new XenCredentialAccessor().getLogin(exc);
         if (login != null) {
             // this is a login message
@@ -81,7 +81,7 @@ public class XenAuthenticationInterceptor extends AbstractInterceptor {
     }
 
     @Override
-    public Outcome handleResponse(Exchange exc) throws Exception {
+    public Outcome handleResponse(Exchange exc) {
         // map session ids
         String sessionId = new XenSessionIdAccessor().getSessionId(exc, Flow.RESPONSE);
         if (sessionId == null || sessionId.length() == 0)
@@ -111,7 +111,7 @@ public class XenAuthenticationInterceptor extends AbstractInterceptor {
         private final Map<String, String> ourSessionIds = new ConcurrentHashMap<>();
         private final Map<String, String> xenSessionIds = new ConcurrentHashMap<>();
 
-        public void init(Router router) throws Exception {
+        public void init(Router router) {
         }
 
         public String getXenSessionId(String ourSessionId) {

@@ -13,12 +13,22 @@
 
 package com.predic8.membrane.core.interceptor.oauth2.processors;
 
+import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.oauth2.OAuth2AuthorizationServerInterceptor;
 import com.predic8.membrane.core.interceptor.oauth2.OAuth2Util;
+import org.slf4j.*;
+
+import java.io.*;
+
+import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
+import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
 
 public class DefaultEndpointProcessor extends EndpointProcessor {
+
+    private static final Logger log = LoggerFactory.getLogger(DefaultEndpointProcessor.class);
+
     public DefaultEndpointProcessor(OAuth2AuthorizationServerInterceptor authServer) {
         super(authServer);
     }
@@ -29,10 +39,20 @@ public class DefaultEndpointProcessor extends EndpointProcessor {
     }
 
     @Override
-    public Outcome process(Exchange exc) throws Exception {
+    public Outcome process(Exchange exc) {
     	if (exc.getResponse() == null) {
-            exc.setResponse(OAuth2Util.createParameterizedJsonErrorResponse(jsonGen, "error", "invalid_request"));
-    	}
-        return Outcome.RETURN;
+            try {
+                exc.setResponse(OAuth2Util.createParameterizedJsonErrorResponse(jsonGen, "error", "invalid_request"));
+            } catch (IOException e) {
+                log.error("", e);
+                ProblemDetails.internal(true)
+                        .component(this.getClass().getSimpleName())
+                        .exception(e)
+                        .stacktrace(true)
+                        .buildAndSetResponse(exc);
+                return ABORT;
+            }
+        }
+        return RETURN;
     }
 }

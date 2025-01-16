@@ -30,7 +30,7 @@ import static java.nio.charset.StandardCharsets.*;
 public class URLParamUtil {
 	private static final Pattern paramsPat = Pattern.compile("([^=]*)=?(.*)");
 
-	public static Map<String, String> getParams(URIFactory uriFactory, Exchange exc, DuplicateKeyOrInvalidFormStrategy duplicateKeyOrInvalidFormStrategy) throws Exception {
+	public static Map<String, String> getParams(URIFactory uriFactory, Exchange exc, DuplicateKeyOrInvalidFormStrategy duplicateKeyOrInvalidFormStrategy) throws URISyntaxException, IOException {
 		String uri = exc.getRequest().getUri();
 
 		// Avoid unnecessary log entries

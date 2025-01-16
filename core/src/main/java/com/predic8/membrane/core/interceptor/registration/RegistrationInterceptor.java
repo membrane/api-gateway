@@ -16,6 +16,7 @@ package com.predic8.membrane.core.interceptor.registration;
 
 import com.fasterxml.jackson.databind.*;
 import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
@@ -24,6 +25,8 @@ import com.predic8.membrane.core.interceptor.registration.entity.*;
 
 import java.io.*;
 import java.sql.*;
+
+import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 
 /**
  * @description Allows account registration (!Experimental!)
@@ -40,7 +43,7 @@ public class RegistrationInterceptor extends AbstractInterceptor {
     }
 
     @Override
-    public Outcome handleRequest(Exchange exc) throws Exception {
+    public Outcome handleRequest(Exchange exc) {
         Request request = exc.getRequest();
         if (!request.isPOSTRequest()) return ErrorMessages.returnErrorBadRequest(exc);
 
@@ -61,6 +64,14 @@ public class RegistrationInterceptor extends AbstractInterceptor {
                 user.setPassword(SecurityUtils.createPasswdCompatibleHash(user.getPassword()));
 
             connection.createStatement().executeUpdate(getInsertAccountIntoDatabaseSQL(user));
+        } catch (SQLException e) {
+            ProblemDetails.internal(router.isProduction())
+                    .component(getDisplayName())
+                    .detail("Could not access database")
+                    .exception(e)
+                    .stacktrace(true)
+                    .buildAndSetResponse(exc);
+            return ABORT;
         }
 
         //TODO: Save user mit flag if confirmated

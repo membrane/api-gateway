@@ -70,7 +70,9 @@
 - XMLProtectionInterceptor.setFailResponse => Use ProblemDetails
 - Rename service:// to internal://
 - Delete interceptor/
-  - Gatekeeper?
+  - Gatekeeper: Yes
+  - SDY Speedy?
+  - JsonPointer Extractor?
 - proxies-2.xsd
   - new Namespace e.g. https://membrane-api.io...
 - 2025

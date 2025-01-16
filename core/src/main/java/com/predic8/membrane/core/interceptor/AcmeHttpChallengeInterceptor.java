@@ -14,16 +14,19 @@
 package com.predic8.membrane.core.interceptor;
 
 import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.proxies.*;
 import com.predic8.membrane.core.transport.ssl.AcmeSSLContext;
 import com.predic8.membrane.core.transport.ssl.SSLContext;
 import com.predic8.membrane.core.transport.ssl.acme.AcmeClient;
+import org.jose4j.lang.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import static com.predic8.membrane.core.http.MimeType.APPLICATION_OCTET_STREAM;
+import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 import static java.util.Arrays.stream;
 
 /**
@@ -43,7 +46,7 @@ public class AcmeHttpChallengeInterceptor extends AbstractInterceptor {
     }
 
     @Override
-    public Outcome handleRequest(Exchange exc) throws Exception {
+    public Outcome handleRequest(Exchange exc) {
         if (exc.getRequest().getUri().startsWith(PREFIX)) {
             String token = exc.getRequest().getUri().substring(PREFIX.length());
             String host = ignorePort
@@ -65,7 +68,18 @@ public class AcmeHttpChallengeInterceptor extends AbstractInterceptor {
                 String correctToken = acmeClient.getToken(host);
 
                 if (correctToken != null && correctToken.equals(token)) {
-                    String keyAuth = token + "." + acmeClient.getThumbprint();
+                    String keyAuth = null;
+                    try {
+                        keyAuth = token + "." + acmeClient.getThumbprint();
+                    } catch (JoseException e) {
+                        ProblemDetails.user(router.isProduction())
+                                .component(getDisplayName())
+                                .detail("Could not create thumbprint!")
+                                .exception(e)
+                                .stacktrace(true)
+                                .buildAndSetResponse(exc);
+                        return ABORT;
+                    }
 
                     exc.setResponse(Response.ok()
                             .header("Content-Type", APPLICATION_OCTET_STREAM)
