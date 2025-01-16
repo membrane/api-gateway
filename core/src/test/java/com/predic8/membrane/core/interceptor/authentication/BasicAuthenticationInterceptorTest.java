@@ -13,6 +13,7 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.authentication;
 
+import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.interceptor.authentication.session.StaticUserDataProvider;
@@ -32,29 +33,30 @@ public class BasicAuthenticationInterceptorTest {
 	static BasicAuthenticationInterceptor bai;
 
 	@BeforeAll
-	public static void setup() throws Exception {
+	static void setup() {
 		bai = new BasicAuthenticationInterceptor();
 		bai.setUsers(of(
 				new User("admin", "admin"),
 				new User("admin", "$6$12345678$jwCsYagMo/KNcTDqnrWL25Dy3AfAT5U94abA5a/iPFO.Cx2zAkMpPxZBNKY/P/xiRrCfCFDxdBp7pvNEMoBcr0")
 		));
+		bai.init(new Router());
 	}
 
 	@Test
-	public void testDeny() throws Exception {
+	void testDeny() {
 		Exchange exc = new Request.Builder().buildExchange();
 		assertEquals(ABORT, bai.handleRequest(exc));
 		assertEquals(401, exc.getResponse().getStatusCode());
 	}
 
 	@Test
-	public void testAccept() throws Exception {
+	void testAccept() {
 		Exchange exc = new Request.Builder().header(AUTHORIZATION, getAuthString("admin", "admin")).buildExchange();
 		assertEquals(CONTINUE, bai.handleRequest(exc));
 	}
 
 	@Test
-	public void testHashedPassword() throws Exception {
+	void testHashedPassword() {
 		Exchange exc = new Request.Builder().header(AUTHORIZATION, getAuthString("admin", "admin")).buildExchange();
 		StaticUserDataProvider p = (StaticUserDataProvider) bai.getUserDataProvider();
 		assertEquals(CONTINUE, bai.handleRequest(exc));

@@ -20,7 +20,12 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
 class LogInterceptorTest {
 
-    final LogInterceptor i = new LogInterceptor();
+    static final LogInterceptor i = new LogInterceptor();
+
+    @BeforeAll
+    static void setUp() {
+        i.init();
+    }
 
     @Test
     void responseIsNull() {

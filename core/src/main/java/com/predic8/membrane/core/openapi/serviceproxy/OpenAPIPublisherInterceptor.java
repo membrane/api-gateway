@@ -55,7 +55,7 @@ public class OpenAPIPublisherInterceptor extends AbstractInterceptor {
     private static final Pattern PATTERN_META = Pattern.compile(PATH + "?/(.*)");
     private static final Pattern PATTERN_UI = Pattern.compile(PATH + "?/ui/(.*)");
 
-    protected Map<String, OpenAPIRecord> apis;
+    protected final Map<String, OpenAPIRecord> apis;
 
     private final Template swaggerUiHtmlTemplate;
     private final Template apiOverviewHtmlTemplate;
@@ -72,11 +72,7 @@ public class OpenAPIPublisherInterceptor extends AbstractInterceptor {
         try {
             return new StreamingTemplateEngine().createTemplate(new InputStreamReader(Objects.requireNonNull(getResourceAsStream(this, filePath))));
         } catch (Exception e) {
-            throw new ConfigurationException("""
-                    Could not create Swagger UI or overview page template from: %s
-                    
-                    Caused by: %s
-                    """.formatted(filePath,e.getMessage()));
+            throw new ConfigurationException("Could not create Swagger UI or overview page template from: %s".formatted(filePath),e);
         }
     }
 
@@ -118,7 +114,7 @@ public class OpenAPIPublisherInterceptor extends AbstractInterceptor {
     }
 
     private Outcome returnHtmlOverview(Exchange exc) {
-        exc.setResponse(ok().contentType(TEXT_HTML_UTF8).body(renderOverviewTemplate()).build());
+        exc.setResponse(ok().contentType(TEXT_HTML_UTF8).body( renderOverviewTemplate()).build());
         return RETURN;
     }
 

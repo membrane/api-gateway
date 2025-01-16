@@ -31,4 +31,9 @@ public class SpELMap<K, V> implements SpELLablePropertyAware {
             return new TypedValue(data.get(name));
         else return new TypedValue("");
     }
+
+    @Override
+    public Object getValue() {
+        return data;
+    }
 }

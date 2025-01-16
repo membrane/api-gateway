@@ -30,7 +30,7 @@ public class AbstractInterceptor implements Interceptor {
 
 	protected String name = this.getClass().getName();
 
-	private EnumSet<Flow> flow = REQUEST_RESPONSE_ABORT;
+	private EnumSet<Flow> flow = REQUEST_RESPONSE_ABORT_FLOW;
 
 	protected Router router;
 
@@ -47,7 +47,6 @@ public class AbstractInterceptor implements Interceptor {
 	}
 
 	public void handleAbort(Exchange exchange) {
-		// do nothing
 	}
 
 	public String getDisplayName() {
@@ -99,11 +98,9 @@ public class AbstractInterceptor implements Interceptor {
 	/**
 	 * Called after parsing is complete and this has been added to the object tree (whose root is Router).
 	 */
-	public void init() throws Exception {
-		// do nothing here - override in subclasses.
-	}
+	public void init() {}
 
-	public void init(Router router) throws Exception {
+    public final void init(Router router) {
 		this.router = router;
 		init();
 	}
@@ -113,9 +110,9 @@ public class AbstractInterceptor implements Interceptor {
 				.getRuleManager()
 				.getRules()
 				.stream()
-				.filter(rule -> rule
+				.filter(proxy -> proxy
 						.getInterceptors() != null)
-				.filter(rule -> rule
+				.filter(proxy -> proxy
 						.getInterceptors()
 						.stream().anyMatch(this::hasSameReferenceAs))
 				.findAny()
@@ -131,6 +128,10 @@ public class AbstractInterceptor implements Interceptor {
 
 	public Router getRouter() { //wird von ReadRulesConfigurationTest aufgerufen.
 		return router;
+	}
+
+	public FlowController getFlowController() {
+		return router.getFlowController();
 	}
 
 	public static Message getMessage(Exchange exc, Interceptor.Flow flow) {

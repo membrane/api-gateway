@@ -25,6 +25,7 @@ import org.slf4j.*;
 import java.io.*;
 import java.util.*;
 
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.REQUEST_RESPONSE_ABORT_FLOW;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.util.HttpUtil.*;
 import static java.lang.String.*;
@@ -123,6 +124,6 @@ public class ReturnInterceptor extends AbstractInterceptor {
 
     @Override
     public EnumSet<Flow> getFlow() {
-        return Flow.Set.REQUEST;
+        return REQUEST_RESPONSE_ABORT_FLOW;
     }
 }

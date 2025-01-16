@@ -14,7 +14,6 @@
 package com.predic8.membrane.core.interceptor.flow;
 
 import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.util.*;
@@ -32,8 +31,8 @@ public class DestinationInterceptor extends AbstractInterceptor {
     private String url;
 
     @Override
-    public void init(Router router) throws Exception {
-        super.init(router);
+    public void init() {
+        super.init();
         if (url == null) {
             throw new ConfigurationException("""
                 <destination> needs a valid url!
@@ -47,7 +46,8 @@ public class DestinationInterceptor extends AbstractInterceptor {
 
     @Override
     public Outcome handleRequest(Exchange exc) {
-        exc.setDestinations(List.of(url));
+        exc.getDestinations().clear();
+        exc.getDestinations().add(url);
         exc.setOriginalRequestUri(url);
         log.debug("Set destination to: {}", url);
         return CONTINUE;
@@ -70,6 +70,6 @@ public class DestinationInterceptor extends AbstractInterceptor {
 
     @Override
     public EnumSet<Flow> getFlow() {
-        return Flow.Set.REQUEST;
+        return Flow.Set.REQUEST_FLOW;
     }
 }

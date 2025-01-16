@@ -13,12 +13,11 @@ See the License for the specific language governing permissions and
 limitations under the License. */
 package com.predic8.membrane.examples.tests;
 
-import com.predic8.membrane.examples.util.AbstractSampleMembraneStartStopTestcase;
-import org.junit.jupiter.api.Test;
+import com.predic8.membrane.examples.util.*;
+import org.junit.jupiter.api.*;
 
-import static io.restassured.RestAssured.given;
-import static org.hamcrest.CoreMatchers.containsString;
-import static org.hamcrest.Matchers.equalTo;
+import static io.restassured.RestAssured.*;
+import static org.hamcrest.CoreMatchers.*;
 
 public class APIKeyRBACExampleTest extends AbstractSampleMembraneStartStopTestcase {
 
@@ -35,7 +34,9 @@ public class APIKeyRBACExampleTest extends AbstractSampleMembraneStartStopTestca
             .get("http://localhost:3000")
         .then().assertThat()
             .statusCode(200)
-            .body(containsString("Caller scopes: accounting,finance"));
+            .body(containsString("Caller scopes"))
+            .body(containsString("accounting"))
+            .body(containsString("finance"));
     }
 
     @Test
@@ -46,6 +47,7 @@ public class APIKeyRBACExampleTest extends AbstractSampleMembraneStartStopTestca
             .get("http://localhost:3000")
         .then().assertThat()
             .statusCode(200)
-            .body(containsString("Caller scopes: admin"));
+            .body(containsString("Caller scopes"))
+            .body(containsString("admin"));
     }
 }

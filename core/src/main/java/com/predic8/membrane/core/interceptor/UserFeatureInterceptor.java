@@ -27,25 +27,23 @@ public class UserFeatureInterceptor extends AbstractInterceptor {
 
 	private static final Logger log = LoggerFactory.getLogger(UserFeatureInterceptor.class.getName());
 
-	private static final FlowController flowController = new FlowController();
-
 	public UserFeatureInterceptor() {
 		name = "User Feature";
-		setFlow(REQUEST_RESPONSE_ABORT); // ?
+		setFlow(REQUEST_RESPONSE_ABORT_FLOW); // ?
 	}
 
 	@Override
 	public Outcome handleRequest(Exchange exc) {
-        return flowController.invokeRequestHandlers(exc, exc.getProxy().getInterceptors());
+        return getFlowController().invokeRequestHandlers(exc, exc.getProxy().getInterceptors());
 	}
 
 	@Override
 	public Outcome handleResponse(Exchange exc) throws Exception {
-        return flowController.invokeResponseHandlers(exc, exc.getProxy().getInterceptors());
+        return getFlowController().invokeResponseHandlers(exc, exc.getProxy().getInterceptors());
 	}
 
 	@Override
 	public void handleAbort(Exchange exc) {
-        flowController.invokeAbortHandlers(exc, exc.getProxy().getInterceptors(), exc.getProxy().getInterceptors().size());
+        getFlowController().invokeAbortHandlers(exc, exc.getProxy().getInterceptors(), exc.getProxy().getInterceptors().size());
 	}
 }

@@ -170,6 +170,8 @@ public class ProblemDetails {
         } else {
             extensionsMap.putAll(extensions);
             if (exception != null) {
+                if (extensionsMap.containsKey("message"))
+                    log.error("Overriding ProblemDetails extensionsMap 'message' entry. Please notify Membrane developers.", new RuntimeException());
                 extensionsMap.put("message",exception.getMessage());
                 if (stacktrace) {
                     extensionsMap.put("stackTrace", getStackTrace());
@@ -182,25 +184,24 @@ public class ProblemDetails {
         root.put("title", title);
         root.put("type", "https://membrane-api.io/error/" + type);
 
+        if (!production && component != null) {
+            root.put("component", component);
+        }
+
         if (detail != null) {
             root.put("detail", detail);
-        }
-        
-        if (component != null) {
-            root.put("component", component);
         }
 
         root.putAll(extensionsMap);
         return root;
     }
 
-    @SuppressWarnings("StringConcatenationInLoop")
-    private @NotNull String getStackTrace() {
-        String stackTrace = "";
-        for (StackTraceElement element : exception.getStackTrace()) {
-            stackTrace += element.toString() + "\n";
-        }
-        return stackTrace;
+    private @NotNull Map getStackTrace() {
+        var m = new LinkedHashMap<>();
+            for (int i = 0; i < exception.getStackTrace().length; i++) {
+                m.put("e"+i , exception.getStackTrace()[i].toString());
+            }
+        return m;
     }
 
     private Response createContent(Map<String, Object> root, Exchange exchange) {

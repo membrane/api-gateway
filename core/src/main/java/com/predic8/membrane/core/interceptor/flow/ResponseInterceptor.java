@@ -22,20 +22,25 @@ import static com.predic8.membrane.core.interceptor.Outcome.*;
 
 /**
  * @description Interceptors are usually applied to requests and responses. By nesting interceptors into a
- *              &lt;response&gt; plugin you can limit their application to responses only.
+ * &lt;response&gt; plugin you can limit their application to responses only.
  */
-@MCElement(name="response", topLevel=false)
+@MCElement(name = "response", topLevel = false)
 public class ResponseInterceptor extends AbstractFlowInterceptor {
 
-	@Override
-	public Outcome handleResponse(Exchange exc) throws Exception {
-		for (int i = interceptors.size() - 1; i >= 0; i--) {
-			Interceptor interceptor = interceptors.get(i);
-			if (interceptor.handlesResponses()) {
-                if (interceptor.handleResponse(exc) == ABORT)
-					return ABORT;
-			}
-		}
-		return CONTINUE;
-	}
+    @Override
+    public Outcome handleResponse(Exchange exc) {
+        for (int i = interceptors.size() - 1; i >= 0; i--) {
+            Interceptor interceptor = interceptors.get(i);
+            if (interceptor.handlesResponses()) {
+                try {
+                    if (interceptor.handleResponse(exc) == ABORT)
+                        return ABORT;
+                } catch (Exception e) {
+                    createProblemDetails( "response", interceptor, exc, e);
+                    return ABORT;
+                }
+            }
+        }
+        return CONTINUE;
+    }
 }

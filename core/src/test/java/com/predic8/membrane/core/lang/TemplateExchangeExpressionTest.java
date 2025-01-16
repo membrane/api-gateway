@@ -11,7 +11,7 @@
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
    See the License for the specific language governing permissions and
    limitations under the License. */
-package com.predic8.membrane.core.interceptor.lang;
+package com.predic8.membrane.core.lang;
 
 import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.*;
@@ -21,7 +21,7 @@ import org.junit.jupiter.api.*;
 import java.util.*;
 
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
-import static com.predic8.membrane.core.interceptor.lang.TemplateExchangeExpression.*;
+import static com.predic8.membrane.core.lang.TemplateExchangeExpression.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 class TemplateExchangeExpressionTest {

@@ -32,22 +32,16 @@ public class SpringConfigurationErrorHandler {
     public static final String STARS = "**********************************************************************************";
 
     public static void handleRootCause(Exception e, Logger log) {
-        Throwable root = ExceptionUtils.getRootCause(e);
-        if (root instanceof PropertyBatchUpdateException pbue) {
-            handlePropertyBatchUpdateException(log, pbue);
-        } else if (root instanceof ConfigurationException ee) {
-            handleConfigurationException(ee);
-        } else if (root instanceof PortOccupiedException poe) {
-            handlePortOccupiedException(poe);
-        } else if (root instanceof SOAPProxyMultipleServicesException mse) {
-            handleSOAPProxyMultipleServicesException(mse);
-        } else {
-            e.printStackTrace();
+        switch (ExceptionUtils.getRootCause(e)) {
+            case PropertyBatchUpdateException pbue -> handlePropertyBatchUpdateException(log, pbue);
+            case ConfigurationException ee -> handleConfigurationException(ee);
+            case PortOccupiedException poe -> handlePortOccupiedException(poe);
+            case SOAPProxyMultipleServicesException mse -> handleSOAPProxyMultipleServicesException(mse);
+            case null, default -> log.error(e.getMessage(), e);
         }
     }
 
     private static void handlePortOccupiedException(PortOccupiedException poe) {
-
         if (poe.getPort() < 1024) {
             System.err.printf("""
                 %s
@@ -113,17 +107,24 @@ public class SpringConfigurationErrorHandler {
     }
 
     private static void handleConfigurationException(ConfigurationException ce) {
+        var reason = "";
+        if (ce.getCause() != null) {
+            reason = "\nReason: " + ce.getCause().getMessage();
+        }
         System.err.printf("""
-                %s
+                ************** Configuration Error ***********************************
                 
                 %s
+                %s
                 
-                giving up.
-                %n""", STARS, ce.getMessage());
+                Giving up.
+                
+                Check proxies.xml file for errors.
+                %n""", ce.getMessage(),reason);
     }
 
+    @SuppressWarnings("StringConcatenationInLoop")
     private static void handleSOAPProxyMultipleServicesException(SOAPProxyMultipleServicesException e) {
-
         String sample = "";
         for (String service : e.getServices()) {
             sample += """
@@ -133,7 +134,6 @@ public class SpringConfigurationErrorHandler {
                     
                     """.formatted(e.getSoapProxy().getWsdl(), service);
         }
-
 
         System.err.printf("""
                 %s

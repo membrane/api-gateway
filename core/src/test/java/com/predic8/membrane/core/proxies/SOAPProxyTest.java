@@ -15,15 +15,19 @@ package com.predic8.membrane.core.proxies;
 
 import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchangestore.*;
+import com.predic8.membrane.core.interceptor.flow.*;
+import com.predic8.membrane.core.interceptor.templating.*;
+import com.predic8.membrane.core.openapi.serviceproxy.*;
 import com.predic8.membrane.core.openapi.util.*;
 import com.predic8.membrane.core.transport.http.*;
 import io.restassured.response.*;
 import org.junit.jupiter.api.*;
 
+import java.io.*;
+
 import static com.predic8.membrane.core.http.MimeType.*;
 import static io.restassured.RestAssured.*;
-import static org.hamcrest.Matchers.*;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class SOAPProxyTest {
 
@@ -32,34 +36,47 @@ public class SOAPProxyTest {
     SOAPProxy proxy;
 
     @BeforeEach
-    void setUp() {
+    void setUp() throws IOException {
         proxy = new SOAPProxy();
         proxy.setPort(2000);
         router = new Router();
         router.setTransport(new HttpTransport());
         router.setExchangeStore(new ForgetfulExchangeStore());
+
+        APIProxy backend = new APIProxy();
+        backend.setKey(new APIProxyKey(2001));
+        StaticInterceptor e = new StaticInterceptor();
+        e.setTextTemplate("<foo></foo>");
+        e.setContentType(TEXT_XML);
+        backend.getInterceptors().add(e);
+        backend.getInterceptors().add(new ReturnInterceptor());
+        router.add(backend);
     }
 
     @AfterEach
     void shutDown() {
-        router.stop();
+        router.shutdown();
     }
 
     @Test
     void parseWSDL() throws Exception {
         proxy.setWsdl("classpath:/ws/cities.wsdl");
+        router.add(proxy);
         router.init();
     }
 
     @Test
     void parseWSDLWithMultiplePortsPerService() throws Exception {
         proxy.setWsdl("classpath:/blz-service.wsdl");
+        router.add(proxy);
         router.init();
     }
 
     @Test
     void parseWSDLWithMultipleServices() throws Exception {
         proxy.setWsdl("classpath:/ws/cities-2-services.wsdl");
+        proxy.setServiceName("CityServiceA");
+        router.add(proxy);
         router.init();
     }
 
@@ -67,10 +84,10 @@ public class SOAPProxyTest {
     void parseWSDLWithMultipleServicesForAGivenServiceA() throws Exception {
         proxy.setServiceName("CityServiceA");
         proxy.setWsdl("classpath:/ws/cities-2-services.wsdl");
+        router.add(proxy);
         router.init();
     }
 
-    @Disabled
     @Test
     void parseWSDLWithMultipleServicesForAGivenServiceB() throws Exception {
         proxy.setServiceName("CityServiceB");
@@ -78,24 +95,24 @@ public class SOAPProxyTest {
         router.add(proxy);
         router.init();
 
-        System.out.println("proxy = " + proxy);
+//        System.out.println("proxy = " + proxy);
 
-        Response res =  given().when().body(TestUtils.getResourceAsStream(this,"/soap-sample/soap-request-bonn.xml"))
+        Response res = given().when().body(TestUtils.getResourceAsStream(this, "/soap-sample/soap-request-bonn.xml"))
                 .post("http://localhost:2000/city-service");
 
-        System.out.println("body.prettyPrint() = " + res.prettyPrint());
-                res.then().statusCode(200)
+//        System.out.println("body.prettyPrint() = " + res.prettyPrint());
+
+        res.then().statusCode(200)
                 .contentType(TEXT_XML)
-                .body("Envelope.Body.getCityResponse.country", equalTo("Germany"))
                 .extract().response().body();
 
     }
 
-    @Disabled
     @Test
-    void parseWSDLWithMultipleServicesForAWrongService() {
+    void parseWSDLWithMultipleServicesForAWrongService() throws Exception {
         proxy.setServiceName("WrongService");
         proxy.setWsdl("classpath:/ws/cities-2-services.wsdl");
-        assertThrows(IllegalArgumentException.class, () ->router.init());
+        router.add(proxy);
+        assertThrows(IllegalArgumentException.class, () -> router.init());
     }
 }

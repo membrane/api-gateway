@@ -38,14 +38,14 @@ public interface ExchangeExpression {
      * @param type
      * @return
      * @param <T>
-     * @throws Exception
+     * @throws ExchangeExpressionException
      */
-    <T> T evaluate(Exchange exchange, Interceptor.Flow flow, Class<T> type);
+    <T> T evaluate(Exchange exchange, Interceptor.Flow flow, Class<T> type) throws ExchangeExpressionException;
 
     static ExchangeExpression getInstance(Router router, Language language, String source) {
         return switch (language) {
             case GROOVY -> new GroovyExchangeExpression(router, source);
-            case SPEL -> new SpELExchangeExpression(source);
+            case SPEL -> new SpELExchangeExpression(source,null);
             case XPATH -> new XPathExchangeExpression(source);
             case JSONPATH -> new JsonpathExchangeExpression(source);
         };
