@@ -1,6 +1,6 @@
 #!/bin/sh
 
-required_version="17"
+required_version="21"
 
 start() {
     membrane_home="$1"

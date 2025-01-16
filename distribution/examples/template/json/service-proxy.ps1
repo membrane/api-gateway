@@ -1,4 +1,4 @@
-$required_version = "17"
+$required_version = "21"
 
 function Start-MembraneService {
     param([string]$membrane_home)
