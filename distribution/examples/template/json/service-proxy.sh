@@ -1,31 +1,33 @@
-#!/bin/bash
-homeSet() {
- echo "MEMBRANE_HOME variable is now set"
- CLASSPATH="$MEMBRANE_HOME/conf"
- CLASSPATH="$CLASSPATH:$MEMBRANE_HOME/lib/*"
- export CLASSPATH
- echo Membrane Router running...
- java  -cp "$CLASSPATH" com.predic8.membrane.core.cli.RouterCLI -c pro
-}xies.xml
+#!/bin/sh
 
-terminate() {
-	echo "Starting of Membrane Router failed."
-	echo "Please execute this script from the appropriate subfolder of MEMBRANE_HOME/examples/"
+start() {
+    membrane_home="$1"
+    export CLASSPATH="$membrane_home/conf:$membrane_home/lib/*"
+    echo "Starting: $membrane_home CL: $CLASSPATH"
+    java -cp "$CLASSPATH" com.predic8.membrane.core.cli.RouterCLI -c proxies.xml
 }
 
-homeNotSet() {
-  echo "MEMBRANE_HOME variable is not set"
-  if [ -f  "`pwd`/../../../starter.jar" ]
-    then 
-    	export MEMBRANE_HOME="`pwd`/../../.."
-    	homeSet	
+find_membrane_directory() {
+    current="$1"
+
+    while [ "$current" != "/" ]; do
+        if [ -d "$current/conf" ] && [ -d "$current/lib" ]; then
+            echo "$current"
+            return 0
+        fi
+        current=$(dirname "$current")
+    done
+
+    return 1
+}
+
+if [ -n "$MEMBRANE_HOME" ]; then
+    start "$MEMBRANE_HOME"
+else
+    membrane_home=$(find_membrane_directory "$(pwd)")
+    if [ $? -eq 0 ]; then
+        start "$membrane_home"
     else
-    	terminate    
-  fi 
-}
-
-if  [ "$MEMBRANE_HOME" ]  
-	then homeSet
-	else homeNotSet
+        echo "Could not find start Membrane. Set the MEMBRANE_HOME env variable."
+    fi
 fi
-
