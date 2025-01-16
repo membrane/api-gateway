@@ -46,7 +46,8 @@ public class ForInterceptor extends AbstractFlowInterceptor {
         try {
             exchangeExpression = ExchangeExpression.getInstance(router, language, in);
         } catch (ConfigurationException ce) {
-            throw new ConfigurationException(ce.getMessage(), """
+            throw new ConfigurationException(ce.getMessage() + """
+                    
                     <for in="%s">""".formatted(in), ce.getCause());
         }
     }

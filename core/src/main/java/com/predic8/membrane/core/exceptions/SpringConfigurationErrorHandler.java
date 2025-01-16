@@ -124,12 +124,8 @@ public class SpringConfigurationErrorHandler {
 
     private static void handleConfigurationException(ConfigurationException ce) {
         var reason = "";
-        var location = "";
         if (ce.getCause() != null) {
             reason = "\nReason: %s\n".formatted(ce.getCause().getMessage());
-        }
-        if (ce.getLocation() != null) {
-            location = "\nSee: " + ce.getLocation();
         }
         System.err.printf("""
                 ************** Configuration Error ***********************************
@@ -140,7 +136,7 @@ public class SpringConfigurationErrorHandler {
                 Giving up.
                 
                 Check proxies.xml file for errors.
-                %n""", ce.getMessage(),location,reason);
+                %n""", ce.getMessage());
     }
 
     @SuppressWarnings("StringConcatenationInLoop")
