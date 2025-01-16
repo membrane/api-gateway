@@ -4,17 +4,4 @@ import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.annot.MCTextContent;
 
 @MCElement(name = "keyTable", mixed = true)
-public class KeyTable {
-
-    private String name;
-
-
-    public String getName() {
-        return name;
-    }
-
-    @MCTextContent
-    public void setName(String name) {
-        this.name = name;
-    }
-}
+public class KeyTable extends TableName{ }

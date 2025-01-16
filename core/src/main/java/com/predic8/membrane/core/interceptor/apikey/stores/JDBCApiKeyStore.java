@@ -12,20 +12,14 @@ import java.util.List;
 import java.util.Optional;
 
 @MCElement(name = "databaseApiKeyStore", topLevel = false)
-public class DatabaseApiKeyStore extends AbstractJdbcSupport implements ApiKeyStore {
+public class JDBCApiKeyStore extends AbstractJdbcSupport implements ApiKeyStore {
 
     private KeyTable keyTable;
     private ScopeTable scopeTable;
-    private Connection connection;
 
     @Override
     public void init(Router router) {
         super.init(router);
-        try {
-            connection = getDatasource().getConnection();
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
     }
 
     @Override
@@ -39,7 +33,7 @@ public class DatabaseApiKeyStore extends AbstractJdbcSupport implements ApiKeySt
     }
 
     private void checkApiKey(String apiKey) throws SQLException {
-        try (PreparedStatement stmt = connection.prepareStatement("SELECT * FROM %s WHERE key_value = ?".formatted(keyTable.getName()))) {
+        try (PreparedStatement stmt = getDatasource().getConnection().prepareStatement("SELECT * FROM %s WHERE apikey = ?".formatted(keyTable.getName()))) {
             stmt.setString(1, apiKey);
         } catch (SQLException e) {
             createTables();
@@ -47,7 +41,7 @@ public class DatabaseApiKeyStore extends AbstractJdbcSupport implements ApiKeySt
     }
 
     private @NotNull Optional<List<String>> fetchScopes(String apiKey) throws SQLException {
-        try (PreparedStatement stmt = connection.prepareStatement("SELECT * FROM %s a,%s s WHERE a.key_value=s.key_value AND a.key_value = ?".formatted(keyTable.getName(), scopeTable.getName()))) {
+        try (PreparedStatement stmt = getDatasource().getConnection().prepareStatement("SELECT * FROM %s a,%s s WHERE a.apikey=s.apikey AND a.apikey = ?".formatted(keyTable.getName(), scopeTable.getName()))) {
             stmt.setString(1, apiKey);
             try (ResultSet rs = stmt.executeQuery()) {
                 List<String> scopes = new ArrayList<>();
@@ -60,16 +54,16 @@ public class DatabaseApiKeyStore extends AbstractJdbcSupport implements ApiKeySt
     }
 
     private void createTables() throws SQLException {
-        Statement stmt = connection.createStatement();
+        Statement stmt = getDatasource().getConnection().createStatement();
         stmt.executeUpdate(String.format("""
                 CREATE TABLE %s (
-                    key_value VARCHAR(255) NOT NULL PRIMARY KEY
+                    apikey VARCHAR(255) NOT NULL PRIMARY KEY
                 )
                 """, keyTable.getName()));
-
+        
         stmt.executeUpdate(String.format("""
                 CREATE TABLE %s (
-                    key_value VARCHAR(255) NOT NULL REFERENCES %s (key_value),
+                    apikey VARCHAR(255) NOT NULL REFERENCES %s (apikey),
                     scope VARCHAR(255) NOT NULL
                 )
                 """, scopeTable.getName(), keyTable.getName()));

@@ -1,7 +1,7 @@
 package com.predic8.membrane.core.stores;
 
 import com.predic8.membrane.core.Router;
-import com.predic8.membrane.core.interceptor.apikey.stores.DatabaseApiKeyStore;
+import com.predic8.membrane.core.interceptor.apikey.stores.JDBCApiKeyStore;
 import com.predic8.membrane.core.interceptor.apikey.stores.KeyTable;
 import com.predic8.membrane.core.interceptor.apikey.stores.ScopeTable;
 import com.predic8.membrane.core.interceptor.apikey.stores.UnauthorizedApiKeyException;
@@ -19,15 +19,15 @@ import java.util.logging.Logger;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class DatabaseApiKeyStorePerformanceTest {
+public class JDBCApiKeyStorePerformanceTest {
 
-    private static final Logger LOGGER = Logger.getLogger(DatabaseApiKeyStorePerformanceTest.class.getName());
+    private static final Logger LOGGER = Logger.getLogger(JDBCApiKeyStorePerformanceTest.class.getName());
     private static final int USERS = 10000;
     private static final String DATABASE_NAME = "test";
     private static final String CREATE_DB_FLAG = "create";
     private Map<String, List<String>> keyToScopesMap = new HashMap<>();
 
-    private DatabaseApiKeyStore databaseApiKeyStore;
+    private JDBCApiKeyStore JDBCApiKeyStore;
     private EmbeddedDataSource dataSource;
     private Connection connection;
     private KeyTable keyTable;
@@ -35,9 +35,9 @@ public class DatabaseApiKeyStorePerformanceTest {
 
     @BeforeEach
     void setUp() throws SQLException {
-        databaseApiKeyStore = createApiKeyStore();
+        JDBCApiKeyStore = createApiKeyStore();
         connection = getDataSource().getConnection();
-        databaseApiKeyStore.init(new Router());
+        JDBCApiKeyStore.init(new Router());
         clearTablesIfExist();
     }
 
@@ -52,15 +52,15 @@ public class DatabaseApiKeyStorePerformanceTest {
 
     @Test
     public void createTableIfTableDoNotExist() throws UnauthorizedApiKeyException, SQLException {
-        databaseApiKeyStore.getScopes("");
-        PreparedStatement stmt = connection.prepareStatement("SELECT * FROM %s".formatted(databaseApiKeyStore.getKeyTable().getName()));
+        JDBCApiKeyStore.getScopes("");
+        PreparedStatement stmt = connection.prepareStatement("SELECT * FROM %s".formatted(JDBCApiKeyStore.getKeyTable().getName()));
         stmt.executeQuery();
         assertTrue(stmt.execute());
         clearTablesIfExist();
     }
 
-    private DatabaseApiKeyStore createApiKeyStore() {
-        DatabaseApiKeyStore apiKeyStore = new DatabaseApiKeyStore();
+    private JDBCApiKeyStore createApiKeyStore() {
+        JDBCApiKeyStore apiKeyStore = new JDBCApiKeyStore();
 
         keyTable = new KeyTable();
         keyTable.setName("apikey");
@@ -78,18 +78,18 @@ public class DatabaseApiKeyStorePerformanceTest {
             dataSource = new EmbeddedDataSource();
             dataSource.setDatabaseName(DATABASE_NAME);
             dataSource.setCreateDatabase(CREATE_DB_FLAG);
-            databaseApiKeyStore.setDatasource(dataSource);
+            JDBCApiKeyStore.setDatasource(dataSource);
         }
         return dataSource;
     }
 
     private void validateAllApiKeys() throws SQLException, UnauthorizedApiKeyException {
         PreparedStatement ps = connection.prepareStatement(
-                "SELECT key_value FROM " + keyTable.getName());
+                "SELECT apikey FROM " + keyTable.getName());
         ResultSet rs = ps.executeQuery();
         while (rs.next()) {
-            String key = rs.getString("key_value");
-            List<String> scopes = databaseApiKeyStore.getScopes(key)
+            String key = rs.getString("apikey");
+            List<String> scopes = JDBCApiKeyStore.getScopes(key)
                     .orElseThrow(() -> new RuntimeException("No scopes found for key: " + key));
             keyToScopesMap.put(key, scopes);
         }
@@ -102,13 +102,13 @@ public class DatabaseApiKeyStorePerformanceTest {
         Statement stmt = connection.createStatement();
         stmt.executeUpdate(String.format("""
                 CREATE TABLE %s (
-                    key_value VARCHAR(255) NOT NULL PRIMARY KEY
+                    apikey VARCHAR(255) NOT NULL PRIMARY KEY
                 )
                 """, keyTable.getName()));
 
         stmt.executeUpdate(String.format("""
                 CREATE TABLE %s (
-                    key_value VARCHAR(255) NOT NULL REFERENCES %s (key_value),
+                    apikey VARCHAR(255) NOT NULL REFERENCES %s (apikey),
                     scope VARCHAR(255) NOT NULL
                 )
                 """, scopeTable.getName(), keyTable.getName()));
@@ -132,9 +132,9 @@ public class DatabaseApiKeyStorePerformanceTest {
 
     private void insertValues() throws SQLException {
         PreparedStatement apiKeyStmt = connection.prepareStatement(String.format(
-                "INSERT INTO %s (key_value) VALUES (?)", keyTable.getName()));
+                "INSERT INTO %s (apikey) VALUES (?)", keyTable.getName()));
         PreparedStatement scopeStmt = connection.prepareStatement(String.format(
-                "INSERT INTO %s (key_value, scope) VALUES (?, ?)", scopeTable.getName()));
+                "INSERT INTO %s (apikey, scope) VALUES (?, ?)", scopeTable.getName()));
         for (int i = 0; i < USERS; i++) {
             String keyValue = UUID.randomUUID().toString();
             apiKeyStmt.setString(1, keyValue);
