@@ -25,6 +25,7 @@ import org.slf4j.*;
 import java.util.*;
 
 import static com.predic8.membrane.core.http.Header.*;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
 import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 
@@ -34,8 +35,6 @@ public class CallInterceptor extends AbstractExchangeExpressionInterceptor {
     private static final Logger log = LoggerFactory.getLogger(CallInterceptor.class.getName());
 
     private static HTTPClientInterceptor hcInterceptor;
-
-    private String url;
 
     /**
      * These headers are filtered out from the response of a called resource
@@ -54,12 +53,12 @@ public class CallInterceptor extends AbstractExchangeExpressionInterceptor {
 
     @Override
     public Outcome handleRequest(Exchange exc) {
-       return handleInternal(exc);
+        return handleInternal(exc);
     }
 
     @Override
     public Outcome handleResponse(Exchange exc) {
-       return handleInternal(exc);
+        return handleInternal(exc);
     }
 
     private Outcome handleInternal(Exchange exc) {
@@ -70,13 +69,11 @@ public class CallInterceptor extends AbstractExchangeExpressionInterceptor {
     }
 
     private @NotNull Outcome doCall(Exchange exc) {
-        if (url != null) {
-            try {
-                exc.setDestinations(List.of(exchangeExpression.evaluate(exc, Flow.REQUEST, String.class)));
-            } catch (ExchangeExpressionException e) {
-                e.provideDetails(ProblemDetails.internal(getRouter().isProduction())).buildAndSetResponse(exc);
-                return ABORT;
-            }
+        try {
+            exc.setDestinations(List.of(exchangeExpression.evaluate(exc, REQUEST, String.class)));
+        } catch (ExchangeExpressionException e) {
+            e.provideDetails(ProblemDetails.internal(getRouter().isProduction())).buildAndSetResponse(exc);
+            return ABORT;
         }
         log.debug("Calling {}", exc.getDestinations());
         try {
@@ -88,7 +85,7 @@ public class CallInterceptor extends AbstractExchangeExpressionInterceptor {
             exc.getRequest().setBodyContent(exc.getResponse().getBody().getContent()); // TODO Optimize?
             copyHeadersFromResponseToRequest(exc);
             exc.getRequest().getHeader().setContentType(exc.getResponse().getHeader().getContentType());
-            log.debug("Outcome of call {}",outcome);
+            log.debug("Outcome of call {}", outcome);
             return CONTINUE;
         } catch (Exception e) {
             ProblemDetails.internal(router.isProduction())
@@ -117,11 +114,11 @@ public class CallInterceptor extends AbstractExchangeExpressionInterceptor {
     @MCAttribute
     @Required
     public void setUrl(String url) {
-        this.url = url;
+        this.expression = url;
     }
 
     public String getUrl() {
-        return url;
+        return expression;
     }
 
     @Override
@@ -131,6 +128,6 @@ public class CallInterceptor extends AbstractExchangeExpressionInterceptor {
 
     @Override
     public String getShortDescription() {
-        return "Calls %s".formatted(url);
+        return "Calls %s".formatted(expression);
     }
 }

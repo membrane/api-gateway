@@ -23,11 +23,25 @@ package com.predic8.membrane.core.util;
  */
 public class ConfigurationException extends RuntimeException {
 
+    /**
+     * Information where the error might be located
+     */
+    private String location;
+
     public ConfigurationException(String message) {
         super(message);
     }
 
-    public ConfigurationException(String message, Exception exception) {
+    public ConfigurationException(String message, Throwable exception) {
         super(message, exception);
+    }
+
+    public ConfigurationException(String message, String location, Throwable exception) {
+        super(message, exception);
+        this.location = location;
+    }
+
+    public String getLocation() {
+        return location;
     }
 }

@@ -34,8 +34,10 @@ public abstract class AbstractExchangeExpressionTest {
     @BeforeAll
     static void setUp() throws URISyntaxException {
         router = new Router();
-        exchange = get("/foo")
+        exchange = get("/foo?city=Paris")
                 .header("name","Jelly Fish")
+                .header("foo","42")
+                .header("x-city","Tokio")
                 .body("""
                 {
                     "id": 747,

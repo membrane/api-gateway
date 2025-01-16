@@ -48,3 +48,8 @@ Use $property.foo instead of $foo. Fields are not accessible just by name!
 Rename `<oauth2Resource>` to `<oauth2Resource2>`.
 
 Remove the `publicURL` attribute from it: It will be automatically computed from the incoming `Host` header.
+
+# Error Messages
+
+In ProblemJson 
+also Validators

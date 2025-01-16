@@ -73,7 +73,7 @@ public class IfInterceptor extends AbstractFlowInterceptor {
              result = exchangeExpression.evaluate(exc, flow, Boolean.class);
         } catch (ExchangeExpressionException e) {
             e.provideDetails(ProblemDetails.internal(router.isProduction()))
-                    .detail("Error evaluating expression on exchange in if plugin.")
+                    .detail("Error evaluating expression on exchange.")
                     .component("if")
                     .buildAndSetResponse(exc);
             return ABORT;

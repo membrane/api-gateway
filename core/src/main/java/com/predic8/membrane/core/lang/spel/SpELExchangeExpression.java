@@ -27,6 +27,7 @@ import org.springframework.expression.common.*;
 import org.springframework.expression.spel.*;
 import org.springframework.expression.spel.standard.*;
 
+import static java.lang.Boolean.FALSE;
 import static org.springframework.expression.spel.SpelCompilerMode.*;
 
 public class SpELExchangeExpression extends AbstractExchangeExpression {
@@ -44,7 +45,7 @@ public class SpELExchangeExpression extends AbstractExchangeExpression {
      */
     public SpELExchangeExpression(String expression, TemplateParserContext parserContext) {
         super(expression);
-        String errorMessage;
+        Exception exception;
         String posLine = "";
         try {
             spelExpression = new SpelExpressionParser(getSpelParserConfiguration()).parseExpression( expression, parserContext );
@@ -52,48 +53,33 @@ public class SpELExchangeExpression extends AbstractExchangeExpression {
         } catch (ParseException e) {
             var pos = e.getPosition();
             posLine = " ".repeat(pos) + "^";
-            errorMessage = e.getLocalizedMessage();
+            exception = e;
         }
         catch (Exception e) {
-            errorMessage = e.getMessage();
+            exception = e;
         }
         throw new ConfigurationException("""
-                    The expression:
+                    Error in expression:
                     
                     %s
                     %s
-                    
-                    caused:
-                    
-                    %s
-                    """.formatted(expression, posLine, errorMessage));
+                    """.formatted(expression, posLine), exception);
     }
 
     @Override
     public <T> T evaluate(Exchange exchange, Interceptor.Flow flow, Class<T> type) {
         try {
-            Object o = spelExpression.getValue(new SpELExchangeEvaluationContext(exchange, exchange.getMessage(flow)),Object.class);
-            if (o == null) {
-                return null;
+            Object o = evaluate(exchange, flow);
+            if (Boolean.class.isAssignableFrom(type)) {
+                return type.cast(toBoolean(o));
             }
-            if (o instanceof SpELLablePropertyAware spa) {
-                if (type.getName().equals(String.class.getName())) {
-                    return type.cast(spa.getValue().toString());
-                }
-                return type.cast( spa.getValue());
+            if (String.class.isAssignableFrom(type)) {
+                return type.cast(toString(o));
             }
-            if (type.getName().equals("java.lang.String")) {
-                return type.cast(o.toString());
+            if (Object.class.isAssignableFrom(type)) {
+                return type.cast( toObject(o));
             }
-            if (type.getName().equals("java.lang.Object")) {
-                if (o instanceof String s) {
-                    if (s.isEmpty())
-                        return null;
-                }
-            }
-            if (type.isInstance(o))
-                return type.cast(o);
-            throw new RuntimeException("Cannot cast!");
+            throw new RuntimeException("Cannot cast {} to {}".formatted(o,type));
         } catch (SpelEvaluationException see) {
             log.error(see.getLocalizedMessage());
             ExchangeExpressionException eee = new ExchangeExpressionException(expression, see);
@@ -104,6 +90,56 @@ public class SpELExchangeExpression extends AbstractExchangeExpression {
             eee.stacktrace(false);
             throw eee.message(see.getLocalizedMessage());
         }
+    }
+
+    private @Nullable Object evaluate(Exchange exchange, Interceptor.Flow flow) {
+        return spelExpression.getValue(new SpELExchangeEvaluationContext(exchange, exchange.getMessage(flow)), Object.class);
+    }
+
+    private static Object toObject(Object o) {
+        if (o == null) {
+            return null;
+        }
+        switch (o) {
+            case String s: {
+                if (s.isEmpty())
+                    return null;
+                break;
+            }
+            case SpELLablePropertyAware spa:
+                return spa.getValue();
+            default:
+        }
+        return o;
+    }
+
+    private static String toString(Object o) {
+        if (o == null)
+            return "";
+        if (o instanceof SpELLablePropertyAware spa) {
+            return spa.getValue().toString();
+        }
+        return o.toString();
+    }
+
+    private static boolean toBoolean(Object o) {
+        if (o == null) {
+            return FALSE;
+        }
+        switch (o) {
+            case String s: {
+                if (s.isEmpty())
+                    return FALSE;
+                return Boolean.parseBoolean(s);
+            }
+            case SpELLablePropertyAware spa:
+                return spa.getValue() != null;
+            default:
+        }
+        if (o instanceof Boolean b) {
+            return b;
+        }
+        return FALSE;
     }
 
     private @NotNull SpelParserConfiguration getSpelParserConfiguration() {

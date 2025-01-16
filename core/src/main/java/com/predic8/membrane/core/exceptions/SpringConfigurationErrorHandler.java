@@ -32,6 +32,13 @@ public class SpringConfigurationErrorHandler {
     public static final String STARS = "**********************************************************************************";
 
     public static void handleRootCause(Exception e, Logger log) {
+
+        ConfigurationException ce = checkForConfigurationException(e);
+        if (ce != null) {
+            handleConfigurationException(ce);
+            return;
+        }
+
         switch (ExceptionUtils.getRootCause(e)) {
             case PropertyBatchUpdateException pbue -> handlePropertyBatchUpdateException(log, pbue);
             case ConfigurationException ee -> handleConfigurationException(ee);
@@ -39,6 +46,15 @@ public class SpringConfigurationErrorHandler {
             case SOAPProxyMultipleServicesException mse -> handleSOAPProxyMultipleServicesException(mse);
             case null, default -> log.error(e.getMessage(), e);
         }
+    }
+
+    private static ConfigurationException checkForConfigurationException(Exception e) {
+        for (Throwable t : ExceptionUtils.getThrowableList(e)) {
+            if (t instanceof ConfigurationException ce) {
+                return ce;
+            }
+        }
+        return null;
     }
 
     private static void handlePortOccupiedException(PortOccupiedException poe) {
@@ -108,19 +124,23 @@ public class SpringConfigurationErrorHandler {
 
     private static void handleConfigurationException(ConfigurationException ce) {
         var reason = "";
+        var location = "";
         if (ce.getCause() != null) {
-            reason = "\nReason: " + ce.getCause().getMessage();
+            reason = "\nReason: %s\n".formatted(ce.getCause().getMessage());
+        }
+        if (ce.getLocation() != null) {
+            location = "\nSee: " + ce.getLocation();
         }
         System.err.printf("""
                 ************** Configuration Error ***********************************
                 
                 %s
-                %s
+                %s%s
                 
                 Giving up.
                 
                 Check proxies.xml file for errors.
-                %n""", ce.getMessage(),reason);
+                %n""", ce.getMessage(),location,reason);
     }
 
     @SuppressWarnings("StringConcatenationInLoop")

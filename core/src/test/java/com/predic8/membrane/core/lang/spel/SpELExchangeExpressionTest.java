@@ -15,6 +15,7 @@ package com.predic8.membrane.core.lang.spel;
 
 import com.predic8.membrane.core.lang.*;
 import com.predic8.membrane.core.lang.ExchangeExpression.*;
+import com.predic8.membrane.core.util.*;
 import org.junit.jupiter.api.*;
 
 import java.util.*;
@@ -30,19 +31,66 @@ class SpELExchangeExpressionTest extends AbstractExchangeExpressionTest {
         return SPEL;
     }
 
+    // Boolean
+
     @Test
-    void string() {
+    void constants() {
+        assertTrue(evalBool("true"));
+        assertFalse(evalBool("false"));
+    }
+
+    @Test
+    void booleanNull() {
+        assertFalse(evalBool("null"));
+    }
+
+    @Test
+    void empty() {
+        assertThrows(ConfigurationException.class,() -> evalBool(""));
+    }
+
+    @Test
+    void zero() {
+        assertFalse(evalBool("0"));
+    }
+
+    @Test
+    void unknown() {
+        assertThrows(ExchangeExpressionException.class,() -> evalBool("unknown"));
+    }
+
+    @Test
+    void truth() {
+        assertTrue(evalBool("property.wet"));
+        assertFalse(evalBool("property['can-fly']"));
+    }
+
+    // String
+
+    @Test
+    void anyString() {
+        assertEquals("abc", evalString("'abc'"));
+    }
+
+
+    @Test
+    void header() {
         assertEquals("Jelly Fish", evalString("header.name"));
     }
 
     @Test
-    void accessNonExistingHeader() {
-        assertNull(evalString("header.unknown"));
+    void headerBracket() {
+        assertEquals("Jelly Fish", evalString("header['name']"));
     }
 
     @Test
-    void accessNonExistingPropertyAsObject() {
-        assertNull(evalObject("property.unknown"));
+    void headerEquals() {
+        assertTrue(evalBool("header.foo == '42'"));
+    }
+
+    @Test
+    void accessNonExistingHeader() {
+        assertEquals("",evalString("header.unknown"));
     }
 
     @Test
@@ -50,10 +98,11 @@ class SpELExchangeExpressionTest extends AbstractExchangeExpressionTest {
         assertEquals("",evalString("property.unknown"));
     }
 
+    // Object
+
     @Test
-    void truth() {
-        assertTrue(evalBool("property.wet"));
-        assertFalse(evalBool("property['can-fly']"));
+    void accessNonExistingPropertyAsObject() {
+        assertNull(evalObject("property.unknown"));
     }
 
     @Test
@@ -77,5 +126,17 @@ class SpELExchangeExpressionTest extends AbstractExchangeExpressionTest {
         }
         assertEquals("US",m.get("country"));
         assertEquals("Europe",m.get("continent"));
+    }
+
+    // Exchange Objects
+    @Test
+    void headerDash() {
+        assertEquals("Tokio", evalString("header['x-city']"));
+    }
+
+
+    @Test
+    void param() {
+        assertEquals("Paris", evalString("param.city"));
     }
 }
