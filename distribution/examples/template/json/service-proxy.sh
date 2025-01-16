@@ -28,6 +28,6 @@ else
     if [ $? -eq 0 ]; then
         start "$membrane_home"
     else
-        echo "Could not find start Membrane. Set the MEMBRANE_HOME env variable."
+        echo "Could not start Membrane. Set the MEMBRANE_HOME env variable."
     fi
 fi
