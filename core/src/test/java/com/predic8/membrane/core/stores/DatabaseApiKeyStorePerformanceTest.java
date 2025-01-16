@@ -56,7 +56,9 @@ public class DatabaseApiKeyStorePerformanceTest {
         long startTime = System.currentTimeMillis();
         testAllApiKeys();
         long endTime = System.currentTimeMillis();
-        System.out.println("Performance: " + (endTime - startTime) + " ms");
+        long duration = (endTime - startTime) / 1000;
+        System.out.println("Performance: " + duration + " seconds");
+        System.out.println("USERS per second: " + (USERS / duration));
     }
 
     private void testAllApiKeys() throws SQLException, UnauthorizedApiKeyException {
