@@ -63,7 +63,6 @@ public class Json2XmlInterceptor extends AbstractInterceptor {
             return CONTINUE;
         msg.getHeader().setContentType(TEXT_XML);
         msg.setBodyContent(json2Xml(msg.getBodyAsStream()));
-
         return CONTINUE;
     }
 
