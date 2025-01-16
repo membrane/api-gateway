@@ -40,7 +40,7 @@ public class TokenEndpointProcessor extends EndpointProcessor {
         try {
             exc.setResponse(new TokenFlowDecider(authServer,exc).getFlow().validateRequest());
         } catch (Exception e) {
-            log.error(e.getMessage(), e);
+            log.error("", e);
             ProblemDetails.internal(true)
                     .component(this.getClass().getSimpleName())
                     .exception(e)

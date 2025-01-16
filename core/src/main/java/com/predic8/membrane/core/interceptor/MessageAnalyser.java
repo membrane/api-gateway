@@ -91,7 +91,7 @@ public class MessageAnalyser extends AbstractInterceptor {
         try {
             data = analyse(exc.getRequest());
         } catch (Exception e) {
-			log.error("Could not analyse request: {}",e.getMessage(), e);
+			log.error("Could not analyse request.", e);
         }
 
         if (!data.hasAnyData()) {
@@ -119,7 +119,7 @@ public class MessageAnalyser extends AbstractInterceptor {
         try {
             data = analyse(exc.getResponse());
         } catch (Exception e) {
-            log.error("Could not analyse response: {}",e.getMessage(), e);
+            log.error("Could not analyse response.", e);
         }
 
         if (!data.hasAnyData()) {

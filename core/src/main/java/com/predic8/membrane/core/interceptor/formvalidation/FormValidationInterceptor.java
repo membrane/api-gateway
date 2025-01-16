@@ -119,7 +119,7 @@ public class FormValidationInterceptor extends AbstractInterceptor {
 					.detail("Could not parse query parameters!")
 					.extension("uri", exc.getRequest().getUri())
 					.exception(e)
-					.stacktrace(false)
+					.stacktrace(true)
 					.buildAndSetResponse(exc);
 			return ABORT;
         }

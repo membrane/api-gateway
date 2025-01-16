@@ -58,7 +58,7 @@ public class HTTPClientInterceptor extends AbstractInterceptor {
         try {
             exc.blockRequestIfNeeded();
         } catch (TerminateException e) {
-            log.error("Could not block request: {}",e.getMessage(), e);
+            log.error("Could not block request.",e);
         }
 
         try {

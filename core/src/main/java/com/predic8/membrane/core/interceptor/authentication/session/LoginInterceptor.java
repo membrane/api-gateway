@@ -152,7 +152,7 @@ public class LoginInterceptor extends AbstractInterceptor {
 						.component(getDisplayName())
 						.detail("Could not handle login request.!")
 						.exception(e)
-						.stacktrace(false)
+						.stacktrace(true)
 						.buildAndSetResponse(exc);
 				return ABORT;
             }

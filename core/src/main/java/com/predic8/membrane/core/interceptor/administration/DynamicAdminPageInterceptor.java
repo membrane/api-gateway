@@ -63,7 +63,7 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 					.component(getDisplayName())
 					.detail("Error in dynamic administration request!")
 					.exception(e)
-					.stacktrace(false)
+					.stacktrace(true)
 					.buildAndSetResponse(exc);
 			return ABORT;
         }

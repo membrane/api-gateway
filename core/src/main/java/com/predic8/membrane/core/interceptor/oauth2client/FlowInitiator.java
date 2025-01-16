@@ -79,7 +79,7 @@ public class FlowInitiator extends AbstractInterceptor {
                     .component(getDisplayName())
                     .detail("Error initiating OAuth2 flow!")
                     .exception(e)
-                    .stacktrace(false)
+                    .stacktrace(true)
                     .buildAndSetResponse(exc);
             return ABORT;
         }

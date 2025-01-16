@@ -50,7 +50,7 @@ public class EmptyEndpointProcessor extends EndpointProcessor {
         try {
             return processInternal(exc);
         } catch (Exception e) {
-            log.error(e.getMessage(), e);
+            log.error("", e);
             ProblemDetails.internal(true)
                     .component(this.getClass().getSimpleName())
                     .exception(e)

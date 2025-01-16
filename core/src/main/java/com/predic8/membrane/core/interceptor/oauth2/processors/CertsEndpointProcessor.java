@@ -53,7 +53,7 @@ public class CertsEndpointProcessor extends EndpointProcessor {
         try {
             exc.setResponse(ok().contentType(APPLICATION_JSON_UTF8).body(jsonBeautifier.beautify(jwks)).build());
         } catch (IOException e) {
-            log.error(e.getMessage(), e);
+            log.error("", e);
             ProblemDetails.internal(true)
                     .component(this.getClass().getSimpleName())
                     .exception(e)

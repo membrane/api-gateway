@@ -108,7 +108,7 @@ public class STOMPClient extends AbstractInterceptor {
 					.component(getDisplayName())
 					.detail("Error in STOMP client!")
 					.exception(e)
-					.stacktrace(false)
+					.stacktrace(true)
 					.buildAndSetResponse(exc);
 			return ABORT;
         }

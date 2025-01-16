@@ -44,7 +44,7 @@ public class DefaultEndpointProcessor extends EndpointProcessor {
             try {
                 exc.setResponse(OAuth2Util.createParameterizedJsonErrorResponse(jsonGen, "error", "invalid_request"));
             } catch (IOException e) {
-                log.error(e.getMessage(), e);
+                log.error("", e);
                 ProblemDetails.internal(true)
                         .component(this.getClass().getSimpleName())
                         .exception(e)

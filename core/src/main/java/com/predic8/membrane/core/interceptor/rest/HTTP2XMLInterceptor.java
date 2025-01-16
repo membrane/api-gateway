@@ -27,43 +27,43 @@ import java.nio.charset.*;
 import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 
 // TODO IMPLEMENTATION NOT FINISHED
-@MCElement(name="http2xml")
+@MCElement(name = "http2xml")
 public class HTTP2XMLInterceptor extends AbstractInterceptor {
 
-	private static final Logger log = LoggerFactory.getLogger(HTTP2XMLInterceptor.class.getName());
+    private static final Logger log = LoggerFactory.getLogger(HTTP2XMLInterceptor.class.getName());
 
-	public HTTP2XMLInterceptor() {
-		name = "HTTP 2 XML";
-	}
+    public HTTP2XMLInterceptor() {
+        name = "HTTP 2 XML";
+    }
 
-	@Override
-	public Outcome handleRequest(Exchange exc) {
+    @Override
+    public Outcome handleRequest(Exchange exc) {
         try {
             return handleRequestInternal(exc);
         } catch (Exception e) {
-			ProblemDetails.user(router.isProduction())
-					.component(getDisplayName())
-					.detail("Could not generate XML from HTTP information!")
-					.exception(e)
-					.stacktrace(true)
-					.buildAndSetResponse(exc);
-			return ABORT;
+            ProblemDetails.user(router.isProduction())
+                    .component(getDisplayName())
+                    .detail("Could not generate XML from HTTP information!")
+                    .exception(e)
+                    .stacktrace(true)
+                    .buildAndSetResponse(exc);
+            return ABORT;
         }
     }
 
-	public Outcome handleRequestInternal(Exchange exc) throws Exception {
-		log.debug("uri: "+ exc.getRequest().getUri());
+    public Outcome handleRequestInternal(Exchange exc) throws Exception {
+        log.debug("uri: " + exc.getRequest().getUri());
 
-		String res = new Request(exc.getRequest()).toXml();
-		log.debug("http-xml: "+ res);
+        String res = new Request(exc.getRequest()).toXml();
+        log.debug("http-xml: " + res);
 
-		exc.getRequest().setBodyContent(res.getBytes(StandardCharsets.UTF_8));
+        exc.getRequest().setBodyContent(res.getBytes(StandardCharsets.UTF_8));
 
-		// TODO
-		exc.getRequest().setMethod("POST");
-		exc.getRequest().getHeader().setSOAPAction("");
+        // TODO
+        exc.getRequest().setMethod("POST");
+        exc.getRequest().getHeader().setSOAPAction("");
 
-		return Outcome.CONTINUE;
-	}
+        return Outcome.CONTINUE;
+    }
 
 }

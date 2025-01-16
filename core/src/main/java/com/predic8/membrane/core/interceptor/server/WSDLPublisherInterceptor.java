@@ -163,7 +163,7 @@ public class WSDLPublisherInterceptor extends AbstractInterceptor {
                     .component(getDisplayName())
                     .detail("Could not return WSDL document!")
                     .exception(e)
-                    .stacktrace(false)
+                    .stacktrace(true)
                     .buildAndSetResponse(exc);
             return ABORT;
         }

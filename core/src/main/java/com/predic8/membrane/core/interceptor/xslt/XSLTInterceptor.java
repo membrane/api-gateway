@@ -57,7 +57,7 @@ public class XSLTInterceptor extends AbstractInterceptor {
 					.component(getDisplayName())
 					.detail("Error transforming request!")
 					.exception(e)
-					.stacktrace(false)
+					.stacktrace(true)
 					.buildAndSetResponse(exc);
 			return ABORT;
         }
@@ -73,7 +73,7 @@ public class XSLTInterceptor extends AbstractInterceptor {
 					.component(getDisplayName())
 					.detail("Error transforming response!")
 					.exception(e)
-					.stacktrace(false)
+					.stacktrace(true)
 					.buildAndSetResponse(exc);
 			return ABORT;
         }

@@ -76,7 +76,7 @@ public class AcmeHttpChallengeInterceptor extends AbstractInterceptor {
                                 .component(getDisplayName())
                                 .detail("Could not create thumbprint!")
                                 .exception(e)
-                                .stacktrace(false)
+                                .stacktrace(true)
                                 .buildAndSetResponse(exc);
                         return ABORT;
                     }
