@@ -1,18 +1,23 @@
-@echo off
-if not "%MEMBRANE_HOME%" == "" goto homeSet
-set "MEMBRANE_HOME=%cd%\..\..\.."
-echo "%MEMBRANE_HOME%"
-if exist "%MEMBRANE_HOME%\service-proxy.bat" goto homeOk
+function Find-MembraneDirectory {
+    param ([string]$currentPath)
 
-:homeSet
-if exist "%MEMBRANE_HOME%\service-proxy.bat" goto homeOk
-echo Please set the MEMBRANE_HOME environment variable to point to
-echo the directory where you have extracted the Membrane software.
-exit
+    while ($currentPath -ne (Get-Item "/").FullName) {
+        if (Test-Path "$currentPath\conf" -and Test-Path "$currentPath\lib") {
+            return $currentPath
+        }
+        $currentPath = (Get-Item $currentPath).Parent.FullName
+    }
+    return $null
+}
 
-:homeOk
-set "CLASSPATH=%MEMBRANE_HOME%"
-set "CLASSPATH=%MEMBRANE_HOME%/conf"
-set "CLASSPATH=%CLASSPATH%;%MEMBRANE_HOME%/starter.jar"
-echo Membrane Router running...
-java  -classpath "%CLASSPATH%" com.predic8.membrane.core.Starter -c proxies.xml
+$currentPath = (Get-Location).Path
+$membraneHome = Find-MembraneDirectory -currentPath $currentPath
+
+if (-not $membraneHome) {
+    Write-Output "Could not start Membrane. Ensure the directory structure is correct."
+    exit
+}
+
+$env:CLASSPATH = "$membraneHome\conf;$membraneHome\lib\*"
+Write-Output "Membrane Router running..."
+java -classpath "$env:CLASSPATH" com.predic8.membrane.core.Starter -c proxies.xml
