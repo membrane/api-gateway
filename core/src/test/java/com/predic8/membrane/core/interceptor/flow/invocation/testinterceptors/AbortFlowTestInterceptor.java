@@ -20,18 +20,24 @@ import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
 
+import java.io.*;
+
 import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 
 public class AbortFlowTestInterceptor extends AbstractInterceptor {
 
     @Override
-    public Outcome handleRequest(Exchange exc) throws Exception {
-        exc.setResponse(Response.ok().body(exc.getRequest().getBody().getContent()).build());
+    public Outcome handleRequest(Exchange exc) {
+        try {
+            exc.setResponse(Response.ok().body(exc.getRequest().getBody().getContent()).build());
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
         return ABORT;
     }
 
     @Override
-    public Outcome handleResponse(Exchange exc) throws Exception {
+    public Outcome handleResponse(Exchange exc) {
         return ABORT;
     }
 }

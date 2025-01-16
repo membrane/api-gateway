@@ -47,7 +47,21 @@ public class XMLProtectionInterceptor extends AbstractInterceptor {
 	}
 
 	@Override
-	public Outcome handleRequest(Exchange exc) throws Exception {
+	public Outcome handleRequest(Exchange exc) {
+        try {
+            return handleInternal(exc);
+        } catch (Exception e) {
+			ProblemDetails.user(router.isProduction())
+					.component(getDisplayName())
+					.detail("Error inspecting body!")
+					.exception(e)
+					.stacktrace(true)
+					.buildAndSetResponse(exc);
+			return ABORT;
+        }
+    }
+
+	private Outcome handleInternal(Exchange exc) throws Exception {
 
 		if (exc.getRequest().isBodyEmpty()) {
 			log.info("body is empty -> request is not scanned");

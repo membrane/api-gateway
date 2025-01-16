@@ -157,7 +157,7 @@ public class OAuth2AuthorizationServerInterceptor extends AbstractInterceptor {
     }
 
     @Override
-    public Outcome handleRequest(Exchange exc) throws Exception {
+    public Outcome handleRequest(Exchange exc) {
         Outcome outcome = getProcessors().runProcessors(exc);
         if (outcome != Outcome.CONTINUE)
             sessionManager.postProcess(exc);
@@ -165,7 +165,7 @@ public class OAuth2AuthorizationServerInterceptor extends AbstractInterceptor {
     }
 
     @Override
-    public Outcome handleResponse(Exchange exc) throws Exception {
+    public Outcome handleResponse(Exchange exc) {
         sessionManager.postProcess(exc);
         return super.handleResponse(exc);
     }

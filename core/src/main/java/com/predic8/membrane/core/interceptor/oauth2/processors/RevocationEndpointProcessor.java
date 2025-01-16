@@ -13,6 +13,7 @@
 
 package com.predic8.membrane.core.interceptor.oauth2.processors;
 
+import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.Outcome;
@@ -22,12 +23,16 @@ import com.predic8.membrane.core.interceptor.oauth2.OAuth2AuthorizationServerInt
 import com.predic8.membrane.core.interceptor.oauth2.OAuth2Util;
 import com.predic8.membrane.core.interceptor.oauth2.ParamNames;
 import com.predic8.membrane.core.util.URLParamUtil;
+import org.slf4j.*;
 
 import java.util.Map;
 
+import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 import static com.predic8.membrane.core.util.URLParamUtil.DuplicateKeyOrInvalidFormStrategy.ERROR;
 
 public class RevocationEndpointProcessor extends EndpointProcessor {
+
+    private static final Logger log = LoggerFactory.getLogger(RevocationEndpointProcessor.class);
 
     public RevocationEndpointProcessor(OAuth2AuthorizationServerInterceptor authServer) {
         super(authServer);
@@ -39,7 +44,21 @@ public class RevocationEndpointProcessor extends EndpointProcessor {
     }
 
     @Override
-    public Outcome process(Exchange exc) throws Exception {
+    public Outcome process(Exchange exc) {
+        try {
+            return processInternal(exc);
+        } catch (Exception e) {
+            log.error("", e);
+            ProblemDetails.internal(true)
+                    .component(this.getClass().getSimpleName())
+                    .exception(e)
+                    .stacktrace(true)
+                    .buildAndSetResponse(exc);
+            return ABORT;
+        }
+    }
+
+    private Outcome processInternal(Exchange exc) throws Exception {
         Map<String, String> params = URLParamUtil.getParams(uriFactory, exc, ERROR);
 
         if (!params.containsKey("token")) {

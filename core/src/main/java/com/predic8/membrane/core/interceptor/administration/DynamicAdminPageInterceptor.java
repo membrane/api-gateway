@@ -14,6 +14,7 @@
 package com.predic8.membrane.core.interceptor.administration;
 
 import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.exchangestore.*;
 import com.predic8.membrane.core.http.*;
@@ -27,6 +28,7 @@ import org.slf4j.*;
 
 import java.io.*;
 import java.lang.reflect.*;
+import java.net.*;
 import java.text.*;
 import java.util.*;
 import java.util.regex.*;
@@ -48,14 +50,25 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 	private boolean useXForwardedForAsClientAddr;
 
 	@Override
-	public Outcome handleRequest(Exchange exc) throws Exception {
+	public Outcome handleRequest(Exchange exc) {
 		log.debug("request: {}", exc.getOriginalRequestUri());
 
 		exc.setTimeReqSent(System.currentTimeMillis());
 
-		Outcome o = dispatchRequest(exc);
+        Outcome o = null;
+        try {
+            o = dispatchRequest(exc);
+        } catch (Exception e) {
+			ProblemDetails.user(router.isProduction())
+					.component(getDisplayName())
+					.detail("Error in dynamic administration request!")
+					.exception(e)
+					.stacktrace(true)
+					.buildAndSetResponse(exc);
+			return ABORT;
+        }
 
-		exc.setReceived();
+        exc.setReceived();
 		exc.setTimeResReceived(System.currentTimeMillis());
 
 		return o;
@@ -63,13 +76,13 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 
 	@SuppressWarnings("unused")
 	@Mapping("/admin/?(\\?.*)?")
-	public Response handleHomeRequest(Map<String, String> params, String relativeRootPath) throws Exception {
+	public Response handleHomeRequest(Map<String, String> params, String relativeRootPath) {
 		return respond(getServiceProxyPage(params, relativeRootPath));
 	}
 
 	@SuppressWarnings("unused")
 	@Mapping("/admin/proxy/?(\\?.*)?")
-	public Response handleProxyRequest(Map<String, String> params, String relativeRootPath) throws Exception {
+	public Response handleProxyRequest(Map<String, String> params, String relativeRootPath) {
 		return respond(getProxyPage(params, relativeRootPath));
 	}
 
@@ -194,8 +207,7 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 
 	@SuppressWarnings("unused")
 	@Mapping("/admin/service-proxy/delete/?(\\?.*)?")
-	public Response handleServiceProxyDeleteRequest(Map<String, String> params, String relativeRootPath)
-			throws Exception {
+	public Response handleServiceProxyDeleteRequest(Map<String, String> params, String relativeRootPath) {
 		if (readOnly)
 			return createReadOnlyErrorResponse();
 
@@ -220,8 +232,7 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 
 	@SuppressWarnings("unused")
 	@Mapping("/admin/proxy/delete/?(\\?.*)?")
-	public Response handleProxyDeleteRequest(Map<String, String> params, String relativeRootPath)
-			throws Exception {
+	public Response handleProxyDeleteRequest(Map<String, String> params, String relativeRootPath) {
 		if (readOnly)
 			return createReadOnlyErrorResponse();
 
@@ -289,25 +300,25 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 
 	@SuppressWarnings("unused")
 	@Mapping("/admin/balancers/?(\\?.*)?")
-	public Response handleBalancersRequest(Map<String, String> params, String relativeRootPath) throws Exception {
+	public Response handleBalancersRequest(Map<String, String> params, String relativeRootPath) {
 		return respond(getBalancersPage(params, relativeRootPath));
 	}
 
 	@SuppressWarnings("unused")
 	@Mapping("/admin/clusters/?(\\?.*)?")
-	public Response handleClustersRequest(Map<String, String> params, String relativeRootPath) throws Exception {
+	public Response handleClustersRequest(Map<String, String> params, String relativeRootPath) {
 		return respond(getClustersPage(params, relativeRootPath));
 	}
 
 	@SuppressWarnings("unused")
 	@Mapping("/admin/clusters/show/?(\\?.*)?")
-	public Response handleClustersShowRequest(Map<String, String> params, String relativeRootPath) throws Exception {
+	public Response handleClustersShowRequest(Map<String, String> params, String relativeRootPath) {
 		return respond(getClusterPage(params, relativeRootPath));
 	}
 
 	@SuppressWarnings("unused")
 	@Mapping("/admin/clusters/save/?(\\?.*)?")
-	public Response handleClustersSaveRequest(Map<String, String> params, String relativeRootPath) throws Exception {
+	public Response handleClustersSaveRequest(Map<String, String> params, String relativeRootPath) {
 		if (readOnly)
 			return createReadOnlyErrorResponse();
 
@@ -448,36 +459,36 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 
 	@SuppressWarnings("unused")
 	@Mapping("/admin/statistics")
-	public Response handleStatisticsRequest(Map<String, String> params, String relativeRootPath) throws Exception {
+	public Response handleStatisticsRequest(Map<String, String> params, String relativeRootPath) {
 		return respond(getStatisticsPage(params, relativeRootPath));
 	}
 
 	@SuppressWarnings("unused")
 	@Mapping("/admin/streams")
-	public Response handleStreamPumpsRequest(Map<String, String> params, String relativeRootPath) throws Exception {
+	public Response handleStreamPumpsRequest(Map<String, String> params, String relativeRootPath) {
 		return respond(getStreamPumpsPage(params, relativeRootPath));
 	}
 
 	@Mapping("/admin/calls(/?\\?.*)?")
-	public Response handleCallsRequest(Map<String, String> params, String relativeRootPath) throws Exception {
+	public Response handleCallsRequest(Map<String, String> params, String relativeRootPath) {
 		return respond(getCallsPage(params, relativeRootPath));
 	}
 
 	@SuppressWarnings("unused")
 	@Mapping("/admin/call/?(\\?.*)?")
-	public Response handleCallRequest(Map<String, String> params, String relativeRootPath) throws Exception {
+	public Response handleCallRequest(Map<String, String> params, String relativeRootPath) {
 		return respond(getCallPage(params, relativeRootPath));
 	}
 
 	@SuppressWarnings("unused")
 	@Mapping("/admin/clients")
-	public Response handleClientsRequest(Map<String, String> params, String relativeRootPath) throws Exception {
+	public Response handleClientsRequest(Map<String, String> params, String relativeRootPath) {
 		return respond(getClientsPage(params, relativeRootPath));
 	}
 
 	@SuppressWarnings("unused")
 	@Mapping("/admin/about")
-	public Response getAbout(Map<String, String> params, String relativeRootPath) throws Exception {
+	public Response getAbout(Map<String, String> params, String relativeRootPath) {
 		return respond(getAboutPage(params, relativeRootPath));
 	}
 
@@ -841,7 +852,7 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 		}.createPage();
 	}
 
-	private Outcome dispatchRequest(Exchange exc) throws Exception {
+	private Outcome dispatchRequest(Exchange exc) throws URISyntaxException, IOException, InvocationTargetException, IllegalAccessException {
 		String pathQuery = URLUtil.getPathQuery(router.getUriFactory(), exc.getDestinations().getFirst());
 		for (Method m : getClass().getMethods() ) {
 			Mapping a = m.getAnnotation(Mapping.class);
@@ -853,7 +864,7 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 		return CONTINUE;
 	}
 
-	private Map<String, String> getParams(Exchange exc) throws Exception {
+	private Map<String, String> getParams(Exchange exc) throws URISyntaxException, IOException {
 		return URLParamUtil.getParams(router.getUriFactory(), exc, ERROR);
 	}
 

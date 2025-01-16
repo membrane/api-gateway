@@ -111,13 +111,13 @@ public class HeaderFilterInterceptor extends AbstractInterceptor {
     }
 
     @Override
-    public Outcome handleRequest(Exchange exc) throws Exception {
+    public Outcome handleRequest(Exchange exc) {
         handleMessage(exc.getRequest());
         return CONTINUE;
     }
 
     @Override
-    public Outcome handleResponse(Exchange exc) throws Exception {
+    public Outcome handleResponse(Exchange exc) {
         handleMessage(exc.getResponse());
         return CONTINUE;
     }
