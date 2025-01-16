@@ -1,5 +1,7 @@
 #!/bin/sh
 
+required_version="17"
+
 start() {
     membrane_home="$1"
     export CLASSPATH="$membrane_home/conf:$membrane_home/lib/*"
@@ -21,9 +23,43 @@ find_membrane_directory() {
     return 1
 }
 
-membrane_home=$(find_membrane_directory "$(pwd)")
-if [ $? -eq 0 ]; then
-    start "$membrane_home"
+start_membrane() {
+  membrane_home=$(find_membrane_directory "$(pwd)")
+  if [ $? -eq 0 ]; then
+      start "$membrane_home"
+  else
+      echo "Could not start Membrane. Ensure the directory structure is correct."
+  fi
+}
+
+if ! command -v java >/dev/null 2>&1; then
+    echo "Java is not installed"
+    exit 1
+fi
+
+version_line=$(java -version 2>&1 | while read -r line; do
+    case "$line" in
+        *"version"*)
+            echo "$line"
+            break
+            ;;
+    esac
+done)
+
+if [ -z "$version_line" ]; then
+    echo "WARNING: Could not determine Java version. Make sure your Java version is at least $required_version. Proceeding anyway..."
+    start_membrane
+    exit 0
+fi
+
+full_version=${version_line#*version \"}
+full_version=${full_version%%\"*}
+current_version=${full_version%%.*}
+
+if expr "'$current_version" \>= "'$required_version" > /dev/null; then
+    start_membrane
+    exit 0
 else
-    echo "Could not start Membrane. Ensure the directory structure is correct."
+    echo "Java version mismatch: Required=$required_version, Installed=$full_version"
+    exit 1
 fi
