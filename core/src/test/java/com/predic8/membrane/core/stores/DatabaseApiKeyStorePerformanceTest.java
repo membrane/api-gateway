@@ -17,11 +17,11 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 public class DatabaseApiKeyStorePerformanceTest {
 
     private static final Logger logger = Logger.getLogger(DatabaseApiKeyStorePerformanceTest.class.getName());
-    DatabaseApiKeyStore databaseApiKeyStore;
-    EmbeddedDataSource dataSource;
-    KeyTable keyTable;
-    ScopeTable scopeTable;
-    static final int USERS = 10000;
+    private DatabaseApiKeyStore databaseApiKeyStore;
+    private EmbeddedDataSource dataSource;
+    private KeyTable keyTable;
+    private ScopeTable scopeTable;
+    private static final int USERS = 10000;
 
     @BeforeEach
     void setUp() throws SQLException {
