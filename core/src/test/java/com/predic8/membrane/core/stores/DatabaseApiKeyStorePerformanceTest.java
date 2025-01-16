@@ -10,16 +10,19 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.sql.*;
-import java.util.*;
-import java.util.logging.Level;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 import java.util.logging.Logger;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class DatabaseApiKeyStorePerformanceTest {
 
     private static final Logger LOGGER = Logger.getLogger(DatabaseApiKeyStorePerformanceTest.class.getName());
-    private static final int USERS = 10;
+    private static final int USERS = 10000;
     private static final String DATABASE_NAME = "test";
     private static final String CREATE_DB_FLAG = "create";
     private Map<String, List<String>> keyToScopesMap = new HashMap<>();
@@ -34,13 +37,13 @@ public class DatabaseApiKeyStorePerformanceTest {
     void setUp() throws SQLException {
         databaseApiKeyStore = createApiKeyStore();
         connection = getDataSource().getConnection();
-        clearTablesIfExist();
-        createTables();
         databaseApiKeyStore.init(new Router());
+        clearTablesIfExist();
     }
 
     @Test
     public void performanceTest() throws UnauthorizedApiKeyException, SQLException {
+        createTables();
         long startTime = System.currentTimeMillis();
         validateAllApiKeys();
         long endTime = System.currentTimeMillis();
@@ -49,11 +52,11 @@ public class DatabaseApiKeyStorePerformanceTest {
 
     @Test
     public void createTableIfTableDoNotExist() throws UnauthorizedApiKeyException, SQLException {
-        clearTablesIfExist();
         databaseApiKeyStore.getScopes("");
         PreparedStatement stmt = connection.prepareStatement("SELECT * FROM %s".formatted(databaseApiKeyStore.getKeyTable().getName()));
         stmt.executeQuery();
         assertTrue(stmt.execute());
+        clearTablesIfExist();
     }
 
     private DatabaseApiKeyStore createApiKeyStore() {
