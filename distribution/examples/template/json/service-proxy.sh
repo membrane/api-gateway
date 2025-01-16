@@ -21,13 +21,9 @@ find_membrane_directory() {
     return 1
 }
 
-if [ -n "$MEMBRANE_HOME" ]; then
-    start "$MEMBRANE_HOME"
+membrane_home=$(find_membrane_directory "$(pwd)")
+if [ $? -eq 0 ]; then
+    start "$membrane_home"
 else
-    membrane_home=$(find_membrane_directory "$(pwd)")
-    if [ $? -eq 0 ]; then
-        start "$membrane_home"
-    else
-        echo "Could not start Membrane. Set the MEMBRANE_HOME env variable."
-    fi
+    echo "Could not start Membrane. Ensure the directory structure is correct."
 fi
