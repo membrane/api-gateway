@@ -49,8 +49,7 @@ public class DatabaseApiKeyStore extends AbstractJdbcSupport implements ApiKeySt
     }
 
     private void checkApiKey(String apiKey, Connection connection) throws SQLException, UnauthorizedApiKeyException {
-        String query = "SELECT * FROM %s WHERE key_value = ?".formatted(keyTable.getName());
-        try (PreparedStatement stmt = connection.prepareStatement(query)) {
+        try (PreparedStatement stmt = connection.prepareStatement("SELECT * FROM %s WHERE key_value = ?".formatted(keyTable.getName()))) {
             stmt.setString(1, apiKey);
             try (ResultSet rs = stmt.executeQuery()) {
                 if (!rs.next()) {
