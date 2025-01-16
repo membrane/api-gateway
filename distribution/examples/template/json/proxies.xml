@@ -40,7 +40,7 @@
 				<template contentType="application/json">
 					{"city": "${property.city}"}
 				</template>
-				<setProperty name="city" value="${/city}" language="xpath"/><!-- Is executed first on the way back -->
+				<setProperty name="city" value="${/city}" language="xpath"/><!-- Is executed on the way back -->
 			</response>
 			<target host="localhost" port="3000" /><!-- Calls logger API below -->
 		</api>

@@ -13,18 +13,40 @@
    limitations under the License. */
 package com.predic8.membrane.core.lang.spel;
 
+import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.lang.*;
 import com.predic8.membrane.core.lang.ExchangeExpression.*;
 import com.predic8.membrane.core.util.*;
 import org.junit.jupiter.api.*;
 
+import java.net.*;
 import java.util.*;
 
+import static com.predic8.membrane.core.http.Request.*;
 import static com.predic8.membrane.core.lang.ExchangeExpression.Language.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 @SuppressWarnings("rawtypes")
 class SpELExchangeExpressionTest extends AbstractExchangeExpressionTest {
+
+    @Override
+    protected Request.Builder getRequestBuilder() throws URISyntaxException {
+        return post("/foo?city=Paris")
+                .body("""
+                {
+                    "id": 747,
+                    "name": "Jelly Fish",
+                    "fish": true,
+                    "insect": false,
+                    "wings": null,
+                    "tags": ["animal","water"],
+                    "world": {
+                        "country": "US",
+                        "continent": "Europe"
+                    }
+                }
+                """);
+    }
 
     @Override
     protected Language getLanguage() {

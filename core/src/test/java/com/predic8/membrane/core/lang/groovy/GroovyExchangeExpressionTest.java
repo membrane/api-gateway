@@ -13,10 +13,12 @@
    limitations under the License. */
 package com.predic8.membrane.core.lang.groovy;
 
+import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.lang.*;
 import com.predic8.membrane.core.lang.ExchangeExpression.*;
 import org.junit.jupiter.api.*;
 
+import java.net.*;
 import java.util.*;
 
 import static com.predic8.membrane.core.lang.ExchangeExpression.Language.*;
@@ -24,6 +26,11 @@ import static org.junit.jupiter.api.Assertions.*;
 
 @SuppressWarnings("rawtypes")
 class GroovyExchangeExpressionTest extends AbstractExchangeExpressionTest {
+
+    @Override
+    protected Request.Builder getRequestBuilder() throws URISyntaxException {
+        return Request.get("foo");
+    }
 
     @Override
     protected Language getLanguage() {
