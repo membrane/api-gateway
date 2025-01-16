@@ -30,31 +30,53 @@ public abstract class AbstractJdbcSupport {
         }
         if (datasources.length > 1) {
             throw new ConfigurationException("""
-                More than one DataSource found in configuration. Specify the dataSource name explicitly.
+                        More than one DataSource found in configuration. Specify the dataSource name explicitly.
+                    
+                        Sample:
+                    
+                        <spring:bean id="yourDataSource" class="org.apache.commons.dbcp.BasicDataSource">
+                            <spring:property name="driverClassName" value="yourDriver"> />
+                            <spring:property name="url" value="jdbc:mysql://localhost:3306/yourDatabase" />
+                            <spring:property name="username" value="yourUsername" />
+                            <spring:property name="password" value="yourPassword" />
+                        </spring:bean>
+                    
+                         <router>
+                            <api port="2000" />
+                                <apiKey>
+                                    <databaseApiKeyStore datasource="yourDataSource">
+                                        <keyTable>key</keyTable>
+                                        <scopeTable>scope</scopeTable>
+                                    </databaseApiKeyStore>
+                                </apiKey>
+                            </api>
+                        </router>
+                    """);
+        }
+        throw new RuntimeException("""
+                No datasource found - specifiy a DataSource bean in your configuration
                 
                 Sample:
                 
-                <spring:bean id="yourDataSource" class="org.apache.commons.dbcp.BasicDataSource">
-                    <spring:property name="driverClassName" value="yourDriver"> />
-                    <spring:property name="url" value="jdbc:mysql://localhost:3306/yourDatabase" />
-                    <spring:property name="username" value="yourUsername" />
-                    <spring:property name="password" value="yourPassword" />
-                </spring:bean>
+                        <spring:bean id="yourDataSource" class="org.apache.commons.dbcp.BasicDataSource">
+                            <spring:property name="driverClassName" value="yourDriver"> />
+                            <spring:property name="url" value="jdbc:mysql://localhost:3306/yourDatabase" />
+                            <spring:property name="username" value="yourUsername" />
+                            <spring:property name="password" value="yourPassword" />
+                        </spring:bean>
                 
-                 <router>
-                    <api port="2000" />
-                        <apiKey>
-                            <databaseApiKeyStore datasource="yourDataSource">
-                                <keyTable>key</keyTable>
-                                <scopeTable>scope</scopeTable>
-                            </databaseApiKeyStore>
-                        </apiKey>
-                    </api>
-                </router>
-            """);
-        }
-        // Use config sample for both
-        throw new RuntimeException("No datasource found - specifiy a DataSource bean in your Membrane configuration");
+                         <router>
+                            <api port="2000" />
+                                <apiKey>
+                                    <databaseApiKeyStore datasource="yourDataSource">
+                                        <keyTable>key</keyTable>
+                                        <scopeTable>scope</scopeTable>
+                                    </databaseApiKeyStore>
+                                </apiKey>
+                            </api>
+                        </router>
+                """
+        );
     }
 
     @MCAttribute
