@@ -72,7 +72,7 @@ class JsonpathExchangeExpressionTest extends AbstractExchangeExpressionTest {
     @Test
     void list() {
         Object o = evalObject("$.tags");
-        if (!(o instanceof List l)) {
+        if (!(o instanceof List<?> l)) {
             fail();
             return;
         }
@@ -84,7 +84,7 @@ class JsonpathExchangeExpressionTest extends AbstractExchangeExpressionTest {
     @Test
     void map() {
         Object o = evalObject("$.world");
-        if (!(o instanceof Map m)) {
+        if (!(o instanceof Map<?,?> m)) {
             fail();
             return;
         }
