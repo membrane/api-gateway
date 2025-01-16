@@ -1,33 +1,67 @@
-#!/bin/bash
+#!/bin/sh
 
-## resolve links - $0 may be a link to Membrane's home
-PRG="$0"
+required_version="21"
 
-# need this for relative symlinks
-while [ -h "$PRG" ] ; do
-  ls=`ls -ld "$PRG"`
-  link=`expr "$ls" : '.*-> \(.*\)$'`
-  if expr "$link" : '/.*' > /dev/null; then
-    PRG="$link"
-  else
-    PRG="`dirname "$PRG"`/$link"
-  fi
-done
+start() {
+    membrane_home="$1"
+    shift
+    CLASSPATH="$membrane_home/conf:$membrane_home/lib/*"
+    echo "Membrane Router running..."
+    exec java $JAVA_OPTS -classpath "$CLASSPATH" com.predic8.membrane.core.cli.RouterCLI "$@"
+}
 
-saveddir=`pwd`
+resolve_membrane_home() {
+    PRG="$1"
 
-MEMBRANE_HOME=`dirname "$PRG"`
+    # Resolve symlinks
+    while [ -h "$PRG" ] ; do
+        ls=$(ls -ld "$PRG")
+        link=$(expr "$ls" : '.*-> \(.*\)$')
+        if expr "$link" : '/.*' > /dev/null; then
+            PRG="$link"
+        else
+            PRG="$(dirname "$PRG")/$link"
+        fi
+    done
 
-# make it fully qualified
-export MEMBRANE_HOME=`cd "$MEMBRANE_HOME" && pwd`
+    saveddir=$(pwd)
+    MEMBRANE_HOME=$(dirname "$PRG")
+    MEMBRANE_HOME=$(cd "$MEMBRANE_HOME" && pwd)
+    cd "$saveddir"
 
-cd "$saveddir"
-# echo Using Membrane at $MEMBRANE_HOME
+    echo "$MEMBRANE_HOME"
+}
 
-CLASSPATH="$MEMBRANE_HOME/conf"
-CLASSPATH="$CLASSPATH:$MEMBRANE_HOME/starter.jar"
-export CLASSPATH
-cd "$MEMBRANE_HOME"
+if ! command -v java >/dev/null 2>&1; then
+    echo "Java is not installed"
+    exit 1
+fi
 
-echo Membrane Router running...
-exec java $JAVA_OPTS -classpath "$CLASSPATH" com.predic8.membrane.core.Starter "$@"
+version_line=$(java -version 2>&1 | while read -r line; do
+    case "$line" in
+        *"version"*)
+            echo "$line"
+            break
+            ;;
+    esac
+done)
+
+if [ -z "$version_line" ]; then
+    echo "WARNING: Could not determine Java version. Make sure your Java version is at least $required_version. Proceeding anyway..."
+    MEMBRANE_HOME=$(resolve_membrane_home "$0")
+    start "$MEMBRANE_HOME" "$@"
+    exit 0
+fi
+
+full_version=${version_line#*version \"}
+full_version=${full_version%%\"*}
+current_version=${full_version%%.*}
+
+if test "$current_version" -ge $required_version; then
+    MEMBRANE_HOME=$(resolve_membrane_home "$0")
+    start "$MEMBRANE_HOME" "$@"
+    exit 0
+else
+    echo "Java version mismatch: Required=$required_version, Installed=$full_version"
+    exit 1
+fi
