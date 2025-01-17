@@ -30,6 +30,7 @@ import java.util.Optional;
 
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.RESPONSE;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.REQUEST_RESPONSE_ABORT_FLOW;
 import static java.util.stream.Stream.concat;
 
 @MCElement(name = "choose")
@@ -49,6 +50,11 @@ public class ChoiceInterceptor extends AbstractFlowInterceptor {
         ).toList());
         // Has to be called after adding interceptors.
         super.init();
+    }
+
+    public ChoiceInterceptor() {
+        this.name = "choice";
+        this.setFlow(REQUEST_RESPONSE_ABORT_FLOW);
     }
 
     @Override
