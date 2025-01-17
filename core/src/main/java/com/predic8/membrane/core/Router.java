@@ -317,6 +317,8 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
                     """, e.getMessage(), e.getLocation());
             System.exit(1);
         } catch (Exception e) {
+            if (e instanceof RuntimeException)
+                throw (RuntimeException) e;
             throw new RuntimeException(e);
         }
 

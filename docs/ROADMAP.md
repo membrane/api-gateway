@@ -46,7 +46,6 @@
 ## TODOs
 
 ### Tests
-- Run ConfigSerializationTest from annot
 - List how to run all tests
   - ConfigSerializationTest
 - Is SessionResumptionTest still needed?
@@ -59,7 +58,6 @@
   - Write example with lots of samples in different languages
 - Restructure samples
 - Rename ExampleTests to .*ExampleTests
-- Call Example
 - Is still in use:
   - /xml/project.xml?
   
@@ -76,13 +74,13 @@
 - proxies-2.xsd
   - new Namespace e.g. https://membrane-api.io...
 - 2025
-- Check AdminConsole
-- Check that interceptors define their flows
 - Test in proxies.xml internal with port
-- Look at ignored tests
 - Interceptor init() and init(Router router)
 - ProblemDetails
-  - JSONValidator
+  - Validators
+     - XML, JSON, WSDL
+     - All in examples/validation
+  - OpenAPI
 - In com.predic8.membrane.core.interceptor.oauth2.authorizationservice.AuthorizationService 
   - Remove throws: 
     - public abstract String getJwksEndpoint() throws Exception; 
@@ -100,6 +98,7 @@
   default: message="${header}\n${body}"
 - Remove etcd stuff 
 - Rewrite RatelimitInterceptor to use AbstractLanguageInterceptor
+- Check that starter is really using Java 8
 
 ## Done
 - Proxy.init() and init(router) make it clear what to call!
@@ -111,6 +110,7 @@
   - XPathCBR aka choose
   - XPathExtractor
   - XPathInterceptor
+  - Gatekeeper
 - Swagger-proxy
   - OpenAPI supports Swagger 2.0
 - UnitTests: Use PackageScan for more or all

@@ -27,8 +27,6 @@ abstract class AbstractLanguageInterceptor extends AbstractInterceptor {
      */
     protected Language language = SPEL;
 
-    protected String expression = ""; // default if there is no expression
-
     public Language getLanguage() {
         return language;
     }
