@@ -13,7 +13,6 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.soap;
 
-import com.google.common.collect.*;
 import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.interceptor.server.*;
@@ -23,13 +22,14 @@ import org.junit.jupiter.api.*;
 
 import java.io.*;
 
+import static com.google.common.collect.Lists.*;
 import static io.restassured.RestAssured.*;
 import static java.nio.charset.StandardCharsets.*;
 import static java.util.Objects.*;
 import static org.hamcrest.Matchers.*;
 
 /**
- * Checks the combination of a soapProxy and internalProxy, using "service:internalProxyName/path/to/the?wsdl".
+ * Checks the combination of a soapProxy and internalProxy, using "internal://internalProxyName/path/to/the?wsdl".
  * <p>
  */
 public class SoapAndInternalProxyTest {
@@ -49,7 +49,7 @@ public class SoapAndInternalProxyTest {
 
     @Test
     void test() throws Exception {
-        router.setRules(Lists.newArrayList(createInternalProxy()));
+        router.setRules(newArrayList(createInternalProxy()));
         router.start();
         Proxy soapProxy = createServiceProxyWithWSDLInterceptors();
         soapProxy.init(router);
@@ -103,7 +103,7 @@ public class SoapAndInternalProxyTest {
         sp.getInterceptors().add(e);
 
         WSDLPublisherInterceptor publisher = new WSDLPublisherInterceptor();
-        publisher.setWsdl("service://int/?wsdl");
+        publisher.setWsdl("internal://int/?wsdl");
         sp.getInterceptors().add(publisher);
         return sp;
     }
