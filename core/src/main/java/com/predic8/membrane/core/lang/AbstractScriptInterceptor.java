@@ -16,6 +16,7 @@
 
 package com.predic8.membrane.core.lang;
 
+import com.fasterxml.jackson.core.*;
 import com.fasterxml.jackson.databind.*;
 import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.exceptions.*;
@@ -26,14 +27,13 @@ import org.graalvm.polyglot.*;
 import org.jetbrains.annotations.*;
 import org.slf4j.*;
 
-import java.io.*;
 import java.util.*;
 import java.util.function.*;
 
 import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
-import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
+import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.lang.ScriptingUtils.*;
 import static java.nio.charset.StandardCharsets.*;
 import static org.apache.commons.lang3.StringUtils.*;
@@ -49,16 +49,17 @@ public abstract class AbstractScriptInterceptor extends AbstractInterceptor {
     private boolean scriptAccessesJson;
 
     @Override
-    public Outcome handleRequest(Exchange exc) throws Exception {
+    public Outcome handleRequest(Exchange exc) {
         return runScript(exc, REQUEST);
     }
 
     @Override
-    public Outcome handleResponse(Exchange exc) throws Exception {
+    public Outcome handleResponse(Exchange exc) {
         return runScript(exc, RESPONSE);
     }
 
-    public void init() throws IOException, ClassNotFoundException {
+    public void init() {
+        super.init();
         if (router == null)
             throw new RuntimeException("ScriptInterceptors need router instance!");
         if (src.isEmpty()) {
@@ -69,18 +70,17 @@ public abstract class AbstractScriptInterceptor extends AbstractInterceptor {
         initInternal();
     }
 
-    protected abstract void initInternal() throws IOException, ClassNotFoundException;
+    protected abstract void initInternal();
 
     @SuppressWarnings("rawtypes")
-    protected Outcome runScript(Exchange exc, Flow flow) throws IOException {
+    protected Outcome runScript(Exchange exc, Flow flow) {
 
         Message msg = getMessage(exc, flow);
 
         Object res;
         try {
             res = script.apply(getParameterBindings(exc, flow, msg));
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             handleScriptExecutionException(exc, e);
             return ABORT;
         }
@@ -98,14 +98,24 @@ public abstract class AbstractScriptInterceptor extends AbstractInterceptor {
             exc.setRequest(request);
         }
 
-        if(res instanceof Map m) {
+        if (res instanceof Map m) {
             msg = createResponseAndToExchangeIfThereIsNone(exc, flow, msg);
             msg.getHeader().setContentType(APPLICATION_JSON);
-            msg.setBodyContent(om.writeValueAsBytes(m));
+            try {
+                msg.setBodyContent(om.writeValueAsBytes(m));
+            } catch (JsonProcessingException e) {
+                ProblemDetails.internal(router.isProduction())
+                        .component(getDisplayName())
+                        .detail("Error serializing Map to JSON")
+                        .exception(e)
+                        .stacktrace(true)
+                        .buildAndSetResponse(exc);
+                return ABORT;
+            }
             return CONTINUE;
         }
 
-        if(res instanceof String s) {
+        if (res instanceof String s) {
             if (s.equals("undefined")) {
                 return CONTINUE;
             }
@@ -115,18 +125,27 @@ public abstract class AbstractScriptInterceptor extends AbstractInterceptor {
             return CONTINUE;
         }
 
-        if(res == null) {
+        if (res == null) {
             return CONTINUE;
         }
 
         // Test for package name is needed cause the dependency is provided and maybe not on the classpath
-        if(res.getClass().getPackageName().startsWith("org.graalvm.polyglot") && res instanceof Value value) {
+        if (res.getClass().getPackageName().startsWith("org.graalvm.polyglot") && res instanceof Value value) {
             Map m = value.as(Map.class);
             msg.getHeader().setContentType(APPLICATION_JSON);
-            msg.setBodyContent(om.writeValueAsBytes(m));
+            try {
+                msg.setBodyContent(om.writeValueAsBytes(m));
+            } catch (JsonProcessingException e) {
+                ProblemDetails.internal(router.isProduction())
+                        .component(getDisplayName())
+                        .detail("Error serializing Map to JSON")
+                        .exception(e)
+                        .stacktrace(true)
+                        .buildAndSetResponse(exc);
+                return ABORT;
+            }
             return CONTINUE;
         }
-
         return CONTINUE;
     }
 
@@ -134,9 +153,10 @@ public abstract class AbstractScriptInterceptor extends AbstractInterceptor {
      * If a script returns a String or a Map that should be interpreted as a successful message (200 OK) if there
      * is not a message already.
      * Design issue: Method does to things!
+     *
      * @param exchange Current Exchange
-     * @param flow Flow
-     * @param msg Current Message
+     * @param flow     Flow
+     * @param msg      Current Message
      * @return Message message of the exchange or newly created Response message
      */
     private static @Nullable Message createResponseAndToExchangeIfThereIsNone(Exchange exchange, Flow flow, Message msg) {
@@ -151,7 +171,7 @@ public abstract class AbstractScriptInterceptor extends AbstractInterceptor {
     }
 
     protected void handleScriptExecutionException(Exchange exc, Exception e) {
-        log.warn("Error executing {} script: {}", name , e.getMessage());
+        log.warn("Error executing {} script: {}", name, e.getMessage());
         log.warn("Script: {}", src);
 
         ProblemDetails pd = ProblemDetails.internal(router.isProduction())
@@ -159,7 +179,7 @@ public abstract class AbstractScriptInterceptor extends AbstractInterceptor {
 
         if (!router.isProduction()) {
             pd.extension("message", e.getMessage())
-            .extension("source", trim(src));
+                    .extension("source", trim(src));
         } else {
             pd.detail("See logs for details.");
         }
@@ -178,8 +198,8 @@ public abstract class AbstractScriptInterceptor extends AbstractInterceptor {
     public void handleAbort(Exchange exc) {
         try {
             runScript(exc, Flow.ABORT);
-        } catch (Exception  e) {
-            log.error("",e);
+        } catch (Exception e) {
+            log.error("", e);
         }
     }
 

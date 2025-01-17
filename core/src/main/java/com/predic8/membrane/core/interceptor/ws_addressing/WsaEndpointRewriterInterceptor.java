@@ -13,31 +13,45 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.ws_addressing;
 
+import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
+import org.springframework.context.*;
 
+import javax.xml.stream.*;
 import java.io.ByteArrayOutputStream;
+
+import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 
 public class WsaEndpointRewriterInterceptor extends AbstractInterceptor {
 	@Override
-	public Outcome handleRequest(Exchange exc) throws Exception {
+	public Outcome handleRequest(Exchange exc) {
 		ByteArrayOutputStream output = new ByteArrayOutputStream();
 
-		new WsaEndpointRewriter(getRegistry()).rewriteEndpoint(exc.getRequest().getBodyAsStreamDecoded(), output, 2020, exc);
+        try {
+			// Why is port 2020 hard coded?
+            new WsaEndpointRewriter(getRegistry()).rewriteEndpoint(exc.getRequest().getBodyAsStreamDecoded(), output, 2020, exc);
+        } catch (XMLStreamException e) {
+			ProblemDetails.internal(router.isProduction())
+					.component(getDisplayName())
+					.detail("Could not rewrite endpoint!")
+					.exception(e)
+					.stacktrace(true)
+					.buildAndSetResponse(exc);
+			return ABORT;
+        }
 
-		exc.getRequest().setBodyContent(output.toByteArray());
+        exc.getRequest().setBodyContent(output.toByteArray());
 
 		return Outcome.CONTINUE;
 	}
 
 	private DecoupledEndpointRegistry getRegistry() {
-		return getRouter().getBeanFactory().getBean(DecoupledEndpointRegistry.class);
+		ApplicationContext beanFactory = getRouter().getBeanFactory();
+		if (beanFactory == null) {
+			return new DecoupledEndpointRegistry();
+		}
+		return beanFactory.getBean(DecoupledEndpointRegistry.class);
 	}
-
-	@Override
-	public Outcome handleResponse(Exchange exc) throws Exception {
-		return Outcome.CONTINUE;
-	}
-
 }

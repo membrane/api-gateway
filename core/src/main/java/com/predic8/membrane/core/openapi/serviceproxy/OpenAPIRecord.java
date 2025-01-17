@@ -60,11 +60,9 @@ public class OpenAPIRecord {
             throw new ConfigurationException("""
                     Cannot convert OpenAPI to JSON.
                     
-                    Caused by: %s
-                    
                     OpenAPI:
                     %s
-                    """.formatted(e.getMessage(),api));
+                    """.formatted(api),e);
         }
         this.spec = spec;
         this.version = api.getSpecVersion().name();

@@ -44,23 +44,23 @@ public class StaticInterceptor extends AbstractInterceptor {
 
     protected final JSONBeautifier jsonBeautifier = new JSONBeautifier();
 
-    protected static final Logger log = LoggerFactory.getLogger("StaticInterceptor");
+    protected static final Logger log = LoggerFactory.getLogger(StaticInterceptor.class);
 
     public StaticInterceptor() {
         name = "Static";
     }
 
     @Override
-    public Outcome handleRequest(Exchange exc) throws Exception {
+    public Outcome handleRequest(Exchange exc) {
         return handleInternal(exc.getRequest(), exc, REQUEST);
     }
 
     @Override
-    public Outcome handleResponse(Exchange exc) throws Exception {
+    public Outcome handleResponse(Exchange exc) {
         return handleInternal(exc.getResponse(), exc, RESPONSE);
     }
 
-    protected Outcome handleInternal(Message msg, Exchange exchange, Flow flow) throws Exception {
+    protected Outcome handleInternal(Message msg, Exchange exchange, Flow flow) {
         msg.setBodyContent(getTemplateBytes());
         msg.getHeader().setContentType(getContentType());
         return CONTINUE;
@@ -96,7 +96,8 @@ public class StaticInterceptor extends AbstractInterceptor {
     }
 
     @Override
-    public void init() throws Exception {
+    public void init() {
+        super.init();
         if (this.getLocation() != null && (getTextTemplate() != null && !getTextTemplate().isBlank())) {
             throw new IllegalStateException("On <" + getName() + ">, ./text() and ./@location cannot be set at the same time.");
         }
@@ -148,6 +149,10 @@ public class StaticInterceptor extends AbstractInterceptor {
 
     @Override
     public String getShortDescription() {
-        return formatAsHtml(textTemplate);
+        String s = "Pretty print: %s<br/>".formatted(pretty);
+        if (contentType != null) {
+            s += "Content-Type: %s<br/>".formatted(contentType);
+        }
+        return s + formatAsHtml(textTemplate);
     }
 }

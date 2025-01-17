@@ -19,13 +19,24 @@ package com.predic8.membrane.core.interceptor.flow.invocation.testinterceptors;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.interceptor.*;
 
+import java.io.*;
+
 import static com.predic8.membrane.core.http.Response.*;
 
 public class ExceptionTestInterceptor extends AbstractInterceptor {
 
     @Override
-    public Outcome handleRequest(Exchange exc) throws Exception {
-        exc.setResponse(ok().body(exc.getRequest().getBody().getContent()).build());
+    public Outcome handleRequest(Exchange exc) {
+        try {
+            exc.setResponse(ok().body(exc.getRequest().getBody().getContent()).build());
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
         throw new RuntimeException();
+    }
+
+    @Override
+    public String getDisplayName() {
+        return "ExceptionTestInterceptor";
     }
 }

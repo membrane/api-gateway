@@ -15,30 +15,23 @@
 package com.predic8.membrane.core.interceptor.lang;
 
 import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.interceptor.*;
 import org.slf4j.*;
 
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
-import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
+import static com.predic8.membrane.core.interceptor.Outcome.*;
 
-public abstract class AbstractSetterInterceptor extends AbstractLanguageInterceptor {
+public abstract class AbstractSetterInterceptor extends AbstractExchangeExpressionInterceptor {
 
     private static final Logger log = LoggerFactory.getLogger(AbstractSetterInterceptor.class);
 
     private boolean failOnError = true;
 
-    protected String name;
+    protected String fieldName;
     protected boolean ifAbsent;
-
-    @Override
-    public void init(Router router) throws Exception {
-        super.init(router);
-        exchangeExpression = new TemplateExchangeExpression(router,language,expression);
-    }
 
     @Override
     public Outcome handleRequest(Exchange exc) {
@@ -55,19 +48,29 @@ public abstract class AbstractSetterInterceptor extends AbstractLanguageIntercep
             return CONTINUE;
 
         try {
-            setValue(exchange, flow, exchangeExpression.evaluate(exchange, flow, Object.class));
+            setValue(exchange, flow, exchangeExpression.evaluate(exchange, flow, getExpressionReturnType()));
         } catch (Exception e) {
             if (failOnError) {
                 ProblemDetails.internal(getRouter().isProduction())
                         .title("Error evaluating expression!")
-                        .extension("field", name)
+                        .component(getDisplayName())
+                        .extension("field", fieldName)
                         .extension("value", expression)
+                        .detail(e.getMessage())
                         .buildAndSetResponse(exchange);
                 return ABORT;
+            } else {
+                log.info("Error evaluating {} but 'FailOnError' is false therefore ignoring. Exception :{}", expression,e);
             }
         }
         return CONTINUE;
     }
+
+    /**
+     *
+     * @return
+     */
+    protected abstract Class getExpressionReturnType();
 
     protected abstract boolean shouldSetValue(Exchange exchange, Flow flow);
 
@@ -82,13 +85,13 @@ public abstract class AbstractSetterInterceptor extends AbstractLanguageIntercep
         return ifAbsent;
     }
 
-    @MCAttribute
-    public void setName(String name) {
-        this.name = name;
+    @MCAttribute(attributeName = "name")
+    public void setFieldName(String fieldName) {
+        this.fieldName = fieldName;
     }
 
-    public String getName() {
-        return name;
+    public String getFieldName() {
+        return fieldName;
     }
 
     @MCAttribute

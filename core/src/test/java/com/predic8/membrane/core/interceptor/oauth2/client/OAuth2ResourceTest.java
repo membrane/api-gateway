@@ -24,12 +24,14 @@ import com.predic8.membrane.core.interceptor.oauth2client.*;
 import com.predic8.membrane.core.interceptor.oauth2client.rf.*;
 import com.predic8.membrane.core.proxies.*;
 import com.predic8.membrane.core.util.*;
+import com.predic8.membrane.core.util.URI;
 import org.jetbrains.annotations.*;
 import org.junit.jupiter.api.*;
 import org.slf4j.*;
 
 import java.io.*;
 import java.math.*;
+import java.net.*;
 import java.security.*;
 import java.util.*;
 import java.util.concurrent.*;
@@ -49,7 +51,6 @@ public abstract class OAuth2ResourceTest {
     private final String serverHost = "localhost";
     private final int clientPort = 31337;
     private HttpRouter oauth2Resource;
-    private OAuth2Resource2Interceptor oAuth2Resource2Interceptor;
 
     private String getServerAddress() {
         return "http://" + serverHost + ":" + serverPort;
@@ -163,7 +164,7 @@ public abstract class OAuth2ResourceTest {
 
         mockAuthServer.getTransport().getInterceptors().add(2, new AbstractInterceptor() {
             @Override
-            public Outcome handleRequest(Exchange exc) throws Exception {
+            public Outcome handleRequest(Exchange exc) {
                 if (state.get() == 0) {
                     ref.set(exc.getOriginalRequestUri());
                     state.set(1);
@@ -194,7 +195,7 @@ public abstract class OAuth2ResourceTest {
         AtomicBoolean blocked = new AtomicBoolean(true);
         mockAuthServer.getTransport().getInterceptors().add(2, new AbstractInterceptor() {
             @Override
-            public Outcome handleRequest(Exchange exc) throws Exception {
+            public Outcome handleRequest(Exchange exc) {
                 if (blocked.get()) {
                     exc.setResponse(Response.ok("Login aborted").build());
                     return Outcome.RETURN;
@@ -263,7 +264,6 @@ public abstract class OAuth2ResourceTest {
 
         ServiceProxy sp = new ServiceProxy(new ServiceProxyKey(serverPort), null, 99999);
 
-
         WellknownFile wkf = getWellknownFile();
         wkf.init(new HttpRouter());
 
@@ -272,7 +272,15 @@ public abstract class OAuth2ResourceTest {
             final SecureRandom rand = new SecureRandom();
 
             @Override
-            public synchronized Outcome handleRequest(Exchange exc) throws Exception {
+            public synchronized Outcome handleRequest(Exchange exc) {
+                try {
+                    return handleRequestInternal(exc);
+                } catch (URISyntaxException | IOException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+
+            public synchronized Outcome handleRequestInternal(Exchange exc) throws URISyntaxException, IOException {
                 if (exc.getRequestURI().endsWith("/.well-known/openid-configuration")) {
                     exc.setResponse(Response.ok(wkf.getWellknown()).build());
                 } else if (exc.getRequestURI().startsWith("/auth?")) {
@@ -330,7 +338,6 @@ public abstract class OAuth2ResourceTest {
         ServiceProxy sp = new ServiceProxy(new ServiceProxyKey(clientPort), null, 99999);
 
         OAuth2Resource2Interceptor oAuth2ResourceInterceptor = new OAuth2Resource2Interceptor();
-        this.oAuth2Resource2Interceptor = oAuth2ResourceInterceptor;
         configureSessionManager(oAuth2ResourceInterceptor);
         MembraneAuthorizationService auth = new MembraneAuthorizationService();
         auth.setSrc(getServerAddress());
@@ -355,7 +362,7 @@ public abstract class OAuth2ResourceTest {
 
         sp.getInterceptors().add(new AbstractInterceptor() {
             @Override
-            public Outcome handleRequest(Exchange exc) throws Exception {
+            public Outcome handleRequest(Exchange exc) {
                 if (!exc.getRequest().getUri().contains("is-logged-in"))
                     return Outcome.CONTINUE;
 
@@ -368,7 +375,15 @@ public abstract class OAuth2ResourceTest {
         sp.getInterceptors().add(oAuth2ResourceInterceptor);
         sp.getInterceptors().add(new AbstractInterceptor() {
             @Override
-            public Outcome handleRequest(Exchange exc) throws Exception {
+            public Outcome handleRequest(Exchange exc) {
+                try {
+                    return handleRequestInternal(exc);
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+
+            public Outcome handleRequestInternal(Exchange exc) throws IOException {
                 OAuth2AnswerParameters answer = OAuth2AnswerParameters.deserialize(String.valueOf(exc.getProperty(Exchange.OAUTH2)));
                 String accessToken = answer.getAccessToken();
                 Map<String, String> body = Map.of(

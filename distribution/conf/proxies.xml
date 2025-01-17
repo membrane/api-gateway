@@ -1,41 +1,103 @@
 <spring:beans xmlns:spring="http://www.springframework.org/schema/beans"
               xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-              xmlns="http://membrane-soa.org/proxies/1/"
+              xmlns="http://membrane-soa.org/proxies/1/" xmlns:lang="http://www.springframework.org/schema/lang"
               xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.2.xsd
-					    http://membrane-soa.org/proxies/1/ http://membrane-soa.org/schemas/proxies-1.xsd">
+					    http://membrane-soa.org/proxies/1/ http://membrane-soa.org/schemas/proxies-1.xsd http://www.springframework.org/schema/lang http://www.springframework.org/schema/lang/spring-lang.xsd">
+
+    <spring:bean class="com.predic8.membrane.core.interceptor.apikey.stores.ApiKeyFileStore">
+        <spring:property name="location" value="./keys.txt" />
+    </spring:bean>
 
     <router>
 
+        <api port="2000">
+            <path>/products</path>
+            <request>
+                <call url="https://api.predic8.de/shop/v2/products"/>
+                <setProperty name="products" value="${$.products}" language="jsonpath"/>
+            </request>
+            <response>
+                <template>
+                    ${property.products}
+                </template>
+            </response>
+            <log/>
+            <return/>
+        </api>
+
+        <api port="2000">
+            <path>/places</path>
+            <request>
+                <setHeader name="Authorization" value="Basic YWxpY2U6Zmxvd2VyMjU="/>
+                <!-- Request token -->
+                <call url="http://localhost:2001/login"/>
+            </request>
+            <target url="http://localhost:2002"/>
+        </api>
+
+        <!-- Login and get a token -->
+        <api port="2001">
+            <path>/login</path>
+            <basicAuthentication>
+                <user username="alice" password="flower25"/>
+            </basicAuthentication>
+            <response>
+                <setHeader name="x-token" value="123"/>
+            </response>
+            <return/>
+        </api>
+
+        <!-- Secured by simple token-->
+        <api port="2002">
+            <path>/places</path>
+            <request>
+                <if test="header['x-token'] != '123'">
+                    <static>Unauthorized!</static>
+                    <return statusCode="401"/>
+                </if>
+            </request>
+            <static>
+                {
+                    "places": "Tokio", "Delhi", "Berlin"
+                }
+            </static>
+            <return/>
+        </api>
+
+        <!--
         <api port="2000" name="hello">
-            <path>/shop/v2</path>
-            <target host="api.predic8.de">
-                <ssl/>
-            </target>
+            <apiKey required="true">
+                <queryParamExtractor name="api-key"/>
+            </apiKey>
+            <request>
+                <setProperty name="scopes" value="${scopes}"/>
+                <template>
+                    {
+                        "sub": "user@example.com",
+                        "aud": "order",
+                        "scope": "${property.scopes}"
+                    }
+                </template>
+                <jwtSign>
+                    <jwk location="key.json"/>
+                </jwtSign>
+            </request>
+            <target url="service://validator" />
         </api>
 
-        <api port="2000" name="hello2">
-            <openapi location="https://api.predic8.de/shop/v2/api-docs" />
+        <api port="2001" name="validator">
+            <request>
+                <setHeader name="Authorization" value="Bearer ${request.body.toString}" />
+                <jwtAuth expectedAud="order">
+                    <jwks>
+                        <jwk location="key.json" />
+                    </jwks>
+                </jwtAuth>
+            </request>
+            <template>${property.jwt.get("scope")}</template>
+            <return />
         </api>
-
-        <api port="2000" name="hello3">
-            <openapi dir="." />
-        </api>
-
-        <serviceProxy port="3000">
-            <target host="api.predic8.de">
-                <ssl/>
-            </target>
-        </serviceProxy>
-
-        <soapProxy port="4000" wsdl="https://www.predic8.de/city-service?wsdl">
-        </soapProxy>
-
-        <internalProxy name="wow">
-            <target host="api.predic8.de">
-                <ssl/>
-            </target>
-        </internalProxy>
-
+        -->
     </router>
 
 </spring:beans>

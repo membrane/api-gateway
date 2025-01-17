@@ -55,7 +55,7 @@ public class OpenAPIPublisherInterceptor extends AbstractInterceptor {
     private static final Pattern PATTERN_META = Pattern.compile(PATH + "?/(.*)");
     private static final Pattern PATTERN_UI = Pattern.compile(PATH + "?/ui/(.*)");
 
-    protected Map<String, OpenAPIRecord> apis;
+    protected final Map<String, OpenAPIRecord> apis;
 
     private final Template swaggerUiHtmlTemplate;
     private final Template apiOverviewHtmlTemplate;
@@ -72,16 +72,12 @@ public class OpenAPIPublisherInterceptor extends AbstractInterceptor {
         try {
             return new StreamingTemplateEngine().createTemplate(new InputStreamReader(Objects.requireNonNull(getResourceAsStream(this, filePath))));
         } catch (Exception e) {
-            throw new ConfigurationException("""
-                    Could not create Swagger UI or overview page template from: %s
-                    
-                    Caused by: %s
-                    """.formatted(filePath,e.getMessage()));
+            throw new ConfigurationException("Could not create Swagger UI or overview page template from: %s".formatted(filePath),e);
         }
     }
 
     @Override
-    public Outcome handleRequest(Exchange exc) throws Exception {
+    public Outcome handleRequest(Exchange exc) {
 
         if (exc.getRequest().getUri().matches(valueOf(PATTERN_UI))) {
             return handleSwaggerUi(exc);
@@ -90,8 +86,17 @@ public class OpenAPIPublisherInterceptor extends AbstractInterceptor {
         if (!exc.getRequest().getUri().startsWith("/api-doc"))
             return CONTINUE;
 
-
-        return handleOverviewOpenAPIDoc(exc);
+        try {
+            return handleOverviewOpenAPIDoc(exc);
+        } catch (Exception e) {
+            ProblemDetails.internal(router.isProduction())
+                    .component(getDisplayName())
+                    .detail("Error handling OpenAPI overview!")
+                    .exception(e)
+                    .stacktrace(true)
+                    .buildAndSetResponse(exc);
+            return ABORT;
+        }
     }
 
     private Outcome handleOverviewOpenAPIDoc(Exchange exc) throws IOException, URISyntaxException {
@@ -118,7 +123,7 @@ public class OpenAPIPublisherInterceptor extends AbstractInterceptor {
     }
 
     private Outcome returnHtmlOverview(Exchange exc) {
-        exc.setResponse(ok().contentType(TEXT_HTML_UTF8).body(renderOverviewTemplate()).build());
+        exc.setResponse(ok().contentType(TEXT_HTML_UTF8).body( renderOverviewTemplate()).build());
         return RETURN;
     }
 

@@ -13,39 +13,28 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.statistics;
 
-import java.io.IOException;
-import java.io.StringWriter;
-import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
+import com.fasterxml.jackson.core.*;
+import com.google.common.collect.*;
+import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.exceptions.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.interceptor.statistics.util.*;
+import com.predic8.membrane.core.util.*;
+import org.slf4j.*;
+import org.springframework.beans.*;
+import org.springframework.context.*;
 
-import javax.sql.DataSource;
+import javax.sql.*;
+import java.io.*;
+import java.sql.*;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import com.fasterxml.jackson.core.JsonFactory;
-import com.fasterxml.jackson.core.JsonGenerationException;
-import com.fasterxml.jackson.core.JsonGenerator;
-import org.springframework.beans.BeansException;
-import com.predic8.membrane.annot.Required;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.ApplicationContextAware;
-
-import com.google.common.collect.ImmutableMap;
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Response;
-import com.predic8.membrane.core.interceptor.AbstractInterceptor;
-import com.predic8.membrane.core.interceptor.Outcome;
-import com.predic8.membrane.core.interceptor.statistics.util.JDBCUtil;
-import com.predic8.membrane.core.util.URIFactory;
-import com.predic8.membrane.core.util.URLParamUtil;
+import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 
 @MCElement(name="statisticsProvider")
 public class StatisticsProvider extends AbstractInterceptor implements ApplicationContextAware {
-	private static Logger log = LoggerFactory.getLogger(StatisticsProvider.class
+	private static final Logger log = LoggerFactory.getLogger(StatisticsProvider.class
 			.getName());
 
 	private final JsonFactory jsonFactory = new JsonFactory(); // thread-safe
@@ -73,10 +62,21 @@ public class StatisticsProvider extends AbstractInterceptor implements Applicati
 	}
 
 	@Override
-	public Outcome handleRequest(Exchange exc) throws Exception {
-		Connection con = dataSource.getConnection();
+	public Outcome handleRequest(Exchange exc) {
+        Connection con;
+        try {
+            con = dataSource.getConnection();
+        } catch (SQLException e) {
+			ProblemDetails.internal(router.isProduction())
+					.component(getDisplayName())
+					.detail("Could not connect to database")
+					.exception(e)
+					.stacktrace(true)
+					.buildAndSetResponse(exc);
+			return ABORT;
+        }
 
-		try {
+        try {
 			int offset = URLParamUtil.getIntParam(router.getUriFactory(), exc, "offset");
 			int max = URLParamUtil.getIntParam(router.getUriFactory(), exc, "max");
 			int total = getTotal(con);
@@ -121,7 +121,7 @@ public class StatisticsProvider extends AbstractInterceptor implements Applicati
 	}
 
 	private void createJson(Exchange exc, ResultSet r, int offset, int max, int total) throws IOException,
-	JsonGenerationException, SQLException {
+            SQLException {
 
 		StringWriter jsonTxt = new StringWriter();
 
@@ -144,7 +144,7 @@ public class StatisticsProvider extends AbstractInterceptor implements Applicati
 	}
 
 	private void writeRecord(ResultSet r, JsonGenerator jsonGen)
-			throws IOException, JsonGenerationException, SQLException {
+			throws IOException, SQLException {
 		jsonGen.writeStartObject();
 		jsonGen.writeNumberField("statusCode", r.getInt(JDBCUtil.STATUS_CODE));
 		jsonGen.writeStringField("time", r.getString(JDBCUtil.TIME));
@@ -192,7 +192,8 @@ public class StatisticsProvider extends AbstractInterceptor implements Applicati
 	}
 
 	@Override
-	public void init() throws Exception {
+	public void init() {
+		super.init();
 		if (dataSourceBeanId != null)
 			dataSource = applicationContext.getBean(dataSourceBeanId, DataSource.class);
 	}

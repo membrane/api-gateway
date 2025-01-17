@@ -15,6 +15,7 @@
 package com.predic8.membrane.core.interceptor.rewrite;
 
 import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.ws.relocator.*;
@@ -44,7 +45,7 @@ public class ReverseProxyingInterceptor extends AbstractInterceptor {
 	 * handles "Destination" header (see RFC 2518 section 9.3; also used by WebDAV)
 	 */
 	@Override
-	public Outcome handleRequest(Exchange exc) throws Exception {
+	public Outcome handleRequest(Exchange exc) {
 		if (exc.getRequest() == null)
 			return CONTINUE;
 		String destination = exc.getRequest().getHeader().getFirstValue(DESTINATION);
@@ -59,11 +60,27 @@ public class ReverseProxyingInterceptor extends AbstractInterceptor {
 		if (exc.getDestinations().isEmpty()) {
 			// just remove the schema/hostname/port. this is illegal (by the spec),
 			// but most clients understand it
-			exc.getRequest().getHeader().setValue(DESTINATION, new URL(destination).getFile());
-			return CONTINUE;
+            try {
+                exc.getRequest().getHeader().setValue(DESTINATION, new URL(destination).getFile());
+            } catch (MalformedURLException e) {
+                log.error("Invalid destination URL: {}",destination, e);
+            }
+            return CONTINUE;
 		}
-		URL target = new URL(exc.getDestinations().getFirst());
-		// rewrite to our schema, host and port
+        URL target;
+        try {
+            target = new URL(exc.getDestinations().getFirst());
+        } catch (MalformedURLException e) {
+			ProblemDetails.internal(router.isProduction())
+					.component(getDisplayName())
+					.detail("Could not parse target URL")
+					.extension("URL", exc.getDestinations().getFirst())
+					.exception(e)
+					.stacktrace(true)
+					.buildAndSetResponse(exc);
+			return ABORT;
+        }
+        // rewrite to our schema, host and port
 		exc.getRequest().getHeader().setValue(DESTINATION,
 				Relocator.getNewLocation(destination, target.getProtocol(),
 						target.getHost(), getPortFromURL(target), exc.getHandler().getContextPath(exc)));
@@ -74,7 +91,7 @@ public class ReverseProxyingInterceptor extends AbstractInterceptor {
 	 * Handles "Location" header.
 	 */
 	@Override
-	public Outcome handleResponse(Exchange exc) throws Exception {
+	public Outcome handleResponse(Exchange exc) {
 		if (exc.getResponse() == null)
 			return CONTINUE;
 		String location = exc.getResponse().getHeader().getFirstValue(LOCATION);
@@ -90,8 +107,12 @@ public class ReverseProxyingInterceptor extends AbstractInterceptor {
 		if (exc.getOriginalHostHeaderHost() == null) {
 			// just remove the schema/hostname/port. this is illegal (by the spec),
 			// but most clients understand it
-			exc.getResponse().getHeader().setValue(LOCATION, new URL(location).getFile());
-			return CONTINUE;
+            try {
+                exc.getResponse().getHeader().setValue(LOCATION, new URL(location).getFile());
+            } catch (MalformedURLException e) {
+				log.error("Could not parse URL for Location header: {}",location, e);
+            }
+            return CONTINUE;
 		}
 		// rewrite to our schema, host and port
 		exc.getResponse().getHeader().setValue(LOCATION,
@@ -100,12 +121,12 @@ public class ReverseProxyingInterceptor extends AbstractInterceptor {
 		return CONTINUE;
 	}
 
-	private boolean isSameSchemeHostAndPort(String location2, String location) {
+	private boolean isSameSchemeHostAndPort(String location1, String location2) {
 		try {
-			if (location.startsWith("/") || location2.startsWith("/"))
+			if (location1.startsWith("/") || location2.startsWith("/"))
 				return false; // no host info available
 			URL loc2 = new URL(location2);
-			URL loc1 = new URL(location);
+			URL loc1 = new URL(location1);
 			if (loc2.getProtocol() != null && !loc2.getProtocol().equals(loc1.getProtocol()))
 				return false;
 			if (loc2.getHost() != null && !loc2.getHost().equals(loc1.getHost()))
@@ -114,7 +135,7 @@ public class ReverseProxyingInterceptor extends AbstractInterceptor {
 		} catch (MalformedURLException e) {
 			if (e.getMessage().startsWith("unknown protocol:"))
 				return false;
-			log.warn("Location 1: {} Location 2: {}", location, location2, e); // TODO: fix these cases
+			log.warn("Location 1: {} Location 2: {}", location1, location2, e);
 			return false;
 		}
 	}

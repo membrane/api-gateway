@@ -14,7 +14,6 @@
 
 package com.predic8.membrane.core.interceptor.schemavalidation;
 
-import com.predic8.membrane.core.Constants.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.Message;
 import com.predic8.membrane.core.http.*;
@@ -34,8 +33,9 @@ import javax.xml.transform.*;
 import java.io.*;
 import java.util.*;
 
+import static com.predic8.membrane.core.Constants.SoapVersion.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
-import static com.predic8.membrane.core.util.SOAPUtil.FaultCode.Client;
+import static com.predic8.membrane.core.util.SOAPUtil.FaultCode.*;
 import static com.predic8.membrane.core.util.WSDLUtil.*;
 import static javax.xml.stream.XMLInputFactory.*;
 
@@ -90,11 +90,11 @@ public class WSDLValidator extends AbstractXMLSchemaValidator {
 	public Outcome validateMessage(Exchange exc, Message msg) throws Exception {
 		SOAPAnalysisResult result =  SOAPUtil.analyseSOAPMessage(xmlInputFactory, xopr, msg);
 
-		if (result.version() == SoapVersion.SOAP11 && !soap11) {
+		if (result.version() == SOAP11 && !soap11) {
 			exc.setResponse(createErrorResponse("SOAP version 1.1 is not valid"));
 			return ABORT;
 		}
-		if (result.version() == SoapVersion.SOAP12 && !soap12) {
+		if (result.version() == SOAP12 && !soap12) {
 			exc.setResponse(createErrorResponse("SOAP version 1.2 is not valid"));
 			return ABORT;
 		}

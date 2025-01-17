@@ -42,7 +42,11 @@ abstract class AbstractSetHeaderInterceptorTest {
                         {
                             "name": "Mango",
                             "a": 5,
-                            "tags": ["PRIVATE","BUSINESS",7]
+                            "tags": ["PRIVATE","BUSINESS",7],
+                            "map": {
+                                "a": 3141592,
+                                "b": "Manaus"
+                            }
                         }
                         """)
                     .build());
@@ -51,11 +55,11 @@ abstract class AbstractSetHeaderInterceptorTest {
         }};
         message = exchange.getRequest();
         interceptor.setLanguage(getLanguage());
-        interceptor.setName("X-Bar");
+        interceptor.setFieldName("X-Bar");
         interceptor.setValue("42");
     }
 
-    protected void extracted(String expression, Object expected) throws Exception {
+    protected void extracted(String expression, Object expected) {
         interceptor.setValue(expression);
         interceptor.init(router);
         interceptor.handleRequest(exchange);

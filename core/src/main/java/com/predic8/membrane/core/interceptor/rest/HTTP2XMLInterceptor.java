@@ -14,6 +14,7 @@
 package com.predic8.membrane.core.interceptor.rest;
 
 import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.xml.Request;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
@@ -21,30 +22,48 @@ import com.predic8.membrane.core.interceptor.Outcome;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.nio.charset.*;
+
+import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
+
 // TODO IMPLEMENTATION NOT FINISHED
-@MCElement(name="http2xml")
+@MCElement(name = "http2xml")
 public class HTTP2XMLInterceptor extends AbstractInterceptor {
 
-	private static Logger log = LoggerFactory.getLogger(HTTP2XMLInterceptor.class.getName());
+    private static final Logger log = LoggerFactory.getLogger(HTTP2XMLInterceptor.class.getName());
 
-	public HTTP2XMLInterceptor() {
-		name = "HTTP 2 XML";
-	}
+    public HTTP2XMLInterceptor() {
+        name = "HTTP 2 XML";
+    }
 
-	@Override
-	public Outcome handleRequest(Exchange exc) throws Exception {
-		log.debug("uri: "+ exc.getRequest().getUri());
+    @Override
+    public Outcome handleRequest(Exchange exc) {
+        try {
+            return handleRequestInternal(exc);
+        } catch (Exception e) {
+            ProblemDetails.user(router.isProduction())
+                    .component(getDisplayName())
+                    .detail("Could not generate XML from HTTP information!")
+                    .exception(e)
+                    .stacktrace(true)
+                    .buildAndSetResponse(exc);
+            return ABORT;
+        }
+    }
 
-		String res = new Request(exc.getRequest()).toXml();
-		log.debug("http-xml: "+ res);
+    public Outcome handleRequestInternal(Exchange exc) throws Exception {
+        log.debug("uri: " + exc.getRequest().getUri());
 
-		exc.getRequest().setBodyContent(res.getBytes("UTF-8"));
+        String res = new Request(exc.getRequest()).toXml();
+        log.debug("http-xml: " + res);
 
-		// TODO
-		exc.getRequest().setMethod("POST");
-		exc.getRequest().getHeader().setSOAPAction("");
+        exc.getRequest().setBodyContent(res.getBytes(StandardCharsets.UTF_8));
 
-		return Outcome.CONTINUE;
-	}
+        // TODO
+        exc.getRequest().setMethod("POST");
+        exc.getRequest().getHeader().setSOAPAction("");
+
+        return Outcome.CONTINUE;
+    }
 
 }

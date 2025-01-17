@@ -65,15 +65,16 @@ public class OAuth2PermissionCheckerInterceptor extends AbstractInterceptor {
     }
 
     @Override
-    public void init() throws Exception {
+    public void init() {
+        super.init();
         valueChecker = createChecker(expression);
     }
 
     @Override
-    public Outcome handleRequest(Exchange exc) throws Exception {
+    public Outcome handleRequest(Exchange exc) {
         Object value = valueSource.evaluate(exc);
         if (!valueChecker.apply(value)) {
-            log.warn("OAuth2 permission check " + expression + " failed on value " + value);
+            log.warn("OAuth2 permission check {} failed on value {}.",expression, value);
             exc.setResponse(Response.forbidden().build());
             return Outcome.RETURN;
         }

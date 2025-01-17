@@ -18,9 +18,8 @@ import com.fasterxml.jackson.databind.*;
 import com.jayway.jsonpath.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.interceptor.Interceptor.*;
-import com.predic8.membrane.core.interceptor.lang.*;
 import com.predic8.membrane.core.lang.*;
-import org.jetbrains.annotations.*;
+import org.jose4j.json.internal.json_simple.*;
 import org.slf4j.*;
 
 import java.io.*;
@@ -42,22 +41,32 @@ public class JsonpathExchangeExpression extends AbstractExchangeExpression {
     public <T> T evaluate(Exchange exchange, Flow flow, Class<T> type) {
         try {
             Object o = execute(exchange, flow);
+            if (type.getName().equals("java.lang.Object") || type.isInstance(o)) {
+                return type.cast(o);
+            }
             if (type.isAssignableFrom(Boolean.class)) {
                 if (o instanceof Boolean b) {
-                    return (T) b;
+                    return type.cast(b);
                 }
-                return convertToBoolean(o);
+                return type.cast(convertToBoolean(o));
+            }
+            if (type.isAssignableFrom(String.class)) {
+                if (o instanceof List l) {
+                    return type.cast(l.getFirst().toString());
+                }
+                if (o instanceof JSONAware ja) {
+                    return type.cast(ja.toJSONString());
+                }
+                return type.cast(o.toString());
             }
             if (o instanceof Integer i) {
-                if (type.isAssignableFrom(Integer.class)) {
-                    return (T) String.valueOf(i);
-                }
-                return (T) String.valueOf(o);
+                return type.cast(String.valueOf(i));
             }
+            // Map and List are covered by the next line
             return type.cast(o);
         } catch (PathNotFoundException e) {
             if (type.isAssignableFrom(Boolean.class)) {
-                return (T) FALSE;
+                return type.cast( FALSE);
             }
             return null;
         } catch (InvalidPathException ipe) {
@@ -70,11 +79,8 @@ public class JsonpathExchangeExpression extends AbstractExchangeExpression {
         }
     }
 
-    private <T> @NotNull T convertToBoolean(Object o) {
-        if (o != null)
-            return (T) TRUE;
-        else
-            return (T) FALSE;
+    private boolean convertToBoolean(Object o) {
+        return o != null;
     }
 
     private Object execute(Exchange exchange, Flow flow) throws IOException {

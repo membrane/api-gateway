@@ -34,8 +34,6 @@ public class RuleResolver implements SchemaResolver {
 
     private static final Logger log = LoggerFactory.getLogger(RuleResolver.class);
 
-    private static final FlowController flowController = new FlowController(); // TODO use one central singleton
-
     final Router router;
     public RuleResolver(Router router) {
         this.router = router;
@@ -61,7 +59,7 @@ public class RuleResolver implements SchemaResolver {
                 exc.getDestinations().clear();
                 exc.getDestinations().add(urlString);
                 exc.setRule(proxy);
-                InternalServiceRoutingInterceptor isri = new InternalServiceRoutingInterceptor();
+                InternalRoutingInterceptor isri = new InternalRoutingInterceptor();
                 isri.init(router);
                 isri.handleRequest(exc);
             } catch (Exception e) {
@@ -89,7 +87,7 @@ public class RuleResolver implements SchemaResolver {
 
             additionalInterceptors.clear(); // TODO !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-            flowController.invokeRequestHandlers(exchange, Stream.concat(p.getInterceptors().stream(), additionalInterceptors.stream()).toList());
+            router.getFlowController().invokeRequestHandlers(exchange, Stream.concat(p.getInterceptors().stream(), additionalInterceptors.stream()).toList());
             return exchange.getResponse().getBodyAsStream();
         } catch (Exception e) {
             throw new RuntimeException(e);
@@ -104,7 +102,7 @@ public class RuleResolver implements SchemaResolver {
 
     protected static String getRuleName(String url) {
         URI uri = URI.create(url);
-        if (!uri.getScheme().equals("service"))
+        if (!uri.getScheme().equals("internal"))
             throw new RuntimeException("Not a service URL!");
         return uri.getHost();
     }

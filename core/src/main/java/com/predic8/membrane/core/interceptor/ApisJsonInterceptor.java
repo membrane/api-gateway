@@ -19,6 +19,7 @@ import com.fasterxml.jackson.databind.node.*;
 import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.config.*;
+import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.Response.*;
 import com.predic8.membrane.core.openapi.serviceproxy.*;
@@ -53,9 +54,20 @@ public class ApisJsonInterceptor extends AbstractInterceptor {
     private Date modified = new Date();
 
     @Override
-    public Outcome handleRequest(Exchange exc) throws Exception {
-        if (apisJson == null)
-            initJson(router, exc);
+    public Outcome handleRequest(Exchange exc) {
+        if (apisJson == null) {
+            try {
+                initJson(router, exc);
+            } catch (JsonProcessingException e) {
+                ProblemDetails.internal(router.isProduction())
+                        .component(getDisplayName())
+                        .detail("Could not create APIs JSON!")
+                        .exception(e)
+                        .stacktrace(true)
+                        .buildAndSetResponse(exc);
+                return ABORT;
+            }
+        }
         exc.setResponse(new ResponseBuilder().body(apisJson).contentType(APPLICATION_JSON).build());
         return RETURN;
     }
@@ -94,7 +106,7 @@ public class ApisJsonInterceptor extends AbstractInterceptor {
         apiJson.put("aid", customIdOrBuildDefault(api, recordId));
         apiJson.put("name", (apiRecord != null) ? apiRecord.getApi().getInfo().getTitle() : api.getName());
         apiJson.put("description", (apiRecord != null && api.getDescription() == null
-                && apiRecord.getApi().getInfo().getDescription() != null)
+                                    && apiRecord.getApi().getInfo().getDescription() != null)
                 ? apiRecord.getApi().getInfo().getDescription()
                 : ofNullable(api.getDescription()).map(ApiDescription::getContent).orElse("API"));
         apiJson.put("humanUrl", getProtocol(api) + getHost(api) + ((apiRecord != null) ? "/api-docs/ui/" + recordId : "/api-docs"));

@@ -13,38 +13,26 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.kubernetes;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.collect.ImmutableList;
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.Router;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Response;
-import com.predic8.membrane.core.interceptor.AbstractInterceptor;
-import com.predic8.membrane.core.interceptor.Outcome;
-import com.predic8.membrane.core.interceptor.kubernetes.model.AdmissionResponse;
-import com.predic8.membrane.core.interceptor.kubernetes.model.AdmissionReview;
-import com.predic8.membrane.core.interceptor.kubernetes.model.JSONValidatorError;
-import com.predic8.membrane.core.interceptor.kubernetes.model.ResponseStatus;
-import com.predic8.membrane.core.interceptor.schemavalidation.MessageValidator;
-import com.predic8.membrane.core.interceptor.schemavalidation.JSONValidator;
-import com.predic8.membrane.core.resolver.ResolverMap;
+import com.fasterxml.jackson.databind.*;
+import com.google.common.collect.*;
+import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.exceptions.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.interceptor.kubernetes.model.*;
+import com.predic8.membrane.core.interceptor.schemavalidation.*;
+import com.predic8.membrane.core.resolver.*;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.nio.charset.Charset;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
+import java.io.*;
+import java.nio.charset.*;
+import java.util.*;
+import java.util.concurrent.*;
 
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 
 /**
- * @description
- * Kubernetes Integration is still experimental.
+ * @description Kubernetes Integration is still experimental.
  * <p>
  * To create the CustomResourceDefinitions, apply kubernetes-config.yaml from
  * core/target/classes/com/predic8/membrane/core/config/kubernetes/ or a part (e.g. the 'serviceproxies' CRD) of the file.
@@ -60,23 +48,23 @@ import static com.predic8.membrane.core.interceptor.Outcome.*;
  * using your key and certificate.
  * </p>
  * <code>
- *    &gt;serviceProxy port="444">
- *      &gt;ssl>
- *        &gt;key>
- *          &gt;private>
- *            -----BEGIN RSA PRIVATE KEY-----
- *            ...
- *            -----END RSA PRIVATE KEY-----
- *          &gt;/private>
- *          &gt;certificate>
- *            -----BEGIN CERTIFICATE-----
- *            ...
- *            -----END CERTIFICATE-----
- *          &gt;/certificate>
- *        &gt;/key>
- *      &gt;/ssl>
- *      &gt;kubernetesValidation resources="serviceproxy" />
- *    &gt;/serviceProxy>
+ * &gt;serviceProxy port="444">
+ * &gt;ssl>
+ * &gt;key>
+ * &gt;private>
+ * -----BEGIN RSA PRIVATE KEY-----
+ * ...
+ * -----END RSA PRIVATE KEY-----
+ * &gt;/private>
+ * &gt;certificate>
+ * -----BEGIN CERTIFICATE-----
+ * ...
+ * -----END CERTIFICATE-----
+ * &gt;/certificate>
+ * &gt;/key>
+ * &gt;/ssl>
+ * &gt;kubernetesValidation resources="serviceproxy" />
+ * &gt;/serviceProxy>
  * </code>
  * <p>
  * Now register a Webhook to validate the new CRDs. (A note to the experts: Membrane's validation schemas are too
@@ -86,49 +74,49 @@ import static com.predic8.membrane.core.interceptor.Outcome.*;
  * apiVersion: admissionregistration.k8s.io/v1
  * kind: ValidatingWebhookConfiguration
  * metadata:
- *   name: membrane
+ * name: membrane
  * webhooks:
- *   - name: membrane.membrane-soa.org
- *     admissionReviewVersions: ["v1", "v1beta1"]
- *     failurePolicy: Fail
- *     rules:
- *       - operations: [ "*" ]
- *         apiGroups: [ "membrane-soa.org" ]
- *         apiVersions: [ "v1", "v1beta1" ]
- *         resources: [ "*" ]
- *         scope: "*"
- *     clientConfig:
- *       service:
- *         name: membrane-validator
- *         namespace: membrane-soa
- *         port: 444
- *       caBundle: LS0t...LQ0K        # base64 encoded, PEM-formatted CA certificate
- *     sideEffects: None
+ * - name: membrane.membrane-soa.org
+ * admissionReviewVersions: ["v1", "v1beta1"]
+ * failurePolicy: Fail
+ * rules:
+ * - operations: [ "*" ]
+ * apiGroups: [ "membrane-soa.org" ]
+ * apiVersions: [ "v1", "v1beta1" ]
+ * resources: [ "*" ]
+ * scope: "*"
+ * clientConfig:
+ * service:
+ * name: membrane-validator
+ * namespace: membrane-soa
+ * port: 444
+ * caBundle: LS0t...LQ0K        # base64 encoded, PEM-formatted CA certificate
+ * sideEffects: None
  * ---
  * apiVersion: v1
  * kind: Namespace
  * metadata:
- *   name: membrane-soa
+ * name: membrane-soa
  * ---
  * apiVersion: v1
  * kind: Service
  * metadata:
- *   namespace: membrane-soa
- *   name: membrane-validator
+ * namespace: membrane-soa
+ * name: membrane-validator
  * spec:
- *   ports:
- *     - port: 444
+ * ports:
+ * - port: 444
  * ---
  * apiVersion: v1
  * kind: Endpoints
  * metadata:
- *   namespace: membrane-soa
- *   name: membrane-validator
+ * namespace: membrane-soa
+ * name: membrane-validator
  * subsets:
- *   - addresses:
- *       - ip: 192.168.0.1   # Membrane's IP
- *     ports:
- *       - port: 444
+ * - addresses:
+ * - ip: 192.168.0.1   # Membrane's IP
+ * ports:
+ * - port: 444
  * </code>
  * <p>
  * Once this setup is complete, you can enable serviceProxies like this:
@@ -137,24 +125,23 @@ import static com.predic8.membrane.core.interceptor.Outcome.*;
  * apiVersion: membrane-soa.org/v1beta1
  * kind: serviceproxy
  * metadata:
- *   name: demo
- *   namespace: membrane-soa
+ * name: demo
+ * namespace: membrane-soa
  * spec:
- *   host: demo.predic8.de
- *   path:
- *     value: /some-path/
- *   interceptors:
- *     - response:
- *         interceptors:
- *         - groovy:
- *             src: |
- *               println "Hello!"
- *   target:
- *     host: thomas-bayer.com
+ * host: demo.predic8.de
+ * path:
+ * value: /some-path/
+ * interceptors:
+ * - response:
+ * interceptors:
+ * - groovy:
+ * src: |
+ * println "Hello!"
+ * target:
+ * host: thomas-bayer.com
  * </code>
- *
  */
-@MCElement(name="kubernetesValidation")
+@MCElement(name = "kubernetesValidation")
 public class KubernetesValidationInterceptor extends AbstractInterceptor {
 
     private ResolverMap resourceResolver;
@@ -163,13 +150,16 @@ public class KubernetesValidationInterceptor extends AbstractInterceptor {
     private List<String> namespaces = ImmutableList.of("membrane-soa");
 
     @Override
-    public void init(Router router) throws Exception {
+    public void init() {
+        super.init();
         resourceResolver = router.getResolverMap();
-        super.init(router);
     }
 
     @Override
-    public Outcome handleRequest(Exchange exc) throws Exception {
+    public Outcome handleRequest(Exchange exc) {
+        try {
+
+
         if (exc.getRequest().isBodyEmpty())
             return CONTINUE;
 
@@ -181,18 +171,21 @@ public class KubernetesValidationInterceptor extends AbstractInterceptor {
         if (object != null) { // DELETE requests do not carry an object
             String requestKind = (String) object.get("kind");
 
-            MessageValidator validator = validators.computeIfAbsent(requestKind.toLowerCase(), schema -> {
-                try {
-                    return new JSONValidator(resourceResolver, "classpath:/com/predic8/membrane/core/config/kubernetes/" + schema + ".schema.json", null);
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
-            });
+            MessageValidator validator = validators.computeIfAbsent(requestKind.toLowerCase(), schema -> new JSONValidator(resourceResolver, "classpath:/com/predic8/membrane/core/config/kubernetes/" + schema + ".schema.json", null));
             validator.validateMessage(exc, exc.getRequest());
         }
         setExchangeResponse(exc, mapper, review);
 
         return RETURN;
+        } catch (Exception e) {
+            ProblemDetails.internal(router.isProduction())
+                    .component(getDisplayName())
+                    .detail("Error handling request!")
+                    .exception(e)
+                    .stacktrace(true)
+                    .buildAndSetResponse(exc);
+            return ABORT;
+        }
     }
 
 
@@ -222,7 +215,7 @@ public class KubernetesValidationInterceptor extends AbstractInterceptor {
 
     /**
      * @description The resources (CustomResourceDefinition Kinds, singular) to watch in the Kubernetes API, comma separated.
-     * @example serviceproxy,ssl
+     * @example serviceproxy, ssl
      */
     @MCAttribute
     public void setResources(String resources) {

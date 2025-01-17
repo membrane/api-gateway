@@ -10,13 +10,11 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-
 package com.predic8.membrane.core.interceptor.jwt;
 
 import com.fasterxml.jackson.core.*;
 import com.fasterxml.jackson.databind.*;
 import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
@@ -56,9 +54,8 @@ public class JwtAuthInterceptor extends AbstractInterceptor {
     }
 
     @Override
-    public void init(Router router) throws Exception {
-        super.init(router);
-
+    public void init() {
+        super.init();
         if(jwtRetriever == null)
             jwtRetriever = new HeaderJwtRetriever("Authorization","Bearer");
 

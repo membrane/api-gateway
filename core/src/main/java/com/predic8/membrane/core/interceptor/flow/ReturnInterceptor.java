@@ -17,6 +17,7 @@
 package com.predic8.membrane.core.interceptor.flow;
 
 import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
@@ -25,6 +26,7 @@ import org.slf4j.*;
 import java.io.*;
 import java.util.*;
 
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.REQUEST_RESPONSE_ABORT_FLOW;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.util.HttpUtil.*;
 import static java.lang.String.*;
@@ -53,8 +55,18 @@ public class ReturnInterceptor extends AbstractInterceptor {
     private String contentType = null;
 
     @Override
-    public Outcome handleRequest(Exchange exc) throws Exception {
-        exc.setResponse(getOrCreateResponse(exc));
+    public Outcome handleRequest(Exchange exc) {
+        try {
+            exc.setResponse(getOrCreateResponse(exc));
+        } catch (IOException e) {
+            ProblemDetails.user(router.isProduction())
+                    .component(getDisplayName())
+                    .detail("Could not create response!")
+                    .exception(e)
+                    .stacktrace(true)
+                    .buildAndSetResponse(exc);
+            return ABORT;
+        }
         return RETURN;
     }
 
@@ -123,6 +135,6 @@ public class ReturnInterceptor extends AbstractInterceptor {
 
     @Override
     public EnumSet<Flow> getFlow() {
-        return Flow.Set.REQUEST;
+        return REQUEST_RESPONSE_ABORT_FLOW;
     }
 }

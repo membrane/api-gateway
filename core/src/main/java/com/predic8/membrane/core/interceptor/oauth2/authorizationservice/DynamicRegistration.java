@@ -32,22 +32,23 @@ import java.util.*;
 import static com.predic8.membrane.core.exchange.Exchange.SSL_CONTEXT;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 
-@MCElement(name="registration")
+@MCElement(name = "registration")
 public class DynamicRegistration {
 
-    ReusableJsonGenerator jsonGenerator = new ReusableJsonGenerator();
+    private final ReusableJsonGenerator jsonGenerator = new ReusableJsonGenerator();
 
     private List<Interceptor> interceptors = new ArrayList<>();
     private SSLParser sslParser;
     private SSLContext sslContext;
-    private final FlowController flowController = new FlowController();
     private HttpClient client;
     private HttpClientConfiguration httpClientConfiguration;
+    private Router router;
 
-    public void init(Router router) throws Exception {
+    public void init(Router router) {
+        this.router = router;
         if (sslParser != null)
             sslContext = new StaticSSLContext(sslParser, router.getResolverMap(), router.getBaseLocation());
-        for(Interceptor i : interceptors)
+        for (Interceptor i : interceptors)
             i.init(router);
         client = router.getHttpClientFactory().createClient(httpClientConfiguration);
     }
@@ -65,41 +66,38 @@ public class DynamicRegistration {
 
         HashMap<String, String> json = Util.parseSimpleJSONResponse(doRequest(exc));
 
-        if(!json.containsKey("client_id") || !json.containsKey("client_secret"))
+        if (!json.containsKey("client_id") || !json.containsKey("client_secret"))
             throw new RuntimeException("Registration endpoint didn't return clientId/clientSecret");
 
-        return new Client(json.get("client_id"),json.get("client_secret"),"", json.get("grant_types"));
+        return new Client(json.get("client_id"), json.get("client_secret"), "", json.get("grant_types"));
     }
 
     private Response doRequest(Exchange exc) throws Exception {
         if (sslContext != null)
             exc.setProperty(SSL_CONTEXT, sslContext);
 
-        if(flowController.invokeRequestHandlers(exc,interceptors) != CONTINUE)
+        if (router.getFlowController().invokeRequestHandlers(exc, interceptors) != CONTINUE)
             throw new RuntimeException("Registration interceptorchain (request) had a problem");
 
         Response response = client.call(exc).getResponse();
 
-        try{
-            flowController.invokeResponseHandlers(exc, interceptors);
-        } catch (AbortException e){
-            throw new RuntimeException("Registration interceptorchain (response) had a problem");
-        }
+        router.getFlowController().invokeResponseHandlers(exc, interceptors);
 
-        if(response.getStatusCode() < 200 || response.getStatusCode() > 201)
+        if (response.getStatusCode() < 200 || response.getStatusCode() > 201)
             throw new RuntimeException("Registration endpoint didn't return successful: " + response.getStatusMessage());
         return response;
     }
 
     private String getRegistrationBody(List<String> callbackUris) throws IOException {
-        JsonGenerator jsonGen = jsonGenerator.resetAndGet();
-        jsonGen.writeStartObject();
-        jsonGen.writeArrayFieldStart("redirect_uris");
-        for (String callbackUri : callbackUris)
-            jsonGen.writeString(callbackUri);
-        jsonGen.writeEndArray();
-        jsonGen.writeEndObject();
-        return jsonGenerator.getJson();
+        try (JsonGenerator jg = jsonGenerator.resetAndGet()) {
+            jg.writeStartObject();
+            jg.writeArrayFieldStart("redirect_uris");
+            for (String callbackUri : callbackUris)
+                jg.writeString(callbackUri);
+            jg.writeEndArray();
+            jg.writeEndObject();
+            return jsonGenerator.getJson();
+        }
     }
 
     public SSLParser getSslParser() {

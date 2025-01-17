@@ -13,21 +13,19 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.authentication.session;
 
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCChildElement;
-import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.Router;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Header;
-import com.predic8.membrane.core.interceptor.AbstractInterceptor;
-import com.predic8.membrane.core.interceptor.Outcome;
-import com.predic8.membrane.core.interceptor.authentication.session.SessionManager.Session;
-import com.predic8.membrane.core.proxies.Proxy;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import com.predic8.membrane.annot.Required;
+import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.exceptions.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.interceptor.authentication.session.SessionManager.*;
+import com.predic8.membrane.core.proxies.*;
+import com.predic8.membrane.core.util.*;
+import org.slf4j.*;
 
-import java.util.Map;
+import java.util.*;
+
+import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 
 /**
  * @description <p>
@@ -109,15 +107,30 @@ public class LoginInterceptor extends AbstractInterceptor {
 	private LoginDialog loginDialog;
 
 	@Override
-	public void init() throws Exception {
+	public void init() {
+		super.init();
 		if (userDataProvider == null)
-			throw new Exception("No userDataProvider configured. - Cannot work without one.");
+			throw new ConfigurationException("""
+				No userDataProvider configured. - Cannot work without one.
+				Location: %s
+				Path: %s
+				""".formatted(location,path));
 		if (tokenProvider == null)
 			log.info("No Tokenprovider given, two-factor authentication not enabled");
+		if (tokenProvider != null)
+			tokenProvider.init(router);
 		if (sessionManager == null)
 			sessionManager = new SessionManager();
+		sessionManager.init(router);
 		userDataProvider.init(router);
 		loginDialog = new LoginDialog(userDataProvider, tokenProvider, sessionManager, accountBlocker, location, getBasePath(), path, exposeUserCredentialsToSession, message);
+
+		try {
+			loginDialog.init(router);
+		} catch (Exception e) {
+			throw new ConfigurationException("Could not create login dialog.",e);
+		}
+		new CleanupThread(sessionManager, accountBlocker).start();
 	}
 
 	public String getBasePath() {
@@ -130,20 +143,20 @@ public class LoginInterceptor extends AbstractInterceptor {
 	}
 
 	@Override
-	public void init(Router router) throws Exception {
-		super.init(router);
-        if (tokenProvider != null)
-            tokenProvider.init(router);
-        loginDialog.init(router);
-		sessionManager.init(router);
-		new CleanupThread(sessionManager, accountBlocker).start();
-	}
-
-	@Override
-	public Outcome handleRequest(Exchange exc) throws Exception {
+	public Outcome handleRequest(Exchange exc) {
 		if (loginDialog.isLoginRequest(exc)) {
-			loginDialog.handleLoginRequest(exc);
-			return Outcome.RETURN;
+            try {
+                loginDialog.handleLoginRequest(exc);
+            } catch (Exception e) {
+				ProblemDetails.user(router.isProduction())
+						.component(getDisplayName())
+						.detail("Could not handle login request.!")
+						.exception(e)
+						.stacktrace(true)
+						.buildAndSetResponse(exc);
+				return ABORT;
+            }
+            return Outcome.RETURN;
 		}
 		Session s = sessionManager.getSession(exc);
         if (s != null && s.isPreAuthorized()) {
@@ -171,7 +184,7 @@ public class LoginInterceptor extends AbstractInterceptor {
 	}
 
 	@Override
-	public Outcome handleResponse(Exchange exc) throws Exception {
+	public Outcome handleResponse(Exchange exc) {
 		Header header = exc.getResponse().getHeader();
 		header.setNoCacheResponseHeaders();
 		return super.handleResponse(exc);

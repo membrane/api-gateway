@@ -13,7 +13,6 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.oauth2client.rf;
 
-import com.fasterxml.jackson.core.*;
 import com.fasterxml.jackson.core.type.*;
 import com.fasterxml.jackson.databind.*;
 import com.predic8.membrane.core.exceptions.*;
@@ -94,10 +93,6 @@ public class OAuth2CallbackRequestHandler {
             session.put(ParamNames.STATE, stateFromUri);
 
             AbstractExchangeSnapshot originalRequest = originalExchangeStore.reconstruct(exc, session, stateFromUri);
-            String url = originalRequest.getRequest().getUri();
-            if (url == null) {
-                url = "/";
-            }
             originalExchangeStore.remove(exc, session, stateFromUri);
 
             if (log.isDebugEnabled()) {
@@ -135,7 +130,7 @@ public class OAuth2CallbackRequestHandler {
                 }
             }
 
-            doRedirect(exc, originalRequest, session);
+            continueOriginalExchange(exc, originalRequest, session);
 
             originalExchangeStore.postProcess(exc);
             return true;
@@ -156,7 +151,7 @@ public class OAuth2CallbackRequestHandler {
         if (code == null) {
             String error = params.get("error");
             if (error != null) {
-                log.warn("OAuth2 Error from Authentication Server: {}",error);
+                log.warn("OAuth2 Error from Authentication Server: {}", error);
                 ProblemDetails pd = ProblemDetails.security(false)
                         .statusCode(500)
                         .addSubType("oauth2-error-from-authentication-server")
@@ -197,7 +192,7 @@ public class OAuth2CallbackRequestHandler {
         });
     }
 
-    private static void doRedirect(Exchange exc, AbstractExchangeSnapshot originalRequest, Session session) throws JsonProcessingException {
+    private static void continueOriginalExchange(Exchange exc, AbstractExchangeSnapshot originalRequest, Session session) throws Exception {
         if (originalRequest.getRequest().getMethod().equals("GET")) {
             exc.setResponse(Response.redirect(originalRequest.getOriginalRequestUri(), false).build());
         } else {

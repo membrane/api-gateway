@@ -15,20 +15,24 @@ package com.predic8.membrane.core.interceptor.server;
 
 import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.Router;
+import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.resolver.*;
 import com.predic8.membrane.core.util.*;
 import org.apache.commons.lang3.*;
+import org.jetbrains.annotations.*;
 import org.slf4j.*;
 
 import java.io.*;
+import java.net.*;
 import java.nio.file.*;
 import java.util.*;
 import java.util.regex.*;
 
 import static com.predic8.membrane.core.http.MimeType.*;
+import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 import static com.predic8.membrane.core.util.HttpUtil.*;
 
 /**
@@ -66,7 +70,7 @@ public class WebServerInterceptor extends AbstractInterceptor {
     }
 
     @Override
-    public void init() throws Exception {
+    public void init() {
         super.init();
         normalizeDocBase();
     }
@@ -80,26 +84,43 @@ public class WebServerInterceptor extends AbstractInterceptor {
             try {
                 this.docBase = getAbsolutePathWithSchemePrefix(docBase);
             } catch (Exception e) {
+                log.error(e.getMessage(), e);
             }
             docBaseIsNormalized = true;
         }
     }
 
     @Override
-    public Outcome handleRequest(Exchange exc) throws Exception {
+    public Outcome handleRequest(Exchange exc) {
+        try {
+            return handleRequestInternal(exc);
+        } catch (IOException e) {
+            ProblemDetails.internal(router.isProduction())
+                    .component(getDisplayName())
+                    .detail("Error serving document")
+                    .exception(e)
+                    .stacktrace(true)
+                    .buildAndSetResponse(exc);
+            return ABORT;
+        }
+    }
+
+    private @NotNull Outcome handleRequestInternal(Exchange exc) throws IOException {
         normalizeDocBase();
 
-        String uri = router.getUriFactory().create(exc.getDestinations().get(0)).getPath();
-
-        log.debug("request: " + uri);
-
-        if (escapesPath(uri) || escapesPath(router.getUriFactory().create(uri).getPath())) {
-            exc.setResponse(Response.badRequest().body("").build());
-            return Outcome.ABORT;
+        String uri;
+        try {
+            uri = getUri(exc);
+        } catch (URISyntaxException e) {
+            ProblemDetails.internal(router.isProduction())
+                    .component(getDisplayName())
+                    .detail("Could not create uri")
+                    .exception(e)
+                    .stacktrace(true)
+                    .buildAndSetResponse(exc);
+            return ABORT;
         }
-
-        if (uri.startsWith("/"))
-            uri = uri.substring(1);
+        if (uri == null) return ABORT;
 
         try {
             exc.setTimeReqSent(System.currentTimeMillis());
@@ -139,7 +160,22 @@ public class WebServerInterceptor extends AbstractInterceptor {
         }
 
         exc.setResponse(Response.notFound().build());
-        return Outcome.ABORT;
+        return ABORT;
+    }
+
+    private @Nullable String getUri(Exchange exc) throws URISyntaxException {
+        String uri = router.getUriFactory().create(exc.getDestinations().getFirst()).getPath();
+
+        log.debug("request: {}", uri);
+
+        if (escapesPath(uri) || escapesPath(router.getUriFactory().create(uri).getPath())) {
+            exc.setResponse(Response.badRequest().body("").build());
+            return null;
+        }
+
+        if (uri.startsWith("/"))
+            uri = uri.substring(1);
+        return uri;
     }
 
 
@@ -231,8 +267,6 @@ public class WebServerInterceptor extends AbstractInterceptor {
     @Required
     @MCAttribute
     public void setDocBase(String docBase) {
-        //if(!docBase.endsWith("/"))
-        //	docBase = docBase + "/";
         this.docBase = docBase;
         docBaseIsNormalized = false;
     }
@@ -246,7 +280,7 @@ public class WebServerInterceptor extends AbstractInterceptor {
         }
 
 
-        String newPath = router.getResolverMap().combine(router.getBaseLocation(), path);
+        String newPath = ResolverMap.combine(router.getBaseLocation(), path);
         if (newPath.endsWith(File.separator + File.separator))
             newPath = newPath.substring(0, newPath.length() - 1);
         if (!newPath.endsWith("/"))

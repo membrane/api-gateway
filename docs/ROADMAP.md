@@ -6,7 +6,14 @@
   - Ideas
     - <target ../> inside <if>
 - Routing with if instead of switch and cbr
-- <if>...<else>
+- <choose>
+     <case test=""> // If this matches execute only nested
+        <..interceptors>
+     </case> 
+     <case test=""></case> // Only evaluate if first did not match
+     <case test=""></case>
+     <otherwise></otherwise>
+  </choose>
 
 # Version 6.1.0
 
@@ -25,12 +32,14 @@
 - log, print or message that writes to log. 
 - Examples
   - soap/secured-wsdl
-    - Check if we offer the sampleSoapService at www.predic8.de
     - Rewrite the example to use it
     - Readme
     - ExampleTest
   - REST / JSON API Versioning test
     - like examples/versioning/soap-xslt but much simpler with json
+- JdbcUserDataProvider
+  - Migrate to PreparedStatement
+- <target url="http://localhost:2000/${params.product}/>
 
 # Version 6.0.0
 
@@ -40,8 +49,6 @@
 - Run ConfigSerializationTest from annot
 - List how to run all tests
   - ConfigSerializationTest
-  - Examples
-    - ExampleUnitTests, Without, With
 - Is SessionResumptionTest still needed?
 
 ### Examples / Documentation
@@ -58,26 +65,45 @@
   
 ### Features
 
-- Call of internal should be possible
-
 
 ### Internal
 - XMLProtectionInterceptor.setFailResponse => Use ProblemDetails
 - Rename service:// to internal://
 - Delete interceptor/
-  - Gatekeeper?
+  - Gatekeeper: Yes
+  - SDY Speedy?
+  - JsonPointer Extractor?
 - proxies-2.xsd
   - new Namespace e.g. https://membrane-api.io...
 - 2025
-- ProblemDetails
-  - Test for production mode filter
-    - Return pd and check if answer contains pd.details ...
-  - Return pretty to user
-  - Should have right Content-Type
 - Check AdminConsole
-- Check that handlers define their flows
+- Check that interceptors define their flows
+- Test in proxies.xml internal with port
+- Look at ignored tests
+- Interceptor init() and init(Router router)
+- ProblemDetails
+  - JSONValidator
+- In com.predic8.membrane.core.interceptor.oauth2.authorizationservice.AuthorizationService 
+  - Remove throws: 
+    - public abstract String getJwksEndpoint() throws Exception; 
+- Exchange property name constants: See Exchange
+- Dependencies
+  - Log4J, where, what
+- Interceptor Interface:
+  - handle should not throw Exception
+- AdminConsole
+  - DisplayName: make all lower
+- Cleaup:
+  - LoggingContextInterceptor? Ask CG
+- Merge log with print
+  <log message="${header.foo}/>
+  default: message="${header}\n${body}"
+- Remove etcd stuff 
+- Rewrite RatelimitInterceptor to use AbstractLanguageInterceptor
 
 ## Done
+- Proxy.init() and init(router) make it clear what to call!
+- Rename service:// to internal://
 - Call plugin
 - Example Tests without unzipping for every test
 - Delete interceptor
@@ -90,11 +116,12 @@
 - UnitTests: Use PackageScan for more or all
 - Make <log headerOnly="false"/> clearer!
 - Inactive UnitTests enabled
+- ProblemDetails
+  - Test for production mode filter
+    - Return pd and check if answer contains pd.details ...
 
 
 ### Examples
-- Implement
-  - CustomErrorHandlingExampleTest
 - Rename Tests to *.ExampleTest
 - Move Examples
   - basic-xml-interceptor -> xml/basic-xml-interceptor
@@ -103,13 +130,9 @@
 
 # Discussion
 
-- K8S stuff document or delete?
-- Excpetion Handling
-  - throw Exception in Interceptor handle?
-- Interceptor
-  - init() and init(router)
-    - Which one to call or both?
-
+- ${} or #{} for expressions
+  - Possible conflict with spring property placeholder configurer
+  - Conflict with SpEL on startup? Are #{} replaced?
 - For ADRs
   - Response Flow guarantee there is a response 
   - Request Flow guarantee there is a request
@@ -118,6 +141,8 @@
 - Wenn Exception/Abort passiert sofort Response mit Error setzen.
 
 - Should AbstractHttpHandler and Http2ExchangeHandler have a common interface?
+- What are nodeExceptions in Exchange? And nodeStatusCodes?
+- Do we need RuleExchangeListener in RuleManager?
 
 # Other
 

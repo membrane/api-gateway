@@ -24,7 +24,7 @@ public interface MessageValidator {
 
 	Outcome validateMessage(Exchange exc, Message msg) throws Exception;
 
-	void init() throws Exception;
+	void init();
 
 	long getValid();
 

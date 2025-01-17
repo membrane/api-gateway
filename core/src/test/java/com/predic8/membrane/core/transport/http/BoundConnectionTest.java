@@ -42,9 +42,13 @@ public class BoundConnectionTest {
 				"*", ".*", 3022), "", -1);
 		sp2.getInterceptors().add(new AbstractInterceptor(){
 			@Override
-			public Outcome handleRequest(Exchange exc) throws Exception {
-				exc.getRequest().readBody();
-				exc.setResponse(Response.ok("OK.").build());
+			public Outcome handleRequest(Exchange exc) {
+                try {
+                    exc.getRequest().readBody();
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+                exc.setResponse(Response.ok("OK.").build());
 				connectionHash = ((HttpServerHandler)exc.getHandler()).getSrcOut().hashCode();
 				return Outcome.RETURN;
 			}
@@ -54,7 +58,7 @@ public class BoundConnectionTest {
 	}
 
 	@AfterEach
-	public void tearDown() throws Exception {
+	public void tearDown() {
 		router.shutdown();
 	}
 

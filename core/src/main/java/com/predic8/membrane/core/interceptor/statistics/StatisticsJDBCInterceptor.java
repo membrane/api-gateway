@@ -27,6 +27,7 @@ import java.util.*;
 
 import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.http.Request.*;
+import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 import static com.predic8.membrane.core.interceptor.statistics.util.JDBCUtil.*;
 
 /**
@@ -79,17 +80,13 @@ public class StatisticsJDBCInterceptor extends AbstractInterceptor implements Ap
 	}
 
 	@Override
-	public Outcome handleResponse(Exchange exc) throws Exception {
-		Connection con = null;
-		try {
-			con = dataSource.getConnection();
+	public Outcome handleResponse(Exchange exc) {
+		try (Connection con = dataSource.getConnection()) {
 			saveExchange(con, exc);
 		} catch (Exception e) {
-			log.warn("Could not save statistics.", e);
-		} finally {
-			closeConnection(con);
+			log.warn("Could not save statistics: {}", e.getMessage());
 		}
-		return Outcome.CONTINUE;
+		return CONTINUE;
 	}
 
 	private void saveExchange(Connection con, Exchange exc) throws Exception {
@@ -206,10 +203,10 @@ public class StatisticsJDBCInterceptor extends AbstractInterceptor implements Ap
 
 	private void logDatabaseMetaData(DatabaseMetaData metaData) throws Exception {
 		log.debug("Database metadata:");
-		log.debug("Name: "+metaData.getDatabaseProductName());
-		log.debug("Version: "+metaData.getDatabaseProductVersion());
-		log.debug("idGenerated: "+idGenerated);
-		log.debug("statString: "+statString);
+		log.debug("Name: {}",metaData.getDatabaseProductName());
+		log.debug("Version: {}",metaData.getDatabaseProductVersion());
+		log.debug("idGenerated: {}",idGenerated);
+		log.debug("statString: {}",statString);
 	}
 
 	private void closeConnection(Connection con) {

@@ -14,6 +14,7 @@
 
 package com.predic8.membrane.core.interceptor.schemavalidation;
 
+import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
@@ -31,11 +32,13 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class ValidatorInterceptorTest {
 
-	private Request requestTB;
+	private static Request requestTB;
 
-	private Request requestXService;
+	private static Request requestXService;
 
-	private Exchange exc;
+	private static Exchange exc;
+
+	private static Router router;
 
 	public static final String ARTICLE_SERVICE_WSDL = "classpath:/validation/ArticleService.wsdl";
 
@@ -45,84 +48,86 @@ public class ValidatorInterceptorTest {
 
 	public static final String E_MAIL_SERVICE_WSDL = "classpath:/validation/XWebEmailValidation.wsdl.xml";
 
-	@BeforeEach
-	public void setUp() throws Exception {
+
+	@BeforeAll
+	public static void setUp() throws Exception {
 		requestTB = MessageUtil.getPostRequest("http://thomas-bayer.com");
 		requestXService = MessageUtil.getPostRequest("http://ws.xwebservices.com");
 		exc = new Exchange(null);
+		router = new Router();
 	}
 
 	@Test
-	public void testHandleRequestValidBLZMessage() throws Exception {
+	void testHandleRequestValidBLZMessage() throws Exception {
 		assertEquals(CONTINUE, getOutcome(requestTB, createValidatorInterceptor(BLZ_SERVICE_WSDL), "/getBank.xml"));
 	}
 
 	@Test
-	public void testHandleRequestInvalidBLZMessage() throws Exception {
+	void testHandleRequestInvalidBLZMessage() throws Exception {
 		assertEquals(ABORT, getOutcome(requestTB, createValidatorInterceptor(BLZ_SERVICE_WSDL), "/getBankInvalid.xml"));
 	}
 
 	@Test
-	public void testHandleRequestValidArticleMessage() throws Exception {
+	void testHandleRequestValidArticleMessage() throws Exception {
 		assertEquals(CONTINUE, getOutcome(requestTB, createValidatorInterceptor(ARTICLE_SERVICE_WSDL), "/validation/articleRequest.xml"));
 	}
 
 	@Test
-	public void testHandleRequestValidArticleMessageBOM() throws Exception {
+	void testHandleRequestValidArticleMessageBOM() throws Exception {
 		assertEquals(CONTINUE, getOutcome(requestTB, createValidatorInterceptor(ARTICLE_SERVICE_BOM_WSDL), "/validation/articleRequest-bom.xml"));
 	}
 
 	@Test
-	public void testHandleNonSOAPXMLMessage() throws Exception {
+	void testHandleNonSOAPXMLMessage() throws Exception {
 		assertEquals(ABORT, getOutcome(requestTB, createValidatorInterceptor(ARTICLE_SERVICE_WSDL), "/customer.xml"));
 	}
 
 	@Test
-	public void testHandleRequestInvalidArticleMessage() throws Exception {
+	void testHandleRequestInvalidArticleMessage() throws Exception {
 		assertEquals(ABORT, getOutcome(requestTB, createValidatorInterceptor(ARTICLE_SERVICE_WSDL), "/validation/articleRequestInvalid.xml"));
 	}
 
 	@Test
-	public void testHandleRequestInvalidArticleMessageBOM() throws Exception {
+	void testHandleRequestInvalidArticleMessageBOM() throws Exception {
 		assertEquals(ABORT, getOutcome(requestTB, createValidatorInterceptor(ARTICLE_SERVICE_BOM_WSDL), "/validation/articleRequestInvalid-bom.xml"));
 	}
 
 	@Test
-	public void testHandleResponseValidArticleMessage() throws Exception {
+	void testHandleResponseValidArticleMessage() throws Exception {
 		exc.setRequest(requestTB);
 		exc.setResponse(Response.ok().body(getContent("/validation/articleResponse.xml")).build());
 		assertEquals(CONTINUE, createValidatorInterceptor(ARTICLE_SERVICE_WSDL).handleResponse(exc));
 	}
 
 	@Test
-	public void testHandleResponseValidArticleMessageGzipped() throws Exception {
+	void testHandleResponseValidArticleMessageGzipped() throws Exception {
 		exc.setRequest(requestTB);
 		exc.setResponse(Response.ok().body(getContent("/validation/articleResponse.xml.gz")).header("Content-Encoding", "gzip").build());
 		assertEquals(CONTINUE, createValidatorInterceptor(ARTICLE_SERVICE_WSDL).handleResponse(exc));
 	}
 
 	@Test
-	public void testHandleRequestValidEmailMessage() throws Exception {
+	void testHandleRequestValidEmailMessage() throws Exception {
 		assertEquals(CONTINUE, getOutcome(requestXService, createValidatorInterceptor(E_MAIL_SERVICE_WSDL), "/validation/validEmail.xml"));
 	}
 
 	@Test
-	public void testHandleRequestInvalidEmailMessageDoubleEMailElement() throws Exception {
+	void testHandleRequestInvalidEmailMessageDoubleEMailElement() throws Exception {
 		assertEquals(ABORT, getOutcome(requestXService, createValidatorInterceptor(E_MAIL_SERVICE_WSDL), "/validation/invalidEmail.xml"));
 	}
 
 	@Test
-	public void testHandleRequestInvalidEmailMessageDoubleRequestElement() throws Exception {
+	void testHandleRequestInvalidEmailMessageDoubleRequestElement() throws Exception {
 		assertEquals(ABORT, getOutcome(requestXService, createValidatorInterceptor(E_MAIL_SERVICE_WSDL), "/validation/invalidEmail2.xml"));
 	}
 
 	@Test
-	public void testHandleRequestInvalidEmailMessageUnknownElement() throws Exception {
+	void testHandleRequestInvalidEmailMessageUnknownElement() throws Exception {
 		assertEquals(ABORT, getOutcome(requestXService, createValidatorInterceptor(E_MAIL_SERVICE_WSDL), "/validation/invalidEmail3.xml"));
 	}
 
 	@Test
-	public void testSchemaValidation() throws Exception {
+	void testSchemaValidation() throws Exception {
 		assertEquals(CONTINUE, getOutcome(requestTB, createSchemaValidatorInterceptor("src/test/resources/validation/order.xsd"), "/validation/order.xml"));
 		assertEquals(ABORT, getOutcome(requestTB, createSchemaValidatorInterceptor("src/test/resources/validation/order.xsd"), "/validation/invalid-order.xml"));
 	}
@@ -141,7 +146,7 @@ public class ValidatorInterceptorTest {
 		ValidatorInterceptor interceptor = new ValidatorInterceptor();
 		interceptor.setResourceResolver(new ResolverMap());
 		interceptor.setSchema(schema);
-		interceptor.init();
+		interceptor.init(router);
 		return interceptor;
 	}
 
@@ -149,7 +154,7 @@ public class ValidatorInterceptorTest {
 		ValidatorInterceptor interceptor = new ValidatorInterceptor();
 		interceptor.setResourceResolver(new ResolverMap());
 		interceptor.setWsdl(wsdl);
-		interceptor.init();
+		interceptor.init(router);
 		return interceptor;
 	}
 

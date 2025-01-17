@@ -15,7 +15,6 @@
 package com.predic8.membrane.core.interceptor.flow;
 
 import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.interceptor.*;
@@ -46,8 +45,6 @@ public class IfInterceptor extends AbstractFlowInterceptor {
     private String test;
     private Language language = SPEL;
 
-    private final FlowController flowController = new FlowController();
-
     private ExchangeExpression exchangeExpression;
 
     public IfInterceptor() {
@@ -55,23 +52,22 @@ public class IfInterceptor extends AbstractFlowInterceptor {
     }
 
     @Override
-    public void init(Router router) throws Exception {
-        super.init(router);
+    public void init() {
+        super.init();
         exchangeExpression = ExchangeExpression.getInstance(router, language, test);
     }
 
     @Override
-    public Outcome handleRequest(Exchange exc) throws Exception {
+    public Outcome handleRequest(Exchange exc) {
         return handleInternal(exc, REQUEST);
     }
 
     @Override
-    public Outcome handleResponse(Exchange exc) throws Exception {
+    public Outcome handleResponse(Exchange exc) {
         return handleInternal(exc, RESPONSE);
     }
 
-    private Outcome handleInternal(Exchange exc, Flow flow) throws Exception {
-
+    private Outcome handleInternal(Exchange exc, Flow flow) {
         boolean result;
         try {
              result = exchangeExpression.evaluate(exc, flow, Boolean.class);
@@ -94,8 +90,8 @@ public class IfInterceptor extends AbstractFlowInterceptor {
             return CONTINUE;
 
         return switch (flow) {
-            case REQUEST -> flowController.invokeRequestHandlers(exc, getInterceptors());
-            case RESPONSE -> flowController.invokeResponseHandlers(exc, getInterceptors());
+            case REQUEST -> getFlowController().invokeRequestHandlers(exc, getInterceptors());
+            case RESPONSE -> getFlowController().invokeResponseHandlers(exc, getInterceptors());
             default -> throw new RuntimeException("Should never happen");
         };
     }

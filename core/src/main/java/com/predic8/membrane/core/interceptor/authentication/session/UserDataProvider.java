@@ -13,14 +13,13 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.authentication.session;
 
-import java.util.Map;
-import java.util.NoSuchElementException;
+import com.predic8.membrane.core.*;
 
-import com.predic8.membrane.core.Router;
+import java.util.*;
 
 public interface UserDataProvider {
 
-	public void init(Router router);
+	void init(Router router);
 
 	/**
 	 * @throws NoSuchElementException
@@ -28,5 +27,5 @@ public interface UserDataProvider {
 	 * @return a hash map containing the user's attributes (used for the token
 	 *         generator or to pass on HTTP headers)
 	 */
-	public Map<String, String> verify(Map<String, String> postData);
+	Map<String, String> verify(Map<String, String> postData);
 }

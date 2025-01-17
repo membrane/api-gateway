@@ -13,14 +13,19 @@
 
 package com.predic8.membrane.core.interceptor.oauth2.processors;
 
+import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.authentication.session.LoginDialog;
 import com.predic8.membrane.core.interceptor.oauth2.OAuth2AuthorizationServerInterceptor;
 import com.predic8.membrane.core.util.URI;
+import org.slf4j.*;
+
+import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 
 public class LoginDialogEndpointProcessor extends EndpointProcessor {
 
+    private static final Logger log = LoggerFactory.getLogger(LoginDialogEndpointProcessor.class);
     private final LoginDialog loginDialog;
 
     public LoginDialogEndpointProcessor(OAuth2AuthorizationServerInterceptor authServer) {
@@ -44,9 +49,18 @@ public class LoginDialogEndpointProcessor extends EndpointProcessor {
     }
 
     @Override
-    public Outcome process(Exchange exc) throws Exception {
-        loginDialog.handleLoginRequest(exc);
-
+    public Outcome process(Exchange exc) {
+        try {
+            loginDialog.handleLoginRequest(exc);
+        } catch (Exception e) {
+            log.error(e.getMessage(),e);
+            ProblemDetails.internal(true)
+                    .component(this.getClass().getSimpleName())
+                    .exception(e)
+                    .stacktrace(true)
+                    .buildAndSetResponse(exc);
+            return ABORT;
+        }
         return Outcome.RETURN;
     }
 

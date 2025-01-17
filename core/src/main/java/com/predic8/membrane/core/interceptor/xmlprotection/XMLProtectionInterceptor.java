@@ -15,14 +15,13 @@
 package com.predic8.membrane.core.interceptor.xmlprotection;
 
 import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
 import org.slf4j.*;
 
 import java.io.*;
 
-import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static java.nio.charset.StandardCharsets.*;
@@ -44,49 +43,58 @@ public class XMLProtectionInterceptor extends AbstractInterceptor {
 
 	public XMLProtectionInterceptor() {
 		name = "XML Protection";
-		setFlow(REQUEST);
+		setFlow(REQUEST_FLOW);
 	}
 
 	@Override
-	public Outcome handleRequest(Exchange exc) throws Exception {
+	public Outcome handleRequest(Exchange exc) {
+        try {
+            return handleInternal(exc);
+        } catch (Exception e) {
+			ProblemDetails.user(router.isProduction())
+					.component(getDisplayName())
+					.detail("Error inspecting body!")
+					.exception(e)
+					.stacktrace(true)
+					.buildAndSetResponse(exc);
+			return ABORT;
+        }
+    }
+
+	private Outcome handleInternal(Exchange exc) throws Exception {
 
 		if (exc.getRequest().isBodyEmpty()) {
-			log.info("body is empty -> request is not scanned by xmlProtection");
+			log.info("body is empty -> request is not scanned");
 			return CONTINUE;
 		}
 
 		if (!exc.getRequest().isXML()) {
-			log.warn("request discarded by xmlProtection, because it's Content-Type header did not indicate that it is actually XML.");
+			String msg = ("Content-Type %s was not XML.").formatted(exc.getRequest().getHeader().getContentType());
+			log.warn(msg);
+			ProblemDetails.user(router.isProduction())
+					.title("Request discarded by xmlProtection")
+					.detail(msg)
+					.buildAndSetResponse(exc);
 			return ABORT;
 		}
 
 		if (!protectXML(exc)) {
-			log.warn("request discarded by xmlProtection, because it is not wellformed or exceeds limits");
-			setFailResponse(exc);
+			String msg = "Request was rejected by XML protection. Please check XML.";
+			log.warn(msg);
+			ProblemDetails.security(router.isProduction())
+					.title("Content violates XML security policy")
+						.detail(msg)
+						.component("XMLProtection")
+									.buildAndSetResponse(exc);
+			exc.getResponse().getHeader().add(X_PROTECTION, "Content violates XML security policy");
 			return ABORT;
 		}
-
 		log.debug("protected against XML attacks");
-
 		return CONTINUE;
-	}
-
-	private void setFailResponse(Exchange exc) {
-		// TODO Problem Details
-		exc.setResponse(Response.badRequest().body("""
-				<error>
-				  <title>XML protection failed!</title>
-				  <message>Request was rejected by XML protection. Please check XML.</message>
-				</error>
-				""")
-				.header(X_PROTECTION, "Content violates XML security policy")
-				.contentType(APPLICATION_XML)
-				.build());
 	}
 
 	private boolean protectXML(Exchange exc) throws Exception {
 		ByteArrayOutputStream stream = new ByteArrayOutputStream();
-
 		XMLProtector protector = new XMLProtector(new OutputStreamWriter(stream, getCharset(exc)),
 				removeDTD, maxElementNameLength, maxAttributeCount);
 
@@ -103,7 +111,6 @@ public class XMLProtectionInterceptor extends AbstractInterceptor {
 		String charset = exc.getRequest().getCharset();
 		if (charset == null)
 			return UTF_8.name();
-
 		return charset;
 	}
 
@@ -116,6 +123,10 @@ public class XMLProtectionInterceptor extends AbstractInterceptor {
 		this.maxAttributeCount = maxAttributeCount;
 	}
 
+	public int getMaxAttributeCount() {
+		return maxAttributeCount;
+	}
+
 	/**
 	 * @description If an incoming request exceeds this limit, it will be discarded.
 	 * @default 1000
@@ -123,6 +134,10 @@ public class XMLProtectionInterceptor extends AbstractInterceptor {
 	@MCAttribute
 	public void setMaxElementNameLength(int maxElementNameLength) {
 		this.maxElementNameLength = maxElementNameLength;
+	}
+
+	public int getMaxElementNameLength() {
+		return maxElementNameLength;
 	}
 
 	/**
@@ -134,10 +149,13 @@ public class XMLProtectionInterceptor extends AbstractInterceptor {
 		this.removeDTD = removeDTD;
 	}
 
+	public boolean isRemoveDTD() {
+		return removeDTD;
+	}
+
 	@Override
 	public String getShortDescription() {
-		return "Protects agains XML attacks.";
+		return "Protects against XML attacks.";
 	}
 
 }
-

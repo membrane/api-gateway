@@ -50,12 +50,16 @@ public class HTTPClientInterceptor extends AbstractInterceptor {
 
     public HTTPClientInterceptor() {
         name = "HTTPClient";
-        setFlow(REQUEST);
+        setFlow(REQUEST_FLOW);
     }
 
     @Override
-    public Outcome handleRequest(Exchange exc) throws Exception {
-        exc.blockRequestIfNeeded();
+    public Outcome handleRequest(Exchange exc) {
+        try {
+            exc.blockRequestIfNeeded();
+        } catch (TerminateException e) {
+            log.error("Could not block request.",e);
+        }
 
         try {
             hc.call(exc, adjustHostHeader, failOverOn5XX);
@@ -66,10 +70,13 @@ public class HTTPClientInterceptor extends AbstractInterceptor {
         } catch (UnknownHostException e) {
             setErrorResponse(exc, "Target host %s of API %s is unknown. DNS was unable to resolve host name.".formatted(URLUtil.getHost(getDestination(exc)), exc.getProxy().getName()) + PROXIES_HINT);
             return ABORT;
-        } catch (MalformedURLException e) {
+        } catch (Exception e) {
             log.error(e.getMessage());
             ProblemDetails.internal(router.isProduction())
-                    .detail(e.getMessage())
+                    .component(getDisplayName())
+                    .exception(e)
+                    .extension("proxy", exc.getProxy().getName())
+                    .stacktrace(true)
                     .buildAndSetResponse(exc);
             return ABORT;
         }
@@ -88,9 +95,8 @@ public class HTTPClientInterceptor extends AbstractInterceptor {
     }
 
     @Override
-    public void init(Router router) throws Exception {
-        super.init(router);
-
+    public void init() {
+        super.init();
         hc = router.getHttpClientFactory().createClient(httpClientConfig);
         hc.setStreamPumpStats(getRouter().getStatistics().getStreamPumpStats());
     }

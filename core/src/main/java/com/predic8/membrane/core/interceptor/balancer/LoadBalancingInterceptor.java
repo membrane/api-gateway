@@ -15,7 +15,7 @@ package com.predic8.membrane.core.interceptor.balancer;
 
 import com.google.common.collect.*;
 import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
@@ -31,280 +31,294 @@ import static com.predic8.membrane.core.interceptor.Outcome.*;
  * @explanation May only be used as interceptor in a ServiceProxy.
  * @topic 7. Clustering and Loadbalancing
  */
-@MCElement(name="balancer")
+@MCElement(name = "balancer")
 public class LoadBalancingInterceptor extends AbstractInterceptor {
 
-	private static final Logger log = LoggerFactory.getLogger(LoadBalancingInterceptor.class
-			.getName());
+    private static final Logger log = LoggerFactory.getLogger(LoadBalancingInterceptor.class
+            .getName());
 
-	/**
-	 * Round-robin is the default, but it's configurable.
-	 */
-	private DispatchingStrategy strategy = new RoundRobinStrategy();
-	private AbstractSessionIdExtractor sessionIdExtractor;
-	private boolean failOver = true;
-	private final Balancer balancer = new Balancer();
-	private NodeOnlineChecker nodeOnlineChecker;
+    /**
+     * Round-robin is the default, but it's configurable.
+     */
+    private DispatchingStrategy strategy = new RoundRobinStrategy();
+    private AbstractSessionIdExtractor sessionIdExtractor;
+    private boolean failOver = true;
+    private final Balancer balancer = new Balancer();
+    private NodeOnlineChecker nodeOnlineChecker;
 
-	public LoadBalancingInterceptor() {
-		name = "Balancer";
-	}
+    public LoadBalancingInterceptor() {
+        name = "Balancer";
+    }
 
-	@Override
-	public void init(Router router) throws Exception {
-		super.init(router);
+    @Override
+    public void init() {
+        super.init();
+        strategy.init(router);
+        if (nodeOnlineChecker != null)
+            nodeOnlineChecker.init(router);
 
-		strategy.init(router);
-		if (nodeOnlineChecker != null)
-			nodeOnlineChecker.init(router);
-	}
+        for (Cluster c : balancer.getClusters())
+            for (Node n : c.getNodes())
+                c.nodeUp(n);
+    }
 
-	@Override
-	public Outcome handleRequest(Exchange exc) throws Exception {
-		
-		if(nodeOnlineChecker != null){
-			exc.setProperty(Exchange.TRACK_NODE_STATUS, true);
-			nodeOnlineChecker.putNodesBackUp();
-		}
+    @Override
+    public Outcome handleRequest(Exchange exc) {
 
-		Node dispatchedNode;
-		try {
-			dispatchedNode = getDispatchedNode(exc);
-		} catch (EmptyNodeListException e) {
-			//This can happen for 2 reasons:
-			//1) Initial server misconfiguration. None configured at all.
-			//2) All destinations got disabled externally (through Membrane maintenance API). See class EmptyNodeListException.
-			log.error("No Node found.");
-			exc.setResponse(Response.internalServerError().build());
-			return ABORT;
-		}
+        if (nodeOnlineChecker != null) {
+            exc.setProperty(Exchange.TRACK_NODE_STATUS, true);
+            nodeOnlineChecker.putNodesBackUp();
+        }
 
-		dispatchedNode.incCounter();
-		dispatchedNode.addThread();
+        Node dispatchedNode;
+        try {
+            dispatchedNode = getDispatchedNode(exc);
+        } catch (EmptyNodeListException e) {
+            //This can happen for 2 reasons:
+            //1) Initial server misconfiguration. None configured at all.
+            //2) All destinations got disabled externally (through Membrane maintenance API). See class EmptyNodeListException.
+            log.error("No Node found.");
+            exc.setResponse(Response.internalServerError().build());
+            return ABORT;
+        } catch (Exception e) {
+            ProblemDetails.internal(router.isProduction())
+                    .component(getDisplayName())
+                    .detail("Could not get dispatched node!")
+                    .exception(e)
+                    .stacktrace(true)
+                    .buildAndSetResponse(exc);
+            return ABORT;
+        }
 
-		exc.setProperty("dispatchedNode", dispatchedNode);
+        dispatchedNode.incCounter();
+        dispatchedNode.addThread();
 
-		exc.setOriginalRequestUri(dispatchedNode.getDestinationURL(exc));
+        exc.setProperty("dispatchedNode", dispatchedNode);
 
-		exc.getDestinations().clear();
-		exc.getDestinations().add(dispatchedNode.getDestinationURL(exc));
+        exc.setOriginalRequestUri(dispatchedNode.getDestinationURL(exc));
 
-		setFailOverNodes(exc, dispatchedNode);
+        exc.getDestinations().clear();
+        exc.getDestinations().add(dispatchedNode.getDestinationURL(exc));
 
-		return CONTINUE;
-	}
-	
-	@Override
-	public void handleAbort(Exchange exc) {
-		if(nodeOnlineChecker != null){
-			nodeOnlineChecker.handle(exc);
-		}		
-	}
+        setFailOverNodes(exc, dispatchedNode);
 
-	@Override
-	public Outcome handleResponse(Exchange exc) throws Exception {
-		if(nodeOnlineChecker != null){
-			nodeOnlineChecker.handle(exc);
-		}
+        return CONTINUE;
+    }
 
-		if (sessionIdExtractor != null) {
-			String sessionId = getSessionId(exc.getResponse());
+    @Override
+    public void handleAbort(Exchange exc) {
+        if (nodeOnlineChecker != null) {
+            nodeOnlineChecker.handle(exc);
+        }
+    }
 
-			if (sessionId != null) {
-				balancer.addSession2Cluster(sessionId, BalancerUtil.getSingleClusterNameOrDefault(balancer), (Node) exc.getProperty("dispatchedNode"));
-			}
-		}
+    @Override
+    public Outcome handleResponse(Exchange exc) {
+        if (nodeOnlineChecker != null) {
+            nodeOnlineChecker.handle(exc);
+        }
 
-		updateDispatchedNode(exc);
-		strategy.done(exc);
+        if (sessionIdExtractor != null) {
+            String sessionId;
+            try {
+                sessionId = getSessionId(exc.getResponse());
+            } catch (Exception e) {
+                ProblemDetails.internal(router.isProduction())
+                        .component(getDisplayName())
+                        .detail("Could not get session id!")
+                        .exception(e)
+                        .stacktrace(true)
+                        .buildAndSetResponse(exc);
+                return ABORT;
+            }
 
-		return CONTINUE;
-	}
+            if (sessionId != null) {
+                balancer.addSession2Cluster(sessionId, BalancerUtil.getSingleClusterNameOrDefault(balancer), (Node) exc.getProperty("dispatchedNode"));
+            }
+        }
 
-	/**
-	 * Add secondary destinations in case the primary fails.
-	 */
-	private void setFailOverNodes(Exchange exc, Node dispatchedNode) {
-		if (!failOver)
-			return;
+        updateDispatchedNode(exc);
+        strategy.done(exc);
 
-		for (Node ep : getEndpoints()) {
-			if (!ep.equals(dispatchedNode)) { //don't add the primary one again
-				exc.getDestinations().add(ep.getDestinationURL(exc));
-			}
-		}
-	}
+        return CONTINUE;
+    }
 
-	private void updateDispatchedNode(Exchange exc) {
-		Node n = (Node) exc.getProperty("dispatchedNode");
-		n.removeThread();
-		// exc.timeResSent will be overridden later as exc really
-		// completes, but to collect the statistics we use the current time
-		exc.setTimeResSent(System.currentTimeMillis());
-		n.collectStatisticsFrom(exc);
-	}
+    /**
+     * Add secondary destinations in case the primary fails.
+     */
+    private void setFailOverNodes(Exchange exc, Node dispatchedNode) {
+        if (!failOver)
+            return;
 
-	private Node getDispatchedNode(Exchange exc) throws Exception {
-		String sessionId;
-		if (sessionIdExtractor == null
-				|| (sessionId = getSessionId(exc.getRequest())) == null) {
-			log.debug("no session id found.");
-			return strategy.dispatch(this, exc);
-		}
+        for (Node ep : getEndpoints()) {
+            if (!ep.equals(dispatchedNode)) { //don't add the primary one again
+                exc.getDestinations().add(ep.getDestinationURL(exc));
+            }
+        }
+    }
 
-		Session s = getSession(sessionId);
-		if (s == null)
-			log.debug("no session found for id {}",sessionId);
-		if (s == null || s.getNode().isDown()) {
-			log.debug("assigning new node for session id {}",sessionId
-					+ (s != null ? " (old node was " + s.getNode() + ")" : ""));
-			balancer.addSession2Cluster(sessionId, BalancerUtil.getSingleClusterNameOrDefault(balancer), strategy.dispatch(this, exc));
-		}
-		s = getSession(sessionId);
-		s.used();
-		return s.getNode();
-	}
+    private void updateDispatchedNode(Exchange exc) {
+        Node n = (Node) exc.getProperty("dispatchedNode");
+        n.removeThread();
+        // exc.timeResSent will be overridden later as exc really
+        // completes, but to collect the statistics we use the current time
+        exc.setTimeResSent(System.currentTimeMillis());
+        n.collectStatisticsFrom(exc);
+    }
 
-	private Session getSession(String sessionId) {
-		return balancer.getSessions(BalancerUtil.getSingleClusterNameOrDefault(balancer)).get(sessionId);
-	}
+    private Node getDispatchedNode(Exchange exc) throws Exception {
+        String sessionId;
+        if (sessionIdExtractor == null
+            || (sessionId = getSessionId(exc.getRequest())) == null) {
+            log.debug("no session id found.");
+            return strategy.dispatch(this, exc);
+        }
 
-	private String getSessionId(Message msg) throws Exception {
-		return sessionIdExtractor.getSessionId(msg);
-	}
+        Session s = getSession(sessionId);
+        if (s == null)
+            log.debug("no session found for id {}", sessionId);
+        if (s == null || s.getNode().isDown()) {
+            log.debug("assigning new node for session id {}", sessionId
+                                                              + (s != null ? " (old node was " + s.getNode() + ")" : ""));
+            balancer.addSession2Cluster(sessionId, BalancerUtil.getSingleClusterNameOrDefault(balancer), strategy.dispatch(this, exc));
+        }
+        s = getSession(sessionId);
+        s.used();
+        return s.getNode();
+    }
 
-	/**
-	 * This is *NOT* {@link #setDisplayName(String)}, but the balancer's name
-	 * set in the proxy configuration to identify this balancer.
-	 * @description Uniquely identifies this Load Balancer, if there is more than one. Used
-	 * in the web administration interface and lbclient to manage nodes.
-	 * @example balancer1
-	 * @default Default
-	 */
-	@MCAttribute
-	public void setName(String name) {
-		balancer.setName(name);
-	}
+    private Session getSession(String sessionId) {
+        return balancer.getSessions(BalancerUtil.getSingleClusterNameOrDefault(balancer)).get(sessionId);
+    }
+
+    private String getSessionId(Message msg) throws Exception {
+        return sessionIdExtractor.getSessionId(msg);
+    }
+
+    /**
+     * This is *NOT* {@link #setDisplayName(String)}, but the balancer's name
+     * set in the proxy configuration to identify this balancer.
+     *
+     * @description Uniquely identifies this Load Balancer, if there is more than one. Used
+     * in the web administration interface and lbclient to manage nodes.
+     * @example balancer1
+     * @default Default
+     */
+    @MCAttribute
+    public void setName(String name) {
+        balancer.setName(name);
+    }
 
 
-	/**
-	 * This is *NOT* {@link #getDisplayName()}, but the balancer's name set in
-	 * the proxy configuration to identify this balancer.
-	 */
-	public String getName() {
-		return balancer.getName();
-	}
+    /**
+     * This is *NOT* {@link #getDisplayName()}, but the balancer's name set in
+     * the proxy configuration to identify this balancer.
+     */
+    public String getName() {
+        return balancer.getName();
+    }
 
-	public DispatchingStrategy getDispatchingStrategy() {
-		return strategy;
-	}
+    public DispatchingStrategy getDispatchingStrategy() {
+        return strategy;
+    }
 
-	/**
-	 * @description Sets the strategy used to choose the backend nodes.
-	 */
-	@MCChildElement(order=3)
-	public void setDispatchingStrategy(DispatchingStrategy strategy) {
-		this.strategy = strategy;
-	}
+    /**
+     * @description Sets the strategy used to choose the backend nodes.
+     */
+    @MCChildElement(order = 3)
+    public void setDispatchingStrategy(DispatchingStrategy strategy) {
+        this.strategy = strategy;
+    }
 
-	public List<Node> getEndpoints() {
-		return balancer.getAvailableNodesByCluster(BalancerUtil.getSingleClusterNameOrDefault(balancer)); // fallback
-	}
+    public List<Node> getEndpoints() {
+        return balancer.getAvailableNodesByCluster(BalancerUtil.getSingleClusterNameOrDefault(balancer)); // fallback
+    }
 
-	public AbstractSessionIdExtractor getSessionIdExtractor() {
-		return sessionIdExtractor;
-	}
+    public AbstractSessionIdExtractor getSessionIdExtractor() {
+        return sessionIdExtractor;
+    }
 
-	/**
-	 * @description Checks if nodes are still available. Sets them to "DOWN" when not reachable, else sets them back up when they are reachable.
-	 */
-	@MCChildElement(order=4)
-	public void setNodeOnlineChecker(NodeOnlineChecker noc)
-	{
-		this.nodeOnlineChecker = noc;
-		this.nodeOnlineChecker.setLbi(this);
-	}
-	
-	public NodeOnlineChecker getNodeOnlineChecker()
-	{
-		return this.nodeOnlineChecker;
-	}
+    /**
+     * @description Checks if nodes are still available. Sets them to "DOWN" when not reachable, else sets them back up when they are reachable.
+     */
+    @MCChildElement(order = 4)
+    public void setNodeOnlineChecker(NodeOnlineChecker noc) {
+        this.nodeOnlineChecker = noc;
+        this.nodeOnlineChecker.setLbi(this);
+    }
 
-	/**
-	 * @description Sets the strategy used to extract a session ID from incoming HTTP requests.
-	 */
-	@MCChildElement(order=1)
-	public void setSessionIdExtractor(
-			AbstractSessionIdExtractor sessionIdExtractor) {
-		this.sessionIdExtractor = sessionIdExtractor;
-	}
+    public NodeOnlineChecker getNodeOnlineChecker() {
+        return this.nodeOnlineChecker;
+    }
 
-	public boolean isFailOver() {
-		return failOver;
-	}
+    /**
+     * @description Sets the strategy used to extract a session ID from incoming HTTP requests.
+     */
+    @MCChildElement(order = 1)
+    public void setSessionIdExtractor(
+            AbstractSessionIdExtractor sessionIdExtractor) {
+        this.sessionIdExtractor = sessionIdExtractor;
+    }
 
-	public void setFailOver(boolean failOver) {
-		this.failOver = failOver;
-	}
+    public boolean isFailOver() {
+        return failOver;
+    }
 
-	public Balancer getClusterManager() {
-		return balancer;
-	}
+    public void setFailOver(boolean failOver) {
+        this.failOver = failOver;
+    }
 
-	/**
-	 * @description Specifies a list of clusters.
-	 */
-	@MCChildElement(order=2)
-	public void setClustersFromSpring(List<Balancer> balancers) {
-		List<Cluster> clusters = new ArrayList<>();
-		for (Balancer balancer : balancers)
-			clusters.addAll(balancer.getClusters());
-		this.balancer.setClusters(clusters);
-	}
+    public Balancer getClusterManager() {
+        return balancer;
+    }
 
-	public List<Balancer> getClustersFromSpring() {
-		return new ArrayList<>(Lists.newArrayList(balancer)) {
-			@Serial
-			private static final long serialVersionUID = 1L;
+    /**
+     * @description Specifies a list of clusters.
+     */
+    @MCChildElement(order = 2)
+    public void setClustersFromSpring(List<Balancer> balancers) {
+        List<Cluster> clusters = new ArrayList<>();
+        for (Balancer balancer : balancers)
+            clusters.addAll(balancer.getClusters());
+        this.balancer.setClusters(clusters);
+    }
 
-			@Override
-			public boolean add(Balancer e) {
-				balancer.setClusters(e.getClusters());
-				return super.add(e);
-			}
+    public List<Balancer> getClustersFromSpring() {
+        return new ArrayList<>(Lists.newArrayList(balancer)) {
+            @Serial
+            private static final long serialVersionUID = 1L;
 
-			@Override
-			public Balancer set(int index, Balancer element) {
-				balancer.setClusters(element.getClusters());
-				return super.set(index, element);
-			}
-		};
-	}
+            @Override
+            public boolean add(Balancer e) {
+                balancer.setClusters(e.getClusters());
+                return super.add(e);
+            }
 
-	public long getSessionTimeout() {
-		return balancer.getSessionTimeout();
-	}
+            @Override
+            public Balancer set(int index, Balancer element) {
+                balancer.setClusters(element.getClusters());
+                return super.set(index, element);
+            }
+        };
+    }
 
-	/**
-	 * @description Time in milliseconds after which sessions time out. (If a session
-	 * extractor is used.) Default is 1 hour, 0 means never.
-	 * @example 600000 <i>(10min)</i>
-	 * @default 3600000
-	 */
-	@MCAttribute
-	public void setSessionTimeout(long sessionTimeout) {
-		balancer.setSessionTimeout(sessionTimeout);
-	}
+    public long getSessionTimeout() {
+        return balancer.getSessionTimeout();
+    }
 
-	@Override
-	public String getShortDescription() {
-		return "Performs load-balancing between <a href=\"/admin/balancers\">several nodes</a>.";
-	}
+    /**
+     * @description Time in milliseconds after which sessions time out. (If a session
+     * extractor is used.) Default is 1 hour, 0 means never.
+     * @example 600000 <i>(10min)</i>
+     * @default 3600000
+     */
+    @MCAttribute
+    public void setSessionTimeout(long sessionTimeout) {
+        balancer.setSessionTimeout(sessionTimeout);
+    }
 
-	@Override
-	public void init() {
-		for (Cluster c : balancer.getClusters())
-			for (Node n : c.getNodes())
-				c.nodeUp(n);
-	}
+    @Override
+    public String getShortDescription() {
+        return "Performs load-balancing between <a href=\"/admin/balancers\">several nodes</a>.";
+    }
 }

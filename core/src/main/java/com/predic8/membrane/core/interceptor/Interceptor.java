@@ -20,9 +20,10 @@ import com.predic8.membrane.core.exchange.*;
 import java.util.*;
 
 /**
- * TODO describe in short what an interceptor is.
- * <p>
- * Interceptor implementations need to be thread safe.
+ * <p>An interceptor can be put into the message flow. There it has access to
+ * the data flowing through via the Exchange object. An interceptor can read
+ * but also manipulate messages. It can also alter the flow of messages.</p>
+ * <p>Interceptor implementations need to be thread safe.</p>
  *
  */
 public interface Interceptor {
@@ -31,9 +32,10 @@ public interface Interceptor {
 		REQUEST, RESPONSE, ABORT;
 
 		public static class Set {
-			public static final EnumSet<Flow> REQUEST = EnumSet.of(Flow.REQUEST);
-			public static final EnumSet<Flow> RESPONSE_ABORT = EnumSet.of(Flow.RESPONSE, Flow.ABORT);
-			public static final EnumSet<Flow> REQUEST_RESPONSE_ABORT = EnumSet.of(Flow.REQUEST, Flow.RESPONSE, Flow.ABORT);
+			public static final EnumSet<Flow> REQUEST_FLOW = EnumSet.of(Flow.REQUEST);
+			public static final EnumSet<Flow> RESPONSE_FLOW = EnumSet.of(Flow.RESPONSE);
+			public static final EnumSet<Flow> RESPONSE_ABORT_FLOW = EnumSet.of(Flow.RESPONSE, Flow.ABORT);
+			public static final EnumSet<Flow> REQUEST_RESPONSE_ABORT_FLOW = EnumSet.of(Flow.REQUEST, Flow.RESPONSE, Flow.ABORT);
 		}
 
 		public boolean isRequest() {
@@ -49,8 +51,8 @@ public interface Interceptor {
 		}
 	}
 
-	Outcome handleRequest(Exchange exchange) throws Exception;
-	Outcome handleResponse(Exchange exchange) throws Exception;
+	Outcome handleRequest(Exchange exchange);
+	Outcome handleResponse(Exchange exchange);
 
 	/**
 	 * Called when any {@link #handleRequest(Exchange)} or
@@ -89,5 +91,5 @@ public interface Interceptor {
      */
 	String getHelpId();
 
-	void init(Router router) throws Exception;
+	void init(Router router);
 }

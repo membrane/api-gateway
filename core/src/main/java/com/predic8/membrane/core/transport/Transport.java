@@ -33,12 +33,10 @@ public abstract class Transport {
 	/**
 	 * SSL and Non-SSL are mixed here, maybe split that in future
 	 */
-
 	protected Set<IPortChangeListener> menuListeners = new HashSet<>();
 
 	private List<Interceptor> interceptors = new Vector<>();
 	private Router router;
-	private boolean printStackTrace = false;
 	private boolean reverseDNS = true;
 
 	private int concurrentConnectionLimitPerIp = -1;
@@ -66,7 +64,7 @@ public abstract class Transport {
 			interceptors.add(new DispatchingInterceptor());
 			interceptors.add(new ReverseProxyingInterceptor());
 			interceptors.add(new UserFeatureInterceptor());
-			interceptors.add(new InternalServiceRoutingInterceptor());
+			interceptors.add(new InternalRoutingInterceptor());
 			interceptors.add(new HTTPClientInterceptor());
 		}
 
@@ -77,19 +75,6 @@ public abstract class Transport {
 
 	public Router getRouter() {
 		return router;
-	}
-
-	public boolean isPrintStackTrace() {
-		return printStackTrace;
-	}
-
-	/**
-	 * @description Whether the stack traces of exceptions thrown by interceptors should be returned in the HTTP response.
-	 * @default false
-	 */
-	@MCAttribute
-	public void setPrintStackTrace(boolean printStackTrace) {
-		this.printStackTrace = printStackTrace;
 	}
 
 	public void closeAll() {

@@ -13,31 +13,21 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.formvalidation;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.regex.Pattern;
+import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.config.*;
+import com.predic8.membrane.core.exceptions.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.util.*;
+import org.slf4j.*;
 
-import javax.xml.stream.XMLStreamException;
-import javax.xml.stream.XMLStreamReader;
-import javax.xml.stream.XMLStreamWriter;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import com.predic8.membrane.annot.Required;
-
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCChildElement;
-import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.config.AbstractXmlElement;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Response;
-import com.predic8.membrane.core.interceptor.AbstractInterceptor;
-import com.predic8.membrane.core.interceptor.Outcome;
-import com.predic8.membrane.core.util.URLParamUtil;
+import javax.xml.stream.*;
+import java.util.*;
+import java.util.regex.*;
 
 import static com.predic8.membrane.core.interceptor.Outcome.*;
-import static com.predic8.membrane.core.util.URLParamUtil.DuplicateKeyOrInvalidFormStrategy.ERROR;
+import static com.predic8.membrane.core.util.URLParamUtil.DuplicateKeyOrInvalidFormStrategy.*;
 
 /**
  * @description Using the formValidation interceptor you can validate the input of HTML forms.
@@ -58,7 +48,7 @@ public class FormValidationInterceptor extends AbstractInterceptor {
 		}
 
 		@Override
-		protected void parseAttributes(XMLStreamReader token) throws Exception {
+		protected void parseAttributes(XMLStreamReader token) {
 			name = token.getAttributeValue("", "name");
 			setRegex(token.getAttributeValue("", "regex"));
 		}
@@ -112,16 +102,28 @@ public class FormValidationInterceptor extends AbstractInterceptor {
 
 	public FormValidationInterceptor() {
 		name = "FormValidation";
-		setFlow(Flow.Set.REQUEST);
+		setFlow(Flow.Set.REQUEST_FLOW);
 	}
 
 	@Override
-	public Outcome handleRequest(Exchange exc) throws Exception {
+	public Outcome handleRequest(Exchange exc) {
 
 		logMappings();
 
-		Map<String, String> propMap = URLParamUtil.getParams(router.getUriFactory(), exc, ERROR);
-		for (Field f : fields) {
+        Map<String, String> propMap;
+        try {
+            propMap = URLParamUtil.getParams(router.getUriFactory(), exc, ERROR);
+        } catch (Exception e) {
+			ProblemDetails.internal(router.isProduction())
+					.component(getDisplayName())
+					.detail("Could not parse query parameters!")
+					.extension("uri", exc.getRequest().getUri())
+					.exception(e)
+					.stacktrace(true)
+					.buildAndSetResponse(exc);
+			return ABORT;
+        }
+        for (Field f : fields) {
 			if ( !propMap.containsKey(f.name) ) continue;
 
 			if ( !f.matchesSubstring(propMap.get(f.name)) ) {
@@ -134,12 +136,12 @@ public class FormValidationInterceptor extends AbstractInterceptor {
 
 	private void setErrorResponse(Exchange exc, Map<String, String> propMap, Field f) {
 		exc.setResponse(Response.badRequest(
-				"Parameter "+f.name+"="+propMap.get(f.name)+" didn't match "+f.regex+"").build());
+				"Parameter "+f.name+"="+propMap.get(f.name)+" didn't match "+f.regex).build());
 	}
 
 	private void logMappings() {
 		for (Field m : fields) {
-			log.debug("[regex:"+m.regex+"],[name:"+m.name+"]");
+			log.debug("[regex:{}],[name:{}]",m.regex,m.name);
 		}
 	}
 

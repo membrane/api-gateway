@@ -14,6 +14,7 @@
 
 package com.predic8.membrane.core.interceptor.schemavalidation;
 
+import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
@@ -44,11 +45,14 @@ public class SOAPMessageValidatorInterceptorTest {
 
 	public static final String INLINE_ANYTYPE_WSDL = "src/test/resources/validation/inline-anytype.wsdl";
 
+	public static Router router = new Router();
+
 	@BeforeAll
-	public static void setUp() throws Exception {
+	public static void setUp() {
 		requestTB = MessageUtil.getPostRequest("http://thomas-bayer.com");
 		requestXService = MessageUtil.getPostRequest("http://ws.xwebservices.com");
 		exc = new Exchange(null);
+		router = new Router();
 	}
 
 	@Test
@@ -91,7 +95,6 @@ public class SOAPMessageValidatorInterceptorTest {
 		assertEquals(ABORT, getOutcome(requestXService, createValidatorInterceptor(E_MAIL_SERVICE_WSDL), "/validation/invalidEmail3.xml"));
 	}
 
-	@Disabled(value="This is a problem in the soa-model dependency.")
 	@Test
 	public void testInlineSchemaWithAnyType() throws Exception {
 		assertEquals(ABORT, getOutcome(requestXService, createValidatorInterceptor(INLINE_ANYTYPE_WSDL), "/validation/invalidEmail3.xml"));
@@ -107,11 +110,11 @@ public class SOAPMessageValidatorInterceptorTest {
 		return TextUtil.formatXML(new InputStreamReader(requireNonNull(this.getClass().getResourceAsStream(fileName))));
 	}
 
-	private ValidatorInterceptor createValidatorInterceptor(String wsdl) throws Exception {
+	private ValidatorInterceptor createValidatorInterceptor(String wsdl) {
 		ValidatorInterceptor interceptor = new ValidatorInterceptor();
 		interceptor.setWsdl(wsdl);
 		interceptor.setResourceResolver(new ResolverMap());
-		interceptor.init();
+		interceptor.init(router);
 		return interceptor;
 	}
 }

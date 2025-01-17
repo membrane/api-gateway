@@ -1,5 +1,5 @@
 <!--
-	*** Web Services with SOAP and WSDL Configuration ***
+	*** Web Services with SOAP and WSDL ***
 
 	Start Membrane with:
 	./service-proxy.sh -c conf/proxies-soap.xml
@@ -57,8 +57,6 @@
 			<validator wsdl="https://www.predic8.de/city-service?wsdl"/>
 			<target host="www.predic8.de"/>
 		</serviceProxy>
-
-
 
 		<!-- 
 			 Administration UI

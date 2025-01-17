@@ -24,13 +24,11 @@ import org.apache.commons.text.*;
 import org.slf4j.*;
 
 import javax.xml.stream.*;
-
-import java.net.InetAddress;
-import java.net.UnknownHostException;
+import java.net.*;
 
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
-import static com.predic8.membrane.core.util.HttpUtil.getForwardedForList;
+import static com.predic8.membrane.core.util.HttpUtil.*;
 
 /**
  * @description Blocks requests whose origin TCP/IP address (hostname or IP address) is not allowed to access the
@@ -50,17 +48,17 @@ public class AccessControlInterceptor extends AbstractInterceptor {
 
 	public AccessControlInterceptor() {
 		setDisplayName("Access Control");
-		setFlow(REQUEST);
+		setFlow(REQUEST_FLOW);
 	}
 
 	@Override
-	public Outcome handleRequest(Exchange exc) throws Exception {
+	public Outcome handleRequest(Exchange exc) {
 		var remoteAddr = exc.getRemoteAddr();
 		var remoteAddrIp = exc.getRemoteAddrIp();
 
 		var xff = getForwardedForList(exc);
 		if (useXForwardedForAsClientAddr && !xff.isEmpty()) {
-			var xLast = xff.get(xff.size()-1);
+			var xLast = xff.getLast();
 			try {
 				remoteAddrIp = InetAddress.getByName(xLast).getHostAddress();
 			} catch (UnknownHostException e) {
@@ -93,10 +91,6 @@ public class AccessControlInterceptor extends AbstractInterceptor {
 				.build());
 	}
 
-	public boolean isUseXForwardedForAsClientAddr() {
-		return useXForwardedForAsClientAddr;
-	}
-
 	/**
 	 * @description whether to use the last value of the last "X-Forwarded-For" header instead of the remote IP address
 	 * @default false
@@ -104,6 +98,10 @@ public class AccessControlInterceptor extends AbstractInterceptor {
 	@MCAttribute
 	public void setUseXForwardedForAsClientAddr(boolean useXForwardedForAsClientAddr) {
 		this.useXForwardedForAsClientAddr = useXForwardedForAsClientAddr;
+	}
+
+	public boolean isUseXForwardedForAsClientAddr() {
+		return useXForwardedForAsClientAddr;
 	}
 
 	/**
@@ -121,17 +119,13 @@ public class AccessControlInterceptor extends AbstractInterceptor {
 	}
 
 	@Override
-	public void init() throws Exception {
+	public void init() {
 		accessControl = parse(file, router);
 	}
 
 	public void setAccessControl(AccessControl ac) { accessControl = ac; }
 
-	public AccessControl getAccessControl() {
-		return accessControl;
-	}
-
-	protected AccessControl parse(String fileName, Router router) throws Exception {
+	protected AccessControl parse(String fileName, Router router) {
 		try {
 			XMLInputFactory factory = XMLInputFactory.newInstance();
 			XMLStreamReader reader = new FixedStreamReader(factory.createXMLStreamReader(router.getResolverMap()

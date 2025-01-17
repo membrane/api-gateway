@@ -104,19 +104,13 @@ public class OpenAPIRecordFactory {
                 throw new ConfigurationException(format("""
                         Could not read or parse OpenAPI Document from location: %s
                         
-                        Reason: %s
-                        
                         Have a look at your proxies.xml configuration.
-                        """, pe.getLocation(), pe.getMessage()));
+                        """, pe.getLocation()),pe);
             }
             if (root instanceof FileNotFoundException fnf) {
-                log.error("Cannot read OpenAPI specification from location {}",spec.location);
-                log.error("Exception: {}",fnf.getMessage());
-                throw new ConfigurationException("Cannot read OpenAPI specification from location: " + spec.location);
+                throw new ConfigurationException("Cannot read OpenAPI specification from location: " + spec.location,fnf);
             }
-
             log.error(e.getMessage(), e);
-
             throw new RuntimeException(e);
         }
     }
@@ -140,7 +134,7 @@ public class OpenAPIRecordFactory {
         return id;
     }
 
-    private OpenAPIRecord create(OpenAPISpec spec) throws IOException {
+    private OpenAPIRecord create(OpenAPISpec spec) {
         OpenAPIRecord record = new OpenAPIRecord(getOpenAPI(spec), spec);
         setExtensionOnAPI(spec, record.api);
         return record;

@@ -25,4 +25,10 @@ public interface SpELLablePropertyAware {
     default String camelToKebab(String string) {
         return string.replaceAll("([a-z0-9]|(?=[A-Z]))([A-Z])", "$1-$2").toLowerCase();
     }
+
+    /**
+     *
+     * @return Object that the SpELLable encapsulates
+     */
+    Object getValue();
 }

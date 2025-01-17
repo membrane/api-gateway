@@ -79,6 +79,7 @@ public class SOAPProxy extends AbstractServiceProxy {
 
     @Override
     public void init() {
+        super.init();
         if (wsdl == null) {
             return;
         }
@@ -90,7 +91,6 @@ public class SOAPProxy extends AbstractServiceProxy {
             resolverMap.addSchemaResolver(httpSR);
         }
         configure();
-        super.init();
     }
 
     protected void configure() {
@@ -136,7 +136,7 @@ public class SOAPProxy extends AbstractServiceProxy {
             }
             ((ServiceProxyKey) key).setMethod("*"); // GET and POST are used for SOAP
         } catch (MalformedURLException e) {
-            throw new IllegalArgumentException("WSDL endpoint location '" + location + "' is not an URL.", e);
+            throw new ConfigurationException("WSDL endpoint location '" + location + "' is not an URL.");
         }
     }
 
@@ -144,7 +144,7 @@ public class SOAPProxy extends AbstractServiceProxy {
         String location = getPort(service).getAddress().getLocation();
 
         if (location == null)
-            throw new IllegalArgumentException("In the WSDL, there is no @location defined on the port.");
+            throw new ConfigurationException("In the WSDL %s, there is no @location defined on the port.".formatted(wsdl));
         return location;
     }
 

@@ -191,7 +191,8 @@ public class RuleManager {
                 continue;
             // If there is a port, internal proxies must not match
             if (proxy instanceof NotPortOpeningProxy) {
-                if (port != -1)
+                // Prevent matches before DispatchingInterceptor was called
+                if (exc.getDestinations().isEmpty())
                     continue;
                 String serviceName = URLUtil.getHost(exc.getDestinations().getFirst());
                 if (!proxy.getName().equals(serviceName))
@@ -205,9 +206,6 @@ public class RuleManager {
                 continue;
             if (!key.complexMatch(exc))
                 continue;
-
-
-
             if (log.isDebugEnabled())
                 log.debug("Matching Rule {} found for RuleKey {} {} {} {} {}",proxy, hostHeader, method, uri, port, localIP);
             return proxy;

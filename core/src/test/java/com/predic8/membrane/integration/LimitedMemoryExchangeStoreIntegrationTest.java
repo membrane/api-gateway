@@ -23,6 +23,7 @@ import com.predic8.membrane.core.proxies.*;
 import com.predic8.membrane.core.transport.http.*;
 import com.predic8.membrane.core.transport.http.client.*;
 import com.predic8.membrane.integration.withinternet.*;
+import org.jetbrains.annotations.*;
 import org.junit.jupiter.api.*;
 
 import java.util.concurrent.atomic.*;
@@ -35,7 +36,7 @@ public class LimitedMemoryExchangeStoreIntegrationTest {
     private static HttpRouter router;
     private static HttpRouter router2;
     private static HttpClientConfiguration hcc;
-    private static AtomicReference<Exchange> middleExchange = new AtomicReference<>();
+    private static final AtomicReference<Exchange> middleExchange = new AtomicReference<>();
 
     @BeforeAll
     public static void setup() throws Exception {
@@ -56,7 +57,7 @@ public class LimitedMemoryExchangeStoreIntegrationTest {
         });
         router = new HttpRouter();
 
-        ((HTTPClientInterceptor) router.getTransport().getInterceptors().get(3)).setHttpClientConfig(hcc);
+        getHttpClientInterceptor(router).setHttpClientConfig(hcc);
 
         router.getRuleManager().addProxyAndOpenPortIfNew(proxy);
         router.init();
@@ -64,7 +65,7 @@ public class LimitedMemoryExchangeStoreIntegrationTest {
         ServiceProxy proxy1 = new ServiceProxy(new ServiceProxyKey("localhost", "POST", ".*", 3046), "localhost", 3045);
         proxy1.getInterceptors().add(new AbstractInterceptor() {
             @Override
-            public Outcome handleRequest(Exchange exc) throws Exception {
+            public Outcome handleRequest(Exchange exc) {
                 middleExchange.set(exc);
                 return super.handleRequest(exc);
             }
@@ -72,12 +73,16 @@ public class LimitedMemoryExchangeStoreIntegrationTest {
         router2 = new HttpRouter();
         router2.setExchangeStore(lmes);
 
-        ((HTTPClientInterceptor) router2.getTransport().getInterceptors().get(3)).setHttpClientConfig(hcc);
+        getHttpClientInterceptor(router2).setHttpClientConfig(hcc);
 
         router2.getTransport().getInterceptors().add(3, new ExchangeStoreInterceptor(lmes));
 
         router2.getRuleManager().addProxyAndOpenPortIfNew(proxy1);
         router2.init();
+    }
+
+    private static @NotNull HTTPClientInterceptor getHttpClientInterceptor(Router router) {
+        return (HTTPClientInterceptor) router.getTransport().getInterceptors().stream().filter(i -> i instanceof HTTPClientInterceptor).findFirst().get();
     }
 
     @BeforeEach

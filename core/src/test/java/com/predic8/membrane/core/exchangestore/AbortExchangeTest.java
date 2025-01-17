@@ -52,8 +52,12 @@ public class AbortExchangeTest {
         ServiceProxy sp2 = new ServiceProxy(new ServiceProxyKey("*", "*", ".*", 3031), "", -1);
         sp2.getInterceptors().add(new AbstractInterceptor() {
             @Override
-            public Outcome handleRequest(Exchange exc) throws Exception {
-                exc.getRequest().readBody();
+            public Outcome handleRequest(Exchange exc) {
+                try {
+                    exc.getRequest().readBody();
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
                 exc.setResponse(Response.ok("").body(new InputStream() {
                     int l = 0;
 
@@ -114,7 +118,7 @@ public class AbortExchangeTest {
     }
 
     @AfterEach
-    public void done() throws IOException {
+    public void done() {
         router.shutdown();
     }
 }

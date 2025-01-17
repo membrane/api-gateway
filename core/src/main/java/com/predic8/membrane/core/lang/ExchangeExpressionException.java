@@ -59,6 +59,7 @@ public class ExchangeExpressionException extends RuntimeException {
         if (body != null)
             pd.extension("body", body.length() > 1024 ? body.substring(0, 1024) : body);
         pd.exception(this);
+        pd.stacktrace(false);
         return pd;
     }
 

@@ -33,16 +33,12 @@
 
 			<path>/client</path>
 
-			<headerFilter>
-				<exclude>X-Authenticated-Username</exclude>
-			</headerFilter>
-
-			<oauth2Resource>
+			<oauth2Resource2>
 				<membrane src="http://localhost:2000/server/" clientId="abc" clientSecret="def" scope="username profile profile2" claims="username" claimsIdt="sub" />
-			</oauth2Resource>
+			</oauth2Resource2>
 
 			<groovy>
-				def name = exc.request.header.getFirstValue("X-Authenticated-Username")
+				def name = exc.properties.oauth2.userinfo.username
 				exc.response = Response.ok("Hello " + name + ".").build()
 				RETURN
 			</groovy>
@@ -55,13 +51,9 @@
 
 			<path>/client</path>
 
-			<headerFilter>
-				<exclude>X-Authenticated-Username</exclude>
-			</headerFilter>
-
-			<oauth2Resource>
+			<oauth2Resource2>
 				<membrane src="http://localhost:2000/server/" clientId="abc" clientSecret="def" scope="username profile profile2" claims="username" claimsIdt="sub" />
-			</oauth2Resource>
+			</oauth2Resource2>
 
 			<groovy>
 				if(exc.request.uri.equals("/test1")){

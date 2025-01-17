@@ -34,4 +34,9 @@ public class SpeLJwtClaims implements SpELLablePropertyAware {
     public TypedValue read(EvaluationContext context, Object target, String name) {
         return new TypedValue(claims.getClaimValue(name));
     }
+
+    @Override
+    public Object getValue() {
+        return claims;
+    }
 }
