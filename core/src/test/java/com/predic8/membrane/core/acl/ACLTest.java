@@ -24,7 +24,9 @@ import static java.util.regex.Pattern.compile;
 
 public abstract class ACLTest extends AccessControlInterceptor {
     @Override
-    public void init() {}
+    public void init() {
+        super.init();
+    }
 
     private AccessControlInterceptor createRouter(boolean isReverseDNS, boolean useForwardedFor, Function<Router, Resource> f) throws Exception {
         Router router = new Router();

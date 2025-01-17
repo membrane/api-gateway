@@ -62,6 +62,8 @@ public class StatisticsJDBCInterceptor extends AbstractInterceptor implements Ap
 
 	@Override
 	public void init() {
+		super.init();
+
 		if (!Objects.equals(dataSourceBeanId, DATASOURCE_BEAN_ID_ATTRIBUTE_CANNOT_BE_USED))
 			dataSource = applicationContext.getBean(dataSourceBeanId, DataSource.class);
 		Connection con = null;

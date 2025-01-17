@@ -113,6 +113,7 @@ public class ExchangeStoreInterceptor extends AbstractInterceptor implements App
 
 	@Override
 	public void init() {
+		super.init();
 
 		//noinspection StatementWithEmptyBody
 		if (Objects.equals(exchangeStoreBeanId, BEAN_ID_ATTRIBUTE_CANNOT_BE_USED))

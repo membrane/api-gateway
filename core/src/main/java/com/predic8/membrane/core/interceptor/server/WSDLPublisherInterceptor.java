@@ -142,6 +142,8 @@ public class WSDLPublisherInterceptor extends AbstractInterceptor {
 
     @Override
     public void init() {
+        super.init();
+
         // inherit wsdl="..." from SoapProxy
         if (wsdl != null)
             return;
