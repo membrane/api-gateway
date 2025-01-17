@@ -47,7 +47,7 @@ public class ExchangeStoreInterceptor extends AbstractInterceptor implements App
 	private final Set<AbstractServiceProxy> serviceProxiesContainingAdminConsole = new HashSet<>();
 
 	public ExchangeStoreInterceptor() {
-		name = "  Store Interceptor";
+		name = "  store interceptor";
 	}
 
 	public ExchangeStoreInterceptor(ExchangeStore exchangeStore) {

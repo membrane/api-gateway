@@ -45,7 +45,7 @@ public class ApiKeysInterceptor extends AbstractInterceptor {
     private boolean required = true;
 
     public ApiKeysInterceptor() {
-        name = "Api Key";
+        name = "api key";
     }
 
     @Override

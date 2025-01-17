@@ -46,7 +46,7 @@ public class StatisticsCSVInterceptor extends AbstractInterceptor {
 	private String fileName = "";
 
 	public StatisticsCSVInterceptor() {
-		name = "CSV Logging";
+		name = "csv logging";
 	}
 
 	@Override

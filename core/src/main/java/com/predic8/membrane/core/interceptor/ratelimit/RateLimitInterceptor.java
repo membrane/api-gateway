@@ -87,7 +87,7 @@ public class RateLimitInterceptor extends AbstractInterceptor {
 
     public RateLimitInterceptor(Duration requestLimitDuration, int requestLimit) {
         strategy = new LazyRateLimit(requestLimitDuration, requestLimit);
-        name = "RateLimiter";
+        name = "rate limiter";
         setFlow(REQUEST_FLOW);
     }
 

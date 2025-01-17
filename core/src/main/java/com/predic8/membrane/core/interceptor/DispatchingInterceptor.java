@@ -41,7 +41,7 @@ public class DispatchingInterceptor extends AbstractInterceptor {
     private static final Logger log = LoggerFactory.getLogger(DispatchingInterceptor.class.getName());
 
     public DispatchingInterceptor() {
-        name = "Dispatching Interceptor";
+        name = "dispatching interceptor";
         setFlow(Flow.Set.REQUEST_FLOW);
     }
 

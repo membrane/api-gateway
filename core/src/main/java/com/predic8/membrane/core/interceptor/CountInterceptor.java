@@ -34,7 +34,7 @@ public class CountInterceptor extends AbstractInterceptor {
 	private int counter;
 
 	public CountInterceptor() {
-		name = "Count Interceptor";
+		name = "count interceptor";
 	}
 
 	@Override

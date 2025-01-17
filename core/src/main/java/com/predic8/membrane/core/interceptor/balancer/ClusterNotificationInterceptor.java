@@ -50,7 +50,7 @@ public class ClusterNotificationInterceptor extends AbstractInterceptor {
 	private String keyHex;
 
 	public ClusterNotificationInterceptor() {
-		name = "ClusterNotifcationInterceptor";
+		name = "cluster notification interceptor";
 	}
 
 	@Override

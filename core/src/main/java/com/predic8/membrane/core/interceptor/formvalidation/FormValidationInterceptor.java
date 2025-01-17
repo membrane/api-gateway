@@ -101,7 +101,7 @@ public class FormValidationInterceptor extends AbstractInterceptor {
 	private List<Field> fields = new ArrayList<>();
 
 	public FormValidationInterceptor() {
-		name = "FormValidation";
+		name = "form validation";
 		setFlow(Flow.Set.REQUEST_FLOW);
 	}
 

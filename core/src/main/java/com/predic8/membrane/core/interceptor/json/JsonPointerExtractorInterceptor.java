@@ -42,7 +42,7 @@ public class JsonPointerExtractorInterceptor extends AbstractInterceptor{
     private final ObjectMapper mapper = new ObjectMapper();
 
     public JsonPointerExtractorInterceptor() {
-        name = "JsonPointer";
+        name = "json pointer";
     }
 
     @Override

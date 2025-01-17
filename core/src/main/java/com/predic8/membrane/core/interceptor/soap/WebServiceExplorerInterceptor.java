@@ -50,7 +50,7 @@ public class WebServiceExplorerInterceptor extends RESTInterceptor {
 	private String portName;
 
 	public WebServiceExplorerInterceptor() {
-		name = "Web Service Explorer";
+		name = "web service explorer";
 	}
 
 	@Override

@@ -47,7 +47,7 @@ public class LogInterceptor extends AbstractExchangeExpressionInterceptor {
     private boolean body = true;
 
     public LogInterceptor() {
-        name = "Log";
+        name = "log";
     }
 
     @Override

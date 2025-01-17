@@ -52,7 +52,7 @@ public class StatisticsJDBCInterceptor extends AbstractInterceptor implements Ap
 	boolean createTable = true;
 
 	public StatisticsJDBCInterceptor() {
-		name = "JDBC Logging";
+		name = "jdbc logging";
 	}
 
 	@Override

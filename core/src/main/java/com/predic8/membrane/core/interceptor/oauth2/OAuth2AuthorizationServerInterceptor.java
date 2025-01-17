@@ -64,7 +64,7 @@ public class OAuth2AuthorizationServerInterceptor extends AbstractInterceptor {
     @Override
     public void init() {
         super.init();
-        name = "OAuth 2 Authorization Server";
+        name = "oauth2 authorization server";
         setFlow(Flow.Set.REQUEST_RESPONSE_ABORT_FLOW);
 
         basePath = computeBasePath();

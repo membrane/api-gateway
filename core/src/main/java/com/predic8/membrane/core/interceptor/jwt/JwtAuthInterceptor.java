@@ -49,7 +49,7 @@ public class JwtAuthInterceptor extends AbstractInterceptor {
     volatile HashMap<String, RsaJsonWebKey> kidToKey;
 
     public JwtAuthInterceptor() {
-        name = "JWT Checker.";
+        name = "jwt checker.";
         setFlow(of(REQUEST));
     }
 

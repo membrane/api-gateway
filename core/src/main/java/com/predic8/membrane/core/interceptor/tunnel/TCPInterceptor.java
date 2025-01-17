@@ -29,7 +29,7 @@ import com.predic8.membrane.core.interceptor.Outcome;
 public class TCPInterceptor extends AbstractInterceptor {
 
 	public TCPInterceptor() {
-		name = "TCP Enabler";
+		name = "tcp enabler";
 	}
 
 	@Override
