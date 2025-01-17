@@ -68,7 +68,7 @@ public class CountInterceptor extends AbstractInterceptor {
 
 	@Override
 	public String getDisplayName() {
-		return "Counter: " + super.getDisplayName();
+		return "counter: " + super.getDisplayName();
 	}
 
 	/**

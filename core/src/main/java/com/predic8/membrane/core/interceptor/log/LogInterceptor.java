@@ -187,7 +187,7 @@ public class LogInterceptor extends AbstractExchangeExpressionInterceptor {
 
     @Override
     public String getDisplayName() {
-        return "Log";
+        return "log";
     }
 
     /**

@@ -161,7 +161,7 @@ public class FormValidationInterceptor extends AbstractInterceptor {
 
 	@Override
 	public String getDisplayName() {
-		return "Form Validation";
+		return "form validation";
 	}
 
 

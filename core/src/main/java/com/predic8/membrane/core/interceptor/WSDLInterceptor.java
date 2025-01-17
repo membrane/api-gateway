@@ -49,7 +49,7 @@ public class WSDLInterceptor extends RelocatingInterceptor {
     private HttpClient hc;
 
     public WSDLInterceptor() {
-        name = "wsdl rewriting interceptor";
+        name = "wsdl rewriting";
         setFlow(RESPONSE_FLOW);
     }
 

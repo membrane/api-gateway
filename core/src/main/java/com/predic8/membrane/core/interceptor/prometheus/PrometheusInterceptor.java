@@ -43,7 +43,7 @@ public class PrometheusInterceptor extends AbstractInterceptor {
     static volatile boolean issuedDuplicateRuleNameWarning = false;
 
     public PrometheusInterceptor() {
-        name = "prometheus interceptor";
+        name = "prometheus";
     }
 
     @Override

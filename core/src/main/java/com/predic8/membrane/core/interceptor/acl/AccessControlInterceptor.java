@@ -47,7 +47,7 @@ public class AccessControlInterceptor extends AbstractInterceptor {
 	private boolean useXForwardedForAsClientAddr = false;
 
 	public AccessControlInterceptor() {
-		setDisplayName("Access Control");
+		setDisplayName("access control");
 		setFlow(REQUEST_FLOW);
 	}
 
