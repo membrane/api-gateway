@@ -2,10 +2,6 @@
 
 # Version 6.2.0
 
-- One API that calls multiple Backends
-  - Ideas
-    - <target ../> inside <if>
-- Routing with if instead of switch and cbr
 - <choose>
      <case test=""> // If this matches execute only nested
         <..interceptors>
@@ -29,17 +25,18 @@
 - JSONBody 
   - Store body as parsed JsonNode or Document
     - If JSON is needed by an interceptor use already parsed JSON
-- log, print or message that writes to log. 
-- Examples
-  - soap/secured-wsdl
-    - Rewrite the example to use it
-    - Readme
-    - ExampleTest
-  - REST / JSON API Versioning test
-    - like examples/versioning/soap-xslt but much simpler with json
+- REST / JSON API Versioning test
+  - like examples/versioning/soap-xslt but much simpler with json
 - JdbcUserDataProvider
   - Migrate to PreparedStatement
 - <target url="http://localhost:2000/${params.product}/>
+- OAuth2 refactoring
+  - In Interface com.predic8.membrane.core.interceptor.oauth2.authorizationservice.AuthorizationService
+    - Remove throws:
+      - public abstract String getJwksEndpoint() throws Exception;
+      - public abstract void init() throws Exception;
+      - getEndSessionEndpoint() throws Exception
+      - doDynamicRegistration(List<String> callbackURLs) throws Exception
 
 # Version 6.0.0
 
@@ -57,7 +54,7 @@
 - Document <if>,<call>,<destination>
   - Write example with lots of samples in different languages
 - Restructure samples
-- Rename ExampleTests to .*ExampleTests
+- Call Example
 - Is still in use:
   - /xml/project.xml?
   
@@ -65,42 +62,57 @@
 
 
 ### Internal
-- XMLProtectionInterceptor.setFailResponse => Use ProblemDetails
-- Rename service:// to internal://
 - Delete interceptor/
   - Gatekeeper: Yes
-  - SDY Speedy?
-  - JsonPointer Extractor?
-- proxies-2.xsd
-  - new Namespace e.g. https://membrane-api.io...
-- 2025
-- Test in proxies.xml internal with port
-- Interceptor init() and init(Router router)
-- ProblemDetails
+  - SDY Speedy (delete) BT
+- proxies-6.xsd
+  - new Namespace e.g. https://membrane-api.io...6
+- 2025 BT
+- ProblemDetails TB
   - Validators
      - XML, JSON, WSDL
      - All in examples/validation
   - OpenAPI
-- In com.predic8.membrane.core.interceptor.oauth2.authorizationservice.AuthorizationService 
-  - Remove throws: 
-    - public abstract String getJwksEndpoint() throws Exception; 
-- Exchange property name constants: See Exchange
-- Dependencies
+- Exchange property name constants: See Exchange TB
+- Logging TB
+  - Simple logger raus
+  - JSON logging raus
+- Dependencies TP, TB
   - Log4J, where, what
-- Interceptor Interface:
-  - handle should not throw Exception
-- AdminConsole
+  - Updates
+- AdminConsole BT
   - DisplayName: make all lower
-- Cleaup:
-  - LoggingContextInterceptor? Ask CG
-- Merge log with print
-  <log message="${header.foo}/>
-  default: message="${header}\n${body}"
-- Remove etcd stuff 
-- Rewrite RatelimitInterceptor to use AbstractLanguageInterceptor
-- Check that starter is really using Java 8
+- LoggingContextInterceptor? Ask CG
+  - Is api name logged?
+  - Comment
+- Remove etcd stuff (BT)
+- Rewrite RatelimitInterceptor to use AbstractLanguageInterceptor TB
+- Language TB
+  - Exchange expression 
+    - getExpression
+  - AbstractLanguageInterceptor as Interface
+- Problem Details TB
+  - /type/component/subtype
+  - component mandatory, subtype optional
+  - Detail: 
+    - Is used everywhere (ADR)
+    - Human easy readable
+    - optional
+  - Message from exception in message
+    - Toplevel not in extension
+    - optional
+    - Message only from exception
+      - Disable in builder
 
 ## Done
+- Merge log with print
+- XMLProtectionInterceptor.setFailResponse => Use ProblemDetails
+- Rename ExampleTests to .*ExampleTests
+- Examples
+  - soap/secured-wsdl
+    - Rewrite the example to use it
+    - ExampleTest
+- log, print or message that writes to log.
 - Proxy.init() and init(router) make it clear what to call!
 - Rename service:// to internal://
 - Call plugin

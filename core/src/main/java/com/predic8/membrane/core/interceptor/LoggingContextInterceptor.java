@@ -19,6 +19,9 @@ import org.apache.logging.log4j.ThreadContext;
 
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 
+/**
+ * Adds the proxy name to log lines
+ */
 @MCElement(name="logContext")
 public class LoggingContextInterceptor extends AbstractInterceptor{
     private final String proxyName = "proxyName";
