@@ -65,7 +65,7 @@ public class LimitedMemoryExchangeStoreIntegrationTest {
         ServiceProxy proxy1 = new ServiceProxy(new ServiceProxyKey("localhost", "POST", ".*", 3046), "localhost", 3045);
         proxy1.getInterceptors().add(new AbstractInterceptor() {
             @Override
-            public Outcome handleRequest(Exchange exc) throws Exception {
+            public Outcome handleRequest(Exchange exc) {
                 middleExchange.set(exc);
                 return super.handleRequest(exc);
             }

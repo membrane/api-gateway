@@ -82,7 +82,7 @@ public class JwtSignInterceptor extends AbstractInterceptor {
                     .extension("message", e.getLocalizedMessage())
                     .detail("Error during attempt to sign JWT payload.")
                     .exception(e)
-                    .stacktrace(false)
+                    .stacktrace(true)
                     .buildAndSetResponse(exc);
             return ABORT;
         } catch (IOException e) {
@@ -92,7 +92,7 @@ public class JwtSignInterceptor extends AbstractInterceptor {
                     .extension("message", e.getLocalizedMessage())
                     .detail("Error during attempt to parse JWT payload.")
                     .exception(e)
-                    .stacktrace(false)
+                    .stacktrace(true)
                     .buildAndSetResponse(exc);
             return ABORT;
         }

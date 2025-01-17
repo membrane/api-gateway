@@ -51,8 +51,8 @@ public interface Interceptor {
 		}
 	}
 
-	Outcome handleRequest(Exchange exchange) throws Exception;
-	Outcome handleResponse(Exchange exchange) throws Exception;
+	Outcome handleRequest(Exchange exchange);
+	Outcome handleResponse(Exchange exchange);
 
 	/**
 	 * Called when any {@link #handleRequest(Exchange)} or

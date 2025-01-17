@@ -14,26 +14,18 @@
 
 package com.predic8.membrane.core.interceptor.json;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCChildElement;
-import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.annot.Required;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Message;
-import com.predic8.membrane.core.interceptor.AbstractInterceptor;
-import com.predic8.membrane.core.interceptor.Outcome;
+import com.fasterxml.jackson.databind.*;
+import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.exceptions.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.interceptor.*;
 
-import javax.xml.xpath.XPathExpressionException;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.StreamSupport;
+import java.io.*;
+import java.util.*;
+import java.util.stream.*;
 
-import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
+import static com.predic8.membrane.core.interceptor.Outcome.*;
 
 /**
  * @description Based on <a href="https://tools.ietf.org/html/draft-ietf-appsawg-json-pointer-03">JSON pointer.</a>
@@ -47,7 +39,7 @@ public class JsonPointerExtractorInterceptor extends AbstractInterceptor{
 
 
     private List<Property> properties = new ArrayList<>();
-    private ObjectMapper mapper = new ObjectMapper();
+    private final ObjectMapper mapper = new ObjectMapper();
 
     public JsonPointerExtractorInterceptor() {
         name = "JsonPointer";
@@ -72,13 +64,33 @@ public class JsonPointerExtractorInterceptor extends AbstractInterceptor{
     }
 
     @Override
-    public Outcome handleRequest(Exchange exc) throws Exception {
-        return handleInternal(exc, exc.getRequest());
+    public Outcome handleRequest(Exchange exc) {
+        try {
+            return handleInternal(exc, exc.getRequest());
+        } catch (IOException e) {
+            ProblemDetails.internal(router.isProduction())
+                    .component(getDisplayName())
+                    .detail("Could not set Properties from JSON pointer!")
+                    .exception(e)
+                    .stacktrace(true)
+                    .buildAndSetResponse(exc);
+            return ABORT;
+        }
     }
 
     @Override
-    public Outcome handleResponse(Exchange exc) throws Exception {
-        return handleInternal(exc, exc.getResponse());
+    public Outcome handleResponse(Exchange exc) {
+        try {
+            return handleInternal(exc, exc.getResponse());
+        } catch (IOException e) {
+            ProblemDetails.internal(router.isProduction())
+                    .component(getDisplayName())
+                    .detail("Could not set Properties from JSON pointer!")
+                    .exception(e)
+                    .stacktrace(true)
+                    .buildAndSetResponse(exc);
+            return ABORT;
+        }
     }
 
     private Outcome handleInternal(Exchange exc, Message msg) throws IOException {
@@ -125,7 +137,7 @@ public class JsonPointerExtractorInterceptor extends AbstractInterceptor{
         }
 
 
-        public Property(String jsonPointer, String name) throws XPathExpressionException {
+        public Property(String jsonPointer, String name) {
             this.name = name;
             this.jsonPointer = jsonPointer;
         }
@@ -140,7 +152,7 @@ public class JsonPointerExtractorInterceptor extends AbstractInterceptor{
          */
         @Required
         @MCAttribute
-        public void setJsonPointer(String jsonPointer) throws XPathExpressionException {
+        public void setJsonPointer(String jsonPointer) {
             this.jsonPointer = jsonPointer;
         }
 

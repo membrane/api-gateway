@@ -54,7 +54,7 @@ public class WebServiceExplorerInterceptor extends RESTInterceptor {
 	}
 
 	@Override
-	public Outcome handleRequest(Exchange exc) throws Exception {
+	public Outcome handleRequest(Exchange exc) {
 		if (exc.getRequest().getMethod().equals("GET"))
 			if (!isWSDLRequest(exc.getRequest()))
 				return super.handleRequest(exc);
@@ -103,7 +103,7 @@ public class WebServiceExplorerInterceptor extends RESTInterceptor {
 	}
 
 	@Mapping("[^?]*/operation/([^/?]+)/([^/?]+)/([^/?]+)")
-	public Response createOperationResponse(QueryParameter params, String relativeRootPath) throws Exception {
+	public Response createOperationResponse(QueryParameter params, String relativeRootPath) {
 		try {
 			final String bindingName = params.getGroup(1);
 			final String portName = params.getGroup(2);

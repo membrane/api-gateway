@@ -197,7 +197,7 @@ public class ChunkedBodyTest {
         } else {
             sp.getInterceptors().add(new AbstractInterceptor() {
                 @Override
-                public Outcome handleRequest(Exchange exc) throws Exception {
+                public Outcome handleRequest(Exchange exc) {
                     String remoteAddr = ((HttpServerHandler) exc.getHandler()).getSourceSocket().getRemoteSocketAddress().toString();
                     if (remoteSocketAddr.get() == null) {
                         remoteSocketAddr.set(remoteAddr);
@@ -211,7 +211,12 @@ public class ChunkedBodyTest {
                         throw new RuntimeException("HTTP/2 is being used.");
 
                     Response r = Response.ok().build();
-                    String cont = Resources.toString(getResource("chunked-body-with-trailer.txt"), US_ASCII);
+                    String cont = null;
+                    try {
+                        cont = Resources.toString(getResource("chunked-body-with-trailer.txt"), US_ASCII);
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
                     cont = cont.replaceAll("\n", "").replaceAll("\r", "").replaceAll("\\\\n", "\n").replaceAll("\\\\r", "\r");
                     r.getHeader().removeFields("Content-Length");
                     r.getHeader().setValue("Transfer-Encoding", "chunked");

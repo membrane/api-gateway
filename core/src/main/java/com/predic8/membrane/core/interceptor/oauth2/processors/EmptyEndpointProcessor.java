@@ -13,6 +13,7 @@
 
 package com.predic8.membrane.core.interceptor.oauth2.processors;
 
+import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.Outcome;
@@ -22,12 +23,17 @@ import com.predic8.membrane.core.interceptor.oauth2.flows.CodeFlow;
 import com.predic8.membrane.core.interceptor.oauth2.flows.IdTokenTokenFlow;
 import com.predic8.membrane.core.interceptor.oauth2.flows.TokenFlow;
 import com.predic8.membrane.core.interceptor.oauth2.parameter.ClaimsParameter;
+import org.slf4j.*;
 
 import java.io.UnsupportedEncodingException;
 import java.util.HashSet;
 import java.util.function.Function;
 
+import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
+
 public class EmptyEndpointProcessor extends EndpointProcessor {
+
+    private static final Logger log = LoggerFactory.getLogger(EmptyEndpointProcessor.class);
 
     public EmptyEndpointProcessor(OAuth2AuthorizationServerInterceptor authServer) {
         super(authServer);
@@ -40,7 +46,21 @@ public class EmptyEndpointProcessor extends EndpointProcessor {
     }
 
     @Override
-    public Outcome process(Exchange exc) throws Exception {
+    public Outcome process(Exchange exc) {
+        try {
+            return processInternal(exc);
+        } catch (Exception e) {
+            log.error("", e);
+            ProblemDetails.internal(true)
+                    .component(this.getClass().getSimpleName())
+                    .exception(e)
+                    .stacktrace(true)
+                    .buildAndSetResponse(exc);
+            return ABORT;
+        }
+    }
+
+    private Outcome processInternal(Exchange exc) throws Exception {
         SessionManager.Session s = authServer.getSessionManager().getOrCreateSession(exc);
         synchronized (s) {
             if (!OAuth2Util.isOpenIdScope(s.getUserAttributes().get(ParamNames.SCOPE)))
@@ -57,6 +77,9 @@ public class EmptyEndpointProcessor extends EndpointProcessor {
         exc.setResponse(OAuth2Util.createParameterizedJsonErrorResponse(jsonGen, "error", "consent_required"));
         return Outcome.RETURN;
     }
+
+
+
 
     private Outcome startOAuth2Flow(Exchange exc, SessionManager.Session s) throws Exception {
         if (getResponseType(s).equals("code"))
@@ -93,11 +116,11 @@ public class EmptyEndpointProcessor extends EndpointProcessor {
         return builder.toString().trim().split(" ");
     }
 
-    private String getClaimDescriptions(String[] claims) throws UnsupportedEncodingException {
+    private String getClaimDescriptions(String[] claims) {
         return createDescription(claims, param -> ClaimRenamer.convert(param), claimParam -> authServer.getConsentPageFile().convertClaim(ClaimRenamer.convert(claimParam)));
     }
 
-    private String getScopeDescriptions(String[] scopes) throws UnsupportedEncodingException {
+    private String getScopeDescriptions(String[] scopes) {
         return createDescription(scopes, param -> {
             if (param.equals("openid"))
                 return "";
@@ -105,7 +128,7 @@ public class EmptyEndpointProcessor extends EndpointProcessor {
         }, scopeParam -> authServer.getConsentPageFile().convertScope(scopeParam));
     }
 
-    private String createDescription(String[] params, Function<String,String> paramNameConverter, Function<String,String> paramValueConverter) throws UnsupportedEncodingException {
+    private String createDescription(String[] params, Function<String,String> paramNameConverter, Function<String,String> paramValueConverter) {
         StringBuilder builder = new StringBuilder();
         HashSet<String> alreadyAddedParams = new HashSet<>();
         for(String param : params) {

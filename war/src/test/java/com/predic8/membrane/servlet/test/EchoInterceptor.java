@@ -14,6 +14,7 @@
 package com.predic8.membrane.servlet.test;
 
 import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
@@ -31,9 +32,19 @@ targetNamespace="http://membrane-soa.org/war-test/1/")
 public class EchoInterceptor extends AbstractInterceptor {
 
 	@Override
-	public Outcome handleRequest(Exchange exc) throws Exception {
-		exc.setResponse(Response.ok().body(getBody(exc)).build());
-		return RETURN;
+	public Outcome handleRequest(Exchange exc) {
+        try {
+            exc.setResponse(Response.ok().body(getBody(exc)).build());
+        } catch (IOException e) {
+			ProblemDetails.user(router.isProduction())
+					.component(getDisplayName())
+					.detail("Error creating echo response!")
+					.exception(e)
+					.stacktrace(true)
+					.buildAndSetResponse(exc);
+			return ABORT;
+        }
+        return RETURN;
 	}
 
 	private static @NotNull String getBody(Exchange exc) throws IOException {

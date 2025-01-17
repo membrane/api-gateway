@@ -18,6 +18,7 @@ import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.oauth2client.OAuth2Resource2Interceptor;
+import org.jetbrains.annotations.*;
 import org.jose4j.jwt.JwtClaims;
 import org.jose4j.jwt.consumer.InvalidJwtException;
 import org.jose4j.jwt.consumer.JwtConsumer;
@@ -48,14 +49,40 @@ public class JwtSMOAuth2R2Test extends OAuth2ResourceTest {
 
         mockAuthServer.getTransport().getInterceptors().add(0, new AbstractInterceptor() {
             @Override
-            public Outcome handleRequest(Exchange exc) throws Exception {
+            public Outcome handleRequest(Exchange exc) {
                 cdl.countDown();
-                cdl.await();
+                try {
+                    cdl.await();
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
 
                 return super.handleRequest(exc);
             }
         });
 
+        List<Thread> threadList = getThreads(limit, goodTests);
+
+        for (Thread thread : threadList)
+            thread.join();
+
+        LOG.debug("joined");
+
+        LOG.debug("cookie count = " + countCookies());
+
+        int j = limit + 1;
+        Exchange excCallResource = new Request.Builder().get(getClientAddress() + "/init" + j).buildExchange();
+        LOG.debug("getting " + excCallResource.getDestinations().get(0));
+        excCallResource = browser.apply(excCallResource);
+        Map body2 = om.readValue(excCallResource.getResponse().getBodyAsStream(), Map.class);
+        assertEquals("/init" + j, body2.get("path"));
+
+        assertEquals(limit, goodTests.get());
+
+        assertEquals(1, countCookies());
+    }
+
+    private @NotNull List<Thread> getThreads(int limit, AtomicInteger goodTests) {
         List<Thread> threadList = new ArrayList<>();
         for (int i = 0; i < limit; i++) {
             int j = i;
@@ -77,24 +104,7 @@ public class JwtSMOAuth2R2Test extends OAuth2ResourceTest {
             thread.start();
             threadList.add(thread);
         }
-
-        for (Thread thread : threadList)
-            thread.join();
-
-        LOG.debug("joined");
-
-        LOG.debug("cookie count = " + countCookies());
-
-        int j = limit + 1;
-        Exchange excCallResource = new Request.Builder().get(getClientAddress() + "/init" + j).buildExchange();
-        LOG.debug("getting " + excCallResource.getDestinations().get(0));
-        excCallResource = browser.apply(excCallResource);
-        Map body2 = om.readValue(excCallResource.getResponse().getBodyAsStream(), Map.class);
-        assertEquals("/init" + j, body2.get("path"));
-
-        assertEquals(limit, goodTests.get());
-
-        assertEquals(1, countCookies());
+        return threadList;
     }
 
     @Test
@@ -103,7 +113,7 @@ public class JwtSMOAuth2R2Test extends OAuth2ResourceTest {
 
         mockAuthServer.getTransport().getInterceptors().add(0, new AbstractInterceptor() {
             @Override
-            public Outcome handleRequest(Exchange exc) throws Exception {
+            public Outcome handleRequest(Exchange exc) {
                 if (exc.getRequest().getUri().startsWith("/auth"))
                     authCounter.incrementAndGet();
 

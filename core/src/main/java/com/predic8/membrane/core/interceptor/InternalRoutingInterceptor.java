@@ -16,6 +16,7 @@
 
 package com.predic8.membrane.core.interceptor;
 
+import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.proxies.Proxy;
 import com.predic8.membrane.core.proxies.*;
@@ -34,20 +35,31 @@ public class InternalRoutingInterceptor extends AbstractInterceptor {
     public static final String REVERSE_INTERCEPTOR_LIST = "membrane.routing.back.interceptors";
 
     @Override
-    public Outcome handleRequest(Exchange exchange) throws Exception {
+    public Outcome handleRequest(Exchange exchange) {
         if (!isTargetInternal(exchange))
             return CONTINUE;
 
         Proxy currentProxy = exchange.getProxy(); // Store current rule (non- "service:..." rule )
 
-        Outcome outcome = routeService(exchange);
-        if (outcome == RETURN) { // An interceptor returned RETURN, so shortcut flow and return
-            outcome = getFlowController().invokeResponseHandlers(exchange, getBackInterceptors(exchange));
-            if (outcome == CONTINUE) {
-                outcome = RETURN; // Signal that the flow reversed, even when during response flow an interceptor returns CONTINUE
+        Outcome outcome;
+        try {
+         outcome = routeService(exchange);
+            if (outcome == RETURN) { // An interceptor returned RETURN, so shortcut flow and return
+                outcome = getFlowController().invokeResponseHandlers(exchange, getBackInterceptors(exchange));
+                if (outcome == CONTINUE) {
+                    outcome = RETURN; // Signal that the flow reversed, even when during response flow an interceptor returns CONTINUE
+                }
+            } else if (outcome == ABORT) { // An interceptor returned ABORT, so shortcut flow and abort
+                handleAbort(exchange);
             }
-        } else if (outcome == ABORT) { // An interceptor returned ABORT, so shortcut flow and abort
-            handleAbort(exchange);
+        } catch (Exception e) {
+            ProblemDetails.internal(router.isProduction())
+                    .component(getDisplayName())
+                    .detail("Could not invoke response handler for internal route")
+                    .exception(e)
+                    .stacktrace(true)
+                    .buildAndSetResponse(exchange);
+            return Outcome.ABORT;
         }
 
         exchange.setRule(currentProxy); // Restore current rule, so that the response interceptors of that rule could be invoked
@@ -60,8 +72,18 @@ public class InternalRoutingInterceptor extends AbstractInterceptor {
     }
 
     @Override
-    public Outcome handleResponse(Exchange exc) throws Exception {
-        return getFlowController().invokeResponseHandlers(exc, getBackInterceptors(exc));
+    public Outcome handleResponse(Exchange exc) {
+        try {
+            return getFlowController().invokeResponseHandlers(exc, getBackInterceptors(exc));
+        } catch (Exception e) {
+            ProblemDetails.internal(router.isProduction())
+                    .component(getDisplayName())
+                    .detail("Error in response handler chain.")
+                    .exception(e)
+                    .stacktrace(true)
+                    .buildAndSetResponse(exc);
+            return ABORT;
+        }
     }
 
     /**

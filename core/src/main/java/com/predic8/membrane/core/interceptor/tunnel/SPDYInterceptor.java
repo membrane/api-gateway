@@ -38,7 +38,7 @@ public class SPDYInterceptor extends AbstractInterceptor {
 	}
 
 	@Override
-	public Outcome handleRequest(Exchange exc) throws Exception {
+	public Outcome handleRequest(Exchange exc) {
 		if ("SPDY/3.1".equalsIgnoreCase(exc.getRequest().getHeader().getFirstValue("Upgrade"))) {
 			exc.setProperty(Exchange.ALLOW_SPDY, Boolean.TRUE);
 		}

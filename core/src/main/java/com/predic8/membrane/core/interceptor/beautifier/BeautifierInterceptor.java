@@ -45,12 +45,12 @@ public class BeautifierInterceptor extends AbstractInterceptor {
     }
 
     @Override
-    public Outcome handleRequest(Exchange exc) throws Exception {
+    public Outcome handleRequest(Exchange exc) {
         return handleInternal(exc.getRequest());
     }
 
     @Override
-    public Outcome handleResponse(Exchange exc) throws Exception {
+    public Outcome handleResponse(Exchange exc) {
         return handleInternal(exc.getResponse());
     }
 

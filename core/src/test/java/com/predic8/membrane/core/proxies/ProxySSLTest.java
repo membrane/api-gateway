@@ -72,7 +72,7 @@ public class ProxySSLTest {
         ProxyRule proxy = new ProxyRule(new ProxyRuleKey(proxyPort));
         proxy.getInterceptors().add(new AbstractInterceptor() {
             @Override
-            public Outcome handleRequest(Exchange exc) throws Exception {
+            public Outcome handleRequest(Exchange exc) {
                 proxyCounter.incrementAndGet();
                 return super.handleRequest(exc);
             }

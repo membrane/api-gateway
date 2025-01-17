@@ -58,16 +58,16 @@ public class IfInterceptor extends AbstractFlowInterceptor {
     }
 
     @Override
-    public Outcome handleRequest(Exchange exc) throws Exception {
+    public Outcome handleRequest(Exchange exc) {
         return handleInternal(exc, REQUEST);
     }
 
     @Override
-    public Outcome handleResponse(Exchange exc) throws Exception {
+    public Outcome handleResponse(Exchange exc) {
         return handleInternal(exc, RESPONSE);
     }
 
-    private Outcome handleInternal(Exchange exc, Flow flow) throws Exception {
+    private Outcome handleInternal(Exchange exc, Flow flow) {
         boolean result;
         try {
              result = exchangeExpression.evaluate(exc, flow, Boolean.class);

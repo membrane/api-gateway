@@ -38,11 +38,11 @@ public class AbstractInterceptor implements Interceptor {
 		super();
 	}
 
-	public Outcome handleRequest(Exchange exc) throws Exception {
+	public Outcome handleRequest(Exchange exc) {
 		return CONTINUE;
 	}
 
-	public Outcome handleResponse(Exchange exc) throws Exception {
+	public Outcome handleResponse(Exchange exc) {
 		return CONTINUE;
 	}
 

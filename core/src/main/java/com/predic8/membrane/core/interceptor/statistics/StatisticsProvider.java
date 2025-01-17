@@ -16,6 +16,7 @@ package com.predic8.membrane.core.interceptor.statistics;
 import com.fasterxml.jackson.core.*;
 import com.google.common.collect.*;
 import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
@@ -28,6 +29,8 @@ import org.springframework.context.*;
 import javax.sql.*;
 import java.io.*;
 import java.sql.*;
+
+import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 
 @MCElement(name="statisticsProvider")
 public class StatisticsProvider extends AbstractInterceptor implements ApplicationContextAware {
@@ -59,10 +62,21 @@ public class StatisticsProvider extends AbstractInterceptor implements Applicati
 	}
 
 	@Override
-	public Outcome handleRequest(Exchange exc) throws Exception {
-		Connection con = dataSource.getConnection();
+	public Outcome handleRequest(Exchange exc) {
+        Connection con;
+        try {
+            con = dataSource.getConnection();
+        } catch (SQLException e) {
+			ProblemDetails.internal(router.isProduction())
+					.component(getDisplayName())
+					.detail("Could not connect to database")
+					.exception(e)
+					.stacktrace(true)
+					.buildAndSetResponse(exc);
+			return ABORT;
+        }
 
-		try {
+        try {
 			int offset = URLParamUtil.getIntParam(router.getUriFactory(), exc, "offset");
 			int max = URLParamUtil.getIntParam(router.getUriFactory(), exc, "max");
 			int total = getTotal(con);
