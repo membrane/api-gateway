@@ -318,6 +318,46 @@ public class ProblemDetails {
         return false;
     }
 
+    public String getTitle() {
+        return title;
+    }
+
+    public String getType() {
+        return type;
+    }
+
+    public int getStatusCode() {
+        return statusCode;
+    }
+
+    public boolean isProduction() {
+        return production;
+    }
+
+    public String getDetail() {
+        return detail;
+    }
+
+    public String getComponent() {
+        return component;
+    }
+
+    public String getInstance() {
+        return instance;
+    }
+
+    public HashMap<String, Object> getExtensions() {
+        return extensions;
+    }
+
+    public Throwable getException() {
+        return exception;
+    }
+
+    public boolean isStacktrace() {
+        return stacktrace;
+    }
+
     @Override
     public String toString() {
         return "ProblemDetails{" +
