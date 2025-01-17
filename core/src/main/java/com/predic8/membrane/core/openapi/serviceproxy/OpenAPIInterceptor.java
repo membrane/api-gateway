@@ -18,7 +18,6 @@ package com.predic8.membrane.core.openapi.serviceproxy;
 
 import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.openapi.*;
 import com.predic8.membrane.core.openapi.validators.*;
@@ -34,7 +33,6 @@ import java.util.*;
 
 import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
 import static com.predic8.membrane.core.exchange.Exchange.*;
-import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.openapi.serviceproxy.APIProxy.*;
 import static com.predic8.membrane.core.openapi.util.UriUtil.*;
@@ -144,7 +142,7 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
             return RETURN;
         } catch (Throwable t /* On Purpose! Catch absolutely all */) {
             log.error("", t);
-            internal(router.isProduction(),getDisplayName())
+            internal(router.isProduction(), getDisplayName())
                     .detail("Message could not be validated against OpenAPI cause of an error during validation. Please check the OpenAPI with title %s.".formatted(rec.api.getInfo().getTitle()))
                     .exception(t)
                     .buildAndSetResponse(exc);
@@ -213,13 +211,13 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
     protected void setDestinationsFromOpenAPI(OpenAPIRecord rec, Exchange exc) {
         exc.getDestinations().clear();
         rec.api.getServers().forEach(server -> {
-            URL url = getServerUrlFromOpenAPI(rec, server);
+            URL url = getServerUrlFromOpenAPI( server);
             exc.setProperty(SNI_SERVER_NAME, url.getHost());
             exc.getDestinations().add(getUrlWithoutPath(url) + exc.getRequest().getUri());
         });
     }
 
-    private static URL getServerUrlFromOpenAPI(OpenAPIRecord rec, Server server) {
+    private static URL getServerUrlFromOpenAPI( Server server) {
         try {
             // It is always OpenAPI 3 or newer cause the parser transforms v2 to v3
             return new URL(server.getUrl());
@@ -315,14 +313,20 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
     }
 
     private void createErrorResponse(Exchange exc, ValidationErrors errors, ValidationErrors.Direction direction, boolean validationDetails) {
-        exc.setResponse(Response.ResponseBuilder.newInstance()
-                .status(errors.get(0).getContext().getStatusCode(), "Bad Request")
-                .body(getErrorMessage(errors, direction, validationDetails)).contentType(APPLICATION_JSON_UTF8).build());
+        user(router.isProduction(), getDisplayName())
+                .title("OpenAPI message validation failed")
+                .addSubType("validation")
+                .statusCode(errors.get(0).getContext().getStatusCode())
+                .topLevel("validation", getErrorMap(errors, direction, validationDetails))
+                .buildAndSetResponse(exc);
     }
 
-    private byte[] getErrorMessage(ValidationErrors errors, ValidationErrors.Direction direction, boolean validationDetails) {
-        if (validationDetails)
+    private static Map<String, Object> getErrorMap(ValidationErrors errors, ValidationErrors.Direction direction, boolean validationDetails) {
+        if (validationDetails) {
             return errors.getErrorMessage(direction);
-        return createErrorMessage("Message validation failed!");
+        }
+        Map<String, Object> m = new LinkedHashMap<>();
+        m.put("error", "Message validation failed!");
+        return m;
     }
 }
