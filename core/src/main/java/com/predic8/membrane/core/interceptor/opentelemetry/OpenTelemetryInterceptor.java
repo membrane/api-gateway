@@ -48,6 +48,7 @@ public class OpenTelemetryInterceptor extends AbstractInterceptor {
 
     @Override
     public void init() {
+        super.init();
         otel = OpenTelemetryConfigurator.openTelemetry("Membrane", exporter, getSampleRate());
         tracer = otel.getTracer("MEMBRANE-TRACER");
 

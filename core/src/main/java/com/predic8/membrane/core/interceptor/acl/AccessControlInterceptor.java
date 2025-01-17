@@ -120,6 +120,7 @@ public class AccessControlInterceptor extends AbstractInterceptor {
 
 	@Override
 	public void init() {
+		super.init();
 		accessControl = parse(file, router);
 	}
 

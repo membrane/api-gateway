@@ -40,6 +40,7 @@ public class RequireAuth extends AbstractInterceptor {
 
     @Override
     public void init() {
+        super.init();
         var jwks = new Jwks();
         jwks.setJwks(new ArrayList<>());
         // TODO init dependency
