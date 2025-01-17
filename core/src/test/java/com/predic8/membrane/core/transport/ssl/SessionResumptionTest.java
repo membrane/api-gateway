@@ -97,10 +97,15 @@ public class SessionResumptionTest {
         rule.setSslInboundParser(sslInboundParser);
         rule.getInterceptors().add(new AbstractInterceptor() {
             @Override
-            public Outcome handleRequest(Exchange exc) throws Exception {
+            public Outcome handleRequest(Exchange exc) {
                 // Inlined from Exchange. Maybe use EchoIntercepor
                 Response.ResponseBuilder builder = Response.ok();
-                byte[] content = exc.getRequest().getBody().getContent();
+                byte[] content;
+                try {
+                    content = exc.getRequest().getBody().getContent();
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
                 builder.body(content);
                 String contentType = exc.getRequest().getHeader().getContentType();
                 if (contentType != null)

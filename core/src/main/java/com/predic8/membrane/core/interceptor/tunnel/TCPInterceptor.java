@@ -38,7 +38,7 @@ public class TCPInterceptor extends AbstractInterceptor {
 	}
 
 	@Override
-	public Outcome handleRequest(Exchange exc) throws Exception {
+	public Outcome handleRequest(Exchange exc) {
 		if ("tcp".equalsIgnoreCase(exc.getRequest().getHeader().getFirstValue("Upgrade"))) {
 			exc.setProperty(Exchange.ALLOW_TCP, Boolean.TRUE);
 		}

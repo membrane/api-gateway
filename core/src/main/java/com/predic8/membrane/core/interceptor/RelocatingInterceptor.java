@@ -14,18 +14,17 @@
 
 package com.predic8.membrane.core.interceptor;
 
-import com.googlecode.jatl.Html;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Request;
-import com.predic8.membrane.core.proxies.ProxyRule;
-import com.predic8.membrane.core.ws.relocator.Relocator;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.googlecode.jatl.*;
+import com.predic8.membrane.core.exceptions.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.proxies.*;
+import com.predic8.membrane.core.ws.relocator.*;
+import org.slf4j.*;
 
-import javax.xml.stream.XMLStreamException;
-import java.io.StringWriter;
+import java.io.*;
 
-import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
+import static com.predic8.membrane.core.interceptor.Outcome.*;
 
 abstract public class RelocatingInterceptor extends AbstractInterceptor {
 
@@ -37,7 +36,7 @@ abstract public class RelocatingInterceptor extends AbstractInterceptor {
 	protected Relocator.PathRewriter pathRewriter;
 
 	@Override
-	public Outcome handleResponse(Exchange exc) throws Exception {
+	public Outcome handleResponse(Exchange exc) {
 
 		if (exc.getProxy() instanceof ProxyRule) {
 			log.debug("{} ProxyRule found: No relocating done!",name);
@@ -61,8 +60,15 @@ abstract public class RelocatingInterceptor extends AbstractInterceptor {
 
 		try {
 			rewrite(exc);
-		} catch (XMLStreamException e) {
-			throw new Exception("while rewriting " + exc.getRequestURI(), e);
+		} catch (Exception e) {
+			ProblemDetails.internal(router.isProduction())
+					.component(getDisplayName())
+					.detail("Error rewriting URI")
+					.extension("URI", exc.getRequestURI())
+					.exception(e)
+					.stacktrace(true)
+					.buildAndSetResponse(exc);
+			return ABORT;
 		}
 		return CONTINUE;
 	}

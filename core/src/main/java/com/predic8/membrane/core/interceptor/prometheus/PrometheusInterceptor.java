@@ -47,7 +47,7 @@ public class PrometheusInterceptor extends AbstractInterceptor {
     }
 
     @Override
-    public Outcome handleRequest(Exchange exc) throws Exception {
+    public Outcome handleRequest(Exchange exc) {
         Context ctx = new Context();
         buildPrometheusStyleResponse(ctx);
         exc.setResponse(Response.ok(ctx.sb.toString()).header(Header.CONTENT_TYPE, "text/plain; version=0.0.4").build());

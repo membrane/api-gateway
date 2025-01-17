@@ -26,6 +26,7 @@ import com.predic8.membrane.core.interceptor.session.*;
 import com.predic8.membrane.core.proxies.*;
 import org.jetbrains.annotations.*;
 
+import java.io.*;
 import java.util.*;
 import java.util.function.*;
 
@@ -42,7 +43,7 @@ import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
  *     <li>two FlowInitiator interceptors (one with and one without 'logout-before-flow' enabled)</li>
  *     <li>four RequireAuth interceptors in varying configurations</li>
  * </ul>
- *
+ * <p>
  * They all point back to the one oauth2resource2 interceptor instance managing sessions, token acquisitions and more.
  */
 public class B2CMembrane {
@@ -61,7 +62,7 @@ public class B2CMembrane {
         this.sessionManager = sessionManager;
     }
 
-    public void init() throws Exception {
+    public void init() {
         oauth2Resource = new HttpRouter();
         oauth2Resource.getTransport().setBacklog(10000);
         oauth2Resource.getTransport().setSocketTimeout(10000);
@@ -121,7 +122,7 @@ public class B2CMembrane {
 
         sp.getInterceptors().add(new AbstractInterceptor() {
             @Override
-            public Outcome handleRequest(Exchange exc) throws Exception {
+            public Outcome handleRequest(Exchange exc) {
                 if (!exc.getRequest().getUri().contains("is-logged-in"))
                     return Outcome.CONTINUE;
 
@@ -215,7 +216,15 @@ public class B2CMembrane {
     private AbstractInterceptor createTestResponseInterceptor() {
         return new AbstractInterceptor() {
             @Override
-            public Outcome handleRequest(Exchange exc) throws Exception {
+            public Outcome handleRequest(Exchange exc) {
+                try {
+                    return handleRequestInternal(exc);
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+
+            public Outcome handleRequestInternal(Exchange exc) throws IOException {
                 OAuth2AnswerParameters answer = OAuth2AnswerParameters.deserialize(String.valueOf(exc.getProperty(Exchange.OAUTH2)));
                 String accessToken = answer == null ? "null" : answer.getAccessToken();
                 Map<String, String> body = new HashMap<>();

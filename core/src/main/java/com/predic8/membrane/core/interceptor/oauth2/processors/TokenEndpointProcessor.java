@@ -13,13 +13,18 @@
 
 package com.predic8.membrane.core.interceptor.oauth2.processors;
 
+import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.oauth2.OAuth2AuthorizationServerInterceptor;
 import com.predic8.membrane.core.interceptor.oauth2.request.tokenrequest.TokenFlowDecider;
+import org.slf4j.*;
+
+import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 
 public class TokenEndpointProcessor extends EndpointProcessor {
 
+    private static final Logger log = LoggerFactory.getLogger(TokenEndpointProcessor.class);
 
     public TokenEndpointProcessor(OAuth2AuthorizationServerInterceptor authServer) {
         super(authServer);
@@ -31,8 +36,18 @@ public class TokenEndpointProcessor extends EndpointProcessor {
     }
 
     @Override
-    public Outcome process(Exchange exc) throws Exception {
-        exc.setResponse(new TokenFlowDecider(authServer,exc).getFlow().validateRequest());
+    public Outcome process(Exchange exc) {
+        try {
+            exc.setResponse(new TokenFlowDecider(authServer,exc).getFlow().validateRequest());
+        } catch (Exception e) {
+            log.error("", e);
+            ProblemDetails.internal(true)
+                    .component(this.getClass().getSimpleName())
+                    .exception(e)
+                    .stacktrace(true)
+                    .buildAndSetResponse(exc);
+            return ABORT;
+        }
         if(exc.getResponse().getStatusCode() == 200)
             authServer.getStatistics().accessTokenCreated();
         return Outcome.RETURN;

@@ -13,16 +13,16 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.rest;
 
-import javax.xml.transform.stream.StreamSource;
+import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.exceptions.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.interceptor.soap.*;
 
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Header;
-import com.predic8.membrane.core.http.MimeType;
-import com.predic8.membrane.core.interceptor.DispatchingInterceptor;
-import com.predic8.membrane.core.interceptor.Outcome;
-import com.predic8.membrane.core.interceptor.soap.SoapOperationExtractor;
+import javax.xml.transform.stream.*;
+
+import static com.predic8.membrane.core.interceptor.Outcome.*;
 
 /**
  * @description Converts SOAP messages into REST requests.
@@ -42,14 +42,24 @@ public class SOAP2RESTInterceptor extends SOAPRESTHelper {
 	}
 
 	@Override
-	public Outcome handleRequest(Exchange exc) throws Exception {
+	public Outcome handleRequest(Exchange exc) {
 		// save SOAP operationName and namespace in exchange properties to generically construct response name
 		soe.handleRequest(exc);
 
 		// apply request XSLT
-		transformAndReplaceBody(exc.getRequest(), requestXSLT, new StreamSource(exc.getRequest().getBodyAsStreamDecoded()), exc.getStringProperties());
+        try {
+            transformAndReplaceBody(exc.getRequest(), requestXSLT, new StreamSource(exc.getRequest().getBodyAsStreamDecoded()), exc.getStringProperties());
+        } catch (Exception e) {
+			ProblemDetails.user(router.isProduction())
+					.component(getDisplayName())
+					.detail("Could not transform with XSLT!")
+					.exception(e)
+					.stacktrace(true)
+					.buildAndSetResponse(exc);
+			return ABORT;
+        }
 
-		// fill Request object from HTTP-XML
+        // fill Request object from HTTP-XML
 		Header header = exc.getRequest().getHeader();
 		header.removeFields(Header.CONTENT_TYPE);
 		header.setContentType(MimeType.TEXT_XML_UTF8);
@@ -63,9 +73,19 @@ public class SOAP2RESTInterceptor extends SOAPRESTHelper {
 	}
 
 	@Override
-	public Outcome handleResponse(Exchange exc) throws Exception {
-		transformAndReplaceBody(exc.getResponse(), responseXSLT, getExchangeXMLSource(exc), exc.getStringProperties());
-		return Outcome.CONTINUE;
+	public Outcome handleResponse(Exchange exc) {
+        try {
+            transformAndReplaceBody(exc.getResponse(), responseXSLT, getExchangeXMLSource(exc), exc.getStringProperties());
+        } catch (Exception e) {
+			ProblemDetails.user(router.isProduction())
+					.component(getDisplayName())
+					.detail("Could not transform with XSLT!")
+					.exception(e)
+					.stacktrace(true)
+					.buildAndSetResponse(exc);
+			return ABORT;
+        }
+        return Outcome.CONTINUE;
 	}
 
 	@Override

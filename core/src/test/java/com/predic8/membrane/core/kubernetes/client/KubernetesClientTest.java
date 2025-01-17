@@ -46,7 +46,15 @@ public class KubernetesClientTest {
         ServiceProxy sp = new ServiceProxy(new ServiceProxyKey(3053), null, 0);
         sp.getInterceptors().add(new AbstractInterceptor() {
             @Override
-            public Outcome handleRequest(Exchange exc) throws Exception {
+            public Outcome handleRequest(Exchange exc) {
+                try {
+                    return handleRequestInternal(exc);
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+
+            public Outcome handleRequestInternal(Exchange exc) throws IOException {
                 if ("/openapi/v2".equals(exc.getRequest().getUri())) {
                     exc.setResponse(Response.ok(
                             Resources.toString(getResource("kubernetes/api/openapi-v2.json"), UTF_8))
@@ -101,7 +109,7 @@ public class KubernetesClientTest {
     }
 
     @Test
-    public void read_nonExistent() throws IOException, KubernetesApiException {
+    public void read_nonExistent() {
         assertThrows(KubernetesApiException.class, () -> {
             KubernetesClient kc = KubernetesClientBuilder.newBuilder().baseURL("http://localhost:3053/").build();
 
@@ -119,7 +127,7 @@ public class KubernetesClientTest {
     }
 
     @Test
-    public void version() throws KubernetesClientBuilder.ParsingException, HttpException, IOException {
+    public void version() throws HttpException, IOException {
         KubernetesClient kc = KubernetesClientBuilder.newBuilder().baseURL("http://localhost:3053/").build();
 
         assertEquals("v1.23.7", kc.version().get("gitVersion"));

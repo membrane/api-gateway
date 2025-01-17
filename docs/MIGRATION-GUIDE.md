@@ -21,6 +21,7 @@ Now if there is no message to set a header, an exception is thrown.
 
 # Internal API
 
+- Interceptor.handleRquest() and handleRquest() aren't throwing any exception anymore
 - ConditionalInterceptor is renamed in IfInterceptor
 
 # <xPAth> and <xPathExtractor>

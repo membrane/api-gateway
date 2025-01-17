@@ -57,7 +57,7 @@ public class RequireAuth extends AbstractInterceptor {
     }
 
     @Override
-    public Outcome handleRequest(Exchange exc) throws Exception {
+    public Outcome handleRequest(Exchange exc) {
         if (!isBearer(exc.getRequest().getHeader())) {
             if (errorStatus != null)
                 exc.setProperty(ERROR_STATUS, errorStatus);

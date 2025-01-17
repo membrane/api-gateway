@@ -76,7 +76,15 @@ public class AcmeServerSimulator {
             final ObjectMapper om = new ObjectMapper();
 
             @Override
-            public Outcome handleRequest(Exchange exc) throws Exception {
+            public Outcome handleRequest(Exchange exc) {
+                try {
+                    return handleRequestInternal(exc);
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+            }
+
+            public Outcome handleRequestInternal(Exchange exc) throws Exception {
                 LOG.debug("acme server: got " + exc.getRequest().getUri() + " request");
                 if ("/directory".equals(exc.getRequest().getUri())) {
                     exc.setResponse(Response.ok()
@@ -116,10 +124,10 @@ public class AcmeServerSimulator {
                             .header("Replay-Nonce", createNonce())
                             .header(CONTENT_TYPE, APPLICATION_PROBLEM_JSON)
                             .body(om.writeValueAsString(ImmutableMap.of(
-                                    "type", "urn:ietf:params:acme:error:badNonce" ,
-                                    "detail", "Bad Nonce: "+jws
-                            ))
-                    ).build());
+                                            "type", "urn:ietf:params:acme:error:badNonce",
+                                            "detail", "Bad Nonce: " + jws
+                                    ))
+                            ).build());
                     return RETURN;
                 }
                 if ("/acme/new-acct".equals(exc.getRequest().getUri())) {
@@ -150,10 +158,10 @@ public class AcmeServerSimulator {
                                 .header("Replay-Nonce", nonce)
                                 .header(CONTENT_TYPE, APPLICATION_PROBLEM_JSON)
                                 .body(om.writeValueAsString(ImmutableMap.of(
-                                        "type", "urn:ietf:params:acme:error:badNonce" ,
-                                        "detail", "Bad Nonce: "+jws
-                                ))
-                        ).build());
+                                                "type", "urn:ietf:params:acme:error:badNonce",
+                                                "detail", "Bad Nonce: " + jws
+                                        ))
+                                ).build());
                         return RETURN;
                     }
 
@@ -170,7 +178,7 @@ public class AcmeServerSimulator {
                     exc.setResponse(Response.ok()
                             .contentType(APPLICATION_JSON)
                             .header("Replay-Nonce", createNonce())
-                            .body(Resources.toString(getResource("acme/order-"+orderStatus.get()+".json"), UTF_8))
+                            .body(Resources.toString(getResource("acme/order-" + orderStatus.get() + ".json"), UTF_8))
                             .build());
 
                     return RETURN;
@@ -231,7 +239,7 @@ public class AcmeServerSimulator {
             @NotNull
             private MyJsonWebSignature getMyJsonWebSignature(Exchange exc) throws IOException, JoseException {
                 @SuppressWarnings("unchecked")
-                Map<String,String> body = om.readValue(exc.getRequest().getBodyAsStreamDecoded(), Map.class);
+                Map<String, String> body = om.readValue(exc.getRequest().getBodyAsStreamDecoded(), Map.class);
                 MyJsonWebSignature jws = new MyJsonWebSignature();
                 jws.setEncodedHeader(body.get("protected"));
                 jws.setEncodedPayload(body.get("payload"));

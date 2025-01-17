@@ -14,13 +14,21 @@
 package com.predic8.membrane.core.interceptor.oauth2.processors;
 
 import com.predic8.membrane.core.beautifier.JSONBeautifier;
+import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.MimeType;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.oauth2.OAuth2AuthorizationServerInterceptor;
+import org.slf4j.*;
+
+import java.io.*;
+
+import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 
 public class WellknownEndpointProcessor extends EndpointProcessor {
+
+    private static final Logger log = LoggerFactory.getLogger(WellknownEndpointProcessor.class);
 
     private JSONBeautifier jsonBeautifier = new JSONBeautifier();
 
@@ -34,8 +42,18 @@ public class WellknownEndpointProcessor extends EndpointProcessor {
     }
 
     @Override
-    public Outcome process(Exchange exc) throws Exception {
-        exc.setResponse(Response.ok().contentType(MimeType.APPLICATION_JSON_UTF8).body(jsonBeautifier.beautify(authServer.getWellknownFile().getWellknown())).build());
+    public Outcome process(Exchange exc) {
+        try {
+            exc.setResponse(Response.ok().contentType(MimeType.APPLICATION_JSON_UTF8).body(jsonBeautifier.beautify(authServer.getWellknownFile().getWellknown())).build());
+        } catch (IOException e) {
+            log.error(e.getMessage(), e);
+            ProblemDetails.internal(true)
+                    .component(this.getClass().getSimpleName())
+                    .exception(e)
+                    .stacktrace(true)
+                    .buildAndSetResponse(exc);
+            return ABORT;
+        }
         return Outcome.RETURN;
     }
 }

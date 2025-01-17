@@ -17,6 +17,7 @@
 package com.predic8.membrane.core.interceptor.flow;
 
 import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
@@ -54,8 +55,18 @@ public class ReturnInterceptor extends AbstractInterceptor {
     private String contentType = null;
 
     @Override
-    public Outcome handleRequest(Exchange exc) throws Exception {
-        exc.setResponse(getOrCreateResponse(exc));
+    public Outcome handleRequest(Exchange exc) {
+        try {
+            exc.setResponse(getOrCreateResponse(exc));
+        } catch (IOException e) {
+            ProblemDetails.user(router.isProduction())
+                    .component(getDisplayName())
+                    .detail("Could not create response!")
+                    .exception(e)
+                    .stacktrace(true)
+                    .buildAndSetResponse(exc);
+            return ABORT;
+        }
         return RETURN;
     }
 

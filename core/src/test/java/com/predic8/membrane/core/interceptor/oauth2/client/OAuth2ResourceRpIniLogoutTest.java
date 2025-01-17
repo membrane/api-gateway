@@ -39,8 +39,7 @@ import org.jose4j.jwk.RsaJwkGenerator;
 import org.jose4j.jws.JsonWebSignature;
 import org.jose4j.jwt.JwtClaims;
 import org.jose4j.jwt.NumericDate;
-import org.jose4j.jwt.consumer.JwtConsumer;
-import org.jose4j.jwt.consumer.JwtConsumerBuilder;
+import org.jose4j.jwt.consumer.*;
 import org.jose4j.lang.JoseException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -48,6 +47,7 @@ import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.math.BigInteger;
+import java.net.*;
 import java.security.SecureRandom;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -188,7 +188,15 @@ public class OAuth2ResourceRpIniLogoutTest {
             final SecureRandom rand = new SecureRandom();
 
             @Override
-            public synchronized Outcome handleRequest(Exchange exc) throws Exception {
+            public Outcome handleRequest(Exchange exc) {
+                try {
+                    return handleRequestInternal(exc);
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+            }
+
+            public synchronized Outcome handleRequestInternal(Exchange exc) throws URISyntaxException, IOException, JoseException, InvalidJwtException {
                 if (exc.getRequestURI().endsWith("/.well-known/openid-configuration")) {
                     exc.setResponse(Response.ok(wkf.getWellknown()).build());
                 } else if (exc.getRequestURI().equals("/certs")) {
@@ -197,9 +205,9 @@ public class OAuth2ResourceRpIniLogoutTest {
                 } else if (exc.getRequestURI().startsWith("/auth?")) {
                     Map<String, String> params = URLParamUtil.getParams(new URIFactory(), exc, URLParamUtil.DuplicateKeyOrInvalidFormStrategy.ERROR);
                     exc.setResponse(new FormPostGenerator(getClientAddress() + "/oauth2callback")
-                        .withParameter("state", params.get("state"))
-                        .withParameter("code", params.get("1234"))
-                        .build());
+                            .withParameter("state", params.get("state"))
+                            .withParameter("code", params.get("1234"))
+                            .build());
                 } else if (exc.getRequestURI().startsWith("/token")) {
                     ObjectMapper om = new ObjectMapper();
                     Map<String, String> res = new HashMap<>();
@@ -263,7 +271,7 @@ public class OAuth2ResourceRpIniLogoutTest {
 
         sp.getInterceptors().add(new AbstractInterceptor() {
             @Override
-            public Outcome handleRequest(Exchange exc) throws Exception {
+            public Outcome handleRequest(Exchange exc) {
                 if (exc.getRequest().getUri().equals("/after-logout")) {
                     exc.setResponse(Response.ok("logged out!").build());
                     return RETURN;
@@ -273,7 +281,7 @@ public class OAuth2ResourceRpIniLogoutTest {
         });
         sp.getInterceptors().add(new AbstractInterceptor() {
             @Override
-            public Outcome handleRequest(Exchange exc) throws Exception {
+            public Outcome handleRequest(Exchange exc) {
                 if (!exc.getRequest().getUri().contains("is-logged-in"))
                     return Outcome.CONTINUE;
 
@@ -286,7 +294,15 @@ public class OAuth2ResourceRpIniLogoutTest {
         sp.getInterceptors().add(oAuth2ResourceInterceptor);
         sp.getInterceptors().add(new AbstractInterceptor() {
             @Override
-            public Outcome handleRequest(Exchange exc) throws Exception {
+            public Outcome handleRequest(Exchange exc) {
+                try {
+                    return handleRequestInternal(exc);
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+
+            public Outcome handleRequestInternal(Exchange exc) throws IOException {
                 OAuth2AnswerParameters answer = OAuth2AnswerParameters.deserialize(String.valueOf(exc.getProperty(Exchange.OAUTH2)));
                 String accessToken = answer.getAccessToken();
                 Map<String, String> body = Map.of(

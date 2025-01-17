@@ -37,7 +37,7 @@ public class LargeBodyTest {
 
     private static HttpRouter router, router2;
     private static HttpClientConfiguration hcc;
-    private static AtomicReference<Exchange> middleExchange = new AtomicReference<>();
+    private static final AtomicReference<Exchange> middleExchange = new AtomicReference<>();
 
     @BeforeAll
     public static void setup() throws Exception {
@@ -64,7 +64,7 @@ public class LargeBodyTest {
         ServiceProxy proxy1 = new ServiceProxy(new ServiceProxyKey("localhost", "POST", ".*", 3041), "localhost", 3040);
         proxy1.getInterceptors().add(new AbstractInterceptor() {
             @Override
-            public Outcome handleRequest(Exchange exc) throws Exception {
+            public Outcome handleRequest(Exchange exc) {
                 middleExchange.set(exc);
                 return super.handleRequest(exc);
             }

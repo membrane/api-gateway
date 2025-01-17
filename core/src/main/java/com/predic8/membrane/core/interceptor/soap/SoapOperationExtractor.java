@@ -14,24 +14,23 @@
 
 package com.predic8.membrane.core.interceptor.soap;
 
-import java.io.IOException;
+import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.multipart.*;
+import org.slf4j.*;
 
-import javax.xml.stream.FactoryConfigurationError;
-import javax.xml.stream.XMLInputFactory;
-import javax.xml.stream.XMLStreamException;
-import javax.xml.stream.XMLStreamReader;
-
-import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.Constants;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.interceptor.AbstractInterceptor;
-import com.predic8.membrane.core.interceptor.Outcome;
-import com.predic8.membrane.core.multipart.XOPReconstitutor;
+import javax.xml.stream.*;
+import java.io.*;
 
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 
 @MCElement(name="soapOperationExtractor")
 public class SoapOperationExtractor extends AbstractInterceptor {
+
+	protected static final Logger log = LoggerFactory.getLogger(SoapOperationExtractor.class);
+
 	public static final String SOAP_OPERATION = "XSLT_SOAP_OPERATION";
 	public static final String SOAP_OPERATION_NS = "XSLT_SOAP_OPERATION_NS";
 
@@ -57,7 +56,17 @@ public class SoapOperationExtractor extends AbstractInterceptor {
 	}
 
 	@Override
-	public Outcome handleRequest(Exchange exc) throws Exception {
+	public Outcome handleRequest(Exchange exc) {
+        try {
+            return handleRequestInternal(exc);
+        } catch (IOException | XMLStreamException e) {
+            log.error("Could not save SOAP operation and namespace into exchange properties: {}",e.getMessage(), e);
+        }
+		return Outcome.CONTINUE;
+    }
+
+
+	private Outcome handleRequestInternal(Exchange exc) throws IOException, XMLStreamException {
 
 		if (exc.getRequest().isBodyEmpty() && !exc.getRequest().isXML()) {
 			return CONTINUE;
