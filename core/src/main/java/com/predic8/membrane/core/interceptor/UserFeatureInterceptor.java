@@ -28,7 +28,7 @@ public class UserFeatureInterceptor extends AbstractInterceptor {
 	private static final Logger log = LoggerFactory.getLogger(UserFeatureInterceptor.class.getName());
 
 	public UserFeatureInterceptor() {
-		name = "User Feature";
+		name = "user feature";
 		setFlow(REQUEST_RESPONSE_ABORT_FLOW); // ?
 	}
 

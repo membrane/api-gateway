@@ -37,7 +37,7 @@ public class JavascriptInterceptor extends AbstractScriptInterceptor {
     protected LanguageAdapter adapter;
 
     public JavascriptInterceptor() {
-        name = "Javascript";
+        name = "javascript";
     }
 
     protected void initInternal() {

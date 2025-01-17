@@ -45,7 +45,7 @@ public class HeaderFilterInterceptor extends AbstractInterceptor {
     private List<Rule> rules = new ArrayList<>();
 
     public HeaderFilterInterceptor() {
-        name = "Header Filter";
+        name = "header filter";
     }
 
     @Override

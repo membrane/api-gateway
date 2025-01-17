@@ -36,7 +36,7 @@ public class RuleMatchingInterceptor extends AbstractInterceptor {
 	private int maxXForwardedForHeaders = 20;
 
 	public RuleMatchingInterceptor() {
-		name = "Rule Matching Interceptor";
+		name = "rule matching interceptor";
 		setFlow(REQUEST_FLOW);
 	}
 

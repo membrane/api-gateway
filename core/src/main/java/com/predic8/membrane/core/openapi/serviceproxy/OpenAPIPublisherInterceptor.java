@@ -61,7 +61,7 @@ public class OpenAPIPublisherInterceptor extends AbstractInterceptor {
     private final Template apiOverviewHtmlTemplate;
 
     public OpenAPIPublisherInterceptor(Map<String, OpenAPIRecord> apis) {
-        name = "OpenAPI Publisher";
+        name = "openapi publisher";
         this.apis = apis;
         swaggerUiHtmlTemplate = createHTMLPageTemplate("/openapi/swagger-ui.html");
         checkServerPaths();

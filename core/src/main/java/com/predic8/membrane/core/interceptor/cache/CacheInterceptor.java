@@ -58,7 +58,7 @@ public class CacheInterceptor extends AbstractInterceptor {
 	private Store store;
 
 	public CacheInterceptor() {
-		name = "Cache (Deprecated)";
+		name = "cache (deprecated)";
 	}
 
 	@Override

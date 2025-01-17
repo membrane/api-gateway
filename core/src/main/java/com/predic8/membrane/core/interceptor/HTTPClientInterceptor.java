@@ -49,7 +49,7 @@ public class HTTPClientInterceptor extends AbstractInterceptor {
     private HttpClient hc;
 
     public HTTPClientInterceptor() {
-        name = "HTTPClient";
+        name = "http client";
         setFlow(REQUEST_FLOW);
     }
 

@@ -47,7 +47,7 @@ public class LoadBalancingInterceptor extends AbstractInterceptor {
     private NodeOnlineChecker nodeOnlineChecker;
 
     public LoadBalancingInterceptor() {
-        name = "Balancer";
+        name = "balancer";
     }
 
     @Override

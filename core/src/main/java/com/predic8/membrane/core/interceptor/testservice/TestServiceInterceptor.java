@@ -68,6 +68,7 @@ public class TestServiceInterceptor extends AbstractInterceptor {
 
     @Override
     public void init() {
+        super.init();
         wi.init(router);
 
         Proxy r = router.getParentProxy(this);

@@ -40,7 +40,7 @@ public class AccessLogInterceptor extends AbstractInterceptor {
     private AccessLogInterceptorService accessLogInterceptorService;
 
     public AccessLogInterceptor() {
-        name = "Access Log";
+        name = "access log";
     }
 
     @Override

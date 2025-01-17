@@ -107,7 +107,7 @@ public class ReturnInterceptor extends AbstractInterceptor {
 
     @Override
     public String getDisplayName() {
-        return "Return";
+        return "return";
     }
 
     @Override

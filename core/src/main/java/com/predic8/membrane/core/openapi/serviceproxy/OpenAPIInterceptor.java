@@ -230,7 +230,7 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
 
     @Override
     public String getDisplayName() {
-        return "OpenAPI";
+        return "openapi";
     }
 
     @Override
