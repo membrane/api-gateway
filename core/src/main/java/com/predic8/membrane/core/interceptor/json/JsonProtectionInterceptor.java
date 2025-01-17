@@ -58,7 +58,7 @@ public class JsonProtectionInterceptor extends AbstractInterceptor {
 
 
     public JsonProtectionInterceptor() {
-        name = "JSON protection";
+        name = "json protection";
         setFlow(of(REQUEST));
     }
 

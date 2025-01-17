@@ -46,7 +46,7 @@ public class NtlmInterceptor extends AbstractInterceptor {
 
 
     public NtlmInterceptor() {
-        name = "NTLM Authentication";
+        name = "ntlm authentication";
     }
 
     @Override

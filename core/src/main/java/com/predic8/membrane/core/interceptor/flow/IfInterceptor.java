@@ -48,7 +48,7 @@ public class IfInterceptor extends AbstractFlowInterceptor {
     private ExchangeExpression exchangeExpression;
 
     public IfInterceptor() {
-        name = "If";
+        name = "if";
     }
 
     @Override

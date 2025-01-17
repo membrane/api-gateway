@@ -54,7 +54,7 @@ public class GroovyTemplateInterceptor extends AbstractInterceptor {
     GroovyInterceptor groovyInterceptor;
 
     public GroovyTemplateInterceptor() {
-        name = "Groovy Template";
+        name = "groovy template";
     }
 
     @Override

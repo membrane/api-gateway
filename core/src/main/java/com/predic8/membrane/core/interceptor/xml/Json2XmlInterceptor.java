@@ -38,7 +38,7 @@ public class Json2XmlInterceptor extends AbstractInterceptor {
 
     @Override
     public String getDisplayName() {
-        return "JSON2XML";
+        return "json 2 xml";
     }
 
     @Override

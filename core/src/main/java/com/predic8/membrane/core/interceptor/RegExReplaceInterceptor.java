@@ -48,7 +48,7 @@ public class RegExReplaceInterceptor extends AbstractInterceptor {
     }
 
     public RegExReplaceInterceptor() {
-        name = "Regex Replacer";
+        name = "regex replacer";
     }
 
     @Override

@@ -33,7 +33,7 @@ public class WADLInterceptor extends RelocatingInterceptor {
 	private static final Logger log = LoggerFactory.getLogger(WADLInterceptor.class.getName());
 
 	public WADLInterceptor() {
-		name = "WADL Rewriting Interceptor";
+		name = "wadl rewriting interceptor";
 		setFlow(Flow.Set.RESPONSE_ABORT_FLOW);
 	}
 

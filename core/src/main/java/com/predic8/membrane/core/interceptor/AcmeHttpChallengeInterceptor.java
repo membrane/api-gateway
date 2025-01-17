@@ -42,7 +42,7 @@ public class AcmeHttpChallengeInterceptor extends AbstractInterceptor {
     private boolean ignorePort;
 
     public AcmeHttpChallengeInterceptor() {
-        name = "ACME HTTP Challenge";
+        name = "acme http challenge";
     }
 
     @Override

@@ -53,7 +53,7 @@ public class TemplateInterceptor extends StaticInterceptor {
     protected Template template;
 
     public TemplateInterceptor() {
-        name = "Template";
+        name = "template";
     }
 
     protected Outcome handleInternal(Message msg, Exchange exc, Flow flow) {

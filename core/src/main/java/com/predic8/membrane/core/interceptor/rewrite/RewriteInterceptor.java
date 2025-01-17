@@ -137,7 +137,7 @@ public class RewriteInterceptor extends AbstractInterceptor {
     private List<Mapping> mappings = new ArrayList<>();
 
     public RewriteInterceptor() {
-        name = "URL Rewriter";
+        name = "url rewriter";
         setFlow(REQUEST_FLOW);
     }
 

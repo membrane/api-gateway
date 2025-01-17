@@ -54,7 +54,7 @@ public class OpenTelemetryInterceptor extends AbstractInterceptor {
     }
 
     public OpenTelemetryInterceptor() {
-        name = "OpenTelemetry Exporter";
+        name = "opentelemetry exporter";
     }
 
     @Override

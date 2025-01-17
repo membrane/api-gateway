@@ -57,7 +57,7 @@ public class ValidatorInterceptor extends AbstractInterceptor implements Applica
     private ApplicationContext applicationContext;
 
     public ValidatorInterceptor() {
-        name = "Validator";
+        name = "validator";
     }
 
     @Override
@@ -98,7 +98,7 @@ public class ValidatorInterceptor extends AbstractInterceptor implements Applica
             Proxy parent = router.getParentProxy(this);
             if (parent instanceof SOAPProxy sp) {
                 wsdl = sp.getWsdl();
-                name = "SOAP Validator";
+                name = "soap validator";
                 return new WSDLValidator(resourceResolver, combine(getBaseLocation(), wsdl), serviceName, createFailureHandler(), skipFaults);
             }
         }

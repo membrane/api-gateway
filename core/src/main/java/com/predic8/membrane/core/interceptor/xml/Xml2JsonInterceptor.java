@@ -136,6 +136,6 @@ public class Xml2JsonInterceptor extends AbstractInterceptor {
 
     @Override
     public String getDisplayName() {
-        return "XML2JSON";
+        return "xml 2 json";
     }
 }
