@@ -70,15 +70,9 @@ public class JavascriptInterceptor extends AbstractScriptInterceptor {
         log.warn("Script: {}", src);
 
         ProblemDetails pd = adapter.getProblemDetails(e);
-
         pd.title("Error executing script.");
-
-        if (!router.isProduction()) {
-            pd.extension("message", e.getMessage())
-                    .extension("source", trim(src));
-        } else {
-            pd.detail("See logs for details.");
-        }
+        pd.extension("message", e.getMessage())
+                .extension("source", trim(src));
 
         exc.setResponse(pd.build());
     }

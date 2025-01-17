@@ -36,9 +36,9 @@ import static com.predic8.membrane.core.http.MimeType.*;
 public class ProblemDetails {
 
     private static final Logger log = LoggerFactory.getLogger(ProblemDetails.class.getName());
-  
+
     private static final ObjectMapper om = new ObjectMapper();
-    private final static ObjectWriter ow = om.writerWithDefaultPrettyPrinter();
+    private static final ObjectWriter ow = om.writerWithDefaultPrettyPrinter();
 
     private boolean production;
 
@@ -49,10 +49,10 @@ public class ProblemDetails {
     private String detail;
 
     /**
-     * Component like plugin
+     * Component e.g. plugin
      */
     private String component;
-    
+
     private String instance;
     private final HashMap<String, Object> extensions = new LinkedHashMap<>();
     private Throwable exception;
@@ -71,11 +71,11 @@ public class ProblemDetails {
     }
 
     public static ProblemDetails gateway(boolean production) {
-        return problemDetails( "gateway", production).statusCode(500).title("Gateway error.");
+        return problemDetails("gateway", production).statusCode(500).title("Gateway error.");
     }
 
     public static ProblemDetails security(boolean production) {
-        return problemDetails( "security", production);
+        return problemDetails("security", production);
     }
 
     public static ProblemDetails openapi(boolean production) {
@@ -89,6 +89,12 @@ public class ProblemDetails {
         return pd;
     }
 
+    /**
+     * type/subtype/subtype/...
+     * lowercase, dash as separator
+     * @param subType
+     * @return
+     */
     public ProblemDetails addSubType(String subType) {
         this.type += "/" + subType;
         return this;
@@ -114,7 +120,7 @@ public class ProblemDetails {
             this.detail = humanReadableExplanation;
         return this;
     }
-    
+
     public ProblemDetails component(String component) {
         this.component = component;
         return this;
@@ -146,7 +152,7 @@ public class ProblemDetails {
 
     /**
      * Does only log, when key in log is needed. The caller is responsible to do the log if
-     * there is something interessting.
+     * there is something interesting.
      */
     public void buildAndSetResponse(Exchange exchange) {
         if (exchange != null) {
@@ -186,13 +192,13 @@ public class ProblemDetails {
         if (exception != null) {
             if (extensionsMap.containsKey("message"))
                 log.error("Overriding ProblemDetails extensionsMap 'message' entry. Please notify Membrane developers.", new RuntimeException());
-            extensionsMap.put("message",exception.getMessage());
+            extensionsMap.put("message", exception.getMessage());
             if (stacktrace) {
                 extensionsMap.put("stackTrace", getStackTrace());
             }
         }
         extensionsMap.put("attention", """
-            Membrane is in development mode. For production set <router production="true"> to reduce details in error messages!""");
+                Membrane is in development mode. For production set <router production="true"> to reduce details in error messages!""");
     }
 
     private void logProduction(Map<String, Object> extensionsMap) {
@@ -203,15 +209,15 @@ public class ProblemDetails {
         title = "An error occurred.";
         detail = "Details can be found in the Membrane log searching for key: %s.".formatted(logKey);
         if (stacktrace) {
-            log.warn("",exception);
+            log.warn("", exception);
         }
     }
 
     private @NotNull Map getStackTrace() {
         var m = new LinkedHashMap<>();
-            for (int i = 0; i < exception.getStackTrace().length; i++) {
-                m.put("e"+i , exception.getStackTrace()[i].toString());
-            }
+        for (int i = 0; i < exception.getStackTrace().length; i++) {
+            m.put("e" + i, exception.getStackTrace()[i].toString());
+        }
         return m;
     }
 
@@ -278,15 +284,16 @@ public class ProblemDetails {
     public static ProblemDetails parse(Response r) throws JsonProcessingException {
 
         if (r.getHeader().getContentType() == null)
-            throw  new RuntimeException("No Content-Type in message with ProblemDetails!");
+            throw new RuntimeException("No Content-Type in message with ProblemDetails!");
 
         if (!r.getHeader().getContentType().equals(APPLICATION_PROBLEM_JSON))
-            throw new RuntimeException("Content-Type ist %s but should be %s.".formatted(r.getHeader().getContentType(),APPLICATION_PROBLEM_JSON));
+            throw new RuntimeException("Content-Type ist %s but should be %s.".formatted(r.getHeader().getContentType(), APPLICATION_PROBLEM_JSON));
 
         ProblemDetails pd = new ProblemDetails();
         pd.statusCode(r.getStatusCode());
 
-        TypeReference<Map<String,Object>> typeRef = new TypeReference<>() {};
+        TypeReference<Map<String, Object>> typeRef = new TypeReference<>() {
+        };
 
         Map<String, Object> m = om.readValue(r.getBodyAsStringDecoded(), typeRef);
 
@@ -295,52 +302,20 @@ public class ProblemDetails {
         pd.detail = (String) m.get("detail");
         pd.instance = (String) m.get("instance");
 
-        for (Map.Entry<String, Object> e :m.entrySet()) {
-            if(pd.isReservedProblemDetailsField(e.getKey()))
+        for (Map.Entry<String, Object> e : m.entrySet()) {
+            if (pd.isReservedProblemDetailsField(e.getKey()))
                 continue;
-            pd.extension(e.getKey(),e.getValue());
+            pd.extension(e.getKey(), e.getValue());
         }
         return pd;
     }
 
     private boolean isReservedProblemDetailsField(String key) {
-        for (String reserved : List.of("type","title","detail","instance")) {
+        for (String reserved : List.of("type", "title", "detail", "instance")) {
             if (key.equals(reserved))
                 return true;
         }
         return false;
-    }
-
-    public boolean isProduction() {
-        return production;
-    }
-
-    public int getStatusCode() {
-        return statusCode;
-    }
-
-    public String getType() {
-        return type;
-    }
-
-    public String getTitle() {
-        return title;
-    }
-
-    public String getDetail() {
-        return detail;
-    }
-
-    public String getInstance() {
-        return instance;
-    }
-
-    public HashMap<String, Object> getExtensions() {
-        return extensions;
-    }
-
-    public Throwable getException() {
-        return exception;
     }
 
     @Override
