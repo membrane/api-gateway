@@ -55,12 +55,12 @@ public class ProblemDetails {
     private String component;
 
     /**
-     * Toplevel elements that are returned to the client even in production
+     * Internal information that is not returned in production
      */
     private final HashMap<String, Object> internalFields = new LinkedHashMap<>();
 
     /**
-     * Internal information that is not returned in production
+     * Toplevel elements that are returned to the client even in production
      */
     private final HashMap<String, Object> topLevel = new LinkedHashMap<>();
     private Throwable exception;
