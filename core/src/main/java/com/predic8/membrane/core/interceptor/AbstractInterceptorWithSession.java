@@ -14,10 +14,13 @@
 package com.predic8.membrane.core.interceptor;
 
 import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.interceptor.session.*;
 import com.predic8.membrane.core.util.*;
 import org.slf4j.*;
+
+import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 
 public abstract class AbstractInterceptorWithSession extends AbstractInterceptor {
 
@@ -55,17 +58,38 @@ public abstract class AbstractInterceptorWithSession extends AbstractInterceptor
     protected abstract Outcome handleResponseInternal(Exchange exc) throws Exception;
 
     @Override
-    public Outcome handleRequest(Exchange exc) throws Exception {
-        Outcome outcome = handleRequestInternal(exc);
+    public Outcome handleRequest(Exchange exc) {
+        Outcome outcome;
+        try {
+            outcome = handleRequestInternal(exc);
+        } catch (Exception e) {
+            ProblemDetails.internal(router.isProduction())
+                    .component(getDisplayName())
+                    .detail("Error handling request!")
+                    .exception(e)
+                    .stacktrace(true)
+                    .buildAndSetResponse(exc);
+            return ABORT;
+        }
         sessionManager.postProcess(exc);
         return outcome;
     }
 
     @Override
-    public Outcome handleResponse(Exchange exc) throws Exception {
-        Outcome outcome = handleResponseInternal(exc);
-        sessionManager.postProcess(exc);
-        return outcome;
+    public Outcome handleResponse(Exchange exc) {
+        try {
+            Outcome outcome = handleResponseInternal(exc);
+            sessionManager.postProcess(exc);
+            return outcome;
+        } catch (Exception e) {
+            ProblemDetails.internal(router.isProduction())
+                    .component(getDisplayName())
+                    .detail("Error handling response!")
+                    .exception(e)
+                    .stacktrace(true)
+                    .buildAndSetResponse(exc);
+            return ABORT;
+        }
     }
 
     public SessionManager getSessionManager() {

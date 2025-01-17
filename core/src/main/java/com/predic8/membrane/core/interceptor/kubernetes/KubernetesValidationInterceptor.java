@@ -16,6 +16,7 @@ package com.predic8.membrane.core.interceptor.kubernetes;
 import com.fasterxml.jackson.databind.*;
 import com.google.common.collect.*;
 import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
@@ -155,7 +156,10 @@ public class KubernetesValidationInterceptor extends AbstractInterceptor {
     }
 
     @Override
-    public Outcome handleRequest(Exchange exc) throws Exception {
+    public Outcome handleRequest(Exchange exc) {
+        try {
+
+
         if (exc.getRequest().isBodyEmpty())
             return CONTINUE;
 
@@ -173,6 +177,15 @@ public class KubernetesValidationInterceptor extends AbstractInterceptor {
         setExchangeResponse(exc, mapper, review);
 
         return RETURN;
+        } catch (Exception e) {
+            ProblemDetails.internal(router.isProduction())
+                    .component(getDisplayName())
+                    .detail("Error handling request!")
+                    .exception(e)
+                    .stacktrace(true)
+                    .buildAndSetResponse(exc);
+            return ABORT;
+        }
     }
 
 

@@ -208,7 +208,7 @@ public class IndexInterceptor extends AbstractInterceptor {
 	}
 
 	@Override
-	public Outcome handleRequest(final Exchange exc) throws Exception {
+	public Outcome handleRequest(final Exchange exc) {
 		StringWriter sw = new StringWriter();
 		new Html(sw) {
 			{

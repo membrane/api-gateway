@@ -16,6 +16,7 @@ package com.predic8.membrane.core.interceptor;
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.annot.Required;
+import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.http.HeaderField;
@@ -23,6 +24,7 @@ import com.predic8.membrane.core.http.Message;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 import static com.predic8.membrane.core.interceptor.RegExReplaceInterceptor.TargetType.BODY;
 import static com.predic8.membrane.core.interceptor.RegExReplaceInterceptor.TargetType.HEADER;
@@ -31,100 +33,115 @@ import static com.predic8.membrane.core.interceptor.RegExReplaceInterceptor.Targ
  * @description Runs a regular-expression-replacement on either the message body (default) or all header values.
  * @topic 4. Interceptors/Features
  */
-@MCElement(name="regExReplacer")
+@MCElement(name = "regExReplacer")
 public class RegExReplaceInterceptor extends AbstractInterceptor {
 
-	private static final Logger log = LoggerFactory.getLogger(RegExReplaceInterceptor.class.getName());
+    private static final Logger log = LoggerFactory.getLogger(RegExReplaceInterceptor.class.getName());
 
-	private String regex;
-	private String replace;
-	private TargetType target = BODY;
+    private String regex;
+    private String replace;
+    private TargetType target = BODY;
 
-	public enum TargetType {
-		BODY,
-		HEADER
-	}
+    public enum TargetType {
+        BODY,
+        HEADER
+    }
 
-	public RegExReplaceInterceptor() {
-		name="Regex Replacer";
-	}
+    public RegExReplaceInterceptor() {
+        name = "Regex Replacer";
+    }
 
-	@Override
-	public String getShortDescription() {
-		return "Replaces strings in message header or body using regular expressions.";
-	}
+    @Override
+    public String getShortDescription() {
+        return "Replaces strings in message header or body using regular expressions.";
+    }
 
-	@Override
-	public Outcome handleRequest(Exchange exc) throws Exception {
-		return handleInternal(exc.getRequest());
-	}
+    @Override
+    public Outcome handleRequest(Exchange exc) {
+        return handleInternal(exc, exc.getRequest());
+    }
 
-	@Override
-	public Outcome handleResponse(Exchange exc) throws Exception {
-		return handleInternal(exc.getResponse());
-	}
+    @Override
+    public Outcome handleResponse(Exchange exc) {
+        return handleInternal(exc, exc.getResponse());
+    }
 
-	private Outcome handleInternal(Message message) throws Exception {
-		if (target == HEADER)
-			replaceHeader(message.getHeader());
-		else
-			replaceBody(message);
-		return CONTINUE;
-	}
+    private Outcome handleInternal(Exchange exc, Message message) {
+        if (target == HEADER) {
+            replaceHeader(message.getHeader());
+            return CONTINUE;
+        }
 
-	private void replaceHeader(Header header) {
-		for (HeaderField hf : header.getAllHeaderFields())
-			hf.setValue(hf.getValue().replaceAll(regex, replace));
-	}
+        try {
+            replaceBody(message);
+        } catch (Exception e) {
+            ProblemDetails.internal(router.isProduction())
+                    .component(getDisplayName())
+                    .detail("Could not replace body!")
+                    .exception(e)
+                    .stacktrace(true)
+                    .buildAndSetResponse(exc);
+            return ABORT;
+        }
+        return CONTINUE;
+    }
 
-	private void replaceBody(Message res) throws Exception {
-		if(res.getHeader().isBinaryContentType())
-			return;
-		log.debug("pattern: " +regex);
-		log.debug("replacement: " +replace);
+    private void replaceHeader(Header header) {
+        for (HeaderField hf : header.getAllHeaderFields())
+            hf.setValue(hf.getValue().replaceAll(regex, replace));
+    }
 
-		res.setBodyContent(res.getBodyAsStringDecoded().replaceAll(regex, replace).getBytes(res.getCharset()));
-		res.getHeader().removeFields("Content-Encoding");
-	}
+    private void replaceBody(Message res) throws Exception {
+        if (res.getHeader().isBinaryContentType())
+            return;
+        log.debug("pattern: {}", regex);
+        log.debug("replacement: {}", replace);
 
-	public String getRegex() {
-		return regex;
-	}
-	/**
-	 * @description Regex to match against the body.
-	 * @example Hallo
-	 */
-	@Required
-	@MCAttribute
-	public void setRegex(String regex) {
-		this.regex = regex;
-	}
+        res.setBodyContent(res.getBodyAsStringDecoded().replaceAll(regex, replace).getBytes(res.getCharset()));
+        res.getHeader().removeFields("Content-Encoding");
+    }
 
-	public String getReplace() {
-		return replace;
-	}
-	/**
-	 * @description String used to replace matched parts.
-	 * @example Hello
-	 */
-	@Required
-	@MCAttribute
-	public void setReplace(String replace) {
-		this.replace = replace;
-	}
+    public String getRegex() {
+        return regex;
+    }
 
-	public TargetType getTarget() {
-		return target;
-	}
-	/**
-	 * @description Whether the replacement should affect the message <tt>body</tt> or the <tt>header</tt> values.
-	 *              Possible values are body and header.
-	 * @default body
-	 * @example header
-	 */
-	@MCAttribute
-	public void setTarget(TargetType target) {
-		this.target = target;
-	}
+    /**
+     * @description Regex to match against the body.
+     * @example Hallo
+     */
+    @Required
+    @MCAttribute
+    public void setRegex(String regex) {
+        this.regex = regex;
+    }
+
+    public String getReplace() {
+        return replace;
+    }
+
+    /**
+     * @description String used to replace matched parts.
+     * @example Hello
+     */
+    @Required
+    @MCAttribute
+    public void setReplace(String replace) {
+        this.replace = replace;
+    }
+
+    public TargetType getTarget() {
+        return target;
+    }
+
+    /**
+     * @description Whether the replacement should affect the message <tt>body</tt> or the <tt>header</tt> values.
+     * Possible values are body and header.
+     * @default body
+     * @example header
+     */
+    @MCAttribute
+    public void setTarget(TargetType target) {
+        this.target = target;
+    }
 
 }

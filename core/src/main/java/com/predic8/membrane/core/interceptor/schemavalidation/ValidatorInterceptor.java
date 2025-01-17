@@ -15,7 +15,9 @@
 package com.predic8.membrane.core.interceptor.schemavalidation;
 
 import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.proxies.*;
 import com.predic8.membrane.core.resolver.*;
@@ -25,6 +27,8 @@ import org.slf4j.*;
 import org.springframework.beans.*;
 import org.springframework.context.*;
 
+import java.io.*;
+
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.resolver.ResolverMap.*;
 
@@ -32,236 +36,259 @@ import static com.predic8.membrane.core.resolver.ResolverMap.*;
  * Basically switches over {@link WSDLValidator}, {@link XMLSchemaValidator},
  * {@link JSONValidator} and {@link SchematronValidator} depending on the
  * attributes.
+ *
  * @topic 8. SOAP based Web Services
  */
-@MCElement(name="validator")
+@MCElement(name = "validator")
 public class ValidatorInterceptor extends AbstractInterceptor implements ApplicationContextAware {
 
-	private static final Logger log = LoggerFactory.getLogger(ValidatorInterceptor.class.getName());
+    private static final Logger log = LoggerFactory.getLogger(ValidatorInterceptor.class.getName());
 
-	private String wsdl;
-	private String schema;
-	private String serviceName;
-	private String jsonSchema;
-	private String schematron;
-	private String failureHandler;
-	private boolean skipFaults;
+    private String wsdl;
+    private String schema;
+    private String serviceName;
+    private String jsonSchema;
+    private String schematron;
+    private String failureHandler;
+    private boolean skipFaults;
 
-	private MessageValidator validator;
-	private ResolverMap resourceResolver;
-	private ApplicationContext applicationContext;
+    private MessageValidator validator;
+    private ResolverMap resourceResolver;
+    private ApplicationContext applicationContext;
 
-	public ValidatorInterceptor() {
-		name = "Validator";
-	}
+    public ValidatorInterceptor() {
+        name = "Validator";
+    }
 
-	@Override
-	public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
-		this.applicationContext = applicationContext;
-	}
+    @Override
+    public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
+        this.applicationContext = applicationContext;
+    }
 
-	@Override
-	public void init() {
-		super.init();
-		resourceResolver = router.getResolverMap();
+    @Override
+    public void init() {
+        super.init();
+        resourceResolver = router.getResolverMap();
         try {
-			validator = getMessageValidator();
+            validator = getMessageValidator();
             validator.init();
         } catch (Exception e) {
-            throw new ConfigurationException("Cannot create message validator.",e);
+            throw new ConfigurationException("Cannot create message validator.", e);
         }
         name = validator.getName();
-		if (skipFaults && wsdl == null)
-			throw new ConfigurationException("validator/@skipFaults only makes sense with validator/@wsdl.");
-	}
+        if (skipFaults && wsdl == null)
+            throw new ConfigurationException("validator/@skipFaults only makes sense with validator/@wsdl.");
+    }
 
-	private MessageValidator getMessageValidator() throws Exception {
-		if (wsdl != null) {
-			return new WSDLValidator(resourceResolver, combine(getBaseLocation(), wsdl), serviceName, createFailureHandler(), skipFaults);
-		}
-		if (schema != null) {
-			return new XMLSchemaValidator(resourceResolver, combine(getBaseLocation(), schema), createFailureHandler());
-		}
-		if (jsonSchema != null) {
-			return new JSONValidator(resourceResolver, combine(getBaseLocation(), jsonSchema), createFailureHandler());
-		}
-		if (schematron != null) {
-			return new SchematronValidator( combine(getBaseLocation(), schematron), createFailureHandler(), router, applicationContext);
-		}
+    private MessageValidator getMessageValidator() throws Exception {
+        if (wsdl != null) {
+            return new WSDLValidator(resourceResolver, combine(getBaseLocation(), wsdl), serviceName, createFailureHandler(), skipFaults);
+        }
+        if (schema != null) {
+            return new XMLSchemaValidator(resourceResolver, combine(getBaseLocation(), schema), createFailureHandler());
+        }
+        if (jsonSchema != null) {
+            return new JSONValidator(resourceResolver, combine(getBaseLocation(), jsonSchema), createFailureHandler());
+        }
+        if (schematron != null) {
+            return new SchematronValidator(combine(getBaseLocation(), schematron), createFailureHandler(), router, applicationContext);
+        }
 
-		if (validator == null) {
-			Proxy parent = router.getParentProxy(this);
-			if (parent instanceof SOAPProxy sp) {
-				wsdl = sp.getWsdl();
-				name = "SOAP Validator";
-				return new WSDLValidator(resourceResolver, combine(getBaseLocation(), wsdl),  serviceName, createFailureHandler(), skipFaults);
-			}
-		}
-		throw new RuntimeException("Validator is not configured properly. <validator> must have an attribute specifying the validator.");
-	}
+        if (validator == null) {
+            Proxy parent = router.getParentProxy(this);
+            if (parent instanceof SOAPProxy sp) {
+                wsdl = sp.getWsdl();
+                name = "SOAP Validator";
+                return new WSDLValidator(resourceResolver, combine(getBaseLocation(), wsdl), serviceName, createFailureHandler(), skipFaults);
+            }
+        }
+        throw new RuntimeException("Validator is not configured properly. <validator> must have an attribute specifying the validator.");
+    }
 
-	private @Nullable String getBaseLocation() {
-		return router == null ? null : router.getBaseLocation();
-	}
+    private @Nullable String getBaseLocation() {
+        return router == null ? null : router.getBaseLocation();
+    }
 
-	@Override
-	public Outcome handleRequest(Exchange exc) throws Exception {
-		if (exc.getRequest().isBodyEmpty())
-			return CONTINUE;
+    @Override
+    public Outcome handleRequest(Exchange exc) {
+        return handleInternal(exc, exc.getRequest());
+    }
 
-		return validator.validateMessage(exc, exc.getRequest());
-	}
+    @Override
+    public Outcome handleResponse(Exchange exc) {
+        return handleInternal(exc, exc.getResponse());
+    }
 
-	@Override
-	public Outcome handleResponse(Exchange exc) throws Exception {
-		if (exc.getResponse().isBodyEmpty())
-			return CONTINUE;
+    private Outcome handleInternal(Exchange exc, Message message) {
+        try {
+            if (message.isBodyEmpty())
+                return CONTINUE;
+        } catch (IOException e) {
+            ProblemDetails.internal(router.isProduction())
+                    .component(getDisplayName())
+                    .detail("Could not read message body")
+                    .exception(e)
+                    .stacktrace(true)
+                    .buildAndSetResponse(exc);
+            return Outcome.ABORT;
+        }
 
-		return validator.validateMessage(exc, exc.getResponse());
-	}
+        try {
+            return validator.validateMessage(exc, message);
+        } catch (Exception e) {
+            ProblemDetails.internal(router.isProduction())
+                    .component(getDisplayName())
+                    .detail("Could not validate message")
+                    .extension("class", message.getClass())
+                    .exception(e)
+                    .stacktrace(true)
+                    .buildAndSetResponse(exc);
+            return Outcome.ABORT;
+        }
+    }
 
-	/**
+    /**
      * @description The WSDL (URL or file) to validate against.
      * @example <a href="http://predic8.com:8080/material/ArticleService?wsdl">"http://predic8.com:8080/material/ArticleService?wsdl</a>
      */
-	@MCAttribute
-	public void setWsdl(String wsdl) {
-		this.wsdl = wsdl;
-	}
+    @MCAttribute
+    public void setWsdl(String wsdl) {
+        this.wsdl = wsdl;
+    }
 
-	public String getWsdl() {
-		return wsdl;
-	}
+    public String getWsdl() {
+        return wsdl;
+    }
 
-	public String getSchema() {
-		return schema;
-	}
+    public String getSchema() {
+        return schema;
+    }
 
-	/**
+    /**
      * @description The XSD Schema (URL or file) to validate against.
      * @example <a href="http://www.predic8.com/schemas/order.xsd">http://www.predic8.com/schemas/order.xsd</a>
      */
-	@MCAttribute
-	public void setSchema(String schema) {
-		this.schema = schema;
-	}
+    @MCAttribute
+    public void setSchema(String schema) {
+        this.schema = schema;
+    }
 
-	public String getFailureHandler() {
-		return failureHandler;
-	}
+    public String getFailureHandler() {
+        return failureHandler;
+    }
 
-	/**
-	 * @description If "response", the HTTP response will include a detailled error message. If "log", the response will
-	 *              be generic and the validation error will be logged.
-	 * @default response
-	 * @example log
-	 */
-	@MCAttribute
-	public void setFailureHandler(String failureHandler) {
-		this.failureHandler = failureHandler;
-	}
+    /**
+     * @description If "response", the HTTP response will include a detailled error message. If "log", the response will
+     * be generic and the validation error will be logged.
+     * @default response
+     * @example log
+     */
+    @MCAttribute
+    public void setFailureHandler(String failureHandler) {
+        this.failureHandler = failureHandler;
+    }
 
-	public String getJsonSchema() {
-		return jsonSchema;
-	}
+    public String getJsonSchema() {
+        return jsonSchema;
+    }
 
-	/**
-	 * @description The JSON Schema (URL or file) to validate against.
-	 * @example examples/validation/json-schema/schema2000.json
-	 */
-	@MCAttribute
-	public void setJsonSchema(String jsonSchema) {
-		this.jsonSchema = jsonSchema;
-	}
+    /**
+     * @description The JSON Schema (URL or file) to validate against.
+     * @example examples/validation/json-schema/schema2000.json
+     */
+    @MCAttribute
+    public void setJsonSchema(String jsonSchema) {
+        this.jsonSchema = jsonSchema;
+    }
 
-	public String getSchematron() {
-		return schematron;
-	}
+    public String getSchematron() {
+        return schematron;
+    }
 
-	/**
-	 * @description The Schematron schema (URL or file) to validate against.
-	 * @example examples/validation/schematron/car-schematron.xml
-	 */
-	@MCAttribute
-	public void setSchematron(String schematron) {
-		this.schematron = schematron;
-	}
+    /**
+     * @description The Schematron schema (URL or file) to validate against.
+     * @example examples/validation/schematron/car-schematron.xml
+     */
+    @MCAttribute
+    public void setSchematron(String schematron) {
+        this.schematron = schematron;
+    }
 
-	public boolean isSkipFaults() {
-		return skipFaults;
-	}
+    public boolean isSkipFaults() {
+        return skipFaults;
+    }
 
-	/**
-	 * @description Whether to skip validation for SOAP fault messages.
-	 * @default false
-	 */
-	@MCAttribute
-	public void setSkipFaults(boolean skipFaults) {
-		this.skipFaults = skipFaults;
-	}
-
-
-	public String getServiceName() {
-		return serviceName;
-	}
-
-	/**
-	 * @description Optional name of a serivce element in a WSDL. If specified it will be
-	 * checked if the SOAP element is possible for that service.
-	 */
-	@MCAttribute
-	public void setServiceName(String serviceName) {
-		this.serviceName = serviceName;
-	}
+    /**
+     * @description Whether to skip validation for SOAP fault messages.
+     * @default false
+     */
+    @MCAttribute
+    public void setSkipFaults(boolean skipFaults) {
+        this.skipFaults = skipFaults;
+    }
 
 
+    public String getServiceName() {
+        return serviceName;
+    }
 
-	public void setResourceResolver(ResolverMap resourceResolver) {
-		this.resourceResolver = resourceResolver;
-	}
+    /**
+     * @description Optional name of a serivce element in a WSDL. If specified it will be
+     * checked if the SOAP element is possible for that service.
+     */
+    @MCAttribute
+    public void setServiceName(String serviceName) {
+        this.serviceName = serviceName;
+    }
 
-	@Override
-	public String getShortDescription() {
-		return validator.getInvalid() + " of " + (validator.getValid() + validator.getInvalid()) + " messages have been invalid.";
-	}
 
-	@Override
-	public String getLongDescription() {
-		StringBuilder sb = new StringBuilder(getShortDescription());
-		sb.deleteCharAt(sb.length()-1);
-		sb.append(" according to ");
-		if (wsdl != null) {
-			sb.append("the WSDL at <br/>");
-			sb.append(TextUtil.linkURL(wsdl));
-		}
-		if (schema != null) {
-			sb.append("the XML Schema at <br/>");
-			sb.append(TextUtil.linkURL(schema));
-		}
-		if (jsonSchema != null) {
-			sb.append("the JSON Schema at <br/>");
-			sb.append(TextUtil.linkURL(jsonSchema));
-		}
-		if (schematron != null) {
-			sb.append("the Schematron at <br/>");
-			sb.append(TextUtil.linkURL(schematron));
-		}
-		sb.append(" .");
-		return sb.toString();
-	}
+    public void setResourceResolver(ResolverMap resourceResolver) {
+        this.resourceResolver = resourceResolver;
+    }
 
-	public interface FailureHandler {
-		FailureHandler VOID = (message, exc) -> {};
+    @Override
+    public String getShortDescription() {
+        return validator.getInvalid() + " of " + (validator.getValid() + validator.getInvalid()) + " messages have been invalid.";
+    }
 
-		void handleFailure(String message, Exchange exc);
-	}
+    @Override
+    public String getLongDescription() {
+        StringBuilder sb = new StringBuilder(getShortDescription());
+        sb.deleteCharAt(sb.length() - 1);
+        sb.append(" according to ");
+        if (wsdl != null) {
+            sb.append("the WSDL at <br/>");
+            sb.append(TextUtil.linkURL(wsdl));
+        }
+        if (schema != null) {
+            sb.append("the XML Schema at <br/>");
+            sb.append(TextUtil.linkURL(schema));
+        }
+        if (jsonSchema != null) {
+            sb.append("the JSON Schema at <br/>");
+            sb.append(TextUtil.linkURL(jsonSchema));
+        }
+        if (schematron != null) {
+            sb.append("the Schematron at <br/>");
+            sb.append(TextUtil.linkURL(schematron));
+        }
+        sb.append(" .");
+        return sb.toString();
+    }
 
-	private FailureHandler createFailureHandler() {
-		if (failureHandler == null || failureHandler.equals("response"))
-			return null;
-		if (failureHandler.equals("log"))
-			return (message, exc) -> log.info("Validation failure: {}", message);
-		throw new IllegalArgumentException("Unknown failureHandler type: " + failureHandler);
-	}
+    public interface FailureHandler {
+        FailureHandler VOID = (message, exc) -> {
+        };
+
+        void handleFailure(String message, Exchange exc);
+    }
+
+    private FailureHandler createFailureHandler() {
+        if (failureHandler == null || failureHandler.equals("response"))
+            return null;
+        if (failureHandler.equals("log"))
+            return (message, exc) -> log.info("Validation failure: {}", message);
+        throw new IllegalArgumentException("Unknown failureHandler type: " + failureHandler);
+    }
 
 }

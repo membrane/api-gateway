@@ -13,11 +13,13 @@
 
 package com.predic8.membrane.core.interceptor.oauth2.processors;
 
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Request;
-import com.predic8.membrane.core.http.Response;
-import com.predic8.membrane.core.interceptor.Outcome;
-import com.predic8.membrane.core.interceptor.oauth2.OAuth2AuthorizationServerInterceptor;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.interceptor.oauth2.*;
+
+import static com.predic8.membrane.core.http.Request.*;
+import static com.predic8.membrane.core.interceptor.Outcome.*;
 
 public class InvalidMethodProcessor extends EndpointProcessor {
     public InvalidMethodProcessor(OAuth2AuthorizationServerInterceptor authServer) {
@@ -26,16 +28,16 @@ public class InvalidMethodProcessor extends EndpointProcessor {
 
     @Override
     public boolean isResponsible(Exchange exc) {
-        return !(exc.getRequest().getMethod().equals(Request.METHOD_GET) || exc.getRequest().getMethod().equals(Request.METHOD_POST));
+        return !(exc.getRequest().getMethod().equals(METHOD_GET) || exc.getRequest().getMethod().equals(METHOD_POST));
     }
 
     @Override
-    public Outcome process(Exchange exc) throws Exception {
+    public Outcome process(Exchange exc) {
         exc.setResponse(Response.
                 ok().
                 header("Access-Control-Allow-Methods","GET,POST").
                 header("Access-Control-Allow-Headers","Authorization").
                 build());
-        return Outcome.RETURN;
+        return RETURN;
     }
 }

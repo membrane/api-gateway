@@ -106,7 +106,7 @@ public class FlowController {
         return CONTINUE;
     }
 
-    public Outcome invokeResponseHandlers(Exchange exchange, List<Interceptor> interceptors) throws Exception {
+    public Outcome invokeResponseHandlers(Exchange exchange, List<Interceptor> interceptors) {
         return invokeResponseHandlers(exchange, interceptors, interceptors.size());
     }
 
@@ -117,7 +117,7 @@ public class FlowController {
      * @param interceptors List of all interceptors
      * @param pos Position of called interceptors in the interceptors list
      */
-    public Outcome invokeResponseHandlers(Exchange exchange, List<Interceptor> interceptors, int pos) throws Exception {
+    public Outcome invokeResponseHandlers(Exchange exchange, List<Interceptor> interceptors, int pos) {
         boolean aborted = false;
         for (int i = pos - 1; i >= 0; i--) {
             Interceptor interceptor = interceptors.get(i);

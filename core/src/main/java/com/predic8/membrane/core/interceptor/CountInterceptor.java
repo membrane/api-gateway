@@ -15,25 +15,21 @@
 
 package com.predic8.membrane.core.interceptor;
 
-import com.googlecode.jatl.Html;
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.annot.Required;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Header;
-import com.predic8.membrane.core.http.MimeType;
-import com.predic8.membrane.core.http.Response;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.googlecode.jatl.*;
+import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.*;
+import org.slf4j.*;
 
-import java.io.StringWriter;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
+import java.io.*;
+import java.net.*;
+
+import static com.predic8.membrane.core.interceptor.Outcome.*;
 
 @MCElement(name="counter")
 public class CountInterceptor extends AbstractInterceptor {
 
-	private static Logger log = LoggerFactory.getLogger(CountInterceptor.class.getName());
+	private static final Logger log = LoggerFactory.getLogger(CountInterceptor.class.getName());
 
 	private int counter;
 
@@ -42,10 +38,14 @@ public class CountInterceptor extends AbstractInterceptor {
 	}
 
 	@Override
-	public Outcome handleRequest(Exchange exc) throws Exception {
-		log.debug(""+ (++counter) +". request received.");
-		exc.setResponse(Response.ok().header(Header.CONTENT_TYPE, MimeType.TEXT_HTML_UTF8).body(getPage()).build());
-		return Outcome.RETURN;
+	public Outcome handleRequest(Exchange exc) {
+		log.debug("{} request received.",++counter);
+        try {
+            exc.setResponse(Response.ok().header(Header.CONTENT_TYPE, MimeType.TEXT_HTML_UTF8).body(getPage()).build());
+        } catch (UnknownHostException e) {
+			log.error("Can not get hostname for HTML heading: {}",e.getMessage(), e);
+        }
+        return RETURN;
 	}
 
 	private String getPage() throws UnknownHostException {

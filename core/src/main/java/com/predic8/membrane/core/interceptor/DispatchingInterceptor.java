@@ -14,6 +14,7 @@
 package com.predic8.membrane.core.interceptor;
 
 import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.openapi.util.*;
 import com.predic8.membrane.core.proxies.*;
@@ -45,11 +46,20 @@ public class DispatchingInterceptor extends AbstractInterceptor {
     }
 
     @Override
-    public Outcome handleRequest(Exchange exc) throws Exception {
+    public Outcome handleRequest(Exchange exc) {
 
         if (exc.getProxy() instanceof AbstractServiceProxy asp) {
             exc.getDestinations().clear();
-            exc.getDestinations().add(getForwardingDestination( exc));
+            try {
+                exc.getDestinations().add(getForwardingDestination( exc));
+            } catch (Exception e) {
+                ProblemDetails.internal(router.isProduction())
+                        .component(getDisplayName())
+                        .detail("Could not get forwarding destination to dispatch request")
+                        .exception(e)
+                        .buildAndSetResponse(exc);
+                return ABORT;
+            }
             setSNIPropertyOnExchange(exc, asp);
             return CONTINUE;
         }

@@ -18,6 +18,8 @@ import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.oauth2.OAuth2AuthorizationServerInterceptor;
 
+import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
+
 public class FaviconEndpointProcessor extends EndpointProcessor {
 
     public FaviconEndpointProcessor(OAuth2AuthorizationServerInterceptor authServer) {
@@ -30,8 +32,8 @@ public class FaviconEndpointProcessor extends EndpointProcessor {
     }
 
     @Override
-    public Outcome process(Exchange exc) throws Exception {
+    public Outcome process(Exchange exc) {
         exc.setResponse(Response.badRequest().build());
-        return Outcome.RETURN;
+        return RETURN;
     }
 }

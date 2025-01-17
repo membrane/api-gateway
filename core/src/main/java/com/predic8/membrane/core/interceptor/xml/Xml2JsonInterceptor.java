@@ -15,6 +15,7 @@
 package com.predic8.membrane.core.interceptor.xml;
 
 import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Message;
 import com.predic8.membrane.core.http.MimeType;
@@ -34,6 +35,7 @@ import java.io.InputStreamReader;
 import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
 
+import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static javax.xml.transform.OutputKeys.*;
@@ -54,13 +56,33 @@ public class Xml2JsonInterceptor extends AbstractInterceptor {
     }
 
     @Override
-    public Outcome handleRequest(Exchange exc) throws Exception {
-        return handleInternal(exc.getRequest());
+    public Outcome handleRequest(Exchange exc) {
+        try {
+            return handleInternal(exc.getRequest());
+        } catch (Exception e) {
+            ProblemDetails.internal(router.isProduction())
+                    .component(getDisplayName())
+                    .detail("Could not transform XML to JSON!")
+                    .extension("flow", "request")
+                    .exception(e)
+                    .buildAndSetResponse(exc);
+            return ABORT;
+        }
     }
 
     @Override
-    public Outcome handleResponse(Exchange exc) throws Exception {
-        return handleInternal(exc.getResponse());
+    public Outcome handleResponse(Exchange exc) {
+        try {
+            return handleInternal(exc.getResponse());
+        } catch (Exception e) {
+            ProblemDetails.internal(router.isProduction())
+                    .component(getDisplayName())
+                    .detail("Could not return WSDL document!")
+                    .extension("flow", "response")
+                    .exception(e)
+                    .buildAndSetResponse(exc);
+            return ABORT;
+        }
     }
 
     private Outcome handleInternal(Message msg) throws Exception {
