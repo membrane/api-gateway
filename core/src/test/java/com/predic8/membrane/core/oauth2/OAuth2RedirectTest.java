@@ -84,8 +84,8 @@ public class OAuth2RedirectTest {
         // Step 9: Exchange Code for Token & continue original request.·
         OAuth2.step9exchangeCodeForToken(
                 callbackUrl,
-                "GET / application/x-www-form-urlencoded; charset=ISO-8859-1 / "
-                // method is 'GET', Content-Type is x-www, body is empty
+                "GET | null | "
+                // method is 'GET', Content-Type is not set, body is empty
         );
 
         assertEquals(firstUrlHit.get(), targetUrlHit.get(), "Check that URL survived encoding.");
@@ -114,11 +114,11 @@ public class OAuth2RedirectTest {
         // Step 9: Exchange Code for Token & continue original request.·
         OAuth2.step9exchangeCodeForToken(
                 callbackUrl,
-                "POST / text/x-json; charset=ISO-8859-1 / [true]"
-                // method is POST, Content-Type text/x-json, body is '[true]'
+                "POST | text/x-json; charset=ISO-8859-1 | [true]"
+                // method is POST, Content-Type is 'text/x-json; charset=ISO-8859-1', body is '[true]'
         );
 
-        assertTrue(targetUrlHit.get().startsWith(firstUrlHit.get() + "&oa2redirect"), "Check that URL survived encoding.");
+        assertTrue(targetUrlHit.get().startsWith(firstUrlHit.get()), "Check that URL survived encoding.");
         assertEquals(firstUrlHit.get(), interceptorChainHit.get(), "Is interceptor chain correctly continued?");
     }
 
@@ -156,8 +156,8 @@ public class OAuth2RedirectTest {
                 return Outcome.CONTINUE;
             }
         });
-        nginxRule.getInterceptors().add(createConditionalInterceptorWithReturnMessage("method == 'POST'", "POST / ${exc.request.header.getFirstValue('Content-Type')} / ${exc.request.body}"));
-        nginxRule.getInterceptors().add(createConditionalInterceptorWithReturnMessage("method == 'GET'", "GET / ${exc.request.header.getFirstValue('Content-Type')} / ${exc.request.body}"));
+        nginxRule.getInterceptors().add(createConditionalInterceptorWithReturnMessage("method == 'POST'", "POST | ${exc.request.header.getFirstValue('Content-Type')} | ${exc.request.body}"));
+        nginxRule.getInterceptors().add(createConditionalInterceptorWithReturnMessage("method == 'GET'", "GET | ${exc.request.header.getFirstValue('Content-Type')} | ${exc.request.body}"));
         nginxRule.getInterceptors().add(new ReturnInterceptor());
         return nginxRule;
     }

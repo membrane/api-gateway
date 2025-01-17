@@ -13,13 +13,19 @@
    limitations under the License. */
 package com.predic8.membrane.core.oauth2;
 
-import io.restassured.response.*;
-import org.jetbrains.annotations.*;
+import com.predic8.membrane.core.resolver.ResolverMap;
+import io.restassured.filter.log.LogDetail;
+import io.restassured.filter.log.UrlDecoder;
+import io.restassured.response.Response;
+import org.jetbrains.annotations.NotNull;
 
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 
+import static com.predic8.membrane.core.resolver.ResolverMap.combine;
 import static io.restassured.RestAssured.*;
-import static io.restassured.filter.log.LogDetail.*;
+import static io.restassured.filter.log.UrlDecoder.urlDecode;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.apache.http.HttpHeaders.*;
 import static org.hamcrest.Matchers.*;
 import static org.hamcrest.text.MatchesPattern.matchesPattern;
@@ -27,7 +33,7 @@ import static org.hamcrest.text.MatchesPattern.matchesPattern;
 public class OAuth2AuthFlowClient {
 
     private static final String CLIENT_BASE_URL = "http://localhost:2000";
-    private static final String CLIENT_URL = CLIENT_BASE_URL + "/a?b=c&d= ";
+    private static final String CLIENT_URL = CLIENT_BASE_URL + "/a?b=c&d=ä";
     private static final String AUTH_SERVER_URL = "http://localhost:2002";
 
     Map<String, String> cookies = new HashMap<>();
@@ -158,13 +164,26 @@ public class OAuth2AuthFlowClient {
     }
 
     void step9exchangeCodeForToken(String location, String expectedBody) {
-        given()
+        String location2 = given()
             .redirects().follow(false)
             .cookies(memCookies)
         .when()
             .post(location)
         .then()
-            .log().ifValidationFails(BODY)
+            .log().ifValidationFails(LogDetail.ALL)
+            .statusCode(307)
+            .extract().response().getHeader(LOCATION);
+
+        // this is what browsers seem to do
+        location2 = urlDecode(combine(location, location2), UTF_8, true);
+
+        given()
+            .redirects().follow(false)
+            .cookies(memCookies)
+        .when()
+            .get(location2)
+        .then()
+            .log().ifValidationFails(LogDetail.ALL)
             .statusCode(200)
             .assertThat().body(is(expectedBody));
     }
