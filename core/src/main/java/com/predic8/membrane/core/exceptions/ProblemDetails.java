@@ -161,24 +161,9 @@ public class ProblemDetails {
         Map<String, Object> extensionsMap = new LinkedHashMap<>();
 
         if (production) {
-            String logKey = UUID.randomUUID().toString();
-            log.warn("logKey={}\ntype={}\ntitle={}\n,detail={}\n,extension={},.", logKey, type, title, detail, extensionsMap);
-
-            type = "internal";
-            title = "An error occurred.";
-            detail = "Details can be found in the Membrane log searching for key: %s.".formatted(logKey);
+            logProduction(extensionsMap);
         } else {
-            extensionsMap.putAll(extensions);
-            if (exception != null) {
-                if (extensionsMap.containsKey("message"))
-                    log.error("Overriding ProblemDetails extensionsMap 'message' entry. Please notify Membrane developers.", new RuntimeException());
-                extensionsMap.put("message",exception.getMessage());
-                if (stacktrace) {
-                    extensionsMap.put("stackTrace", getStackTrace());
-                }
-            }
-            extensionsMap.put("attention", """
-                Membrane is in development mode. For production set <router production="true"> to reduce details in error messages!""");
+            logDevelopment(extensionsMap);
         }
 
         root.put("title", title);
@@ -194,6 +179,32 @@ public class ProblemDetails {
 
         root.putAll(extensionsMap);
         return root;
+    }
+
+    private void logDevelopment(Map<String, Object> extensionsMap) {
+        extensionsMap.putAll(extensions);
+        if (exception != null) {
+            if (extensionsMap.containsKey("message"))
+                log.error("Overriding ProblemDetails extensionsMap 'message' entry. Please notify Membrane developers.", new RuntimeException());
+            extensionsMap.put("message",exception.getMessage());
+            if (stacktrace) {
+                extensionsMap.put("stackTrace", getStackTrace());
+            }
+        }
+        extensionsMap.put("attention", """
+            Membrane is in development mode. For production set <router production="true"> to reduce details in error messages!""");
+    }
+
+    private void logProduction(Map<String, Object> extensionsMap) {
+        String logKey = UUID.randomUUID().toString();
+        log.warn("logKey={}\ntype={}\ntitle={}\n,detail={}\n,extension={},.", logKey, type, title, detail, extensionsMap);
+
+        type = "internal";
+        title = "An error occurred.";
+        detail = "Details can be found in the Membrane log searching for key: %s.".formatted(logKey);
+        if (stacktrace) {
+            log.warn("",exception);
+        }
     }
 
     private @NotNull Map getStackTrace() {

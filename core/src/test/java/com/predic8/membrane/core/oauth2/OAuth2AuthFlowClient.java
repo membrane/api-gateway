@@ -1,19 +1,28 @@
+/* Copyright 2025 predic8 GmbH, www.predic8.com
+
+   Licensed under the Apache License, Version 2.0 (the "License");
+   you may not use this file except in compliance with the License.
+   You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License. */
 package com.predic8.membrane.core.oauth2;
 
-import io.restassured.filter.log.LogDetail;
-import io.restassured.response.Response;
-import org.jetbrains.annotations.NotNull;
+import io.restassured.response.*;
+import org.jetbrains.annotations.*;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
-import static io.restassured.RestAssured.given;
-import static io.restassured.filter.log.LogDetail.BODY;
-import static org.apache.http.HttpHeaders.CONTENT_TYPE;
-import static org.apache.http.HttpHeaders.LOCATION;
-import static org.hamcrest.Matchers.is;
+import static io.restassured.RestAssured.*;
+import static io.restassured.filter.log.LogDetail.*;
+import static org.apache.http.HttpHeaders.*;
+import static org.hamcrest.Matchers.*;
 import static org.hamcrest.text.MatchesPattern.matchesPattern;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class OAuth2AuthFlowClient {
 

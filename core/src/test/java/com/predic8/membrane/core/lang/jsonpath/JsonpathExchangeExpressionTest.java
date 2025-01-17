@@ -13,13 +13,16 @@
    limitations under the License. */
 package com.predic8.membrane.core.lang.jsonpath;
 
+import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.lang.*;
 import com.predic8.membrane.core.lang.ExchangeExpression.*;
 import org.junit.jupiter.api.*;
 
+import java.net.*;
 import java.util.*;
 
-import static com.predic8.membrane.core.lang.ExchangeExpression.Language.JSONPATH;
+import static com.predic8.membrane.core.http.Request.*;
+import static com.predic8.membrane.core.lang.ExchangeExpression.Language.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 class JsonpathExchangeExpressionTest extends AbstractExchangeExpressionTest {
@@ -27,6 +30,25 @@ class JsonpathExchangeExpressionTest extends AbstractExchangeExpressionTest {
     @Override
     protected Language getLanguage() {
         return JSONPATH;
+    }
+
+    @Override
+    protected Request.Builder getRequestBuilder() throws URISyntaxException {
+        return post("/foo?city=Paris")
+                .body("""
+                {
+                    "id": 747,
+                    "name": "Jelly Fish",
+                    "fish": true,
+                    "insect": false,
+                    "wings": null,
+                    "tags": ["animal","water"],
+                    "world": {
+                        "country": "US",
+                        "continent": "Europe"
+                    }
+                }
+                """);
     }
 
     @Test
@@ -50,7 +72,7 @@ class JsonpathExchangeExpressionTest extends AbstractExchangeExpressionTest {
     @Test
     void list() {
         Object o = evalObject("$.tags");
-        if (!(o instanceof List l)) {
+        if (!(o instanceof List<?> l)) {
             fail();
             return;
         }
@@ -62,7 +84,7 @@ class JsonpathExchangeExpressionTest extends AbstractExchangeExpressionTest {
     @Test
     void map() {
         Object o = evalObject("$.world");
-        if (!(o instanceof Map m)) {
+        if (!(o instanceof Map<?,?> m)) {
             fail();
             return;
         }
