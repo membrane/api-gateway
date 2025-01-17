@@ -279,7 +279,7 @@ public class IndexInterceptor extends AbstractInterceptor {
 
 	@Override
 	public String getDisplayName() {
-		return "Index Interceptor";
+		return "index";
 	}
 
 	@Override

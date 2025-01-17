@@ -38,7 +38,7 @@ public class SOAP2RESTInterceptor extends SOAPRESTHelper {
 	private DispatchingInterceptor di = new DispatchingInterceptor();
 
 	public SOAP2RESTInterceptor() {
-		name = "SOAP 2 REST Gateway";
+		name = "soap 2 rest gateway";
 	}
 
 	@Override

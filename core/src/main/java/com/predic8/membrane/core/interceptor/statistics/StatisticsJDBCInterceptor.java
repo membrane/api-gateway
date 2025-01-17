@@ -52,7 +52,7 @@ public class StatisticsJDBCInterceptor extends AbstractInterceptor implements Ap
 	boolean createTable = true;
 
 	public StatisticsJDBCInterceptor() {
-		name = "JDBC Logging";
+		name = "jdbc logging";
 	}
 
 	@Override
@@ -62,6 +62,8 @@ public class StatisticsJDBCInterceptor extends AbstractInterceptor implements Ap
 
 	@Override
 	public void init() {
+		super.init();
+
 		if (!Objects.equals(dataSourceBeanId, DATASOURCE_BEAN_ID_ATTRIBUTE_CANNOT_BE_USED))
 			dataSource = applicationContext.getBean(dataSourceBeanId, DataSource.class);
 		Connection con = null;

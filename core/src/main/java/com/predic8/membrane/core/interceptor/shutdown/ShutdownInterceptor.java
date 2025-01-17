@@ -43,7 +43,7 @@ import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
 public class ShutdownInterceptor extends AbstractInterceptor {
 
     public ShutdownInterceptor() {
-        name = "Shutdown Interceptor";
+        name = "shutdown interceptor";
     }
 
     @Override

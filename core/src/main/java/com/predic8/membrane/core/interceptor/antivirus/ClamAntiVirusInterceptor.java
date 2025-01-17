@@ -40,7 +40,7 @@ public class ClamAntiVirusInterceptor extends AbstractInterceptor {
     ClamAVClient client;
 
     public ClamAntiVirusInterceptor() {
-        name = "ClamAV";
+        name = "clam av";
     }
 
     @Override

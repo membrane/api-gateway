@@ -43,7 +43,7 @@ public class SampleSoapServiceInterceptor extends AbstractInterceptor {
     public static final String CITY_SERVICE_NS = "https://predic8.de/cities";
 
     public SampleSoapServiceInterceptor() {
-        name = "SampleSoapService";
+        name = "sample soap service";
     }
 
     @Override

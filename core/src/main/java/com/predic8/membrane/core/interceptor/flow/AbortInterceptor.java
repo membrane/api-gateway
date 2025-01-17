@@ -34,7 +34,7 @@ public class AbortInterceptor extends AbstractFlowInterceptor {
     private static final Logger log = LoggerFactory.getLogger(AbortInterceptor.class);
 
     public AbortInterceptor() {
-        name = "Abort";
+        name = "abort";
         setFlow(RESPONSE_ABORT_FLOW);
     }
 

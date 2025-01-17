@@ -71,7 +71,7 @@ public class MessageAnalyser extends AbstractInterceptor {
 	}
 
 	public MessageAnalyser() {
-		name = "Message Analyser";
+		name = "message analyser";
 	}
 
 	@Override

@@ -44,7 +44,7 @@ public class LimitInterceptor extends AbstractInterceptor {
 	private long maxBodyLength = -1;
 
 	public LimitInterceptor() {
-		name = "Limit Interceptor";
+		name = "limit interceptor";
 	}
 
 	@Override

@@ -40,7 +40,7 @@ public class MockInterceptor extends AbstractInterceptor {
 
 	public MockInterceptor(String label, String[] failurePoints) {
 		this.label = label;
-		name = "MockInterceptor: "+label;
+		name = "mock interceptor: "+label;
 		this.failurePoints = new HashSet<>(asList(failurePoints));
 	}
 

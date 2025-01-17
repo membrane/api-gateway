@@ -44,7 +44,7 @@ public class PaddingHeaderInterceptor extends AbstractInterceptor {
     private final SecureRandom secRdm = new SecureRandom();
 
     private void setInterceptorMeta() {
-        name = "Padding Header";
+        name = "padding header";
         setFlow(of(REQUEST, RESPONSE));
     }
 
