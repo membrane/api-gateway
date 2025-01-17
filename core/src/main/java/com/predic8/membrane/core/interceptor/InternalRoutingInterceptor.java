@@ -39,7 +39,7 @@ public class InternalRoutingInterceptor extends AbstractInterceptor {
         if (!isTargetInternal(exchange))
             return CONTINUE;
 
-        Proxy currentProxy = exchange.getProxy(); // Store current rule (non- "service:..." rule )
+        Proxy currentProxy = exchange.getProxy(); // Store current rule (non- "internal://..." rule )
 
         Outcome outcome;
         try {
@@ -180,10 +180,8 @@ public class InternalRoutingInterceptor extends AbstractInterceptor {
         if (service.getTargetURL() != null) {
             return service.getTargetURL();
         }
-        if (service instanceof AbstractServiceProxy asp) {
-            if (asp.getTarget().getHost() != null) {
-                return service.getTargetScheme() + "://" + asp.getTarget().getHost() + ":" + asp.getTarget().getPort() + exchange.getRequest().getUri();
-            }
+        if (service.getTarget().getHost() != null) {
+            return service.getTargetScheme() + "://" + service.getTarget().getHost() + ":" + service.getTarget().getPort() + exchange.getRequest().getUri();
         }
         return "/";
     }
