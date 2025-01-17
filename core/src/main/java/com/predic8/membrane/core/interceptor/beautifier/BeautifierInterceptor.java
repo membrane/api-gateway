@@ -41,7 +41,7 @@ public class BeautifierInterceptor extends AbstractInterceptor {
 
 
     public BeautifierInterceptor() {
-        name = "Beautifier";
+        name = "beautifier";
     }
 
     @Override

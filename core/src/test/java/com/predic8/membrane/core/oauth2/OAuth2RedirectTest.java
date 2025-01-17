@@ -1,44 +1,43 @@
+/* Copyright 2025 predic8 GmbH, www.predic8.com
+
+   Licensed under the Apache License, Version 2.0 (the "License");
+   you may not use this file except in compliance with the License.
+   You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License. */
 package com.predic8.membrane.core.oauth2;
 
-import com.predic8.membrane.core.Router;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.exchangestore.ForgetfulExchangeStore;
-import com.predic8.membrane.core.interceptor.AbstractInterceptor;
-import com.predic8.membrane.core.interceptor.Outcome;
-import com.predic8.membrane.core.interceptor.authentication.session.StaticUserDataProvider;
-import com.predic8.membrane.core.interceptor.flow.IfInterceptor;
-import com.predic8.membrane.core.interceptor.flow.ResponseInterceptor;
-import com.predic8.membrane.core.interceptor.flow.ReturnInterceptor;
-import com.predic8.membrane.core.interceptor.log.LogInterceptor;
-import com.predic8.membrane.core.interceptor.oauth2.ClaimList;
-import com.predic8.membrane.core.interceptor.oauth2.Client;
-import com.predic8.membrane.core.interceptor.oauth2.OAuth2AuthorizationServerInterceptor;
-import com.predic8.membrane.core.interceptor.oauth2.StaticClientList;
-import com.predic8.membrane.core.interceptor.oauth2.authorizationservice.MembraneAuthorizationService;
-import com.predic8.membrane.core.interceptor.oauth2.tokengenerators.BearerTokenGenerator;
-import com.predic8.membrane.core.interceptor.oauth2client.OAuth2Resource2Interceptor;
-import com.predic8.membrane.core.interceptor.oauth2client.SessionOriginalExchangeStore;
-import com.predic8.membrane.core.interceptor.session.InMemorySessionManager;
-import com.predic8.membrane.core.interceptor.templating.TemplateInterceptor;
-import com.predic8.membrane.core.proxies.SSLableProxy;
-import com.predic8.membrane.core.proxies.ServiceProxy;
-import com.predic8.membrane.core.proxies.ServiceProxyKey;
-import com.predic8.membrane.core.transport.http.HttpTransport;
-import io.restassured.response.Response;
-import org.jetbrains.annotations.NotNull;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.exchangestore.*;
+import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.interceptor.authentication.session.*;
+import com.predic8.membrane.core.interceptor.flow.*;
+import com.predic8.membrane.core.interceptor.log.*;
+import com.predic8.membrane.core.interceptor.oauth2.*;
+import com.predic8.membrane.core.interceptor.oauth2.authorizationservice.*;
+import com.predic8.membrane.core.interceptor.oauth2.tokengenerators.*;
+import com.predic8.membrane.core.interceptor.oauth2client.*;
+import com.predic8.membrane.core.interceptor.session.*;
+import com.predic8.membrane.core.interceptor.templating.*;
+import com.predic8.membrane.core.proxies.*;
+import com.predic8.membrane.core.transport.http.*;
+import io.restassured.response.*;
+import org.jetbrains.annotations.*;
+import org.junit.jupiter.api.*;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.atomic.AtomicReference;
+import java.util.*;
+import java.util.concurrent.atomic.*;
 
-import static com.predic8.membrane.core.interceptor.log.LogInterceptor.Level.DEBUG;
-import static com.predic8.membrane.core.lang.ExchangeExpression.Language.SPEL;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static com.predic8.membrane.core.interceptor.log.LogInterceptor.Level.*;
+import static com.predic8.membrane.core.lang.ExchangeExpression.Language.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class OAuth2RedirectTest {
 
@@ -57,7 +56,7 @@ public class OAuth2RedirectTest {
     }
 
     @AfterEach
-    void shutdown() throws IOException {
+    void shutdown() {
         authorizationServerRouter.shutdown();
         oauth2ResourceRouter.shutdown();
         backendRouter.shutdown();

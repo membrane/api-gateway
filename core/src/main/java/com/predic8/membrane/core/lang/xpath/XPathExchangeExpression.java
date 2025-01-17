@@ -17,9 +17,10 @@ package com.predic8.membrane.core.lang.xpath;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.interceptor.lang.*;
 import com.predic8.membrane.core.lang.*;
+import com.predic8.membrane.core.util.xml.*;
 import org.slf4j.*;
+import org.w3c.dom.*;
 
 import javax.xml.namespace.*;
 import javax.xml.xpath.*;
@@ -41,12 +42,14 @@ public class XPathExchangeExpression extends AbstractExchangeExpression {
     public <T> T evaluate(Exchange exchange, Interceptor.Flow flow, Class<T> type) {
         Message msg = exchange.getMessage(flow);
         try {
-            if (type.isAssignableFrom(Boolean.class)) {
-                // XPath is not thread safe! Therefore every time the factory is called!
-                return evalutateAndCast(msg, BOOLEAN, type);
+            if (Boolean.class.isAssignableFrom(type)) {
+                return type.cast( evalutateAndCast(msg, BOOLEAN));
             }
-            if (type.isAssignableFrom(String.class)) {
-                return evalutateAndCast(msg, STRING, type);
+            if (String.class.isAssignableFrom(type)) {
+                return type.cast(evalutateAndCast(msg, STRING));
+            }
+            if (Object.class.isAssignableFrom(type)) {
+                return type.cast( evaluateAndCastToObject( msg));
             }
             throw  new RuntimeException("Should not Happen!");
         } catch (XPathExpressionException xee) {
@@ -57,7 +60,20 @@ public class XPathExchangeExpression extends AbstractExchangeExpression {
         }
     }
 
-    private <T> T evalutateAndCast(Message msg, QName xmlType, Class<T> expectedJavaType) throws XPathExpressionException {
-        return expectedJavaType.cast(factory.newXPath().evaluate(expression, getInputSource(msg), xmlType));
+    private Object evaluateAndCastToObject(Message msg) throws XPathExpressionException {
+        Object t = evalutateAndCast(msg, NODESET);
+        if (t instanceof NodeList nl) {
+            return new NodeListWrapper(nl);
+        }
+        return t;
+    }
+
+    private Object evalutateAndCast(Message msg, QName xmlType) throws XPathExpressionException {
+        if (log.isDebugEnabled()) {
+            log.debug("Evaluating: {}", expression);
+            log.debug("Body: {}", msg.getBodyAsStringDecoded()); // is expensive!
+        }
+        // XPath is not thread safe! Therefore every time the factory is called!
+        return factory.newXPath().evaluate(expression, getInputSource(msg), xmlType);
     }
 }

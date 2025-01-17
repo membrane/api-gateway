@@ -150,7 +150,7 @@ public class REST2SOAPInterceptor extends SOAPRESTHelper {
     private Boolean isSOAP12;
 
     public REST2SOAPInterceptor() {
-        name = "REST 2 SOAP Gateway";
+        name = "rest 2 soap gateway";
     }
 
     @Override

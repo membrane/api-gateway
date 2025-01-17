@@ -37,7 +37,7 @@ public class GreaseInterceptor extends AbstractInterceptor {
     private double rate = 1;
 
     public GreaseInterceptor() {
-        name = "Grease";
+        name = "grease";
         setFlow(of(REQUEST, RESPONSE));
     }
 

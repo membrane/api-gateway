@@ -45,7 +45,7 @@ public class ApiKeysInterceptor extends AbstractInterceptor {
     private boolean required = true;
 
     public ApiKeysInterceptor() {
-        name = "Api Key";
+        name = "api key";
     }
 
     @Override
@@ -63,6 +63,7 @@ public class ApiKeysInterceptor extends AbstractInterceptor {
 
     @Override
     public void init() {
+        super.init();
         stores.addAll(router.getBeanFactory().getBeansOfType(ApiKeyStore.class).values());
         stores.forEach(apiKeyStore -> apiKeyStore.init(router));
     }

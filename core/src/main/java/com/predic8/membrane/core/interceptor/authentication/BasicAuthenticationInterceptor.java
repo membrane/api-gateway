@@ -45,7 +45,7 @@ public class BasicAuthenticationInterceptor extends AbstractInterceptor {
 	private UserDataProvider userDataProvider = new StaticUserDataProvider();
 
 	public BasicAuthenticationInterceptor() {
-		name = "Basic Authenticator";
+		name = "basic authenticator";
 		setFlow(REQUEST_FLOW);
 	}
 

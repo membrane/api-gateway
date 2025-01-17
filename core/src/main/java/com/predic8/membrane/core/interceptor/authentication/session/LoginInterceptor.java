@@ -296,6 +296,6 @@ public class LoginInterceptor extends AbstractInterceptor {
 
 	@Override
 	public String getDisplayName() {
-		return "Login Interceptor";
+		return "login";
 	}
 }

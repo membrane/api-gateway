@@ -33,7 +33,7 @@ public class RequestInterceptor extends AbstractFlowInterceptor {
     private static final Logger log = LoggerFactory.getLogger(RequestInterceptor.class);
 
     public RequestInterceptor() {
-        name = "Request Interceptor";
+        name = "request interceptor";
         setFlow(REQUEST_FLOW);
     }
 

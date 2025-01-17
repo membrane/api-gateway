@@ -53,7 +53,7 @@ public class StatisticsProvider extends AbstractInterceptor implements Applicati
 
 
 	public StatisticsProvider() {
-		name = "Provides caller statistics as JSON";
+		name = "provides caller statistics as json";
 	}
 
 	@Override

@@ -38,7 +38,7 @@ public class ReverseProxyingInterceptor extends AbstractInterceptor {
 	private static final Logger log = LoggerFactory.getLogger(ReverseProxyingInterceptor.class);
 
 	public ReverseProxyingInterceptor() {
-		name = "Reverse Proxy";
+		name = "reverse proxy";
 	}
 
 	/**

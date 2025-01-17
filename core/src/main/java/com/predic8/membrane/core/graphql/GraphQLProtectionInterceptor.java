@@ -60,7 +60,7 @@ public class GraphQLProtectionInterceptor extends AbstractInterceptor {
     private GraphQLoverHttpValidator validator;
 
     public GraphQLProtectionInterceptor() {
-        name = "GraphQL protection";
+        name = "graphql protection";
     }
 
     @Override

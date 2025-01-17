@@ -15,7 +15,6 @@
 package com.predic8.membrane.examples.tests.template.json;
 
 import com.predic8.membrane.examples.util.*;
-import org.hamcrest.*;
 import org.junit.jupiter.api.*;
 
 import static com.predic8.membrane.core.http.MimeType.*;
@@ -51,8 +50,9 @@ public class JsonTemplateExampleTest extends AbstractSampleMembraneStartStopTest
                     }""")
             .post("http://localhost:2000/json-in")
         .then().assertThat()
+            .log().ifValidationFails()
             .statusCode(200)
-            .body("city", Matchers.equalTo("Bonn"));
+            .body("city", equalTo("Bonn"));
         // @formatter:on
     }
 }

@@ -42,7 +42,7 @@ public class SoapOperationExtractor extends AbstractInterceptor {
 	}
 
 	public SoapOperationExtractor() {
-		name = "SOAP Operation Extractor";
+		name = "soap operation extractor";
 	}
 
 	@Override

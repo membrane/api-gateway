@@ -34,7 +34,7 @@ import com.predic8.membrane.core.exchange.Exchange;
 public class URLNormalizerInterceptor extends AbstractInterceptor {
 
 	public URLNormalizerInterceptor() {
-		name = "URL Path Normalizer";
+		name = "url path normalizer";
 	}
 
 	@Override
