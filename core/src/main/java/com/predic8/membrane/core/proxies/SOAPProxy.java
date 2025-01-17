@@ -188,7 +188,7 @@ public class SOAPProxy extends AbstractServiceProxy {
     }
 
     private void setTarget(URL url) {
-        if (wsdl.startsWith("service:")) {
+        if (wsdl.startsWith("internal:")) {
             try {
                 target.setUrl(UriUtil.getPathFromURL( router.getUriFactory(),wsdl)); // TODO
             } catch (URISyntaxException e) {
