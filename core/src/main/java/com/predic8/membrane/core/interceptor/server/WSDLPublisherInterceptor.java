@@ -27,6 +27,7 @@ import org.slf4j.*;
 import javax.annotation.concurrent.*;
 import java.util.*;
 
+import static com.predic8.membrane.core.http.MimeType.TEXT_XML;
 import static com.predic8.membrane.core.http.Response.forbidden;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 
@@ -178,7 +179,7 @@ public class WSDLPublisherInterceptor extends AbstractInterceptor {
             if (exc.getRequestURI().endsWith("?wsdl") || exc.getRequestURI().endsWith("?WSDL")) {
                 processDocuments(exc);
                 exc.setResponse(WebServerInterceptor.createResponse(router.getResolverMap(), resource = wsdl));
-                exc.getResponse().getHeader().setContentType(MimeType.TEXT_XML);
+                exc.getResponse().getHeader().setContentType(TEXT_XML);
             }
             if (exc.getRequestURI().contains("?xsd=")) {
                 Map<String, String> params = URLParamUtil.getParams(router.getUriFactory(), exc, URLParamUtil.DuplicateKeyOrInvalidFormStrategy.ERROR);
@@ -194,7 +195,7 @@ public class WSDLPublisherInterceptor extends AbstractInterceptor {
                         path = paths.get(n);
                     }
                     exc.setResponse(WebServerInterceptor.createResponse(router.getResolverMap(), resource = path));
-                    exc.getResponse().getHeader().setContentType(MimeType.TEXT_XML);
+                    exc.getResponse().getHeader().setContentType(TEXT_XML);
                 }
             }
             if (resource != null) {

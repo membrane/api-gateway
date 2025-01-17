@@ -2,10 +2,6 @@
 
 # Version 6.2.0
 
-- One API that calls multiple Backends
-  - Ideas
-    - <target ../> inside <if>
-- Routing with if instead of switch and cbr
 - <choose>
      <case test=""> // If this matches execute only nested
         <..interceptors>
@@ -29,14 +25,8 @@
 - JSONBody 
   - Store body as parsed JsonNode or Document
     - If JSON is needed by an interceptor use already parsed JSON
-- log, print or message that writes to log. 
-- Examples
-  - soap/secured-wsdl
-    - Rewrite the example to use it
-    - Readme
-    - ExampleTest
-  - REST / JSON API Versioning test
-    - like examples/versioning/soap-xslt but much simpler with json
+- REST / JSON API Versioning test
+  - like examples/versioning/soap-xslt but much simpler with json
 - JdbcUserDataProvider
   - Migrate to PreparedStatement
 - <target url="http://localhost:2000/${params.product}/>
@@ -57,7 +47,7 @@
 - Document <if>,<call>,<destination>
   - Write example with lots of samples in different languages
 - Restructure samples
-- Rename ExampleTests to .*ExampleTests
+- Call Example
 - Is still in use:
   - /xml/project.xml?
   
@@ -65,7 +55,6 @@
 
 
 ### Internal
-- XMLProtectionInterceptor.setFailResponse => Use ProblemDetails
 - Rename service:// to internal://
 - Delete interceptor/
   - Gatekeeper: Yes
@@ -98,9 +87,15 @@
   default: message="${header}\n${body}"
 - Remove etcd stuff 
 - Rewrite RatelimitInterceptor to use AbstractLanguageInterceptor
-- Check that starter is really using Java 8
 
 ## Done
+- XMLProtectionInterceptor.setFailResponse => Use ProblemDetails
+- Rename ExampleTests to .*ExampleTests
+- Examples
+  - soap/secured-wsdl
+    - Rewrite the example to use it
+    - ExampleTest
+- log, print or message that writes to log.
 - Proxy.init() and init(router) make it clear what to call!
 - Rename service:// to internal://
 - Call plugin
