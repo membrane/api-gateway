@@ -15,7 +15,6 @@ package com.predic8.membrane.core.interceptor.rest;
 
 import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.config.*;
-import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
@@ -31,6 +30,7 @@ import java.util.*;
 import java.util.regex.*;
 
 import static com.predic8.membrane.core.Constants.*;
+import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
 import static com.predic8.membrane.core.http.Header.*;
 import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
@@ -166,11 +166,10 @@ public class REST2SOAPInterceptor extends SOAPRESTHelper {
             transformAndReplaceBody(exc.getRequest(), mapping.requestXSLT,
                     getRequestXMLSource(exc), exc.getStringProperties());
         } catch (Exception e) {
-            ProblemDetails.user(router.isProduction())
-                    .component(getDisplayName())
+            log.error("",e);
+            user(router.isProduction(),getDisplayName())
                     .detail("Could not covert REST to SOAP!")
                     .exception(e)
-                    .stacktrace(true)
                     .buildAndSetResponse(exc);
             return ABORT;
         }
@@ -185,11 +184,10 @@ public class REST2SOAPInterceptor extends SOAPRESTHelper {
         try {
             return handleResponseInternal(exc);
         } catch (Exception e) {
-            ProblemDetails.user(router.isProduction())
-                    .component(getDisplayName())
+            log.error("",e);
+            user(router.isProduction(),getDisplayName())
                     .detail("Could not covert SOAP to REST!")
                     .exception(e)
-                    .stacktrace(true)
                     .buildAndSetResponse(exc);
             return ABORT;
         }

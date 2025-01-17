@@ -62,12 +62,8 @@
 
 
 ### Internal
-- Delete interceptor/
-  - Gatekeeper: Yes
-  - SDY Speedy (delete) BT
 - proxies-6.xsd
   - new Namespace e.g. https://membrane-api.io...6
-- 2025 BT
 - ProblemDetails TB
   - Validators
      - XML, JSON, WSDL
@@ -80,24 +76,13 @@
 - Dependencies TP, TB
   - Log4J, where, what
   - Updates
-- AdminConsole BT
-  - DisplayName: make all lower
-- LoggingContextInterceptor? Ask CG
-  - Is api name logged?
-  - Comment
-- Remove etcd stuff (BT)
 - Rewrite RatelimitInterceptor to use AbstractLanguageInterceptor TB
 - Language TB
   - Exchange expression 
     - getExpression
   - AbstractLanguageInterceptor as Interface
 - Problem Details TB
-  - /type/component/subtype
   - component mandatory, subtype optional
-  - Detail: 
-    - Is used everywhere (ADR)
-    - Human easy readable
-    - optional
   - Message from exception in message
     - Toplevel not in extension
     - optional

@@ -28,6 +28,7 @@ import org.springframework.expression.spel.standard.*;
 import java.time.*;
 import java.util.*;
 
+import static com.predic8.membrane.core.exceptions.ProblemDetails.user;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.util.HttpUtil.*;
@@ -98,22 +99,22 @@ public class RateLimitInterceptor extends AbstractInterceptor {
                 return CONTINUE;
         } catch (SpelEvaluationException e) {
             log.info("Cannot evaluate keyExpression {} cause is {}", keyExpression, e.getCause());
-            exc.setResponse(ProblemDetails.internal(router.isProduction())
+            exc.setResponse(ProblemDetails.internal(router.isProduction(),getDisplayName())
                     .addSubType("rate-limiter")
-                    .detail("Cannot evaluate keyExpression '%s' cause is %s".formatted(keyExpression,e.getMessage()))
+                    .detail("Cannot evaluate keyExpression '%s' cause is %s".formatted(keyExpression, e.getMessage()))
                     .build());
             return RETURN;
         }
 
-        log.info("{} limit: {} duration: {} is exceeded. (clientIp: {})",getKey(exc),getRequestLimit(),getRequestLimitDuration(),exc.getRemoteAddrIp());
-        exc.setResponse(ProblemDetails.user(false)
-                        .statusCode(429)
-                        .addSubType("rate-limiter")
-                        .title("Rate limit is exceeded")
-                        .detail("The quota of the ratelimiter is exceeded. Try again in %s seconds.".formatted(strategy.getLimitReset(exc.getRemoteAddrIp())))
-                        .extension("limit",getRequestLimit())
-                        .extension("duration",getRequestLimitDuration())
-                .build());
+        log.info("{} limit: {} duration: {} is exceeded. (clientIp: {})", getKey(exc), getRequestLimit(), getRequestLimitDuration(), exc.getRemoteAddrIp());
+        user(false, getDisplayName())
+                .statusCode(429)
+                .title("Rate limit is exceeded.")
+                .addSubType("rate-limit")
+                .detail("The quota of the rate limit is exceeded. Try again in %s seconds.".formatted(strategy.getLimitReset(exc.getRemoteAddrIp())))
+                .internal("limit", getRequestLimit())
+                .internal("duration", getRequestLimitDuration())
+                .buildAndSetResponse(exc);
         setHeaderRateLimitFieldsOnResponse(exc);
 
         return RETURN;
@@ -149,28 +150,28 @@ public class RateLimitInterceptor extends AbstractInterceptor {
         if (xForwardedFor.isEmpty())
             return useRemoteIpAddress(exc);
 
-        log.debug("X-Forwared-For {}",xForwardedFor);
+        log.debug("X-Forwared-For {}", xForwardedFor);
 
         if (trustedProxyList != null && !trustedProxyList.isEmpty()) {
             log.debug("Checking list of trusted proxies");
             for (int i = 1; i <= trustedProxyList.size(); i++) {
                 String trustedProxy = trustedProxyList.get(trustedProxyList.size() - i);
                 String forwardedFor = xForwardedFor.get(xForwardedFor.size() - i);
-                log.debug("Checking proxy {} against {}", trustedProxy, forwardedFor );
+                log.debug("Checking proxy {} against {}", trustedProxy, forwardedFor);
                 if (!Objects.equals(trustedProxy, forwardedFor)) {
                     log.info("Trusted proxy {} is not in X-Forwarded-For list {}, or not on the right position.", trustedProxy, xForwardedFor);
                     return useRemoteIpAddress(exc);
                 }
             }
             String clientIp = getOneBeforeTrustworthyProxy(xForwardedFor, trustedProxyList.size());
-            log.debug("Using {} as client ip.",clientIp);
+            log.debug("Using {} as client ip.", clientIp);
             return clientIp;
         }
 
         if (trustedProxyCount != -1) {
             log.debug("Using trustedProxyCount of {}", trustedProxyCount);
             if (xForwardedFor.size() <= trustedProxyCount) {
-                log.info("Forwarded-For entries {} do not match trusted proxies {}",xForwardedFor,trustedProxyList);
+                log.info("Forwarded-For entries {} do not match trusted proxies {}", xForwardedFor, trustedProxyList);
                 return useRemoteIpAddress(exc);
             }
             // e.g.:
@@ -200,7 +201,7 @@ public class RateLimitInterceptor extends AbstractInterceptor {
 
     private static String useRemoteIpAddress(Exchange exc) {
         String ip = exc.getRemoteAddrIp();
-        log.debug("Using ip {}",ip);
+        log.debug("Using ip {}", ip);
         return ip;
     }
 
@@ -236,8 +237,8 @@ public class RateLimitInterceptor extends AbstractInterceptor {
     /**
      * @description Duration after the limit is reset in the <i>ISO 8600 Duration</i> format, e.g. PT10S for 10 seconds,
      * PT5M for 5 minutes or PT8H for eight hours.
-     * @see <a href="https://en.wikipedia.org/wiki/ISO_8601#Durations">ISO 8601 Durations</a>
      * @default PT3600S
+     * @see <a href="https://en.wikipedia.org/wiki/ISO_8601#Durations">ISO 8601 Durations</a>
      */
     @MCAttribute
     public void setRequestLimitDuration(String duration) {

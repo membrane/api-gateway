@@ -16,7 +16,6 @@
 
 package com.predic8.membrane.core.interceptor;
 
-import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.proxies.Proxy;
 import com.predic8.membrane.core.proxies.*;
@@ -26,6 +25,7 @@ import org.slf4j.*;
 import java.net.*;
 import java.util.*;
 
+import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.util.URLUtil.*;
 
@@ -53,13 +53,13 @@ public class InternalRoutingInterceptor extends AbstractInterceptor {
                 handleAbort(exchange);
             }
         } catch (Exception e) {
-            ProblemDetails.internal(router.isProduction())
-                    .component(getDisplayName())
-                    .detail("Could not invoke response handler for internal route")
+            String detail = "Could not invoke request handler for internal route.";
+            log.error(detail, e); // Most should be handled inside the interceptors
+            internal(router.isProduction(),getDisplayName())
+                    .detail(detail)
                     .exception(e)
-                    .stacktrace(true)
                     .buildAndSetResponse(exchange);
-            return Outcome.ABORT;
+            return ABORT;
         }
 
         exchange.setRule(currentProxy); // Restore current rule, so that the response interceptors of that rule could be invoked
@@ -76,11 +76,11 @@ public class InternalRoutingInterceptor extends AbstractInterceptor {
         try {
             return getFlowController().invokeResponseHandlers(exc, getBackInterceptors(exc));
         } catch (Exception e) {
-            ProblemDetails.internal(router.isProduction())
-                    .component(getDisplayName())
-                    .detail("Error in response handler chain.")
+            String detail = "Could not invoke response handler for internal route.";
+            log.error(detail, e); // Most should be handled inside the interceptors
+            internal(router.isProduction(),getDisplayName())
+                    .detail(detail)
                     .exception(e)
-                    .stacktrace(true)
                     .buildAndSetResponse(exc);
             return ABORT;
         }

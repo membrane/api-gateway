@@ -21,7 +21,7 @@ public class SetHeaderInterceptor extends AbstractSetterInterceptor {
 
     @SuppressWarnings("rawtypes")
     @Override
-    protected Class getExpressionReturnType() {
+    protected Class<?> getExpressionReturnType() {
         return String.class;
     }
 

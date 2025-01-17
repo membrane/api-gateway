@@ -14,14 +14,13 @@
 package com.predic8.membrane.core.interceptor.administration;
 
 import com.predic8.membrane.core.*;
-import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.exchangestore.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.interceptor.balancer.*;
-import com.predic8.membrane.core.proxies.*;
 import com.predic8.membrane.core.proxies.Proxy;
+import com.predic8.membrane.core.proxies.*;
 import com.predic8.membrane.core.transport.*;
 import com.predic8.membrane.core.util.*;
 import org.slf4j.*;
@@ -33,6 +32,7 @@ import java.text.*;
 import java.util.*;
 import java.util.regex.*;
 
+import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
 import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.interceptor.administration.AdminPageBuilder.*;
@@ -55,15 +55,14 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 
 		exc.setTimeReqSent(System.currentTimeMillis());
 
-        Outcome o = null;
+        Outcome o;
         try {
             o = dispatchRequest(exc);
         } catch (Exception e) {
-			ProblemDetails.user(router.isProduction())
-					.component(getDisplayName())
+			log.error("", e);
+			internal(router.isProduction(),getDisplayName())
 					.detail("Error in dynamic administration request!")
 					.exception(e)
-					.stacktrace(true)
 					.buildAndSetResponse(exc);
 			return ABORT;
         }

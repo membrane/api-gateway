@@ -16,23 +16,28 @@ package com.predic8.membrane.core.interceptor.registration;
 
 import com.fasterxml.jackson.databind.*;
 import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.interceptor.authentication.session.*;
 import com.predic8.membrane.core.interceptor.registration.entity.*;
+import org.slf4j.*;
 
 import java.io.*;
 import java.sql.*;
 
-import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
+import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
+import static com.predic8.membrane.core.interceptor.Outcome.*;
 
 /**
  * @description Allows account registration (!Experimental!)
  */
 @MCElement(name = "accountRegistration")
 public class RegistrationInterceptor extends AbstractInterceptor {
+
+    private static final Logger log = LoggerFactory.getLogger(RegistrationInterceptor.class);
+
+
     private JdbcUserDataProvider userDataProvider;
 
     @Override
@@ -65,11 +70,10 @@ public class RegistrationInterceptor extends AbstractInterceptor {
 
             connection.createStatement().executeUpdate(getInsertAccountIntoDatabaseSQL(user));
         } catch (SQLException e) {
-            ProblemDetails.internal(router.isProduction())
-                    .component(getDisplayName())
+            log.error("",e);
+            internal(router.isProduction(),getDisplayName())
                     .detail("Could not access database")
                     .exception(e)
-                    .stacktrace(true)
                     .buildAndSetResponse(exc);
             return ABORT;
         }

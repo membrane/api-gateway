@@ -14,14 +14,15 @@
 package com.predic8.membrane.servlet.test;
 
 import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
 import org.jetbrains.annotations.*;
+import org.slf4j.*;
 
 import java.io.*;
 
+import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static java.nio.charset.StandardCharsets.*;
 
@@ -31,16 +32,17 @@ targetNamespace="http://membrane-soa.org/war-test/1/")
 @MCElement(name="echo", configPackage="com.predic8.membrane.servlet.test.config.spring")
 public class EchoInterceptor extends AbstractInterceptor {
 
+	private static final Logger log = LoggerFactory.getLogger(EchoInterceptor.class.getName());
+
 	@Override
 	public Outcome handleRequest(Exchange exc) {
         try {
             exc.setResponse(Response.ok().body(getBody(exc)).build());
         } catch (IOException e) {
-			ProblemDetails.user(router.isProduction())
-					.component(getDisplayName())
+			log.error("",e);
+			user(router.isProduction(),getDisplayName())
 					.detail("Error creating echo response!")
 					.exception(e)
-					.stacktrace(true)
 					.buildAndSetResponse(exc);
 			return ABORT;
         }

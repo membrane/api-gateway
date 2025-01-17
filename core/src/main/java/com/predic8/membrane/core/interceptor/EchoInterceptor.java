@@ -14,11 +14,11 @@
 package com.predic8.membrane.core.interceptor;
 
 import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import org.slf4j.*;
 
+import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 
 /**
@@ -42,11 +42,11 @@ public class EchoInterceptor extends AbstractInterceptor {
 				builder.status(204); // No Content
 			}
 		} catch (Exception e) {
-			ProblemDetails.internal(router.isProduction())
-					.component(getDisplayName())
+			log.error("Could create echo: {}",e.getMessage());
+			internal(router.isProduction(),getDisplayName())
 					.detail("Could create echo!")
 					.exception(e)
-					.stacktrace(true)
+					.stacktrace(false)
 					.buildAndSetResponse(exc);
 			return ABORT;
 		}

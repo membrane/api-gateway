@@ -15,7 +15,6 @@
 package com.predic8.membrane.core.interceptor;
 
 import com.googlecode.jatl.*;
-import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.proxies.*;
@@ -24,6 +23,7 @@ import org.slf4j.*;
 
 import java.io.*;
 
+import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 
 abstract public class RelocatingInterceptor extends AbstractInterceptor {
@@ -61,12 +61,11 @@ abstract public class RelocatingInterceptor extends AbstractInterceptor {
 		try {
 			rewrite(exc);
 		} catch (Exception e) {
-			ProblemDetails.internal(router.isProduction())
-					.component(getDisplayName())
+			log.error("",e);
+			internal(router.isProduction(),getDisplayName())
 					.detail("Error rewriting URI")
-					.extension("URI", exc.getRequestURI())
+					.topLevel("URI", exc.getRequestURI())
 					.exception(e)
-					.stacktrace(true)
 					.buildAndSetResponse(exc);
 			return ABORT;
 		}

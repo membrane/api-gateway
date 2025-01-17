@@ -95,11 +95,11 @@ class OpenAPIInterceptorTest {
         ProblemDetails pd = ProblemDetails.parse(exc.getResponse());
 
         assertEquals("No matching API found!", pd.getTitle());
-        assertEquals("https://membrane-api.io/error/user/not-found", pd.getType());
+        assertEquals("https://membrane-api.io/error/user/openapi/not-found", pd.getType());
     }
 
     @Test
-    void destinations() throws Exception {
+    void destinations() {
         exc.getRequest().setUri("/foo/boo");
         exc.setOriginalRequestUri("/foo/boo");
 
@@ -198,19 +198,19 @@ class OpenAPIInterceptorTest {
 
         assertEquals(3,validationErrors.size());
 
-        Map<String,Object> m1 = (Map<String, Object>) ((List)validationErrors.get( direction + "/BODY")).get(0);
+        Map<String,Object> m1 = (Map<String, Object>) ((List)validationErrors.get( direction + "/BODY")).getFirst();
         assertEquals("Customer",m1.get("complexType"));
         assertEquals("object",m1.get("schemaType"));
 
         assertTrue(((String)m1.get("message")).contains("additional properties"));
 
-        Map<String,Object> m2 = (Map<String, Object>) ((List)validationErrors.get(direction + "/BODY#/firstName")).get(0);
+        Map<String,Object> m2 = (Map<String, Object>) ((List)validationErrors.get(direction + "/BODY#/firstName")).getFirst();
 
         assertEquals("Customer",m2.get("complexType"));
         assertEquals("object",m2.get("schemaType"));
         assertTrue(((String)m2.get("message")).contains("missing"));
 
-        Map<String,Object> m3 = (Map<String, Object>) ((List)validationErrors.get(direction + "/BODY#/age")).get(0);
+        Map<String,Object> m3 = (Map<String, Object>) ((List)validationErrors.get(direction + "/BODY#/age")).getFirst();
 
         assertEquals("Customer",m3.get("complexType"));
         assertEquals("integer",m3.get("schemaType"));

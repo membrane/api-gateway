@@ -78,13 +78,13 @@ class ApiDocsInterceptorTest {
     }
 
     @Test
-    void initTest() throws Exception {
+    void initTest() {
         assertEquals(RETURN, interceptor.handleRequest(exc));
     }
 
     @Test
     void getOpenApiInterceptorTest() {
-        assertEquals("OpenAPI", getOpenAPIInterceptor(rule).get().getDisplayName());
+        assertEquals("openapi", getOpenAPIInterceptor(rule).get().getDisplayName());
         assertEquals(Optional.empty(), getOpenAPIInterceptor(new APIProxy()));
     }
 
@@ -94,14 +94,14 @@ class ApiDocsInterceptorTest {
     }
 
     @Test
-    void initializeEmptyRuleApiSpecsTest() throws Exception {
+    void initializeEmptyRuleApiSpecsTest() {
         ApiDocsInterceptor adi = new ApiDocsInterceptor();
         adi.init(new Router());
         assertEquals(new HashMap<>(), adi.initializeRuleApiSpecs());
     }
 
     @Test
-    void getHTMLOverview() throws Exception {
+    void getHTMLOverview() {
         exc.getRequest().setUri("/api-docs");
         Header header = new Header();
         header.setAccept("html");
@@ -111,7 +111,7 @@ class ApiDocsInterceptorTest {
     }
 
     @Test
-    void getSwaggerUI() throws Exception {
+    void getSwaggerUI() {
         exc.getRequest().setUri("/api-docs/ui/fruit-shop-api-v2-0-0");
         assertEquals(RETURN, interceptor.handleRequest(exc));
         assertTrue(exc.getResponse().getBodyAsStringDecoded().contains("Swagger"));

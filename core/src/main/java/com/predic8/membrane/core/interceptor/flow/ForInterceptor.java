@@ -67,7 +67,8 @@ public class ForInterceptor extends AbstractFlowInterceptor {
         try {
             o = exchangeExpression.evaluate(exc, flow, Object.class);
         } catch (ExchangeExpressionException e) {
-            e.provideDetails(ProblemDetails.internal(router.isProduction()))
+           ProblemDetails pd =  ProblemDetails.internal(router.isProduction(), getDisplayName());
+            e.provideDetails(pd)
                     .detail("Error evaluating expression on exchange.")
                     .component(getDisplayName())
                     .buildAndSetResponse(exc);

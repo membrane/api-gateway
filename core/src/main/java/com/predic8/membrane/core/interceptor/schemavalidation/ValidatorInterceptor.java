@@ -15,7 +15,6 @@
 package com.predic8.membrane.core.interceptor.schemavalidation;
 
 import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
@@ -29,6 +28,7 @@ import org.springframework.context.*;
 
 import java.io.*;
 
+import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.resolver.ResolverMap.*;
 
@@ -124,26 +124,24 @@ public class ValidatorInterceptor extends AbstractInterceptor implements Applica
             if (message.isBodyEmpty())
                 return CONTINUE;
         } catch (IOException e) {
-            ProblemDetails.internal(router.isProduction())
-                    .component(getDisplayName())
+            log.error("", e);
+            internal(router.isProduction(),getDisplayName())
                     .detail("Could not read message body")
                     .exception(e)
-                    .stacktrace(true)
                     .buildAndSetResponse(exc);
-            return Outcome.ABORT;
+            return ABORT;
         }
 
         try {
             return validator.validateMessage(exc, message);
         } catch (Exception e) {
-            ProblemDetails.internal(router.isProduction())
-                    .component(getDisplayName())
-                    .detail("Could not validate message")
-                    .extension("class", message.getClass())
+            log.error("", e);
+            internal(router.isProduction(),getDisplayName())
+                    .detail("Error validating message")
+                    .internal("class", message.getClass())
                     .exception(e)
-                    .stacktrace(true)
                     .buildAndSetResponse(exc);
-            return Outcome.ABORT;
+            return ABORT;
         }
     }
 

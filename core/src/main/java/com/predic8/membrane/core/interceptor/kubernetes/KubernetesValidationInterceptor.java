@@ -16,19 +16,20 @@ package com.predic8.membrane.core.interceptor.kubernetes;
 import com.fasterxml.jackson.databind.*;
 import com.google.common.collect.*;
 import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.interceptor.kubernetes.model.*;
 import com.predic8.membrane.core.interceptor.schemavalidation.*;
 import com.predic8.membrane.core.resolver.*;
+import org.slf4j.*;
 
 import java.io.*;
 import java.nio.charset.*;
 import java.util.*;
 import java.util.concurrent.*;
 
+import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 
 /**
@@ -144,6 +145,9 @@ import static com.predic8.membrane.core.interceptor.Outcome.*;
 @MCElement(name = "kubernetesValidation")
 public class KubernetesValidationInterceptor extends AbstractInterceptor {
 
+    private static final Logger log = LoggerFactory.getLogger(KubernetesValidationInterceptor.class.getName());
+
+
     private ResolverMap resourceResolver;
     private List<String> resources;
     private final ConcurrentMap<String, MessageValidator> validators = new ConcurrentHashMap<>();
@@ -178,11 +182,11 @@ public class KubernetesValidationInterceptor extends AbstractInterceptor {
 
         return RETURN;
         } catch (Exception e) {
-            ProblemDetails.internal(router.isProduction())
+            log.error("",e);
+            internal(router.isProduction(),getDisplayName())
                     .component(getDisplayName())
                     .detail("Error handling request!")
                     .exception(e)
-                    .stacktrace(true)
                     .buildAndSetResponse(exc);
             return ABORT;
         }

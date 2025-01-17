@@ -44,6 +44,7 @@ public class ProblemDetails {
 
     private int statusCode;
     private String type;
+    private String subType = "";
 
     private String title;
     private String detail;
@@ -53,8 +54,15 @@ public class ProblemDetails {
      */
     private String component;
 
-    private String instance;
-    private final HashMap<String, Object> extensions = new LinkedHashMap<>();
+    /**
+     * Toplevel elements that are returned to the client even in production
+     */
+    private final HashMap<String, Object> internalFields = new LinkedHashMap<>();
+
+    /**
+     * Internal information that is not returned in production
+     */
+    private final HashMap<String, Object> topLevel = new LinkedHashMap<>();
     private Throwable exception;
 
     /**
@@ -62,24 +70,39 @@ public class ProblemDetails {
      */
     private boolean stacktrace = true;
 
-    public static ProblemDetails user(boolean production) {
-        return problemDetails("user", production).statusCode(400);
+    public static ProblemDetails user(boolean production, String component) {
+        return problemDetails("user", production)
+                .statusCode(400)
+                .title("User error.")
+                .component(component);
     }
 
-    public static ProblemDetails internal(boolean production) {
-        return problemDetails("internal", production).statusCode(500).title("Internal server error.");
+    public static ProblemDetails internal(boolean production, String component) {
+        return problemDetails("internal", production)
+                .statusCode(500)
+                .title("Internal server error.")
+                .component(component);
     }
 
-    public static ProblemDetails gateway(boolean production) {
-        return problemDetails("gateway", production).statusCode(500).title("Gateway error.");
+    public static ProblemDetails gateway(boolean production, String component) {
+        return problemDetails("gateway", production)
+                .statusCode(500)
+                .title("Gateway error.")
+                .component(component);
     }
 
-    public static ProblemDetails security(boolean production) {
-        return problemDetails("security", production);
+    public static ProblemDetails security(boolean production, String component) {
+        return problemDetails("security", production)
+                .statusCode(500)
+                .title("Security error.")
+                .component(component);
     }
 
-    public static ProblemDetails openapi(boolean production) {
-        return problemDetails("openapi", production);
+    public static ProblemDetails openapi(boolean production, String component) {
+        return problemDetails("openapi", production)
+                .statusCode(400)
+                .title("OpenAPI error.")
+                .component(component);
     }
 
     public static ProblemDetails problemDetails(String type, boolean production) {
@@ -92,11 +115,12 @@ public class ProblemDetails {
     /**
      * type/subtype/subtype/...
      * lowercase, dash as separator
+     *
      * @param subType
      * @return
      */
     public ProblemDetails addSubType(String subType) {
-        this.type += "/" + subType;
+        this.subType += "/" + subType;
         return this;
     }
 
@@ -126,13 +150,13 @@ public class ProblemDetails {
         return this;
     }
 
-    public ProblemDetails instance(String instance) {
-        this.instance = instance;
+    public ProblemDetails internal(String key, Object value) {
+        this.internalFields.put(key, value);
         return this;
     }
 
-    public ProblemDetails extension(String key, Object value) {
-        this.extensions.put(key, value);
+    public ProblemDetails topLevel(String key, Object value) {
+        this.topLevel.put(key, value);
         return this;
     }
 
@@ -155,55 +179,57 @@ public class ProblemDetails {
      * there is something interesting.
      */
     public void buildAndSetResponse(Exchange exchange) {
-        if (exchange != null) {
-            exchange.setResponse(createContent(createMap(), exchange));
-            return;
-        }
-        throw new RuntimeException("Should not happen!");
+        exchange.setResponse(createContent(createMap(), exchange));
     }
 
     private @NotNull Map<String, Object> createMap() {
         Map<String, Object> root = new LinkedHashMap<>();
-        Map<String, Object> extensionsMap = new LinkedHashMap<>();
+        Map<String, Object> internalMap = new LinkedHashMap<>();
 
         if (production) {
-            logProduction(extensionsMap);
+            logProduction(internalMap);
         } else {
-            logDevelopment(extensionsMap);
+            internalMap = logDevelopment();
         }
 
         root.put("title", title);
-        root.put("type", "https://membrane-api.io/error/" + type);
-
-        if (!production && component != null) {
-            root.put("component", component);
-        }
+        String type = "https://membrane-api.io/error/" + this.type;
+        if (!component.isEmpty())
+            type += "/" + normalizeForType(component);
+        if (!subType.isEmpty())
+            type += subType;
+        root.put("type", type);
 
         if (detail != null) {
             root.put("detail", detail);
         }
-
-        root.putAll(extensionsMap);
+        root.putAll(topLevel);
+        root.putAll(internalMap);
         return root;
     }
 
-    private void logDevelopment(Map<String, Object> extensionsMap) {
-        extensionsMap.putAll(extensions);
-        if (exception != null) {
-            if (extensionsMap.containsKey("message"))
-                log.error("Overriding ProblemDetails extensionsMap 'message' entry. Please notify Membrane developers.", new RuntimeException());
-            extensionsMap.put("message", exception.getMessage());
-            if (stacktrace) {
-                extensionsMap.put("stackTrace", getStackTrace());
-            }
-        }
-        extensionsMap.put("attention", """
-                Membrane is in development mode. For production set <router production="true"> to reduce details in error messages!""");
+    private String normalizeForType(String s) {
+        return s.replace(" ", "-").toLowerCase();
     }
 
-    private void logProduction(Map<String, Object> extensionsMap) {
+    private Map<String, Object> logDevelopment() {
+        var internalMap = new LinkedHashMap<>(internalFields);
+        if (exception != null) {
+            if (internalMap.containsKey("message"))
+                log.error("Overriding ProblemDetails extensionsMap 'message' entry. Please notify Membrane developers.", new RuntimeException());
+            internalMap.put("message", exception.getMessage());
+            if (stacktrace) {
+                internalMap.put("stackTrace", getStackTrace());
+            }
+        }
+        internalMap.put("attention", """
+                Membrane is in development mode. For production set <router production="true"> to reduce details in error messages!""");
+        return internalMap;
+    }
+
+    private void logProduction(Map<String, Object> internalMap) {
         String logKey = UUID.randomUUID().toString();
-        log.warn("logKey={}\ntype={}\ntitle={}\n,detail={}\n,extension={},.", logKey, type, title, detail, extensionsMap);
+        log.warn("logKey={}\ntype={}\ntitle={}\n,detail={}\n,extension={},.", logKey, type, title, detail, internalMap);
 
         type = "internal";
         title = "An error occurred.";
@@ -300,12 +326,11 @@ public class ProblemDetails {
         pd.type = (String) m.get("type");
         pd.title = (String) m.get("title");
         pd.detail = (String) m.get("detail");
-        pd.instance = (String) m.get("instance");
 
         for (Map.Entry<String, Object> e : m.entrySet()) {
             if (pd.isReservedProblemDetailsField(e.getKey()))
                 continue;
-            pd.extension(e.getKey(), e.getValue());
+            pd.internal(e.getKey(), e.getValue());
         }
         return pd;
     }
@@ -342,12 +367,8 @@ public class ProblemDetails {
         return component;
     }
 
-    public String getInstance() {
-        return instance;
-    }
-
-    public HashMap<String, Object> getExtensions() {
-        return extensions;
+    public HashMap<String, Object> getInternal() {
+        return internalFields;
     }
 
     public Throwable getException() {
@@ -356,19 +377,5 @@ public class ProblemDetails {
 
     public boolean isStacktrace() {
         return stacktrace;
-    }
-
-    @Override
-    public String toString() {
-        return "ProblemDetails{" +
-               "production=" + production +
-               ", statusCode=" + statusCode +
-               ", type='" + type + '\'' +
-               ", title='" + title + '\'' +
-               ", detail='" + detail + '\'' +
-               ", instance='" + instance + '\'' +
-               ", extensions=" + extensions +
-               ", exception=" + exception +
-               '}';
     }
 }

@@ -29,6 +29,7 @@ import org.jetbrains.annotations.*;
 import java.io.*;
 import java.util.*;
 
+import static com.predic8.membrane.core.exceptions.ProblemDetails.internal;
 import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.lang.ScriptingUtils.*;
@@ -62,10 +63,9 @@ public class TemplateInterceptor extends StaticInterceptor {
         }
         catch (TemplateExecutionException e) {
             log.warn("Groovy template error: {}",e.getMessage());
-            exc.setResponse(ProblemDetails.gateway( router.isProduction())
-                    .extension("message",e.getLocalizedMessage())
-                    .extension("line", e.getLineNumber()) // Has no getLocalizedMessage
-                    .detail("Error during Groovy template rendering.")
+            exc.setResponse(ProblemDetails.gateway( router.isProduction(),getDisplayName())
+                    .detail("Error during template rendering.")
+                    .internal("line", e.getLineNumber())
                     .exception(e)
                     .stacktrace(false)
                     .build());
@@ -73,21 +73,20 @@ public class TemplateInterceptor extends StaticInterceptor {
         }
         catch (GroovyRuntimeException e) {
             log.warn("Groovy error executing template: {}",e.getMessage());
-            exc.setResponse(ProblemDetails.gateway( router.isProduction())
-                    .addSubType("template")
-                    .detail(e.getMessage())
-                    .extension("location", e.getLocalizedMessage()) // Line, column
+            exc.setResponse(ProblemDetails.gateway( router.isProduction(),getDisplayName())
+                    .addSubType("groovy")
+                    .detail("Groovy error during template rendering.")
                     .exception(e)
+                    .stacktrace(false)
                     .build());
             return ABORT;
         }
         catch (Exception e) {
             log.warn(e.getMessage(),e);
-            exc.setResponse(ProblemDetails.internal(router.isProduction())
+            internal(router.isProduction(),getDisplayName())
                     .addSubType("template")
-                    .detail(e.getMessage())
                     .exception(e)
-                    .build());
+                    .buildAndSetResponse(exc);
             return ABORT;
         }
 
