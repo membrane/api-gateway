@@ -50,10 +50,14 @@ public class StatisticsCSVInterceptor extends AbstractInterceptor {
 	}
 
 	@Override
-	public Outcome handleResponse(Exchange exc) throws Exception {
+	public Outcome handleResponse(Exchange exc) {
 		log.debug("logging statistics to {}", new File(fileName).getAbsolutePath());
-		writeExchange(exc);
-		return CONTINUE;
+        try {
+            writeExchange(exc);
+        } catch (Exception e) {
+            log.error("Error while logging statistics", e);
+        }
+        return CONTINUE;
 	}
 
 	private void writeExchange(Exchange exc) throws Exception {

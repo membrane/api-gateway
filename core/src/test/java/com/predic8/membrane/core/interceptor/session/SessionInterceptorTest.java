@@ -173,10 +173,14 @@ public class SessionInterceptorTest {
     private AbstractInterceptor testResponseInterceptor() {
         return new AbstractInterceptor() {
             @Override
-            public Outcome handleRequest(Exchange exc) throws Exception {
+            public Outcome handleRequest(Exchange exc) {
                 if(exc.getResponse() == null)
                     exc.setResponse(Response.ok().build());
-                exc.getResponse().setBodyContent(createTestResponseBody(exc).getBytes());
+                try {
+                    exc.getResponse().setBodyContent(createTestResponseBody(exc).getBytes());
+                } catch (JsonProcessingException e) {
+                    throw new RuntimeException(e);
+                }
                 return RETURN;
             }
 

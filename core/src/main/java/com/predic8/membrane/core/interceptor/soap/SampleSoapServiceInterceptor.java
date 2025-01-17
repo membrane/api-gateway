@@ -14,6 +14,7 @@
 package com.predic8.membrane.core.interceptor.soap;
 
 import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
@@ -51,7 +52,20 @@ public class SampleSoapServiceInterceptor extends AbstractInterceptor {
     }
 
     @Override
-    public Outcome handleRequest(Exchange exc) throws Exception {
+    public Outcome handleRequest(Exchange exc) {
+        try {
+            return handleRequestInternal(exc);
+        } catch (Exception e) {
+            ProblemDetails.internal(router.isProduction())
+                    .component(getDisplayName())
+                    .detail("Could not process SOAP request!")
+                    .exception(e)
+                    .buildAndSetResponse(exc);
+            return ABORT;
+        }
+    }
+
+    private Outcome handleRequestInternal(Exchange exc) throws Exception {
         if (isWSDLRequest(exc)) {
             exc.setResponse(createWSDLResponse(exc));
             return RETURN;
@@ -68,7 +82,7 @@ public class SampleSoapServiceInterceptor extends AbstractInterceptor {
         return RETURN;
     }
 
-    private static Response createResourceNotFoundSOAPFault() throws Exception {
+    private static Response createResourceNotFoundSOAPFault() {
         return ok(getSoapFault("Resource Not Found", "404", "Cannot parse SOAP message. Request should contain e.g. <name>Bonn</name>")).contentType(TEXT_XML).build();
     }
 
@@ -76,7 +90,7 @@ public class SampleSoapServiceInterceptor extends AbstractInterceptor {
         return ok(getResponse(getCity(exc))).contentType(TEXT_XML).build();
     }
 
-    private static Response createMethodNotAllowedSOAPFault(String method) throws Exception {
+    private static Response createMethodNotAllowedSOAPFault(String method) {
         return ok(getSoapFault("Method %s not allowed".formatted(method), "405", "Use POST to access the service.")).contentType(TEXT_XML).build();
     }
 

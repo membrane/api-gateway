@@ -19,6 +19,7 @@ import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.multipart.*;
+import org.slf4j.*;
 
 import javax.xml.stream.*;
 import java.io.*;
@@ -27,6 +28,9 @@ import static com.predic8.membrane.core.Constants.*;
 
 @MCElement(name="analyser")
 public class MessageAnalyser extends AbstractInterceptor {
+
+	protected static final Logger log = LoggerFactory.getLogger(MessageAnalyser.class);
+
 	public static final String REQUEST_ROOT_ELEMENT_NAME = "MEMRequestRootElementName";
 	public static final String REQUEST_ROOT_ELEMENT_NS = "MEMRequestRootElementNS";
 	public static final String REQUEST_SOAP_VERSION = "MEMRequestSoapVersion";
@@ -81,11 +85,16 @@ public class MessageAnalyser extends AbstractInterceptor {
 	}
 
 	@Override
-	public Outcome handleRequest(Exchange exc) throws Exception {
+	public Outcome handleRequest(Exchange exc) {
 
-		ExtractedData data = analyse(exc.getRequest());
+        ExtractedData data = null;
+        try {
+            data = analyse(exc.getRequest());
+        } catch (Exception e) {
+			log.error("Could not analyse request.", e);
+        }
 
-		if (!data.hasAnyData()) {
+        if (!data.hasAnyData()) {
 			return Outcome.CONTINUE;
 		}
 
@@ -104,11 +113,16 @@ public class MessageAnalyser extends AbstractInterceptor {
 	}
 
 	@Override
-	public Outcome handleResponse(Exchange exc) throws Exception {
+	public Outcome handleResponse(Exchange exc) {
 
-		ExtractedData data = analyse(exc.getResponse());
+        ExtractedData data = null;
+        try {
+            data = analyse(exc.getResponse());
+        } catch (Exception e) {
+            log.error("Could not analyse response.", e);
+        }
 
-		if (!data.hasAnyData()) {
+        if (!data.hasAnyData()) {
 			return Outcome.CONTINUE;
 		}
 

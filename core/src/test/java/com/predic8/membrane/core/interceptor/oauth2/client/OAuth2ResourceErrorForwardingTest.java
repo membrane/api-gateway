@@ -30,6 +30,7 @@ import org.jetbrains.annotations.*;
 import org.junit.jupiter.api.*;
 
 import java.io.*;
+import java.net.*;
 import java.util.*;
 import java.util.concurrent.atomic.*;
 
@@ -115,11 +116,16 @@ public class OAuth2ResourceErrorForwardingTest {
         sp.getInterceptors().add(new AbstractInterceptor() {
 
             @Override
-            public synchronized Outcome handleRequest(Exchange exc) throws Exception {
+            public synchronized Outcome handleRequest(Exchange exc) {
                 if (exc.getRequestURI().endsWith("/.well-known/openid-configuration")) {
                     exc.setResponse(Response.ok(wkf.getWellknown()).build());
                 } else if (exc.getRequestURI().startsWith("/auth?")) {
-                    Map<String, String> params = URLParamUtil.getParams(new URIFactory(), exc, URLParamUtil.DuplicateKeyOrInvalidFormStrategy.ERROR);
+                    Map<String, String> params = null;
+                    try {
+                        params = URLParamUtil.getParams(new URIFactory(), exc, URLParamUtil.DuplicateKeyOrInvalidFormStrategy.ERROR);
+                    } catch (URISyntaxException | IOException e) {
+                        throw new RuntimeException(e);
+                    }
                     exc.setResponse(new FormPostGenerator(getClientAddress() + "/oauth2callback")
                                     .withParameter("error", "DEMO-123")
                                     .withParameter("error_description", "This is a demo error.")
@@ -163,7 +169,7 @@ public class OAuth2ResourceErrorForwardingTest {
 
         sp.getInterceptors().add(new AbstractInterceptor() {
             @Override
-            public Outcome handleRequest(Exchange exc) throws Exception {
+            public Outcome handleRequest(Exchange exc) {
                 if (!exc.getRequest().getUri().contains("is-logged-in"))
                     return Outcome.CONTINUE;
 
@@ -176,7 +182,15 @@ public class OAuth2ResourceErrorForwardingTest {
         sp.getInterceptors().add(oAuth2ResourceInterceptor);
         sp.getInterceptors().add(new AbstractInterceptor() {
             @Override
-            public Outcome handleRequest(Exchange exc) throws Exception {
+            public Outcome handleRequest(Exchange exc) {
+                try {
+                    return handleRequestInternal(exc);
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+
+            public Outcome handleRequestInternal(Exchange exc) throws IOException {
                 OAuth2AnswerParameters answer = OAuth2AnswerParameters.deserialize(String.valueOf(exc.getProperty(Exchange.OAUTH2)));
                 String accessToken = answer.getAccessToken();
                 Map<String, String> body = Map.of(
@@ -234,8 +248,13 @@ public class OAuth2ResourceErrorForwardingTest {
 
         sp.getInterceptors().add(new AbstractInterceptor() {
             @Override
-            public Outcome handleRequest(Exchange exc) throws Exception {
-                Map<String, String> params = URLParamUtil.getParams(new URIFactory(), exc, URLParamUtil.DuplicateKeyOrInvalidFormStrategy.ERROR);
+            public Outcome handleRequest(Exchange exc) {
+                Map<String, String> params = null;
+                try {
+                    params = URLParamUtil.getParams(new URIFactory(), exc, URLParamUtil.DuplicateKeyOrInvalidFormStrategy.ERROR);
+                } catch (URISyntaxException | IOException e) {
+                    throw new RuntimeException(e);
+                }
                 error.set(params.get("error"));
                 errorDescription.set(params.get("error_description"));
 

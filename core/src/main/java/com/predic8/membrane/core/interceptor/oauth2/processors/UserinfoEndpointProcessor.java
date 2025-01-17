@@ -13,13 +13,18 @@
 
 package com.predic8.membrane.core.interceptor.oauth2.processors;
 
+import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.oauth2.OAuth2AuthorizationServerInterceptor;
 import com.predic8.membrane.core.interceptor.oauth2.request.UserinfoRequest;
+import org.slf4j.*;
+
+import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 
 public class UserinfoEndpointProcessor extends EndpointProcessor {
 
+    private static final Logger log = LoggerFactory.getLogger(UserinfoEndpointProcessor.class);
 
     public UserinfoEndpointProcessor(OAuth2AuthorizationServerInterceptor authServer) {
         super(authServer);
@@ -31,8 +36,18 @@ public class UserinfoEndpointProcessor extends EndpointProcessor {
     }
 
     @Override
-    public Outcome process(Exchange exc) throws Exception {
-        exc.setResponse(new UserinfoRequest(authServer,exc).validateRequest());
+    public Outcome process(Exchange exc) {
+        try {
+            exc.setResponse(new UserinfoRequest(authServer,exc).validateRequest());
+        } catch (Exception e) {
+            log.error(e.getMessage(), e);
+            ProblemDetails.internal(true)
+                    .component(this.getClass().getSimpleName())
+                    .exception(e)
+                    .stacktrace(true)
+                    .buildAndSetResponse(exc);
+            return ABORT;
+        }
         if(exc.getResponse().getStatusCode() == 200)
             authServer.getStatistics().accessTokenValid();
         else

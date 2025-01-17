@@ -46,12 +46,12 @@ public class SpringInterceptor extends AbstractInterceptor implements Applicatio
 	}
 
 	@Override
-	public Outcome handleRequest(Exchange exc) throws Exception {
+	public Outcome handleRequest(Exchange exc) {
 		return i.handleRequest(exc);
 	}
 
 	@Override
-	public Outcome handleResponse(Exchange exc) throws Exception {
+	public Outcome handleResponse(Exchange exc) {
 		return i.handleResponse(exc);
 	}
 

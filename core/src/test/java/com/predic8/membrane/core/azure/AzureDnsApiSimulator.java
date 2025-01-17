@@ -49,8 +49,17 @@ public class AzureDnsApiSimulator {
         var sp = new ServiceProxy(new ServiceProxyKey(port), "localhost", port);
 
         sp.getInterceptors().add(new AbstractInterceptor() {
+
             @Override
-            public Outcome handleRequest(Exchange exc) throws Exception {
+            public Outcome handleRequest(Exchange exc) {
+                try {
+                    return handleRequestInternal(exc);
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+
+            public Outcome handleRequestInternal(Exchange exc) throws IOException {
                 log.info("got request {}", exc.getRequestURI());
 
                 if (missingHeaders(exc)) {

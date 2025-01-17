@@ -139,7 +139,7 @@ public abstract class OAuth2ResourceB2CTest {
 
         mockAuthorizationServer.getMockAuthServer().getTransport().getInterceptors().add(2, new AbstractInterceptor() {
             @Override
-            public Outcome handleRequest(Exchange exc) throws Exception {
+            public Outcome handleRequest(Exchange exc) {
                 if (state.get() == 0) {
                     ref.set(exc.getOriginalRequestUri());
                     state.set(1);

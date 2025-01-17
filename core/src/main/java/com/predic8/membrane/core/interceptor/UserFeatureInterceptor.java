@@ -38,7 +38,7 @@ public class UserFeatureInterceptor extends AbstractInterceptor {
 	}
 
 	@Override
-	public Outcome handleResponse(Exchange exc) throws Exception {
+	public Outcome handleResponse(Exchange exc) {
         return getFlowController().invokeResponseHandlers(exc, exc.getProxy().getInterceptors());
 	}
 

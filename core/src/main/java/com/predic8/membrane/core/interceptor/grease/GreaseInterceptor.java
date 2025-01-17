@@ -52,13 +52,13 @@ public class GreaseInterceptor extends AbstractInterceptor {
     }
 
     @Override
-    public Outcome handleRequest(Exchange exc) throws Exception {
+    public Outcome handleRequest(Exchange exc) {
         exc.setRequest((Request) handleInternal(exc.getRequest()));
         return CONTINUE;
     }
 
     @Override
-    public Outcome handleResponse(Exchange exc) throws Exception {
+    public Outcome handleResponse(Exchange exc) {
         exc.setResponse((Response) handleInternal(exc.getResponse()));
         return CONTINUE;
     }

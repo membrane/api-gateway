@@ -14,21 +14,17 @@
 
 package com.predic8.membrane.core.interceptor.xml;
 
-import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Message;
-import com.predic8.membrane.core.http.MimeType;
-import com.predic8.membrane.core.interceptor.AbstractInterceptor;
-import com.predic8.membrane.core.interceptor.Outcome;
-import org.json.JSONObject;
-import org.json.JSONTokener;
-import org.json.XML;
+import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.interceptor.*;
+import org.json.*;
 
-import java.io.InputStream;
-import java.io.InputStreamReader;
+import java.io.*;
 
-import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
-import static java.nio.charset.StandardCharsets.UTF_8;
+import static com.predic8.membrane.core.http.MimeType.*;
+import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static java.nio.charset.StandardCharsets.*;
 
 
 /**
@@ -53,24 +49,22 @@ public class Json2XmlInterceptor extends AbstractInterceptor {
     private static final String ROOT = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>";
 
     @Override
-    public Outcome handleRequest(Exchange exc) throws Exception {
+    public Outcome handleRequest(Exchange exc) {
         return handleInternal(exc.getRequest());
     }
 
     @Override
-    public Outcome handleResponse(Exchange exc) throws Exception {
+    public Outcome handleResponse(Exchange exc) {
         return handleInternal(exc.getResponse());
     }
 
     private Outcome handleInternal(Message msg){
         if(!msg.isJSON())
             return CONTINUE;
-        msg.getHeader().setContentType(MimeType.TEXT_XML);
+        msg.getHeader().setContentType(TEXT_XML);
         msg.setBodyContent(json2Xml(msg.getBodyAsStream()));
-
         return CONTINUE;
     }
-
 
     private byte[] json2Xml(InputStream body) {
         return (ROOT + XML.toString(convertToJsonObject(body))).getBytes(UTF_8);
