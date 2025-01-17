@@ -15,7 +15,6 @@
 package com.predic8.membrane.core.interceptor.templating;
 
 import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
@@ -29,7 +28,7 @@ import org.jetbrains.annotations.*;
 import java.io.*;
 import java.util.*;
 
-import static com.predic8.membrane.core.exceptions.ProblemDetails.internal;
+import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
 import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.lang.ScriptingUtils.*;
@@ -63,22 +62,22 @@ public class TemplateInterceptor extends StaticInterceptor {
         }
         catch (TemplateExecutionException e) {
             log.warn("Groovy template error: {}",e.getMessage());
-            exc.setResponse(ProblemDetails.gateway( router.isProduction(),getDisplayName())
+            gateway( router.isProduction(),getDisplayName())
                     .detail("Error during template rendering.")
                     .internal("line", e.getLineNumber())
                     .exception(e)
                     .stacktrace(false)
-                    .build());
+                    .buildAndSetResponse(exc);
             return ABORT;
         }
         catch (GroovyRuntimeException e) {
             log.warn("Groovy error executing template: {}",e.getMessage());
-            exc.setResponse(ProblemDetails.gateway( router.isProduction(),getDisplayName())
+            gateway( router.isProduction(),getDisplayName())
                     .addSubType("groovy")
                     .detail("Groovy error during template rendering.")
                     .exception(e)
                     .stacktrace(false)
-                    .build());
+                    .buildAndSetResponse(exc);
             return ABORT;
         }
         catch (Exception e) {

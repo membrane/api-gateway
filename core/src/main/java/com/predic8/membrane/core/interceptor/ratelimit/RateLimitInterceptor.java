@@ -15,7 +15,6 @@
 package com.predic8.membrane.core.interceptor.ratelimit;
 
 import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
@@ -28,7 +27,7 @@ import org.springframework.expression.spel.standard.*;
 import java.time.*;
 import java.util.*;
 
-import static com.predic8.membrane.core.exceptions.ProblemDetails.user;
+import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.util.HttpUtil.*;
@@ -99,10 +98,10 @@ public class RateLimitInterceptor extends AbstractInterceptor {
                 return CONTINUE;
         } catch (SpelEvaluationException e) {
             log.info("Cannot evaluate keyExpression {} cause is {}", keyExpression, e.getCause());
-            exc.setResponse(ProblemDetails.internal(router.isProduction(),getDisplayName())
+            internal(router.isProduction(),getDisplayName())
                     .addSubType("rate-limiter")
                     .detail("Cannot evaluate keyExpression '%s' cause is %s".formatted(keyExpression, e.getMessage()))
-                    .build());
+                    .buildAndSetResponse(exc);
             return RETURN;
         }
 

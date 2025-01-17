@@ -15,15 +15,15 @@
 package com.predic8.membrane.core.interceptor;
 
 import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.proxies.*;
 import org.slf4j.*;
 
-import static com.predic8.membrane.core.exchange.Exchange.SSL_CONTEXT;
-import static com.predic8.membrane.core.http.Header.X_FORWARDED_FOR;
-import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.REQUEST_FLOW;
+import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
+import static com.predic8.membrane.core.exchange.Exchange.*;
+import static com.predic8.membrane.core.http.Header.*;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 
 @SuppressWarnings("unused")
@@ -49,12 +49,12 @@ public class RuleMatchingInterceptor extends AbstractInterceptor {
 
 		if (proxy instanceof NullProxy) {
 			// Do not log. 404 is too common
-            exc.setResponse(ProblemDetails.user(router.isProduction(),"routing")
+            user(router.isProduction(),"routing")
                     .statusCode(404)
                     .title("Wrong path or method")
                     .detail("This request was not accepted by Membrane. Please check HTTP method and path.")
-                    .internal("method", exc.getRequest().getMethod())
-                    .internal("uri", exc.getRequest().getUri()).build());
+                    .topLevel("method", exc.getRequest().getMethod())
+                    .topLevel("uri", exc.getRequest().getUri()).buildAndSetResponse(exc);
 			return ABORT;
 		}
 
