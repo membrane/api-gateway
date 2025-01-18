@@ -32,8 +32,10 @@ import java.util.*;
 import java.util.concurrent.atomic.*;
 
 import static com.predic8.membrane.core.http.Header.*;
+import static com.predic8.membrane.core.http.Request.post;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.interceptor.ratelimit.RateLimitInterceptor.*;
+import static com.predic8.membrane.core.lang.ExchangeExpression.Language.*;
 import static java.lang.Long.*;
 import static java.lang.Thread.*;
 import static java.time.Duration.*;
@@ -61,15 +63,14 @@ public class RateLimitInterceptorTest {
 	@ValueSource( strings = {"properties.a","path","json.foo","method","path + method","headers.host","exchange.remoteAddrIp"})
 	void simplePropertyExpression(String expression) throws Exception {
 
-		System.out.println("expression = " + expression);
+		log.info("expression: {}", expression);
 
 		Exchange exc1 = prepareRequest("aaa");
 		Exchange exc2 = prepareRequest("bbb");
 
-		RateLimitInterceptor interceptor = new RateLimitInterceptor(ofSeconds(10),3) {{
-			setKeyExpression(expression);
-			init();
-		}};
+		RateLimitInterceptor interceptor = new RateLimitInterceptor(ofSeconds(10),3);
+		interceptor.setKeyExpression(expression);
+		interceptor.init();
 
 		assertEquals(CONTINUE, interceptor.handleRequest(exc1));
 		assertEquals(CONTINUE, interceptor.handleRequest(exc2));
@@ -88,19 +89,49 @@ public class RateLimitInterceptorTest {
 		assertTrue(parseLong(h1.getFirstValue(X_RATELIMIT_RESET)) > 0);
 	}
 
+	@Test
+	void jsonpathExpression() throws URISyntaxException {
+		Exchange excA = createJsonExchange("a");
+		Exchange excB = createJsonExchange("b");
+
+		RateLimitInterceptor interceptor = new RateLimitInterceptor(ofSeconds(10),3);
+		interceptor.setLanguage(JSONPATH);
+		interceptor.setKeyExpression("$.application");
+		interceptor.init();
+
+		assertEquals(CONTINUE, interceptor.handleRequest(excA));
+		assertEquals(CONTINUE, interceptor.handleRequest(excB));
+		assertEquals(CONTINUE, interceptor.handleRequest(excA));
+		assertEquals(CONTINUE, interceptor.handleRequest(excB));
+		assertEquals(CONTINUE, interceptor.handleRequest(excA));
+		assertEquals(CONTINUE, interceptor.handleRequest(excB));
+		assertEquals(RETURN, interceptor.handleRequest(excA));
+		assertEquals(RETURN, interceptor.handleRequest(excB));
+
+		assertEquals(429, excA.getResponse().getStatusCode());
+		assertEquals(429, excB.getResponse().getStatusCode());
+	}
+
+	private static Exchange createJsonExchange(String application) throws URISyntaxException {
+        return post("/foo")
+                .json("""
+                        {
+                             "application": "%s"
+                        }
+                        """.formatted(application))
+                .buildExchange();
+	}
+
 	@NotNull
 	private static Exchange prepareRequest(String value) throws URISyntaxException, JsonProcessingException {
 		Exchange exc = new Request.Builder()
 				.method(value)
 				.url(new URIFactory(),"/" + value)
 				.header("Host",value)
+				.body(om.writeValueAsBytes(Map.of("foo",value)))
 				.buildExchange();
 		exc.setProperty("a",value);
 		exc.setRemoteAddrIp(value);
-
-		Map<String,String> m = new HashMap<>();
-		m.put("foo",value);
-		exc.getRequest().setBodyContent(om.writeValueAsBytes(m));
 		return exc;
 	}
 
@@ -114,6 +145,7 @@ public class RateLimitInterceptorTest {
 		int tryLimit = 16;
 		int rateLimitSeconds = 1;
 		RateLimitInterceptor rli = new RateLimitInterceptor(ofSeconds(rateLimitSeconds), tryLimit);
+		rli.init();
 
 		for (int i = 0; i < tryLimit; i++) {
 			assertEquals(CONTINUE, rli.handleRequest(exc));
@@ -131,7 +163,7 @@ public class RateLimitInterceptorTest {
 	}
 
 	@Test
-	void rateLimitByJWT() throws Exception {
+	void rateLimitByJWT() {
 		var interceptor = new RateLimitInterceptor(ofSeconds(10), 100);
 		interceptor.setKeyExpression("properties.jwt.sub");
 		interceptor.init();
@@ -157,7 +189,7 @@ public class RateLimitInterceptorTest {
 	}
 
 	@Test
-	void rateLimitByJWTDifferentProperties() throws Exception {
+	void rateLimitByJWTDifferentProperties() {
 		var interceptor = new RateLimitInterceptor(ofSeconds(10), 100);
 		interceptor.setKeyExpression("properties.jwt.sub");
 		interceptor.init();
@@ -189,6 +221,7 @@ public class RateLimitInterceptorTest {
 		int tryLimit = 16;
 		int rateLimitSeconds = 1;
 		final RateLimitInterceptor rli = new RateLimitInterceptor(ofSeconds(rateLimitSeconds), tryLimit);
+		rli.init();
 		
 		ArrayList<Thread> threads = new ArrayList<>();
 		final AtomicInteger continues = new AtomicInteger();
@@ -333,7 +366,7 @@ public class RateLimitInterceptorTest {
 
 
 	@Test
-	void rateLimitInitWithoutKeyExpression() throws Exception {
+	void rateLimitInitWithoutKeyExpression() {
 		new RateLimitInterceptor().init();
 	}
 
