@@ -89,7 +89,7 @@ public class RateLimitInterceptor extends AbstractExchangeExpressionInterceptor 
 
     @Override
     public void init() {
-        super.init(); // Not needed to call it. It would be better not to, see below
+        super.init();
     }
 
     @Override
