@@ -13,55 +13,147 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.schemavalidation;
 
+import com.fasterxml.jackson.databind.*;
 import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.interceptor.schemavalidation.ValidatorInterceptor.*;
 import com.predic8.membrane.core.resolver.*;
+import org.jetbrains.annotations.*;
 import org.junit.jupiter.api.*;
 
-import java.io.*;
-
-import static org.apache.commons.io.IOUtils.*;
+import static com.predic8.membrane.core.http.Request.*;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
+import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
+import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class JSONSchemaValidationTest {
 
-	private void validate(String schema, String json, boolean success) throws Exception {
-		final StringBuffer sb = new StringBuffer();
-		FailureHandler fh = (message, exc) -> {
-            sb.append(message);
-            sb.append("\n");
-        };
-		JSONValidator validator = new JSONValidator(new ResolverMap(), schema, fh);
-		validator.init();
-		Request request = new Request.Builder().body(toByteArray(getClass().getResourceAsStream(json))).build();
-		Exchange exchange = new Exchange(null);
-		validator.validateMessage(exchange, request);
-		if (success)
-            assertEquals(0, sb.length(), sb.toString());
-		else
-            assertFalse(sb.isEmpty(), "No error occurred, but expected one.");
-	}
+    private static final ObjectMapper om = new ObjectMapper();
 
-	@Test
-	public void run() throws Exception {
-		validate("classpath:/validation/jsonschema/schema2000.json", "/validation/jsonschema/good2000.json", true);
-	}
+    @Test
+    void valid1() throws Exception {
+        assertEquals(CONTINUE, getValidator("""
+                {
+                    "required": [ "p1" ],
+                    "properties": {
+                        "p1": {
+                            "format": "date"
+                        },
+                        "p2": {
+                            "format": "phone"
+                        }
+                    }
+                }
+                """).validateMessage(post("/foo").body("""
+                {
+                    "p1": "2010-11-15",
+                    "p2": "+3927166273"
+                }
+                """).buildExchange(), REQUEST));
+    }
 
-	@Test
-	public void run2() throws Exception {
-		validate("classpath:/validation/jsonschema/schema2000.json", "/validation/jsonschema/bad2000.json", false);
-	}
+    @Test
+    void inValid1() throws Exception {
+        var validator = getValidator("""
+                {
+                    "required": [ "p1" ],
+                    "properties": {
+                        "p1": {
+                            "format": "date"
+                        },
+                        "p2": {
+                            "format": "phone"
+                        }
+                    }
+                }
+                """);
+        Exchange exc = post("/foo").body("""
+                {
+                  	"p2": null
+                }
+                """).buildExchange();
+        assertEquals(ABORT, validator.validateMessage(exc, REQUEST));
 
-	@Test
-	public void run3() throws Exception {
-		validate("classpath:/validation/jsonschema/schema2001.json", "/validation/jsonschema/good2001.json", true);
-	}
+        JsonNode jn =  om.readTree(exc.getResponse().getBodyAsStream());
 
-	@Test
-	public void run4() throws Exception {
-		validate("classpath:/validation/jsonschema/schema2001.json", "/validation/jsonschema/bad2001.json", false);
-	}
+        assertEquals("JSON validation failed", jn.get("title").textValue());
+        assertEquals("https://membrane-api.io/error/user",jn.get("type").textValue());
+        assertEquals(1, jn.get("errors").size());
 
+//        System.out.println("exc.getResponse().getBodyAsStringDecoded() = " + exc.getResponse().getBodyAsStringDecoded());
+    }
 
+    @Test
+    void valid2() throws Exception {
+        assertEquals(CONTINUE, getValidator("""
+              {
+                 "required": ["id","price"],
+                 "properties": {
+                     "id": {
+                         "type": "integer"
+                     },
+                     "price": {
+                         "type": "number",
+                                 "minimum": 0
+                     },
+                     "tags": {
+                         "type": "array",
+                         "items": {
+                             "type": "string"
+                         }
+                     }
+                 }
+             }
+             """).validateMessage(post("/foo").body("""
+                {
+                    "id": 123,
+                    "price": 1.99,
+                    "tags": ["food","fresh"]
+                }
+                """).buildExchange(), REQUEST));
+    }
+
+    @Test
+    void inValid2() throws Exception {
+        var exc = post("/foo").body("""
+                {
+                    "id": "123",
+                    "price": -1.99,
+                    "tags": ["food","fresh",2]
+                }
+                """).buildExchange();
+        assertEquals(ABORT, getValidator("""
+              {
+                 "required": ["id","price"],
+                 "properties": {
+                     "id": {
+                         "type": "integer"
+                     },
+                     "price": {
+                         "type": "number",
+                                 "minimum": 0
+                     },
+                     "tags": {
+                         "type": "array",
+                         "items": {
+                             "type": "string"
+                         }
+                     }
+                 }
+             }
+             """).validateMessage(exc, REQUEST));
+
+        JsonNode jn =  om.readTree(exc.getResponse().getBodyAsStream());
+
+        assertEquals("JSON validation failed", jn.get("title").textValue());
+        assertEquals("https://membrane-api.io/error/user",jn.get("type").textValue());
+        assertEquals(2, jn.get("errors").size());
+
+        System.out.println("exc.getResponse().getBodyAsStringDecoded() = " + exc.getResponse().getBodyAsStringDecoded());
+    }
+
+    private static @NotNull JSONSchemaValidator getValidator(String schema) {
+        var validator = new JSONSchemaValidator(new StaticStringResolver(), schema, null);
+        validator.init();
+        return validator;
+    }
 }

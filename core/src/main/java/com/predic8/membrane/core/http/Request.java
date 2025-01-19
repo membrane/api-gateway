@@ -59,7 +59,7 @@ public class Request extends Message {
 	String uri;
 
 	@Override
-	public void parseStartLine(InputStream in) throws IOException, EndOfStreamException {
+	public void parseStartLine(InputStream in) throws IOException {
 		try {
 			String firstLine = HttpUtil.readLine(in);
 			Matcher matcher = pattern.matcher(firstLine);
@@ -275,12 +275,17 @@ public class Request extends Message {
 			return this;
 		}
 
+		public Builder body(InputStream is) {
+			req.setBody(new Body(is));
+			return this;
+		}
+
 		public Builder body(byte[] body) {
 			req.setBodyContent(body);
 			return this;
 		}
 
-		public Builder body(long contentLength, InputStream body) throws IOException {
+		public Builder body(long contentLength, InputStream body) {
 			req.body = new Body(body, contentLength);
 			Header header = req.getHeader();
 			header.removeFields(CONTENT_ENCODING);

@@ -14,13 +14,13 @@
 
 package com.predic8.membrane.core.interceptor.schemavalidation;
 
-import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.multipart.*;
 import com.predic8.membrane.core.resolver.*;
 import com.predic8.membrane.core.util.*;
 import com.predic8.schema.Schema;
-import org.apache.commons.text.*;
 import org.slf4j.*;
 import org.xml.sax.*;
 
@@ -30,80 +30,92 @@ import javax.xml.validation.*;
 import java.io.*;
 import java.util.*;
 
-import static java.nio.charset.StandardCharsets.*;
+import static com.predic8.membrane.core.Constants.*;
+import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
+import static com.predic8.membrane.core.http.Header.VALIDATION_ERROR_SOURCE;
 
 public class XMLSchemaValidator extends AbstractXMLSchemaValidator {
-	private static final Logger log = LoggerFactory.getLogger(XMLSchemaValidator.class.getName());
+    private static final Logger log = LoggerFactory.getLogger(XMLSchemaValidator.class.getName());
 
-	public XMLSchemaValidator(ResolverMap resourceResolver, String location, ValidatorInterceptor.FailureHandler failureHandler) {
-		super(resourceResolver, location, failureHandler);
-		init();
-	}
+    public XMLSchemaValidator(ResolverMap resourceResolver, String location, ValidatorInterceptor.FailureHandler failureHandler) {
+        super(resourceResolver, location, failureHandler);
+        init(); // Better to call in Interceptor?
+    }
 
-	@Override
-	public String getName() {
-		return "XML Schema Validator";
-	}
+    @Override
+    public String getName() {
+        return "xml-schema-validator";
+    }
 
-	@Override
-	protected List<Schema> getSchemas() {
-		return null; // never gets called
-	}
+    @Override
+    protected List<Schema> getSchemas() {
+        return null; // never gets called
+    }
 
-	@Override
-	protected List<Validator> createValidators() {
-		SchemaFactory sf = SchemaFactory.newInstance(Constants.XSD_NS);
-		sf.setResourceResolver(resolver.toLSResourceResolver());
-		List<Validator> validators = new ArrayList<>();
-		log.debug("Creating validator for schema: {}", location);
+    @Override
+    protected List<Validator> createValidators() {
+        SchemaFactory sf = SchemaFactory.newInstance(XSD_NS);
+        sf.setResourceResolver(resolver.toLSResourceResolver());
+        List<Validator> validators = new ArrayList<>();
+        log.debug("Creating validator for schema: {}", location);
         StreamSource ss;
         try {
             ss = new StreamSource(resolver.resolve(location));
         } catch (ResourceRetrievalException e) {
-            throw new ConfigurationException("Cannot resolve schema from %s.".formatted(location),e);
+            throw new ConfigurationException("Cannot resolve schema from %s.".formatted(location), e);
         }
         ss.setSystemId(location);
         Validator validator;
         try {
             validator = sf.newSchema(ss).newValidator();
         } catch (SAXException e) {
-            throw new ConfigurationException("Cannot parse schema from %s.".formatted(location),e);
+            throw new ConfigurationException("Cannot parse schema from %s.".formatted(location), e);
         }
         validator.setResourceResolver(resolver.toLSResourceResolver());
-		validator.setErrorHandler(new SchemaValidatorErrorHandler());
-		validators.add(validator);
-		return validators;
-	}
+        validator.setErrorHandler(new SchemaValidatorErrorHandler());
+        validators.add(validator);
+        return validators;
+    }
 
-	/**
-	 * Time is dependent on Source type. Messured on Mac M1 and 1_000_000 validations
-	 * StreamSource = 6.2s
-	 * DOMSource = 38.8s
-	 *
-	 * @param input Stream with body
-	 * @return Source
-	 */
-	@Override
-	protected Source getMessageBody(InputStream input) {
-		return new StreamSource(input);
-	}
+    /**
+     * Time is dependent on Source type. Messured on Mac M1 and 1_000_000 validations
+     * StreamSource = 6.2s
+     * DOMSource = 38.8s
+     *
+     * @param input Stream with body
+     * @return Source
+     */
+    @Override
+    protected Source getMessageBody(InputStream input) {
+        return new StreamSource(input);
+    }
 
-	@Override
-	protected Response createErrorResponse(String message) {
-		return Response.
-				badRequest().
-				contentType(MimeType.TEXT_XML_UTF8).
-				body(("<error>" + StringEscapeUtils.escapeXml11(message) + "</error>").getBytes(UTF_8)).
-				build();
-	}
+    @Override
+    protected void setErrorResponse(Exchange exchange, String message) {
+        user(false)
+                .title(getErrorTitle())
+                .component(getName())
+                .extension("error", message)
+                .buildAndSetResponse(exchange);
+    }
 
-	@Override
-	protected boolean isFault(Message msg) {
-		return false;
-	}
+    @Override
+    protected void setErrorResponse(Exchange exchange, Interceptor.Flow flow, List<Exception> exceptions) {
+        user(false)
+                .title(getErrorTitle())
+                .component(getName())
+                .extension("validation", convertExceptionsToMap(exceptions))
+                .buildAndSetResponse(exchange);
+        exchange.getResponse().getHeader().add(VALIDATION_ERROR_SOURCE, flow.name());
+    }
 
-	@Override
-	protected String getPreliminaryError(XOPReconstitutor xopr, Message msg) {
-		return null;
-	}
+    @Override
+    protected boolean isFault(Message msg) {
+        return false;
+    }
+
+    @Override
+    protected String getPreliminaryError(XOPReconstitutor xopr, Message msg) {
+        return null;
+    }
 }
