@@ -90,13 +90,14 @@ public class RateLimitInterceptor extends AbstractExchangeExpressionInterceptor 
     @Override
     public void init() {
         super.init(); // Not needed to call it. It would be better not to, see below
+    }
 
+    @Override
+    protected ExchangeExpression getExchangeExpression() {
         // If there is no expression use the client IP
         if (expression.isEmpty())
-            return;
-
-        // Overwrites the exchangeExpression with one that does not expect an ${} expression
-        exchangeExpression = ExchangeExpression.newInstance(router, language, expression);
+            return null;
+        return ExchangeExpression.newInstance(router, language, expression);
     }
 
     @Override
