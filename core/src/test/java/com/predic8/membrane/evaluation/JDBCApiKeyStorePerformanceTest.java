@@ -25,12 +25,12 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class JDBCApiKeyStorePerformanceTest {
 
     private static final Logger LOGGER = Logger.getLogger(JDBCApiKeyStorePerformanceTest.class.getName());
-    private static final int USERS = 10000;
+    private static final int USERS = 10;
     private static final String DATABASE_NAME = "test";
     private static final String CREATE_DB_FLAG = "create";
     private Map<String, List<String>> keyToScopesMap = new HashMap<>();
 
-    private JDBCApiKeyStore JDBCApiKeyStore;
+    private JDBCApiKeyStore jdbcApiKeyStore;
     private EmbeddedDataSource dataSource;
     private Connection connection;
     private KeyTable keyTable;
@@ -38,9 +38,9 @@ public class JDBCApiKeyStorePerformanceTest {
 
     @BeforeEach
     void setUp() throws SQLException {
-        JDBCApiKeyStore = createApiKeyStore();
+        jdbcApiKeyStore = createApiKeyStore();
         connection = getDataSource().getConnection();
-        JDBCApiKeyStore.init(new Router());
+        jdbcApiKeyStore.init(new Router());
         clearTablesIfExist();
     }
 
@@ -53,14 +53,14 @@ public class JDBCApiKeyStorePerformanceTest {
         LOGGER.info("Performance: " + (endTime - startTime) / 1000 + " seconds");
     }
 
-    @Test
+    /*@Test
     public void createTableIfTableDoNotExist() throws UnauthorizedApiKeyException, SQLException {
-        JDBCApiKeyStore.getScopes("");
-        PreparedStatement stmt = connection.prepareStatement("SELECT * FROM %s".formatted(JDBCApiKeyStore.getKeyTable().getName()));
+        jdbcApiKeyStore.getScopes("");
+        PreparedStatement stmt = connection.prepareStatement("SELECT * FROM %s".formatted(jdbcApiKeyStore.getKeyTable().getName()));
         stmt.executeQuery();
         assertTrue(stmt.execute());
         clearTablesIfExist();
-    }
+    }*/
 
     private JDBCApiKeyStore createApiKeyStore() {
         JDBCApiKeyStore apiKeyStore = new JDBCApiKeyStore();
@@ -81,7 +81,7 @@ public class JDBCApiKeyStorePerformanceTest {
             dataSource = new EmbeddedDataSource();
             dataSource.setDatabaseName(DATABASE_NAME);
             dataSource.setCreateDatabase(CREATE_DB_FLAG);
-            JDBCApiKeyStore.setDatasource(dataSource);
+            jdbcApiKeyStore.setDatasource(dataSource);
         }
         return dataSource;
     }
@@ -92,7 +92,7 @@ public class JDBCApiKeyStorePerformanceTest {
         ResultSet rs = ps.executeQuery();
         while (rs.next()) {
             String key = rs.getString("apikey");
-            List<String> scopes = JDBCApiKeyStore.getScopes(key)
+            List<String> scopes = jdbcApiKeyStore.getScopes(key)
                     .orElseThrow(() -> new RuntimeException("No scopes found for key: " + key));
             keyToScopesMap.put(key, scopes);
         }

@@ -6,7 +6,10 @@ import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.util.jdbc.AbstractJdbcSupport;
 import org.jetbrains.annotations.NotNull;
 
-import java.sql.*;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -32,11 +35,15 @@ public class JDBCApiKeyStore extends AbstractJdbcSupport implements ApiKeyStore 
         }
     }
 
-    private void checkApiKey(String apiKey) throws SQLException {
-        try (PreparedStatement stmt = getDatasource().getConnection().prepareStatement("SELECT * FROM %s WHERE apikey = ?".formatted(keyTable.getName()))) {
+    private void checkApiKey(String apiKey) throws Exception {
+        try (PreparedStatement stmt = getDatasource().getConnection().prepareStatement(
+                "SELECT * FROM %s WHERE apikey = ?".formatted(keyTable.getName()))) {
             stmt.setString(1, apiKey);
-        } catch (SQLException e) {
-            createTables();
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (!rs.next()) {
+                    throw new UnauthorizedApiKeyException();
+                }
+            }
         }
     }
 
@@ -51,22 +58,6 @@ public class JDBCApiKeyStore extends AbstractJdbcSupport implements ApiKeyStore 
                 return Optional.of(scopes);
             }
         }
-    }
-
-    private void createTables() throws SQLException {
-        Statement stmt = getDatasource().getConnection().createStatement();
-        stmt.executeUpdate(String.format("""
-                CREATE TABLE %s (
-                    apikey VARCHAR(255) NOT NULL PRIMARY KEY
-                )
-                """, keyTable.getName()));
-        
-        stmt.executeUpdate(String.format("""
-                CREATE TABLE %s (
-                    apikey VARCHAR(255) NOT NULL REFERENCES %s (apikey),
-                    scope VARCHAR(255) NOT NULL
-                )
-                """, scopeTable.getName(), keyTable.getName()));
     }
 
     @MCChildElement(order = 0)

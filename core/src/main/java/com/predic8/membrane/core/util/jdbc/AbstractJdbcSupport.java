@@ -14,23 +14,29 @@ public abstract class AbstractJdbcSupport {
     private static final String DATASOURCE_SAMPLE = """
              Sample:
             
-                <spring:bean id="yourDataSource" class="org.apache.commons.dbcp.BasicDataSource">
-                    <spring:property name="driverClassName" value="yourDriver"> />
-                    <spring:property name="url" value="jdbc:mysql://localhost:3306/yourDatabase" />
-                    <spring:property name="username" value="yourUsername" />
-                    <spring:property name="password" value="yourPassword" />
-                </spring:bean>
-            
-                 <router>
-                    <api port="2000" />
-                        <apiKey>
-                            <databaseApiKeyStore datasource="yourDataSource">
-                                <keyTable>key</keyTable>
-                                <scopeTable>scope</scopeTable>
-                            </databaseApiKeyStore>
-                        </apiKey>
-                    </api>
-                </router>
+            <spring:beans xmlns="http://membrane-soa.org/proxies/1/"
+                                   xmlns:spring="http://www.springframework.org/schema/beans"
+                                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                                   xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.2.xsd
+                                            http://membrane-soa.org/proxies/1/ http://membrane-soa.org/schemas/proxies-1.xsd">
+             <spring:bean id="dataSource" class="org.apache.commons.dbcp2.BasicDataSource">
+                 <spring:property name="driverClassName" value="org.postgresql.Driver" />
+                 <spring:property name="url" value="jdbc:postgresql://localhost:5432/postgres" />
+                 <spring:property name="username" value="user" />
+                 <spring:property name="password" value="password" />
+             </spring:bean>
+
+             <router>
+                 <api port="2000">
+                     <apiKey>
+                         <databaseApiKeyStore datasource="dataSource">
+                             <keyTable>key</keyTable>
+                             <scopeTable>scope</scopeTable>
+                         </databaseApiKeyStore>
+                         <headerExtractor />
+                     </apiKey>
+                 </api>
+             </router>
             """;
 
     public void init(Router router) {
