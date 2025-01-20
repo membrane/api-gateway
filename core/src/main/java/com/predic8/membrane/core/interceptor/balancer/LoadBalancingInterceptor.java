@@ -15,7 +15,6 @@ package com.predic8.membrane.core.interceptor.balancer;
 
 import com.google.common.collect.*;
 import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
@@ -24,6 +23,7 @@ import org.slf4j.*;
 import java.io.*;
 import java.util.*;
 
+import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 
 /**
@@ -81,11 +81,9 @@ public class LoadBalancingInterceptor extends AbstractInterceptor {
             exc.setResponse(Response.internalServerError().build());
             return ABORT;
         } catch (Exception e) {
-            ProblemDetails.internal(router.isProduction())
-                    .component(getDisplayName())
+            internal(router.isProduction(),getDisplayName())
                     .detail("Could not get dispatched node!")
                     .exception(e)
-                    .stacktrace(true)
                     .buildAndSetResponse(exc);
             return ABORT;
         }
@@ -123,11 +121,9 @@ public class LoadBalancingInterceptor extends AbstractInterceptor {
             try {
                 sessionId = getSessionId(exc.getResponse());
             } catch (Exception e) {
-                ProblemDetails.internal(router.isProduction())
-                        .component(getDisplayName())
+                internal(router.isProduction(),getDisplayName())
                         .detail("Could not get session id!")
                         .exception(e)
-                        .stacktrace(true)
                         .buildAndSetResponse(exc);
                 return ABORT;
             }

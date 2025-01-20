@@ -15,7 +15,6 @@
 package com.predic8.membrane.core.transport.http2;
 
 import com.google.common.collect.*;
-import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.HeaderField;
 import com.predic8.membrane.core.http.*;
@@ -32,6 +31,7 @@ import java.io.*;
 import java.net.*;
 import java.util.*;
 
+import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
 import static com.predic8.membrane.core.exchange.ExchangeState.*;
 import static com.predic8.membrane.core.transport.http2.frame.Error.*;
 import static com.predic8.membrane.core.transport.http2.frame.Frame.*;
@@ -165,7 +165,7 @@ public class Http2ExchangeHandler implements Runnable {
     }
 
     private Response generateErrorResponse(Exception e) {
-        return ProblemDetails.internal(transport.getRouter().isProduction())
+        return internal(transport.getRouter().isProduction(),"http2-exchange-handler")
                 .exception(e)
                 .build();
     }

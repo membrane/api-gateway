@@ -21,13 +21,13 @@ import com.predic8.membrane.core.interceptor.*;
 public class MyInterceptor extends AbstractInterceptor {
 
 	@Override
-	public Outcome handleRequest(Exchange exc) throws Exception {
+	public Outcome handleRequest(Exchange exc) {
 		System.out.println("MyInterceptor maven at request invoked.");
 		return Outcome.CONTINUE;
 	}
 
    @Override
-	public Outcome handleResponse(Exchange exc) throws Exception {
+	public Outcome handleResponse(Exchange exc) {
 		System.out.println("MyInterceptor maven at response invoked.");
 		return Outcome.CONTINUE;
 	}

@@ -13,16 +13,15 @@
 
 package com.predic8.membrane.core.interceptor.oauth2.processors;
 
-import com.predic8.membrane.core.exceptions.*;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.interceptor.Outcome;
-import com.predic8.membrane.core.interceptor.authentication.session.SessionManager;
-import com.predic8.membrane.core.interceptor.oauth2.OAuth2AuthorizationServerInterceptor;
-import com.predic8.membrane.core.interceptor.oauth2.request.AuthWithSessionRequest;
-import com.predic8.membrane.core.interceptor.oauth2.request.AuthWithoutSessionRequest;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.interceptor.authentication.session.*;
+import com.predic8.membrane.core.interceptor.oauth2.*;
+import com.predic8.membrane.core.interceptor.oauth2.request.*;
 import org.slf4j.*;
 
-import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
+import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
+import static com.predic8.membrane.core.interceptor.Outcome.*;
 
 public class AuthEndpointProcessor extends EndpointProcessor {
 
@@ -44,8 +43,7 @@ public class AuthEndpointProcessor extends EndpointProcessor {
             return processInternal(exc);
         } catch (Exception e) {
             log.error("", e);
-            ProblemDetails.internal(true)
-                    .component(this.getClass().getSimpleName())
+            internal(true,"auth-endpoint-processor")
                     .exception(e)
                     .stacktrace(true)
                     .buildAndSetResponse(exc);

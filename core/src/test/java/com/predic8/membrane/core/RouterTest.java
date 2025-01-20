@@ -59,7 +59,7 @@ class RouterTest {
             .statusCode(500)
             .contentType(APPLICATION_PROBLEM_JSON)
             .body("title", equalTo("An error occurred."))
-            .body("type",equalTo("https://membrane-api.io/error/internal"))
+            .body("type",equalTo("https://membrane-api.io/error/internal/interceptor"))
             .body("detail",containsString("key"))
             .body("$",aMapWithSize(3))
         .extract();
@@ -78,7 +78,7 @@ class RouterTest {
             .statusCode(500)
             .contentType(APPLICATION_XML)
             .body("error.title", equalTo("An error occurred."))
-            .body("error.type",equalTo("https://membrane-api.io/error/internal"))
+            .body("error.type",equalTo("https://membrane-api.io/error/internal/interceptor"))
             .body("error.message", Matchers.not(containsString(INTERNAL_SECRET)))
             .body("error.detail",containsString("key"))
             .extract();
@@ -99,7 +99,7 @@ class RouterTest {
             .statusCode(500)
             .contentType(APPLICATION_PROBLEM_JSON)
             .body("title", equalTo("Internal server error."))
-            .body("type",equalTo("https://membrane-api.io/error/internal"))
+            .body("type",equalTo("https://membrane-api.io/error/internal/interceptor"))
             .body("$",hasKey("attention"))
             .body("attention", Matchers.containsString("development mode"))
             .body("$",not(hasKey("stacktrace")))
@@ -127,7 +127,7 @@ class RouterTest {
 
         System.out.println(r.asPrettyString());
         NodeList n = getNodeList(r.asInputStream());
-        assertEquals(7, n.getLength());
+        assertEquals(6, n.getLength());
     }
 
     private static Router createRouter(int port, boolean production) throws IOException {
@@ -139,6 +139,11 @@ class RouterTest {
             @Override
             public Outcome handleRequest(Exchange exc) {
                 throw new RuntimeException(INTERNAL_SECRET);
+            }
+
+            @Override
+            public String getDisplayName() {
+                return "interceptor";
             }
         });
         r.setHotDeploy(false);

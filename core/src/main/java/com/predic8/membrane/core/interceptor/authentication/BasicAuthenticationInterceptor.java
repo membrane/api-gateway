@@ -16,7 +16,6 @@ package com.predic8.membrane.core.interceptor.authentication;
 
 import com.google.common.collect.*;
 import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.interceptor.authentication.session.*;
@@ -26,6 +25,7 @@ import com.predic8.membrane.core.util.*;
 import java.util.*;
 
 import static com.predic8.membrane.core.Constants.*;
+import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
 import static com.predic8.membrane.core.exchange.Exchange.*;
 import static com.predic8.membrane.core.http.Header.*;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.*;
@@ -79,10 +79,9 @@ public class BasicAuthenticationInterceptor extends AbstractInterceptor {
 	}
 
 	private Outcome deny(Exchange exc) {
-		ProblemDetails.security(router.isProduction())
+		security(router.isProduction(),getDisplayName())
 						.statusCode(401)
 						.title("Unauthorized")
-				.component(getDisplayName())
 						.buildAndSetResponse(exc);
 		exc.getResponse().setHeader(HttpUtil.createHeaders(null, "WWW-Authenticate", "Basic realm=\"%s Authentication\"".formatted(PRODUCT_NAME)));
 		return ABORT;

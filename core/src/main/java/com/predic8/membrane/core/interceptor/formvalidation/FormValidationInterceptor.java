@@ -15,7 +15,6 @@ package com.predic8.membrane.core.interceptor.formvalidation;
 
 import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.config.*;
-import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
@@ -26,6 +25,8 @@ import javax.xml.stream.*;
 import java.util.*;
 import java.util.regex.*;
 
+import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.REQUEST_FLOW;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.util.URLParamUtil.DuplicateKeyOrInvalidFormStrategy.*;
 
@@ -102,7 +103,7 @@ public class FormValidationInterceptor extends AbstractInterceptor {
 
 	public FormValidationInterceptor() {
 		name = "form validation";
-		setFlow(Flow.Set.REQUEST_FLOW);
+		setFlow(REQUEST_FLOW);
 	}
 
 	@Override
@@ -114,12 +115,10 @@ public class FormValidationInterceptor extends AbstractInterceptor {
         try {
             propMap = URLParamUtil.getParams(router.getUriFactory(), exc, ERROR);
         } catch (Exception e) {
-			ProblemDetails.internal(router.isProduction())
-					.component(getDisplayName())
+			internal(router.isProduction(),getDisplayName())
 					.detail("Could not parse query parameters!")
-					.extension("uri", exc.getRequest().getUri())
+					.topLevel("uri", exc.getRequest().getUri())
 					.exception(e)
-					.stacktrace(true)
 					.buildAndSetResponse(exc);
 			return ABORT;
         }

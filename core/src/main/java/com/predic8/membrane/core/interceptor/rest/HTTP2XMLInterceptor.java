@@ -13,18 +13,16 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.rest;
 
-import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.exceptions.*;
+import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.xml.Request;
-import com.predic8.membrane.core.interceptor.AbstractInterceptor;
-import com.predic8.membrane.core.interceptor.Outcome;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.predic8.membrane.core.http.xml.*;
+import com.predic8.membrane.core.interceptor.*;
+import org.slf4j.*;
 
 import java.nio.charset.*;
 
-import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
+import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
+import static com.predic8.membrane.core.interceptor.Outcome.*;
 
 // TODO IMPLEMENTATION NOT FINISHED
 @MCElement(name = "http2xml")
@@ -41,21 +39,20 @@ public class HTTP2XMLInterceptor extends AbstractInterceptor {
         try {
             return handleRequestInternal(exc);
         } catch (Exception e) {
-            ProblemDetails.user(router.isProduction())
-                    .component(getDisplayName())
+            log.error("",e);
+            user(router.isProduction(),getDisplayName())
                     .detail("Could not generate XML from HTTP information!")
                     .exception(e)
-                    .stacktrace(true)
                     .buildAndSetResponse(exc);
             return ABORT;
         }
     }
 
     public Outcome handleRequestInternal(Exchange exc) throws Exception {
-        log.debug("uri: " + exc.getRequest().getUri());
+        log.debug("uri: {}", exc.getRequest().getUri());
 
         String res = new Request(exc.getRequest()).toXml();
-        log.debug("http-xml: " + res);
+        log.debug("http-xml: {}", res);
 
         exc.getRequest().setBodyContent(res.getBytes(StandardCharsets.UTF_8));
 

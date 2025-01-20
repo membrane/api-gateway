@@ -14,7 +14,6 @@
 package com.predic8.membrane.core.interceptor.oauth2.processors;
 
 import com.predic8.membrane.core.beautifier.*;
-import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.interceptor.oauth2.*;
@@ -22,6 +21,7 @@ import org.slf4j.*;
 
 import java.io.*;
 
+import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
 import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.http.Response.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
@@ -54,13 +54,11 @@ public class CertsEndpointProcessor extends EndpointProcessor {
             exc.setResponse(ok().contentType(APPLICATION_JSON_UTF8).body(jsonBeautifier.beautify(jwks)).build());
         } catch (IOException e) {
             log.error("", e);
-            ProblemDetails.internal(true)
-                    .component(this.getClass().getSimpleName())
+            internal(true,"certs-endpoint-processor")
                     .exception(e)
-                    .stacktrace(true)
                     .buildAndSetResponse(exc);
             return ABORT;
         }
-        return Outcome.RETURN;
+        return RETURN;
     }
 }

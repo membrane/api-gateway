@@ -68,15 +68,13 @@ public class AcmeHttpChallengeInterceptor extends AbstractInterceptor {
                 String correctToken = acmeClient.getToken(host);
 
                 if (correctToken != null && correctToken.equals(token)) {
-                    String keyAuth = null;
+                    String keyAuth;
                     try {
                         keyAuth = token + "." + acmeClient.getThumbprint();
                     } catch (JoseException e) {
-                        ProblemDetails.user(router.isProduction())
-                                .component(getDisplayName())
+                        ProblemDetails.user(router.isProduction(),getDisplayName())
                                 .detail("Could not create thumbprint!")
                                 .exception(e)
-                                .stacktrace(true)
                                 .buildAndSetResponse(exc);
                         return ABORT;
                     }

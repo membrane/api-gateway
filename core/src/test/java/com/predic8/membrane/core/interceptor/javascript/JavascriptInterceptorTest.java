@@ -91,10 +91,10 @@ public class JavascriptInterceptorTest {
         ProblemDetails pd = ProblemDetails.parse(exc.getResponse());
         assertEquals(500, pd.getStatusCode());
         System.out.println("pd = " + pd);
-        assertEquals("https://membrane-api.io/error/internal", pd.getType());
+        assertEquals("https://membrane-api.io/error/internal/javascript", pd.getType());
         assertTrue(pd.getTitle().contains("Error executing"));
-        assertEquals(1,pd.getExtensions().get("line"));
-        assertEquals(1,pd.getExtensions().get("column"));
+        assertEquals(1,pd.getInternal().get("line"));
+        assertEquals(1,pd.getInternal().get("column"));
     }
 
     @ParameterizedTest
@@ -223,7 +223,7 @@ public class JavascriptInterceptorTest {
 
 
     @SafeVarargs
-    private Outcome executeScript(String src, Class<LanguageSupport>... engine) throws Exception {
+    private Outcome executeScript(String src, Class<LanguageSupport>... engine) {
         interceptor.setSrc(src);
 
         // Needed because GraalVMJavascriptSupport is not found using Class.forname() in the Interceptor!

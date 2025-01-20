@@ -15,43 +15,43 @@
 package com.predic8.membrane.core.interceptor.flow;
 
 import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.*;
-import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.interceptor.*;
 import org.slf4j.*;
 
 import java.util.*;
 
+import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
+
 public abstract class AbstractFlowInterceptor extends AbstractInterceptor {
 
-	private static final Logger log = LoggerFactory.getLogger(AbstractFlowInterceptor.class);
+    private static final Logger log = LoggerFactory.getLogger(AbstractFlowInterceptor.class);
 
-	protected List<Interceptor> interceptors = new ArrayList<>();
+    protected List<Interceptor> interceptors = new ArrayList<>();
 
-	public List<Interceptor> getInterceptors() {
-		return interceptors;
-	}
+    public List<Interceptor> getInterceptors() {
+        return interceptors;
+    }
 
-	@MCChildElement(allowForeign=true)
-	public void setInterceptors(List<Interceptor> interceptors) {
-		this.interceptors = interceptors;
-	}
+    @MCChildElement(allowForeign = true)
+    public void setInterceptors(List<Interceptor> interceptors) {
+        this.interceptors = interceptors;
+    }
 
-	@Override
-	public void init() {
-		super.init();
-		for (Interceptor i : interceptors)
-			i.init(router);
-	}
+    @Override
+    public void init() {
+        super.init();
+        for (Interceptor i : interceptors)
+            i.init(router);
+    }
 
-	protected static void createProblemDetails( String flow,Interceptor interceptor, Exchange exc, Exception e) {
-		String msg = "Aborting! Exception caused by %s during %s flow.".formatted(flow,interceptor.getDisplayName()); // Flow is capital to make it the same as in other places
-		log.warn(msg, e);
-		ProblemDetails.internal(false)
-				.detail(msg)
-				.component(interceptor.getDisplayName())
-				.exception(e)
-				.buildAndSetResponse(exc);
-	}
+    protected static void createProblemDetails(String flow, Interceptor interceptor, Exchange exc, Exception e) {
+        String msg = "Aborting! Exception caused by %s during %s flow.".formatted(flow, interceptor.getDisplayName()); // Flow is capital to make it the same as in other places
+        log.warn(msg, e);
+        internal(false, "flow-interceptor")
+                .detail(msg)
+                .component(interceptor.getDisplayName())
+                .exception(e)
+                .buildAndSetResponse(exc);
+    }
 }

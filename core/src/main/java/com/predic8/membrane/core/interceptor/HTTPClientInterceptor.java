@@ -40,7 +40,7 @@ public class HTTPClientInterceptor extends AbstractInterceptor {
 
     private static final Logger log = LoggerFactory.getLogger(HTTPClientInterceptor.class.getName());
 
-    private static final String PROXIES_HINT = " String Maybe the target is only reachable over an HTTP proxy server. Please check proxy settings in conf/proxies.xml.";
+    private static final String PROXIES_HINT = " Maybe the target is only reachable over an HTTP proxy server. Please check proxy settings in conf/proxies.xml.";
 
     private boolean failOverOn5XX;
     private boolean adjustHostHeader = true;
@@ -60,34 +60,33 @@ public class HTTPClientInterceptor extends AbstractInterceptor {
         } catch (TerminateException e) {
             log.error("Could not block request.",e);
         }
-
         try {
             hc.call(exc, adjustHostHeader, failOverOn5XX);
             return RETURN;
         } catch (ConnectException e) {
-            setErrorResponse(exc, "Target %s is not reachable.".formatted(getDestination(exc)) + PROXIES_HINT);
+            String msg = "Target %s is not reachable.".formatted(getDestination(exc));
+            log.warn(msg + PROXIES_HINT);
+            ProblemDetails.gateway(router.isProduction(),getDisplayName())
+                    .statusCode(502)
+                    .detail(msg)
+                    .buildAndSetResponse(exc);
             return ABORT;
         } catch (UnknownHostException e) {
-            setErrorResponse(exc, "Target host %s of API %s is unknown. DNS was unable to resolve host name.".formatted(URLUtil.getHost(getDestination(exc)), exc.getProxy().getName()) + PROXIES_HINT);
+            String msg = "Target host %s of API %s is unknown. DNS was unable to resolve host name.".formatted(URLUtil.getHost(getDestination(exc)), exc.getProxy().getName());
+            log.warn(msg + PROXIES_HINT);
+            ProblemDetails.gateway(router.isProduction(),getDisplayName())
+                    .statusCode(502)
+                    .detail(msg)
+                    .buildAndSetResponse(exc);
             return ABORT;
         } catch (Exception e) {
-            log.error(e.getMessage());
-            ProblemDetails.internal(router.isProduction())
-                    .component(getDisplayName())
+            log.error("",e);
+            ProblemDetails.internal(router.isProduction(),getDisplayName())
                     .exception(e)
-                    .extension("proxy", exc.getProxy().getName())
-                    .stacktrace(true)
+                    .internal("proxy", exc.getProxy().getName())
                     .buildAndSetResponse(exc);
             return ABORT;
         }
-    }
-
-    private void setErrorResponse(Exchange exc, String msg) {
-        log.warn(msg);
-        exc.setResponse(ProblemDetails.gateway(router.isProduction())
-                .statusCode(502)
-                .detail(msg)
-                .build());
     }
 
     private String getDestination(Exchange exc) {

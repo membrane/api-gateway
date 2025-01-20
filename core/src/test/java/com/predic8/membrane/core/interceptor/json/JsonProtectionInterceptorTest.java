@@ -14,7 +14,6 @@
 
 package com.predic8.membrane.core.interceptor.json;
 
-import com.fasterxml.jackson.databind.*;
 import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.exchange.*;
@@ -31,7 +30,7 @@ public class JsonProtectionInterceptorTest {
     static JsonProtectionInterceptor jpiProd;
     static JsonProtectionInterceptor jpiDev;
 
-    private static JsonProtectionInterceptor buildJPI(boolean prod) throws Exception {
+    private static JsonProtectionInterceptor buildJPI(boolean prod) {
         Router router = new Router();
         router.setProduction(prod);
         JsonProtectionInterceptor jpi = new JsonProtectionInterceptor();
@@ -257,8 +256,8 @@ public class JsonProtectionInterceptorTest {
 
             assertTrue(pd.getDetail().contains(parameters[2].toString()));
             assertEquals("JSON Protection Violation", pd.getTitle());
-            assertEquals(parameters[0],pd.getExtensions().get("line"));
-            assertEquals(parameters[1], pd.getExtensions().get("column"));
+            assertEquals(parameters[0],pd.getInternal().get("line"));
+            assertEquals(parameters[1], pd.getInternal().get("column"));
         }
     }
 }

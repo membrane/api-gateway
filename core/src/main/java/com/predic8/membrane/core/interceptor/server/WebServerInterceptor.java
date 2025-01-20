@@ -14,8 +14,7 @@
 package com.predic8.membrane.core.interceptor.server;
 
 import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.Router;
-import com.predic8.membrane.core.exceptions.*;
+import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
@@ -31,8 +30,9 @@ import java.nio.file.*;
 import java.util.*;
 import java.util.regex.*;
 
+import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
 import static com.predic8.membrane.core.http.MimeType.*;
-import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
+import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.util.HttpUtil.*;
 
 /**
@@ -95,11 +95,10 @@ public class WebServerInterceptor extends AbstractInterceptor {
         try {
             return handleRequestInternal(exc);
         } catch (IOException e) {
-            ProblemDetails.internal(router.isProduction())
-                    .component(getDisplayName())
+            log.error("", e);
+            internal(router.isProduction(),getDisplayName())
                     .detail("Error serving document")
                     .exception(e)
-                    .stacktrace(true)
                     .buildAndSetResponse(exc);
             return ABORT;
         }
@@ -112,11 +111,9 @@ public class WebServerInterceptor extends AbstractInterceptor {
         try {
             uri = getUri(exc);
         } catch (URISyntaxException e) {
-            ProblemDetails.internal(router.isProduction())
-                    .component(getDisplayName())
+            internal(router.isProduction(),getDisplayName())
                     .detail("Could not create uri")
                     .exception(e)
-                    .stacktrace(true)
                     .buildAndSetResponse(exc);
             return ABORT;
         }

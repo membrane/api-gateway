@@ -40,9 +40,8 @@ import java.util.Date;
 
 public class BasicXmlInterceptor extends AbstractInterceptor {
 
-    
     @Override
-    public Outcome handleRequest(Exchange exc) throws Exception {
+    public Outcome handleRequest(Exchange exc) {
         if(!exc.getRequest().isXML()){
             return Outcome.CONTINUE;
         }
