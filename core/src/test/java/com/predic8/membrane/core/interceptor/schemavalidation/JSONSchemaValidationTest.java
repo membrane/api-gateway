@@ -76,7 +76,7 @@ public class JSONSchemaValidationTest {
         JsonNode jn =  om.readTree(exc.getResponse().getBodyAsStream());
 
         assertEquals("JSON validation failed", jn.get("title").textValue());
-        assertEquals("https://membrane-api.io/error/user",jn.get("type").textValue());
+        assertEquals("https://membrane-api.io/error/user/json-schema-validator",jn.get("type").textValue());
         assertEquals(1, jn.get("errors").size());
 
 //        System.out.println("exc.getResponse().getBodyAsStringDecoded() = " + exc.getResponse().getBodyAsStringDecoded());
@@ -145,7 +145,7 @@ public class JSONSchemaValidationTest {
         JsonNode jn =  om.readTree(exc.getResponse().getBodyAsStream());
 
         assertEquals("JSON validation failed", jn.get("title").textValue());
-        assertEquals("https://membrane-api.io/error/user",jn.get("type").textValue());
+        assertEquals("https://membrane-api.io/error/user/json-schema-validator",jn.get("type").textValue());
         assertEquals(2, jn.get("errors").size());
 
         System.out.println("exc.getResponse().getBodyAsStringDecoded() = " + exc.getResponse().getBodyAsStringDecoded());

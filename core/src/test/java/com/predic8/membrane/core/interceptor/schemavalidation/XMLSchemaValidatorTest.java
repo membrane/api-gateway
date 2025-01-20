@@ -64,7 +64,7 @@ class XMLSchemaValidatorTest {
         JsonNode jn = om.readTree(exc.getResponse().getBodyAsStreamDecoded());
 
         assertEquals("XML message validation failed", jn.get("title").asText());
-        assertEquals("https://membrane-api.io/error/user", jn.get("type").asText());
+        assertEquals("https://membrane-api.io/error/user/xml-schema-validator", jn.get("type").asText());
 
         JsonNode validation = jn.get("validation");
 
