@@ -15,15 +15,15 @@ package com.predic8.membrane.core.interceptor.schemavalidation;
 
 import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.util.*;
 import org.junit.jupiter.api.*;
 
-import java.io.*;
+import java.util.*;
 
-import static com.predic8.membrane.core.http.MimeType.TEXT_XML;
-import static com.predic8.membrane.core.util.SOAPUtil.FaultCode.Server;
+import static com.predic8.membrane.core.http.MimeType.*;
+import static com.predic8.membrane.core.http.Response.*;
+import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static com.predic8.membrane.core.util.SOAPUtil.FaultCode.*;
 import static com.predic8.membrane.test.AssertUtils.*;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -32,36 +32,36 @@ public class SOAPFaultTest {
 	final Router r = new Router();
 
 	@Test
-	public void testValidateFaults() throws Exception {
+	public void testValidateFaults() {
 		ValidatorInterceptor i = createValidatorInterceptor(false);
 		Exchange exc = createFaultExchange();
-		assertEquals(Outcome.ABORT, i.handleResponse(exc));
+		assertEquals(ABORT, i.handleResponse(exc));
 		assertContainsNot("secret", exc.getResponse().toString());
 	}
 
 	@Test
-	public void testSkipFaults() throws Exception {
+	public void testSkipFaults() {
 		ValidatorInterceptor i = createValidatorInterceptor(true);
 		Exchange exc = createFaultExchange();
-		assertEquals(Outcome.CONTINUE, i.handleResponse(exc));
+		assertEquals(CONTINUE, i.handleResponse(exc));
 		assertContains("secret", exc.getResponse().toString());
 	}
 
 	@Test
-	public void testSkipFault2() throws Exception {
+	public void testSkipFault2() {
 		ValidatorInterceptor i = createValidatorInterceptor(true);
 		Exchange exc = getExchangeCP("wsdlValidator/soapFaultCustom.xml");
 
-		assertEquals(Outcome.CONTINUE, i.handleResponse(exc));
+		assertEquals(CONTINUE, i.handleResponse(exc));
 	}
 
-	private Exchange getExchangeCP(String path) throws IOException {
+	private Exchange getExchangeCP(String path) {
 		Exchange exc = new Exchange(null);
-		exc.setResponse(Response.ok().contentType(TEXT_XML).body(getClass().getClassLoader().getResourceAsStream(path), true).build());
+		exc.setResponse(ok().contentType(TEXT_XML).body(getClass().getClassLoader().getResourceAsStream(path), true).build());
 		return exc;
 	}
 
-	private ValidatorInterceptor createValidatorInterceptor(boolean skipFaults) throws Exception {
+	private ValidatorInterceptor createValidatorInterceptor(boolean skipFaults) {
 		ValidatorInterceptor i = new ValidatorInterceptor();
 		i.setWsdl(ARTICLE_SERVICE_WSDL);
 		i.setSkipFaults(skipFaults);
@@ -71,7 +71,7 @@ public class SOAPFaultTest {
 
 	private Exchange createFaultExchange() {
 		Exchange exc = new Exchange(null);
-		exc.setResponse(SOAPUtil.createSOAPValidationErrorResponse(Server,"secret","detail"));
+		exc.setResponse(SOAPUtil.createSOAPFaultResponse(Server,"secret", Map.of("detail","error")));
 		return exc;
 	}
 

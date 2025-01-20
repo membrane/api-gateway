@@ -13,30 +13,27 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.schemavalidation;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.xml.sax.ErrorHandler;
-import org.xml.sax.SAXException;
-import org.xml.sax.SAXParseException;
+import org.slf4j.*;
+import org.xml.sax.*;
 
 public class SchemaValidatorErrorHandler implements ErrorHandler {
 
-	private static Logger log = LoggerFactory.getLogger(SchemaValidatorErrorHandler.class.getName());
+	private static final Logger log = LoggerFactory.getLogger(SchemaValidatorErrorHandler.class.getName());
 
 	private Exception exception;
 
-	public void error(SAXParseException e) throws SAXException {
+	public void error(SAXParseException e) {
 		exception = e;
-		log.info("Error: " + e);
+		log.info("Error: {}", e.getMessage());
 	}
 
-	public void fatalError(SAXParseException e) throws SAXException {
+	public void fatalError(SAXParseException e) {
 		exception = e;
-		log.info("Fatal Error: " + e);
+		log.info("Fatal Error: {}", e.getMessage());
 	}
 
-	public void warning(SAXParseException e) throws SAXException {
-		log.info("Warning: " + e);
+	public void warning(SAXParseException e) {
+		log.info("Warning: {}", e.getMessage());
 	}
 
 	public Exception getException() {

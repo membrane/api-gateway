@@ -21,14 +21,12 @@ import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.multipart.*;
 import com.predic8.membrane.core.resolver.*;
 import com.predic8.membrane.core.util.*;
-import com.predic8.membrane.core.util.SOAPUtil.*;
 import com.predic8.schema.*;
 import com.predic8.wsdl.*;
 import org.jetbrains.annotations.*;
 import org.slf4j.*;
 
 import javax.xml.namespace.*;
-import javax.xml.stream.*;
 import javax.xml.transform.*;
 import java.io.*;
 import java.util.*;
@@ -36,12 +34,12 @@ import java.util.*;
 import static com.predic8.membrane.core.Constants.SoapVersion.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.util.SOAPUtil.FaultCode.*;
+import static com.predic8.membrane.core.util.SOAPUtil.*;
 import static com.predic8.membrane.core.util.WSDLUtil.*;
-import static javax.xml.stream.XMLInputFactory.*;
 
 public class WSDLValidator extends AbstractXMLSchemaValidator {
 
-	static Logger log = LoggerFactory.getLogger(WSDLValidator.class.getName());
+	private static final Logger log = LoggerFactory.getLogger(WSDLValidator.class.getName());
 
 	/**
 	 * A WSDL can have several definition.service elements. The serviceName is the
@@ -83,33 +81,34 @@ public class WSDLValidator extends AbstractXMLSchemaValidator {
 
 	@Override
 	public String getName() {
-		return "WSDL Validator";
+		return "wsdl-validator";
 	}
 
 	@Override
-	public Outcome validateMessage(Exchange exc, Message msg) throws Exception {
-		SOAPAnalysisResult result =  SOAPUtil.analyseSOAPMessage(xmlInputFactory, xopr, msg);
+	public Outcome validateMessage(Exchange exc, Interceptor.Flow flow) throws Exception {
+		Message msg = exc.getMessage(flow);
+		SOAPAnalysisResult result =  SOAPUtil.analyseSOAPMessage( xopr, msg);
 
 		if (result.version() == SOAP11 && !soap11) {
-			exc.setResponse(createErrorResponse("SOAP version 1.1 is not valid"));
+			setErrorResponse(exc,"SOAP version 1.1 is not valid");
 			return ABORT;
 		}
 		if (result.version() == SOAP12 && !soap12) {
-			exc.setResponse(createErrorResponse("SOAP version 1.2 is not valid"));
+			setErrorResponse(exc,"SOAP version 1.2 is not valid");
 			return ABORT;
 		}
 
 		if (checkIfSOAPElementIsUsedAsAWSDLMessage) {
 			if (msg instanceof Request && !isPossibleRequestElement(result.soapElement())) {
-				exc.setResponse(createErrorResponse("%s is not a valid request element. Possible elements are %s".formatted(result.soapElement(), requestElements)));
+				setErrorResponse(exc,"%s is not a valid request element. Possible elements are %s".formatted(result.soapElement(), requestElements));
 				return ABORT;
 			}
 			if (msg instanceof Response && !isPossibleResponseElement(result.soapElement())) {
-				exc.setResponse(createErrorResponse("%s is not a valid response element. Possible elements are %s".formatted(result.soapElement(), requestElements)));
+				setErrorResponse(exc,"%s is not a valid response element. Possible elements are %s".formatted(result.soapElement(), requestElements));
 				return ABORT;
 			}
 		}
-		return super.validateMessage(exc, msg);
+		return super.validateMessage(exc, flow);
 	}
 
 	private boolean isPossibleRequestElement(javax.xml.namespace.QName name) {
@@ -203,30 +202,34 @@ public class WSDLValidator extends AbstractXMLSchemaValidator {
 	}
 
 	@Override
-	protected Source getMessageBody(InputStream input) throws Exception {
+	protected Source getMessageBody(InputStream input) {
 		return MessageUtil.getSOAPBody(input);
 	}
 
 	@Override
-	protected Response createErrorResponse(String message) {
-		return SOAPUtil.createSOAPValidationErrorResponse(Client, "Message validation failed!",message);
+	protected void setErrorResponse(Exchange exchange, String message) {
+		exchange.setResponse(SOAPUtil.createSOAPFaultResponse(Client, getErrorTitle(),Map.of("error",message)));
 	}
 
-	private static final XMLInputFactory xmlInputFactory = XMLInputFactory.newInstance();
-	static {
-		xmlInputFactory.setProperty(IS_REPLACING_ENTITY_REFERENCES, false);
-		xmlInputFactory.setProperty(IS_SUPPORTING_EXTERNAL_ENTITIES, false);
+	@Override
+	protected void setErrorResponse(Exchange exchange, Interceptor.Flow flow, List<Exception> exceptions) {
+		exchange.setResponse(createSOAPFaultResponse(Client, getErrorTitle(), Map.of("validation", convertExceptionsToMap(exceptions))));
 	}
 
 	@Override
 	protected boolean isFault(Message msg) {
-		return SOAPUtil.analyseSOAPMessage(xmlInputFactory, xopr, msg).isFault();
+		return SOAPUtil.analyseSOAPMessage( xopr, msg).isFault();
 	}
 
 	@Override
 	protected String getPreliminaryError(XOPReconstitutor xopr, Message msg) {
-		if (SOAPUtil.isSOAP(xmlInputFactory, xopr, msg))
+		if (isSOAP( xopr, msg))
 			return null;
 		return "Not a SOAP message.";
+	}
+
+	@Override
+	public String getErrorTitle() {
+		return "WSDL message validation failed";
 	}
 }

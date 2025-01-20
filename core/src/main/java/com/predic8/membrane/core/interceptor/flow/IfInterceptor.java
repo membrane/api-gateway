@@ -53,7 +53,7 @@ public class IfInterceptor extends AbstractFlowInterceptor {
     @Override
     public void init() {
         super.init();
-        exchangeExpression = ExchangeExpression.getInstance(router, language, test);
+        exchangeExpression = ExchangeExpression.newInstance(router, language, test);
     }
 
     @Override

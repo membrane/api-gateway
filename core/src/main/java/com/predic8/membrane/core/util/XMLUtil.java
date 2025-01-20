@@ -23,12 +23,13 @@ import javax.xml.transform.*;
 import javax.xml.transform.dom.*;
 import javax.xml.transform.stream.*;
 import java.io.*;
+import java.util.*;
 
 import static javax.xml.transform.OutputKeys.*;
 
 public class XMLUtil {
 
-    public static String xml2string(Document doc) throws TransformerException {
+    public static String xml2string(Node doc) throws TransformerException {
         TransformerFactory tfFactory = TransformerFactory.newInstance(); // Comment ThreadSafe? with URL
         Transformer tf = tfFactory.newTransformer();
         tf.setOutputProperty(OMIT_XML_DECLARATION, "yes");
@@ -52,5 +53,33 @@ public class XMLUtil {
      */
     public static @NotNull InputSource getInputSource(Message msg) {
         return new InputSource(new InputStreamReader(msg.getBodyAsStreamDecoded()));
+    }
+
+    public static void mapToXml(Document doc, Element parent, Map<String, Object> map) {
+        for (Map.Entry<String, Object> entry : map.entrySet()) {
+            Element elem = doc.createElement(entry.getKey());
+            Object value = entry.getValue();
+
+            if (value instanceof Map) {
+                // Recursively handle nested maps
+                mapToXml(doc, elem, (Map<String, Object>) value);
+            } else if (value instanceof List) {
+                // Handle lists
+                for (Object item : (List<?>) value) {
+                    Element itemElement = doc.createElement("item");
+                    if (item instanceof Map) {
+                        mapToXml(doc, itemElement, (Map<String, Object>) item);
+                    } else {
+                        itemElement.setTextContent(item.toString());
+                    }
+                    elem.appendChild(itemElement);
+                }
+            } else {
+                // Handle primitive values
+                elem.setTextContent(value.toString());
+            }
+
+            parent.appendChild(elem);
+        }
     }
 }

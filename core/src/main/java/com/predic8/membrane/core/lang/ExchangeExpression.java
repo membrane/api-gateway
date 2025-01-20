@@ -30,6 +30,12 @@ public interface ExchangeExpression {
     enum Language {GROOVY, SPEL, XPATH, JSONPATH}
 
     /**
+     *
+     * @return String from which the ExchangeExpression was created
+     */
+    String getExpression();
+
+    /**
      * Override this with the logic to evaluate the expression on the exchange
      * Caller is responsible for exception handling. But caller can delegate it back to the
      * fill() method.
@@ -42,13 +48,12 @@ public interface ExchangeExpression {
      */
     <T> T evaluate(Exchange exchange, Interceptor.Flow flow, Class<T> type) throws ExchangeExpressionException;
 
-    static ExchangeExpression getInstance(Router router, Language language, String source) {
+    static ExchangeExpression newInstance(Router router, Language language, String expression) {
         return switch (language) {
-            case GROOVY -> new GroovyExchangeExpression(router, source);
-            case SPEL -> new SpELExchangeExpression(source,null);
-            case XPATH -> new XPathExchangeExpression(source);
-            case JSONPATH -> new JsonpathExchangeExpression(source);
+            case GROOVY -> new GroovyExchangeExpression(router, expression);
+            case SPEL -> new SpELExchangeExpression(expression,null);
+            case XPATH -> new XPathExchangeExpression(expression);
+            case JSONPATH -> new JsonpathExchangeExpression(expression);
         };
     }
-
 }
