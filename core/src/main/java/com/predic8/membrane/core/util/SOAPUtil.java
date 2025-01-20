@@ -16,29 +16,32 @@ package com.predic8.membrane.core.util;
 
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.multipart.*;
+import org.jetbrains.annotations.*;
 import org.slf4j.*;
+import org.w3c.dom.*;
 
 import javax.xml.namespace.*;
+import javax.xml.parsers.*;
 import javax.xml.stream.*;
 import javax.xml.stream.events.*;
+import java.util.*;
 
 import static com.predic8.membrane.core.Constants.*;
-import static com.predic8.membrane.core.http.MimeType.TEXT_XML_UTF8;
-import static com.predic8.membrane.core.util.SOAPUtil.FaultCode.Server;
-import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.apache.commons.text.StringEscapeUtils.escapeXml11;
+import static com.predic8.membrane.core.http.MimeType.*;
+import static com.predic8.membrane.core.util.XMLUtil.*;
+import static java.nio.charset.StandardCharsets.*;
+import static javax.xml.stream.XMLInputFactory.IS_REPLACING_ENTITY_REFERENCES;
+import static javax.xml.stream.XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES;
+import static org.apache.commons.text.StringEscapeUtils.*;
 
 public class SOAPUtil {
 
     private static final Logger log = LoggerFactory.getLogger(SOAPUtil.class.getName());
     public static final SOAPAnalysisResult NO_SOAP_RESULT = new SOAPAnalysisResult(false, false, null, null);
 
-    public static boolean isSOAP(XMLInputFactory xmlInputFactory, XOPReconstitutor xopr, Message msg) {
+    public static boolean isSOAP( XOPReconstitutor xopr, Message msg) {
         try {
-            XMLEventReader parser;
-            synchronized (xmlInputFactory) {
-                parser = xmlInputFactory.createXMLEventReader(xopr.reconstituteIfNecessary(msg));
-            }
+            XMLEventReader parser = XMLInputFactory.newInstance().createXMLEventReader(xopr.reconstituteIfNecessary(msg));
 
             while (parser.hasNext()) {
                 XMLEvent event = parser.nextEvent();
@@ -57,33 +60,52 @@ public class SOAPUtil {
 
     public enum FaultCode {Server, Client}
 
-    public static Response createSOAPValidationErrorResponse(FaultCode code, String faultstring, String detail) {
+    public static Response createSOAPFaultResponse(FaultCode code, String faultstring, Map<String,Object> details) {
+        Response response = createRawSOAPErrorResponse();
+        try {
+            response.setBodyContent(xml2string(createSOAP11Fault(code, faultstring, details)).getBytes(UTF_8));
+            return response;
+        } catch (Exception e) {
+            throw new RuntimeException("Should not happen", e);
+        }
+    }
+
+    public static Element createSOAP11Fault(FaultCode faultcode, String faultstring, Map<String, Object> detail) throws ParserConfigurationException {
+        Document doc = DocumentBuilderFactory.newInstance().newDocumentBuilder().newDocument();
+
+        Element env = doc.createElementNS(SOAP11_NS, "soap:Envelope");
+        env.setAttribute("xmlns:soap", SOAP11_NS);
+        doc.appendChild(env);
+
+        Element body = doc.createElementNS(SOAP11_NS, "soap:Body");
+        env.appendChild(body);
+
+        Element fault = doc.createElement("Fault");
+        body.appendChild(fault);
+
+        Element faultCode = doc.createElement("faultcode");
+        faultCode.setTextContent(faultcode.name());
+        fault.appendChild(faultCode);
+
+        Element faultString = doc.createElement("faultstring");
+        faultString.setTextContent(faultstring);
+        fault.appendChild(faultString);
+
+        if (detail != null && !detail.isEmpty()) {
+            Element detailElement = doc.createElement("detail");
+            mapToXml(doc, detailElement, detail);
+            fault.appendChild(detailElement);
+        }
+
+        return env;
+    }
+
+    private static @NotNull Response createRawSOAPErrorResponse() {
         Response response = new Response();
-        response.setStatusCode(400);
+        response.setStatusCode(200); // SOAP 1.1 is always 200 even in case of error!
         response.setStatusMessage("Bad request");
         response.setHeader(HttpUtil.createHeaders(TEXT_XML_UTF8));
-        response.setBodyContent(getFaultSOAP11Body(code, faultstring, detail).getBytes(UTF_8));
         return response;
-    }
-
-    public static String getFaultSOAP11Body(String detail) {
-        return getFaultSOAP11Body(Server,"Internal Server Error", detail );
-    }
-
-    public static String getFaultSOAP11Body(FaultCode code, String faultstring, String detail) {
-
-        return """
-                  <s11:Envelope xmlns:s11="http://schemas.xmlsoap.org/soap/envelope/">
-                    <s11:Body>
-                      <s11:Fault>
-                        <faultcode>s11:%s</faultcode>
-                        <faultstring>%s</faultstring>
-                        <detail>%s</detail>
-                      </s11:Fault>
-                    </s11:Body>
-                  </s11:Envelope>"""
-                .formatted(code, escapeXml11(faultstring), escapeXml11(detail))
-                .replace("\n", CRLF);
     }
 
     public static String getFaultSOAP12Body(String title, String text) {
@@ -108,17 +130,17 @@ public class SOAPUtil {
     public record SOAPAnalysisResult(boolean isSOAP, boolean isFault, SoapVersion version, QName soapElement) {
     }
 
-    public static SOAPAnalysisResult analyseSOAPMessage(XMLInputFactory xmlInputFactory, XOPReconstitutor xopr, Message msg) {
+    public static SOAPAnalysisResult analyseSOAPMessage( XOPReconstitutor xopr, Message msg) {
         /*
          * 0: waiting for "<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\">"
          * 1: waiting for "<soapenv:Body>" (skipping any "<soapenv:Header>")
          * 2: waiting for "<soapenv:Fault>"
          */
         try {
-            XMLEventReader parser;
-            synchronized (xmlInputFactory) {
-                parser = xmlInputFactory.createXMLEventReader(xopr.reconstituteIfNecessary(msg));
-            }
+            XMLInputFactory f = XMLInputFactory.newInstance();
+            f.setProperty(IS_REPLACING_ENTITY_REFERENCES, false);
+            f.setProperty(IS_SUPPORTING_EXTERNAL_ENTITIES, false);
+            XMLEventReader parser = f.createXMLEventReader(xopr.reconstituteIfNecessary(msg));
 
             SoapVersion version = null;
             int state = 0;

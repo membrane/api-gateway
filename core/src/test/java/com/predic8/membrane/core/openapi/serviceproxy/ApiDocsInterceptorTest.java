@@ -58,7 +58,6 @@ class ApiDocsInterceptorTest {
         rule = createProxy(router, spec);
 
         router.setExchangeStore(new ForgetfulExchangeStore());
-
         router.setTransport(new HttpTransport());
         router.add(rule);
         router.init();
@@ -84,7 +83,7 @@ class ApiDocsInterceptorTest {
 
     @Test
     void getOpenApiInterceptorTest() {
-        assertEquals("OpenAPI", getOpenAPIInterceptor(rule).get().getDisplayName());
+        assertEquals("openapi", getOpenAPIInterceptor(rule).get().getDisplayName());
         assertEquals(Optional.empty(), getOpenAPIInterceptor(new APIProxy()));
     }
 

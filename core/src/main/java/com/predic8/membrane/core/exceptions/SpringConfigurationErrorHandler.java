@@ -131,12 +131,12 @@ public class SpringConfigurationErrorHandler {
                 ************** Configuration Error ***********************************
                 
                 %s
-                %s%s
+                %s
                 
                 Giving up.
                 
                 Check proxies.xml file for errors.
-                %n""", ce.getMessage());
+                %n""", ce.getMessage(), reason);
     }
 
     @SuppressWarnings("StringConcatenationInLoop")
@@ -185,8 +185,7 @@ public class SpringConfigurationErrorHandler {
                 switch (requireNonNull(pce).getPropertyName()) {
                     case "requestLimitDuration" ->
                             RateLimitErrorHandling.handleRequestLimitDurationConfigurationException(log, pce);
-                    default -> log.error("""
-                            Invalid value %s for property %s.""".formatted(pce.getNewValue(), pce.getPropertyName()));
+                    default -> log.error("Invalid value {} for property {}.",pce.getNewValue(), pce.getPropertyName());
 
                 }
             }

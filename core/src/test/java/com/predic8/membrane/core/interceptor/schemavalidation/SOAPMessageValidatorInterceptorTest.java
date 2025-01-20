@@ -16,14 +16,13 @@ package com.predic8.membrane.core.interceptor.schemavalidation;
 
 import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.resolver.*;
 import com.predic8.membrane.core.util.*;
 import org.junit.jupiter.api.*;
 
 import java.io.*;
 
+import static com.predic8.membrane.core.http.Request.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static java.util.Objects.*;
 import static org.junit.jupiter.api.Assertions.*;
@@ -31,79 +30,132 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class SOAPMessageValidatorInterceptorTest {
 
-	private static Request requestTB;
-
-	private static Request requestXService;
-
-	private static Exchange exc;
-
 	public static final String ARTICLE_SERVICE_WSDL = "src/test/resources/validation/ArticleService.wsdl";
-
 	public static final String BLZ_SERVICE_WSDL = "src/test/resources/validation/BLZService.xml";
-
 	public static final String E_MAIL_SERVICE_WSDL = "src/test/resources/validation/XWebEmailValidation.wsdl.xml";
-
 	public static final String INLINE_ANYTYPE_WSDL = "src/test/resources/validation/inline-anytype.wsdl";
-
-	public static Router router = new Router();
+	public static final String WSDL_MESSAGE_VALIDATION_FAILED = "WSDL message validation failed";
+	public static Router router;
 
 	@BeforeAll
-	public static void setUp() {
-		requestTB = MessageUtil.getPostRequest("http://thomas-bayer.com");
-		requestXService = MessageUtil.getPostRequest("http://ws.xwebservices.com");
-		exc = new Exchange(null);
+	static void setup() {
 		router = new Router();
 	}
 
 	@Test
 	public void testHandleRequestValidBLZMessage() throws Exception {
-		assertEquals(CONTINUE, getOutcome(requestTB, createValidatorInterceptor(BLZ_SERVICE_WSDL), "/getBank.xml"));
+		Exchange exc = post("http://thomas-bayer.com")
+				.body(getContent("/getBank.xml"))
+				.buildExchange();
+		assertEquals(CONTINUE, createValidatorInterceptor(BLZ_SERVICE_WSDL).handleRequest(exc));
 	}
 
 	@Test
 	public void testHandleRequestInvalidBLZMessage() throws Exception {
-		assertEquals(ABORT, getOutcome(requestTB, createValidatorInterceptor(BLZ_SERVICE_WSDL), "/getBankInvalid.xml"));
+		Exchange exc = post("http://thomas-bayer.com")
+				.body(getContent("/getBankInvalid.xml"))
+				.buildExchange();
+		assertEquals(ABORT, createValidatorInterceptor(BLZ_SERVICE_WSDL).handleRequest(exc));
+		assertEquals(200, exc.getResponse().getStatusCode());
+		String body = exc.getResponse().getBodyAsStringDecoded();
+				System.out.println("body = " + body);
+		assertTrue(body.contains(WSDL_MESSAGE_VALIDATION_FAILED));
+		assertTrue(body.contains("No child element is expected"));
+		assertTrue(body.contains("line"));
+		assertTrue(body.contains("column"));
 	}
 
 	@Test
 	public void testHandleRequestValidArticleMessage() throws Exception {
-		assertEquals(CONTINUE, getOutcome(requestTB, createValidatorInterceptor(ARTICLE_SERVICE_WSDL), "/validation/articleRequest.xml"));
+		Exchange exc = post("http://thomas-bayer.com/article")
+				.body(getContent("/validation/articleRequest.xml"))
+				.buildExchange();
+		assertEquals(CONTINUE, createValidatorInterceptor(ARTICLE_SERVICE_WSDL).handleRequest(exc));
 	}
 
 	@Test
 	public void testHandleRequestInvalidArticleMessage() throws Exception {
-		assertEquals(ABORT, getOutcome(requestTB, createValidatorInterceptor(ARTICLE_SERVICE_WSDL), "/validation/articleRequestInvalid.xml"));
+		Exchange exc = post("http://thomas-bayer.com")
+				.body(getContent("/validation/articleRequestInvalid.xml"))
+				.buildExchange();
+		assertEquals(ABORT, createValidatorInterceptor(ARTICLE_SERVICE_WSDL).handleRequest(exc));
+		assertEquals(200, exc.getResponse().getStatusCode());
+
+		String body = exc.getResponse().getBodyAsStringDecoded();
+		assertTrue(body.contains(WSDL_MESSAGE_VALIDATION_FAILED));
+		assertTrue(body.contains("must have no character"));
+		assertTrue(body.contains("line"));
+		assertTrue(body.contains("column"));
 	}
 
 	@Test
 	public void testHandleRequestValidEmailMessage() throws Exception {
-		assertEquals(CONTINUE, getOutcome(requestXService, createValidatorInterceptor(E_MAIL_SERVICE_WSDL), "/validation/validEmail.xml"));
+		Exchange exc = post("http://ws.xwebservices.com")
+				.body(getContent("/validation/validEmail.xml"))
+				.buildExchange();
+		assertEquals(CONTINUE, createValidatorInterceptor(E_MAIL_SERVICE_WSDL).handleRequest(exc));
 	}
 
 	@Test
 	public void testHandleRequestInvalidEmailMessageDoubleEMailElement() throws Exception {
-		assertEquals(ABORT, getOutcome(requestXService, createValidatorInterceptor(E_MAIL_SERVICE_WSDL), "/validation/invalidEmail.xml"));
+		Exchange exc = post("http://ws.xwebservices.com")
+				.body(getContent("/validation/invalidEmail.xml"))
+				.buildExchange();
+		assertEquals(ABORT, createValidatorInterceptor(E_MAIL_SERVICE_WSDL).handleRequest(exc));
+
+		String body = exc.getResponse().getBodyAsStringDecoded();
+		System.out.println("body = " + body);
+		assertTrue(body.contains(WSDL_MESSAGE_VALIDATION_FAILED));
+		assertTrue(body.contains("Invalid content"));
+		assertTrue(body.contains("Email"));
+		assertTrue(body.contains("line"));
+		assertTrue(body.contains("column"));
 	}
 
 	@Test
 	public void testHandleRequestInvalidEmailMessageDoubleRequestElement() throws Exception {
-		assertEquals(ABORT, getOutcome(requestXService, createValidatorInterceptor(E_MAIL_SERVICE_WSDL), "/validation/invalidEmail2.xml"));
+		Exchange exc = post("http://ws.xwebservices.com")
+				.body(getContent("/validation/invalidEmail2.xml"))
+				.buildExchange();
+		assertEquals(ABORT, createValidatorInterceptor(E_MAIL_SERVICE_WSDL).handleRequest(exc));
+
+		String body = exc.getResponse().getBodyAsStringDecoded();
+//		System.out.println("body = " + body);
+		assertTrue(body.contains(WSDL_MESSAGE_VALIDATION_FAILED));
+		assertTrue(body.contains("Invalid content"));
+		assertTrue(body.contains("ValidateEmailRequest"));
+		assertTrue(body.contains("line"));
+		assertTrue(body.contains("column"));
 	}
 
 	@Test
 	public void testHandleRequestInvalidEmailMessageUnknownElement() throws Exception {
-		assertEquals(ABORT, getOutcome(requestXService, createValidatorInterceptor(E_MAIL_SERVICE_WSDL), "/validation/invalidEmail3.xml"));
+		Exchange exc = post("http://ws.xwebservices.com")
+				.body(getContent("/validation/invalidEmail3.xml"))
+				.buildExchange();
+		assertEquals(ABORT, createValidatorInterceptor(E_MAIL_SERVICE_WSDL).handleRequest(exc));
+
+		String body = exc.getResponse().getBodyAsStringDecoded();
+//		System.out.println("body = " + body);
+		assertTrue(body.contains(WSDL_MESSAGE_VALIDATION_FAILED));
+		assertTrue(body.contains("Invalid content"));
+		assertTrue(body.contains("line"));
+		assertTrue(body.contains("column"));
 	}
 
 	@Test
 	public void testInlineSchemaWithAnyType() throws Exception {
-		assertEquals(ABORT, getOutcome(requestXService, createValidatorInterceptor(INLINE_ANYTYPE_WSDL), "/validation/invalidEmail3.xml"));
-	}
+		Exchange exc = post("http://ws.xwebservices.com")
+				.body(getContent("/validation/invalidEmail3.xml"))
+				.buildExchange();
+		assertEquals(ABORT, createValidatorInterceptor(INLINE_ANYTYPE_WSDL).handleRequest(exc));
 
-	private Outcome getOutcome(Request request, Interceptor interceptor, String fileName) throws Exception {
-		request.setBodyContent(getContent(fileName).getBytes());
-		exc.setRequest(request);
-		return interceptor.handleRequest(exc);
+		String body = exc.getResponse().getBodyAsStringDecoded();
+//		System.out.println("body = " + body);
+		assertTrue(body.contains(WSDL_MESSAGE_VALIDATION_FAILED));
+		assertTrue(body.contains("Cannot find the declaration"));
+		assertTrue(body.contains("line"));
+		assertTrue(body.contains("column"));
 	}
 
 	private String getContent(String fileName) throws Exception {

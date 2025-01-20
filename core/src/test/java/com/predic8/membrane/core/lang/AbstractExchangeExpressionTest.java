@@ -56,17 +56,17 @@ public abstract class AbstractExchangeExpressionTest {
     protected abstract Language getLanguage();
 
     protected Object evalObject(String expression) {
-        return ExchangeExpression.getInstance(router, getLanguage(),expression)
+        return ExchangeExpression.newInstance(router, getLanguage(),expression)
                 .evaluate(exchange,flow, Object.class);
     }
 
     protected boolean evalBool(String expression) {
-        return ExchangeExpression.getInstance(router, getLanguage(),expression)
+        return ExchangeExpression.newInstance(router, getLanguage(),expression)
                 .evaluate(exchange,flow, Boolean.class);
     }
 
     protected String evalString(String expression) {
-        return ExchangeExpression.getInstance(router, getLanguage(),expression)
+        return ExchangeExpression.newInstance(router, getLanguage(),expression)
                 .evaluate(exchange,flow, String.class);
     }
 }
