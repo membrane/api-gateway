@@ -32,7 +32,11 @@ import java.io.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.*;
 
+import static com.predic8.membrane.core.http.Header.*;
+import static com.predic8.membrane.core.http.MimeType.*;
+import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static java.nio.charset.StandardCharsets.*;
+import static javax.xml.stream.XMLInputFactory.*;
 
 public class SchematronValidator extends AbstractMessageValidator {
 	private static final Logger log = LoggerFactory.getLogger(SchematronValidator.class.getName());
@@ -79,12 +83,13 @@ public class SchematronValidator extends AbstractMessageValidator {
 		}
 
 		xmlInputFactory = XMLInputFactory.newInstance();
-		xmlInputFactory.setProperty(XMLInputFactory.IS_REPLACING_ENTITY_REFERENCES, false);
-		xmlInputFactory.setProperty(XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES, false);
+		xmlInputFactory.setProperty(IS_REPLACING_ENTITY_REFERENCES, false);
+		xmlInputFactory.setProperty(IS_SUPPORTING_EXTERNAL_ENTITIES, false);
 	}
 
 	@Override
-	public Outcome validateMessage(Exchange exc, Message msg) {
+	public Outcome validateMessage(Exchange exc, Interceptor.Flow flow) {
+		Message msg = exc.getMessage(flow);
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
 
 		try {
@@ -109,7 +114,7 @@ public class SchematronValidator extends AbstractMessageValidator {
 					if (startElement.getName().getLocalPart().equals("failed-assert")) {
 						setErrorMessage(exc, new String(result, UTF_8), false,getSourceOfError(msg) );
 						invalid.incrementAndGet();
-						return Outcome.ABORT;
+						return ABORT;
 					}
 				}
 			}
@@ -117,12 +122,12 @@ public class SchematronValidator extends AbstractMessageValidator {
 		} catch (TransformerException e) {
 			setErrorMessage(exc, e.getMessage(), true, getSourceOfError(msg));
 			invalid.incrementAndGet();
-			return Outcome.ABORT;
+			return ABORT;
 		} catch (Exception e) {
 			log.error("", e);
 			setErrorMessage(exc, "internal error", true, getSourceOfError(msg));
 			invalid.incrementAndGet();
-			return Outcome.ABORT;
+			return ABORT;
 		}
 		valid.incrementAndGet();
 		return Outcome.CONTINUE;
@@ -136,12 +141,12 @@ public class SchematronValidator extends AbstractMessageValidator {
 
 		if (failureHandler != null) {
 			failureHandler.handleFailure(message, exc);
-			exc.setResponse(Response.badRequest().contentType(MimeType.TEXT_XML_UTF8).body((MSG_HEADER + MSG_FOOTER).getBytes(UTF_8)).build());
+			exc.setResponse(Response.badRequest().contentType(TEXT_XML_UTF8).body((MSG_HEADER + MSG_FOOTER).getBytes(UTF_8)).build());
 		} else {
-			exc.setResponse(Response.badRequest().contentType(MimeType.TEXT_XML_UTF8).body(message.getBytes(UTF_8)).build());
+			exc.setResponse(Response.badRequest().contentType(TEXT_XML_UTF8).body(message.getBytes(UTF_8)).build());
 		}
 		if (!escape)
-			exc.getResponse().getHeader().add(Header.VALIDATION_ERROR_SOURCE, source);
+			exc.getResponse().getHeader().add(VALIDATION_ERROR_SOURCE, source);
 	}
 
 	@Override

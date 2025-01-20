@@ -42,7 +42,7 @@ public class XMLProtectionInterceptor extends AbstractInterceptor {
 	private boolean removeDTD = true;
 
 	public XMLProtectionInterceptor() {
-		name = "XML Protection";
+		name = "xml protection";
 		setFlow(REQUEST_FLOW);
 	}
 

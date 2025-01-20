@@ -28,7 +28,7 @@ import java.util.function.*;
 
 public abstract  class LanguageAdapter {
 
-    private static final Logger log = LoggerFactory.getLogger(JavascriptInterceptor.class);
+    private static final Logger log = LoggerFactory.getLogger(LanguageAdapter.class);
 
     protected LanguageSupport languageSupport;
     final protected Router router;

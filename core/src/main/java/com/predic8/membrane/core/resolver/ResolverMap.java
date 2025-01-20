@@ -17,7 +17,6 @@ package com.predic8.membrane.core.resolver;
 import com.google.common.base.Objects;
 import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.*;
-import com.predic8.membrane.core.cloud.etcd.*;
 import com.predic8.membrane.core.kubernetes.*;
 import com.predic8.membrane.core.kubernetes.client.*;
 import com.predic8.membrane.core.transport.http.*;
@@ -44,8 +43,6 @@ import java.util.*;
  */
 @MCElement(name = "resolverMap")
 public class ResolverMap implements Cloneable, Resolver {
-
-    private EtcdResolver etcdResolver;
 
     /**
      * First param is the parent. The following params will be combined to one path
@@ -244,16 +241,6 @@ public class ResolverMap implements Cloneable, Resolver {
 
     public ExternalResolverConverter toExternalResolver() {
         return new ExternalResolverConverter();
-    }
-
-    public EtcdResolver getEtcdResolver() {
-        return etcdResolver;
-    }
-
-    @MCChildElement(order = 0)
-    public void setEtcdResolver(EtcdResolver etcdResolver) {
-        this.etcdResolver = etcdResolver;
-        addSchemaResolver(etcdResolver);
     }
 
     public KubernetesSchemaResolver getKubernetesSchemaResolver() {

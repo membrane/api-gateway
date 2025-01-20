@@ -47,7 +47,7 @@ public class StaticInterceptor extends AbstractInterceptor {
     protected static final Logger log = LoggerFactory.getLogger(StaticInterceptor.class);
 
     public StaticInterceptor() {
-        name = "Static";
+        name = "static";
     }
 
     @Override

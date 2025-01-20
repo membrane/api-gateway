@@ -38,7 +38,7 @@ public class ThrottleInterceptor extends AbstractInterceptor {
 	private int busyDelay = 0;
 
 	public ThrottleInterceptor() {
-		name = "Throttle";
+		name = "throttle";
 	}
 
 	@Override

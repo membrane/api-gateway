@@ -32,6 +32,7 @@ import java.io.*;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
 import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static org.jose4j.jws.AlgorithmIdentifiers.RSA_USING_SHA256;
 
 @MCElement(name = "jwtSign")
 public class JwtSignInterceptor extends AbstractInterceptor {
@@ -71,15 +72,15 @@ public class JwtSignInterceptor extends AbstractInterceptor {
             JsonWebSignature jws = new JsonWebSignature();
             jws.setPayload(prepareJwtPayload(exc.getMessage(flow)));
             jws.setKey(rsaJsonWebKey.getRsaPrivateKey());
-            jws.setAlgorithmHeaderValue(AlgorithmIdentifiers.RSA_USING_SHA256);
+            jws.setAlgorithmHeaderValue(RSA_USING_SHA256);
             jws.setKeyIdHeaderValue(rsaJsonWebKey.getKeyId());
             exc.getMessage(flow).setBodyContent(jws.getCompactSerialization().getBytes());
             return CONTINUE;
         } catch (JoseException e) {
             log.error("Error during attempt to sign JWT payload: {}", e.getLocalizedMessage());
-            ProblemDetails.gateway(router.isProduction())
+            ProblemDetails.security(router.isProduction())
+                    .addSubType("crypto")
                     .component(getDisplayName())
-                    .extension("message", e.getLocalizedMessage())
                     .detail("Error during attempt to sign JWT payload.")
                     .exception(e)
                     .stacktrace(true)
@@ -87,9 +88,9 @@ public class JwtSignInterceptor extends AbstractInterceptor {
             return ABORT;
         } catch (IOException e) {
             log.error("Error during attempt to parse JWT payload: {}", e.getLocalizedMessage());
-            ProblemDetails.gateway(router.isProduction())
+            ProblemDetails.security(router.isProduction())
+                    .addSubType("io")
                     .component(getDisplayName())
-                    .extension("message", e.getLocalizedMessage())
                     .detail("Error during attempt to parse JWT payload.")
                     .exception(e)
                     .stacktrace(true)

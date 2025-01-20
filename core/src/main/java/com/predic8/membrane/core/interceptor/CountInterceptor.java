@@ -34,7 +34,7 @@ public class CountInterceptor extends AbstractInterceptor {
 	private int counter;
 
 	public CountInterceptor() {
-		name = "Count Interceptor";
+		name = "count interceptor";
 	}
 
 	@Override
@@ -68,7 +68,7 @@ public class CountInterceptor extends AbstractInterceptor {
 
 	@Override
 	public String getDisplayName() {
-		return "Counter: " + super.getDisplayName();
+		return "counter: " + super.getDisplayName();
 	}
 
 	/**

@@ -30,7 +30,7 @@ import static io.restassured.RestAssured.*;
 import static java.util.Collections.*;
 import static org.junit.jupiter.api.Assertions.*;
 
-abstract class AbstractInterceptorFlowTest {
+public abstract class AbstractInterceptorFlowTest {
 
     private static Router router;
 

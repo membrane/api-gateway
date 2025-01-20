@@ -27,21 +27,13 @@ import java.util.*;
 
 public class Exchange extends AbstractExchange {
 
-	public static final String HTTP_SERVLET_REQUEST = "HttpServletRequest";
-
-	public static final String /*PROPERTY_*/ALLOW_WEBSOCKET = "use-websocket";
-
-	public static final String /*PROPERTY_*/ALLOW_TCP = "use-tcp";
-
-	public static final String /*PROPERTY_*/ALLOW_SPDY = "use-sdpy";
-
-	public static final String /*PROPERTY_*/TRACK_NODE_STATUS = "TRACK_NODE_STATUS";
-
-	public static final String /*PROPERTY_*/SSL_CONTEXT = "SSL_CONTEXT";
-
-	public static final String OAUTH2 = "oauth2";
-
-	// Property names
+	/* Exchange Properties */
+	public static final String HTTP_SERVLET_REQUEST = "membrane.servlet.request";
+	public static final String ALLOW_WEBSOCKET = "membrane.use.websocket";
+	public static final String ALLOW_TCP = "membrane.use.tcp";
+	public static final String TRACK_NODE_STATUS = "membrane.track.node.status";
+	public static final String SSL_CONTEXT = "membrane.ssl.context";
+	public static final String OAUTH2 = "membrane.oauth2";
 	public static final String SNI_SERVER_NAME = "membrane.sni.server.name";
 	public static final String WS_ORIGINAL_EXCHANGE = "membrane.ws.original.exchange";
 	public static final String SECURITY_SCHEMES = "membrane.security.schemes";
@@ -225,16 +217,8 @@ public class Exchange extends AbstractExchange {
 		return nodeStatusCodes;
 	}
 
-	public void setNodeStatusCodes(int[] nodeStatusCodes) {
-		this.nodeStatusCodes = nodeStatusCodes;
-	}
-
 	public Exception[] getNodeExceptions() {
 		return nodeExceptions;
-	}
-
-	public void setNodeExceptions(Exception[] nodeExceptions) {
-		this.nodeExceptions = nodeExceptions;
 	}
 
 	public String getInboundProtocol() {

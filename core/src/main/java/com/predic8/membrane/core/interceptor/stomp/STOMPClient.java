@@ -94,6 +94,7 @@ public class STOMPClient extends AbstractInterceptor {
 
 	@Override
 	public void init() {
+		super.init();
 		connectionManager = new ConnectionManager(connectionConfiguration.getKeepAliveTimeout(), router.getTimerManager());
 		if (sslOutboundParser != null)
 			sslOutboundProvider = new StaticSSLContext(sslOutboundParser, router.getResolverMap(), router.getBaseLocation());

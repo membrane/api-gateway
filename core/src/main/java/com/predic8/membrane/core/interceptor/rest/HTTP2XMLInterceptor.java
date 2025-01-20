@@ -33,7 +33,7 @@ public class HTTP2XMLInterceptor extends AbstractInterceptor {
     private static final Logger log = LoggerFactory.getLogger(HTTP2XMLInterceptor.class.getName());
 
     public HTTP2XMLInterceptor() {
-        name = "HTTP 2 XML";
+        name = "http 2 xml";
     }
 
     @Override

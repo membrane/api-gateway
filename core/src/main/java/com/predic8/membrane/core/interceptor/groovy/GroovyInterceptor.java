@@ -41,7 +41,7 @@ public class GroovyInterceptor extends AbstractScriptInterceptor {
     private static final Logger log = LoggerFactory.getLogger(GroovyInterceptor.class);
 
     public GroovyInterceptor() {
-        name = "Groovy";
+        name = "groovy";
     }
 
     @Override

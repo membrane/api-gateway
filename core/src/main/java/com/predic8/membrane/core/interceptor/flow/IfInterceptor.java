@@ -48,13 +48,13 @@ public class IfInterceptor extends AbstractFlowInterceptor {
     private ExchangeExpression exchangeExpression;
 
     public IfInterceptor() {
-        name = "If";
+        name = "if";
     }
 
     @Override
     public void init() {
         super.init();
-        exchangeExpression = ExchangeExpression.getInstance(router, language, test);
+        exchangeExpression = ExchangeExpression.newInstance(router, language, test);
     }
 
     @Override
@@ -73,7 +73,7 @@ public class IfInterceptor extends AbstractFlowInterceptor {
              result = exchangeExpression.evaluate(exc, flow, Boolean.class);
         } catch (ExchangeExpressionException e) {
             e.provideDetails(ProblemDetails.internal(router.isProduction()))
-                    .detail("Error evaluating expression on exchange in if plugin.")
+                    .detail("Error evaluating expression on exchange.")
                     .component("if")
                     .buildAndSetResponse(exc);
             return ABORT;

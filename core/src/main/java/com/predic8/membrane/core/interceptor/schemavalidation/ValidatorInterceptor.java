@@ -17,7 +17,6 @@ package com.predic8.membrane.core.interceptor.schemavalidation;
 import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.proxies.*;
 import com.predic8.membrane.core.resolver.*;
@@ -29,12 +28,13 @@ import org.springframework.context.*;
 
 import java.io.*;
 
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.resolver.ResolverMap.*;
 
 /**
  * Basically switches over {@link WSDLValidator}, {@link XMLSchemaValidator},
- * {@link JSONValidator} and {@link SchematronValidator} depending on the
+ * {@link JSONSchemaValidator} and {@link SchematronValidator} depending on the
  * attributes.
  *
  * @topic 8. SOAP based Web Services
@@ -57,7 +57,7 @@ public class ValidatorInterceptor extends AbstractInterceptor implements Applica
     private ApplicationContext applicationContext;
 
     public ValidatorInterceptor() {
-        name = "Validator";
+        name = "validator";
     }
 
     @Override
@@ -88,21 +88,25 @@ public class ValidatorInterceptor extends AbstractInterceptor implements Applica
             return new XMLSchemaValidator(resourceResolver, combine(getBaseLocation(), schema), createFailureHandler());
         }
         if (jsonSchema != null) {
-            return new JSONValidator(resourceResolver, combine(getBaseLocation(), jsonSchema), createFailureHandler());
+            return new JSONSchemaValidator(resourceResolver, combine(getBaseLocation(), jsonSchema), createFailureHandler());
         }
         if (schematron != null) {
             return new SchematronValidator(combine(getBaseLocation(), schematron), createFailureHandler(), router, applicationContext);
         }
 
-        if (validator == null) {
-            Proxy parent = router.getParentProxy(this);
-            if (parent instanceof SOAPProxy sp) {
-                wsdl = sp.getWsdl();
-                name = "SOAP Validator";
-                return new WSDLValidator(resourceResolver, combine(getBaseLocation(), wsdl), serviceName, createFailureHandler(), skipFaults);
-            }
-        }
+        WSDLValidator validator = getWsdlValidatorFromSOAPProxy();
+        if (validator != null) return validator;
+
         throw new RuntimeException("Validator is not configured properly. <validator> must have an attribute specifying the validator.");
+    }
+
+    private @Nullable WSDLValidator getWsdlValidatorFromSOAPProxy() {
+        if (router.getParentProxy(this) instanceof SOAPProxy sp) {
+            wsdl = sp.getWsdl();
+            name = "soap validator";
+            return new WSDLValidator(resourceResolver, combine(getBaseLocation(), wsdl), serviceName, createFailureHandler(), skipFaults);
+        }
+        return null;
     }
 
     private @Nullable String getBaseLocation() {
@@ -111,17 +115,17 @@ public class ValidatorInterceptor extends AbstractInterceptor implements Applica
 
     @Override
     public Outcome handleRequest(Exchange exc) {
-        return handleInternal(exc, exc.getRequest());
+        return handleInternal(exc, REQUEST);
     }
 
     @Override
     public Outcome handleResponse(Exchange exc) {
-        return handleInternal(exc, exc.getResponse());
+        return handleInternal(exc, RESPONSE);
     }
 
-    private Outcome handleInternal(Exchange exc, Message message) {
+    private Outcome handleInternal(Exchange exc, Flow flow) {
         try {
-            if (message.isBodyEmpty())
+            if (exc.getMessage(flow).isBodyEmpty())
                 return CONTINUE;
         } catch (IOException e) {
             ProblemDetails.internal(router.isProduction())
@@ -134,12 +138,12 @@ public class ValidatorInterceptor extends AbstractInterceptor implements Applica
         }
 
         try {
-            return validator.validateMessage(exc, message);
+            return validator.validateMessage(exc, flow);
         } catch (Exception e) {
             ProblemDetails.internal(router.isProduction())
                     .component(getDisplayName())
                     .detail("Could not validate message")
-                    .extension("class", message.getClass())
+                    .extension("class", exc.getMessage(flow).getClass())
                     .exception(e)
                     .stacktrace(true)
                     .buildAndSetResponse(exc);

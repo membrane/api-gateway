@@ -7,8 +7,17 @@
 	<router>
 
 		<api port="2000">
+			<!-- Use client IP to count requests -->
 			<rateLimiter requestLimit="3" requestLimitDuration="PT30S"/>
-			<target host="www.google.de" port="80" />
+			<static>Success</static>
+			<return/>
+		</api>
+
+		<api port="2010">
+			<!-- Use the content of the field 'user' to count requests -->
+			<rateLimiter requestLimit="3" requestLimitDuration="PT30S" language="jsonpath" keyExpression="$.user"/>
+			<static>Success</static>
+			<return/>
 		</api>
 
 	</router>
