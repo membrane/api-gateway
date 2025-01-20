@@ -62,6 +62,8 @@
 
 
 ### Internal
+- RuleManager:102 - API name is /products:2000. <api> names must not contain a '/'.
+- Change maven coordinates?
 - proxies-6.xsd
   - new Namespace e.g. https://membrane-api.io...6
 - ProblemDetails TB
