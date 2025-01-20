@@ -16,14 +16,17 @@
 
 package com.predic8.membrane.core.interceptor;
 
-import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.exceptions.*;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.EmptyBody;
-import com.predic8.membrane.core.http.Header;
-import com.predic8.membrane.core.http.Request;
+import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.*;
 
-import java.io.IOException;
+import java.io.*;
+
+import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
+import static com.predic8.membrane.core.http.Header.CONTENT_LENGTH;
+import static com.predic8.membrane.core.http.Header.CONTENT_TYPE;
+import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
+import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 
 @MCElement(name="methodOverride")
 public class MethodOverrideInterceptor extends AbstractInterceptor {
@@ -32,7 +35,7 @@ public class MethodOverrideInterceptor extends AbstractInterceptor {
     public Outcome handleRequest(Exchange exc) {
         String methodHeader = exc.getRequest().getHeader().getFirstValue(Header.X_HTTP_METHOD_OVERRIDE);
         if(methodHeader == null)
-            return Outcome.CONTINUE;
+            return CONTINUE;
 
         try {
             switch(methodHeader){
@@ -40,27 +43,25 @@ public class MethodOverrideInterceptor extends AbstractInterceptor {
                     break;
             }
         } catch (IOException e) {
-            ProblemDetails.internal(router.isProduction())
-                    .component(getDisplayName())
+            internal(router.isProduction(),getDisplayName())
                     .detail("Could overwrite method.")
-                    .extension("method", methodHeader)
+                    .internal("method", methodHeader)
                     .exception(e)
-                    .stacktrace(true)
                     .buildAndSetResponse(exc);
-            return Outcome.ABORT;
+            return ABORT;
         }
 
         exc.getRequest().getHeader().removeFields(Header.X_HTTP_METHOD_OVERRIDE);
 
-        return Outcome.CONTINUE;
+        return CONTINUE;
     }
 
     private void handleGet(Exchange exc) throws IOException {
         Request req = exc.getRequest();
         req.readBody();
         req.setBody(new EmptyBody());
-        req.getHeader().removeFields(Header.CONTENT_LENGTH);
-        req.getHeader().removeFields(Header.CONTENT_TYPE);
+        req.getHeader().removeFields(CONTENT_LENGTH);
+        req.getHeader().removeFields(CONTENT_TYPE);
         req.setMethod("GET");
     }
 }

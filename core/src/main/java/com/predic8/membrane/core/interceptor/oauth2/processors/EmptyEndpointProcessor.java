@@ -13,23 +13,20 @@
 
 package com.predic8.membrane.core.interceptor.oauth2.processors;
 
-import com.predic8.membrane.core.exceptions.*;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Response;
-import com.predic8.membrane.core.interceptor.Outcome;
-import com.predic8.membrane.core.interceptor.authentication.session.SessionManager;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.interceptor.authentication.session.*;
 import com.predic8.membrane.core.interceptor.oauth2.*;
-import com.predic8.membrane.core.interceptor.oauth2.flows.CodeFlow;
-import com.predic8.membrane.core.interceptor.oauth2.flows.IdTokenTokenFlow;
-import com.predic8.membrane.core.interceptor.oauth2.flows.TokenFlow;
-import com.predic8.membrane.core.interceptor.oauth2.parameter.ClaimsParameter;
+import com.predic8.membrane.core.interceptor.oauth2.flows.*;
+import com.predic8.membrane.core.interceptor.oauth2.parameter.*;
 import org.slf4j.*;
 
-import java.io.UnsupportedEncodingException;
-import java.util.HashSet;
-import java.util.function.Function;
+import java.util.*;
+import java.util.function.*;
 
-import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
+import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
+import static com.predic8.membrane.core.interceptor.Outcome.*;
 
 public class EmptyEndpointProcessor extends EndpointProcessor {
 
@@ -51,10 +48,8 @@ public class EmptyEndpointProcessor extends EndpointProcessor {
             return processInternal(exc);
         } catch (Exception e) {
             log.error("", e);
-            ProblemDetails.internal(true)
-                    .component(this.getClass().getSimpleName())
+            internal(true,"empty-endpoint-processor")
                     .exception(e)
-                    .stacktrace(true)
                     .buildAndSetResponse(exc);
             return ABORT;
         }
@@ -94,7 +89,7 @@ public class EmptyEndpointProcessor extends EndpointProcessor {
         return Outcome.RETURN;
     }
 
-    private void addConsentPageDataToSession(SessionManager.Session s) throws UnsupportedEncodingException {
+    private void addConsentPageDataToSession(SessionManager.Session s) {
         s.getUserAttributes().put(ConsentPageFile.PRODUCT_NAME, authServer.getConsentPageFile().getProductName());
         s.getUserAttributes().put(ConsentPageFile.LOGO_URL,authServer.getConsentPageFile().getLogoUrl());
         s.getUserAttributes().put(ConsentPageFile.SCOPE_DESCRIPTIONS, getScopeDescriptions(s.getUserAttributes().get(ParamNames.SCOPE).split(" ")));
@@ -117,7 +112,7 @@ public class EmptyEndpointProcessor extends EndpointProcessor {
     }
 
     private String getClaimDescriptions(String[] claims) {
-        return createDescription(claims, param -> ClaimRenamer.convert(param), claimParam -> authServer.getConsentPageFile().convertClaim(ClaimRenamer.convert(claimParam)));
+        return createDescription(claims, ClaimRenamer::convert, claimParam -> authServer.getConsentPageFile().convertClaim(ClaimRenamer.convert(claimParam)));
     }
 
     private String getScopeDescriptions(String[] scopes) {

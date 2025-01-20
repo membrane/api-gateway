@@ -14,7 +14,6 @@
 package com.predic8.membrane.core.openapi.serviceproxy;
 
 import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.proxies.*;
@@ -25,6 +24,7 @@ import java.util.function.*;
 import java.util.regex.*;
 import java.util.stream.*;
 
+import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPIPublisher.*;
 import static java.lang.String.valueOf;
@@ -52,11 +52,10 @@ public class ApiDocsInterceptor extends AbstractInterceptor {
         try {
             publisher = new OpenAPIPublisher(ruleApiSpecs);
         } catch (Exception e) {
-            ProblemDetails.internal(router.isProduction())
-                    .component(getDisplayName())
+            log.error("", e);
+            internal(router.isProduction(),getDisplayName())
                     .detail("Error creating OpenAPI publisher!")
                     .exception(e)
-                    .stacktrace(true)
                     .buildAndSetResponse(exc);
             return ABORT;
         }
@@ -68,11 +67,10 @@ public class ApiDocsInterceptor extends AbstractInterceptor {
         try {
             return publisher.handleOverviewOpenAPIDoc(exc, router, log);
         } catch (Exception e) {
-            ProblemDetails.internal(router.isProduction())
-                    .component(getDisplayName())
+            log.error("", e);
+            internal(router.isProduction(),getDisplayName())
                     .detail("Error generating OpenAPI overview!")
                     .exception(e)
-                    .stacktrace(true)
                     .buildAndSetResponse(exc);
             return ABORT;
         }

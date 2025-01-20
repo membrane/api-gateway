@@ -14,30 +14,24 @@
 
 package com.predic8.membrane.core.interceptor.xml;
 
-import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.exceptions.*;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Message;
-import com.predic8.membrane.core.http.MimeType;
-import com.predic8.membrane.core.interceptor.AbstractInterceptor;
-import com.predic8.membrane.core.interceptor.Outcome;
-import org.json.XML;
-import org.w3c.dom.Document;
+import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.interceptor.*;
+import org.json.*;
+import org.slf4j.*;
+import org.w3c.dom.*;
 
-import javax.xml.XMLConstants;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.transform.Transformer;
-import javax.xml.transform.TransformerFactory;
-import javax.xml.transform.dom.DOMSource;
-import javax.xml.transform.stream.StreamResult;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.StringWriter;
-import java.io.UnsupportedEncodingException;
+import javax.xml.*;
+import javax.xml.parsers.*;
+import javax.xml.transform.*;
+import javax.xml.transform.dom.*;
+import javax.xml.transform.stream.*;
+import java.io.*;
 
-import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
-import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
-import static java.nio.charset.StandardCharsets.UTF_8;
+import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
+import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static java.nio.charset.StandardCharsets.*;
 import static javax.xml.transform.OutputKeys.*;
 
 
@@ -50,6 +44,8 @@ import static javax.xml.transform.OutputKeys.*;
 @MCElement(name="xml2Json")
 public class Xml2JsonInterceptor extends AbstractInterceptor {
 
+    private static final Logger log = LoggerFactory.getLogger(Xml2JsonInterceptor.class.getName());
+
     @Override
     public String getShortDescription() {
         return "Converts XML message bodies to JSON.";
@@ -60,10 +56,10 @@ public class Xml2JsonInterceptor extends AbstractInterceptor {
         try {
             return handleInternal(exc.getRequest());
         } catch (Exception e) {
-            ProblemDetails.internal(router.isProduction())
-                    .component(getDisplayName())
+            log.error("", e);
+            internal(router.isProduction(),getDisplayName())
                     .detail("Could not transform XML to JSON!")
-                    .extension("flow", "request")
+                    .internal("flow", "request")
                     .exception(e)
                     .buildAndSetResponse(exc);
             return ABORT;
@@ -75,10 +71,9 @@ public class Xml2JsonInterceptor extends AbstractInterceptor {
         try {
             return handleInternal(exc.getResponse());
         } catch (Exception e) {
-            ProblemDetails.internal(router.isProduction())
-                    .component(getDisplayName())
+            internal(router.isProduction(),getDisplayName())
                     .detail("Could not return WSDL document!")
-                    .extension("flow", "response")
+                    .internal("flow", "response")
                     .exception(e)
                     .buildAndSetResponse(exc);
             return ABORT;

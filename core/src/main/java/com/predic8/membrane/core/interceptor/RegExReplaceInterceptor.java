@@ -13,21 +13,14 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor;
 
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.annot.Required;
-import com.predic8.membrane.core.exceptions.*;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Header;
-import com.predic8.membrane.core.http.HeaderField;
-import com.predic8.membrane.core.http.Message;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.*;
+import org.slf4j.*;
 
-import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
-import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
-import static com.predic8.membrane.core.interceptor.RegExReplaceInterceptor.TargetType.BODY;
-import static com.predic8.membrane.core.interceptor.RegExReplaceInterceptor.TargetType.HEADER;
+import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
+import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static com.predic8.membrane.core.interceptor.RegExReplaceInterceptor.TargetType.*;
 
 /**
  * @description Runs a regular-expression-replacement on either the message body (default) or all header values.
@@ -75,11 +68,9 @@ public class RegExReplaceInterceptor extends AbstractInterceptor {
         try {
             replaceBody(message);
         } catch (Exception e) {
-            ProblemDetails.internal(router.isProduction())
-                    .component(getDisplayName())
+            internal(router.isProduction(),getDisplayName())
                     .detail("Could not replace body!")
                     .exception(e)
-                    .stacktrace(true)
                     .buildAndSetResponse(exc);
             return ABORT;
         }

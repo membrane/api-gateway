@@ -44,20 +44,18 @@ public class ExchangeExpressionException extends RuntimeException {
      * @return ProblemDetails filled from exception
      */
     public ProblemDetails provideDetails(ProblemDetails pd) {
-        if (pd == null)
-            pd = ProblemDetails.internal(true);
         if (message != null) {
-            pd.extension("message", message);
+            pd.internal("message", message);
         } else {
-            pd.extension("message", getMessage());
+            pd.internal("message", getMessage());
         }
-        pd.extension("expression", expression)
+        pd.internal("expression", expression)
             .stacktrace(statcktrace);
         for (Map.Entry<String, Object> entry : extensions.entrySet()) {
-            pd.extension(entry.getKey(), entry.getValue());
+            pd.internal(entry.getKey(), entry.getValue());
         }
         if (body != null)
-            pd.extension("body", body.length() > 1024 ? body.substring(0, 1024) : body);
+            pd.internal("body", body.length() > 1024 ? body.substring(0, 1024) : body);
         pd.exception(this);
         pd.stacktrace(false);
         return pd;

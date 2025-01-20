@@ -14,7 +14,6 @@
 package com.predic8.membrane.core.interceptor.apikey;
 
 import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.interceptor.apikey.extractors.*;
@@ -25,6 +24,7 @@ import org.slf4j.*;
 import java.util.*;
 import java.util.stream.*;
 
+import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static java.util.stream.Stream.*;
 
@@ -51,12 +51,12 @@ public class ApiKeysInterceptor extends AbstractInterceptor {
     @Override
     public String getShortDescription() {
         return required ? "Secures access with api keys and RBAC with scopes. "
-               : "Warning: Required is set to <code>false</code>, scopes will be extracted but any api key, even missing ones, will be accepted.";
+                : "Warning: Required is set to <code>false</code>, scopes will be extracted but any api key, even missing ones, will be accepted.";
     }
 
     @Override
     public String getLongDescription() {
-        return getShortDescription() + "<br/>" +  extractors.stream()
+        return getShortDescription() + "<br/>" + extractors.stream()
                 .map(extractor -> extractor.getDescription() + "<br/>")
                 .collect(Collectors.joining());
     }
@@ -72,13 +72,13 @@ public class ApiKeysInterceptor extends AbstractInterceptor {
     public Outcome handleRequest(Exchange exc) {
         var key = getKey(exc);
         if (required && key.isEmpty()) {
-            log.warn("Tried access apiKey protected resource without key. Uri: {}",exc.getRequestURI());
-            exc.setResponse(ProblemDetails.security(false)
-                            .statusCode(401)
-                            .addSubType(TYPE_4XX)
-                            .title(TITLE_4XX)
+            log.warn("Tried access apiKey protected resource without key. Uri: {}", exc.getRequestURI());
+            security(false, getDisplayName())
+                    .statusCode(401)
+                    .addSubType(TYPE_4XX)
+                    .title(TITLE_4XX)
                     .detail("Tried to access API key protected resource without key.")
-                    .build());
+                    .buildAndSetResponse(exc);
             return RETURN;
         }
 
@@ -87,15 +87,17 @@ public class ApiKeysInterceptor extends AbstractInterceptor {
                 var k = key.get();
                 new ApiKeySecurityScheme(k.location(), k.name()).scopes(getScopes(k.key())).add(exc);
             } catch (UnauthorizedApiKeyException e) {
-                if (!required) {return CONTINUE;}
-                log.warn("The provided API {} key is invalid.",key.get());
-                exc.setResponse(ProblemDetails.security(false)
-                                .statusCode(403)
-                                .addSubType(TYPE_4XX)
-                                .title(TITLE_4XX)
-                                .component(getDisplayName())
-                                .detail("The provided API key is invalid.")
-                                .build());
+                if (!required) {
+                    return CONTINUE;
+                }
+                log.warn("The provided API {} key is invalid.", key.get());
+                security(false, getDisplayName())
+                        .statusCode(403)
+                        .addSubType(TYPE_4XX)
+                        .title(TITLE_4XX)
+                        .component(getDisplayName())
+                        .detail("The provided API key is invalid.")
+                        .buildAndSetResponse(exc);
                 return RETURN;
             }
         }
@@ -110,7 +112,8 @@ public class ApiKeysInterceptor extends AbstractInterceptor {
             try {
                 store.getScopes(key).ifPresent(combinedScopes::addAll);
                 keyFound = true;
-            } catch (Exception ignored) {}
+            } catch (Exception ignored) {
+            }
         }
 
         if (!keyFound) {
@@ -122,10 +125,10 @@ public class ApiKeysInterceptor extends AbstractInterceptor {
 
     public Optional<LocationNameValue> getKey(Exchange exc) {
         return extractors.stream()
-                         .flatMap(ext -> ofNullable(
-                                 ext.extract(exc).orElse(null)
-                         ))
-                         .findFirst();
+                .flatMap(ext -> ofNullable(
+                        ext.extract(exc).orElse(null)
+                ))
+                .findFirst();
     }
 
     /**

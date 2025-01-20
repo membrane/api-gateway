@@ -16,20 +16,23 @@ package com.predic8.membrane.core.interceptor.stomp;
 
 import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.config.security.*;
-import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.transport.http.*;
 import com.predic8.membrane.core.transport.http.client.*;
 import com.predic8.membrane.core.transport.ssl.*;
+import org.slf4j.*;
 
 import java.io.*;
 
-import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
+import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
+import static com.predic8.membrane.core.interceptor.Outcome.*;
 
 @MCElement(name="stompClient")
 public class STOMPClient extends AbstractInterceptor {
+
+	private static final Logger log = LoggerFactory.getLogger(STOMPClient.class.getName());
 
 	// config
 	private int port = 61613;
@@ -105,11 +108,10 @@ public class STOMPClient extends AbstractInterceptor {
         try {
             return handleRequestInternal(exc);
         } catch (IOException e) {
-			ProblemDetails.user(router.isProduction())
-					.component(getDisplayName())
+			log.error("", e);
+			user(router.isProduction(),getDisplayName())
 					.detail("Error in STOMP client!")
 					.exception(e)
-					.stacktrace(true)
 					.buildAndSetResponse(exc);
 			return ABORT;
         }
