@@ -30,6 +30,7 @@ import java.io.*;
 import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 import static com.predic8.membrane.core.resolver.ResolverMap.*;
 
 /**
@@ -142,7 +143,7 @@ public class ValidatorInterceptor extends AbstractInterceptor implements Applica
             log.error("", e);
             internal(router.isProduction(),getDisplayName())
                     .detail("Error validating message")
-                    .internal("class", message.getClass())
+                    .internal("class", exc.getMessage(flow).getClass())
                     .exception(e)
                     .buildAndSetResponse(exc);
             return ABORT;

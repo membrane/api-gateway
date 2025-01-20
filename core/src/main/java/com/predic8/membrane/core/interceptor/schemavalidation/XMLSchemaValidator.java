@@ -92,19 +92,18 @@ public class XMLSchemaValidator extends AbstractXMLSchemaValidator {
 
     @Override
     protected void setErrorResponse(Exchange exchange, String message) {
-        user(false)
+        user(false,getName())
                 .title(getErrorTitle())
                 .component(getName())
-                .extension("error", message)
+                .internal("error", message)
                 .buildAndSetResponse(exchange);
     }
 
     @Override
     protected void setErrorResponse(Exchange exchange, Interceptor.Flow flow, List<Exception> exceptions) {
-        user(false)
+        user(false,getName())
                 .title(getErrorTitle())
-                .component(getName())
-                .extension("validation", convertExceptionsToMap(exceptions))
+                .internal("validation", convertExceptionsToMap(exceptions))
                 .buildAndSetResponse(exchange);
         exchange.getResponse().getHeader().add(VALIDATION_ERROR_SOURCE, flow.name());
     }

@@ -92,19 +92,18 @@ public class JSONSchemaValidator extends AbstractMessageValidator {
 
         if (failureHandler != null) {
             failureHandler.handleFailure(getErrorString(msg, errors), exc);
-            user(false)
+            user(false,getName())
                     .title(getErrorTitle())
-                    .component(getName())
                     .buildAndSetResponse(exc);
             invalid.incrementAndGet();
             return ABORT;
         }
 
-        user(false)
+        user(false,getName())
                 .title(getErrorTitle())
                 .component(getName())
-                .extension("flow", flow.name())
-                .extension("errors", errors)
+                .internal("flow", flow.name())
+                .internal("errors", errors)
                 .buildAndSetResponse(exc);
 
         invalid.incrementAndGet();
