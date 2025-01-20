@@ -77,7 +77,7 @@ public class JwtSignInterceptor extends AbstractInterceptor {
             exc.getMessage(flow).setBodyContent(jws.getCompactSerialization().getBytes());
             return CONTINUE;
         } catch (Exception e) {
-            log.error("Error during attempt to sign JWT payload: {}", e.getMessage());
+            log.error("Error during attempt to sign JWT payload", e);
             security(router.isProduction(),getDisplayName())
                     .addSubType("crypto")
                     .detail("Error during attempt to sign JWT payload.")
