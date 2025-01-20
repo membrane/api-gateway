@@ -32,7 +32,7 @@ function Start-Membrane {
 try {
     $null = Get-Command java -ErrorAction Stop
 } catch {
-    Write-Host "Java is not installed"
+    Write-Host "Java is not installed. Membrane needs at least Java $required_version."
     exit 1
 }
 
@@ -41,7 +41,7 @@ try {
     $version_line = $version_output | Where-Object { $_ -match "version" } | Select-Object -First 1
 
     if (-not $version_line) {
-        Write-Host "WARNING: Could not determine Java version. Make sure your Java version is at least $required_version. Proceeding anyway..."
+        Write-Host "WARNING: Could not determine Java version. Make sure Java version is at least $required_version. Proceeding anyway..."
         Start-Membrane
         exit 0
     }

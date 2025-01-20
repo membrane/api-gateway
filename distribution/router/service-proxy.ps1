@@ -29,7 +29,7 @@ function Resolve-MembraneHome {
 }
 
 if (-not (Get-Command java -ErrorAction SilentlyContinue)) {
-    Write-Host "Java is not installed"
+    Write-Host "Java is not installed. Membrane needs at least Java $required_version."
     exit 1
 }
 
@@ -41,7 +41,7 @@ java -version 2>&1 | ForEach-Object {
 }
 
 if (-not $version_line) {
-    Write-Host "WARNING: Could not determine Java version. Make sure your Java version is at least $required_version. Proceeding anyway..."
+    Write-Host "WARNING: Could not determine Java version. Make sure Java version is at least $required_version. Proceeding anyway..."
     if (-not $env:MEMBRANE_HOME) {
         $env:MEMBRANE_HOME = Resolve-MembraneHome $PSCommandPath
     }

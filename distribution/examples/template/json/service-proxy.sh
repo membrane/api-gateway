@@ -33,7 +33,7 @@ start_membrane() {
 }
 
 if ! command -v java >/dev/null 2>&1; then
-    echo "Java is not installed"
+    echo "Java is not installed. Membrane needs at least Java $required_version."
     exit 1
 fi
 
@@ -47,7 +47,7 @@ version_line=$(java -version 2>&1 | while read -r line; do
 done)
 
 if [ -z "$version_line" ]; then
-    echo "WARNING: Could not determine Java version. Make sure your Java version is at least $required_version. Proceeding anyway..."
+    echo "WARNING: Could not determine Java version. Make sure Java version is at least $required_version. Proceeding anyway..."
     start_membrane
     exit 0
 fi
