@@ -35,6 +35,7 @@ import org.xml.sax.*;
 import javax.xml.parsers.*;
 import java.io.*;
 import java.net.*;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -140,7 +141,7 @@ public class TestServiceInterceptor extends AbstractInterceptor {
     private Response createResponse(Throwable e, boolean useSoap11) {
         String title = "Internal Server Error";
         String message = e.getMessage();
-        String body = useSoap11 ? SOAPUtil.getFaultSOAP11Body(Server, title, message) : SOAPUtil.getFaultSOAP12Body(title,
+        String body = useSoap11 ? SOAPUtil.createSOAPFaultResponse(Server, title, Map.of("details",message)).getBodyAsStringDecoded() : SOAPUtil.getFaultSOAP12Body(title,
                 message);
         return Response.internalServerError().
                 header(SERVER, PRODUCT_NAME).

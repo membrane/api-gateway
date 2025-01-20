@@ -33,4 +33,8 @@ public abstract class AbstractMessageValidator implements MessageValidator {
     public void init() {
 
     }
+
+    public String getErrorTitle() {
+        return "Message validation failed";
+    }
 }

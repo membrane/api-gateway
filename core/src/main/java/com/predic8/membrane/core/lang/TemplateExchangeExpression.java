@@ -95,7 +95,7 @@ public class TemplateExchangeExpression extends AbstractExchangeExpression {
             }
             String expr = m.group(3);
             if (expr != null) {
-                tokens.add(new Expression(ExchangeExpression.getInstance(router, language, expr)));
+                tokens.add(new Expression(ExchangeExpression.newInstance(router, language, expr)));
             }
         }
         log.debug("Tokens: {}", tokens);
