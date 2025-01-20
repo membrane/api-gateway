@@ -62,6 +62,8 @@
 
 
 ### Internal
+- RuleManager:102 - API name is /products:2000. <api> names must not contain a '/'.
+- Change maven coordinates?
 - Delete interceptor/
   - Gatekeeper: Yes
   - SDY Speedy (delete) BT
