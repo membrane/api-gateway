@@ -29,6 +29,7 @@ import java.nio.charset.*;
 import java.util.*;
 import java.util.concurrent.*;
 
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 
 /**
@@ -171,8 +172,8 @@ public class KubernetesValidationInterceptor extends AbstractInterceptor {
         if (object != null) { // DELETE requests do not carry an object
             String requestKind = (String) object.get("kind");
 
-            MessageValidator validator = validators.computeIfAbsent(requestKind.toLowerCase(), schema -> new JSONValidator(resourceResolver, "classpath:/com/predic8/membrane/core/config/kubernetes/" + schema + ".schema.json", null));
-            validator.validateMessage(exc, exc.getRequest());
+            MessageValidator validator = validators.computeIfAbsent(requestKind.toLowerCase(), schema -> new JSONSchemaValidator(resourceResolver, "classpath:/com/predic8/membrane/core/config/kubernetes/" + schema + ".schema.json", null));
+            validator.validateMessage(exc, REQUEST);
         }
         setExchangeResponse(exc, mapper, review);
 

@@ -17,7 +17,6 @@ package com.predic8.membrane.core.interceptor.schemavalidation;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.interceptor.schemavalidation.ValidatorInterceptor.*;
 import com.predic8.membrane.core.multipart.*;
 import com.predic8.membrane.core.resolver.*;
 import com.predic8.membrane.core.util.*;
@@ -35,7 +34,7 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.*;
 
 import static com.predic8.membrane.core.Constants.*;
-import static com.predic8.membrane.core.http.Header.VALIDATION_ERROR_SOURCE;
+import static com.predic8.membrane.core.http.Header.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 
 public abstract class AbstractXMLSchemaValidator extends AbstractMessageValidator {
@@ -72,7 +71,8 @@ public abstract class AbstractXMLSchemaValidator extends AbstractMessageValidato
 			validators.add(createValidators());
 	}
 
-	public Outcome validateMessage(Exchange exc, Message msg) throws Exception {
+	public Outcome validateMessage(Exchange exc, Interceptor.Flow flow) throws Exception {
+		Message msg = exc.getMessage(flow);
 		List<Exception> exceptions = new ArrayList<>();
 		String preliminaryError = getPreliminaryError(xopr, msg);
 		if (preliminaryError == null) {
@@ -104,15 +104,13 @@ public abstract class AbstractXMLSchemaValidator extends AbstractMessageValidato
 			valid.incrementAndGet();
 			return CONTINUE;
 		}
-		if (failureHandler == FailureHandler.VOID) {
-			exc.setProperty("error", getErrorMsg(exceptions));
-		} else if (failureHandler != null) {
-			failureHandler.handleFailure(getErrorMsg(exceptions), exc);
-			exc.setResponse(createErrorResponse("validation error"));
-		} else {
-			exc.setResponse(createErrorResponse(getErrorMsg(exceptions)));
-			exc.getResponse().getHeader().add(VALIDATION_ERROR_SOURCE, getSourceOfError(msg));
+		String errorMsg = getErrorMsg(exceptions); // Errors als simple String
+		if (failureHandler != null) {
+			failureHandler.handleFailure(errorMsg, exc);
 		}
+		exc.setProperty("error", errorMsg); // TODO Search for usage. If it is used rename property. See properties in class Exchange
+		setErrorResponse(exc,flow,exceptions);
+		msg.getHeader().add(VALIDATION_ERROR_SOURCE, flow.name());
 		invalid.incrementAndGet();
 		return ABORT;
 	}
@@ -147,12 +145,26 @@ public abstract class AbstractXMLSchemaValidator extends AbstractMessageValidato
 
 	private String getErrorMsg(List<Exception> excs) {
 		StringBuilder buf = new StringBuilder();
-		buf.append("Validation failed: ");
+		buf.append("%s: ".formatted(getErrorTitle()));
 		for (Exception e : excs) {
 			buf.append(e);
 			buf.append("; ");
 		}
 		return buf.toString();
+	}
+
+	protected List<Map<String, Object>> convertExceptionsToMap(List<Exception> exceptions) {
+		return exceptions.stream().map(AbstractXMLSchemaValidator::createErrorEntry).toList();
+	}
+
+	private static @NotNull Map<String, Object> createErrorEntry(Exception e) {
+		var error = new LinkedHashMap<String,Object>();
+		error.put("message", e.getMessage());
+		if (e instanceof SAXParseException spe) {
+			error.put("line", spe.getLineNumber());
+			error.put("column", spe.getColumnNumber());
+		}
+		return error;
 	}
 
 	@Override
@@ -166,9 +178,16 @@ public abstract class AbstractXMLSchemaValidator extends AbstractMessageValidato
 	}
 
 	protected abstract List<Schema> getSchemas();
-	protected abstract Source getMessageBody(InputStream input) throws Exception;
-	protected abstract Response createErrorResponse(String message);
+	protected abstract Source getMessageBody(InputStream input);
+
+	protected abstract void setErrorResponse(Exchange exchange, String message);
+	protected abstract void setErrorResponse(Exchange exchange, Interceptor.Flow flow,List<Exception> exceptions);
+
 	protected abstract boolean isFault(Message msg);
 	protected abstract String getPreliminaryError(XOPReconstitutor xopr, Message msg);
 
+	@Override
+	public String getErrorTitle() {
+		return "XML message validation failed";
+	}
 }
