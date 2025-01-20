@@ -140,4 +140,9 @@ public class AbstractInterceptor implements Interceptor {
 			case RESPONSE, ABORT ->  exc.getResponse();
 		};
 	}
+
+	@Override
+	public String toString() {
+		return getDisplayName();
+	}
 }

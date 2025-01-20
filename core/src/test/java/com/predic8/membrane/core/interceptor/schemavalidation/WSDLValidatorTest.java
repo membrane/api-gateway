@@ -23,17 +23,19 @@ import org.slf4j.*;
 import java.net.*;
 
 import static com.predic8.membrane.core.http.MimeType.TEXT_XML;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.RESPONSE;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class WSDLValidatorTest {
 
+    private static final Logger log = LoggerFactory.getLogger(WSDLValidatorTest.class.getName());
+
     public static final String CITIES_WSDL = "src/test/resources/ws/cities.wsdl";
     public static final String TWO_SEPARATED_SERVICES_WSDL = "src/test/resources/ws/two-separated-services.wsdl";
     public static final String MULTIPLE_PORTS_WSDL = "src/test/resources/ws/multiple-ports-in-a-service.wsdl";
     public static final String ABSTRACT_SERVICE_NO_BINDING_WSDL = "src/test/resources/ws/abstract-service-no-binding.wsdl";
-
-    static Logger log = LoggerFactory.getLogger(WSDLValidatorTest.class.getName());
 
     @Test
     void invalidRequestElement() throws Exception {
@@ -41,7 +43,7 @@ public class WSDLValidatorTest {
                     <foo:notInSchema xmlns:foo="http://membrane-api.io/foo"/>
                 """));
 
-        assertEquals(ABORT, createValidator(CITIES_WSDL, null, false).validateMessage(exc, exc.getRequest()));
+        assertEquals(ABORT, createValidator(CITIES_WSDL, null, false).validateMessage(exc, REQUEST));
         assertTrue(exc.getResponse().getBodyAsStringDecoded().contains("validation failed"));
     }
 
@@ -54,7 +56,7 @@ public class WSDLValidatorTest {
                 </cit:getCity>
                 """));
 
-        Outcome actual = createValidator(CITIES_WSDL, null, false).validateMessage(exc, exc.getRequest());
+        Outcome actual = createValidator(CITIES_WSDL, null, false).validateMessage(exc, REQUEST);
         dumpResonseBody(exc);
         assertEquals(CONTINUE, actual);
         assertNull(exc.getResponse());
@@ -69,7 +71,7 @@ public class WSDLValidatorTest {
                 </cit:getCityResponse>
                 """));
 
-        Outcome actual = createValidator(CITIES_WSDL, null, false).validateMessage(exc, exc.getResponse());
+        Outcome actual = createValidator(CITIES_WSDL, null, false).validateMessage(exc, RESPONSE);
         dumpResonseBody(exc);
         assertEquals(CONTINUE, actual);
     }
@@ -83,7 +85,7 @@ public class WSDLValidatorTest {
                 </cit:getCity>
                 """));
 
-        Outcome actual = createValidator(CITIES_WSDL, null, false).validateMessage(exc, exc.getRequest());
+        Outcome actual = createValidator(CITIES_WSDL, null, false).validateMessage(exc, REQUEST);
         dumpResonseBody(exc);
         assertEquals(ABORT, actual);
         assertNotNull(exc.getResponse());
@@ -98,7 +100,7 @@ public class WSDLValidatorTest {
                 """));
 
         Outcome outcome = createValidator(TWO_SEPARATED_SERVICES_WSDL, "ServiceA", false)
-                .validateMessage(exc, exc.getRequest());
+                .validateMessage(exc, REQUEST);
         dumpResonseBody(exc);
         assertEquals(CONTINUE, outcome);
         assertNull(exc.getResponse());
@@ -111,7 +113,7 @@ public class WSDLValidatorTest {
                 <ns:a xmlns:ns="https://predic8.de/">Paris</ns:a> <!-- Element is not referenced from Service B -->
                 """));
 
-        assertEquals(ABORT, createValidator(TWO_SEPARATED_SERVICES_WSDL, "ServiceB", false).validateMessage(exc, exc.getRequest()));
+        assertEquals(ABORT, createValidator(TWO_SEPARATED_SERVICES_WSDL, "ServiceB", false).validateMessage(exc, REQUEST));
         assertNotNull(exc.getResponse());
         String body = exc.getResponse().getBodyAsStringDecoded();
         assertTrue(body.contains("not a valid request element"));
@@ -124,7 +126,7 @@ public class WSDLValidatorTest {
                 <s11:Fault/>
                 """));
 
-        assertEquals(ABORT, createValidator(CITIES_WSDL, null, false).validateMessage(exc, exc.getResponse()));
+        assertEquals(ABORT, createValidator(CITIES_WSDL, null, false).validateMessage(exc, RESPONSE));
         dumpResonseBody(exc);
         assertNotNull(exc.getResponse());
         assertTrue(exc.getResponse().getBodyAsStringDecoded().contains("validation failed"));
@@ -136,7 +138,7 @@ public class WSDLValidatorTest {
                 <s11:Fault/>
                 """));
 
-        assertEquals(CONTINUE, createValidator(CITIES_WSDL, null, true).validateMessage(exc, exc.getResponse()));
+        assertEquals(CONTINUE, createValidator(CITIES_WSDL, null, true).validateMessage(exc, RESPONSE));
         dumpResonseBody(exc);
     }
 
@@ -146,7 +148,7 @@ public class WSDLValidatorTest {
                 <ns:a xmlns:ns="https://predic8.de/">Paris</ns:a>
                 """));
 
-        Outcome outcome = createValidator(MULTIPLE_PORTS_WSDL, "Service", false).validateMessage(exc, exc.getRequest());
+        Outcome outcome = createValidator(MULTIPLE_PORTS_WSDL, "Service", false).validateMessage(exc, REQUEST);
         dumpResonseBody(exc);
         assertEquals(CONTINUE, outcome);
     }
@@ -159,19 +161,18 @@ public class WSDLValidatorTest {
 
         exc.getRequest().setUri("/port-b-path");
 
-        Outcome outcome = createValidator(ABSTRACT_SERVICE_NO_BINDING_WSDL, null, false).validateMessage(exc, exc.getRequest());
+        Outcome outcome = createValidator(ABSTRACT_SERVICE_NO_BINDING_WSDL, null, false).validateMessage(exc, REQUEST);
         dumpResonseBody(exc);
         assertEquals(CONTINUE, outcome);
     }
 
     @Test
     void abstractWsdlNoReferencedRequestElement() throws Exception {
-
         Exchange exc = getRequestExchange(soap11("""
                 <ns:b xmlns:ns="https://predic8.de/">7</ns:b> <!-- Declared in schema but not used as a SOAP message -->
                 """));
 
-        Outcome outcome = createValidator(ABSTRACT_SERVICE_NO_BINDING_WSDL, null, false).validateMessage(exc, exc.getRequest());
+        Outcome outcome = createValidator(ABSTRACT_SERVICE_NO_BINDING_WSDL, null, false).validateMessage(exc, REQUEST);
         dumpResonseBody(exc);
         assertEquals(ABORT, outcome);
         assertTrue(exc.getResponse().getBodyAsStringDecoded().contains("is not a valid request element"));
@@ -210,8 +211,8 @@ public class WSDLValidatorTest {
         return exc;
     }
 
-    private static WSDLValidator createValidator(String location, String serviceName, boolean skipFaults) throws Exception {
-        WSDLValidator validator = new WSDLValidator(new ResolverMap(), location, serviceName, (msg, exc) -> log.info("Validation failure: " + msg), skipFaults);
+    private static WSDLValidator createValidator(String location, String serviceName, boolean skipFaults) {
+        WSDLValidator validator = new WSDLValidator(new ResolverMap(), location, serviceName, (msg, exc) -> log.info("Validation failure: {}", msg), skipFaults);
         validator.init();
         return validator;
     }
