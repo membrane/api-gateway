@@ -14,73 +14,100 @@
 
 package com.predic8.membrane.core.lang.xpath;
 
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.lang.*;
+import com.predic8.membrane.core.lang.ExchangeExpression.*;
 import org.junit.jupiter.api.*;
+import org.w3c.dom.*;
 
 import java.net.*;
 
-import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
-import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
+import static com.predic8.membrane.core.http.MimeType.*;
+import static com.predic8.membrane.core.http.Request.*;
+import static com.predic8.membrane.core.lang.ExchangeExpression.Language.*;
 import static org.junit.jupiter.api.Assertions.*;
 
-class XPathExchangeExpressionTest {
+class XPathExchangeExpressionTest extends AbstractExchangeExpressionTest {
 
-    Exchange exc;
+    @Override
+    protected Language getLanguage() {
+        return XPATH;
+    }
 
-    @BeforeEach
-    void setup() throws URISyntaxException {
-        exc = Request.post("/foo")
-                .contentType(APPLICATION_JSON)
+    @Override
+    protected Builder getRequestBuilder() throws URISyntaxException {
+        return post("/foo")
+                .contentType(APPLICATION_XML)
                 .body("""
-                <person id="7">
+                <persons id="7">
                     <name>John Doe</name>
-                </person>
-                """).buildExchange();
+                    <name>James Smith</name>
+                    <name>Thomas Müller</name>
+                </persons>
+                """);
+    }
+
+    // Boolean
+
+    @Test
+    void boolSimple() {
+        assertTrue(evalBool("true()"));
+        assertFalse(evalBool("false()"));
     }
 
     @Test
-    void simple() {
-        booleanAssertTrue("true()");
+    void truth() {
+        assertTrue(evalBool("//persons"));
+        assertTrue(evalBool("//persons/@id"));
+        assertFalse(evalBool("//unknown"));
+        assertTrue(evalBool("//persons/@id = 7"));
     }
+
+    // String
 
     @Test
     void attribute() {
-        booleanAssertTrue("//person/@id = 7");
-    }
-
-    @Test
-    void getStringAttribute() {
-        assertGetString("7","/person/@id");
+        assertEquals("7",evalString("//persons/@id"));
     }
 
     @Test
     void getStringTextContent() {
-        assertGetString("John Doe","/person/name");
+        assertEquals("John Doe",evalString("/persons/name[1]"));
     }
 
     @Test
     void getNoExistingElement() {
-        assertGetString("","/person/wrong");
+        assertEquals("", evalString("//persons/wrong"));
+    }
+
+    // Object
+
+    @Test
+    void getList() {
+        Object o = evalObject("//persons/name");
+        if (o instanceof NodeList nl) {
+            assertEquals(3, nl.getLength());
+            return;
+        }
+        fail();
     }
 
     @Test
-    void wrongContent() {
-        exc.getRequest().setBodyContent("{}".getBytes());
-        assertThrows(Exception.class, () -> assertGetString("John Doe","/person/name"));
+    void getSingleElement() {
+        Object o = evalObject("//persons/name[2]");
+        if (o instanceof NodeList nl) {
+            assertEquals(1, nl.getLength());
+            assertEquals("James Smith", nl.item(0).getTextContent());
+            return;
+        }
+        fail();
     }
+
+    // Other
 
     @Test
     void wrongContentType() {
-        exc.getRequest().getHeader().setContentType(APPLICATION_JSON);
-        assertGetString("John Doe","/person/name");
+        exchange.getRequest().getHeader().setContentType(APPLICATION_JSON);
+        assertEquals("John Doe",evalString("/persons/name[1]"));
     }
 
-    protected void booleanAssertTrue(String xpath) {
-        assertTrue(new XPathExchangeExpression(xpath).evaluate(exc, REQUEST, Boolean.class));
-    }
-
-    protected void assertGetString(String expected, String xpath) {
-        assertEquals(expected, new XPathExchangeExpression(xpath).evaluate(exc, REQUEST, String.class));
-    }
 }

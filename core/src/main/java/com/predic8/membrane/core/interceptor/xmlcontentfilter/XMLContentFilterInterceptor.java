@@ -55,7 +55,7 @@ public class XMLContentFilterInterceptor extends AbstractInterceptor {
     private XMLContentFilter xmlContentFilter;
 
     public XMLContentFilterInterceptor() {
-        name = "XML Content Filter";
+        name = "xml content filter";
         setFlow(Flow.Set.REQUEST_RESPONSE_ABORT_FLOW);
     }
 

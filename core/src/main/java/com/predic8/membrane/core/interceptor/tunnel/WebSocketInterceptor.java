@@ -54,7 +54,7 @@ public class WebSocketInterceptor extends AbstractInterceptor {
 
 	@Override
 	public String getDisplayName() {
-		return "WebSocket Interceptor";
+		return "websocket";
 	}
 
 	@Override

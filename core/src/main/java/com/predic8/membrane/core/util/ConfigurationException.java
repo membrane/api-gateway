@@ -27,7 +27,8 @@ public class ConfigurationException extends RuntimeException {
         super(message);
     }
 
-    public ConfigurationException(String message, Exception exception) {
+    public ConfigurationException(String message, Throwable exception) {
         super(message, exception);
     }
+
 }

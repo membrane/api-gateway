@@ -132,6 +132,6 @@ public class RuleResolver implements SchemaResolver {
 
     @Override
     public List<String> getSchemas() {
-        return Lists.newArrayList("service");
+        return Lists.newArrayList("internal");
     }
 }

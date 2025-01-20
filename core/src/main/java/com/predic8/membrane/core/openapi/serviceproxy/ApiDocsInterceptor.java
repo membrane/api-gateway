@@ -133,7 +133,7 @@ public class ApiDocsInterceptor extends AbstractInterceptor {
 
     @Override
     public String getDisplayName() {
-        return "Api Docs";
+        return "api docs";
     }
 
     @Override

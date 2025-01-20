@@ -45,7 +45,7 @@ public class XSLTInterceptor extends AbstractInterceptor {
 	private final XOPReconstitutor xopr = new XOPReconstitutor();
 
 	public XSLTInterceptor() {
-		name = "XSLT Transformer";
+		name = "xslt transformer";
 	}
 
 	@Override

@@ -13,30 +13,19 @@
 
 package com.predic8.membrane.core.interceptor.oauth2;
 
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCChildElement;
-import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.Router;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.interceptor.AbstractInterceptor;
-import com.predic8.membrane.core.interceptor.Outcome;
-import com.predic8.membrane.core.interceptor.authentication.session.AccountBlocker;
-import com.predic8.membrane.core.interceptor.authentication.session.CleanupThread;
-import com.predic8.membrane.core.interceptor.authentication.session.SessionManager;
-import com.predic8.membrane.core.interceptor.authentication.session.UserDataProvider;
+import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.interceptor.authentication.session.*;
 import com.predic8.membrane.core.interceptor.oauth2.processors.*;
-import com.predic8.membrane.core.interceptor.oauth2.tokengenerators.BearerTokenGenerator;
-import com.predic8.membrane.core.interceptor.oauth2.tokengenerators.JwtGenerator;
-import com.predic8.membrane.core.interceptor.oauth2.tokengenerators.TokenGenerator;
-import com.predic8.membrane.core.proxies.Proxy;
+import com.predic8.membrane.core.interceptor.oauth2.tokengenerators.*;
+import com.predic8.membrane.core.proxies.*;
 import com.predic8.membrane.core.util.*;
 import org.jose4j.lang.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import com.predic8.membrane.annot.Required;
+import org.slf4j.*;
 
 import java.io.*;
-import java.util.HashSet;
+import java.util.*;
 
 @SuppressWarnings("LoggingSimilarMessage")
 @MCElement(name = "oauth2authserver")
@@ -75,10 +64,9 @@ public class OAuth2AuthorizationServerInterceptor extends AbstractInterceptor {
     @Override
     public void init() {
         super.init();
-        name = "OAuth 2 Authorization Server";
+        name = "oauth2 authorization server";
         setFlow(Flow.Set.REQUEST_RESPONSE_ABORT_FLOW);
 
-        this.setRouter(router);
         basePath = computeBasePath();
         if (basePath.endsWith("/"))
             throw new RuntimeException("When <oauth2AuthorizationServer> is nested in a <serviceProxy> with a <path>, the path should not end in a '/'.");
@@ -255,10 +243,6 @@ public class OAuth2AuthorizationServerInterceptor extends AbstractInterceptor {
     @MCChildElement(order = 5)
     public void setTokenGenerator(TokenGenerator tokenGenerator) {
         this.tokenGenerator = tokenGenerator;
-    }
-
-    public void setRouter(Router router) {
-        this.router = router;
     }
 
     public HashSet<String> getSupportedAuthorizationGrants() {

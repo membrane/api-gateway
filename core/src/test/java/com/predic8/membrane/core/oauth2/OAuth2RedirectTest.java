@@ -1,44 +1,43 @@
+/* Copyright 2025 predic8 GmbH, www.predic8.com
+
+   Licensed under the Apache License, Version 2.0 (the "License");
+   you may not use this file except in compliance with the License.
+   You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License. */
 package com.predic8.membrane.core.oauth2;
 
-import com.predic8.membrane.core.Router;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.exchangestore.ForgetfulExchangeStore;
-import com.predic8.membrane.core.interceptor.AbstractInterceptor;
-import com.predic8.membrane.core.interceptor.Outcome;
-import com.predic8.membrane.core.interceptor.authentication.session.StaticUserDataProvider;
-import com.predic8.membrane.core.interceptor.flow.IfInterceptor;
-import com.predic8.membrane.core.interceptor.flow.ResponseInterceptor;
-import com.predic8.membrane.core.interceptor.flow.ReturnInterceptor;
-import com.predic8.membrane.core.interceptor.log.LogInterceptor;
-import com.predic8.membrane.core.interceptor.oauth2.ClaimList;
-import com.predic8.membrane.core.interceptor.oauth2.Client;
-import com.predic8.membrane.core.interceptor.oauth2.OAuth2AuthorizationServerInterceptor;
-import com.predic8.membrane.core.interceptor.oauth2.StaticClientList;
-import com.predic8.membrane.core.interceptor.oauth2.authorizationservice.MembraneAuthorizationService;
-import com.predic8.membrane.core.interceptor.oauth2.tokengenerators.BearerTokenGenerator;
-import com.predic8.membrane.core.interceptor.oauth2client.OAuth2Resource2Interceptor;
-import com.predic8.membrane.core.interceptor.oauth2client.SessionOriginalExchangeStore;
-import com.predic8.membrane.core.interceptor.session.InMemorySessionManager;
-import com.predic8.membrane.core.interceptor.templating.TemplateInterceptor;
-import com.predic8.membrane.core.proxies.SSLableProxy;
-import com.predic8.membrane.core.proxies.ServiceProxy;
-import com.predic8.membrane.core.proxies.ServiceProxyKey;
-import com.predic8.membrane.core.transport.http.HttpTransport;
-import io.restassured.response.Response;
-import org.jetbrains.annotations.NotNull;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.exchangestore.*;
+import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.interceptor.authentication.session.*;
+import com.predic8.membrane.core.interceptor.flow.*;
+import com.predic8.membrane.core.interceptor.log.*;
+import com.predic8.membrane.core.interceptor.oauth2.*;
+import com.predic8.membrane.core.interceptor.oauth2.authorizationservice.*;
+import com.predic8.membrane.core.interceptor.oauth2.tokengenerators.*;
+import com.predic8.membrane.core.interceptor.oauth2client.*;
+import com.predic8.membrane.core.interceptor.session.*;
+import com.predic8.membrane.core.interceptor.templating.*;
+import com.predic8.membrane.core.proxies.*;
+import com.predic8.membrane.core.transport.http.*;
+import io.restassured.response.*;
+import org.jetbrains.annotations.*;
+import org.junit.jupiter.api.*;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.atomic.AtomicReference;
+import java.util.*;
+import java.util.concurrent.atomic.*;
 
-import static com.predic8.membrane.core.interceptor.log.LogInterceptor.Level.DEBUG;
-import static com.predic8.membrane.core.lang.ExchangeExpression.Language.SPEL;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static com.predic8.membrane.core.interceptor.log.LogInterceptor.Level.*;
+import static com.predic8.membrane.core.lang.ExchangeExpression.Language.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class OAuth2RedirectTest {
 
@@ -57,7 +56,7 @@ public class OAuth2RedirectTest {
     }
 
     @AfterEach
-    void shutdown() throws IOException {
+    void shutdown() {
         authorizationServerRouter.shutdown();
         oauth2ResourceRouter.shutdown();
         backendRouter.shutdown();
@@ -85,8 +84,8 @@ public class OAuth2RedirectTest {
         // Step 9: Exchange Code for Token & continue original request.·
         OAuth2.step9exchangeCodeForToken(
                 callbackUrl,
-                "GET / application/x-www-form-urlencoded; charset=ISO-8859-1 / "
-                // method is 'GET', Content-Type is x-www, body is empty
+                "GET | null | "
+                // method is 'GET', Content-Type is not set, body is empty
         );
 
         assertEquals(firstUrlHit.get(), targetUrlHit.get(), "Check that URL survived encoding.");
@@ -115,11 +114,11 @@ public class OAuth2RedirectTest {
         // Step 9: Exchange Code for Token & continue original request.·
         OAuth2.step9exchangeCodeForToken(
                 callbackUrl,
-                "POST / text/x-json; charset=ISO-8859-1 / [true]"
-                // method is POST, Content-Type text/x-json, body is '[true]'
+                "POST | text/x-json; charset=ISO-8859-1 | [true]"
+                // method is POST, Content-Type is 'text/x-json; charset=ISO-8859-1', body is '[true]'
         );
 
-        assertTrue(targetUrlHit.get().startsWith(firstUrlHit.get() + "&oa2redirect"), "Check that URL survived encoding.");
+        assertTrue(targetUrlHit.get().startsWith(firstUrlHit.get()), "Check that URL survived encoding.");
         assertEquals(firstUrlHit.get(), interceptorChainHit.get(), "Is interceptor chain correctly continued?");
     }
 
@@ -157,8 +156,8 @@ public class OAuth2RedirectTest {
                 return Outcome.CONTINUE;
             }
         });
-        nginxRule.getInterceptors().add(createConditionalInterceptorWithReturnMessage("method == 'POST'", "POST / ${exc.request.header.getFirstValue('Content-Type')} / ${exc.request.body}"));
-        nginxRule.getInterceptors().add(createConditionalInterceptorWithReturnMessage("method == 'GET'", "GET / ${exc.request.header.getFirstValue('Content-Type')} / ${exc.request.body}"));
+        nginxRule.getInterceptors().add(createConditionalInterceptorWithReturnMessage("method == 'POST'", "POST | ${exc.request.header.getFirstValue('Content-Type')} | ${exc.request.body}"));
+        nginxRule.getInterceptors().add(createConditionalInterceptorWithReturnMessage("method == 'GET'", "GET | ${exc.request.header.getFirstValue('Content-Type')} | ${exc.request.body}"));
         nginxRule.getInterceptors().add(new ReturnInterceptor());
         return nginxRule;
     }

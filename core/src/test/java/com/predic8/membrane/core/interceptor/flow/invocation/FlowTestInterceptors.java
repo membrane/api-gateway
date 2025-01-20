@@ -19,8 +19,14 @@ package com.predic8.membrane.core.interceptor.flow.invocation;
 import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.interceptor.flow.*;
+import com.predic8.membrane.core.interceptor.flow.choice.Case;
+import com.predic8.membrane.core.interceptor.flow.choice.ChoiceInterceptor;
+import com.predic8.membrane.core.interceptor.flow.choice.Otherwise;
 import com.predic8.membrane.core.interceptor.flow.invocation.testinterceptors.*;
 import com.predic8.membrane.core.interceptor.groovy.*;
+
+import java.awt.*;
+import java.util.List;
 
 import static java.util.Arrays.*;
 
@@ -45,6 +51,26 @@ public class FlowTestInterceptors {
         return new IfInterceptor() {{
             setTest(test);
             setInterceptors(asList(nestedInterceptors));
+        }};
+    }
+
+    public static ChoiceInterceptor CHOICE(Otherwise otherwise, Case... cases) {
+        return new ChoiceInterceptor() {{
+            setOtherwise(otherwise);
+            setCases(asList(cases));
+        }};
+    }
+
+    public static Case CASE(String test, Interceptor... nestedInterceptors) {
+        return new Case() {{
+            setTest(test);
+            setInterceptors(List.of(nestedInterceptors));
+        }};
+    }
+
+    public static Otherwise OTHERWISE(Interceptor... nestedInterceptors) {
+        return new Otherwise() {{
+            setInterceptors(List.of(nestedInterceptors));
         }};
     }
 

@@ -41,7 +41,7 @@ public class AdminConsoleInterceptor extends AbstractInterceptor {
 	private boolean useXForwardedForAsClientAddr = false;
 
 	public AdminConsoleInterceptor() {
-		name = "Administration";
+		name = "administration";
 		rewriteInterceptor.getMappings().add(new RewriteInterceptor.Mapping("^/?$", "/admin", "redirect"));
 		wsi.setDocBase("classpath:/com/predic8/membrane/core/interceptor/administration/docBase");
 	}

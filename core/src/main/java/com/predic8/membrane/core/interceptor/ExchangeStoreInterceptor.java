@@ -47,7 +47,7 @@ public class ExchangeStoreInterceptor extends AbstractInterceptor implements App
 	private final Set<AbstractServiceProxy> serviceProxiesContainingAdminConsole = new HashSet<>();
 
 	public ExchangeStoreInterceptor() {
-		name = "  Store Interceptor";
+		name = "  store interceptor";
 	}
 
 	public ExchangeStoreInterceptor(ExchangeStore exchangeStore) {
@@ -113,6 +113,7 @@ public class ExchangeStoreInterceptor extends AbstractInterceptor implements App
 
 	@Override
 	public void init() {
+		super.init();
 
 		//noinspection StatementWithEmptyBody
 		if (Objects.equals(exchangeStoreBeanId, BEAN_ID_ATTRIBUTE_CANNOT_BE_USED))

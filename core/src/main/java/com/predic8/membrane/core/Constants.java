@@ -77,7 +77,7 @@ public class Constants {
 	public static final String PRODUCT_CONTACT_EMAIL = "info@predic8.de";
 
 	public static final String HTML_FOOTER =
-			"Copyright &copy;2009-2024 " +
+			"Copyright &copy;2009-2025 " +
 					"<a href=\"http://predic8.com/\">predic8 GmbH</a>" +
 					". All Rights Reserved. See " +
 					"<a href=\"http://www.membrane-soa.org/api-gateway/\">http://www.membrane-soa.org/api-gateway/</a>" +

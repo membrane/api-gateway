@@ -61,11 +61,11 @@ public class WebServerInterceptor extends AbstractInterceptor {
     boolean generateIndex;
 
     public WebServerInterceptor() {
-        name = "Web Server";
+        name = "web server";
     }
 
     public WebServerInterceptor(Router r) {
-        name = "Web Server";
+        name = "web server";
         this.router = r;
     }
 

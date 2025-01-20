@@ -15,6 +15,7 @@ package com.predic8.membrane.core.lang;
 
 import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.Interceptor.*;
 import com.predic8.membrane.core.lang.ExchangeExpression.*;
 import org.junit.jupiter.api.*;
@@ -22,7 +23,6 @@ import org.junit.jupiter.api.*;
 import java.net.*;
 import java.util.*;
 
-import static com.predic8.membrane.core.http.Request.*;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
 
 public abstract class AbstractExchangeExpressionTest {
@@ -31,25 +31,14 @@ public abstract class AbstractExchangeExpressionTest {
     protected static Exchange exchange;
     protected static Flow flow;
 
-    @BeforeAll
-    static void setUp() throws URISyntaxException {
+    @BeforeEach
+    void setUp() throws URISyntaxException {
         router = new Router();
-        exchange = get("/foo")
+        exchange = getRequestBuilder()
                 .header("name","Jelly Fish")
-                .body("""
-                {
-                    "id": 747,
-                    "name": "Jelly Fish",
-                    "fish": true,
-                    "insect": false,
-                    "wings": null,
-                    "tags": ["animal","water"],
-                    "world": {
-                        "country": "US",
-                        "continent": "Europe"
-                    }
-                }
-                """).buildExchange();
+                .header("foo","42")
+                .header("x-city","Tokio")
+                .buildExchange();
         flow = REQUEST;
         exchange.setProperty("wet", true);
         exchange.setProperty("can-fly", false);
@@ -61,6 +50,8 @@ public abstract class AbstractExchangeExpressionTest {
     static void tearDown() {
         router.shutdown();
     }
+
+    protected abstract Request.Builder getRequestBuilder() throws URISyntaxException;
 
     protected abstract Language getLanguage();
 
