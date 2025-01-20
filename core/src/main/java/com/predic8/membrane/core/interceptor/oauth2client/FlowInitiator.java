@@ -77,7 +77,7 @@ public class FlowInitiator extends AbstractInterceptor {
     @Override
     public Outcome handleRequest(Exchange exc) {
         try {
-            return oauth2.handleRequestInternal(exc);
+            return handleRequestInternal(exc);
         } catch (Exception e) {
             log.error("", e);
             ProblemDetails.internal(router.isProduction(),getDisplayName())
