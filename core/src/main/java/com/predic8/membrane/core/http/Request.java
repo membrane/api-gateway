@@ -27,6 +27,7 @@ import java.util.regex.*;
 
 import static com.predic8.membrane.core.Constants.*;
 import static com.predic8.membrane.core.http.Header.*;
+import static com.predic8.membrane.core.http.MimeType.APPLICATION;
 
 public class Request extends Message {
 
@@ -59,7 +60,7 @@ public class Request extends Message {
 	String uri;
 
 	@Override
-	public void parseStartLine(InputStream in) throws IOException, EndOfStreamException {
+	public void parseStartLine(InputStream in) throws IOException {
 		try {
 			String firstLine = HttpUtil.readLine(in);
 			Matcher matcher = pattern.matcher(firstLine);
@@ -184,11 +185,9 @@ public class Request extends Message {
 
 	@Override
 	public <T extends Message> T createSnapshot(Runnable bodyUpdatedCallback, BodyCollectingMessageObserver.Strategy strategy, long limit) {
-		Request result = this.createMessageSnapshot(new Request(), bodyUpdatedCallback, strategy, limit);
-
-		result.setUri(this.getUri());
-		result.setMethod(this.getMethod());
-
+		Request result = createMessageSnapshot(new Request(), bodyUpdatedCallback, strategy, limit);
+		result.setUri(getUri());
+		result.setMethod(getMethod());
 		return (T) result;
 	}
 
@@ -280,12 +279,18 @@ public class Request extends Message {
 			return this;
 		}
 
-		public Builder body(long contentLength, InputStream body) throws IOException {
+		public Builder body(long contentLength, InputStream body) {
 			req.body = new Body(body, contentLength);
 			Header header = req.getHeader();
 			header.removeFields(CONTENT_ENCODING);
 			header.removeFields(TRANSFER_ENCODING);
 			header.setContentLength(contentLength);
+			return this;
+		}
+
+		public Builder json(String body) {
+			req.setBodyContent(body.getBytes());
+			req.header.setContentType(APPLICATION);
 			return this;
 		}
 

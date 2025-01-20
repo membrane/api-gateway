@@ -14,28 +14,64 @@
 
 package com.predic8.membrane.examples.tests;
 
+import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.examples.util.*;
 import org.junit.jupiter.api.*;
 
-import static com.predic8.membrane.test.AssertUtils.*;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static io.restassured.RestAssured.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class RateLimiterExampleTest extends DistributionExtractingTestcase {
 
-	@Override
-	protected String getExampleDirName() {
-		return "rateLimiter";
-	}
+    @Override
+    protected String getExampleDirName() {
+        return "rateLimiter";
+    }
 
-	@Test
-	void test() throws Exception {
-		BufferLogger logger = new BufferLogger();
-		try(Process2 ignored = startServiceProxyScript(logger)) {
-			getAndAssert200(LOCALHOST_2000);
-			getAndAssert200(LOCALHOST_2000);
-			getAndAssert200(LOCALHOST_2000);
-			getAndAssert(429, LOCALHOST_2000);
-			assertTrue(logger.contains("INFO RateLimitInterceptor:108 - 127.0.0.1 limit: 3 duration: PT30S is exceeded. (clientIp: 127.0.0.1)"));
-		}
-	}
+    @Test
+    void clientIp() throws Exception {
+        BufferLogger logger = new BufferLogger();
+        try (Process2 ignored = startServiceProxyScript(logger)) {
+            getAndAssert("Dummy",2000,200);
+            getAndAssert("Dummy",2000,200);
+            getAndAssert("Dummy",2000,200);
+            getAndAssert("Dummy",2000,429);
+            assertTrue(logger.contains("127.0.0.1"));
+            assertTrue(logger.contains("PT30S"));
+            assertTrue(logger.contains("is exceeded"));
+        }
+    }
+
+    @Test
+    void jsonpathExpression() throws Exception {
+        BufferLogger logger = new BufferLogger();
+        try (Process2 ignored = startServiceProxyScript(logger)) {
+            getAndAssert("Alice",2010,200);
+            getAndAssert("Alice",2010,200);
+            getAndAssert("Bob",2010,200);
+            getAndAssert("Alice",2010,200);
+            getAndAssert("Alice",2010,429);
+            getAndAssert("Bob",2010,200);
+            getAndAssert("Bob",2010,200);
+            getAndAssert("Bob",2010,429);
+            assertTrue(logger.contains("Bob"));
+            assertTrue(logger.contains("PT30S"));
+            assertTrue(logger.contains("is exceeded"));
+        }
+    }
+
+    private static void getAndAssert(String user, int port, int statusCode) {
+        // @formatter:off
+        given()
+            .contentType(MimeType.APPLICATION_JSON)
+            .body("""
+               {
+                   "user": "%s"
+               }
+               """.formatted(user))
+            .post("http://localhost:" +port)
+        .then()
+            .statusCode(statusCode);
+        // @formatter:on
+    }
 }

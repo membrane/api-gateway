@@ -23,7 +23,11 @@ public class AbstractExchangeExpressionInterceptor extends AbstractLanguageInter
     @Override
     public void init() {
         super.init();
-        exchangeExpression = TemplateExchangeExpression.newInstance(router, language, expression);
+        exchangeExpression = getExchangeExpression();
+    }
+
+    protected ExchangeExpression getExchangeExpression() {
+        return TemplateExchangeExpression.newInstance(router, language, expression);
     }
 
 }
