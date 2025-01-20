@@ -11,7 +11,7 @@ In this example we will make an HTTP GET request call to secured resources.
 
 To run the example execute the following steps:
 
-1. Go to the `examples/acl` directory.
+1. Go to the `examples/security/acl` directory.
 
 2. Execute `service-proxy.bat`
 
@@ -52,7 +52,7 @@ Further a AccessControl interceptor is added to the serviceProxy.
 The value of the attribute 'file' is the name of the access control list XML file. 
 Before processing the first request, the ACL file is read, and the access control component is initialized. 
 
-Next take a look at `acl.xml` file located under the `examples/acl` directory:
+Next take a look at `acl.xml` file located under the `examples/security/acl` directory:
 
 ```
 <accessControl>
