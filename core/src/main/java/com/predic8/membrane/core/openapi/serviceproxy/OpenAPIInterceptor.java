@@ -17,9 +17,7 @@
 package com.predic8.membrane.core.openapi.serviceproxy;
 
 import com.predic8.membrane.core.*;
-import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.openapi.*;
 import com.predic8.membrane.core.openapi.validators.*;
@@ -33,8 +31,8 @@ import java.io.*;
 import java.net.*;
 import java.util.*;
 
+import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
 import static com.predic8.membrane.core.exchange.Exchange.*;
-import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.openapi.serviceproxy.APIProxy.*;
 import static com.predic8.membrane.core.openapi.util.UriUtil.*;
@@ -66,13 +64,13 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
         // No matching API found
         if (basePath == null) {
             // Do not log: 404 is too common
-            exc.setResponse(ProblemDetails.user(false)
+            user(false, getDisplayName())
                     .statusCode(404)
                     .addSubType("not-found")
                     .title("No matching API found!")
                     .detail("There is no API on the path %s deployed. Please check the path.".formatted(exc.getOriginalRequestUri()))
-                    .extension("path", exc.getOriginalRequestUri())
-                    .build());
+                    .topLevel("path", exc.getOriginalRequestUri())
+                    .buildAndSetResponse(exc);
             return RETURN;
         }
 
@@ -94,19 +92,19 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
         } catch (OpenAPIParsingException e) {
             String detail = "Could not parse OpenAPI with title %s. Check syntax and references.".formatted(rec.api.getInfo().getTitle());
             log.warn(detail);
-            exc.setResponse(ProblemDetails.internal(router.isProduction())
+            internal(router.isProduction(), getDisplayName())
                     .detail(detail)
                     .exception(e)
-                    .build());
+                    .buildAndSetResponse(exc);
             return RETURN;
         } catch (Throwable t /* On purpose! Catch absolutely all */) {
             final String LOG_MESSAGE = "Message could not be validated against OpenAPI cause of an error during validation. Please check the OpenAPI with title %s.";
             log.error(LOG_MESSAGE.formatted(rec.api.getInfo().getTitle()));
-            log.error(t.getMessage(),t);
-            exc.setResponse(ProblemDetails.internal(router.isProduction())
+            log.error("", t);
+            internal(router.isProduction(), getDisplayName())
                     .detail(LOG_MESSAGE.formatted(rec.api.getInfo().getTitle()))
                     .exception(t)
-                    .build());
+                    .buildAndSetResponse(exc);
 
             return RETURN;
         }
@@ -136,18 +134,18 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
             }
         } catch (OpenAPIParsingException e) {
             String detail = "Could not parse OpenAPI with title %s. Check syntax and references.".formatted(rec.api.getInfo().getTitle());
-            log.warn(detail,e);
-            exc.setResponse(ProblemDetails.internal(router.isProduction())
+            log.warn(detail, e);
+            internal(router.isProduction(), getDisplayName())
                     .detail(detail)
                     .exception(e)
-                    .build());
+                    .buildAndSetResponse(exc);
             return RETURN;
         } catch (Throwable t /* On Purpose! Catch absolutely all */) {
-            log.error(t.getMessage(), t);
-            exc.setResponse(ProblemDetails.internal(router.isProduction())
+            log.error("", t);
+            internal(router.isProduction(), getDisplayName())
                     .detail("Message could not be validated against OpenAPI cause of an error during validation. Please check the OpenAPI with title %s.".formatted(rec.api.getInfo().getTitle()))
                     .exception(t)
-                    .build());
+                    .buildAndSetResponse(exc);
             return RETURN;
         }
 
@@ -213,13 +211,13 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
     protected void setDestinationsFromOpenAPI(OpenAPIRecord rec, Exchange exc) {
         exc.getDestinations().clear();
         rec.api.getServers().forEach(server -> {
-            URL url = getServerUrlFromOpenAPI(rec, server);
+            URL url = getServerUrlFromOpenAPI( server);
             exc.setProperty(SNI_SERVER_NAME, url.getHost());
             exc.getDestinations().add(getUrlWithoutPath(url) + exc.getRequest().getUri());
         });
     }
 
-    private static URL getServerUrlFromOpenAPI(OpenAPIRecord rec, Server server) {
+    private static URL getServerUrlFromOpenAPI( Server server) {
         try {
             // It is always OpenAPI 3 or newer cause the parser transforms v2 to v3
             return new URL(server.getUrl());
@@ -306,23 +304,29 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
 
     private String buildValidationPropertiesDescription(Map<String, Object> props) {
         return """
-            - Security: %s<br />
-            - Requests: %s<br />
-            - Responses: %s<br />
-            - Details: %s<br />
-            For in-depth explanation of these properties visit <a href="https://www.membrane-api.io/openapi/configuration-and-validation/index.html#validation"> here </a><br />
-            """.formatted(props.get("security"), props.get("requests"), props.get("responses"), props.get("details"));
+                - Security: %s<br />
+                - Requests: %s<br />
+                - Responses: %s<br />
+                - Details: %s<br />
+                For in-depth explanation of these properties visit <a href="https://www.membrane-api.io/openapi/configuration-and-validation/index.html#validation"> here </a><br />
+                """.formatted(props.get("security"), props.get("requests"), props.get("responses"), props.get("details"));
     }
 
     private void createErrorResponse(Exchange exc, ValidationErrors errors, ValidationErrors.Direction direction, boolean validationDetails) {
-        exc.setResponse(Response.ResponseBuilder.newInstance()
-                .status(errors.get(0).getContext().getStatusCode(), "Bad Request")
-                .body(getErrorMessage(errors, direction, validationDetails)).contentType(APPLICATION_JSON_UTF8).build());
+        user(router.isProduction(), getDisplayName())
+                .title("OpenAPI message validation failed")
+                .addSubType("validation")
+                .statusCode(errors.get(0).getContext().getStatusCode())
+                .topLevel("validation", getErrorMap(errors, direction, validationDetails))
+                .buildAndSetResponse(exc);
     }
 
-    private byte[] getErrorMessage(ValidationErrors errors, ValidationErrors.Direction direction, boolean validationDetails) {
-        if (validationDetails)
+    private static Map<String, Object> getErrorMap(ValidationErrors errors, ValidationErrors.Direction direction, boolean validationDetails) {
+        if (validationDetails) {
             return errors.getErrorMessage(direction);
-        return createErrorMessage("Message validation failed!");
+        }
+        Map<String, Object> m = new LinkedHashMap<>();
+        m.put("error", "Message validation failed!");
+        return m;
     }
 }

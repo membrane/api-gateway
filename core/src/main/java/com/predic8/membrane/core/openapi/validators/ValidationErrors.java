@@ -16,9 +16,6 @@
 
 package com.predic8.membrane.core.openapi.validators;
 
-import com.fasterxml.jackson.core.*;
-import com.fasterxml.jackson.databind.*;
-
 import java.util.*;
 import java.util.stream.*;
 
@@ -26,8 +23,6 @@ import static com.predic8.membrane.core.openapi.util.Utils.*;
 import static com.predic8.membrane.core.openapi.validators.ValidationErrors.Direction.*;
 
 public class ValidationErrors {
-
-    private final static ObjectMapper om = new ObjectMapper();
 
     private final List<ValidationError> errors = new ArrayList<>();
 
@@ -84,27 +79,22 @@ public class ValidationErrors {
         return errors.stream();
     }
 
-    public byte[] getErrorMessage(Direction direction) {
+    public Map<String,Object> getErrorMessage(Direction direction) {
 
-        if (errors.isEmpty())
-            return "No validation errors!".getBytes();
+        var root = new LinkedHashMap<String, Object>();
+
+        if (errors.isEmpty()) {
+            root.put("message", "No validation errors!");
+            return root;
+        }
 
         Map<String, List<Map<String, Object>>> m = getValidationErrorsGroupedByLocation(direction);
-        Map<String, Object> wrapper = new LinkedHashMap<>();
-
-        ValidationContext ctx = errors.get(0).getContext();
-        setFieldIfNotNull(wrapper, "method", ctx.getMethod());
-        setFieldIfNotNull(wrapper, "uriTemplate", ctx.getUriTemplate());
-        setFieldIfNotNull(wrapper, "path", ctx.getPath());
-
-        wrapper.put("validationErrors", m);
-
-        try {
-            return om.writerWithDefaultPrettyPrinter().writeValueAsBytes(wrapper);
-        } catch (JsonProcessingException e) {
-            e.printStackTrace();
-        }
-        return "Error!".getBytes();
+        ValidationContext ctx = errors.getFirst().getContext();
+        setFieldIfNotNull(root, "method", ctx.getMethod());
+        setFieldIfNotNull(root, "uriTemplate", ctx.getUriTemplate());
+        setFieldIfNotNull(root, "path", ctx.getPath());
+        root.put("errors", m);
+        return root;
     }
 
     private Map<String, List<Map<String, Object>>> getValidationErrorsGroupedByLocation(Direction direction) {

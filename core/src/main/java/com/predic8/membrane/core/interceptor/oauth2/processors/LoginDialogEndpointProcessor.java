@@ -13,15 +13,15 @@
 
 package com.predic8.membrane.core.interceptor.oauth2.processors;
 
-import com.predic8.membrane.core.exceptions.*;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.interceptor.Outcome;
-import com.predic8.membrane.core.interceptor.authentication.session.LoginDialog;
-import com.predic8.membrane.core.interceptor.oauth2.OAuth2AuthorizationServerInterceptor;
-import com.predic8.membrane.core.util.URI;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.interceptor.authentication.session.*;
+import com.predic8.membrane.core.interceptor.oauth2.*;
+import com.predic8.membrane.core.util.*;
 import org.slf4j.*;
 
-import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
+import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
+import static com.predic8.membrane.core.interceptor.Outcome.*;
 
 public class LoginDialogEndpointProcessor extends EndpointProcessor {
 
@@ -54,10 +54,8 @@ public class LoginDialogEndpointProcessor extends EndpointProcessor {
             loginDialog.handleLoginRequest(exc);
         } catch (Exception e) {
             log.error(e.getMessage(),e);
-            ProblemDetails.internal(true)
-                    .component(this.getClass().getSimpleName())
+            internal(true,"login-dialog-endpoint-processor")
                     .exception(e)
-                    .stacktrace(true)
                     .buildAndSetResponse(exc);
             return ABORT;
         }

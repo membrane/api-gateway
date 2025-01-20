@@ -53,8 +53,7 @@ public class DispatchingInterceptor extends AbstractInterceptor {
             try {
                 exc.getDestinations().add(getForwardingDestination( exc));
             } catch (Exception e) {
-                ProblemDetails.internal(router.isProduction())
-                        .component(getDisplayName())
+                ProblemDetails.internal(router.isProduction(),getDisplayName())
                         .detail("Could not get forwarding destination to dispatch request")
                         .exception(e)
                         .buildAndSetResponse(exc);

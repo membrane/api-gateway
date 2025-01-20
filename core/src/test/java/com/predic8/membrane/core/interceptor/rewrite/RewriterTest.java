@@ -29,7 +29,7 @@ public class RewriterTest {
     private RewriteInterceptor rewriter;
 
     @BeforeEach
-    void setUp() throws Exception {
+    void setUp() {
         rewriter = new RewriteInterceptor();
         List<Mapping> mappings = new ArrayList<>();
         mappings.add(new Mapping("/hello/(.*)", "/$1", null));
@@ -51,12 +51,12 @@ public class RewriterTest {
         assertEquals(400, exc.getResponse().getStatusCode());
 
         var pd = ProblemDetails.parse(exc.getResponse());
-        assertEquals("https://membrane-api.io/error/user/path", pd.getType());
+        assertEquals("https://membrane-api.io/error/user/url-rewriter/path", pd.getType());
 
     }
 
     @Test
-    void rewriteWithoutTarget2() throws Exception {
+    void rewriteWithoutTarget2() {
         Exchange exc = new Exchange(null);
         Request req = new Request();
         req.setUri("/%25");
@@ -71,7 +71,7 @@ public class RewriterTest {
     }
 
     @Test
-    void rewriteWithoutTarget3() throws Exception {
+    void rewriteWithoutTarget3() {
         Exchange exc = new Exchange(null);
         Request req = new Request();
         req.setUri("/hello/%25");

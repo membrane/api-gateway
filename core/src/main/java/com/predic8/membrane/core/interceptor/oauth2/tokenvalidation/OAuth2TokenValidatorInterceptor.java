@@ -14,7 +14,6 @@
 package com.predic8.membrane.core.interceptor.oauth2.tokenvalidation;
 
 import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
@@ -22,7 +21,8 @@ import com.predic8.membrane.core.transport.http.*;
 
 import java.net.*;
 
-import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.REQUEST_FLOW;
+import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 
 @MCElement(name="tokenValidator")
@@ -53,12 +53,10 @@ public class OAuth2TokenValidatorInterceptor extends AbstractInterceptor {
                 if(callExchangeAndCheckFor200(buildAccessTokenValidationExchange(exc)))
                     return CONTINUE;
             } catch (Exception e) {
-                ProblemDetails.internal(router.isProduction())
-                        .component(getDisplayName())
+                internal(router.isProduction(),getDisplayName())
                         .exception(e)
-                        .stacktrace(true)
                         .buildAndSetResponse(exc);
-                return Outcome.ABORT;
+                return ABORT;
             }
         }
         setResponseToBadRequest(exc);

@@ -13,18 +13,21 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.ws_addressing;
 
-import com.predic8.membrane.core.exceptions.*;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.interceptor.AbstractInterceptor;
-import com.predic8.membrane.core.interceptor.Outcome;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.interceptor.*;
+import org.slf4j.*;
 import org.springframework.context.*;
 
 import javax.xml.stream.*;
-import java.io.ByteArrayOutputStream;
+import java.io.*;
 
-import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
+import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
+import static com.predic8.membrane.core.interceptor.Outcome.*;
 
 public class WsaEndpointRewriterInterceptor extends AbstractInterceptor {
+
+	private static final Logger log = LoggerFactory.getLogger(WsaEndpointRewriterInterceptor.class);
+
 	@Override
 	public Outcome handleRequest(Exchange exc) {
 		ByteArrayOutputStream output = new ByteArrayOutputStream();
@@ -33,11 +36,10 @@ public class WsaEndpointRewriterInterceptor extends AbstractInterceptor {
 			// Why is port 2020 hard coded?
             new WsaEndpointRewriter(getRegistry()).rewriteEndpoint(exc.getRequest().getBodyAsStreamDecoded(), output, 2020, exc);
         } catch (XMLStreamException e) {
-			ProblemDetails.internal(router.isProduction())
-					.component(getDisplayName())
+			log.error("",e);
+			internal(router.isProduction(),getDisplayName())
 					.detail("Could not rewrite endpoint!")
 					.exception(e)
-					.stacktrace(true)
 					.buildAndSetResponse(exc);
 			return ABORT;
         }

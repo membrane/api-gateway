@@ -30,6 +30,7 @@ import java.util.*;
 import static com.fasterxml.jackson.core.JsonParser.Feature.*;
 import static com.fasterxml.jackson.core.JsonTokenId.*;
 import static com.fasterxml.jackson.databind.DeserializationFeature.*;
+import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static java.util.EnumSet.*;
@@ -139,13 +140,12 @@ public class JsonProtectionInterceptor extends AbstractInterceptor {
     private Response createErrorResponse(String msg, Integer line, Integer col) {
         if (shouldProvideDetails()) {
             log.warn("JSON protection violation. Line: {}, col: {}, msg: {}", line, col, msg);
-            ProblemDetails pd = ProblemDetails.security(false)
+            ProblemDetails pd = user(false,getDisplayName())
                     .statusCode(400)
-                    .addSubType("json-validation")
-                    .title("JSON Protection Violation");
-            pd.detail(msg);
-            if (line != null) pd.extension("line", line);
-            if (col != null) pd.extension("column", col);
+                    .title("JSON Protection Violation")
+                    .detail(msg);
+            if (line != null) pd.topLevel("line", line);
+            if (col != null) pd.topLevel("column", col);
             return pd.build();
         }
         return Response.badRequest().build();

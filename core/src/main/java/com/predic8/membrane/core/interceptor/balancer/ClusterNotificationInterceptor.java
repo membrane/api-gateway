@@ -15,7 +15,6 @@
 package com.predic8.membrane.core.interceptor.balancer;
 
 import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
@@ -28,6 +27,7 @@ import javax.crypto.spec.*;
 import java.util.*;
 import java.util.regex.*;
 
+import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.interceptor.balancer.BalancerUtil.*;
 import static com.predic8.membrane.core.util.URLParamUtil.DuplicateKeyOrInvalidFormStrategy.*;
@@ -61,7 +61,7 @@ public class ClusterNotificationInterceptor extends AbstractInterceptor {
 
 		if (!m.matches()) return Outcome.CONTINUE;
 
-		log.debug("request received: "+m.group(1));
+		log.debug("request received: {}",m.group(1));
 		if (validateSignature && !getParams(exc).containsKey("data")) {
 			exc.setResponse(Response.forbidden().build());
 			return Outcome.ABORT;
@@ -73,11 +73,10 @@ public class ClusterNotificationInterceptor extends AbstractInterceptor {
                     getDecryptedParams(getParams(exc).get("data")):
                         getParams(exc);
         } catch (Exception e) {
-			ProblemDetails.internal(router.isProduction())
-					.component(getDisplayName())
+			log.error("",e);
+			internal(router.isProduction(),getDisplayName())
 					.detail("Could not decrypt parameters!")
 					.exception(e)
-					.stacktrace(true)
 					.buildAndSetResponse(exc);
 			return ABORT;
         }

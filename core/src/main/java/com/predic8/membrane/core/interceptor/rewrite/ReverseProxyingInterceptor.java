@@ -15,7 +15,6 @@
 package com.predic8.membrane.core.interceptor.rewrite;
 
 import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.ws.relocator.*;
@@ -23,6 +22,7 @@ import org.slf4j.*;
 
 import java.net.*;
 
+import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
 import static com.predic8.membrane.core.http.Header.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.util.URLUtil.*;
@@ -71,12 +71,11 @@ public class ReverseProxyingInterceptor extends AbstractInterceptor {
         try {
             target = new URL(exc.getDestinations().getFirst());
         } catch (MalformedURLException e) {
-			ProblemDetails.internal(router.isProduction())
-					.component(getDisplayName())
+			log.error("Could not parse target URL: {}",destination);
+			internal(router.isProduction(),getDisplayName())
 					.detail("Could not parse target URL")
-					.extension("URL", exc.getDestinations().getFirst())
+					.internal("URL", exc.getDestinations().getFirst())
 					.exception(e)
-					.stacktrace(true)
 					.buildAndSetResponse(exc);
 			return ABORT;
         }

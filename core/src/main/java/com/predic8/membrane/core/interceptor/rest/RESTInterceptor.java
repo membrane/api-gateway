@@ -14,7 +14,6 @@
 package com.predic8.membrane.core.interceptor.rest;
 
 import com.fasterxml.jackson.core.*;
-import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
@@ -26,6 +25,7 @@ import java.lang.reflect.*;
 import java.security.*;
 import java.util.regex.*;
 
+import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
 import static com.predic8.membrane.core.http.Header.*;
 import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
@@ -41,19 +41,17 @@ public abstract class RESTInterceptor extends AbstractInterceptor {
 
 	@Override
 	public Outcome handleRequest(Exchange exc) {
-		log.debug("request: " + exc.getOriginalRequestUri());
+		log.debug("request: {}", exc.getOriginalRequestUri());
 
 		exc.setTimeReqSent(System.currentTimeMillis());
 
-        Outcome o = null;
+        Outcome o;
         try {
             o = dispatchRequest(exc);
         } catch (Exception e) {
-			ProblemDetails.internal(router.isProduction())
-					.component(getDisplayName())
+			internal(router.isProduction(),getDisplayName())
 					.detail("Error dispatching request!")
 					.exception(e)
-					.stacktrace(true)
 					.buildAndSetResponse(exc);
             return ABORT;
         }
@@ -77,7 +75,7 @@ public abstract class RESTInterceptor extends AbstractInterceptor {
 	}
 
 	private Outcome dispatchRequest(Exchange exc) throws Exception {
-		String path = router.getUriFactory().create(exc.getDestinations().get(0)).getPath();
+		String path = router.getUriFactory().create(exc.getDestinations().getFirst()).getPath();
 		for (Method m : getClass().getMethods() ) {
 			Mapping a = m.getAnnotation(Mapping.class);
 			if (a==null) continue;

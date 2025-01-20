@@ -19,7 +19,6 @@ package com.predic8.membrane.core.openapi.serviceproxy;
 import com.fasterxml.jackson.core.*;
 import com.fasterxml.jackson.databind.*;
 import com.fasterxml.jackson.databind.node.*;
-import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.util.*;
@@ -33,6 +32,7 @@ import java.net.*;
 import java.util.*;
 import java.util.regex.*;
 
+import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
 import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.http.Response.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
@@ -89,11 +89,10 @@ public class OpenAPIPublisherInterceptor extends AbstractInterceptor {
         try {
             return handleOverviewOpenAPIDoc(exc);
         } catch (Exception e) {
-            ProblemDetails.internal(router.isProduction())
-                    .component(getDisplayName())
+            log.error("", e);
+            internal(router.isProduction(),getDisplayName())
                     .detail("Error handling OpenAPI overview!")
                     .exception(e)
-                    .stacktrace(true)
                     .buildAndSetResponse(exc);
             return ABORT;
         }
@@ -129,12 +128,12 @@ public class OpenAPIPublisherInterceptor extends AbstractInterceptor {
 
     private Outcome returnNoFound(Exchange exc, String id) {
         // Do not log. Too common!
-        exc.setResponse(ProblemDetails.openapi(false)
+        exc.setResponse(openapi(false,getDisplayName())
                 .statusCode(404)
                 .addSubType("wrong-id")
                 .title("OpenAPI not found")
                 .detail("OpenAPI document with the id %s not found.".formatted(id))
-                .extension("id", id)
+                .topLevel("id", id)
                 .build());
         return RETURN;
     }
@@ -152,12 +151,12 @@ public class OpenAPIPublisherInterceptor extends AbstractInterceptor {
         // No id specified
         if (!m.matches()) {
             // Do not log! Too common.
-            exc.setResponse(ProblemDetails.openapi(false)
+            openapi(false,getDisplayName())
                     .statusCode(404)
                     .addSubType("wrong-id")
                     .title("No OpenAPI document id")
                     .detail("Please specify an id of an OpenAPI document. Path should match this pattern: /api-docs/ui/<<id>>")
-                    .build());
+                    .buildAndSetResponse(exc);
             return RETURN;
         }
 

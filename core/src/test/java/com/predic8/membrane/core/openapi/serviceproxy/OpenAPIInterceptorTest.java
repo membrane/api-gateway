@@ -95,11 +95,11 @@ class OpenAPIInterceptorTest {
         ProblemDetails pd = ProblemDetails.parse(exc.getResponse());
 
         assertEquals("No matching API found!", pd.getTitle());
-        assertEquals("https://membrane-api.io/error/user/not-found", pd.getType());
+        assertEquals("https://membrane-api.io/error/user/openapi/not-found", pd.getType());
     }
 
     @Test
-    void destinations() throws Exception {
+    void destinations() {
         exc.getRequest().setUri("/foo/boo");
         exc.setOriginalRequestUri("/foo/boo");
 
@@ -117,7 +117,7 @@ class OpenAPIInterceptorTest {
     }
 
     @Test
-    void destinationsTargetSet() throws Exception {
+    void destinationsTargetSet() {
         exc.getRequest().setUri("/foo/boo");
         exc.setOriginalRequestUri("/foo/boo");
         APIProxy proxy = createProxy(router, specInfo3Servers);
@@ -126,7 +126,6 @@ class OpenAPIInterceptorTest {
         assertEquals(0, exc.getDestinations().size());
     }
 
-    @SuppressWarnings({"unchecked"})
     @Test
     void validateRequest() throws Exception {
 
@@ -146,16 +145,15 @@ class OpenAPIInterceptorTest {
         assertEquals(RETURN, interceptor.handleRequest(exc));
         assertEquals(400,exc.getResponse().getStatusCode());
 
-        assertEquals("POST", getMapFromResponse(exc).get("method"));
+        assertEquals("POST", getMapFromResponse(exc).get("validation").get("method"));
         testValidationResults(getMapFromResponse(exc), "REQUEST");
     }
 
-    @SuppressWarnings({"unchecked"})
     @Test
     void validateResponse() throws Exception {
         specCustomers.validateResponses = YES;
         Exchange exc = callPut(specCustomers);
-        assertEquals("PUT", getMapFromResponse(exc).get("method"));
+        assertEquals("PUT",  getMapFromResponse(exc).get("validation").get("method"));
         testValidationResults(getMapFromResponse(exc), "RESPONSE");
     }
 
@@ -163,7 +161,7 @@ class OpenAPIInterceptorTest {
     void validateResponseLessDetails() throws Exception {
         specCustomers.validateResponses = YES;
         specCustomers.validationDetails = NO;
-        assertEquals("Message validation failed!", getMapFromResponse(callPut(specCustomers)).get("error"));
+        assertEquals("Message validation failed!", getMapFromResponse(callPut(specCustomers)).get("validation").get("error"));
     }
 
     @NotNull
@@ -182,35 +180,36 @@ class OpenAPIInterceptorTest {
         customer.put("age",110);
         customer.put("foo",110);
 
-        exc.setResponse(Response.ResponseBuilder.newInstance().status(200,"OK").contentType(APPLICATION_JSON).body(convert2JSON(customer)).build());
+        exc.setResponse(Response.ok().contentType(APPLICATION_JSON).body(convert2JSON(customer)).build());
         assertEquals(RETURN, interceptor.handleResponse(exc));
         assertEquals(500,exc.getResponse().getStatusCode());
         return exc;
     }
 
     @SuppressWarnings({"unchecked", "rawtypes"})
-    private void testValidationResults(Map<String, Object> errors, String direction) {
+    private void testValidationResults(Map<String, Map<String,Object>> errors1, String direction) {
+        Map<String,Object> errors = errors1.get("validation");
 
         assertEquals("/customers", errors.get("uriTemplate"));
         assertEquals("/customers", errors.get("path"));
 
-        Map<String,Object> validationErrors = (Map<String, Object>) errors.get("validationErrors");
+        Map<String,Object> validationErrors = (Map<String, Object>) errors.get("errors");
 
         assertEquals(3,validationErrors.size());
 
-        Map<String,Object> m1 = (Map<String, Object>) ((List)validationErrors.get( direction + "/BODY")).get(0);
+        Map<String,Object> m1 = (Map<String, Object>) ((List)validationErrors.get( direction + "/BODY")).getFirst();
         assertEquals("Customer",m1.get("complexType"));
         assertEquals("object",m1.get("schemaType"));
 
         assertTrue(((String)m1.get("message")).contains("additional properties"));
 
-        Map<String,Object> m2 = (Map<String, Object>) ((List)validationErrors.get(direction + "/BODY#/firstName")).get(0);
+        Map<String,Object> m2 = (Map<String, Object>) ((List)validationErrors.get(direction + "/BODY#/firstName")).getFirst();
 
         assertEquals("Customer",m2.get("complexType"));
         assertEquals("object",m2.get("schemaType"));
         assertTrue(((String)m2.get("message")).contains("missing"));
 
-        Map<String,Object> m3 = (Map<String, Object>) ((List)validationErrors.get(direction + "/BODY#/age")).get(0);
+        Map<String,Object> m3 = (Map<String, Object>) ((List)validationErrors.get(direction + "/BODY#/age")).getFirst();
 
         assertEquals("Customer",m3.get("complexType"));
         assertEquals("integer",m3.get("schemaType"));

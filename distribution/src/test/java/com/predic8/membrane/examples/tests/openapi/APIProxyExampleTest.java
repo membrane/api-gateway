@@ -109,18 +109,20 @@ public class APIProxyExampleTest extends AbstractSampleMembraneStartStopTestcase
 
         JSONAssert.assertEquals("""
                         {
-                          "method" : "POST",
-                          "uriTemplate" : "/products",
-                          "path" : "/shop/v2/products",
-                          "validationErrors" : {
-                            "REQUEST/BODY#/price" : [ {
-                              "message" : "-2.7 is smaller than the minimum of 0",
-                              "complexType" : "Product",
-                              "schemaType" : "number"
-                            } ]
+                          "validation": {
+                              "method" : "POST",
+                              "uriTemplate" : "/products",
+                              "path" : "/shop/v2/products",
+                              "errors" : {
+                                "REQUEST/BODY#/price" : [ {
+                                  "message" : "-2.7 is smaller than the minimum of 0",
+                                  "complexType" : "Product",
+                                  "schemaType" : "number"
+                                } ]
+                            }
                           }
                         }
                         """
-                , res.body().asString(), true);
+                , res.body().asString(), false);
     }
 }

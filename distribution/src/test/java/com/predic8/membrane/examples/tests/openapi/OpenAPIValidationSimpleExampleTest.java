@@ -33,19 +33,22 @@ public class OpenAPIValidationSimpleExampleTest extends DistributionExtractingTe
 			""";
 
 	final String validationResult = """
-			{
-			  "method" : "POST",
-			  "uriTemplate" : "/persons",
-			  "path" : "/persons",
-			  "validationErrors" : {
-				"REQUEST/BODY#/age" : [ {
-				  "message" : "-10 is smaller than the minimum of 0",
-				  "complexType" : "Person",
-				  "schemaType" : "integer"
-				} ]
-			  }
-			}
-""";
+				{
+					"title": "OpenAPI message validation failed",
+					"type": "https://membrane-api.io/error/user/openapi/validation",
+					"validation": {
+				 		"method" : "POST",
+				  		"uriTemplate" : "/persons",
+				  		"path" : "/persons",
+				  		"errors" : {
+							"REQUEST/BODY#/age" : [ {
+					  		"message" : "-10 is smaller than the minimum of 0",
+					  		"complexType" : "Person",
+					  		"schemaType" : "integer"
+						}]
+				  	}
+				  }
+				}""";
 
 	@Override
 	protected String getExampleDirName() {

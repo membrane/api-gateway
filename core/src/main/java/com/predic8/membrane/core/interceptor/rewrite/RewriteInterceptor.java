@@ -15,7 +15,6 @@ package com.predic8.membrane.core.interceptor.rewrite;
 
 import com.googlecode.jatl.*;
 import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
@@ -28,6 +27,7 @@ import java.net.*;
 import java.util.*;
 import java.util.regex.*;
 
+import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.interceptor.rewrite.RewriteInterceptor.Type.*;
@@ -204,12 +204,12 @@ public class RewriteInterceptor extends AbstractInterceptor {
             return URLUtil.getPathQuery(factory, destination);
         } catch (URISyntaxException ignore) {
             log.info("Can't parse query: {}", destination);
-            ProblemDetails.user(false)
+            user(false,getDisplayName())
                     .addSubType("path")
                     .title("The path does not follow the URI specification. Confirm the validity of the provided URL.")
                     .detail("Check the URL: " + destination)
-                    .extension("component", "rewrite")
-                    .extension("path", destination)
+                    .internal("component", "rewrite")
+                    .internal("path", destination)
                     .buildAndSetResponse(exc);
             return null;
         }

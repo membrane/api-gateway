@@ -14,12 +14,11 @@
 package com.predic8.membrane.core.interceptor.server;
 
 import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.resolver.*;
 import com.predic8.membrane.core.proxies.*;
+import com.predic8.membrane.core.resolver.*;
 import com.predic8.membrane.core.util.*;
 import com.predic8.membrane.core.ws.relocator.Relocator.*;
 import org.slf4j.*;
@@ -27,8 +26,9 @@ import org.slf4j.*;
 import javax.annotation.concurrent.*;
 import java.util.*;
 
-import static com.predic8.membrane.core.http.MimeType.TEXT_XML;
-import static com.predic8.membrane.core.http.Response.forbidden;
+import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
+import static com.predic8.membrane.core.http.MimeType.*;
+import static com.predic8.membrane.core.http.Response.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 
 /**
@@ -162,11 +162,10 @@ public class WSDLPublisherInterceptor extends AbstractInterceptor {
         try {
             return handleRequestInternal(exc);
         } catch (Exception e) {
-            ProblemDetails.internal(router.isProduction())
-                    .component(getDisplayName())
+            log.error("", e);
+            internal(router.isProduction(),getDisplayName())
                     .detail("Could not return WSDL document!")
                     .exception(e)
-                    .stacktrace(true)
                     .buildAndSetResponse(exc);
             return ABORT;
         }
