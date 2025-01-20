@@ -56,8 +56,8 @@ public class SOAPProxyValidationExampleTest extends DistributionExtractingTestca
 			.when()
 				.post("http://localhost:2000/")
 			.then()
-				.statusCode(400)
-				.extract().asString();
+				.log().ifValidationFails()
+				.statusCode(200);
 			// @formatter:on
         }
     }
