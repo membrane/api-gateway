@@ -84,13 +84,13 @@ public class APIProxy extends ServiceProxy {
         basePaths = getOpenAPIMap();
         configureBasePaths();
 
-        interceptors.add(new OpenAPIPublisherInterceptor(apiRecords));
-        interceptors.add(new OpenAPIInterceptor(this, router));
+        interceptors.addFirst(new OpenAPIInterceptor(this, router));
+        interceptors.addFirst(new OpenAPIPublisherInterceptor(apiRecords));
     }
 
     /**
      * One API should not have multiple OpenAPI specs sharing the same path. The interceptor needs the path to check against
-     * the right OpenAPI. Therefor the path must be unique.
+     * the right OpenAPI. Therefore the path must be unique.
      * The check does not consider variables. Maybe this is needed in the future?
      */
     void checkForDuplicatePaths() {
