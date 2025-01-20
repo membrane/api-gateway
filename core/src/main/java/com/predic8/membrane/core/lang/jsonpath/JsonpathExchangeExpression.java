@@ -15,6 +15,7 @@
 package com.predic8.membrane.core.lang.jsonpath;
 
 import com.fasterxml.jackson.databind.*;
+import com.fasterxml.jackson.databind.exc.*;
 import com.jayway.jsonpath.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.interceptor.Interceptor.*;
@@ -25,6 +26,7 @@ import org.slf4j.*;
 import java.io.*;
 import java.util.*;
 
+import static com.predic8.membrane.core.util.StringUtil.*;
 import static java.lang.Boolean.*;
 
 public class JsonpathExchangeExpression extends AbstractExchangeExpression {
@@ -73,8 +75,17 @@ public class JsonpathExchangeExpression extends AbstractExchangeExpression {
             throw new ExchangeExpressionException(expression, ipe)
                     .message(ipe.getLocalizedMessage());
         }
+        catch (MismatchedInputException e) {
+            String body = exchange.getMessage(flow).getBodyAsStringDecoded();
+            if (body == null || body.isEmpty()) {
+                log.info("Error evaluating Jsonpath {}. Body is empty!", expression);
+            } else {
+                log.info("Error evaluating Jsonpath {}. Body is: {}", expression, truncateAfter(body,200));
+            }
+            throw new ExchangeExpressionException(expression, e);
+        }
         catch (Exception e) {
-            log.error("Error evaluating Jsonpath expression {}. Got message {}", expression , e);
+            log.info("Error evaluating Jsonpath {}. Got message {}", expression , e);
             throw new ExchangeExpressionException(expression, e);
         }
     }

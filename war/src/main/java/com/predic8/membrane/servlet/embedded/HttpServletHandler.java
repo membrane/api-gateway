@@ -14,29 +14,20 @@
 
 package com.predic8.membrane.servlet.embedded;
 
-import java.io.IOException;
-import java.net.InetAddress;
-import java.util.Enumeration;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.transport.*;
+import com.predic8.membrane.core.transport.http.*;
+import com.predic8.membrane.core.util.*;
+import jakarta.servlet.*;
+import jakarta.servlet.http.*;
+import org.apache.commons.logging.*;
 
-import jakarta.servlet.ServletOutputStream;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
+import java.io.*;
+import java.net.*;
+import java.util.*;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.PlainBodyTransferrer;
-import com.predic8.membrane.core.http.Header;
-import com.predic8.membrane.core.http.HeaderField;
-import com.predic8.membrane.core.http.Request;
-import com.predic8.membrane.core.http.Response;
-import com.predic8.membrane.core.transport.Transport;
-import com.predic8.membrane.core.transport.http.AbortException;
-import com.predic8.membrane.core.transport.http.AbstractHttpHandler;
-import com.predic8.membrane.core.transport.http.EOFWhileReadingFirstLineException;
-import com.predic8.membrane.core.util.DNSCache;
-import com.predic8.membrane.core.util.EndOfStreamException;
+import static com.predic8.membrane.core.http.Header.TRANSFER_ENCODING;
 
 class HttpServletHandler extends AbstractHttpHandler {
 	private static final Log log = LogFactory.getLog(HttpServletHandler.class);
@@ -79,7 +70,7 @@ class HttpServletHandler extends AbstractHttpHandler {
 				return;
 			}
 
-			exchange.getRequest().readBody(); // read if not alread read
+			exchange.getRequest().readBody(); // read if not already read
 			writeResponse(exchange.getResponse());
 			exchange.setCompleted();
 		} catch (EndOfStreamException e) {
@@ -95,11 +86,10 @@ class HttpServletHandler extends AbstractHttpHandler {
 
 	}
 
-	@SuppressWarnings("deprecation")
 	protected void writeResponse(Response res) throws Exception {
 		response.setStatus(res.getStatusCode());
 		for (HeaderField header : res.getHeader().getAllHeaderFields()) {
-			if (header.getHeaderName().equals(Header.TRANSFER_ENCODING))
+			if (header.getHeaderName().hasName(TRANSFER_ENCODING))
 				continue;
 			response.addHeader(header.getHeaderName().toString(), header.getValue());
 		}
@@ -123,7 +113,7 @@ class HttpServletHandler extends AbstractHttpHandler {
 
 		if (getTransport().isRemoveContextRoot()) {
 			String contextPath = request.getContextPath();
-			if (contextPath.length() > 0 && pathQuery.startsWith(contextPath))
+			if (!contextPath.isEmpty() && pathQuery.startsWith(contextPath))
 				pathQuery = pathQuery.substring(contextPath.length());
 		}
 

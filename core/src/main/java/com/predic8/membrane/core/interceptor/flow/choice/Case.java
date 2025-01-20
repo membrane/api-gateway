@@ -17,17 +17,12 @@ import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.annot.Required;
 import com.predic8.membrane.core.Router;
-import com.predic8.membrane.core.exceptions.ProblemDetails;
 import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.interceptor.Interceptor;
 import com.predic8.membrane.core.interceptor.Interceptor.Flow;
 import com.predic8.membrane.core.lang.ExchangeExpression;
 import com.predic8.membrane.core.lang.ExchangeExpression.Language;
-import com.predic8.membrane.core.lang.ExchangeExpressionException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.List;
 
 import static com.predic8.membrane.core.lang.ExchangeExpression.Language.SPEL;
 
@@ -41,7 +36,7 @@ public class Case extends InterceptorContainer {
     private ExchangeExpression exchangeExpression;
 
     public void init(Router router) {
-        exchangeExpression = ExchangeExpression.getInstance(router, language, test);
+        exchangeExpression = ExchangeExpression.newInstance(router, language, test);
     }
 
     boolean evaluate(Exchange exc, Flow flow) {

@@ -44,7 +44,7 @@ public class ForInterceptor extends AbstractFlowInterceptor {
     public void init() {
         super.init();
         try {
-            exchangeExpression = ExchangeExpression.getInstance(router, language, in);
+            exchangeExpression = ExchangeExpression.newInstance(router, language, in);
         } catch (ConfigurationException ce) {
             throw new ConfigurationException(ce.getMessage() + """
                     

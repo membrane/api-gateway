@@ -27,6 +27,7 @@ import java.util.regex.*;
 
 import static com.predic8.membrane.core.Constants.*;
 import static com.predic8.membrane.core.http.Header.*;
+import static com.predic8.membrane.core.http.MimeType.APPLICATION;
 
 public class Request extends Message {
 
@@ -184,11 +185,9 @@ public class Request extends Message {
 
 	@Override
 	public <T extends Message> T createSnapshot(Runnable bodyUpdatedCallback, BodyCollectingMessageObserver.Strategy strategy, long limit) {
-		Request result = this.createMessageSnapshot(new Request(), bodyUpdatedCallback, strategy, limit);
-
-		result.setUri(this.getUri());
-		result.setMethod(this.getMethod());
-
+		Request result = createMessageSnapshot(new Request(), bodyUpdatedCallback, strategy, limit);
+		result.setUri(getUri());
+		result.setMethod(getMethod());
 		return (T) result;
 	}
 
@@ -291,6 +290,12 @@ public class Request extends Message {
 			header.removeFields(CONTENT_ENCODING);
 			header.removeFields(TRANSFER_ENCODING);
 			header.setContentLength(contentLength);
+			return this;
+		}
+
+		public Builder json(String body) {
+			req.setBodyContent(body.getBytes());
+			req.header.setContentType(APPLICATION);
 			return this;
 		}
 

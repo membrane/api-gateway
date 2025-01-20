@@ -19,15 +19,15 @@ import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.lang.spel.*;
+import com.predic8.membrane.core.interceptor.lang.*;
+import com.predic8.membrane.core.lang.*;
 import org.slf4j.*;
-import org.springframework.expression.*;
 import org.springframework.expression.spel.*;
-import org.springframework.expression.spel.standard.*;
 
 import java.time.*;
 import java.util.*;
 
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.util.HttpUtil.*;
@@ -49,7 +49,7 @@ import static java.lang.String.*;
  * @see <a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-Forwarded-For">X-Forwarded-For &#64;Mozilla</a>
  */
 @MCElement(name = "rateLimiter")
-public class RateLimitInterceptor extends AbstractInterceptor {
+public class RateLimitInterceptor extends AbstractExchangeExpressionInterceptor {
 
     private static final Logger log = LoggerFactory.getLogger(RateLimitInterceptor.class.getName());
 
@@ -66,10 +66,6 @@ public class RateLimitInterceptor extends AbstractInterceptor {
     public static final String X_RATELIMIT_RESET = "X-RateLimit-Reset";
 
     private final RateLimitStrategy strategy;
-
-    private final SpelParserConfiguration spelConfig = new SpelParserConfiguration(SpelCompilerMode.IMMEDIATE, this.getClass().getClassLoader());
-    private String keyExpression;
-    private Expression expression;
 
     private List<String> trustedProxyList;
 
@@ -92,55 +88,67 @@ public class RateLimitInterceptor extends AbstractInterceptor {
     }
 
     @Override
+    protected ExchangeExpression getExchangeExpression() {
+        // If there is no expression use the client IP
+        if (expression.isEmpty())
+            return null;
+        return ExchangeExpression.newInstance(router, language, expression);
+    }
+
+    @Override
     public Outcome handleRequest(Exchange exc) {
         try {
             if (!strategy.isRequestLimitReached(getKey(exc)))
                 return CONTINUE;
         } catch (SpelEvaluationException e) {
-            log.info("Cannot evaluate keyExpression {} cause is {}", keyExpression, e.getCause());
+            log.info("Cannot evaluate keyExpression {} cause is {}", expression, e.getCause());
             exc.setResponse(ProblemDetails.internal(router.isProduction())
                     .addSubType("rate-limiter")
-                    .detail("Cannot evaluate keyExpression '%s' cause is %s".formatted(keyExpression,e.getMessage()))
+                    .detail("Cannot evaluate keyExpression '%s' cause is %s".formatted(expression, e.getMessage()))
                     .build());
             return RETURN;
         }
 
-        log.info("{} limit: {} duration: {} is exceeded. (clientIp: {})",getKey(exc),getRequestLimit(),getRequestLimitDuration(),exc.getRemoteAddrIp());
+        log.info("{} limit: {} duration: {} is exceeded. (clientIp: {})", getKey(exc), getRequestLimit(), getRequestLimitDuration(), exc.getRemoteAddrIp());
         exc.setResponse(ProblemDetails.user(false)
-                        .statusCode(429)
-                        .addSubType("rate-limiter")
-                        .title("Rate limit is exceeded")
-                        .detail("The quota of the ratelimiter is exceeded. Try again in %s seconds.".formatted(strategy.getLimitReset(exc.getRemoteAddrIp())))
-                        .extension("limit",getRequestLimit())
-                        .extension("duration",getRequestLimitDuration())
+                .statusCode(429)
+                .addSubType("rate-limiter")
+                .title("Rate limit is exceeded")
+                .detail("The quota of the ratelimiter is exceeded. Try again in %s seconds.".formatted(strategy.getLimitReset(exc.getRemoteAddrIp())))
+                .extension("limit", getRequestLimit())
+                .extension("duration", getRequestLimitDuration())
                 .build());
         setHeaderRateLimitFieldsOnResponse(exc);
 
         return RETURN;
     }
 
-    @Override
-    public void init() {
-        super.init();
-        if (keyExpression == null || keyExpression.isBlank())
-            return;
-        expression = new SpelExpressionParser(spelConfig).parseExpression(keyExpression);
-    }
-
     private String getKey(Exchange exc) {
-        if (keyExpression == null) {
+        if (expression == null || expression.isEmpty()) {
             return getClientIp(exc);
         }
 
-        String result = expression.getValue(new SpELExchangeEvaluationContext(exc, exc.getRequest()), String.class);
-        if (result != null)
-            return result;
+        String value;
+        try {
+            value = exchangeExpression.evaluate(exc, REQUEST, String.class);
+        } catch (Exception e) {
+            log.info("Error evaluating expression {} for rate limit. Fallback to 'unknown'",expression); // Can be pretty common
+            return "unknown";
+        }
+        if (!value.isEmpty())
+            return value;
 
         log.warn("The expression {} evaluates to null or there is an error in the expression. This may result in a wrong counting for the ratelimiter.", expression);
-        return "null";
+        return "unknown";
     }
 
     protected String getClientIp(Exchange exc) {
+        String supposedClientId = computeClientIpFromForwards(exc);
+        log.debug("Using client ip {}", supposedClientId);
+        return supposedClientId;
+    }
+
+    private String computeClientIpFromForwards(Exchange exc) {
         if (!trustForwardedFor || exc.getRequest().getHeader().getXForwardedFor() == null) {
             return useRemoteIpAddress(exc);
         }
@@ -149,59 +157,55 @@ public class RateLimitInterceptor extends AbstractInterceptor {
         if (xForwardedFor.isEmpty())
             return useRemoteIpAddress(exc);
 
-        log.debug("X-Forwared-For {}",xForwardedFor);
+        log.debug("X-Forwared-For {}", xForwardedFor);
 
         if (trustedProxyList != null && !trustedProxyList.isEmpty()) {
-            log.debug("Checking list of trusted proxies");
-            for (int i = 1; i <= trustedProxyList.size(); i++) {
-                String trustedProxy = trustedProxyList.get(trustedProxyList.size() - i);
-                String forwardedFor = xForwardedFor.get(xForwardedFor.size() - i);
-                log.debug("Checking proxy {} against {}", trustedProxy, forwardedFor );
-                if (!Objects.equals(trustedProxy, forwardedFor)) {
-                    log.info("Trusted proxy {} is not in X-Forwarded-For list {}, or not on the right position.", trustedProxy, xForwardedFor);
-                    return useRemoteIpAddress(exc);
-                }
-            }
-            String clientIp = getOneBeforeTrustworthyProxy(xForwardedFor, trustedProxyList.size());
-            log.debug("Using {} as client ip.",clientIp);
-            return clientIp;
+            return getClientIPfromTrustedProxyList(exc, xForwardedFor);
         }
 
         if (trustedProxyCount != -1) {
-            log.debug("Using trustedProxyCount of {}", trustedProxyCount);
-            if (xForwardedFor.size() <= trustedProxyCount) {
-                log.info("Forwarded-For entries {} do not match trusted proxies {}",xForwardedFor,trustedProxyList);
+            return getClientIPFromTrustedProxyCount(exc, xForwardedFor);
+        }
+
+        log.debug("No trustedProxyCount and no trustedProxyList.");
+        if (xForwardedFor.size() != 1) {
+            log.debug("More than 1 entry in X-Forwarded-For.");
+            return exc.getRemoteAddrIp();
+        }
+        log.debug("Using entry in X-Forwarded-For");
+        return xForwardedFor.getFirst();
+    }
+
+    private String getClientIPFromTrustedProxyCount(Exchange exc, List<String> xForwardedFor) {
+        log.debug("Using trustedProxyCount of {}", trustedProxyCount);
+        if (xForwardedFor.size() <= trustedProxyCount) {
+            log.info("Forwarded-For entries {} do not match trusted proxies {}", xForwardedFor, trustedProxyList);
+            return useRemoteIpAddress(exc);
+        }
+        // e.g.:
+        // 3 entries in X-Forwarded-For = a.b.c
+        // trustedProxyCount = 2
+        // 3 - 2 - 1 = 0 = First entry from the left
+        // See tests
+        return getOneBeforeTrustworthyProxy(xForwardedFor, trustedProxyCount);
+    }
+
+    private String getClientIPfromTrustedProxyList(Exchange exc, List<String> xForwardedFor) {
+        log.debug("Checking list of trusted proxies");
+        for (int i = 1; i <= trustedProxyList.size(); i++) {
+            String trustedProxy = trustedProxyList.get(trustedProxyList.size() - i);
+            String forwardedFor = xForwardedFor.get(xForwardedFor.size() - i);
+            log.debug("Checking proxy {} against {}", trustedProxy, forwardedFor);
+            if (!Objects.equals(trustedProxy, forwardedFor)) {
+                log.info("Trusted proxy {} is not in X-Forwarded-For list {}, or not on the right position.", trustedProxy, xForwardedFor);
                 return useRemoteIpAddress(exc);
             }
-            // e.g.:
-            // 3 entries in X-Forwarded-For = a.b.c
-            // trustedProxyCount = 2
-            // 3 - 2 - 1 = 0 = First entry from the left
-            // See tests
-            String clientIp = getOneBeforeTrustworthyProxy(xForwardedFor, trustedProxyCount);
-            log.debug("Client ip is {}", clientIp);
-            return clientIp;
         }
-
-        if (trustedProxyList == null) {
-            log.debug("No trustedProxyCount and no trustedProxyList.");
-            if (xForwardedFor.size() != 1) {
-                String ip = exc.getRemoteAddrIp();
-                log.debug("More than 1 entry in X-Forwarded-For. Using ip address {}", ip);
-                return ip;
-            }
-            String ff = xForwardedFor.getFirst();
-            log.debug("Using entry {} in X-Forwarded-For", ff);
-            return ff;
-        }
-
-        return useRemoteIpAddress(exc);
+        return getOneBeforeTrustworthyProxy(xForwardedFor, trustedProxyList.size());
     }
 
     private static String useRemoteIpAddress(Exchange exc) {
-        String ip = exc.getRemoteAddrIp();
-        log.debug("Using ip {}",ip);
-        return ip;
+        return exc.getRemoteAddrIp();
     }
 
     protected static String getOneBeforeTrustworthyProxy(List<String> l, int count) {
@@ -236,8 +240,8 @@ public class RateLimitInterceptor extends AbstractInterceptor {
     /**
      * @description Duration after the limit is reset in the <i>ISO 8600 Duration</i> format, e.g. PT10S for 10 seconds,
      * PT5M for 5 minutes or PT8H for eight hours.
-     * @see <a href="https://en.wikipedia.org/wiki/ISO_8601#Durations">ISO 8601 Durations</a>
      * @default PT3600S
+     * @see <a href="https://en.wikipedia.org/wiki/ISO_8601#Durations">ISO 8601 Durations</a>
      */
     @MCAttribute
     public void setRequestLimitDuration(String duration) {
@@ -255,12 +259,12 @@ public class RateLimitInterceptor extends AbstractInterceptor {
      */
     @MCAttribute
     public void setKeyExpression(String expression) {
-        this.keyExpression = expression;
+        this.expression = expression;
     }
 
     @SuppressWarnings("unused")
     public String getKeyExpression() {
-        return keyExpression;
+        return expression;
     }
 
     public String getTrustedProxyList() {
@@ -300,7 +304,7 @@ public class RateLimitInterceptor extends AbstractInterceptor {
     }
 
     /**
-     * @description Set this only to true if you know that are you doing. The function of the ratelimter relys on corrent X-ForwaredFor header values.
+     * @description Set this only to true if you know that are you doing. The function of the ratelimter relays on current 'X-ForwaredFor' header values.
      * @default false
      */
     @MCAttribute
