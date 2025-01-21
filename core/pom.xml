@@ -23,7 +23,7 @@
 		<groupId>org.membrane-soa</groupId>
 		<artifactId>service-proxy-parent</artifactId>
 		<relativePath>../pom.xml</relativePath>
-		<version>5.8.1-SNAPSHOT</version>
+		<version>6.0.0-SNAPSHOT</version>
 	</parent>
 
 	<!-- Open Telemetry -->
@@ -266,11 +266,6 @@
 		<dependency>
 			<groupId>org.xmlunit</groupId>
 			<artifactId>xmlunit-matchers</artifactId>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.membrane-soa</groupId>
-			<artifactId>service-proxy-test</artifactId>
 			<scope>test</scope>
 		</dependency>
 		<dependency>
