@@ -14,14 +14,17 @@
 package com.predic8.membrane.core.interceptor.rest;
 
 import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.interceptor.soap.*;
+import org.slf4j.*;
 
 import javax.xml.transform.stream.*;
 
+import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
+import static com.predic8.membrane.core.http.Header.*;
+import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 
 /**
@@ -30,6 +33,8 @@ import static com.predic8.membrane.core.interceptor.Outcome.*;
  */
 @MCElement(name="soap2Rest")
 public class SOAP2RESTInterceptor extends SOAPRESTHelper {
+
+	private static final Logger log = LoggerFactory.getLogger(SOAP2RESTInterceptor.class.getName());
 
 	private String requestXSLT;
 	private String responseXSLT;
@@ -50,9 +55,9 @@ public class SOAP2RESTInterceptor extends SOAPRESTHelper {
         try {
             transformAndReplaceBody(exc.getRequest(), requestXSLT, new StreamSource(exc.getRequest().getBodyAsStreamDecoded()), exc.getStringProperties());
         } catch (Exception e) {
-			ProblemDetails.user(router.isProduction())
-					.component(getDisplayName())
-					.detail("Could not transform with XSLT!")
+			log.error("", e);
+			user(router.isProduction(),getDisplayName())
+					.detail("Could not transform using XSLT!")
 					.exception(e)
 					.stacktrace(true)
 					.buildAndSetResponse(exc);
@@ -61,15 +66,15 @@ public class SOAP2RESTInterceptor extends SOAPRESTHelper {
 
         // fill Request object from HTTP-XML
 		Header header = exc.getRequest().getHeader();
-		header.removeFields(Header.CONTENT_TYPE);
-		header.setContentType(MimeType.TEXT_XML_UTF8);
+		header.removeFields(CONTENT_TYPE);
+		header.setContentType(TEXT_XML_UTF8);
 		XML2HTTP.unwrapMessageIfNecessary(exc.getRequest());
 
 		// reset exchange destination to new request URI
 		exc.getDestinations().clear();
 		di.handleRequest(exc);
 
-		return Outcome.CONTINUE;
+		return CONTINUE;
 	}
 
 	@Override
@@ -77,15 +82,14 @@ public class SOAP2RESTInterceptor extends SOAPRESTHelper {
         try {
             transformAndReplaceBody(exc.getResponse(), responseXSLT, getExchangeXMLSource(exc), exc.getStringProperties());
         } catch (Exception e) {
-			ProblemDetails.user(router.isProduction())
-					.component(getDisplayName())
-					.detail("Could not transform with XSLT!")
+			log.error("", e);
+			user(router.isProduction(),getDisplayName())
+					.detail("Could not transform using XSLT!")
 					.exception(e)
-					.stacktrace(true)
 					.buildAndSetResponse(exc);
 			return ABORT;
         }
-        return Outcome.CONTINUE;
+        return CONTINUE;
 	}
 
 	@Override

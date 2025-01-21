@@ -14,7 +14,6 @@
 package com.predic8.membrane.core.interceptor.ntlm;
 
 import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
@@ -27,6 +26,7 @@ import java.net.*;
 import java.util.*;
 import java.util.regex.*;
 
+import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
 import static com.predic8.membrane.core.http.Header.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 
@@ -92,16 +92,14 @@ public class NtlmInterceptor extends AbstractInterceptor {
         try {
             authenticationResult = authenticate(stableConnection, originalRequestUrl, user, pass, domain, workstation);
         } catch (Exception e) {
-            ProblemDetails.internal(router.isProduction())
-                    .component(getDisplayName())
+            internal(router.isProduction(),getDisplayName())
                     .detail("Could not authenticate!")
-                    .extension("domain", domain)
-                    .extension("workstation", workstation)
-                    .extension("originalRequestUrl", originalRequestUrl)
+                    .internal("domain", domain)
+                    .internal("workstation", workstation)
+                    .internal("originalRequestUrl", originalRequestUrl)
                     .exception(e)
-                    .stacktrace(true)
                     .buildAndSetResponse(exc);
-            return Outcome.ABORT;
+            return ABORT;
         }
 
         exc.setResponse(authenticationResult.getResponse());

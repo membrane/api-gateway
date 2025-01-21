@@ -14,7 +14,6 @@
 package com.predic8.membrane.core.interceptor.authentication.session;
 
 import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
@@ -25,7 +24,8 @@ import org.slf4j.*;
 
 import java.util.*;
 
-import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
+import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
+import static com.predic8.membrane.core.interceptor.Outcome.*;
 
 /**
  * @description <p>
@@ -148,11 +148,10 @@ public class LoginInterceptor extends AbstractInterceptor {
             try {
                 loginDialog.handleLoginRequest(exc);
             } catch (Exception e) {
-				ProblemDetails.user(router.isProduction())
-						.component(getDisplayName())
+				log.error("",e);
+				internal(router.isProduction(),getDisplayName())
 						.detail("Could not handle login request.!")
 						.exception(e)
-						.stacktrace(true)
 						.buildAndSetResponse(exc);
 				return ABORT;
             }

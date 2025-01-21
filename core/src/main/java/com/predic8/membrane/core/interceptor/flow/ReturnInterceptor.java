@@ -17,7 +17,6 @@
 package com.predic8.membrane.core.interceptor.flow;
 
 import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
@@ -26,7 +25,8 @@ import org.slf4j.*;
 import java.io.*;
 import java.util.*;
 
-import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.REQUEST_RESPONSE_ABORT_FLOW;
+import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.util.HttpUtil.*;
 import static java.lang.String.*;
@@ -59,11 +59,11 @@ public class ReturnInterceptor extends AbstractInterceptor {
         try {
             exc.setResponse(getOrCreateResponse(exc));
         } catch (IOException e) {
-            ProblemDetails.user(router.isProduction())
-                    .component(getDisplayName())
-                    .detail("Could not create response!")
+            String detail = "Could not create response!";
+            log.error(detail, e);
+            internal(router.isProduction(),getDisplayName())
+                    .detail(detail)
                     .exception(e)
-                    .stacktrace(true)
                     .buildAndSetResponse(exc);
             return ABORT;
         }

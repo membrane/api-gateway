@@ -13,19 +13,16 @@
    limitations under the License. */
 package com.predic8.membrane.core.oauth2;
 
-import com.predic8.membrane.core.resolver.ResolverMap;
-import io.restassured.filter.log.LogDetail;
-import io.restassured.filter.log.UrlDecoder;
-import io.restassured.response.Response;
-import org.jetbrains.annotations.NotNull;
+import io.restassured.filter.log.*;
+import io.restassured.response.*;
+import org.jetbrains.annotations.*;
 
-import java.nio.charset.StandardCharsets;
 import java.util.*;
 
-import static com.predic8.membrane.core.resolver.ResolverMap.combine;
+import static com.predic8.membrane.core.resolver.ResolverMap.*;
 import static io.restassured.RestAssured.*;
-import static io.restassured.filter.log.UrlDecoder.urlDecode;
-import static java.nio.charset.StandardCharsets.UTF_8;
+import static io.restassured.filter.log.UrlDecoder.*;
+import static java.nio.charset.StandardCharsets.*;
 import static org.apache.http.HttpHeaders.*;
 import static org.hamcrest.Matchers.*;
 import static org.hamcrest.text.MatchesPattern.matchesPattern;

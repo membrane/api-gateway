@@ -20,6 +20,7 @@ import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.interceptor.session.*;
 import com.predic8.membrane.core.util.*;
+import org.slf4j.*;
 
 import java.util.*;
 
@@ -27,6 +28,9 @@ import static com.predic8.membrane.core.interceptor.Outcome.*;
 
 @MCElement(name = "flowInitiator")
 public class FlowInitiator extends AbstractInterceptor {
+
+    private static final Logger log = LoggerFactory.getLogger(FlowInitiator.class.getName());
+
     private String triggerFlow;
     private String defaultFlow;
     private String afterLoginUrl;
@@ -73,13 +77,12 @@ public class FlowInitiator extends AbstractInterceptor {
     @Override
     public Outcome handleRequest(Exchange exc) {
         try {
-            return oauth2.handleRequestInternal(exc);
+            return handleRequestInternal(exc);
         } catch (Exception e) {
-            ProblemDetails.user(router.isProduction())
-                    .component(getDisplayName())
+            log.error("", e);
+            ProblemDetails.internal(router.isProduction(),getDisplayName())
                     .detail("Error initiating OAuth2 flow!")
                     .exception(e)
-                    .stacktrace(true)
                     .buildAndSetResponse(exc);
             return ABORT;
         }

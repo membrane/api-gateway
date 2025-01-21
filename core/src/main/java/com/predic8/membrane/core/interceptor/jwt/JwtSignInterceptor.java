@@ -15,7 +15,6 @@ package com.predic8.membrane.core.interceptor.jwt;
 import com.fasterxml.jackson.databind.*;
 import com.fasterxml.jackson.databind.node.*;
 import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
@@ -29,10 +28,11 @@ import org.slf4j.*;
 
 import java.io.*;
 
+import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
 import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
-import static org.jose4j.jws.AlgorithmIdentifiers.RSA_USING_SHA256;
+import static org.jose4j.jws.AlgorithmIdentifiers.*;
 
 @MCElement(name = "jwtSign")
 public class JwtSignInterceptor extends AbstractInterceptor {
@@ -76,24 +76,12 @@ public class JwtSignInterceptor extends AbstractInterceptor {
             jws.setKeyIdHeaderValue(rsaJsonWebKey.getKeyId());
             exc.getMessage(flow).setBodyContent(jws.getCompactSerialization().getBytes());
             return CONTINUE;
-        } catch (JoseException e) {
-            log.error("Error during attempt to sign JWT payload: {}", e.getLocalizedMessage());
-            ProblemDetails.security(router.isProduction())
+        } catch (Exception e) {
+            log.error("Error during attempt to sign JWT payload", e);
+            security(router.isProduction(),getDisplayName())
                     .addSubType("crypto")
-                    .component(getDisplayName())
                     .detail("Error during attempt to sign JWT payload.")
                     .exception(e)
-                    .stacktrace(true)
-                    .buildAndSetResponse(exc);
-            return ABORT;
-        } catch (IOException e) {
-            log.error("Error during attempt to parse JWT payload: {}", e.getLocalizedMessage());
-            ProblemDetails.security(router.isProduction())
-                    .addSubType("io")
-                    .component(getDisplayName())
-                    .detail("Error during attempt to parse JWT payload.")
-                    .exception(e)
-                    .stacktrace(true)
                     .buildAndSetResponse(exc);
             return ABORT;
         }

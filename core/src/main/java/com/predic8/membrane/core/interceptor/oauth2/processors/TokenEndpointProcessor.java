@@ -13,14 +13,14 @@
 
 package com.predic8.membrane.core.interceptor.oauth2.processors;
 
-import com.predic8.membrane.core.exceptions.*;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.interceptor.Outcome;
-import com.predic8.membrane.core.interceptor.oauth2.OAuth2AuthorizationServerInterceptor;
-import com.predic8.membrane.core.interceptor.oauth2.request.tokenrequest.TokenFlowDecider;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.interceptor.oauth2.*;
+import com.predic8.membrane.core.interceptor.oauth2.request.tokenrequest.*;
 import org.slf4j.*;
 
-import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
+import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
+import static com.predic8.membrane.core.interceptor.Outcome.*;
 
 public class TokenEndpointProcessor extends EndpointProcessor {
 
@@ -41,10 +41,9 @@ public class TokenEndpointProcessor extends EndpointProcessor {
             exc.setResponse(new TokenFlowDecider(authServer,exc).getFlow().validateRequest());
         } catch (Exception e) {
             log.error("", e);
-            ProblemDetails.internal(true)
+            internal(true,"token-endpoint-processor")
                     .component(this.getClass().getSimpleName())
                     .exception(e)
-                    .stacktrace(true)
                     .buildAndSetResponse(exc);
             return ABORT;
         }

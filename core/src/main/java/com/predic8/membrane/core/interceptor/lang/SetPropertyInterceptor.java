@@ -21,7 +21,7 @@ public class SetPropertyInterceptor extends AbstractSetterInterceptor {
 
     @SuppressWarnings("rawtypes")
     @Override
-    protected Class getExpressionReturnType() {
+    protected Class<?> getExpressionReturnType() {
         return Object.class;
     }
 

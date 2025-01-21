@@ -48,7 +48,6 @@ public abstract class OAuth2ResourceB2CTest {
         didLogIn.set(false);
         didLogOut.set(false);
         mockAuthorizationServer.resetBehavior();
-
         mockAuthorizationServer.init();
         b2cMembrane.init();
     }
@@ -153,7 +152,7 @@ public abstract class OAuth2ResourceB2CTest {
 
 
         Exchange excCallResource = new Request.Builder().get(tc.getClientAddress() + "/malicious").buildExchange();
-        LOG.debug("getting " + excCallResource.getDestinations().get(0));
+        LOG.debug("getting {}", excCallResource.getDestinations().getFirst());
         browser.apply(excCallResource); // will be aborted
 
         browser.clearCookies(); // send the auth link to some helpless (other) user
@@ -435,8 +434,8 @@ public abstract class OAuth2ResourceB2CTest {
         exc = browser.apply(exc);
 
         ProblemDetails pd = ProblemDetails.parse(exc.getResponse());
-        assertEquals("https://membrane-api.io/error/security/oauth2-error-from-authentication-server", pd.getType());
-        assertEquals("DEMO-123", pd.getExtensions().get("error"));
+        assertEquals("https://membrane-api.io/error/security/oauth2-callback-request-handler/oauth2-error-from-authentication-server", pd.getType());
+        assertEquals("DEMO-123", pd.getInternal().get("error"));
     }
 
     @Test

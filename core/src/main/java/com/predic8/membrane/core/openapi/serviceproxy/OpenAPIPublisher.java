@@ -13,37 +13,28 @@
    limitations under the License. */
 package com.predic8.membrane.core.openapi.serviceproxy;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.ObjectWriter;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.predic8.membrane.core.Router;
-import com.predic8.membrane.core.exceptions.*;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.interceptor.Outcome;
-import groovy.text.StreamingTemplateEngine;
-import groovy.text.Template;
-import io.swagger.v3.oas.models.OpenAPI;
-import io.swagger.v3.parser.ObjectMapperFactory;
-import org.slf4j.Logger;
+import com.fasterxml.jackson.core.*;
+import com.fasterxml.jackson.databind.*;
+import com.fasterxml.jackson.databind.node.*;
+import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.interceptor.*;
+import groovy.text.*;
+import io.swagger.v3.oas.models.*;
+import io.swagger.v3.parser.*;
+import org.slf4j.*;
 
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.net.URISyntaxException;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import java.io.*;
+import java.net.*;
+import java.util.*;
+import java.util.regex.*;
 
-import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
-import static com.predic8.membrane.core.http.MimeType.TEXT_HTML_UTF8;
-import static com.predic8.membrane.core.http.Response.ok;
-import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
-import static com.predic8.membrane.core.openapi.util.OpenAPIUtil.isOpenAPI3;
-import static com.predic8.membrane.core.openapi.util.OpenAPIUtil.isSwagger2;
-import static com.predic8.membrane.core.openapi.util.Utils.getResourceAsStream;
+import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
+import static com.predic8.membrane.core.http.MimeType.*;
+import static com.predic8.membrane.core.http.Response.*;
+import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static com.predic8.membrane.core.openapi.util.OpenAPIUtil.*;
+import static com.predic8.membrane.core.openapi.util.Utils.*;
 
 public class OpenAPIPublisher {
 
@@ -61,7 +52,7 @@ public class OpenAPIPublisher {
 
     protected Map<String, OpenAPIRecord> apis;
 
-    public OpenAPIPublisher(Map<String, OpenAPIRecord> apis) throws IOException, ClassNotFoundException, URISyntaxException {
+    public OpenAPIPublisher(Map<String, OpenAPIRecord> apis) throws IOException, ClassNotFoundException {
         this.apis = apis;
         swaggerUiHtmlTemplate = createTemplate("/openapi/swagger-ui.html");
         apiOverviewHtmlTemplate = createTemplate("/openapi/overview.html");
@@ -73,11 +64,12 @@ public class OpenAPIPublisher {
         // No id specified
         if (!m.matches()) {
             // Do not log! Too common!
-            exc.setResponse(ProblemDetails.openapi(false)
+            openapi(false,"openapi-publisher")
                     .statusCode(404)
                     .addSubType("wrong-id")
                     .title("No OpenAPI document id")
-                    .detail("Please specify an id of an OpenAPI document. Path should match this pattern: /api-docs/ui/<<id>>").build());
+                    .detail("Please specify an id of an OpenAPI document. Path should match this pattern: /api-docs/ui/<<id>>")
+                    .buildAndSetResponse(exc);
             return RETURN;
         }
 
@@ -130,11 +122,12 @@ public class OpenAPIPublisher {
 
     private Outcome returnNoFound(Exchange exc, String id) {
         // Do not log. Too common.
-        exc.setResponse(ProblemDetails.openapi(false)
+        openapi(false,"openapi-publisher")
                 .statusCode(404)
                 .addSubType("wrong-id")
                 .title("OpenAPI not found.")
-                .detail("OpenAPI document with the id %s not found.".formatted(id)).build());
+                .detail("OpenAPI document with the id %s not found.".formatted(id))
+                .buildAndSetResponse(exc);
         return RETURN;
     }
 

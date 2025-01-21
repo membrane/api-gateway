@@ -19,7 +19,6 @@ import com.fasterxml.jackson.databind.node.*;
 import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.config.*;
-import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.Response.*;
 import com.predic8.membrane.core.openapi.serviceproxy.*;
@@ -31,6 +30,7 @@ import org.slf4j.*;
 import java.text.*;
 import java.util.*;
 
+import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
 import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static java.util.Optional.*;
@@ -59,11 +59,9 @@ public class ApisJsonInterceptor extends AbstractInterceptor {
             try {
                 initJson(router, exc);
             } catch (JsonProcessingException e) {
-                ProblemDetails.internal(router.isProduction())
-                        .component(getDisplayName())
+                internal(router.isProduction(),getDisplayName())
                         .detail("Could not create APIs JSON!")
                         .exception(e)
-                        .stacktrace(true)
                         .buildAndSetResponse(exc);
                 return ABORT;
             }

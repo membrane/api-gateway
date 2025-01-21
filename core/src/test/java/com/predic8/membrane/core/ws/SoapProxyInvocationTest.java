@@ -187,28 +187,29 @@ public class SoapProxyInvocationTest {
 
     @Test
     void twoRequestToSecondNotDeployedService()  {
-        Response res =  given().when()
+        // @formatter:off
+        given().when()
                 .body(SERVICE_B_REQUEST)
                 .contentType(TEXT_XML)
-                .post("http://localhost:2000/services/b");  // This service is not selected!
-
-        System.out.println("res.prettyPrint() = " + res.prettyPrint());
-        
-        res.then().statusCode(404)
-                .contentType(APPLICATION_PROBLEM_JSON)
-                .body("title", equalTo("Wrong path or method"));
+                .post("http://localhost:2000/services/b")  // This service is not selected!
+        .then().statusCode(404)
+                .log().ifValidationFails()
+                .contentType(APPLICATION_XML)
+                .body("error.title", equalTo("Wrong path or method"));
+        // @formatter:on
     }
 
     @Test
     void twoServicesAInvalidRequest()  {
-        Response res =  given().when()
+        // @formatter:off
+        given().when()
                 .body(SERVICE_A_INVALID_REQUEST)
                 .contentType(TEXT_XML)
-                .post("http://localhost:2000/services/a");
-
-        res.then().statusCode(200)
+                .post("http://localhost:2000/services/a")
+        .then().statusCode(200)
                 .contentType(TEXT_XML)
                 .body("Envelope.Body.Fault.faultcode", equalTo("Client"))
                 .body("Envelope.Body.Fault.faultstring", equalTo("WSDL message validation failed"));
+        // @formatter:on
     }
 }

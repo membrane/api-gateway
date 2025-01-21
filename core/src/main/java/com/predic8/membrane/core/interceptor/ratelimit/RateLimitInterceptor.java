@@ -15,7 +15,6 @@
 package com.predic8.membrane.core.interceptor.ratelimit;
 
 import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
@@ -27,6 +26,7 @@ import org.springframework.expression.spel.*;
 import java.time.*;
 import java.util.*;
 
+import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
@@ -102,22 +102,22 @@ public class RateLimitInterceptor extends AbstractExchangeExpressionInterceptor 
                 return CONTINUE;
         } catch (SpelEvaluationException e) {
             log.info("Cannot evaluate keyExpression {} cause is {}", expression, e.getCause());
-            exc.setResponse(ProblemDetails.internal(router.isProduction())
+            internal(router.isProduction(),getDisplayName())
                     .addSubType("rate-limiter")
                     .detail("Cannot evaluate keyExpression '%s' cause is %s".formatted(expression, e.getMessage()))
-                    .build());
+                    .buildAndSetResponse(exc);
             return RETURN;
         }
 
         log.info("{} limit: {} duration: {} is exceeded. (clientIp: {})", getKey(exc), getRequestLimit(), getRequestLimitDuration(), exc.getRemoteAddrIp());
-        exc.setResponse(ProblemDetails.user(false)
+        user(false, getDisplayName())
                 .statusCode(429)
-                .addSubType("rate-limiter")
-                .title("Rate limit is exceeded")
-                .detail("The quota of the ratelimiter is exceeded. Try again in %s seconds.".formatted(strategy.getLimitReset(exc.getRemoteAddrIp())))
-                .extension("limit", getRequestLimit())
-                .extension("duration", getRequestLimitDuration())
-                .build());
+                .title("Rate limit is exceeded.")
+                .addSubType("rate-limit")
+                .detail("The quota of the rate limit is exceeded. Try again in %s seconds.".formatted(strategy.getLimitReset(exc.getRemoteAddrIp())))
+                .internal("limit", getRequestLimit())
+                .internal("duration", getRequestLimitDuration())
+                .buildAndSetResponse(exc);
         setHeaderRateLimitFieldsOnResponse(exc);
 
         return RETURN;

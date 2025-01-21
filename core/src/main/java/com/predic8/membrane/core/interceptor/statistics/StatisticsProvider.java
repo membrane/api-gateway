@@ -16,7 +16,6 @@ package com.predic8.membrane.core.interceptor.statistics;
 import com.fasterxml.jackson.core.*;
 import com.google.common.collect.*;
 import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
@@ -30,7 +29,8 @@ import javax.sql.*;
 import java.io.*;
 import java.sql.*;
 
-import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
+import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
+import static com.predic8.membrane.core.interceptor.Outcome.*;
 
 @MCElement(name="statisticsProvider")
 public class StatisticsProvider extends AbstractInterceptor implements ApplicationContextAware {
@@ -67,11 +67,9 @@ public class StatisticsProvider extends AbstractInterceptor implements Applicati
         try {
             con = dataSource.getConnection();
         } catch (SQLException e) {
-			ProblemDetails.internal(router.isProduction())
-					.component(getDisplayName())
+			internal(router.isProduction(),getDisplayName())
 					.detail("Could not connect to database")
 					.exception(e)
-					.stacktrace(true)
 					.buildAndSetResponse(exc);
 			return ABORT;
         }

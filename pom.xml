@@ -67,7 +67,6 @@
 		<module>starter</module>
 		<module>distribution</module>
 		<module>war</module>
-		<module>test</module>
 		<module>maven-plugin</module>
 	</modules>
 
