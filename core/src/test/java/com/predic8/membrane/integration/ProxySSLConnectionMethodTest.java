@@ -14,6 +14,7 @@
 
 package com.predic8.membrane.integration;
 
+import com.predic8.membrane.core.util.AssertUtils;
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.methods.GetMethod;
 import org.junit.jupiter.api.*;
@@ -23,7 +24,6 @@ import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.exchangestore.MemoryExchangeStore;
 import com.predic8.membrane.core.proxies.ProxyRule;
 import com.predic8.membrane.core.proxies.ProxyRuleKey;
-import com.predic8.membrane.test.AssertUtils;
 
 public class ProxySSLConnectionMethodTest {
 

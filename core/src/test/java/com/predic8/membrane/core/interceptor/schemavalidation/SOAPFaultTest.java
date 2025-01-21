@@ -23,8 +23,9 @@ import java.util.*;
 import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.http.Response.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static com.predic8.membrane.core.util.AssertUtils.assertContains;
+import static com.predic8.membrane.core.util.AssertUtils.assertContainsNot;
 import static com.predic8.membrane.core.util.SOAPUtil.FaultCode.*;
-import static com.predic8.membrane.test.AssertUtils.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class SOAPFaultTest {

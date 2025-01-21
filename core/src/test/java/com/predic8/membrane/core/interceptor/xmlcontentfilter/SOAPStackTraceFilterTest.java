@@ -19,7 +19,8 @@ import org.junit.jupiter.api.*;
 
 import java.io.*;
 
-import static com.predic8.membrane.test.AssertUtils.*;
+import static com.predic8.membrane.core.util.AssertUtils.assertContains;
+import static com.predic8.membrane.core.util.AssertUtils.assertContainsNot;
 
 class SOAPStackTraceFilterTest {
 

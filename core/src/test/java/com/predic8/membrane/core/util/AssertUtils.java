@@ -14,43 +14,17 @@
 
 package com.predic8.membrane.core.util;
 
-import org.apache.commons.io.FileUtils;
 import org.apache.http.HttpEntity;
-import org.apache.http.HttpHost;
-import org.apache.http.HttpRequestInterceptor;
 import org.apache.http.ParseException;
-import org.apache.http.auth.AuthScope;
-import org.apache.http.auth.AuthState;
-import org.apache.http.auth.Credentials;
-import org.apache.http.auth.UsernamePasswordCredentials;
-import org.apache.http.client.CredentialsProvider;
-import org.apache.http.client.methods.*;
-import org.apache.http.client.utils.HttpClientUtils;
-import org.apache.http.conn.ssl.NoopHostnameVerifier;
-import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
-import org.apache.http.entity.StringEntity;
-import org.apache.http.impl.auth.BasicScheme;
-import org.apache.http.impl.client.BasicCookieStore;
-import org.apache.http.impl.client.BasicCredentialsProvider;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.cookie.RFC6265CookieSpecProvider;
-import org.apache.http.protocol.HttpContext;
 import org.apache.http.util.EntityUtils;
 
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.TrustManager;
-import javax.net.ssl.X509TrustManager;
-import java.io.File;
 import java.io.IOException;
-import java.security.KeyManagementException;
-import java.security.NoSuchAlgorithmException;
-import java.security.SecureRandom;
-import java.security.cert.X509Certificate;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.apache.commons.io.FileUtils.writeStringToFile;
-import static org.apache.http.client.protocol.HttpClientContext.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class AssertUtils {
@@ -64,6 +38,12 @@ public class AssertUtils {
         if (haystack.contains(needle))
             return;
         throw new AssertionError("The string '" + haystack + "' does not contain '" + needle + "'.");
+    }
+
+    public static void assertContainsNot(String needle, String haystack) {
+        if (!haystack.contains(needle))
+            return;
+        throw new AssertionError("The string '" + haystack + "' does contain '" + needle + "'.");
     }
 
     public static String getAndAssert200(String url) throws ParseException, IOException {
