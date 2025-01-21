@@ -103,11 +103,6 @@
 				<version>${project.version}</version>
 			</dependency>
 			<dependency>
-				<groupId>org.membrane-soa</groupId>
-				<artifactId>service-proxy-test</artifactId>
-				<version>${project.version}</version>
-			</dependency>
-			<dependency>
 				<groupId>jakarta.activation</groupId>
 				<artifactId>jakarta.activation-api</artifactId>
 				<version>2.1.2</version>

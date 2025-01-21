@@ -47,11 +47,6 @@
 
 		<!-- Test Dependencies -->
 		<dependency>
-			<groupId>org.membrane-soa</groupId>
-			<artifactId>service-proxy-test</artifactId>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
 			<groupId>org.junit.jupiter</groupId>
 			<artifactId>junit-jupiter-api</artifactId>
 			<scope>test</scope>

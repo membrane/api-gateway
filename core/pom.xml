@@ -269,11 +269,6 @@
 			<scope>test</scope>
 		</dependency>
 		<dependency>
-			<groupId>org.membrane-soa</groupId>
-			<artifactId>service-proxy-test</artifactId>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
 			<groupId>io.swagger.parser.v3</groupId>
 			<artifactId>swagger-parser</artifactId>
 		</dependency>
