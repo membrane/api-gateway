@@ -14,6 +14,7 @@
 
 package com.predic8.membrane.examples.util;
 
+import org.apache.commons.io.*;
 import org.junit.jupiter.api.*;
 import org.slf4j.*;
 
@@ -22,7 +23,6 @@ import java.util.*;
 import java.util.zip.*;
 
 import static com.predic8.membrane.core.http.MimeType.*;
-import static com.predic8.membrane.test.AssertUtils.*;
 import static java.io.File.*;
 import static java.nio.charset.StandardCharsets.*;
 import static java.util.Objects.*;
@@ -214,9 +214,15 @@ public abstract class DistributionExtractingTestcase {
      * @param a String to be replaced
      * @param b String that replaces
      * @throws IOException Problem accessing File
+     *
+     * TODO: merge
      */
     protected void replaceInFile2(String filename, String a, String b) throws IOException {
         replaceInFile(new File(baseDir, filename), a, b);
+    }
+
+    private static void replaceInFile(File file, String from, String to_) throws IOException {
+        writeStringToFile(file, FileUtils.readFileToString(file, UTF_8).replace(from, to_), UTF_8);
     }
 
     public InputStream getResourceAsStream(String filename) {

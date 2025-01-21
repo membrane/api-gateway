@@ -17,9 +17,10 @@ package com.predic8.membrane.examples.tests.loadbalancing;
 import com.predic8.membrane.examples.util.*;
 import org.junit.jupiter.api.*;
 
+import static com.predic8.membrane.AssertUtils.assertContains;
+import static com.predic8.membrane.AssertUtils.assertContainsNot;
 import static com.predic8.membrane.examples.tests.loadbalancing.LoadBalancerUtil.*;
-import static com.predic8.membrane.test.AssertUtils.*;
-import static java.lang.Thread.sleep;
+import static java.lang.Thread.*;
 
 public class Loadbalancing4XmlSessionExampleTest extends DistributionExtractingTestcase {
 

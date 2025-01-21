@@ -24,7 +24,7 @@ import java.io.*;
 import java.util.ArrayList;
 import java.util.*;
 
-import static com.predic8.membrane.test.AssertUtils.*;
+import static com.predic8.membrane.AssertUtils.*;
 import static java.nio.charset.StandardCharsets.*;
 import static java.util.Arrays.*;
 import static java.util.Objects.*;

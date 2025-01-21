@@ -14,7 +14,8 @@
 
 package com.predic8.membrane.examples.tests;
 
-import static com.predic8.membrane.test.AssertUtils.*;
+import static com.predic8.membrane.AssertUtils.assertContains;
+import static com.predic8.membrane.AssertUtils.assertContainsNot;
 
 import java.io.File;
 import java.io.IOException;
@@ -23,7 +24,6 @@ import java.util.concurrent.TimeoutException;
 import com.predic8.membrane.examples.util.*;
 import org.junit.jupiter.api.Test;
 
-import com.predic8.membrane.test.AssertUtils;
 
 public class QuickstartRESTExampleTest extends DistributionExtractingTestcase {
 

@@ -16,6 +16,7 @@ package com.predic8.membrane.core.interceptor.schemavalidation;
 import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.util.*;
+import com.predic8.membrane.test.*;
 import org.junit.jupiter.api.*;
 
 import java.util.*;
@@ -24,7 +25,7 @@ import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.http.Response.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.util.SOAPUtil.FaultCode.*;
-import static com.predic8.membrane.test.AssertUtils.*;
+import static com.predic8.membrane.test.AssertUtils.assertContains;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class SOAPFaultTest {
@@ -36,7 +37,7 @@ public class SOAPFaultTest {
 		ValidatorInterceptor i = createValidatorInterceptor(false);
 		Exchange exc = createFaultExchange();
 		assertEquals(ABORT, i.handleResponse(exc));
-		assertContainsNot("secret", exc.getResponse().toString());
+		AssertUtils.assertContainsNot("secret", exc.getResponse().toString());
 	}
 
 	@Test

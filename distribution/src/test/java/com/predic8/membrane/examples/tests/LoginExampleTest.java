@@ -14,13 +14,13 @@
 
 package com.predic8.membrane.examples.tests;
 
+import com.predic8.membrane.*;
+import com.predic8.membrane.core.interceptor.authentication.session.totp.*;
 import com.predic8.membrane.examples.util.*;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
-import com.predic8.membrane.core.interceptor.authentication.session.totp.OtpProvider;
-
-import static com.predic8.membrane.core.http.MimeType.APPLICATION_X_WWW_FORM_URLENCODED;
-import static com.predic8.membrane.test.AssertUtils.*;
+import static com.predic8.membrane.AssertUtils.assertContains;
+import static com.predic8.membrane.core.http.MimeType.*;
 
 public class LoginExampleTest extends DistributionExtractingTestcase {
 

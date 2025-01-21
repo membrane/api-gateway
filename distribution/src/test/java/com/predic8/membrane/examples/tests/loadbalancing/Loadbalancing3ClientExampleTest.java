@@ -14,6 +14,7 @@
 
 package com.predic8.membrane.examples.tests.loadbalancing;
 
+import com.predic8.membrane.*;
 import com.predic8.membrane.examples.util.*;
 import org.junit.jupiter.api.*;
 
@@ -21,9 +22,8 @@ import java.io.*;
 
 import static com.predic8.membrane.examples.tests.loadbalancing.BalancerClientScriptUtil.*;
 import static com.predic8.membrane.examples.tests.loadbalancing.LoadBalancerUtil.*;
-import static com.predic8.membrane.test.AssertUtils.*;
-import static java.lang.Thread.sleep;
-import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.lang.Thread.*;
+import static java.nio.charset.StandardCharsets.*;
 import static org.apache.commons.io.FileUtils.*;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -82,8 +82,11 @@ public class Loadbalancing3ClientExampleTest extends DistributionExtractingTestc
 
 			sleep(100);
 
-			setupHTTPAuthentication("localhost", 9000, "admin", "admin");
-			assertContains("localhost:4000", getAndAssert200("http://localhost:9000/admin/clusters/show?cluster=Default"));
+			try(AssertUtils au = new AssertUtils()) {
+				au.setupHTTPAuthentication("localhost", 9000, "admin", "admin");
+				au.assertContains("localhost:4000", au.getAndAssert200("http://localhost:9000/admin/clusters/show?cluster=Default"));
+
+			}
 		}
 	}
 }
