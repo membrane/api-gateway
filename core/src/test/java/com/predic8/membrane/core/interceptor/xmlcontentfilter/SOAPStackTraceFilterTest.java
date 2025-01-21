@@ -13,13 +13,15 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.xmlcontentfilter;
 
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.*;
-import org.junit.jupiter.api.*;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.Body;
+import com.predic8.membrane.core.http.Request;
+import org.junit.jupiter.api.Test;
 
-import java.io.*;
+import java.io.IOException;
 
-import static com.predic8.membrane.test.AssertUtils.*;
+import static com.predic8.membrane.core.util.AssertUtils.assertContains;
+import static com.predic8.membrane.test.AssertUtils.assertContainsNot;
 
 class SOAPStackTraceFilterTest {
 
