@@ -14,17 +14,17 @@
 
 package com.predic8.membrane.examples.tests.openapi;
 
-import com.predic8.membrane.examples.util.*;
-import io.restassured.response.*;
-import org.hamcrest.*;
-import org.junit.jupiter.api.*;
-import org.skyscreamer.jsonassert.*;
+import com.predic8.membrane.examples.util.AbstractSampleMembraneStartStopTestcase;
+import com.predic8.membrane.test.HttpAssertions;
+import io.restassured.response.Response;
+import org.hamcrest.Matchers;
+import org.json.JSONException;
+import org.junit.jupiter.api.Test;
+import org.skyscreamer.jsonassert.JSONAssert;
 
-import java.io.*;
-
-import static com.predic8.membrane.test.AssertUtils.*;
-import static io.restassured.RestAssured.*;
-import static io.restassured.http.ContentType.*;
+import static com.predic8.membrane.test.StringAssertions.assertContains;
+import static io.restassured.RestAssured.given;
+import static io.restassured.http.ContentType.JSON;
 
 public class APIProxyExampleTest extends AbstractSampleMembraneStartStopTestcase  {
 
@@ -37,9 +37,10 @@ public class APIProxyExampleTest extends AbstractSampleMembraneStartStopTestcase
 
     @SuppressWarnings("JsonSchemaCompliance")
     @Test
-    void api_doc() throws IOException {
-        String andAssert = getAndAssert(200, LOCALHOST_2000 + "/api-docs");
-        JSONAssert.assertEquals("""
+    void api_doc() throws Exception {
+        try (HttpAssertions ha = new HttpAssertions()) {
+            String andAssert = ha.getAndAssert(200, LOCALHOST_2000 + "/api-docs");
+            JSONAssert.assertEquals("""
                 {
                   "fruitshop-v2-0" : {
                     "openapi" : "3.0.2",
@@ -50,24 +51,29 @@ public class APIProxyExampleTest extends AbstractSampleMembraneStartStopTestcase
                   }
                 }
                 """, andAssert, true);
+        }
     }
 
     @Test
-    void apiOverview() throws IOException {
-        String body = getAndAssert(200, LOCALHOST_2000 + "/api-doc", ACCEPT_HTML_HEADER);
-        assertContains("""
+    void apiOverview() throws Exception {
+        try (HttpAssertions ha = new HttpAssertions()) {
+            String body = ha.getAndAssert(200, LOCALHOST_2000 + "/api-doc", ACCEPT_HTML_HEADER);
+            assertContains("""
                 <h1 class="title">APIs</h1>
                 """, body);
-        assertContains("Fruit Shop API", body);
-        assertContains("/shop", body);
+            assertContains("Fruit Shop API", body);
+            assertContains("/shop", body);
+        }
     }
 
     @Test
-    void swaggerUi() throws IOException {
-        String body = getAndAssert(200, LOCALHOST_2000 + "/api-docs/ui/fruitshop-v2-0", ACCEPT_HTML_HEADER);
-        assertContains("""
+    void swaggerUi() throws Exception {
+        try (HttpAssertions ha = new HttpAssertions()) {
+            String body = ha.getAndAssert(200, LOCALHOST_2000 + "/api-docs/ui/fruitshop-v2-0", ACCEPT_HTML_HEADER);
+            assertContains("""
                 content="SwaggerUI""", body);
-        assertContains("/api-docs/fruitshop-v2-0", body);
+            assertContains("/api-docs/fruitshop-v2-0", body);
+        }
     }
 
     @Test
@@ -91,7 +97,7 @@ public class APIProxyExampleTest extends AbstractSampleMembraneStartStopTestcase
     }
 
     @Test
-    void postLikeSwaggerUIInvalidPrice() {
+    void postLikeSwaggerUIInvalidPrice() throws JSONException {
         // @formatter:off
         Response res = given()
             .contentType(JSON)
@@ -108,21 +114,21 @@ public class APIProxyExampleTest extends AbstractSampleMembraneStartStopTestcase
         res.then().assertThat().statusCode(400);
 
         JSONAssert.assertEquals("""
-                        {
-                          "validation": {
-                              "method" : "POST",
-                              "uriTemplate" : "/products",
-                              "path" : "/shop/v2/products",
-                              "errors" : {
-                                "REQUEST/BODY#/price" : [ {
-                                  "message" : "-2.7 is smaller than the minimum of 0",
-                                  "complexType" : "Product",
-                                  "schemaType" : "number"
-                                } ]
-                            }
-                          }
-                        }
-                        """
-                , res.body().asString(), false);
+                {
+                  "validation": {
+                      "method" : "POST",
+                      "uriTemplate" : "/products",
+                      "path" : "/shop/v2/products",
+                      "errors" : {
+                        "REQUEST/BODY#/price" : [ {
+                          "message" : "-2.7 is smaller than the minimum of 0",
+                          "complexType" : "Product",
+                          "schemaType" : "number"
+                        } ]
+                    }
+                  }
+                }
+                """,
+                res.body().asString(), false);
     }
 }

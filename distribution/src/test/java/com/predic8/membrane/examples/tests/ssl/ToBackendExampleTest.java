@@ -14,15 +14,15 @@
 
 package com.predic8.membrane.examples.tests.ssl;
 
-import static com.predic8.membrane.test.AssertUtils.assertContains;
-import static com.predic8.membrane.test.AssertUtils.getAndAssert200;
+import com.predic8.membrane.examples.util.DistributionExtractingTestcase;
+import com.predic8.membrane.examples.util.Process2;
+import com.predic8.membrane.test.HttpAssertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 
-import org.junit.jupiter.api.*;
-
-import com.predic8.membrane.examples.util.DistributionExtractingTestcase;
-import com.predic8.membrane.examples.util.Process2;
+import static com.predic8.membrane.test.StringAssertions.assertContains;
 
 public class ToBackendExampleTest extends DistributionExtractingTestcase {
 
@@ -38,8 +38,8 @@ public class ToBackendExampleTest extends DistributionExtractingTestcase {
 
 	@Test
 	public void test() throws Exception {
-		try(Process2 ignore = startServiceProxyScript()) {
-			assertContains("shop", getAndAssert200("http://localhost:3023/"));
+		try(Process2 ignore = startServiceProxyScript(); HttpAssertions ha = new HttpAssertions()) {
+			assertContains("shop", ha.getAndAssert200("http://localhost:3023/"));
 		}
 	}
 }

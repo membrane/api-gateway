@@ -15,6 +15,7 @@
 package com.predic8.membrane.examples.config;
 
 import com.predic8.membrane.examples.util.*;
+import org.json.JSONException;
 import org.junit.jupiter.api.*;
 import org.skyscreamer.jsonassert.*;
 
@@ -41,7 +42,7 @@ public class ProxiesXMLOfflineExampleTest extends AbstractSampleMembraneStartSto
 
     @SuppressWarnings("JsonSchemaCompliance")
     @Test
-    void api_doc() {
+    void api_doc() throws JSONException {
         JSONAssert.assertEquals("""
                 {
                   "fruitshop-v1-1" : {

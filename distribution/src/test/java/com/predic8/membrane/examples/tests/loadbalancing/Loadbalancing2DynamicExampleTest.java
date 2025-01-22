@@ -14,12 +14,13 @@
 
 package com.predic8.membrane.examples.tests.loadbalancing;
 
-import com.predic8.membrane.examples.util.*;
-import org.junit.jupiter.api.*;
+import com.predic8.membrane.examples.util.DistributionExtractingTestcase;
+import com.predic8.membrane.examples.util.Process2;
+import com.predic8.membrane.test.HttpAssertions;
+import org.junit.jupiter.api.Test;
 
 import static com.predic8.membrane.examples.tests.loadbalancing.LoadBalancerUtil.*;
-import static com.predic8.membrane.test.AssertUtils.*;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class Loadbalancing2DynamicExampleTest extends DistributionExtractingTestcase {
 
@@ -32,7 +33,7 @@ public class Loadbalancing2DynamicExampleTest extends DistributionExtractingTest
 	public void addingNodesDynamicallyUsingTheAdminConsole() throws Exception {
 		replaceInFile2("proxies.xml", "8080", "3023");
 
-		try(Process2 ignored = startServiceProxyScript()) {
+		try(Process2 ignored = startServiceProxyScript(); HttpAssertions ha = new HttpAssertions()) {
 
 			// Make sure backends are running
 			assertEquals(1, getRespondingNode("http://localhost:4000/"));
@@ -43,7 +44,7 @@ public class Loadbalancing2DynamicExampleTest extends DistributionExtractingTest
 			addLBNodeViaHTML("http://localhost:9000/admin/", "localhost", 4000);
 
 			assertNodeStatus(
-					getAndAssert200("http://localhost:9000/admin/clusters/show?cluster=Default"),
+					ha.getAndAssert200("http://localhost:9000/admin/clusters/show?cluster=Default"),
 					"localhost", 4000, "UP");
 
 			// Because just one node is running we should get always the same node
@@ -53,7 +54,7 @@ public class Loadbalancing2DynamicExampleTest extends DistributionExtractingTest
 			addLBNodeViaHTML("http://localhost:9000/admin/", "localhost", 4001);
 
 			assertNodeStatus(
-					getAndAssert200("http://localhost:9000/admin/clusters/show?cluster=Default"),
+					ha.getAndAssert200("http://localhost:9000/admin/clusters/show?cluster=Default"),
 					"localhost", 4001, "UP");
 
 			checkWhatNodesAreResponding(new int[]{1,2});
@@ -64,7 +65,7 @@ public class Loadbalancing2DynamicExampleTest extends DistributionExtractingTest
 	public void addingNodesDynamicallyUsingTheCluserAPI() throws Exception {
 		replaceInFile2("proxies.xml", "8080", "3023");
 
-		try(Process2 ignored = startServiceProxyScript()) {
+		try(Process2 ignored = startServiceProxyScript(); HttpAssertions ha = new HttpAssertions()) {
 
 			// Make sure backends are running
 			assertEquals(1, getRespondingNode("http://localhost:4000/"));
@@ -72,34 +73,34 @@ public class Loadbalancing2DynamicExampleTest extends DistributionExtractingTest
 			assertEquals(3, getRespondingNode("http://localhost:4002/"));
 
 			// Start Node 1
-			getAndAssert(204, "http://localhost:9010/clustermanager/up?host=localhost&port=4000");
+			ha.getAndAssert(204, "http://localhost:9010/clustermanager/up?host=localhost&port=4000");
 
 			assertNodeStatus(
-					getAndAssert200("http://localhost:9000/admin/clusters/show?cluster=Default"),
+					ha.getAndAssert200("http://localhost:9000/admin/clusters/show?cluster=Default"),
 					"localhost", 4000, "UP");
 
 			// Because just one node is running we should get always the same node
 			assertEquals(1, getRespondingNode("http://localhost:3023/service"));
 
 			// Start Node 2
-			getAndAssert(204, "http://localhost:9010/clustermanager/up?host=localhost&port=4001");
+			ha.getAndAssert(204, "http://localhost:9010/clustermanager/up?host=localhost&port=4001");
 			checkWhatNodesAreResponding(new int[]{1,2});
 
 			// Start Node 3
-			getAndAssert(204, "http://localhost:9010/clustermanager/up?host=localhost&port=4002");
+			ha.getAndAssert(204, "http://localhost:9010/clustermanager/up?host=localhost&port=4002");
 			checkWhatNodesAreResponding(new int[]{1,2,3});
 
 			// Stop Node 3
-			getAndAssert(204, "http://localhost:9010/clustermanager/down?host=localhost&port=4002");
+			ha.getAndAssert(204, "http://localhost:9010/clustermanager/down?host=localhost&port=4002");
 			checkWhatNodesAreResponding(new int[]{1,2});
 
 			// Stop Node 2
-			getAndAssert(204, "http://localhost:9010/clustermanager/down?host=localhost&port=4001");
+			ha.getAndAssert(204, "http://localhost:9010/clustermanager/down?host=localhost&port=4001");
 			checkWhatNodesAreResponding(new int[]{1});
 
 			// Stop Node 1
-			getAndAssert(204, "http://localhost:9010/clustermanager/down?host=localhost&port=4000");
-			getAndAssert(500,"http://localhost:3023/service");
+			ha.getAndAssert(204, "http://localhost:9010/clustermanager/down?host=localhost&port=4000");
+			ha.getAndAssert(500,"http://localhost:3023/service");
 		}
 	}
 }

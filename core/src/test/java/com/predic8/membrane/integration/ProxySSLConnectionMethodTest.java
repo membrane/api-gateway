@@ -14,16 +14,18 @@
 
 package com.predic8.membrane.integration;
 
-import org.apache.commons.httpclient.HttpClient;
-import org.apache.commons.httpclient.methods.GetMethod;
-import org.junit.jupiter.api.*;
-
 import com.predic8.membrane.core.HttpRouter;
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.exchangestore.MemoryExchangeStore;
 import com.predic8.membrane.core.proxies.ProxyRule;
 import com.predic8.membrane.core.proxies.ProxyRuleKey;
-import com.predic8.membrane.test.AssertUtils;
+import org.apache.commons.httpclient.HttpClient;
+import org.apache.commons.httpclient.methods.GetMethod;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+import static com.predic8.membrane.test.StringAssertions.assertContains;
 
 public class ProxySSLConnectionMethodTest {
 
@@ -49,7 +51,7 @@ public class ProxySSLConnectionMethodTest {
 
 		GetMethod post = new GetMethod("https://www.google.com/");
 		client.executeMethod(post);
-		AssertUtils.assertContains("<html", post.getResponseBodyAsString());
+		assertContains("<html", post.getResponseBodyAsString());
 
 		client.getHttpConnectionManager().closeIdleConnections(0);
 	}

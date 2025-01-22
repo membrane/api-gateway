@@ -13,22 +13,15 @@
    limitations under the License. */
 package com.predic8.membrane.servlet.test;
 
-import java.io.IOException;
-
-import javax.xml.stream.XMLStreamException;
-
-import org.apache.http.ParseException;
-import org.junit.jupiter.api.Test;
-
 import com.predic8.membrane.test.WSDLTestUtil;
+import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class WSDLPublisherTest {
 
 	@Test
-	public void doit() throws ParseException, IOException, XMLStreamException {
+	public void doit() throws Exception {
 		assertEquals(5, WSDLTestUtil.countWSDLandXSDs("http://localhost:3021/wsdlPublisher/?wsdl"));
 	}
-
 }

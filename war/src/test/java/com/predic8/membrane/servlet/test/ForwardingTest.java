@@ -14,12 +14,6 @@
 
 package com.predic8.membrane.servlet.test;
 
-import static org.junit.jupiter.api.Assertions.*;
-
-import java.io.IOException;
-import java.util.Arrays;
-import java.util.List;
-
 import org.apache.http.HttpResponse;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.HttpClient;
@@ -28,11 +22,15 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.util.EntityUtils;
-import org.junit.jupiter.api.Test;
-
-import com.predic8.membrane.test.AssertUtils;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
+
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.List;
+
+import static com.predic8.membrane.test.StringAssertions.assertContains;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class ForwardingTest {
 
@@ -53,7 +51,7 @@ public class ForwardingTest {
 		HttpResponse res = hc.execute(post);
 		assertEquals(200, res.getStatusLine().getStatusCode());
 
-		AssertUtils.assertContains(secret, EntityUtils.toString(res.getEntity()));
+		assertContains(secret, EntityUtils.toString(res.getEntity()));
 	}
 
 	private void testQueryParam(int port, String param) throws ClientProtocolException, IOException {
@@ -62,24 +60,24 @@ public class ForwardingTest {
 		HttpResponse res = hc.execute(get);
 		assertEquals(200, res.getStatusLine().getStatusCode());
 
-		AssertUtils.assertContains("?" + param, EntityUtils.toString(res.getEntity()));
+		assertContains("?" + param, EntityUtils.toString(res.getEntity()));
 	}
 
 	@ParameterizedTest
 	@MethodSource("getPorts")
-	public void testParam1(int port) throws ClientProtocolException, IOException {
+	public void testParam1(int port) throws IOException {
 		testQueryParam(port, "a");
 	}
 
 	@ParameterizedTest
 	@MethodSource("getPorts")
-	public void testParam2(int port) throws ClientProtocolException, IOException {
+	public void testParam2(int port) throws IOException {
 		testQueryParam(port, "a=1");
 	}
 
 	@ParameterizedTest
 	@MethodSource("getPorts")
-	public void testParam3(int port) throws ClientProtocolException, IOException {
+	public void testParam3(int port) throws IOException {
 		testQueryParam(port, "a=1&b=2");
 	}
 

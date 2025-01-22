@@ -15,7 +15,7 @@ package com.predic8.membrane.examples.tests.integration;
 
 import com.predic8.membrane.core.HttpRouter;
 import com.predic8.membrane.core.Router;
-import com.predic8.membrane.test.AssertUtils;
+import com.predic8.membrane.test.HttpAssertions;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -23,8 +23,6 @@ import org.junit.jupiter.params.provider.MethodSource;
 import java.util.Collection;
 
 import static com.predic8.membrane.core.http.MimeType.APPLICATION_X_WWW_FORM_URLENCODED;
-import static com.predic8.membrane.test.AssertUtils.getAndAssert;
-import static com.predic8.membrane.test.AssertUtils.getAndAssert200;
 import static java.util.Arrays.asList;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -64,9 +62,11 @@ public class OAuth2ExampleTest {
             String clientBasePath) throws Exception {
         setUp(proxies);
 
-        getAndAssert200("http://localhost:2001" + clientBasePath);
-        AssertUtils.postAndAssert(200, "http://localhost:2000" + serverBasePath + "/login/", getWWWFormEncodedContentTypeHeader(), "target=&username=john&password=password");
-        assertEquals("Hello john.", getAndAssert200("http://localhost:2000" + serverBasePath + "/"));
+        try (HttpAssertions ha = new HttpAssertions()) {
+            ha.getAndAssert200("http://localhost:2001" + clientBasePath);
+            ha.postAndAssert(200, "http://localhost:2000" + serverBasePath + "/login/", getWWWFormEncodedContentTypeHeader(), "target=&username=john&password=password");
+            assertEquals("Hello john.", ha.getAndAssert200("http://localhost:2000" + serverBasePath + "/"));
+        }
     }
 
     private String[] getWWWFormEncodedContentTypeHeader() {
@@ -84,9 +84,11 @@ public class OAuth2ExampleTest {
             String clientBasePath) throws Exception {
         setUp(proxies);
 
-        getAndAssert200("http://localhost:2001" + clientBasePath);
-        assertTrue(AssertUtils.postAndAssert(200, "http://localhost:2000" + serverBasePath + "/login/", getWWWFormEncodedContentTypeHeader(), "target=&username=john&password=wrongPassword").contains("Invalid password."));
-        getAndAssert(400, "http://localhost:2000" + serverBasePath + "/");
+        try (HttpAssertions ha = new HttpAssertions()) {
+            ha.getAndAssert200("http://localhost:2001" + clientBasePath);
+            assertTrue(ha.postAndAssert(200, "http://localhost:2000" + serverBasePath + "/login/", getWWWFormEncodedContentTypeHeader(), "target=&username=john&password=wrongPassword").contains("Invalid password."));
+            ha.getAndAssert(400, "http://localhost:2000" + serverBasePath + "/");
+        }
     }
 
     @ParameterizedTest(name = "{0}")
@@ -97,9 +99,11 @@ public class OAuth2ExampleTest {
             String clientBasePath) throws Exception {
         setUp(proxies);
 
-        getAndAssert200("http://localhost:2001" + clientBasePath);
-        assertTrue(AssertUtils.postAndAssert(200, "http://localhost:2000" + serverBasePath + "/login/", "target=&username=john&password=password").contains("Invalid password."));
-        getAndAssert(400, "http://localhost:2000" + serverBasePath + "/");
+        try (HttpAssertions ha = new HttpAssertions()) {
+            ha.getAndAssert200("http://localhost:2001" + clientBasePath);
+            assertTrue(ha.postAndAssert(200, "http://localhost:2000" + serverBasePath + "/login/", "target=&username=john&password=password").contains("Invalid password."));
+            ha.getAndAssert(400, "http://localhost:2000" + serverBasePath + "/");
+        }
     }
 
     @ParameterizedTest(name = "{0}")
@@ -110,7 +114,9 @@ public class OAuth2ExampleTest {
             String clientBasePath) throws Exception {
         setUp(proxies);
 
-        getAndAssert(400, "http://localhost:2000" + serverBasePath + "/oauth2/auth");
+        try (HttpAssertions ha = new HttpAssertions()) {
+            ha.getAndAssert(400, "http://localhost:2000" + serverBasePath + "/oauth2/auth");
+        }
     }
 
     @ParameterizedTest(name = "{0}")
@@ -121,8 +127,11 @@ public class OAuth2ExampleTest {
             String clientBasePath) throws Exception {
         setUp(proxies);
 
-        testGoodLoginRequest(proxies, serverBasePath, clientBasePath);
-        getAndAssert200("http://localhost:2001" + clientBasePath + "/login/logout");
+        try (HttpAssertions ha = new HttpAssertions()) {
+
+            testGoodLoginRequest(proxies, serverBasePath, clientBasePath);
+            ha.getAndAssert200("http://localhost:2001" + clientBasePath + "/login/logout");
+        }
     }
 
     @AfterEach

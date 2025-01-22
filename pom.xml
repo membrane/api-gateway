@@ -67,6 +67,7 @@
 		<module>starter</module>
 		<module>distribution</module>
 		<module>war</module>
+		<module>test</module>
 		<module>maven-plugin</module>
 	</modules>
 
@@ -100,6 +101,11 @@
 			<dependency>
 				<groupId>org.membrane-soa</groupId>
 				<artifactId>membrane-service-proxy</artifactId>
+				<version>${project.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.membrane-soa</groupId>
+				<artifactId>service-proxy-test</artifactId>
 				<version>${project.version}</version>
 			</dependency>
 			<dependency>
