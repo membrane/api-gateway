@@ -14,36 +14,14 @@
 
 package com.predic8.membrane.test;
 
-import java.io.File;
-import java.io.IOException;
-import java.nio.charset.*;
-import java.security.KeyManagementException;
-import java.security.NoSuchAlgorithmException;
-import java.security.SecureRandom;
-import java.security.cert.CertificateException;
-import java.security.cert.X509Certificate;
-
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.TrustManager;
-import javax.net.ssl.X509TrustManager;
-
-import org.apache.commons.io.FileUtils;
-import org.apache.http.HttpEntity;
-import org.apache.http.HttpException;
-import org.apache.http.HttpHost;
-import org.apache.http.HttpRequest;
-import org.apache.http.HttpRequestInterceptor;
-import org.apache.http.HttpResponse;
-import org.apache.http.ParseException;
+import org.apache.http.*;
 import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.AuthState;
 import org.apache.http.auth.Credentials;
 import org.apache.http.auth.UsernamePasswordCredentials;
-import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.CredentialsProvider;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.*;
-import org.apache.http.client.protocol.HttpClientContext;
 import org.apache.http.client.utils.HttpClientUtils;
 import org.apache.http.conn.ssl.NoopHostnameVerifier;
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
@@ -53,45 +31,39 @@ import org.apache.http.impl.client.BasicCookieStore;
 import org.apache.http.impl.client.BasicCredentialsProvider;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.protocol.HttpContext;
-import org.apache.http.protocol.HttpCoreContext;
 import org.apache.http.util.EntityUtils;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.apache.commons.io.FileUtils.writeStringToFile;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509TrustManager;
+import java.io.IOException;
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
+import java.security.cert.X509Certificate;
+
 import static org.apache.http.client.protocol.HttpClientContext.CREDS_PROVIDER;
 import static org.apache.http.client.protocol.HttpClientContext.TARGET_AUTH_STATE;
 import static org.apache.http.protocol.HttpCoreContext.HTTP_TARGET_HOST;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-public class AssertUtils {
+public class HttpAssertions implements AutoCloseable {
 
-    private static HttpClient hc = HttpClientBuilder.create().build();
+    private HttpClient hc = HttpClientBuilder.create().build();
 
-    public static void assertContains(String needle, String haystack) {
-        if (haystack.contains(needle))
-            return;
-        throw new AssertionError("The string '" + haystack + "' does not contain '" + needle + "'.");
-    }
-
-    public static void assertContainsNot(String needle, String haystack) {
-        if (!haystack.contains(needle))
-            return;
-        throw new AssertionError("The string '" + haystack + "' does contain '" + needle + "'.");
-    }
-
-    public static String getAndAssert200(String url) throws ParseException, IOException {
+    public String getAndAssert200(String url) throws ParseException, IOException {
         return getAndAssert(200, url);
     }
 
-    public static String getAndAssert200(String url, String[] header) throws ParseException, IOException {
+    public String getAndAssert200(String url, String[] header) throws ParseException, IOException {
         return getAndAssert(200, url, header);
     }
 
-    public static String getAndAssert(int expectedHttpStatusCode, String url) throws ParseException, IOException {
+    public String getAndAssert(int expectedHttpStatusCode, String url) throws ParseException, IOException {
         return getAndAssert(expectedHttpStatusCode, url, null);
     }
 
-    public static String getAndAssert(int expectedHttpStatusCode, String url, String[] header) throws ParseException, IOException {
+    public String getAndAssert(int expectedHttpStatusCode, String url, String[] header) throws ParseException, IOException {
         HttpGet get = new HttpGet(url);
         try {
             HttpResponse res = invokeAndAssertInternal(expectedHttpStatusCode, url, header, get);
@@ -103,7 +75,7 @@ public class AssertUtils {
 
     }
 
-    public static HttpResponse getAndAssertWithResponse(int expectedHttpStatusCode, String url, String[] header) throws ParseException, IOException {
+    public HttpResponse getAndAssertWithResponse(int expectedHttpStatusCode, String url, String[] header) throws ParseException, IOException {
         HttpGet get = new HttpGet(url);
         try {
             return invokeAndAssertInternal(expectedHttpStatusCode, url, header, get);
@@ -112,7 +84,7 @@ public class AssertUtils {
         }
     }
 
-    public static HttpResponse invokeAndAssertInternal(int expectedHttpStatusCode, String url, String[] header, HttpGet get) throws IOException {
+    public HttpResponse invokeAndAssertInternal(int expectedHttpStatusCode, String url, String[] header, HttpGet get) throws IOException {
         if (header != null)
             for (int i = 0; i < header.length; i += 2)
                 get.addHeader(header[i], header[i + 1]);
@@ -125,48 +97,46 @@ public class AssertUtils {
         return res;
     }
 
-    public static String postAndAssert200(String url, String body) throws IOException {
+    public String postAndAssert200(String url, String body) throws IOException {
         return postAndAssert(200, url, body);
     }
 
-    public static String assertStatusCode(int expectedHttpStatusCode, HttpUriRequest request) throws IOException {
+    public String assertStatusCode(int expectedHttpStatusCode, HttpUriRequest request) throws IOException {
         HttpResponse res = hc.execute(request);
         assertEquals(expectedHttpStatusCode, res.getStatusLine().getStatusCode());
         return EntityUtils.toString(res.getEntity());
     }
 
-    public static String postAndAssert(int expectedHttpStatusCode, String url, String body) throws IOException {
+    public String postAndAssert(int expectedHttpStatusCode, String url, String body) throws IOException {
         return postAndAssert(expectedHttpStatusCode, url, new String[0], body);
     }
 
-    public static String postAndAssert(int expectedHttpStatusCode, String url, String[] headers, String body) throws IOException {
+    public String postAndAssert(int expectedHttpStatusCode, String url, String[] headers, String body) throws IOException {
         return invokeAndAssert(new HttpPost(url),expectedHttpStatusCode,url,headers,body);
     }
 
-    public static String putAndAssert(int expectedHttpStatusCode, String url, String[] headers, String body) throws IOException {
+    public String putAndAssert(int expectedHttpStatusCode, String url, String[] headers, String body) throws IOException {
         return invokeAndAssert(new HttpPut(url),expectedHttpStatusCode,url,headers,body);
     }
 
-    public static String invokeAndAssert(HttpEntityEnclosingRequestBase requestBase, int expectedHttpStatusCode, String url, String[] headers, String body) throws IOException {
+    public String invokeAndAssert(HttpEntityEnclosingRequestBase requestBase, int expectedHttpStatusCode, String url, String[] headers, String body) throws IOException {
         for (int i = 0; i < headers.length; i+=2)
             requestBase.setHeader(headers[i], headers[i+1]);
         requestBase.setEntity(new StringEntity(body));
         try {
-            HttpResponse res = hc.execute(requestBase);
-            assertEquals(expectedHttpStatusCode, res.getStatusLine().getStatusCode());
-            return EntityUtils.toString(res.getEntity());
+            return assertStatusCode(expectedHttpStatusCode, requestBase);
         } finally {
             requestBase.releaseConnection();
         }
     }
 
-    public static void disableHTTPAuthentication() {
+    public void disableHTTPAuthentication() {
         hc = HttpClientBuilder.create().build();
     }
 
-    public static void setupHTTPAuthentication(String host, int port, String user, String pass) {
+    public void setupHTTPAuthentication(String host, int port, String user, String pass) throws Exception {
         if (hc != null)
-            closeConnections();
+            close();
         hc = getAuthenticatingHttpClient(host, port, user, pass);
     }
 
@@ -197,7 +167,7 @@ public class AssertUtils {
         return new AuthScope(targetHost.getHostName(), targetHost.getPort());
     }
 
-    public static void trustAnyHTTPSServer(int port) throws NoSuchAlgorithmException, KeyManagementException {
+    public void trustAnyHTTPSServer(int port) throws NoSuchAlgorithmException, KeyManagementException {
         SSLContext context = SSLContext.getInstance("SSL");
         context.init(null, new TrustManager[] { new X509TrustManager() {
             @Override
@@ -217,12 +187,8 @@ public class AssertUtils {
         hc = HttpClientBuilder.create().setSSLSocketFactory(new SSLConnectionSocketFactory(context, NoopHostnameVerifier.INSTANCE)).build();
     }
 
-    public static void replaceInFile(File file, String from, String to_) throws IOException {
-        writeStringToFile(file, FileUtils.readFileToString(file, UTF_8).replace(from, to_), UTF_8);
-
-    }
-
-    public static void closeConnections() {
+    @Override
+    public void close() throws Exception {
         if (hc != null) {
             HttpClientUtils.closeQuietly(hc);
             hc = HttpClientBuilder.create().build();
