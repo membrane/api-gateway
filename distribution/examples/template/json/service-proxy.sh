@@ -37,14 +37,7 @@ if ! command -v java >/dev/null 2>&1; then
     exit 1
 fi
 
-version_line=$(java -version 2>&1 | while read -r line; do
-    case "$line" in
-        *"version"*)
-            echo "$line"
-            break
-            ;;
-    esac
-done)
+version_line=$(java -version 2>&1 | grep "version" | head -n 1)
 
 if [ -z "$version_line" ]; then
     echo "WARNING: Could not determine Java version. Make sure Java version is at least $required_version. Proceeding anyway..."
