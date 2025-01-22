@@ -28,6 +28,7 @@ import java.io.*;
 import java.util.*;
 
 import static com.predic8.membrane.core.http.MimeType.*;
+import static com.predic8.membrane.core.util.ExceptionUtil.concatMessageAndCauseMessages;
 
 
 /**
@@ -217,7 +218,7 @@ public class ProblemDetails {
         if (exception != null) {
             if (internalMap.containsKey("message"))
                 log.error("Overriding ProblemDetails extensionsMap 'message' entry. Please notify Membrane developers.", new RuntimeException());
-            internalMap.put("message", exception.getMessage());
+            internalMap.put("message", concatMessageAndCauseMessages(exception));
             if (stacktrace) {
                 internalMap.put("stackTrace", getStackTrace());
             }
