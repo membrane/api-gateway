@@ -14,14 +14,13 @@
 
 package com.predic8.membrane.examples.tests.loadbalancing;
 
-import static com.predic8.membrane.examples.tests.loadbalancing.LoadBalancerUtil.*;
-import static com.predic8.membrane.test.AssertUtils.*;
-import static org.junit.jupiter.api.Assertions.*;
-
-import org.junit.jupiter.api.Test;
-
 import com.predic8.membrane.examples.util.DistributionExtractingTestcase;
 import com.predic8.membrane.examples.util.Process2;
+import com.predic8.membrane.test.HttpAssertions;
+import org.junit.jupiter.api.Test;
+
+import static com.predic8.membrane.examples.tests.loadbalancing.LoadBalancerUtil.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class Loadbalancing5MultipleExampleTest extends DistributionExtractingTestcase {
 
@@ -36,7 +35,7 @@ public class Loadbalancing5MultipleExampleTest extends DistributionExtractingTes
 		replaceInFile2("proxies.xml","8080", "3023");
 		replaceInFile2("proxies.xml","8081", "3024");
 
-		try(Process2 ignored = startServiceProxyScript()) {
+		try(Process2 ignored = startServiceProxyScript(); HttpAssertions ha = new HttpAssertions()) {
 			checkWhatNodesAreResponding(new int[]{1,2});
 
 			assertEquals(3, getRespondingNode("http://localhost:3024/service"));
@@ -44,14 +43,14 @@ public class Loadbalancing5MultipleExampleTest extends DistributionExtractingTes
 			assertEquals(3, getRespondingNode("http://localhost:3024/service"));
 			assertEquals(4, getRespondingNode("http://localhost:3024/service"));
 
-			String status = getAndAssert200("http://localhost:9000/admin/clusters/show?balancer=balancer1&cluster=Default");
+			String status = ha.getAndAssert200("http://localhost:9000/admin/clusters/show?balancer=balancer1&cluster=Default");
 			assertNodeStatus(status, "localhost", 4000, "UP");
 			assertNodeStatus(status, "localhost", 4001, "UP");
 
-			getAndAssert(204, "http://localhost:9010/clustermanager/down?balancer=balancer1&host=localhost&port=4001");
+			ha.getAndAssert(204, "http://localhost:9010/clustermanager/down?balancer=balancer1&host=localhost&port=4001");
 			Thread.sleep(1000);
 
-			status = getAndAssert200("http://localhost:9000/admin/clusters/show?balancer=balancer1&cluster=Default");
+			status = ha.getAndAssert200("http://localhost:9000/admin/clusters/show?balancer=balancer1&cluster=Default");
 			assertNodeStatus(status, "localhost", 4000, "UP");
 			assertNodeStatus(status, "localhost", 4001, "DOWN");
 

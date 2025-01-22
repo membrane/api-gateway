@@ -14,12 +14,8 @@
 
 package com.predic8.membrane.examples.tests;
 
-import static com.predic8.membrane.test.AssertUtils.disableHTTPAuthentication;
-import static com.predic8.membrane.test.AssertUtils.getAndAssert;
-import static com.predic8.membrane.test.AssertUtils.getAndAssert200;
-import static com.predic8.membrane.test.AssertUtils.setupHTTPAuthentication;
-
-import com.predic8.membrane.examples.util.*;
+import com.predic8.membrane.examples.util.AbstractSampleMembraneStartStopTestcase;
+import com.predic8.membrane.test.HttpAssertions;
 import org.junit.jupiter.api.Test;
 
 public class BasicAuthExampleTest extends AbstractSampleMembraneStartStopTestcase {
@@ -34,19 +30,23 @@ public class BasicAuthExampleTest extends AbstractSampleMembraneStartStopTestcas
 
 	@Test
 	public void testStaticUDProvider() throws Exception {
-		disableHTTPAuthentication();
-		getAndAssert(401, CUSTOMER_HOST_LOCAL_STATIC);
+		try (HttpAssertions ha = new HttpAssertions()) {
+			ha.disableHTTPAuthentication();
+			ha.getAndAssert(401, CUSTOMER_HOST_LOCAL_STATIC);
 
-		setupHTTPAuthentication("localhost", 2000, "alice", "membrane");
-		getAndAssert200(CUSTOMER_HOST_LOCAL_STATIC);
+			ha.setupHTTPAuthentication("localhost", 2000, "alice", "membrane");
+			ha.getAndAssert200(CUSTOMER_HOST_LOCAL_STATIC);
+		}
 	}
 
 	@Test
 	public void testFileUDProvider() throws Exception {
-		disableHTTPAuthentication();
-		getAndAssert(401, CUSTOMER_HOST_LOCAL_FILE);
+		try (HttpAssertions ha = new HttpAssertions()) {
+			ha.disableHTTPAuthentication();
+			ha.getAndAssert(401, CUSTOMER_HOST_LOCAL_FILE);
 
-		setupHTTPAuthentication("localhost", 3000, "membrane", "proxy");
-		getAndAssert200(CUSTOMER_HOST_LOCAL_FILE);
+			ha.setupHTTPAuthentication("localhost", 3000, "membrane", "proxy");
+			ha.getAndAssert200(CUSTOMER_HOST_LOCAL_FILE);
+		}
 	}
 }

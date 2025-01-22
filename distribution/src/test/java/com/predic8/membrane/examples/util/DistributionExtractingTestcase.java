@@ -14,19 +14,24 @@
 
 package com.predic8.membrane.examples.util;
 
-import org.junit.jupiter.api.*;
-import org.slf4j.*;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.*;
-import java.util.*;
-import java.util.zip.*;
+import java.util.Enumeration;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
 
 import static com.predic8.membrane.core.http.MimeType.*;
-import static com.predic8.membrane.test.AssertUtils.*;
-import static java.io.File.*;
-import static java.nio.charset.StandardCharsets.*;
-import static java.util.Objects.*;
-import static org.apache.commons.io.FileUtils.*;
+import static com.predic8.membrane.test.StringAssertions.replaceInFile;
+import static java.io.File.separator;
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.util.Objects.requireNonNull;
+import static org.apache.commons.io.FileUtils.readFileToString;
+import static org.apache.commons.io.FileUtils.writeStringToFile;
 
 /**
  * Extracts the .zip distribution built by Maven.

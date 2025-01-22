@@ -14,10 +14,12 @@
 
 package com.predic8.membrane.examples.tests;
 
-import com.predic8.membrane.examples.util.*;
-import org.junit.jupiter.api.*;
+import com.predic8.membrane.examples.util.AbstractSampleMembraneStartStopTestcase;
+import com.predic8.membrane.test.HttpAssertions;
+import org.junit.jupiter.api.Test;
 
-import static com.predic8.membrane.test.AssertUtils.*;
+import static com.predic8.membrane.test.StringAssertions.assertContains;
+import static com.predic8.membrane.test.StringAssertions.assertContainsNot;
 
 public class XSLTExampleTest extends AbstractSampleMembraneStartStopTestcase {
 
@@ -32,7 +34,9 @@ public class XSLTExampleTest extends AbstractSampleMembraneStartStopTestcase {
 
     @Test
     public void test() throws Exception {
-        assertContains("<male>", getAndAssert200(CUSTOMER_HOST_REMOTE + PATH));
-        assertContainsNot("<male>", getAndAssert200(CUSTOMER_HOST_LOCAL + PATH));
+        try (HttpAssertions ha = new HttpAssertions()) {
+            assertContains("<male>", ha.getAndAssert200(CUSTOMER_HOST_REMOTE + PATH));
+            assertContainsNot("<male>", ha.getAndAssert200(CUSTOMER_HOST_LOCAL + PATH));
+        }
     }
 }

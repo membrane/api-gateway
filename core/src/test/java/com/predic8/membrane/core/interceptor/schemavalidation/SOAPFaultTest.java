@@ -13,19 +13,21 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.schemavalidation;
 
-import com.predic8.membrane.core.*;
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.util.*;
-import org.junit.jupiter.api.*;
+import com.predic8.membrane.core.Router;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.util.SOAPUtil;
+import org.junit.jupiter.api.Test;
 
-import java.util.*;
+import java.util.Map;
 
-import static com.predic8.membrane.core.http.MimeType.*;
-import static com.predic8.membrane.core.http.Response.*;
-import static com.predic8.membrane.core.interceptor.Outcome.*;
-import static com.predic8.membrane.core.util.SOAPUtil.FaultCode.*;
-import static com.predic8.membrane.test.AssertUtils.*;
-import static org.junit.jupiter.api.Assertions.*;
+import static com.predic8.membrane.core.http.MimeType.TEXT_XML;
+import static com.predic8.membrane.core.http.Response.ok;
+import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
+import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
+import static com.predic8.membrane.core.util.SOAPUtil.FaultCode.Server;
+import static com.predic8.membrane.test.StringAssertions.assertContains;
+import static com.predic8.membrane.test.StringAssertions.assertContainsNot;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class SOAPFaultTest {
 	public static final String ARTICLE_SERVICE_WSDL = "src/test/resources/validation/ArticleService.wsdl";

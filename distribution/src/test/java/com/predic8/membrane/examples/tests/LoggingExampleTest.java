@@ -14,11 +14,13 @@
 
 package com.predic8.membrane.examples.tests;
 
-import static com.predic8.membrane.test.AssertUtils.getAndAssert200;
-import static org.junit.jupiter.api.Assertions.*;
-
-import com.predic8.membrane.examples.util.*;
+import com.predic8.membrane.examples.util.DistributionExtractingTestcase;
+import com.predic8.membrane.examples.util.Process2;
+import com.predic8.membrane.examples.util.SubstringWaitableConsoleEvent;
+import com.predic8.membrane.test.HttpAssertions;
 import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class LoggingExampleTest extends DistributionExtractingTestcase {
 
@@ -29,9 +31,9 @@ public class LoggingExampleTest extends DistributionExtractingTestcase {
 
 	@Test
 	public void test() throws Exception {
-		try(Process2 sl = startServiceProxyScript()) {
+		try(Process2 sl = startServiceProxyScript(); HttpAssertions ha = new HttpAssertions()) {
 			SubstringWaitableConsoleEvent logged = new SubstringWaitableConsoleEvent(sl, "HTTP/1.1");
-			getAndAssert200("http://localhost:2000/");
+			ha.getAndAssert200("http://localhost:2000/");
 			assertTrue(logged.occurred());
 		}
 	}

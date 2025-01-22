@@ -14,18 +14,22 @@
 
 package com.predic8.membrane.examples.tests.loadbalancing;
 
-import com.predic8.membrane.examples.util.*;
-import org.junit.jupiter.api.*;
+import com.predic8.membrane.examples.util.DistributionExtractingTestcase;
+import com.predic8.membrane.examples.util.Process2;
+import com.predic8.membrane.test.HttpAssertions;
+import org.junit.jupiter.api.Test;
 
-import java.io.*;
+import java.io.File;
 
 import static com.predic8.membrane.examples.tests.loadbalancing.BalancerClientScriptUtil.*;
-import static com.predic8.membrane.examples.tests.loadbalancing.LoadBalancerUtil.*;
-import static com.predic8.membrane.test.AssertUtils.*;
+import static com.predic8.membrane.examples.tests.loadbalancing.LoadBalancerUtil.assertNodeStatus;
+import static com.predic8.membrane.examples.tests.loadbalancing.LoadBalancerUtil.getRespondingNode;
+import static com.predic8.membrane.test.StringAssertions.assertContains;
 import static java.lang.Thread.sleep;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.apache.commons.io.FileUtils.*;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.apache.commons.io.FileUtils.readFileToString;
+import static org.apache.commons.io.FileUtils.writeStringToFile;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class Loadbalancing3ClientExampleTest extends DistributionExtractingTestcase {
 
@@ -40,7 +44,7 @@ public class Loadbalancing3ClientExampleTest extends DistributionExtractingTestc
 		replaceInFile2("proxies.xml", "8080", "3023");
 		replaceInFile2("lb-client-secured.proxies.xml", "8080", "3023");
 
-		try(Process2 ignored = startServiceProxyScript()) {
+		try(Process2 ignored = startServiceProxyScript(); HttpAssertions ha = new HttpAssertions()) {
 			assertEquals(1, getRespondingNode("http://localhost:4000/"));
 			assertEquals(2, getRespondingNode("http://localhost:4001/"));
 			assertEquals(3, getRespondingNode("http://localhost:4002/"));
@@ -50,7 +54,7 @@ public class Loadbalancing3ClientExampleTest extends DistributionExtractingTestc
 			sleep(1000);
 
 			assertNodeStatus(
-					getAndAssert200("http://localhost:9000/admin/clusters/show?cluster=Default"),
+					ha.getAndAssert200("http://localhost:9000/admin/clusters/show?cluster=Default"),
 					"localhost", 4000, "UP");
 
 			addNodeViaScript(baseDir, "localhost", 4001);
@@ -70,7 +74,7 @@ public class Loadbalancing3ClientExampleTest extends DistributionExtractingTestc
 			assertEquals(3, getRespondingNode("http://localhost:3023/service"));
 		}
 
-		try(Process2 ignored = startServiceProxyScript(null,"service-proxy-secured")) {
+		try(Process2 ignored = startServiceProxyScript(null,"service-proxy-secured"); HttpAssertions ha = new HttpAssertions()) {
 			controlNodeViaScript(1, baseDir, "up", "localhost", 4000); // 1 indicates failure
 
 			File propFile = new File(baseDir, "client.properties");
@@ -82,8 +86,8 @@ public class Loadbalancing3ClientExampleTest extends DistributionExtractingTestc
 
 			sleep(100);
 
-			setupHTTPAuthentication("localhost", 9000, "admin", "admin");
-			assertContains("localhost:4000", getAndAssert200("http://localhost:9000/admin/clusters/show?cluster=Default"));
+			ha.setupHTTPAuthentication("localhost", 9000, "admin", "admin");
+			assertContains("localhost:4000", ha.getAndAssert200("http://localhost:9000/admin/clusters/show?cluster=Default"));
 		}
 	}
 }

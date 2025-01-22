@@ -14,10 +14,10 @@
 
 package com.predic8.membrane.examples.tests;
 
-import com.predic8.membrane.examples.util.*;
-import org.junit.jupiter.api.*;
-
-import static com.predic8.membrane.test.AssertUtils.*;
+import com.predic8.membrane.examples.util.DistributionExtractingTestcase;
+import com.predic8.membrane.examples.util.Process2;
+import com.predic8.membrane.test.HttpAssertions;
+import org.junit.jupiter.api.Test;
 
 public class ACLExampleTest extends DistributionExtractingTestcase {
 
@@ -28,13 +28,13 @@ public class ACLExampleTest extends DistributionExtractingTestcase {
 
 	@Test
 	public void test() throws Exception {
-		try(Process2 ignored = startServiceProxyScript()) {
-			getAndAssert200("http://localhost:2000/");
+		try(Process2 ignored = startServiceProxyScript(); HttpAssertions ha = new HttpAssertions()) {
+			ha.getAndAssert200("http://localhost:2000/");
 
 			// this request succeeds through membrane, but fails on the backend with 404
-			getAndAssert(404, "http://localhost:2000/contacts/");
+			ha.getAndAssert(404, "http://localhost:2000/contacts/");
 
-			getAndAssert(401, "http://localhost:2000/open-source/");
+			ha.getAndAssert(401, "http://localhost:2000/open-source/");
 		}
 	}
 }

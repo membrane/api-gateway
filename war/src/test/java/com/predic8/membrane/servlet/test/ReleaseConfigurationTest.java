@@ -14,12 +14,7 @@
 
 package com.predic8.membrane.servlet.test;
 
-import static org.junit.jupiter.api.Assertions.*;
-
-import java.io.IOException;
-
 import org.apache.http.HttpResponse;
-import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.StringEntity;
@@ -27,7 +22,10 @@ import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.util.EntityUtils;
 import org.junit.jupiter.api.Test;
 
-import com.predic8.membrane.test.AssertUtils;
+import java.io.IOException;
+
+import static com.predic8.membrane.test.StringAssertions.assertContains;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class ReleaseConfigurationTest {
 
@@ -38,7 +36,7 @@ public class ReleaseConfigurationTest {
 	}
 
 	@Test
-	public void testReachable() throws ClientProtocolException, IOException {
+	public void testReachable() throws IOException {
 		String secret = "Web Services";
 		HttpClient hc = HttpClientBuilder.create().build();
 		HttpPost post = new HttpPost(getBaseURL());
@@ -46,7 +44,7 @@ public class ReleaseConfigurationTest {
 		HttpResponse res = hc.execute(post);
 		assertEquals(200, res.getStatusLine().getStatusCode());
 
-		AssertUtils.assertContains(secret, EntityUtils.toString(res.getEntity()));
+		assertContains(secret, EntityUtils.toString(res.getEntity()));
 	}
 
 	private String getBaseURL() {

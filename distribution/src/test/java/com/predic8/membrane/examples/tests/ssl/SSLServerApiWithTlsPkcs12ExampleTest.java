@@ -14,12 +14,12 @@
 
 package com.predic8.membrane.examples.tests.ssl;
 
-import org.junit.jupiter.api.Test;
-
 import com.predic8.membrane.examples.util.DistributionExtractingTestcase;
 import com.predic8.membrane.examples.util.Process2;
+import com.predic8.membrane.test.HttpAssertions;
+import org.junit.jupiter.api.Test;
 
-import static com.predic8.membrane.test.AssertUtils.*;
+import static com.predic8.membrane.test.StringAssertions.assertContains;
 
 public class SSLServerApiWithTlsPkcs12ExampleTest extends DistributionExtractingTestcase {
 
@@ -32,9 +32,9 @@ public class SSLServerApiWithTlsPkcs12ExampleTest extends DistributionExtracting
 	void test() throws Exception {
 		replaceInFile2("proxies.xml", "443", "3023");
 
-		try(Process2 ignored = startServiceProxyScript()) {
-			trustAnyHTTPSServer(3023);
-			assertContains("success", getAndAssert200("https://localhost:3023/axis2/services/BLZService?wsdl"));
+		try(Process2 ignored = startServiceProxyScript(); HttpAssertions ha = new HttpAssertions()) {
+			ha.trustAnyHTTPSServer(3023);
+			assertContains("success", ha.getAndAssert200("https://localhost:3023/axis2/services/BLZService?wsdl"));
 		}
 	}
 }
