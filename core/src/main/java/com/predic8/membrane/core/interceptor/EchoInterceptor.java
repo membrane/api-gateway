@@ -42,7 +42,7 @@ public class EchoInterceptor extends AbstractInterceptor {
 				builder.status(204); // No Content
 			}
 		} catch (Exception e) {
-			log.error("Could create echo.",e);
+			log.error("Could not create echo.", e);
 			internal(router.isProduction(),getDisplayName())
 					.detail("Could not create echo!")
 					.exception(e)
