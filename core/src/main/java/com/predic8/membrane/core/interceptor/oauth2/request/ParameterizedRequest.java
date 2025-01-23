@@ -21,7 +21,6 @@ import com.predic8.membrane.core.interceptor.authentication.session.SessionManag
 import com.predic8.membrane.core.interceptor.oauth2.Client;
 import com.predic8.membrane.core.interceptor.oauth2.OAuth2AuthorizationServerInterceptor;
 import com.predic8.membrane.core.interceptor.oauth2.ParamNames;
-import com.predic8.membrane.core.interceptor.oauth2.ReusableJsonGenerator;
 import com.predic8.membrane.core.util.URLParamUtil;
 
 import java.util.*;
@@ -35,7 +34,6 @@ public abstract class ParameterizedRequest {
     protected Exchange exc;
     protected OAuth2AuthorizationServerInterceptor authServer;
     protected Map<String,String> params;
-    protected ReusableJsonGenerator jsonGen;
 
     protected abstract Response checkForMissingParameters() throws Exception;
     protected abstract Response processWithParameters() throws Exception;
@@ -57,7 +55,6 @@ public abstract class ParameterizedRequest {
         this.authServer = authServer;
         this.exc = exc;
         this.params = getValidParams(exc);
-        this.jsonGen = new ReusableJsonGenerator();
     }
 
     private Map<String, String> getValidParams(Exchange exc) throws Exception {

@@ -15,6 +15,7 @@ package com.predic8.membrane.core.interceptor.oauth2.request.tokenrequest;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.interceptor.oauth2.BufferedJsonGenerator;
 import com.predic8.membrane.core.interceptor.oauth2.OAuth2AuthorizationServerInterceptor;
 import com.predic8.membrane.core.interceptor.oauth2.ParamNames;
 import com.predic8.membrane.core.interceptor.oauth2.request.ParameterizedRequest;
@@ -37,22 +38,21 @@ public abstract class TokenRequest extends ParameterizedRequest {
 
     protected String getTokenJSONResponse() throws IOException {
         String json;
-        synchronized (jsonGen) {
-            JsonGenerator gen = jsonGen.resetAndGet();
+        BufferedJsonGenerator jsonGen = new BufferedJsonGenerator();
+        try (JsonGenerator gen = jsonGen.jg()) {
             gen.writeStartObject();
             gen.writeObjectField("access_token", token);
             gen.writeObjectField("token_type", authServer.getTokenGenerator().getTokenType());
             if (expiration != 0)
                 gen.writeObjectField("expires_in", expiration);
-            if(scope != null && !scope.isEmpty())
+            if (scope != null && !scope.isEmpty())
                 gen.writeObjectField(ParamNames.SCOPE, scope);
             if (idToken != null && !idToken.isEmpty())
                 gen.writeObjectField(ParamNames.ID_TOKEN, idToken);
-            if(refreshToken != null && !refreshToken.isEmpty())
-                gen.writeObjectField(ParamNames.REFRESH_TOKEN,refreshToken);
+            if (refreshToken != null && !refreshToken.isEmpty())
+                gen.writeObjectField(ParamNames.REFRESH_TOKEN, refreshToken);
             gen.writeEndObject();
-            json = jsonGen.getJson();
+            return jsonGen.getJson();
         }
-        return json;
     }
 }

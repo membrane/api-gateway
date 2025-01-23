@@ -19,25 +19,24 @@ import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 
-public class ReusableJsonGeneratorTest {
+public class BufferedJsonGeneratorTest {
 
     @Test
     public void reusableJsonGenerator() throws IOException {
-
         String[] params = new String[]{
                 "error", "invalid_request"
         };
-        ReusableJsonGenerator jsonGen = new ReusableJsonGenerator();
 
-        String json1 = generateJson(jsonGen, params);
-        String json2 = generateJson(jsonGen, params);
+        String json1 = generateJson(params);
+        String json2 = generateJson(params);
 
         Assertions.assertEquals(json1, json2);
     }
 
-    private String generateJson(ReusableJsonGenerator jsonGen, String[] params) throws IOException {
+    private String generateJson(String[] params) throws IOException {
         String json = null;
-        try (JsonGenerator gen = jsonGen.resetAndGet()) {
+        BufferedJsonGenerator jsonGen = new BufferedJsonGenerator();
+        try (JsonGenerator gen = jsonGen.jg()) {
             gen.writeStartObject();
             for (int i = 0; i < params.length; i += 2)
                 gen.writeObjectField(params[i], params[i + 1]);

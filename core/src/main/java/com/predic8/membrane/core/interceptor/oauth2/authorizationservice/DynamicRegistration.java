@@ -35,8 +35,6 @@ import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 @MCElement(name = "registration")
 public class DynamicRegistration {
 
-    private final ReusableJsonGenerator jsonGenerator = new ReusableJsonGenerator();
-
     private List<Interceptor> interceptors = new ArrayList<>();
     private SSLParser sslParser;
     private SSLContext sslContext;
@@ -89,7 +87,8 @@ public class DynamicRegistration {
     }
 
     private String getRegistrationBody(List<String> callbackUris) throws IOException {
-        try (JsonGenerator jg = jsonGenerator.resetAndGet()) {
+        BufferedJsonGenerator jsonGenerator = new BufferedJsonGenerator();
+        try (JsonGenerator jg = jsonGenerator.jg()) {
             jg.writeStartObject();
             jg.writeArrayFieldStart("redirect_uris");
             for (String callbackUri : callbackUris)

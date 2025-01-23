@@ -25,8 +25,8 @@ public class OAuth2TestUtil {
     public static String sessionId = null;
 
     static String getMockClaims() throws IOException {
-        ReusableJsonGenerator jsonGen = new ReusableJsonGenerator();
-        try (JsonGenerator gen = jsonGen.resetAndGet()) {
+        BufferedJsonGenerator jsonGen = new BufferedJsonGenerator();
+        try (JsonGenerator gen = jsonGen.jg()) {
             gen.writeStartObject();
             gen.writeObjectFieldStart("userinfo");
             gen.writeObjectField("email", null);

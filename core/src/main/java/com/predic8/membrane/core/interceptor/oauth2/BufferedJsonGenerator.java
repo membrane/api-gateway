@@ -19,24 +19,19 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
-public class ReusableJsonGenerator {
+public class BufferedJsonGenerator {
     JsonFactory jsonFactory = new JsonFactory();
     ByteArrayOutputStream baos = new ByteArrayOutputStream();
     JsonGenerator jsonGenerator;
 
-    public ReusableJsonGenerator() {
+    public BufferedJsonGenerator() {
         try {
             jsonGenerator = jsonFactory.createGenerator(baos);
         } catch (IOException e) {
         }
     }
 
-    public JsonGenerator resetAndGet() {
-        baos.reset();
-        try {
-            jsonGenerator = jsonFactory.createGenerator(baos);
-        } catch (IOException e) {
-        }
+    public JsonGenerator jg() {
         return jsonGenerator;
     }
 

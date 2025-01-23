@@ -17,7 +17,7 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.predic8.membrane.core.interceptor.oauth2.ReusableJsonGenerator;
+import com.predic8.membrane.core.interceptor.oauth2.BufferedJsonGenerator;
 
 import java.io.IOException;
 import java.util.*;
@@ -50,13 +50,10 @@ public class ClaimsParameter {
     }
 
     public static String writeCompleteJson(String[] userinfoClaims, String[] idTokenClaims) throws IOException {
-        return writeCompleteJson(new ReusableJsonGenerator(),userinfoClaims,idTokenClaims);
-    }
-
-    public static String writeCompleteJson(ReusableJsonGenerator jsonGen, String[] userinfoClaims, String[] idTokenClaims) throws IOException {
         if(userinfoClaims == null && idTokenClaims == null)
             return "";
-        JsonGenerator gen = jsonGen.resetAndGet();
+        BufferedJsonGenerator jsonGen = new BufferedJsonGenerator();
+        JsonGenerator gen = jsonGen.jg();
         gen.writeStartObject();
         if(userinfoClaims != null)
             writeSingleClaimsObject(gen,USERINFO,userinfoClaims);

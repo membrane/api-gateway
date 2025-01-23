@@ -41,14 +41,14 @@ public class CredentialsFlow extends TokenRequest {
     protected Response checkForMissingParameters() throws Exception {
         // TODO also check for client id and client secret and additionally for the username ( else we cant create tokens )
         if(getGrantType() == null || getClientId() == null || getClientSecret() == null)
-            return OAuth2Util.createParameterizedJsonErrorResponse(jsonGen,"error","invalid_request");
+            return OAuth2Util.createParameterizedJsonErrorResponse("error","invalid_request");
         return new NoResponse();
     }
 
     @Override
     protected Response processWithParameters() throws Exception {
         if(!verifyClientThroughParams())
-            return OAuth2Util.createParameterizedJsonErrorResponse(jsonGen,"error","unauthorized_client");
+            return OAuth2Util.createParameterizedJsonErrorResponse("error","unauthorized_client");
 
         scope = getScope();
         
@@ -66,12 +66,12 @@ public class CredentialsFlow extends TokenRequest {
                 client = authServer.getClientList().getClient(getClientId());
             }
         } catch (Exception e) {
-            return OAuth2Util.createParameterizedJsonErrorResponse(jsonGen, "error", "invalid_client");
+            return OAuth2Util.createParameterizedJsonErrorResponse("error", "invalid_client");
         }
         
         String grantTypes = client.getGrantTypes();
         if (!grantTypes.contains(getGrantType())) {
-			return OAuth2Util.createParameterizedJsonErrorResponse(jsonGen, "error", "invalid_grant_type");
+			return OAuth2Util.createParameterizedJsonErrorResponse("error", "invalid_grant_type");
         }
         
         authServer.getSessionFinder().addSessionForToken(token,session);
