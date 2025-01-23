@@ -61,7 +61,7 @@ public class TemplateInterceptor extends StaticInterceptor {
             msg.setBodyContent(fillAndGetBytes(exc,msg,flow));
         }
         catch (TemplateExecutionException e) {
-            log.warn("Groovy template error: {}",e.getMessage());
+            log.warn("Groovy template error: {}", e.getMessage());
             gateway( router.isProduction(),getDisplayName())
                     .detail("Error during template rendering.")
                     .internal("line", e.getLineNumber())
@@ -71,7 +71,7 @@ public class TemplateInterceptor extends StaticInterceptor {
             return ABORT;
         }
         catch (GroovyRuntimeException e) {
-            log.warn("Groovy error executing template: {}",e.getMessage());
+            log.warn("Groovy error executing template: {}", e.getMessage());
             gateway( router.isProduction(),getDisplayName())
                     .addSubType("groovy")
                     .detail("Groovy error during template rendering.")
@@ -81,7 +81,7 @@ public class TemplateInterceptor extends StaticInterceptor {
             return ABORT;
         }
         catch (Exception e) {
-            log.warn(e.getMessage(),e);
+            log.warn("", e);
             internal(router.isProduction(),getDisplayName())
                     .addSubType("template")
                     .exception(e)
