@@ -28,6 +28,7 @@ import java.io.*;
 import java.util.*;
 
 import static com.predic8.membrane.core.http.MimeType.*;
+import static com.predic8.membrane.core.util.ExceptionUtil.concatMessageAndCauseMessages;
 
 
 /**
@@ -217,9 +218,9 @@ public class ProblemDetails {
         if (exception != null) {
             if (internalMap.containsKey("message"))
                 log.error("Overriding ProblemDetails extensionsMap 'message' entry. Please notify Membrane developers.", new RuntimeException());
-            internalMap.put("message", exception.getMessage());
+            internalMap.put("message", concatMessageAndCauseMessages(exception));
             if (stacktrace) {
-                internalMap.put("stackTrace", getStackTrace());
+                internalMap.put("stackTrace", getStackTrace(exception, new StackTraceElement[0]));
             }
         }
         internalMap.put("attention", """
@@ -239,10 +240,27 @@ public class ProblemDetails {
         }
     }
 
-    private @NotNull Map getStackTrace() {
+    private static @NotNull Map getStackTrace(Throwable exception, StackTraceElement[] enclosingTrace) {
         var m = new LinkedHashMap<>();
-        for (int i = 0; i < exception.getStackTrace().length; i++) {
-            m.put("e" + i, exception.getStackTrace()[i].toString());
+
+        StackTraceElement[] trace = exception.getStackTrace();
+        int m2 = trace.length - 1;
+        int n = enclosingTrace.length - 1;
+        while (m2 >= 0 && n >=0 && trace[m2].equals(enclosingTrace[n])) {
+            m2--; n--;
+        }
+        int framesInCommon = trace.length - 1 - m2;
+
+        for (int i = 0; i <= m2; i++) {
+            m.put("e" + i, trace[i].toString());
+        }
+
+        if (framesInCommon != 0) {
+            m.put("more_frames_in_common", framesInCommon);
+        }
+
+        if (exception.getCause() != null) {
+            m.put("cause", getStackTrace(exception.getCause(), trace));
         }
         return m;
     }
