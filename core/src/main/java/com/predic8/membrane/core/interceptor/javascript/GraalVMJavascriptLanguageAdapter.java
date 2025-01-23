@@ -32,7 +32,7 @@ public class GraalVMJavascriptLanguageAdapter extends LanguageAdapter {
 
     @Override
     public ProblemDetails getProblemDetails(Exception e) {
-        ProblemDetails pd = internal(router.isProduction(),"javascript");
+        ProblemDetails pd = internal(router.isProduction(),"javascript-graal");
         if (e instanceof PolyglotException pe) {
             pd.internal("column",  pe.getSourceLocation().getStartColumn());
             pd.internal("line", pe.getSourceLocation().getStartLine() - preScriptLineLength );

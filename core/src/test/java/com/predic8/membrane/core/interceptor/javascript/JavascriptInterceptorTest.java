@@ -91,7 +91,7 @@ public class JavascriptInterceptorTest {
         ProblemDetails pd = ProblemDetails.parse(exc.getResponse());
         assertEquals(500, pd.getStatusCode());
         System.out.println("pd = " + pd);
-        assertEquals("https://membrane-api.io/error/internal/javascript", pd.getType());
+        assertTrue(pd.getType().startsWith("https://membrane-api.io/error/internal/javascript-"));
         assertTrue(pd.getTitle().contains("Error executing"));
         assertEquals(1,pd.getInternal().get("line"));
         assertEquals(1,pd.getInternal().get("column"));

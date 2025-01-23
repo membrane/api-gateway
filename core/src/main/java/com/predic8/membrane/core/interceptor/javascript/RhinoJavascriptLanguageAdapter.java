@@ -31,7 +31,7 @@ public class RhinoJavascriptLanguageAdapter extends LanguageAdapter {
 
     @Override
     public ProblemDetails getProblemDetails(Exception e) {
-        ProblemDetails pd = ProblemDetails.internal(router.isProduction(),"javascript");
+        ProblemDetails pd = ProblemDetails.internal(router.isProduction(),"javascript-rhino");
         if (e.getCause() instanceof ScriptException se) {
             pd.internal("column", se.getColumnNumber() + 1);
             pd.internal("line", se.getLineNumber() - preScriptLineLength + 1);
