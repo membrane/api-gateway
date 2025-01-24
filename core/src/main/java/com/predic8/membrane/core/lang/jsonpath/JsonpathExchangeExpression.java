@@ -20,6 +20,7 @@ import com.jayway.jsonpath.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.interceptor.Interceptor.*;
 import com.predic8.membrane.core.lang.*;
+import com.predic8.membrane.core.util.*;
 import org.jose4j.json.internal.json_simple.*;
 import org.slf4j.*;
 
@@ -37,6 +38,25 @@ public class JsonpathExchangeExpression extends AbstractExchangeExpression {
 
     public JsonpathExchangeExpression(String source) {
         super(source);
+        syntaxCheckJsonpath(source);
+    }
+
+    private static void syntaxCheckJsonpath(String source) {
+        try {
+            JsonPath.read(new ByteArrayInputStream("{}".getBytes()), source);
+        } catch (PathNotFoundException ignore) {
+            // It is normal that nothing is found in an empty document
+        }
+        catch (Exception e) {
+            throw new ConfigurationException("""
+                The jsonpath expression:
+                
+                %s
+                
+                cannot be compiled.
+                
+                Error: %s""".formatted(source, e));
+        }
     }
 
     @Override
@@ -72,6 +92,7 @@ public class JsonpathExchangeExpression extends AbstractExchangeExpression {
             }
             return null;
         } catch (InvalidPathException ipe) {
+            log.error("{} is an invalid jsonpath: {}",expression, ipe.getMessage());
             throw new ExchangeExpressionException(expression, ipe)
                     .message(ipe.getLocalizedMessage());
         }

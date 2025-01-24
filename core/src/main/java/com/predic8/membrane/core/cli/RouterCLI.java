@@ -98,7 +98,7 @@ public class RouterCLI {
         return spec;
     }
 
-    private static Router initRouterByConfig(MembraneCommandLine commandLine) throws InvalidConfigurationException, IOException {
+    private static Router initRouterByConfig(MembraneCommandLine commandLine) throws Exception {
         try {
             return Router.init(getRulesFile(commandLine), RouterCLI.class.getClassLoader());
         } catch (XmlBeanDefinitionStoreException e) {
