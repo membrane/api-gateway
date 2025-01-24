@@ -15,10 +15,10 @@ package com.predic8.membrane.core.interceptor.flow;
 
 import com.predic8.membrane.core.http.Request.*;
 import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.util.*;
 import org.junit.jupiter.api.*;
 
-import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
-import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
+import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.lang.ExchangeExpression.Language.*;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -41,8 +41,8 @@ class IfInterceptorJsonpathTest extends ConditionalEvaluationTestContext {
     }
 
     @Test
-    void invalid() throws Exception {
-        assertEquals(ABORT, eval("$$33foobar][", getRequest(),false));
+    void invalid() {
+        assertThrows(ConfigurationException.class, () -> eval("$$33foobar][", getRequest(),false));
     }
 
     private static Builder getRequest() {
