@@ -383,7 +383,7 @@ public class SSLProxy implements Proxy {
 
             if (!cont) {
                 if (exc.getProperty(ABORTION_REASON) != null && exc.getProperty(ABORTION_REASON) instanceof Throwable)
-                    ((Throwable) exc.getProperty(ABORTION_REASON)).printStackTrace();
+                    log.error("", (Throwable) exc.getProperty(ABORTION_REASON));
                 byte error = exc.getError().getCode();
 
                 byte[] alert_unrecognized_name = { 21 /* alert */, 3, 1 /* TLS 1.0 */, 0, 2 /* length: 2 bytes */,

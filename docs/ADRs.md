@@ -102,3 +102,8 @@ Should implementations of init() in subclasses of Interceptor call init() on sup
 
 # Keep K8S
 
+# java.net.URI or com.predic8.membrane.core.util.URI ?
+- our URI is a 1:1 replacement for the java.net.URI.
+- by default, our URI delegates to the java URI
+- but: If URIFacteroy is configured this way, our allows special characters. This is required for proxying some 
+  Microsoft products.
