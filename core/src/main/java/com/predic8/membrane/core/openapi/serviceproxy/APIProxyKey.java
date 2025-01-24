@@ -109,6 +109,11 @@ public class APIProxyKey extends ServiceProxyKey {
     }
 
     @Override
+    public String toString() {
+        return super.toString() + (exchangeExpression != null ? " " + exchangeExpression.getExpression() : "");
+    }
+
+    @Override
     public boolean equals(Object obj) {
         if (!super.equals(obj))
             return false;

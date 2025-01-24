@@ -14,13 +14,14 @@
 package com.predic8.membrane.core.proxies;
 
 import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.config.*;
 import com.predic8.membrane.core.openapi.serviceproxy.*;
-import org.hamcrest.*;
 import org.junit.jupiter.api.*;
 
 import static com.predic8.membrane.core.http.MimeType.*;
 import static io.restassured.RestAssured.*;
 import static org.hamcrest.Matchers.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 class ServiceProxyTest {
 
@@ -34,7 +35,6 @@ class ServiceProxyTest {
         }};
         router.add(proxyWithOutTarget);
         router.init();
-
     }
 
     @AfterAll
@@ -52,8 +52,23 @@ class ServiceProxyTest {
             .statusCode(500)
             .contentType(APPLICATION_PROBLEM_JSON)
             .body("type", equalTo("https://membrane-api.io/error/internal/http-client"))
-            .body("message", Matchers.containsString("/foo"))
-            .body("message", Matchers.containsString("<target>"));
+            .body("message", containsString("/foo"))
+            .body("message", containsString("<target>"));
         // @formatter:on
+    }
+    
+    @Test
+    void getNameDefault() {
+        assertEquals("0.0.0.0:80", new ServiceProxy().getName());
+    }
+
+    @Test
+    void getName() {
+        var sp = new ServiceProxy();
+        sp.setIp("127.0.0.1");
+        sp.setPort(8080);
+        sp.setMethod("PUT");
+        sp.setPath(new Path(false,"/foo"));
+        assertEquals("0.0.0.0:8080 PUT /foo", sp.getName());
     }
 }

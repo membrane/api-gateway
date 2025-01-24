@@ -47,7 +47,7 @@ public class APIProxy extends ServiceProxy implements Polyglot {
     public static final String SECURITY = "security";
     public static final String VALIDATION_DETAILS = "details";
 
-    private static Language language = SPEL;
+    private Language language = SPEL;
     private ExchangeExpression exchangeExpression;
     private String test;
     private String id;

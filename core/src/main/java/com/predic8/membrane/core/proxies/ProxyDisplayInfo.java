@@ -30,7 +30,7 @@ public class ProxyDisplayInfo {
     public static void logInfosAboutStartedProxies(RuleManager manager) {
         log.info("Started {} API{}:", manager.getRules().size(), (manager.getRules().size() > 1 ? "s" : ""));
         manager.getRules().forEach(proxy ->
-                log.info("  {} {}{}{}", proxyDisplayName(proxy), proxyCustomName(proxy), getProxyKeyDisplayName(proxy), additionalProxyInfo(proxy))
+                log.info("  {} {}{}", proxyDisplayName(proxy), proxy.getName(), additionalProxyInfo(proxy))
         );
     }
 
@@ -80,22 +80,15 @@ public class ProxyDisplayInfo {
                 .collect(joining("\n"));
     }
 
-    private static String proxyCustomName(Proxy proxy) {
-        if (Objects.equals(proxy.getName(), proxy.getKey().toString())) {
-            return "";
-        }
-        return "\"%s\" ".formatted(proxy.getName());
-    }
-
     private static String proxyDisplayName(Proxy proxy) {
         if (proxy instanceof APIProxy) {
             return "API";
         } else if (proxy instanceof ServiceProxy) {
-            return "ServiceProxy";
+            return "Service";
         } else if (proxy instanceof SOAPProxy) {
-            return "SOAPProxy";
+            return "SOAP";
         } else if (proxy instanceof InternalProxy) {
-            return "InternalProxy";
+            return "Internal";
         }
         return "Proxy";
     }
