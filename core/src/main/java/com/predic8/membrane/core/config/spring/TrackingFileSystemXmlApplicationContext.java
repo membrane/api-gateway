@@ -22,6 +22,7 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.predic8.membrane.core.util.ExceptionUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeansException;
@@ -32,6 +33,8 @@ import org.springframework.context.ApplicationContextException;
 import org.springframework.context.support.FileSystemXmlApplicationContext;
 import org.springframework.core.io.Resource;
 import org.xml.sax.SAXParseException;
+
+import static com.predic8.membrane.core.util.ExceptionUtil.concatMessageAndCauseMessages;
 
 /**
  * Delegates everything to {@link FileSystemXmlApplicationContext}.
@@ -155,7 +158,7 @@ TrackingApplicationContext, BaseLocationApplicationContext, CheckableBeanFactory
 			if (cause instanceof SAXParseException) {
 				int line = ((SAXParseException) cause).getLineNumber();
 
-				throw new InvalidConfigurationException("line " + line + ": " + cause.getMessage());
+				throw new InvalidConfigurationException("line " + line + ": " + concatMessageAndCauseMessages(cause));
 			}
 		}
 		throw e;

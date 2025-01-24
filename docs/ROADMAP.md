@@ -90,6 +90,8 @@
     - optional
     - Message only from exception
       - Disable in builder
+- '<spring:bean class="com.predic8.membrane.core.interceptor.apikey.stores.ApiKeyFileStore">' 
+  durch '<apiKeyFileStore .. />' ersetzen (dafür topLevel=true) BT
 
 ## Done
 - Merge log with print
