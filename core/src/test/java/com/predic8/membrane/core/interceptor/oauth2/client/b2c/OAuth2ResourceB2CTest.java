@@ -434,7 +434,7 @@ public abstract class OAuth2ResourceB2CTest {
         exc = browser.apply(exc);
 
         ProblemDetails pd = ProblemDetails.parse(exc.getResponse());
-        assertEquals("https://membrane-api.io/error/security/oauth2-callback-request-handler/oauth2-error-from-authentication-server", pd.getType());
+        assertEquals("https://membrane-api.io/problems/security", pd.getType());
         assertEquals("DEMO-123", pd.getInternal().get("error"));
     }
 

@@ -85,9 +85,9 @@ public class AccessControlInterceptor extends AbstractInterceptor {
 	private void setResponseToAccessDenied(Exchange exc) {
 		log.warn("Access Denied. Method: {} Uri: {}", exc.getRequest().getMethod(), exc.getOriginalRequestUri());
 		security(false,getDisplayName())
-				.statusCode(401)
-				.addSubType("authorization-denied")
 				.title("Access Denied")
+				.statusCode(401)
+				.addSubSee("authorization-denied")
 				.buildAndSetResponse(exc);
 	}
 

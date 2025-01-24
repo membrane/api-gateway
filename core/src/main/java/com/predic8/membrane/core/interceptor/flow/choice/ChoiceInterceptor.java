@@ -80,7 +80,7 @@ public class ChoiceInterceptor extends AbstractFlowInterceptor {
 
     private void handleExpressionProblemDetails(ExchangeExpressionException e, Exchange exc) {
         e.provideDetails(internal(router.isProduction(),getDisplayName()))
-            .addSubType("expression-evaluation")
+            .addSubSee("expression-evaluation")
             .detail("Error evaluating expression on exchange in if plugin.")
             .buildAndSetResponse(exc);
     }
