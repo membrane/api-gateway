@@ -16,14 +16,12 @@ package com.predic8.membrane.core.interceptor.oauth2.processors;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.oauth2.OAuth2AuthorizationServerInterceptor;
-import com.predic8.membrane.core.interceptor.oauth2.ReusableJsonGenerator;
 import com.predic8.membrane.core.util.URIFactory;
 
 public abstract class EndpointProcessor {
 
     protected final OAuth2AuthorizationServerInterceptor authServer;
     URIFactory uriFactory;
-    ReusableJsonGenerator jsonGen = new ReusableJsonGenerator();
 
     public abstract boolean isResponsible(Exchange exc);
     public abstract Outcome process(Exchange exc);

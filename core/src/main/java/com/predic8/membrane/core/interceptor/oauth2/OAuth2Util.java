@@ -13,7 +13,6 @@
 
 package com.predic8.membrane.core.interceptor.oauth2;
 
-import com.fasterxml.jackson.core.JsonGenerator;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.MimeType;
 import com.predic8.membrane.core.http.Response;
@@ -49,19 +48,18 @@ public class OAuth2Util {
         return uri.contains("://");
     }
 
-    public static Response createParameterizedJsonErrorResponse(final ReusableJsonGenerator jsonGen, String... params) throws IOException {
+    public static Response createParameterizedJsonErrorResponse(String... params) throws IOException {
         if (params.length % 2 != 0)
             throw new IllegalArgumentException("The number of strings passed as params is not even");
 
         String json;
-        synchronized (jsonGen) {
-            try (JsonGenerator gen = jsonGen.resetAndGet()) {
-                gen.writeStartObject();
-                for (int i = 0; i < params.length; i += 2)
-                    gen.writeObjectField(params[i], params[i + 1]);
-                gen.writeEndObject();
-                json = jsonGen.getJson();
-            }
+        try (var bufferedJsonGenerator = new BufferedJsonGenerator()) {
+            var gen = bufferedJsonGenerator.getJsonGenerator();
+            gen.writeStartObject();
+            for (int i = 0; i < params.length; i += 2)
+                gen.writeObjectField(params[i], params[i + 1]);
+            gen.writeEndObject();
+            json = bufferedJsonGenerator.getJson();
         }
 
         return Response.badRequest()

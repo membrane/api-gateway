@@ -27,16 +27,16 @@ public class ErrorFlow extends ParameterizedRequest {
 
     @Override
     protected Response checkForMissingParameters() throws Exception {
-        return OAuth2Util.createParameterizedJsonErrorResponse(jsonGen,"error","invalid_request");
+        return OAuth2Util.createParameterizedJsonErrorResponse("error","invalid_request");
     }
 
     @Override
     protected Response processWithParameters() throws Exception {
-        return OAuth2Util.createParameterizedJsonErrorResponse(jsonGen,"error","invalid_request");
+        return OAuth2Util.createParameterizedJsonErrorResponse("error","invalid_request");
     }
 
     @Override
     protected Response getResponse() throws Exception {
-        return OAuth2Util.createParameterizedJsonErrorResponse(jsonGen,"error","invalid_request");
+        return OAuth2Util.createParameterizedJsonErrorResponse("error","invalid_request");
     }
 }
