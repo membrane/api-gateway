@@ -46,13 +46,6 @@ public class ProxyDisplayInfo {
         return "";
     }
 
-    private static String getProxyKeyDisplayName(Proxy proxy) {
-        return String.format("%s:%d%s",
-                getHost(proxy),
-                proxy.getKey().getPort(),
-                getPath(proxy));
-    }
-
     private static @NotNull String getPath(Proxy proxy) {
         String path = proxy.getKey().getPath();
         return path != null ? path : "";
