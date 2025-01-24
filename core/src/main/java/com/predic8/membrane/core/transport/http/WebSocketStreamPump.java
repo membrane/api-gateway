@@ -44,7 +44,7 @@ public class WebSocketStreamPump extends StreamPump {
                     try {
                         i2.init(i.getRouter());
                     } catch (Exception e) {
-                        log.error("Could not init WebSocketInterceptors: {}",e.getMessage());
+                        log.error("Could not init WebSocketInterceptors.", e);
                     }
                 break;
             }

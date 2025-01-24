@@ -37,7 +37,7 @@ public class AuthWithoutSessionRequest extends ParameterizedRequest {
     @Override
     protected Response checkForMissingParameters() throws Exception {
         if(getClientId() == null || getRedirectUri() == null)
-            return OAuth2Util.createParameterizedJsonErrorResponse(jsonGen,"error", "invalid_request");
+            return OAuth2Util.createParameterizedJsonErrorResponse("error", "invalid_request");
 
         if(getResponseType() == null || getScope() == null)
             return createParameterizedFormUrlencodedRedirect(exc, getState(), getRedirectUri() + "?error=invalid_request");
@@ -50,11 +50,11 @@ public class AuthWithoutSessionRequest extends ParameterizedRequest {
         try {
             client = authServer.getClientList().getClient(getClientId());
         } catch (Exception e) {
-            return OAuth2Util.createParameterizedJsonErrorResponse(jsonGen,"error", "unauthorized_client");
+            return OAuth2Util.createParameterizedJsonErrorResponse("error", "unauthorized_client");
         }
 
         if (!OAuth2Util.isAbsoluteUri(getRedirectUri()) || !getRedirectUri().equals(client.getCallbackUrl()))
-            return OAuth2Util.createParameterizedJsonErrorResponse(jsonGen, "error", "invalid_request");
+            return OAuth2Util.createParameterizedJsonErrorResponse("error", "invalid_request");
 
         if (promptEqualsNone())
             return createParameterizedFormUrlencodedRedirect(exc, getState(), client.getCallbackUrl() + "?error=login_required");

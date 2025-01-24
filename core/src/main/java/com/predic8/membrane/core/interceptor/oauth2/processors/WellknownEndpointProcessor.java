@@ -45,7 +45,7 @@ public class WellknownEndpointProcessor extends EndpointProcessor {
         try {
             exc.setResponse(Response.ok().contentType(MimeType.APPLICATION_JSON_UTF8).body(jsonBeautifier.beautify(authServer.getWellknownFile().getWellknown())).build());
         } catch (IOException e) {
-            log.error(e.getMessage(), e);
+            log.error("While constructing the wellknown response.", e);
             internal(true,"wellknown-endpoint-processor")
                     .exception(e)
                     .buildAndSetResponse(exc);

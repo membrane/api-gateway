@@ -36,6 +36,7 @@ public class GraalVMJavascriptLanguageAdapter extends LanguageAdapter {
         if (e instanceof PolyglotException pe) {
             pd.internal("column",  pe.getSourceLocation().getStartColumn());
             pd.internal("line", pe.getSourceLocation().getStartLine() - preScriptLineLength );
+            pd.internal("engine", "graal");
             pd.exception(pe);
         }
 

@@ -116,7 +116,7 @@ public class StreamPump implements Runnable {
 			in.close();
 			out.close();
 		} catch (IOException e) {
-			log.error(e.getMessage(), e);
+			log.error("While closing stream pump.", e);
 		}
 	}
 

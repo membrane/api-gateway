@@ -17,10 +17,13 @@ import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.util.*;
 import org.junit.jupiter.api.*;
 
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
 import static com.predic8.membrane.core.http.MimeType.*;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class ProblemDetailsTest {
@@ -125,5 +128,24 @@ public class ProblemDetailsTest {
 
         assertEquals(421,pd.getStatusCode());
         assertEquals("https://membrane-api.io/error/user/a/validation",pd.getType());
+    }
+
+    @Test
+    void causeStacktrace() throws IOException {
+        byte[] responseBody = internal(false, "a")
+                .exception(new RuntimeException("b", new InnerExceptionGenerator().generate()))
+                .build().getBody().getContentAsStream().readAllBytes();
+
+        String b = new String(responseBody, UTF_8);
+        System.out.println(b);
+
+        assertTrue(b.contains("InnerExceptionGenerator"));
+        assertTrue(b.contains("more_frames_in_common"));
+    }
+
+    private static class InnerExceptionGenerator {
+        public Exception generate() {
+            return new RuntimeException("inner");
+        }
     }
 }

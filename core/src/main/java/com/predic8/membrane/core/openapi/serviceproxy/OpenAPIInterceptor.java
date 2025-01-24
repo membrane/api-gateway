@@ -93,15 +93,16 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
             String detail = "Could not parse OpenAPI with title %s. Check syntax and references.".formatted(rec.api.getInfo().getTitle());
             log.warn(detail);
             internal(router.isProduction(), getDisplayName())
+                    .addSubType("openapi-parsing/request")
                     .detail(detail)
                     .exception(e)
                     .buildAndSetResponse(exc);
             return RETURN;
         } catch (Throwable t /* On purpose! Catch absolutely all */) {
             final String LOG_MESSAGE = "Message could not be validated against OpenAPI cause of an error during validation. Please check the OpenAPI with title %s.";
-            log.error(LOG_MESSAGE.formatted(rec.api.getInfo().getTitle()));
-            log.error("", t);
+            log.error(LOG_MESSAGE.formatted(rec.api.getInfo().getTitle()), t);
             internal(router.isProduction(), getDisplayName())
+                    .addSubType("generic/request")
                     .detail(LOG_MESSAGE.formatted(rec.api.getInfo().getTitle()))
                     .exception(t)
                     .buildAndSetResponse(exc);
@@ -136,6 +137,7 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
             String detail = "Could not parse OpenAPI with title %s. Check syntax and references.".formatted(rec.api.getInfo().getTitle());
             log.warn(detail, e);
             internal(router.isProduction(), getDisplayName())
+                    .addSubType("openapi-parsing/response")
                     .detail(detail)
                     .exception(e)
                     .buildAndSetResponse(exc);
@@ -143,6 +145,7 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
         } catch (Throwable t /* On Purpose! Catch absolutely all */) {
             log.error("", t);
             internal(router.isProduction(), getDisplayName())
+                    .addSubType("generic/response")
                     .detail("Message could not be validated against OpenAPI cause of an error during validation. Please check the OpenAPI with title %s.".formatted(rec.api.getInfo().getTitle()))
                     .exception(t)
                     .buildAndSetResponse(exc);

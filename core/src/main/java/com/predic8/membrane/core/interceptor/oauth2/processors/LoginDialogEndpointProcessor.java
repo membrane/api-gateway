@@ -53,7 +53,7 @@ public class LoginDialogEndpointProcessor extends EndpointProcessor {
         try {
             loginDialog.handleLoginRequest(exc);
         } catch (Exception e) {
-            log.error(e.getMessage(),e);
+            log.error("", e);
             internal(true,"login-dialog-endpoint-processor")
                     .exception(e)
                     .buildAndSetResponse(exc);

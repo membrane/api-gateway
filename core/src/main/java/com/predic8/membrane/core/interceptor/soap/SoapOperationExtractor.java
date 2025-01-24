@@ -60,7 +60,7 @@ public class SoapOperationExtractor extends AbstractInterceptor {
         try {
             return handleRequestInternal(exc);
         } catch (IOException | XMLStreamException e) {
-            log.error("Could not save SOAP operation and namespace into exchange properties: {}",e.getMessage(), e);
+            log.error("Could not save SOAP operation and namespace into exchange properties.", e);
         }
 		return Outcome.CONTINUE;
     }
