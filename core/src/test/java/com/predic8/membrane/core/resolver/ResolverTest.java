@@ -151,7 +151,7 @@ public class ResolverTest {
 		case FILE:
 			if (!deployment.equals(STANDALONE))
 				return false;
-			String current = new File(".").getAbsolutePath().replaceAll("\\\\", "/");
+			String current = new File(".").getAbsolutePath().replaceAll("\\\\", "/").replaceAll(" ", "%20");
 			if (current.endsWith("."))
 				current = current.substring(0, current.length()-1);
 			if (current.startsWith(":/", 1))
@@ -191,7 +191,7 @@ public class ResolverTest {
 		case ROOT_DIR:
 			String current3;
 			if (deployment.equals(STANDALONE)) {
-				current3 = new File(".").getAbsolutePath().replaceAll("\\\\", "/");
+				current3 = "file://" +  new File(".").getAbsolutePath().replaceAll("\\\\", "/").replaceAll(" ", "%20");
 				if (current3.endsWith("."))
 					current3 = current3.substring(0, current3.length()-1);
 				if (current3.startsWith(":/", 1))

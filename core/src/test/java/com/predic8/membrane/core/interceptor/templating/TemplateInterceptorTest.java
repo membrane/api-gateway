@@ -14,6 +14,7 @@
 
 package com.predic8.membrane.core.interceptor.templating;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.*;
 import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.*;
@@ -38,6 +39,9 @@ import static java.nio.file.StandardCopyOption.*;
 import static javax.xml.xpath.XPathConstants.*;
 import static org.junit.jupiter.api.Assertions.*;
 
+/*
+* Does not test beautifying because of differences in newline handling across operating systems.
+*/
 public class TemplateInterceptorTest {
 
     private final ObjectMapper om = new ObjectMapper();
@@ -229,15 +233,14 @@ public class TemplateInterceptorTest {
     }
 
     @Test
-    void testPrettify() {
+    void testPrettifyProducesValidJson() throws JsonProcessingException {
         String inputJson = "\t{\n\n\t\t\"name\":\"John\"\t\t,\"age\":30}";
-        String expectedPrettyJson = """
-                {
-                  "name" : "John",
-                  "age" : 30
-                }""";
-        String result = ti.prettifyJson(inputJson);
-        assertEquals(expectedPrettyJson, result);
+
+        ObjectMapper mapper = new ObjectMapper();
+        JsonNode parsedNode = mapper.readTree(ti.prettifyJson(inputJson));
+
+        assertEquals("John", parsedNode.get("name").asText());
+        assertEquals(30, parsedNode.get("age").asInt());
     }
 
     @Test

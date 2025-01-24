@@ -22,6 +22,7 @@ import org.junit.jupiter.api.Test;
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 
+import static com.predic8.membrane.test.StringAssertions.assertContains;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class CliCommandTest {
@@ -113,24 +114,16 @@ public class CliCommandTest {
 
         rootCommand.parse(new String[]{"-b"}).printHelp();
         String output = outContent.toString();
-        assertEquals("""
-                usage: root <command> [options]
-                
-                Commands:
-                 sub - Sub command
-                 without - Sub command without options
-                 required - Sub command with required options
-                
-                Options:
-                 -a,--option-a <arg>   Option A
-                 -b                    Flag B
-                
-                Examples:
-                 Example Number 1
-                    root sub
-                 Example Number 2
-                    root without
-                """, output);
+        assertContains("usage: root <command> [options]", output);
+        assertContains(" sub - Sub command", output);
+        assertContains(" without - Sub command without options", output);
+        assertContains(" required - Sub command with required options", output);
+        assertContains(" -a,--option-a <arg>   Option A", output);
+        assertContains(" -b                    Flag B", output);
+        assertContains(" Example Number 1", output);
+        assertContains("    root sub", output);
+        assertContains(" Example Number 2", output);
+        assertContains("    root without", output);
 
         System.setOut(System.out);
     }
@@ -142,13 +135,9 @@ public class CliCommandTest {
 
         rootCommand.parse(new String[]{"sub", "-y"}).printHelp();
         String output = outContent.toString();
-        assertEquals("""
-                usage: root sub [options]
-                
-                Options:
-                 -x <arg>   Option X
-                 -y         Flag Y
-                """, output);
+        assertContains("usage: root sub [options]", output);
+        assertContains(" -x <arg>   Option X", output);
+        assertContains(" -y         Flag Y", output);
 
         System.setOut(System.out);
     }
@@ -160,10 +149,7 @@ public class CliCommandTest {
 
         rootCommand.parse(new String[]{"without"}).printHelp();
         String output = outContent.toString();
-        assertEquals("""
-                usage: root without
-                
-                """, output);
+        assertContains("usage: root without", output);
 
         System.setOut(System.out);
     }

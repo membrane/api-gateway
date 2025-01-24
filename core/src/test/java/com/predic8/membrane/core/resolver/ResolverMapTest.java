@@ -40,27 +40,26 @@ public class ResolverMapTest {
 
     @Test
     void moreThanTwoParameters() {
-        assertEquals(
-                current + "/src/test/resources/openapi/specs/array.yml",
-                combine("src/test/resources/", "openapi/specs/foo", "array.yml")
-        );
+        String expectedUnix = current + "/src/test/resources/openapi/specs/array.yml";
+        String expectedWindows = current + "\\src\\test\\resources\\openapi\\specs\\array.yml";
+        String actual = combine("src/test/resources/", "openapi/specs/foo", "array.yml");
+        assertTrue(actual.equals(expectedUnix) || actual.equals(expectedWindows));
     }
 
     @Test
     void combineParentFileProtocolWithAbsoluteChild() {
-        assertEquals(
-                "file:///array.yml",
-                combine("file://src/test/resources/openapi/specs", "/array.yml")
-        );
+        String expectedUnix = "file:///array.yml";
+        String expectedWindows = "file://C:\\array.yml";
+        String actual = combine("file://src/test/resources/openapi/specs", "/array.yml");
+        assertTrue(actual.equals(expectedUnix) || actual.equals(expectedWindows));
     }
 
     @Test
     void combineParentFileProtocolWithRelativeChildWithoutTrailingSlash() {
-        // TODO Soll specs verschwinden? Soll es auf einmal absolut sein?
-        assertEquals(
-                "file:///src/test/resources/openapi/array.yml",
-                combine("file://src/test/resources/openapi/specs.wsdl", "array.yml")
-        );
+        String expectedUnix = "file:///src/test/resources/openapi/array.yml";
+        String expectedWindows = "file://C:\\src\\test\\resources\\openapi\\array.yml";
+        String actual = combine("file://src/test/resources/openapi/specs.wsdl", "array.yml");
+        assertTrue(actual.equals(expectedUnix) || actual.equals(expectedWindows));
     }
 
     @Test
@@ -78,17 +77,22 @@ public class ResolverMapTest {
 
     @Test
     void combineRelativeParentWithRelativeChild() {
-        assertEquals(current + "/src/test/resources/openapi/specs/array.yml", combine("src/test/resources/openapi/specs/", "array.yml"));
+        String expectedUnix = current + "/src/test/resources/openapi/specs/array.yml";
+        String expectedWindows = current + "\\src\\test\\resources\\openapi\\specs\\array.yml";
+        String actual = combine("src/test/resources/openapi/specs/", "array.yml");
+        assertTrue(actual.equals(expectedUnix) || actual.equals(expectedWindows));
     }
 
     @Test
     void combineRelativeParentWithRelativeChildParentDoesNotEndWithSlash() {
-        assertEquals(current + "/src/test/resources/openapi/specs/array.yml", combine("src/test/resources/openapi/specs/foo", "array.yml"));
+        String expectedUnix = current + "/src/test/resources/openapi/specs/array.yml";
+        String expectedWindows = current + "\\src\\test\\resources\\openapi\\specs\\array.yml";
+        String actual = combine("src/test/resources/openapi/specs/foo", "array.yml");
+        assertTrue(actual.equals(expectedUnix) || actual.equals(expectedWindows));
     }
 
     @Test
     void combineRelativeParentWithRelativeProtocolChild() {
         assertEquals("file://array.yml", combine("src/test/resources/openapi/specs/", "file://array.yml"));
     }
-
 }

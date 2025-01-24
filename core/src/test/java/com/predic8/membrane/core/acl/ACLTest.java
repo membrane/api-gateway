@@ -15,26 +15,40 @@ package com.predic8.membrane.core.acl;
 
 import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.interceptor.acl.*;
+import com.predic8.membrane.core.util.DNSCache;
+import org.mockito.MockedStatic;
 
+import java.net.InetAddress;
 import java.util.function.*;
 
 import static java.util.regex.Pattern.*;
+import static org.mockito.Mockito.*;
 
 public abstract class ACLTest extends AccessControlInterceptor {
 
-    private AccessControlInterceptor createRouter(boolean isReverseDNS, boolean useForwardedFor, Function<Router, Resource> f) {
-        Router router = new Router();
+    private AccessControlInterceptor createInterceptor(boolean isReverseDNS, boolean useForwardedFor, Function<Router, Resource> f) {
+        Router router = mock(Router.class);
+        DNSCache dnsCache = mock(DNSCache.class);
+
+        when(router.getDnsCache()).thenReturn(dnsCache);
+        when(dnsCache.getCanonicalHostName(argThat(inetAddress ->
+                inetAddress != null && inetAddress.getHostAddress().equals("127.0.0.1"))))
+                .thenReturn("localhost");
+        when(dnsCache.getCanonicalHostName(argThat(inetAddress ->
+                inetAddress != null && !inetAddress.getHostAddress().equals("127.0.0.1"))))
+                .thenCallRealMethod();
+
         AccessControlInterceptor aci = buildAci(f.apply(router), router);
         aci.setUseXForwardedForAsClientAddr(useForwardedFor);
         return aci;
     }
 
     AccessControlInterceptor createIpACI(String scheme, ParseType ptype, boolean isReverseDNS, boolean useForwardedFor) {
-        return createRouter(isReverseDNS, useForwardedFor, router -> getIpResource(scheme, ptype, router));
+        return createInterceptor(isReverseDNS, useForwardedFor, router -> getIpResource(scheme, ptype, router));
     }
 
     AccessControlInterceptor createHostnameACI(String scheme, boolean isReverseDNS) throws Exception {
-        return createRouter(isReverseDNS, false, router -> getHostnameResource(scheme, router));
+        return createInterceptor(isReverseDNS, false, router -> getHostnameResource(scheme, router));
     }
 
     private static AccessControlInterceptor buildAci(Resource resource, Router router) {

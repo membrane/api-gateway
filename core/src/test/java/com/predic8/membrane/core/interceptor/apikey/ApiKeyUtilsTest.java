@@ -34,6 +34,6 @@ public class ApiKeyUtilsTest {
     }
 
     private static String getLocationPath() {
-        return requireNonNull(ApiKeyFileStoreTest.class.getClassLoader().getResource("apikeys/keys.txt")).getPath();
+        return "file:/" + requireNonNull(ApiKeyFileStoreTest.class.getClassLoader().getResource("apikeys/keys.txt")).getPath();
     }
 }

@@ -272,7 +272,7 @@ public abstract class OAuth2AuthorizationServerInterceptorBase {
         mas = new MembraneAuthorizationService();
         mas.setClientId("abc");
         mas.setClientSecret("def");
-        mas.setSrc(System.getProperty("user.dir") + "/src/test/resources/oauth2");
+        mas.setSrc("file://" + System.getProperty("user.dir").replaceAll(" ", "%20") + "/src/test/resources/oauth2");
         mas.init(router);
         //mas.init2();    // requires pull request 330
     }
