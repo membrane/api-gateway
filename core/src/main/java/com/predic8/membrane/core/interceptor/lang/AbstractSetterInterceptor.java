@@ -50,6 +50,7 @@ public abstract class AbstractSetterInterceptor extends AbstractExchangeExpressi
         try {
             setValue(exchange, flow, exchangeExpression.evaluate(exchange, flow, getExpressionReturnType()));
         } catch (Exception e) {
+            log.error("While evaluating expression {} for field {}.", expression, fieldName, e);
             if (failOnError) {
                 internal(getRouter().isProduction(),getDisplayName())
                         .title("Error evaluating expression!")
