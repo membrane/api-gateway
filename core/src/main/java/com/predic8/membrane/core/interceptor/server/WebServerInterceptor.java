@@ -84,7 +84,7 @@ public class WebServerInterceptor extends AbstractInterceptor {
             try {
                 this.docBase = getAbsolutePathWithSchemePrefix(docBase);
             } catch (Exception e) {
-                log.error("While handling docBase=", this.docBase, e);
+                log.error("While handling docBase={}", this.docBase, e);
             }
             docBaseIsNormalized = true;
         }
