@@ -13,7 +13,6 @@
 
 package com.predic8.membrane.core.interceptor.oauth2.authorizationservice;
 
-import com.fasterxml.jackson.core.*;
 import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.config.security.*;
@@ -87,15 +86,15 @@ public class DynamicRegistration {
     }
 
     private String getRegistrationBody(List<String> callbackUris) throws IOException {
-        BufferedJsonGenerator jsonGenerator = new BufferedJsonGenerator();
-        try (JsonGenerator jg = jsonGenerator.jg()) {
+        try (var bufferedJsonGenerator = new BufferedJsonGenerator()) {
+            var jg = bufferedJsonGenerator.getJsonGenerator();
             jg.writeStartObject();
             jg.writeArrayFieldStart("redirect_uris");
             for (String callbackUri : callbackUris)
                 jg.writeString(callbackUri);
             jg.writeEndArray();
             jg.writeEndObject();
-            return jsonGenerator.getJson();
+            return bufferedJsonGenerator.getJson();
         }
     }
 

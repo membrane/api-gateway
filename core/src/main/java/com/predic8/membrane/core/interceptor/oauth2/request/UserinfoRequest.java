@@ -74,8 +74,8 @@ public class UserinfoRequest extends ParameterizedRequest {
             claims.putAll(getClaimsFromScopes(sessionProperties));
         }
 
-        BufferedJsonGenerator jsonGen = new BufferedJsonGenerator();
-        try (var gen = jsonGen.jg()) {
+        try (var bufferedJsonGenerator = new BufferedJsonGenerator()) {
+            var gen = bufferedJsonGenerator.getJsonGenerator();
             gen.writeStartObject();
 
             for (var e : claims.entrySet()) {
@@ -84,7 +84,7 @@ public class UserinfoRequest extends ParameterizedRequest {
 
             gen.writeEndObject();
 
-            return jsonGen.getJson();
+            return bufferedJsonGenerator.getJson();
         }
     }
 

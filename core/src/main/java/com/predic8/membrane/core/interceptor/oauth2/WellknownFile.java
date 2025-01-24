@@ -108,27 +108,28 @@ public class WellknownFile {
     }
 
     private void writeWellknown() throws IOException {
-        BufferedJsonGenerator bufferedJsonGenerator = new BufferedJsonGenerator();
-        var jsonGen = bufferedJsonGenerator.jg();
-        jsonGen.writeStartObject();
+        try (var bufferedJsonGenerator = new BufferedJsonGenerator()) {
+            var jg = bufferedJsonGenerator.getJsonGenerator();
+            jg.writeStartObject();
 
-        writeIssuer(jsonGen);
-        writeAuthorizationEndpoint(jsonGen);
-        writeTokenEndpoint(jsonGen);
-        writeUserinfoEndpoint(jsonGen);
-        writeRevocationEndpoint(jsonGen);
-        writeJwksUri(jsonGen);
-        writeEndSessionEndpoint(jsonGen);
-        writeSupportedResponseTypes(jsonGen);
-        writeSupportedResponseModes(jsonGen);
-        writeSupportedSubjectTypes(jsonGen);
-        writeSupportedIdTokenSigningAlgValues(jsonGen);
-        writeSupportedScopes(jsonGen);
-        writeSupportedTokenEndpointAuthMethods(jsonGen);
-        writeSupportedClaims(jsonGen);
+            writeIssuer(jg);
+            writeAuthorizationEndpoint(jg);
+            writeTokenEndpoint(jg);
+            writeUserinfoEndpoint(jg);
+            writeRevocationEndpoint(jg);
+            writeJwksUri(jg);
+            writeEndSessionEndpoint(jg);
+            writeSupportedResponseTypes(jg);
+            writeSupportedResponseModes(jg);
+            writeSupportedSubjectTypes(jg);
+            writeSupportedIdTokenSigningAlgValues(jg);
+            writeSupportedScopes(jg);
+            writeSupportedTokenEndpointAuthMethods(jg);
+            writeSupportedClaims(jg);
 
-        jsonGen.writeEndObject();
-        setWellknown(bufferedJsonGenerator.getJson());
+            jg.writeEndObject();
+            setWellknown(bufferedJsonGenerator.getJson());
+        }
     }
 
     private void writeSupportedClaims(JsonGenerator jg) throws IOException {

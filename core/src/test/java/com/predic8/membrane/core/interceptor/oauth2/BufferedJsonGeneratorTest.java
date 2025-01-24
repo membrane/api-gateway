@@ -13,7 +13,6 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.oauth2;
 
-import com.fasterxml.jackson.core.JsonGenerator;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -34,16 +33,14 @@ public class BufferedJsonGeneratorTest {
     }
 
     private String generateJson(String[] params) throws IOException {
-        String json = null;
-        BufferedJsonGenerator jsonGen = new BufferedJsonGenerator();
-        try (JsonGenerator gen = jsonGen.jg()) {
+        try (var bufferedJsonGenerator = new BufferedJsonGenerator()) {
+            var gen = bufferedJsonGenerator.getJsonGenerator();
             gen.writeStartObject();
             for (int i = 0; i < params.length; i += 2)
                 gen.writeObjectField(params[i], params[i + 1]);
             gen.writeEndObject();
-            json = jsonGen.getJson();
+            return bufferedJsonGenerator.getJson();
         }
-        return json;
     }
 
 }

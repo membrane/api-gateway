@@ -13,7 +13,6 @@
 
 package com.predic8.membrane.core.interceptor.oauth2.request.tokenrequest;
 
-import com.fasterxml.jackson.core.JsonGenerator;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.oauth2.BufferedJsonGenerator;
 import com.predic8.membrane.core.interceptor.oauth2.OAuth2AuthorizationServerInterceptor;
@@ -37,9 +36,8 @@ public abstract class TokenRequest extends ParameterizedRequest {
     }
 
     protected String getTokenJSONResponse() throws IOException {
-        String json;
-        BufferedJsonGenerator jsonGen = new BufferedJsonGenerator();
-        try (JsonGenerator gen = jsonGen.jg()) {
+        try (var bufferedJsonGenerator = new BufferedJsonGenerator()) {
+            var gen = bufferedJsonGenerator.getJsonGenerator();
             gen.writeStartObject();
             gen.writeObjectField("access_token", token);
             gen.writeObjectField("token_type", authServer.getTokenGenerator().getTokenType());
@@ -52,7 +50,7 @@ public abstract class TokenRequest extends ParameterizedRequest {
             if (refreshToken != null && !refreshToken.isEmpty())
                 gen.writeObjectField(ParamNames.REFRESH_TOKEN, refreshToken);
             gen.writeEndObject();
-            return jsonGen.getJson();
+            return bufferedJsonGenerator.getJson();
         }
     }
 }

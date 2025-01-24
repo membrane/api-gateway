@@ -13,7 +13,6 @@
 
 package com.predic8.membrane.core.interceptor.oauth2;
 
-import com.fasterxml.jackson.core.JsonGenerator;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.MimeType;
 import com.predic8.membrane.core.http.Response;
@@ -54,13 +53,13 @@ public class OAuth2Util {
             throw new IllegalArgumentException("The number of strings passed as params is not even");
 
         String json;
-        BufferedJsonGenerator jsonGen = new BufferedJsonGenerator();
-        try (JsonGenerator gen = jsonGen.jg()) {
+        try (var bufferedJsonGenerator = new BufferedJsonGenerator()) {
+            var gen = bufferedJsonGenerator.getJsonGenerator();
             gen.writeStartObject();
             for (int i = 0; i < params.length; i += 2)
                 gen.writeObjectField(params[i], params[i + 1]);
             gen.writeEndObject();
-            json = jsonGen.getJson();
+            json = bufferedJsonGenerator.getJson();
         }
 
         return Response.badRequest()

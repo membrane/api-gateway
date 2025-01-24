@@ -52,15 +52,16 @@ public class ClaimsParameter {
     public static String writeCompleteJson(String[] userinfoClaims, String[] idTokenClaims) throws IOException {
         if(userinfoClaims == null && idTokenClaims == null)
             return "";
-        BufferedJsonGenerator jsonGen = new BufferedJsonGenerator();
-        JsonGenerator gen = jsonGen.jg();
-        gen.writeStartObject();
-        if(userinfoClaims != null)
-            writeSingleClaimsObject(gen,USERINFO,userinfoClaims);
-        if(idTokenClaims != null)
-            writeSingleClaimsObject(gen,ID_TOKEN,idTokenClaims);
-        gen.writeEndObject();
-        return jsonGen.getJson();
+        try (var bufferedJsonGenerator = new BufferedJsonGenerator()) {
+            var gen = bufferedJsonGenerator.getJsonGenerator();
+            gen.writeStartObject();
+            if (userinfoClaims != null)
+                writeSingleClaimsObject(gen, USERINFO, userinfoClaims);
+            if (idTokenClaims != null)
+                writeSingleClaimsObject(gen, ID_TOKEN, idTokenClaims);
+            gen.writeEndObject();
+            return bufferedJsonGenerator.getJson();
+        }
     }
 
     static void writeSingleClaimsObject(JsonGenerator gen, String objectName, String... claims) throws IOException {

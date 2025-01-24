@@ -13,7 +13,6 @@
 
 package com.predic8.membrane.core.interceptor.oauth2;
 
-import com.fasterxml.jackson.core.JsonGenerator;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.oauth2.tokengenerators.BearerJwtTokenGenerator;
 import com.predic8.membrane.core.proxies.NullProxy;
@@ -25,8 +24,8 @@ public class OAuth2TestUtil {
     public static String sessionId = null;
 
     static String getMockClaims() throws IOException {
-        BufferedJsonGenerator jsonGen = new BufferedJsonGenerator();
-        try (JsonGenerator gen = jsonGen.jg()) {
+        try (var bufferedJsonGenerator = new BufferedJsonGenerator()) {
+            var gen = bufferedJsonGenerator.getJsonGenerator();
             gen.writeStartObject();
             gen.writeObjectFieldStart("userinfo");
             gen.writeObjectField("email", null);
@@ -36,7 +35,7 @@ public class OAuth2TestUtil {
             gen.writeObjectField("email", null);
             gen.writeEndObject();
             gen.writeEndObject();
-            return jsonGen.getJson();
+            return bufferedJsonGenerator.getJson();
         }
     }
 

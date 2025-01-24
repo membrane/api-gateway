@@ -19,19 +19,20 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
-public class BufferedJsonGenerator {
-    JsonFactory jsonFactory = new JsonFactory();
-    ByteArrayOutputStream baos = new ByteArrayOutputStream();
-    JsonGenerator jsonGenerator;
+public class BufferedJsonGenerator implements AutoCloseable{
+    private final ByteArrayOutputStream baos = new ByteArrayOutputStream();
+    private final JsonGenerator jsonGenerator;
 
     public BufferedJsonGenerator() {
         try {
+            JsonFactory jsonFactory = new JsonFactory();
             jsonGenerator = jsonFactory.createGenerator(baos);
         } catch (IOException e) {
+            throw new RuntimeException("Should not happen, as this is in-memory only.", e);
         }
     }
 
-    public JsonGenerator jg() {
+    public JsonGenerator getJsonGenerator() {
         return jsonGenerator;
     }
 
@@ -45,6 +46,15 @@ public class BufferedJsonGenerator {
             return getJson();
         } catch (IOException e) {
             return null;
+        }
+    }
+
+    @Override
+    public void close() {
+        try {
+            jsonGenerator.close();
+        } catch (IOException e) {
+            throw new RuntimeException("Should not happen, as this is in-memory only.", e);
         }
     }
 }
