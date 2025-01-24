@@ -139,7 +139,7 @@ public class OAuth2CallbackRequestHandler {
             // TODO: originalExchangeStore.remove(exc, session, state);
             throw e;
         } catch (Exception e) {
-            log.error("could not exchange code for token", e);
+            log.error("Could not exchange code for token.", e);
             exc.setResponse(Response.badRequest().body(e.getMessage()).build());
             originalExchangeStore.postProcess(exc);
             return true;

@@ -107,6 +107,7 @@ public abstract class AbstractScriptInterceptor extends AbstractInterceptor {
             } catch (JsonProcessingException e) {
                 log.error("", e);
                 internal(router.isProduction(),getDisplayName())
+                        .addSubType("json-processing-1")
                         .detail("Error serializing Map to JSON")
                         .exception(e)
                         .buildAndSetResponse(exc);
@@ -138,6 +139,7 @@ public abstract class AbstractScriptInterceptor extends AbstractInterceptor {
             } catch (JsonProcessingException e) {
                 log.error("", e);
                 internal(router.isProduction(),getDisplayName())
+                        .addSubType("json-processing-2")
                         .detail("Error serializing Map to JSON")
                         .exception(e)
                         .buildAndSetResponse(exc);
@@ -174,6 +176,7 @@ public abstract class AbstractScriptInterceptor extends AbstractInterceptor {
         log.warn("Script: {}", src);
 
         ProblemDetails pd = internal(router.isProduction(),getDisplayName())
+                .addSubType("script-execution")
                 .title("Error executing script.");
 
         if (!router.isProduction()) {

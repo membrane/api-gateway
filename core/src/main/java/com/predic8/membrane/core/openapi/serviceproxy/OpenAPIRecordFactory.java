@@ -110,8 +110,9 @@ public class OpenAPIRecordFactory {
             if (root instanceof FileNotFoundException fnf) {
                 throw new ConfigurationException("Cannot read OpenAPI specification from location: " + spec.location,fnf);
             }
-            log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            String msg = "While parsing spec %s .".formatted(spec.location);
+            log.error(msg, e);
+            throw new RuntimeException(msg, e);
         }
     }
 

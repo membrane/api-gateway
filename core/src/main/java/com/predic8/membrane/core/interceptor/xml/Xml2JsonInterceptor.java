@@ -58,6 +58,7 @@ public class Xml2JsonInterceptor extends AbstractInterceptor {
         } catch (Exception e) {
             log.error("", e);
             internal(router.isProduction(),getDisplayName())
+                    .addSubType("request")
                     .detail("Could not transform XML to JSON!")
                     .internal("flow", "request")
                     .exception(e)
@@ -72,6 +73,7 @@ public class Xml2JsonInterceptor extends AbstractInterceptor {
             return handleInternal(exc.getResponse());
         } catch (Exception e) {
             internal(router.isProduction(),getDisplayName())
+                    .addSubType("response")
                     .detail("Could not return WSDL document!")
                     .internal("flow", "response")
                     .exception(e)

@@ -97,7 +97,7 @@ public class LoginDialog {
 					Doc base: %s
 					""".formatted( router.getBaseLocation(), wsi.getDocBase()),e);
         } catch (IOException e) {
-			log.error("Cannot close {}",e.getMessage());
+			log.error("Cannot access index.html (baseLocation={}, docBase={})" , router.getBaseLocation(), wsi.getDocBase(), e);
         }
     }
 

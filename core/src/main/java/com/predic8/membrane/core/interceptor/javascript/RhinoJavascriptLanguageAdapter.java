@@ -36,6 +36,7 @@ public class RhinoJavascriptLanguageAdapter extends LanguageAdapter {
             pd.internal("column", se.getColumnNumber() + 1);
             pd.internal("line", se.getLineNumber() - preScriptLineLength + 1);
             pd.internal("message",  se.getMessage());
+            pd.internal("engine", "rhino");
         }
         return pd;
     }

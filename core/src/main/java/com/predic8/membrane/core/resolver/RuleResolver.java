@@ -63,7 +63,7 @@ public class RuleResolver implements SchemaResolver {
                 isri.init(router);
                 isri.handleRequest(exc);
             } catch (Exception e) {
-                log.debug(e.getMessage(),e);
+                log.debug("", e);
                 throw new RuntimeException(e);
             }
         }
