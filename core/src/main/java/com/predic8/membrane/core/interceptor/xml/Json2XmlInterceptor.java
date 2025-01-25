@@ -34,9 +34,8 @@ import static java.nio.charset.StandardCharsets.*;
 
 
 /**
- * @description If enabled converts body content from json to xml.
- * @explanation Can be used for both request and response. Resulting xml will be utf-8. It uses org.json
- * XML.toString() to do the conversion
+ * @description Converts body payload from JSON to XML. The JSON must be an object other JSON documents e.g. arrays are not supported.
+ * @explanation Resulting XML will be in UTF-8 encoding.
  * @topic 4. Interceptors/Features
  */
 @MCElement(name = "json2Xml")

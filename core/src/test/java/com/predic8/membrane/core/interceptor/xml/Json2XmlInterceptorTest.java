@@ -23,9 +23,9 @@ import javax.xml.xpath.*;
 import java.io.*;
 import java.net.*;
 
-import static com.predic8.membrane.core.http.Request.get;
-import static com.predic8.membrane.core.http.Request.put;
+import static com.predic8.membrane.core.http.Request.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static java.nio.charset.StandardCharsets.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 
@@ -71,6 +71,7 @@ public class Json2XmlInterceptorTest {
         assertTrue(msg.isXML());
         assertEquals("Mike", xPath(msg.getBodyAsStringDecoded(), "/person/name"));
         assertEquals("San Francisco", xPath(msg.getBodyAsStringDecoded(), "/person/city"));
+        assertTrue(msg.getBodyAsStringDecoded().contains(UTF_8.name()));
     }
 
     @Test
@@ -96,6 +97,27 @@ public class Json2XmlInterceptorTest {
     @Test
     void noRoot() throws Exception {
         Exchange exc = put("/no-root").json(noRoot).buildExchange();
+        assertEquals(CONTINUE,  interceptor.handleRequest(exc));
+        Message msg = exc.getRequest();
+        assertTrue(msg.isXML());
+        assertEquals("1", xPath(msg.getBodyAsStringDecoded(), "/root/a"));
+        assertEquals("2", xPath(msg.getBodyAsStringDecoded(), "/root/b"));
+    }
+
+    @Test
+    void noRootWithRootNameSpecified() throws Exception {
+        interceptor.setRoot("top");
+        Exchange exc = put("/no-root").json(noRoot).buildExchange();
+        assertEquals(CONTINUE,  interceptor.handleRequest(exc));
+        Message msg = exc.getRequest();
+        assertTrue(msg.isXML());
+        assertEquals("1", xPath(msg.getBodyAsStringDecoded(), "/top/a"));
+        assertEquals("2", xPath(msg.getBodyAsStringDecoded(), "/top/b"));
+    }
+
+    @Test
+    void stringOnly() throws Exception {
+        Exchange exc = put("/no-root").json("Panama").buildExchange();
         assertEquals(CONTINUE,  interceptor.handleRequest(exc));
         Message msg = exc.getRequest();
         assertTrue(msg.isXML());
