@@ -18,6 +18,7 @@ import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.util.*;
 import org.junit.jupiter.api.*;
 
+import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.lang.ExchangeExpression.Language.*;
 import static org.junit.jupiter.api.Assertions.*;
@@ -52,7 +53,8 @@ class IfInterceptorJsonpathTest extends ConditionalEvaluationTestContext {
                 "name": "Heinz",
                 "email": null
             }
-            """);
+            """)
+                .contentType(APPLICATION_JSON);
     }
 
     private static Outcome eval(String condition, Object builder, boolean shouldCallNested) throws Exception {

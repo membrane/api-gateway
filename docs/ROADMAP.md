@@ -2,6 +2,7 @@
 
 # Version 6.2.0
 
+- Plugin that uses AI e.g. Mock
 - <choose>
      <case test=""> // If this matches execute only nested
         <..interceptors>
@@ -131,6 +132,7 @@
 
 # Discussion
 
+- <api> without port => Change from port 80 to matches all open ports
 - ${} or #{} for expressions
   - Possible conflict with spring property placeholder configurer
   - Conflict with SpEL on startup? Are #{} replaced?
