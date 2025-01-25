@@ -21,8 +21,11 @@ import org.junit.jupiter.api.*;
 import java.net.*;
 import java.util.*;
 
+import static com.predic8.membrane.core.http.MimeType.TEXT_XML;
 import static com.predic8.membrane.core.http.Request.*;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
 import static com.predic8.membrane.core.lang.ExchangeExpression.Language.*;
+import static java.lang.Boolean.FALSE;
 import static org.junit.jupiter.api.Assertions.*;
 
 class JsonpathExchangeExpressionTest extends AbstractExchangeExpressionTest {
@@ -92,5 +95,33 @@ class JsonpathExchangeExpressionTest extends AbstractExchangeExpressionTest {
         assertEquals("Europe",m.get("continent"));
     }
 
+    @Test
+    void emptyBodyForObject() throws URISyntaxException {
+        assertInstanceOf(Object.class, evaluateWithEmptyBodyFor(Object.class));
+    }
 
+    @Test
+    void emptyBodyForString() throws URISyntaxException {
+        var v = evaluateWithEmptyBodyFor(String.class);
+        assertInstanceOf(Object.class, v);
+        assertEquals("", v);
+    }
+
+    @Test
+    void emptyBodyForBoolean() throws URISyntaxException {
+        var v = evaluateWithEmptyBodyFor(Boolean.class);
+        assertInstanceOf(Object.class, v);
+        assertEquals(FALSE, v);
+    }
+
+    @Test
+    void wrongContentType() throws URISyntaxException {
+        assertEquals("", ExchangeExpression.newInstance(router, JSONPATH, "$")
+                .evaluate(Request.post("/foo").contentType(TEXT_XML).buildExchange(), REQUEST, String.class));
+    }
+
+    private static <T> T evaluateWithEmptyBodyFor(Class<T> type) throws URISyntaxException {
+        return ExchangeExpression.newInstance(router, JSONPATH, "$")
+                .evaluate(get("/foo").buildExchange(), REQUEST, type);
+    }
 }
