@@ -53,12 +53,15 @@ public class SpELExchangeEvaluationContext extends StandardEvaluationContext {
 
     private SpELMessageWrapper request;
     private SpELMessageWrapper response;
+    private final Flow flow;
 
     public SpELExchangeEvaluationContext(Exchange exchange, Flow flow) {
         super();
 
-        this.message = exchange.getMessage(flow);
         this.exchange = exchange;
+        this.flow = flow;
+        this.message = exchange.getMessage(flow);
+
         properties = new SpELProperties(exchange.getProperties());
         headers = new SpELHeader(message.getHeader());
 
@@ -147,8 +150,8 @@ public class SpELExchangeEvaluationContext extends StandardEvaluationContext {
         return scopes;
     }
 
-    public void setScopes(String scopes) {
-        this.scopes = scopes;
+    public Flow getFlow() {
+        return flow;
     }
 
     public SpELMap<String, Object> getJson() throws IOException {

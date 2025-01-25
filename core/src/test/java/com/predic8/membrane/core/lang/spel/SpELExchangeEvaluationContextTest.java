@@ -55,6 +55,11 @@ public class SpELExchangeEvaluationContextTest {
     }
 
     @Test
+    void flow() {
+        assertEquals(REQUEST.name(), keyExpression("flow"));
+    }
+
+    @Test
     void paramsSubscription() {
         assertEquals("10", keyExpression("params['limit']"));
     }

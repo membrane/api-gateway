@@ -13,7 +13,6 @@
    limitations under the License. */
 package com.predic8.membrane.core.oauth2;
 
-import io.restassured.filter.log.*;
 import io.restassured.response.*;
 import org.jetbrains.annotations.*;
 
@@ -21,6 +20,7 @@ import java.util.*;
 
 import static com.predic8.membrane.core.resolver.ResolverMap.*;
 import static io.restassured.RestAssured.*;
+import static io.restassured.filter.log.LogDetail.*;
 import static io.restassured.filter.log.UrlDecoder.*;
 import static java.nio.charset.StandardCharsets.*;
 import static org.apache.http.HttpHeaders.*;
@@ -167,7 +167,7 @@ public class OAuth2AuthFlowClient {
         .when()
             .post(location)
         .then()
-            .log().ifValidationFails(LogDetail.ALL)
+            .log().ifValidationFails(ALL)
             .statusCode(307)
             .extract().response().getHeader(LOCATION);
 
@@ -180,7 +180,7 @@ public class OAuth2AuthFlowClient {
         .when()
             .get(location2)
         .then()
-            .log().ifValidationFails(LogDetail.ALL)
+            .log().ifValidationFails(ALL)
             .statusCode(200)
             .assertThat().body(is(expectedBody));
     }
