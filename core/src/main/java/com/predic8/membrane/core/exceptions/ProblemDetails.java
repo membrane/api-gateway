@@ -294,7 +294,10 @@ public class ProblemDetails {
 
     private static String document2string(Document document) throws TransformerException {
         StringWriter writer = new StringWriter();
-        TransformerFactory.newInstance().newTransformer().transform(new DOMSource(document), new StreamResult(writer));
+        TransformerFactory tf = TransformerFactory.newInstance();
+        Transformer t = tf.newTransformer();
+        t.setOutputProperty(OutputKeys.INDENT, "yes");
+        t.transform(new DOMSource(document), new StreamResult(writer));
         return writer.toString();
     }
 
