@@ -6,9 +6,7 @@ import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.util.jdbc.AbstractJdbcSupport;
 import org.jetbrains.annotations.NotNull;
 
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -22,6 +20,11 @@ public class JDBCApiKeyStore extends AbstractJdbcSupport implements ApiKeyStore 
     @Override
     public void init(Router router) {
         super.init(router);
+        try {
+            createTablesIfNotExist();
+        } catch (SQLException e) {
+            throw new RuntimeException("Error initializing database tables", e);
+        }
     }
 
     @Override
@@ -57,6 +60,31 @@ public class JDBCApiKeyStore extends AbstractJdbcSupport implements ApiKeyStore 
                 return Optional.of(scopes);
             }
         }
+    }
+
+    private void createTablesIfNotExist() throws SQLException {
+        try (Connection connection = getDatasource().getConnection()) {
+            if (tableExists(connection, keyTable.getName())) {
+                connection.createStatement().executeUpdate(String.format("""
+                    CREATE TABLE %s (
+                        apikey VARCHAR(255) NOT NULL PRIMARY KEY
+                    )
+                    """, keyTable.getName()));
+            }
+
+            if (tableExists(connection, scopeTable.getName())) {
+                connection.createStatement().executeUpdate(String.format("""
+                    CREATE TABLE %s (
+                        apikey VARCHAR(255) NOT NULL REFERENCES %s (apikey),
+                        scope VARCHAR(255) NOT NULL
+                    )
+                    """, scopeTable.getName(), keyTable.getName()));
+            }
+        }
+    }
+
+    private boolean tableExists(Connection connection, String tableName) throws SQLException {
+        return !connection.getMetaData().getTables(null, null, tableName.toUpperCase(), null).next();
     }
 
     @MCChildElement(order = 0)
