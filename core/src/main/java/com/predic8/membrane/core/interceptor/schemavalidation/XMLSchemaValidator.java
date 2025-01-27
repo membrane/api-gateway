@@ -94,6 +94,7 @@ public class XMLSchemaValidator extends AbstractXMLSchemaValidator {
     protected void setErrorResponse(Exchange exchange, String message) {
         user(false,getName())
                 .title(getErrorTitle())
+                .addSubType("validation")
                 .component(getName())
                 .internal("error", message)
                 .buildAndSetResponse(exchange);

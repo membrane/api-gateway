@@ -16,6 +16,7 @@ import com.fasterxml.jackson.core.type.*;
 import com.fasterxml.jackson.databind.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.interceptor.*;
 import org.jetbrains.annotations.*;
 import org.slf4j.*;
 import org.w3c.dom.*;
@@ -49,6 +50,9 @@ public class ProblemDetails {
 
     private String title;
     private String detail;
+
+    private Interceptor.Flow flow;
+    private String seeSuffix = "";
 
     /**
      * Component e.g. plugin
@@ -151,6 +155,16 @@ public class ProblemDetails {
         return this;
     }
 
+    public ProblemDetails flow(Interceptor.Flow flow) {
+        this.flow = flow;
+        return this;
+    }
+
+    public ProblemDetails addSubSee(String s) {
+        this.seeSuffix += s;
+        return this;
+    }
+
     public ProblemDetails internal(String key, Object value) {
         this.internalFields.put(key, value);
         return this;
@@ -187,24 +201,25 @@ public class ProblemDetails {
         Map<String, Object> root = new LinkedHashMap<>();
         Map<String, Object> internalMap = new LinkedHashMap<>();
 
-        if (production) {
-            logProduction(internalMap);
-        } else {
-            internalMap = logDevelopment();
+        root.put("title", title);
+        String type = "https://membrane-api.io/problems/" + this.type;
+        if (!subType.isEmpty()) {
+            type += subType;
         }
 
-        root.put("title", title);
-        String type = "https://membrane-api.io/error/" + this.type;
-        if (!component.isEmpty())
-            type += "/" + normalizeForType(component);
-        if (!subType.isEmpty())
-            type += subType;
         root.put("type", type);
 
         if (detail != null) {
             root.put("detail", detail);
         }
         root.putAll(topLevel);
+
+        if (production) {
+            logProduction(internalMap);
+        } else {
+            internalMap = createInternal(type);
+        }
+
         root.putAll(internalMap);
         return root;
     }
@@ -213,7 +228,7 @@ public class ProblemDetails {
         return s.replace(" ", "-").toLowerCase();
     }
 
-    private Map<String, Object> logDevelopment() {
+    private Map<String, Object> createInternal(String type) {
         var internalMap = new LinkedHashMap<>(internalFields);
         if (exception != null) {
             if (internalMap.containsKey("message"))
@@ -223,6 +238,19 @@ public class ProblemDetails {
                 internalMap.put("stackTrace", getStackTrace(exception, new StackTraceElement[0]));
             }
         }
+
+        String see = type;
+        if (!component.isEmpty()) {
+            see += "/" + normalizeForType(component);
+        }
+        if (flow != null) {
+            see += "/" + flow.name().toLowerCase();
+        }
+        if (!see.isEmpty()) {
+            see += "/" + seeSuffix;
+        }
+        internalMap.put("see", see);
+
         internalMap.put("attention", """
                 Membrane is in development mode. For production set <router production="true"> to reduce details in error messages!""");
         return internalMap;
@@ -232,8 +260,11 @@ public class ProblemDetails {
         String logKey = UUID.randomUUID().toString();
         log.warn("logKey={}\ntype={}\ntitle={}\n,detail={}\n,extension={},.", logKey, type, title, detail, internalMap);
 
-        type = "internal";
-        title = "An error occurred.";
+        // In case of an internal error in production we do not want a specifiy error title
+        if (type.equals("internal")) {
+            title = "Internal error";
+        }
+
         detail = "Details can be found in the Membrane log searching for key: %s.".formatted(logKey);
         if (stacktrace) {
             log.warn("", exception);
@@ -396,4 +427,6 @@ public class ProblemDetails {
     public boolean isStacktrace() {
         return stacktrace;
     }
+
+
 }
