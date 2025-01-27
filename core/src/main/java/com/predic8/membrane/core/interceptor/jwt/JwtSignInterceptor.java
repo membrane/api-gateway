@@ -79,7 +79,7 @@ public class JwtSignInterceptor extends AbstractInterceptor {
         } catch (Exception e) {
             log.error("Error during attempt to sign JWT payload", e);
             security(router.isProduction(),getDisplayName())
-                    .addSubType("crypto")
+                    .addSubSee("crypto")
                     .detail("Error during attempt to sign JWT payload.")
                     .exception(e)
                     .buildAndSetResponse(exc);
