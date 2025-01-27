@@ -2,6 +2,7 @@
 
 # Version 6.2.0
 
+- Plugin that uses AI e.g. Mock
 - <choose>
      <case test=""> // If this matches execute only nested
         <..interceptors>
@@ -68,21 +69,14 @@
   - new Namespace e.g. https://membrane-api.io...6
 - ProblemDetails TB
   - Validators
-     - XML, JSON, WSDL
      - All in examples/validation
-  - OpenAPI
-- Exchange property name constants: See Exchange TB
-- Logging TB
-  - Simple logger raus
-  - JSON logging raus
 - Dependencies TP, TB
   - Log4J, where, what
   - Updates
-- Rewrite RatelimitInterceptor to use AbstractLanguageInterceptor TB
-- Language TB
-  - Exchange expression 
-    - getExpression
-  - AbstractLanguageInterceptor as Interface
+- '<spring:bean class="com.predic8.membrane.core.interceptor.apikey.stores.ApiKeyFileStore">' 
+  durch '<apiKeyFileStore .. />' ersetzen (dafür topLevel=true) BT
+
+## Done
 - Problem Details TB
   - component mandatory, subtype optional
   - Message from exception in message
@@ -90,6 +84,14 @@
     - optional
     - Message only from exception
       - Disable in builder
+- Rewrite RatelimitInterceptor to use AbstractLanguageInterceptor TB
+- Exchange property name constants: See Exchange TB
+- Logging TB
+  - Simple logger raus
+  - JSON logging raus
+- ProblemDetails
+  - OpenAPI
+  - XML, JSON, WSDL
 - '<spring:bean class="com.predic8.membrane.core.interceptor.apikey.stores.ApiKeyFileStore">' 
   durch '<apiKeyFileStore .. />' ersetzen (dafür topLevel=true) BT
 - Test after next merges:
@@ -97,8 +99,6 @@
 - LogInterceptor:
   - Do not log body if Content-Encoding header is set 
     - Might be zip, br ...
-
-## Done
 - Merge log with print
 - XMLProtectionInterceptor.setFailResponse => Use ProblemDetails
 - Rename ExampleTests to .*ExampleTests
@@ -136,6 +136,7 @@
 
 # Discussion
 
+- <api> without port => Change from port 80 to matches all open ports
 - ProblemDetails: 
   - When flow = RESPONSE it should always be an internal error!
 - ${} or #{} for expressions

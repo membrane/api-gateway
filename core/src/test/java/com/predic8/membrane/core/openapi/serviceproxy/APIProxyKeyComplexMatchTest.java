@@ -14,6 +14,7 @@
 package com.predic8.membrane.core.openapi.serviceproxy;
 
 import com.predic8.membrane.core.http.Request.Builder;
+import com.predic8.membrane.core.lang.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -27,6 +28,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Stream;
 
+import static com.predic8.membrane.core.lang.ExchangeExpression.Language.SPEL;
 import static com.predic8.membrane.test.TestUtil.assembleExchange;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.junit.jupiter.params.provider.Arguments.of;
@@ -37,37 +39,41 @@ class APIProxyKeyComplexMatchTest {
 
     @BeforeEach
     void setup() {
-        k1 = new APIProxyKey("","", 80, null, "*", null, true) {{
+        k1 = new APIProxyKey("","", 80, null, "*",null, true) {{
             addBasePaths(new ArrayList<>(List.of("/bar")));
         }};
     }
 
     @Test
     void complexMatchExpressionTrueTest() throws URISyntaxException {
-        var key = new APIProxyKey("", "", 80, null,"*","true", false);
+        var key = new APIProxyKey("", "", 80, null,"*", null,false);
         var exc = new Builder().get("").buildExchange();
         assertTrue(key.complexMatch(exc));
     }
 
     @Test
-    void complexMatchExpressionFalseTest() throws URISyntaxException {
-        var key = new APIProxyKey("", "", 80, null,"*", "1 == 2", false);
-        var exc = new Builder().get("").buildExchange();
-        assertFalse(key.complexMatch(exc));
+    void complexMatchExpressionFalse() throws URISyntaxException {
+        var key = new APIProxyKey("", "", 80, null,"*",
+                ExchangeExpression.newInstance(null, SPEL,"1 == 2"), false);
+        assertFalse(key.complexMatch(new Builder().get("").buildExchange()));
     }
 
     @Test
-    void complexMatchExpressionHeaderTest() throws URISyntaxException {
-        var key = new APIProxyKey("", "", 80, null,"*","headers['X-Custom-Header'] == 'foo'", false);
+    void complexMatchExpressionHeader() throws URISyntaxException {
+        var key = new APIProxyKey("", "", 80, null,"*", null,false);
         var exc = new Builder().get("").header("X-Custom-Header", "foo").buildExchange();
         assertTrue(key.complexMatch(exc));
     }
 
     @Test
-    void complexMatchExpressionQueryParamTest() throws URISyntaxException {
-        var key = new APIProxyKey("", "", 80, null,"*","params['foo'] == 'bar'", false);
-        var exc = new Builder().get("/baz?foo=bar").buildExchange();
-        assertTrue(key.complexMatch(exc));
+    void complexMatchExpressionQueryParam() throws URISyntaxException {
+        var key = new APIProxyKey("", "", 80, null,"*",
+                ExchangeExpression.newInstance(null, SPEL,"param.foo == 'bar'"),false);
+        assertTrue(key.complexMatch(new Builder().get("/baz?foo=bar").buildExchange()));
+
+        key = new APIProxyKey("", "", 80, null,"*",
+                ExchangeExpression.newInstance(null, SPEL,"param.foo == 'wrong'"),false);
+        assertFalse(key.complexMatch(new Builder().get("/baz?foo=bar").buildExchange()));
     }
 
     @DisplayName("Access old path /api-doc")

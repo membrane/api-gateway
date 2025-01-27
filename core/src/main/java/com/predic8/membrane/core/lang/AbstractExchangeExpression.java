@@ -37,4 +37,20 @@ public abstract class AbstractExchangeExpression implements ExchangeExpression {
     public String toString() {
         return expression;
     }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (!(obj instanceof AbstractExchangeExpression aee)) {
+            return false;
+        }
+        if (!this.getClass().equals(obj.getClass())) {
+            return false;
+        }
+        return expression.equals(aee.expression);
+    }
+
+    @Override
+    public int hashCode() {
+        return getClass().hashCode() + expression.hashCode();
+    }
 }

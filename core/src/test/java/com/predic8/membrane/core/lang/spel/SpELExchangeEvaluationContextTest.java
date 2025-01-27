@@ -17,11 +17,11 @@ import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.util.*;
 import org.junit.jupiter.api.*;
-import org.springframework.expression.*;
 import org.springframework.expression.spel.standard.*;
 
 import java.net.*;
 
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.http.MediaType.*;
 
@@ -51,8 +51,12 @@ public class SpELExchangeEvaluationContextTest {
     }
 
     String keyExpression(String spel) {
-        Expression expression = new SpelExpressionParser().parseExpression(spel);
-        return expression.getValue(new SpELExchangeEvaluationContext(exc, exc.getRequest()), String.class);
+        return new SpelExpressionParser().parseExpression(spel).getValue(new SpELExchangeEvaluationContext(exc, REQUEST), String.class);
+    }
+
+    @Test
+    void flow() {
+        assertEquals(REQUEST.name(), keyExpression("flow"));
     }
 
     @Test

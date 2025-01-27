@@ -23,6 +23,7 @@ import org.junit.jupiter.api.*;
 import java.net.*;
 import java.util.*;
 
+import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
 
 public abstract class AbstractExchangeExpressionTest {
@@ -38,6 +39,7 @@ public abstract class AbstractExchangeExpressionTest {
                 .header("name","Jelly Fish")
                 .header("foo","42")
                 .header("x-city","Tokio")
+                .contentType(APPLICATION_JSON)
                 .buildExchange();
         flow = REQUEST;
         exchange.setProperty("wet", true);

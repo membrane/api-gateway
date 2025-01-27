@@ -17,17 +17,14 @@
 package com.predic8.membrane.core.openapi.serviceproxy;
 
 import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.lang.spel.*;
+import com.predic8.membrane.core.lang.*;
 import com.predic8.membrane.core.proxies.*;
 import org.slf4j.*;
-import org.springframework.expression.*;
-import org.springframework.expression.spel.*;
-import org.springframework.expression.spel.standard.*;
 
 import java.util.*;
 
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
 import static java.util.Optional.*;
-import static org.springframework.expression.spel.SpelCompilerMode.*;
 
 public class APIProxyKey extends ServiceProxyKey {
 
@@ -35,32 +32,29 @@ public class APIProxyKey extends ServiceProxyKey {
 
     private final ArrayList<String> basePaths = new ArrayList<>();
 
-    private final SpelParserConfiguration spelConfig = new SpelParserConfiguration(IMMEDIATE, this.getClass().getClassLoader());
-
     /**
      * For complex matches use SpEL
      */
-    private Expression testExpr;
+    private ExchangeExpression exchangeExpression;
 
-    public APIProxyKey(RuleKey key, String test, boolean openAPI) {
+    public APIProxyKey(RuleKey key, ExchangeExpression exchangeExpression, boolean openAPI) {
         super(key);
-        init(test, openAPI);
+        init(exchangeExpression, openAPI);
         setUsePathPattern(true);
     }
 
     public APIProxyKey(int port) {
-        this(null,"*",port,null,"*",null,true);
+        this(null, "*", port, null, "*", null, true);
     }
 
-    public APIProxyKey(String ip, String host, int port, String path, String method, String test, boolean openAPI) {
+    public APIProxyKey(String ip, String host, int port, String path, String method, ExchangeExpression exchangeExpression, boolean openAPI) {
         super(host, method, path, port, ip);
-        init(test, openAPI);
+        init(exchangeExpression, openAPI);
         setUsePathPattern(true);
     }
 
-    protected void init(String test, boolean openAPI) {
-        if (test != null)
-            testExpr = new SpelExpressionParser(spelConfig).parseExpression(test);
+    protected void init(ExchangeExpression exchangeExpression, boolean openAPI) {
+        this.exchangeExpression = exchangeExpression;
 
         if (!openAPI)
             return;
@@ -94,13 +88,9 @@ public class APIProxyKey extends ServiceProxyKey {
     }
 
     private boolean testCondition(Exchange exc) {
-        if (testExpr == null)
+        if (exchangeExpression == null)
             return true;
-        return isTrue(testExpr.getValue(new SpELExchangeEvaluationContext(exc, exc.getRequest()), Boolean.class));
-    }
-
-    private static boolean isTrue(Boolean result) {
-        return result != null && result;
+        return exchangeExpression.evaluate(exc, REQUEST, Boolean.class);
     }
 
     void addBasePaths(ArrayList<String> paths) {
@@ -113,9 +103,14 @@ public class APIProxyKey extends ServiceProxyKey {
                 + ofNullable(getIp()).orElse("0.0.0.0") + "-"
                 + getHost()
                 + getPort()
-                + getPath() + "-"
-                + (testExpr == null ? "true" : testExpr.getExpressionString())
+                + getPath()
+                + (exchangeExpression == null ? "" : "-" + exchangeExpression.getExpression())
         );
+    }
+
+    @Override
+    public String toString() {
+        return super.toString() + (exchangeExpression != null ? " " + exchangeExpression.getExpression() : "");
     }
 
     @Override
@@ -125,13 +120,13 @@ public class APIProxyKey extends ServiceProxyKey {
         if (obj instanceof APIProxyKey other) {
             if (!basePaths.equals(other.basePaths))
                 return false;
-            return Objects.equals(testExpr, other.testExpr);
+            return Objects.equals(exchangeExpression, other.exchangeExpression);
         }
         return false;
     }
 
     @Override
     public int hashCode() {
-        return super.hashCode() + testExpr.hashCode() + basePaths.hashCode();
+        return super.hashCode() + Objects.hashCode( exchangeExpression.hashCode()) + basePaths.hashCode();
     }
 }

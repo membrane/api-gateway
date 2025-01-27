@@ -54,3 +54,7 @@ Remove the `publicURL` attribute from it: It will be automatically computed from
 
 In ProblemJson 
 also Validators
+
+# Monitoring
+
+Default naming scheme for serviceProxys has changed. This might affect existing filters in log aggregation systems and/or monitoring dashboards, e.g. in Prometheus/Grafana.")
