@@ -97,7 +97,7 @@ public class WebServerInterceptor extends AbstractInterceptor {
         } catch (IOException e) {
             log.error("", e);
             internal(router.isProduction(),getDisplayName())
-                    .addSubType("request")
+                    .flow(Flow.REQUEST)
                     .detail("Error serving document")
                     .exception(e)
                     .buildAndSetResponse(exc);
@@ -113,7 +113,7 @@ public class WebServerInterceptor extends AbstractInterceptor {
             uri = getUri(exc);
         } catch (URISyntaxException e) {
             internal(router.isProduction(),getDisplayName())
-                    .addSubType("uri-creation")
+                    .addSubSee("uri-creation")
                     .detail("Could not create uri")
                     .exception(e)
                     .buildAndSetResponse(exc);
