@@ -91,7 +91,7 @@ public class JDBCApiKeyStore extends AbstractJdbcSupport implements ApiKeyStore 
                         """, scopeTable.getName(), keyTable.getName()));
             }
         } catch (Exception e) {
-            throw new ConfigurationException("Failed to create tables: ", e);
+            throw new ConfigurationException("Failed to create tables for API Keys %s and %s: ".formatted(keyTable.getName(),scopeTable.getName()), e);
         }
     }
 
