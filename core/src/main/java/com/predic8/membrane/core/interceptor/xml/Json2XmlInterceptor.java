@@ -36,7 +36,7 @@ import static java.nio.charset.StandardCharsets.*;
 /**
  * @description Converts body payload from JSON to XML. The JSON must be an object other JSON documents e.g. arrays are not supported.
  * @explanation Resulting XML will be in UTF-8 encoding.
- * @topic 4. Interceptors/Features
+ * @topic 2. Enterprise Integration Patterns
  */
 @MCElement(name = "json2Xml")
 public class Json2XmlInterceptor extends AbstractInterceptor {

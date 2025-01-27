@@ -38,7 +38,7 @@ import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
  *              advised to test its functionality in combination with your SOAP service provider before deploying it in
  *              production.
  *              </p>
- * @topic 8. SOAP based Web Services
+ * @topic 5. Web Services with SOAP and WSDL
  */
 @MCElement(name="soapStackTraceFilter")
 public class SOAPStackTraceFilterInterceptor extends AbstractInterceptor {

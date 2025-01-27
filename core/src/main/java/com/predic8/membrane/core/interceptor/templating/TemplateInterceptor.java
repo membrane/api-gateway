@@ -41,7 +41,7 @@ import static java.nio.charset.StandardCharsets.*;
  * <a href="https://docs.groovy-lang.org/docs/next/html/documentation/template-engines.html#_xmltemplateengine">XMLTemplateEngine</a>
  * otherwise <a href="https://docs.groovy-lang.org/docs/next/html/documentation/template-engines.html#_streamingtemplateengine">StreamingTemplateEngine</a>.
  * Have a look at the samples in <a href="https://github.com/membrane/service-proxy/tree/master/distribution/examples">examples/template</a>.
- * @topic 4. Interceptors/Features
+ * @topic 2. Enterprise Integration Patterns
  */
 
 

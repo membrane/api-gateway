@@ -37,7 +37,7 @@ import static org.apache.commons.text.StringEscapeUtils.*;
 
 /**
  * @description Blocks requests which do not have the correct RFC 1945 basic authentication credentials (HTTP header "Authentication: Basic ....").
- * @topic 6. Security
+ * @topic 3. Security and Validation
  */
 @MCElement(name="basicAuthentication")
 public class BasicAuthenticationInterceptor extends AbstractInterceptor {

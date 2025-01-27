@@ -44,7 +44,7 @@ import static java.lang.String.*;
  * <p>
  * This plugin is useful together with the template plugin. See examples/template.
  * </p>
- * @topic 4. Interceptors/Features
+ * @topic 1. Proxies and Flow
  */
 @MCElement(name = "return")
 public class ReturnInterceptor extends AbstractInterceptor {

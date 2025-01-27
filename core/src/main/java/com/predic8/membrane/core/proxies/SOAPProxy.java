@@ -55,7 +55,7 @@ import static com.predic8.membrane.core.Constants.*;
  * @explanation If the WSDL specified by the <i>wsdl</i> attribute is unavailable at startup, the &lt;soapProxy&gt;
  * becomes inactive. Reinitialization can be triggered via the admin console or automatically by the
  * {@link Router}, which periodically attempts to restore the proxy.
- * @topic 2. Proxies
+ * @topic 1. Proxies and Flow
  */
 @MCElement(name = "soapProxy")
 public class SOAPProxy extends AbstractServiceProxy {

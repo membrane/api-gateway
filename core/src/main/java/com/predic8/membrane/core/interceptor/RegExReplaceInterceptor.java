@@ -24,7 +24,7 @@ import static com.predic8.membrane.core.interceptor.RegExReplaceInterceptor.Targ
 
 /**
  * @description Runs a regular-expression-replacement on either the message body (default) or all header values.
- * @topic 4. Interceptors/Features
+ * @topic 2. Enterprise Integration Patterns
  */
 @MCElement(name = "regExReplacer")
 public class RegExReplaceInterceptor extends AbstractInterceptor {

@@ -27,6 +27,7 @@ import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.*;
  * By nesting plugins into an &lt;abort&gt; you can limit their application to abort flows only.
  * On plugins nested in &lt;abort&gt; handleResponse() is called not handleAbort() in order to
  * allow normal processing.
+ * @topic 1. Proxies and Flow
  */
 @MCElement(name="abort", topLevel=false)
 public class AbortInterceptor extends AbstractFlowInterceptor {

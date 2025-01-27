@@ -27,7 +27,7 @@ import static com.predic8.membrane.core.interceptor.Outcome.*;
 
 /**
  * @description Delegates virus checks to an external Virus Scanner.
- * @topic 6. Security
+ * @topic 3. Security and Validation
  */
 @MCElement(name="clamav")
 public class ClamAntiVirusInterceptor extends AbstractInterceptor {

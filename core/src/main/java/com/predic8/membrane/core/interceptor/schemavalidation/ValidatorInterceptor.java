@@ -38,7 +38,7 @@ import static com.predic8.membrane.core.resolver.ResolverMap.*;
  * {@link JSONSchemaValidator} and {@link SchematronValidator} depending on the
  * attributes.
  *
- * @topic 8. SOAP based Web Services
+ * @topic 3. Security and Validation
  */
 @MCElement(name = "validator")
 public class ValidatorInterceptor extends AbstractInterceptor implements ApplicationContextAware {

@@ -33,7 +33,7 @@ import static org.apache.commons.text.StringEscapeUtils.*;
  * @description Executes a Groovy script. The script can access and manipulate data from the request and response.
  * Use this or the Javascript plugin to extend the functions of Membrane by scripting.
  * See: example/groovy for working samples
- * @topic 4. Interceptors/Features
+ * @topic 2. Enterprise Integration Patterns
  */
 @MCElement(name = "groovy", mixed = true)
 public class GroovyInterceptor extends AbstractScriptInterceptor {

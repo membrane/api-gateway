@@ -33,7 +33,7 @@ import static com.predic8.membrane.core.util.HttpUtil.*;
 /**
  * @description Blocks requests whose origin TCP/IP address (hostname or IP address) is not allowed to access the
  *              requested resource.
- * @topic 6. Security
+ * @topic 3. Security and Validation
  */
 @MCElement(name="accessControl")
 public class AccessControlInterceptor extends AbstractInterceptor {

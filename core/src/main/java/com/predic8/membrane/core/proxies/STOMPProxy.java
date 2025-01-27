@@ -18,7 +18,7 @@ import com.predic8.membrane.annot.MCElement;
 
 /**
  * @description <p>Proxies incoming STOMP CONNECT requests. Use a &lt;stompClient&gt; to forward these requests so some other machine.</p>
- * @topic 2. Proxies
+ * @topic 1. Proxies and Flow
  */
 @MCElement(name="stompProxy")
 public class STOMPProxy extends SSLableProxy {
