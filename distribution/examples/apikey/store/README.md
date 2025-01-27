@@ -1,8 +1,8 @@
-### JDBC API Key Store
+# JDBC API Key Store
 
 A quick guide to setting up a JDBC-based API key store using PostgreSQL.
 
-### Prerequisite:
+### Prerequisite
 
 - **Docker installed:**
 
@@ -21,8 +21,9 @@ A quick guide to setting up a JDBC-based API key store using PostgreSQL.
 
 2. **Download JDBC Driver:**
 
-    - Download the PostgreSQL JDBC driver from the official site: [https://jdbc.postgresql.org/download/](https://jdbc.postgresql.org/download/).
-    - Place it in the `lib` directory.
+    - Download the PostgreSQL JDBC driver from the official
+      site: [https://jdbc.postgresql.org/download/](https://jdbc.postgresql.org/download/).
+    - Place it in the `lib` directory of your Membrane installation.
 
 3. **Configure `proxies.xml`:**
 
@@ -48,29 +49,57 @@ A quick guide to setting up a JDBC-based API key store using PostgreSQL.
             <target url="https://api.predic8.de"/>
     </api>
    ```
-   
+
 4. **run service.proxy.sh script:**
 
 ```shell
 ./service-proxy.sh
 ```
 
-5. **Run Database Script Insert Values**
+5. **Run SQL File in your Docker Container**
+
+- First, you need to copy the ```insert_apikeys.sql``` file into the Docker container.
 
     ```shell
-   ./psql.sh
+    docker cp /path/to/insert_apikeys.sql postgres:/insert_apikeys.sql
     ```
-   
-- This script will:
-  - Connect to the PostgreSQL database.
-  - Insert initial API keys into the key table if not exists.
+- Access the Postgres Container
 
-- After running the script, the first API key inserted will be displayed in the console. Copy this key for use in the next step.
+    ```shell
+    docker exec -it postgres bash
+    ```
+
+- Once inside the container, connect to the PostgreSQL database using the psql command:
+
+    ```shell
+    psql -U user -d postgres
+    ```
+- Run the SQL File
+
+    ```shell
+    \i /insert_apikeys.sql
+   ```
+
+- Verify the Data
+
+    ```shell
+    SELECT * FROM key;
+    ```
+
+- Exit
+
+    ```shell
+    \q
+    ```
+
+    ```shell
+    exit
+    ```
 
 6. **You can test it using curl:**
 
 ```shell
-curl localhost:2000 -H "x-api-key:<FIRST API KEY>"
+curl localhost:2000 -H "x-api-key:unsecure2000"
 ```
 
 - if the API key is valid, you will be redirected to ```https://api.predic8.de```.

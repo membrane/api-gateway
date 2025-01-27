@@ -3,6 +3,7 @@ package com.predic8.membrane.core.interceptor.apikey.stores;
 import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.Router;
+import com.predic8.membrane.core.util.ConfigurationException;
 import com.predic8.membrane.core.util.jdbc.AbstractJdbcSupport;
 import org.jetbrains.annotations.NotNull;
 
@@ -20,11 +21,7 @@ public class JDBCApiKeyStore extends AbstractJdbcSupport implements ApiKeyStore 
     @Override
     public void init(Router router) {
         super.init(router);
-        try {
-            createTablesIfNotExist();
-        } catch (SQLException e) {
-            throw new RuntimeException("Error initializing database tables", e);
-        }
+        createTablesIfNotExist();
     }
 
     @Override
@@ -62,24 +59,25 @@ public class JDBCApiKeyStore extends AbstractJdbcSupport implements ApiKeyStore 
         }
     }
 
-    private void createTablesIfNotExist() throws SQLException {
+    private void createTablesIfNotExist() {
         try (Connection connection = getDatasource().getConnection()) {
             if (tableExists(connection, keyTable.getName())) {
                 connection.createStatement().executeUpdate(String.format("""
-                    CREATE TABLE %s (
-                        apikey VARCHAR(255) NOT NULL PRIMARY KEY
-                    )
-                    """, keyTable.getName()));
+                        CREATE TABLE %s (
+                            apikey VARCHAR(255) NOT NULL PRIMARY KEY
+                        )
+                        """, keyTable.getName()));
             }
-
             if (tableExists(connection, scopeTable.getName())) {
                 connection.createStatement().executeUpdate(String.format("""
-                    CREATE TABLE %s (
-                        apikey VARCHAR(255) NOT NULL REFERENCES %s (apikey),
-                        scope VARCHAR(255) NOT NULL
-                    )
-                    """, scopeTable.getName(), keyTable.getName()));
+                        CREATE TABLE %s (
+                            apikey VARCHAR(255) NOT NULL REFERENCES %s (apikey),
+                            scope VARCHAR(255) NOT NULL
+                        )
+                        """, scopeTable.getName(), keyTable.getName()));
             }
+        } catch (Exception e) {
+            throw new ConfigurationException("Failed to create tables: ", e);
         }
     }
 
