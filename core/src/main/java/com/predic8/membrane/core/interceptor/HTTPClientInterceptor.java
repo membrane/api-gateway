@@ -75,7 +75,7 @@ public class HTTPClientInterceptor extends AbstractInterceptor {
         } catch (SocketTimeoutException e) {
             // Details are logged further down in the HTTPClient
             internal(router.isProduction(), getDisplayName())
-                    .detail("Target %s is not reachable.".formatted(getDestination(exc)))
+                    .detail("Target %s is not reachable.".formatted(exc.getDestinations()))
                     .buildAndSetResponse(exc);
             return ABORT;
         } catch (UnknownHostException e) {
