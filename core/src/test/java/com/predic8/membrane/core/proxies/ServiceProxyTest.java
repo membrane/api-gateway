@@ -51,9 +51,9 @@ class ServiceProxyTest {
             .log().ifValidationFails()
             .statusCode(500)
             .contentType(APPLICATION_PROBLEM_JSON)
-            .body("type", equalTo("https://membrane-api.io/error/internal/http-client"))
-            .body("message", containsString("/foo"))
-            .body("message", containsString("<target>"));
+            .body("type", equalTo("https://membrane-api.io/problems/internal"))
+            .body("message", Matchers.containsString("/foo"))
+            .body("message", Matchers.containsString("<target>"));
         // @formatter:on
     }
     

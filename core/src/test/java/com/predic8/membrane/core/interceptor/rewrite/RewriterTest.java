@@ -51,7 +51,7 @@ public class RewriterTest {
         assertEquals(400, exc.getResponse().getStatusCode());
 
         var pd = ProblemDetails.parse(exc.getResponse());
-        assertEquals("https://membrane-api.io/error/user/url-rewriter/path", pd.getType());
+        assertEquals("https://membrane-api.io/problems/user/path", pd.getType());
 
     }
 

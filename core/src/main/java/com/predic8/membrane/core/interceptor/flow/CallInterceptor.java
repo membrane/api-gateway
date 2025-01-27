@@ -74,7 +74,7 @@ public class CallInterceptor extends AbstractExchangeExpressionInterceptor {
         } catch (ExchangeExpressionException e) {
             e.provideDetails(
                     internal(getRouter().isProduction(),getDisplayName()))
-                    .addSubType("expression-evaluation")
+                    .addSubSee("expression-evaluation")
                     .buildAndSetResponse(exc);
             return ABORT;
         }
@@ -93,7 +93,7 @@ public class CallInterceptor extends AbstractExchangeExpressionInterceptor {
         } catch (Exception e) {
             log.error("",e);
             internal(router.isProduction(),getDisplayName())
-                    .addSubType("internal-calling")
+                    .addSubSee("internal-calling")
                     .detail("Internal call")
                     .exception(e)
                     .buildAndSetResponse(exc);

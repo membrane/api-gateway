@@ -52,21 +52,20 @@ class RouterTest {
     void prodJson() {
 
         // @formatter:off
-        ExtractableResponse<Response> r = RestAssured.given()
+        RestAssured.given()
             .contentType(APPLICATION_JSON)
             .post("http://localhost:2000/")
         .then()
+            .log().ifValidationFails()
             .statusCode(500)
             .contentType(APPLICATION_PROBLEM_JSON)
-            .body("title", equalTo("An error occurred."))
-            .body("type",equalTo("https://membrane-api.io/error/internal/interceptor"))
+            .body("title", equalTo("Internal server error."))
+            .body("type",equalTo("https://membrane-api.io/problems/internal"))
             .body("detail",containsString("key"))
             .body("message", Matchers.not(containsString(INTERNAL_SECRET)))
             .body("$",aMapWithSize(3))
         .extract();
         // @formatter:on
-
-//        System.out.println("r = " + r.asPrettyString());
     }
 
     @Test
@@ -79,10 +78,9 @@ class RouterTest {
             .log().ifValidationFails(ALL)
             .statusCode(500)
             .contentType(APPLICATION_XML)
-            .body("error.title", equalTo("An error occurred."))
-            .body("error.type",equalTo("https://membrane-api.io/error/internal/interceptor"))
+            .body("error.title", equalTo("Internal server error."))
+            .body("error.type",equalTo("https://membrane-api.io/problems/internal"))
             .body("error.message", Matchers.not(containsString(INTERNAL_SECRET)))
-            .body("error.detail",containsString("key"))
             .extract();
         // @formatter:on
 
@@ -98,7 +96,7 @@ class RouterTest {
             .statusCode(500)
             .contentType(APPLICATION_PROBLEM_JSON)
             .body("title", equalTo("Internal server error."))
-            .body("type",equalTo("https://membrane-api.io/error/internal/interceptor"))
+            .body("type",equalTo("https://membrane-api.io/problems/internal"))
             .body("$",hasKey("attention"))
             .body("attention", Matchers.containsString("development mode"))
             .body("$",not(hasKey("stacktrace")))

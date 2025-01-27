@@ -17,6 +17,7 @@
 package com.predic8.membrane.core.openapi.serviceproxy;
 
 import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.openapi.*;
@@ -33,6 +34,8 @@ import java.util.*;
 
 import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
 import static com.predic8.membrane.core.exchange.Exchange.*;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.RESPONSE;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.openapi.serviceproxy.APIProxy.*;
 import static com.predic8.membrane.core.openapi.util.UriUtil.*;
@@ -65,9 +68,9 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
         if (basePath == null) {
             // Do not log: 404 is too common
             user(false, getDisplayName())
-                    .statusCode(404)
-                    .addSubType("not-found")
                     .title("No matching API found!")
+                    .statusCode(404)
+                    .addSubSee("not-found")
                     .detail("There is no API on the path %s deployed. Please check the path.".formatted(exc.getOriginalRequestUri()))
                     .topLevel("path", exc.getOriginalRequestUri())
                     .buildAndSetResponse(exc);
@@ -86,14 +89,15 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
 
             if (!errors.isEmpty()) {
                 apiProxy.statisticCollector.collect(errors);
-                createErrorResponse(exc, errors, REQUEST, validationDetails(rec.api));
+                createErrorResponse(exc, errors, ValidationErrors.Direction.REQUEST, validationDetails(rec.api));
                 return RETURN;
             }
         } catch (OpenAPIParsingException e) {
             String detail = "Could not parse OpenAPI with title %s. Check syntax and references.".formatted(rec.api.getInfo().getTitle());
             log.warn(detail);
             internal(router.isProduction(), getDisplayName())
-                    .addSubType("openapi-parsing/request")
+                    .addSubSee("openapi-parsing")
+                    .flow(REQUEST)
                     .detail(detail)
                     .exception(e)
                     .buildAndSetResponse(exc);
@@ -101,8 +105,9 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
         } catch (Throwable t /* On purpose! Catch absolutely all */) {
             final String LOG_MESSAGE = "Message could not be validated against OpenAPI cause of an error during validation. Please check the OpenAPI with title %s.";
             log.error(LOG_MESSAGE.formatted(rec.api.getInfo().getTitle()), t);
-            internal(router.isProduction(), getDisplayName())
-                    .addSubType("generic/request")
+            user(router.isProduction(), getDisplayName())
+                    .addSubSee("generic")
+                    .flow(REQUEST)
                     .detail(LOG_MESSAGE.formatted(rec.api.getInfo().getTitle()))
                     .exception(t)
                     .buildAndSetResponse(exc);
@@ -130,22 +135,24 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
             if (errors != null && errors.hasErrors()) {
                 exc.getResponse().setStatusCode(500); // A validation error in the response is a server error!
                 apiProxy.statisticCollector.collect(errors);
-                createErrorResponse(exc, errors, RESPONSE, validationDetails(rec.api));
+                createErrorResponse(exc, errors, ValidationErrors.Direction.RESPONSE, validationDetails(rec.api));
                 return RETURN;
             }
         } catch (OpenAPIParsingException e) {
             String detail = "Could not parse OpenAPI with title %s. Check syntax and references.".formatted(rec.api.getInfo().getTitle());
             log.warn(detail, e);
-            internal(router.isProduction(), getDisplayName())
-                    .addSubType("openapi-parsing/response")
+            user(router.isProduction(), getDisplayName())
+                    .addSubType("openapi")
+                    .flow(RESPONSE)
                     .detail(detail)
                     .exception(e)
                     .buildAndSetResponse(exc);
             return RETURN;
         } catch (Throwable t /* On Purpose! Catch absolutely all */) {
             log.error("", t);
-            internal(router.isProduction(), getDisplayName())
-                    .addSubType("generic/response")
+            user(router.isProduction(), getDisplayName())
+                    .addSubSee("generic")
+                    .flow(RESPONSE)
                     .detail("Message could not be validated against OpenAPI cause of an error during validation. Please check the OpenAPI with title %s.".formatted(rec.api.getInfo().getTitle()))
                     .exception(t)
                     .buildAndSetResponse(exc);
@@ -316,12 +323,17 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
     }
 
     private void createErrorResponse(Exchange exc, ValidationErrors errors, ValidationErrors.Direction direction, boolean validationDetails) {
-        user(router.isProduction(), getDisplayName())
+        ProblemDetails pd = user(router.isProduction(), getDisplayName())
                 .title("OpenAPI message validation failed")
                 .addSubType("validation")
                 .statusCode(errors.get(0).getContext().getStatusCode())
-                .topLevel("validation", getErrorMap(errors, direction, validationDetails))
-                .buildAndSetResponse(exc);
+                .topLevel("validation", getErrorMap(errors, direction, validationDetails));
+        if (direction == ValidationErrors.Direction.REQUEST) {
+            pd.flow(REQUEST);
+        } else {
+            pd.flow(RESPONSE);
+        }
+        pd.buildAndSetResponse(exc);
     }
 
     private static Map<String, Object> getErrorMap(ValidationErrors errors, ValidationErrors.Direction direction, boolean validationDetails) {

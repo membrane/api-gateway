@@ -87,6 +87,12 @@ public class Response extends Message {
 			return this;
 		}
 
+		public ResponseBuilder json(String json) {
+			res.setBodyContent(json.getBytes(UTF_8));
+			res.header.setContentType(APPLICATION_JSON);
+			return this;
+		}
+
 		private static class BodyCompleteMessageObserver extends AbstractMessageObserver implements NonRelevantBodyObserver{
 
 			private final InputStream stream;

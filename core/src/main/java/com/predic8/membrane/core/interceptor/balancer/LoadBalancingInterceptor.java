@@ -82,7 +82,7 @@ public class LoadBalancingInterceptor extends AbstractInterceptor {
             return ABORT;
         } catch (Exception e) {
             internal(router.isProduction(),getDisplayName())
-                    .addSubType("node-dispatching")
+                    .addSubSee("node-dispatching")
                     .detail("Could not get dispatched node!")
                     .exception(e)
                     .buildAndSetResponse(exc);
@@ -123,7 +123,7 @@ public class LoadBalancingInterceptor extends AbstractInterceptor {
                 sessionId = getSessionId(exc.getResponse());
             } catch (Exception e) {
                 internal(router.isProduction(),getDisplayName())
-                        .addSubType("sessionid-extraction")
+                        .addSubSee("sessionid-extraction")
                         .detail("Could not get session id!")
                         .exception(e)
                         .buildAndSetResponse(exc);
