@@ -64,10 +64,11 @@ public class OpenAPIPublisher {
         // No id specified
         if (!m.matches()) {
             // Do not log! Too common!
-            openapi(false,"openapi-publisher")
-                    .statusCode(404)
-                    .addSubType("wrong-id")
+            user(false,"openapi-publisher")
                     .title("No OpenAPI document id")
+                    .addSubType("openapi")
+                    .statusCode(404)
+                    .addSubSee("wrong-id")
                     .detail("Please specify an id of an OpenAPI document. Path should match this pattern: /api-docs/ui/<<id>>")
                     .buildAndSetResponse(exc);
             return RETURN;
@@ -122,10 +123,11 @@ public class OpenAPIPublisher {
 
     private Outcome returnNoFound(Exchange exc, String id) {
         // Do not log. Too common.
-        openapi(false,"openapi-publisher")
-                .statusCode(404)
-                .addSubType("wrong-id")
+        user(false,"openapi-publisher")
                 .title("OpenAPI not found.")
+                .statusCode(404)
+                .addSubType("openapi")
+                .addSubSee("wrong-id")
                 .detail("OpenAPI document with the id %s not found.".formatted(id))
                 .buildAndSetResponse(exc);
         return RETURN;

@@ -136,6 +136,8 @@
 
 # Discussion
 
+- ProblemDetails: 
+  - When flow = RESPONSE it should always be an internal error!
 - ${} or #{} for expressions
   - Possible conflict with spring property placeholder configurer
   - Conflict with SpEL on startup? Are #{} replaced?

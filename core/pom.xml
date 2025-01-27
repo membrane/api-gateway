@@ -57,6 +57,11 @@
 			<artifactId>commons-codec</artifactId>
 		</dependency>
 		<dependency>
+			<groupId>org.brotli</groupId>
+			<artifactId>dec</artifactId>
+			<version>0.1.2</version>
+		</dependency>
+		<dependency>
 			<groupId>org.apache.commons</groupId>
 			<artifactId>commons-dbcp2</artifactId>
 			<exclusions>
@@ -201,7 +206,7 @@
 		<dependency>
 			<groupId>org.mozilla</groupId>
 			<artifactId>rhino-engine</artifactId>
-			<version>1.7.15</version>
+			<version>1.8.0</version>
 		</dependency>
 		<dependency>
 			<groupId>org.graalvm.sdk</groupId>

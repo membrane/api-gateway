@@ -131,7 +131,7 @@ public class ValidatorInterceptor extends AbstractInterceptor implements Applica
         } catch (IOException e) {
             log.error("", e);
             internal(router.isProduction(),getDisplayName())
-                    .addSubType("io")
+                    .addSubSee("io")
                     .detail("Could not read message body")
                     .exception(e)
                     .buildAndSetResponse(exc);
@@ -143,9 +143,9 @@ public class ValidatorInterceptor extends AbstractInterceptor implements Applica
         } catch (Exception e) {
             log.error("", e);
             internal(router.isProduction(),getDisplayName())
-                    .addSubType("generic")
                     .detail("Error validating message")
-                    .internal("class", exc.getMessage(flow).getClass())
+                    .addSubSee("generic")
+                    .internal("validator", validator.getName())
                     .exception(e)
                     .buildAndSetResponse(exc);
             return ABORT;

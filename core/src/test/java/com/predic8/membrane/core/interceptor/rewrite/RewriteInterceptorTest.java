@@ -93,7 +93,7 @@ public class RewriteInterceptorTest {
 
 		JsonNode json = om.readTree(exc.getResponse().getBodyAsStream());
 
-		assertEquals("https://membrane-api.io/error/user/url-rewriter/path",json.get("type").asText());
+		assertEquals("https://membrane-api.io/problems/user/path",json.get("type").asText());
 		assertEquals("The path does not follow the URI specification. Confirm the validity of the provided URL.",json.get("title").asText());
 		assertTrue(json.get("detail").asText().contains("http://www.predic8.de:80/buy/banana/%"));
 	}
