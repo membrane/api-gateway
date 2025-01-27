@@ -58,43 +58,17 @@ A quick guide to setting up a JDBC-based API key store using PostgreSQL.
 
 5. **Run SQL File in your Docker Container**
 
-- First, you need to copy the ```insert_apikeys.sql``` file into the Docker container.
+- Run this command:
 
-    ```shell
-    docker cp /path/to/insert_apikeys.sql postgres:/insert_apikeys.sql
-    ```
-- Access the Postgres Container
+```shell
+docker exec -i postgres psql -U user -d postgres < ./insert_apikeys.sql
+```
 
-    ```shell
-    docker exec -it postgres bash
-    ```
+- test
 
-- Once inside the container, connect to the PostgreSQL database using the psql command:
-
-    ```shell
-    psql -U user -d postgres
-    ```
-- Run the SQL File
-
-    ```shell
-    \i /insert_apikeys.sql
-   ```
-
-- Verify the Data
-
-    ```shell
-    SELECT * FROM key;
-    ```
-
-- Exit
-
-    ```shell
-    \q
-    ```
-
-    ```shell
-    exit
-    ```
+```shell
+docker exec -i postgres psql -U user -d postgres -c "SELECT * FROM key;"
+```
 
 6. **You can test it using curl:**
 
@@ -103,4 +77,3 @@ curl localhost:2000 -H "x-api-key:unsecure2000"
 ```
 
 - if the API key is valid, you will be redirected to ```https://api.predic8.de```.
-   
