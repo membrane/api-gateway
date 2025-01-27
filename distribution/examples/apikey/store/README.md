@@ -1,4 +1,4 @@
-# JDBC API Key Store
+# JDBC Database API Key Store
 
 A quick guide to setting up a JDBC-based API key store using PostgreSQL.
 
