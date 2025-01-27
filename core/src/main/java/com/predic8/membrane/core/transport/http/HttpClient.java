@@ -77,11 +77,6 @@ public class HttpClient implements AutoCloseable {
     private final Http2ClientPool http2ClientPool;
     private StreamPump.StreamPumpStats streamPumpStats;
 
-    /**
-     * TODO make injectable, make it an optional feature, don't pay for what you don't use.
-     */
-//	private HttpClientStatusEventBus httpClientStatusEventBus = HttpClientStatusEventBus.getService();
-
     private static final String[] HTTP2_PROTOCOLS = new String[]{"h2"};
 
     public HttpClient() {
@@ -306,7 +301,11 @@ public class HttpClient implements AutoCloseable {
                 } else {
                     logException(exc, counter, e);
                 }
-            } catch (UnknownHostException e) {
+            } catch (SocketTimeoutException e) {
+                log.info("Connection to {} timed out.", target);
+                throw e;
+            }
+            catch (UnknownHostException e) {
                 exception = e;
                 log.warn("Unknown host: {}", (target == null ? dest : target));
             } catch (EOFWhileReadingFirstLineException e) {
@@ -407,10 +406,6 @@ public class HttpClient implements AutoCloseable {
         if (exc.getProperty(ALLOW_TCP) == TRUE && isUpgradeToResponse(response, "tcp")) {
             log.debug("Upgrading to TCP protocol.");
             return "TCP";
-        }
-        if (exc.getProperty(ALLOW_SPDY) == TRUE && isUpgradeToResponse(response, "SPDY/3.1")) {
-            log.debug("Upgrading to SPDY/3.1 protocol.");
-            return "SPDY/3.1";
         }
         return newProtocol;
     }

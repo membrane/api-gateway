@@ -14,13 +14,13 @@
 package com.predic8.membrane.core.interceptor;
 
 import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import org.slf4j.*;
 
 import java.io.*;
 
+import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 
 /**
@@ -82,19 +82,17 @@ public class LimitInterceptor extends AbstractInterceptor {
 		long len = msg.getHeader().getContentLength();
 		if (len != -1 && len > maxBodyLength) {
 			log.info("Message length of {} exceeded limit {}.",len,maxBodyLength);
-			exc.setResponse(createFailureResponse());
+			security(router.isProduction(), getDisplayName())
+					.title("Message is too large.")
+					.detail("Message bodies must be smaller than limit.")
+					.internal("maxBodyLength", maxBodyLength)
+					.buildAndSetResponse(exc);
 			return ABORT;
 		}
 
 		msg.setBody(new Body(new LengthLimitingStream(msg.getBodyAsStream())));
 
 		return CONTINUE;
-	}
-
-	private Response createFailureResponse() {
-		return ProblemDetails.security(router.isProduction())
-				.title("Message is too large")
-				.detail("Message bodies must be smaller than %s bytes.".formatted(maxBodyLength)).build();
 	}
 
 	public class LengthLimitingStream extends InputStream {

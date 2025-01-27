@@ -1,3 +1,33 @@
+# Architecture Decision Log
+
+## ADR-001 ProblemDetails
+
+Status: PROPOSED
+
+### Context:
+
+### Decision:
+
+- Use ProblemDetails to return error messages to the API caller
+- Fields:
+  - type, title
+  - subtype(s)
+    - subtype should be enough to identify error
+    - first subtype component must be uncritical for security
+      e.g. /security/oauth2/keystore/invalid-alias
+  - component
+    - Component that caused the error
+    - Mandatory
+  - detail:
+    - For humans easily readable description
+    - Used because a log of examples use this field
+    - Is also returned in production
+  - internal/message:
+    - Message from an exception
+- Returning a PD is no substitute for logging
+
+### Consequences:
+
 # ADR Discussions
 
 ## Make flow a property of exchange 
@@ -72,3 +102,8 @@ Should implementations of init() in subclasses of Interceptor call init() on sup
 
 # Keep K8S
 
+# java.net.URI or com.predic8.membrane.core.util.URI ?
+- our URI is a 1:1 replacement for the java.net.URI.
+- by default, our URI delegates to the java URI
+- but: If URIFacteroy is configured this way, our allows special characters. This is required for proxying some 
+  Microsoft products.

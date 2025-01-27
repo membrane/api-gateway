@@ -13,22 +13,19 @@
 
 package com.predic8.membrane.core.interceptor.oauth2.processors;
 
-import com.predic8.membrane.core.exceptions.*;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Response;
-import com.predic8.membrane.core.interceptor.Outcome;
-import com.predic8.membrane.core.interceptor.authentication.session.SessionManager;
-import com.predic8.membrane.core.interceptor.oauth2.Client;
-import com.predic8.membrane.core.interceptor.oauth2.OAuth2AuthorizationServerInterceptor;
-import com.predic8.membrane.core.interceptor.oauth2.OAuth2Util;
-import com.predic8.membrane.core.interceptor.oauth2.ParamNames;
-import com.predic8.membrane.core.util.URLParamUtil;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.interceptor.authentication.session.*;
+import com.predic8.membrane.core.interceptor.oauth2.*;
+import com.predic8.membrane.core.util.*;
 import org.slf4j.*;
 
-import java.util.Map;
+import java.util.*;
 
-import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
-import static com.predic8.membrane.core.util.URLParamUtil.DuplicateKeyOrInvalidFormStrategy.ERROR;
+import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
+import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static com.predic8.membrane.core.util.URLParamUtil.DuplicateKeyOrInvalidFormStrategy.*;
 
 public class RevocationEndpointProcessor extends EndpointProcessor {
 
@@ -49,10 +46,8 @@ public class RevocationEndpointProcessor extends EndpointProcessor {
             return processInternal(exc);
         } catch (Exception e) {
             log.error("", e);
-            ProblemDetails.internal(true)
-                    .component(this.getClass().getSimpleName())
+            internal(true, "revocation-endpoint-processor")
                     .exception(e)
-                    .stacktrace(true)
                     .buildAndSetResponse(exc);
             return ABORT;
         }
@@ -62,7 +57,7 @@ public class RevocationEndpointProcessor extends EndpointProcessor {
         Map<String, String> params = URLParamUtil.getParams(uriFactory, exc, ERROR);
 
         if (!params.containsKey("token")) {
-            exc.setResponse(OAuth2Util.createParameterizedJsonErrorResponse(jsonGen, "error", "invalid_request"));
+            exc.setResponse(OAuth2Util.createParameterizedJsonErrorResponse("error", "invalid_request"));
             return Outcome.RETURN;
         }
 
@@ -77,11 +72,10 @@ public class RevocationEndpointProcessor extends EndpointProcessor {
 
         Client client;
         Map<String, String> userAttributes = session.getUserAttributes();
-        synchronized (userAttributes){
+        synchronized (userAttributes) {
             try {
                 client = authServer.getClientList().getClient(userAttributes.get(ParamNames.CLIENT_ID));
-            }
-            catch(Exception e){
+            } catch (Exception e) {
                 // This should never happen
                 exc.setResponse(Response
                         .ok()
@@ -93,24 +87,24 @@ public class RevocationEndpointProcessor extends EndpointProcessor {
 
         String paramClientId = params.get(ParamNames.CLIENT_ID);
         String paramClientSecret = params.get(ParamNames.CLIENT_SECRET);
-        if((paramClientId != null && !client.getClientId().equals(paramClientId)) || (paramClientSecret != null && !client.getClientSecret().equals(paramClientSecret))){
-            exc.setResponse(OAuth2Util.createParameterizedJsonErrorResponse(jsonGen, "error", "invalid_grant"));
+        if ((paramClientId != null && !client.getClientId().equals(paramClientId)) || (paramClientSecret != null && !client.getClientSecret().equals(paramClientSecret))) {
+            exc.setResponse(OAuth2Util.createParameterizedJsonErrorResponse("error", "invalid_grant"));
             return Outcome.RETURN;
         }
 
         try {
             authServer.getTokenGenerator().invalidateToken(params.get("token"), client.getClientId(), client.getClientSecret());
         } catch (Exception e) {
-            exc.setResponse(OAuth2Util.createParameterizedJsonErrorResponse(jsonGen, "error", "invalid_grant"));
+            exc.setResponse(OAuth2Util.createParameterizedJsonErrorResponse("error", "invalid_grant"));
             return Outcome.RETURN;
         }
-        synchronized(session) {
+        synchronized (session) {
             session.clear();
         }
-        synchronized (authServer.getSessionManager()){
+        synchronized (authServer.getSessionManager()) {
             authServer.getSessionManager().removeSession(session);
         }
-        synchronized (authServer.getSessionFinder()){
+        synchronized (authServer.getSessionFinder()) {
             authServer.getSessionFinder().removeSessionForToken(params.get("token"));
         }
         exc.setResponse(Response

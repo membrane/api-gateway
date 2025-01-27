@@ -14,10 +14,10 @@
 
 package com.predic8.membrane.core.transport.http;
 
-import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.transport.*;
 import com.predic8.membrane.core.transport.ssl.*;
 import com.predic8.membrane.core.util.*;
+import org.slf4j.Logger;
 import org.slf4j.*;
 
 import javax.annotation.*;
@@ -27,8 +27,9 @@ import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.*;
 
+import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
 import static java.lang.Boolean.*;
-import static java.lang.System.currentTimeMillis;
+import static java.lang.System.*;
 
 public class HttpEndpointListener extends Thread {
 
@@ -272,10 +273,9 @@ public class HttpEndpointListener extends Thread {
             sourceSocket.getOutputStream().write(TLS_ALERT_INTERNAL_ERROR, 0, TLS_ALERT_INTERNAL_ERROR.length);
         else {
             log.warn("Limit of {} concurrent connections per client is reached.", transport.getConcurrentConnectionLimitPerIp());
-            ProblemDetails.internal(false)
+            user(false,"http-endpoint-listener")
                     .statusCode(429)
                     .addSubType("rate-limit")
-                    .addSubType("write-limit-reached")
                     .title("Limit of concurrent connections per client is reached.")
                     .detail("There is a limit of concurrent connections per client to avoid denial of service attacks.")
                     .build()

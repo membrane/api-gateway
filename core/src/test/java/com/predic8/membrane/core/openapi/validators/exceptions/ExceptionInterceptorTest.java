@@ -55,7 +55,7 @@ public class ExceptionInterceptorTest extends AbstractSecurityValidatorTest {
         assertEquals(RETURN, interceptor.handleRequest(exc));
         assertEquals(500,exc.getResponse().getStatusCode());
         JsonNode json = om.readTree(exc.getResponse().getBodyAsStream());
-        assertEquals("https://membrane-api.io/error/internal",json.get("type").asText());
+        assertEquals("https://membrane-api.io/problems/internal",json.get("type").asText());
     }
 
     @Test
@@ -78,9 +78,9 @@ public class ExceptionInterceptorTest extends AbstractSecurityValidatorTest {
         assertEquals(CONTINUE, interceptor.handleRequest(exc));
         assertEquals(RETURN, interceptor.handleResponse(exc));
 
-        assertEquals(500,exc.getResponse().getStatusCode());
+        assertEquals(400,exc.getResponse().getStatusCode());
         JsonNode json = om.readTree(exc.getResponse().getBodyAsStream());
-        assertEquals("https://membrane-api.io/error/internal",json.get("type").asText());
+        assertEquals("https://membrane-api.io/problems/user/openapi",json.get("type").asText());
     }
 
 

@@ -14,17 +14,14 @@
 
 package com.predic8.membrane.servlet.test;
 
-import static com.predic8.membrane.test.AssertUtils.assertContains;
-import static com.predic8.membrane.test.AssertUtils.getAndAssert200;
+import com.predic8.membrane.test.HttpAssertions;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
-import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 
-import org.apache.http.client.ClientProtocolException;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.MethodSource;
+import static com.predic8.membrane.test.StringAssertions.assertContains;
 
 public class WSDLRewritingTest {
 
@@ -38,8 +35,10 @@ public class WSDLRewritingTest {
 
 	@ParameterizedTest
 	@MethodSource("getPorts")
-	public void testWSDLRewritten(int port) throws ClientProtocolException, IOException {
-		assertContains("localhost:" + port, getAndAssert200(getBaseURL(port) + "ArticleService.wsdl"));
+	public void testWSDLRewritten(int port) throws Exception {
+		try (HttpAssertions ha = new HttpAssertions()) {
+			assertContains("localhost:" + port, ha.getAndAssert200(getBaseURL(port) + "ArticleService.wsdl"));
+		}
 	}
 
 	private String getBaseURL(int port) {

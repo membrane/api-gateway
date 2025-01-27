@@ -14,20 +14,24 @@
 
 package com.predic8.membrane.examples.tests;
 
-import com.predic8.membrane.examples.util.*;
-import org.junit.jupiter.api.*;
+import com.predic8.membrane.examples.util.DistributionExtractingTestcase;
+import com.predic8.membrane.examples.util.Process2;
+import com.predic8.membrane.test.HttpAssertions;
+import org.junit.jupiter.api.Test;
 
-import java.io.*;
+import java.io.File;
+import java.io.IOException;
 import java.sql.*;
 
 import static com.predic8.membrane.core.util.OSUtil.isWindows;
-import static com.predic8.membrane.test.AssertUtils.*;
 import static java.io.File.separator;
 import static java.lang.Thread.sleep;
-import static java.nio.charset.StandardCharsets.*;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Objects.requireNonNull;
-import static org.apache.commons.io.FileUtils.*;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.apache.commons.io.FileUtils.copyFileToDirectory;
+import static org.apache.commons.io.FileUtils.writeStringToFile;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class LoggingJDBCExampleTest extends DistributionExtractingTestcase {
 
@@ -44,8 +48,8 @@ public class LoggingJDBCExampleTest extends DistributionExtractingTestcase {
                 replace("org.apache.derby.jdbc.ClientDriver", "org.apache.derby.jdbc.EmbeddedDriver").
                 replace("jdbc:derby://localhost:1527/membranedb;create=true", "jdbc:derby:derbyDB;create=true"), UTF_8);
 
-        try (Process2 ignored = startServiceProxyScript()) {
-            getAndAssert200("http://localhost:2000/");
+        try (Process2 ignored = startServiceProxyScript(); HttpAssertions ha = new HttpAssertions()) {
+            ha.getAndAssert200("http://localhost:2000/");
         }
 
         assertLogToDerbySucceeded();

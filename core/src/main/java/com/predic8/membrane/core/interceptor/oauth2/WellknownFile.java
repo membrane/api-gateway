@@ -43,8 +43,6 @@ public class WellknownFile {
     private String wellknown;
     private OAuth2AuthorizationServerInterceptor oasi;
     private ResolverMap resolver;
-    private ReusableJsonGenerator reusableJsonGen = new ReusableJsonGenerator();
-    private JsonGenerator jsonGen;
 
     private String authorizationEndpoint;
     private String issuer;
@@ -110,97 +108,99 @@ public class WellknownFile {
     }
 
     private void writeWellknown() throws IOException {
-        jsonGen = reusableJsonGen.resetAndGet();
-        jsonGen.writeStartObject();
+        try (var bufferedJsonGenerator = new BufferedJsonGenerator()) {
+            var jg = bufferedJsonGenerator.getJsonGenerator();
+            jg.writeStartObject();
 
-        writeIssuer();
-        writeAuthorizationEndpoint();
-        writeTokenEndpoint();
-        writeUserinfoEndpoint();
-        writeRevocationEndpoint();
-        writeJwksUri();
-        writeEndSessionEndpoint();
-        writeSupportedResponseTypes();
-        writeSupportedResponseModes();
-        writeSupportedSubjectTypes();
-        writeSupportedIdTokenSigningAlgValues();
-        writeSupportedScopes();
-        writeSupportedTokenEndpointAuthMethods();
-        writeSupportedClaims();
+            writeIssuer(jg);
+            writeAuthorizationEndpoint(jg);
+            writeTokenEndpoint(jg);
+            writeUserinfoEndpoint(jg);
+            writeRevocationEndpoint(jg);
+            writeJwksUri(jg);
+            writeEndSessionEndpoint(jg);
+            writeSupportedResponseTypes(jg);
+            writeSupportedResponseModes(jg);
+            writeSupportedSubjectTypes(jg);
+            writeSupportedIdTokenSigningAlgValues(jg);
+            writeSupportedScopes(jg);
+            writeSupportedTokenEndpointAuthMethods(jg);
+            writeSupportedClaims(jg);
 
-        jsonGen.writeEndObject();
-        setWellknown(reusableJsonGen.getJson());
+            jg.writeEndObject();
+            setWellknown(bufferedJsonGenerator.getJson());
+        }
     }
 
-    private void writeSupportedClaims() throws IOException {
-        stringEnumToJson(CLAIMS_SUPPORTED, getSupportedClaims().split(" "));
+    private void writeSupportedClaims(JsonGenerator jg) throws IOException {
+        stringEnumToJson(jg, CLAIMS_SUPPORTED, getSupportedClaims().split(" "));
     }
 
-    private void writeSupportedTokenEndpointAuthMethods() throws IOException {
-        stringEnumToJson(TOKEN_ENDPOINT_AUTH_METHODS_SUPPORTED, getSupportedTokenEndpointAuthMethods().split(" "));
+    private void writeSupportedTokenEndpointAuthMethods(JsonGenerator jg) throws IOException {
+        stringEnumToJson(jg, TOKEN_ENDPOINT_AUTH_METHODS_SUPPORTED, getSupportedTokenEndpointAuthMethods().split(" "));
     }
 
-    private void writeSupportedScopes() throws IOException {
-        stringEnumToJson(SCOPES_SUPPORTED, getSupportedScopes().split(" "));
+    private void writeSupportedScopes(JsonGenerator jg) throws IOException {
+        stringEnumToJson(jg, SCOPES_SUPPORTED, getSupportedScopes().split(" "));
     }
 
-    private void writeSupportedIdTokenSigningAlgValues() throws IOException {
-        stringEnumToJson(ID_TOKEN_SIGNING_ALG_VALUES_SUPPORTED, getSupportedIdTokenSigningAlgValues().split(" "));
+    private void writeSupportedIdTokenSigningAlgValues(JsonGenerator jg) throws IOException {
+        stringEnumToJson(jg, ID_TOKEN_SIGNING_ALG_VALUES_SUPPORTED, getSupportedIdTokenSigningAlgValues().split(" "));
     }
 
-    private void writeSupportedSubjectTypes() throws IOException {
-        stringEnumToJson(SUBJECT_TYPES_SUPPORTED, getSupportedSubjectType().split(" "));
+    private void writeSupportedSubjectTypes(JsonGenerator jg) throws IOException {
+        stringEnumToJson(jg, SUBJECT_TYPES_SUPPORTED, getSupportedSubjectType().split(" "));
     }
 
-    private void stringEnumToJson(String name, String... enumeration) throws IOException {
-        jsonGen.writeArrayFieldStart(name);
+    private void stringEnumToJson(JsonGenerator jg, String name, String... enumeration) throws IOException {
+        jg.writeArrayFieldStart(name);
         for(String value : enumeration)
-            jsonGen.writeString(OAuth2Util.urldecode(value));
-        jsonGen.writeEndArray();
+            jg.writeString(OAuth2Util.urldecode(value));
+        jg.writeEndArray();
     }
 
-    private void writeSupportedResponseTypes() throws IOException {
-        stringEnumToJson(RESPONSE_TYPES_SUPPORTED,getSupportedResponseTypes().split(" "));
+    private void writeSupportedResponseTypes(JsonGenerator jg) throws IOException {
+        stringEnumToJson(jg, RESPONSE_TYPES_SUPPORTED, getSupportedResponseTypes().split(" "));
     }
 
-    private void writeSupportedResponseModes() throws IOException {
+    private void writeSupportedResponseModes(JsonGenerator jg) throws IOException {
         if (supportedResponseModes != null)
-            stringEnumToJson(RESPONSE_MODES_SUPPORTED, getSupportedResponseModes().split(" "));
+            stringEnumToJson(jg, RESPONSE_MODES_SUPPORTED, getSupportedResponseModes().split(" "));
     }
 
-    private void writeJwksUri() throws IOException {
-        writeSingleJsonField(JWKS_URI, getJwksUri());
+    private void writeJwksUri(JsonGenerator jg) throws IOException {
+        writeSingleJsonField(jg, JWKS_URI, getJwksUri());
     }
 
-    private void writeEndSessionEndpoint() throws IOException {
+    private void writeEndSessionEndpoint(JsonGenerator jg) throws IOException {
         if (getEndSessionEndpoint() != null)
-            writeSingleJsonField(END_SESSION_ENDPOINT, getEndSessionEndpoint());
+            writeSingleJsonField(jg, END_SESSION_ENDPOINT, getEndSessionEndpoint());
     }
 
-    private void writeSingleJsonField(String name, String value) throws IOException {
-        jsonGen.writeObjectField(name, value);
+    private void writeSingleJsonField(JsonGenerator jg, String name, String value) throws IOException {
+        jg.writeObjectField(name, value);
     }
 
-    private void writeRevocationEndpoint() throws IOException {
+    private void writeRevocationEndpoint(JsonGenerator jg) throws IOException {
         String revocationEndpoint1 = getRevocationEndpoint();
         if (revocationEndpoint1 != null)
-            writeSingleJsonField(REVOCATION_ENDPOINT, revocationEndpoint1);
+            writeSingleJsonField(jg, REVOCATION_ENDPOINT, revocationEndpoint1);
     }
 
-    private void writeUserinfoEndpoint() throws IOException {
-        writeSingleJsonField(USERINFO_ENDPOINT, getUserinfoEndpoint());
+    private void writeUserinfoEndpoint(JsonGenerator jg) throws IOException {
+        writeSingleJsonField(jg, USERINFO_ENDPOINT, getUserinfoEndpoint());
     }
 
-    private void writeTokenEndpoint() throws IOException {
-        writeSingleJsonField(TOKEN_ENDPOINT, getTokenEndpoint());
+    private void writeTokenEndpoint(JsonGenerator jg) throws IOException {
+        writeSingleJsonField(jg, TOKEN_ENDPOINT, getTokenEndpoint());
     }
 
-    private void writeAuthorizationEndpoint() throws IOException {
-        writeSingleJsonField(AUTHORIZATION_ENDPOINT, getAuthorizationEndpoint());
+    private void writeAuthorizationEndpoint(JsonGenerator jg) throws IOException {
+        writeSingleJsonField(jg, AUTHORIZATION_ENDPOINT, getAuthorizationEndpoint());
     }
 
-    private void writeIssuer() throws IOException {
-        writeSingleJsonField(ISSUER, getIssuer());
+    private void writeIssuer(JsonGenerator jg) throws IOException {
+        writeSingleJsonField(jg, ISSUER, getIssuer());
     }
 
     public String getAuthorizationEndpoint() {

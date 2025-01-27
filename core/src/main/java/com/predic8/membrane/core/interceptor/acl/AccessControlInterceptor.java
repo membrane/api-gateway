@@ -16,7 +16,6 @@ package com.predic8.membrane.core.interceptor.acl;
 
 import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.*;
-import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.resolver.*;
@@ -26,6 +25,7 @@ import org.slf4j.*;
 import javax.xml.stream.*;
 import java.net.*;
 
+import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.util.HttpUtil.*;
@@ -84,11 +84,11 @@ public class AccessControlInterceptor extends AbstractInterceptor {
 
 	private void setResponseToAccessDenied(Exchange exc) {
 		log.warn("Access Denied. Method: {} Uri: {}", exc.getRequest().getMethod(), exc.getOriginalRequestUri());
-		exc.setResponse(ProblemDetails.security(false)
-				.statusCode(401)
-				.addSubType("authorization-denied")
+		security(false,getDisplayName())
 				.title("Access Denied")
-				.build());
+				.statusCode(401)
+				.addSubSee("authorization-denied")
+				.buildAndSetResponse(exc);
 	}
 
 	/**

@@ -120,7 +120,7 @@ public class OAuth2AuthorizationServerInterceptor extends AbstractInterceptor {
         try {
             jwtGenerator = new JwtGenerator();
         } catch (JoseException e) {
-            log.error(e.getMessage(),e);
+            log.error("",e);
             throw new ConfigurationException("Could not generate JwtGenerator");
         }
         sessionManager.init(router);

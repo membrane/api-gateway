@@ -14,13 +14,14 @@
 
 package com.predic8.membrane.examples.tests;
 
-import com.predic8.membrane.examples.util.*;
+import com.predic8.membrane.core.interceptor.authentication.session.totp.OtpProvider;
+import com.predic8.membrane.examples.util.DistributionExtractingTestcase;
+import com.predic8.membrane.examples.util.Process2;
+import com.predic8.membrane.test.HttpAssertions;
 import org.junit.jupiter.api.Test;
 
-import com.predic8.membrane.core.interceptor.authentication.session.totp.OtpProvider;
-
 import static com.predic8.membrane.core.http.MimeType.APPLICATION_X_WWW_FORM_URLENCODED;
-import static com.predic8.membrane.test.AssertUtils.*;
+import static com.predic8.membrane.test.StringAssertions.assertContains;
 
 public class LoginExampleTest extends DistributionExtractingTestcase {
 
@@ -31,17 +32,17 @@ public class LoginExampleTest extends DistributionExtractingTestcase {
 
 	@Test
 	public void test() throws Exception {
-		try (Process2 ignored =startServiceProxyScript()) {
-			String form = getAndAssert200("http://localhost:2000/");
+		try (Process2 ignored =startServiceProxyScript(); HttpAssertions ha = new HttpAssertions()) {
+			String form = ha.getAndAssert200("http://localhost:2000/");
 			assertContains("Username:", form);
 			assertContains("Password:", form);
 
-			form = postAndAssert(200, "http://localhost:2000/login/",
+			form = ha.postAndAssert(200, "http://localhost:2000/login/",
 					new String[] { "Content-Type", "application/x-www-form-urlencoded" },
 					"username=john&password=password");
 			assertContains("token:", form);
 
-			form = postAndAssert(200, "http://localhost:2000/login/",
+			form = ha.postAndAssert(200, "http://localhost:2000/login/",
 					new String[] { "Content-Type", APPLICATION_X_WWW_FORM_URLENCODED },
 					"token=" + getToken());
 
@@ -49,10 +50,10 @@ public class LoginExampleTest extends DistributionExtractingTestcase {
 			assertContains("This page has moved to", form);
 
 			// access the "protected" page
-			assertContains("predic8.com", getAndAssert200("http://localhost:2000/"));
+			assertContains("predic8.com", ha.getAndAssert200("http://localhost:2000/"));
 
 			// logout
-			assertContains("Username:", getAndAssert200("http://localhost:2000/login/logout"));
+			assertContains("Username:", ha.getAndAssert200("http://localhost:2000/login/logout"));
 		}
 	}
 

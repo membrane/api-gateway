@@ -30,6 +30,7 @@ import org.slf4j.*;
 import java.util.*;
 import java.util.function.*;
 
+import static com.predic8.membrane.core.exceptions.ProblemDetails.internal;
 import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
 import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
@@ -104,11 +105,11 @@ public abstract class AbstractScriptInterceptor extends AbstractInterceptor {
             try {
                 msg.setBodyContent(om.writeValueAsBytes(m));
             } catch (JsonProcessingException e) {
-                ProblemDetails.internal(router.isProduction())
-                        .component(getDisplayName())
+                log.error("", e);
+                internal(router.isProduction(),getDisplayName())
+                        .addSubSee("json-processing-1")
                         .detail("Error serializing Map to JSON")
                         .exception(e)
-                        .stacktrace(true)
                         .buildAndSetResponse(exc);
                 return ABORT;
             }
@@ -136,11 +137,11 @@ public abstract class AbstractScriptInterceptor extends AbstractInterceptor {
             try {
                 msg.setBodyContent(om.writeValueAsBytes(m));
             } catch (JsonProcessingException e) {
-                ProblemDetails.internal(router.isProduction())
-                        .component(getDisplayName())
+                log.error("", e);
+                internal(router.isProduction(),getDisplayName())
+                        .addSubSee("json-processing-2")
                         .detail("Error serializing Map to JSON")
                         .exception(e)
-                        .stacktrace(true)
                         .buildAndSetResponse(exc);
                 return ABORT;
             }
@@ -174,12 +175,13 @@ public abstract class AbstractScriptInterceptor extends AbstractInterceptor {
         log.warn("Error executing {} script: {}", name, e.getMessage());
         log.warn("Script: {}", src);
 
-        ProblemDetails pd = ProblemDetails.internal(router.isProduction())
+        ProblemDetails pd = internal(router.isProduction(),getDisplayName())
+                .addSubSee("script-execution")
                 .title("Error executing script.");
 
         if (!router.isProduction()) {
-            pd.extension("message", e.getMessage())
-                    .extension("source", trim(src));
+            pd.internal("message", e.getMessage())
+                    .internal("source", trim(src));
         } else {
             pd.detail("See logs for details.");
         }

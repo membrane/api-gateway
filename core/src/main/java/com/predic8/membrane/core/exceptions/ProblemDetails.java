@@ -16,6 +16,7 @@ import com.fasterxml.jackson.core.type.*;
 import com.fasterxml.jackson.databind.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.interceptor.*;
 import org.jetbrains.annotations.*;
 import org.slf4j.*;
 import org.w3c.dom.*;
@@ -28,6 +29,7 @@ import java.io.*;
 import java.util.*;
 
 import static com.predic8.membrane.core.http.MimeType.*;
+import static com.predic8.membrane.core.util.ExceptionUtil.concatMessageAndCauseMessages;
 
 
 /**
@@ -44,17 +46,28 @@ public class ProblemDetails {
 
     private int statusCode;
     private String type;
+    private String subType = "";
 
     private String title;
     private String detail;
+
+    private Interceptor.Flow flow;
+    private String seeSuffix = "";
 
     /**
      * Component e.g. plugin
      */
     private String component;
 
-    private String instance;
-    private final HashMap<String, Object> extensions = new LinkedHashMap<>();
+    /**
+     * Internal information that is not returned in production
+     */
+    private final HashMap<String, Object> internalFields = new LinkedHashMap<>();
+
+    /**
+     * Toplevel elements that are returned to the client even in production
+     */
+    private final HashMap<String, Object> topLevel = new LinkedHashMap<>();
     private Throwable exception;
 
     /**
@@ -62,24 +75,39 @@ public class ProblemDetails {
      */
     private boolean stacktrace = true;
 
-    public static ProblemDetails user(boolean production) {
-        return problemDetails("user", production).statusCode(400);
+    public static ProblemDetails user(boolean production, String component) {
+        return problemDetails("user", production)
+                .statusCode(400)
+                .title("User error.")
+                .component(component);
     }
 
-    public static ProblemDetails internal(boolean production) {
-        return problemDetails("internal", production).statusCode(500).title("Internal server error.");
+    public static ProblemDetails internal(boolean production, String component) {
+        return problemDetails("internal", production)
+                .statusCode(500)
+                .title("Internal server error.")
+                .component(component);
     }
 
-    public static ProblemDetails gateway(boolean production) {
-        return problemDetails("gateway", production).statusCode(500).title("Gateway error.");
+    public static ProblemDetails gateway(boolean production, String component) {
+        return problemDetails("gateway", production)
+                .statusCode(500)
+                .title("Gateway error.")
+                .component(component);
     }
 
-    public static ProblemDetails security(boolean production) {
-        return problemDetails("security", production);
+    public static ProblemDetails security(boolean production, String component) {
+        return problemDetails("security", production)
+                .statusCode(500)
+                .title("Security error.")
+                .component(component);
     }
 
-    public static ProblemDetails openapi(boolean production) {
-        return problemDetails("openapi", production);
+    public static ProblemDetails openapi(boolean production, String component) {
+        return problemDetails("openapi", production)
+                .statusCode(400)
+                .title("OpenAPI error.")
+                .component(component);
     }
 
     public static ProblemDetails problemDetails(String type, boolean production) {
@@ -92,11 +120,12 @@ public class ProblemDetails {
     /**
      * type/subtype/subtype/...
      * lowercase, dash as separator
+     *
      * @param subType
      * @return
      */
     public ProblemDetails addSubType(String subType) {
-        this.type += "/" + subType;
+        this.subType += "/" + subType;
         return this;
     }
 
@@ -126,13 +155,23 @@ public class ProblemDetails {
         return this;
     }
 
-    public ProblemDetails instance(String instance) {
-        this.instance = instance;
+    public ProblemDetails flow(Interceptor.Flow flow) {
+        this.flow = flow;
         return this;
     }
 
-    public ProblemDetails extension(String key, Object value) {
-        this.extensions.put(key, value);
+    public ProblemDetails addSubSee(String s) {
+        this.seeSuffix += s;
+        return this;
+    }
+
+    public ProblemDetails internal(String key, Object value) {
+        this.internalFields.put(key, value);
+        return this;
+    }
+
+    public ProblemDetails topLevel(String key, Object value) {
+        this.topLevel.put(key, value);
         return this;
     }
 
@@ -155,68 +194,104 @@ public class ProblemDetails {
      * there is something interesting.
      */
     public void buildAndSetResponse(Exchange exchange) {
-        if (exchange != null) {
-            exchange.setResponse(createContent(createMap(), exchange));
-            return;
-        }
-        throw new RuntimeException("Should not happen!");
+        exchange.setResponse(createContent(createMap(), exchange));
     }
 
     private @NotNull Map<String, Object> createMap() {
         Map<String, Object> root = new LinkedHashMap<>();
-        Map<String, Object> extensionsMap = new LinkedHashMap<>();
-
-        if (production) {
-            logProduction(extensionsMap);
-        } else {
-            logDevelopment(extensionsMap);
-        }
+        Map<String, Object> internalMap = new LinkedHashMap<>();
 
         root.put("title", title);
-        root.put("type", "https://membrane-api.io/error/" + type);
-
-        if (!production && component != null) {
-            root.put("component", component);
+        String type = "https://membrane-api.io/problems/" + this.type;
+        if (!subType.isEmpty()) {
+            type += subType;
         }
+
+        root.put("type", type);
 
         if (detail != null) {
             root.put("detail", detail);
         }
+        root.putAll(topLevel);
 
-        root.putAll(extensionsMap);
+        if (production) {
+            logProduction(internalMap);
+        } else {
+            internalMap = createInternal(type);
+        }
+
+        root.putAll(internalMap);
         return root;
     }
 
-    private void logDevelopment(Map<String, Object> extensionsMap) {
-        extensionsMap.putAll(extensions);
-        if (exception != null) {
-            if (extensionsMap.containsKey("message"))
-                log.error("Overriding ProblemDetails extensionsMap 'message' entry. Please notify Membrane developers.", new RuntimeException());
-            extensionsMap.put("message", exception.getMessage());
-            if (stacktrace) {
-                extensionsMap.put("stackTrace", getStackTrace());
-            }
-        }
-        extensionsMap.put("attention", """
-                Membrane is in development mode. For production set <router production="true"> to reduce details in error messages!""");
+    private String normalizeForType(String s) {
+        return s.replace(" ", "-").toLowerCase();
     }
 
-    private void logProduction(Map<String, Object> extensionsMap) {
-        String logKey = UUID.randomUUID().toString();
-        log.warn("logKey={}\ntype={}\ntitle={}\n,detail={}\n,extension={},.", logKey, type, title, detail, extensionsMap);
+    private Map<String, Object> createInternal(String type) {
+        var internalMap = new LinkedHashMap<>(internalFields);
+        if (exception != null) {
+            if (internalMap.containsKey("message"))
+                log.error("Overriding ProblemDetails extensionsMap 'message' entry. Please notify Membrane developers.", new RuntimeException());
+            internalMap.put("message", concatMessageAndCauseMessages(exception));
+            if (stacktrace) {
+                internalMap.put("stackTrace", getStackTrace(exception, new StackTraceElement[0]));
+            }
+        }
 
-        type = "internal";
-        title = "An error occurred.";
+        String see = type;
+        if (!component.isEmpty()) {
+            see += "/" + normalizeForType(component);
+        }
+        if (flow != null) {
+            see += "/" + flow.name().toLowerCase();
+        }
+        if (!see.isEmpty()) {
+            see += "/" + seeSuffix;
+        }
+        internalMap.put("see", see);
+
+        internalMap.put("attention", """
+                Membrane is in development mode. For production set <router production="true"> to reduce details in error messages!""");
+        return internalMap;
+    }
+
+    private void logProduction(Map<String, Object> internalMap) {
+        String logKey = UUID.randomUUID().toString();
+        log.warn("logKey={}\ntype={}\ntitle={}\n,detail={}\n,extension={},.", logKey, type, title, detail, internalMap);
+
+        // In case of an internal error in production we do not want a specifiy error title
+        if (type.equals("internal")) {
+            title = "Internal error";
+        }
+
         detail = "Details can be found in the Membrane log searching for key: %s.".formatted(logKey);
         if (stacktrace) {
             log.warn("", exception);
         }
     }
 
-    private @NotNull Map getStackTrace() {
+    private static @NotNull Map getStackTrace(Throwable exception, StackTraceElement[] enclosingTrace) {
         var m = new LinkedHashMap<>();
-        for (int i = 0; i < exception.getStackTrace().length; i++) {
-            m.put("e" + i, exception.getStackTrace()[i].toString());
+
+        StackTraceElement[] trace = exception.getStackTrace();
+        int m2 = trace.length - 1;
+        int n = enclosingTrace.length - 1;
+        while (m2 >= 0 && n >=0 && trace[m2].equals(enclosingTrace[n])) {
+            m2--; n--;
+        }
+        int framesInCommon = trace.length - 1 - m2;
+
+        for (int i = 0; i <= m2; i++) {
+            m.put("e" + i, trace[i].toString());
+        }
+
+        if (framesInCommon != 0) {
+            m.put("more_frames_in_common", framesInCommon);
+        }
+
+        if (exception.getCause() != null) {
+            m.put("cause", getStackTrace(exception.getCause(), trace));
         }
         return m;
     }
@@ -300,12 +375,11 @@ public class ProblemDetails {
         pd.type = (String) m.get("type");
         pd.title = (String) m.get("title");
         pd.detail = (String) m.get("detail");
-        pd.instance = (String) m.get("instance");
 
         for (Map.Entry<String, Object> e : m.entrySet()) {
             if (pd.isReservedProblemDetailsField(e.getKey()))
                 continue;
-            pd.extension(e.getKey(), e.getValue());
+            pd.internal(e.getKey(), e.getValue());
         }
         return pd;
     }
@@ -342,12 +416,8 @@ public class ProblemDetails {
         return component;
     }
 
-    public String getInstance() {
-        return instance;
-    }
-
-    public HashMap<String, Object> getExtensions() {
-        return extensions;
+    public HashMap<String, Object> getInternal() {
+        return internalFields;
     }
 
     public Throwable getException() {
@@ -358,17 +428,5 @@ public class ProblemDetails {
         return stacktrace;
     }
 
-    @Override
-    public String toString() {
-        return "ProblemDetails{" +
-               "production=" + production +
-               ", statusCode=" + statusCode +
-               ", type='" + type + '\'' +
-               ", title='" + title + '\'' +
-               ", detail='" + detail + '\'' +
-               ", instance='" + instance + '\'' +
-               ", extensions=" + extensions +
-               ", exception=" + exception +
-               '}';
-    }
+
 }

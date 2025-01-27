@@ -14,11 +14,12 @@
 
 package com.predic8.membrane.examples.tests;
 
-import static com.predic8.membrane.test.AssertUtils.getAndAssert200;
-
-import com.predic8.membrane.examples.util.*;
+import com.predic8.membrane.examples.util.DistributionExtractingTestcase;
+import com.predic8.membrane.examples.util.Process2;
+import com.predic8.membrane.test.HttpAssertions;
 import org.junit.jupiter.api.Test;
 
+// TODO Rewrite to SampleSoapService
 public class ProxyExampleTest extends DistributionExtractingTestcase {
 
 	@Override
@@ -28,9 +29,9 @@ public class ProxyExampleTest extends DistributionExtractingTestcase {
 
 	@Test
 	public void test() throws Exception {
-		try(Process2 ignored = startServiceProxyScript()) {
-			getAndAssert200("http://localhost:2000/axis2/services/BLZService?wsdl");
-			getAndAssert200("http://localhost:2001/axis2/services/BLZService?wsdl");
+		try(Process2 ignored = startServiceProxyScript(); HttpAssertions ha = new HttpAssertions()) {
+			ha.getAndAssert200("http://localhost:2000/axis2/services/BLZService?wsdl");
+			ha.getAndAssert200("http://localhost:2001/axis2/services/BLZService?wsdl");
 		}
 	}
 }

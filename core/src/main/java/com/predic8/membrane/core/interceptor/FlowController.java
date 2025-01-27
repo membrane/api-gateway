@@ -14,7 +14,6 @@
 package com.predic8.membrane.core.interceptor;
 
 import com.predic8.membrane.core.*;
-import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.interceptor.Interceptor.*;
 import com.predic8.membrane.core.transport.http.*;
@@ -22,8 +21,9 @@ import org.slf4j.*;
 
 import java.util.*;
 
-import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
-import static com.predic8.membrane.core.interceptor.Interceptor.Flow.RESPONSE;
+import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
+import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 
 /**
@@ -92,11 +92,10 @@ public class FlowController {
                     return ABORT;
                 }
             } catch (Exception e) {
-                String msg = "Aborting! Exception caused by %s during %s flow.".formatted(interceptor.getDisplayName(),flow);
+                String msg = "Aborting! Exception caused in %s during %s %s flow.".formatted(interceptor.getDisplayName(), exchange.getRequest().getUri(), flow);
                 log.warn(msg, e);
-                ProblemDetails.internal(router.isProduction())
+                internal(router.isProduction(),interceptor.getDisplayName())
                         .detail(msg)
-                        .component(interceptor.getDisplayName())
                         .exception(e)
                         .buildAndSetResponse(exchange);
                 invokeAbortHandlers(exchange, interceptors, i);

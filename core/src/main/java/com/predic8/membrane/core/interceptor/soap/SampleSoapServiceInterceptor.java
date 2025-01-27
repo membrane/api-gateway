@@ -56,8 +56,7 @@ public class SampleSoapServiceInterceptor extends AbstractInterceptor {
         try {
             return handleRequestInternal(exc);
         } catch (Exception e) {
-            ProblemDetails.internal(router.isProduction())
-                    .component(getDisplayName())
+            ProblemDetails.internal(router.isProduction(),getDisplayName())
                     .detail("Could not process SOAP request!")
                     .exception(e)
                     .buildAndSetResponse(exc);

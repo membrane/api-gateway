@@ -31,7 +31,6 @@ import static com.predic8.membrane.core.lang.ExchangeExpression.Language.*;
  * @description <p>
  * The "if" interceptor supports conditional execution of nested plugins.
  * </p>
- *
  * See:
  * - com.predic8.membrane.core.interceptor.flow.IfInterceptorSpELTest
  * - com.predic8.membrane.core.interceptor.flow.IfInterceptorGroovyTest
@@ -54,7 +53,7 @@ public class IfInterceptor extends AbstractFlowInterceptor {
     @Override
     public void init() {
         super.init();
-        exchangeExpression = ExchangeExpression.getInstance(router, language, test);
+        exchangeExpression = ExchangeExpression.newInstance(router, language, test);
     }
 
     @Override
@@ -70,17 +69,16 @@ public class IfInterceptor extends AbstractFlowInterceptor {
     private Outcome handleInternal(Exchange exc, Flow flow) {
         boolean result;
         try {
-             result = exchangeExpression.evaluate(exc, flow, Boolean.class);
+            result = exchangeExpression.evaluate(exc, flow, Boolean.class);
         } catch (ExchangeExpressionException e) {
-            e.provideDetails(ProblemDetails.internal(router.isProduction()))
+            e.provideDetails(ProblemDetails.internal(router.isProduction(), getDisplayName()))
                     .detail("Error evaluating expression on exchange.")
-                    .component("if")
                     .buildAndSetResponse(exc);
             return ABORT;
         } catch (NullPointerException npe) {
             // Expression evaluated to null and can't be converted to boolean
             // We assume that null is false
-            log.debug("Expression {} returned null and is therefore interpreted as false",test);
+            log.debug("Expression {} returned null and is therefore interpreted as false", test);
             result = false;
         }
         if (log.isDebugEnabled())

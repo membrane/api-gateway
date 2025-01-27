@@ -15,11 +15,11 @@
 package com.predic8.membrane.core.interceptor.lang;
 
 import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.interceptor.*;
 import org.slf4j.*;
 
+import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
 import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
@@ -50,13 +50,14 @@ public abstract class AbstractSetterInterceptor extends AbstractExchangeExpressi
         try {
             setValue(exchange, flow, exchangeExpression.evaluate(exchange, flow, getExpressionReturnType()));
         } catch (Exception e) {
+            log.error("While evaluating expression {} for field {}.", expression, fieldName, e);
             if (failOnError) {
-                ProblemDetails.internal(getRouter().isProduction())
+                internal(getRouter().isProduction(),getDisplayName())
                         .title("Error evaluating expression!")
-                        .component(getDisplayName())
-                        .extension("field", fieldName)
-                        .extension("value", expression)
-                        .detail(e.getMessage())
+                        .internal("field", fieldName)
+                        .internal("value", expression)
+                        .exception(e)
+                        .stacktrace(false)
                         .buildAndSetResponse(exchange);
                 return ABORT;
             } else {
@@ -70,7 +71,7 @@ public abstract class AbstractSetterInterceptor extends AbstractExchangeExpressi
      *
      * @return
      */
-    protected abstract Class getExpressionReturnType();
+    protected abstract Class<?> getExpressionReturnType();
 
     protected abstract boolean shouldSetValue(Exchange exchange, Flow flow);
 

@@ -62,12 +62,10 @@
 
 
 ### Internal
-- Delete interceptor/
-  - Gatekeeper: Yes
-  - SDY Speedy (delete) BT
+- RuleManager:102 - API name is /products:2000. <api> names must not contain a '/'.
+- Change maven coordinates?
 - proxies-6.xsd
   - new Namespace e.g. https://membrane-api.io...6
-- 2025 BT
 - ProblemDetails TB
   - Validators
      - XML, JSON, WSDL
@@ -80,29 +78,25 @@
 - Dependencies TP, TB
   - Log4J, where, what
   - Updates
-- AdminConsole BT
-  - DisplayName: make all lower
-- LoggingContextInterceptor? Ask CG
-  - Is api name logged?
-  - Comment
-- Remove etcd stuff (BT)
 - Rewrite RatelimitInterceptor to use AbstractLanguageInterceptor TB
 - Language TB
   - Exchange expression 
     - getExpression
   - AbstractLanguageInterceptor as Interface
 - Problem Details TB
-  - /type/component/subtype
   - component mandatory, subtype optional
-  - Detail: 
-    - Is used everywhere (ADR)
-    - Human easy readable
-    - optional
   - Message from exception in message
     - Toplevel not in extension
     - optional
     - Message only from exception
       - Disable in builder
+- '<spring:bean class="com.predic8.membrane.core.interceptor.apikey.stores.ApiKeyFileStore">' 
+  durch '<apiKeyFileStore .. />' ersetzen (dafür topLevel=true) BT
+- Test after next merges:
+  12:23:17,049 ERROR 30 RouterThread /185.191.171.13:7356 SpELExchangeExpression:84 - EL1008E: Property or field 'exc' cannot be found on object of type 'com.predic8.membrane.core.lang.spel.SpELExchangeEvaluationContext' - maybe not public or not vali
+- LogInterceptor:
+  - Do not log body if Content-Encoding header is set 
+    - Might be zip, br ...
 
 ## Done
 - Merge log with print
@@ -142,6 +136,8 @@
 
 # Discussion
 
+- ProblemDetails: 
+  - When flow = RESPONSE it should always be an internal error!
 - ${} or #{} for expressions
   - Possible conflict with spring property placeholder configurer
   - Conflict with SpEL on startup? Are #{} replaced?

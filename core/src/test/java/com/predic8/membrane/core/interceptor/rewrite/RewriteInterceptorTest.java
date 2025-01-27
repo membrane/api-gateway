@@ -37,7 +37,7 @@ public class RewriteInterceptorTest {
 	private ServiceProxy sp;
 
 	@BeforeEach
-	public void setUp() throws Exception {
+	public void setUp() {
 		HttpRouter router = new HttpRouter();
 
 		di = new DispatchingInterceptor();
@@ -58,7 +58,7 @@ public class RewriteInterceptorTest {
 	}
 
 	@Test
-	void testRewriteWithoutTarget() throws Exception {
+	void testRewriteWithoutTarget() {
 		exc.setRequest(MessageUtil.getGetRequest("/buy/banana/3"));
 		assertEquals(CONTINUE, di.handleRequest(exc));
 		assertEquals(CONTINUE, rewriter.handleRequest(exc));
@@ -66,7 +66,7 @@ public class RewriteInterceptorTest {
 	}
 
 	@Test
-	void testRewrite() throws Exception {
+	void testRewrite() {
 		exc.setRequest(MessageUtil.getGetRequest("/buy/banana/3"));
 		exc.setRule(sp);
 
@@ -76,7 +76,7 @@ public class RewriteInterceptorTest {
 	}
 
 	@Test
-	void storeSample() throws Exception {
+	void storeSample() {
 		exc.setRequest(MessageUtil.getGetRequest("https://api.predic8.de/store/products/"));
 		assertEquals(CONTINUE, di.handleRequest(exc));
 		assertEquals(CONTINUE, rewriter.handleRequest(exc));
@@ -93,7 +93,7 @@ public class RewriteInterceptorTest {
 
 		JsonNode json = om.readTree(exc.getResponse().getBodyAsStream());
 
-		assertEquals("https://membrane-api.io/error/user/path",json.get("type").asText());
+		assertEquals("https://membrane-api.io/problems/user/path",json.get("type").asText());
 		assertEquals("The path does not follow the URI specification. Confirm the validity of the provided URL.",json.get("title").asText());
 		assertTrue(json.get("detail").asText().contains("http://www.predic8.de:80/buy/banana/%"));
 	}

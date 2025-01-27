@@ -15,7 +15,6 @@
 package com.predic8.membrane.core.interceptor.templating;
 
 import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
@@ -29,6 +28,7 @@ import org.jetbrains.annotations.*;
 import java.io.*;
 import java.util.*;
 
+import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
 import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.lang.ScriptingUtils.*;
@@ -61,33 +61,31 @@ public class TemplateInterceptor extends StaticInterceptor {
             msg.setBodyContent(fillAndGetBytes(exc,msg,flow));
         }
         catch (TemplateExecutionException e) {
-            log.warn("Groovy template error: {}",e.getMessage());
-            exc.setResponse(ProblemDetails.gateway( router.isProduction())
-                    .extension("message",e.getLocalizedMessage())
-                    .extension("line", e.getLineNumber()) // Has no getLocalizedMessage
-                    .detail("Error during Groovy template rendering.")
+            log.warn("Groovy template error: {}", e.getMessage());
+            gateway( router.isProduction(),getDisplayName())
+                    .detail("Error during template rendering.")
+                    .internal("line", e.getLineNumber())
                     .exception(e)
                     .stacktrace(false)
-                    .build());
+                    .buildAndSetResponse(exc);
             return ABORT;
         }
         catch (GroovyRuntimeException e) {
-            log.warn("Groovy error executing template: {}",e.getMessage());
-            exc.setResponse(ProblemDetails.gateway( router.isProduction())
-                    .addSubType("template")
-                    .detail(e.getMessage())
-                    .extension("location", e.getLocalizedMessage()) // Line, column
+            log.warn("Groovy error executing template: {}", e.getMessage());
+            internal( router.isProduction(),getDisplayName())
+                    .addSubSee("groovy")
+                    .detail("Groovy error during template rendering.")
                     .exception(e)
-                    .build());
+                    .stacktrace(false)
+                    .buildAndSetResponse(exc);
             return ABORT;
         }
         catch (Exception e) {
-            log.warn(e.getMessage(),e);
-            exc.setResponse(ProblemDetails.internal(router.isProduction())
-                    .addSubType("template")
-                    .detail(e.getMessage())
+            log.warn("", e);
+            internal(router.isProduction(),getDisplayName())
+                    .addSubSee("template")
                     .exception(e)
-                    .build());
+                    .buildAndSetResponse(exc);
             return ABORT;
         }
 

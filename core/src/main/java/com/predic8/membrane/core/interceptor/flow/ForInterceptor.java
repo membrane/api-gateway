@@ -44,7 +44,7 @@ public class ForInterceptor extends AbstractFlowInterceptor {
     public void init() {
         super.init();
         try {
-            exchangeExpression = ExchangeExpression.getInstance(router, language, in);
+            exchangeExpression = ExchangeExpression.newInstance(router, language, in);
         } catch (ConfigurationException ce) {
             throw new ConfigurationException(ce.getMessage() + """
                     
@@ -67,7 +67,8 @@ public class ForInterceptor extends AbstractFlowInterceptor {
         try {
             o = exchangeExpression.evaluate(exc, flow, Object.class);
         } catch (ExchangeExpressionException e) {
-            e.provideDetails(ProblemDetails.internal(router.isProduction()))
+           ProblemDetails pd =  ProblemDetails.internal(router.isProduction(), getDisplayName());
+            e.provideDetails(pd)
                     .detail("Error evaluating expression on exchange.")
                     .component(getDisplayName())
                     .buildAndSetResponse(exc);

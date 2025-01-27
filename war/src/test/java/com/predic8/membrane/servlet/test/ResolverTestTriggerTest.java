@@ -13,15 +13,14 @@
    limitations under the License. */
 package com.predic8.membrane.servlet.test;
 
-import static com.predic8.membrane.test.AssertUtils.getAndAssert200;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.platform.engine.discovery.DiscoverySelectors.selectClass;
-
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.io.StringWriter;
-
-import org.apache.http.ParseException;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.Header;
+import com.predic8.membrane.core.http.MimeType;
+import com.predic8.membrane.core.http.Response;
+import com.predic8.membrane.core.interceptor.AbstractInterceptor;
+import com.predic8.membrane.core.interceptor.Outcome;
+import com.predic8.membrane.core.resolver.SchemaResolver;
+import com.predic8.membrane.test.HttpAssertions;
 import org.junit.jupiter.api.Test;
 import org.junit.platform.launcher.Launcher;
 import org.junit.platform.launcher.LauncherDiscoveryRequest;
@@ -32,13 +31,11 @@ import org.junit.platform.launcher.listeners.TestExecutionSummary;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Header;
-import com.predic8.membrane.core.http.MimeType;
-import com.predic8.membrane.core.http.Response;
-import com.predic8.membrane.core.interceptor.AbstractInterceptor;
-import com.predic8.membrane.core.interceptor.Outcome;
-import com.predic8.membrane.core.resolver.SchemaResolver;
+import java.io.PrintWriter;
+import java.io.StringWriter;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.platform.engine.discovery.DiscoverySelectors.selectClass;
 
 public class ResolverTestTriggerTest extends AbstractInterceptor {
 
@@ -85,8 +82,10 @@ public class ResolverTestTriggerTest extends AbstractInterceptor {
 	}
 
 	@Test
-	public void run() throws ParseException, IOException {
-		assertEquals(MAGIC, getAndAssert200("http://localhost:3021/test/"));
+	public void run() throws Exception {
+		try (HttpAssertions ha = new HttpAssertions()) {
+			assertEquals(MAGIC, ha.getAndAssert200("http://localhost:3021/test/"));
+		}
 	}
 
 }

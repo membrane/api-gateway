@@ -13,25 +13,19 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.flow.choice;
 
-import com.predic8.membrane.annot.MCChildElement;
-import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.exceptions.ProblemDetails;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.interceptor.Interceptor;
-import com.predic8.membrane.core.interceptor.Outcome;
-import com.predic8.membrane.core.interceptor.flow.AbstractFlowInterceptor;
-import com.predic8.membrane.core.lang.ExchangeExpressionException;
-import org.jetbrains.annotations.Nullable;
+import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.interceptor.flow.*;
+import com.predic8.membrane.core.lang.*;
+import org.jetbrains.annotations.*;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
-import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
-import static com.predic8.membrane.core.interceptor.Interceptor.Flow.RESPONSE;
-import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.REQUEST_RESPONSE_ABORT_FLOW;
-import static java.util.stream.Stream.concat;
+import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.*;
+import static java.util.stream.Stream.*;
 
 @MCElement(name = "choose")
 public class ChoiceInterceptor extends AbstractFlowInterceptor {
@@ -85,9 +79,9 @@ public class ChoiceInterceptor extends AbstractFlowInterceptor {
     }
 
     private void handleExpressionProblemDetails(ExchangeExpressionException e, Exchange exc) {
-        e.provideDetails(ProblemDetails.internal(router.isProduction()))
+        e.provideDetails(internal(router.isProduction(),getDisplayName()))
+            .addSubSee("expression-evaluation")
             .detail("Error evaluating expression on exchange in if plugin.")
-            .component(getDisplayName())
             .buildAndSetResponse(exc);
     }
 

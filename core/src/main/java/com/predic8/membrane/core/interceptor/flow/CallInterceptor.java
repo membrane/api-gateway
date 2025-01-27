@@ -14,7 +14,6 @@
 package com.predic8.membrane.core.interceptor.flow;
 
 import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.interceptor.lang.*;
@@ -24,8 +23,9 @@ import org.slf4j.*;
 
 import java.util.*;
 
+import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
 import static com.predic8.membrane.core.http.Header.*;
-import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
 import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 
@@ -72,7 +72,10 @@ public class CallInterceptor extends AbstractExchangeExpressionInterceptor {
         try {
             exc.setDestinations(List.of(exchangeExpression.evaluate(exc, REQUEST, String.class)));
         } catch (ExchangeExpressionException e) {
-            e.provideDetails(ProblemDetails.internal(getRouter().isProduction())).buildAndSetResponse(exc);
+            e.provideDetails(
+                    internal(getRouter().isProduction(),getDisplayName()))
+                    .addSubSee("expression-evaluation")
+                    .buildAndSetResponse(exc);
             return ABORT;
         }
         log.debug("Calling {}", exc.getDestinations());
@@ -88,8 +91,12 @@ public class CallInterceptor extends AbstractExchangeExpressionInterceptor {
             log.debug("Outcome of call {}", outcome);
             return CONTINUE;
         } catch (Exception e) {
-            ProblemDetails.internal(router.isProduction())
-                    .detail("Internal call");
+            log.error("",e);
+            internal(router.isProduction(),getDisplayName())
+                    .addSubSee("internal-calling")
+                    .detail("Internal call")
+                    .exception(e)
+                    .buildAndSetResponse(exc);
             return ABORT;
         }
     }

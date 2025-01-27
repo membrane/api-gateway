@@ -61,7 +61,7 @@ public class TestUtils {
         return obj.getClass().getResourceAsStream(fileName);
     }
 
-    public static APIProxy createProxy(Router router, OpenAPISpec spec) throws Exception {
+    public static APIProxy createProxy(Router router, OpenAPISpec spec) {
         APIProxy proxy = new APIProxy();
         proxy.init(router);
         proxy.setSpecs(singletonList(spec));
@@ -70,8 +70,7 @@ public class TestUtils {
         return proxy;
     }
 
-    @SuppressWarnings("rawtypes")
-    public static Map getMapFromResponse(Exchange exc) throws IOException {
+    public static Map<String,Map<String,Object>> getMapFromResponse(Exchange exc) throws IOException {
         return om.readValue(exc.getResponse().getBody().getContent(), Map.class);
     }
 

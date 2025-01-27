@@ -71,10 +71,13 @@ public class ClamAntiVirusInterceptor extends AbstractInterceptor {
     }
 
     private Outcome gatewayTimeout(Exchange exc) {
-        internal(router.isProduction())
-                .title("Could not reach clamav daemon!")
-                .detail("Could not reach clamav daemon on %s:%s".formatted(host,port))
-                .component(getDisplayName())
+        log.error("Could not reach clamav daemon on {}:{}",host,port );
+        internal(router.isProduction(),getDisplayName())
+                .title("Virus scanner error!")
+                .detail("Could not execute virus scan.")
+                .internal("message","Could not reach clamav daemon.")
+                .internal("scanner-host", host)
+                .internal("scanner-port", port)
                 .buildAndSetResponse(exc);
         return RETURN;
     }

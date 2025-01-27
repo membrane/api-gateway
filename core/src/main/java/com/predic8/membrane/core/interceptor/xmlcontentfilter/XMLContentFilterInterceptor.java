@@ -14,7 +14,6 @@
 package com.predic8.membrane.core.interceptor.xmlcontentfilter;
 
 import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
@@ -22,6 +21,7 @@ import org.slf4j.*;
 
 import javax.xml.xpath.*;
 
+import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 
 /**
@@ -97,8 +97,8 @@ public class XMLContentFilterInterceptor extends AbstractInterceptor {
             xmlContentFilter.removeMatchingElements(message);
             return CONTINUE;
         } catch (Exception e) {
-            log.error(e.getMessage(), e);
-            ProblemDetails.internal(router.isProduction())
+            log.error("", e);
+            internal(router.isProduction(),getDisplayName())
                     .title("XML Error")
                     .exception(e)
                     .buildAndSetResponse(exc);

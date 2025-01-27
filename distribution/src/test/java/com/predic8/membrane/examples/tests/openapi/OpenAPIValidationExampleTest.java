@@ -14,15 +14,17 @@
 
 package com.predic8.membrane.examples.tests.openapi;
 
-import com.predic8.membrane.examples.util.*;
-import io.restassured.response.*;
-import org.junit.jupiter.api.*;
-import org.skyscreamer.jsonassert.*;
+import com.predic8.membrane.examples.util.AbstractSampleMembraneStartStopTestcase;
+import com.predic8.membrane.test.HttpAssertions;
+import io.restassured.response.Response;
+import org.json.JSONException;
+import org.junit.jupiter.api.Test;
+import org.skyscreamer.jsonassert.JSONAssert;
 
-import static com.predic8.membrane.core.http.MimeType.*;
-import static com.predic8.membrane.test.AssertUtils.*;
-import static io.restassured.RestAssured.*;
-import static io.restassured.http.ContentType.*;
+import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
+import static io.restassured.RestAssured.given;
+import static io.restassured.http.ContentType.JSON;
+import static io.restassured.http.ContentType.XML;
 
 public class OpenAPIValidationExampleTest extends AbstractSampleMembraneStartStopTestcase {
 
@@ -33,7 +35,9 @@ public class OpenAPIValidationExampleTest extends AbstractSampleMembraneStartSto
 
     @Test
     public void validRequest() throws Exception {
-        getAndAssert(200, LOCALHOST_2000 + "/demo-api/v2/persons?limit=10");
+        try (HttpAssertions ha = new HttpAssertions()) {
+            ha.getAndAssert(200, LOCALHOST_2000 + "/demo-api/v2/persons?limit=10");
+        }
     }
 
     @Test
@@ -59,7 +63,7 @@ public class OpenAPIValidationExampleTest extends AbstractSampleMembraneStartSto
     }
 
     @Test
-    void oneOfWithWrongStringPattern() {
+    void oneOfWithWrongStringPattern() throws JSONException {
         // @formatter:off
         Response res = given()
             .contentType(JSON)
@@ -82,17 +86,21 @@ public class OpenAPIValidationExampleTest extends AbstractSampleMembraneStartSto
 
         JSONAssert.assertEquals("""
                 {
-                  "method" : "PUT",
-                  "uriTemplate" : "/persons/{pid}",
-                  "path" : "/demo-api/v2/persons/4077C19D-2C1D-427B-B2DD-FC3112CE89D1",
-                  "validationErrors" : {
-                	"REQUEST/BODY#/address/zip" : [ {
-                	  "message" : "OneOf requires that exactly one subschema is valid. But there are 0 subschemas valid.",
-                	  "complexType" : "Address",
-                	  "schemaType" : "object"
-                	} ]
+                  "title": "OpenAPI message validation failed",
+                  "type": "https://membrane-api.io/error/user/openapi/validation",
+                  "validation": {
+                      "method" : "PUT",
+                      "uriTemplate" : "/persons/{pid}",
+                      "path" : "/demo-api/v2/persons/4077C19D-2C1D-427B-B2DD-FC3112CE89D1",
+                      "errors" : {
+                        "REQUEST/BODY#/address/zip" : [ {
+                          "message" : "OneOf requires that exactly one subschema is valid. But there are 0 subschemas valid.",
+                          "complexType" : "Address",
+                          "schemaType" : "object"
+                        } ]
+                      }
                   }
-                }""", res.asString(), true);
+                }""", res.asString(), false);
         // @formatter:on
     }
 
@@ -119,7 +127,7 @@ public class OpenAPIValidationExampleTest extends AbstractSampleMembraneStartSto
     }
 
     @Test
-    void wrongRegexPattern() {
+    void wrongRegexPattern() throws JSONException {
         // @formatter:off
         Response res = given()
                 .contentType(JSON)
@@ -137,26 +145,28 @@ public class OpenAPIValidationExampleTest extends AbstractSampleMembraneStartSto
 
         JSONAssert.assertEquals("""
                 {
-                   "method" : "PUT",
-                   "uriTemplate" : "/persons/{pid}",
-                   "path" : "/demo-api/v2/persons/4077C19D-2C1D-427B-B2DD-FC3112CE89D1",
-                   "validationErrors" : {
-                     "REQUEST/BODY#/countryCode" : [ {
-                       "message" : "The string 'Germany' is 7 characters long. MaxLength of 2 is exceeded.",
-                       "complexType" : "Person",
-                       "schemaType" : "string"
-                     }, {
-                       "message" : "The string 'Germany' does not match the regex pattern \\\\w{2}.",
-                       "complexType" : "Person",
-                       "schemaType" : "string"
-                     } ]
+                   "validation": {
+                       "method" : "PUT",
+                       "uriTemplate" : "/persons/{pid}",
+                       "path" : "/demo-api/v2/persons/4077C19D-2C1D-427B-B2DD-FC3112CE89D1",
+                       "errors" : {
+                         "REQUEST/BODY#/countryCode" : [ {
+                           "message" : "The string 'Germany' is 7 characters long. MaxLength of 2 is exceeded.",
+                           "complexType" : "Person",
+                           "schemaType" : "string"
+                         }, {
+                           "message" : "The string 'Germany' does not match the regex pattern \\\\w{2}.",
+                           "complexType" : "Person",
+                           "schemaType" : "string"
+                         } ]
+                       }
                    }
-                 }""", res.asString(), true);
+                 }""", res.asString(), false);
         // @formatter:on
     }
 
     @Test
-    void additionalPropertyRole() {
+    void additionalPropertyRole() throws JSONException {
         // @formatter:off
         Response res = given()
                 .contentType(JSON)
@@ -174,22 +184,24 @@ public class OpenAPIValidationExampleTest extends AbstractSampleMembraneStartSto
 
         JSONAssert.assertEquals("""
                 {
-                  "method" : "PUT",
-                  "uriTemplate" : "/persons/{pid}",
-                  "path" : "/demo-api/v2/persons/4077C19D-2C1D-427B-B2DD-FC3112CE89D1",
-                  "validationErrors" : {
-                    "REQUEST/BODY" : [ {
-                      "message" : "The object has the additional Property: role .But the schema does not allow additional properties.",
-                      "complexType" : "Person",
-                      "schemaType" : "object"
-                    } ]
+                  "validation": {
+                      "method" : "PUT",
+                      "uriTemplate" : "/persons/{pid}",
+                      "path" : "/demo-api/v2/persons/4077C19D-2C1D-427B-B2DD-FC3112CE89D1",
+                      "errors" : {
+                        "REQUEST/BODY" : [ {
+                          "message" : "The object has the additional Property: role .But the schema does not allow additional properties.",
+                          "complexType" : "Person",
+                          "schemaType" : "object"
+                        } ]
+                      }
                   }
-                }""", res.asString(), true);
+                }""", res.asString(), false);
         // @formatter:on
     }
 
     @Test
-    void RequiredPropertyIsMissing() {
+    void RequiredPropertyIsMissing() throws JSONException {
         // @formatter:off
         Response res = given()
                 .contentType(JSON)
@@ -206,17 +218,19 @@ public class OpenAPIValidationExampleTest extends AbstractSampleMembraneStartSto
 
         JSONAssert.assertEquals("""
                 {
-                  "method" : "PUT",
-                  "uriTemplate" : "/persons/{pid}",
-                  "path" : "/demo-api/v2/persons/4077C19D-2C1D-427B-B2DD-FC3112CE89D1",
-                  "validationErrors" : {
-                    "REQUEST/BODY#/name" : [ {
-                      "message" : "Required property name is missing.",
-                      "complexType" : "Person",
-                      "schemaType" : "object"
-                    } ]
+                  "validation": {
+                      "method" : "PUT",
+                      "uriTemplate" : "/persons/{pid}",
+                      "path" : "/demo-api/v2/persons/4077C19D-2C1D-427B-B2DD-FC3112CE89D1",
+                      "errors" : {
+                        "REQUEST/BODY#/name" : [ {
+                          "message" : "Required property name is missing.",
+                          "complexType" : "Person",
+                          "schemaType" : "object"
+                        } ]
+                      }
                   }
-                }""", res.asString(), true);
+                }""", res.asString(), false);
         // @formatter:on
     }
 
@@ -234,7 +248,7 @@ public class OpenAPIValidationExampleTest extends AbstractSampleMembraneStartSto
     }
 
     @Test
-    void invalidUUIDEmailAndEnum() {
+    void invalidUUIDEmailAndEnum() throws JSONException {
         // @formatter:off
         Response res = given()
                 .contentType(JSON)
@@ -253,26 +267,28 @@ public class OpenAPIValidationExampleTest extends AbstractSampleMembraneStartSto
 
         JSONAssert.assertEquals("""
                 {
-                  "method" : "PUT",
-                  "uriTemplate" : "/persons/{pid}",
-                  "path" : "/demo-api/v2/persons/4077C19D-2C1D-427B-B2D-FC3112CE89D1",
-                  "validationErrors" : {
-                	"REQUEST/BODY#/type" : [ {
-                	  "message" : "The string 'ARTIST' does not contain a value from the enum PRIVAT,BUSINESS.",
-                	  "complexType" : "Person",
-                	  "schemaType" : "string"
-                	} ],
-                	"REQUEST/BODY#/email" : [ {
-                	  "message" : "The string 'jan(at)schilderei.nl' is not a valid email.",
-                	  "complexType" : "Person",
-                	  "schemaType" : "string"
-                	} ],
-                	"REQUEST/PATH_PARAMETER/pid" : [ {
-                	  "message" : "The string '4077C19D-2C1D-427B-B2D-FC3112CE89D1' is not a valid UUID.",
-                	  "schemaType" : "string"
-                	} ]
+                  "validation": {
+                      "method" : "PUT",
+                      "uriTemplate" : "/persons/{pid}",
+                      "path" : "/demo-api/v2/persons/4077C19D-2C1D-427B-B2D-FC3112CE89D1",
+                      "errors" : {
+                        "REQUEST/BODY#/type" : [ {
+                          "message" : "The string 'ARTIST' does not contain a value from the enum PRIVAT,BUSINESS.",
+                          "complexType" : "Person",
+                          "schemaType" : "string"
+                        } ],
+                        "REQUEST/BODY#/email" : [ {
+                          "message" : "The string 'jan(at)schilderei.nl' is not a valid email.",
+                          "complexType" : "Person",
+                          "schemaType" : "string"
+                        } ],
+                        "REQUEST/PATH_PARAMETER/pid" : [ {
+                          "message" : "The string '4077C19D-2C1D-427B-B2D-FC3112CE89D1' is not a valid UUID.",
+                          "schemaType" : "string"
+                        } ]
+                	}
                   }
-                }""", res.asString(), true);
+                }""", res.asString(), false);
         // @formatter:on
     }
 
@@ -293,7 +309,7 @@ public class OpenAPIValidationExampleTest extends AbstractSampleMembraneStartSto
     }
 
     @Test
-    void limitGreaterThan100() {
+    void limitGreaterThan100() throws JSONException {
         // @formatter:off
         Response res = given()
             .contentType(JSON)
@@ -305,22 +321,24 @@ public class OpenAPIValidationExampleTest extends AbstractSampleMembraneStartSto
 
         JSONAssert.assertEquals("""
                 {
-                	"method" : "GET",
-                	"uriTemplate" : "/persons",
-                	"path" : "/demo-api/v2/persons?limit=200",
-                	"validationErrors" : {
-                	  "REQUEST/QUERY_PARAMETER/limit" : [ {
-                		"message" : "200.0 is greater than the maximum of 100",
-                		"schemaType" : "integer"
-                	  } ]
+                    "validation": {
+                        "method" : "GET",
+                        "uriTemplate" : "/persons",
+                        "path" : "/demo-api/v2/persons?limit=200",
+                        "errors" : {
+                          "REQUEST/QUERY_PARAMETER/limit" : [ {
+                            "message" : "200.0 is greater than the maximum of 100",
+                            "schemaType" : "integer"
+                          } ]
+                        }
                 	}
                   }
-                """, res.asString(), true);
+                """, res.asString(), false);
         // @formatter:on
     }
 
     @Test
-    void wrongPath() {
+    void wrongPath() throws JSONException {
         // @formatter:off
         Response res = given()
                 .contentType(JSON)
@@ -332,15 +350,17 @@ public class OpenAPIValidationExampleTest extends AbstractSampleMembraneStartSto
 
         JSONAssert.assertEquals("""
                 {
-                	"method" : "GET",
-                	"path" : "/demo-api/v2/wrong",
-                	"validationErrors" : {
-                	  "REQUEST/PATH" : [ {
-                		"message" : "Path /demo-api/v2/wrong is invalid."
-                	  } ]
+                    "validation": {
+                        "method" : "GET",
+                        "path" : "/demo-api/v2/wrong",
+                        "errors" : {
+                          "REQUEST/PATH" : [ {
+                            "message" : "Path /demo-api/v2/wrong is invalid."
+                          } ]
+                        }
                 	}
                  }
-                """, res.asString(), true);
+                """, res.asString(), false);
         // @formatter:on
     }
 }

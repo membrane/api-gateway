@@ -13,50 +13,55 @@
    limitations under the License. */
 package com.predic8.membrane.test;
 
-import org.apache.http.*;
-
-import javax.xml.namespace.*;
-import javax.xml.stream.*;
-import javax.xml.stream.events.*;
-import java.io.*;
-import java.net.*;
-import java.util.*;
+import javax.xml.namespace.QName;
+import javax.xml.stream.XMLEventReader;
+import javax.xml.stream.XMLInputFactory;
+import javax.xml.stream.XMLStreamException;
+import javax.xml.stream.events.Attribute;
+import javax.xml.stream.events.XMLEvent;
+import java.io.StringReader;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.List;
 
 public class WSDLTestUtil {
-	private static final XMLInputFactory xmlInputFactory = XMLInputFactory.newInstance();
-	static {
-		xmlInputFactory.setProperty(XMLInputFactory.IS_REPLACING_ENTITY_REFERENCES, false);
-		xmlInputFactory.setProperty(XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES, false);
-	}
+    private static final XMLInputFactory xmlInputFactory = XMLInputFactory.newInstance();
 
-	public static List<String> getXSDs(String wsdl) throws XMLStreamException {
-		List<String> result = new ArrayList<>();
+    static {
+        xmlInputFactory.setProperty(XMLInputFactory.IS_REPLACING_ENTITY_REFERENCES, false);
+        xmlInputFactory.setProperty(XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES, false);
+    }
 
-		XMLEventReader parser;
-		synchronized(xmlInputFactory) {
-			parser = xmlInputFactory.createXMLEventReader(new StringReader(wsdl));
-		}
+    public static List<String> getXSDs(String wsdl) throws XMLStreamException {
+        List<String> result = new ArrayList<>();
 
-		while (parser.hasNext()) {
-			XMLEvent event = parser.nextEvent();
-			if (event.isStartElement()) {
-				String name = event.asStartElement().getName().getLocalPart();
-				if (name.equals("import") || name.equals("include")) {
-					Attribute a = event.asStartElement().getAttributeByName(new QName("schemaLocation"));
-					if (a != null)
-						result.add(a.getValue());
-				}
-			}
-		}
+        XMLEventReader parser;
+        synchronized (xmlInputFactory) {
+            parser = xmlInputFactory.createXMLEventReader(new StringReader(wsdl));
+        }
 
-		return result;
-	}
+        while (parser.hasNext()) {
+            XMLEvent event = parser.nextEvent();
+            if (event.isStartElement()) {
+                String name = event.asStartElement().getName().getLocalPart();
+                if (name.equals("import") || name.equals("include")) {
+                    Attribute a = event.asStartElement().getAttributeByName(new QName("schemaLocation"));
+                    if (a != null)
+                        result.add(a.getValue());
+                }
+            }
+        }
 
-	public static int countWSDLandXSDs(String url) throws ParseException, XMLStreamException, IOException {
-		int sum = 1;
-        for (String xsd : WSDLTestUtil.getXSDs(AssertUtils.getAndAssert200(url)))
-			sum += countWSDLandXSDs(new URL(new URL(url), xsd).toString());
-		return sum;
-	}
+        return result;
+    }
 
+    public static int countWSDLandXSDs(String url) throws Exception {
+        try (HttpAssertions ha = new HttpAssertions()) {
+            int sum = 1;
+            List<String> xsds = WSDLTestUtil.getXSDs(ha.getAndAssert200(url));
+            for (String xsd : xsds)
+                sum += countWSDLandXSDs(new URL(new URL(url), xsd).toString());
+            return sum;
+        }
+    }
 }

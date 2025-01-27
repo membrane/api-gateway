@@ -13,30 +13,23 @@
    limitations under the License. */
 package com.predic8.membrane.core.acl;
 
-import com.predic8.membrane.core.Router;
+import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.interceptor.acl.*;
-import com.predic8.membrane.core.transport.Transport;
-import com.predic8.membrane.core.transport.http.HttpTransport;
 
-import java.util.function.Function;
+import java.util.function.*;
 
-import static java.util.regex.Pattern.compile;
+import static java.util.regex.Pattern.*;
 
 public abstract class ACLTest extends AccessControlInterceptor {
 
-    private AccessControlInterceptor createRouter(boolean isReverseDNS, boolean useForwardedFor, Function<Router, Resource> f) throws Exception {
+    private AccessControlInterceptor createRouter(boolean isReverseDNS, boolean useForwardedFor, Function<Router, Resource> f) {
         Router router = new Router();
-        Transport transport = new HttpTransport();
-        router.setTransport(transport);
-        router.getTransport().setReverseDNS(isReverseDNS);
         AccessControlInterceptor aci = buildAci(f.apply(router), router);
         aci.setUseXForwardedForAsClientAddr(useForwardedFor);
-        router.getTransport().getInterceptors().add(aci);
-        router.init();
         return aci;
     }
 
-    AccessControlInterceptor createIpACI(String scheme, ParseType ptype, boolean isReverseDNS, boolean useForwardedFor) throws Exception {
+    AccessControlInterceptor createIpACI(String scheme, ParseType ptype, boolean isReverseDNS, boolean useForwardedFor) {
         return createRouter(isReverseDNS, useForwardedFor, router -> getIpResource(scheme, ptype, router));
     }
 

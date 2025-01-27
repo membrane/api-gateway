@@ -71,8 +71,7 @@ public class JavascriptInterceptor extends AbstractScriptInterceptor {
 
         ProblemDetails pd = adapter.getProblemDetails(e);
         pd.title("Error executing script.");
-        pd.extension("message", e.getMessage())
-                .extension("source", trim(src));
+        pd.internal("source", trim(src));
 
         exc.setResponse(pd.build());
     }

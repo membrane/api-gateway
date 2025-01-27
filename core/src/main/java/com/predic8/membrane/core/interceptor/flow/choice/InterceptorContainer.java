@@ -13,16 +13,16 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.flow.choice;
 
-import com.predic8.membrane.annot.MCChildElement;
-import com.predic8.membrane.core.Router;
-import com.predic8.membrane.core.exceptions.ProblemDetails;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.interceptor.Interceptor;
-import com.predic8.membrane.core.interceptor.Interceptor.Flow;
-import com.predic8.membrane.core.interceptor.Outcome;
-import com.predic8.membrane.core.lang.ExchangeExpressionException;
+import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.interceptor.Interceptor.*;
+import com.predic8.membrane.core.lang.*;
 
-import java.util.List;
+import java.util.*;
+
+import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
 
 abstract class InterceptorContainer {
 
@@ -42,9 +42,9 @@ abstract class InterceptorContainer {
     }
 
     private void handleInvocationProblemDetails(Exchange exc, Exception e, Router router) {
-        ProblemDetails.internal(router.isProduction())
-            .detail("Error invoking plugin: " + e.getLocalizedMessage())
-            .component(e.getClass().getSimpleName())
+        internal(router.isProduction(),"interceptor-container")
+            .detail("Error invoking plugin.")
+            .exception(e)
             .buildAndSetResponse(exc);
     }
 

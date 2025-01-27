@@ -31,11 +31,12 @@ public class RhinoJavascriptLanguageAdapter extends LanguageAdapter {
 
     @Override
     public ProblemDetails getProblemDetails(Exception e) {
-        ProblemDetails pd = ProblemDetails.internal(router.isProduction());
+        ProblemDetails pd = ProblemDetails.internal(router.isProduction(),"javascript");
         if (e.getCause() instanceof ScriptException se) {
-            pd.extension("column",  se.getColumnNumber() + 1);
-            pd.extension("line",  se.getLineNumber() - preScriptLineLength + 1);
-            pd.extension("message",  se.getMessage());
+            pd.internal("column", se.getColumnNumber() + 1);
+            pd.internal("line", se.getLineNumber() - preScriptLineLength + 1);
+            pd.internal("message",  se.getMessage());
+            pd.internal("engine", "rhino");
         }
         return pd;
     }

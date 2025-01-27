@@ -336,6 +336,10 @@ public abstract class Message {
 		return "deflate".equalsIgnoreCase(header.getContentEncoding());
 	}
 
+	public boolean isBrotli() {
+		return "br".equalsIgnoreCase(header.getContentEncoding());
+	}
+
 	public String getCharset() {
 		return header.getCharset();
 	}

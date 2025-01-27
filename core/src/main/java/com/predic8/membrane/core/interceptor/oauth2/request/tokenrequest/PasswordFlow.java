@@ -38,7 +38,7 @@ public class PasswordFlow extends TokenRequest {
     @Override
     protected Response checkForMissingParameters() throws Exception {
         if(getGrantType() == null || getUsername() == null || getPassword() == null || getClientId() == null || getClientSecret() == null)
-            return OAuth2Util.createParameterizedJsonErrorResponse(jsonGen,"error","invalid_request");
+            return OAuth2Util.createParameterizedJsonErrorResponse("error","invalid_request");
         return new NoResponse();
     }
 
@@ -46,11 +46,11 @@ public class PasswordFlow extends TokenRequest {
     protected Response processWithParameters() throws Exception {
 
         if(!verifyClientThroughParams())
-            return OAuth2Util.createParameterizedJsonErrorResponse(jsonGen,"error","unauthorized_client");
+            return OAuth2Util.createParameterizedJsonErrorResponse("error","unauthorized_client");
 
         Map<String,String> userParams = verifyUserThroughParams();
         if(userParams == null)
-            return OAuth2Util.createParameterizedJsonErrorResponse(jsonGen,"error","access_denied");
+            return OAuth2Util.createParameterizedJsonErrorResponse("error","access_denied");
 
         scope = getScope();
         token = createTokenForVerifiedUserAndClient(userParams);
@@ -70,12 +70,12 @@ public class PasswordFlow extends TokenRequest {
                 client = authServer.getClientList().getClient(getClientId());
             }
         } catch (Exception e) {
-            return OAuth2Util.createParameterizedJsonErrorResponse(jsonGen, "error", "invalid_client");
+            return OAuth2Util.createParameterizedJsonErrorResponse("error", "invalid_client");
         }
         
         String grantTypes = client.getGrantTypes();
         if (!grantTypes.contains(getGrantType())) {
-			return OAuth2Util.createParameterizedJsonErrorResponse(jsonGen, "error", "invalid_grant_type");
+			return OAuth2Util.createParameterizedJsonErrorResponse("error", "invalid_grant_type");
         }
 
         refreshToken = authServer.getRefreshTokenGenerator().getToken(client.getClientId(), client.getClientId(), client.getClientSecret(), claimsMapForRefresh(userParams));
