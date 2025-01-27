@@ -15,6 +15,7 @@ package com.predic8.membrane.core.util;
 
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.schemavalidation.*;
+import org.brotli.dec.BrotliInputStream;
 import org.xml.sax.*;
 
 import javax.xml.parsers.*;
@@ -41,6 +42,8 @@ public class MessageUtil {
 			return new GZIPInputStream(res.getBodyAsStream());
 		} else if (res.isDeflate()) {
 			return new ByteArrayInputStream(ByteUtil.getDecompressedData(res.getBody().getContent()));
+		} else if (res.isBrotli()) {
+			return new BrotliInputStream(res.getBodyAsStream());
 		}
 		return res.getBodyAsStream();
 	}
@@ -50,6 +53,8 @@ public class MessageUtil {
 			return ByteUtil.getByteArrayData(new GZIPInputStream(res.getBodyAsStream()));
 		} else if (res.isDeflate()) {
 			return ByteUtil.getDecompressedData(res.getBody().getContent());
+		} else if (res.isBrotli()) {
+			return new BrotliInputStream(res.getBodyAsStream()).readAllBytes();
 		}
 		return res.getBody().getContent();
 	}

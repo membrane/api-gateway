@@ -30,6 +30,7 @@ import javax.xml.transform.stream.*;
 import java.io.*;
 
 import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static java.nio.charset.StandardCharsets.*;
 import static javax.xml.transform.OutputKeys.*;
@@ -58,9 +59,8 @@ public class Xml2JsonInterceptor extends AbstractInterceptor {
         } catch (Exception e) {
             log.error("", e);
             internal(router.isProduction(),getDisplayName())
-                    .addSubType("request")
+                    .flow(REQUEST)
                     .detail("Could not transform XML to JSON!")
-                    .internal("flow", "request")
                     .exception(e)
                     .buildAndSetResponse(exc);
             return ABORT;
@@ -73,9 +73,8 @@ public class Xml2JsonInterceptor extends AbstractInterceptor {
             return handleInternal(exc.getResponse());
         } catch (Exception e) {
             internal(router.isProduction(),getDisplayName())
-                    .addSubType("response")
+                    .flow(Flow.RESPONSE)
                     .detail("Could not return WSDL document!")
-                    .internal("flow", "response")
                     .exception(e)
                     .buildAndSetResponse(exc);
             return ABORT;

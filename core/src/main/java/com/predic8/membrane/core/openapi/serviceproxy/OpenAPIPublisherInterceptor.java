@@ -129,9 +129,10 @@ public class OpenAPIPublisherInterceptor extends AbstractInterceptor {
     private Outcome returnNoFound(Exchange exc, String id) {
         // Do not log. Too common!
         exc.setResponse(openapi(false,getDisplayName())
-                .statusCode(404)
-                .addSubType("wrong-id")
                 .title("OpenAPI not found")
+                .statusCode(404)
+                .addSubType("openapi")
+                .addSubSee("wrong-id")
                 .detail("OpenAPI document with the id %s not found.".formatted(id))
                 .topLevel("id", id)
                 .build());
@@ -152,9 +153,10 @@ public class OpenAPIPublisherInterceptor extends AbstractInterceptor {
         if (!m.matches()) {
             // Do not log! Too common.
             openapi(false,getDisplayName())
-                    .statusCode(404)
-                    .addSubType("wrong-id")
                     .title("No OpenAPI document id")
+                    .statusCode(404)
+                    .addSubType("openapi")
+                    .addSubSee("wrong-id")
                     .detail("Please specify an id of an OpenAPI document. Path should match this pattern: /api-docs/ui/<<id>>")
                     .buildAndSetResponse(exc);
             return RETURN;
