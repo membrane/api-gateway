@@ -37,7 +37,8 @@ if ! command -v java >/dev/null 2>&1; then
     exit 1
 fi
 
-version_line=$(java -version 2>&1 | grep "version" | head -n 1)
+echo $(JAVA_TOOL_OPTIONS='-Duser.language=de' java -version 2>&1 | grep "version" | head -n 1)
+version_line=$(JAVA_TOOL_OPTIONS='-Duser.language=de' java -version 2>&1 | grep "version" | head -n 1)
 
 if [ -z "$version_line" ]; then
     echo "WARNING: Could not determine Java version. Make sure Java version is at least $required_version. Proceeding anyway..."
@@ -45,7 +46,7 @@ if [ -z "$version_line" ]; then
     exit 0
 fi
 
-full_version=${version_line#*version \"}
+full_version=${version_line#*\"}
 full_version=${full_version%%\"*}
 current_version=${full_version%%.*}
 
