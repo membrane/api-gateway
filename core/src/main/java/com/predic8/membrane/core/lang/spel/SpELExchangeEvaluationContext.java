@@ -17,9 +17,9 @@ package com.predic8.membrane.core.lang.spel;
 import com.fasterxml.jackson.databind.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.interceptor.Interceptor.*;
 import com.predic8.membrane.core.lang.spel.functions.*;
 import com.predic8.membrane.core.lang.spel.spelable.*;
-import com.predic8.membrane.core.security.*;
 import com.predic8.membrane.core.util.*;
 import org.slf4j.*;
 import org.springframework.expression.spel.support.*;
@@ -28,8 +28,6 @@ import java.io.*;
 import java.util.*;
 
 import static com.predic8.membrane.core.util.URLParamUtil.DuplicateKeyOrInvalidFormStrategy.*;
-
-import static com.predic8.membrane.core.exchange.Exchange.SECURITY_SCHEMES;
 
 public class SpELExchangeEvaluationContext extends StandardEvaluationContext {
     private static final Logger log = LoggerFactory.getLogger(SpELExchangeEvaluationContext.class);
@@ -55,17 +53,15 @@ public class SpELExchangeEvaluationContext extends StandardEvaluationContext {
 
     private SpELMessageWrapper request;
     private SpELMessageWrapper response;
+    private final Flow flow;
 
-
-    public SpELExchangeEvaluationContext(Exchange exc) {
-        this(exc, exc.getRequest());
-    }
-
-    public SpELExchangeEvaluationContext(Exchange exchange, Message message) {
+    public SpELExchangeEvaluationContext(Exchange exchange, Flow flow) {
         super();
 
-        this.message = message;
         this.exchange = exchange;
+        this.flow = flow;
+        this.message = exchange.getMessage(flow);
+
         properties = new SpELProperties(exchange.getProperties());
         headers = new SpELHeader(message.getHeader());
 
@@ -154,8 +150,8 @@ public class SpELExchangeEvaluationContext extends StandardEvaluationContext {
         return scopes;
     }
 
-    public void setScopes(String scopes) {
-        this.scopes = scopes;
+    public Flow getFlow() {
+        return flow;
     }
 
     public SpELMap<String, Object> getJson() throws IOException {

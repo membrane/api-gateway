@@ -15,24 +15,19 @@
 
 package com.predic8.membrane.core.interceptor.log;
 
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Message;
-import com.predic8.membrane.core.lang.spel.SpELExchangeEvaluationContext;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.slf4j.MDC;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.lang.spel.*;
+import org.slf4j.*;
 
-import java.io.IOException;
-import java.text.SimpleDateFormat;
-import java.util.AbstractMap;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.function.Function;
-import java.util.function.Supplier;
-import java.util.stream.Collectors;
+import java.io.*;
+import java.text.*;
+import java.util.*;
+import java.util.function.*;
+import java.util.stream.*;
 
-import static com.predic8.membrane.core.util.TextUtil.escapeQuotes;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
+import static com.predic8.membrane.core.util.TextUtil.*;
 
 public class AccessLogInterceptorService {
 
@@ -155,7 +150,7 @@ public class AccessLogInterceptorService {
     private Function<AdditionalVariable, AbstractMap.SimpleEntry<String, String>> additionalPatternToMapEntry(Exchange exc) {
         return additionalPattern -> new AbstractMap.SimpleEntry<>(
                 additionalPattern.getName(),
-                safe(() ->  additionalPattern.getExpression().getValue(new SpELExchangeEvaluationContext(exc)),
+                safe(() ->  additionalPattern.getExpression().getValue(new SpELExchangeEvaluationContext(exc, REQUEST)),
                     additionalPattern.getDefaultValue()
                 )
         );

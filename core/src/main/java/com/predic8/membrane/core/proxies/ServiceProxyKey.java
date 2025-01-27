@@ -14,7 +14,7 @@
 
 package com.predic8.membrane.core.proxies;
 
-import org.apache.commons.lang3.*;
+import org.jetbrains.annotations.*;
 import org.slf4j.*;
 
 import java.util.regex.*;
@@ -82,49 +82,6 @@ public class ServiceProxyKey extends AbstractRuleKey {
     @Override
     public boolean isHostWildcard() {
         return isHostWildCard;
-    }
-
-    @Override
-    public String toString() {
-        return (host.equals("*") ? "" : host + " ")
-               + (method.equals("*") ? "" : method + " ")
-               + StringUtils.defaultIfEmpty(getPath(), "")
-               + ":" + port;
-    }
-
-
-    @Override
-    public int hashCode() {
-        final int prime = 31;
-        int result = super.hashCode();
-        result = prime * result + ((host == null) ? 0 : host.hashCode());
-        result = prime * result + ((method == null) ? 0 : method.hashCode());
-        result = prime * result + ((getPath() == null) ? 0 : getPath().hashCode());
-        return result;
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        if (this == obj)
-            return true;
-        if (!super.equals(obj))
-            return false;
-        if (getClass() != obj.getClass())
-            return false;
-        ServiceProxyKey other = (ServiceProxyKey) obj;
-        if (host == null) {
-            if (other.host != null)
-                return false;
-        } else if (!host.equals(other.host))
-            return false;
-        if (method == null) {
-            if (other.method != null)
-                return false;
-        } else if (!method.equals(other.method))
-            return false;
-        if (getPath() == null) {
-            return other.getPath() == null;
-        } else return getPath().equals(other.getPath());
     }
 
     @Override
@@ -213,5 +170,59 @@ public class ServiceProxyKey extends AbstractRuleKey {
      */
     public Pattern getHostPattern() {
         return hostPattern;
+    }
+
+    @Override
+    public String toString() {
+        return getHostString() + ":" + port + getMethodString() + getPathString();
+    }
+
+    private String getPathString() {
+        if (getPath() != null && !getPath().isEmpty()) {
+            return " " + getPath();
+        }
+        return "";
+    }
+
+    private @NotNull String getMethodString() {
+        return method.equals("*") ? "" : " %s".formatted(method);
+    }
+
+    private String getHostString() {
+        return host.equals("*") ? "0.0.0.0" : host;
+    }
+
+    @Override
+    public int hashCode() {
+        final int prime = 31;
+        int result = super.hashCode();
+        result = prime * result + ((host == null) ? 0 : host.hashCode());
+        result = prime * result + ((method == null) ? 0 : method.hashCode());
+        result = prime * result + ((getPath() == null) ? 0 : getPath().hashCode());
+        return result;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj)
+            return true;
+        if (!super.equals(obj))
+            return false;
+        if (getClass() != obj.getClass())
+            return false;
+        ServiceProxyKey other = (ServiceProxyKey) obj;
+        if (host == null) {
+            if (other.host != null)
+                return false;
+        } else if (!host.equals(other.host))
+            return false;
+        if (method == null) {
+            if (other.method != null)
+                return false;
+        } else if (!method.equals(other.method))
+            return false;
+        if (getPath() == null) {
+            return other.getPath() == null;
+        } else return getPath().equals(other.getPath());
     }
 }

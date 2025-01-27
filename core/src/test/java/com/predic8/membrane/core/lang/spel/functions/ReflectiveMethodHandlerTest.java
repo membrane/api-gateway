@@ -13,21 +13,20 @@
    limitations under the License. */
 package com.predic8.membrane.core.lang.spel.functions;
 
-import com.predic8.membrane.core.http.Request;
-import com.predic8.membrane.core.lang.spel.SpELExchangeEvaluationContext;
-import org.jetbrains.annotations.NotNull;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
-import org.springframework.core.convert.TypeDescriptor;
-import org.springframework.expression.TypedValue;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.lang.spel.*;
+import org.jetbrains.annotations.*;
+import org.junit.jupiter.api.*;
+import org.springframework.core.convert.*;
+import org.springframework.expression.*;
 
-import java.lang.reflect.Method;
-import java.net.URISyntaxException;
-import java.util.HashMap;
-import java.util.Map;
+import java.lang.reflect.*;
+import java.net.*;
+import java.util.*;
 
-import static com.predic8.membrane.core.lang.spel.functions.ReflectiveMethodHandler.getTypeDescriptor;
-import static java.util.List.of;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
+import static com.predic8.membrane.core.lang.spel.functions.ReflectiveMethodHandler.*;
+import static java.util.List.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class ReflectiveMethodHandlerTest {
@@ -41,7 +40,7 @@ public class ReflectiveMethodHandlerTest {
     @BeforeAll
     static void init() throws URISyntaxException {
         rmh = new ReflectiveMethodHandler(TestFunctions.class);
-        ctx = new SpELExchangeEvaluationContext(Request.get("foo").buildExchange());
+        ctx = new SpELExchangeEvaluationContext(Request.get("foo").buildExchange(), REQUEST);
     }
 
     @Test

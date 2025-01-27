@@ -32,7 +32,7 @@ import static org.mockito.Mockito.when;
 
 class ApisJsonInterceptorTest {
     private static final String RESPONSE_JSON = """
-        {"aid":"example.com:1234","name":"API Collection","description":"API Collection Description","url":"http://example.com/apis.json","created":"2024-07-15","modified":"2024-07-15","specificationVersion":"0.18","apis":[{"aid":"example.com:*-0.0.0.0-*80/baz-true","name":"Demo API","description":"API","humanUrl":"http://localhost/api-docs","baseUrl":"http://localhost/baz"}]}""";
+        {"aid":"example.com:1234","name":"API Collection","description":"API Collection Description","url":"http://example.com/apis.json","created":"2024-07-15","modified":"2024-07-15","specificationVersion":"0.18","apis":[{"aid":"example.com:*-0.0.0.0-*80/baz","name":"Demo API","description":"API","humanUrl":"http://localhost/api-docs","baseUrl":"http://localhost/baz"}]}""";
     private static ApisJsonInterceptor aji;
 
     @BeforeAll
@@ -77,7 +77,7 @@ class ApisJsonInterceptorTest {
         apiProxy.init();
         JsonNode apiNode = aji.jsonNodeFromApiProxy(apiProxy, null, null);
 
-        assertEquals("example.com:*-0.0.0.0-*80/baz-true", apiNode.get("aid").asText());
+        assertEquals("example.com:*-0.0.0.0-*80/baz", apiNode.get("aid").asText());
         assertEquals("Demo API", apiNode.get("name").asText());
         assertEquals("API", apiNode.get("description").asText());
         assertEquals("http://localhost/api-docs", apiNode.get("humanUrl").asText());

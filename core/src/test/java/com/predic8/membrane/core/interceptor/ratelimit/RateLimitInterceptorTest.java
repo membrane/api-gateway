@@ -32,6 +32,7 @@ import java.util.*;
 import java.util.concurrent.atomic.*;
 
 import static com.predic8.membrane.core.http.Header.*;
+import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
 import static com.predic8.membrane.core.http.Request.post;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.interceptor.ratelimit.RateLimitInterceptor.*;
@@ -119,6 +120,7 @@ public class RateLimitInterceptorTest {
                              "application": "%s"
                         }
                         """.formatted(application))
+                .contentType(APPLICATION_JSON)
                 .buildExchange();
 	}
 
@@ -128,6 +130,7 @@ public class RateLimitInterceptorTest {
 				.method(value)
 				.url(new URIFactory(),"/" + value)
 				.header("Host",value)
+				.contentType(APPLICATION_JSON)
 				.body(om.writeValueAsBytes(Map.of("foo",value)))
 				.buildExchange();
 		exc.setProperty("a",value);
