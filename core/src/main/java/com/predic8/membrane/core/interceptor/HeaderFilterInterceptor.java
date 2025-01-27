@@ -35,7 +35,7 @@ import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 /**
  * @description Removes message headers matching a list of patterns.
  * The first matching child element will be acted upon by the filter.
- * @topic 4. Interceptors/Features
+ * @topic 2. Enterprise Integration Patterns
  */
 @MCElement(name = "headerFilter")
 public class HeaderFilterInterceptor extends AbstractInterceptor {

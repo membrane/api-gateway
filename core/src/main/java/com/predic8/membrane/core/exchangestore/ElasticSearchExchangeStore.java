@@ -48,7 +48,7 @@ import static java.util.stream.Collectors.*;
  *              tools. Before writing, this class will check if index exists in current Elasticsearch instance. If index does not
  *              exist, it will create index and set up mapping for data types. If the existing index already have mapping this step
  *              will be skipped in order to not to overwrite existing mapping.
- * @topic 5. Monitoring, Logging and Statistics
+ * @topic 4. Monitoring, Logging and Statistics
  */
 @MCElement(name="elasticSearchExchangeStore")
 public class ElasticSearchExchangeStore extends AbstractExchangeStore {

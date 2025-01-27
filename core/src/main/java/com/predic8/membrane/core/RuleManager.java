@@ -17,7 +17,9 @@ package com.predic8.membrane.core;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.exchangestore.*;
 import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.lang.*;
 import com.predic8.membrane.core.model.*;
+import com.predic8.membrane.core.openapi.serviceproxy.*;
 import com.predic8.membrane.core.proxies.Proxy;
 import com.predic8.membrane.core.proxies.*;
 import com.predic8.membrane.core.transport.http.*;
@@ -204,13 +206,25 @@ public class RuleManager {
                 continue;
             if (key.isUsePathPattern() && !key.matchesPath(uri))
                 continue;
-            if (!key.complexMatch(exc))
+            try {
+                if (!key.complexMatch(exc))
+                    continue;
+            } catch (ExchangeExpressionException eee) {
+                log.warn("Error evaluating test expression {} of API {}. Ignoring test. Please check configuration.", getTestExpression(proxy), proxy.getName());
                 continue;
+            }
             if (log.isDebugEnabled())
-                log.debug("Matching Rule {} found for RuleKey {} {} {} {} {}",proxy, hostHeader, method, uri, port, localIP);
+                log.debug("Matching Rule {} found for RuleKey {} {} {} {} {}", proxy, hostHeader, method, uri, port, localIP);
             return proxy;
         }
         return findProxyRule(exc);
+    }
+
+    private static String getTestExpression(Proxy proxy) {
+        if (proxy instanceof APIProxy ap) {
+            return ap.getTest();
+        }
+        return "´unknown´";
     }
 
     private static String getLocalIP(AbstractHttpHandler handler) {

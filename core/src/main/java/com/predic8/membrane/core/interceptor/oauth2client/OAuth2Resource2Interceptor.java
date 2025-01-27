@@ -43,7 +43,7 @@ import static java.nio.charset.StandardCharsets.*;
 /**
  * @description Allows only authorized HTTP requests to pass through. Unauthorized requests get a redirect to the
  * authorization server as response.
- * @topic 6. Security
+ * @topic 3. Security and Validation
  */
 @MCElement(name = "oauth2Resource2")
 public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {

@@ -13,9 +13,9 @@
    limitations under the License. */
 package com.predic8.membrane.core.proxies;
 
-import com.predic8.membrane.core.http.Request;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
+import static com.predic8.membrane.core.http.Request.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 
@@ -70,7 +70,7 @@ public class ServiceProxyKeyTest {
 
 	@Test
 	void testNoRegExpMatchesPath() {
-		ServiceProxyKey key = new ServiceProxyKey("localhost", Request.METHOD_POST, "/axis2/services", 3000);
+		ServiceProxyKey key = new ServiceProxyKey("localhost", METHOD_POST, "/axis2/services", 3000);
 		key.setPathRegExp(false);
 
 		assertTrue(key.matchesPath("/axis2/services/bla/other"));
@@ -79,20 +79,20 @@ public class ServiceProxyKeyTest {
 
 	@Test
 	void testRegularExpressionMatchesPath() {
-		ServiceProxyKey key = new ServiceProxyKey("localhost", Request.METHOD_POST, ".*FooService", 3000);
+		ServiceProxyKey key = new ServiceProxyKey("localhost", METHOD_POST, ".*FooService", 3000);
 		assertTrue(key.matchesPath("/axis2/services/FooService"));
 		assertFalse(key.matchesPath("/axis2/services/FooService/Bla"));
 	}
 
 	@Test
-	void testRegularExpressionMatchesPathAnyURI() {
-		ServiceProxyKey key = new ServiceProxyKey("localhost", Request.METHOD_POST, ".*", 3000);
+	void regularExpressionMatchesPathAnyURI() {
+		ServiceProxyKey key = new ServiceProxyKey("localhost", METHOD_POST, ".*", 3000);
 		assertTrue(key.matchesPath("/axis2/services/FooService"));
 		assertTrue(key.matchesPath("/axis2/services/FooService/Bla"));
 	}
 
 	@Test
-	void testHostMatch() {
+	void hostMatch() {
 		testHostMatch("localhost", "localhost");
 		testHostMatch("foo.predic8.de", "foo.predic8.de");
 		testHostMatch(" foo.predic8.de ", "foo.predic8.de");
@@ -110,5 +110,15 @@ public class ServiceProxyKeyTest {
 
 	private void testHostMatch(String hostArg, String hostHeader, boolean result) {
 		assertEquals(new ServiceProxyKey(hostArg, "GET", null, 80).matchesHostHeader(hostHeader), result);
+	}
+
+	@Test
+	void toStringDefault() {
+		assertEquals("0.0.0.0:80", new ServiceProxyKey(80).toString());
+	}
+
+	@Test
+	void toStringTest() {
+        assertEquals("localhost:3000 POST /axis2/services", new ServiceProxyKey("localhost", METHOD_POST, "/axis2/services", 3000).toString());
 	}
 }

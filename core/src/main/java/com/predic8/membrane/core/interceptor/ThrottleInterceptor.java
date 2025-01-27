@@ -26,7 +26,7 @@ import com.predic8.membrane.core.http.Response;
  * @description <p>
  *              The throttle feature can slow down traffic to thwart denial of service attacks.
  *              </p>
- * @topic 6. Security
+ * @topic 3. Security and Validation
  */
 @MCElement(name="throttle")
 public class ThrottleInterceptor extends AbstractInterceptor {

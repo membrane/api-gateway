@@ -28,7 +28,7 @@ import com.predic8.membrane.core.exchange.Exchange;
  *              new soapProxy which has configured a serviceProxy-path of "\Q/material/ArticleService\E.*" which does
  *              not match.
  *              </p>
- * @topic 4. Interceptors/Features
+ * @topic 6. Misc
  */
 @MCElement(name="urlNormalizer")
 public class URLNormalizerInterceptor extends AbstractInterceptor {

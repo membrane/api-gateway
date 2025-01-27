@@ -20,6 +20,7 @@ import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.lang.ExchangeExpression.*;
 import org.junit.jupiter.api.*;
 
+import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
 import static org.junit.jupiter.api.Assertions.*;
 
 abstract class AbstractSetHeaderInterceptorTest {
@@ -38,6 +39,7 @@ abstract class AbstractSetHeaderInterceptorTest {
             setRequest(new Request.Builder().post("/boo")
                     .header("host", "localhost:8080")
                     .header("X-Api-Key", "31415")
+                    .contentType(APPLICATION_JSON)
                     .body("""
                         {
                             "name": "Mango",

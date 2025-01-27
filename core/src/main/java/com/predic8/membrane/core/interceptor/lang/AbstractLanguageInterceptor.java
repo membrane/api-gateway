@@ -20,7 +20,7 @@ import com.predic8.membrane.core.lang.ExchangeExpression.*;
 
 import static com.predic8.membrane.core.lang.ExchangeExpression.Language.*;
 
-abstract class AbstractLanguageInterceptor extends AbstractInterceptor {
+abstract class AbstractLanguageInterceptor extends AbstractInterceptor implements Polyglot{
 
     /**
      * SpEL is default

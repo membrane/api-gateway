@@ -29,7 +29,7 @@ import static java.nio.charset.StandardCharsets.*;
 
 /**
  * @description Beautifies request and response bodies. Supported are the Formats: JSON, XML
- * @topic 4. Interceptors/Features
+ * @topic 2. Enterprise Integration Patterns
  */
 @MCElement(name = "beautifier")
 public class BeautifierInterceptor extends AbstractInterceptor {

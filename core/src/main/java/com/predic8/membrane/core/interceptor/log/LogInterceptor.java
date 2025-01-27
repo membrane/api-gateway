@@ -31,7 +31,7 @@ import static org.slf4j.LoggerFactory.*;
 /**
  * @description The log feature logs request and response messages. The messages will appear either on the console or in
  * a log file depending on the log configuration.
- * @topic 5. Monitoring, Logging and Statistics
+ * @topic 4. Monitoring, Logging and Statistics
  */
 @MCElement(name = "log")
 public class LogInterceptor extends AbstractExchangeExpressionInterceptor {

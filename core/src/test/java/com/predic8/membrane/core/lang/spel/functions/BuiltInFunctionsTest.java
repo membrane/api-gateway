@@ -13,7 +13,6 @@
    limitations under the License. */
 package com.predic8.membrane.core.lang.spel.functions;
 
-import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.lang.spel.*;
 import com.predic8.membrane.core.security.*;
 import org.junit.jupiter.api.*;
@@ -23,10 +22,11 @@ import java.util.*;
 
 import static com.predic8.membrane.core.exchange.Exchange.*;
 import static com.predic8.membrane.core.http.Header.*;
+import static com.predic8.membrane.core.http.Request.*;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
 import static com.predic8.membrane.core.lang.spel.functions.BuiltInFunctions.*;
 import static com.predic8.membrane.core.security.ApiKeySecurityScheme.In.*;
 import static java.util.List.*;
-
 import static org.junit.jupiter.api.Assertions.*;
 
 public class BuiltInFunctionsTest {
@@ -35,14 +35,14 @@ public class BuiltInFunctionsTest {
 
     @BeforeAll
     static void init() throws URISyntaxException {
-        var exc = Request.get("foo").buildExchange();
+        var exc = get("foo").buildExchange();
         exc.setProperty(SECURITY_SCHEMES, List.of(
                 new ApiKeySecurityScheme(HEADER, "X-Api-Key").scopes("demo", "test"),
                 new BasicHttpSecurityScheme().scopes("foo", "bar")
         ));
         exc.getRequest().setBodyContent("""
                 {"name":"John"}""".getBytes());
-        ctx = new SpELExchangeEvaluationContext(exc);
+        ctx = new SpELExchangeEvaluationContext(exc, REQUEST);
     }
 
     @Test
@@ -80,8 +80,8 @@ public class BuiltInFunctionsTest {
 
     @Test
     public void testNullScopes() throws URISyntaxException {
-        var exc2 = Request.get("foo").buildExchange();
-        SpELExchangeEvaluationContext ctxWithoutScopes = new SpELExchangeEvaluationContext(exc2);
+        var exc2 = get("foo").buildExchange();
+        SpELExchangeEvaluationContext ctxWithoutScopes = new SpELExchangeEvaluationContext(exc2, REQUEST);
         assertFalse(BuiltInFunctions.hasScope(ctxWithoutScopes));
         assertFalse(BuiltInFunctions.hasScope(of("foo"), ctxWithoutScopes));
     }
@@ -98,22 +98,22 @@ public class BuiltInFunctionsTest {
 
     @Test
     public void testHasBearerAuth() throws URISyntaxException {
-        var exc2 = Request.get("foo").header(AUTHORIZATION, "Bearer 8w458934pj5u9843").buildExchange();
-        SpELExchangeEvaluationContext ctxWithoutScopes = new SpELExchangeEvaluationContext(exc2);
+        var exc2 = get("foo").header(AUTHORIZATION, "Bearer 8w458934pj5u9843").buildExchange();
+        SpELExchangeEvaluationContext ctxWithoutScopes = new SpELExchangeEvaluationContext(exc2,REQUEST);
         assertTrue(BuiltInFunctions.isBearerAuthorization(ctxWithoutScopes));
     }
 
     @Test
     public void testHasOtherAuth() throws URISyntaxException {
-        var exc2 = Request.get("foo").header(AUTHORIZATION, "Other 8w458934pj5u9843").buildExchange();
-        SpELExchangeEvaluationContext ctxWithoutScopes = new SpELExchangeEvaluationContext(exc2);
+        var exc2 = get("foo").header(AUTHORIZATION, "Other 8w458934pj5u9843").buildExchange();
+        SpELExchangeEvaluationContext ctxWithoutScopes = new SpELExchangeEvaluationContext(exc2, REQUEST);
         assertFalse(BuiltInFunctions.isBearerAuthorization(ctxWithoutScopes));
     }
 
     @Test
     public void testHasNoAuth() throws URISyntaxException {
-        var exc2 = Request.get("foo").buildExchange();
-        SpELExchangeEvaluationContext ctxWithoutScopes = new SpELExchangeEvaluationContext(exc2);
+        var exc2 = get("foo").buildExchange();
+        SpELExchangeEvaluationContext ctxWithoutScopes = new SpELExchangeEvaluationContext(exc2, REQUEST);
         assertFalse(BuiltInFunctions.isBearerAuthorization(ctxWithoutScopes));
     }
 

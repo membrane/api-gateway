@@ -20,7 +20,7 @@ import com.predic8.membrane.core.util.*;
  * @description <p>Internal proxy that can only be invoked by other proxies within the gateway. An internal
  * proxy does not listen on any port.</p>
  * <p>Internal proxies are useful to better structure the configuration of the gateway.</p>
- * @topic 2. Proxies
+ * @topic 1. Proxies and Flow
  */
 @MCElement(name="internal")
 public class InternalProxy extends AbstractServiceProxy implements NotPortOpeningProxy {

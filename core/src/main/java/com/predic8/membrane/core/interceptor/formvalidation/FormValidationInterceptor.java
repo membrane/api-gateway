@@ -32,7 +32,7 @@ import static com.predic8.membrane.core.util.URLParamUtil.DuplicateKeyOrInvalidF
 
 /**
  * @description Using the formValidation interceptor you can validate the input of HTML forms.
- * @topic 4. Interceptors/Features
+ * @topic 3. Security and Validation
  */
 @MCElement(name="formValidation")
 public class FormValidationInterceptor extends AbstractInterceptor {

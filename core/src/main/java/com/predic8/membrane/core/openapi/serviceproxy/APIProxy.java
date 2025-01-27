@@ -17,6 +17,9 @@
 package com.predic8.membrane.core.openapi.serviceproxy;
 
 import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.interceptor.lang.*;
+import com.predic8.membrane.core.lang.*;
+import com.predic8.membrane.core.lang.ExchangeExpression.*;
 import com.predic8.membrane.core.openapi.util.*;
 import com.predic8.membrane.core.proxies.*;
 import com.predic8.membrane.core.util.*;
@@ -26,12 +29,14 @@ import org.slf4j.*;
 import java.net.*;
 import java.util.*;
 
+import static com.predic8.membrane.core.lang.ExchangeExpression.Language.SPEL;
+
 /**
  * @description The api proxy extends the serviceProxy with API related functions like OpenAPI support.
- * @topic 2. Proxies
+ * @topic 1. Proxies and Flow
  */
 @MCElement(name = "api")
-public class APIProxy extends ServiceProxy {
+public class APIProxy extends ServiceProxy implements Polyglot {
 
     private static final Logger log = LoggerFactory.getLogger(APIProxy.class.getName());
 
@@ -42,6 +47,8 @@ public class APIProxy extends ServiceProxy {
     public static final String SECURITY = "security";
     public static final String VALIDATION_DETAILS = "details";
 
+    private Language language = SPEL;
+    private ExchangeExpression exchangeExpression;
     private String test;
     private String id;
     private ApiDescription description;
@@ -69,7 +76,10 @@ public class APIProxy extends ServiceProxy {
     @Override
     public void init() {
         super.init();
-        key = new APIProxyKey(key, test, !specs.isEmpty());
+        if (test != null && !test.isEmpty()) {
+            exchangeExpression = ExchangeExpression.newInstance(router, language, test);
+        }
+        key = new APIProxyKey(key, exchangeExpression, !specs.isEmpty());
         initOpenAPI();
     }
 
@@ -193,6 +203,17 @@ public class APIProxy extends ServiceProxy {
     @MCChildElement
     public void setDescription(ApiDescription description) {
         this.description = description;
+    }
+
+    @Override
+    public Language getLanguage() {
+        return language;
+    }
+
+    @MCAttribute
+    @Override
+    public void setLanguage(Language language) {
+        this.language = language;
     }
 
     @MCElement(name = "description", topLevel = false, mixed = true)
