@@ -78,6 +78,7 @@ MIT License
 -------------------------------------------------
 SLF4J
 OAuth2-OpenID
+Brotli Decoder by Google
 
 Mozilla Public License
 -------------------------------------------------
