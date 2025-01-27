@@ -127,6 +127,6 @@ public class APIProxyKey extends ServiceProxyKey {
 
     @Override
     public int hashCode() {
-        return super.hashCode() + exchangeExpression.hashCode() + basePaths.hashCode();
+        return super.hashCode() + Objects.hashCode( exchangeExpression.hashCode()) + basePaths.hashCode();
     }
 }
