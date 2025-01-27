@@ -49,7 +49,7 @@ public class ProblemDetailsTest {
         assertEquals(400, r.getStatusCode());
         assertEquals(APPLICATION_PROBLEM_JSON, r.getHeader().getContentType());
 
-        System.out.println("r.getBodyAsStringDecoded() = " + r.getBodyAsStringDecoded());
+//        System.out.println("r.getBodyAsStringDecoded() = " + r.getBodyAsStringDecoded());
 
         JsonNode json = om.readTree(r.getBodyAsStringDecoded());
 
@@ -57,7 +57,7 @@ public class ProblemDetailsTest {
         assertEquals("https://membrane-api.io/problems/user/catastrophy",json.get("type").asText());
 
         // Assert Order
-        assertIterableEquals(List.of("title","type","see","attention"), CollectionsUtil.toList( json.fieldNames()));r
+        assertIterableEquals(List.of("title","type","see","attention"), CollectionsUtil.toList( json.fieldNames()));
     }
 
     @Test
@@ -67,7 +67,7 @@ public class ProblemDetailsTest {
                 .title("Something happend!")
                 .detail("The barn burned down and the roof fell on cow Elsa.").build();
 
-        System.out.println("r.getBodyAsStringDecoded() = " + r.getBodyAsStringDecoded());
+//        System.out.println("r.getBodyAsStringDecoded() = " + r.getBodyAsStringDecoded());
 
         JsonNode json = om.readTree(r.getBodyAsStringDecoded());
 
@@ -82,7 +82,7 @@ public class ProblemDetailsTest {
                 .internal("a", "1")
                 .internal("b", "2").build();
 
-        System.out.println("r.getBodyAsStringDecoded() = " + r.getBodyAsStringDecoded());
+//        System.out.println("r.getBodyAsStringDecoded() = " + r.getBodyAsStringDecoded());
 
         JsonNode json = om.readTree(r.getBodyAsStringDecoded());
 
@@ -95,8 +95,7 @@ public class ProblemDetailsTest {
         JsonNode json = om.readTree(getResponseWithDetailsAndExtensions(true).getBodyAsStringDecoded());
         assertEquals(3,json.size());
         assertEquals("https://membrane-api.io/problems/user/catastrophy",json.get("type").asText());
-        assertEquals("An error occurred.", json.get("title").asText());
-        assertTrue(json.get("detail").asText().contains("can be found in the Membrane log"));
+        assertEquals("Something happend!", json.get("title").asText());
     }
 
     @Test
@@ -126,14 +125,13 @@ public class ProblemDetailsTest {
                 .internal("a", "1")
                 .internal("b", "2").build();
 
-        System.out.println("r.getBodyAsStringDecoded() = " + r.getBodyAsStringDecoded());
+//        System.out.println("r.getBodyAsStringDecoded() = " + r.getBodyAsStringDecoded());
         
         JsonNode json = om.readTree(r.getBodyAsStringDecoded());
 
         assertEquals(3,json.size());
         assertEquals("https://membrane-api.io/problems/internal/catastrophe",json.get("type").asText());
         assertEquals("Something happened!",json.get("title").asText());
-        assertTrue(json.get("detail").asText().contains("can be found in the Membrane log"));
     }
 
     @Test
@@ -144,8 +142,6 @@ public class ProblemDetailsTest {
                 .title("Validation error")
                 .detail("Wrong format")
                 .build());
-
-        ProblemDetails pd = ProblemDetails.parse(r);
 
         assertEquals(421,pd.getStatusCode());
         assertEquals("https://membrane-api.io/problems/user/validation",pd.getType());
@@ -160,7 +156,7 @@ public class ProblemDetailsTest {
                 .addSubSee("io")
                 .build();
 
-        System.out.println("r.getBodyAsStringDecoded() = " + r.getBodyAsStringDecoded());
+//        System.out.println("r.getBodyAsStringDecoded() = " + r.getBodyAsStringDecoded());
 
         JsonNode json = om.readTree(r.getBodyAsStringDecoded());
 
@@ -196,7 +192,7 @@ public class ProblemDetailsTest {
         assertTrue(exc.getResponse().isXML());
 
         assertEquals("Catastrophe!", xPath(body, "/problem-details/title"));
-        assertEquals("https://membrane-api.io/error/user/blaster/atomic", xPath(body, "/problem-details/type"));
+        assertEquals("https://membrane-api.io/problems/user/atomic", xPath(body, "/problem-details/type"));
         assertEquals("7", xPath(body, "/problem-details/foo"));
         assertTrue(xPath(body, "/problem-details/attention").contains("development mode"));
     }

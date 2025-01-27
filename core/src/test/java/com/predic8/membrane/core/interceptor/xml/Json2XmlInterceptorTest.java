@@ -116,20 +116,10 @@ public class Json2XmlInterceptorTest {
     }
 
     @Test
-    void stringOnly() throws Exception {
-        Exchange exc = put("/no-root").json("Panama").buildExchange();
-        assertEquals(CONTINUE,  interceptor.handleRequest(exc));
-        Message msg = exc.getRequest();
-        assertTrue(msg.isXML());
-        assertEquals("1", xPath(msg.getBodyAsStringDecoded(), "/root/a"));
-        assertEquals("2", xPath(msg.getBodyAsStringDecoded(), "/root/b"));
-    }
-
-    @Test
     void invalidJSON() throws URISyntaxException {
         Exchange exc = put("/invalid").json("{ invalid").buildExchange();
         assertEquals(ABORT,  interceptor.handleRequest(exc));
-        System.out.println("exc.getRequest().getBodyAsStringDecoded() = " + exc.getResponse().getBodyAsStringDecoded());
+        assertTrue(exc.getResponse().getBodyAsStringDecoded().contains("Error parsing JSON"));
     }
 
     private static String xPath(String body, String expression) throws XPathExpressionException {

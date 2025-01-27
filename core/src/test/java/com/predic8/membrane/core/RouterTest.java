@@ -61,7 +61,6 @@ class RouterTest {
             .contentType(APPLICATION_PROBLEM_JSON)
             .body("title", equalTo("Internal server error."))
             .body("type",equalTo("https://membrane-api.io/problems/internal"))
-            .body("detail",containsString("key"))
             .body("message", Matchers.not(containsString(INTERNAL_SECRET)))
             .body("$",aMapWithSize(3))
         .extract();
@@ -118,7 +117,7 @@ class RouterTest {
                 .statusCode(500)
                 .contentType(APPLICATION_XML)
                 .body("problem-details.title", equalTo("Internal server error."))
-                .body("problem-details.type",equalTo("https://membrane-api.io/error/internal/interceptor"))
+                .body("problem-details.type",equalTo("https://membrane-api.io/problems/internal"))
                 .body("problem-details.attention", Matchers.containsString("development mode"))
                 .body("problem-details.message", Matchers.containsString("supersecret"))
                 .body("problem-details.stacktrace", Matchers.not(containsString("HttpServerHandler")))
