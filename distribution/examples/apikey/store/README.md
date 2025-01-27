@@ -2,11 +2,6 @@
 
 A quick guide to setting up a JDBC-based API key store using PostgreSQL.
 
-#### Key Features:
-- **Database Integration**: PostgreSQL for storing API keys and scopes.
-- **JDBC Configuration**: Leverage the PostgreSQL JDBC driver.
-- **Spring Integration**: Configure data sources via `proxies.xml`.
-
 ### Prerequisite:
 
 - **Docker installed:**
@@ -27,7 +22,7 @@ A quick guide to setting up a JDBC-based API key store using PostgreSQL.
 2. **Download JDBC Driver:**
 
     - Download the PostgreSQL JDBC driver from the official site: [https://jdbc.postgresql.org/download/](https://jdbc.postgresql.org/download/).
-    - Place it in the `lib` directory of your project.
+    - Place it in the `lib` directory.
 
 3. **Configure `proxies.xml`:**
 
@@ -43,14 +38,14 @@ A quick guide to setting up a JDBC-based API key store using PostgreSQL.
    ```
    ```xml
     <api port="2000">
-			<apiKey>
-				<databaseApiKeyStore datasource="dataSource">
-					<keyTable>key</keyTable>
-					<scopeTable>scope</scopeTable>
-				</databaseApiKeyStore>
+            <apiKey>
+                <databaseApiKeyStore datasource="dataSource">
+                    <keyTable>key</keyTable>
+                    <scopeTable>scope</scopeTable>
+                </databaseApiKeyStore>
                 <headerExtractor />
-			</apiKey>
-			<target url="https://api.predic8.de"/>
+            </apiKey>
+            <target url="https://api.predic8.de"/>
     </api>
    ```
    
@@ -60,7 +55,7 @@ A quick guide to setting up a JDBC-based API key store using PostgreSQL.
 ./service-proxy.sh
 ```
 
-5. **Run Database Script to Initialize Tables and Insert Values**
+5. **Run Database Script Insert Values**
 
     ```shell
    ./psql.sh
@@ -68,8 +63,7 @@ A quick guide to setting up a JDBC-based API key store using PostgreSQL.
    
 - This script will:
   - Connect to the PostgreSQL database.
-  - Create the required key and scope tables if they do not exist.
-  - Insert initial API keys into the key table.
+  - Insert initial API keys into the key table if not exists.
 
 - After running the script, the first API key inserted will be displayed in the console. Copy this key for use in the next step.
 
@@ -79,9 +73,5 @@ A quick guide to setting up a JDBC-based API key store using PostgreSQL.
 curl localhost:2000 -H "x-api-key:<FIRST API KEY>"
 ```
 
-#### Implementation Highlights:
-
-- **`JDBCApiKeyStore`**:
-    - Manages API keys and scopes using JDBC.
-    - Automatically creates `key` and `scope` tables if missing.
+- if the API key is valid, you will be redirected to ```https://api.predic8.de```.
    

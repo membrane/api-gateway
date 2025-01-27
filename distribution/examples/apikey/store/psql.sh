@@ -6,23 +6,6 @@ DB_PASSWORD="password"
 DB_HOST="localhost"
 USERS=10
 
-create_tables() {
-    echo "Creating tables..."
-    docker exec postgres psql -U $DB_USER -d $DB_NAME -c "
-    CREATE TABLE IF NOT EXISTS key (
-        apikey VARCHAR(255) PRIMARY KEY
-    );
-    "
-
-    docker exec postgres psql -U $DB_USER -d $DB_NAME -c "
-    CREATE TABLE IF NOT EXISTS scope (
-        apikey VARCHAR(255) REFERENCES key(apikey),
-        scope VARCHAR(255) NOT NULL
-    );
-    "
-    echo "Tables created successfully."
-}
-
 insert_values() {
     echo "Inserting values..."
     local batch_size=1000
@@ -60,7 +43,6 @@ insert_values() {
 }
 
 main() {
-    create_tables
     insert_values
 }
 
