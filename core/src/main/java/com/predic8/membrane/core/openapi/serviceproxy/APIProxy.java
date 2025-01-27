@@ -33,7 +33,7 @@ import static com.predic8.membrane.core.lang.ExchangeExpression.Language.SPEL;
 
 /**
  * @description The api proxy extends the serviceProxy with API related functions like OpenAPI support.
- * @topic 2. Proxies
+ * @topic 1. Proxies and Flow
  */
 @MCElement(name = "api")
 public class APIProxy extends ServiceProxy implements Polyglot {

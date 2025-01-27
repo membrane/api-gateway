@@ -19,7 +19,7 @@ import com.predic8.membrane.annot.*;
 /**
  * @description
  * Clients can send HTTP requests to a proxy that forward the request to a Web server. It acts on behalf of the client.
- * @topic 2. Proxies
+ * @topic 1. Proxies and Flow
  */
 @MCElement(name="proxy")
 public class ProxyRule extends SSLableProxy {

@@ -45,7 +45,7 @@ import static com.predic8.membrane.core.util.HttpUtil.*;
  * The interceptor chain will not continue beyond this interceptor, as it either successfully returns a
  * HTTP response with the contents of a file, or a "404 Not Found." error.
  * </p>
- * @topic 4. Interceptors/Features
+ * @topic 6. Misc
  */
 @MCElement(name = "webServer")
 public class WebServerInterceptor extends AbstractInterceptor {

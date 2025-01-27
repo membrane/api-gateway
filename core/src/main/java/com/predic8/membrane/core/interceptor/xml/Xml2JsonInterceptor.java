@@ -40,7 +40,7 @@ import static javax.xml.transform.OutputKeys.*;
  * @description If enabled converts body content from xml to json.
  * @explanation Can be used for both request and response. Xml file assumed to be in UTF-8. If input is invalid it returns
  * empty json object.
- * @topic 4. Interceptors/Features
+ * @topic 2. Enterprise Integration Patterns
  */
 @MCElement(name="xml2Json")
 public class Xml2JsonInterceptor extends AbstractInterceptor {

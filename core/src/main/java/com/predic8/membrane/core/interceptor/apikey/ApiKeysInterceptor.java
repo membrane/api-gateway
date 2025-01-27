@@ -30,7 +30,7 @@ import static java.util.stream.Stream.*;
 
 /**
  * @description Secures APIs by validating keys stored in either files or proxies.xml. Keys can be received from clients via HTTP headers or URL query parameters. Additional permission checks are possible through scope validation - scopes are loaded into an Exchange property and can be checked using the "hasScope()" SpEL function.
- * @topic 6. Security
+ * @topic 3. Security and Validation
  */
 @MCElement(name = "apiKey")
 public class ApiKeysInterceptor extends AbstractInterceptor {

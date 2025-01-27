@@ -37,7 +37,7 @@ import static java.nio.charset.StandardCharsets.*;
 /**
  * @description Receives control messages to dynamically modify the configuration of a {@link LoadBalancingInterceptor}.
  * @explanation See also examples/loadbalancer-client-2 in the Membrane API Gateway distribution.
- * @topic 7. Clustering and Loadbalancing
+ * @topic 2. Enterprise Integration Patterns
  */
 @MCElement(name="clusterNotification")
 public class ClusterNotificationInterceptor extends AbstractInterceptor {

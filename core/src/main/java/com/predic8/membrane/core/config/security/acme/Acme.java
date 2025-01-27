@@ -37,7 +37,7 @@ import java.util.Objects;
  *         </li>
  *     </ol>
  * </p>
- * @topic 6. Security
+ * @topic 3. Security and Validation
  */
 @MCElement(name="acme")
 public class Acme {

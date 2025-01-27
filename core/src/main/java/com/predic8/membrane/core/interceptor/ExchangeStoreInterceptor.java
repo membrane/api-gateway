@@ -33,7 +33,7 @@ import static com.predic8.membrane.core.interceptor.Outcome.*;
  * @description Adds the current state of HTTP requests and responses to an "exchange store".
  * @explanation Note that depending on the implementation of the exchange store, both request *and* response logging
  *              might both be required for the exchange to be saved.
- * @topic 5. Monitoring, Logging and Statistics
+ * @topic 4. Monitoring, Logging and Statistics
  */
 @MCElement(name="exchangeStore")
 public class ExchangeStoreInterceptor extends AbstractInterceptor implements ApplicationContextAware {

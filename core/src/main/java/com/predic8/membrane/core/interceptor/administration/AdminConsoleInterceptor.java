@@ -25,7 +25,7 @@ import static com.predic8.membrane.core.http.Header.*;
 
 /**
  * @description Displays up-to-date statistics, recent exchanges and, by default, allows live modification of Membrane's configuration.
- * @topic 5. Monitoring, Logging and Statistics
+ * @topic 4. Monitoring, Logging and Statistics
  */
 @MCElement(name="adminConsole")
 public class AdminConsoleInterceptor extends AbstractInterceptor {

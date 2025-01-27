@@ -36,7 +36,7 @@ import static com.predic8.membrane.core.interceptor.Outcome.*;
  * The <i>wsdlPublisher</i> serves WSDL files (and attached XML Schema Documents), if your
  * backend service does not already do so.
  * </p>
- * @topic 8. SOAP based Web Services
+ * @topic 5. Web Services with SOAP and WSDL
  */
 @MCElement(name = "wsdlPublisher")
 public class WSDLPublisherInterceptor extends AbstractInterceptor {
