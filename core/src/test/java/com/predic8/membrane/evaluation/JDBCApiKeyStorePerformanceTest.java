@@ -17,7 +17,6 @@ import java.util.UUID;
 import java.util.logging.Logger;
 
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * To test the performance of API key lookups in a database
@@ -28,7 +27,7 @@ public class JDBCApiKeyStorePerformanceTest {
     private static final int USERS = 10;
     private static final String DATABASE_NAME = "test";
     private static final String CREATE_DB_FLAG = "create";
-    private Map<String, List<String>> keyToScopesMap = new HashMap<>();
+    private final Map<String, List<String>> keyToScopesMap = new HashMap<>();
 
     private JDBCApiKeyStore jdbcApiKeyStore;
     private EmbeddedDataSource dataSource;
