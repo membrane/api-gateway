@@ -95,7 +95,7 @@ public class JavascriptInterceptorTest {
         assertTrue(pd.getTitle().contains("Error executing"));
         assertEquals(1,pd.getInternal().get("line"));
         assertEquals(1,pd.getInternal().get("column"));
-        assertTrue(pd.getInternal().get("engine"));
+        assertNotNull(pd.getInternal().get("engine"));
     }
 
     @ParameterizedTest
