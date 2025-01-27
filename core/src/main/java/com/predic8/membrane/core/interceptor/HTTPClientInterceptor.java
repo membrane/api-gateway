@@ -24,6 +24,7 @@ import org.slf4j.*;
 
 import java.net.*;
 
+import static com.predic8.membrane.core.exceptions.ProblemDetails.internal;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 
@@ -71,6 +72,12 @@ public class HTTPClientInterceptor extends AbstractInterceptor {
                     .detail(msg)
                     .buildAndSetResponse(exc);
             return ABORT;
+        } catch (SocketTimeoutException e) {
+            // Details are logged further down in the HTTPClient
+            internal(router.isProduction(), getDisplayName())
+                    .detail("Target %s is not reachable.".formatted(getDestination(exc)))
+                    .buildAndSetResponse(exc);
+            return ABORT;
         } catch (UnknownHostException e) {
             String msg = "Target host %s of API %s is unknown. DNS was unable to resolve host name.".formatted(URLUtil.getHost(getDestination(exc)), exc.getProxy().getName());
             log.warn(msg + PROXIES_HINT);
@@ -81,7 +88,7 @@ public class HTTPClientInterceptor extends AbstractInterceptor {
             return ABORT;
         } catch (Exception e) {
             log.error("",e);
-            ProblemDetails.internal(router.isProduction(),getDisplayName())
+            internal(router.isProduction(),getDisplayName())
                     .exception(e)
                     .internal("proxy", exc.getProxy().getName())
                     .buildAndSetResponse(exc);

@@ -92,6 +92,11 @@
       - Disable in builder
 - '<spring:bean class="com.predic8.membrane.core.interceptor.apikey.stores.ApiKeyFileStore">' 
   durch '<apiKeyFileStore .. />' ersetzen (dafür topLevel=true) BT
+- Test after next merges:
+  12:23:17,049 ERROR 30 RouterThread /185.191.171.13:7356 SpELExchangeExpression:84 - EL1008E: Property or field 'exc' cannot be found on object of type 'com.predic8.membrane.core.lang.spel.SpELExchangeEvaluationContext' - maybe not public or not vali
+- LogInterceptor:
+  - Do not log body if Content-Encoding header is set 
+    - Might be zip, br ...
 
 ## Done
 - Merge log with print
