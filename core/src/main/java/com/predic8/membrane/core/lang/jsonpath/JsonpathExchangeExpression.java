@@ -82,8 +82,7 @@ public class JsonpathExchangeExpression extends AbstractExchangeExpression {
             return null;
         } catch (InvalidPathException ipe) {
             log.error("{} is an invalid jsonpath: {}", expression, ipe.getMessage());
-            throw new ExchangeExpressionException(expression, ipe)
-                    .message(ipe.getLocalizedMessage());
+            throw new ExchangeExpressionException(expression, ipe);
         } catch (MismatchedInputException e) {
             String body = exchange.getMessage(flow).getBodyAsStringDecoded();
             if (body == null || body.isEmpty()) {
