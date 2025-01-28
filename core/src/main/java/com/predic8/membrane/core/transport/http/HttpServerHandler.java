@@ -14,32 +14,17 @@
 
 package com.predic8.membrane.core.transport.http;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.net.InetAddress;
-import java.net.Socket;
-import java.net.SocketException;
-import java.net.SocketTimeoutException;
-import java.util.concurrent.atomic.AtomicInteger;
-
-import javax.net.ssl.SSLException;
-import javax.net.ssl.SSLSocket;
-
+import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.transport.http2.Http2ServerHandler;
-import com.predic8.membrane.core.transport.http2.Http2TlsSupport;
-import com.predic8.membrane.core.transport.ssl.TLSUnrecognizedNameException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.predic8.membrane.core.transport.http2.*;
+import com.predic8.membrane.core.transport.ssl.*;
+import com.predic8.membrane.core.util.*;
+import org.slf4j.*;
 
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.transport.ssl.SSLProvider;
-import com.predic8.membrane.core.util.DNSCache;
-import com.predic8.membrane.core.util.EndOfStreamException;
-import com.predic8.membrane.core.util.Util;
+import javax.net.ssl.*;
+import java.io.*;
+import java.net.*;
+import java.util.concurrent.atomic.*;
 
 public class HttpServerHandler extends AbstractHttpHandler implements Runnable {
 
@@ -148,16 +133,15 @@ public class HttpServerHandler extends AbstractHttpHandler implements Runnable {
 		} catch (TLSUnrecognizedNameException e) {
 			if (showSSLExceptions)
 				log.error("{}", e.getMessage());
+		} catch (SSLHandshakeException e) {
+			log.error("SSLHandshakeException: {}", e.getMessage());
 		} catch (SSLException s) {
-			SSLException ex = s;
 			if(showSSLExceptions) {
-				if (ex.getCause() instanceof SSLException cause) {
-					ex = cause;
+				if (s.getCause() instanceof SocketException) {
+					log.debug("SSL socket closed");
+				} else {
+					log.error("", s);
 				}
-				if (ex.getCause() instanceof SocketException)
-					log.debug("ssl socket closed");
-				else
-					log.error("", ex);
 			}
 		} catch (EndOfStreamException e) {
 			log.debug("stream closed");
