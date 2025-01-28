@@ -134,7 +134,6 @@ public class WebServiceExplorerInterceptor extends RESTInterceptor {
 		
 		if (getProxy() instanceof SOAPProxy sp) {
 			String serviceName = sp.getServiceName();
-			System.out.println("serviceName = " + serviceName);
 			if (serviceName != null) {
 				return WSDLUtil.getService(d, serviceName);
 			}
