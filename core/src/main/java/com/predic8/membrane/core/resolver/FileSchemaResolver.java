@@ -16,6 +16,7 @@ package com.predic8.membrane.core.resolver;
 
 import com.google.common.collect.*;
 import com.predic8.membrane.core.util.functionalInterfaces.*;
+import org.slf4j.*;
 
 import java.io.*;
 import java.nio.file.*;
@@ -26,11 +27,12 @@ import static com.predic8.membrane.core.util.URIUtil.*;
 
 public class FileSchemaResolver implements SchemaResolver {
 
+	private static final Logger log = LoggerFactory.getLogger(FileSchemaResolver.class.getName());
+
 	WatchService watchService;
-	ConcurrentHashMap<String,WatchKey> watchServiceForFile = new ConcurrentHashMap<>();
-	ConcurrentHashMap<String, ExceptionThrowingConsumer<InputStream>> watchedFiles = new ConcurrentHashMap<>();
-	long fileWatchIntervalInSeconds = 1;
-	Runnable fileWatchJob = new Runnable() {
+	private final ConcurrentHashMap<String,WatchKey> watchServiceForFile = new ConcurrentHashMap<>();
+	private final ConcurrentHashMap<String, ExceptionThrowingConsumer<InputStream>> watchedFiles = new ConcurrentHashMap<>();
+	private final Runnable fileWatchJob = new Runnable() {
 		@Override
 		public void run() {
 			while(!watchedFiles.isEmpty()){
@@ -54,7 +56,7 @@ public class FileSchemaResolver implements SchemaResolver {
 
 				try {
                     //noinspection BusyWait
-                    Thread.sleep(fileWatchIntervalInSeconds*1000);
+                    Thread.sleep(1000); // fileWatchIntervalInSeconds
 				} catch (InterruptedException ignored) {
 				}
 			}
@@ -75,14 +77,16 @@ public class FileSchemaResolver implements SchemaResolver {
 	 */
 	public InputStream resolve(String fileUrl) throws ResourceRetrievalException {
 		try {
-			return new FileInputStream( pathFromFileURI(fileUrl));
+            File file = new File(pathFromFileURI(fileUrl));
+			log.debug("Resolving {}", file.getAbsolutePath());
+			return new FileInputStream(file);
 		} catch (FileNotFoundException e) {
 			throw new ResourceRetrievalException(fileUrl, e);
 		}
 	}
 
 	@Override
-	public void observeChange(String url, ExceptionThrowingConsumer<InputStream> consumer) throws ResourceRetrievalException {
+	public void observeChange(String url, ExceptionThrowingConsumer<InputStream> consumer) {
 		url = Paths.get(pathFromFileURI(url)).toAbsolutePath().toString();
 		if(watchService == null){
 			try {

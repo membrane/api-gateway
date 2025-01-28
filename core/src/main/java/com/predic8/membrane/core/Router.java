@@ -89,11 +89,11 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
     protected Transport transport;
     protected ResolverMap resolverMap;
     protected DNSCache dnsCache = new DNSCache();
-    protected ExecutorService backgroundInitializator =
-            newSingleThreadExecutor(new HttpServerThreadFactory("Router Background Initializator"));
+    protected final ExecutorService backgroundInitializer =
+            newSingleThreadExecutor(new HttpServerThreadFactory("Router Background Initializer"));
     protected HotDeploymentThread hdt;
     protected URIFactory uriFactory = new URIFactory(false);
-    protected Statistics statistics = new Statistics();
+    protected final Statistics statistics = new Statistics();
     protected String jmxRouterName;
 
     /**
@@ -110,7 +110,7 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
 
     private int retryInitInterval = 5 * 60 * 1000; // 5 minutes
     private boolean retryInit;
-    private Timer reinitializator;
+    private Timer reinitializer;
     private String id;
     private final KubernetesWatcher kubernetesWatcher = new KubernetesWatcher(this);
     private final TimerManager timerManager = new TimerManager();
@@ -215,7 +215,7 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
      * When running as an embedded servlet, this has no effect.
      */
     public void shutdown() {
-        backgroundInitializator.shutdown();
+        backgroundInitializer.shutdown();
         if (transport != null)
             transport.closeAll();
         timerManager.shutdown();
@@ -233,8 +233,8 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
         shutdown();
     }
 
-    public ExecutorService getBackgroundInitializator() {
-        return backgroundInitializator;
+    public ExecutorService getBackgroundInitializer() {
+        return backgroundInitializer;
     }
 
     public Proxy getParentProxy(Interceptor interceptor) {
@@ -268,7 +268,7 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
     @Override
     public void start() {
         try {
-            if (transport == null && beanFactory != null && !beanFactory.getBeansOfType(Transport.class).values().isEmpty())
+            if (transport == null && beanFactory != null && !beanFactory.getBeansOfType(Transport.class).isEmpty())
                 throw new RuntimeException("unclaimed transport detected. - please migrate to 4.0");
             if (exchangeStore == null)
                 exchangeStore = new LimitedMemoryExchangeStore();
@@ -289,7 +289,7 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
             }
 
             if (retryInitInterval > 0)
-                startAutoReinitializator();
+                startAutoReinitializer();
         } catch (DuplicatePathException e) {
             System.err.printf("""
                     ================================================================================================
@@ -372,7 +372,7 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
     }
 
     private void stopHotDeployment() {
-        stopAutoReinitializator();
+        stopAutoReinitializer();
         if (hdt != null) {
             hdt.stopASAP();
             hdt = null;
@@ -382,12 +382,12 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
         }
     }
 
-    private void startAutoReinitializator() {
+    private void startAutoReinitializer() {
         if (getInactiveRules().isEmpty())
             return;
 
-        reinitializator = new Timer("auto reinitializator", true);
-        reinitializator.schedule(new TimerTask() {
+        reinitializer = new Timer("auto reinitializer", true);
+        reinitializer.schedule(new TimerTask() {
             @Override
             public void run() {
                 tryReinitialization();
@@ -417,15 +417,14 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
         if (stillFailing)
             log.info("There are still inactive rules.");
         else {
-            stopAutoReinitializator();
+            stopAutoReinitializer();
             log.info("All rules have been initialized.");
         }
     }
 
-    private void stopAutoReinitializator() {
-        Timer reinitializator2 = reinitializator;
-        if (reinitializator2 != null) {
-            reinitializator2.cancel();
+    private void stopAutoReinitializer() {
+        if (reinitializer != null) {
+            reinitializer.cancel();
         }
     }
 
@@ -527,7 +526,7 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
      * <p>Inactive rules will simply be ignored for routing decisions for incoming requests.
      * This means that requests for inactive rules might be routed using different routes or result in a "400 Bad Request"
      * when no active route could be matched to the request.</p>
-     * <p>Once rules become active due to reinitialization, they are considered in future routing decissions.</p>
+     * <p>Once rules become active due to reinitialization, they are considered in future routing decision.</p>
      * <h3>Reinitialization</h3>
      * <p>Inactive rules may be <i>reinitialized</i> and, if reinitialization succeeds, become active.</p>
      * <p>By default, reinitialization is attempted at regular intervals using a timer (see {@link #setRetryInitInterval(int)}).</p>
