@@ -32,6 +32,8 @@ import java.io.*;
 import java.net.*;
 import java.util.*;
 
+import static com.predic8.membrane.core.util.URIUtil.normalizeSingleDot;
+
 public class RuleManager {
 
     private static final Logger log = LoggerFactory.getLogger(RuleManager.class.getName());
@@ -171,7 +173,7 @@ public class RuleManager {
 
         String hostHeader = request.getHeader().getHost();
         String method = request.getMethod();
-        String uri = request.getUri();
+        String uri = normalizeSingleDot(request.getUri()); // Removes /./ in path for rule matching
         String version = request.getVersion();
 
         AbstractHttpHandler handler = exc.getHandler();
