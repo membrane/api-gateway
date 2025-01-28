@@ -27,7 +27,7 @@ import static com.predic8.membrane.core.transport.ws.interceptors.WebSocketLogIn
 
 @MCElement(name = "wsLog")
 public class WebSocketLogInterceptor implements WebSocketInterceptorInterface {
-    private static final Logger LOG = LoggerFactory.getLogger(WebSocketLogInterceptor.class);
+    private static final Logger log = LoggerFactory.getLogger(WebSocketLogInterceptor.class);
 
     public enum Encoding {
         RAW,
@@ -52,8 +52,8 @@ public class WebSocketLogInterceptor implements WebSocketInterceptorInterface {
 
     @Override
     public void handleFrame(WebSocketFrame frame, boolean frameTravelsToRight, WebSocketSender sender) throws Exception {
-        LOG.info("Frame travels from " + (frameTravelsToRight ? "client to server" : "server to client"));
-        LOG.info(encoding == HEX ? frame.toStringHex() : frame.toString());
+        log.info("Frame travels from " + (frameTravelsToRight ? "client to server" : "server to client"));
+        log.info(encoding == HEX ? frame.toStringHex() : frame.toString());
         sender.handleFrame(frame);
     }
 }
