@@ -19,7 +19,6 @@ import org.junit.platform.suite.api.*;
 @SelectPackages({"com.predic8.membrane.core"})
 /**
  * @TODO Fix:
- * - com.predic8.membrane.core.interceptor.soap.SampleSoapInterceptorTest
  * - com.predic8.membrane.core.interceptor.opentelemetry.OpenTelemetryInterceptorTest
  * - com.predic8.membrane.core.interceptor.rewrite.RewriteInterceptorIntegrationTest   // Rewrite as UnitTest with sampleSOAPService
  * Still in use?
@@ -27,9 +26,7 @@ import org.junit.platform.suite.api.*;
  * - com.predic8.membrane.core.interceptor.shadowing.ShadowingInterceptorTest
  */
 @ExcludeClassNamePatterns({
-		"com.predic8.membrane.core.interceptor.soap.SampleSoapInterceptorTest",
 		"com.predic8.membrane.core.interceptor.opentelemetry.OpenTelemetryInterceptorTest",
-		"com.predic8.membrane.core.interceptor.session.SessionInterceptorTest",
 		"com.predic8.membrane.core.interceptor.balancer.NodeOnlineCheckerTest",
 		"com.predic8.membrane.core.interceptor.tunnel.WebsocketStompTest",
 		"com.predic8.membrane.core.interceptor.oauth2client.OAuth2Resource2InterceptorTest",

@@ -27,6 +27,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * - <a href="https://stackoverflow.com/questions/7857416/file-uri-scheme-and-relative-files">File Uri Scheme and Relative Files</a>
  * - <a href="https://en.wikipedia.org/wiki/File_URI_scheme">File URI scheme</a>
  */
+@SuppressWarnings("CommentedOutCode")
 public class URIUtilTest {
 
     /**
@@ -157,4 +158,19 @@ public class URIUtilTest {
         assertEquals("b", removeDriveLetterAndSlash("a|/b"));
     }
 
+    @Test
+    void normalizeSingleDot() {
+        assertEquals("", URIUtil.normalizeSingleDot(""));
+        assertEquals("foo", URIUtil.normalizeSingleDot("foo"));
+        assertEquals("/", URIUtil.normalizeSingleDot("/./"));
+        assertEquals("a/b", URIUtil.normalizeSingleDot("a/./b"));
+        assertEquals("a/b/c/", URIUtil.normalizeSingleDot("a/./b/./c/./"));
+        assertEquals("a/b/c/d", URIUtil.normalizeSingleDot("a/./b/./c/./d"));
+
+        // ?
+        assertEquals("a?c/./d", URIUtil.normalizeSingleDot("a?c/./d"));
+        assertEquals("a/b?c/./d", URIUtil.normalizeSingleDot("a/./b?c/./d"));
+        assertEquals("a/.b?c/./d", URIUtil.normalizeSingleDot("a/.b?c/./d"));
+        assertEquals("a/x/b?c/./d", URIUtil.normalizeSingleDot("a/x/b?c/./d"));
+    }
 }
