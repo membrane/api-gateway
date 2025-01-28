@@ -81,14 +81,14 @@ public class SpELExchangeExpression extends AbstractExchangeExpression {
             }
             throw new RuntimeException("Cannot cast {} to {}".formatted(o,type));
         } catch (SpelEvaluationException see) {
-            log.error(see.getLocalizedMessage());
+            log.error("Error in expression '{}': {}",expression, see.getLocalizedMessage());
             ExchangeExpressionException eee = new ExchangeExpressionException(expression, see);
             if (see.getCause() instanceof ConverterNotFoundException cnfe) {
                 eee.extension("sourceType", cnfe.getSourceType())
                         .extension("targetType", cnfe.getTargetType());
             }
             eee.stacktrace(false);
-            throw eee.message(see.getLocalizedMessage());
+            throw eee;
         }
     }
 
