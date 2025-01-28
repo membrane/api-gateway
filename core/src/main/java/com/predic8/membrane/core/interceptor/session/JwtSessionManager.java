@@ -13,39 +13,27 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.session;
 
-import com.bornium.security.oauth2openid.token.IdTokenProvider;
-import com.bornium.security.oauth2openid.token.IdTokenVerifier;
-import com.google.common.cache.Cache;
-import com.google.common.cache.CacheBuilder;
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCChildElement;
-import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.Router;
-import com.predic8.membrane.core.config.security.Blob;
-import com.predic8.membrane.core.exchange.Exchange;
-import org.jose4j.json.JsonUtil;
-import org.jose4j.jwk.JsonWebKey;
-import org.jose4j.jwk.RsaJsonWebKey;
-import org.jose4j.jwk.RsaJwkGenerator;
-import org.jose4j.jwt.JwtClaims;
-import org.jose4j.jwt.MalformedClaimException;
-import org.jose4j.jwt.consumer.InvalidJwtException;
-import org.jose4j.jwt.consumer.JwtConsumerBuilder;
-import org.jose4j.lang.JoseException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import com.predic8.membrane.annot.Required;
+import com.bornium.security.oauth2openid.token.*;
+import com.google.common.cache.*;
+import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.config.security.*;
+import com.predic8.membrane.core.exchange.*;
+import org.jose4j.json.*;
+import org.jose4j.jwk.*;
+import org.jose4j.jwt.*;
+import org.jose4j.jwt.consumer.*;
+import org.jose4j.lang.*;
+import org.slf4j.*;
 
-import java.math.BigInteger;
-import java.security.SecureRandom;
-import java.time.Duration;
-import java.time.Instant;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
+import java.math.*;
+import java.security.*;
+import java.time.*;
+import java.util.*;
+import java.util.concurrent.*;
+import java.util.stream.*;
+
+import static org.jose4j.jwk.JsonWebKey.OutputControlLevel.INCLUDE_PRIVATE;
 
 /**
  * Take care - this session manager saves values in the session for internal use -> those are reserved keywords and cannot be used
@@ -54,7 +42,7 @@ import java.util.stream.Stream;
 @MCElement(name = "jwtSessionManager")
 public class JwtSessionManager extends SessionManager {
 
-    private static Logger LOG = LoggerFactory.getLogger(JwtSessionManager.class);
+    private static final Logger log = LoggerFactory.getLogger(JwtSessionManager.class);
 
     private Cache<Map, String> jwtCache;
 
@@ -79,10 +67,11 @@ public class JwtSessionManager extends SessionManager {
 
         if (jwk == null) {
             rsaJsonWebKey = generateKey();
-            LOG.warn("jwtSessionManager uses a generated key ('" +
-                    rsaJsonWebKey.toJson(JsonWebKey.OutputControlLevel.INCLUDE_PRIVATE)+
-                    "'). Sessions of this instance will not be compatible with sessions of other (e.g. restarted)"+
-                    "instances. To solve this, write the JWK into a file and reference it using <jwtSessionManager><jwk location=\"...\">.");
+            log.warn("""
+                    jwtSessionManager uses a generated key ('{}'). Sessions of this instance 
+                    will not be compatible with sessions of other (e.g. restarted)
+                    instances. To solve this, write the JWK into a file and reference it using <jwtSessionManager><jwk location="...">.
+                    """, rsaJsonWebKey.toJson(INCLUDE_PRIVATE));
         } else {
             rsaJsonWebKey = new RsaJsonWebKey(JsonUtil.parseJson(jwk.get(router.getResolverMap(), router.getBaseLocation())));
         }
@@ -118,7 +107,7 @@ public class JwtSessionManager extends SessionManager {
                     //.filter(entry -> !entry.getKey().equals("exp") && !entry.getKey().equals("iss")) // filter default jwt claims - those are not part of a session
                     .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
         } catch (InvalidJwtException e) {
-            log.warn("Could not verify cookie: " + cookie + "\nPossible Reason: Cookie is not signed by and thus not a session of this instance");
+            log.warn("Could not verify cookie: {}\nPossible Reason: Cookie is not signed by and thus not a session of this instance", cookie);
             e.printStackTrace();
         }
         return new HashMap<>();
@@ -140,12 +129,10 @@ public class JwtSessionManager extends SessionManager {
             Map filteredSession = filterSession(s.get());
             String token = jwtCache.getIfPresent(filteredSession);
             if (token != null) {
-                if (LOG.isDebugEnabled())
-                    LOG.debug("reusing cookie for: " + filteredSession);
+                log.debug("reusing cookie for: {}", filteredSession);
                 return token;
             }
-            if (LOG.isDebugEnabled())
-                LOG.debug("encoding cookie: " + filteredSession);
+            log.debug("encoding cookie: {}", filteredSession);
             token = idTokenProvider.createIdTokenNoNullClaims(issuer, null, null, validTime, null, null, new HashMap<>(filteredSession));
             jwtCache.put(filteredSession, token);
             return token;
@@ -156,7 +143,7 @@ public class JwtSessionManager extends SessionManager {
 
     private Map filterSession(Map<String, Object> stringObjectMap) {
         Map result = new HashMap(stringObjectMap);
-        Stream.of("iss","exp","nbf","iat").forEach(result::remove);
+        Stream.of("iss", "exp", "nbf", "iat").forEach(result::remove);
         return result;
     }
 
@@ -172,7 +159,7 @@ public class JwtSessionManager extends SessionManager {
                     } catch (InvalidJwtException e) {
                         // this should only happen if the issuer doesn't add up
                         // wrong issuer happens *all the time* so we do not want to print here to not spam the log of membrane
-                        if(verbose)
+                        if (verbose)
                             e.printStackTrace();
                     }
                     return false;
@@ -192,7 +179,7 @@ public class JwtSessionManager extends SessionManager {
         } catch (InvalidJwtException e) {
             // this should only happen if the issuer doesn't add up or the signature is malformed
             // wrong issuer happens *all the time* so we do not want to print here to not spam the log of membrane
-            if(verbose)
+            if (verbose)
                 e.printStackTrace();
         }
         return false;
@@ -209,15 +196,15 @@ public class JwtSessionManager extends SessionManager {
         return false;
     }
 
-    private JwtClaims validateSignatureOfJwt(String cookie) throws InvalidJwtException {
-        return idTokenVerifier.createCustomJwtValidator()
+    private void validateSignatureOfJwt(String cookie) throws InvalidJwtException {
+        idTokenVerifier.createCustomJwtValidator()
                 .setExpectedIssuer(issuer)
                 .build()
                 .processToClaims(cookie);
     }
 
-    private JwtClaims checkJwtWithoutVerifyingSignature(String cookie) throws InvalidJwtException {
-        return new JwtConsumerBuilder()
+    private void checkJwtWithoutVerifyingSignature(String cookie) throws InvalidJwtException {
+        new JwtConsumerBuilder()
                 .setSkipSignatureVerification()
                 .setExpectedIssuer(issuer)
                 .setRequireExpirationTime()
@@ -249,7 +236,7 @@ public class JwtSessionManager extends SessionManager {
         this.jwk = jwk;
     }
 
-    @MCElement(name="jwk", mixed = true, topLevel = false, id="jwtSessionManager-jwk")
+    @MCElement(name = "jwk", mixed = true, topLevel = false, id = "jwtSessionManager-jwk")
     public static class Jwk extends Blob {
 
     }

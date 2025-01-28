@@ -53,9 +53,13 @@ public class HttpRouter extends Router {
 		return (HttpTransport)transport;
 	}
 
+	/**
+	 * TODO Only used for tests. It s brittle cause it is dependent on
+	 * the list. In tests interceptors in the proxy can be used instead.
+	 */
 	public void addUserFeatureInterceptor(Interceptor i) {
 		List<Interceptor> is = getTransport().getInterceptors();
-		is.add(is.size()-2, i);
+		is.add(is.size()-3, i);
 	}
 
 }
