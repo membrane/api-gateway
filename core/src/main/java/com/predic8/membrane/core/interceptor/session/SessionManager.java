@@ -43,20 +43,21 @@ import static java.util.stream.Collectors.toMap;
 @SuppressWarnings("unused")
 public abstract class SessionManager {
 
+    private static final Logger log = LoggerFactory.getLogger(SessionManager.class);
+
     public static final String SESSION_VALUE_SEPARATOR = ",";
     public static final String VALUE_TO_EXPIRE_SESSION_IN_BROWSER = "Expires=Thu, 01 Jan 1970 00:00:00 GMT";
-    Logger log = LoggerFactory.getLogger(SessionManager.class);
 
     public static final String SESSION = "SESSION";
     public static final String SESSION_COOKIE_ORIGINAL = "SESSION_COOKIE_ORIGINAL";
 
     protected String usernameKeyName = "username";
-    long expiresAfterSeconds = 15 * 60;
-    String domain;
-    boolean httpOnly = false;
-    String sameSite = null;
+    protected long expiresAfterSeconds = 15 * 60;
+    protected String domain;
+    protected boolean httpOnly = false;
+    protected String sameSite = null;
 
-    String issuer;
+    protected String issuer;
     protected boolean ttlExpiryRefreshOnAccess = true;
     protected boolean secure = false;
     protected boolean sessionCookie = false;
@@ -294,6 +295,7 @@ public abstract class SessionManager {
         return getSessionFromExchange(exc).orElseGet(() -> getSessionFromManager(exc));
     }
 
+    // TODO Side effect!
     private Session getSessionFromManager(Exchange exc) {
         exc.setProperty(SESSION, getSessionInternal(exc));
         return getSessionFromExchange(exc).get();

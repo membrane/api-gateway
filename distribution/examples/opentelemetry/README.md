@@ -36,6 +36,7 @@ Take a look at the `proxies.xml`.
 
    <transport>
       <ruleMatching />
+      <logContext />
       <exchangeStore />
       <dispatching />
       <reverseProxying />
@@ -43,6 +44,7 @@ Take a look at the `proxies.xml`.
          <otlpExporter host="localhost" port="4317" transport="grpc"/>
       </openTelemetry>
       <userFeature />
+      <internalRouting />
       <httpClient />
    </transport>
 
