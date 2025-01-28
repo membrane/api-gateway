@@ -38,10 +38,12 @@
 	    	
 	    		<transport>
 					<ruleMatching />
+					<logContext />
 					<exchangeStore />
 					<dispatching />
 					<reverseProxying />
 					<userFeature />
+					<internalRouting />
 					<httpClient />
 	    		</transport>
 
@@ -96,24 +98,29 @@
 	    	<!-- step 1: select the first matching <soapProxy>, <serviceProxy>
 	    		or <proxy> for the incoming HTTP request.
 	    	-->
-			<ruleMatching />                               
+			<ruleMatching />
+
+			<!-- step 2: add log context: this enables the proxy handling this HTTP
+			     request to be printed
+			-->
+			<logContext />
 			
-			<!-- step 2:
+			<!-- step 3:
 				store the HTTP request (or response on the way back) in the
 				specified store (a collection of file system directories).
 			-->
 			<exchangeStore name="myFileExchangeStore" />
 			
-			<!-- step 3: set the exchange's destination to the <*proxy>'s target. -->   
+			<!-- step 4: set the exchange's destination to the <*proxy>'s target. -->
 			<dispatching />
 			
-			<!-- step 4:
+			<!-- step 5:
 				Adjust host names in the HTTP request "Destination" header
 				and HTTP response "Location" header.
 			-->
 			<reverseProxying />
 			
-			<!-- step 5:
+			<!-- step 6:
 				Execute the <*proxy>'s interceptor sub-chain.
 				
 				Usually, this is where the magic happens: An admin configures
@@ -124,8 +131,13 @@
 				the admin.
 			-->
 			<userFeature />
+
+			<!-- step 7: Routes URLs like internal://$PROXY_NAME/$PROXY_PATH to other
+			     proxies.
+			-->
+			<internalRouting />
 			
-			<!-- step 6:
+			<!-- step 8:
 				Forward the (altered) HTTP request to the target.
 				
 				If successful, all steps will be "unwound" and all interceptor steps

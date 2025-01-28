@@ -19,6 +19,7 @@
  
 		<transport coreThreadPoolSize="20" socketTimeout="30000" tcpNoDelay="true">
 			<ruleMatching />
+			<logContext />
 			<dispatching />
 			<exchangeStore name="forgetfulExchangeStore" />
 			<exchangeStore name="memoryExchangeStore" />
