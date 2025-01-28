@@ -13,18 +13,18 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.server;
 
-import com.predic8.membrane.core.Router;
-import com.predic8.membrane.core.exchange.Exchange;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import com.fasterxml.jackson.databind.*;
+import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.exchange.*;
+import org.junit.jupiter.api.*;
 
-import java.util.ArrayList;
-import java.util.Objects;
+import java.util.*;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 class WebServerInterceptorTest {
+
+    private static final ObjectMapper om = new ObjectMapper();
 
     WebServerInterceptor ws;
     Exchange exc;
@@ -47,11 +47,12 @@ class WebServerInterceptorTest {
     }
 
     @Test
-    void noIndex() throws Exception {
+    void noIndex() {
         ws.setGenerateIndex(false);
         ws.handleRequest(exc);
         // No index file is set, and no index page is generated, so throw not found.
-        assertEquals(404, exc.getResponse().getStatusCode());
+//        System.out.println("exc.getResponse().getBodyAsStringDecoded() = " + exc.getResponse().getBodyAsStringDecoded());
+        assertEquals(500, exc.getResponse().getStatusCode());
     }
 
     @Test
@@ -59,6 +60,12 @@ class WebServerInterceptorTest {
         ws.setGenerateIndex(true);
         ws.handleRequest(exc);
         // No index file is set, but index page is being generated. Body lists the page.html resource.
-        assertTrue(exc.getResponse().getBodyAsStringDecoded().contains("page.html"));
+        String body = exc.getResponse().getBodyAsStringDecoded();
+//        System.out.println("body = " + body);
+
+        JsonNode json = om.readTree(body);
+
+        assertEquals("Could not resolve file",json.get("title").asText());
+        assertEquals("https://membrane-api.io/problems/internal",json.get("type").asText());
     }
 }

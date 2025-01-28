@@ -32,8 +32,11 @@ import java.util.regex.*;
 
 import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
 import static com.predic8.membrane.core.http.MimeType.*;
+import static com.predic8.membrane.core.http.Response.ok;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static com.predic8.membrane.core.resolver.ResolverMap.combine;
 import static com.predic8.membrane.core.util.HttpUtil.*;
+import static java.lang.System.currentTimeMillis;
 
 /**
  * @description Serves static files based on the request's path.
@@ -122,33 +125,16 @@ public class WebServerInterceptor extends AbstractInterceptor {
         if (uri == null) return ABORT;
 
         try {
-            exc.setTimeReqSent(System.currentTimeMillis());
-
-            exc.setResponse(createResponse(router.getResolverMap(), ResolverMap.combine(router.getBaseLocation(), docBase, uri)));
-
+            exc.setTimeReqSent(currentTimeMillis());
+            exc.setResponse(createResponse(router.getResolverMap(), combine(router.getBaseLocation(), docBase, uri)));
             exc.setReceived();
-            exc.setTimeResReceived(System.currentTimeMillis());
-            return Outcome.RETURN;
-        } catch (ResourceRetrievalException e) {
-            for (String i : index) {
-                try {
-                    exc.setResponse(createResponse(router.getResolverMap(), ResolverMap.combine(router.getBaseLocation(), docBase, uri + i)));
-
-                    exc.setReceived();
-                    exc.setTimeResReceived(System.currentTimeMillis());
-                    return Outcome.RETURN;
-                } catch (ResourceRetrievalException ignored) {}
-            }
-            String uri2 = uri + "/";
-            for (String i : index) {
-                try {
-                    exc.setResponse(createResponse(router.getResolverMap(), ResolverMap.combine(router.getBaseLocation(), docBase, uri2 + i)));
-
-                    exc.setReceived();
-                    exc.setTimeResReceived(System.currentTimeMillis());
-                    return Outcome.RETURN;
-                } catch (ResourceRetrievalException ignored) {}
-            }
+            exc.setTimeResReceived(currentTimeMillis());
+            return RETURN;
+        } catch (Exception e) {
+            if (tryToReceiveResource(exc, uri))
+                return RETURN;
+            if (tryToReceiveResource(exc, uri + "/"))
+                return RETURN;
         }
 
         if (generateIndex) {
@@ -160,6 +146,18 @@ public class WebServerInterceptor extends AbstractInterceptor {
 
         exc.setResponse(Response.notFound().build());
         return ABORT;
+    }
+
+    private boolean tryToReceiveResource(Exchange exc, String uri) {
+        for (String i : index) {
+            try {
+                exc.setResponse(createResponse(router.getResolverMap(), combine(router.getBaseLocation(), docBase, uri + i)));
+                exc.setReceived();
+                exc.setTimeResReceived(currentTimeMillis());
+                return true;
+            } catch (Exception ignored) {}
+        }
+        return false;
     }
 
     private @Nullable String getUri(Exchange exc) throws URISyntaxException {
@@ -179,18 +177,13 @@ public class WebServerInterceptor extends AbstractInterceptor {
 
 
     private Outcome generateHtmlResponseFromChildren(Exchange exc, String uri) throws FileNotFoundException {
-        List<String> children = router.getResolverMap().getChildren(ResolverMap.combine(router.getBaseLocation(), docBase, uri));
+        List<String> children = router.getResolverMap().getChildren(combine(router.getBaseLocation(), docBase, uri));
         if (children == null) {
             return null;
         }
-
         Collections.sort(children);
-
-        String baseUri = determineBaseUri(exc, uri);
-        String htmlContent = generateHtmlContent(children, baseUri);
-
-        exc.setResponse(Response.ok().contentType("text/html").body(htmlContent).build());
-        return Outcome.RETURN;
+        exc.setResponse(ok().contentType(TEXT_HTML).body(generateHtmlContent(children, determineBaseUri(exc, uri))).build());
+        return RETURN;
     }
 
     private String determineBaseUri(Exchange exc, String uri) {
@@ -222,11 +215,19 @@ public class WebServerInterceptor extends AbstractInterceptor {
                 || uri.startsWith("..");
     }
 
-    public static Response createResponse(ResolverMap rr, String resPath) throws IOException {
-        return Response.ok()
-                .header(createHeaders(getContentType(resPath)))
-                .body(rr.resolve(resPath), true)
-                .build();
+    public Response createResponse(ResolverMap rr, String resPath) {
+        try {
+            return ok()
+                    .header(createHeaders(getContentType(resPath)))
+                    .body(rr.resolve(resPath), true)
+                    .build();
+        } catch (Exception e) {
+            return internal(router.isProduction(),getDisplayName())
+                    .title("Could not resolve file")
+                    .topLevel("path",resPath)
+                    .exception(e)
+                    .build();
+        }
     }
 
     // @TODO Move to Util
@@ -277,9 +278,11 @@ public class WebServerInterceptor extends AbstractInterceptor {
                 return p.toUri().toString();
         } catch (Exception ignored) {
         }
+        return getNewPath(path);
+    }
 
-
-        String newPath = ResolverMap.combine(router.getBaseLocation(), path);
+    private @NotNull String getNewPath(String path) {
+        String newPath = combine(router.getBaseLocation(), path);
         if (newPath.endsWith(File.separator + File.separator))
             newPath = newPath.substring(0, newPath.length() - 1);
         if (!newPath.endsWith("/"))

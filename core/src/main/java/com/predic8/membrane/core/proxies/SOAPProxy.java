@@ -113,7 +113,14 @@ public class SOAPProxy extends AbstractServiceProxy {
     }
 
     void parseWSDL() {
-        Definitions definitions = getWsdlParser().parse(getWsdlParserContext());
+        Definitions definitions;
+        try {
+            definitions = getWsdlParser().parse(getWsdlParserContext());
+        } catch (Exception e) {
+            String msg = "Could not parse WSDL from %s.".formatted(getWsdlParserContext().getInput());
+            log.error("{}: {}",msg,e.getMessage());
+            throw new ConfigurationException(msg,e);
+        }
         Service service = getService(definitions);
         setProxyName(service, definitions);
         String location = getLocation(service);
@@ -305,6 +312,7 @@ public class SOAPProxy extends AbstractServiceProxy {
         if (!hasWSDLPublisherInterceptor()) {
             WSDLPublisherInterceptor wp = new WSDLPublisherInterceptor();
             wp.setWsdl(wsdl);
+            wp.init(router);
             interceptors.addFirst(wp);
             automaticallyAddedInterceptorCount++;
         }

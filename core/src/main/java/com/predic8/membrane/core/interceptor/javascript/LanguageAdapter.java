@@ -89,7 +89,7 @@ public abstract  class LanguageAdapter {
     }
 
     public Function<Map<String, Object>, Object> compileScript(String script) throws IOException, ClassNotFoundException {
-        return languageSupport.compileScript(router.getBackgroundInitializator(), router.getBeanFactory().getClassLoader(), prepareScript(script));
+        return languageSupport.compileScript(router.getBackgroundInitializer(), router.getBeanFactory().getClassLoader(), prepareScript(script));
     }
 
     public abstract ProblemDetails getProblemDetails(Exception e);
