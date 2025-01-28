@@ -41,7 +41,14 @@ public class ProxyDisplayInfo {
                 return " using OpenAPI specifications:\n" + formatLocationInfo(recs);
             }
         } else if (proxy instanceof SOAPProxy s) {
-            return " using WSDL @ " + s.getWsdl();
+            return " %s\n    using WSDL @ %s".formatted(getPathString(s),s.getWsdl());
+        }
+        return "";
+    }
+
+    private static String getPathString(SOAPProxy s) {
+        if (s.getPath() != null) {
+            return s.getPath().getValue();
         }
         return "";
     }

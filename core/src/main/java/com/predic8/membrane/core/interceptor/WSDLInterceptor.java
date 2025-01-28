@@ -61,7 +61,6 @@ public class WSDLInterceptor extends RelocatingInterceptor {
 
     @Override
     protected void rewrite(Exchange exc) throws Exception {
-
         log.debug("Changing endpoint address in WSDL");
 
         ByteArrayOutputStream stream = new ByteArrayOutputStream();

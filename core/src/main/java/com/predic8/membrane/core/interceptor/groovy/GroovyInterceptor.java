@@ -52,7 +52,7 @@ public class GroovyInterceptor extends AbstractScriptInterceptor {
     @Override
     protected void initInternal() {
         try {
-            script = new GroovyLanguageSupport().compileScript(router.getBackgroundInitializator(), null, src);
+            script = new GroovyLanguageSupport().compileScript(router.getBackgroundInitializer(), null, src);
         } catch (MultipleCompilationErrorsException e) {
             logGroovyError(e);
             throw new ConfigurationException("Error in Groovy script initialization.",e);
