@@ -18,7 +18,7 @@ import java.util.regex.*;
 
 import static java.net.URLDecoder.*;
 import static java.nio.charset.StandardCharsets.*;
-import static java.util.Optional.empty;
+import static java.util.Optional.*;
 
 public class URIUtil {
 
@@ -26,13 +26,14 @@ public class URIUtil {
 
     /**
      * Removes file protocol from uri
+     *
      * @param uri path that can contain file protocol
      * @return path without the file protocol
      */
     public static String pathFromFileURI(String uri) {
         if (!uri.startsWith("file:"))
             return uri;
-        return decode(processDecodedPart(stripFilePrefix(uri)),UTF_8);
+        return decode(processDecodedPart(stripFilePrefix(uri)), UTF_8);
     }
 
     private static String processDecodedPart(String path) {
@@ -48,7 +49,7 @@ public class URIUtil {
     }
 
     static String slashToBackslash(String path) {
-        return path.replace('/','\\');
+        return path.replace('/', '\\');
     }
 
     static String removeLocalhost(String s) {
@@ -72,4 +73,28 @@ public class URIUtil {
     private static String stripFilePrefix(String uri) {
         return uri.substring(5); // Remove "file:"
     }
+
+    public static String normalizeSingleDot(String uri) {
+        if (!uri.contains("/./"))
+            return uri;
+
+        StringBuilder sb = new StringBuilder(uri.length());
+        for (int i = 0; i < uri.length(); i++) {
+            int c = uri.codePointAt(i);
+            switch (c) {
+                case '?':
+                    sb.append(uri.substring(i));
+                    return sb.toString();
+                case '/':
+                    sb.appendCodePoint(c);
+                    while (i < uri.length() - 2 && uri.codePointAt(i + 1) == '.' && uri.codePointAt(i + 2) == '/')
+                        i += 2;
+                    break;
+                default:
+                    sb.appendCodePoint(c);
+            }
+        }
+        return sb.toString();
+    }
+
 }

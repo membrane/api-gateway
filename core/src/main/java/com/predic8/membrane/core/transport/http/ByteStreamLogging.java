@@ -41,8 +41,8 @@ public class ByteStreamLogging {
         for(int i = off; i < off+len; i++) {
             sb.append(b[i]).append(" ");
         }
-        sb.append("]");
-        System.out.println(new String(b,off,len));
+        sb.append("] ");
+        sb.append(new String(b,off,len));
         log.info(sb.toString());
     }
 

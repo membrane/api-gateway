@@ -16,6 +16,7 @@ package com.predic8.membrane.core.interceptor.soap;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.proxies.*;
+import org.jetbrains.annotations.*;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.*;
 import org.junit.jupiter.params.provider.*;
@@ -31,7 +32,8 @@ import java.util.*;
 
 import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.interceptor.soap.SampleSoapServiceInterceptor.*;
-import static java.util.Objects.requireNonNull;
+import static java.util.Objects.*;
+import static javax.xml.xpath.XPathConstants.STRING;
 import static org.apache.commons.io.IOUtils.*;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -88,7 +90,7 @@ class SampleSoapInterceptorTest {
             "/foo?w-sdl, /foo"
     })
     void getPathWithoutParamTest(String path, String expected) {
-        assertEquals(getPathWithoutParam(path), expected);
+        assertEquals( expected,getPathWithoutParam(path));
     }
 
 
@@ -128,58 +130,64 @@ class SampleSoapInterceptorTest {
 
     private boolean compareXmlStrings(String xml, String country, String population) {
         try {
-            ByteArrayInputStream inputStream = new ByteArrayInputStream(xml.getBytes());
-            DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-            factory.setNamespaceAware(true);
-            DocumentBuilder builder = factory.newDocumentBuilder();
-            Document document = builder.parse(new InputSource(inputStream));
+            DocumentBuilder builder = getDocumentBuilderFactory().newDocumentBuilder();
+            Document document = getParse(xml, builder);
 
-            XPath xPath = XPathFactory.newInstance().newXPath();
-            xPath.setNamespaceContext(new NamespaceContext() {
-                @Override
-                public Iterator<String> getPrefixes(String namespaceURI) {
-                    return null;
-                }
-
-                @Override
-                public String getPrefix(String namespaceURI) {
-                    if ("http://schemas.xmlsoap.org/soap/envelope/".equals(namespaceURI)) {
-                        return "s";
-                    } else if ("https://predic8.de/city-service".equals(namespaceURI)) {
-                        return "cs";
-                    }
-                    return null;
-                }
-
-                @Override
-                public String getNamespaceURI(String prefix) {
-                    if ("s".equals(prefix)) {
-                        return "http://schemas.xmlsoap.org/soap/envelope/";
-                    } else if ("cs".equals(prefix)) {
-                        return "https://predic8.de/city-service";
-                    }
-                    return null;
-                }
-            });
-
-            Node countryNode = (Node) xPath.evaluate(
-                    String.format("/s:Envelope/s:Body/cs:getCityResponse/country[text()='%s']", country),
+            String countryNode = (String) getXPath().evaluate(
+                    "/s:Envelope/s:Body/cs:getCityResponse/country",
                     document,
-                    XPathConstants.NODE
+                    STRING
             );
-            Node populationNode = (Node) xPath.evaluate(
-                    String.format("/s:Envelope/s:Body/cs:getCityResponse/population[text()='%s']", population),
+            String populationNode = (String) getXPath().evaluate(
+                    "/s:Envelope/s:Body/cs:getCityResponse/population",
                     document,
-                    XPathConstants.NODE
+                    STRING
             );
-
-            return country.equals(countryNode != null ? countryNode.getTextContent() : null)
-                    && population.equals(populationNode != null ? populationNode.getTextContent() : null);
-
-
+            return country.equals(countryNode) && population.equals(populationNode);
         } catch (Exception e) {
             log.error("Error comparing XML: ",e);
             return false;
         }
+    }
+
+    private static @NotNull XPath getXPath() {
+        XPath xPath = XPathFactory.newInstance().newXPath();
+        xPath.setNamespaceContext(new NamespaceContext() {
+            @Override
+            public Iterator<String> getPrefixes(String namespaceURI) {
+                return null;
+            }
+
+            @Override
+            public String getPrefix(String namespaceURI) {
+                if ("http://schemas.xmlsoap.org/soap/envelope/".equals(namespaceURI)) {
+                    return "s";
+                } else if ("https://predic8.de/cities".equals(namespaceURI)) {
+                    return "cs";
+                }
+                return null;
+            }
+
+            @Override
+            public String getNamespaceURI(String prefix) {
+                if ("s".equals(prefix)) {
+                    return "http://schemas.xmlsoap.org/soap/envelope/";
+                } else if ("cs".equals(prefix)) {
+                    return "https://predic8.de/cities";
+                }
+                return null;
+            }
+        });
+        return xPath;
+    }
+
+    private static Document getParse(String xml, DocumentBuilder builder) throws SAXException, IOException {
+        return builder.parse(new InputSource(new ByteArrayInputStream(xml.getBytes())));
+    }
+
+    private static @NotNull DocumentBuilderFactory getDocumentBuilderFactory() {
+        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+        factory.setNamespaceAware(true);
+        return factory;
     }
 }

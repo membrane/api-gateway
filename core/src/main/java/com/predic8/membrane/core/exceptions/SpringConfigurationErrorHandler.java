@@ -118,7 +118,10 @@ public class SpringConfigurationErrorHandler {
 
     private static String getHowToFindPortWindows() {
         return """
-                netstat -aon | find /i "listening"
+                using the Command Line (cmd):
+                  netstat -aon | find /i "listening"
+                using the Powershell (powershell):
+                  netstat -aon | Select-String -Pattern listening
                 """;
     }
 

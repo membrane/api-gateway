@@ -20,11 +20,15 @@ import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.transport.ws.WebSocketFrame;
 import com.predic8.membrane.core.transport.ws.WebSocketInterceptorInterface;
 import com.predic8.membrane.core.transport.ws.WebSocketSender;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import static com.predic8.membrane.core.transport.ws.interceptors.WebSocketLogInterceptor.Encoding.HEX;
 
 @MCElement(name = "wsLog")
 public class WebSocketLogInterceptor implements WebSocketInterceptorInterface {
+    private static final Logger log = LoggerFactory.getLogger(WebSocketLogInterceptor.class);
+
     public enum Encoding {
         RAW,
         HEX
@@ -48,8 +52,8 @@ public class WebSocketLogInterceptor implements WebSocketInterceptorInterface {
 
     @Override
     public void handleFrame(WebSocketFrame frame, boolean frameTravelsToRight, WebSocketSender sender) throws Exception {
-        System.out.println("Frame travels from " + (frameTravelsToRight ? "client to server" : "server to client"));
-        System.out.println(encoding == HEX ? frame.toStringHex() : frame.toString());
+        log.info("Frame travels from " + (frameTravelsToRight ? "client to server" : "server to client"));
+        log.info(encoding == HEX ? frame.toStringHex() : frame.toString());
         sender.handleFrame(frame);
     }
 }
