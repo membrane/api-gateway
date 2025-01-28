@@ -31,8 +31,10 @@
 				<exclude>X-Powered-By</exclude>
 			</headerFilter>
 			<ruleMatching />
+			<logContext />
 			<dispatching />
 			<userFeature />
+			<internalRouting />
 			<httpClient />
 		</web:servletTransport>
 		

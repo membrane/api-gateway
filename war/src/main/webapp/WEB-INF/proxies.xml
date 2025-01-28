@@ -41,10 +41,12 @@
 				<exclude>X-Powered-By</exclude>
 			</headerFilter>
 			<ruleMatching />
+			<logContext />
 			<exchangeStore name="memoryExchangeStore" />
 			<dispatching />
 			<reverseProxying />
 			<userFeature />
+			<internalRouting />
 			<httpClient />
 		</web:servletTransport>
 	
