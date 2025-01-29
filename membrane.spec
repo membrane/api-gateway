@@ -82,11 +82,11 @@ EOF
 <Configuration>
   <Appenders>
     <Console name="STDOUT" target="SYSTEM_OUT">
-      <PatternLayout pattern="%d %5p %tid %tn %c{1}:%L - %m%n" />
+      <PatternLayout pattern="%d %5p %tid %tn %c{1}:%L %X - %m%n" />
     </Console>
     <!-- <RollingFile name="FILE" fileName="%{logdir}/membrane.log"
       filePattern="%{logdir}membrane.log.%i">
-      <PatternLayout pattern="%d %5p %tid %tn %c{1}:%L - %m%n" />
+      <PatternLayout pattern="%d %5p %tid %tn %c{1}:%L %X - %m%n" />
       <Policies>
         <SizeBasedTriggeringPolicy size="100 MB" />
       </Policies>
