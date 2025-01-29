@@ -102,10 +102,6 @@ public class RuleManager {
             if (proxy instanceof NotPortOpeningProxy)
                 continue;
 
-            if (proxy.getName().contains("/")) {
-                log.error("API name is {}. <api> names must not contain a '/'. ", proxy.getName());
-            }
-
             router.getTransport().openPort(proxy.getKey().getIp(), proxy.getKey().getPort(), sslProviders.get(getIpPort(proxy)),
                     router.getTimerManager());
         }
