@@ -18,6 +18,7 @@ import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.openapi.serviceproxy.*;
 import com.predic8.membrane.core.resolver.*;
+import com.predic8.membrane.core.util.ExceptionUtil;
 import org.apache.commons.cli.*;
 import org.jetbrains.annotations.*;
 import org.slf4j.*;
@@ -29,6 +30,7 @@ import java.util.*;
 import static com.predic8.membrane.core.Constants.*;
 import static com.predic8.membrane.core.config.spring.TrackingFileSystemXmlApplicationContext.*;
 import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPISpec.YesNoOpenAPIOption.*;
+import static com.predic8.membrane.core.util.ExceptionUtil.concatMessageAndCauseMessages;
 import static com.predic8.membrane.core.util.OSUtil.*;
 import static java.lang.Integer.*;
 
@@ -63,7 +65,7 @@ public class RouterCLI {
                 return initRouterByConfig(commandLine);
             }
         } catch (InvalidConfigurationException e) {
-            log.error("Fatal error: {}", e.getMessage());
+            log.error("Fatal error: {}", concatMessageAndCauseMessages(e));
         }
         catch (Exception ex) {
             SpringConfigurationErrorHandler.handleRootCause(ex,log);
