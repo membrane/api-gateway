@@ -119,7 +119,7 @@
 # Discussion
 
 - <api> without port => Change from port 80 to matches all open ports
-- ProblemDetails: 
+- ProblemDetails: (TB)
   - When flow = RESPONSE it should always be an internal error!
 - For ADRs
   - Response Flow guarantee there is a response 
