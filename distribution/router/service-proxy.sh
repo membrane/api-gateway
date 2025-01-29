@@ -32,22 +32,42 @@ resolve_membrane_home() {
     echo "$MEMBRANE_HOME"
 }
 
+if ! ( _test=test && _="${_test#t}" ) >/dev/null 2>&1; then
+    echo "WARNING: Shell does not support parameter expansion. Java version check disabled!" >&2
+    echo "         Please ensure Java $required_version is installed." >&2
+    MEMBRANE_HOME=$(resolve_membrane_home "$0")
+    start "$MEMBRANE_HOME" "$@"
+    exit 0
+fi
+
 if ! command -v java >/dev/null 2>&1; then
     echo "Java is not installed. Membrane needs at least Java $required_version."
     exit 1
 fi
 
-version_line=$(java -version 2>&1 | head -n 1)
-full_version=$(echo "$version_line" | sed -E 's/.*version "([0-9]+)\..*".*/\1/')
+version_line=$(java -version 2>&1 | grep "version" | head -n 1)
 
-if [ -z "$full_version" ]; then
+if [ -z "$version_line" ]; then
     echo "WARNING: Could not determine Java version. Make sure Java version is at least $required_version. Proceeding anyway..."
     MEMBRANE_HOME=$(resolve_membrane_home "$0")
     start "$MEMBRANE_HOME" "$@"
     exit 0
 fi
 
-if [ "$full_version" -ge "$required_version" ]; then
+full_version=${version_line#*version \"}
+full_version=${full_version%%\"*}
+current_version=${full_version%%.*}
+
+case "$current_version" in
+    ''|*[!0-9]*)
+        echo "WARNING: Could not parse Java version. Make sure Java version is at least $required_version. Proceeding anyway..."
+        MEMBRANE_HOME=$(resolve_membrane_home "$0")
+        start "$MEMBRANE_HOME" "$@"
+        exit 0
+        ;;
+esac
+
+if [ "$current_version" -ge "$required_version" ]; then
     MEMBRANE_HOME=$(resolve_membrane_home "$0")
     start "$MEMBRANE_HOME" "$@"
     exit 0
