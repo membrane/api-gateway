@@ -27,7 +27,7 @@ import java.util.regex.*;
 
 import static com.predic8.membrane.core.Constants.*;
 import static com.predic8.membrane.core.http.Header.*;
-import static com.predic8.membrane.core.http.MimeType.APPLICATION;
+import static com.predic8.membrane.core.http.MimeType.*;
 
 public class Request extends Message {
 
@@ -295,7 +295,7 @@ public class Request extends Message {
 
 		public Builder json(String body) {
 			req.setBodyContent(body.getBytes());
-			req.header.setContentType(APPLICATION);
+			req.header.setContentType(APPLICATION_JSON);
 			return this;
 		}
 

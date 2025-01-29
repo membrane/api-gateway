@@ -38,7 +38,7 @@ import static com.predic8.membrane.core.resolver.ResolverMap.*;
  * {@link JSONSchemaValidator} and {@link SchematronValidator} depending on the
  * attributes.
  *
- * @topic 8. SOAP based Web Services
+ * @topic 3. Security and Validation
  */
 @MCElement(name = "validator")
 public class ValidatorInterceptor extends AbstractInterceptor implements ApplicationContextAware {
@@ -131,6 +131,7 @@ public class ValidatorInterceptor extends AbstractInterceptor implements Applica
         } catch (IOException e) {
             log.error("", e);
             internal(router.isProduction(),getDisplayName())
+                    .addSubSee("io")
                     .detail("Could not read message body")
                     .exception(e)
                     .buildAndSetResponse(exc);
@@ -143,7 +144,8 @@ public class ValidatorInterceptor extends AbstractInterceptor implements Applica
             log.error("", e);
             internal(router.isProduction(),getDisplayName())
                     .detail("Error validating message")
-                    .internal("class", exc.getMessage(flow).getClass())
+                    .addSubSee("generic")
+                    .internal("validator", validator.getName())
                     .exception(e)
                     .buildAndSetResponse(exc);
             return ABORT;

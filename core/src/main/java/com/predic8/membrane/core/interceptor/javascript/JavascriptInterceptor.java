@@ -27,7 +27,7 @@ import static org.apache.commons.text.StringEscapeUtils.*;
 /**
  * @description Executes a Javascript. The script can access and manipulate data from the request and response.
  * Use this or the Groovy plugin to extend the functions of Membrane by scripting. See the samples in examples/javascript.
- * @topic 4. Interceptors/Features
+ * @topic 2. Enterprise Integration Patterns
  */
 @MCElement(name = "javascript", mixed = true)
 public class JavascriptInterceptor extends AbstractScriptInterceptor {
@@ -71,8 +71,7 @@ public class JavascriptInterceptor extends AbstractScriptInterceptor {
 
         ProblemDetails pd = adapter.getProblemDetails(e);
         pd.title("Error executing script.");
-        pd.internal("message", e.getMessage())
-                .internal("source", trim(src));
+        pd.internal("source", trim(src));
 
         exc.setResponse(pd.build());
     }

@@ -46,7 +46,7 @@ public abstract class AbstractFlowInterceptor extends AbstractInterceptor {
     }
 
     protected static void createProblemDetails(String flow, Interceptor interceptor, Exchange exc, Exception e) {
-        String msg = "Aborting! Exception caused by %s during %s flow.".formatted(flow, interceptor.getDisplayName()); // Flow is capital to make it the same as in other places
+        String msg = "Aborting! Exception caused by %s %s during %s flow.".formatted(exc.getRequest().getUri(), flow, interceptor.getDisplayName()); // Flow is capital to make it the same as in other places
         log.warn(msg, e);
         internal(false, "flow-interceptor")
                 .detail(msg)

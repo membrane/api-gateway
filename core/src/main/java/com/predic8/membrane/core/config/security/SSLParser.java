@@ -21,7 +21,7 @@ import com.predic8.membrane.core.config.security.acme.Acme;
 
 /**
  * @description <p>Configures inbound or outbound SSL connections.</p>
- * @topic 6. Security
+ * @topic 3. Security and Validation
  */
 @MCElement(name="ssl")
 public class SSLParser {

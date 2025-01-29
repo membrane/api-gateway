@@ -100,7 +100,7 @@ public class FileExchangeStore extends AbstractExchangeStore {
 					}
 				}
 			} catch (Exception e) {
-				log.error("{}",e, e);
+				log.error("While writing {} {} to a file.", exc.getRequest().getUri(), flow, e);
 			}
 		} else {
 			log.error("Directory does not exists or file is not a directory: {}",buf);

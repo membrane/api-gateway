@@ -107,6 +107,13 @@ public class ValidatorInterceptorTest {
 	}
 
 	@Test
+	void testHandleResponseValidArticleMessageBrotli() throws Exception {
+		exc.setRequest(requestTB);
+		exc.setResponse(Response.ok().body(getContent("/validation/articleResponse.xml.br")).header("Content-Encoding", "br").build());
+		assertEquals(CONTINUE, createValidatorInterceptor(ARTICLE_SERVICE_WSDL).handleResponse(exc));
+	}
+
+	@Test
 	void testHandleRequestValidEmailMessage() throws Exception {
 		assertEquals(CONTINUE, getOutcome(requestXService, createValidatorInterceptor(E_MAIL_SERVICE_WSDL), "/validation/validEmail.xml"));
 	}

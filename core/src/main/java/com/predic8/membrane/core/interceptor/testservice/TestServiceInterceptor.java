@@ -123,7 +123,7 @@ public class TestServiceInterceptor extends AbstractInterceptor {
             Document d = getDocument(exc);
             exc.setResponse(createResponse(exc, d));
         } catch (Exception e) {
-            log.error(e.getMessage(), e);
+            log.error("", e);
             exc.setResponse(createResponse(e, exc.getProperty(SOAP_VERSION) == null));
         }
         return RETURN;

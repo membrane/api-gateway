@@ -17,10 +17,10 @@ package com.predic8.membrane.examples.tests.log;
 
 import com.predic8.membrane.examples.util.DistributionExtractingTestcase;
 import com.predic8.membrane.examples.util.WaitableConsoleEvent;
+import com.predic8.membrane.test.HttpAssertions;
 import org.junit.jupiter.api.Test;
 
-import static com.predic8.membrane.test.AssertUtils.assertContains;
-import static com.predic8.membrane.test.AssertUtils.getAndAssert200;
+import static com.predic8.membrane.test.StringAssertions.assertContains;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class AccessLogExampleTest extends DistributionExtractingTestcase {
@@ -32,25 +32,25 @@ public class AccessLogExampleTest extends DistributionExtractingTestcase {
 
     @Test
     void testConsole() throws Exception {
-        try (var process = startServiceProxyScript()) {
+        try (var process = startServiceProxyScript(); HttpAssertions ha = new HttpAssertions()) {
             var console = new WaitableConsoleEvent(process, p -> p.contains("\"GET / HTTP/1.1\" 200 0 [application/json]"));
-            getAndAssert200("http://localhost:2000");
+            ha.getAndAssert200("http://localhost:2000");
             assertTrue(console.occurred());
         }
     }
 
     @Test
     void testRollingFile() throws Exception {
-        try (var ignore = startServiceProxyScript()) {
-            getAndAssert200("http://localhost:2000");
+        try (var ignore = startServiceProxyScript(); HttpAssertions ha = new HttpAssertions()) {
+            ha.getAndAssert200("http://localhost:2000");
         }
         assertContains("\"GET / HTTP/1.1\" 200 0 [application/json]", readFile("access.log"));
     }
 
     @Test
     void testHeader() throws Exception {
-        try (var ignore = startServiceProxyScript()) {
-            getAndAssert200("http://localhost:2000");
+        try (var ignore = startServiceProxyScript(); HttpAssertions ha = new HttpAssertions()) {
+            ha.getAndAssert200("http://localhost:2000");
         }
         assertContains("X-Forwarded-For: 127.0.0.1", readFile("access.log"));
     }

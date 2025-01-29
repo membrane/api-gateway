@@ -22,11 +22,6 @@ public class ExchangeExpressionException extends RuntimeException {
     private final String expression;
     private final Map<String, Object> extensions = new HashMap<>();
 
-    /**
-     * User provided message. Overrides the message from the exception
-     */
-    private String message;
-
     private boolean statcktrace = true;
 
     /*
@@ -44,11 +39,6 @@ public class ExchangeExpressionException extends RuntimeException {
      * @return ProblemDetails filled from exception
      */
     public ProblemDetails provideDetails(ProblemDetails pd) {
-        if (message != null) {
-            pd.internal("message", message);
-        } else {
-            pd.internal("message", getMessage());
-        }
         pd.internal("expression", expression)
             .stacktrace(statcktrace);
         for (Map.Entry<String, Object> entry : extensions.entrySet()) {
@@ -73,11 +63,6 @@ public class ExchangeExpressionException extends RuntimeException {
 
     public ExchangeExpressionException column(String column) {
         extensions.put("column", column);
-        return this;
-    }
-
-    public ExchangeExpressionException message(String message) {
-        this.message = message;
         return this;
     }
 

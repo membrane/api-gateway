@@ -16,11 +16,11 @@ package com.predic8.membrane.examples.tests;
 
 import com.predic8.membrane.examples.util.DistributionExtractingTestcase;
 import com.predic8.membrane.examples.util.Process2;
+import com.predic8.membrane.test.HttpAssertions;
 import org.junit.jupiter.api.Test;
 
 import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
-import static com.predic8.membrane.test.AssertUtils.assertContains;
-import static com.predic8.membrane.test.AssertUtils.getAndAssert200;
+import static com.predic8.membrane.test.StringAssertions.assertContains;
 
 public class LoggingCSVExampleTest extends DistributionExtractingTestcase {
 
@@ -31,8 +31,8 @@ public class LoggingCSVExampleTest extends DistributionExtractingTestcase {
 
 	@Test
 	public void test() throws Exception {
-		try(Process2 ignored = startServiceProxyScript()) {
-			getAndAssert200("http://localhost:2000/");
+		try(Process2 ignored = startServiceProxyScript(); HttpAssertions ha = new HttpAssertions()) {
+			ha.getAndAssert200("http://localhost:2000/");
 		}
 		assertContains(APPLICATION_JSON, readFile("log.csv"));
 	}

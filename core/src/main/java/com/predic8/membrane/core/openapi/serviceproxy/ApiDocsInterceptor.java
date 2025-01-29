@@ -54,6 +54,7 @@ public class ApiDocsInterceptor extends AbstractInterceptor {
         } catch (Exception e) {
             log.error("", e);
             internal(router.isProduction(),getDisplayName())
+                    .addSubSee("publisher-creation")
                     .detail("Error creating OpenAPI publisher!")
                     .exception(e)
                     .buildAndSetResponse(exc);
@@ -69,6 +70,7 @@ public class ApiDocsInterceptor extends AbstractInterceptor {
         } catch (Exception e) {
             log.error("", e);
             internal(router.isProduction(),getDisplayName())
+                    .addSubSee("publisher-handling")
                     .detail("Error generating OpenAPI overview!")
                     .exception(e)
                     .buildAndSetResponse(exc);

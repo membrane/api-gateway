@@ -30,18 +30,20 @@ import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
 import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.http.Response.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static com.predic8.membrane.core.resolver.ResolverMap.combine;
 
 /**
  * @description <p>
  * The <i>wsdlPublisher</i> serves WSDL files (and attached XML Schema Documents), if your
  * backend service does not already do so.
  * </p>
- * @topic 8. SOAP based Web Services
+ * @topic 5. Web Services with SOAP and WSDL
  */
 @MCElement(name = "wsdlPublisher")
 public class WSDLPublisherInterceptor extends AbstractInterceptor {
 
     private static final Logger log = LoggerFactory.getLogger(WSDLPublisherInterceptor.class);
+    private WebServerInterceptor webServerInterceptor;
 
     public WSDLPublisherInterceptor() {
         name = "wsdl publisher";
@@ -68,7 +70,7 @@ public class WSDLPublisherInterceptor extends AbstractInterceptor {
         public String rewrite(String path) {
             try {
                 if (!path.contains("://") && !path.startsWith("/")) {
-                    path = ResolverMap.combine(resource, path);
+                    path = combine(resource, path);
                 }
                 synchronized (paths) {
                     if (paths_reverse.containsKey(path)) {
@@ -96,7 +98,7 @@ public class WSDLPublisherInterceptor extends AbstractInterceptor {
     @GuardedBy("paths")
     private final Queue<String> documents_to_process = new LinkedList<>();
 
-    private void processDocuments(Exchange exc) throws Exception {
+    private void processDocuments(Exchange exc) {
         // exc.response is only temporarily used so we can call the WSDLInterceptor
         // exc.response is set to garbage and should be discarded after this method
         synchronized (paths) {
@@ -106,14 +108,13 @@ public class WSDLPublisherInterceptor extends AbstractInterceptor {
                     if (doc == null)
                         break;
                     log.debug("WSDLPublisherInterceptor: processing {}", doc);
-
-                    exc.setResponse(WebServerInterceptor.createResponse(router.getResolverMap(), doc));
+                    exc.setResponse(webServerInterceptor.createResponse(router.getResolverMap(), doc));
                     WSDLInterceptor wi = new WSDLInterceptor();
                     wi.setRewriteEndpoint(false);
                     wi.setPathRewriter(new RelativePathRewriter(exc, doc));
                     wi.handleResponse(exc);
                 }
-            } catch (ResourceRetrievalException e) {
+            } catch (Exception e) {
                 log.error("Could not recursively load all documents referenced by {}.", wsdl, e);
             }
         }
@@ -143,6 +144,9 @@ public class WSDLPublisherInterceptor extends AbstractInterceptor {
     @Override
     public void init() {
         super.init();
+
+        webServerInterceptor = new WebServerInterceptor();
+        webServerInterceptor.init(router);
 
         // inherit wsdl="..." from SoapProxy
         if (wsdl != null)
@@ -179,7 +183,7 @@ public class WSDLPublisherInterceptor extends AbstractInterceptor {
             String resource = null;
             if (exc.getRequestURI().endsWith("?wsdl") || exc.getRequestURI().endsWith("?WSDL")) {
                 processDocuments(exc);
-                exc.setResponse(WebServerInterceptor.createResponse(router.getResolverMap(), resource = wsdl));
+                exc.setResponse(webServerInterceptor.createResponse(router.getResolverMap(), resource = combine(router.getBaseLocation(), wsdl)));
                 exc.getResponse().getHeader().setContentType(TEXT_XML);
             }
             if (exc.getRequestURI().contains("?xsd=")) {
@@ -195,14 +199,15 @@ public class WSDLPublisherInterceptor extends AbstractInterceptor {
                         }
                         path = paths.get(n);
                     }
-                    exc.setResponse(WebServerInterceptor.createResponse(router.getResolverMap(), resource = path));
+                    exc.setResponse(webServerInterceptor.createResponse(router.getResolverMap(), resource = path));
                     exc.getResponse().getHeader().setContentType(TEXT_XML);
                 }
             }
             if (resource != null) {
                 WSDLInterceptor wi = new WSDLInterceptor();
                 wi.setRewriteEndpoint(false);
-                wi.setPathRewriter(new RelativePathRewriter(exc, resource));
+                wi.setPathRewriter(new RelativePathRewriter(exc, combine(router.getBaseLocation(), wsdl)));
+                wi.init(router);
                 wi.handleResponse(exc);
                 return RETURN;
             }

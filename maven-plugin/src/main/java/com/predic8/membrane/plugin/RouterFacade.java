@@ -37,7 +37,7 @@ class RouterFacade {
 
     void waitForFinish() {
         try {
-            router.getBackgroundInitializator().awaitTermination(MAX_VALUE, NANOSECONDS);
+            router.getBackgroundInitializer().awaitTermination(MAX_VALUE, NANOSECONDS);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         }

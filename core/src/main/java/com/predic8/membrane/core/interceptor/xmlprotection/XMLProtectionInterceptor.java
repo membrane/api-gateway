@@ -29,7 +29,7 @@ import static java.nio.charset.StandardCharsets.*;
 /**
  * @description Prohibits XML documents to be passed through that look like XML attacks on older parsers. Too many
  * attributes, too long element names are such indications. DTD definitions will simply be removed.
- * @topic 6. Security
+ * @topic 3. Security and Validation
  */
 @MCElement(name = "xmlProtection")
 public class XMLProtectionInterceptor extends AbstractInterceptor {

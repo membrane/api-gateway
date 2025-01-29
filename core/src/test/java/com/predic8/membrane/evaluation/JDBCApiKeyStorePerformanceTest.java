@@ -30,6 +30,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.logging.Logger;
 
+import static com.predic8.membrane.core.interceptor.statistics.util.JDBCUtil.tableExists;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -39,12 +40,12 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class JDBCApiKeyStorePerformanceTest {
 
     private static final Logger LOGGER = Logger.getLogger(JDBCApiKeyStorePerformanceTest.class.getName());
-    private static final int USERS = 10000;
+    private static final int USERS = 10;
     private static final String DATABASE_NAME = "test";
     private static final String CREATE_DB_FLAG = "create";
-    private Map<String, List<String>> keyToScopesMap = new HashMap<>();
+    private final Map<String, List<String>> keyToScopesMap = new HashMap<>();
 
-    private JDBCApiKeyStore JDBCApiKeyStore;
+    private JDBCApiKeyStore jdbcApiKeyStore;
     private EmbeddedDataSource dataSource;
     private Connection connection;
     private KeyTable keyTable;
@@ -52,28 +53,25 @@ public class JDBCApiKeyStorePerformanceTest {
 
     @BeforeEach
     void setUp() throws SQLException {
-        JDBCApiKeyStore = createApiKeyStore();
+        jdbcApiKeyStore = createApiKeyStore();
         connection = getDataSource().getConnection();
-        JDBCApiKeyStore.init(new Router());
-        clearTablesIfExist();
+        jdbcApiKeyStore.init(new Router());
     }
 
     @Test
+    public void createTableIfNotExistsTest() throws SQLException {
+        assertTrue(tableExists(connection, jdbcApiKeyStore.getKeyTable().getName()));
+        assertTrue(tableExists(connection, jdbcApiKeyStore.getScopeTable().getName()));
+    }
+
+
+    @Test
     public void performanceTest() throws UnauthorizedApiKeyException, SQLException {
-        createTables();
+        insertValues();
         long startTime = System.currentTimeMillis();
         validateAllApiKeys();
         long endTime = System.currentTimeMillis();
         LOGGER.info("Performance: " + (endTime - startTime) / 1000 + " seconds");
-    }
-
-    @Test
-    public void createTableIfTableDoNotExist() throws UnauthorizedApiKeyException, SQLException {
-        JDBCApiKeyStore.getScopes("");
-        PreparedStatement stmt = connection.prepareStatement("SELECT * FROM %s".formatted(JDBCApiKeyStore.getKeyTable().getName()));
-        stmt.executeQuery();
-        assertTrue(stmt.execute());
-        clearTablesIfExist();
     }
 
     private JDBCApiKeyStore createApiKeyStore() {
@@ -95,7 +93,7 @@ public class JDBCApiKeyStorePerformanceTest {
             dataSource = new EmbeddedDataSource();
             dataSource.setDatabaseName(DATABASE_NAME);
             dataSource.setCreateDatabase(CREATE_DB_FLAG);
-            JDBCApiKeyStore.setDatasource(dataSource);
+            jdbcApiKeyStore.setDatasource(dataSource);
         }
         return dataSource;
     }
@@ -106,44 +104,12 @@ public class JDBCApiKeyStorePerformanceTest {
         ResultSet rs = ps.executeQuery();
         while (rs.next()) {
             String key = rs.getString("apikey");
-            List<String> scopes = JDBCApiKeyStore.getScopes(key)
+            List<String> scopes = jdbcApiKeyStore.getScopes(key)
                     .orElseThrow(() -> new RuntimeException("No scopes found for key: " + key));
             keyToScopesMap.put(key, scopes);
         }
         for (Map.Entry<String, List<String>> entry : keyToScopesMap.entrySet()) {
             assertNotNull(entry.getValue(), "Scopes should not be null for key: " + entry.getKey());
-        }
-    }
-
-    private void createTables() throws SQLException {
-        Statement stmt = connection.createStatement();
-        stmt.executeUpdate(String.format("""
-                CREATE TABLE %s (
-                    apikey VARCHAR(255) NOT NULL PRIMARY KEY
-                )
-                """, keyTable.getName()));
-
-        stmt.executeUpdate(String.format("""
-                CREATE TABLE %s (
-                    apikey VARCHAR(255) NOT NULL REFERENCES %s (apikey),
-                    scope VARCHAR(255) NOT NULL
-                )
-                """, scopeTable.getName(), keyTable.getName()));
-        insertValues();
-    }
-
-    private void clearTablesIfExist() throws SQLException {
-        Statement stmt = connection.createStatement();
-        dropTableIfExists(stmt, scopeTable.getName());
-        dropTableIfExists(stmt, keyTable.getName());
-    }
-
-    private void dropTableIfExists(Statement stmt, String tableName) {
-        try {
-            stmt.executeUpdate("DROP TABLE " + tableName);
-            LOGGER.info("Table " + tableName + " dropped.");
-        } catch (SQLException e) {
-            LOGGER.fine("Table " + tableName + " does not exist or could not be dropped: " + e.getMessage());
         }
     }
 

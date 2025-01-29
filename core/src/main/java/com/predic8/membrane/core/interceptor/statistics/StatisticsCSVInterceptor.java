@@ -29,7 +29,7 @@ import static java.nio.charset.StandardCharsets.*;
  * @description Writes statistics (time, status code, hostname, URI, etc.) about exchanges passing through into a CSV
  *              file (one line per exchange).
  * @explanation Note that the CSV file is UTF-8 encoded.
- * @topic 5. Monitoring, Logging and Statistics
+ * @topic 4. Monitoring, Logging and Statistics
  */
 @MCElement(name="statisticsCSV")
 public class StatisticsCSVInterceptor extends AbstractInterceptor {

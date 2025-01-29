@@ -14,24 +14,20 @@
 
 package com.predic8.membrane.core.config.spring;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.URI;
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.List;
+import org.slf4j.*;
+import org.springframework.beans.*;
+import org.springframework.beans.factory.support.*;
+import org.springframework.beans.factory.xml.*;
+import org.springframework.context.*;
+import org.springframework.context.support.*;
+import org.springframework.core.io.*;
+import org.xml.sax.*;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.BeansException;
-import org.springframework.beans.factory.support.DefaultListableBeanFactory;
-import org.springframework.beans.factory.xml.XmlBeanDefinitionStoreException;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.ApplicationContextException;
-import org.springframework.context.support.FileSystemXmlApplicationContext;
-import org.springframework.core.io.Resource;
-import org.xml.sax.SAXParseException;
+import java.io.*;
+import java.net.*;
+import java.util.*;
+
+import static com.predic8.membrane.core.util.ExceptionUtil.*;
 
 /**
  * Delegates everything to {@link FileSystemXmlApplicationContext}.
@@ -155,7 +151,7 @@ TrackingApplicationContext, BaseLocationApplicationContext, CheckableBeanFactory
 			if (cause instanceof SAXParseException) {
 				int line = ((SAXParseException) cause).getLineNumber();
 
-				throw new InvalidConfigurationException("line " + line + ": " + cause.getMessage());
+				throw new InvalidConfigurationException("line " + line + ": " + concatMessageAndCauseMessages(cause));
 			}
 		}
 		throw e;

@@ -44,7 +44,7 @@ import static org.springframework.web.util.HtmlUtils.*;
  * The word "flow" refers to the current Membrane Flow (=REQUEST).
  * </p>
  *
- * @topic 4. Interceptors/Features
+ * @topic 2. Enterprise Integration Patterns
  */
 @MCElement(name = "groovyTemplate", mixed = true)
 public class GroovyTemplateInterceptor extends AbstractInterceptor {

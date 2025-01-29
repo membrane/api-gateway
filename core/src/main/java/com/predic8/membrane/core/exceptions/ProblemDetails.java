@@ -16,6 +16,7 @@ import com.fasterxml.jackson.core.type.*;
 import com.fasterxml.jackson.databind.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.interceptor.*;
 import org.jetbrains.annotations.*;
 import org.slf4j.*;
 import org.w3c.dom.*;
@@ -28,6 +29,7 @@ import java.io.*;
 import java.util.*;
 
 import static com.predic8.membrane.core.http.MimeType.*;
+import static com.predic8.membrane.core.util.ExceptionUtil.concatMessageAndCauseMessages;
 
 
 /**
@@ -48,6 +50,9 @@ public class ProblemDetails {
 
     private String title;
     private String detail;
+
+    private Interceptor.Flow flow;
+    private String seeSuffix = "";
 
     /**
      * Component e.g. plugin
@@ -150,6 +155,16 @@ public class ProblemDetails {
         return this;
     }
 
+    public ProblemDetails flow(Interceptor.Flow flow) {
+        this.flow = flow;
+        return this;
+    }
+
+    public ProblemDetails addSubSee(String s) {
+        this.seeSuffix += s;
+        return this;
+    }
+
     public ProblemDetails internal(String key, Object value) {
         this.internalFields.put(key, value);
         return this;
@@ -186,24 +201,25 @@ public class ProblemDetails {
         Map<String, Object> root = new LinkedHashMap<>();
         Map<String, Object> internalMap = new LinkedHashMap<>();
 
-        if (production) {
-            logProduction(internalMap);
-        } else {
-            internalMap = logDevelopment();
+        root.put("title", title);
+        String type = "https://membrane-api.io/problems/" + this.type;
+        if (!subType.isEmpty()) {
+            type += subType;
         }
 
-        root.put("title", title);
-        String type = "https://membrane-api.io/error/" + this.type;
-        if (!component.isEmpty())
-            type += "/" + normalizeForType(component);
-        if (!subType.isEmpty())
-            type += subType;
         root.put("type", type);
 
         if (detail != null) {
             root.put("detail", detail);
         }
         root.putAll(topLevel);
+
+        if (production) {
+            logProduction(internalMap);
+        } else {
+            internalMap = createInternal(type);
+        }
+
         root.putAll(internalMap);
         return root;
     }
@@ -212,16 +228,29 @@ public class ProblemDetails {
         return s.replace(" ", "-").toLowerCase();
     }
 
-    private Map<String, Object> logDevelopment() {
+    private Map<String, Object> createInternal(String type) {
         var internalMap = new LinkedHashMap<>(internalFields);
         if (exception != null) {
             if (internalMap.containsKey("message"))
                 log.error("Overriding ProblemDetails extensionsMap 'message' entry. Please notify Membrane developers.", new RuntimeException());
-            internalMap.put("message", exception.getMessage());
+            internalMap.put("message", concatMessageAndCauseMessages(exception));
             if (stacktrace) {
-                internalMap.put("stackTrace", getStackTrace());
+                internalMap.put("stackTrace", getStackTrace(exception, new StackTraceElement[0]));
             }
         }
+
+        String see = type;
+        if (!component.isEmpty()) {
+            see += "/" + normalizeForType(component);
+        }
+        if (flow != null) {
+            see += "/" + flow.name().toLowerCase();
+        }
+        if (!see.isEmpty()) {
+            see += "/" + seeSuffix;
+        }
+        internalMap.put("see", see);
+
         internalMap.put("attention", """
                 Membrane is in development mode. For production set <router production="true"> to reduce details in error messages!""");
         return internalMap;
@@ -231,18 +260,38 @@ public class ProblemDetails {
         String logKey = UUID.randomUUID().toString();
         log.warn("logKey={}\ntype={}\ntitle={}\n,detail={}\n,extension={},.", logKey, type, title, detail, internalMap);
 
-        type = "internal";
-        title = "An error occurred.";
+        // In case of an internal error in production we do not want a specifiy error title
+        if (type.equals("internal")) {
+            title = "Internal error";
+        }
+
         detail = "Details can be found in the Membrane log searching for key: %s.".formatted(logKey);
         if (stacktrace) {
             log.warn("", exception);
         }
     }
 
-    private @NotNull Map getStackTrace() {
+    private static @NotNull Map getStackTrace(Throwable exception, StackTraceElement[] enclosingTrace) {
         var m = new LinkedHashMap<>();
-        for (int i = 0; i < exception.getStackTrace().length; i++) {
-            m.put("e" + i, exception.getStackTrace()[i].toString());
+
+        StackTraceElement[] trace = exception.getStackTrace();
+        int m2 = trace.length - 1;
+        int n = enclosingTrace.length - 1;
+        while (m2 >= 0 && n >=0 && trace[m2].equals(enclosingTrace[n])) {
+            m2--; n--;
+        }
+        int framesInCommon = trace.length - 1 - m2;
+
+        for (int i = 0; i <= m2; i++) {
+            m.put("e" + i, trace[i].toString());
+        }
+
+        if (framesInCommon != 0) {
+            m.put("more_frames_in_common", framesInCommon);
+        }
+
+        if (exception.getCause() != null) {
+            m.put("cause", getStackTrace(exception.getCause(), trace));
         }
         return m;
     }
@@ -276,7 +325,10 @@ public class ProblemDetails {
 
     private static String document2string(Document document) throws TransformerException {
         StringWriter writer = new StringWriter();
-        TransformerFactory.newInstance().newTransformer().transform(new DOMSource(document), new StreamResult(writer));
+        TransformerFactory tf = TransformerFactory.newInstance();
+        Transformer t = tf.newTransformer();
+        t.setOutputProperty(OutputKeys.INDENT, "yes");
+        t.transform(new DOMSource(document), new StreamResult(writer));
         return writer.toString();
     }
 
@@ -378,4 +430,6 @@ public class ProblemDetails {
     public boolean isStacktrace() {
         return stacktrace;
     }
+
+
 }

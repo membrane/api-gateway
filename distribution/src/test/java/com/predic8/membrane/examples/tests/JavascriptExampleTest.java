@@ -14,18 +14,23 @@
 
 package com.predic8.membrane.examples.tests;
 
-import com.predic8.membrane.examples.util.*;
-import io.restassured.response.*;
-import org.junit.jupiter.api.*;
-import org.skyscreamer.jsonassert.*;
+import com.predic8.membrane.examples.util.AbstractSampleMembraneStartStopTestcase;
+import com.predic8.membrane.examples.util.BufferLogger;
+import com.predic8.membrane.examples.util.Process2;
+import io.restassured.response.Response;
+import org.json.JSONException;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.skyscreamer.jsonassert.JSONAssert;
 
-import java.io.*;
+import java.io.IOException;
 
-import static com.predic8.membrane.core.http.MimeType.*;
-import static com.predic8.membrane.test.AssertUtils.*;
-import static io.restassured.RestAssured.*;
-import static org.hamcrest.Matchers.*;
-import static org.junit.jupiter.api.Assertions.*;
+import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
+import static com.predic8.membrane.test.StringAssertions.assertContains;
+import static io.restassured.RestAssured.get;
+import static io.restassured.RestAssured.given;
+import static org.hamcrest.Matchers.equalTo;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class JavascriptExampleTest extends AbstractSampleMembraneStartStopTestcase {
 
@@ -57,7 +62,7 @@ public class JavascriptExampleTest extends AbstractSampleMembraneStartStopTestca
     }
 
     @Test
-    public void transformJson() {
+    public void transformJson() throws JSONException {
 
         String jsonInput = """
                 {

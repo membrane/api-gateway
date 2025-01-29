@@ -14,10 +14,11 @@
 
 package com.predic8.membrane.examples.tutorials.rest;
 
-import com.predic8.membrane.examples.util.*;
-import org.junit.jupiter.api.*;
+import com.predic8.membrane.examples.util.AbstractSampleMembraneStartStopTestcase;
+import com.predic8.membrane.test.HttpAssertions;
+import org.junit.jupiter.api.Test;
 
-import static com.predic8.membrane.test.AssertUtils.*;
+import static com.predic8.membrane.test.StringAssertions.assertContains;
 
 /**
  * See: <a href="https://membrane-api.io/tutorials/rest/">REST tutorials</a>
@@ -33,7 +34,9 @@ public class TutorialRestInitialExampleTest extends AbstractSampleMembraneStartS
 
     @Test
     public void testStart() throws Exception {
-        assertContains("Shop API", getAndAssert200(LOCALHOST_2000));
-        assertContains("Membrane API Gateway Administration", getAndAssert200("http://localhost:9000/admin/"));
+        try (HttpAssertions ha = new HttpAssertions()) {
+            assertContains("Shop API", ha.getAndAssert200(LOCALHOST_2000));
+            assertContains("Membrane API Gateway Administration", ha.getAndAssert200("http://localhost:9000/admin/"));
+        }
     }
 }

@@ -14,15 +14,17 @@
 
 package com.predic8.membrane.examples.tests.openapi;
 
-import com.predic8.membrane.examples.util.*;
-import io.restassured.response.*;
-import org.junit.jupiter.api.*;
-import org.skyscreamer.jsonassert.*;
+import com.predic8.membrane.examples.util.AbstractSampleMembraneStartStopTestcase;
+import com.predic8.membrane.test.HttpAssertions;
+import io.restassured.response.Response;
+import org.json.JSONException;
+import org.junit.jupiter.api.Test;
+import org.skyscreamer.jsonassert.JSONAssert;
 
-import static com.predic8.membrane.core.http.MimeType.*;
-import static com.predic8.membrane.test.AssertUtils.*;
-import static io.restassured.RestAssured.*;
-import static io.restassured.http.ContentType.*;
+import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
+import static io.restassured.RestAssured.given;
+import static io.restassured.http.ContentType.JSON;
+import static io.restassured.http.ContentType.XML;
 
 public class OpenAPIValidationExampleTest extends AbstractSampleMembraneStartStopTestcase {
 
@@ -33,7 +35,9 @@ public class OpenAPIValidationExampleTest extends AbstractSampleMembraneStartSto
 
     @Test
     public void validRequest() throws Exception {
-        getAndAssert(200, LOCALHOST_2000 + "/demo-api/v2/persons?limit=10");
+        try (HttpAssertions ha = new HttpAssertions()) {
+            ha.getAndAssert(200, LOCALHOST_2000 + "/demo-api/v2/persons?limit=10");
+        }
     }
 
     @Test
@@ -59,7 +63,7 @@ public class OpenAPIValidationExampleTest extends AbstractSampleMembraneStartSto
     }
 
     @Test
-    void oneOfWithWrongStringPattern() {
+    void oneOfWithWrongStringPattern() throws JSONException {
         // @formatter:off
         Response res = given()
             .contentType(JSON)
@@ -123,7 +127,7 @@ public class OpenAPIValidationExampleTest extends AbstractSampleMembraneStartSto
     }
 
     @Test
-    void wrongRegexPattern() {
+    void wrongRegexPattern() throws JSONException {
         // @formatter:off
         Response res = given()
                 .contentType(JSON)
@@ -162,7 +166,7 @@ public class OpenAPIValidationExampleTest extends AbstractSampleMembraneStartSto
     }
 
     @Test
-    void additionalPropertyRole() {
+    void additionalPropertyRole() throws JSONException {
         // @formatter:off
         Response res = given()
                 .contentType(JSON)
@@ -197,7 +201,7 @@ public class OpenAPIValidationExampleTest extends AbstractSampleMembraneStartSto
     }
 
     @Test
-    void RequiredPropertyIsMissing() {
+    void RequiredPropertyIsMissing() throws JSONException {
         // @formatter:off
         Response res = given()
                 .contentType(JSON)
@@ -244,7 +248,7 @@ public class OpenAPIValidationExampleTest extends AbstractSampleMembraneStartSto
     }
 
     @Test
-    void invalidUUIDEmailAndEnum() {
+    void invalidUUIDEmailAndEnum() throws JSONException {
         // @formatter:off
         Response res = given()
                 .contentType(JSON)
@@ -305,7 +309,7 @@ public class OpenAPIValidationExampleTest extends AbstractSampleMembraneStartSto
     }
 
     @Test
-    void limitGreaterThan100() {
+    void limitGreaterThan100() throws JSONException {
         // @formatter:off
         Response res = given()
             .contentType(JSON)
@@ -334,7 +338,7 @@ public class OpenAPIValidationExampleTest extends AbstractSampleMembraneStartSto
     }
 
     @Test
-    void wrongPath() {
+    void wrongPath() throws JSONException {
         // @formatter:off
         Response res = given()
                 .contentType(JSON)

@@ -33,7 +33,7 @@ import static com.predic8.membrane.core.util.HttpUtil.*;
 /**
  * @description Blocks requests whose origin TCP/IP address (hostname or IP address) is not allowed to access the
  *              requested resource.
- * @topic 6. Security
+ * @topic 3. Security and Validation
  */
 @MCElement(name="accessControl")
 public class AccessControlInterceptor extends AbstractInterceptor {
@@ -85,9 +85,9 @@ public class AccessControlInterceptor extends AbstractInterceptor {
 	private void setResponseToAccessDenied(Exchange exc) {
 		log.warn("Access Denied. Method: {} Uri: {}", exc.getRequest().getMethod(), exc.getOriginalRequestUri());
 		security(false,getDisplayName())
-				.statusCode(401)
-				.addSubType("authorization-denied")
 				.title("Access Denied")
+				.statusCode(401)
+				.addSubSee("authorization-denied")
 				.buildAndSetResponse(exc);
 	}
 

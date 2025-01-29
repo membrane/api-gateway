@@ -14,20 +14,21 @@
 
 package com.predic8.membrane.examples.tests;
 
-import static com.predic8.membrane.test.AssertUtils.getAndAssert200;
-import static java.io.File.createTempFile;
-import static java.lang.Thread.sleep;
-import static java.util.Calendar.*;
-import static org.junit.jupiter.api.Assertions.*;
+import com.predic8.membrane.core.exchangestore.FileExchangeStore;
+import com.predic8.membrane.examples.util.DistributionExtractingTestcase;
+import com.predic8.membrane.examples.util.Process2;
+import com.predic8.membrane.test.HttpAssertions;
+import org.junit.jupiter.api.Test;
 
 import java.io.File;
 import java.io.FilenameFilter;
 import java.util.Calendar;
 
-import com.predic8.membrane.examples.util.*;
-import org.junit.jupiter.api.Test;
-
-import com.predic8.membrane.core.exchangestore.FileExchangeStore;
+import static java.io.File.createTempFile;
+import static java.lang.Thread.sleep;
+import static java.util.Calendar.*;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class FileExchangeStoreExampleTest extends DistributionExtractingTestcase {
 
@@ -38,8 +39,8 @@ public class FileExchangeStoreExampleTest extends DistributionExtractingTestcase
 
 	@Test
 	public void test() throws Exception {
-		try(Process2 ignored = startServiceProxyScript()) {
-			getAndAssert200("http://localhost:2000/");
+		try(Process2 ignored = startServiceProxyScript(); HttpAssertions ha = new HttpAssertions()) {
+			ha.getAndAssert200("http://localhost:2000/");
 
 			sleep(300);
 

@@ -41,7 +41,7 @@ import static java.nio.charset.StandardCharsets.*;
  * <a href="https://docs.groovy-lang.org/docs/next/html/documentation/template-engines.html#_xmltemplateengine">XMLTemplateEngine</a>
  * otherwise <a href="https://docs.groovy-lang.org/docs/next/html/documentation/template-engines.html#_streamingtemplateengine">StreamingTemplateEngine</a>.
  * Have a look at the samples in <a href="https://github.com/membrane/service-proxy/tree/master/distribution/examples">examples/template</a>.
- * @topic 4. Interceptors/Features
+ * @topic 2. Enterprise Integration Patterns
  */
 
 
@@ -61,7 +61,7 @@ public class TemplateInterceptor extends StaticInterceptor {
             msg.setBodyContent(fillAndGetBytes(exc,msg,flow));
         }
         catch (TemplateExecutionException e) {
-            log.warn("Groovy template error: {}",e.getMessage());
+            log.warn("Groovy template error: {}", e.getMessage());
             gateway( router.isProduction(),getDisplayName())
                     .detail("Error during template rendering.")
                     .internal("line", e.getLineNumber())
@@ -71,9 +71,9 @@ public class TemplateInterceptor extends StaticInterceptor {
             return ABORT;
         }
         catch (GroovyRuntimeException e) {
-            log.warn("Groovy error executing template: {}",e.getMessage());
-            gateway( router.isProduction(),getDisplayName())
-                    .addSubType("groovy")
+            log.warn("Groovy error executing template: {}", e.getMessage());
+            internal( router.isProduction(),getDisplayName())
+                    .addSubSee("groovy")
                     .detail("Groovy error during template rendering.")
                     .exception(e)
                     .stacktrace(false)
@@ -81,9 +81,9 @@ public class TemplateInterceptor extends StaticInterceptor {
             return ABORT;
         }
         catch (Exception e) {
-            log.warn(e.getMessage(),e);
+            log.warn("", e);
             internal(router.isProduction(),getDisplayName())
-                    .addSubType("template")
+                    .addSubSee("template")
                     .exception(e)
                     .buildAndSetResponse(exc);
             return ABORT;

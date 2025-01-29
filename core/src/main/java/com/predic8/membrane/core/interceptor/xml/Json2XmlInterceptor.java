@@ -18,23 +18,111 @@ import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.util.*;
+import org.jetbrains.annotations.*;
 import org.json.*;
+import org.slf4j.*;
 
 import java.io.*;
 
+import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
 import static com.predic8.membrane.core.http.MimeType.*;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
+import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static java.nio.charset.StandardCharsets.*;
 
 
 /**
- * @description If enabled converts body content from json to xml.
- * @explanation Can be used for both request and response. Resulting xml will be utf-8. It uses org.json
- *  XML.toString() to do the conversion
- * @topic 4. Interceptors/Features
+ * @description Converts body payload from JSON to XML. The JSON must be an object other JSON documents e.g. arrays are not supported.
+ * @explanation Resulting XML will be in UTF-8 encoding.
+ * @topic 2. Enterprise Integration Patterns
  */
-@MCElement(name="json2Xml")
+@MCElement(name = "json2Xml")
 public class Json2XmlInterceptor extends AbstractInterceptor {
+
+    private static final Logger log = LoggerFactory.getLogger(Json2XmlInterceptor.class);
+
+
+    // Prolog is needed to provide the UTF-8 encoding
+    private static final String PROLOG = """
+            <?xml version="1.0" encoding="UTF-8"?>""";
+
+    private String root;
+
+    @Override
+    public Outcome handleRequest(Exchange exc) {
+        return handleInternal(exc, REQUEST);
+    }
+
+    @Override
+    public Outcome handleResponse(Exchange exc) {
+        return handleInternal(exc, RESPONSE);
+    }
+
+    private Outcome handleInternal(Exchange exchange, Flow flow) {
+        Message msg = exchange.getMessage(flow);
+        if (!msg.isJSON())
+            return CONTINUE;
+
+        try {
+            msg.setBodyContent(json2Xml(msg.getBodyAsStream()));
+        } catch (JSONException e) {
+            log.info("Error parsing JSON: {}",e.getMessage());
+            user(router.isProduction(), getDisplayName())
+                    .title("Error parsing JSON")
+                    .addSubType("validation/json")
+                    .exception(e)
+                    .stacktrace(false)
+                    .internal("flow", flow)
+                    .internal("body", StringUtil.truncateAfter(msg.getBodyAsStringDecoded(), 200))
+                    .buildAndSetResponse(exchange);
+            return ABORT;
+        }
+        catch (Exception e) {
+            internal(router.isProduction(), getDisplayName())
+                    .title("Error parsing JSON")
+                    .addSubType("validation/json")
+                    .exception(e)
+                    .stacktrace(true)
+                    .internal("flow", flow)
+                    .internal("body", StringUtil.truncateAfter(msg.getBodyAsStringDecoded(), 200))
+                    .buildAndSetResponse(exchange);
+            return ABORT;
+        }
+
+        msg.getHeader().setContentType(APPLICATION_XML);
+        return CONTINUE;
+    }
+
+    private byte[] json2Xml(InputStream body) {
+        return (PROLOG + XML.toString(getJSONRoot(body))).getBytes(UTF_8);
+    }
+
+    private @NotNull JSONObject getJSONRoot(InputStream body) {
+        if (root != null) {
+            return createRoot(root, convertToJsonObject(body));
+        }
+        JSONObject json = convertToJsonObject(body);
+
+        // If there is exactly one element, then we can use that as root
+        if (json.length() == 1) {
+            return json;
+        } else {
+            // Otherwise we must wrap the fields into a single root element
+            return createRoot("root", json);
+        }
+    }
+
+    private JSONObject createRoot(String name, JSONObject jsonObject) {
+        JSONObject root = new JSONObject();
+        root.put(name, jsonObject);
+        return root;
+    }
+
+    private JSONObject convertToJsonObject(InputStream body) {
+        return new JSONObject(new JSONTokener(new InputStreamReader(body, UTF_8)));
+    }
 
     @Override
     public String getDisplayName() {
@@ -46,33 +134,18 @@ public class Json2XmlInterceptor extends AbstractInterceptor {
         return "Converts JSON message bodies to XML.";
     }
 
-    private static final String ROOT = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>";
-
-    @Override
-    public Outcome handleRequest(Exchange exc) {
-        return handleInternal(exc.getRequest());
+    public String getRoot() {
+        return root;
     }
 
-    @Override
-    public Outcome handleResponse(Exchange exc) {
-        return handleInternal(exc.getResponse());
+    /**
+     * A JSON object can have multiple keys. When transforming that to XML a single root element is needed.
+     * If set a root element with this name will wrap the content.
+     *
+     * @param root Name of the element to wrap the content in
+     */
+    @MCAttribute
+    public void setRoot(String root) {
+        this.root = root;
     }
-
-    private Outcome handleInternal(Message msg){
-        if(!msg.isJSON())
-            return CONTINUE;
-        msg.getHeader().setContentType(TEXT_XML);
-        msg.setBodyContent(json2Xml(msg.getBodyAsStream()));
-        return CONTINUE;
-    }
-
-    private byte[] json2Xml(InputStream body) {
-        return (ROOT + XML.toString(convertToJsonObject(body))).getBytes(UTF_8);
-
-    }
-
-    private JSONObject convertToJsonObject(InputStream body){
-        return new JSONObject(new JSONTokener(new InputStreamReader(body, UTF_8)));
-    }
-
 }

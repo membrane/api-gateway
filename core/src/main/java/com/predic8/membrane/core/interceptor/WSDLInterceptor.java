@@ -33,7 +33,7 @@ import static java.nio.charset.StandardCharsets.*;
 
 /**
  * @description <p>The <i>wsdlRewriter</i> rewrites endpoint addresses of services and XML Schema locations in WSDL documents.</p>
- * @topic 8. SOAP based Web Services
+ * @topic 5. Web Services with SOAP and WSDL
  */
 @MCElement(name = "wsdlRewriter")
 public class WSDLInterceptor extends RelocatingInterceptor {
@@ -61,7 +61,6 @@ public class WSDLInterceptor extends RelocatingInterceptor {
 
     @Override
     protected void rewrite(Exchange exc) throws Exception {
-
         log.debug("Changing endpoint address in WSDL");
 
         ByteArrayOutputStream stream = new ByteArrayOutputStream();

@@ -26,22 +26,22 @@ import static org.junit.jupiter.api.Assertions.*;
 public class UnavailableSoapProxyTest {
 
 	private Router r, r2;
-	private static Router router;
+	private static Router backendRouter;
 	private SOAPProxy sp;
 	private ServiceProxy sp3;
 
 	@BeforeAll
 	static void setup() throws Exception {
-		ServiceProxy rule = new ServiceProxy(new ServiceProxyKey(4000), null, 0);
-		rule.getInterceptors().add(new SampleSoapServiceInterceptor());
-		router = new HttpRouter();
-		router.getRuleManager().addProxyAndOpenPortIfNew(rule);
-		router.init();
+		ServiceProxy cityAPI = new ServiceProxy(new ServiceProxyKey(4000), null, 0);
+		cityAPI.getInterceptors().add(new SampleSoapServiceInterceptor());
+		backendRouter = new HttpRouter();
+		backendRouter.getRuleManager().addProxyAndOpenPortIfNew(cityAPI);
+		backendRouter.init();
 	}
 
 	@AfterAll
 	static void teardown() {
-		router.shutdown();
+		backendRouter.shutdown();
 	}
 
 	@BeforeEach
@@ -60,7 +60,7 @@ public class UnavailableSoapProxyTest {
 		sp3 = new ServiceProxy();
 		sp3.setPort(2000);
 		sp3.setTarget(new AbstractServiceProxy.Target("localhost", 2001));
-		ValidatorInterceptor v = new ValidatorInterceptor();
+		ValidatorInterceptor v = new ValidatorInterceptor(); // Calling init on interceptor will break test!
 		v.setWsdl("http://localhost:2001?wsdl");
 		sp3.getInterceptors().add(v);
 

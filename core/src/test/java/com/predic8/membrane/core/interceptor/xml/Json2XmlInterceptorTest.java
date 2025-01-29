@@ -13,79 +13,118 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.xml;
 
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.MimeType;
-import com.predic8.membrane.core.http.Request;
-import com.predic8.membrane.core.http.Response;
-import com.predic8.membrane.core.interceptor.Outcome;
-import org.apache.commons.io.IOUtils;
-import org.json.JSONException;
-import org.junit.jupiter.api.Test;
-import org.w3c.dom.Document;
-import javax.xml.parsers.DocumentBuilderFactory;
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
-import java.util.function.Function;
+import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.*;
+import org.junit.jupiter.api.*;
+import org.xml.sax.*;
 
+import javax.xml.xpath.*;
+import java.io.*;
+import java.net.*;
+
+import static com.predic8.membrane.core.http.Request.*;
+import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static java.nio.charset.StandardCharsets.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 
 public class Json2XmlInterceptorTest {
 
-    @Test
-    public void validJSONTest() throws Exception {
-        assertEquals("sonoo\u00fc\u00f6\u00fc\u00f6", getNameFromDocument(DocumentBuilderFactory.newInstance().newDocumentBuilder().
-                parse(processThroughInterceptor(loadResource("/json/convert.json")))));
+    private static final XPathFactory xPathFactory = XPathFactory.newInstance();
+
+    Json2XmlInterceptor interceptor;
+
+    static final String mike = """
+                {
+                    "person": {
+                        "name": "Mike",
+                        "city": "San Francisco"
+                    }
+                }
+                """;
+
+    static final String single = """
+            {
+                "place": "Berlin"
+            }
+            """;
+
+    static final String noRoot = """
+            {
+                "a": 1,
+                "b": 2
+            }
+            """;
+
+    @BeforeEach
+    void setUp() {
+        interceptor = new Json2XmlInterceptor();
+        interceptor.init(new Router());
     }
 
     @Test
-    public void validJSONResponseTest() throws Exception {
-        assertEquals("sonoo\u00fc\u00f6\u00fc\u00f6", getNameFromDocument(DocumentBuilderFactory.newInstance().newDocumentBuilder().
-                parse(processThroughInterceptorResponse(loadResource("/json/convert.json")))));
+    void normalRequest() throws Exception {
+        Exchange exc = put("/person").json(mike).buildExchange();
+        assertEquals(CONTINUE,  interceptor.handleRequest(exc));
+        Message msg = exc.getRequest();
+        assertTrue(msg.isXML());
+        assertEquals("Mike", xPath(msg.getBodyAsStringDecoded(), "/person/name"));
+        assertEquals("San Francisco", xPath(msg.getBodyAsStringDecoded(), "/person/city"));
+        assertTrue(msg.getBodyAsStringDecoded().contains(UTF_8.name()));
     }
 
     @Test
-    public void invalidJsonTest() throws Exception {
-        assertThrows(JSONException.class, () -> getNameFromDocument(DocumentBuilderFactory.newInstance().newDocumentBuilder().
-                parse(processThroughInterceptor(new ByteArrayInputStream("invalid json".getBytes(StandardCharsets.UTF_8))))));
+    void normalResponse() throws Exception {
+        Exchange exc = get("/foo").buildExchange();
+        exc.setResponse(Response.ok().json(mike).build());
+        assertEquals(CONTINUE,  interceptor.handleResponse(exc));
+        Message msg = exc.getResponse();
+        assertTrue(msg.isXML());
+        assertEquals("Mike", xPath(msg.getBodyAsStringDecoded(), "/person/name"));
+        assertEquals("San Francisco", xPath(msg.getBodyAsStringDecoded(), "/person/city"));
     }
 
-    private Request createRequestFromBytes(byte[] bytes) throws IOException {
-        return new Request.Builder().contentType(MimeType.APPLICATION_JSON_UTF8).body(bytes).build();
+    @Test
+    void single() throws Exception {
+        Exchange exc = put("/place").json(single).buildExchange();
+        assertEquals(CONTINUE,  interceptor.handleRequest(exc));
+        Message msg = exc.getRequest();
+        assertTrue(msg.isXML());
+        assertEquals("Berlin", xPath(msg.getBodyAsStringDecoded(), "/place"));
     }
 
-    private Response createResponseFromBytes(byte[] bytes) throws IOException {
-        return new Response.ResponseBuilder().contentType(MimeType.APPLICATION_JSON_UTF8).body(bytes).build();
+    @Test
+    void noRoot() throws Exception {
+        Exchange exc = put("/no-root").json(noRoot).buildExchange();
+        assertEquals(CONTINUE,  interceptor.handleRequest(exc));
+        Message msg = exc.getRequest();
+        assertTrue(msg.isXML());
+        assertEquals("1", xPath(msg.getBodyAsStringDecoded(), "/root/a"));
+        assertEquals("2", xPath(msg.getBodyAsStringDecoded(), "/root/b"));
     }
 
-    private InputStream processThroughInterceptor(InputStream stream) throws Exception {
-        Exchange exc = fillAndgetExchange(stream);
-        new Json2XmlInterceptor().handleRequest(exc);
-        return exc.getRequest().getBodyAsStream();
+    @Test
+    void noRootWithRootNameSpecified() throws Exception {
+        interceptor.setRoot("top");
+        Exchange exc = put("/no-root").json(noRoot).buildExchange();
+        assertEquals(CONTINUE,  interceptor.handleRequest(exc));
+        Message msg = exc.getRequest();
+        assertTrue(msg.isXML());
+        assertEquals("1", xPath(msg.getBodyAsStringDecoded(), "/top/a"));
+        assertEquals("2", xPath(msg.getBodyAsStringDecoded(), "/top/b"));
     }
 
-    private InputStream processThroughInterceptorResponse(InputStream stream) throws Exception {
-        Exchange exc = fillAndgetExchange(stream);
-        new Json2XmlInterceptor().handleResponse(exc);
-        return exc.getResponse().getBodyAsStream();
+    @Test
+    void invalidJSON() throws URISyntaxException {
+        Exchange exc = put("/invalid").json("{ invalid").buildExchange();
+        assertEquals(ABORT,  interceptor.handleRequest(exc));
+        assertTrue(exc.getResponse().getBodyAsStringDecoded().contains("Error parsing JSON"));
     }
 
-    private Exchange fillAndgetExchange(InputStream stream) throws IOException {
-        byte[] res = IOUtils.toByteArray(stream);
-        Exchange exc = new Exchange(null);
-        exc.setRequest(createRequestFromBytes(res));
-        exc.setResponse(createResponseFromBytes(res));
-        return exc;
-    }
-
-    private InputStream loadResource(String path) {
-        return this.getClass().getResourceAsStream(path);
-    }
-
-    private String getNameFromDocument(Document document) {
-        return document.getElementsByTagName("name").item(0).getFirstChild().getNodeValue();
+    private static String xPath(String body, String expression) throws XPathExpressionException {
+        System.out.println("body = " + body);
+        return xPathFactory.newXPath().evaluate(expression, new InputSource(new StringReader(body)));
     }
 
 }

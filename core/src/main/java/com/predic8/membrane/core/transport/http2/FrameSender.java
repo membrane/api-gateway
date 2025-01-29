@@ -149,7 +149,7 @@ public class FrameSender implements Runnable {
                 frame.write(out);
             }
         } catch (Throwable e) {
-            e.printStackTrace();
+            log.error("", e);
         } finally {
             updateThreadName(false);
         }

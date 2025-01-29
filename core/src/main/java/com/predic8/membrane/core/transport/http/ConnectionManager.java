@@ -20,7 +20,6 @@ import org.slf4j.*;
 
 import javax.annotation.*;
 import java.io.*;
-import java.net.*;
 import java.util.*;
 import java.util.concurrent.atomic.*;
 
@@ -44,7 +43,7 @@ import java.util.concurrent.atomic.*;
  */
 public class ConnectionManager {
 
-	private static Logger log = LoggerFactory.getLogger(ConnectionManager.class.getName());
+	private static final Logger log = LoggerFactory.getLogger(ConnectionManager.class.getName());
 
 	private final long keepAliveTimeout;
 	private final AtomicInteger numberInPool = new AtomicInteger();
@@ -100,7 +99,7 @@ public class ConnectionManager {
 	}
 
 	public Connection getConnection(String host, int port, String localHost, SSLProvider sslProvider, int connectTimeout, @Nullable String sniServerName,
-		@Nullable ProxyConfiguration proxy, @Nullable SSLContext proxySSLContext, @Nullable String[] applicationProtocols) throws UnknownHostException, IOException {
+		@Nullable ProxyConfiguration proxy, @Nullable SSLContext proxySSLContext, @Nullable String[] applicationProtocols) throws IOException {
 
 		log.debug("connection requested for " + host + ":" + port + (proxy != null ? " via " + proxy.getHost() + ":" + proxy.getPort() : ""));
 
@@ -140,7 +139,7 @@ public class ConnectionManager {
 		return result;
 	}
 
-	public Connection getConnection(String host, int port, String localHost, SSLProvider sslProvider, int connectTimeout) throws UnknownHostException, IOException {
+	public Connection getConnection(String host, int port, String localHost, SSLProvider sslProvider, int connectTimeout) throws IOException {
 		return getConnection(host,port,localHost,sslProvider,connectTimeout,null,null,null,null);
 	}
 
@@ -181,7 +180,7 @@ public class ConnectionManager {
 						if (i == l.size() - 1)
 							l.remove(i);
 						else
-							l.set(i, l.remove(l.size() - 1));
+							l.set(i, l.removeLast());
 						--i;
 						closed++;
 						toClose.add(o.connection);

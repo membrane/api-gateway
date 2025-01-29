@@ -17,7 +17,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>org.membrane-soa</groupId>
 	<artifactId>service-proxy-parent</artifactId>
-	<version>5.8.1-SNAPSHOT</version>
+	<version>6.0.0-SNAPSHOT</version>
 	<name>${project.artifactId}</name>
 	<description>Membrane is an open source API Gateway written in Java that features:
 	- OpenAPI support with validation
@@ -67,6 +67,7 @@
 		<module>starter</module>
 		<module>distribution</module>
 		<module>war</module>
+		<module>test</module>
 		<module>maven-plugin</module>
 	</modules>
 
@@ -120,7 +121,7 @@
 			<dependency>
 				<groupId>commons-codec</groupId>
 				<artifactId>commons-codec</artifactId>
-				<version>1.17.1</version>
+				<version>1.17.2</version>
 			</dependency>
 			<dependency>
 				<groupId>org.apache.commons</groupId>

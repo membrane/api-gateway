@@ -14,13 +14,12 @@
 
 package com.predic8.membrane.examples.tests.validation;
 
-import static com.predic8.membrane.test.AssertUtils.getAndAssert;
-import static java.io.File.separator;
-
-import org.junit.jupiter.api.Test;
-
 import com.predic8.membrane.examples.util.DistributionExtractingTestcase;
 import com.predic8.membrane.examples.util.Process2;
+import com.predic8.membrane.test.HttpAssertions;
+import org.junit.jupiter.api.Test;
+
+import static java.io.File.separator;
 
 public class FormValidationExampleTest extends DistributionExtractingTestcase {
 
@@ -31,9 +30,9 @@ public class FormValidationExampleTest extends DistributionExtractingTestcase {
 
 	@Test
 	public void test() throws Exception {
-		try(Process2 ignored = startServiceProxyScript()) {
-			getAndAssert(400, "http://localhost:2000/?name=banana0");
-			getAndAssert(200, "http://localhost:2000/?name=banana");
+		try(Process2 ignored = startServiceProxyScript(); HttpAssertions ha = new HttpAssertions()) {
+			ha.getAndAssert(400, "http://localhost:2000/?name=banana0");
+			ha.getAndAssert(200, "http://localhost:2000/?name=banana");
 		}
 	}
 }

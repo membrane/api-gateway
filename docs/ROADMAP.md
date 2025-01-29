@@ -2,15 +2,11 @@
 
 # Version 6.2.0
 
-- <choose>
-     <case test=""> // If this matches execute only nested
-        <..interceptors>
-     </case> 
-     <case test=""></case> // Only evaluate if first did not match
-     <case test=""></case>
-     <otherwise></otherwise>
-  </choose>
-
+- Plugin that uses AI e.g. Mock
+- JSONBody
+  - Store body as parsed JsonNode or Document
+    - If JSON is needed by an interceptor use already parsed JSON
+    
 # Version 6.1.0
 
 - Grafana Dashboard to import in examples/prometheus
@@ -22,9 +18,6 @@
   - Signs the body if it is a JWT
   - JWT encoder
     - Encodes a JWT into binary version
-- JSONBody 
-  - Store body as parsed JsonNode or Document
-    - If JSON is needed by an interceptor use already parsed JSON
 - REST / JSON API Versioning test
   - like examples/versioning/soap-xslt but much simpler with json
 - JdbcUserDataProvider
@@ -37,26 +30,20 @@
       - public abstract void init() throws Exception;
       - getEndSessionEndpoint() throws Exception
       - doDynamicRegistration(List<String> callbackURLs) throws Exception
+- Call Example
 
 # Version 6.0.0
 
 ## TODOs
 
 ### Tests
-- List how to run all tests
-  - ConfigSerializationTest
 - Is SessionResumptionTest still needed?
 
 ### Examples / Documentation
 - Check
   - Is example embedded-java still running?
     - Update to Java 21 needed?
-- Document <if>,<call>,<destination>
-  - Write example with lots of samples in different languages
 - Restructure samples
-- Call Example
-- Is still in use:
-  - /xml/project.xml?
   
 ### Features
 
@@ -66,23 +53,13 @@
 - Change maven coordinates?
 - proxies-6.xsd
   - new Namespace e.g. https://membrane-api.io...6
-- ProblemDetails TB
-  - Validators
-     - XML, JSON, WSDL
-     - All in examples/validation
-  - OpenAPI
-- Exchange property name constants: See Exchange TB
-- Logging TB
-  - Simple logger raus
-  - JSON logging raus
 - Dependencies TP, TB
   - Log4J, where, what
   - Updates
-- Rewrite RatelimitInterceptor to use AbstractLanguageInterceptor TB
-- Language TB
-  - Exchange expression 
-    - getExpression
-  - AbstractLanguageInterceptor as Interface
+- '<spring:bean class="com.predic8.membrane.core.interceptor.apikey.stores.ApiKeyFileStore">' 
+  durch '<apiKeyFileStore .. />' ersetzen (dafür topLevel=true) BT
+
+## Done
 - Problem Details TB
   - component mandatory, subtype optional
   - Message from exception in message
@@ -90,8 +67,21 @@
     - optional
     - Message only from exception
       - Disable in builder
-
-## Done
+- Rewrite RatelimitInterceptor to use AbstractLanguageInterceptor TB
+- Exchange property name constants: See Exchange TB
+- Logging TB
+  - Simple logger raus
+  - JSON logging raus
+- ProblemDetails
+  - OpenAPI
+  - XML, JSON, WSDL
+- '<spring:bean class="com.predic8.membrane.core.interceptor.apikey.stores.ApiKeyFileStore">' 
+  durch '<apiKeyFileStore .. />' ersetzen (dafür topLevel=true) BT
+- Test after next merges:
+  12:23:17,049 ERROR 30 RouterThread /185.191.171.13:7356 SpELExchangeExpression:84 - EL1008E: Property or field 'exc' cannot be found on object of type 'com.predic8.membrane.core.lang.spel.SpELExchangeEvaluationContext' - maybe not public or not vali
+- LogInterceptor:
+  - Do not log body if Content-Encoding header is set 
+    - Might be zip, br ...
 - Merge log with print
 - XMLProtectionInterceptor.setFailResponse => Use ProblemDetails
 - Rename ExampleTests to .*ExampleTests
@@ -119,7 +109,6 @@
   - Test for production mode filter
     - Return pd and check if answer contains pd.details ...
 
-
 ### Examples
 - Rename Tests to *.ExampleTest
 - Move Examples
@@ -129,25 +118,20 @@
 
 # Discussion
 
-- ${} or #{} for expressions
-  - Possible conflict with spring property placeholder configurer
-  - Conflict with SpEL on startup? Are #{} replaced?
+- <api> without port => Change from port 80 to matches all open ports
+- ProblemDetails: 
+  - When flow = RESPONSE it should always be an internal error!
 - For ADRs
   - Response Flow guarantee there is a response 
   - Request Flow guarantee there is a request
   - Return guarantee Response is there
 
 - Wenn Exception/Abort passiert sofort Response mit Error setzen.
-
-- Should AbstractHttpHandler and Http2ExchangeHandler have a common interface?
-- What are nodeExceptions in Exchange? And nodeStatusCodes?
 - Do we need RuleExchangeListener in RuleManager?
 
 # Other
 
-- Unfinshed or not referenced tests:
-  - AcmeAzureTableApiStorageEngineTest (Deleted)
-  - EtcdRequestTest (Deleted)
+- Not finished or not referenced tests:
   - ConcurrentConnectionLimitTest
   - See UnitTests
   - HttpTransportTest

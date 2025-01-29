@@ -48,7 +48,7 @@ import static java.util.stream.Collectors.*;
  *              tools. Before writing, this class will check if index exists in current Elasticsearch instance. If index does not
  *              exist, it will create index and set up mapping for data types. If the existing index already have mapping this step
  *              will be skipped in order to not to overwrite existing mapping.
- * @topic 5. Monitoring, Logging and Statistics
+ * @topic 4. Monitoring, Logging and Statistics
  */
 @MCElement(name="elasticSearchExchangeStore")
 public class ElasticSearchExchangeStore extends AbstractExchangeStore {
@@ -113,7 +113,6 @@ public class ElasticSearchExchangeStore extends AbstractExchangeStore {
                     else
                         Thread.sleep(updateIntervalMs);
                 } catch (InterruptedException e) {
-                    log.error(e.getMessage(),e);
                     break;
                 } catch(Exception e){
                     throw new RuntimeException(e);
@@ -146,7 +145,7 @@ public class ElasticSearchExchangeStore extends AbstractExchangeStore {
             try {
                 return IOUtils.toString(Runtime.getRuntime().exec("hostname").getInputStream());
             } catch (IOException e1) {
-                log.error(e1.getMessage(),e1);
+                log.error("Unable to get hostname of localhost.", e1);
                 return "localhost";
             }
         }
@@ -192,7 +191,7 @@ public class ElasticSearchExchangeStore extends AbstractExchangeStore {
             value.put("issuer",documentPrefix);
             return mapper.writeValueAsString(value);
         } catch (IOException e) {
-            log.error(e.getMessage(),e);
+            log.error("While collecting data from %s", exc.getRequest().getUri(), e);
             return "";
         }
     }
@@ -208,7 +207,7 @@ public class ElasticSearchExchangeStore extends AbstractExchangeStore {
             ((PropertyValueCollector) collector).getRespContentTypes().addAll(getPropertyValueArray("response.header.Content-Type.keyword"));
             ((PropertyValueCollector) collector).getServers().addAll(getPropertyValueArray("server.keyword"));
         } catch (Exception e) {
-            log.error(e.getMessage(),e);
+            log.error("", e);
         }
 
     }
@@ -320,7 +319,7 @@ public class ElasticSearchExchangeStore extends AbstractExchangeStore {
         try {
             removeFromElasticSearchById(exchange.getId());
         } catch (Exception e) {
-            log.error(e.getMessage(),e);
+            log.error("While removing the Exchange.", e);
         }
     }
 
@@ -360,8 +359,8 @@ public class ElasticSearchExchangeStore extends AbstractExchangeStore {
                     .contentType(APPLICATION_JSON)
                     .buildExchange();
             client.call(exc);
-        }catch (Exception e){
-            log.error(e.getMessage(),e);
+        } catch (Exception e) {
+            log.error("While removing all Exchanges for proxy {}.", proxy.getName(), e);
         }
     }
 
@@ -398,8 +397,8 @@ public class ElasticSearchExchangeStore extends AbstractExchangeStore {
                     .contentType(APPLICATION_JSON)
                     .buildExchange();
             client.call(exc);
-        }catch (Exception e){
-            log.error(e.getMessage(),e);
+        } catch (Exception e) {
+            log.error("While removing all Exchanges.", e);
         }
     }
 
@@ -436,8 +435,8 @@ public class ElasticSearchExchangeStore extends AbstractExchangeStore {
             List<Map> source = getSourceElementFromElasticSearchResponse(responseToMap(exc));
             AbstractExchangeSnapshot[] snapshots = mapper.readValue(mapper.writeValueAsString(source), AbstractExchangeSnapshot[].class);
             return Stream.of(snapshots).map(AbstractExchangeSnapshot::toAbstractExchange).toArray(AbstractExchange[]::new);
-        }catch (Exception e){
-            log.error(e.getMessage(),e);
+        } catch (Exception e) {
+            log.error("While retrieving all Exchanges.", e);
             return new AbstractExchange[0];
         }
     }
@@ -480,7 +479,7 @@ public class ElasticSearchExchangeStore extends AbstractExchangeStore {
                 return new ArrayList<>();
 
             return getAbstractExchangeListFromExchange(exc);
-        }catch (Exception e){
+        } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }
@@ -613,12 +612,10 @@ public class ElasticSearchExchangeStore extends AbstractExchangeStore {
                     log.info("Elastic store mapping update completed");
                 }
             } catch (JSONException e) {
-                log.error(e.getMessage(),e);
-                log.error("There is an error while updating mapping for elastic search. Response from elastic search is below");
-                log.error(res.toString());
+                log.error("There is an error while updating mapping for elastic search. Response from elastic search: {}", res, e);
             }
         } catch (Exception e) {
-            log.error(e.getMessage(),e);
+            log.error("While setting up ElasticSearch Index.", e);
         }
     }
 

@@ -16,6 +16,7 @@
 
 package com.predic8.membrane.core.interceptor;
 
+import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.proxies.Proxy;
 import com.predic8.membrane.core.proxies.*;
@@ -29,6 +30,7 @@ import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.util.URLUtil.*;
 
+@MCElement(name = "internalRouting")
 public class InternalRoutingInterceptor extends AbstractInterceptor {
 
     private static final Logger log = LoggerFactory.getLogger(InternalRoutingInterceptor.class.getName());
@@ -56,6 +58,7 @@ public class InternalRoutingInterceptor extends AbstractInterceptor {
             String detail = "Could not invoke request handler for internal route.";
             log.error(detail, e); // Most should be handled inside the interceptors
             internal(router.isProduction(),getDisplayName())
+                    .flow(Flow.REQUEST)
                     .detail(detail)
                     .exception(e)
                     .buildAndSetResponse(exchange);
@@ -79,6 +82,7 @@ public class InternalRoutingInterceptor extends AbstractInterceptor {
             String detail = "Could not invoke response handler for internal route.";
             log.error(detail, e); // Most should be handled inside the interceptors
             internal(router.isProduction(),getDisplayName())
+                    .flow(Flow.RESPONSE)
                     .detail(detail)
                     .exception(e)
                     .buildAndSetResponse(exc);

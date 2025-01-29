@@ -13,26 +13,17 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.xslt;
 
-import static com.predic8.membrane.core.util.TextUtil.isNullOrEmpty;
+import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.resolver.*;
+import org.slf4j.*;
 
-import java.io.ByteArrayOutputStream;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.concurrent.ArrayBlockingQueue;
+import javax.xml.transform.*;
+import javax.xml.transform.stream.*;
+import java.io.*;
+import java.util.*;
+import java.util.concurrent.*;
 
-import javax.xml.transform.Source;
-import javax.xml.transform.Transformer;
-import javax.xml.transform.TransformerConfigurationException;
-import javax.xml.transform.TransformerFactory;
-import javax.xml.transform.stream.StreamResult;
-import javax.xml.transform.stream.StreamSource;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import com.predic8.membrane.core.Router;
-import com.predic8.membrane.core.resolver.ResolverMap;
-import com.predic8.membrane.core.resolver.ResourceRetrievalException;
+import static com.predic8.membrane.core.util.TextUtil.*;
 
 public class XSLTTransformer {
 	private static final Logger log = LoggerFactory.getLogger(XSLTTransformer.class.getName());
@@ -45,10 +36,10 @@ public class XSLTTransformer {
 		fac = TransformerFactory.newInstance();
 
 		this.styleSheet = styleSheet;
-		log.debug("using " + concurrency + " parallel transformer instances for " + styleSheet);
+		log.debug("using {} parallel transformer instances for {}",concurrency, styleSheet);
 		transformers = new ArrayBlockingQueue<>(concurrency);
 		createOneTransformer(router.getResolverMap(), router.getBaseLocation());
-		router.getBackgroundInitializator().execute(() -> {
+		router.getBackgroundInitializer().execute(() -> {
 			try {
 				for (int i = 1; i < concurrency; i++)
 					createOneTransformer(router.getResolverMap(), router.getBaseLocation());
@@ -76,7 +67,7 @@ public class XSLTTransformer {
 
 	public byte[] transform(Source xml, Map<String, String> parameters)
 			throws Exception {
-		log.debug("applying transformation: " + styleSheet);
+		log.debug("applying transformation: {}", styleSheet);
 
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		Transformer t = transformers.take();

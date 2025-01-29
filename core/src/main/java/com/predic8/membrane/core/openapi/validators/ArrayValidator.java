@@ -60,13 +60,6 @@ public class ArrayValidator implements IJSONSchemaValidator {
             }
         }
 
-        // @TODO Implement
-        // As of 2022-11-20 parser does not support OpenAPI 3.1.0
-        if (schema.getPrefixItems() != null) {
-            //noinspection unchecked
-            schema.getPrefixItems().forEach(o -> System.out.println("o = " + o));
-        }
-
         if (schema.getMinItems() != null && node.size() < schema.getMinItems()) {
             errors.add(ctx, format("Array has %d items. This is less then minItems of %d.", node.size(), schema.getMinItems()));
         }

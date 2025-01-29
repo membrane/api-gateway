@@ -17,7 +17,9 @@ package com.predic8.membrane.core;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.exchangestore.*;
 import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.lang.*;
 import com.predic8.membrane.core.model.*;
+import com.predic8.membrane.core.openapi.serviceproxy.*;
 import com.predic8.membrane.core.proxies.Proxy;
 import com.predic8.membrane.core.proxies.*;
 import com.predic8.membrane.core.transport.http.*;
@@ -29,6 +31,8 @@ import org.slf4j.*;
 import java.io.*;
 import java.net.*;
 import java.util.*;
+
+import static com.predic8.membrane.core.util.URIUtil.normalizeSingleDot;
 
 public class RuleManager {
 
@@ -169,7 +173,7 @@ public class RuleManager {
 
         String hostHeader = request.getHeader().getHost();
         String method = request.getMethod();
-        String uri = request.getUri();
+        String uri = normalizeSingleDot(request.getUri()); // Removes /./ in path for rule matching
         String version = request.getVersion();
 
         AbstractHttpHandler handler = exc.getHandler();
@@ -204,13 +208,25 @@ public class RuleManager {
                 continue;
             if (key.isUsePathPattern() && !key.matchesPath(uri))
                 continue;
-            if (!key.complexMatch(exc))
+            try {
+                if (!key.complexMatch(exc))
+                    continue;
+            } catch (ExchangeExpressionException eee) {
+                log.warn("Error evaluating test expression {} of API {}. Ignoring test. Please check configuration.", getTestExpression(proxy), proxy.getName());
                 continue;
+            }
             if (log.isDebugEnabled())
-                log.debug("Matching Rule {} found for RuleKey {} {} {} {} {}",proxy, hostHeader, method, uri, port, localIP);
+                log.debug("Matching Rule {} found for RuleKey {} {} {} {} {}", proxy, hostHeader, method, uri, port, localIP);
             return proxy;
         }
         return findProxyRule(exc);
+    }
+
+    private static String getTestExpression(Proxy proxy) {
+        if (proxy instanceof APIProxy ap) {
+            return ap.getTest();
+        }
+        return "´unknown´";
     }
 
     private static String getLocalIP(AbstractHttpHandler handler) {

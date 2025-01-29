@@ -13,8 +13,11 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor;
 
-import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.exchange.*;
+
+import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static com.predic8.membrane.core.util.URIUtil.*;
 
 /**
  * @description <p>
@@ -28,7 +31,7 @@ import com.predic8.membrane.core.exchange.Exchange;
  *              new soapProxy which has configured a serviceProxy-path of "\Q/material/ArticleService\E.*" which does
  *              not match.
  *              </p>
- * @topic 4. Interceptors/Features
+ * @topic 6. Misc
  */
 @MCElement(name="urlNormalizer")
 public class URLNormalizerInterceptor extends AbstractInterceptor {
@@ -39,34 +42,21 @@ public class URLNormalizerInterceptor extends AbstractInterceptor {
 
 	@Override
 	public String getShortDescription() {
-		return "Replaces \"/./\" in the request URI's path by \"/\".";
+		return """
+			Replaces /./ in the request URI's path by /. 
+			
+			e.g. 
+			http//api.predic8.de/foo/./bar 
+			
+			to:
+			
+			http//api.predic8.de/foo/bar 
+			""";
 	}
 
 	@Override
 	public Outcome handleRequest(Exchange exc) {
-		String uri = exc.getRequestURI();
-		if (uri.contains("/./")) {
-			StringBuilder sb = new StringBuilder(uri.length());
-			OUTER:
-				for (int i = 0; i < uri.length(); i++) {
-					int c = uri.codePointAt(i);
-					switch (c) {
-					case '?':
-						sb.append(uri.substring(i));
-						break OUTER;
-					case '/':
-						sb.appendCodePoint(c);
-						while (i < uri.length() - 2 && uri.codePointAt(i+1) == '.' && uri.codePointAt(i+2) == '/')
-							i += 2;
-						break;
-					default:
-						sb.appendCodePoint(c);
-						break;
-					}
-				}
-			exc.getRequest().setUri(sb.toString());
-		}
-		return Outcome.CONTINUE;
+        exc.getRequest().setUri(normalizeSingleDot(exc.getRequestURI()));
+		return CONTINUE;
 	}
-
 }

@@ -39,7 +39,7 @@ import static java.nio.charset.StandardCharsets.*;
 
 /**
  * @description Converts REST requests into SOAP messages.
- * @topic 8. SOAP based Web Services
+ * @topic 5. Web Services with SOAP and WSDL
  */
 @MCElement(name = "rest2Soap")
 public class REST2SOAPInterceptor extends SOAPRESTHelper {

@@ -20,6 +20,8 @@ import com.predic8.membrane.core.util.*;
 import org.slf4j.*;
 
 import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.RESPONSE;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 
 public abstract class AbstractInterceptorWithSession extends AbstractInterceptor {
@@ -65,6 +67,7 @@ public abstract class AbstractInterceptorWithSession extends AbstractInterceptor
         } catch (Exception e) {
             log.error("", e);
             internal(router.isProduction(),getDisplayName())
+                    .flow(REQUEST)
                     .detail("Error handling request!")
                     .exception(e)
                     .buildAndSetResponse(exc);
@@ -83,6 +86,7 @@ public abstract class AbstractInterceptorWithSession extends AbstractInterceptor
         } catch (Exception e) {
             log.error("", e);
             internal(router.isProduction(),getDisplayName())
+                    .flow(RESPONSE)
                     .detail("Error handling response!")
                     .exception(e)
                     .buildAndSetResponse(exc);

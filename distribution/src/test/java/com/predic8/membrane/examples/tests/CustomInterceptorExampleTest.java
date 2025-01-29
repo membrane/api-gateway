@@ -14,11 +14,14 @@
 
 package com.predic8.membrane.examples.tests;
 
-import com.predic8.membrane.examples.util.*;
+import com.predic8.membrane.examples.util.BufferLogger;
+import com.predic8.membrane.examples.util.DistributionExtractingTestcase;
+import com.predic8.membrane.examples.util.Process2;
+import com.predic8.membrane.examples.util.SubstringWaitableConsoleEvent;
+import com.predic8.membrane.test.HttpAssertions;
 import org.junit.jupiter.api.Test;
 
-import static com.predic8.membrane.test.AssertUtils.getAndAssert200;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class CustomInterceptorExampleTest extends DistributionExtractingTestcase {
 
@@ -35,9 +38,9 @@ public class CustomInterceptorExampleTest extends DistributionExtractingTestcase
                 throw new RuntimeException("Maven exited with code " + mvn.waitForExit(60000) + ": " + logger);
         }
 
-        try(Process2 sl = startServiceProxyScript()) {
+        try(Process2 sl = startServiceProxyScript(); HttpAssertions ha = new HttpAssertions()) {
             SubstringWaitableConsoleEvent invoked = new SubstringWaitableConsoleEvent(sl, "MyInterceptor maven at request invoked.");
-            getAndAssert200(LOCALHOST_2000);
+            ha.getAndAssert200(LOCALHOST_2000);
             assertTrue(invoked.occurred());
         }
     }

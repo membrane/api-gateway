@@ -28,8 +28,8 @@ import javax.xml.parsers.*;
 import java.io.*;
 
 import static com.predic8.membrane.core.http.MimeType.*;
+import static io.restassured.filter.log.LogDetail.*;
 import static org.hamcrest.Matchers.*;
-import static org.junit.jupiter.api.Assertions.*;
 
 class RouterTest {
 
@@ -52,20 +52,19 @@ class RouterTest {
     void prodJson() {
 
         // @formatter:off
-        ExtractableResponse<Response> r = RestAssured.given()
+        RestAssured.given()
             .contentType(APPLICATION_JSON)
             .post("http://localhost:2000/")
         .then()
+            .log().ifValidationFails()
             .statusCode(500)
             .contentType(APPLICATION_PROBLEM_JSON)
-            .body("title", equalTo("An error occurred."))
-            .body("type",equalTo("https://membrane-api.io/error/internal/interceptor"))
-            .body("detail",containsString("key"))
+            .body("title", equalTo("Internal server error."))
+            .body("type",equalTo("https://membrane-api.io/problems/internal"))
+            .body("message", Matchers.not(containsString(INTERNAL_SECRET)))
             .body("$",aMapWithSize(3))
         .extract();
         // @formatter:on
-
-//        System.out.println("r = " + r.asPrettyString());
     }
 
     @Test
@@ -75,19 +74,16 @@ class RouterTest {
             .contentType(APPLICATION_XML)
             .post("http://localhost:2000/")
         .then()
+            .log().ifValidationFails(ALL)
             .statusCode(500)
             .contentType(APPLICATION_XML)
-            .body("error.title", equalTo("An error occurred."))
-            .body("error.type",equalTo("https://membrane-api.io/error/internal/interceptor"))
+            .body("error.title", equalTo("Internal server error."))
+            .body("error.type",equalTo("https://membrane-api.io/problems/internal"))
             .body("error.message", Matchers.not(containsString(INTERNAL_SECRET)))
-            .body("error.detail",containsString("key"))
             .extract();
         // @formatter:on
 
 //        System.out.println("r.asPrettyString() = " + r.asPrettyString());
-        
-        NodeList n = getNodeList(r.asInputStream());
-        assertEquals(3, n.getLength());
     }
 
     @Test
@@ -99,7 +95,7 @@ class RouterTest {
             .statusCode(500)
             .contentType(APPLICATION_PROBLEM_JSON)
             .body("title", equalTo("Internal server error."))
-            .body("type",equalTo("https://membrane-api.io/error/internal/interceptor"))
+            .body("type",equalTo("https://membrane-api.io/problems/internal"))
             .body("$",hasKey("attention"))
             .body("attention", Matchers.containsString("development mode"))
             .body("$",not(hasKey("stacktrace")))
@@ -117,17 +113,16 @@ class RouterTest {
                 .contentType(APPLICATION_XML)
                 .post("http://localhost:2001/")
             .then()
+                .log().ifValidationFails(ALL)
                 .statusCode(500)
-//                .contentType(APPLICATION_XML)
-//                .body("error.title", equalTo("Internal server error."))
-//                .body("error.type",equalTo("https://membrane-api.io/error/internal"))
-//                .body("error.attention", Matchers.containsString("development mode"))
+                .contentType(APPLICATION_XML)
+                .body("problem-details.title", equalTo("Internal server error."))
+                .body("problem-details.type",equalTo("https://membrane-api.io/problems/internal"))
+                .body("problem-details.attention", Matchers.containsString("development mode"))
+                .body("problem-details.message", Matchers.containsString("supersecret"))
+                .body("problem-details.stacktrace", Matchers.not(containsString("HttpServerHandler")))
                 .extract();
         // @formatter:on
-
-        System.out.println(r.asPrettyString());
-        NodeList n = getNodeList(r.asInputStream());
-        assertEquals(6, n.getLength());
     }
 
     private static Router createRouter(int port, boolean production) throws IOException {

@@ -15,13 +15,13 @@
 package com.predic8.membrane.core.interceptor.flow;
 
 import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.lang.*;
 import com.predic8.membrane.core.lang.ExchangeExpression.*;
 import org.slf4j.*;
 
+import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
 import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
@@ -71,7 +71,7 @@ public class IfInterceptor extends AbstractFlowInterceptor {
         try {
             result = exchangeExpression.evaluate(exc, flow, Boolean.class);
         } catch (ExchangeExpressionException e) {
-            e.provideDetails(ProblemDetails.internal(router.isProduction(), getDisplayName()))
+            e.provideDetails(internal(router.isProduction(), getDisplayName()))
                     .detail("Error evaluating expression on exchange.")
                     .buildAndSetResponse(exc);
             return ABORT;

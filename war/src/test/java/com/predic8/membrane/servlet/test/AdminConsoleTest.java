@@ -14,18 +14,14 @@
 
 package com.predic8.membrane.servlet.test;
 
-import static com.predic8.membrane.test.AssertUtils.assertContains;
-import static com.predic8.membrane.test.AssertUtils.getAndAssert200;
-import static com.predic8.membrane.test.AssertUtils.setupHTTPAuthentication;
+import com.predic8.membrane.test.HttpAssertions;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
-import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 
-import org.apache.http.client.ClientProtocolException;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.MethodSource;
+import static com.predic8.membrane.test.StringAssertions.assertContains;
 
 public class AdminConsoleTest {
 
@@ -41,20 +37,23 @@ public class AdminConsoleTest {
 
 	@ParameterizedTest
 	@MethodSource("getPorts")
-	public void testAdminConsoleReachable(int port) throws ClientProtocolException, IOException {
-		setupHTTPAuthentication("localhost", port, BASIC_AUTH_USER, BASIC_AUTH_PASSWORD);
-		assertContains("ServiceProxies", getAndAssert200(getBaseURL(port) + "admin/"));
+	public void testAdminConsoleReachable(int port) throws Exception {
+		try (HttpAssertions ha = new HttpAssertions()) {
+			ha.setupHTTPAuthentication("localhost", port, BASIC_AUTH_USER, BASIC_AUTH_PASSWORD);
+			assertContains("ServiceProxies", ha.getAndAssert200(getBaseURL(port) + "admin/"));
+		}
 	}
 
 	@ParameterizedTest
 	@MethodSource("getPorts")
-	public void testAdminConsoleJavascriptDownloadable(int port) throws ClientProtocolException, IOException {
-		setupHTTPAuthentication("localhost", port, BASIC_AUTH_USER, BASIC_AUTH_PASSWORD);
-		assertContains("jQuery", getAndAssert200(getBaseURL(port) + "admin/jquery-ui/js/jquery-ui-1.8.13.custom.min.js"));
+	public void testAdminConsoleJavascriptDownloadable(int port) throws Exception {
+		try (HttpAssertions ha = new HttpAssertions()) {
+			ha.setupHTTPAuthentication("localhost", port, BASIC_AUTH_USER, BASIC_AUTH_PASSWORD);
+			assertContains("jQuery", ha.getAndAssert200(getBaseURL(port) + "admin/jquery-ui/js/jquery-ui-1.8.13.custom.min.js"));
+		}
 	}
 
 	private String getBaseURL(int port) {
 		return "http://localhost:" + port + "/";
 	}
-
 }

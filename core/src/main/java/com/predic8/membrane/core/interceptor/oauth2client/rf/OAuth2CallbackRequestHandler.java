@@ -139,7 +139,7 @@ public class OAuth2CallbackRequestHandler {
             // TODO: originalExchangeStore.remove(exc, session, state);
             throw e;
         } catch (Exception e) {
-            log.error("could not exchange code for token", e);
+            log.error("Could not exchange code for token.", e);
             exc.setResponse(Response.badRequest().body(e.getMessage()).build());
             originalExchangeStore.postProcess(exc);
             return true;
@@ -154,11 +154,11 @@ public class OAuth2CallbackRequestHandler {
             if (error != null) {
                 log.warn("OAuth2 Error from Authentication Server: {}", error);
                 ProblemDetails pd = security(false,"oauth2-callback-request-handler")
+                        .title("OAuth2 Error from Authentication Server")
                         .statusCode(500)
-                        .addSubType("oauth2-error-from-authentication-server")
-                        .title("OAuth2 Error from Authentication Server");
-                pd.detail(params.get("error_description"));
-                pd.internal("error", error);
+                        .addSubSee("oauth2-error-from-authentication-server")
+                        .detail(params.get("error_description"))
+                        .internal("error", error);
                 throw new OAuth2Exception(error, params.get("error_description"), pd.build());
             }
             throw new RuntimeException("No code received.");

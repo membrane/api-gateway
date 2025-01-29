@@ -90,7 +90,7 @@ import static com.predic8.membrane.core.interceptor.Outcome.*;
  *              <li>The user is redirected to the originally requested URL (or a generic URL, in case the login dialog
  *              was directly requested). (Step 8.)</li>
  *              </ul>
- * @topic 6. Security
+ * @topic 3. Security and Validation
  */
 @MCElement(name="login")
 public class LoginInterceptor extends AbstractInterceptor {

@@ -14,16 +14,16 @@
 
 package com.predic8.membrane.examples.tests;
 
-import static com.predic8.membrane.test.AssertUtils.*;
-
-import java.io.File;
-import java.io.IOException;
-import java.util.concurrent.TimeoutException;
-
-import com.predic8.membrane.examples.util.*;
+import com.predic8.membrane.examples.util.DistributionExtractingTestcase;
+import com.predic8.membrane.examples.util.Process2;
+import com.predic8.membrane.examples.util.ProxiesXmlUtil;
+import com.predic8.membrane.test.HttpAssertions;
 import org.junit.jupiter.api.Test;
 
-import com.predic8.membrane.test.AssertUtils;
+import java.io.File;
+
+import static com.predic8.membrane.test.StringAssertions.assertContains;
+import static com.predic8.membrane.test.StringAssertions.assertContainsNot;
 
 public class QuickstartRESTExampleTest extends DistributionExtractingTestcase {
 
@@ -33,12 +33,10 @@ public class QuickstartRESTExampleTest extends DistributionExtractingTestcase {
 	}
 
 	@Test
-	public void doit() throws IOException, InterruptedException, TimeoutException {
-		Process2 sl = startServiceProxyScript();
-		try {
-			String result = getAndAssert200("http://localhost:2000/restnames/name.groovy?name=Pia");
+	public void doit() throws Exception {
+		try (Process2 sl = startServiceProxyScript(); HttpAssertions ha = new HttpAssertions()) {
+			String result = ha.getAndAssert200("http://localhost:2000/restnames/name.groovy?name=Pia");
 			assertContains("Italy", result);
-			AssertUtils.closeConnections();
 
 			new ProxiesXmlUtil(new File(baseDir, "proxies.xml")).updateWith(
 					"""
@@ -72,16 +70,14 @@ public class QuickstartRESTExampleTest extends DistributionExtractingTestcase {
 							     </router>\r
 							</spring:beans>""", sl);
 
-			result = getAndAssert200("http://localhost:2000/names/Pia");
+			result = ha.getAndAssert200("http://localhost:2000/names/Pia");
 			assertContains("Italy, Spain", result);
 			assertContainsNot(",<", result);
 
 			assertContains("Pia", readFileFromBaseDir("log.csv"));
 
-			setupHTTPAuthentication("localhost", 9000, "alice", "membrane");
-			assertContains("ServiceProxies", getAndAssert200("http://localhost:9000/admin/"));
-		} finally {
-			sl.killScript();
+			ha.setupHTTPAuthentication("localhost", 9000, "alice", "membrane");
+			assertContains("ServiceProxies", ha.getAndAssert200("http://localhost:9000/admin/"));
 		}
 	}
 }

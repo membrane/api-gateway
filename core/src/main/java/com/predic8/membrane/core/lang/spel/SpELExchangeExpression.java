@@ -15,7 +15,7 @@
 package com.predic8.membrane.core.lang.spel;
 
 import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.interceptor.Interceptor.*;
 import com.predic8.membrane.core.lang.*;
 import com.predic8.membrane.core.lang.spel.spelable.*;
 import com.predic8.membrane.core.util.*;
@@ -27,7 +27,7 @@ import org.springframework.expression.common.*;
 import org.springframework.expression.spel.*;
 import org.springframework.expression.spel.standard.*;
 
-import static java.lang.Boolean.FALSE;
+import static java.lang.Boolean.*;
 import static org.springframework.expression.spel.SpelCompilerMode.*;
 
 public class SpELExchangeExpression extends AbstractExchangeExpression {
@@ -67,7 +67,7 @@ public class SpELExchangeExpression extends AbstractExchangeExpression {
     }
 
     @Override
-    public <T> T evaluate(Exchange exchange, Interceptor.Flow flow, Class<T> type) {
+    public <T> T evaluate(Exchange exchange, Flow flow, Class<T> type) {
         try {
             Object o = evaluate(exchange, flow);
             if (Boolean.class.isAssignableFrom(type)) {
@@ -81,19 +81,19 @@ public class SpELExchangeExpression extends AbstractExchangeExpression {
             }
             throw new RuntimeException("Cannot cast {} to {}".formatted(o,type));
         } catch (SpelEvaluationException see) {
-            log.error(see.getLocalizedMessage());
+            log.error("Error in expression '{}': {}",expression, see.getLocalizedMessage());
             ExchangeExpressionException eee = new ExchangeExpressionException(expression, see);
             if (see.getCause() instanceof ConverterNotFoundException cnfe) {
                 eee.extension("sourceType", cnfe.getSourceType())
                         .extension("targetType", cnfe.getTargetType());
             }
             eee.stacktrace(false);
-            throw eee.message(see.getLocalizedMessage());
+            throw eee;
         }
     }
 
-    private @Nullable Object evaluate(Exchange exchange, Interceptor.Flow flow) {
-        return spelExpression.getValue(new SpELExchangeEvaluationContext(exchange, exchange.getMessage(flow)), Object.class);
+    private @Nullable Object evaluate(Exchange exchange, Flow flow) {
+        return spelExpression.getValue(new SpELExchangeEvaluationContext(exchange, flow), Object.class);
     }
 
     private static Object toObject(Object o) {

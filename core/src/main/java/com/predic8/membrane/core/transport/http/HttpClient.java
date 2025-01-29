@@ -301,7 +301,11 @@ public class HttpClient implements AutoCloseable {
                 } else {
                     logException(exc, counter, e);
                 }
-            } catch (UnknownHostException e) {
+            } catch (SocketTimeoutException e) {
+                log.info("Connection to {} timed out.", target);
+                throw e;
+            }
+            catch (UnknownHostException e) {
                 exception = e;
                 log.warn("Unknown host: {}", (target == null ? dest : target));
             } catch (EOFWhileReadingFirstLineException e) {

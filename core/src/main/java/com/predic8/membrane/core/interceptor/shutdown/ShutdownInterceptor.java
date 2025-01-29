@@ -37,7 +37,7 @@ import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
  *                  <tt>&lt;router&gt;</tt> bean (which implicitly stands for
  *                  <tt>&lt;router id="router"&gt;</tt>) called "router".
  *              </p>
- * @topic 4. Interceptors/Features
+ * @topic 6. Misc
  */
 @MCElement(name="shutdown")
 public class ShutdownInterceptor extends AbstractInterceptor {
