@@ -32,6 +32,13 @@ start_membrane() {
     fi
 }
 
+if ! ( _test=test && _="${_test#t}" ) >/dev/null 2>&1; then
+    echo "WARNING: Shell does not support parameter expansion. Java version check disabled!" >&2
+    echo "         Please ensure Java $required_version is installed." >&2
+    start_membrane
+    exit 0
+fi
+
 if ! command -v java >/dev/null 2>&1; then
     echo "Java is not installed. Membrane needs at least Java $required_version."
     exit 1
