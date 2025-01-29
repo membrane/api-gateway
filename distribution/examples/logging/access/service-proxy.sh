@@ -1,34 +1,73 @@
-#!/bin/bash
-homeSet() {
- echo "MEMBRANE_HOME variable is now set"
- CLASSPATH="$MEMBRANE_HOME/conf"
- CLASSPATH="$CLASSPATH:$MEMBRANE_HOME/starter.jar"
- export CLASSPATH
- echo Membrane Router running...
- java -Dlog4j.configurationFile=$(pwd)/log4j2_access.xml -classpath "$CLASSPATH" com.predic8.membrane.core.Starter -c proxies.xml
- 
+#!/bin/sh
+
+required_version="21"
+
+start() {
+    membrane_home="$1"
+    export CLASSPATH="$membrane_home/conf:$membrane_home/lib/*"
+    echo "Starting: $membrane_home CL: $CLASSPATH"
+    java -Dlog4j.configurationFile=$(pwd)/log4j2_access.xml -cp "$CLASSPATH" com.predic8.membrane.core.cli.RouterCLI -c proxies.xml
 }
 
-terminate() {
-	echo "Starting of Membrane Router failed."
-	echo "Please execute this script from the appropriate subfolder of MEMBRANE_HOME/examples/"
-	
+find_membrane_directory() {
+    current="$1"
+
+    while [ "$current" != "/" ]; do
+        if [ -d "$current/conf" ] && [ -d "$current/lib" ]; then
+            echo "$current"
+            return 0
+        fi
+        current=$(dirname "$current")
+    done
+
+    return 1
 }
 
-homeNotSet() {
-  echo "MEMBRANE_HOME variable is not set"
-
-  if [ -f  "`pwd`/../../../starter.jar" ]
-    then 
-    	export MEMBRANE_HOME="`pwd`/../../.."
-    	homeSet	
+start_membrane() {
+    membrane_home=$(find_membrane_directory "$(pwd)")
+    if [ $? -eq 0 ]; then
+        start "$membrane_home"
     else
-    	terminate    
-  fi 
+        echo "Could not start Membrane. Ensure the directory structure is correct."
+    fi
 }
 
-if  [ "$MEMBRANE_HOME" ]  
-	then homeSet
-	else homeNotSet
+if ! ( _test=test && _="${_test#t}" ) >/dev/null 2>&1; then
+    echo "WARNING: Shell does not support parameter expansion. Java version check disabled!" >&2
+    echo "         Please ensure Java $required_version is installed." >&2
+    start_membrane
+    exit 0
 fi
 
+if ! command -v java >/dev/null 2>&1; then
+    echo "Java is not installed. Membrane needs at least Java $required_version."
+    exit 1
+fi
+
+version_line=$(java -version 2>&1 | grep "version" | head -n 1)
+
+if [ -z "$version_line" ]; then
+    echo "WARNING: Could not determine Java version. Make sure Java version is at least $required_version. Proceeding anyway..."
+    start_membrane
+    exit 0
+fi
+
+full_version=${version_line#*version \"}
+full_version=${full_version%%\"*}
+current_version=${full_version%%.*}
+
+case "$current_version" in
+    ''|*[!0-9]*)
+        echo "WARNING: Could not parse Java version. Make sure Java version is at least $required_version. Proceeding anyway..."
+        start_membrane
+        exit 0
+        ;;
+esac
+
+if [ "$current_version" -ge "$required_version" ]; then
+    start_membrane
+    exit 0
+else
+    echo "Java version mismatch: Required=$required_version, Installed=$full_version"
+    exit 1
+fi

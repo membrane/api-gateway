@@ -11,6 +11,56 @@
     <router>
 
         <api port="2000">
+            <response>
+                <static>Not Found!</static>
+            </response>
+            <return statusCode="404"/>
+        </api>
+
+        <api port="2000">
+            <response>
+                <headerFilter>
+                    <include>content.*</include>
+                    <include>connection.*</include>
+                    <exclude>.*</exclude>
+                </headerFilter>
+            </response>
+            <log/>
+            <target url="https://www.wikipedia.org"/>
+        </api>
+
+        <api port="3000">
+            <response>
+                <setHeader value="Server" name="Vulnerable Web Server 2.0"/>
+                <setHeader value="Token" name="1234"/>
+            </response>
+            <return/>
+        </api>
+
+        <!--                           -->
+
+        <api name="Color" port="2000">
+            <request>
+                <setProperty name="color" value="${param.color}"/>
+            </request>
+            <response>
+                <setHeader name="X-Color" value="${property.color}"/>
+            </response>
+            <target host="localhost" port="2001"/>
+        </api>
+
+        <api name="backend" port="2001">
+            <response>
+                <static>Response from backend.</static>
+            </response>
+            <return/>
+        </api>
+
+        <api port="9000">
+            <adminConsole/>
+        </api>
+
+        <api port="2000">
             <path>/products</path>
             <request>
                 <call url="https://api.predic8.de/shop/v2/products"/>

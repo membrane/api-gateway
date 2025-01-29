@@ -14,6 +14,8 @@
 
 package com.predic8.membrane.core.transport.ssl;
 
+import com.predic8.membrane.core.util.*;
+
 import javax.annotation.Nullable;
 import java.io.IOException;
 import java.net.InetAddress;
@@ -22,7 +24,7 @@ import java.net.Socket;
 
 public interface SSLProvider {
 	ServerSocket createServerSocket(int port, int backlog, InetAddress bindAddress) throws IOException;
-	Socket wrapAcceptedSocket(Socket socket) throws IOException;
+	Socket wrapAcceptedSocket(Socket socket) throws IOException, EndOfStreamException;
 	Socket createSocket() throws IOException;
 	/**
 	 * @param host relevant to verify the server cert only
@@ -38,7 +40,7 @@ public interface SSLProvider {
 	boolean showSSLExceptions();
 
 	/**
-	 * @return the application protocols selected by the TLS server, or null elsewise (not a TLS connection, ALPN not supported, ...)
+	 * @return the application protocols selected by the TLS server, or null else wise (not a TLS connection, ALPN not supported, ...)
 	 */
     String[] getApplicationProtocols(Socket socket);
 
