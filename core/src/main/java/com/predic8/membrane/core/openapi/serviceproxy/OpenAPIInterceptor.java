@@ -34,13 +34,11 @@ import java.util.*;
 
 import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
 import static com.predic8.membrane.core.exchange.Exchange.*;
-import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
-import static com.predic8.membrane.core.interceptor.Interceptor.Flow.RESPONSE;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.openapi.serviceproxy.APIProxy.*;
 import static com.predic8.membrane.core.openapi.util.UriUtil.*;
 import static com.predic8.membrane.core.openapi.util.Utils.*;
-import static com.predic8.membrane.core.openapi.validators.ValidationErrors.Direction.*;
 import static java.util.Comparator.*;
 import static java.util.stream.Collectors.*;
 
@@ -168,6 +166,7 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
                 return basePath;
             }
         }
+        log.debug("Could not find matching base path for OpenAPI request {}. Returning empty basePath.", exc.getRequest().getUri());
         return null;
     }
 
