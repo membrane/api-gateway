@@ -16,6 +16,7 @@ package com.predic8.membrane.core.transport.ssl;
 
 import com.oracle.util.ssl.*;
 import com.predic8.membrane.core.proxies.*;
+import com.predic8.membrane.core.util.*;
 import org.slf4j.*;
 
 import javax.annotation.*;
@@ -35,6 +36,8 @@ import static java.nio.charset.StandardCharsets.*;
  */
 public class SSLContextCollection implements SSLProvider {
 
+	public static final byte[] ALERT_UNRECOGNIZED_NAME = new byte[]{ 21 /* alert */, 3, 1 /* TLS 1.0 */, 0, 2 /* length: 2 bytes */,
+			2 /* fatal */, 112 /* unrecognized_name */ };
 	private static final Logger log = LoggerFactory.getLogger(SSLContextCollection.class.getName());
 
 	public static class Builder {
@@ -81,7 +84,7 @@ public class SSLContextCollection implements SSLProvider {
 	}
 
 	@Override
-	public Socket wrapAcceptedSocket(Socket socket) throws IOException {
+	public Socket wrapAcceptedSocket(Socket socket) throws IOException, EndOfStreamException {
 		InputStream ins = socket.getInputStream();
 
 		byte[] buffer = new byte[0xFF];
@@ -91,15 +94,7 @@ public class SSLContextCollection implements SSLProvider {
 		//Set socket read timeout to 30 seconds
 		socket.setSoTimeout(30000);
 
-		// Read the header of TLS record
-		while (position < SSLExplorer.RECORD_HEADER_SIZE) {
-			int count = SSLExplorer.RECORD_HEADER_SIZE - position;
-			int n = ins.read(buffer, position, count);
-			if (n < 0) {
-				throw new IOException("unexpected end of stream!");
-			}
-			position += n;
-		}
+		position = readTLSRecordHeader(position, SSLExplorer.RECORD_HEADER_SIZE, ins, buffer);
 
 		// Get the required size to explore the SSL capabilities
 		int recordLength = SSLExplorer.getRequiredSize(buffer, 0, position);
@@ -107,14 +102,7 @@ public class SSLContextCollection implements SSLProvider {
 			buffer = Arrays.copyOf(buffer, recordLength);
 		}
 
-		while (position < recordLength) {
-			int count = recordLength - position;
-			int n = ins.read(buffer, position, count);
-			if (n < 0) {
-				throw new IOException("unexpected end of stream!");
-			}
-			position += n;
-		}
+		position = readTLSRecordHeader(position, recordLength, ins, buffer);
 
 		capabilities = SSLExplorer.explore(buffer, 0, recordLength);
 
@@ -135,23 +123,10 @@ public class SSLContextCollection implements SSLProvider {
 				if (sslContext == null) {
 					// no hostname matched: send 'unrecognized_name' alert and close socket
 
-					byte[] alert_unrecognized_name = { 21 /* alert */, 3, 1 /* TLS 1.0 */, 0, 2 /* length: 2 bytes */,
-							2 /* fatal */, 112 /* unrecognized_name */ };
-
 					try (socket) {
-						socket.getOutputStream().write(alert_unrecognized_name);
+						socket.getOutputStream().write(ALERT_UNRECOGNIZED_NAME);
 					}
-
-					StringBuilder hostname = null;
-					for (SNIServerName snisn : serverNames) {
-						if (hostname == null)
-							hostname = new StringBuilder();
-						else
-							hostname.append(", ");
-						hostname.append(new String(snisn.getEncoded(), UTF_8));
-					}
-
-					throw new TLSUnrecognizedNameException(hostname.toString());
+                    throw new TLSUnrecognizedNameException(getHostname(serverNames));
 				}
 			}
 		}
@@ -169,6 +144,31 @@ public class SSLContextCollection implements SSLProvider {
 			sslContext = sslContexts.getFirst();
 
 		return sslContext.wrap(socket, buffer, position);
+	}
+
+	private static int readTLSRecordHeader(int position, int recordHeaderSize, InputStream ins, byte[] buffer) throws IOException, EndOfStreamException {
+		// Read the header of TLS record
+		while (position < recordHeaderSize) {
+			int count = recordHeaderSize - position;
+			int n = ins.read(buffer, position, count);
+			if (n < 0) {
+				throw new EndOfStreamException("unexpected end of stream!");
+			}
+			position += n;
+		}
+		return position;
+	}
+
+	private static @org.jetbrains.annotations.Nullable String getHostname(List<SNIServerName> serverNames) {
+		StringBuilder hostname = null;
+		for (SNIServerName snisn : serverNames) {
+			if (hostname == null)
+				hostname = new StringBuilder();
+			else
+				hostname.append(", ");
+			hostname.append(new String(snisn.getEncoded(), UTF_8));
+		}
+		return hostname.toString();
 	}
 
 	private SSLContext getSSLContextForHostname(String hostname) {
