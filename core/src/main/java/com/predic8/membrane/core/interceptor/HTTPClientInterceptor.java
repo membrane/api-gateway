@@ -87,14 +87,14 @@ public class HTTPClientInterceptor extends AbstractInterceptor {
                     .buildAndSetResponse(exc);
             return ABORT;
         } catch (MalformedURLException e) {
-            log.error("",e.getMessage());
+            log.error("{}",e.getMessage());
             internal(router.isProduction(),getDisplayName())
                     .exception(e)
                     .internal("proxy", exc.getProxy().getName())
                     .buildAndSetResponse(exc);
             return ABORT;
         } catch (Exception e) {
-            log.error("{}",e);
+            log.error("",e);
             internal(router.isProduction(),getDisplayName())
                     .exception(e)
                     .internal("proxy", exc.getProxy().getName())
