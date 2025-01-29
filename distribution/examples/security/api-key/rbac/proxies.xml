@@ -11,9 +11,7 @@
     If an interceptor-specific store is needed, embed the store directly within the interceptor,
     using the syntax: <keyFileStore location="<xyz>" />.
     -->
-    <spring:bean class="com.predic8.membrane.core.interceptor.apikey.stores.ApiKeyFileStore">
-        <spring:property name="location" value="./demo-keys.txt" />
-    </spring:bean>
+    <apiKeyFileStore location="./demo-keys.txt" />
 
     <router>
 
