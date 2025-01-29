@@ -34,14 +34,14 @@ public class OAuth2SecurityValidatorTest extends AbstractSecurityValidatorTest {
 
 
     @BeforeEach
-    void setUpSpec() throws Exception {
+    void setUpSpec() {
         OpenAPISpec spec = new OpenAPISpec();
         spec.location = "src/test/resources/openapi/specs/security/oauth2.yml";
         spec.validateRequests = YES;
         spec.validateSecurity = YES;
 
         Router router = getRouter();
-        interceptor = new OpenAPIInterceptor(createProxy(router, spec),router);
+        interceptor = new OpenAPIInterceptor(createProxy(router, spec));
         interceptor.init(router);
     }
 

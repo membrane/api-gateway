@@ -94,8 +94,11 @@ public class APIProxy extends ServiceProxy implements Polyglot {
         basePaths = getOpenAPIMap();
         configureBasePaths();
 
-        interceptors.addFirst(new OpenAPIInterceptor(this, router));
-
+        // The openapiPublisher and the openapiValidator can be engaged manually in the interceptor chain of a proxy. If
+        // not they are placed here at the very top of the chain.
+        if (getFirstInterceptorOfType(OpenAPIInterceptor.class).isEmpty()) {
+            interceptors.addFirst(new OpenAPIInterceptor(this));
+        }
         if (getFirstInterceptorOfType(OpenAPIPublisherInterceptor.class).isEmpty()) {
             interceptors.addFirst(new OpenAPIPublisherInterceptor(apiRecords));
         }
