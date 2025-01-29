@@ -16,6 +16,7 @@ package com.predic8.membrane.core.transport.ssl;
 
 import com.oracle.util.ssl.*;
 import com.predic8.membrane.core.proxies.*;
+import com.predic8.membrane.core.util.*;
 import org.slf4j.*;
 
 import javax.annotation.*;
@@ -81,7 +82,7 @@ public class SSLContextCollection implements SSLProvider {
 	}
 
 	@Override
-	public Socket wrapAcceptedSocket(Socket socket) throws IOException {
+	public Socket wrapAcceptedSocket(Socket socket) throws IOException, EndOfStreamException {
 		InputStream ins = socket.getInputStream();
 
 		byte[] buffer = new byte[0xFF];
@@ -96,7 +97,7 @@ public class SSLContextCollection implements SSLProvider {
 			int count = SSLExplorer.RECORD_HEADER_SIZE - position;
 			int n = ins.read(buffer, position, count);
 			if (n < 0) {
-				throw new IOException("unexpected end of stream!");
+				throw new EndOfStreamException("unexpected end of stream!");
 			}
 			position += n;
 		}
@@ -111,7 +112,7 @@ public class SSLContextCollection implements SSLProvider {
 			int count = recordLength - position;
 			int n = ins.read(buffer, position, count);
 			if (n < 0) {
-				throw new IOException("unexpected end of stream!");
+				throw new EndOfStreamException("unexpected end of stream!");
 			}
 			position += n;
 		}

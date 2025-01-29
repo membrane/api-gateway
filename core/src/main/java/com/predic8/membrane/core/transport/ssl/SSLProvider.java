@@ -14,6 +14,8 @@
 
 package com.predic8.membrane.core.transport.ssl;
 
+import com.predic8.membrane.core.util.*;
+
 import javax.annotation.Nullable;
 import java.io.IOException;
 import java.net.InetAddress;
@@ -22,7 +24,7 @@ import java.net.Socket;
 
 public interface SSLProvider {
 	ServerSocket createServerSocket(int port, int backlog, InetAddress bindAddress) throws IOException;
-	Socket wrapAcceptedSocket(Socket socket) throws IOException;
+	Socket wrapAcceptedSocket(Socket socket) throws IOException, EndOfStreamException;
 	Socket createSocket() throws IOException;
 	/**
 	 * @param host relevant to verify the server cert only

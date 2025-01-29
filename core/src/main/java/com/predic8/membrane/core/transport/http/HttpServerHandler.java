@@ -26,6 +26,8 @@ import java.io.*;
 import java.net.*;
 import java.util.concurrent.atomic.*;
 
+import static com.predic8.membrane.core.util.StringUtil.truncateAfter;
+
 public class HttpServerHandler extends AbstractHttpHandler implements Runnable {
 
 	private static final Logger log = LoggerFactory.getLogger(HttpServerHandler.class);
@@ -53,7 +55,7 @@ public class HttpServerHandler extends AbstractHttpHandler implements Runnable {
 		return (HttpTransport)super.getTransport();
 	}
 
-	private void setup() throws IOException {
+	private void setup() throws IOException, EndOfStreamException {
 		this.exchange = new Exchange(this);
 		SSLProvider sslProvider = endpointListener.getSslProvider();
 		if (sslProvider != null) {
@@ -152,8 +154,9 @@ public class HttpServerHandler extends AbstractHttpHandler implements Runnable {
 		} catch (NoResponseException e) {
 			log.debug("No response received. Maybe increase the keep-alive timeout on the server.");
 		} catch (EOFWhileReadingFirstLineException e) {
-			log.debug("Client connection terminated before line was read. Line so far: ("
-					+ e.getLineSoFar() + ")");
+			log.debug("Client connection terminated before first line was read. Line so far: {}", truncateAfter(e.getLineSoFar(),80));
+		} catch (EOFWhileReadingLineException e) {
+			log.debug("Client connection terminated while reading header line: {}",truncateAfter(e.getLineSoFar(),80));
 		} catch (Exception e) {
 			log.error("", e);
 		} finally {
