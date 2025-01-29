@@ -94,7 +94,7 @@ public class HTTPClientInterceptor extends AbstractInterceptor {
                     .buildAndSetResponse(exc);
             return ABORT;
         } catch (Exception e) {
-            log.error("",e);
+            log.error("{}",e);
             internal(router.isProduction(),getDisplayName())
                     .exception(e)
                     .internal("proxy", exc.getProxy().getName())

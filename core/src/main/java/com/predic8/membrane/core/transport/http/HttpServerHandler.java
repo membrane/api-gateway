@@ -43,7 +43,7 @@ public class HttpServerHandler extends AbstractHttpHandler implements Runnable {
 	private Http2ServerHandler http2ServerHandler;
 
 
-	public HttpServerHandler(Socket socket, HttpEndpointListener endpointListener) throws IOException {
+	public HttpServerHandler(Socket socket, HttpEndpointListener endpointListener) {
 		super(endpointListener.getTransport());
 		this.endpointListener = endpointListener;
 		this.sourceSocket = socket;
@@ -65,7 +65,7 @@ public class HttpServerHandler extends AbstractHttpHandler implements Runnable {
 			// if there is no SSLProvider then there shouldn't be any ssl exceptions showing here
 			showSSLExceptions = false;
 		}
-		log.debug("New ServerThread created. " + counter.incrementAndGet());
+		log.debug("New ServerThread created. {}", counter.incrementAndGet());
 		srcIn = new BufferedInputStream(sourceSocket.getInputStream(), 2048);
 		srcOut = new BufferedOutputStream(sourceSocket.getOutputStream(), 2048);
 		sourceSocket.setSoTimeout(endpointListener.getTransport().getSocketTimeout());
@@ -129,7 +129,7 @@ public class HttpServerHandler extends AbstractHttpHandler implements Runnable {
 				exchange = new Exchange(this);
 			}
 		} catch (SocketTimeoutException e) {
-			log.debug("Socket of thread " + counter + " timed out");
+			log.debug("Socket of thread {} timed out",counter);
 		} catch (SocketException se) {
 			log.debug("client socket closed");
 		} catch (TLSUnrecognizedNameException e) {
@@ -188,9 +188,7 @@ public class HttpServerHandler extends AbstractHttpHandler implements Runnable {
 		} catch (Exception e2) {
 			if (e2.getMessage().contains("Socket closed"))
 				return;
-			log.error("problems closing socket on remote port: "
-					+ sourceSocket.getPort() + " on remote host: "
-					+ sourceSocket.getInetAddress(), e2);
+			log.error("problems closing socket on remote port: {} on remote host: {}", sourceSocket.getPort(), sourceSocket.getInetAddress(), e2);
 		}
 	}
 

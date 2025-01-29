@@ -40,7 +40,7 @@ public interface SSLProvider {
 	boolean showSSLExceptions();
 
 	/**
-	 * @return the application protocols selected by the TLS server, or null elsewise (not a TLS connection, ALPN not supported, ...)
+	 * @return the application protocols selected by the TLS server, or null else wise (not a TLS connection, ALPN not supported, ...)
 	 */
     String[] getApplicationProtocols(Socket socket);
 
