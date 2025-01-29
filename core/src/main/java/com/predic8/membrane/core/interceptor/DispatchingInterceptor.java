@@ -21,8 +21,10 @@ import com.predic8.membrane.core.proxies.*;
 import org.slf4j.*;
 
 import java.net.*;
+import java.util.*;
 
 import static com.predic8.membrane.core.exchange.Exchange.*;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.REQUEST_FLOW;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 
 /**
@@ -42,7 +44,6 @@ public class DispatchingInterceptor extends AbstractInterceptor {
 
     public DispatchingInterceptor() {
         name = "dispatching interceptor";
-        setFlow(Flow.Set.REQUEST_FLOW);
     }
 
     @Override
@@ -100,5 +101,10 @@ public class DispatchingInterceptor extends AbstractInterceptor {
 
         // That's fine. Maybe it is a <soapProxy> without a target
         return null;
+    }
+
+    @Override
+    public EnumSet<Flow> getFlow() {
+        return REQUEST_FLOW;
     }
 }

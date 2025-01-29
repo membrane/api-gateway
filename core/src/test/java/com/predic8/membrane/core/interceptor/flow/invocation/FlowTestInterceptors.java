@@ -20,12 +20,11 @@ import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.interceptor.flow.*;
 import com.predic8.membrane.core.interceptor.flow.choice.Case;
-import com.predic8.membrane.core.interceptor.flow.choice.ChoiceInterceptor;
+import com.predic8.membrane.core.interceptor.flow.choice.ChooseInterceptor;
 import com.predic8.membrane.core.interceptor.flow.choice.Otherwise;
 import com.predic8.membrane.core.interceptor.flow.invocation.testinterceptors.*;
 import com.predic8.membrane.core.interceptor.groovy.*;
 
-import java.awt.*;
 import java.util.List;
 
 import static java.util.Arrays.*;
@@ -54,8 +53,8 @@ public class FlowTestInterceptors {
         }};
     }
 
-    public static ChoiceInterceptor CHOICE(Otherwise otherwise, Case... cases) {
-        return new ChoiceInterceptor() {{
+    public static ChooseInterceptor CHOICE(Otherwise otherwise, Case... cases) {
+        return new ChooseInterceptor() {{
             setOtherwise(otherwise);
             setCases(asList(cases));
         }};
@@ -74,7 +73,7 @@ public class FlowTestInterceptors {
         }};
     }
 
-    public static Interceptor GROOVY(String aSrc) throws Exception {
+    public static Interceptor GROOVY(String aSrc) {
         return new GroovyInterceptor() {{
             router = new HttpRouter();
             setSrc(aSrc);
