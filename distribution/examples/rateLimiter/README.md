@@ -11,7 +11,7 @@ In this example we will send 4 requests to the service with a rate limit of 3 re
 
 2. Go to the `examples/rateLimiter` directory.
 
-3. Execute `service-proxy.bat`
+3. Execute `service-proxy.ps1`
 
 4. Run the command line
 

@@ -11,7 +11,7 @@ Using the rewriter in the [OpenAPI](../../openapi) element, you can rewrite the 
     servers:
     - url: http://localhost:2000/demo-api/v1/
     ```
-3. Execute `service-proxy.sh` or `service-proxy.bat`.
+3. Execute `service-proxy.sh` or `service-proxy.ps1`.
 4. Review the [proxies.xml](./proxies.xml) configuration. 
     ```xml
     <api port="2000">

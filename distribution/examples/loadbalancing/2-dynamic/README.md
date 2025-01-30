@@ -13,7 +13,7 @@ In this example we will distribute requests to 3 different nodes.
 To run the example execute the following steps:
 
 1. Go to the `examples/loadbalancing/2-dynamic` directory.
-2. Execute `service-proxy.bat` or `service-proxy.sh`
+2. Execute `service-proxy.ps1` or `service-proxy.sh`
 3. Open the URL http://localhost:4000 in your browser. 
    You will see a simple web app that counts how often it was called. There are 2 more web apps of the same kind
    listening at port `4001` and `4002`.

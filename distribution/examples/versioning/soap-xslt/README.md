@@ -20,7 +20,7 @@ In many enterprise environments, services evolve over time, resulting in differe
    ./service-proxy.sh
    
    # For Windows
-   service-proxy.bat
+   service-proxy.ps1
    ```
 
 3. **Send a SOAP Request (New Version)**

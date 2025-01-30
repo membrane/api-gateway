@@ -8,7 +8,7 @@ Running API Gateway
 Make sure you have installed Java 17 or higher. Then do the following:
 
 * Starting the Service Proxy (Windows)
-  Execute service-proxy.bat
+  Execute service-proxy.ps1
 	
 * Starting the Service Proxy (Linux)
   Execute service-proxy.sh
