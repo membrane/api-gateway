@@ -148,10 +148,10 @@ TrackingApplicationContext, BaseLocationApplicationContext, CheckableBeanFactory
 	public static void handleXmlBeanDefinitionStoreException(XmlBeanDefinitionStoreException e) throws InvalidConfigurationException {
 		Throwable cause = e.getCause();
 		if (cause != null) {
-			if (cause instanceof SAXParseException) {
-				int line = ((SAXParseException) cause).getLineNumber();
+			if (cause instanceof SAXParseException saxpe) {
+				int line = saxpe.getLineNumber();
 
-				throw new InvalidConfigurationException("line " + line + ": " + concatMessageAndCauseMessages(cause));
+				throw new InvalidConfigurationException(e.getResourceDescription() + " line " + line + ": " + concatMessageAndCauseMessages(cause));
 			}
 		}
 		throw e;
