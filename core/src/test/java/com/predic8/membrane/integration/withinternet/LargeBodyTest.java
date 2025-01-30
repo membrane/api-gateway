@@ -11,7 +11,6 @@
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
    See the License for the specific language governing permissions and
    limitations under the License. */
-
 package com.predic8.membrane.integration.withinternet;
 
 import com.predic8.membrane.core.*;
@@ -56,7 +55,7 @@ public class LargeBodyTest {
         });
         router = new HttpRouter();
 
-        ((HTTPClientInterceptor) router.getTransport().getInterceptors().get(3)).setHttpClientConfig(hcc);
+        setClientConfigHTTPClientOnInterceptor(router);
 
         router.getRuleManager().addProxyAndOpenPortIfNew(proxy);
         router.init();
@@ -71,10 +70,14 @@ public class LargeBodyTest {
         });
         router2 = new HttpRouter();
 
-        ((HTTPClientInterceptor) router2.getTransport().getInterceptors().get(3)).setHttpClientConfig(hcc);
+        setClientConfigHTTPClientOnInterceptor(router2);
 
         router2.getRuleManager().addProxyAndOpenPortIfNew(proxy1);
         router2.init();
+    }
+
+    private static void setClientConfigHTTPClientOnInterceptor(HttpRouter router2) {
+        router2.getTransport().getFirstInterceptorOfType(HTTPClientInterceptor.class).get().setHttpClientConfig(hcc);
     }
 
     @AfterAll
