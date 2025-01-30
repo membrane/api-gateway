@@ -20,7 +20,7 @@ import static com.predic8.membrane.core.interceptor.flow.invocation.FlowTestInte
 import static com.predic8.membrane.core.interceptor.flow.invocation.InterceptorFlowTest.FALSE;
 import static com.predic8.membrane.core.interceptor.flow.invocation.InterceptorFlowTest.TRUE;
 
-public class ChoiceInterceptorTest extends AbstractInterceptorFlowTest {
+public class ChooseInterceptorTest extends AbstractInterceptorFlowTest {
 
     @Test
     void caseA() throws Exception {

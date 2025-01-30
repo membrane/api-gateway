@@ -16,12 +16,13 @@
 
 package com.predic8.membrane.examples.tests;
 
-import com.predic8.membrane.examples.util.AbstractSampleMembraneStartStopTestcase;
-import org.junit.jupiter.api.Test;
+import com.predic8.membrane.examples.util.*;
+import org.junit.jupiter.api.*;
 
-import static io.restassured.RestAssured.given;
-import static io.restassured.RestAssured.when;
-import static org.hamcrest.Matchers.containsString;
+import static com.predic8.membrane.core.http.MimeType.*;
+import static io.restassured.RestAssured.*;
+import static io.restassured.filter.log.LogDetail.*;
+import static org.hamcrest.Matchers.*;
 
 public class APIKeyWithOpenAPIExampleTest extends AbstractSampleMembraneStartStopTestcase {
 
@@ -46,6 +47,7 @@ public class APIKeyWithOpenAPIExampleTest extends AbstractSampleMembraneStartSto
         .when()
             .get("http://localhost:2000/shop/v2/products")
         .then().assertThat()
+            .log().ifValidationFails(ALL)
             .statusCode(200)
             .body(containsString("meta"));
     }
@@ -54,9 +56,16 @@ public class APIKeyWithOpenAPIExampleTest extends AbstractSampleMembraneStartSto
     public void noScopesPost() {
         given()
             .header("X-Api-Key", "111")
+            .contentType(APPLICATION_JSON)
+            .body("""
+                        {
+                            "name": "Candy",
+                            "price": 1.99
+                        }""")
         .when()
             .post("http://localhost:2000/shop/v2/products")
         .then().assertThat()
+            .log().ifValidationFails(ALL)
             .statusCode(403)
             .body(containsString("Caller ist not in scope write"));
     }
@@ -64,7 +73,8 @@ public class APIKeyWithOpenAPIExampleTest extends AbstractSampleMembraneStartSto
     @Test
     public void writeScopes() {
         given()
-            .headers("X-Api-Key", "222", "Content-Type", "application/json")
+            .headers("X-Api-Key", "222")
+            .contentType(APPLICATION_JSON)
             .body("{\"name\": \"Mango\", \"price\": 2.79}")
         .when()
             .post("http://localhost:2000/shop/v2/products")
