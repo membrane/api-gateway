@@ -25,9 +25,6 @@ import com.predic8.membrane.core.util.*;
 import java.io.*;
 import java.util.*;
 
-/**
- *
- */
 public abstract class Transport {
 
 	/**
@@ -75,6 +72,10 @@ public abstract class Transport {
 
 	public Router getRouter() {
 		return router;
+	}
+
+	public <T extends Interceptor> Optional<T> getFirstInterceptorOfType(Class<T> type) {
+		return InterceptorUtil.getFirstInterceptorOfType(interceptors, type);
 	}
 
 	public void closeAll() {
