@@ -38,14 +38,14 @@ public class ExceptionInterceptorTest extends AbstractSecurityValidatorTest {
 
 
     @BeforeEach
-    void setUpSpec() throws Exception {
+    void setUpSpec() {
         OpenAPISpec spec = new OpenAPISpec();
         spec.location = "src/test/resources/openapi/specs/exceptions/error-in-spec.yml";
         spec.validateRequests = YES;
         spec.validateResponses = YES;
 
         Router router = getRouter();
-        interceptor = new OpenAPIInterceptor(createProxy(router, spec),router);
+        interceptor = new OpenAPIInterceptor(createProxy(router, spec));
         interceptor.init(router);
     }
 

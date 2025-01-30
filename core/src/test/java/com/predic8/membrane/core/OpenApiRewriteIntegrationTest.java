@@ -17,17 +17,17 @@ import com.predic8.membrane.core.interceptor.flow.*;
 import com.predic8.membrane.core.interceptor.log.*;
 import com.predic8.membrane.core.openapi.serviceproxy.*;
 import com.predic8.membrane.core.proxies.*;
-import io.restassured.response.*;
+import org.hamcrest.*;
 import org.jetbrains.annotations.*;
 import org.junit.jupiter.api.*;
 
 import static io.restassured.RestAssured.*;
+import static io.restassured.filter.log.LogDetail.*;
 import static java.util.Collections.*;
-import static org.junit.jupiter.api.Assertions.*;
 
 public class OpenApiRewriteIntegrationTest {
 
-    private static final Router r = new HttpRouter();
+    private Router r = new HttpRouter();
 
     @BeforeEach
     public void setUp() throws Exception {
@@ -36,17 +36,17 @@ public class OpenApiRewriteIntegrationTest {
         r.init();
     }
 
-    @AfterAll
-    public static void tearDown() {
+    @AfterEach
+    public void tearDown() {
         r.shutdown();
     }
 
     @NotNull
-    private static ServiceProxy getTargetProxy() {
-        ServiceProxy targetProxy = new ServiceProxy(new ServiceProxyKey("localhost", "GET", ".*", 3000), null, 8000);
-        targetProxy.getInterceptors().add(new ReturnInterceptor());
-        targetProxy.init(r);
-        return targetProxy;
+    private ServiceProxy getTargetProxy() {
+        ServiceProxy tp = new ServiceProxy(new ServiceProxyKey("localhost", "GET", ".*", 3000), null, 8000);
+        tp.getInterceptors().add(new ReturnInterceptor());
+        tp.init(r);
+        return tp;
     }
 
     @NotNull
@@ -60,19 +60,21 @@ public class OpenApiRewriteIntegrationTest {
         proxy.setSpecs(singletonList(spec));
         proxy.setKey(new APIProxyKey(null, "*", 2000, null, "*", null,false));
         proxy.getInterceptors().add(new LogInterceptor());
-        proxy.init(r);
+      //  proxy.init(r);
         return proxy;
     }
 
     @Test
     void rewriteUrlInOpenAPIDocument() {
-        Response r = given()
-                .when()
-                .get("http://localhost:2000/api-docs/rewriting-test-v1-0");
-
-        assertTrue(r.asString().contains("http://localhost:2000/bar"));
-
-        r.then().statusCode(200);
+        // @formatter:off
+        given()
+            .when()
+                .get("http://localhost:2000/api-docs/rewriting-test-v1-0")
+        .then()
+            .log().ifValidationFails(ALL)
+            .statusCode(200)
+            .body(Matchers.containsString("http://localhost:2000/bar"));
+        // @formatter:on
     }
 
 

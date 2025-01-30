@@ -28,7 +28,7 @@ import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.*;
 import static java.util.stream.Stream.*;
 
 @MCElement(name = "choose")
-public class ChoiceInterceptor extends AbstractFlowInterceptor {
+public class ChooseInterceptor extends AbstractFlowInterceptor {
 
     private final List<Case> cases = new ArrayList<>();
     private Otherwise otherwise;
@@ -46,8 +46,8 @@ public class ChoiceInterceptor extends AbstractFlowInterceptor {
         super.init();
     }
 
-    public ChoiceInterceptor() {
-        this.name = "choice";
+    public ChooseInterceptor() {
+        this.name = "choose";
         this.setFlow(REQUEST_RESPONSE_ABORT_FLOW);
     }
 

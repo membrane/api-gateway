@@ -31,6 +31,7 @@
       - getEndSessionEndpoint() throws Exception
       - doDynamicRegistration(List<String> callbackURLs) throws Exception
 - Call Example
+- new GroovyLanguageSupport() in GroocyExchangeExpression is instanciated all the time. Reuse it?
 
 # Version 6.0.0
 

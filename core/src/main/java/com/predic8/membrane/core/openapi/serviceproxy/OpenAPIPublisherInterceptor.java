@@ -19,6 +19,7 @@ package com.predic8.membrane.core.openapi.serviceproxy;
 import com.fasterxml.jackson.core.*;
 import com.fasterxml.jackson.databind.*;
 import com.fasterxml.jackson.databind.node.*;
+import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.util.*;
@@ -32,15 +33,25 @@ import java.net.*;
 import java.util.*;
 import java.util.regex.*;
 
-import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
-import static com.predic8.membrane.core.http.MimeType.*;
-import static com.predic8.membrane.core.http.Response.*;
+import static com.predic8.membrane.core.exceptions.ProblemDetails.internal;
+import static com.predic8.membrane.core.exceptions.ProblemDetails.user;
+import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
+import static com.predic8.membrane.core.http.MimeType.TEXT_HTML_UTF8;
+import static com.predic8.membrane.core.http.Response.ok;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
-import static com.predic8.membrane.core.openapi.util.OpenAPIUtil.*;
+import static com.predic8.membrane.core.openapi.util.OpenAPIUtil.isOpenAPI3;
+import static com.predic8.membrane.core.openapi.util.OpenAPIUtil.isSwagger2;
 import static com.predic8.membrane.core.openapi.util.UriUtil.*;
-import static com.predic8.membrane.core.openapi.util.Utils.*;
+import static com.predic8.membrane.core.openapi.util.Utils.getResourceAsStream;
 import static java.lang.String.valueOf;
 
+/**
+ * @description <p>
+ * The <i>openapiPublisher</i> serves OpenAPI documents
+ * </p>
+ * @topic 5. OpenAPI
+ */
+@MCElement(name = "openapiPublisher")
 public class OpenAPIPublisherInterceptor extends AbstractInterceptor {
 
     private static final Logger log = LoggerFactory.getLogger(OpenAPIPublisherInterceptor.class.getName());
@@ -55,14 +66,26 @@ public class OpenAPIPublisherInterceptor extends AbstractInterceptor {
     private static final Pattern PATTERN_META = Pattern.compile(PATH + "?/(.*)");
     private static final Pattern PATTERN_UI = Pattern.compile(PATH + "?/ui/(.*)");
 
-    protected final Map<String, OpenAPIRecord> apis;
+    protected Map<String, OpenAPIRecord> apis;
 
-    private final Template swaggerUiHtmlTemplate;
-    private final Template apiOverviewHtmlTemplate;
+    private Template swaggerUiHtmlTemplate;
+    private Template apiOverviewHtmlTemplate;
+
+    public OpenAPIPublisherInterceptor() {
+    }
 
     public OpenAPIPublisherInterceptor(Map<String, OpenAPIRecord> apis) {
-        name = "openapi publisher";
         this.apis = apis;
+    }
+
+    public void init() {
+        super.init();
+        if (apis == null) {
+            if (router.getParentProxy(this) instanceof APIProxy ap) {
+                apis = ap.apiRecords;
+            }
+        }
+
         swaggerUiHtmlTemplate = createHTMLPageTemplate("/openapi/swagger-ui.html");
         checkServerPaths();
         apiOverviewHtmlTemplate = createHTMLPageTemplate("/openapi/overview.html");
@@ -72,7 +95,7 @@ public class OpenAPIPublisherInterceptor extends AbstractInterceptor {
         try {
             return new StreamingTemplateEngine().createTemplate(new InputStreamReader(Objects.requireNonNull(getResourceAsStream(this, filePath))));
         } catch (Exception e) {
-            throw new ConfigurationException("Could not create Swagger UI or overview page template from: %s".formatted(filePath),e);
+            throw new ConfigurationException("Could not create Swagger UI or overview page template from: %s".formatted(filePath), e);
         }
     }
 
@@ -90,7 +113,7 @@ public class OpenAPIPublisherInterceptor extends AbstractInterceptor {
             return handleOverviewOpenAPIDoc(exc);
         } catch (Exception e) {
             log.error("", e);
-            internal(router.isProduction(),getDisplayName())
+            internal(router.isProduction(), getDisplayName())
                     .detail("Error handling OpenAPI overview!")
                     .exception(e)
                     .buildAndSetResponse(exc);
@@ -122,20 +145,20 @@ public class OpenAPIPublisherInterceptor extends AbstractInterceptor {
     }
 
     private Outcome returnHtmlOverview(Exchange exc) {
-        exc.setResponse(ok().contentType(TEXT_HTML_UTF8).body( renderOverviewTemplate()).build());
+        exc.setResponse(ok().contentType(TEXT_HTML_UTF8).body(renderOverviewTemplate()).build());
         return RETURN;
     }
 
     private Outcome returnNoFound(Exchange exc, String id) {
         // Do not log. Too common!
-        exc.setResponse(openapi(false,getDisplayName())
+        user(false, getDisplayName())
                 .title("OpenAPI not found")
                 .statusCode(404)
                 .addSubType("openapi")
                 .addSubSee("wrong-id")
                 .detail("OpenAPI document with the id %s not found.".formatted(id))
                 .topLevel("id", id)
-                .build());
+                .buildAndSetResponse(exc);
         return RETURN;
     }
 
@@ -152,7 +175,7 @@ public class OpenAPIPublisherInterceptor extends AbstractInterceptor {
         // No id specified
         if (!m.matches()) {
             // Do not log! Too common.
-            openapi(false,getDisplayName())
+            user(false, getDisplayName())
                     .title("No OpenAPI document id")
                     .statusCode(404)
                     .addSubType("openapi")
@@ -237,7 +260,7 @@ public class OpenAPIPublisherInterceptor extends AbstractInterceptor {
 
         apis.values().stream()
                 .filter(this::hasPathMatchingAllRequests)
-                .forEach(apiRecord -> log.warn("API {} contains URLs with '/' matching all requests. This might cause routing to the wrong API!",apiRecord.api.getInfo().getTitle()));
+                .forEach(apiRecord -> log.warn("API {} contains URLs with '/' matching all requests. This might cause routing to the wrong API!", apiRecord.api.getInfo().getTitle()));
 
     }
 
@@ -251,6 +274,11 @@ public class OpenAPIPublisherInterceptor extends AbstractInterceptor {
                     }
                 })
                 .anyMatch(serverUrl -> serverUrl == null || serverUrl.isEmpty() || serverUrl.equals("/"));
+    }
+
+    @Override
+    public String getDisplayName() {
+        return "openapi publisher";
     }
 
 }

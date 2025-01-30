@@ -51,6 +51,10 @@ public abstract class AbstractProxy implements Proxy {
         this.key = ruleKey;
     }
 
+    protected  <T extends Interceptor> Optional<T> getFirstInterceptorOfType(Class<T> type) {
+        return InterceptorUtil.getFirstInterceptorOfType(interceptors, type);
+    }
+
     public List<Interceptor> getInterceptors() {
         return interceptors;
     }
@@ -169,7 +173,7 @@ public abstract class AbstractProxy implements Proxy {
     }
 
     @Override
-    public String toString() { // TODO toString, getName, setName und name=""
+    public String toString() {
         // Initialisierung vereinheitlichen.
         return getName();
     }

@@ -35,7 +35,7 @@ public class OpenAPI31Test {
     Exchange exc = new Exchange(null);
 
     @BeforeEach
-    public void setUp() throws Exception {
+    public void setUp() {
         Router router = new Router();
         router.setUriFactory(new URIFactory());
 
@@ -44,12 +44,12 @@ public class OpenAPI31Test {
 
         exc.setRequest(new Request.Builder().method("GET").build());
 
-        interceptor = new OpenAPIInterceptor(createProxy(router, petstore_v3_1), router);
+        interceptor = new OpenAPIInterceptor(createProxy(router, petstore_v3_1));
         interceptor.init(router);
     }
 
     @Test
-    void simple() throws Exception {
+    void simple() {
         exc.getRequest().setUri("/pets");
         Outcome actual = interceptor.handleRequest(exc);
         assertEquals(Outcome.RETURN, actual);
