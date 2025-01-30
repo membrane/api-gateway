@@ -6,10 +6,7 @@
         </Console>
     </Appenders>
     <Loggers>
-        <Logger name="com.predic8.membrane.core.openapi" level="info">
-            <AppenderRef ref="STDOUT" />
-        </Logger>
-        <Logger name="com.predic8.membrane.core.interceptor" level="info">
+        <Logger name="com.predic8.membrane.core" level="info" additivity="false">
             <AppenderRef ref="STDOUT" />
         </Logger>
         <Root level="info">

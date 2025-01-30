@@ -44,13 +44,13 @@ public class RuleResolver implements SchemaResolver {
         log.debug("Resolving from {}", urlString);
         URI uri = URI.create(urlString);
         String proxyName = uri.getHost();
-        Proxy proxy = router.getRuleManager().getRuleByName(proxyName);
+        Proxy proxy = router.getRuleManager().getRuleByName(proxyName,Proxy.class);
 
         if (proxy == null)
-            throw new RuntimeException("Rule with name '" + proxyName + "' not found");
+            throw new RuntimeException("Rule with name '%s' not found".formatted(proxyName));
 
         if (!proxy.isActive())
-            throw new RuntimeException("Rule with name '" + proxyName + "' not active");
+            throw new RuntimeException("Rule with name '%s' not active".formatted(proxyName));
 
         if (proxy instanceof InternalProxy ip) {
             log.debug("Resolving from internal proxy {}",ip);

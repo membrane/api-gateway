@@ -12,9 +12,11 @@
 
         <api port="2000">
             <openapi location="fruitshop-api-v2-openapi-3-security.yml" validateSecurity="yes"/>
+            <openapiPublisher/> <!-- OpenAPI docs at /api-docs should be available without authentication -->
             <apiKey required = "false">
                 <headerExtractor name="X-Api-Key"/>
             </apiKey>
+            <openapiValidator/> <!-- OpenAPI validation should be executed after API key authentication -->
             <!--Swagger UI requires CORS but FruitShop does not use CORS, so we disable CORS.-->
             <headerFilter>
                 <exclude>Origin</exclude>

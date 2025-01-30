@@ -35,7 +35,7 @@ public class OpenAPIValidationSimpleExampleTest extends DistributionExtractingTe
 	final String validationResult = """
 				{
 					"title": "OpenAPI message validation failed",
-					"type": "https://membrane-api.io/error/user/openapi/validation",
+					"type": "https://membrane-api.io/problems/user/validation",
 					"validation": {
 				 		"method" : "POST",
 				  		"uriTemplate" : "/persons",

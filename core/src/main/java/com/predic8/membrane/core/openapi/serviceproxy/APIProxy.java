@@ -94,8 +94,14 @@ public class APIProxy extends ServiceProxy implements Polyglot {
         basePaths = getOpenAPIMap();
         configureBasePaths();
 
-        interceptors.addFirst(new OpenAPIInterceptor(this, router));
-        interceptors.addFirst(new OpenAPIPublisherInterceptor(apiRecords));
+        // The openapiPublisher and the openapiValidator can be engaged manually in the interceptor chain of a proxy. If
+        // not they are placed here at the very top of the chain.
+        if (getFirstInterceptorOfType(OpenAPIInterceptor.class).isEmpty()) {
+            interceptors.addFirst(new OpenAPIInterceptor(this));
+        }
+        if (getFirstInterceptorOfType(OpenAPIPublisherInterceptor.class).isEmpty()) {
+            interceptors.addFirst(new OpenAPIPublisherInterceptor(apiRecords));
+        }
     }
 
     /**
@@ -115,16 +121,16 @@ public class APIProxy extends ServiceProxy implements Polyglot {
                     // Check if the path is not from the same API. One OpenAPI can have several server.urls with the same path.
                     if (!l.contains(rec)) {
                         throw new ConfigurationException("""
-                            ================================================================================================
-        
-                            Configuration Error: Several OpenAPI Documents share the same path!
-        
-                            An API routes and validates requests according to the path of the OpenAPI's servers.url fields.
-                            Within one API the same path should be used only by one OpenAPI. Change the paths or place
-                            openapi-elements into separate APIs.
-        
-                            Shared path: %s
-                            %n""".formatted(path));
+                                ================================================================================================
+                                
+                                Configuration Error: Several OpenAPI Documents share the same path!
+                                
+                                An API routes and validates requests according to the path of the OpenAPI's servers.url fields.
+                                Within one API the same path should be used only by one OpenAPI. Change the paths or place
+                                openapi-elements into separate APIs.
+                                
+                                Shared path: %s
+                                %n""".formatted(path));
                     }
                 }
 

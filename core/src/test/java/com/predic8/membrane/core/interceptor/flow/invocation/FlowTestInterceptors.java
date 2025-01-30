@@ -19,13 +19,11 @@ package com.predic8.membrane.core.interceptor.flow.invocation;
 import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.interceptor.flow.*;
-import com.predic8.membrane.core.interceptor.flow.choice.Case;
-import com.predic8.membrane.core.interceptor.flow.choice.ChooseInterceptor;
-import com.predic8.membrane.core.interceptor.flow.choice.Otherwise;
+import com.predic8.membrane.core.interceptor.flow.choice.*;
 import com.predic8.membrane.core.interceptor.flow.invocation.testinterceptors.*;
 import com.predic8.membrane.core.interceptor.groovy.*;
 
-import java.util.List;
+import java.util.*;
 
 import static java.util.Arrays.*;
 

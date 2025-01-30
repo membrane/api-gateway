@@ -19,15 +19,16 @@ package com.predic8.membrane.core.openapi.serviceproxy;
 import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.interceptor.flow.*;
 import com.predic8.membrane.core.interceptor.templating.*;
-import com.predic8.membrane.core.proxies.*;
+import com.predic8.membrane.core.proxies.AbstractServiceProxy.*;
 import com.predic8.membrane.core.transport.http.*;
 import com.predic8.membrane.core.util.*;
 import org.hamcrest.*;
 import org.jetbrains.annotations.*;
 import org.junit.jupiter.api.*;
 
-import static com.predic8.membrane.core.openapi.util.TestUtils.*;
 import static io.restassured.RestAssured.*;
+import static io.restassured.filter.log.LogDetail.*;
+import static java.util.Collections.singletonList;
 
 public class Swagger20Test {
 
@@ -40,23 +41,32 @@ public class Swagger20Test {
         router.setTransport(new HttpTransport());
         router.setUriFactory(new URIFactory());
 
-        OpenAPISpec petstore_v2 = new OpenAPISpec();
-        petstore_v2.location = "src/test/resources/openapi/specs/swagger-v2/petstore-v2.json";
-
-        APIProxy proxy1 = createProxy(router, petstore_v2);
-        proxy1.setTarget(new AbstractServiceProxy.Target("localhost", 2001));
-        router.getRuleManager().addProxyAndOpenPortIfNew(proxy1);
+        router.getRuleManager().addProxyAndOpenPortIfNew(getApiProxy());
         router.getRuleManager().addProxyAndOpenPortIfNew(getTargetProxy());
         router.init();
     }
 
-    private @NotNull APIProxy getTargetProxy() throws Exception {
-        APIProxy targetProxy = new APIProxy();
-        targetProxy.setKey(new APIProxyKey(2001));
-        targetProxy.getInterceptors().add(new StaticInterceptor() {{ textTemplate = "Hi!"; }});
-        targetProxy.getInterceptors().add(new ReturnInterceptor());
-        targetProxy.init(router);
-        return targetProxy;
+    private @NotNull APIProxy getApiProxy() {
+        APIProxy ap = new APIProxy();
+        ap.setSpecs(singletonList(getOpenAPISpec()));
+        ap.setKey(new APIProxyKey(2000));
+        ap.setTarget(new Target("localhost", 2001));
+        return ap;
+    }
+
+    private static @NotNull OpenAPISpec getOpenAPISpec() {
+        OpenAPISpec petstore_v2 = new OpenAPISpec();
+        petstore_v2.location = "src/test/resources/openapi/specs/swagger-v2/petstore-v2.json";
+        return petstore_v2;
+    }
+
+    private @NotNull APIProxy getTargetProxy() {
+        APIProxy tp = new APIProxy();
+        tp.setKey(new APIProxyKey(2001));
+        tp.getInterceptors().add(new StaticInterceptor() {{ textTemplate = "Hi!"; }});
+        tp.getInterceptors().add(new ReturnInterceptor());
+        tp.init(router);
+        return tp;
     }
 
     @AfterEach
@@ -70,6 +80,8 @@ public class Swagger20Test {
         given()
             .get("http://localhost:2000/api-docs")
         .then()
+            .log().ifValidationFails(ALL)
+            .statusCode(200)
             .body("swagger-petstore-v1-0-7.title", Matchers.equalTo("Swagger Petstore"));
         // @formatter:on
     }

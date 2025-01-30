@@ -16,12 +16,13 @@
 
 package com.predic8.membrane.core.openapi.serviceproxy;
 
-import com.predic8.membrane.core.*;
+import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.openapi.*;
 import com.predic8.membrane.core.openapi.validators.*;
+import com.predic8.membrane.core.proxies.Proxy;
 import com.predic8.membrane.core.proxies.*;
 import io.swagger.v3.oas.models.*;
 import io.swagger.v3.oas.models.servers.*;
@@ -34,27 +35,42 @@ import java.util.*;
 
 import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
 import static com.predic8.membrane.core.exchange.Exchange.*;
-import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
-import static com.predic8.membrane.core.interceptor.Interceptor.Flow.RESPONSE;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.openapi.serviceproxy.APIProxy.*;
 import static com.predic8.membrane.core.openapi.util.UriUtil.*;
 import static com.predic8.membrane.core.openapi.util.Utils.*;
-import static com.predic8.membrane.core.openapi.validators.ValidationErrors.Direction.*;
 import static java.util.Comparator.*;
 import static java.util.stream.Collectors.*;
 
-
+/**
+ * @description <p>Validator for OpenAPI documents</p>
+ * @topic 5. OpenAPI
+ */
+@MCElement(name = "openapiValidator")
 public class OpenAPIInterceptor extends AbstractInterceptor {
 
     private static final Logger log = LoggerFactory.getLogger(OpenAPIInterceptor.class.getName());
     public static final String OPENAPI_RECORD = "OPENAPI_RECORD";
 
-    protected final APIProxy apiProxy;
+    protected APIProxy apiProxy;
 
-    public OpenAPIInterceptor(APIProxy apiProxy, Router router) {
+    public OpenAPIInterceptor() {}
+
+
+    public OpenAPIInterceptor(APIProxy apiProxy) {
         this.apiProxy = apiProxy;
-        this.router = router;
+    }
+
+    @Override
+    public void init() {
+        super.init();
+        if (apiProxy == null) {
+            Proxy parent = router.getParentProxy(this);
+            if (parent instanceof APIProxy ap) {
+                apiProxy = ap;
+            }
+        }
     }
 
     public APIProxy getApiProxy() {
@@ -168,6 +184,7 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
                 return basePath;
             }
         }
+        log.debug("Could not find matching base path for OpenAPI request {}. Returning empty basePath.", exc.getRequest().getUri());
         return null;
     }
 
