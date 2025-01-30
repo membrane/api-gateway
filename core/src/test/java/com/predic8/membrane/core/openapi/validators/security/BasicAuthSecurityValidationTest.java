@@ -40,7 +40,7 @@ public class BasicAuthSecurityValidationTest {
     private BasicAuthenticationInterceptor baInterceptor;
 
     @BeforeEach
-    void setUpSpec() throws Exception {
+    void setUpSpec() {
         Router router = new Router();
         router.setUriFactory(new URIFactory());
 
@@ -48,7 +48,7 @@ public class BasicAuthSecurityValidationTest {
         spec.location = "src/test/resources/openapi/specs/security/http-basic.yml";
         spec.validateRequests = YES;
 
-        oasInterceptor = new OpenAPIInterceptor(createProxy(router, spec),router);
+        oasInterceptor = new OpenAPIInterceptor(createProxy(router, spec));
         oasInterceptor.init(router);
 
         baInterceptor = new BasicAuthenticationInterceptor();

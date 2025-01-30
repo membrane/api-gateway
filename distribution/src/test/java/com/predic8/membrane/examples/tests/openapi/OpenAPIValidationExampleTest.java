@@ -87,7 +87,7 @@ public class OpenAPIValidationExampleTest extends AbstractSampleMembraneStartSto
         JSONAssert.assertEquals("""
                 {
                   "title": "OpenAPI message validation failed",
-                  "type": "https://membrane-api.io/error/user/openapi/validation",
+                  "type": "https://membrane-api.io/problems/user/validation",
                   "validation": {
                       "method" : "PUT",
                       "uriTemplate" : "/persons/{pid}",

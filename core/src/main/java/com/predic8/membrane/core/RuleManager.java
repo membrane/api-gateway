@@ -317,9 +317,9 @@ public class RuleManager {
         return router.getExchangeStore();
     }
 
-    public Proxy getRuleByName(String name) {
+    public <T extends Proxy> T getRuleByName(String name, Class<T> type) {
         for (Proxy r : proxies) {
-            if (name.equals(r.getName())) return r;
+            if (name.equals(r.getName())) return type.cast(r);
         }
         return null;
     }

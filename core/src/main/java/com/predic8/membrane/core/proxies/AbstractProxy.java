@@ -22,6 +22,8 @@ import org.slf4j.*;
 
 import java.util.*;
 
+import static java.util.Optional.empty;
+
 /**
  * Convenience class that implements Proxy.
  */
@@ -49,6 +51,15 @@ public abstract class AbstractProxy implements Proxy {
 
     public AbstractProxy(RuleKey ruleKey) {
         this.key = ruleKey;
+    }
+
+    protected  <T extends Interceptor> Optional<T> getFirstInterceptorOfType(Class<T> type) {
+        for (Interceptor i : interceptors) {
+            if (type.isAssignableFrom(i.getClass())) {
+                return Optional.of(type.cast( i));
+            }
+        }
+        return empty();
     }
 
     public List<Interceptor> getInterceptors() {

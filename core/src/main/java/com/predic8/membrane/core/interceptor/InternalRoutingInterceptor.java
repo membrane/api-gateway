@@ -149,7 +149,7 @@ public class InternalRoutingInterceptor extends AbstractInterceptor {
     }
 
     private AbstractServiceProxy getRuleByDest(Exchange exchange) {
-        Proxy proxy = router.getRuleManager().getRuleByName(getHost(exchange.getDestinations().getFirst()));
+        Proxy proxy = router.getRuleManager().getRuleByName(getHost(exchange.getDestinations().getFirst()), Proxy.class);
         if (proxy == null)
             throw new RuntimeException("No api found for destination " + exchange.getDestinations().getFirst());
         if (proxy instanceof AbstractServiceProxy sp)
