@@ -21,6 +21,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
+import java.nio.file.Files;
 import java.util.Enumeration;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
@@ -151,8 +152,11 @@ public abstract class DistributionExtractingTestcase {
             //noinspection ConstantConditions
             for (File child : file.listFiles())
                 recursiveDelete(child);
-        if (!file.delete())
-            throw new RuntimeException("could not delete " + file.getAbsolutePath());
+        try {
+            Files.delete(file.toPath());
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public static void unzip(File zip, File target) throws IOException {

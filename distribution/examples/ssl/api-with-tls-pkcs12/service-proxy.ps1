@@ -3,6 +3,7 @@ $required_version = "21"
 function Start-MembraneService {
     param([string]$membrane_home)
 
+    $env:MEMBRANE_HOME = $membrane_home
     $CLASSPATH = "$membrane_home\conf;$membrane_home\lib\*"
     Write-Host "Starting: $membrane_home CL: $CLASSPATH"
     & java -cp "$CLASSPATH" com.predic8.membrane.core.cli.RouterCLI -c proxies.xml
