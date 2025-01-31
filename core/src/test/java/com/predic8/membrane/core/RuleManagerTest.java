@@ -14,12 +14,12 @@
 package com.predic8.membrane.core;
 
 import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.proxies.*;
 import org.junit.jupiter.api.*;
 
 import java.net.*;
 
+import static com.predic8.membrane.core.http.Request.*;
 import static com.predic8.membrane.test.TestUtil.*;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -83,19 +83,19 @@ public class RuleManagerTest {
 
 	@Test
 	void internalUnknown() throws URISyntaxException {
-		Exchange exc = Request.get("/ignored").buildExchange();
+		Exchange exc = get("/ignored").buildExchange();
 		exc.getDestinations().add("internal://unknown");
 		assertInstanceOf(NullProxy.class, manager.getMatchingRule(exc));
 	}
 
 	@Test
 	void internal() throws URISyntaxException {
-		assertEquals("order", manager.getMatchingRule(Request.get("internal://order").buildExchange()).getName());
+		assertEquals("order", manager.getMatchingRule(get("internal://order").buildExchange()).getName());
 	}
 
 	@Test
 	void internalWithPath() throws URISyntaxException {
-		assertEquals("order", manager.getMatchingRule(Request.get("internal://order/path").buildExchange()).getName());
+		assertEquals("order", manager.getMatchingRule(get("internal://order/path").buildExchange()).getName());
 	}
 
 	@Test

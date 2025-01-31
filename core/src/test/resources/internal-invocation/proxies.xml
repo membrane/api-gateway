@@ -86,7 +86,7 @@
 		<serviceProxy name="FullChain2" port="3028">
 			<interceptor refid="Mock5" />
 			<interceptor refid="Mock6" />
-			<target host="predic8.de" />
+			<target host="localhost" port="2000" />
 		</serviceProxy>
 	
 		<serviceProxy name="ReturnedChain0" port="3029">
@@ -105,7 +105,12 @@
 		<serviceProxy name="ReturnedChain2" port="3029">
 			<interceptor refid="Mock5" />
 			<interceptor refid="Mock6" />
-			<target host="predic8.de" />
+			<target host="localhost" port="2000" />
 		</serviceProxy>
+
+		<api port="2000">
+			<return/>
+		</api>
+
 	</router>
 </spring:beans>

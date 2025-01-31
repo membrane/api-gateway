@@ -68,7 +68,7 @@ public class RewriteInterceptorTest {
 	@Test
 	void testRewrite() {
 		exc.setRequest(MessageUtil.getGetRequest("/buy/banana/3"));
-		exc.setRule(sp);
+		exc.setProxy(sp);
 
 		assertEquals(CONTINUE, di.handleRequest(exc));
 		assertEquals(CONTINUE, rewriter.handleRequest(exc));
@@ -86,7 +86,7 @@ public class RewriteInterceptorTest {
 	@Test
 	void invalidURI() throws Exception {
 		exc.setRequest(MessageUtil.getGetRequest("/buy/banana/%"));
-		exc.setRule(sp);
+		exc.setProxy(sp);
 
 		assertEquals(CONTINUE, di.handleRequest(exc));
 		assertEquals(RETURN, rewriter.handleRequest(exc));

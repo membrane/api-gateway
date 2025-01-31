@@ -65,7 +65,7 @@ public class InternalRoutingInterceptor extends AbstractInterceptor {
             return ABORT;
         }
 
-        exchange.setRule(currentProxy); // Restore current rule, so that the response interceptors of that rule could be invoked
+        exchange.setProxy(currentProxy); // Restore current rule, so that the response interceptors of that rule could be invoked
         return outcome;
     }
 

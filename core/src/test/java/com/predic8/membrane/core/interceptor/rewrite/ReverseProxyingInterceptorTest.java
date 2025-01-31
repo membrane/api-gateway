@@ -31,33 +31,33 @@ public class ReverseProxyingInterceptorTest {
 	ReverseProxyingInterceptor rp = new ReverseProxyingInterceptor();
 
 	@Test
-	public void localRedirect() throws Exception {
+	public void localRedirect() {
 		rp.init(new Router());
 		// invalid by spec, redirection location should not be rewritten
 		assertEquals("/local", getRewrittenRedirectionLocation("membrane", 2000, "http://target/foo", "/local"));
 	}
 
 	@Test
-	public void sameServer() throws Exception {
+	public void sameServer() {
 		// same server, redirection location should be rewritten
 		// (whether ":80" actually occurs the final string does not matter)
 		assertEquals("http://membrane/bar", getRewrittenRedirectionLocation("membrane", 80, "http://target/foo", "http://target/bar"));
 	}
 
 	@Test
-	public void sameServerNonStdPort() throws Exception {
+	public void sameServerNonStdPort() {
 		// same server, redirection location should be rewritten
 		assertEquals("http://membrane:2000/bar", getRewrittenRedirectionLocation("membrane", 2000, "http://target/foo", "http://target/bar"));
 	}
 
 	@Test
-	public void differentPort() throws Exception {
+	public void differentPort() {
 		// different port, redirection location should not be rewritten
 		assertEquals("http://membrane:2001/bar", getRewrittenRedirectionLocation("membrane", 80, "http://membrane:2000/foo", "http://membrane:2001/bar"));
 	}
 
 	@Test
-	public void differentServer() throws Exception {
+	public void differentServer() {
 		// different server, redirection location should not be rewritten
 		assertEquals("http://target2/bar", getRewrittenRedirectionLocation("membrane", 2000, "http://target/foo", "http://target2/bar"));
 	}
@@ -66,9 +66,9 @@ public class ReverseProxyingInterceptorTest {
 	/**
 	 * Lets the ReverseProxyingInterceptor handle a fake Exchange and returns the rewritten "Location" header.
 	 */
-	private String getRewrittenRedirectionLocation(String requestHostHeader, int port, String requestURI, String redirectionURI) throws Exception {
+	private String getRewrittenRedirectionLocation(String requestHostHeader, int port, String requestURI, String redirectionURI) {
 		Exchange exc = createExchange(requestHostHeader, null, port, requestURI, redirectionURI);
-		exc.setRule(new ServiceProxy());
+		exc.setProxy(new ServiceProxy());
 		assertEquals(CONTINUE, rp.handleResponse(exc));
 		return exc.getResponse().getHeader().getFirstValue(LOCATION);
 	}
@@ -110,7 +110,7 @@ public class ReverseProxyingInterceptorTest {
 	 */
 	private String getRewrittenDestination(String requestHostHeader, String requestDestinationHeader, int port, String requestURI, String targetScheme, int targetPort) throws Exception {
 		Exchange exc = createExchange(requestHostHeader, requestDestinationHeader, port, requestURI, null);
-		exc.setRule(new ServiceProxy());
+		exc.setProxy(new ServiceProxy());
 		String url = new URL(targetScheme, "target", targetPort, exc.getRequest().getUri()).toString();
 		exc.getDestinations().add(url);
 		assertEquals(CONTINUE, rp.handleRequest(exc));
@@ -122,7 +122,7 @@ public class ReverseProxyingInterceptorTest {
 	 */
 	private Exchange createExchange(String requestHostHeader, String requestDestinationHeader, int port, String requestURI, String redirectionURI) {
 		Exchange exc = new Exchange(new FakeHttpHandler(port));
-		exc.setRule(new ServiceProxy());
+		exc.setProxy(new ServiceProxy());
 		Request req = new Request();
 		req.setUri(requestURI);
 		Header header = new Header();
