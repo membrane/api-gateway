@@ -6,7 +6,6 @@ function Start-MembraneService {
     $env:MEMBRANE_HOME = $membrane_home
     $CLASSPATH = "$membrane_home\conf;$membrane_home\lib\*"
     Write-Host "Starting: $membrane_home CL: $CLASSPATH"
-    Write-Host "--- PWD: $(pwd) ---"
     & java "-Dlog4j.configurationFile=$(pwd)/log4j2_access.xml" -cp "$CLASSPATH" com.predic8.membrane.core.cli.RouterCLI -c proxies.xml
 }
 
