@@ -32,6 +32,7 @@
       - doDynamicRegistration(List<String> callbackURLs) throws Exception
 - Call Example
 - new GroovyLanguageSupport() in GroocyExchangeExpression is instanciated all the time. Reuse it?
+- SampleSOAPService: Add some more cities
 
 # Version 6.0.0
 

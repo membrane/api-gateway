@@ -50,7 +50,7 @@ public class OpenAPIPublisherInterceptorTest {
     Exchange get = new Exchange(null);
 
     @BeforeEach
-    void setUp() throws Exception {
+    void setUp() {
         Router router = new Router();
         router.setUriFactory(new URIFactory());
         router.setBaseLocation("");
@@ -63,7 +63,7 @@ public class OpenAPIPublisherInterceptorTest {
         interceptor.init(router);
 
         get.setRequest(new Request.Builder().method("GET").build());
-        get.setRule(new NullProxy());
+        get.setProxy(new NullProxy());
         get.setOriginalHostHeader("api.predic8.de:80");
     }
 
@@ -102,7 +102,7 @@ public class OpenAPIPublisherInterceptorTest {
 
     @ParameterizedTest
     @MethodSource("metaParameters")
-    public void getHTMLOverview(String testPath) throws Exception {
+    public void getHTMLOverview(String testPath) {
         get.getRequest().setUri(testPath);
         Header header = new Header();
         header.setAccept("html");
@@ -113,7 +113,7 @@ public class OpenAPIPublisherInterceptorTest {
 
     @ParameterizedTest
     @MethodSource("uiParameters")
-    public void getSwaggerUI(String testPath) throws Exception {
+    public void getSwaggerUI(String testPath) {
         get.getRequest().setUri(testPath + "/nested-objects-and-arrays-test-api-v1-0");
         assertEquals( RETURN, interceptor.handleRequest(get));
         assertTrue(get.getResponse().getBodyAsStringDecoded().contains("html"));

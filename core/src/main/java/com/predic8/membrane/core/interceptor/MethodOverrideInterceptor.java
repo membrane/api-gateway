@@ -23,8 +23,7 @@ import com.predic8.membrane.core.http.*;
 import java.io.*;
 
 import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
-import static com.predic8.membrane.core.http.Header.CONTENT_LENGTH;
-import static com.predic8.membrane.core.http.Header.CONTENT_TYPE;
+import static com.predic8.membrane.core.http.Header.*;
 import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 
@@ -62,6 +61,7 @@ public class MethodOverrideInterceptor extends AbstractInterceptor {
         req.setBody(new EmptyBody());
         req.getHeader().removeFields(CONTENT_LENGTH);
         req.getHeader().removeFields(CONTENT_TYPE);
+        req.getHeader().removeFields(CONTENT_ENCODING);
         req.setMethod("GET");
     }
 }

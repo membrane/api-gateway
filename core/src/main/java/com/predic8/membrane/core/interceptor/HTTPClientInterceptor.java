@@ -17,14 +17,19 @@ import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.proxies.*;
 import com.predic8.membrane.core.transport.http.*;
 import com.predic8.membrane.core.transport.http.client.*;
 import com.predic8.membrane.core.util.*;
 import org.slf4j.*;
 
+import java.io.*;
 import java.net.*;
 
 import static com.predic8.membrane.core.exceptions.ProblemDetails.internal;
+import static com.predic8.membrane.core.http.Header.*;
+import static com.predic8.membrane.core.http.Request.METHOD_GET;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 
@@ -59,15 +64,18 @@ public class HTTPClientInterceptor extends AbstractInterceptor {
         try {
             exc.blockRequestIfNeeded();
         } catch (TerminateException e) {
-            log.error("Could not block request.",e);
+            log.error("Could not block request.", e);
         }
+
+        changeMethod(exc);
+
         try {
             hc.call(exc, adjustHostHeader, failOverOn5XX);
             return RETURN;
         } catch (ConnectException e) {
             String msg = "Target %s is not reachable.".formatted(getDestination(exc));
             log.warn(msg + PROXIES_HINT);
-            ProblemDetails.gateway(router.isProduction(),getDisplayName())
+            ProblemDetails.gateway(router.isProduction(), getDisplayName())
                     .statusCode(502)
                     .detail(msg)
                     .buildAndSetResponse(exc);
@@ -81,26 +89,59 @@ public class HTTPClientInterceptor extends AbstractInterceptor {
         } catch (UnknownHostException e) {
             String msg = "Target host %s of API %s is unknown. DNS was unable to resolve host name.".formatted(URLUtil.getHost(getDestination(exc)), exc.getProxy().getName());
             log.warn(msg + PROXIES_HINT);
-            ProblemDetails.gateway(router.isProduction(),getDisplayName())
+            ProblemDetails.gateway(router.isProduction(), getDisplayName())
                     .statusCode(502)
                     .detail(msg)
                     .buildAndSetResponse(exc);
             return ABORT;
         } catch (MalformedURLException e) {
-            log.error("",e);
-            internal(router.isProduction(),getDisplayName())
+            log.error("", e);
+            internal(router.isProduction(), getDisplayName())
                     .exception(e)
                     .internal("proxy", exc.getProxy().getName())
                     .buildAndSetResponse(exc);
             return ABORT;
         } catch (Exception e) {
-            log.error("",e);
-            internal(router.isProduction(),getDisplayName())
+            log.error("", e);
+            internal(router.isProduction(), getDisplayName())
                     .exception(e)
                     .internal("proxy", exc.getProxy().getName())
                     .buildAndSetResponse(exc);
             return ABORT;
         }
+    }
+
+    /**
+     * Makes it possible to change the method by specifying <target method="POST"/>
+     *
+     * @param exc
+     */
+    private static void changeMethod(Exchange exc) {
+        if (!(exc.getProxy() instanceof AbstractServiceProxy asp) || asp.getTarget() == null)
+            return;
+
+        String newMethod = asp.getTarget().getMethod();
+        if (newMethod == null || newMethod.equalsIgnoreCase(exc.getRequest().getMethod()))
+            return;
+
+        log.debug("Changing method from {} to {}", exc.getRequest().getMethod(), newMethod);
+        exc.getRequest().setMethod(newMethod);
+
+        if (newMethod.equalsIgnoreCase(METHOD_GET)) {
+            handleBodyContentWhenChangingToGET(exc);
+        }
+    }
+
+    private static void handleBodyContentWhenChangingToGET(Exchange exc) {
+        Request req = exc.getRequest();
+        try {
+            req.readBody();
+        } catch (IOException ignored) {
+        }
+        req.setBody(new EmptyBody());
+        req.getHeader().removeFields(CONTENT_LENGTH);
+        req.getHeader().removeFields(CONTENT_TYPE);
+        req.getHeader().removeFields(CONTENT_ENCODING);
     }
 
     private String getDestination(Exchange exc) {

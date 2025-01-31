@@ -13,20 +13,32 @@
    limitations under the License. */
 package com.predic8.membrane.core.lang.spel.spelable;
 
-import org.springframework.expression.EvaluationContext;
-import org.springframework.expression.TypedValue;
+import com.predic8.membrane.core.exchange.*;
+import org.slf4j.*;
+import org.springframework.expression.*;
 
-import java.util.Map;
+import java.util.*;
 
-public class SpELMap<K, V> implements SpELLablePropertyAware {
-    protected final Map<K, V> data;
+import static com.predic8.membrane.core.lang.ScriptingUtils.*;
 
-    public SpELMap(Map<K, V> data) {
-        this.data = data;
+public class SpELPathParameters implements SpELLablePropertyAware {
+
+    private static final Logger log = LoggerFactory.getLogger(SpELPathParameters.class);
+
+    protected final Exchange exchange;
+    protected Map<String , String> data;
+
+    public SpELPathParameters(Exchange exchange) {
+        this.exchange = exchange;
     }
 
     @Override
     public TypedValue read(EvaluationContext context, Object target, String name) {
+
+        if (data == null) {
+            data = extractPathParameters(exchange);
+        }
+
         if (data.containsKey(name))
             return new TypedValue(data.get(name));
 

@@ -91,6 +91,7 @@ public abstract class AbstractServiceProxy extends SSLableProxy {
     public static class Target {
         private String host;
         private int port = -1;
+        private String method;
         protected String url;
         private boolean adjustHostHeader = true;
 
@@ -152,7 +153,6 @@ public abstract class AbstractServiceProxy extends SSLableProxy {
             return sslParser;
         }
 
-
         /**
          * @description Configures outbound SSL (HTTPS).
          */
@@ -168,6 +168,20 @@ public abstract class AbstractServiceProxy extends SSLableProxy {
         @MCAttribute
         public void setAdjustHostHeader(boolean adjustHostHeader) {
             this.adjustHostHeader = adjustHostHeader;
+        }
+
+        public String getMethod() {
+            return method;
+        }
+
+        /**
+         * The method that should be used to make the call to the backend. With that
+         * parameter the method from the original call can be overwritten.
+         * @param method
+         */
+        @MCAttribute
+        public void setMethod(String method) {
+            this.method = method;
         }
     }
 

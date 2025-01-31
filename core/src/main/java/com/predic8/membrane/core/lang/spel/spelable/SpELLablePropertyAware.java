@@ -17,9 +17,11 @@ import org.springframework.expression.EvaluationContext;
 import org.springframework.expression.TypedValue;
 
 public interface SpELLablePropertyAware {
+
     default boolean canRead(EvaluationContext context, Object target, String name) {
         return true;
     }
+
     TypedValue read(EvaluationContext context, Object target, String name);
 
     default String camelToKebab(String string) {

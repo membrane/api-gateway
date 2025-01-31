@@ -21,6 +21,7 @@ import org.junit.jupiter.api.*;
 import java.net.*;
 import java.util.*;
 
+import static com.predic8.membrane.core.http.Request.get;
 import static com.predic8.membrane.core.lang.ExchangeExpression.Language.*;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -29,7 +30,7 @@ class GroovyExchangeExpressionTest extends AbstractExchangeExpressionTest {
 
     @Override
     protected Request.Builder getRequestBuilder() throws URISyntaxException {
-        return Request.get("foo");
+        return get("/foo/314/new%20york");
     }
 
     @Override
@@ -79,5 +80,11 @@ class GroovyExchangeExpressionTest extends AbstractExchangeExpressionTest {
         }
         assertEquals("US",m.get("country"));
         assertEquals("Europe",m.get("continent"));
+    }
+
+    @Test
+    void pathParameter() {
+        assertEquals("314",evalString("pathParam.fid"));
+        assertEquals("new york",evalString("pathParam.gid"));
     }
 }

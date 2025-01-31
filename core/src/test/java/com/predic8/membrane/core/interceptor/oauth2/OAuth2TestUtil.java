@@ -41,7 +41,7 @@ public class OAuth2TestUtil {
 
     public static void makeExchangeValid(Exchange exc) {
         exc.setOriginalRequestUri(exc.getRequest().getUri());
-        exc.setRule(new NullProxy());
+        exc.setProxy(new NullProxy());
     }
 
     public static void useJWTForAccessTokensAndRefreshTokens(OAuth2AuthorizationServerInterceptor oasi) {

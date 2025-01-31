@@ -22,10 +22,9 @@ import java.util.*;
 import java.util.concurrent.*;
 import java.util.function.*;
 
-public class RhinoJavascriptLanguageSupport extends LanguageSupport {
+public class RhinoJavascriptLanguageSupport implements LanguageSupport {
 
     private static final Logger log = LoggerFactory.getLogger(RhinoJavascriptLanguageSupport.class);
-
 
     private abstract static class JavascriptScriptExecutorPool<R> extends ScriptExecutorPool<ScriptEngine,R>{
         private final String javascriptCode;
@@ -49,10 +48,9 @@ public class RhinoJavascriptLanguageSupport extends LanguageSupport {
             try {
                 return script.eval(javascriptCode);
             } catch (ScriptException e) {
-                log.error("Error compiling script:" + e.getMessage());
-                log.error("Error in Line:");
-                log.error(TextUtil.getLineFromMultilineString(javascriptCode,e.getLineNumber()));
-                log.error("Script:\n" + javascriptCode);
+                log.error("Error compiling script: {}", e.getMessage());
+                log.error("Error in Line: {}", TextUtil.getLineFromMultilineString(javascriptCode,e.getLineNumber()));
+                log.error("Script:\n{}", javascriptCode);
                 throw new RuntimeException("Error compiling script:", e);
             }
         }
@@ -63,19 +61,6 @@ public class RhinoJavascriptLanguageSupport extends LanguageSupport {
                 return sce.getEngineByName(javascriptEngineName);
             }
         }
-    }
-
-    @Override
-    public Function<Map<String, Object>, Boolean> compileExpression(ExecutorService executorService, ClassLoader classLoader, String src) {
-        return new JavascriptScriptExecutorPool<>(executorService, classLoader, src) {
-            @Override
-            public Boolean apply(Map<String, Object> parameters) {
-                Object result = this.execute(parameters);
-                if (result instanceof Boolean)
-                    return (Boolean)result;
-                return false;
-            }
-        };
     }
 
     @Override
