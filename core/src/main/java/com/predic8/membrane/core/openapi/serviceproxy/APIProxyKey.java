@@ -18,12 +18,14 @@ package com.predic8.membrane.core.openapi.serviceproxy;
 
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.lang.*;
+import com.predic8.membrane.core.openapi.util.*;
 import com.predic8.membrane.core.proxies.*;
 import org.slf4j.*;
 
 import java.util.*;
 
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
+import static com.predic8.membrane.core.openapi.util.UriTemplateMatcher.matchTemplate;
 import static java.util.Optional.*;
 
 public class APIProxyKey extends ServiceProxyKey {
@@ -123,6 +125,17 @@ public class APIProxyKey extends ServiceProxyKey {
             return Objects.equals(exchangeExpression, other.exchangeExpression);
         }
         return false;
+    }
+
+    @Override
+    public boolean matchesPath(String path) {
+        try {
+            matchTemplate(getPath(), path); // ignore result
+            return true;
+        } catch (PathDoesNotMatchException e) {
+            log.debug("Path {} doesn't match {}", path,getPath());
+        }
+        return path.startsWith(getPath());
     }
 
     @Override

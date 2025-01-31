@@ -43,8 +43,6 @@ import static java.nio.charset.StandardCharsets.*;
  * Have a look at the samples in <a href="https://github.com/membrane/service-proxy/tree/master/distribution/examples">examples/template</a>.
  * @topic 2. Enterprise Integration Patterns
  */
-
-
 @MCElement(name="template", mixed = true)
 public class TemplateInterceptor extends StaticInterceptor {
 
@@ -95,7 +93,7 @@ public class TemplateInterceptor extends StaticInterceptor {
     }
 
     @SuppressWarnings("RedundantThrows") // Declaration of exception is needed. However, Groovy does not declare it.
-    private String fillTemplate(Exchange exc, Message msg, Flow flow) throws TemplateExecutionException {
+    protected String fillTemplate(Exchange exc, Message msg, Flow flow) throws TemplateExecutionException {
         String payload = template.make(getVariableBinding(exc, msg, flow)).toString();
         if (isOfMediaType(APPLICATION_JSON,contentType) && pretty) {
             return prettifyJson(payload);

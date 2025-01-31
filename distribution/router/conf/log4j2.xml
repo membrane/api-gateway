@@ -13,7 +13,7 @@
         </RollingFile>
     </Appenders>
     <Loggers>
-        <Logger name="com.predic8" level="info">
+        <Logger name="com.predic8" level="info" additivity="false">
             <AppenderRef ref="FILE" />
         </Logger>
         <Root level="info">

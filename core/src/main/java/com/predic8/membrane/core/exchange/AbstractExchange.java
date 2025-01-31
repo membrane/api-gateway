@@ -135,7 +135,7 @@ public abstract class AbstractExchange {
 		return proxy;
 	}
 
-	public void setRule(Proxy proxy) {
+	public void setProxy(Proxy proxy) {
 		this.proxy = proxy;
 	}
 
@@ -425,7 +425,7 @@ public abstract class AbstractExchange {
 		copy.setOriginalRequestUri(source.getOriginalRequestUri());
 		copy.setTime(source.getTime());
 		copy.setErrorMessage(source.getErrorMessage());
-		copy.setRule(source.getProxy());
+		copy.setProxy(source.getProxy());
 		copy.setProperties(new HashMap<>(source.getProperties()));
 		copy.setStatus(source.getStatus());
 		copy.setForceToStop(source.isForcedToStop());

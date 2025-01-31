@@ -24,7 +24,7 @@ import java.util.*;
 import java.util.concurrent.*;
 import java.util.function.*;
 
-public class GraalVMJavascriptSupport extends LanguageSupport {
+public class GraalVMJavascriptSupport implements LanguageSupport {
 
     private static final Logger log = LoggerFactory.getLogger(GraalVMJavascriptSupport.class);
 
@@ -61,9 +61,9 @@ public class GraalVMJavascriptSupport extends LanguageSupport {
                 if (e.isSyntaxError()) {
                     SourceSection location = e.getSourceLocation();
                     log.warn("Syntax error compiling Javascript at {} line {} position {}", location.getSource(), location.getStartLine(), location.getCharIndex());
-                    log.warn("Location " + location);
+                    log.warn("Location: {}", location);
                 } else {
-                    log.warn("");
+                    log.warn("",e);
                 }
                 throw e;
             } catch (Exception e) {
@@ -76,19 +76,6 @@ public class GraalVMJavascriptSupport extends LanguageSupport {
         protected Source createOneScript() {
             return Source.create("js", javascriptCode);
         }
-    }
-
-    @Override
-    public Function<Map<String, Object>, Boolean> compileExpression(ExecutorService executorService, ClassLoader cl, String src) {
-        return new GraalVMJavascriptSupport.GraalVMJavascriptExecutorPool<>(executorService, src) {
-            @Override
-            public Boolean apply(Map<String, Object> parameters) {
-                Object result = this.execute(parameters);
-                if (result instanceof Boolean)
-                    return (Boolean) result;
-                return false;
-            }
-        };
     }
 
     @Override

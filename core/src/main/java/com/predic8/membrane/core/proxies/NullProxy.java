@@ -20,4 +20,9 @@ public class NullProxy extends AbstractProxy {
    public boolean isTargetAdjustHostHeader() {
       return true;
    }
+
+   @Override
+   public String getName() {
+      return "Null Proxy";
+   }
 }

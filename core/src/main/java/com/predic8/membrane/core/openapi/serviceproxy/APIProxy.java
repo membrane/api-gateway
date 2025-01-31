@@ -32,7 +32,7 @@ import java.util.*;
 import static com.predic8.membrane.core.lang.ExchangeExpression.Language.SPEL;
 
 /**
- * @description The api proxy extends the serviceProxy with API related functions like OpenAPI support.
+ * @description The api proxy extends the serviceProxy with API related functions like OpenAPI support and path parameters.
  * @topic 1. Proxies and Flow
  */
 @MCElement(name = "api")
