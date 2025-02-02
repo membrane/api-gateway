@@ -85,7 +85,7 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
 
     protected RuleManager ruleManager = new RuleManager();
     protected final FlowController flowController;
-    protected ExchangeStore exchangeStore = new ForgetfulExchangeStore();
+    protected ExchangeStore exchangeStore;
     protected Transport transport;
     protected ResolverMap resolverMap;
     protected DNSCache dnsCache = new DNSCache();
