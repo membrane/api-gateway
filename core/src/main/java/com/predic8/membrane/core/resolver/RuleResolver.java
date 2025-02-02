@@ -58,7 +58,7 @@ public class RuleResolver implements SchemaResolver {
                 Exchange exc = Request.get("?wsdl").buildExchange();
                 exc.getDestinations().clear();
                 exc.getDestinations().add(urlString);
-                exc.setRule(proxy);
+                exc.setProxy(proxy);
                 InternalRoutingInterceptor isri = new InternalRoutingInterceptor();
                 isri.init(router);
                 isri.handleRequest(exc);

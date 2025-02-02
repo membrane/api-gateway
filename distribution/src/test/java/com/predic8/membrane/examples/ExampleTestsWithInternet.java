@@ -19,6 +19,7 @@ import com.predic8.membrane.examples.env.*;
 import com.predic8.membrane.examples.tests.*;
 import com.predic8.membrane.examples.tests.loadbalancing.*;
 import com.predic8.membrane.examples.tests.openapi.*;
+import com.predic8.membrane.examples.tests.rest2soap.*;
 import com.predic8.membrane.examples.tests.ssl.*;
 import com.predic8.membrane.examples.tests.validation.*;
 import com.predic8.membrane.examples.tests.versioning.*;
@@ -61,7 +62,9 @@ import org.junit.platform.suite.api.*;
         // Configuration
         ProxiesXMLExampleTest.class,
         ProxiesXMLSoapExampleTest.class,
-        ProxiesXMLFullExampleTest.class
+        ProxiesXMLFullExampleTest.class,
+
+        Rest2SOAPTemplateExampleTest.class
 
 })
 @ExcludeClassNamePatterns("com.predic8.membrane.examples.env.HelpLinkExistenceTest")

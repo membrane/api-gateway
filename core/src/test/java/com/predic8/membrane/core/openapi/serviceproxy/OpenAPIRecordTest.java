@@ -34,7 +34,7 @@ class OpenAPIRecordTest {
         router.setBaseLocation("");
 
         get.setRequest(new Request.Builder().method("GET").build());
-        get.setRule(new NullProxy());
+        get.setProxy(new NullProxy());
         get.setOriginalHostHeader("api.predic8.de:80");
     }
 }

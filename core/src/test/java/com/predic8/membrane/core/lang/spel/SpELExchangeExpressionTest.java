@@ -31,7 +31,7 @@ class SpELExchangeExpressionTest extends AbstractExchangeExpressionTest {
 
     @Override
     protected Request.Builder getRequestBuilder() throws URISyntaxException {
-        return post("/foo?city=Paris")
+        return post("/foo/7/9?city=Paris")
                 .body("""
                 {
                     "id": 747,
@@ -160,5 +160,11 @@ class SpELExchangeExpressionTest extends AbstractExchangeExpressionTest {
     @Test
     void param() {
         assertEquals("Paris", evalString("param.city"));
+    }
+
+    @Test
+    void pathParameters() {
+        assertEquals("7", evalString("pathParam['fid']"));
+        assertEquals("9", evalString("pathParam['gid']"));
     }
 }

@@ -15,6 +15,8 @@ package com.predic8.membrane.core.openapi.util;
 
 import org.jetbrains.annotations.*;
 
+import java.net.*;
+import java.nio.charset.*;
 import java.util.*;
 import java.util.regex.*;
 import java.util.stream.*;
@@ -34,7 +36,10 @@ public class UriTemplateMatcher {
      *
      * @return Map of Parameters. If the path does not match PathDoesNotMatchException is thrown.
      */
-    public Map<String, String> match(String template, String uri) throws PathDoesNotMatchException {
+    public static Map<String, String> matchTemplate(String template, String uri) throws PathDoesNotMatchException {
+        if (template == null || uri == null)
+            return null;
+
         Matcher parameters = getTemplateMatcher(template, uri);
 
         if (!parameters.matches()) {
@@ -47,7 +52,7 @@ public class UriTemplateMatcher {
                 .boxed()
                 .collect(toMap(
                         names::get,
-                        i -> parameters.group(i + 1)
+                        i -> URLDecoder.decode(parameters.group(i + 1), StandardCharsets.UTF_8)
                 ));
     }
 

@@ -65,7 +65,7 @@ public class RuleMatchingInterceptor extends AbstractInterceptor {
 	}
 
 	public static void assignRule(Exchange exc, Proxy proxy) {
-		exc.setRule(proxy);
+		exc.setProxy(proxy);
 		if (!(proxy instanceof SSLableProxy sp))
 			return;
 

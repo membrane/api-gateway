@@ -21,7 +21,7 @@ import java.util.*;
 import java.util.concurrent.*;
 import java.util.function.*;
 
-public class GroovyLanguageSupport extends LanguageSupport {
+public class GroovyLanguageSupport implements LanguageSupport {
 
 	private abstract static class GroovyScriptExecutorPool<R> extends
 	ScriptExecutorPool<Script, R> {
@@ -54,18 +54,6 @@ public class GroovyLanguageSupport extends LanguageSupport {
 	}
 
 	private static final GroovyShell shell = new GroovyShell();
-
-	@Override
-	public Function<Map<String, Object>, Boolean> compileExpression(ExecutorService executorService, ClassLoader classLoader, String src) {
-		return new GroovyScriptExecutorPool<>(executorService, addImports(src)) {
-			@Override
-			public Boolean apply(Map<String, Object> parameters) {
-				if (this.execute(parameters) instanceof Boolean result)
-					return result;
-				return false;
-			}
-		};
-	}
 
 	@Override
 	public Function<Map<String, Object>, Object> compileScript(ExecutorService executorService, ClassLoader classLoader, String script) {

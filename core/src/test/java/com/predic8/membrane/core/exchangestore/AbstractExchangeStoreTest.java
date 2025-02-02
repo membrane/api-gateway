@@ -34,39 +34,38 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class AbstractExchangeStoreTest {
 
+    private Exchange e1, e2, e3, e4, e5;
+
     private static final Pattern pattern = Pattern.compile("/.*(/?\\?.*)?");
 
-    @SuppressWarnings("FieldCanBeLocal")
-    private Exchange e1, e2, e3, e4, e5;
     private final LimitedMemoryExchangeStore exchangeStore = new LimitedMemoryExchangeStore();
-
 
     @BeforeEach
     void setUp() throws URISyntaxException {
         e1 = Request.get("/foo/bar?a=1&b=2&sort=method").contentType(APPLICATION_JSON).header("Goo","Bar").buildExchange();
         e1.setResponse(Response.ok().contentType(TEXT_HTML_UTF8).header("X-Foo","XXX ZZZ AAA").build());
         e1.setOriginalRequestUri("/foo/bar");
-        e1.setRule(new APIProxy());
+        e1.setProxy(new APIProxy());
 
         e2 = Request.post("/products").contentType(APPLICATION_JSON).header("Foo Goo","Bar").buildExchange();
         e2.setResponse(Response.ok().contentType(TEXT_HTML_UTF8).header("X-Goo","XXX ZZZ AAA").build());
         e2.setOriginalRequestUri("/poo/bar");
-        e2.setRule(new APIProxy());
+        e2.setProxy(new APIProxy());
 
         e3 = Request.post("/products").contentType(APPLICATION_JSON).header("Zoo Goo","Bar").buildExchange();
         e3.setResponse(Response.badRequest().contentType(TEXT_HTML_UTF8).header("X-OO","XXX ZZZ AAA").build());
         e3.setOriginalRequestUri("/bar");
-        e3.setRule(new APIProxy());
+        e3.setProxy(new APIProxy());
 
         e4 = Request.get("/foo/bar?a=1&b=2&sort=method").contentType(APPLICATION_JSON).header("Goo Goo","Bar").buildExchange();
         e4.setResponse(Response.badRequest().contentType(TEXT_HTML_UTF8).header("X-Bar","XXX ZZZ AAA").build());
         e4.setOriginalRequestUri("/foo/bar");
-        e4.setRule(new APIProxy());
+        e4.setProxy(new APIProxy());
 
         e5 = Request.get("/foo/bar?a=1&b=2&sort=method").contentType(APPLICATION_JSON).header("Goo Goo","Bar").buildExchange();
         e5.setResponse(Response.ok().contentType(TEXT_HTML_UTF8).header("X-Goo","XXX ZZZ AAA").build());
         e5.setOriginalRequestUri("/goo/bar");
-        e5.setRule(new APIProxy());
+        e5.setProxy(new APIProxy());
 
         exchangeStore.snap(e1, REQUEST);
         exchangeStore.snap(e1, RESPONSE);

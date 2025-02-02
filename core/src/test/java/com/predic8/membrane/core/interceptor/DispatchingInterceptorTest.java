@@ -34,7 +34,7 @@ public class DispatchingInterceptorTest {
 	private Exchange exc;
 
 	@BeforeEach
-	public void setUp() throws Exception {
+	public void setUp() {
 		Router router = new Router();
 		dispatcher = new DispatchingInterceptor();
 		dispatcher.init(router);
@@ -45,7 +45,7 @@ public class DispatchingInterceptorTest {
 	@Test
 	public void testServiceProxy() throws Exception {
 		exc.setRequest(MessageUtil.getGetRequest("/axis2/services/BLZService?wsdl"));
-		exc.setRule(serviceProxy);
+		exc.setProxy(serviceProxy);
 
 		assertEquals(CONTINUE, dispatcher.handleRequest(exc));
 
@@ -58,7 +58,7 @@ public class DispatchingInterceptorTest {
 	@Test
 	public void testProxyRuleHttp() throws Exception {
 		exc.setRequest(MessageUtil.getGetRequest("http://www.thomas-bayer.com:80/axis2/services/BLZService?wsdl"));
-		exc.setRule(getProxyRule());
+		exc.setProxy(getProxyRule());
 
 		assertEquals(CONTINUE, dispatcher.handleRequest(exc));
 
@@ -75,7 +75,7 @@ public class DispatchingInterceptorTest {
 
     @Test
     void getAddressFromTargetElementTargetWithHostAndPort() throws Exception {
-		exc.setRule(serviceProxy);
+		exc.setProxy(serviceProxy);
 		exc.setRequest(new Request.Builder().get("/foo").build());
 		assertEquals("http://thomas-bayer.com:80/foo", getGetAddressFromTargetElement());
     }
@@ -83,7 +83,7 @@ public class DispatchingInterceptorTest {
 	@Test
 	void getAddressFromTargetElementTargetWithURL() throws Exception {
 		serviceProxy.getTarget().setUrl("http://api.predic8.de");
-		exc.setRule(serviceProxy);
+		exc.setProxy(serviceProxy);
 		exc.setOriginalRequestUri("/foo");
 		assertEquals("http://api.predic8.de/foo", getGetAddressFromTargetElement());
 	}
@@ -91,7 +91,7 @@ public class DispatchingInterceptorTest {
 	@Test
 	void getAddressFromTargetElementTargetWithURLHTTPS() throws Exception {
 		serviceProxy.getTarget().setUrl("https://api.predic8.de");
-		exc.setRule(serviceProxy);
+		exc.setProxy(serviceProxy);
 		exc.setOriginalRequestUri("/foo");
 		assertEquals("https://api.predic8.de/foo", getGetAddressFromTargetElement());
 	}
@@ -99,7 +99,7 @@ public class DispatchingInterceptorTest {
 	@Test
 	void getAddressFromTargetElementTargetWithSlash() throws Exception {
 		serviceProxy.getTarget().setUrl("https://api.predic8.de/");
-		exc.setRule(serviceProxy);
+		exc.setProxy(serviceProxy);
 		exc.setOriginalRequestUri("/foo");
 		assertEquals("https://api.predic8.de/", getGetAddressFromTargetElement());
 	}
@@ -107,7 +107,7 @@ public class DispatchingInterceptorTest {
 	@Test
 	void getAddressFromTargetElementTargetWithPath() throws Exception {
 		serviceProxy.getTarget().setUrl("https://api.predic8.de/baz");
-		exc.setRule(serviceProxy);
+		exc.setProxy(serviceProxy);
 		exc.setOriginalRequestUri("/foo");
 		assertEquals("https://api.predic8.de/baz", getGetAddressFromTargetElement());
 	}

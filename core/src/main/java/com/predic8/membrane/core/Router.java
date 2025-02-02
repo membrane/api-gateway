@@ -357,8 +357,12 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
     private void startHotDeployment() {
         if (hdt != null)
             throw new IllegalStateException("Hot deployment already started.");
-        if (!(beanFactory instanceof TrackingApplicationContext))
-            throw new RuntimeException("ApplicationContext is not a TrackingApplicationContext. Please set <router hotDeploy=\"false\">.");
+        if (!(beanFactory instanceof TrackingApplicationContext)) {
+            log.warn("""
+                    ApplicationContext is not a TrackingApplicationContext. Please set <router hotDeploy="false">.
+                    """);
+            return;
+        }
         if (!(beanFactory instanceof AbstractRefreshableApplicationContext))
             throw new RuntimeException("ApplicationContext is not a AbstractRefreshableApplicationContext. Please set <router hotDeploy=\"false\">.");
         synchronized (hotDeployingContexts) {

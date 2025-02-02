@@ -36,8 +36,6 @@ import com.predic8.membrane.annot.MCTextContent;
 @MCElement(name="path", topLevel=false, mixed=true)
 public class Path {
 
-	public static final String ELEMENT_NAME = "path";
-
 	private String value;
 
 	private boolean regExp;

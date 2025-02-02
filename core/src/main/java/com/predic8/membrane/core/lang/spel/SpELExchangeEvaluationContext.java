@@ -32,7 +32,7 @@ import static com.predic8.membrane.core.util.URLParamUtil.DuplicateKeyOrInvalidF
 public class SpELExchangeEvaluationContext extends StandardEvaluationContext {
     private static final Logger log = LoggerFactory.getLogger(SpELExchangeEvaluationContext.class);
 
-    private static  final ObjectMapper om = new ObjectMapper();
+    private static final ObjectMapper om = new ObjectMapper();
 
     private final Exchange exchange;
     private final Message message;
@@ -44,6 +44,9 @@ public class SpELExchangeEvaluationContext extends StandardEvaluationContext {
     private final SpELLablePropertyAware properties;
 
     private SpELLablePropertyAware params;
+
+    private final SpELPathParameters pathParam;
+
     private String path;
     private String method;
 
@@ -62,32 +65,42 @@ public class SpELExchangeEvaluationContext extends StandardEvaluationContext {
         this.flow = flow;
         this.message = exchange.getMessage(flow);
 
+        pathParam = new SpELPathParameters(exchange);
         properties = new SpELProperties(exchange.getProperties());
         headers = new SpELHeader(message.getHeader());
 
-        Request request = exchange.getRequest();
-        if (request != null) {
-            path = request.getUri();
-            method = request.getMethod();
-            try {
-                params = new SpELMap<>(URLParamUtil.getParams(new URIFactory(), exchange, ERROR));
-            } catch (Exception e) {
-                log.warn("Error parsing query parameters: {}", e.getMessage());
-            }
-            this.request = new SpELMessageWrapper(exchange.getRequest());
-        }
-
-        Response response = exchange.getResponse();
-        if (response != null) {
-            this.response = new SpELMessageWrapper(exchange.getResponse());
-            this.statusCode = exchange.getResponse().getStatusCode();
-        }
+        extractFromRequest(exchange);
+        extractFromResponse(exchange);
 
         setRootObject(this);
         addPropertyAccessor(new AwareExchangePropertyAccessor());
 
         // Enables Membrane functions in SpEL scripts like 'hasScopes("admin")'
         setMethodResolvers(List.of(new BuiltInFunctionResolver()));
+    }
+
+    private void extractFromResponse(Exchange exchange) {
+        Response response = exchange.getResponse();
+        if (response == null)
+            return;
+
+        this.response = new SpELMessageWrapper(response);
+        this.statusCode = response.getStatusCode();
+    }
+
+    private void extractFromRequest(Exchange exchange) {
+        Request request = exchange.getRequest();
+        if (request == null)
+            return;
+
+        path = request.getUri();
+        method = request.getMethod();
+        try {
+            params = new SpELMap<>(URLParamUtil.getParams(new URIFactory(), exchange, ERROR));
+        } catch (Exception e) {
+            log.warn("Error parsing query parameters: {}", e.getMessage());
+        }
+        this.request = new SpELMessageWrapper(exchange.getRequest());
     }
 
     public SpELLablePropertyAware getProperties() {
@@ -136,7 +149,9 @@ public class SpELExchangeEvaluationContext extends StandardEvaluationContext {
         return method;
     }
 
-    public int getStatusCode() { return statusCode; }
+    public int getStatusCode() {
+        return statusCode;
+    }
 
     public SpELMessageWrapper getRequest() {
         return request;
@@ -152,6 +167,11 @@ public class SpELExchangeEvaluationContext extends StandardEvaluationContext {
 
     public Flow getFlow() {
         return flow;
+    }
+
+    @SuppressWarnings("unused")
+    public SpELLablePropertyAware getPathParam() {
+        return pathParam;
     }
 
     public SpELMap<String, Object> getJson() throws IOException {

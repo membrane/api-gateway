@@ -1,0 +1,33 @@
+<spring:beans xmlns="http://membrane-soa.org/proxies/1/"
+	xmlns:spring="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.2.xsd
+					    http://membrane-soa.org/proxies/1/ http://membrane-soa.org/schemas/proxies-1.xsd">
+
+	<router>
+
+		<api port="2000" method="GET">
+			<path>/cities/{city}</path>
+			<request>
+				<soapBody version="1.1"><![CDATA[
+                    <getCity xmlns="https://predic8.de/cities">
+                        <name>${pathParam.city}</name>
+                    </getCity>
+                ]]></soapBody>
+			</request>
+			<response>
+				<template contentType="application/json">
+					{
+						"country": "${property.country}",
+						"population": "${property.population}"
+					}
+				</template>
+				<setProperty name="country" value="${//country}" language="xpath"/>
+				<setProperty name="population" value="${//population}" language="xpath"/>
+			</response>
+			<target method="POST" url="https://www.predic8.de/city-service"/>
+		</api>
+		
+	</router>
+	
+</spring:beans>

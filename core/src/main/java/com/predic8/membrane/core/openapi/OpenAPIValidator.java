@@ -16,29 +16,20 @@
 
 package com.predic8.membrane.core.openapi;
 
-import com.predic8.membrane.core.openapi.model.Request;
-import com.predic8.membrane.core.openapi.model.Response;
+import com.predic8.membrane.core.openapi.model.*;
 import com.predic8.membrane.core.openapi.serviceproxy.*;
-import com.predic8.membrane.core.openapi.util.MethodNotAllowException;
-import com.predic8.membrane.core.openapi.util.PathDoesNotMatchException;
-import com.predic8.membrane.core.openapi.util.UriUtil;
-import com.predic8.membrane.core.openapi.validators.OperationValidator;
-import com.predic8.membrane.core.openapi.validators.PathParametersValidator;
-import com.predic8.membrane.core.openapi.validators.ValidationContext;
-import com.predic8.membrane.core.openapi.validators.ValidationErrors;
-import com.predic8.membrane.core.util.URIFactory;
-import io.swagger.v3.oas.models.OpenAPI;
-import io.swagger.v3.oas.models.PathItem;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.predic8.membrane.core.openapi.util.*;
+import com.predic8.membrane.core.openapi.validators.*;
+import com.predic8.membrane.core.util.*;
+import io.swagger.v3.oas.models.*;
+import org.slf4j.*;
 
-import java.net.URISyntaxException;
-import java.util.Map;
+import java.net.*;
+import java.util.*;
 
-import static com.predic8.membrane.core.openapi.util.UriUtil.normalizeUri;
-import static com.predic8.membrane.core.openapi.validators.ValidationContext.ValidatedEntityType.METHOD;
-import static com.predic8.membrane.core.openapi.validators.ValidationContext.ValidatedEntityType.PATH;
-import static java.lang.String.format;
+import static com.predic8.membrane.core.openapi.util.UriUtil.*;
+import static com.predic8.membrane.core.openapi.validators.ValidationContext.ValidatedEntityType.*;
+import static java.lang.String.*;
 
 public class OpenAPIValidator {
 
@@ -60,12 +51,11 @@ public class OpenAPIValidator {
      */
     private void init() {
         if (rec.getApi().getServers() != null) {
-            log.debug("Found server " + getUrl());
+            log.debug("Found server {}", getUrl());
             try {
                 basePath = UriUtil.getPathFromURL(uriFactory, getUrl());
             } catch (URISyntaxException e) {
-                // @TODO
-                throw new RuntimeException("Config Error ", e);
+                throw new ConfigurationException("Error initializing OpenAPI validator. Path was: %s ".formatted(getUrl()), e);
             }
         }
     }
@@ -74,18 +64,18 @@ public class OpenAPIValidator {
         if (rec.getSpec().hasRewrite() && rec.getSpec().getRewrite().getBasePath() != null)
             return rec.getSpec().getRewrite().getBasePath();
 
-        return rec.getApi().getServers().get(0).getUrl();
+        return rec.getApi().getServers().getFirst().getUrl();
     }
 
-    public ValidationErrors validate(Request request) {
+    public ValidationErrors validate(Request<? extends Body> request) {
         return validateMessage(request, null);
     }
 
-    public ValidationErrors validateResponse(Request request, Response response) {
+    public ValidationErrors validateResponse(Request<? extends Body> request, Response<? extends Body> response) {
         return validateMessage(request, response);
     }
 
-    private ValidationErrors validateMessage(Request req, Response res) {
+    private ValidationErrors validateMessage(Request<? extends Body> req, Response<? extends Body> res) {
 
         for (Map.Entry<String, PathItem> path : rec.getApi().getPaths().entrySet()) {
             try {
@@ -102,7 +92,7 @@ public class OpenAPIValidator {
                 .statusCode(404), format("Path %s is invalid.", req.getPath()));
     }
 
-    private ValidationErrors validateMethodsAndParametersIfPathMatches(Request req, Response response, String uriTemplate, PathItem pathItem) throws PathDoesNotMatchException {
+    private ValidationErrors validateMethodsAndParametersIfPathMatches(Request<? extends Body> req, Response<? extends Body> response, String uriTemplate, PathItem pathItem) throws PathDoesNotMatchException {
 
         // Throws exception if path or parameters do not match
         req.parsePathParameters(normalizeUri(basePath + uriTemplate));
@@ -118,7 +108,7 @@ public class OpenAPIValidator {
         return errors;
     }
 
-    private ValidationErrors validateMethods(ValidationContext ctx, Request req, Response response, PathItem pathItem) {
+    private ValidationErrors validateMethods(ValidationContext ctx, Request<? extends Body> req, Response<? extends Body> response, PathItem pathItem) {
         ValidationErrors errors = new ValidationErrors();
         try {
             return errors.add(new OperationValidator(rec.getApi()).validateOperation(ctx, req, response, pathItem));

@@ -16,29 +16,21 @@
 
 package com.predic8.membrane.core.openapi.util;
 
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
 import java.util.*;
 import java.util.regex.*;
 
 import static com.predic8.membrane.core.openapi.util.UriTemplateMatcher.*;
 import static java.util.List.of;
-import static java.util.Map.entry;
+import static java.util.Map.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class UriTemplateMatcherTest {
 
-    UriTemplateMatcher matcher;
-
-    @BeforeEach
-    public void setUp() {
-        matcher = new UriTemplateMatcher();
-    }
-
     @Test
     public void simple() throws PathDoesNotMatchException {
-        assertEquals(0,matcher.match("/foo", "/foo").size());
+        assertEquals(0, matchTemplate("/foo", "/foo").size());
     }
 
     @Test
@@ -48,56 +40,56 @@ public class UriTemplateMatcherTest {
 
     @Test
     public void simpleNoneMatch() {
-        assertThrows(PathDoesNotMatchException.class, () -> matcher.match("/foo", "/bar"));
+        assertThrows(PathDoesNotMatchException.class, () -> matchTemplate("/foo", "/bar"));
     }
 
     @Test
     public void noneMatch() {
-        assertThrows(PathDoesNotMatchException.class, () -> matcher.match("/foo/{fid}", "/bar/7"));
+        assertThrows(PathDoesNotMatchException.class, () -> matchTemplate("/foo/{fid}", "/bar/7"));
     }
 
     @Test
     void bad() throws PathDoesNotMatchException {
-        Map<String, String> match = matcher.match("aaa{id}bbb", "aaa7bbb");
+        Map<String, String> match = matchTemplate("aaa{id}bbb", "aaa7bbb");
         assertEquals(1, match.size());
         assertEquals("7", match.get("id"));
     }
 
     @Test
     public void simpleOneParam() throws PathDoesNotMatchException {
-        Map<String, String> match = matcher.match("/foo/{id}", "/foo/7");
+        Map<String, String> match = matchTemplate("/foo/{id}", "/foo/7");
         assertEquals(1, match.size());
         assertEquals("7", match.get("id"));
     }
 
     @Test
     public void matchNoSlashAtEnd() throws PathDoesNotMatchException {
-        assertEquals(0,matcher.match("/foo", "/foo/").size());
+        assertEquals(0, matchTemplate("/foo", "/foo/").size());
     }
 
     @Test
     public void matchTemplateTrailingSlash() throws PathDoesNotMatchException {
-        assertEquals(0,matcher.match("/foo/", "/foo").size());
+        assertEquals(0, matchTemplate("/foo/", "/foo").size());
     }
 
     @Test
     public void matchUriAndTemplateTrailingSlash() throws PathDoesNotMatchException {
-        assertEquals(0,matcher.match("/foo/", "/foo/").size());
+        assertEquals(0, matchTemplate("/foo/", "/foo/").size());
     }
 
     @Test
     public void matchUriTrailingSlashWithParams() throws PathDoesNotMatchException {
-        assertEquals(0,matcher.match("/foo", "/foo/?x=1").size());
+        assertEquals(0, matchTemplate("/foo", "/foo/?x=1").size());
     }
 
     @Test
     public void matchNoTrailingSlashesWithParams() throws PathDoesNotMatchException {
-        assertEquals(0,matcher.match("/foo", "/foo?x=1").size());
+        assertEquals(0, matchTemplate("/foo", "/foo?x=1").size());
     }
 
     @Test
     public void matchUriAndTemplateWithFourParams() throws PathDoesNotMatchException {
-        Map<String, String> match = matcher.match("/foo/{id1}/{id2}/{id3}/{id4}", "/foo/a/b/c/d");
+        Map<String, String> match = matchTemplate("/foo/{id1}/{id2}/{id3}/{id4}", "/foo/a/b/c/d");
         assertEquals(4, match.size());
         assertEquals("a", match.get("id1"));
         assertEquals("b", match.get("id2"));
@@ -107,32 +99,32 @@ public class UriTemplateMatcherTest {
 
     @Test
     public void matchUriAndTemplateWithFourParamsWithTrailingSlash() throws PathDoesNotMatchException {
-        assertEquals(4,matcher.match("/foo/{id1}/{id2}/{id3}/{id4}", "/foo/a/b/c/d/").size());
+        assertEquals(4, matchTemplate("/foo/{id1}/{id2}/{id3}/{id4}", "/foo/a/b/c/d/").size());
     }
 
     @Test
     public void matchUriWithTwoParamsAgainstOneParam() {
-        assertThrows(PathDoesNotMatchException.class, () -> matcher.match("/foo/{id1}/{id2}", "/foo/a"));
+        assertThrows(PathDoesNotMatchException.class, () -> matchTemplate("/foo/{id1}/{id2}", "/foo/a"));
     }
 
     @Test
     public void matchUriWithThreeParamsAgainstOneParam() {
-        assertThrows(PathDoesNotMatchException.class, () -> matcher.match("/foo/{id1}/{id2}/{id3}", "/foo/a"));
+        assertThrows(PathDoesNotMatchException.class, () -> matchTemplate("/foo/{id1}/{id2}/{id3}", "/foo/a"));
     }
 
     @Test
     public void matchUriWithOneParamsAgainstTwoParam() {
-        assertThrows(PathDoesNotMatchException.class, () -> matcher.match("/foo/{id1}", "/foo/a/b"));
+        assertThrows(PathDoesNotMatchException.class, () -> matchTemplate("/foo/{id1}", "/foo/a/b"));
     }
 
     @Test
     public void matchUriWithOneParamsAgainstThreeParam() {
-        assertThrows(PathDoesNotMatchException.class, () -> matcher.match("/foo/{id1}", "/foo/a/b/c"));
+        assertThrows(PathDoesNotMatchException.class, () -> matchTemplate("/foo/{id1}", "/foo/a/b/c"));
     }
 
     @Test
     public void matchUriWithTwoParams() throws PathDoesNotMatchException {
-        Map<String, String> match = matcher.match("/foo/{id1}/{id2}", "/foo/a/b");
+        Map<String, String> match = matchTemplate("/foo/{id1}/{id2}", "/foo/a/b");
         assertEquals(2, match.size());
         assertTrue(match.containsKey("id1"));
         assertTrue(match.containsKey("id2"));
@@ -140,28 +132,28 @@ public class UriTemplateMatcherTest {
 
     @Test
     public void matchSingleSlashes() throws PathDoesNotMatchException {
-        assertEquals(0,matcher.match("/", "/").size());
+        assertEquals(0, matchTemplate("/", "/").size());
     }
 
     @Test
     public void matchSingleTemplateSlash() throws PathDoesNotMatchException {
-        assertEquals(0,matcher.match("/", "").size());
+        assertEquals(0, matchTemplate("/", "").size());
     }
 
     @Test
     public void matchSingleUriSlash() throws PathDoesNotMatchException {
-        assertEquals(0,matcher.match("", "/").size());
+        assertEquals(0, matchTemplate("", "/").size());
     }
 
     @Test
     public void matchNoSlashes() throws PathDoesNotMatchException {
-        assertEquals(0,matcher.match("", "").size());
+        assertEquals(0, matchTemplate("", "").size());
     }
 
     @Test
     public void match() throws PathDoesNotMatchException {
-        assertEquals(Map.of("fid", "7"), matcher.match("/foo/{fid}", "/foo/7"));
-        assertEquals(Map.ofEntries(entry("cid","42"), entry("coid","abc")), matcher.match("/customer/{cid}/contracts/{coid}", "/customer/42/contracts/abc"));
+        assertEquals(Map.of("fid", "7"), matchTemplate("/foo/{fid}", "/foo/7"));
+        assertEquals(Map.ofEntries(entry("cid","42"), entry("coid","abc")), matchTemplate("/customer/{cid}/contracts/{coid}", "/customer/42/contracts/abc"));
     }
 
     @Test
@@ -183,7 +175,7 @@ public class UriTemplateMatcherTest {
 
     @Test
     public void exoticParameterNames() throws PathDoesNotMatchException {
-        var matches = matcher.match("/foo/{i_d1}/{Id-2}/{id%3}/{id<>4}", "/foo/1/2/3/4/");
+        var matches = matchTemplate("/foo/{i_d1}/{Id-2}/{id%3}/{id<>4}", "/foo/1/2/3/4/");
         assertEquals(4,matches.size());
         assertEquals("1", matches.get("i_d1"));
         assertEquals("2", matches.get("Id-2"));

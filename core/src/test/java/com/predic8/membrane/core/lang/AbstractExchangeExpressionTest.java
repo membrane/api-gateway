@@ -18,6 +18,7 @@ import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.Interceptor.*;
 import com.predic8.membrane.core.lang.ExchangeExpression.*;
+import com.predic8.membrane.core.openapi.serviceproxy.*;
 import org.junit.jupiter.api.*;
 
 import java.net.*;
@@ -46,6 +47,12 @@ public abstract class AbstractExchangeExpressionTest {
         exchange.setProperty("can-fly", false);
         exchange.setProperty("tags", List.of("animal", "water"));
         exchange.setProperty("world", Map.of("country", "US", "continent", "Europe"));
+
+        APIProxyKey key = new APIProxyKey(2000);
+        key.setPath("/foo/{fid}/{gid}");
+        APIProxy proxy = new APIProxy();
+        proxy.setKey(key);
+        exchange.setProxy(proxy);
     }
 
     @AfterAll
