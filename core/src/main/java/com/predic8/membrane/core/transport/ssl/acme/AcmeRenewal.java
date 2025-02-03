@@ -140,7 +140,13 @@ public class AcmeRenewal {
             }
             if (LOG.isDebugEnabled())
                 LOG.debug("acme ("+id()+"): finalizing order");
-            client.finalizeOrder(getAccountURL(), oal.get().getOrder().getFinalize(), client.generateCSR(hosts, client.getOALKey(hosts).getPrivateKey()));
+            try {
+                client.finalizeOrder(getAccountURL(), oal.get().getOrder().getFinalize(), client.generateCSR(hosts, client.getOALKey(hosts).getPrivateKey()));
+            } catch (AcmeException e) {
+                if (e.getMessage().contains("urn:ietf:params:acme:error:orderNotReady Order's status (\"valid\") is not acceptable for finalization"))
+                    return; // order is already valid
+                throw e;
+            }
         }
         waitFor(
                 "order to become 'VALID'",
