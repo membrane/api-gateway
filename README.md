@@ -94,7 +94,7 @@ A versatile and lightweight **API Gateway** for **REST** and **legacy SOAP Web S
   - Open a terminal in the extracted directory.
   - Run the appropriate command for your operating system:
     - **Linux/Mac:** `./service-proxy.sh`
-    - **Windows:** `service-proxy.bat`
+    - **Windows:** `service-proxy.ps1`
 
 3. **Access the Gateway**
   - Open your browser and navigate to [http://localhost:2000](http://localhost:2000).

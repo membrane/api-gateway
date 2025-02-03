@@ -12,7 +12,7 @@ To run the example execute the following steps:
 
 1. Go to the `examples/loadbalancing/3-node-api` directory.
 
-2. Run `service-proxy.bat` or `service-proxy.sh`
+2. Run `service-proxy.ps1` or `service-proxy.sh`
 
    This will start three nodes, the loadbalancer and the node management API.
 

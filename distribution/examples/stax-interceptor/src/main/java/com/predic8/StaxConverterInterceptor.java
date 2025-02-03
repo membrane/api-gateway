@@ -43,20 +43,25 @@ public class StaxConverterInterceptor extends AbstractInterceptor implements XML
 
 
     @Override
-    public Outcome handleRequest(Exchange exc) throws Exception {
+    public Outcome handleRequest(Exchange exc) {
         return handleInternal(exc.getRequest());
     }
 
     @Override
-    public Outcome handleResponse(Exchange exc) throws Exception {
+    public Outcome handleResponse(Exchange exc) {
         return handleInternal(exc.getResponse());
     }
 
-    private Outcome handleInternal(Message msg) throws Exception {
+    private Outcome handleInternal(Message msg) {
         if(!msg.isXML()){
             return CONTINUE;
         }
-        replaceTag(msg);
+
+        try {
+            replaceTag(msg);
+        } catch (XMLStreamException e) {
+            throw new RuntimeException(e);
+        }
         return CONTINUE;
     }
 

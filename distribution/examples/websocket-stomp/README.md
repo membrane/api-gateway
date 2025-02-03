@@ -25,7 +25,7 @@ the Running instructions.
 	  
 3.	Go to the `examples/websocket-stomp directory`.
 	  
-4.	Execute `service-proxy.sh` / `service-proxy.bat`
+4.	Execute `service-proxy.sh` / `service-proxy.ps1`
 	  
 5.	Open the URL http://localhost:8161/admin/queues.jsp in your browser.
 

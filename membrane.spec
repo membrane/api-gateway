@@ -131,7 +131,7 @@ exit 0
 %{__rm} -rf %{buildroot}%{homedir}/examples
 %{__rm} -rf %{buildroot}%{homedir}/tutorials
 
-%{__rm} -f %{buildroot}%{homedir}/service-proxy.bat
+%{__rm} -f %{buildroot}%{homedir}/service-proxy.ps1
 %{__rm} -f %{buildroot}%{homedir}/CHANGELOG.txt
 %{__rm} -f %{buildroot}%{homedir}/INSTALL_TANUKI.txt
 %{__rm} -f %{buildroot}%{homedir}/README.txt

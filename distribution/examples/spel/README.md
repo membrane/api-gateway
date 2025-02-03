@@ -13,7 +13,7 @@ In this example we will visit a website and take a look at the logs in the conso
 
 2. Look at file `proxies.xml` ( maybe change some properties )
 
-3. Execute `service-proxy.bat`
+3. Execute `service-proxy.ps1`
 
 4. Open the URL [http://localhost:${LISTEN_PORT}/](http://localhost:${LISTEN_PORT}/) in your browser. Where LISTEN_PORT is value defined in `proxies.xml`
 

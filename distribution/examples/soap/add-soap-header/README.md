@@ -59,7 +59,7 @@ Run the appropriate command based on your operating system:
    ./service-proxy.sh
 
    # For Windows
-   service-proxy.bat
+   service-proxy.ps1
    ```
 
 ### Step 5: Test the Service

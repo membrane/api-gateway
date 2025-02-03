@@ -1,65 +1,69 @@
 $required_version = "21"
 
-function Start-MembraneRouter {
-    param(
-        [string]$membrane_home,
-        [Parameter(ValueFromRemainingArguments=$true)]
-        [string[]]$remainingArgs
-    )
+function Start-MembraneService {
+    param([string]$membrane_home)
 
+    $env:MEMBRANE_HOME = $membrane_home
     $CLASSPATH = "$membrane_home\conf;$membrane_home\lib\*"
-    Write-Host "Membrane Router running..."
-    & java $env:JAVA_OPTS -classpath "$CLASSPATH" com.predic8.membrane.core.cli.RouterCLI @remainingArgs
+    Write-Host "Starting: $membrane_home CL: $CLASSPATH"
+    & java -cp "$CLASSPATH" com.predic8.membrane.core.cli.RouterCLI
 }
 
-function Resolve-MembraneHome {
-    param([string]$PRG)
+function Find-MembraneDirectory {
+    param([string]$current)
 
-    while ((Get-Item -LiteralPath $PRG -ErrorAction SilentlyContinue).LinkType -eq "SymbolicLink") {
-        $PRG = (Get-Item -LiteralPath $PRG).Target
+    while ($current -ne "") {
+        if ((Test-Path "$current\conf") -and (Test-Path "$current\lib")) {
+            return $current
+        }
+        $current = Split-Path -Parent $current
     }
-
-    $saveddir = Get-Location
-    $MEMBRANE_HOME = Split-Path -Parent $PRG
-    Set-Location -Path $MEMBRANE_HOME
-    $MEMBRANE_HOME = (Get-Location).Path
-    Set-Location -Path $saveddir
-
-    return $MEMBRANE_HOME
+    return $null
 }
 
-if (-not (Get-Command java -ErrorAction SilentlyContinue)) {
+function Start-Membrane {
+    $membrane_home = Find-MembraneDirectory (Get-Location).Path
+    if ($membrane_home) {
+        Start-MembraneService $membrane_home
+    } else {
+        Write-Host "Could not start Membrane. Ensure the directory structure is correct."
+    }
+}
+
+try {
+    $null = Get-Command java -ErrorAction Stop
+} catch {
     Write-Host "Java is not installed. Membrane needs at least Java $required_version."
     exit 1
 }
 
-$version_line = $null
-java -version 2>&1 | ForEach-Object {
-    if ($_ -match "version") {
-        $version_line = $_
-    }
-}
+try {
+    $version_output = & java -version 2>&1
+    $version_line = $version_output | Where-Object { $_ -match "version" } | Select-Object -First 1
 
-if (-not $version_line) {
-    Write-Host "WARNING: Could not determine Java version. Make sure Java version is at least $required_version. Proceeding anyway..."
-    if (-not $env:MEMBRANE_HOME) {
-        $env:MEMBRANE_HOME = Resolve-MembraneHome $PSCommandPath
+    if (-not $version_line) {
+        Write-Host "WARNING: Could not determine Java version. Make sure Java version is at least $required_version. Proceeding anyway..."
+        Start-Membrane
+        exit 0
     }
-    Start-MembraneRouter $env:MEMBRANE_HOME $args
-    exit 0
-}
 
-$full_version = [regex]::Match($version_line, '"([^"]+)"').Groups[1].Value
-$current_version = [int]($full_version.Split('.')[0])
+    $full_version = $version_line -replace '.*version "([^"]+)".*', '$1'
+    $current_version = $full_version -replace '\..*$', ''
 
-if ($current_version -ge $required_version) {
-    Write-Host $env:MEMBRANE_HOME
-    if (-not $env:MEMBRANE_HOME) {
-        $env:MEMBRANE_HOME = Resolve-MembraneHome $PSCommandPath
+    if ($current_version -match '^\d+$') {
+        if ([int]$current_version -ge [int]$required_version) {
+            Start-Membrane
+            exit 0
+        } else {
+            Write-Host "Java version mismatch: Required=$required_version, Installed=$full_version"
+            exit 1
+        }
+    } else {
+        Write-Host "WARNING: Could not parse Java version. Make sure your Java version is at least $required_version. Proceeding anyway..."
+        Start-Membrane
+        exit 0
     }
-    Start-MembraneRouter $env:MEMBRANE_HOME $args
-    exit 0
-} else {
-    Write-Host "Java version mismatch: Required=$required_version, Installed=$full_version"
+} catch {
+    Write-Host "Error checking Java version: $_"
     exit 1
 }

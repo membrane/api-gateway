@@ -5,7 +5,7 @@ This example describes how to secure an API with SSL/TLS using a keystore in the
 
 ## Running the Example
 
-1. Run `service-proxy.bat` or `service-proxy.sh`
+1. Run `service-proxy.ps1` or `service-proxy.sh`
 2. Open the following URL in your browser. Please do not forget to use `https` instead of `http`.
 
     `https://localhost/`

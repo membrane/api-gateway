@@ -29,7 +29,7 @@ import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
  *              </p>
  *              <p>
  *                  Has undefined behavior when Membrane is <b>not</b> started from command line
- *                  (=via the RouterCLI class, which <tt>service-proxy.bat</tt>/<tt>service-proxy.sh</tt>
+ *                  (=via the RouterCLI class, which <tt>service-proxy.ps1</tt>/<tt>service-proxy.sh</tt>
  *                  do use).
  *              </p>
  *              <p>

@@ -3,7 +3,7 @@
 The `Replace`plugin allows you to modify values in your JSON by using a `jsonPath` expression to target specific fields for replacement.
 ## Running the Example
 
-1. Run `service-proxy.bat` or `service-proxy.sh`
+1. Run `service-proxy.ps1` or `service-proxy.sh`
 2. Send a request using `curl`:
 
    ```shell

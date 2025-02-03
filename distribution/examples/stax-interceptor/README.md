@@ -53,7 +53,7 @@ Run the Membrane service proxy:
 ./service-proxy.sh
 
 # For Windows
-service-proxy.bat
+service-proxy.ps1
 ```
 
 ### Step 4: Test the Transformation
