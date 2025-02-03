@@ -8,7 +8,7 @@ This example explains how to protect an API or a Web application using __HTTP Ba
 
 1. Go to the `examples/security/basic-auth/simple` directory.
 
-2. Execute `service-proxy.bat` or `service-proxy.sh`
+2. Execute `service-proxy.ps1` or `service-proxy.sh`
 
 3. Open the URL http://localhost:2000 in your browser.
 

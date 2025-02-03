@@ -27,7 +27,7 @@ This example walks you through setting up **HTTP Basic Authentication** for an A
    VALUES ('johnsmith123', 'pass123'), ('membrane', 'proxy');
    ```
 
-5. Execute `service-proxy.bat` or `service-proxy.sh`.
+5. Execute `service-proxy.ps1` or `service-proxy.sh`.
 
 6. Open the URL http://localhost:2000 in your browser.
 

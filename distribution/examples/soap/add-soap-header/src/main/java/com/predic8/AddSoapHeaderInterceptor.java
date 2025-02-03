@@ -14,7 +14,6 @@
 
 package com.predic8;
 
-import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Message;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
@@ -23,9 +22,11 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.xml.sax.SAXException;
+
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.stream.XMLStreamException;
 import javax.xml.transform.OutputKeys;
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerException;
@@ -36,20 +37,24 @@ import java.io.IOException;
 import java.io.StringWriter;
 import java.nio.charset.StandardCharsets;
 
-public class AddSoapHeaderInterceptor extends AbstractInterceptor{
+public class AddSoapHeaderInterceptor extends AbstractInterceptor {
 
     @Override
-    public Outcome handleRequest(Exchange exc) throws Exception {
+    public Outcome handleRequest(Exchange exc) {
         if(!exc.getRequest().isXML()){
             return Outcome.CONTINUE;
         }
 
-        this.addHeaderNode(exc.getRequest());
+        try {
+            this.addHeaderNode(exc.getRequest());
+        } catch (XMLStreamException e) {
+            throw new RuntimeException(e);
+        }
         return Outcome.CONTINUE;
     }
 
 
-    private void addHeaderNode(Message res){
+    private void addHeaderNode(Message res) throws XMLStreamException {
         try {
             DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
             factory.setNamespaceAware(true);
@@ -89,7 +94,6 @@ public class AddSoapHeaderInterceptor extends AbstractInterceptor{
         } catch (ParserConfigurationException | SAXException | IOException | TransformerException e) {
             e.printStackTrace();
         }
-
     }
 
     private String docToString(Document doc) throws TransformerException {

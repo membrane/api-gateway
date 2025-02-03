@@ -11,7 +11,7 @@ To run the example execute the following steps:
 
 1. Go to the `examples/logging-csv` directory.
 
-2. Execute `service-proxy.sh` or service-proxy.bat`
+2. Execute `service-proxy.sh` or service-proxy.ps1`
 
 3. Open the URL http://localhost:2000 in your browser. 
 

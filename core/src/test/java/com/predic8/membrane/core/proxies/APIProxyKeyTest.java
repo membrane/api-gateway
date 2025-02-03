@@ -13,21 +13,18 @@
    limitations under the License. */
 package com.predic8.membrane.core.proxies;
 
-import com.predic8.membrane.core.HttpRouter;
-import com.predic8.membrane.core.Router;
+import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.config.*;
-import com.predic8.membrane.core.interceptor.flow.ReturnInterceptor;
-import com.predic8.membrane.core.interceptor.templating.TemplateInterceptor;
-import com.predic8.membrane.core.openapi.serviceproxy.APIProxy;
-import com.predic8.membrane.core.openapi.serviceproxy.APIProxyKey;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
+import com.predic8.membrane.core.interceptor.flow.*;
+import com.predic8.membrane.core.interceptor.templating.*;
+import com.predic8.membrane.core.openapi.serviceproxy.*;
+import org.junit.jupiter.api.*;
 
-import java.io.IOException;
+import java.io.*;
 
-import static io.restassured.RestAssured.when;
-import static org.hamcrest.CoreMatchers.containsString;
+import static io.restassured.RestAssured.*;
+import static io.restassured.filter.log.LogDetail.*;
+import static org.hamcrest.CoreMatchers.*;
 
 public class APIProxyKeyTest {
 
@@ -47,10 +44,14 @@ public class APIProxyKeyTest {
     void serviceProxyPathSubpath() throws Exception {
         registerApiProxy("/foo", "Baz");
         router.init();
+
+        // @formatter:off
         when()
-                .get("http://localhost:3000/foo/bar")
-                .then()
-                .body(containsString("Baz"));
+            .get("http://localhost:3000/foo/bar")
+        .then()
+            .log().ifValidationFails(ALL)
+            .body(containsString("Baz"));
+        // @formatter:on
     }
 
     @Test

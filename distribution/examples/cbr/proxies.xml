@@ -27,15 +27,15 @@
 			<return/>
 		</api>
 	
-		<api name="order">
+		<internal name="order">
 			<static>Normal order received.</static>
 			<return/>
-		</api>
+		</internal>
 		
-		<api name="express">
+		<internal name="express">
 			<static>Express order received.</static>
 			<return/>
-		</api>
+		</internal>
 
 	</router>
 	

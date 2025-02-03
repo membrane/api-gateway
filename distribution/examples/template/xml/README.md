@@ -12,7 +12,7 @@ Execute the following steps:
 
 2. Have a look at `proxies.xml`.
 
-3. Open a commandline and execute `service-proxy.sh` or `service-proxy.bat` 
+3. Open a commandline and execute `service-proxy.sh` or `service-proxy.ps1` 
 
 4. Run this command from a second commandline: 
 

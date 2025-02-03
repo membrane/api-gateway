@@ -5,7 +5,7 @@ This plugin offers a sample SOAP service that can be used in tutorials and for t
 ## Starting the Service
 
 1. Go to the `examples/soap/sample-soap-service` directory.
-2. Run `service-proxy.sh` or `service-proxy.bat` to start the API Gateway.
+2. Run `service-proxy.sh` or `service-proxy.ps1` to start the API Gateway.
 
 ## Using the Service 
 ### Get the WSDL

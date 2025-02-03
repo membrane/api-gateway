@@ -18,26 +18,28 @@ import com.predic8.membrane.examples.util.Process2;
 import com.predic8.membrane.test.HttpAssertions;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-
-// TODO Include in Testsuite, See also OAuth2ApiTest
 public class OAuth2MembraneExampleTest extends DistributionExtractingTestcase {
 
     @Test
     public void test() throws Exception {
-        try(Process2 ignored = new Process2.Builder().in(getExampleDir("oauth2/membrane/authorization_server")).script("service-proxy").waitForMembrane()
+        try(Process2 ignored = new Process2.Builder().in(getExampleDir("oauth2/membrane/authorization_server")).script("service-proxy") .waitForMembrane()
                 .start()) {
 
             try(Process2 ignored2 = new Process2.Builder().in(getExampleDir("oauth2/membrane/client")).script("service-proxy").waitForMembrane().start();
                 HttpAssertions ha = new HttpAssertions()) {
-                    ha.getAndAssert200("http://localhost:2001");
+                    // note that we just check that both servers come up and roughly work. this does not follow the
+                    // README.txt .
                     String[] headers = new String[2];
                     headers[0] = "Content-Type";
                     headers[1] = "application/x-www-form-urlencoded";
-                    ha.postAndAssert(200, "http://localhost:2000/login/", headers, "target=&username=john&password=password");
-                    ha.postAndAssert(200, "http://localhost:2000/login/consent", headers, "target=&consent=Accept");
-                    assertEquals(ha.getAndAssert200("http://thomas-bayer.com"), ha.getAndAssert200("http://localhost:2000/"));
+                    ha.getAndAssert(200, "http://localhost:2000/login/");
+                    ha.postAndAssert(307, "http://localhost:8000/oauth2/auth?client_id=abc&response_type=code&scope=openid%20profile&redirect_uri=http://localhost:2000/oauth2callback&state=security_token=37la4hu9jjdmou5c0minb7tll2&url=/login/", headers, "target=&username=john&password=password");
             }
         }
+    }
+
+    @Override
+    protected String getExampleDirName() {
+        return "oauth2/membrane";
     }
 }

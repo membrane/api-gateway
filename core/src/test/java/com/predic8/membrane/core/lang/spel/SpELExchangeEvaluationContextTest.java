@@ -13,9 +13,12 @@
    limitations under the License. */
 package com.predic8.membrane.core.lang.spel;
 
+import com.predic8.membrane.core.config.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.openapi.serviceproxy.*;
 import com.predic8.membrane.core.util.*;
+import org.jetbrains.annotations.*;
 import org.junit.jupiter.api.*;
 import org.springframework.expression.spel.standard.*;
 
@@ -33,7 +36,7 @@ public class SpELExchangeEvaluationContextTest {
     void setup() throws URISyntaxException {
         exc = new Request.Builder()
                 .method("POST")
-                .url(new URIFactory(), "/products?limit=10&offset=0")
+                .url(new URIFactory(), "/products/new%20and%20fresh?limit=10&offset=0")
                 .contentType(APPLICATION_JSON.toString())
                 .header("Authentication","foo")
                 .header("shadow-ing", "nothappening")
@@ -46,12 +49,25 @@ public class SpELExchangeEvaluationContextTest {
                 .buildExchange();
 
         exc.setProperty("foo","1234");
-
         exc.setResponse(Response.accepted().build());
+        exc.setProxy(getApiProxy());
+    }
+
+    private static @NotNull APIProxy getApiProxy() {
+        APIProxy ap = new APIProxy();
+        Path p = new Path();
+        p.setValue("/products/{category}");
+        ap.setPath(p);
+        return ap;
     }
 
     String keyExpression(String spel) {
         return new SpelExpressionParser().parseExpression(spel).getValue(new SpELExchangeEvaluationContext(exc, REQUEST), String.class);
+    }
+
+    @Test
+    void pathParameters() {
+        assertEquals("new and fresh", keyExpression("pathParam.category"));
     }
 
     @Test
@@ -61,17 +77,17 @@ public class SpELExchangeEvaluationContextTest {
 
     @Test
     void paramsSubscription() {
-        assertEquals("10", keyExpression("params['limit']"));
+        assertEquals("10", keyExpression("param['limit']"));
     }
 
     @Test
     void paramsDot() {
-        assertEquals("10", keyExpression("params.limit"));
+        assertEquals("10", keyExpression("param.limit"));
     }
 
     @Test
     void paramsDotOffset() {
-        assertEquals("0", keyExpression("params.offset"));
+        assertEquals("0", keyExpression("param.offset"));
     }
 
     @Test

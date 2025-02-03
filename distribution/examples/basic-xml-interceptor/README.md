@@ -21,7 +21,7 @@ To run the example execute the following steps:
    mvn package
   ```
 
-3. Execute service-proxy.bat or service-proxy.sh
+3. Execute service-proxy.ps1 or service-proxy.sh
 4. Open a second terminal
 5. Run below command
 

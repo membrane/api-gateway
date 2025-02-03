@@ -50,8 +50,10 @@ public abstract class AbstractRuleKey implements RuleKey {
         ip = key.getIp();
 
         if (key instanceof AbstractRuleKey arKey) {
-            pathPattern = arKey.getPathPattern();
             pathRegExp = arKey.getPathRegExp();
+            if (pathRegExp) {
+                pathPattern = arKey.getPathPattern();
+            }
         }
     }
 
@@ -113,7 +115,7 @@ public abstract class AbstractRuleKey implements RuleKey {
     public boolean matchesPath(String path) {
         if (isPathRegExp())
             return matchesPathPattern(path);
-        return path.startsWith(getPath());
+        return path.startsWith(this.path);
     }
 
     private boolean matchesPathPattern(String path) {

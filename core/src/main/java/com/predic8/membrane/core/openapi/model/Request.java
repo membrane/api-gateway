@@ -28,7 +28,6 @@ public class Request<T extends Body> extends Message<T,Request<T>> {
 
     private final String method;
     private String path;
-    private final UriTemplateMatcher uriTemplateMatcher = new UriTemplateMatcher();
     private Map<String,String> pathParameters;
 
     private List<SecurityScheme> securitySchemes = emptyList();
@@ -117,7 +116,7 @@ public class Request<T extends Body> extends Message<T,Request<T>> {
     }
 
     public void parsePathParameters(String uriTemplate) throws PathDoesNotMatchException {
-        pathParameters = uriTemplateMatcher.match(uriTemplate, path);
+        pathParameters = UriTemplateMatcher.matchTemplate(uriTemplate, path);
     }
 
     @Override
@@ -125,7 +124,6 @@ public class Request<T extends Body> extends Message<T,Request<T>> {
         return "Request{" +
                "method='" + method + '\'' +
                ", path='" + path + '\'' +
-               ", uriTemplateMatcher=" + uriTemplateMatcher +
                ", pathParameters=" + pathParameters +
                ", securityScheme=" + securitySchemes +
                ", scopes=" + scopes +

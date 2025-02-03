@@ -40,7 +40,7 @@ public class RuleManager {
 
     private Router router;
 
-    private final List<Proxy> proxies = new Vector<>();
+    protected final List<Proxy> proxies = new Vector<>();
     private final List<RuleDefinitionSource> ruleSources = new ArrayList<>();
     private final Set<IRuleChangeListener> listeners = new HashSet<>();
 
