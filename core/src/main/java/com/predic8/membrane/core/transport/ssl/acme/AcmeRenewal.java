@@ -143,8 +143,11 @@ public class AcmeRenewal {
             try {
                 client.finalizeOrder(getAccountURL(), oal.get().getOrder().getFinalize(), client.generateCSR(hosts, client.getOALKey(hosts).getPrivateKey()));
             } catch (AcmeException e) {
-                if (e.getMessage().contains("urn:ietf:params:acme:error:orderNotReady Order's status (\"valid\") is not acceptable for finalization"))
-                    return; // order is already valid
+                if (e.getMessage().contains("urn:ietf:params:acme:error:orderNotReady Order's status (\"valid\") is not acceptable for finalization")) {
+                    // order is already valid. reretrieve it and continue
+                    oal.set(client.getOrder(getAccountURL(), oal.get().getLocation()));
+                    return;
+                }
                 throw e;
             }
         }
