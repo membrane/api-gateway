@@ -248,7 +248,6 @@ public class MembraneAuthorizationService extends AuthorizationService {
      * if access to the Authorization Server is also routed via Membrane API Gateway. Usually points
      * to an internal proxy, e.g. "internal://oauth2-gw/", which routes to the Authorization Server.
      */
-    @Required
     @MCAttribute
     public void setInternalSrc(String internalSrc) {
         this.internalSrc = internalSrc;
