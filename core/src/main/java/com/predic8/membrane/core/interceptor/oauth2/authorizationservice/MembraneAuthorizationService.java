@@ -40,6 +40,7 @@ import java.util.stream.Collectors;
 @MCElement(name="membrane")
 public class MembraneAuthorizationService extends AuthorizationService {
     private String src; // url to OpenID-Provider data
+    private String internalSrc;
 
     private String issuer;
     private String tokenEndpoint;
@@ -81,21 +82,17 @@ public class MembraneAuthorizationService extends AuthorizationService {
             supportsDynamicRegistration = true;
         }
         try {
-            String[] urls = src.split(Pattern.quote(" "),2);
-            if(urls.length == 1) {
-                String url = urls[0] + (urls[0].endsWith("/") ? "" : "/") + ".well-known/openid-configuration";
+            if(internalSrc == null) {
+                String url = src + (src.endsWith("/") ? "" : "/") + ".well-known/openid-configuration";
 
                 parseSrc(resolve(router.getResolverMap(), router.getBaseLocation(), url));
-            }
-            else if(urls.length == 2){
-                String internalUrl = urls[1] + (urls[1].endsWith("/") ? "" : "/") + ".well-known/openid-configuration";
+            } else {
+                String internalUrl = internalSrc + (internalSrc.endsWith("/") ? "" : "/") + ".well-known/openid-configuration";
 
                 parseSrc(resolve(router.getResolverMap(), router.getBaseLocation(), internalUrl));
 
-                publicAuthorizationEndpoint = urls[0] + new URI(authorizationEndpoint).getPath();
+                publicAuthorizationEndpoint = src + new URI(authorizationEndpoint).getPath();
             }
-            else if(urls.length > 2)
-                throw new RuntimeException("src property is not set correctly: " + src);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -233,10 +230,28 @@ public class MembraneAuthorizationService extends AuthorizationService {
         return src;
     }
 
+    /**
+     * Base URL of the OIDC Discovery compliant Authorization Server.
+     */
     @Required
     @MCAttribute
     public void setSrc(String src) {
         this.src = src;
+    }
+
+    public String getInternalSrc() {
+        return internalSrc;
+    }
+
+    /**
+     * Internal Base URL of the OIDC Discovery compliant Authorization Server. Needs only to be set,
+     * if access to the Authorization Server is also routed via Membrane API Gateway. Usually points
+     * to an internal proxy, e.g. "internal://oauth2-gw/", which routes to the Authorization Server.
+     */
+    @Required
+    @MCAttribute
+    public void setInternalSrc(String internalSrc) {
+        this.internalSrc = internalSrc;
     }
 
     public String getClaims() {
