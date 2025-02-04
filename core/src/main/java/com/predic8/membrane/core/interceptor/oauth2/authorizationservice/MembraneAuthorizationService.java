@@ -27,6 +27,7 @@ import com.predic8.membrane.core.resolver.ResolverMap;
 import com.predic8.membrane.core.resolver.ResourceRetrievalException;
 import org.apache.commons.io.IOUtils;
 import com.predic8.membrane.annot.Required;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -81,23 +82,19 @@ public class MembraneAuthorizationService extends AuthorizationService {
             dynamicRegistration.init(router);
             supportsDynamicRegistration = true;
         }
-        try {
-            if(internalSrc == null) {
-                String url = src + (src.endsWith("/") ? "" : "/") + ".well-known/openid-configuration";
-
-                parseSrc(resolve(router.getResolverMap(), router.getBaseLocation(), url));
-            } else {
-                String internalUrl = internalSrc + (internalSrc.endsWith("/") ? "" : "/") + ".well-known/openid-configuration";
-
-                parseSrc(resolve(router.getResolverMap(), router.getBaseLocation(), internalUrl));
-
-                publicAuthorizationEndpoint = src + new URI(authorizationEndpoint).getPath();
-            }
-        } catch (IOException e) {
-            throw new RuntimeException(e);
+        parseSrc(resolve(
+                router.getResolverMap(),
+                router.getBaseLocation(),
+                getWellKnownUrl(internalSrc == null ? src : internalSrc)));
+        if(internalSrc != null) {
+            publicAuthorizationEndpoint = src + new URI(authorizationEndpoint).getPath();
         }
         adjustScope();
         prepareClaimsForLoginUrl();
+    }
+
+    private @NotNull String getWellKnownUrl(String baseUrl) {
+        return baseUrl + (baseUrl.endsWith("/") ? "" : "/") + ".well-known/openid-configuration";
     }
 
     public InputStream resolve(ResolverMap rm, String baseLocation, String url) throws Exception {
