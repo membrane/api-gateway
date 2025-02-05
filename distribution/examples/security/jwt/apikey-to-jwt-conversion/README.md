@@ -9,7 +9,7 @@ Convert scoped API keys to JWTs dynamically with customizable payload.
 2. **Start** the API Gateway by executing `service-proxy.sh` (Linux/Mac) or `service-proxy.ps1` (Windows).
 3. **Fetch JWT**:
    ```
-   curl http://localhost:2000 -H "X-Key: 123456789"
+   curl http://localhost:2000 -H "X-Api-Key: 123456789"
    ```
 4. **Use it to access a protected endpoint**:
    ```
@@ -36,9 +36,9 @@ The resulting JWT is stored in the body and returned via `<return>`.
   <setProperty name="scopes" value="${scopes()}"/>
   <template>
    {
-   "sub": "user@example.com",
-   "aud": "order",
-   "scope": "${property.scopes}"
+     "sub": "user@example.com", 
+     "aud": "order", 
+     "scope": "${property.scopes}"
    }
   </template>
   <jwtSign>
