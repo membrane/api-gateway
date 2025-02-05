@@ -444,6 +444,10 @@
                 </configuration>
             </plugin>
 
+            <!--
+             This configuration copies the required file to the docs directory
+             for the membrane-api.io/docs website.
+            -->
             <plugin>
                 <artifactId>maven-antrun-plugin</artifactId>
                 <version>3.0.0</version>
@@ -456,7 +460,8 @@
                         <configuration>
                             <target>
                                 <copy todir="../docs">
-                                    <fileset dir="${project.build.directory}/classes/com/predic8/membrane/core/config/spring">
+                                    <fileset
+                                            dir="${project.build.directory}/classes/com/predic8/membrane/core/config/spring">
                                         <include name="router-conf.xsd"/>
                                     </fileset>
                                 </copy>
