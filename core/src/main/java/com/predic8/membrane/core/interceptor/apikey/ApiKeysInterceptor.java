@@ -66,6 +66,7 @@ public class ApiKeysInterceptor extends AbstractInterceptor {
         super.init();
         stores.addAll(router.getBeanFactory().getBeansOfType(ApiKeyStore.class).values());
         stores.forEach(apiKeyStore -> apiKeyStore.init(router));
+        extractors.forEach(apiKeyExtractor -> apiKeyExtractor.init(router));
     }
 
     @Override

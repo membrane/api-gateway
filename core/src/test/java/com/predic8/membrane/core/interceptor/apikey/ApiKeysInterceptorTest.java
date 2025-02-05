@@ -16,6 +16,7 @@ package com.predic8.membrane.core.interceptor.apikey;
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Request;
+import com.predic8.membrane.core.interceptor.apikey.extractors.ApiKeyExpressionExtractor;
 import com.predic8.membrane.core.interceptor.apikey.extractors.ApiKeyHeaderExtractor;
 import com.predic8.membrane.core.interceptor.apikey.extractors.ApiKeyQueryParamExtractor;
 import com.predic8.membrane.core.interceptor.apikey.stores.ApiKeyFileStore;
@@ -45,9 +46,11 @@ public class ApiKeysInterceptorTest {
     static ApiKeyFileStore mergeStore;
     static ApiKeyHeaderExtractor ahe;
     static ApiKeyQueryParamExtractor aqe;
+    static ApiKeyExpressionExtractor aee;
     static ApiKeysInterceptor akiWithProp;
     static ApiKeysInterceptor akiWithoutProp;
     static ApiKeysInterceptor akiWithTwoStores;
+    static ApiKeysInterceptor akiWithExpressionExtractor;
 
     @BeforeAll
     static void setup() {
@@ -61,6 +64,9 @@ public class ApiKeysInterceptorTest {
 
         ahe = new ApiKeyHeaderExtractor();
         aqe = new ApiKeyQueryParamExtractor();
+        aee = new ApiKeyExpressionExtractor();
+        aee.setExpression("message.body");
+        aee.init(new Router());
 
         akiWithProp = new ApiKeysInterceptor();
         akiWithProp.setExtractors(of(ahe));
@@ -73,6 +79,17 @@ public class ApiKeysInterceptorTest {
 
         akiWithTwoStores = new ApiKeysInterceptor();
         akiWithTwoStores.setStores(of(store, mergeStore));
+
+        akiWithExpressionExtractor = new ApiKeysInterceptor();
+        akiWithExpressionExtractor.setExtractors(of(aee));
+        akiWithExpressionExtractor.setStores(of(store));
+    }
+
+    @Test
+    void handleRequestWithKeyInsideBody() {
+        Exchange exc = new Request.Builder().body(apiKey).buildExchange();
+        assertEquals(CONTINUE, akiWithExpressionExtractor.handleRequest(exc));
+        assertEquals(Set.of("accounting", "management"), getScopes(exc));
     }
 
     @Test
