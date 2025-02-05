@@ -20,7 +20,7 @@ public class ApiKeySecurityScheme extends AbstractSecurityScheme {
      */
     public String parameterName;
 
-    public enum In {HEADER, QUERY, COOKIE}
+    public enum In {HEADER, QUERY, COOKIE, EXPRESSION}
 
     public In in;
 
