@@ -1,0 +1,12 @@
+### Fetch JWT
+GET / HTTP/1.1
+Host: localhost:3000
+X-Api-Key: 123456789
+
+// Save the JWT for the next request
+> {% client.global.set("jwt", response.body); %}
+
+### Access JWT Protected Resource
+GET / HTTP/1.1
+Host: localhost:3000
+Authorization: Bearer {{jwt}}
