@@ -16,6 +16,7 @@ package com.predic8.membrane.core.interceptor.apikey;
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Request;
+import com.predic8.membrane.core.interceptor.apikey.extractors.ApiKeyExpressionExtractor;
 import com.predic8.membrane.core.interceptor.apikey.extractors.ApiKeyHeaderExtractor;
 import com.predic8.membrane.core.interceptor.apikey.extractors.ApiKeyQueryParamExtractor;
 import com.predic8.membrane.core.interceptor.apikey.stores.ApiKeyFileStore;
@@ -31,6 +32,8 @@ import java.util.Set;
 
 import static com.predic8.membrane.core.exchange.Exchange.SECURITY_SCHEMES;
 import static com.predic8.membrane.core.http.MimeType.APPLICATION_PROBLEM_JSON;
+import static com.predic8.membrane.core.http.Request.get;
+import static com.predic8.membrane.core.http.Request.post;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
 import static com.predic8.membrane.core.interceptor.apikey.ApiKeysInterceptor.SCOPES;
@@ -45,9 +48,11 @@ public class ApiKeysInterceptorTest {
     static ApiKeyFileStore mergeStore;
     static ApiKeyHeaderExtractor ahe;
     static ApiKeyQueryParamExtractor aqe;
+    static ApiKeyExpressionExtractor aee;
     static ApiKeysInterceptor akiWithProp;
     static ApiKeysInterceptor akiWithoutProp;
     static ApiKeysInterceptor akiWithTwoStores;
+    static ApiKeysInterceptor akiWithExpressionExtractor;
 
     @BeforeAll
     static void setup() {
@@ -61,6 +66,9 @@ public class ApiKeysInterceptorTest {
 
         ahe = new ApiKeyHeaderExtractor();
         aqe = new ApiKeyQueryParamExtractor();
+        aee = new ApiKeyExpressionExtractor();
+        aee.setExpression("json['api-key']");
+        aee.init(new Router());
 
         akiWithProp = new ApiKeysInterceptor();
         akiWithProp.setExtractors(of(ahe));
@@ -73,11 +81,27 @@ public class ApiKeysInterceptorTest {
 
         akiWithTwoStores = new ApiKeysInterceptor();
         akiWithTwoStores.setStores(of(store, mergeStore));
+
+        akiWithExpressionExtractor = new ApiKeysInterceptor();
+        akiWithExpressionExtractor.setExtractors(of(aee));
+        akiWithExpressionExtractor.setStores(of(store));
     }
 
     @Test
-    void handleRequestWithKeyRequiredWithValidApiKey() {
-        Exchange exc = new Request.Builder().header(keyHeader, apiKey).buildExchange();
+    void handleRequestWithKeyInsideBody() throws URISyntaxException {
+        Exchange exc = post("/").body("""
+            {
+                "foo": "bar",
+                "api-key": "%s"
+            }
+        """.formatted(apiKey)).buildExchange();
+        assertEquals(CONTINUE, akiWithExpressionExtractor.handleRequest(exc));
+        assertEquals(Set.of("accounting", "management"), getScopes(exc));
+    }
+
+    @Test
+    void handleRequestWithKeyRequiredWithValidApiKey() throws URISyntaxException {
+        Exchange exc = get("/").header(keyHeader, apiKey).buildExchange();
         assertEquals(CONTINUE, akiWithProp.handleRequest(exc));
         assertEquals(Set.of("accounting", "management"), getScopes(exc));
     }
@@ -88,8 +112,8 @@ public class ApiKeysInterceptorTest {
     }
 
     @Test
-    void handleRequestWithKeyRequiredWithInvalidApiKey() {
-        Exchange exc = new Request.Builder().header(keyHeader, "foo").buildExchange();
+    void handleRequestWithKeyRequiredWithInvalidApiKey() throws URISyntaxException {
+        Exchange exc = get("/").header(keyHeader, "foo").buildExchange();
         assertEquals(RETURN, akiWithProp.handleRequest(exc));
         assertNull(exc.getProperty(SCOPES));
         assertEquals(403, exc.getResponse().getStatusCode());
@@ -98,7 +122,7 @@ public class ApiKeysInterceptorTest {
 
     @Test
     void handleRequestWithKeyRequiredWithoutApiKey() throws URISyntaxException {
-        Exchange exc = new Request.Builder().get("/").buildExchange();
+        Exchange exc = get("/").buildExchange();
         assertEquals(RETURN, akiWithProp.handleRequest(exc));
         assertNull(exc.getProperty(SCOPES));
         assertEquals(401, exc.getResponse().getStatusCode());
@@ -106,22 +130,22 @@ public class ApiKeysInterceptorTest {
     }
 
     @Test
-    void handleRequestWithoutKeyRequiredWithApiKey() {
-        Exchange exc = new Request.Builder().header(keyHeader, apiKey).buildExchange();
+    void handleRequestWithoutKeyRequiredWithApiKey() throws URISyntaxException {
+        Exchange exc = get("/").header(keyHeader, apiKey).buildExchange();
         assertEquals(CONTINUE, akiWithoutProp.handleRequest(exc));
         assertEquals(Set.of("accounting", "management"), getScopes(exc));
     }
 
     @Test
-    void handleRequestWithoutKeyRequiredWithInvalidApiKey() {
-        Exchange exc = new Request.Builder().header(keyHeader, "foo").buildExchange();
+    void handleRequestWithoutKeyRequiredWithInvalidApiKey() throws URISyntaxException {
+        Exchange exc = get("/").header(keyHeader, "foo").buildExchange();
         assertEquals(CONTINUE, akiWithoutProp.handleRequest(exc));
         assertNull(exc.getProperty(SCOPES));
     }
 
     @Test
-    void handleRequestWithoutKeyRequiredWithoutApiKey() {
-        Exchange exc = new Request.Builder().buildExchange();
+    void handleRequestWithoutKeyRequiredWithoutApiKey() throws URISyntaxException {
+        Exchange exc = get("/").buildExchange();
         assertEquals(CONTINUE, akiWithoutProp.handleRequest(exc));
         assertNull(exc.getProperty(SCOPES));
     }

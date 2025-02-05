@@ -1,0 +1,46 @@
+<spring:beans xmlns="http://membrane-soa.org/proxies/1/"
+              xmlns:spring="http://www.springframework.org/schema/beans"
+              xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+              xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.2.xsd
+					    http://membrane-soa.org/proxies/1/ http://membrane-soa.org/schemas/proxies-1.xsd">
+
+    <router>
+
+        <!-- If caller provides a valid API key it will receive a signed JWT. -->
+        <api port="2000" name="Token Server">
+            <apiKey required="true">
+                <apiKeyFileStore location="demo-keys.txt" />
+                <headerExtractor />
+            </apiKey>
+            <request>
+                <setProperty name="scopes" value="${scopes()}"/>
+                <template>
+                    {
+                    "sub": "user@example.com",
+                    "aud": "order",
+                    "scope": "${property.scopes}"
+                    }
+                </template>
+                <jwtSign>
+                    <jwk location="jwk.json"/>
+                </jwtSign>
+            </request>
+            <return />
+        </api>
+
+        <api port="2001" name="Protected Resource">
+            <jwtAuth expectedAud="order">
+                <jwks>
+                    <jwk location="jwk.json" />
+                </jwks>
+            </jwtAuth>
+            <template>
+                You accessed protected content!
+                JWT Scopes: ${property.jwt.get("scope")}
+            </template>
+            <return />
+        </api>
+
+    </router>
+
+</spring:beans>
