@@ -13,15 +13,15 @@
 
 package com.predic8.membrane.core.interceptor.oauth2;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.predic8.membrane.core.Router;
-import com.predic8.membrane.core.resolver.ResolverMap;
-import org.apache.commons.io.IOUtils;
+import com.fasterxml.jackson.core.type.*;
+import com.fasterxml.jackson.databind.*;
+import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.resolver.*;
+import org.apache.commons.io.*;
 
-import java.io.IOException;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
+import java.io.*;
+import java.util.*;
+import java.util.concurrent.*;
 
 public class ConsentPageFile {
 

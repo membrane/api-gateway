@@ -1,14 +1,15 @@
 openapi: '3.0.2'
 info:
   title: Fruit Shop API
-  version: '1.0'
+  version: '1.1'
+  x-membrane-id: fruitshop
 servers:
-  - url: https://api.predic8.de/shop
-#x-validation:
-#  - request: true
+  - url: https://api.predic8.de/shop/v2
 paths:
-  /products/:
+  /products:
     get:
+      tags:
+        - Shop
       parameters:
         - name: limit
           in: query
@@ -16,6 +17,7 @@ paths:
           schema: 
             type: integer
             maximum: 100
+            minimum: 0
             example: 10
       responses:
         '200':
@@ -25,15 +27,21 @@ paths:
               schema:
                 $ref: "#/components/schemas/ProductList"
     post:
+      tags:
+        - Shop
       requestBody:
         content:
           application/json:
             schema:
               $ref: "#/components/schemas/Product"
-
       responses:
-        '200':
+        '201':
           description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Product"
+          
   /products/{pid}:
     parameters:
       - in: path
@@ -43,9 +51,15 @@ paths:
           minimum: 0
         required: true
     get:
+      tags:
+        - Shop
       responses:
         '200':
-          description: OK      
+          description: OK  
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Product"
 
 components:
   schemas:
@@ -55,12 +69,14 @@ components:
         meta:
           type: object
         products:
-          type: object
-          properties:
-            name:
-              type: string
-            product_url:
-              type: string
+          type: array
+          items:
+            type: object
+            properties:
+              name:
+                type: string
+              product_url:
+                type: string
     Product:
       type: object
       required: ["name","price"]
@@ -68,7 +84,8 @@ components:
       properties:
         name:
           type: string
-          example: Feigen
+          example: Figs
+          maxLength: 10
         price:
           type: number
           example: 2.70
@@ -76,9 +93,16 @@ components:
         category_url:
           type: string
           example: /shop/categories/Fruits
+          readOnly: true
         vendor_url:
           type: string
           example: /shop/vendors/672
-
-
-
+          readOnly: true
+        product_url:
+          type: string
+          example: /shop/products/44
+          readOnly: true
+        photo_url:
+          type: string
+          example: /shop/products/44/photo
+          readOnly: true

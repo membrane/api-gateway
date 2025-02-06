@@ -13,6 +13,9 @@
    limitations under the License. */
 package com.predic8.membrane.core.util;
 
+import java.io.*;
+import java.net.URI;
+import java.net.*;
 import java.util.*;
 import java.util.regex.*;
 
@@ -24,6 +27,33 @@ public class URIUtil {
 
     private static final Pattern driveLetterPattern = Pattern.compile("^(\\w)[/:|].*");
 
+    public static String toFileURIString(File f) throws URISyntaxException {
+        return convertPath2FileURI(f.getAbsolutePath()).toString();
+    }
+
+    public static java.net.URI convertPath2FileURI(String path) throws URISyntaxException {
+        if (!path.startsWith("file:"))
+            path = "file:" + path;
+        return new URI(path.replaceAll(" ","%20"));
+    }
+
+    public static String convertPath2FilePathString(String path) {
+        if (!path.startsWith("file:"))
+            path = "file:" + path;
+        return path.replaceAll(" ","%20");
+    }
+
+
+    /**
+     * Removes file protocol from uri
+     *
+     * @param uri path that can contain file protocol
+     * @return path without the file protocol
+     */
+    public static String pathFromFileURI(URI uri) {
+        return pathFromFileURI(uri.getPath());
+    }
+
     /**
      * Removes file protocol from uri
      *
@@ -31,8 +61,6 @@ public class URIUtil {
      * @return path without the file protocol
      */
     public static String pathFromFileURI(String uri) {
-        if (!uri.startsWith("file:"))
-            return uri;
         return decode(processDecodedPart(stripFilePrefix(uri)), UTF_8);
     }
 
@@ -71,6 +99,8 @@ public class URIUtil {
     }
 
     private static String stripFilePrefix(String uri) {
+        if (!uri.startsWith("file:"))
+            return uri;
         return uri.substring(5); // Remove "file:"
     }
 

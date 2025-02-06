@@ -81,7 +81,7 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
     protected static final HashSet<ApplicationContext> hotDeployingContexts = new HashSet<>();
 
     private ApplicationContext beanFactory;
-    private String baseLocation;
+    private String baseLocation ;
 
     protected RuleManager ruleManager = new RuleManager();
     protected final FlowController flowController;
@@ -119,7 +119,7 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
 
     public Router() {
         ruleManager.setRouter(this);
-        resolverMap = new ResolverMap(timerManager, httpClientFactory, kubernetesClientFactory);
+        resolverMap = new ResolverMap(httpClientFactory, kubernetesClientFactory);
         resolverMap.addRuleResolver(this);
         flowController = new FlowController(this);
     }

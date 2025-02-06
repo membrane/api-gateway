@@ -13,23 +13,18 @@
    limitations under the License. */
 package com.predic8.membrane.core.openapi.serviceproxy;
 
-import com.predic8.membrane.core.Router;
-import io.swagger.parser.OpenAPIParser;
-import io.swagger.v3.oas.models.OpenAPI;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
+import com.predic8.membrane.core.*;
+import io.swagger.parser.*;
+import io.swagger.v3.oas.models.*;
+import org.junit.jupiter.api.*;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
+import java.io.*;
+import java.util.*;
 
-import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
-import static com.predic8.membrane.core.openapi.util.TestUtils.getResourceAsStream;
-import static com.predic8.membrane.core.util.FileUtil.readInputStream;
-import static io.swagger.v3.oas.models.SpecVersion.V30;
-import static io.swagger.v3.oas.models.SpecVersion.V31;
+import static com.predic8.membrane.core.http.MimeType.*;
+import static com.predic8.membrane.core.openapi.util.TestUtils.*;
+import static com.predic8.membrane.core.util.FileUtil.*;
+import static io.swagger.v3.oas.models.SpecVersion.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 class OpenAPIRecordFactoryTest {
@@ -44,7 +39,7 @@ class OpenAPIRecordFactoryTest {
     }
 
     @Test
-    void readAndParseOpenAPI31() throws IOException {
+    void readAndParseOpenAPI31() {
         Collection<OpenAPISpec> specs = new ArrayList<>();
         specs.add(new OpenAPISpec() {{
             setLocation("customers.yml");
@@ -89,7 +84,7 @@ class OpenAPIRecordFactoryTest {
     }
 
     @Test
-    void referencesTest() throws IOException {
+    void referencesTest() {
         OpenAPIRecord rec = factory.create(new ArrayList<>() {{
             add(new OpenAPISpec() {{
                 setLocation("oas31/request-reference.yaml");
@@ -137,7 +132,7 @@ class OpenAPIRecordFactoryTest {
                 .getSchema().getProperties().get("email");
     }
 
-    private static OpenAPIRecord getOpenAPIRecord(String fileName, String id) throws IOException {
+    private static OpenAPIRecord getOpenAPIRecord(String fileName, String id) {
         return factory.create(new ArrayList<>() {{
             add(new OpenAPISpec() {{
                 setLocation(fileName);
@@ -146,12 +141,12 @@ class OpenAPIRecordFactoryTest {
     }
 
     @Test
-    void getUniqueIdNoCollision() throws IOException {
+    void getUniqueIdNoCollision() {
         assertEquals("customers-api-v1-0",  factory.getUniqueId(new HashMap<>(), new OpenAPIRecord(getApi("/openapi/specs/customers.yml"),null)));
     }
 
     @Test
-    void getUniqueIdCollision() throws IOException {
+    void getUniqueIdCollision() {
         HashMap<String, OpenAPIRecord> recs = new HashMap<>();
         recs.put("customers-api-v1-0",new OpenAPIRecord());
         assertEquals("customers-api-v1-0-0",  factory.getUniqueId(recs, new OpenAPIRecord(getApi("/openapi/specs/customers.yml"),null)));

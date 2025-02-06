@@ -18,6 +18,7 @@ import com.predic8.membrane.core.openapi.model.*;
 import com.predic8.membrane.core.openapi.serviceproxy.*;
 import com.predic8.membrane.core.openapi.validators.*;
 import com.predic8.membrane.core.util.*;
+import com.predic8.membrane.test.*;
 import jakarta.mail.internet.*;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.*;
@@ -27,6 +28,7 @@ import java.util.stream.*;
 
 import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.openapi.util.TestUtils.*;
+import static com.predic8.membrane.core.util.URIUtil.convertPath2FilePathString;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class RequestReferenceTest {
@@ -34,8 +36,8 @@ public class RequestReferenceTest {
     OpenAPIValidator validator;
 
     @BeforeEach
-    void setUp() throws Exception {
-        OpenAPIRecord apiRecord = new OpenAPIRecord(parseOpenAPI(getResourceAsStream(this, "/openapi/specs/oas31/request-reference.yaml")), new OpenAPISpec());
+    void setUp() {
+        OpenAPIRecord apiRecord = new OpenAPIRecord(parseOpenAPI( convertPath2FilePathString(TestUtil.getPathFromResource("openapi/specs/oas31/request-reference.yaml"))), new OpenAPISpec());
         validator = new OpenAPIValidator(new URIFactory(), apiRecord);
     }
 

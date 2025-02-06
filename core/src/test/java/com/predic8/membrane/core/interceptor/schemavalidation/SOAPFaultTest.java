@@ -16,6 +16,7 @@ package com.predic8.membrane.core.interceptor.schemavalidation;
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.util.SOAPUtil;
+import com.predic8.membrane.test.*;
 import org.junit.jupiter.api.Test;
 
 import java.util.Map;
@@ -27,10 +28,11 @@ import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 import static com.predic8.membrane.core.util.SOAPUtil.FaultCode.Server;
 import static com.predic8.membrane.test.StringAssertions.assertContains;
 import static com.predic8.membrane.test.StringAssertions.assertContainsNot;
+import static com.predic8.membrane.test.TestUtil.getPathFromResource;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class SOAPFaultTest {
-	public static final String ARTICLE_SERVICE_WSDL = "src/test/resources/validation/ArticleService.wsdl";
+	public static final String ARTICLE_SERVICE_WSDL = getPathFromResource( "/validation/ArticleService.wsdl");
 	final Router r = new Router();
 
 	@Test

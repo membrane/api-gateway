@@ -15,7 +15,7 @@
 package com.predic8.membrane.examples.config;
 
 import com.predic8.membrane.examples.util.*;
-import org.json.JSONException;
+import org.json.*;
 import org.junit.jupiter.api.*;
 import org.skyscreamer.jsonassert.*;
 
@@ -23,6 +23,7 @@ import java.io.*;
 
 import static com.predic8.membrane.core.http.MimeType.*;
 import static io.restassured.RestAssured.*;
+import static io.restassured.filter.log.LogDetail.*;
 import static org.hamcrest.Matchers.*;
 
 public class ProxiesXMLOfflineExampleTest extends AbstractSampleMembraneStartStopTestcase {
@@ -60,6 +61,7 @@ public class ProxiesXMLOfflineExampleTest extends AbstractSampleMembraneStartSto
     void port2000() {
         get(LOCALHOST_2000)
                 .then().assertThat()
+                .log().ifValidationFails(ALL)
                 .contentType(APPLICATION_JSON)
                 .body("success", equalTo(true));
     }

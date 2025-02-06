@@ -37,6 +37,7 @@ import static com.predic8.membrane.core.openapi.serviceproxy.APIProxy.*;
 import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPISpec.YesNoOpenAPIOption.*;
 import static com.predic8.membrane.core.openapi.util.OpenAPIUtil.*;
 import static com.predic8.membrane.core.util.FileUtil.*;
+import static com.predic8.membrane.core.util.URIUtil.convertPath2FilePathString;
 import static java.lang.String.*;
 
 public class OpenAPIRecordFactory {
@@ -68,7 +69,7 @@ public class OpenAPIRecordFactory {
         log.info("Parsing specs from dir {}",spec.dir);
         File[] files = getOpenAPIFiles(spec.dir);
         if (files == null) {
-            log.warn("Directory %s does not contain any OpenAPI documents.".formatted(spec.dir));
+            log.warn("Directory {} does not contain any OpenAPI documents.",spec.dir);
             return;
         }
         for (File file : files) {
@@ -112,7 +113,7 @@ public class OpenAPIRecordFactory {
             }
             String msg = "While parsing spec %s .".formatted(spec.location);
             log.error(msg, e);
-            throw new RuntimeException(msg, e);
+            throw new ConfigurationException(msg, e);
         }
     }
 
@@ -150,10 +151,8 @@ public class OpenAPIRecordFactory {
     private OpenAPI getOpenAPI(OpenAPISpec spec) {
         String path = resolve(spec.location);
         try {
-            JsonNode node = omYaml.readTree(getInputStreamForLocation(spec.location));
-            OpenAPI openAPI = new OpenAPIParser().readLocation(path, null, getParseOptions()).getOpenAPI();
-
-            addConversionNoticeIfSwagger2(openAPI, node);
+            OpenAPI openAPI = new OpenAPIParser().readLocation(convertPath2FilePathString(path), null, getParseOptions()).getOpenAPI();
+            addConversionNoticeIfSwagger2(openAPI, omYaml.readTree(getInputStreamForLocation(spec.location)));
             return openAPI;
         } catch (IOException e) {
             throw new OpenAPIParsingException("Could not read OpenAPI file: " + e.getMessage(), path);

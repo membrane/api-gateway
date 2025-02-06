@@ -22,12 +22,14 @@ import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.openapi.serviceproxy.*;
 import com.predic8.membrane.core.openapi.validators.security.*;
+import com.predic8.membrane.test.*;
 import org.junit.jupiter.api.*;
 import org.springframework.http.*;
 
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPISpec.YesNoOpenAPIOption.*;
 import static com.predic8.membrane.core.openapi.util.TestUtils.*;
+import static com.predic8.membrane.test.TestUtil.getPathFromResource;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class ExceptionInterceptorTest extends AbstractSecurityValidatorTest {
@@ -40,7 +42,7 @@ public class ExceptionInterceptorTest extends AbstractSecurityValidatorTest {
     @BeforeEach
     void setUpSpec() {
         OpenAPISpec spec = new OpenAPISpec();
-        spec.location = "src/test/resources/openapi/specs/exceptions/error-in-spec.yml";
+        spec.location = getPathFromResource("openapi/specs/exceptions/error-in-spec.yml");
         spec.validateRequests = YES;
         spec.validateResponses = YES;
 

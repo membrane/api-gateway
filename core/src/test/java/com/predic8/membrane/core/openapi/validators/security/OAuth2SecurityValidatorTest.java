@@ -19,6 +19,7 @@ package com.predic8.membrane.core.openapi.validators.security;
 import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.openapi.serviceproxy.*;
+import com.predic8.membrane.test.*;
 import org.junit.jupiter.api.*;
 
 import static com.predic8.membrane.core.http.Request.*;
@@ -26,6 +27,7 @@ import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPISpec.YesNoOpenAPIOption.*;
 import static com.predic8.membrane.core.openapi.util.TestUtils.*;
 import static com.predic8.membrane.core.security.OAuth2SecurityScheme.*;
+import static com.predic8.membrane.test.TestUtil.getPathFromResource;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class OAuth2SecurityValidatorTest extends AbstractSecurityValidatorTest {
@@ -36,7 +38,7 @@ public class OAuth2SecurityValidatorTest extends AbstractSecurityValidatorTest {
     @BeforeEach
     void setUpSpec() {
         OpenAPISpec spec = new OpenAPISpec();
-        spec.location = "src/test/resources/openapi/specs/security/oauth2.yml";
+        spec.location = getPathFromResource( "openapi/specs/security/oauth2.yml");
         spec.validateRequests = YES;
         spec.validateSecurity = YES;
 

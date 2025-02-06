@@ -6,6 +6,10 @@
 - JSONBody
   - Store body as parsed JsonNode or Document
     - If JSON is needed by an interceptor use already parsed JSON
+- Data Masking
+  - Is JSONPath replacement with Jayway possible? <mask>$.cusomter.payment.creditcard
+    - Other ways to do it.
+- proxies.xml: global Element for Interceptors 
     
 # Version 6.1.0
 
@@ -33,6 +37,9 @@
 - Call Example
 - new GroovyLanguageSupport() in GroocyExchangeExpression is instanciated all the time. Reuse it?
 - SampleSOAPService: Add some more cities
+- <apiKey/>
+    <scriptXX>${json[key]}</scriptXX>
+  - See: RateLimitInterceptor
 
 # Version 6.0.0
 
