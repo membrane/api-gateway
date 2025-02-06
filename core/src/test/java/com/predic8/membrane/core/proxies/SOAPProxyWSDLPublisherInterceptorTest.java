@@ -15,8 +15,10 @@ package com.predic8.membrane.core.proxies;
 
 import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.config.*;
+import com.predic8.membrane.test.*;
 import org.junit.jupiter.api.*;
 
+import static com.predic8.membrane.test.TestUtil.getPathFromResource;
 import static io.restassured.RestAssured.*;
 import static org.hamcrest.Matchers.*;
 
@@ -40,7 +42,7 @@ public class SOAPProxyWSDLPublisherInterceptorTest {
     @Test
     void publisherOnly() throws Exception {
         SOAPProxy sp = new SOAPProxy() {{
-            wsdl = "src/test/resources/validation/ArticleService.wsdl";
+            wsdl = getPathFromResource( "validation/ArticleService.wsdl");
             key = new ServiceProxyKey(2000);
         }};
         sp.setPath(new Path(false,"/articles"));

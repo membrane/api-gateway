@@ -31,7 +31,7 @@ public class SOAPProxyValidationExampleTest extends DistributionExtractingTestca
     }
 
     @Test
-    public void testValidCitySoapRequest() throws IOException, InterruptedException {
+    public void testValidCitySoapRequest() throws Exception {
         try (Process2 ignored = startServiceProxyScript()) {
             // @formatter:off
 			given()

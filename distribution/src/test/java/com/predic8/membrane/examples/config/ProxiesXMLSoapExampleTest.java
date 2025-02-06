@@ -19,6 +19,7 @@ import org.junit.jupiter.api.*;
 
 import static com.predic8.membrane.core.http.MimeType.*;
 import static io.restassured.RestAssured.*;
+import static io.restassured.filter.log.LogDetail.*;
 import static org.hamcrest.Matchers.*;
 
 public class ProxiesXMLSoapExampleTest extends AbstractSampleMembraneStartStopTestcase {
@@ -40,6 +41,7 @@ public class ProxiesXMLSoapExampleTest extends AbstractSampleMembraneStartStopTe
     void getWebServicesExplorer2000() {
         get(LOCALHOST_2000 + "/city-service")
         .then().assertThat()
+            .log().ifValidationFails(ALL)
             .statusCode(200)
             .contentType(TEXT_HTML)
             .body("html.head.title",containsString("CityService"));

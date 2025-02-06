@@ -81,11 +81,11 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
     protected static final HashSet<ApplicationContext> hotDeployingContexts = new HashSet<>();
 
     private ApplicationContext beanFactory;
-    private String baseLocation;
+    private String baseLocation ;
 
     protected RuleManager ruleManager = new RuleManager();
     protected final FlowController flowController;
-    protected ExchangeStore exchangeStore;
+    protected ExchangeStore exchangeStore = new ForgetfulExchangeStore();
     protected Transport transport;
     protected ResolverMap resolverMap;
     protected DNSCache dnsCache = new DNSCache();

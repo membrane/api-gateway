@@ -24,12 +24,16 @@ import com.predic8.membrane.core.util.*;
 import com.predic8.membrane.core.util.functionalInterfaces.*;
 import com.predic8.xml.util.*;
 import org.jetbrains.annotations.*;
+import org.slf4j.*;
 import org.w3c.dom.ls.*;
 
 import java.io.*;
+import java.net.*;
 import java.net.URI;
 import java.security.*;
 import java.util.*;
+
+import static com.predic8.membrane.core.util.URIUtil.*;
 
 /**
  * A ResolverMap consists of a list of {@link SchemaResolver}s.
@@ -43,6 +47,8 @@ import java.util.*;
  */
 @MCElement(name = "resolverMap")
 public class ResolverMap implements Cloneable, Resolver {
+
+    private static final Logger log = LoggerFactory.getLogger(ResolverMap.class.getName());
 
     /**
      * First param is the parent. The following params will be combined to one path
@@ -65,30 +71,41 @@ public class ResolverMap implements Cloneable, Resolver {
         String parent = locations[0];
         String relativeChild = locations[1];
 
+        log.warn("Combining {} with {}", parent, relativeChild);
+
         if (relativeChild.contains(":/") || relativeChild.contains(":\\") || parent == null || parent.isEmpty())
             return relativeChild;
         if (parent.startsWith("file://")) {
             if (relativeChild.startsWith("\\") || relativeChild.startsWith("/"))
                 return "file://" + new File(relativeChild).getAbsolutePath();
             //System.err.println(FileSchemaResolver.normalize(parent));
-            File parentFile = new File(URIUtil.pathFromFileURI(parent));
+            File parentFile = new File(pathFromFileURI(parent));
             //System.err.println(parentFile.getAbsolutePath());
             if (!parent.endsWith("/") && !parent.endsWith("\\"))
                 parentFile = parentFile.getParentFile();
             //System.err.println(parentFile.getAbsolutePath());
-            return keepTrailingSlash(parentFile, relativeChild);
+            try {
+                return keepTrailingSlash(parentFile, relativeChild);
+            } catch (URISyntaxException e) {
+                throw new RuntimeException("Error combining: " + locations, e);
+            }
         }
         if (parent.contains(":/")) {
             try {
-                return new URI(parent).resolve(relativeChild.replaceAll("\\\\", "/")).toString();
+                return new URI(parent).resolve(prepare4Uri(relativeChild)).toString();
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
         } else if (parent.startsWith("/")) {
             try {
-                return removeFileProtocol(new URI("file:" + parent).resolve(relativeChild).toString());
+                return pathFromFileURI(convertPath2FileURI(parent).resolve(relativeChild));
             } catch (Exception e) {
-                throw new RuntimeException(e);
+                throw new ConfigurationException("""
+                        Error resolving paths to resources. Check proxies.xml, OpenAPI, JSON/XSD Schema and WSDL documents for references.
+                        
+                        Parent path: %s
+                        Child path: %s
+                        """.formatted(parent, relativeChild));
             }
         }
         File parentFile = new File(parent);
@@ -98,8 +115,14 @@ public class ResolverMap implements Cloneable, Resolver {
 
     }
 
-    static @NotNull String keepTrailingSlash(File parentFile, String relativeChild) {
-        String res = "file://" + new File(parentFile, relativeChild).getAbsolutePath();
+    protected static String prepare4Uri(String path) {
+        path = path.replaceAll("\\\\", "/");
+        path = path.replaceAll(" ", "%20");
+        return path;
+    }
+
+    static @NotNull String keepTrailingSlash(File parentFile, String relativeChild) throws URISyntaxException {
+        String res = toFileURIString(new File(parentFile, relativeChild));
         if (endsWithSlash(relativeChild))
             return res + "/";
         return res;
