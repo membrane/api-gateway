@@ -23,6 +23,8 @@ import javax.annotation.Nullable;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
@@ -57,7 +59,7 @@ public class TableStorageApi implements HttpClientConfigurable<AzureTableStorage
         return config;
     }
 
-    protected Request.Builder requestBuilder(@Nullable String announceUrl) throws Exception {
+    protected Request.Builder requestBuilder(@Nullable String announceUrl) {
         var date = now();
 
         var stringToSign = buildStringToSign(date, announceUrl);
@@ -96,14 +98,17 @@ public class TableStorageApi implements HttpClientConfigurable<AzureTableStorage
         return base + url.substring(url.lastIndexOf("/" + config.getTableName()));
     }
 
-    private String sign(String base64Key, String stringToSign) throws Exception {
-        var algo = "HmacSHA256";
+    private String sign(String base64Key, String stringToSign) {
+        try {
+            var algo = "HmacSHA256";
+            byte[] key = java.util.Base64.getDecoder().decode(base64Key);
+            Mac hmacSHA256 = Mac.getInstance(algo);
+            hmacSHA256.init(new SecretKeySpec(key, algo));
+            byte[] utf8Bytes = stringToSign.getBytes(StandardCharsets.UTF_8);
 
-        byte[] key = java.util.Base64.getDecoder().decode(base64Key);
-        Mac hmacSHA256 = Mac.getInstance(algo);
-        hmacSHA256.init(new SecretKeySpec(key, algo));
-        byte[] utf8Bytes = stringToSign.getBytes(StandardCharsets.UTF_8);
-
-        return Base64.getEncoder().encodeToString(hmacSHA256.doFinal(utf8Bytes));
+            return Base64.getEncoder().encodeToString(hmacSHA256.doFinal(utf8Bytes));
+        } catch (InvalidKeyException | NoSuchAlgorithmException e) {
+            throw new RuntimeException(e);
+        }
     }
 }
