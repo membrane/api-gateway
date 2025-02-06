@@ -9,7 +9,7 @@ Execute the following steps:
 
 1. Set sample directory (`<membrane-root>/examples/throttle/`) as working directory.
 
-2. Execute the `service-proxy.sh` script or its Windows batch file equivalent.
+2. Execute the `membrane.sh` script or its Windows batch file equivalent.
 
 3. Run the `timing.sh` script or its Windows batch file equivalent.
 

@@ -53,7 +53,7 @@ A quick guide to setting up a JDBC-based API key store using PostgreSQL.
 4. **run service.proxy.sh script:**
 
 ```shell
-./service-proxy.sh
+./membrane.sh
 ```
 
 5. **Run SQL File in your Docker Container**

@@ -15,7 +15,7 @@ In this example, Membrane acts as a pre-configured OAuth2 authorization server. 
 
 Steps to start the authorization server:
 1. Open the `authorization_server` subfolder in a terminal.
-2. Run `service-proxy.ps1` or `service-proxy.sh`.
+2. Run `membrane.cmd` or `membrane.sh`.
 3. Verify the server is running by visiting [http://localhost:9000/admin](http://localhost:9000/admin).
 
 ### 2. Start the Server with the Protected Resource
@@ -24,7 +24,7 @@ The `token_validator` folder contains a Membrane setup that validates tokens and
 
 Steps to start the token validator:
 1. Open the `token_validator` folder in a terminal.
-2. Run `service-proxy.ps1` or `service-proxy.sh` there.
+2. Run `membrane.cmd` or `membrane.sh` there.
 3. Verify the resource side is running at [http://localhost:9001/admin](http://localhost:9001/admin).
 
 ### 3. Get a Token and Access the Protected Resource

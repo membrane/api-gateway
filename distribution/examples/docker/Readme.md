@@ -44,7 +44,7 @@ COPY proxies.xml /opt/membrane/conf/
 
 EXPOSE 2000
 
-ENTRYPOINT ["/opt/membrane/service-proxy.sh"]
+ENTRYPOINT ["/opt/membrane/membrane.sh"]
 ```
 
 In this Dockerfile, we pull the Membrane base image from Docker Hub, then copy proxies.xml into the Membrane configuration directory. We declare that port 2000 should be exposed, and set the entrypoint to the Membrane startup script.

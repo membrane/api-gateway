@@ -11,7 +11,7 @@ To run the example execute the following steps:
 
 1. Have a look at `file-exchangestore-beans.xml`
 
-2. Execute `examples/file-exchangestore/service-proxy.ps1`
+2. Execute `examples/file-exchangestore/membrane.cmd`
 
 3. Open http://localhost:2000/ in your browser.
 

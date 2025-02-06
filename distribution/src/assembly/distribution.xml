@@ -42,19 +42,19 @@
             </includes>
         </fileSet>
         <fileSet>
-            <!-- router folder fileSet without service-proxy.sh -->
+            <!-- router folder fileSet without membrane.sh -->
             <directory>router</directory>
             <outputDirectory>/</outputDirectory>
             <excludes>
-                <exclude>service-proxy.sh</exclude>
+                <exclude>membrane.sh</exclude>
             </excludes>
         </fileSet>
         <fileSet>
-            <!-- extra fileSet for service-proxy.sh with execute permissions -->
+            <!-- extra fileSet for membrane.sh with execute permissions -->
             <directory>router</directory>
             <outputDirectory>/</outputDirectory>
             <includes>
-                <include>service-proxy.sh</include>
+                <include>membrane.sh</include>
             </includes>
             <fileMode>0755</fileMode>
         </fileSet>

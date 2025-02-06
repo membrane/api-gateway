@@ -417,7 +417,7 @@
               &lt;/p&gt;
               &lt;p&gt;
                   Has undefined behavior when Membrane is &lt;b&gt;not&lt;/b&gt; started from command line
-                  (=via the RouterCLI class, which &lt;tt&gt;service-proxy.ps1&lt;/tt&gt;/&lt;tt&gt;service-proxy.sh&lt;/tt&gt;
+                  (=via the RouterCLI class, which &lt;tt&gt;membrane.cmd&lt;/tt&gt;/&lt;tt&gt;membrane.sh&lt;/tt&gt;
                   do use).
               &lt;/p&gt;
               &lt;p&gt;
@@ -1184,7 +1184,7 @@
               &lt;/p&gt;
               &lt;p&gt;
                   Has undefined behavior when Membrane is &lt;b&gt;not&lt;/b&gt; started from command line
-                  (=via the RouterCLI class, which &lt;tt&gt;service-proxy.ps1&lt;/tt&gt;/&lt;tt&gt;service-proxy.sh&lt;/tt&gt;
+                  (=via the RouterCLI class, which &lt;tt&gt;membrane.cmd&lt;/tt&gt;/&lt;tt&gt;membrane.sh&lt;/tt&gt;
                   do use).
               &lt;/p&gt;
               &lt;p&gt;
@@ -2226,7 +2226,7 @@
               &lt;/p&gt;
               &lt;p&gt;
                   Has undefined behavior when Membrane is &lt;b&gt;not&lt;/b&gt; started from command line
-                  (=via the RouterCLI class, which &lt;tt&gt;service-proxy.ps1&lt;/tt&gt;/&lt;tt&gt;service-proxy.sh&lt;/tt&gt;
+                  (=via the RouterCLI class, which &lt;tt&gt;membrane.cmd&lt;/tt&gt;/&lt;tt&gt;membrane.sh&lt;/tt&gt;
                   do use).
               &lt;/p&gt;
               &lt;p&gt;
@@ -3628,7 +3628,7 @@
               &lt;/p&gt;
               &lt;p&gt;
                   Has undefined behavior when Membrane is &lt;b&gt;not&lt;/b&gt; started from command line
-                  (=via the RouterCLI class, which &lt;tt&gt;service-proxy.ps1&lt;/tt&gt;/&lt;tt&gt;service-proxy.sh&lt;/tt&gt;
+                  (=via the RouterCLI class, which &lt;tt&gt;membrane.cmd&lt;/tt&gt;/&lt;tt&gt;membrane.sh&lt;/tt&gt;
                   do use).
               &lt;/p&gt;
               &lt;p&gt;
@@ -5005,7 +5005,7 @@
               &lt;/p&gt;
               &lt;p&gt;
                   Has undefined behavior when Membrane is &lt;b&gt;not&lt;/b&gt; started from command line
-                  (=via the RouterCLI class, which &lt;tt&gt;service-proxy.ps1&lt;/tt&gt;/&lt;tt&gt;service-proxy.sh&lt;/tt&gt;
+                  (=via the RouterCLI class, which &lt;tt&gt;membrane.cmd&lt;/tt&gt;/&lt;tt&gt;membrane.sh&lt;/tt&gt;
                   do use).
               &lt;/p&gt;
               &lt;p&gt;
@@ -6895,7 +6895,7 @@
               &lt;/p&gt;
               &lt;p&gt;
                   Has undefined behavior when Membrane is &lt;b&gt;not&lt;/b&gt; started from command line
-                  (=via the RouterCLI class, which &lt;tt&gt;service-proxy.ps1&lt;/tt&gt;/&lt;tt&gt;service-proxy.sh&lt;/tt&gt;
+                  (=via the RouterCLI class, which &lt;tt&gt;membrane.cmd&lt;/tt&gt;/&lt;tt&gt;membrane.sh&lt;/tt&gt;
                   do use).
               &lt;/p&gt;
               &lt;p&gt;
@@ -8205,7 +8205,7 @@
               &lt;/p&gt;
               &lt;p&gt;
                   Has undefined behavior when Membrane is &lt;b&gt;not&lt;/b&gt; started from command line
-                  (=via the RouterCLI class, which &lt;tt&gt;service-proxy.ps1&lt;/tt&gt;/&lt;tt&gt;service-proxy.sh&lt;/tt&gt;
+                  (=via the RouterCLI class, which &lt;tt&gt;membrane.cmd&lt;/tt&gt;/&lt;tt&gt;membrane.sh&lt;/tt&gt;
                   do use).
               &lt;/p&gt;
               &lt;p&gt;
@@ -9506,7 +9506,7 @@
               &lt;/p&gt;
               &lt;p&gt;
                   Has undefined behavior when Membrane is &lt;b&gt;not&lt;/b&gt; started from command line
-                  (=via the RouterCLI class, which &lt;tt&gt;service-proxy.ps1&lt;/tt&gt;/&lt;tt&gt;service-proxy.sh&lt;/tt&gt;
+                  (=via the RouterCLI class, which &lt;tt&gt;membrane.cmd&lt;/tt&gt;/&lt;tt&gt;membrane.sh&lt;/tt&gt;
                   do use).
               &lt;/p&gt;
               &lt;p&gt;
@@ -10384,7 +10384,7 @@
               &lt;/p&gt;
               &lt;p&gt;
                   Has undefined behavior when Membrane is &lt;b&gt;not&lt;/b&gt; started from command line
-                  (=via the RouterCLI class, which &lt;tt&gt;service-proxy.ps1&lt;/tt&gt;/&lt;tt&gt;service-proxy.sh&lt;/tt&gt;
+                  (=via the RouterCLI class, which &lt;tt&gt;membrane.cmd&lt;/tt&gt;/&lt;tt&gt;membrane.sh&lt;/tt&gt;
                   do use).
               &lt;/p&gt;
               &lt;p&gt;
@@ -11337,7 +11337,7 @@
               &lt;/p&gt;
               &lt;p&gt;
                   Has undefined behavior when Membrane is &lt;b&gt;not&lt;/b&gt; started from command line
-                  (=via the RouterCLI class, which &lt;tt&gt;service-proxy.ps1&lt;/tt&gt;/&lt;tt&gt;service-proxy.sh&lt;/tt&gt;
+                  (=via the RouterCLI class, which &lt;tt&gt;membrane.cmd&lt;/tt&gt;/&lt;tt&gt;membrane.sh&lt;/tt&gt;
                   do use).
               &lt;/p&gt;
               &lt;p&gt;
@@ -11739,7 +11739,7 @@
               &lt;/p&gt;
               &lt;p&gt;
                   Has undefined behavior when Membrane is &lt;b&gt;not&lt;/b&gt; started from command line
-                  (=via the RouterCLI class, which &lt;tt&gt;service-proxy.ps1&lt;/tt&gt;/&lt;tt&gt;service-proxy.sh&lt;/tt&gt;
+                  (=via the RouterCLI class, which &lt;tt&gt;membrane.cmd&lt;/tt&gt;/&lt;tt&gt;membrane.sh&lt;/tt&gt;
                   do use).
               &lt;/p&gt;
               &lt;p&gt;
@@ -12610,7 +12610,7 @@
               &lt;/p&gt;
               &lt;p&gt;
                   Has undefined behavior when Membrane is &lt;b&gt;not&lt;/b&gt; started from command line
-                  (=via the RouterCLI class, which &lt;tt&gt;service-proxy.ps1&lt;/tt&gt;/&lt;tt&gt;service-proxy.sh&lt;/tt&gt;
+                  (=via the RouterCLI class, which &lt;tt&gt;membrane.cmd&lt;/tt&gt;/&lt;tt&gt;membrane.sh&lt;/tt&gt;
                   do use).
               &lt;/p&gt;
               &lt;p&gt;
@@ -13526,7 +13526,7 @@
               &lt;/p&gt;
               &lt;p&gt;
                   Has undefined behavior when Membrane is &lt;b&gt;not&lt;/b&gt; started from command line
-                  (=via the RouterCLI class, which &lt;tt&gt;service-proxy.ps1&lt;/tt&gt;/&lt;tt&gt;service-proxy.sh&lt;/tt&gt;
+                  (=via the RouterCLI class, which &lt;tt&gt;membrane.cmd&lt;/tt&gt;/&lt;tt&gt;membrane.sh&lt;/tt&gt;
                   do use).
               &lt;/p&gt;
               &lt;p&gt;
@@ -14319,7 +14319,7 @@
               &lt;/p&gt;
               &lt;p&gt;
                   Has undefined behavior when Membrane is &lt;b&gt;not&lt;/b&gt; started from command line
-                  (=via the RouterCLI class, which &lt;tt&gt;service-proxy.ps1&lt;/tt&gt;/&lt;tt&gt;service-proxy.sh&lt;/tt&gt;
+                  (=via the RouterCLI class, which &lt;tt&gt;membrane.cmd&lt;/tt&gt;/&lt;tt&gt;membrane.sh&lt;/tt&gt;
                   do use).
               &lt;/p&gt;
               &lt;p&gt;
@@ -15081,7 +15081,7 @@
               &lt;/p&gt;
               &lt;p&gt;
                   Has undefined behavior when Membrane is &lt;b&gt;not&lt;/b&gt; started from command line
-                  (=via the RouterCLI class, which &lt;tt&gt;service-proxy.ps1&lt;/tt&gt;/&lt;tt&gt;service-proxy.sh&lt;/tt&gt;
+                  (=via the RouterCLI class, which &lt;tt&gt;membrane.cmd&lt;/tt&gt;/&lt;tt&gt;membrane.sh&lt;/tt&gt;
                   do use).
               &lt;/p&gt;
               &lt;p&gt;
@@ -16566,7 +16566,7 @@
               &lt;/p&gt;
               &lt;p&gt;
                   Has undefined behavior when Membrane is &lt;b&gt;not&lt;/b&gt; started from command line
-                  (=via the RouterCLI class, which &lt;tt&gt;service-proxy.ps1&lt;/tt&gt;/&lt;tt&gt;service-proxy.sh&lt;/tt&gt;
+                  (=via the RouterCLI class, which &lt;tt&gt;membrane.cmd&lt;/tt&gt;/&lt;tt&gt;membrane.sh&lt;/tt&gt;
                   do use).
               &lt;/p&gt;
               &lt;p&gt;
@@ -17459,7 +17459,7 @@
               &lt;/p&gt;
               &lt;p&gt;
                   Has undefined behavior when Membrane is &lt;b&gt;not&lt;/b&gt; started from command line
-                  (=via the RouterCLI class, which &lt;tt&gt;service-proxy.ps1&lt;/tt&gt;/&lt;tt&gt;service-proxy.sh&lt;/tt&gt;
+                  (=via the RouterCLI class, which &lt;tt&gt;membrane.cmd&lt;/tt&gt;/&lt;tt&gt;membrane.sh&lt;/tt&gt;
                   do use).
               &lt;/p&gt;
               &lt;p&gt;
@@ -18784,7 +18784,7 @@
               &lt;/p&gt;
               &lt;p&gt;
                   Has undefined behavior when Membrane is &lt;b&gt;not&lt;/b&gt; started from command line
-                  (=via the RouterCLI class, which &lt;tt&gt;service-proxy.ps1&lt;/tt&gt;/&lt;tt&gt;service-proxy.sh&lt;/tt&gt;
+                  (=via the RouterCLI class, which &lt;tt&gt;membrane.cmd&lt;/tt&gt;/&lt;tt&gt;membrane.sh&lt;/tt&gt;
                   do use).
               &lt;/p&gt;
               &lt;p&gt;
@@ -19550,7 +19550,7 @@
               &lt;/p&gt;
               &lt;p&gt;
                   Has undefined behavior when Membrane is &lt;b&gt;not&lt;/b&gt; started from command line
-                  (=via the RouterCLI class, which &lt;tt&gt;service-proxy.ps1&lt;/tt&gt;/&lt;tt&gt;service-proxy.sh&lt;/tt&gt;
+                  (=via the RouterCLI class, which &lt;tt&gt;membrane.cmd&lt;/tt&gt;/&lt;tt&gt;membrane.sh&lt;/tt&gt;
                   do use).
               &lt;/p&gt;
               &lt;p&gt;
@@ -21090,7 +21090,7 @@
               &lt;/p&gt;
               &lt;p&gt;
                   Has undefined behavior when Membrane is &lt;b&gt;not&lt;/b&gt; started from command line
-                  (=via the RouterCLI class, which &lt;tt&gt;service-proxy.ps1&lt;/tt&gt;/&lt;tt&gt;service-proxy.sh&lt;/tt&gt;
+                  (=via the RouterCLI class, which &lt;tt&gt;membrane.cmd&lt;/tt&gt;/&lt;tt&gt;membrane.sh&lt;/tt&gt;
                   do use).
               &lt;/p&gt;
               &lt;p&gt;
@@ -22485,7 +22485,7 @@
               &lt;/p&gt;
               &lt;p&gt;
                   Has undefined behavior when Membrane is &lt;b&gt;not&lt;/b&gt; started from command line
-                  (=via the RouterCLI class, which &lt;tt&gt;service-proxy.ps1&lt;/tt&gt;/&lt;tt&gt;service-proxy.sh&lt;/tt&gt;
+                  (=via the RouterCLI class, which &lt;tt&gt;membrane.cmd&lt;/tt&gt;/&lt;tt&gt;membrane.sh&lt;/tt&gt;
                   do use).
               &lt;/p&gt;
               &lt;p&gt;

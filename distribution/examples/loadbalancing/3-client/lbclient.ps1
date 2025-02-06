@@ -5,7 +5,7 @@ if (-not $env:MEMBRANE_HOME) {
 Write-Output $env:MEMBRANE_HOME
 
 function Check-MembraneHome {
-    if (Test-Path "$env:MEMBRANE_HOME\service-proxy.ps1") {
+    if (Test-Path "$env:MEMBRANE_HOME\membrane.cmd") {
         return $true
     }
     Write-Output "Please set the MEMBRANE_HOME environment variable to point to"

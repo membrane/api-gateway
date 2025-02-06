@@ -7,7 +7,7 @@ This sample explains how to set up and use the `validator` plugin, utilizing JSO
 
 1. Go to the directory `<membrane-root>/examples/validation/json-schema`.
 
-2. Start `service-proxy.ps1` or `service-proxy.sh`.
+2. Start `membrane.cmd` or `membrane.sh`.
 
 3. Look at `schema2000.json` and compare the schema to `good2000.json` and `bad2000.json`.
 

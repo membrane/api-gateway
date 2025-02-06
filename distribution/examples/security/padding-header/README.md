@@ -5,7 +5,7 @@ The Padding Header is utilized to protect against [breach attacks](https://nvd.n
 ## Running the Sample
 
 1. Go to the `examples/security/padding-header` directory.
-2. Run `service-proxy.sh` or `service-proxy.ps1` to start the API Gateway.
+2. Run `membrane.sh` or `membrane.cmd` to start the API Gateway.
 3. Send a request to http://localhost:2000:
 ```
 curl http://localhost:2000 -v
