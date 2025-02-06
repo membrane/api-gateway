@@ -53,11 +53,18 @@ public class ResolverMap implements Cloneable, Resolver {
     /**
      * First param is the parent. The following params will be combined to one path
      * e.g. "/foo/bar", "baz/x.yaml" ", "soo" => "/foo/bar/baz/soo"
+     * See ResolverMapCombinedTest
      *
      * @param locations List of relative paths
      * @return combined path
      */
     public static String combine(String... locations) {
+        String resolved = combineInternal(locations);
+        log.debug("Resolved locations: {} to: {}", locations, resolved);
+        return resolved;
+    }
+
+    private static String combineInternal(String... locations) {
         if (locations.length < 2)
             throw new InvalidParameterException();
 
@@ -71,23 +78,18 @@ public class ResolverMap implements Cloneable, Resolver {
         String parent = locations[0];
         String relativeChild = locations[1];
 
-        log.warn("Combining {} with {}", parent, relativeChild);
-
         if (relativeChild.contains(":/") || relativeChild.contains(":\\") || parent == null || parent.isEmpty())
             return relativeChild;
         if (parent.startsWith("file://")) {
             if (relativeChild.startsWith("\\") || relativeChild.startsWith("/"))
                 return "file://" + new File(relativeChild).getAbsolutePath();
-            //System.err.println(FileSchemaResolver.normalize(parent));
             File parentFile = new File(pathFromFileURI(parent));
-            //System.err.println(parentFile.getAbsolutePath());
             if (!parent.endsWith("/") && !parent.endsWith("\\"))
                 parentFile = parentFile.getParentFile();
-            //System.err.println(parentFile.getAbsolutePath());
             try {
                 return keepTrailingSlash(parentFile, relativeChild);
             } catch (URISyntaxException e) {
-                throw new RuntimeException("Error combining: " + locations, e);
+                throw new RuntimeException("Error combining: " + Arrays.toString(locations), e);
             }
         }
         if (parent.contains(":/")) {
@@ -96,7 +98,8 @@ public class ResolverMap implements Cloneable, Resolver {
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
-        } else if (parent.startsWith("/")) {
+        }
+        if (parent.startsWith("/")) {
             try {
                 return pathFromFileURI(convertPath2FileURI(parent).resolve(relativeChild));
             } catch (Exception e) {
@@ -112,16 +115,20 @@ public class ResolverMap implements Cloneable, Resolver {
         if (!parent.endsWith("/") && !parent.endsWith("\\"))
             parentFile = parentFile.getParentFile();
         return new File(parentFile, relativeChild).getAbsolutePath();
-
     }
 
+    /**
+     * Prepares a path string to be used to construct a URI
+     * @param path
+     * @return
+     */
     protected static String prepare4Uri(String path) {
         path = path.replaceAll("\\\\", "/");
         path = path.replaceAll(" ", "%20");
         return path;
     }
 
-    static @NotNull String keepTrailingSlash(File parentFile, String relativeChild) throws URISyntaxException {
+   protected static @NotNull String keepTrailingSlash(File parentFile, String relativeChild) throws URISyntaxException {
         String res = toFileURIString(new File(parentFile, relativeChild));
         if (endsWithSlash(relativeChild))
             return res + "/";
@@ -132,22 +139,15 @@ public class ResolverMap implements Cloneable, Resolver {
         return path.endsWith("/") || path.endsWith("\\");
     }
 
-    static @NotNull String removeFileProtocol(String uri) {
-        if (uri.startsWith("file:")) {
-            return uri.substring(5);
-        }
-        return uri;
-    }
-
     int count = 0;
     private String[] schemas;
     private SchemaResolver[] resolvers;
 
     public ResolverMap() {
-        this(null, null, null);
+        this(null, null);
     }
 
-    public ResolverMap(TimerManager timerManager, HttpClientFactory httpClientFactory, KubernetesClientFactory kubernetesClientFactory) {
+    public ResolverMap(HttpClientFactory httpClientFactory, KubernetesClientFactory kubernetesClientFactory) {
         schemas = new String[10];
         resolvers = new SchemaResolver[10];
 

@@ -66,7 +66,6 @@ public class ResolverMapCombineTest {
         assertEquals("file:/chi/gnat", combine("file:///chi/elm","gnat"));
     }
 
-
     @Test
     void fileRelativeWithSlashPlusFile() {
         assertEquals("file:/chi/elm/gnat", combine("file:///chi/elm/","gnat"));
@@ -74,10 +73,7 @@ public class ResolverMapCombineTest {
 
     @Test
     void fileWithAbsoluteChild() {
-        assertEquals(
-                "file:///array.yml",
-                combine("file://src/test/resources/openapi/specs", "/array.yml")
-        );
+        assertEquals("file:///array.yml", combine("file://src/test/resources/openapi/specs", "/array.yml"));
     }
 
     @Test
@@ -88,10 +84,7 @@ public class ResolverMapCombineTest {
 
     @Test
     void fileWithSpacheAbsoluteChild() {
-        assertEquals(
-                "file:/tang%20ting/yap%20lob.yml",
-                combine("file:///tang%20ting/slob", "yap lob.yml")
-        );
+        assertEquals("file:/tang%20ting/yap%20lob.yml", combine("file:///tang%20ting/slob", "yap lob.yml"));
     }
 
     // URLS
@@ -116,34 +109,21 @@ public class ResolverMapCombineTest {
         assertEquals("http://predic8.de/chi/elm", combine("/foo","http://predic8.de/chi/elm"));
     }
 
-
     // Special
 
     @Test
     void moreThanTwoParameters() {
-        assertEquals(
-                current + "/src/test/resources/openapi/specs/array.yml",
-                combine("src/test/resources/", "openapi/specs/foo", "array.yml")
-        );
+        assertEquals(current + "/src/test/resources/openapi/specs/array.yml", combine("src/test/resources/", "openapi/specs/foo", "array.yml"));
     }
-
-
 
     @Test
     void combineParentFileProtocolWithRelativeChildWithoutTrailingSlash() {
-        // TODO Soll specs verschwinden? Soll es auf einmal absolut sein?
-        assertEquals(
-                "file:/src/test/resources/openapi/array.yml",
-                combine("file://src/test/resources/openapi/specs.wsdl", "array.yml")
-        );
+        assertEquals("file:/src/test/resources/openapi/array.yml", combine("file://src/test/resources/openapi/specs.wsdl", "array.yml"));
     }
 
     @Test
     void combineParentWithNonFileProtocolAndRelativeChild() {
-        assertEquals(
-                "https://api.predic8.de/shop/v2/api-docs",
-                combine("https://api.predic8.de/shop/", "v2/api-docs")
-        );
+        assertEquals("https://api.predic8.de/shop/v2/api-docs", combine("https://api.predic8.de/shop/", "v2/api-docs"));
     }
 
     @Test
@@ -192,6 +172,4 @@ public class ResolverMapCombineTest {
     void urlPlusPathSpace() {
         assertEquals("http://localhost:2000/cock%20lock", combine("http://localhost:2000/chip","cock lock"));
     }
-
-
 }
