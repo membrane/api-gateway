@@ -152,11 +152,20 @@ public class OpenAPIRecordFactory {
         try {
             JsonNode node = omYaml.readTree(getInputStreamForLocation(spec.location));
             OpenAPI openAPI = new OpenAPIParser().readLocation(path, null, getParseOptions()).getOpenAPI();
-
+            if (openAPI == null) {
+                // OpenAPI parser logs exception but unfortunately it is not available here.
+                log.error("Could not read OpenAPI: {}", path);
+                throw new ConfigurationException("""
+                                             Could not read OpenAPI. Look at log statements further up and check format of OpenAPI document.
+                                             
+                                             Path: %s
+                                             
+                                             """.formatted(path));
+            }
             addConversionNoticeIfSwagger2(openAPI, node);
             return openAPI;
         } catch (IOException e) {
-            throw new OpenAPIParsingException("Could not read OpenAPI file: " + e.getMessage(), path);
+            throw new OpenAPIParsingException("Could not read OpenAPI: " + e.getMessage(), path);
         }
     }
 
