@@ -21,9 +21,11 @@ import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.util.*;
+import com.predic8.membrane.test.*;
 import org.junit.jupiter.api.*;
 
 import static com.predic8.membrane.core.openapi.util.TestUtils.createProxy;
+import static com.predic8.membrane.test.TestUtil.getPathFromResource;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class OpenAPI31Test {
@@ -40,7 +42,7 @@ public class OpenAPI31Test {
         router.setUriFactory(new URIFactory());
 
         petstore_v3_1 = new OpenAPISpec();
-        petstore_v3_1.location = "src/test/resources/openapi/specs/petstore-v3.1.json";
+        petstore_v3_1.location = getPathFromResource("openapi/specs/petstore-v3.1.json");
 
         exc.setRequest(new Request.Builder().method("GET").build());
 

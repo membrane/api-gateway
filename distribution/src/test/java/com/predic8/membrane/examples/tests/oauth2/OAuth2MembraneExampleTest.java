@@ -26,6 +26,7 @@ import java.util.*;
 
 import static com.predic8.membrane.core.http.MimeType.*;
 import static io.restassured.RestAssured.*;
+import static io.restassured.filter.log.LogDetail.ALL;
 import static org.hamcrest.CoreMatchers.*;
 
 public class OAuth2MembraneExampleTest extends DistributionExtractingTestcase {
@@ -77,11 +78,15 @@ public class OAuth2MembraneExampleTest extends DistributionExtractingTestcase {
     }
 
     private static void accessTargetResource(Map<String, String> cookies) {
+
+        System.out.println("Cookies: " + cookies);
+
         // @formatter:off
         given()
             .cookies(cookies)
             .get("http://localhost:8000")
         .then().assertThat()
+            .log().ifValidationFails(ALL)
             .statusCode(200)
             .body(containsString("accessed"))
             .body(containsString("john@predic8.de"));

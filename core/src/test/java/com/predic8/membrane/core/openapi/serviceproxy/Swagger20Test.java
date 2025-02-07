@@ -22,10 +22,12 @@ import com.predic8.membrane.core.interceptor.templating.*;
 import com.predic8.membrane.core.proxies.AbstractServiceProxy.*;
 import com.predic8.membrane.core.transport.http.*;
 import com.predic8.membrane.core.util.*;
+import com.predic8.membrane.test.*;
 import org.hamcrest.*;
 import org.jetbrains.annotations.*;
 import org.junit.jupiter.api.*;
 
+import static com.predic8.membrane.test.TestUtil.getPathFromResource;
 import static io.restassured.RestAssured.*;
 import static io.restassured.filter.log.LogDetail.*;
 import static java.util.Collections.singletonList;
@@ -56,7 +58,7 @@ public class Swagger20Test {
 
     private static @NotNull OpenAPISpec getOpenAPISpec() {
         OpenAPISpec petstore_v2 = new OpenAPISpec();
-        petstore_v2.location = "src/test/resources/openapi/specs/swagger-v2/petstore-v2.json";
+        petstore_v2.location = getPathFromResource("openapi/specs/swagger-v2/petstore-v2.json");
         return petstore_v2;
     }
 

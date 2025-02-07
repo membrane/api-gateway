@@ -24,6 +24,7 @@ import com.predic8.membrane.core.interceptor.jwt.*;
 import com.predic8.membrane.core.openapi.serviceproxy.*;
 import com.predic8.membrane.core.security.*;
 import com.predic8.membrane.core.transport.http.*;
+import com.predic8.membrane.test.*;
 import org.jetbrains.annotations.*;
 import org.jose4j.jwk.*;
 import org.jose4j.jws.*;
@@ -35,11 +36,12 @@ import java.util.*;
 
 import static com.predic8.membrane.core.exchange.Exchange.SECURITY_SCHEMES;
 import static com.predic8.membrane.core.openapi.util.TestUtils.*;
+import static com.predic8.membrane.test.TestUtil.getPathFromResource;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class JWTInterceptorAndSecurityValidatorTest {
 
-    public static final String SPEC_LOCATION = "src/test/resources/openapi/openapi-proxy/no-extensions.yml";
+    public static final String SPEC_LOCATION = getPathFromResource( "openapi/openapi-proxy/no-extensions.yml");
     APIProxy proxy;
 
     RsaJsonWebKey privateKey;
@@ -67,7 +69,7 @@ public class JWTInterceptorAndSecurityValidatorTest {
         callInterceptorChain(exc);
 
         //noinspection unchecked
-        assertEquals(new HashSet<>(List.of("write","admin","read")), ((List<SecurityScheme>)exc.getProperty(SECURITY_SCHEMES)).get(0).getScopes());
+        assertEquals(new HashSet<>(List.of("write","admin","read")), ((List<SecurityScheme>)exc.getProperty(SECURITY_SCHEMES)).getFirst().getScopes());
 
     }
 
@@ -82,7 +84,7 @@ public class JWTInterceptorAndSecurityValidatorTest {
     }
 
     @NotNull
-    private JwtAuthInterceptor getJwtAuthInterceptor(Router router) throws Exception {
+    private JwtAuthInterceptor getJwtAuthInterceptor(Router router) {
         JwtAuthInterceptor interceptor = createInterceptor(getPublicKey());
         interceptor.setJwtRetriever(new HeaderJwtRetriever("Authorization","bearer"));
         interceptor.init(router);

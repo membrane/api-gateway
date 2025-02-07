@@ -85,7 +85,7 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
 
     protected RuleManager ruleManager = new RuleManager();
     protected final FlowController flowController;
-    protected ExchangeStore exchangeStore;
+    protected ExchangeStore exchangeStore = new LimitedMemoryExchangeStore();
     protected Transport transport;
     protected ResolverMap resolverMap;
     protected DNSCache dnsCache = new DNSCache();
@@ -119,7 +119,7 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
 
     public Router() {
         ruleManager.setRouter(this);
-        resolverMap = new ResolverMap(timerManager, httpClientFactory, kubernetesClientFactory);
+        resolverMap = new ResolverMap(httpClientFactory, kubernetesClientFactory);
         resolverMap.addRuleResolver(this);
         flowController = new FlowController(this);
     }

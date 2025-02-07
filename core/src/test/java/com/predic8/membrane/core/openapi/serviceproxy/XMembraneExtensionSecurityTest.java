@@ -17,14 +17,14 @@
 package com.predic8.membrane.core.openapi.serviceproxy;
 
 import com.predic8.membrane.core.*;
+import com.predic8.membrane.test.*;
 import org.junit.jupiter.api.*;
 
-import java.io.*;
-import java.net.URISyntaxException;
 import java.util.*;
 
 import static com.predic8.membrane.core.openapi.serviceproxy.APIProxy.*;
 import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPISpec.YesNoOpenAPIOption.*;
+import static com.predic8.membrane.test.TestUtil.getPathFromResource;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class XMembraneExtensionSecurityTest {
@@ -32,12 +32,12 @@ public class XMembraneExtensionSecurityTest {
     OpenAPIPublisherInterceptor interceptor;
 
     @BeforeEach
-    void setUp() throws IOException, ClassNotFoundException, URISyntaxException {
+    void setUp() {
         Router router = new Router();
         router.setBaseLocation("");
         OpenAPIRecordFactory factory = new OpenAPIRecordFactory(router);
         OpenAPISpec spec = new OpenAPISpec();
-        spec.setLocation("src/test/resources/openapi/openapi-proxy/validate-security-extensions.yml");
+        spec.setLocation(getPathFromResource("openapi/openapi-proxy/validate-security-extensions.yml"));
         Map<String,OpenAPIRecord> records = factory.create(Collections.singletonList(spec));
 
         interceptor = new OpenAPIPublisherInterceptor(records);

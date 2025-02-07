@@ -28,6 +28,7 @@ import com.predic8.membrane.core.interceptor.session.*;
 import com.predic8.membrane.core.interceptor.templating.*;
 import com.predic8.membrane.core.proxies.*;
 import com.predic8.membrane.core.transport.http.*;
+import com.predic8.membrane.test.*;
 import io.restassured.response.*;
 import org.jetbrains.annotations.*;
 import org.junit.jupiter.api.*;
@@ -37,6 +38,7 @@ import java.util.concurrent.atomic.*;
 
 import static com.predic8.membrane.core.interceptor.log.LogInterceptor.Level.*;
 import static com.predic8.membrane.core.lang.ExchangeExpression.Language.*;
+import static com.predic8.membrane.test.TestUtil.getPathFromResource;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class OAuth2RedirectTest {
@@ -199,8 +201,8 @@ public class OAuth2RedirectTest {
             setLevel(DEBUG);
         }});
         azureRule.getInterceptors().add(new OAuth2AuthorizationServerInterceptor() {{
-            setLocation("src/test/resources/openId/dialog");
-            setConsentFile("src/test/resources/openId/consentFile.json");
+            setLocation(getPathFromResource("openId/dialog"));
+            setConsentFile(getPathFromResource("openId/consentFile.json"));
             setTokenGenerator(new BearerTokenGenerator());
             setIssuer("http://localhost:2002");
             setUserDataProvider(new StaticUserDataProvider() {{
