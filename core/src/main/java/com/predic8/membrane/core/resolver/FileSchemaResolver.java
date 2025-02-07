@@ -68,7 +68,10 @@ public class FileSchemaResolver implements SchemaResolver {
 
     @Override
     public List<String> getSchemas() {
-        return List.of("file", null);
+        var l = new ArrayList<String>();
+        l.add("file");
+        l.add(null); // List.of() does not work with null
+        return l;
     }
 
     /**
@@ -81,7 +84,7 @@ public class FileSchemaResolver implements SchemaResolver {
         try {
             return new FileInputStream(path);
         } catch (FileNotFoundException e) {
-            log.error("File not found: {}",path, e.getMessage());
+            log.error("File {} not found: {}",path, e.getMessage());
             throw new ResourceRetrievalException(fileUrl, e);
         }
     }
