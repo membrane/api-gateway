@@ -14,6 +14,7 @@
 
 package com.predic8.membrane.core.resolver;
 
+import com.google.common.collect.Lists;
 import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
@@ -115,7 +116,7 @@ public class HTTPSchemaResolver implements SchemaResolver {
 
     @Override
     public List<String> getSchemas() {
-        return List.of("http", "https");
+        return Lists.newArrayList("http", "https");
     }
 
     public InputStream resolve(String url) throws ResourceRetrievalException {
