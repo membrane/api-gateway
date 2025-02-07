@@ -13,21 +13,18 @@
    limitations under the License. */
 package com.predic8.membrane.core.azure.api.tablestorage;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Response;
+import com.fasterxml.jackson.databind.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.transport.http.*;
+import org.jetbrains.annotations.*;
 
-import java.io.IOException;
-import java.net.URISyntaxException;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.NoSuchElementException;
+import java.io.*;
+import java.net.*;
+import java.util.*;
 
-import static java.net.URLEncoder.encode;
-import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.net.URLEncoder.*;
+import static java.nio.charset.StandardCharsets.*;
 
 public class TableEntityCommandExecutor {
 
@@ -37,81 +34,85 @@ public class TableEntityCommandExecutor {
 
     public TableEntityCommandExecutor(TableStorageApi api, String rowKey) {
         this.api = api;
+        path = createPath(api, rowKey);
+        queryPath = createQueryPath(api);
+    }
 
-        path = api.config().getCustomHost() == null
-                ? String.format("https://%s.table.core.windows.net/%s%s",
-                api.config().getStorageAccountName(),
-                api.config().getTableName(),
-                buildUriBracketParams(api, rowKey))
-                : String.format("%s/%s%s",
-                api.config().getCustomHost(),
-                api.config().getTableName(),
-                buildUriBracketParams(api, rowKey));
-        queryPath = api.config().getCustomHost() == null
-                ? String.format("https://%s.table.core.windows.net/%s",
-                api.config().getStorageAccountName(),
-                api.config().getTableName())
-                : String.format("%s/%s",
-                api.config().getCustomHost(),
-                api.config().getTableName());
+    private static @NotNull String createQueryPath(TableStorageApi api) {
+        return api.config().getCustomHost() == null ? createTableAddressWithStorageAccount(api) : createAddressWithHost(api);
+    }
+
+    private static @NotNull String createAddressWithHost(TableStorageApi api) {
+        return String.format("%s/%s", api.config().getCustomHost(), api.config().getTableName());
+    }
+
+    private static @NotNull String createTableAddressWithStorageAccount(TableStorageApi api) {
+        return String.format("https://%s.table.core.windows.net/%s", api.config().getStorageAccountName(), api.config().getTableName());
+    }
+
+    private static @NotNull String createPath(TableStorageApi api, String rowKey) {
+        return api.config().getCustomHost() == null ? createTableStorageUri(api, rowKey) : createTableStorageUri2(api, rowKey);
+    }
+
+    private static @NotNull String createTableStorageUri2(TableStorageApi api, String rowKey) {
+        return String.format("%s/%s%s", api.config().getCustomHost(), api.config().getTableName(), buildUriBracketParams(api, rowKey));
+    }
+
+    private static @NotNull String createTableStorageUri(TableStorageApi api, String rowKey) {
+        return String.format("https://%s.table.core.windows.net/%s%s", api.config().getStorageAccountName(), api.config().getTableName(), buildUriBracketParams(api, rowKey));
     }
 
     private static String buildUriBracketParams(TableStorageApi api, String rowKey) {
-        String params = "(PartitionKey='" + api.config().getPartitionKey() + "'";
-        if (rowKey != null) {
-            params += ",RowKey='" + rowKey + "'";
-        }
-        params +=")";
-        return encode(params, UTF_8);
+        return encode("(PartitionKey='%s'%s)".formatted(api.config().getPartitionKey(),rowKey(rowKey)), UTF_8);
+    }
+
+    private static String rowKey(String rowKey) {
+        return rowKey != null ? ",RowKey='%s'".formatted( rowKey) : "";
     }
 
     public JsonNode get() throws Exception {
-        var res = api.http().call(
-                api.requestBuilder(path)
-                    .get(path)
-                    .buildExchange()
-        ).getResponse();
+        try (HttpClient hc = api.http()) {
+            var res =hc.call(api.requestBuilder(path).get(path).buildExchange()
+            ).getResponse();
 
-        var response = new ObjectMapper().readTree(res.getBodyAsStringDecoded());
+            var response = new ObjectMapper().readTree(res.getBodyAsStringDecoded());
 
-        if (response.has("odata.error")) {
-            throw new NoSuchElementException(res.getBodyAsStringDecoded());
+            if (response.has("odata.error")) {
+                throw new NoSuchElementException(res.getBodyAsStringDecoded());
+            }
+            return response;
         }
-
-        return response;
     }
 
     public void insertOrReplace(String data) throws Exception {
-        var payload = Map.of("data", data);
-
-        var exc = api.http().call(
-                api.requestBuilder(path)
-                        .put(path)
-                        .body(new ObjectMapper().writeValueAsString(payload))
-                        .buildExchange()
-        );
-
-        if (exc.getResponse().getStatusCode() != 204) {
-            throw new RuntimeException(exc.getResponse().toString());
+        try (HttpClient hc = api.http()) {
+            var exc = hc.call(
+                    api.requestBuilder(path)
+                            .put(path)
+                            .body(new ObjectMapper().writeValueAsString(Map.of("data", data)))
+                            .buildExchange()
+            );
+            if (exc.getResponse().getStatusCode() != 204) {
+                throw new RuntimeException(exc.getResponse().toString());
+            }
         }
     }
 
     public void delete() throws Exception {
-        var exc = api.http().call(
-                api.requestBuilder(path)
-                        .delete(path)
-                        .header("If-Match", "*")
-                        .buildExchange()
-        );
-
-        var response = exc.getResponse();
-
-        if (response.getStatusCode() != 204) {
-            throw new RuntimeException(response.toString());
+        try (HttpClient hc = api.http()) {
+            var exc = hc.call(
+                    api.requestBuilder(path)
+                            .delete(path)
+                            .header("If-Match", "*")
+                            .buildExchange()
+            );
+            if (exc.getResponse().getStatusCode() != 204) {
+                throw new RuntimeException(exc.getResponse().toString());
+            }
         }
     }
 
-    public Iterator<JsonNode> query() throws Exception {
+    public Iterator<JsonNode> query() {
         return new TableEntityIterator();
     }
 
@@ -133,8 +134,8 @@ public class TableEntityCommandExecutor {
 
         private void preparePageForIteration() {
             Response res;
-            try {
-                res = api.http().call(exc).getResponse();
+            try(HttpClient hc = api.http()) {
+                res = hc.call(exc).getResponse();
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
@@ -150,32 +151,29 @@ public class TableEntityCommandExecutor {
             }
 
             if (r.has("odata.error")) {
-                throw new RuntimeException("API returned error: " + r.toString());
+                throw new RuntimeException("API returned error: " + r);
             }
 
             if (!r.has("value")) {
                 internalPageIterator = null;
                 return;
             }
-
-            ArrayNode an = (ArrayNode) r.get("value");
-            internalPageIterator = an.iterator();
+            internalPageIterator = r.get("value").iterator();
         }
 
         /**
          * @return whether the page has been flipped successfully
          */
         private boolean flipPage() {
-            String npk = exc.getResponse().getHeader().getFirstValue("x-ms-continuation-NextPartitionKey");
-            String nrk = exc.getResponse().getHeader().getFirstValue("x-ms-continuation-NextRowKey");
+            String npk = getXmsContinuationNextPartitionKey();
+            String nrk = getXmsContinuationNextRowKey();
 
             if (npk == null || nrk == null)
                 return false;
 
-            String path = queryPath + "?NextPartitionKey=" + npk + "&NextRowKey=" + nrk;
             try {
                 exc = api.requestBuilder(queryPath)
-                        .get(path)
+                        .get(getPath(npk, nrk))
                         .buildExchange();
             } catch (URISyntaxException e) {
                 throw new RuntimeException(e);
@@ -183,6 +181,18 @@ public class TableEntityCommandExecutor {
 
             preparePageForIteration();
             return true;
+        }
+
+        private @NotNull String getPath(String npk, String nrk) {
+            return queryPath + "?NextPartitionKey=" + npk + "&NextRowKey=" + nrk;
+        }
+
+        private String getXmsContinuationNextRowKey() {
+            return exc.getResponse().getHeader().getFirstValue("x-ms-continuation-NextRowKey");
+        }
+
+        private String getXmsContinuationNextPartitionKey() {
+            return exc.getResponse().getHeader().getFirstValue("x-ms-continuation-NextPartitionKey");
         }
 
         @Override
