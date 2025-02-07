@@ -39,7 +39,6 @@ import org.jose4j.lang.JoseException;
 
 import java.io.IOException;
 import java.math.BigInteger;
-import java.nio.charset.StandardCharsets;
 import java.security.Key;
 import java.security.SecureRandom;
 import java.util.Base64;
@@ -50,6 +49,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.predic8.membrane.core.RuleManager.RuleDefinitionSource.MANUAL;
 import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
+import static java.net.URLEncoder.encode;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -137,7 +138,8 @@ public class MockAuthorizationServer {
                         exc.setResponse(Response.redirect(tc.getClientAddress() + "/oauth2callback?error=DEMO-123&error_description=This+is+a+demo+error.&state=" + params.get("state"), false).build());
                     } else {
                         onLogin.run();
-                        exc.setResponse(Response.redirect(tc.getClientAddress() + "/oauth2callback?code=1234&state=" + params.get("state"), false).build());
+                        exc.setResponse(Response.redirect(tc.getClientAddress() + "/oauth2callback?code=" +
+                                encode(generateCode(flowId), UTF_8) + "&state=" + params.get("state"), false).build());
                     }
                 } else if (exc.getRequestURI().contains("/token")) {
                     handleTokenRequest(flowId, exc);
@@ -155,11 +157,19 @@ public class MockAuthorizationServer {
         return sp;
     }
 
+    private String generateCode(String flowId) {
+        return "a-sample-code-for-" + flowId;
+    }
+
+    private void verifyCode(String codeToVerify, String flowId) {
+        assertEquals("a-sample-code-for-" + flowId, codeToVerify);
+    }
+
     private void handleTokenRequest(String flowId, Exchange exc) throws Exception {
         Map<String, String> params = URLParamUtil.getParams(new URIFactory(), exc, URLParamUtil.DuplicateKeyOrInvalidFormStrategy.ERROR);
         String grantType = params.get("grant_type");
         if (grantType.equals("authorization_code")) {
-            assertEquals("1234", params.get("code"));
+            verifyCode(params.get("code"), flowId);
             assertEquals("http://localhost:31337/oauth2callback", params.get("redirect_uri"));
         } else if (grantType.equals("refresh_token")) {
             String refreshToken = params.get("refresh_token");
@@ -170,7 +180,7 @@ public class MockAuthorizationServer {
         }
         String secret = tc.clientId + ":" + tc.clientSecret;
 
-        assertEquals("Basic " + Base64.getEncoder().encodeToString(secret.getBytes(StandardCharsets.UTF_8)) , exc.getRequest().getHeader().getFirstValue("Authorization"));
+        assertEquals("Basic " + Base64.getEncoder().encodeToString(secret.getBytes(UTF_8)) , exc.getRequest().getHeader().getFirstValue("Authorization"));
 
         exc.setResponse(Response.ok(om.writeValueAsString(
                 createTokenResponse(flowId, params)
@@ -209,7 +219,7 @@ public class MockAuthorizationServer {
 
         String profileInfo = om.writeValueAsString(createProfileInfo());
 
-        res.put("profile_info", Base64.getUrlEncoder().encodeToString(profileInfo.getBytes(StandardCharsets.UTF_8)));
+        res.put("profile_info", Base64.getUrlEncoder().encodeToString(profileInfo.getBytes(UTF_8)));
         return res;
     }
 

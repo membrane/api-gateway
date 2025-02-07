@@ -334,6 +334,37 @@ public abstract class OAuth2ResourceB2CTest {
 
 
     @Test
+    public void loggingInViaDefaultFlowAfterAbortedProfileEditing() throws Exception {
+        Exchange exc = new Request.Builder().get(tc.getClientAddress() + "/init").buildExchange();
+        exc = browser.apply(exc);
+
+        mockAuthorizationServer.abortSignIn.set(true);
+
+        // /pe/init logs the user out before sending her to the AS
+        exc = new Request.Builder().get(tc.getClientAddress() + "/pe/init").buildExchange();
+        exc = browser.apply(exc);
+
+        assertEquals("signin aborted", exc.getResponse().getBodyAsStringDecoded());
+
+        mockAuthorizationServer.abortSignIn.set(false);
+
+        exc = new Request.Builder().get(tc.getClientAddress() + "/init").buildExchange();
+        exc = browser.apply(exc);
+
+        assertEquals(200, exc.getResponse().getStatusCode());
+        assertEquals("/init", exc.getRequest().getUri());
+
+        exc = new Request.Builder().get(tc.getClientAddress() + "/api-no-auth-needed/").buildExchange();
+        exc = browser.apply(exc);
+
+        // valid access token, since logged in again using b2c_1_susi
+        String a2 = (String) om.readValue(exc.getResponse().getBodyAsStringDecoded(), Map.class).get("accessToken");
+        JwtClaims c2 = createJwtConsumer().processToClaims(a2);
+        assertEquals(12, c2.getClaimsMap().size());
+        assertEquals("b2c_1_susi", c2.getClaimValue("tfp"));
+    }
+
+    @Test
     public void loginParams() throws Exception {
         Exchange exc = new Request.Builder().get(tc.getClientAddress() + "/init?login_hint=def&illegal=true").buildExchange();
         browser.applyWithoutRedirect(exc);

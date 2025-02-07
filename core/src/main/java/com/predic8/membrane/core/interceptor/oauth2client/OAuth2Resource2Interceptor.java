@@ -308,6 +308,7 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
         if (session.get().containsKey(ParamNames.STATE))
             state = session.get(ParamNames.STATE) + SESSION_VALUE_SEPARATOR + state;
         session.put(ParamNames.STATE, state);
+        session.remove("defaultFlow", "triggerFlow");
 
         return RETURN;
     }
