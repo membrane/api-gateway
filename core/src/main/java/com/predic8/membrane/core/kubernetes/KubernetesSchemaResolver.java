@@ -14,19 +14,13 @@
 
 package com.predic8.membrane.core.kubernetes;
 
-import com.google.common.collect.Lists;
-import com.predic8.membrane.core.kubernetes.client.KubernetesClient;
-import com.predic8.membrane.core.kubernetes.client.KubernetesClientFactory;
-import com.predic8.membrane.core.resolver.ResourceRetrievalException;
-import com.predic8.membrane.core.resolver.SchemaResolver;
-import com.predic8.membrane.core.util.functionalInterfaces.ExceptionThrowingConsumer;
+import com.predic8.membrane.core.kubernetes.client.*;
+import com.predic8.membrane.core.resolver.*;
+import com.predic8.membrane.core.util.functionalInterfaces.*;
 
-import javax.annotation.Nullable;
-import java.io.ByteArrayInputStream;
-import java.io.InputStream;
-import java.util.Base64;
-import java.util.List;
-import java.util.Map;
+import javax.annotation.*;
+import java.io.*;
+import java.util.*;
 
 public class KubernetesSchemaResolver implements SchemaResolver {
 
@@ -48,7 +42,7 @@ public class KubernetesSchemaResolver implements SchemaResolver {
 
     @Override
     public List<String> getSchemas() {
-        return Lists.newArrayList("kubernetes");
+        return List.of("kubernetes");
     }
 
     public InputStream resolve(String url) throws ResourceRetrievalException {
@@ -73,13 +67,12 @@ public class KubernetesSchemaResolver implements SchemaResolver {
         } catch (ResourceRetrievalException e) {
             throw e;
         } catch (Exception e) {
-            ResourceRetrievalException rre = new ResourceRetrievalException(url, e);
-            throw rre;
+            throw new ResourceRetrievalException(url, e);
         }
     }
 
     @Override
-    public void observeChange(String url, ExceptionThrowingConsumer<InputStream> consumer) throws ResourceRetrievalException {
+    public void observeChange(String url, ExceptionThrowingConsumer<InputStream> consumer) {
         throw new RuntimeException("not implemented");
     }
 

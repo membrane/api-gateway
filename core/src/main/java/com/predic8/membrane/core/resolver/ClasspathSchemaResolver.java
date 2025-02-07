@@ -14,7 +14,6 @@
 
 package com.predic8.membrane.core.resolver;
 
-import com.google.common.collect.*;
 import com.predic8.membrane.core.util.functionalInterfaces.*;
 
 import java.io.*;
@@ -24,7 +23,7 @@ public class ClasspathSchemaResolver implements SchemaResolver {
 
 	@Override
 	public List<String> getSchemas() {
-		return Lists.newArrayList("classpath");
+		return List.of("classpath");
 	}
 
 	@Override
