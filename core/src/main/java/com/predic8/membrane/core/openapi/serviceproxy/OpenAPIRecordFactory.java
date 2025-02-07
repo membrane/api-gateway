@@ -151,12 +151,20 @@ public class OpenAPIRecordFactory {
     private OpenAPI getOpenAPI(OpenAPISpec spec) {
         String path = resolve(spec.location);
         try {
-            OpenAPI openAPI = new OpenAPIParser().readLocation(convertPath2FilePathString(path), null, getParseOptions()).getOpenAPI();
+            OpenAPI openAPI = new OpenAPIParser().readLocation(convertPathToFileUriPathIfNeeded(path), null, getParseOptions()).getOpenAPI();
             addConversionNoticeIfSwagger2(openAPI, omYaml.readTree(getInputStreamForLocation(spec.location)));
             return openAPI;
         } catch (IOException e) {
             throw new OpenAPIParsingException("Could not read OpenAPI: " + e.getMessage(), path);
         }
+    }
+
+    private static @NotNull String convertPathToFileUriPathIfNeeded(String path) {
+        // Convert normal path to file URI path if needed
+        if (!path.startsWith("http:") && !path.startsWith("https:") && !path.startsWith("file:")) {
+            path = convertPath2FilePathString(path);
+        }
+        return path;
     }
 
     private InputStream getInputStreamForLocation(String location) throws ResourceRetrievalException {
