@@ -155,7 +155,7 @@ public class OpenAPIRecordFactory {
             addConversionNoticeIfSwagger2(openAPI, omYaml.readTree(getInputStreamForLocation(spec.location)));
             return openAPI;
         } catch (IOException e) {
-            throw new OpenAPIParsingException("Could not read OpenAPI file: " + e.getMessage(), path);
+            throw new OpenAPIParsingException("Could not read OpenAPI: " + e.getMessage(), path);
         }
     }
 
