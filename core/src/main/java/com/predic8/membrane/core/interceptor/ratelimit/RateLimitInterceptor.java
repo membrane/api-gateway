@@ -314,6 +314,6 @@ public class RateLimitInterceptor extends AbstractExchangeExpressionInterceptor 
 
     @Override
     public String getShortDescription() {
-        return "Limits incoming requests. It limits to " + strategy.getRequestLimit() + " requests every " + strategy.getRequestLimitDuration().toString() + ".";
+        return "Limits incoming requests to %s requests every %s.".formatted(strategy.getRequestLimit(), strategy.getRequestLimitDuration());
     }
 }

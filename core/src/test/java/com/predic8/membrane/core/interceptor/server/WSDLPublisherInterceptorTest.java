@@ -21,6 +21,7 @@ import org.junit.jupiter.params.provider.*;
 
 import java.util.*;
 
+import static com.predic8.membrane.test.TestUtil.getPathFromResource;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class WSDLPublisherInterceptorTest {
@@ -29,7 +30,7 @@ public class WSDLPublisherInterceptorTest {
 
 	static List<Object[]> getPorts() {
 		return Arrays.asList(new Object[][] {
-				{ "src/test/resources/validation/ArticleService.wsdl", 3024 },
+				{ getPathFromResource( "validation/ArticleService.wsdl"), 3024 },
 				{ "classpath:/validation/ArticleService.wsdl", 3025 },
 		});
 	}

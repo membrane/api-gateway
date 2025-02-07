@@ -17,8 +17,10 @@ import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.config.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.interceptor.server.*;
+import com.predic8.membrane.test.*;
 import org.junit.jupiter.api.*;
 
+import static com.predic8.membrane.test.TestUtil.getPathFromResource;
 import static io.restassured.RestAssured.*;
 import static org.hamcrest.Matchers.*;
 
@@ -52,7 +54,7 @@ public class ServiceProxyWSDLInterceptorsTest {
         sp.getInterceptors().add(rewritter);
 
         WSDLPublisherInterceptor publisher = new WSDLPublisherInterceptor();
-        publisher.setWsdl("src/test/resources/validation/ArticleService.wsdl");
+        publisher.setWsdl(getPathFromResource("validation/ArticleService.wsdl"));
         sp.getInterceptors().add(publisher);
 
         sp.setTarget(new AbstractServiceProxy.Target("localhost", 8888));

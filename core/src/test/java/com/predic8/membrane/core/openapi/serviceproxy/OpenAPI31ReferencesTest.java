@@ -19,6 +19,7 @@ package com.predic8.membrane.core.openapi.serviceproxy;
 import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.interceptor.flow.*;
 import com.predic8.membrane.core.util.*;
+import com.predic8.membrane.test.*;
 import io.swagger.v3.oas.models.*;
 import io.swagger.v3.oas.models.media.*;
 import io.swagger.v3.oas.models.parameters.*;
@@ -27,6 +28,7 @@ import org.junit.jupiter.api.*;
 import java.util.*;
 
 import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPISpec.YesNoOpenAPIOption.*;
+import static com.predic8.membrane.test.TestUtil.getPathFromResource;
 import static io.restassured.RestAssured.*;
 import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assertions.*;
@@ -43,7 +45,7 @@ public class OpenAPI31ReferencesTest {
         router.setUriFactory(new URIFactory());
 
         OpenAPISpec spec = new OpenAPISpec();
-        spec.location = "src/test/resources/openapi/specs/oas31/request-reference.yaml";
+        spec.location = getPathFromResource( "openapi/specs/oas31/request-reference.yaml");
         spec.setValidateRequests(YES);
 
         api = new APIProxy();

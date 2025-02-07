@@ -13,25 +13,23 @@
    limitations under the License. */
 package com.predic8.membrane.core.openapi.serviceproxy;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.predic8.membrane.core.Router;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.exchangestore.ForgetfulExchangeStore;
-import com.predic8.membrane.core.http.Header;
-import com.predic8.membrane.core.http.Request;
-import com.predic8.membrane.core.transport.http.HttpTransport;
-import com.predic8.membrane.core.util.URIFactory;
+import com.fasterxml.jackson.databind.*;
+import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.exchangestore.*;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.transport.http.*;
+import com.predic8.membrane.core.util.*;
 import org.junit.jupiter.api.*;
 
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.Optional;
+import java.io.*;
+import java.util.*;
 
-import static com.predic8.membrane.core.http.MimeType.APPLICATION_PROBLEM_JSON;
-import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
-import static com.predic8.membrane.core.openapi.serviceproxy.ApiDocsInterceptor.getOpenAPIInterceptor;
-import static com.predic8.membrane.core.openapi.util.TestUtils.createProxy;
+import static com.predic8.membrane.core.http.MimeType.*;
+import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static com.predic8.membrane.core.openapi.serviceproxy.ApiDocsInterceptor.*;
+import static com.predic8.membrane.core.openapi.util.TestUtils.*;
+import static com.predic8.membrane.test.TestUtil.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 @SuppressWarnings("OptionalGetWithoutIsPresent")
@@ -54,7 +52,7 @@ class ApiDocsInterceptorTest {
         exc.setOriginalRequestUri("/foo");
 
         OpenAPISpec spec = new OpenAPISpec();
-        spec.location = "src/test/resources/openapi/specs/fruitshop-api-v2-openapi-3.yml";
+        spec.location = getPathFromResource( "openapi/specs/fruitshop-api-v2-openapi-3.yml");
         rule = createProxy(router, spec);
 
         router.setExchangeStore(new ForgetfulExchangeStore());

@@ -14,16 +14,12 @@ limitations under the License. */
 
 package com.predic8.membrane.core.config.security;
 
-import com.google.common.base.Objects;
-import com.predic8.io.IOUtil;
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.annot.MCTextContent;
-import com.predic8.membrane.core.resolver.ResolverMap;
-import com.predic8.membrane.core.resolver.ResourceRetrievalException;
-import com.predic8.membrane.core.util.ByteUtil;
+import com.google.common.base.*;
+import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.resolver.*;
+import com.predic8.membrane.core.util.*;
 
-import java.io.IOException;
+import java.io.*;
 
 public abstract class Blob {
     String content;
@@ -31,9 +27,8 @@ public abstract class Blob {
 
     @Override
     public boolean equals(Object obj) {
-        if (!(obj instanceof Blob))
+        if (!(obj instanceof Blob other))
             return false;
-        Blob other = (Blob)obj;
         return Objects.equal(content, other.content)
                 && Objects.equal(location, other.location);
     }
@@ -66,7 +61,7 @@ public abstract class Blob {
 
     public String get(ResolverMap resolverMap, String baseLocation) throws IOException {
         if (getLocation() != null) {
-            if (getContent() != null && getContent().length() > 0)
+            if (getContent() != null && !getContent().isEmpty())
                 throw new IllegalStateException("On <"+getName()+">, ./text() and ./@location cannot be set at the same time.");
             return new String(ByteUtil.getByteArrayData(resolverMap.resolve(ResolverMap.combine(baseLocation, getLocation()))));
         } else {

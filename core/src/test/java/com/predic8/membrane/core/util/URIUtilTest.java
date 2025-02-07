@@ -15,6 +15,8 @@ package com.predic8.membrane.core.util;
 
 import org.junit.jupiter.api.*;
 
+import java.io.*;
+import java.net.*;
 import java.util.function.*;
 
 import static com.predic8.membrane.core.util.URIUtil.*;
@@ -173,4 +175,16 @@ public class URIUtilTest {
         assertEquals("a/.b?c/./d", URIUtil.normalizeSingleDot("a/.b?c/./d"));
         assertEquals("a/x/b?c/./d", URIUtil.normalizeSingleDot("a/x/b?c/./d"));
     }
+
+    @Test
+    void toFileURIStringTest() throws URISyntaxException {
+        assertEquals("file:/swig/jig", toFileURIString(new File("/swig/jig")));
+        assertEquals("file:/jag%20sag/runt", toFileURIString(new File("/jag sag/runt")));
+    }
+
+    @Test
+    void toFileURIStringSpacheTest() throws URISyntaxException {
+        assertEquals("file:/chip%20clip", toFileURIString(new File("/chip clip")));
+    }
+
 }

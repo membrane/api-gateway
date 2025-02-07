@@ -17,15 +17,17 @@ import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.interceptor.apikey.*;
 import com.predic8.membrane.core.interceptor.log.*;
+import com.predic8.membrane.test.*;
 import org.junit.jupiter.api.*;
 
+import static com.predic8.membrane.test.TestUtil.getPathFromResource;
 import static org.junit.jupiter.api.Assertions.*;
 
 class APIProxySpringConfigurationTest extends AbstractProxySpringConfigurationTest {
 
     static String publisherSeparate = """
             <api port="2000" name="bool-api">
-                <openapi location="src/test/resources/openapi/specs/boolean.yml" validateSecurity="yes"/>
+                <openapi location="%s" validateSecurity="yes"/>
                 <apiKey required = "false">
                     <headerExtractor name="X-Api-Key"/>
                 </apiKey>
@@ -35,11 +37,11 @@ class APIProxySpringConfigurationTest extends AbstractProxySpringConfigurationTe
                 <openapiPublisher/>
                 <log/>
                 <target url="https://api.predic8.de"/>
-            </api>""";
+            </api>""".formatted(getPathFromResource("openapi/specs/boolean.yml"));
 
     static String noPublisherNoOpenAPIInterceptor = """
             <api port="2000" name="bool-api">
-                <openapi location="src/test/resources/openapi/specs/boolean.yml" validateSecurity="yes"/>
+                <openapi location="%s" validateSecurity="yes"/>
                 <apiKey required = "false">
                     <headerExtractor name="X-Api-Key"/>
                 </apiKey>
@@ -48,7 +50,8 @@ class APIProxySpringConfigurationTest extends AbstractProxySpringConfigurationTe
                 </headerFilter>
                 <log/>
                 <target url="https://api.predic8.de"/>
-            </api>""";
+            </api>""".formatted(getPathFromResource("openapi/specs/boolean.yml"));
+
 
     @Test
     void interceptorSequenceFromSpringConfiguration() {
