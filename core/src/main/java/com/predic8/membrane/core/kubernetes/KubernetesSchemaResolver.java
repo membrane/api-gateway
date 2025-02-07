@@ -14,6 +14,7 @@
 
 package com.predic8.membrane.core.kubernetes;
 
+import com.google.common.collect.Lists;
 import com.predic8.membrane.core.kubernetes.client.*;
 import com.predic8.membrane.core.resolver.*;
 import com.predic8.membrane.core.util.functionalInterfaces.*;
@@ -42,7 +43,7 @@ public class KubernetesSchemaResolver implements SchemaResolver {
 
     @Override
     public List<String> getSchemas() {
-        return List.of("kubernetes");
+        return Lists.newArrayList("kubernetes");
     }
 
     public InputStream resolve(String url) throws ResourceRetrievalException {
