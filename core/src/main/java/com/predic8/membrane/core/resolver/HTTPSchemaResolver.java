@@ -14,31 +14,26 @@
 
 package com.predic8.membrane.core.resolver;
 
-import java.io.ByteArrayInputStream;
-import java.io.InputStream;
+import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.transport.http.*;
+import com.predic8.membrane.core.transport.http.client.*;
+import com.predic8.membrane.core.util.*;
+import com.predic8.membrane.core.util.functionalInterfaces.*;
+
+import javax.annotation.*;
+import java.io.*;
 import java.net.*;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
+import java.security.*;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.*;
 
-import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Response;
-import com.predic8.membrane.core.transport.http.HttpClient;
-import com.predic8.membrane.core.transport.http.HttpClientFactory;
-import com.predic8.membrane.core.transport.http.client.HttpClientConfiguration;
-import com.predic8.membrane.core.util.ByteUtil;
-import com.predic8.membrane.core.util.URIFactory;
-import com.predic8.membrane.core.util.functionalInterfaces.ExceptionThrowingConsumer;
-
-import javax.annotation.Nullable;
-
-import static com.google.common.collect.Lists.*;
 import static com.predic8.membrane.core.Constants.*;
 import static com.predic8.membrane.core.http.Header.*;
+import static com.predic8.membrane.core.http.Request.Builder;
 import static com.predic8.membrane.core.http.Request.*;
-import static java.lang.Thread.sleep;
+import static java.lang.Thread.*;
 
 @MCElement(name = "httpSchemaResolver")
 public class HTTPSchemaResolver implements SchemaResolver {
@@ -46,7 +41,7 @@ public class HTTPSchemaResolver implements SchemaResolver {
     private HttpClientFactory httpClientFactory;
     private final ConcurrentHashMap<String, byte[]> watchedUrlMd5s = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<String, ExceptionThrowingConsumer<InputStream>> consumerForUrls = new ConcurrentHashMap<>();
-    int httpWatchIntervalInSeconds = 1;
+    private final int httpWatchIntervalInSeconds = 1;
     Thread httpWatcher = null;
 
     final byte[] NO_HASH = "NO_HASH".getBytes();
@@ -56,7 +51,7 @@ public class HTTPSchemaResolver implements SchemaResolver {
     private HttpClient httpClient;
     private final URIFactory uriFactory = new URIFactory(false);
 
-    Runnable httpWatchJob = new Runnable() {
+    private final Runnable httpWatchJob = new Runnable() {
         @Override
         public void run() {
             MessageDigest md;
@@ -66,7 +61,7 @@ public class HTTPSchemaResolver implements SchemaResolver {
                 throw new RuntimeException(e);
             }
             try (HttpClient client = httpClientFactory.createClient(null)) {
-                while (watchedUrlMd5s.size() > 0) {
+                while (!watchedUrlMd5s.isEmpty()) {
                     try {
                         for (String url : watchedUrlMd5s.keySet()) {
                             md.reset();
@@ -120,7 +115,7 @@ public class HTTPSchemaResolver implements SchemaResolver {
 
     @Override
     public List<String> getSchemas() {
-        return newArrayList("http", "https");
+        return List.of("http", "https");
     }
 
     public InputStream resolve(String url) throws ResourceRetrievalException {
@@ -141,7 +136,7 @@ public class HTTPSchemaResolver implements SchemaResolver {
 
 
     @Override
-    public void observeChange(String url, ExceptionThrowingConsumer<InputStream> consumer) throws ResourceRetrievalException {
+    public void observeChange(String url, ExceptionThrowingConsumer<InputStream> consumer) {
         watchedUrlMd5s.put(url, NO_HASH);
         consumerForUrls.put(url, consumer);
         if (httpWatcher == null) {
