@@ -82,7 +82,7 @@ public class FileSchemaResolver implements SchemaResolver {
         try {
             return new FileInputStream(path);
         } catch (FileNotFoundException e) {
-            log.error("File not found: {}",path, e.getMessage());
+            log.error("File {} not found: {}",path, e.getMessage());
             throw new ResourceRetrievalException(fileUrl, e);
         }
     }
