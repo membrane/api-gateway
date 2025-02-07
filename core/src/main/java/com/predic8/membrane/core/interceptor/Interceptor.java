@@ -34,6 +34,7 @@ public interface Interceptor {
 		public static class Set {
 			public static final EnumSet<Flow> REQUEST_FLOW = EnumSet.of(Flow.REQUEST);
 			public static final EnumSet<Flow> RESPONSE_FLOW = EnumSet.of(Flow.RESPONSE);
+			public static final EnumSet<Flow> REQUEST_RESPONSE_FLOW = EnumSet.of(Flow.REQUEST, Flow.RESPONSE);
 			public static final EnumSet<Flow> RESPONSE_ABORT_FLOW = EnumSet.of(Flow.RESPONSE, Flow.ABORT);
 			public static final EnumSet<Flow> REQUEST_RESPONSE_ABORT_FLOW = EnumSet.of(Flow.REQUEST, Flow.RESPONSE, Flow.ABORT);
 		}

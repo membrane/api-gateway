@@ -17,7 +17,6 @@
 package com.predic8.membrane.core.openapi.serviceproxy;
 
 import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.openapi.*;
@@ -36,6 +35,7 @@ import java.util.*;
 import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
 import static com.predic8.membrane.core.exchange.Exchange.*;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.openapi.serviceproxy.APIProxy.*;
 import static com.predic8.membrane.core.openapi.util.UriUtil.*;
@@ -56,7 +56,6 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
     protected APIProxy apiProxy;
 
     public OpenAPIInterceptor() {}
-
 
     public OpenAPIInterceptor(APIProxy apiProxy) {
         this.apiProxy = apiProxy;
@@ -304,15 +303,22 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
     }
 
     public String buildSwaggerUrl(OpenAPI api) {
-        String protocol = "";
-        String host = !Objects.equals(getKey().getHost(), "*") ? getKey().getHost() : "localhost";
-        if (!(host.contains("http://") || host.contains("https://"))) {
-            protocol = router.getParentProxy(this).getProtocol();
-        }
-        String path = getKey().getPath() != null ? getKey().getPath() : "";
-        int port = getKey().getPort();
+        return "%s%s:%d%s%s".formatted(getSwaggerProtocol(getSwaggerHost()), getSwaggerHost(), getKey().getPort(), getSwaggerPath(), getSwaggerPath(api));
+    }
 
-        return "%s%s:%d%s%s".formatted(protocol, host, port, path, getSwaggerPath(api));
+    private String getSwaggerHost() {
+        return !Objects.equals(getKey().getHost(), "*") ? getKey().getHost() : "localhost";
+    }
+
+    private String getSwaggerProtocol(String host) {
+        if (!(host.contains("http://") || host.contains("https://"))) {
+            return router.getParentProxy(this).getProtocol();
+        }
+        return "";
+    }
+
+    private String getSwaggerPath() {
+        return getKey().getPath() != null ? getKey().getPath() : "";
     }
 
     private String getSwaggerPath(OpenAPI api) {
@@ -323,7 +329,6 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
                 .get()
                 .getKey();
     }
-
 
     private RuleKey getKey() {
         return router.getParentProxy(this).getKey();
@@ -340,17 +345,20 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
     }
 
     private void createErrorResponse(Exchange exc, ValidationErrors errors, ValidationErrors.Direction direction, boolean validationDetails) {
-        ProblemDetails pd = user(router.isProduction(), getDisplayName())
+        user(router.isProduction(), getDisplayName())
                 .title("OpenAPI message validation failed")
                 .addSubType("validation")
                 .statusCode(errors.get(0).getContext().getStatusCode())
-                .topLevel("validation", getErrorMap(errors, direction, validationDetails));
-        if (direction == ValidationErrors.Direction.REQUEST) {
-            pd.flow(REQUEST);
-        } else {
-            pd.flow(RESPONSE);
-        }
-        pd.buildAndSetResponse(exc);
+                .flow(getFlowFromDirection(direction))
+                .topLevel("validation", getErrorMap(errors, direction, validationDetails))
+                .buildAndSetResponse(exc);
+    }
+
+    private Flow getFlowFromDirection(ValidationErrors.Direction direction) {
+        return switch (direction) {
+            case ValidationErrors.Direction.REQUEST -> REQUEST;
+            case ValidationErrors.Direction.RESPONSE -> RESPONSE;
+        };
     }
 
     private static Map<String, Object> getErrorMap(ValidationErrors errors, ValidationErrors.Direction direction, boolean validationDetails) {
@@ -360,5 +368,10 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
         Map<String, Object> m = new LinkedHashMap<>();
         m.put("error", "Message validation failed!");
         return m;
+    }
+
+    @Override
+    public EnumSet<Flow> getFlow() {
+        return REQUEST_RESPONSE_FLOW;
     }
 }
