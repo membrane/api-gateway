@@ -13,24 +13,25 @@
    limitations under the License. */
 package com.predic8.membrane.core.azure.api.tablestorage;
 
-import com.predic8.membrane.core.azure.AzureTableStorage;
-import com.predic8.membrane.core.azure.api.AzureApiClient;
-import com.predic8.membrane.core.azure.api.HttpClientConfigurable;
-import com.predic8.membrane.core.http.Request;
-import com.predic8.membrane.core.transport.http.HttpClient;
+import com.predic8.membrane.core.azure.*;
+import com.predic8.membrane.core.azure.api.*;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.transport.http.*;
 
-import javax.annotation.Nullable;
-import javax.crypto.Mac;
-import javax.crypto.spec.SecretKeySpec;
-import java.nio.charset.StandardCharsets;
-import java.time.Instant;
-import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
-import java.util.Base64;
-import java.util.Locale;
+import javax.annotation.*;
+import javax.crypto.*;
+import javax.crypto.spec.*;
+import java.security.*;
+import java.time.*;
+import java.time.format.*;
+import java.util.*;
+
+import static com.predic8.membrane.core.http.MimeType.*;
+import static java.nio.charset.StandardCharsets.*;
 
 public class TableStorageApi implements HttpClientConfigurable<AzureTableStorage> {
 
+    public static final String ALGO = "HmacSHA256";
     private final AzureApiClient apiClient;
     private final AzureTableStorage config;
 
@@ -57,25 +58,21 @@ public class TableStorageApi implements HttpClientConfigurable<AzureTableStorage
         return config;
     }
 
-    protected Request.Builder requestBuilder(@Nullable String announceUrl) throws Exception {
+    protected Request.Builder requestBuilder(@Nullable String announceUrl) {
         var date = now();
-
-        var stringToSign = buildStringToSign(date, announceUrl);
-        var storageAccountKey = config.getStorageAccountKey();
-
-        var signature = sign(storageAccountKey, stringToSign);
-
-        var storageAccountName = config.getStorageAccountName();
-
         return new Request.Builder()
-                .contentType("application/json")
+                .contentType(APPLICATION_JSON)
                 .header("Date", date)
                 .header("x-ms-version", "2020-12-06")
-                .header("Accept", "application/json")
+                .header("Accept", APPLICATION_JSON)
                 .header("DataServiceVersion", "3.0;NetFx")
                 .header("MaxDataServiceVersion", "3.0;NetFx")
                 .header("Authorization",
-                        String.format("SharedKeyLite %s:%s", storageAccountName, signature));
+                        String.format("SharedKeyLite %s:%s", config.getStorageAccountName(), getSign(announceUrl, date)));
+    }
+
+    private String getSign(@org.jetbrains.annotations.Nullable String announceUrl, String date) {
+        return sign(config.getStorageAccountKey(), buildStringToSign(date, announceUrl));
     }
 
     private String now() {
@@ -86,8 +83,7 @@ public class TableStorageApi implements HttpClientConfigurable<AzureTableStorage
     }
 
     private String buildStringToSign(String date, @Nullable String url) {
-        var storageAccount = config.getStorageAccountName();
-        var base = String.format("%s\n/%s", date, storageAccount);
+        var base = String.format("%s\n/%s", date, config.getStorageAccountName());
 
         if (url == null) {
             return base + "/Tables";
@@ -96,14 +92,13 @@ public class TableStorageApi implements HttpClientConfigurable<AzureTableStorage
         return base + url.substring(url.lastIndexOf("/" + config.getTableName()));
     }
 
-    private String sign(String base64Key, String stringToSign) throws Exception {
-        var algo = "HmacSHA256";
-
-        byte[] key = java.util.Base64.getDecoder().decode(base64Key);
-        Mac hmacSHA256 = Mac.getInstance(algo);
-        hmacSHA256.init(new SecretKeySpec(key, algo));
-        byte[] utf8Bytes = stringToSign.getBytes(StandardCharsets.UTF_8);
-
-        return Base64.getEncoder().encodeToString(hmacSHA256.doFinal(utf8Bytes));
+    private String sign(String base64Key, String stringToSign) {
+        try {
+            Mac hmacSHA256 = Mac.getInstance(ALGO);
+            hmacSHA256.init(new SecretKeySpec(Base64.getDecoder().decode(base64Key), ALGO));
+            return Base64.getEncoder().encodeToString(hmacSHA256.doFinal(stringToSign.getBytes(UTF_8)));
+        } catch (InvalidKeyException | NoSuchAlgorithmException e) {
+            throw new RuntimeException(e);
+        }
     }
 }
