@@ -13,6 +13,8 @@
    limitations under the License. */
 package com.predic8.membrane.core.util;
 
+import org.jetbrains.annotations.*;
+
 import java.io.*;
 import java.net.URI;
 import java.net.*;
@@ -31,18 +33,32 @@ public class URIUtil {
         return convertPath2FileURI(f.getAbsolutePath()).toString();
     }
 
+    /**
+     *
+     * @param path Filepath like /foo/boo
+     * @return
+     * @throws URISyntaxException
+     */
     public static java.net.URI convertPath2FileURI(String path) throws URISyntaxException {
+        return new URI( addFilePrefix(encodePathCharactersForUri(path)));
+    }
+
+    public static String encodePathCharactersForUri(String s) {
+        return s.replaceAll(" ","%20").replace("\\","/");
+    }
+
+    private static @NotNull String addFilePrefix(String path) {
         if (!path.startsWith("file:"))
             path = "file:" + path;
-        return new URI(path.replaceAll(" ","%20"));
+        if (path.charAt(5) != '/')
+            path = "file:/" + path.substring(5);
+        return path;
     }
 
     public static String convertPath2FilePathString(String path) {
-        if (!path.startsWith("file:"))
-            path = "file:" + path;
+        path = addFilePrefix(path);
         return path.replaceAll(" ","%20");
     }
-
 
     /**
      * Removes file protocol from uri
