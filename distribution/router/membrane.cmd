@@ -1,6 +1,9 @@
 @echo off
 setlocal EnableDelayedExpansion
 
+:: Capture original command-line arguments into CMDARGS
+set "CMDARGS=%*"
+
 set "exitcode=0"
 set "required_version=21"
 
@@ -85,7 +88,8 @@ set "membrane_home=%~1"
 set "MEMBRANE_HOME=%membrane_home%"
 set "CLASSPATH=%membrane_home%\conf;%membrane_home%\lib\*"
 echo Starting: %membrane_home% CL: %CLASSPATH%
-java -cp "%CLASSPATH%" com.predic8.membrane.core.cli.RouterCLI -c proxies.xml %*
+echo Java CMD: java -cp "%CLASSPATH%" com.predic8.membrane.core.cli.RouterCLI %CMDARGS%
+java -cp "%CLASSPATH%" com.predic8.membrane.core.cli.RouterCLI %CMDARGS%
 goto :eof
 
 :finish
