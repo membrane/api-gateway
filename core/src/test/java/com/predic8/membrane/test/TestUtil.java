@@ -13,13 +13,18 @@
    limitations under the License. */
 package com.predic8.membrane.test;
 
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Request;
-import com.predic8.membrane.core.transport.http.FakeHttpHandler;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.openapi.util.*;
+import com.predic8.membrane.core.transport.http.*;
+import com.predic8.membrane.core.util.*;
+import org.junit.jupiter.api.*;
 
-import java.io.InputStream;
-import java.net.Inet4Address;
-import java.net.UnknownHostException;
+import java.io.*;
+import java.net.*;
+
+import static com.predic8.membrane.core.util.URIUtil.pathFromFileURI;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class TestUtil {
 
@@ -36,5 +41,14 @@ public class TestUtil {
                 setVersion(proxyVersion);
             }});
         }};
+    }
+
+    public static String getPathFromResource(String resourcePaht) {
+        return pathFromFileURI(TestUtils.class.getResource("../../../../../..").getPath() + resourcePaht);
+    }
+
+    @Test
+    void getPathFromResource() {
+        assertTrue(new File(getPathFromResource("log4j2.xml")).exists());
     }
 }

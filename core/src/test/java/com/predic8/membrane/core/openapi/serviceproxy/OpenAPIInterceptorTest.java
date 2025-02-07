@@ -21,6 +21,7 @@ import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.util.*;
+import com.predic8.membrane.test.*;
 import org.jetbrains.annotations.*;
 import org.junit.jupiter.api.*;
 
@@ -31,6 +32,7 @@ import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPISpec.YesNoOpenAPIOption.*;
 import static com.predic8.membrane.core.openapi.util.JsonUtil.*;
 import static com.predic8.membrane.core.openapi.util.TestUtils.*;
+import static com.predic8.membrane.test.TestUtil.getPathFromResource;
 import static org.junit.jupiter.api.Assertions.*;
 
 class OpenAPIInterceptorTest {
@@ -50,13 +52,13 @@ class OpenAPIInterceptorTest {
         router.setUriFactory(new URIFactory());
 
         specInfoServers = new OpenAPISpec();
-        specInfoServers.location = "src/test/resources/openapi/specs/info-servers.yml";
+        specInfoServers.location = getPathFromResource("openapi/specs/info-servers.yml");
 
         specInfo3Servers = new OpenAPISpec();
-        specInfo3Servers.location = "src/test/resources/openapi/specs/info-3-servers.yml";
+        specInfo3Servers.location = getPathFromResource("openapi/specs/info-3-servers.yml");
 
         specCustomers = new OpenAPISpec();
-        specCustomers.location = "src/test/resources/openapi/specs/customers.yml";
+        specCustomers.location = getPathFromResource( "openapi/specs/customers.yml");
 
         exc.setRequest(new Request.Builder().method("GET").build());
 

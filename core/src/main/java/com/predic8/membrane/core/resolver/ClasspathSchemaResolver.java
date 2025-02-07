@@ -14,11 +14,11 @@
 
 package com.predic8.membrane.core.resolver;
 
-import java.io.InputStream;
-import java.util.List;
+import com.google.common.collect.*;
+import com.predic8.membrane.core.util.functionalInterfaces.*;
 
-import com.google.common.collect.Lists;
-import com.predic8.membrane.core.util.functionalInterfaces.ExceptionThrowingConsumer;
+import java.io.*;
+import java.util.*;
 
 public class ClasspathSchemaResolver implements SchemaResolver {
 
@@ -36,7 +36,7 @@ public class ClasspathSchemaResolver implements SchemaResolver {
 	}
 
 	@Override
-	public void observeChange(String url, ExceptionThrowingConsumer<InputStream> consumer) throws ResourceRetrievalException {
+	public void observeChange(String url, ExceptionThrowingConsumer<InputStream> consumer) {
 		throw new RuntimeException("Not implemented");
 	}
 

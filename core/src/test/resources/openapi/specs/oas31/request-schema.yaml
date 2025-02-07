@@ -6,7 +6,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '/openapi/specs/oas31/user-schema.yaml#/components/schemas/User'
+              $ref: 'user-schema.yaml#/components/schemas/User'
       responses:
         '200':
           description: Ok

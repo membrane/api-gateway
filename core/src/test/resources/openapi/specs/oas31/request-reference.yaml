@@ -6,4 +6,4 @@ servers:
   - url: http://localhost:3000
 paths:
   /users:
-    $ref: '/openapi/specs/oas31/request-schema.yaml#/paths/~1users'
+    $ref: 'request-schema.yaml#/paths/~1users'

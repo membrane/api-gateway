@@ -57,6 +57,12 @@ public class TestUtils {
         return new OpenAPIParser().readContents(readInputStream(is), null, parseOptions).getOpenAPI();
     }
 
+    public static OpenAPI parseOpenAPI(String file) {
+        ParseOptions parseOptions = new ParseOptions();
+        parseOptions.setResolve(true);
+        return new OpenAPIParser().readLocation(file, null, parseOptions).getOpenAPI();
+    }
+
     public static InputStream getResourceAsStream(Object obj, String fileName) {
         return obj.getClass().getResourceAsStream(fileName);
     }
