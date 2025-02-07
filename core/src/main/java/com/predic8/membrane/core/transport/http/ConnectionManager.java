@@ -13,28 +13,16 @@
    limitations under the License. */
 package com.predic8.membrane.core.transport.http;
 
-import java.io.IOException;
-import java.net.UnknownHostException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Timer;
-import java.util.TimerTask;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.atomic.AtomicInteger;
+import com.predic8.membrane.core.transport.http.client.*;
+import com.predic8.membrane.core.transport.ssl.*;
+import com.predic8.membrane.core.util.*;
+import org.slf4j.*;
 
-import com.predic8.membrane.core.transport.http.client.ProxyConfiguration;
-import com.predic8.membrane.core.transport.ssl.SSLContext;
-import com.predic8.membrane.core.util.TimerManager;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import com.predic8.membrane.core.transport.ssl.SSLProvider;
-
-import javax.annotation.Nullable;
+import javax.annotation.*;
+import java.io.*;
+import java.net.*;
+import java.util.*;
+import java.util.concurrent.atomic.*;
 
 /**
  * Pools TCP/IP connections, holding them open for a configurable number of milliseconds.
@@ -137,7 +125,7 @@ public class ConnectionManager {
 				int i = l.size() - 1;
 				while(i >= 0) {
 					OldConnection c = l.get(i);
-					if (c.deathTime > now) {
+					if (c.deathTime > now && !c.connection.isClosed()) {
 						l.remove(i);
 						return c.connection;
 					}
