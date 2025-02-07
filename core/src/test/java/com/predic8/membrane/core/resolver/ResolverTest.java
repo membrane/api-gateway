@@ -19,6 +19,7 @@ import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.interceptor.schemavalidation.*;
 import com.predic8.membrane.core.interceptor.server.*;
 import com.predic8.membrane.core.proxies.*;
+import com.predic8.membrane.test.*;
 import com.predic8.schema.*;
 import com.predic8.wsdl.*;
 import org.junit.jupiter.api.*;
@@ -30,6 +31,7 @@ import java.security.*;
 import java.util.*;
 
 import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static com.predic8.membrane.test.TestUtil.getPathFromResource;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class ResolverTest {
@@ -84,7 +86,7 @@ public class ResolverTest {
 
 	@ParameterizedTest
 	@MethodSource("getConfigurations")
-	public void testLSResourceResolver(BasisUrlType basisUrlType) throws IOException {
+	public void testLSResourceResolver(BasisUrlType basisUrlType) {
 		if (hit = !setupLocations(basisUrlType))
 			return;
 
@@ -113,7 +115,7 @@ public class ResolverTest {
 
 	@ParameterizedTest
 	@MethodSource("getConfigurations")
-	public void testMembraneSoaModel(BasisUrlType basisUrlType) throws IOException {
+	public void testMembraneSoaModel(BasisUrlType basisUrlType) {
 		if (hit = !setupLocations(basisUrlType))
 			return;
 
@@ -256,7 +258,7 @@ public class ResolverTest {
 
 		WebServerInterceptor i = new WebServerInterceptor();
 		if (deployment.equals(STANDALONE))
-			i.setDocBase("src/test/resources");
+			i.setDocBase(getPathFromResource(""));
 		else {
 			i.setDocBase("/test");
 			router.getResolverMap().addSchemaResolver(resolverMap.getFileSchemaResolver());

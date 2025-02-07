@@ -32,7 +32,7 @@ public class Json2XmlExampleTest extends DistributionExtractingTestcase {
     @Test
     public void test() throws Exception {
         BufferLogger logger = new BufferLogger();
-        try (Process2 ignored = new Process2.Builder().in(baseDir).script("service-proxy").waitForMembrane().withWatcher(logger).start()) {
+        try (Process2 ignored = new Process2.Builder().in(baseDir).script("membrane").waitForMembrane().withWatcher(logger).start()) {
             // @formatter:off
             given()
                 .contentType(JSON)

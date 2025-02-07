@@ -18,6 +18,7 @@ package com.predic8.membrane.core.openapi.serviceproxy;
 
 import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.util.*;
+import com.predic8.membrane.test.*;
 import io.swagger.v3.oas.models.*;
 import org.jetbrains.annotations.*;
 import org.junit.jupiter.api.*;
@@ -28,6 +29,7 @@ import static com.predic8.membrane.core.openapi.serviceproxy.APIProxy.*;
 import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPISpec.YesNoOpenAPIOption.NO;
 import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPISpec.YesNoOpenAPIOption.YES;
 import static com.predic8.membrane.core.openapi.util.TestUtils.*;
+import static com.predic8.membrane.test.TestUtil.getPathFromResource;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class APIProxyOpenAPITest {
@@ -138,7 +140,7 @@ public class APIProxyOpenAPITest {
     }
 
     @Test
-    public void validationDetailsFalseExtensions() throws Exception {
+    public void validationDetailsFalseExtensions() {
 
         OpenAPISpec spec = getSpec("validation-details-false-extensions.yml");
         spec.validateRequests = YES;
@@ -161,7 +163,7 @@ public class APIProxyOpenAPITest {
     }
 
     @Test
-    public void multipleOpenAPIsWithTheSamePath() throws Exception {
+    public void multipleOpenAPIsWithTheSamePath() {
 
         APIProxy api = new APIProxy();
         api.setName("TestAPI");
@@ -173,7 +175,7 @@ public class APIProxyOpenAPITest {
     }
 
     @Test
-    public void oneOpenAPIWithMultipleServerUrlsSharingTheSamePath() throws Exception {
+    public void oneOpenAPIWithMultipleServerUrlsSharingTheSamePath() {
 
         APIProxy api = new APIProxy();
         api.setName("TestAPI");
@@ -198,7 +200,7 @@ public class APIProxyOpenAPITest {
     }
 
     @NotNull
-    private OpenAPI getOpenAPI(OpenAPISpec spec) throws Exception {
+    private OpenAPI getOpenAPI(OpenAPISpec spec) {
         APIProxy proxy = createProxy(router, spec);
         assertEquals(1, proxy.apiRecords.size());
         OpenAPI api = getSingleOpenAPIRecord(proxy.apiRecords).api;
@@ -226,7 +228,7 @@ public class APIProxyOpenAPITest {
     @NotNull
     private static OpenAPISpec getSpec(String location) {
         OpenAPISpec spec = new OpenAPISpec();
-        spec.location = "src/test/resources/openapi/openapi-proxy/" + location;
+        spec.location = getPathFromResource( "openapi/openapi-proxy/" + location);
         return spec;
     }
 
