@@ -14,6 +14,7 @@
 
 package com.predic8.membrane.core.resolver;
 
+import com.google.common.collect.Lists;
 import com.predic8.membrane.core.util.functionalInterfaces.*;
 import org.slf4j.*;
 
@@ -68,7 +69,7 @@ public class FileSchemaResolver implements SchemaResolver {
 
     @Override
     public List<String> getSchemas() {
-        return List.of("file", null);
+        return Lists.newArrayList("file", null);
     }
 
     /**
