@@ -38,6 +38,7 @@ import static com.predic8.membrane.core.exceptions.ProblemDetails.user;
 import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
 import static com.predic8.membrane.core.http.MimeType.TEXT_HTML_UTF8;
 import static com.predic8.membrane.core.http.Response.ok;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.REQUEST_FLOW;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.openapi.util.OpenAPIUtil.isOpenAPI3;
 import static com.predic8.membrane.core.openapi.util.OpenAPIUtil.isSwagger2;
@@ -281,4 +282,8 @@ public class OpenAPIPublisherInterceptor extends AbstractInterceptor {
         return "openapi publisher";
     }
 
+    @Override
+    public EnumSet<Flow> getFlow() {
+        return REQUEST_FLOW;
+    }
 }
