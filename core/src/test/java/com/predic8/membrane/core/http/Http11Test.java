@@ -11,22 +11,21 @@
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
    See the License for the specific language governing permissions and
    limitations under the License. */
-package com.predic8.membrane.integration;
+package com.predic8.membrane.core.http;
 
 import com.predic8.membrane.core.*;
-import com.predic8.membrane.core.http.Header;
-import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.soap.*;
 import com.predic8.membrane.core.proxies.*;
 import org.apache.commons.httpclient.*;
 import org.apache.commons.httpclient.methods.*;
-import org.apache.http.params.*;
 import org.junit.jupiter.api.*;
 
 import java.io.*;
 
 import static com.predic8.membrane.core.util.NetworkUtil.*;
 import static com.predic8.membrane.core.util.TextUtil.*;
+import static org.apache.commons.httpclient.HttpVersion.HTTP_1_1;
+import static org.apache.http.params.CoreProtocolPNames.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class Http11Test {
@@ -34,12 +33,11 @@ public class Http11Test {
 	private static HttpRouter router;
 	private static HttpRouter router2;
 	private static int port4k;
-	private static int port5k;
 
-	@BeforeAll
+    @BeforeAll
 	public static void setUp() throws Exception {
 		port4k = getFreePortEqualAbove(4000);
-		port5k = getFreePortEqualAbove(5000);
+        int port5k = getFreePortEqualAbove(5000);
 		ServiceProxy proxy2 = new ServiceProxy(new ServiceProxyKey("localhost", "POST", ".*", port5k), null, 0);
 		proxy2.getInterceptors().add(new SampleSoapServiceInterceptor());
 		router2 = new HttpRouter();
@@ -63,8 +61,8 @@ public class Http11Test {
 	 * RFC2616 section 8.2.3 ("indefinite period").
 	 */
 	public static void initExpect100ContinueWithFastFail(HttpClient client) {
-		client.getParams().setParameter(HttpProtocolParams.PROTOCOL_VERSION, HttpVersion.HTTP_1_1);
-		client.getParams().setParameter(HttpProtocolParams.USE_EXPECT_CONTINUE, true);
+		client.getParams().setParameter(PROTOCOL_VERSION, HTTP_1_1);
+		client.getParams().setParameter(USE_EXPECT_CONTINUE, true);
 		client.getParams().setParameter("http.method.retry-handler", (HttpMethodRetryHandler) (arg0, arg1, arg2) -> false);
 		client.getParams().setParameter("http.socket.timeout", 7000);
 	}

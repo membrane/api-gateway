@@ -11,15 +11,15 @@
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
    See the License for the specific language governing permissions and
    limitations under the License. */
-package com.predic8.membrane.integration;
+package com.predic8.membrane.integration.withinternet;
 
 import com.predic8.membrane.core.*;
-import com.predic8.membrane.core.RuleManager.*;
 import com.predic8.membrane.core.config.security.*;
 import com.predic8.membrane.core.proxies.*;
 import com.predic8.membrane.core.transport.http.client.*;
 import org.junit.jupiter.api.*;
 
+import static com.predic8.membrane.core.RuleManager.RuleDefinitionSource.*;
 import static io.restassured.RestAssured.*;
 
 
@@ -35,7 +35,7 @@ public class ViaProxyTest {
 		proxy.setPort(3128);
 
 		proxyRouter = new HttpRouter(proxy);
-		proxyRouter.getRuleManager().addProxy(new ProxyRule(new ProxyRuleKey(3128)), RuleDefinitionSource.MANUAL);
+		proxyRouter.getRuleManager().addProxy(new ProxyRule(new ProxyRuleKey(3128)), MANUAL);
 		proxyRouter.init();
 
 		ServiceProxy rule = new ServiceProxy(new ServiceProxyKey("localhost", "GET", ".*", 4000), "api.predic8.de", 443);
