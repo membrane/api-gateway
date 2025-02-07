@@ -123,7 +123,7 @@ public class ConnectionManager {
 				int i = l.size() - 1;
 				while(i >= 0) {
 					OldConnection c = l.get(i);
-					if (c.deathTime > now) {
+					if (c.deathTime > now && !c.connection.isClosed()) {
 						l.remove(i);
 						return c.connection;
 					}
