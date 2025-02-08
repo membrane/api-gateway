@@ -41,7 +41,7 @@ import static com.google.common.io.Resources.*;
 import static com.predic8.membrane.core.Constants.*;
 import static com.predic8.membrane.core.http.ChunkedBody.*;
 import static com.predic8.membrane.core.http.ChunksBuilder.*;
-import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
+import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.transport.http2.Http2ServerHandler.*;
 import static java.nio.charset.StandardCharsets.*;
 import static org.junit.jupiter.api.Assertions.*;
@@ -289,12 +289,27 @@ public class ChunkedBodyTest {
 
         InputStream is = cb.getContentAsStream();
 
+        // Read the complete JSON from the body
         assertEquals(42, om.readTree(is).get("foo").asInt());
 
-        assertEquals(5, bis.available()); // 0 + CRLF + CRLF is still not read from bis, maybe we can make BodyInputStream to read them or leave it to loop to read whats left
-//        assertEquals(-1, bis.read());
+        // But 0 + CRLF + CRLF is still not read from stream
+        assertEquals(5, bis.available());
 
+        // No data is available that means no more chunks, but the input stream is still not read completely
         assertEquals(0, is.available());
-        assertFalse(cb.read); //  0 + CRLF + CRLF is not read yet
+
+        //  0 + CRLF + CRLF is not read yet
+        assertFalse(cb.read);
+
+        if(!(is instanceof BodyInputStream bodyIs)) {
+            fail();
+            return;
+        }
+
+        // Try to read next chunk which does not exist. Now chunk trailer should be read
+        assertNull(bodyIs.readNextChunk());
+
+        // Message is now completely read
+        assertTrue(cb.read);
     }
 }
