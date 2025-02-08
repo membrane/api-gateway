@@ -14,6 +14,7 @@
 
 package com.predic8.membrane.core.http;
 
+import com.fasterxml.jackson.databind.*;
 import com.google.common.io.*;
 import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.config.security.KeyStore;
@@ -25,6 +26,7 @@ import com.predic8.membrane.core.transport.http.*;
 import com.predic8.membrane.core.transport.http.client.*;
 import okhttp3.*;
 import org.apache.commons.httpclient.methods.*;
+import org.jetbrains.annotations.*;
 import org.junit.jupiter.api.*;
 
 import javax.net.ssl.*;
@@ -32,31 +34,37 @@ import java.io.*;
 import java.net.*;
 import java.security.*;
 import java.security.cert.*;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.*;
 
 import static com.google.common.io.Resources.*;
 import static com.predic8.membrane.core.Constants.*;
+import static com.predic8.membrane.core.http.ChunkedBody.*;
+import static com.predic8.membrane.core.http.ChunksBuilder.*;
+import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
 import static com.predic8.membrane.core.transport.http2.Http2ServerHandler.*;
 import static java.nio.charset.StandardCharsets.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class ChunkedBodyTest {
+
+    private static final ObjectMapper om = new ObjectMapper();
+
     @Test
     void testReadChunkSize() throws Exception {
-        String s = "3d2F" + CRLF;
-        assertEquals(15663, ChunkedBody.readChunkSize(new ByteArrayInputStream(s.getBytes())));
+        assertEquals(15663, readChunkSize(new ByteArrayInputStream(("3d2F" + CRLF).getBytes())));
     }
 
     @Test
     void testReadChunkSizeWithExtension() throws Exception {
         String s = "3d2F" + CRLF + ";gfgfgfg" + CRLF;
-        assertEquals(15663, ChunkedBody.readChunkSize(new ByteArrayInputStream(s.getBytes())));
+        assertEquals(15663, readChunkSize(new ByteArrayInputStream(s.getBytes())));
     }
 
     @Test
     void testReadChunkSizeWithExtensionValue() throws Exception {
         String s = "3d2F" + CRLF + ";gfgf=gfg" + CRLF;
-        assertEquals(15663, ChunkedBody.readChunkSize(new ByteArrayInputStream(s.getBytes())));
+        assertEquals(15663, readChunkSize(new ByteArrayInputStream(s.getBytes())));
     }
 
     @Test
@@ -159,7 +167,9 @@ public class ChunkedBodyTest {
                     assertEquals("Mon, 12 Dec 2022 09:28:00 GMT", res.trailers().get("Expires"));
                 }
             }
-            hc.dispatcher().executorService().shutdown();
+            try(ExecutorService es = hc.dispatcher().executorService()) {
+                es.shutdown();
+            }
             hc.connectionPool().evictAll();
         } finally {
             router.stop();
@@ -171,13 +181,7 @@ public class ChunkedBodyTest {
         router.setHotDeploy(false);
         ServiceProxy sp = new ServiceProxy(new ServiceProxyKey(http2 ? 3060 : 3059), "localhost", 3060);
         if (http2) {
-            SSLParser sslParser = new SSLParser();
-            sslParser.setUseExperimentalHttp2(true);
-            sslParser.setEndpointIdentificationAlgorithm("");
-            sslParser.setShowSSLExceptions(true);
-            sslParser.setKeyStore(new KeyStore());
-            sslParser.getKeyStore().setLocation("classpath:/ssl-rsa.keystore");
-            sslParser.getKeyStore().setKeyPassword("secret");
+            SSLParser sslParser = getSslParserForHttp2();
             sp.setSslInboundParser(sslParser);
         }
         AtomicReference<String> remoteSocketAddr = new AtomicReference<>();
@@ -186,19 +190,13 @@ public class ChunkedBodyTest {
             HttpClientConfiguration httpClientConfig = new HttpClientConfiguration();
             httpClientConfig.setUseExperimentalHttp2(true);
             interceptor.setHttpClientConfig(httpClientConfig);
-            SSLParser sslParser2 = new SSLParser();
-            sslParser2.setEndpointIdentificationAlgorithm("");
-            sslParser2.setShowSSLExceptions(true);
-            sslParser2.setUseExperimentalHttp2(true);
-            sslParser2.setTrustStore(new TrustStore());
-            sslParser2.getTrustStore().setLocation("classpath:/ssl-rsa-pub.keystore");
-            sslParser2.getTrustStore().setPassword("secret");
+            SSLParser sslParser2 = getSslParserForHttp2Client();
             sp.getTarget().setSslParser(sslParser2);
         } else {
             sp.getInterceptors().add(new AbstractInterceptor() {
                 @Override
                 public Outcome handleRequest(Exchange exc) {
-                    String remoteAddr = ((HttpServerHandler) exc.getHandler()).getSourceSocket().getRemoteSocketAddress().toString();
+                    String remoteAddr = getRemoteAddr(exc);
                     if (remoteSocketAddr.get() == null) {
                         remoteSocketAddr.set(remoteAddr);
                     } else if (!remoteAddr.equals(remoteSocketAddr.get())) {
@@ -211,25 +209,92 @@ public class ChunkedBodyTest {
                         throw new RuntimeException("HTTP/2 is being used.");
 
                     Response r = Response.ok().build();
-                    String cont = null;
+                    r.getHeader().removeFields("Content-Length");
+                    r.getHeader().setValue("Transfer-Encoding", "chunked");
+                    r.getHeader().setValue("Content-Type", "text/plain");
+                    r.getHeader().setValue("Trailer", "Expires");
+                    r.setBody(new ChunkedBody(new ByteArrayInputStream(getContent())));
+                    exc.setResponse(r);
+                    return RETURN;
+                }
+
+                private static String getRemoteAddr(Exchange exc) {
+                    return ((HttpServerHandler) exc.getHandler()).getSourceSocket().getRemoteSocketAddress().toString();
+                }
+
+                private static byte[] getContent() {
+                    String cont;
                     try {
                         cont = Resources.toString(getResource("chunked-body-with-trailer.txt"), US_ASCII);
                     } catch (IOException e) {
                         throw new RuntimeException(e);
                     }
                     cont = cont.replaceAll("\n", "").replaceAll("\r", "").replaceAll("\\\\n", "\n").replaceAll("\\\\r", "\r");
-                    r.getHeader().removeFields("Content-Length");
-                    r.getHeader().setValue("Transfer-Encoding", "chunked");
-                    r.getHeader().setValue("Content-Type", "text/plain");
-                    r.getHeader().setValue("Trailer", "Expires");
-                    r.setBody(new ChunkedBody(new ByteArrayInputStream(cont.getBytes(US_ASCII))));
-                    exc.setResponse(r);
-                    return Outcome.RETURN;
+                    return cont.getBytes(US_ASCII);
                 }
             });
         }
         router.getRules().add(sp);
         router.start();
         return router;
+    }
+
+    private static @NotNull SSLParser getSslParserForHttp2() {
+        SSLParser sslParser = new SSLParser();
+        sslParser.setUseExperimentalHttp2(true);
+        sslParser.setEndpointIdentificationAlgorithm("");
+        sslParser.setShowSSLExceptions(true);
+        sslParser.setKeyStore(new KeyStore());
+        sslParser.getKeyStore().setLocation("classpath:/ssl-rsa.keystore");
+        sslParser.getKeyStore().setKeyPassword("secret");
+        return sslParser;
+    }
+
+    private static @NotNull SSLParser getSslParserForHttp2Client() {
+        SSLParser sslParser2 = new SSLParser();
+        sslParser2.setEndpointIdentificationAlgorithm("");
+        sslParser2.setShowSSLExceptions(true);
+        sslParser2.setUseExperimentalHttp2(true);
+        sslParser2.setTrustStore(new TrustStore());
+        sslParser2.getTrustStore().setLocation("classpath:/ssl-rsa-pub.keystore");
+        sslParser2.getTrustStore().setPassword("secret");
+        return sslParser2;
+    }
+
+    @Test
+    void oneLine() throws IOException {
+
+        byte[] bytes = chunks().add("Encircles the cell, the very heart.").build();
+
+        ChunkedBody cb = new ChunkedBody(new ByteArrayInputStream(bytes));
+        cb.read();
+
+        assertEquals(1, cb.chunks.size());
+    }
+
+    @Test
+    void readTrailerTest() throws IOException {
+        byte[] trailer = ("3D" + CRLF + CRLF).getBytes();
+        ByteArrayInputStream is = new ByteArrayInputStream(trailer);
+        assertEquals(61, readChunkSize(is)); // 3D = 61
+        readTrailer(is);
+        assertEquals( 0,is.available()); // Check that everything is read
+    }
+
+    @Test
+    void readStream() throws IOException {
+        ByteArrayInputStream bis = new ByteArrayInputStream(chunks().add("""
+            { "foo": 42 }""").build());
+        ChunkedBody cb = new ChunkedBody(bis);
+
+        InputStream is = cb.getContentAsStream();
+
+        assertEquals(42, om.readTree(is).get("foo").asInt());
+
+        assertEquals(5, bis.available()); // 0 + CRLF + CRLF is still not read from bis, maybe we can make BodyInputStream to read them or leave it to loop to read whats left
+//        assertEquals(-1, bis.read());
+
+        assertEquals(0, is.available());
+        assertFalse(cb.read); //  0 + CRLF + CRLF is not read yet
     }
 }

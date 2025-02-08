@@ -136,7 +136,7 @@ public class HttpServerHandler extends AbstractHttpHandler implements Runnable {
 			if (showSSLExceptions)
 				log.error("{}", e.getMessage());
 		} catch (SSLHandshakeException e) {
-			log.error("SSLHandshakeException: {}", e.getMessage());
+			log.error("SSLHandshakeException: {}", e.getMessage(), e);
 		} catch (SSLException s) {
 			if(showSSLExceptions) {
 				if (s.getCause() instanceof SocketException) {

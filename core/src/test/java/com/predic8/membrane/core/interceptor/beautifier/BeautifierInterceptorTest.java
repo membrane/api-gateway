@@ -15,61 +15,94 @@
  */
 package com.predic8.membrane.core.interceptor.beautifier;
 
-import com.fasterxml.jackson.core.*;
 import com.fasterxml.jackson.databind.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
+import org.jetbrains.annotations.*;
 import org.junit.jupiter.api.*;
 
-import java.net.*;
-
 import static com.predic8.membrane.core.http.MimeType.*;
+import static com.predic8.membrane.core.http.Request.*;
+import static com.predic8.membrane.core.http.Response.*;
 import static java.nio.charset.StandardCharsets.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class BeautifierInterceptorTest {
-    ObjectMapper om = new ObjectMapper();
 
-    BeautifierInterceptor beautifierInterceptor;
+    static final ObjectMapper om = new ObjectMapper();
 
-    Exchange jsonExchange;
-    Exchange xmlExchange;
+    BeautifierInterceptor interceptor;
+
+    Exchange jsonExc;
+    Exchange xmlExc;
 
     Response response;
+    
+    JsonNode json;
+    static final byte[] xml = ("<foo><bar>baz</bar></foo>").getBytes(UTF_8);
 
-    Request req;
-
-
-    JsonNode testJson = om.readTree("{\"test\": \"foo\", \"sad\": \"sad\"}");
-    byte[] testXml = ("<foo><bar>baz</bar></foo>").getBytes(UTF_8);
-
-    public BeautifierInterceptorTest() throws JsonProcessingException {}
+    public BeautifierInterceptorTest() {}
 
     @BeforeEach
-    void setUp() throws URISyntaxException {
-        beautifierInterceptor = new BeautifierInterceptor();
-        jsonExchange = Request.post("/foo").contentType(APPLICATION_JSON).buildExchange();
-        xmlExchange = Request.post("/foo").contentType(APPLICATION_XML).buildExchange();
-        response = Response.ok().contentType(TEXT_PLAIN).body("Message").build();
+    void setUp() throws Exception {
+        json = om.readTree("{\"test\": \"foo\", \"sad\": \"sad\"}");
+
+        interceptor = new BeautifierInterceptor();
+        jsonExc = post("/foo").contentType(APPLICATION_JSON).buildExchange();
+        xmlExc = post("/foo").contentType(APPLICATION_XML).buildExchange();
+        response = ok().contentType(TEXT_PLAIN).body("Message").build();
+    }
+    
+    @Test
+    void jsonRequest() throws Exception {
+        Exchange exc = Request.post("/foo")
+                .contentType(APPLICATION_JSON)
+                .body(jsonString())
+                .buildExchange();
+        
+        interceptor.handleRequest(exc);
+
+        Request req = exc.getRequest();
+        int bodyLength = req.getBody().getLength();
+        assertEquals(req.getHeader().getContentLength(), bodyLength);
+        assertEquals(bodyLength, req.getBodyAsStringDecoded().length());
+    }
+
+    @Test
+    void jsonResponse() throws Exception {
+        Exchange exc = Response.ok().body(jsonString()).buildExchange();
+
+        interceptor.handleResponse(exc);
+
+        Response res = exc.getResponse();
+        int bodyLength = res.getBody().getLength();
+        assertEquals(res.getHeader().getContentLength(), bodyLength);
+        assertEquals(bodyLength, res.getBodyAsStringDecoded().length());
+    }
+
+    private static @NotNull String jsonString() {
+        return """
+                { "place": "Mumbai", "foo": {"bar": "baz", "sad": 5 } }
+                """;
     }
 
     @Test
     void JSONBeautifierTest () throws Exception {
-        req = jsonExchange.getRequest();
-        req.setBodyContent(om.writeValueAsBytes(testJson));
-        jsonExchange.setRequest(req);
-        assertFalse(jsonExchange.getRequest().getBody().toString().contains("\n"));
-        beautifierInterceptor.handleRequest(jsonExchange);
-        assertTrue(jsonExchange.getRequest().getBody().toString().contains("\n"));
+        Request req = jsonExc.getRequest();
+        req.setBodyContent(om.writeValueAsBytes(json));
+        jsonExc.setRequest(req);
+        assertFalse(jsonExc.getRequest().getBody().toString().contains("\n"));
+        interceptor.handleRequest(jsonExc);
+        assertTrue(jsonExc.getRequest().getBody().toString().contains("\n"));
     }
 
     @Test
-    void XMLBeautifierTest() throws Exception {
-        req = xmlExchange.getRequest();
-        req.setBodyContent(testXml);
-        xmlExchange.setRequest(req);
-        assertFalse(xmlExchange.getRequest().getBody().toString().contains("\n"));
-        beautifierInterceptor.handleRequest(xmlExchange);
-        assertTrue(xmlExchange.getRequest().getBody().toString().contains("\n"));
+    void XMLBeautifierTest() {
+        Request req = xmlExc.getRequest();
+        req.setBodyContent(xml);
+        xmlExc.setRequest(req);
+        assertFalse(xmlExc.getRequest().getBody().toString().contains("\n"));
+        interceptor.handleRequest(xmlExc);
+        assertTrue(xmlExc.getRequest().getBody().toString().contains("\n"));
     }
 }
