@@ -4,7 +4,7 @@ This example shows how to use API keys with role-based access control (RBAC). An
 
 ## 1. Accessing the API
 1. **Navigate** to the `examples/security/api-key/apikey-openapi` directory.
-2. **Start** the API Gateway by executing `service-proxy.sh` (Linux/Mac) or `service-proxy.ps1` (Windows).
+2. **Start** the API Gateway by executing `membrane.sh` (Linux/Mac) or `membrane.cmd` (Windows).
 3. Open `http://localhost:2000/api-docs`.
 4. Click on `Fruit Shop API`
 5. Expand 'GET /products', click on `Try it out` and then on `execute`.

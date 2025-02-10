@@ -8,7 +8,7 @@ This sample explains how to set up and use the `validator` plugin, utilizing XML
 1. Go to the directory `<membrane-root>/examples/validation/xml`.
 
 
-2. Start `service-proxy.ps1` or `service-proxy.sh`.
+2. Start `membrane.cmd` or `membrane.sh`.
 
 
 3. Run `curl -d @year.xml http://localhost:2000/`. Observe that you get a successful response.

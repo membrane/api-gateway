@@ -8,10 +8,10 @@ Running API Gateway
 Make sure you have installed Java 17 or higher. Then do the following:
 
 * Starting the Service Proxy (Windows)
-  Execute service-proxy.ps1
+  Execute membrane.cmd
 	
 * Starting the Service Proxy (Linux)
-  Execute service-proxy.sh
+  Execute membrane.sh
 	
 The Service Proxy by default uses the sample configuration conf/proxies.xml .
 

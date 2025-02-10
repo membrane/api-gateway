@@ -8,7 +8,7 @@ This sample explains how to set up and use the `formValidation` plugin.
 1. Navigate to the `<membrane-root>/examples/validation/form` directory.
 
 
-2. Execute the `service-proxy.sh` script, or its batch file equivalent.
+2. Execute the `membrane.sh` script, or its batch file equivalent.
 
 
 3. Use the following `curl` command in a terminal to send valid form data to Membrane:  

@@ -9,7 +9,7 @@ To run the example, execute the following steps:
 
 1. Go to the examples/message-transformation/json2xml directory
 
-2. Run `service-proxy.sh` or `service-proxy.ps1` to start the API Gateway.
+2. Run `membrane.sh` or `membrane.cmd` to start the API Gateway.
 
 3. Run the command below in a second console from the same directory:
 

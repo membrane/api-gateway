@@ -17,7 +17,7 @@ To run the example execute the following steps:
    mvn package
   ```
 
-3. Execute service-proxy.ps1 or service-proxy.sh
+3. Execute membrane.cmd or membrane.sh
 
 4. Open http://localhost:2000/ using a browser
 
@@ -44,7 +44,7 @@ Again in the proxies.xml file inside `<serviceProxy>` tag you can see that we ad
 </serviceProxy>
 ```
 
-When we run the membrane using service-proxy.sh you can see that in the console that requests and responses are being intercepted by our custom interceptor.
+When we run the membrane using membrane.sh you can see that in the console that requests and responses are being intercepted by our custom interceptor.
 
 ---
 See:

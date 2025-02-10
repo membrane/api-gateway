@@ -13,7 +13,7 @@ Make sure to use Membrane version 5 or newer.
 1. Go to the _examples/openapi/openapi-proxy_ directory and start Membrane:
 
 ```shell
-./service-proxy.sh
+./membrane.sh
 ```
 
 or:

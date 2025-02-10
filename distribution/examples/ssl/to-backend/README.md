@@ -5,7 +5,7 @@
 
 In the example we will route to an SSL protected API.
 
-1. Execute `service-proxy.sh` or `service-proxy.ps1`
+1. Execute `membrane.sh` or `membrane.cmd`
 
 2. Open the URL http://localhost:2000 in your browser.
 

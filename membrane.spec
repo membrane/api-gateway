@@ -48,7 +48,7 @@ After=network.target remote-fs.target nss-lookup.target syslog.target
 Type=simple
 User=%{name}
 Group=%{name}
-ExecStart=%{_datadir}/%{name}/service-proxy.sh -c /%{confdir}/proxies.xml
+ExecStart=%{_datadir}/%{name}/membrane.sh -c /%{confdir}/proxies.xml
 Restart=always
 RestartSec=10
 
@@ -131,14 +131,14 @@ exit 0
 %{__rm} -rf %{buildroot}%{homedir}/examples
 %{__rm} -rf %{buildroot}%{homedir}/tutorials
 
-%{__rm} -f %{buildroot}%{homedir}/service-proxy.ps1
+%{__rm} -f %{buildroot}%{homedir}/membrane.cmd
 %{__rm} -f %{buildroot}%{homedir}/CHANGELOG.txt
 %{__rm} -f %{buildroot}%{homedir}/INSTALL_TANUKI.txt
 %{__rm} -f %{buildroot}%{homedir}/README.txt
 %{__rm} -f %{buildroot}%{homedir}/build-install-wrapper.xml
 
 # TODO use %{confdir} macro here, does not get replaced currently
-sed -i 's#CLASSPATH="$MEMBRANE_HOME/conf"#CLASSPATH="/etc/membrane"#' %{buildroot}%{homedir}/service-proxy.sh
+sed -i 's#CLASSPATH="$MEMBRANE_HOME/conf"#CLASSPATH="/etc/membrane"#' %{buildroot}%{homedir}/membrane.sh
 
 %post
 %systemd_post %{name}.service

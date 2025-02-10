@@ -22,10 +22,10 @@ public class OAuth2MembraneExampleTest extends DistributionExtractingTestcase {
 
     @Test
     public void test() throws Exception {
-        try(Process2 ignored = new Process2.Builder().in(getExampleDir("oauth2/membrane/authorization_server")).script("service-proxy") .waitForMembrane()
+        try(Process2 ignored = new Process2.Builder().in(getExampleDir("oauth2/membrane/authorization_server")).script("membrane") .waitForMembrane()
                 .start()) {
 
-            try(Process2 ignored2 = new Process2.Builder().in(getExampleDir("oauth2/membrane/client")).script("service-proxy").waitForMembrane().start();
+            try(Process2 ignored2 = new Process2.Builder().in(getExampleDir("oauth2/membrane/client")).script("membrane").waitForMembrane().start();
                 HttpAssertions ha = new HttpAssertions()) {
                     // note that we just check that both servers come up and roughly work. this does not follow the
                     // README.txt .

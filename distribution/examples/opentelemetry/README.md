@@ -14,7 +14,7 @@ To instrument an API add the `opentelemetry` plugin to it.
 docker run -d --name jaeger -e COLLECTOR_OTLP_ENABLED=true -p 16686:16686 -p 4317:4317 -p 4318:4318 jaegertracing/all-in-one:latest
 ```
 
-2. Run `service-proxy.ps1` or `./service-proxy.sh` to start Membrane.
+2. Run `membrane.cmd` or `./membrane.sh` to start Membrane.
 
 3. Call the first endpoint in the telemetry chain:
 

@@ -50,10 +50,10 @@ Upon successful packaging, the interceptor `.jar` file needs to be copied to Mem
 Run the Membrane service proxy:
 ```sh
 # For Unix/Mac
-./service-proxy.sh
+./membrane.sh
 
 # For Windows
-service-proxy.ps1
+membrane.cmd
 ```
 
 ### Step 4: Test the Transformation

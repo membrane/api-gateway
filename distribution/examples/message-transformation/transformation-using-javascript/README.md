@@ -7,7 +7,7 @@ Transforming JSON into documents with a different format. Using Javascript you c
 
 Execute the following steps in the `$MEMBRANE_HOME/examples/message-transformation/json2json-with-javascript` folder:
 
-1. Run `service-proxy.sh` or  `service-proxy.ps1` to start the API Gateway.
+1. Run `membrane.sh` or  `membrane.cmd` to start the API Gateway.
 
 2. Execute the following curls:
 

@@ -32,6 +32,7 @@ import static com.predic8.membrane.core.config.spring.TrackingFileSystemXmlAppli
 import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPISpec.YesNoOpenAPIOption.*;
 import static com.predic8.membrane.core.util.ExceptionUtil.concatMessageAndCauseMessages;
 import static com.predic8.membrane.core.util.OSUtil.*;
+import static com.predic8.membrane.core.util.URIUtil.pathFromFileURI;
 import static java.lang.Integer.*;
 
 public class RouterCLI {
@@ -171,21 +172,21 @@ public class RouterCLI {
     }
 
     private static String getRulesFileFromRelativeSpec(ResolverMap rm, String relativeFile, String errorNotice) {
-        String try1 = ResolverMap.combine(prefix(getUserDir()), relativeFile);
+        String try1 = pathFromFileURI(ResolverMap.combine(prefix(getUserDir()), relativeFile));
         try(InputStream ignored = rm.resolve(try1)) {
             return try1;
         } catch (Exception e) {
-            // ignored
+            log.error("Could not resolve path to configuration (attempt 1).", e);
         }
 
         String membraneHome = System.getenv(MEMBRANE_HOME);
         String try2 = null;
         if (membraneHome != null) {
-            try2 = ResolverMap.combine(prefix(membraneHome), relativeFile);
+            try2 = pathFromFileURI(ResolverMap.combine(prefix(membraneHome), relativeFile));
             try(InputStream ignored =  rm.resolve(try2)) {
                 return try2;
             } catch (Exception e) {
-                // ignored
+                log.error("Could not resolve path to configuration (attempt 2).", e);
             }
         }
         System.err.println("Could not find Membrane's configuration file at " + try1 + (try2 == null ? "" : " and not at " + try2) + " . " + errorNotice);

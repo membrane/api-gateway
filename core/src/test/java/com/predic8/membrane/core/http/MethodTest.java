@@ -16,11 +16,13 @@ package com.predic8.membrane.core.http;
 import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.interceptor.flow.invocation.testinterceptors.*;
 import com.predic8.membrane.core.proxies.*;
 import org.apache.commons.httpclient.*;
 import org.apache.commons.httpclient.methods.*;
 import org.junit.jupiter.api.*;
 
+import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class MethodTest {
@@ -29,17 +31,18 @@ public class MethodTest {
 
 	@BeforeAll
 	public static void setUp() throws Exception {
-		ServiceProxy proxy = new ServiceProxy(new ServiceProxyKey("localhost", "*", ".*", 4000), "predic8.de", 80);
+		ServiceProxy proxy = new ServiceProxy(new ServiceProxyKey("localhost", "*", ".*", 2000), "dummy", 80);
 		proxy.getInterceptors().add(new AbstractInterceptor() {
 			@Override
 			public Outcome handleRequest(Exchange exc) {
 				if (exc.getRequest().getMethod().equals("DELETE")) {
 					exc.setResponse(Response.ok().build());
-					return Outcome.RETURN;
+					return RETURN;
 				}
 				return super.handleRequest(exc);
 			}
 		});
+		proxy.getInterceptors().add(new ExceptionTestInterceptor()); // Cause exception
 		router = new HttpRouter();
 		router.getRuleManager().addProxyAndOpenPortIfNew(proxy);
 		router.init();
@@ -54,12 +57,10 @@ public class MethodTest {
 	public void testDELETE() throws Exception {
 		HttpClient client = new HttpClient();
 
-		DeleteMethod delete = new DeleteMethod("http://localhost:4000/method-test/");
+		DeleteMethod delete = new DeleteMethod("http://localhost:2000/method-test/");
 
 		int status = client.executeMethod(delete);
 		assertTrue(status < 400);
 	}
-
-
 
 }

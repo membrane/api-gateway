@@ -19,10 +19,9 @@ import org.junit.platform.suite.api.SelectClasses;
 import org.junit.platform.suite.api.Suite;
 
 @Suite
-@SelectClasses( {
-	UnitTests.class,
-	IntegrationTests.class
+@SelectClasses({
+        UnitTests.class,
+        IntegrationTestsWithoutInternet.class,
+        IntegrationTestsWithInternet.class
 })
-public class AllTests {
-
-}
+public class AllTests {}

@@ -22,7 +22,7 @@ To run the example execute the following steps:
 
 3. Execute
 
-   `service-proxy.ps1`
+   `membrane.cmd`
 
    This will initialize the `LoadBalancingInterceptor` and associate it with a rule.
 
