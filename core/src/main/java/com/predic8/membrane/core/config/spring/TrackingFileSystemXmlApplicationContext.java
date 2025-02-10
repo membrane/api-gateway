@@ -134,7 +134,7 @@ TrackingApplicationContext, BaseLocationApplicationContext, CheckableBeanFactory
 		if (location.startsWith("classpath:")) {
 			return new ClassPathResource(location.substring("classpath:".length()));
 		}
-		if (location.endsWith("file:")) {
+		if (location.startsWith("file:")) {
             try {
                 return new FileUrlResource(location);
             } catch (MalformedURLException e) {
