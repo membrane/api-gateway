@@ -25,8 +25,8 @@ import com.predic8.membrane.core.kubernetes.*;
 import com.predic8.membrane.core.kubernetes.client.*;
 import com.predic8.membrane.core.openapi.*;
 import com.predic8.membrane.core.openapi.serviceproxy.*;
-import com.predic8.membrane.core.resolver.*;
 import com.predic8.membrane.core.proxies.*;
+import com.predic8.membrane.core.resolver.*;
 import com.predic8.membrane.core.transport.*;
 import com.predic8.membrane.core.transport.http.*;
 import com.predic8.membrane.core.transport.http.client.*;
@@ -135,16 +135,11 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
             getRuleManager().addProxy(proxy, RuleDefinitionSource.SPRING);
     }
 
-    public static Router init(String configFileName) {
-        return init(configFileName, Router.class.getClassLoader());
-    }
-
-    public static Router init(String resource, ClassLoader classLoader) {
+    public static Router init(String resource) {
         log.debug("loading spring config: {}", resource);
 
         TrackingFileSystemXmlApplicationContext bf =
                 new TrackingFileSystemXmlApplicationContext(new String[]{resource}, false);
-        bf.setClassLoader(classLoader);
         bf.refresh();
         bf.start();
 
