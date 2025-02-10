@@ -1,4 +1,4 @@
-/* Copyright 2009, 2012 predic8 GmbH, www.predic8.com
+    private static final String[] HTTP1_PROTOCOLS = new String[]{"http/1.1"};/* Copyright 2009, 2012 predic8 GmbH, www.predic8.com
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -78,7 +78,8 @@ public class HttpClient implements AutoCloseable {
     private StreamPump.StreamPumpStats streamPumpStats;
 
     private static final String[] HTTP2_PROTOCOLS = new String[]{"h2"};
-
+    private static final String[] HTTP1_PROTOCOLS = new String[]{"http/1.1"};
+   
     public HttpClient() {
         this(null, null);
     }
@@ -394,7 +395,7 @@ public class HttpClient implements AutoCloseable {
         if (useHttp2) {
             return HTTP2_PROTOCOLS;
         }
-        return null;
+        return HTTP1_PROTOCOLS;
     }
 
     private String upgradeProtocol(Exchange exc, Response response, String newProtocol) {
