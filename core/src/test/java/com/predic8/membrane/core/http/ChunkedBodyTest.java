@@ -283,10 +283,8 @@ public class ChunkedBodyTest {
 
     @Test
     void readStream() throws IOException {
-        ByteArrayInputStream bis = new ByteArrayInputStream(chunks().add("""
-            { "foo": 42 }""").build());
+        ByteArrayInputStream bis = getJSONBodyWithSingleChunk();
         ChunkedBody cb = new ChunkedBody(bis);
-
         InputStream is = cb.getContentAsStream();
 
         // Read the complete JSON from the body
@@ -311,5 +309,62 @@ public class ChunkedBodyTest {
 
         // Message is now completely read
         assertTrue(cb.read);
+    }
+
+    private static @NotNull ByteArrayInputStream getJSONBodyWithSingleChunk() {
+        return new ByteArrayInputStream(chunks().add("""
+                { "foo": 42 }""").build());
+    }
+
+    @Test
+    void readStreamDiscard() throws IOException {
+        ByteArrayInputStream bis = getJSONBodyWithSingleChunk();
+        ChunkedBody cb = new ChunkedBody(bis);
+
+        InputStream is = cb.getContentAsStream();
+
+        // Read the complete JSON from the body
+        assertEquals(42, om.readTree(is).get("foo").asInt());
+
+        cb.discard();
+
+        // discard() should read all the bytes
+        assertEquals(0, bis.available());
+    }
+
+    @Test
+    void readStream2() throws IOException {
+        ByteArrayInputStream bis = new ByteArrayInputStream(chunks().add("""
+                { "foo": 42 }""").add("""
+                { "foo": 43 }""").build());
+        ChunkedBody cb = new ChunkedBody(bis);
+        InputStream is = cb.getContentAsStream();
+
+
+        // Read the complete JSON from the body
+        assertEquals(42, om.readTree(is).get("foo").asInt());
+
+        // But 0 + CRLF + CRLF is still not read from stream
+        assertEquals(23, bis.available());
+
+        // No data is available that means no more chunks, but the input stream is still not read completely
+        assertEquals(0, is.available());
+
+        //  0 + CRLF + CRLF is not read yet
+        assertFalse(cb.read);
+
+        if(!(is instanceof BodyInputStream bodyIs)) {
+            fail();
+            return;
+        }
+
+        // Try to read next chunk which does not exist. Now chunk trailer should be read
+        assertNull(bodyIs.readNextChunk());
+
+        // Message is now completely read
+        assertTrue(cb.read);
+
+
+        cb.read();
     }
 }
