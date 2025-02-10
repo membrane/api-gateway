@@ -20,7 +20,7 @@ To test the router we will use the command line tool curl that can transfer data
 
 To run the example execute the following steps:
 
-1. Execute `service-proxy.ps1` or `service-proxy.sh`.
+1. Execute `membrane.cmd` or `membrane.sh`.
 
 2. Open a new console and execute `curl --header "Accept: application/json" http://localhost:2000/bank/37050198`
 

@@ -44,7 +44,7 @@ public class JavascriptExampleTest extends AbstractSampleMembraneStartStopTestca
     @BeforeEach
     void startMembrane() throws IOException, InterruptedException {
         logger = new BufferLogger();
-        process = new Process2.Builder().in(baseDir).script("service-proxy").withWatcher(logger).waitForMembrane().start();
+        process = new Process2.Builder().in(baseDir).script("membrane").withWatcher(logger).waitForMembrane().start();
 
         // Dump HTTP
         //filters(new RequestLoggingFilter(), new ResponseLoggingFilter());

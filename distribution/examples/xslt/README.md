@@ -9,7 +9,7 @@ Execute the following steps:
 
 1. Go to the `examples/xslt` directory.
 
-2. Execute `service-proxy.ps1` or `service-proxy.sh`
+2. Execute `membrane.cmd` or `membrane.sh`
 
 2. Open the URL https://api.predic8.de/restnames/name.groovy?name=Pia in your browser.
 

@@ -17,4 +17,4 @@ RUN groupadd --gid $USER_GID $USERNAME && useradd --uid $USER_UID --gid $USER_GI
 
 USER $USERNAME
 WORKDIR /opt/membrane
-ENTRYPOINT ["./service-proxy.sh"]
+ENTRYPOINT ["./membrane.sh"]

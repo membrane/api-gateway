@@ -48,7 +48,7 @@ public class BalancerClientScriptUtil {
 
     public static  String getClientStartCommand(String command, String nodeHost, int nodePort) {
         if (isWindows())
-            return  "PowerShell -ExecutionPolicy Bypass -File \"lbclient.ps1\" " + command + " " + nodeHost + " " + nodePort;
+            return  "cmd /c \"lbclient.cmd\" " + command + " " + nodeHost + " " + nodePort;
 
         return "bash lbclient.sh " + command + " " + nodeHost + " " + nodePort;
     }

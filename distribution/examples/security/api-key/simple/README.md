@@ -6,7 +6,7 @@ Secure endpoints using API keys.
 ***Note:*** *The requests are also available in the requests.http file.*
 
 1. **Navigate** to the `examples/security/api-key/simple` directory.
-2. **Start** the API Gateway by executing `service-proxy.sh` (Linux/Mac) or `service-proxy.ps1` (Windows).
+2. **Start** the API Gateway by executing `membrane.sh` (Linux/Mac) or `membrane.cmd` (Windows).
 3. **Test Mandatory API Key Authentication**:
     - Send a request without an API key to see access denial:
       ```

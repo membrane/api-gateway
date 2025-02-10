@@ -56,10 +56,10 @@ This ensures the interceptor `.jar` is automatically copied to Membrane's `lib` 
 Run the appropriate command based on your operating system:
    ```sh
    # For Unix/Mac
-   ./service-proxy.sh
+   ./membrane.sh
 
    # For Windows
-   service-proxy.ps1
+   membrane.cmd
    ```
 
 ### Step 5: Test the Service

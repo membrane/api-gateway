@@ -11,7 +11,7 @@ Use Membrane version 5 or newer.
 2. Start Membrane:
 
 ```
-./service-proxy.sh
+./membrane.sh
 ```
 
 or:

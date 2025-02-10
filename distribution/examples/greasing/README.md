@@ -6,7 +6,7 @@ Modify JSON documents by injecting random fields or shuffling field order withou
 ***Note:*** *The request is also available in the requests.http file.*
 
 1. **Navigate** to the `examples/greasing` directory.
-2. **Start** the API Gateway by executing `service-proxy.sh` (Linux/Mac) or `service-proxy.ps1` (Windows).
+2. **Start** the API Gateway by executing `membrane.sh` (Linux/Mac) or `membrane.cmd` (Windows).
 3. **Access** the greased API:
    ```
    curl -v http://localhost:2000 \

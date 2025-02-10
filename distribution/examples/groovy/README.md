@@ -8,7 +8,7 @@ Using the `groovy` element you can run Groovy scripts to manipulate or monitor m
 
 1. Take a look at [proxies.xml](proxies.xml). There you'll find the APIs with Groovy scripts.
 2. Open a commandline session or a terminal.
-3. Run `service-proxy.ps1` or `./service-proxy.sh` in this folder
+3. Run `membrane.cmd` or `./membrane.sh` in this folder
 4. Open a second terminal and run the commands:
 
    **Create JSON with Groovy:**
@@ -63,7 +63,7 @@ Using the `groovy` element you can run Groovy scripts to manipulate or monitor m
    Greatings from Spring       
    ```
 
-   Then take a look at the output of the `service-proxy.sh/bat` script. You should see the output from the Groovy script, printing the request header fields.
+   Then take a look at the output of the `membrane.sh/bat` script. You should see the output from the Groovy script, printing the request header fields.
 
 
    ```

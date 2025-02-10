@@ -200,11 +200,11 @@ public abstract class DistributionExtractingTestcase {
     }
 
     protected Process2 startServiceProxyScript() throws IOException, InterruptedException {
-        return startServiceProxyScript(null, "service-proxy");
+        return startServiceProxyScript(null, "membrane");
     }
 
     protected Process2 startServiceProxyScript(ConsoleWatcher watch) throws IOException, InterruptedException {
-        return startServiceProxyScript(watch,"service-proxy");
+        return startServiceProxyScript(watch,"membrane");
     }
 
     protected Process2 startServiceProxyScript(ConsoleWatcher watch, String script) throws IOException, InterruptedException {
