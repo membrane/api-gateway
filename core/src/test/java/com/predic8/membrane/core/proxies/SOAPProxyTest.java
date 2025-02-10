@@ -20,14 +20,14 @@ import com.predic8.membrane.core.interceptor.templating.*;
 import com.predic8.membrane.core.openapi.serviceproxy.*;
 import com.predic8.membrane.core.openapi.util.*;
 import com.predic8.membrane.core.transport.http.*;
-import io.restassured.response.*;
 import org.junit.jupiter.api.*;
 
 import java.io.*;
 
 import static com.predic8.membrane.core.http.MimeType.*;
 import static io.restassured.RestAssured.*;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static io.restassured.filter.log.LogDetail.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class SOAPProxyTest {
 
@@ -95,17 +95,15 @@ public class SOAPProxyTest {
         router.add(proxy);
         router.init();
 
-//        System.out.println("proxy = " + proxy);
-
-        Response res = given().when().body(TestUtils.getResourceAsStream(this, "/soap-sample/soap-request-bonn.xml"))
-                .post("http://localhost:2000/city-service");
-
-//        System.out.println("body.prettyPrint() = " + res.prettyPrint());
-
-        res.then().statusCode(200)
-                .contentType(TEXT_XML)
-                .extract().response().body();
-
+        // @formatter: off
+        given().when()
+            .body(TestUtils.getResourceAsStream(this, "/soap-sample/soap-request-bonn.xml"))
+            .post("http://localhost:2000/city-service")
+        .then()
+            .log().ifValidationFails(ALL)
+            .statusCode(200)
+            .contentType(TEXT_XML);
+        // @formatter: on
     }
 
     @Test

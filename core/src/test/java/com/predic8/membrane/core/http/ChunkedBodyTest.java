@@ -14,6 +14,7 @@
 
 package com.predic8.membrane.core.http;
 
+import com.fasterxml.jackson.databind.*;
 import com.google.common.io.*;
 import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.config.security.KeyStore;
@@ -25,6 +26,7 @@ import com.predic8.membrane.core.transport.http.*;
 import com.predic8.membrane.core.transport.http.client.*;
 import okhttp3.*;
 import org.apache.commons.httpclient.methods.*;
+import org.jetbrains.annotations.*;
 import org.junit.jupiter.api.*;
 
 import javax.net.ssl.*;
@@ -32,31 +34,37 @@ import java.io.*;
 import java.net.*;
 import java.security.*;
 import java.security.cert.*;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.*;
 
 import static com.google.common.io.Resources.*;
 import static com.predic8.membrane.core.Constants.*;
+import static com.predic8.membrane.core.http.ChunkedBody.*;
+import static com.predic8.membrane.core.http.ChunksBuilder.*;
+import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.transport.http2.Http2ServerHandler.*;
 import static java.nio.charset.StandardCharsets.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class ChunkedBodyTest {
+
+    private static final ObjectMapper om = new ObjectMapper();
+
     @Test
     void testReadChunkSize() throws Exception {
-        String s = "3d2F" + CRLF;
-        assertEquals(15663, ChunkedBody.readChunkSize(new ByteArrayInputStream(s.getBytes())));
+        assertEquals(15663, readChunkSize(new ByteArrayInputStream(("3d2F" + CRLF).getBytes())));
     }
 
     @Test
     void testReadChunkSizeWithExtension() throws Exception {
         String s = "3d2F" + CRLF + ";gfgfgfg" + CRLF;
-        assertEquals(15663, ChunkedBody.readChunkSize(new ByteArrayInputStream(s.getBytes())));
+        assertEquals(15663, readChunkSize(new ByteArrayInputStream(s.getBytes())));
     }
 
     @Test
     void testReadChunkSizeWithExtensionValue() throws Exception {
         String s = "3d2F" + CRLF + ";gfgf=gfg" + CRLF;
-        assertEquals(15663, ChunkedBody.readChunkSize(new ByteArrayInputStream(s.getBytes())));
+        assertEquals(15663, readChunkSize(new ByteArrayInputStream(s.getBytes())));
     }
 
     @Test
@@ -70,6 +78,11 @@ public class ChunkedBodyTest {
                         cont = cont.replaceAll("\n", "").replaceAll("\r", "").replaceAll("\\\\n", "\n").replaceAll("\\\\r", "\r");
                         s.getOutputStream().write(cont.getBytes(US_ASCII));
                         s.getOutputStream().flush();
+                        try {
+                            Thread.sleep(100); // a TCP close may outpace the TCP data paket elsewise
+                        } catch (InterruptedException e) {
+                            Thread.currentThread().interrupt();
+                        }
                     }
                 } catch (IOException e) {
                     e.printStackTrace();
@@ -84,6 +97,8 @@ public class ChunkedBodyTest {
             e.getResponse().getBodyAsStringDecoded(); // read body
 
             assertEquals("Mon, 12 Dec 2022 09:28:00 GMT", e.getResponse().getBody().getTrailer().getFirstValue("Expires"));
+
+            t.interrupt();
         }
     }
 
@@ -159,7 +174,9 @@ public class ChunkedBodyTest {
                     assertEquals("Mon, 12 Dec 2022 09:28:00 GMT", res.trailers().get("Expires"));
                 }
             }
-            hc.dispatcher().executorService().shutdown();
+            try(ExecutorService es = hc.dispatcher().executorService()) {
+                es.shutdown();
+            }
             hc.connectionPool().evictAll();
         } finally {
             router.stop();
@@ -171,13 +188,7 @@ public class ChunkedBodyTest {
         router.setHotDeploy(false);
         ServiceProxy sp = new ServiceProxy(new ServiceProxyKey(http2 ? 3060 : 3059), "localhost", 3060);
         if (http2) {
-            SSLParser sslParser = new SSLParser();
-            sslParser.setUseExperimentalHttp2(true);
-            sslParser.setEndpointIdentificationAlgorithm("");
-            sslParser.setShowSSLExceptions(true);
-            sslParser.setKeyStore(new KeyStore());
-            sslParser.getKeyStore().setLocation("classpath:/ssl-rsa.keystore");
-            sslParser.getKeyStore().setKeyPassword("secret");
+            SSLParser sslParser = getSslParserForHttp2();
             sp.setSslInboundParser(sslParser);
         }
         AtomicReference<String> remoteSocketAddr = new AtomicReference<>();
@@ -186,19 +197,13 @@ public class ChunkedBodyTest {
             HttpClientConfiguration httpClientConfig = new HttpClientConfiguration();
             httpClientConfig.setUseExperimentalHttp2(true);
             interceptor.setHttpClientConfig(httpClientConfig);
-            SSLParser sslParser2 = new SSLParser();
-            sslParser2.setEndpointIdentificationAlgorithm("");
-            sslParser2.setShowSSLExceptions(true);
-            sslParser2.setUseExperimentalHttp2(true);
-            sslParser2.setTrustStore(new TrustStore());
-            sslParser2.getTrustStore().setLocation("classpath:/ssl-rsa-pub.keystore");
-            sslParser2.getTrustStore().setPassword("secret");
+            SSLParser sslParser2 = getSslParserForHttp2Client();
             sp.getTarget().setSslParser(sslParser2);
         } else {
             sp.getInterceptors().add(new AbstractInterceptor() {
                 @Override
                 public Outcome handleRequest(Exchange exc) {
-                    String remoteAddr = ((HttpServerHandler) exc.getHandler()).getSourceSocket().getRemoteSocketAddress().toString();
+                    String remoteAddr = getRemoteAddr(exc);
                     if (remoteSocketAddr.get() == null) {
                         remoteSocketAddr.set(remoteAddr);
                     } else if (!remoteAddr.equals(remoteSocketAddr.get())) {
@@ -211,20 +216,28 @@ public class ChunkedBodyTest {
                         throw new RuntimeException("HTTP/2 is being used.");
 
                     Response r = Response.ok().build();
-                    String cont = null;
+                    r.getHeader().removeFields("Content-Length");
+                    r.getHeader().setValue("Transfer-Encoding", "chunked");
+                    r.getHeader().setValue("Content-Type", "text/plain");
+                    r.getHeader().setValue("Trailer", "Expires");
+                    r.setBody(new ChunkedBody(new ByteArrayInputStream(getContent())));
+                    exc.setResponse(r);
+                    return RETURN;
+                }
+
+                private static String getRemoteAddr(Exchange exc) {
+                    return ((HttpServerHandler) exc.getHandler()).getSourceSocket().getRemoteSocketAddress().toString();
+                }
+
+                private static byte[] getContent() {
+                    String cont;
                     try {
                         cont = Resources.toString(getResource("chunked-body-with-trailer.txt"), US_ASCII);
                     } catch (IOException e) {
                         throw new RuntimeException(e);
                     }
                     cont = cont.replaceAll("\n", "").replaceAll("\r", "").replaceAll("\\\\n", "\n").replaceAll("\\\\r", "\r");
-                    r.getHeader().removeFields("Content-Length");
-                    r.getHeader().setValue("Transfer-Encoding", "chunked");
-                    r.getHeader().setValue("Content-Type", "text/plain");
-                    r.getHeader().setValue("Trailer", "Expires");
-                    r.setBody(new ChunkedBody(new ByteArrayInputStream(cont.getBytes(US_ASCII))));
-                    exc.setResponse(r);
-                    return Outcome.RETURN;
+                    return cont.getBytes(US_ASCII);
                 }
             });
         }
@@ -232,4 +245,200 @@ public class ChunkedBodyTest {
         router.start();
         return router;
     }
+
+    private static @NotNull SSLParser getSslParserForHttp2() {
+        SSLParser sslParser = new SSLParser();
+        sslParser.setUseExperimentalHttp2(true);
+        sslParser.setEndpointIdentificationAlgorithm("");
+        sslParser.setShowSSLExceptions(true);
+        sslParser.setKeyStore(new KeyStore());
+        sslParser.getKeyStore().setLocation("classpath:/ssl-rsa.keystore");
+        sslParser.getKeyStore().setKeyPassword("secret");
+        return sslParser;
+    }
+
+    private static @NotNull SSLParser getSslParserForHttp2Client() {
+        SSLParser sslParser2 = new SSLParser();
+        sslParser2.setEndpointIdentificationAlgorithm("");
+        sslParser2.setShowSSLExceptions(true);
+        sslParser2.setUseExperimentalHttp2(true);
+        sslParser2.setTrustStore(new TrustStore());
+        sslParser2.getTrustStore().setLocation("classpath:/ssl-rsa-pub.keystore");
+        sslParser2.getTrustStore().setPassword("secret");
+        return sslParser2;
+    }
+
+    @Test
+    void oneLine() throws IOException {
+
+        byte[] bytes = chunks().add("Encircles the cell, the very heart.").build();
+
+        ChunkedBody cb = new ChunkedBody(new ByteArrayInputStream(bytes));
+        cb.read();
+
+        assertEquals(1, cb.chunks.size());
+    }
+
+    @Test
+    void readTrailerTest() throws IOException {
+        byte[] trailer = ("3D" + CRLF + CRLF).getBytes();
+        ByteArrayInputStream is = new ByteArrayInputStream(trailer);
+        assertEquals(61, readChunkSize(is)); // 3D = 61
+        readTrailer(is);
+        assertEquals( 0,is.available()); // Check that everything is read
+    }
+
+    @Test
+    void readStream() throws IOException {
+        ByteArrayInputStream bis = getJSONBodyWithSingleChunk();
+        ChunkedBody cb = new ChunkedBody(bis);
+        InputStream is = cb.getContentAsStream();
+
+        // Read the complete JSON from the body
+        assertEquals(42, om.readTree(is).get("foo").asInt());
+
+        // But 0 + CRLF + CRLF is still not read from stream
+        assertEquals(5, bis.available());
+
+        // No data is available that means no more chunks, but the input stream is still not read completely
+        assertEquals(0, is.available());
+
+        //  0 + CRLF + CRLF is not read yet
+        assertFalse(cb.read);
+
+        if(!(is instanceof BodyInputStream bodyIs)) {
+            fail();
+            return;
+        }
+
+        // Try to read next chunk which does not exist. Now chunk trailer should be read
+        assertNull(bodyIs.readNextChunk());
+
+        // Message is now completely read
+        assertTrue(cb.read);
+    }
+
+    @Test
+    void readStreamRepeatedly() throws IOException {
+        ByteArrayInputStream bis = getJSONBodyWithSingleChunk();
+        ChunkedBody cb = new ChunkedBody(bis);
+
+        // Read the JSON from the body
+        assertEquals(42, om.readTree(cb.getContentAsStream()).get("foo").asInt());
+
+        // Re-Read JSON from the body (both reads will leave the final end-chunk unread)
+        assertEquals(42, om.readTree(cb.getContentAsStream()).get("foo").asInt());
+
+        if(!(cb.getContentAsStream() instanceof BodyInputStream bodyIs)) {
+            fail();
+            return;
+        }
+
+        // Try to read next chunk which does not exist. Now chunk trailer should be read
+        assertNull(bodyIs.readNextChunk());
+
+        // Message is now completely read
+        assertTrue(cb.read);
+    }
+
+    private static @NotNull ByteArrayInputStream getJSONBodyWithSingleChunk() {
+        return new ByteArrayInputStream(chunks().add("""
+                { "foo": 42 }""").build());
+    }
+
+    @Test
+    void readStreamDiscard() throws IOException {
+        ByteArrayInputStream bis = getJSONBodyWithSingleChunk();
+        ChunkedBody cb = new ChunkedBody(bis);
+
+        InputStream is = cb.getContentAsStream();
+
+        // Read the complete JSON from the body
+        assertEquals(42, om.readTree(is).get("foo").asInt());
+
+        cb.discard();
+
+        // discard() should read all the bytes
+        assertEquals(0, bis.available());
+    }
+
+    @Test
+    void readStreamWith2ConcatenatedJSON() throws IOException {
+        ByteArrayInputStream bis = createBodyWith2ConcatenatedJSONs();
+        ChunkedBody cb = new ChunkedBody(bis);
+        InputStream is = cb.getContentAsStream();
+
+        // Read the first JSON from the body
+        assertEquals(42, om.readTree(is).get("foo").asInt());
+
+        // Read the second JSON from the body
+        assertEquals(43, om.readTree(is).get("foo").asInt());
+
+        if(!(is instanceof BodyInputStream bodyIs)) {
+            fail();
+            return;
+        }
+
+        // Try to read next chunk which does not exist. Now chunk trailer should be read
+        assertNull(bodyIs.readNextChunk());
+
+        // Message is now completely read
+        assertTrue(cb.read);
+    }
+
+    @Test
+    void readHalfStreamAndThenTheRest() throws IOException {
+        ByteArrayInputStream bis = createBodyWith2ConcatenatedJSONs();
+        ChunkedBody cb = new ChunkedBody(bis);
+        InputStream is = cb.getContentAsStream();
+
+        // Read the first JSON from the body
+        assertEquals(42, om.readTree(is).get("foo").asInt());
+
+        // now switch to read() which reads everything which is left
+        cb.read();
+
+        // now assert that everything is actually there
+        assertEquals(26, cb.getContent().length);
+    }
+
+    @Test
+    void readHalfStreamAndThenGetLength() throws IOException {
+        ByteArrayInputStream bis = createBodyWith2ConcatenatedJSONs();
+        ChunkedBody cb = new ChunkedBody(bis);
+        InputStream is = cb.getContentAsStream();
+
+        // Read the first JSON from the body
+        assertEquals(42, om.readTree(is).get("foo").asInt());
+
+        // now assert that everything is actually there
+        assertEquals(26, cb.getLength());
+    }
+
+    @Test
+    void readEverythingAndThenStream() throws IOException {
+        ByteArrayInputStream bis = createBodyWith2ConcatenatedJSONs();
+        ChunkedBody cb = new ChunkedBody(bis);
+
+        // read() everything
+        cb.read();
+
+        // assert that everything is actually there
+        assertEquals(26, cb.getContent().length);
+
+        InputStream is = cb.getContentAsStream();
+        // Read the first JSON from the body
+        assertEquals(42, om.readTree(is).get("foo").asInt());
+        // Read the second JSON from the body
+        assertEquals(43, om.readTree(is).get("foo").asInt());
+        // now the end of stream has been reached
+        assertEquals(-1, is.read());
+    }
+
+    private static @NotNull ByteArrayInputStream createBodyWith2ConcatenatedJSONs() {
+        return new ByteArrayInputStream(chunks().add("""
+                { "foo": 42 }""").add("""
+                { "foo": 43 }""").build());
+    }
+
 }

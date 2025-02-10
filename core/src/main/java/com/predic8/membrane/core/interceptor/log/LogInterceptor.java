@@ -24,6 +24,8 @@ import com.predic8.membrane.core.lang.*;
 import java.io.*;
 
 import static com.predic8.membrane.core.http.MimeType.*;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.RESPONSE;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.interceptor.log.LogInterceptor.Level.*;
 import static org.slf4j.LoggerFactory.*;
@@ -52,14 +54,14 @@ public class LogInterceptor extends AbstractExchangeExpressionInterceptor {
 
     @Override
     public Outcome handleRequest(Exchange exc) {
-        logMessage(exc, Flow.REQUEST);
+        logMessage(exc, REQUEST);
         return CONTINUE;
 
     }
 
     @Override
     public Outcome handleResponse(Exchange exc) {
-        logMessage(exc,Flow.RESPONSE);
+        logMessage(exc, RESPONSE);
         return CONTINUE;
     }
 
