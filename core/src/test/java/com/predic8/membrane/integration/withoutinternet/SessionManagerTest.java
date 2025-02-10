@@ -12,15 +12,15 @@
    See the License for the specific language governing permissions and
    limitations under the License. */
 
-package com.predic8.membrane.integration;
+package com.predic8.membrane.integration.withoutinternet;
 
 import com.predic8.membrane.core.HttpRouter;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.AbstractInterceptorWithSession;
 import com.predic8.membrane.core.interceptor.Outcome;
-import com.predic8.membrane.core.interceptor.session.InMemorySessionManager;
-import com.predic8.membrane.core.interceptor.session.JwtSessionManager;
+import com.predic8.membrane.core.interceptor.session.*;
+import com.predic8.membrane.integration.*;
 import org.apache.http.Header;
 import org.apache.http.client.config.CookieSpecs;
 import org.apache.http.client.config.RequestConfig;
@@ -50,9 +50,9 @@ import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-public class SessionManager {
+public class SessionManagerTest {
 
-    public static Collection<Object[]> data() throws Exception {
+    public static Collection<Object[]> data() {
         return Arrays.asList(inMemory(),
                 jwt());
     }
@@ -71,6 +71,7 @@ public class SessionManager {
         };
     }
 
+    @SuppressWarnings("UastIncorrectHttpHeaderInspection")
     public static final String REMEMBER_HEADER = "X-Remember-This";
     public static final int GATEWAY_PORT = 3061;
 
@@ -154,7 +155,7 @@ public class SessionManager {
                     List<Header> collect = Arrays.stream(resp.getHeaders("Set-Cookie")).toList();
                     assertEquals(2,collect.size());
 
-                    assertTrue(collect.stream().filter(v -> v.getValue().toLowerCase().contains(com.predic8.membrane.core.interceptor.session.SessionManager.VALUE_TO_EXPIRE_SESSION_IN_BROWSER.toLowerCase())).count() == 1);
+                    assertEquals(1, collect.stream().filter(v -> v.getValue().toLowerCase().contains(SessionManager.VALUE_TO_EXPIRE_SESSION_IN_BROWSER.toLowerCase())).count());
                     Arrays.stream(resp.getAllHeaders()).forEach(h -> System.out.println(h.toString()));
                 }
             }
@@ -344,7 +345,7 @@ public class SessionManager {
             }
 
             @Override
-            protected Outcome handleResponseInternal(Exchange exc) throws Exception {
+            protected Outcome handleResponseInternal(Exchange exc) {
                 return handleResponse(exc);
             }
         };

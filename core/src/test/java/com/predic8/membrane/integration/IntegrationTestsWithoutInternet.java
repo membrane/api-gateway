@@ -1,4 +1,4 @@
-/* Copyright 2009, 2011 predic8 GmbH, www.predic8.com
+/* Copyright 2023 predic8 GmbH, www.predic8.com
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -11,17 +11,15 @@
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
    See the License for the specific language governing permissions and
    limitations under the License. */
-package com.predic8.membrane;
 
-import com.predic8.membrane.core.*;
-import com.predic8.membrane.integration.*;
-import org.junit.platform.suite.api.SelectClasses;
-import org.junit.platform.suite.api.Suite;
+package com.predic8.membrane.integration;
 
+import org.junit.platform.suite.api.*;
+
+/**
+ * Tests that do not need Internet but other resources or that take run slowly
+ */
 @Suite
-@SelectClasses({
-        UnitTests.class,
-        IntegrationTestsWithoutInternet.class,
-        IntegrationTestsWithInternet.class
-})
-public class AllTests {}
+@SelectPackages({"com.predic8.membrane.integration.withoutinternet"})
+public class IntegrationTestsWithoutInternet {
+}

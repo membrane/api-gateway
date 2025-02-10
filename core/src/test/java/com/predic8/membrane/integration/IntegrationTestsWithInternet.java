@@ -1,4 +1,4 @@
-/* Copyright 2009, 2012 predic8 GmbH, www.predic8.com
+/* Copyright 2023 predic8 GmbH, www.predic8.com
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -13,15 +13,12 @@
    limitations under the License. */
 package com.predic8.membrane.integration;
 
-import com.predic8.membrane.core.*;
-import org.junit.platform.suite.api.SelectClasses;
-import org.junit.platform.suite.api.Suite;
+import org.junit.platform.suite.api.*;
 
-
+/**
+ * Tests that need the Internet to run
+ */
 @Suite
-@SelectClasses( {
-		IntegrationTestsWithoutInternet.class,
-		IntegrationTestsWithInternet.class
-})
-public class IntegrationTests {
+@SelectPackages({"com.predic8.membrane.integration.withinternet"})
+public class IntegrationTestsWithInternet {
 }

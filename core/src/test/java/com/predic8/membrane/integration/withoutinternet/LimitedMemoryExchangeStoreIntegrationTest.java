@@ -12,7 +12,7 @@
    See the License for the specific language governing permissions and
    limitations under the License. */
 
-package com.predic8.membrane.integration;
+package com.predic8.membrane.integration.withoutinternet;
 
 import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.*;
@@ -47,7 +47,7 @@ public class LimitedMemoryExchangeStoreIntegrationTest {
         hcc = new HttpClientConfiguration();
         hcc.setMaxRetries(1);
 
-        ServiceProxy proxy = new ServiceProxy(new ServiceProxyKey("localhost", "POST", ".*", 3045), "thomas-bayer.com", 80);
+        ServiceProxy proxy = new ServiceProxy(new ServiceProxyKey("localhost", "POST", ".*", 3045), "dummy", 80);
         proxy.getInterceptors().add(new AbstractInterceptor() {
             @Override
             public Outcome handleRequest(Exchange exc) {
