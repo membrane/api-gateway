@@ -158,8 +158,6 @@ public class ChunkedBody extends AbstractBody {
     boolean bodyComplete = false;
 
     public InputStream getContentAsStream() {
-        read = true;
-
         if (!bodyObserved) {
             bodyObserved = true;
             for (MessageObserver observer : observers)
@@ -185,6 +183,7 @@ public class ChunkedBody extends AbstractBody {
                 } else {
                     trailer = readTrailer(inputStream);
 
+                    read = true;
                     bodyComplete = true;
 
                     for (MessageObserver observer : observers)
