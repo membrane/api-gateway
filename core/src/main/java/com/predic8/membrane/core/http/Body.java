@@ -30,6 +30,8 @@ import static java.lang.System.currentTimeMillis;
  * <p>
  * The caller is responsible to adjust the header accordingly,
  * e.g. the fields Transfer-Encoding and Content-Length.
+ * <p>
+ * This class internally has a binary model whether the body is read or not.
  */
 public class Body extends AbstractBody {
 

@@ -40,7 +40,7 @@ public class BodyInputStream extends InputStream {
 
 	public BodyInputStream(List<Chunk> chunks) {
 		this.chunks = chunks;
-		currentChunk = chunks.isEmpty() ? null : chunks.get(0);
+		currentChunk = chunks.isEmpty() ? null : chunks.getFirst();
 		if (currentChunk != null) {
 			currentChunkLength = currentChunk.getLength();
 			currentChunkData = currentChunk.getContent();
@@ -66,8 +66,10 @@ public class BodyInputStream extends InputStream {
 
 		positionWithinChunk++;
 
+		// Are we at the end of the current chunk?
 		while (positionWithinChunk == currentChunkLength) {
 			currentChunkIndex++;
+			// Was this the last chunk?
 			if (currentChunkIndex == chunks.size()) {
 				Chunk c = readNextChunk();
 				if (c == null) {
@@ -102,9 +104,11 @@ public class BodyInputStream extends InputStream {
 	public int read(byte[] b, int off, int len) throws IOException {
 		if (b == null) {
 			throw new NullPointerException();
-		} else if (off < 0 || len < 0 || len > b.length - off) {
+		}
+		if (off < 0 || len < 0 || len > b.length - off) {
 			throw new IndexOutOfBoundsException();
-		} else if (len == 0) {
+		}
+		if (len == 0) {
 			return 0;
 		}
 

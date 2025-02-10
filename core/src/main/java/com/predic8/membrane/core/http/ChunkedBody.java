@@ -22,6 +22,7 @@ import java.util.*;
 
 import static com.predic8.membrane.core.Constants.*;
 import static com.predic8.membrane.core.http.ChunkedBodyTransferrer.*;
+import static com.predic8.membrane.core.util.ByteUtil.readByteArray;
 import static java.lang.Long.*;
 import static java.nio.charset.StandardCharsets.*;
 
@@ -29,7 +30,11 @@ import static java.nio.charset.StandardCharsets.*;
  * Reads the body with "Transfer-Encoding: chunked".
  * <p>
  * See {@link ChunkedBodyTransferrer} for writing a body using chunks.
+ * <p>
+ * This class internally reads body chunks piece by piece. When accessing the body using streams, not all chunks
+ * might therefore be read immediately.
  */
+@SuppressWarnings("ResultOfMethodCallIgnored")
 public class ChunkedBody extends AbstractBody {
 
     private static final Logger log = LoggerFactory.getLogger(ChunkedBody.class.getName());
@@ -39,7 +44,6 @@ public class ChunkedBody extends AbstractBody {
     private Header trailer;
 
     public ChunkedBody(InputStream in) {
-        log.debug("ChunkedInOutBody constructor");
         inputStream = in;
     }
 
@@ -47,7 +51,7 @@ public class ChunkedBody extends AbstractBody {
         List<Chunk> chunks = new ArrayList<>();
         int chunkSize;
         while ((chunkSize = readChunkSize(in)) > 0) {
-            chunks.add(new Chunk(ByteUtil.readByteArray(in, chunkSize)));
+            chunks.add(new Chunk(readByteArray(in, chunkSize)));
             //noinspection ResultOfMethodCallIgnored
             in.read(); // CR
             //noinspection ResultOfMethodCallIgnored
@@ -56,11 +60,10 @@ public class ChunkedBody extends AbstractBody {
         return chunks;
     }
 
-    private static Header readTrailer(InputStream in) throws IOException {
+    protected static Header readTrailer(InputStream in) throws IOException {
         in.mark(2);
         if (in.read() == 13) {
-            //noinspection ResultOfMethodCallIgnored
-            in.read();
+            in.read(); // LF
             return null;
         }
         in.reset();
@@ -71,16 +74,14 @@ public class ChunkedBody extends AbstractBody {
         }
     }
 
-    private static void readChunksAndDrop(InputStream in, List<MessageObserver> observers) throws IOException {
+    private void readChunksAndDrop(InputStream is) throws IOException {
         int chunkSize;
-        while ((chunkSize = readChunkSize(in)) > 0) {
-            Chunk chunk = new Chunk(ByteUtil.readByteArray(in, chunkSize));
+        while ((chunkSize = readChunkSize(is)) > 0) {
+            Chunk chunk = new Chunk(readByteArray(is, chunkSize));
             for (MessageObserver observer : observers)
                 observer.bodyChunk(chunk);
-            //noinspection ResultOfMethodCallIgnored
-            in.read(); // CR
-			//noinspection ResultOfMethodCallIgnored
-            in.read(); // LF
+            is.read(); // CR
+            is.read(); // LF
         }
     }
 
@@ -90,7 +91,6 @@ public class ChunkedBody extends AbstractBody {
         int c;
         while ((c = in.read()) != -1) {
             if (c == 13) {
-                //noinspection ResultOfMethodCallIgnored
                 in.read(); // LF
                 break;
             }
@@ -149,7 +149,7 @@ public class ChunkedBody extends AbstractBody {
         for (MessageObserver observer : observers)
             observer.bodyRequested(this);
 
-        readChunksAndDrop(inputStream, observers);
+        readChunksAndDrop(inputStream);
         trailer = readTrailer(inputStream);
         markAsRead();
     }
@@ -158,8 +158,6 @@ public class ChunkedBody extends AbstractBody {
     boolean bodyComplete = false;
 
     public InputStream getContentAsStream() {
-        read = true;
-
         if (!bodyObserved) {
             bodyObserved = true;
             for (MessageObserver observer : observers)
@@ -174,25 +172,19 @@ public class ChunkedBody extends AbstractBody {
                     return null;
                 int chunkSize = readChunkSize(inputStream);
                 if (chunkSize > 0) {
-                    Chunk c = new Chunk(ByteUtil.readByteArray(inputStream, chunkSize));
-                    //noinspection ResultOfMethodCallIgnored
+                    Chunk c = new Chunk(readByteArray(inputStream, chunkSize));
                     inputStream.read(); // CR
-                    //noinspection ResultOfMethodCallIgnored
                     inputStream.read(); // LF
                     for (MessageObserver observer : observers)
                         observer.bodyChunk(c);
                     return c;
-                } else {
-                    trailer = readTrailer(inputStream);
-
-                    bodyComplete = true;
-
-                    for (MessageObserver observer : observers)
-                        observer.bodyComplete(ChunkedBody.this);
-                    observers.clear();
-
-                    return null;
                 }
+                trailer = readTrailer(inputStream);
+
+                // After the trailer(0 + CRLF + CRLF) is read we mark the body read
+                markAsRead();
+
+                return null;
             }
         };
     }
@@ -202,7 +194,7 @@ public class ChunkedBody extends AbstractBody {
         log.debug("writeNotReadChunked");
         int chunkSize;
         while ((chunkSize = readChunkSize(inputStream)) > 0) {
-            Chunk chunk = new Chunk(ByteUtil.readByteArray(inputStream, chunkSize));
+            Chunk chunk = new Chunk(readByteArray(inputStream, chunkSize));
             out.write(chunk);
             chunks.add(chunk);
             for (MessageObserver observer : observers)
@@ -222,7 +214,7 @@ public class ChunkedBody extends AbstractBody {
         log.debug("writeStreamed");
         int chunkSize;
         while ((chunkSize = readChunkSize(inputStream)) > 0) {
-            Chunk chunk = new Chunk(ByteUtil.readByteArray(inputStream, chunkSize));
+            Chunk chunk = new Chunk(readByteArray(inputStream, chunkSize));
             out.write(chunk);
             for (MessageObserver observer : observers)
                 observer.bodyChunk(chunk);

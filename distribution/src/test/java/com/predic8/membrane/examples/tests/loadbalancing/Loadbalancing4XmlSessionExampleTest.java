@@ -59,7 +59,7 @@ public class Loadbalancing4XmlSessionExampleTest extends DistributionExtractingT
 					addLBNodeViaHTML("http://localhost:9000/admin/", "localhost", 4000);
 					addLBNodeViaHTML("http://localhost:9000/admin/", "localhost", 4001);
 
-					sleep(300); // wait for nodes to come up
+					sleep(200); // wait for nodes to come up
 
 					try(Process2 mvnExec = new Process2.Builder().in(baseDir).executable("mvn exec:java@client").start()) {
 						mvnExec.waitForExit(30000);
