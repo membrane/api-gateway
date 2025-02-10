@@ -17,6 +17,7 @@ import org.junit.jupiter.api.*;
 
 import java.io.*;
 import java.net.*;
+import java.net.URI;
 import java.util.function.*;
 
 import static com.predic8.membrane.core.util.URIUtil.*;
@@ -183,8 +184,17 @@ public class URIUtilTest {
     }
 
     @Test
-    void toFileURIStringSpacheTest() throws URISyntaxException {
+    void toFileURIStringSpaceTest() throws URISyntaxException {
         assertEquals("file:/chip%20clip", toFileURIString(new File("/chip clip")));
     }
 
+    @Test
+    void convertPath2FileURITest() throws URISyntaxException {
+        assertEquals(new URI("file:///foo"), convertPath2FileURI("/foo"));
+        assertEquals(new URI("file:/foo/boo"), convertPath2FileURI("\\foo\\boo"));
+        assertEquals(new URI("file:/foo"), convertPath2FileURI("file:/foo"));
+        assertEquals(new URI("file://foo"), convertPath2FileURI("file://foo"));
+        assertEquals(new URI("file:///foo"), convertPath2FileURI("file:///foo"));
+        assertEquals(new URI("file:/c:/foo/boo"), convertPath2FileURI("c:\\foo\\boo"));
+    }
 }
