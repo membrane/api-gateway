@@ -30,6 +30,9 @@ import static java.nio.charset.StandardCharsets.*;
  * Reads the body with "Transfer-Encoding: chunked".
  * <p>
  * See {@link ChunkedBodyTransferrer} for writing a body using chunks.
+ * <p>
+ * This class internally reads body chunks piece by piece. When accessing the body using streams, not all chunks
+ * might therefore be read immediately.
  */
 @SuppressWarnings("ResultOfMethodCallIgnored")
 public class ChunkedBody extends AbstractBody {

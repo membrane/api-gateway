@@ -403,6 +403,19 @@ public class ChunkedBodyTest {
     }
 
     @Test
+    void readHalfStreamAndThenGetLength() throws IOException {
+        ByteArrayInputStream bis = createBodyWith2ConcatenatedJSONs();
+        ChunkedBody cb = new ChunkedBody(bis);
+        InputStream is = cb.getContentAsStream();
+
+        // Read the first JSON from the body
+        assertEquals(42, om.readTree(is).get("foo").asInt());
+
+        // now assert that everything is actually there
+        assertEquals(26, cb.getLength());
+    }
+
+    @Test
     void readEverythingAndThenStream() throws IOException {
         ByteArrayInputStream bis = createBodyWith2ConcatenatedJSONs();
         ChunkedBody cb = new ChunkedBody(bis);

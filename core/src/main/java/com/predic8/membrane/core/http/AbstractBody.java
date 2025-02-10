@@ -37,6 +37,11 @@ import static java.nio.charset.StandardCharsets.*;
  * message's body), the incoming network stream's buffer is directly written to
  * the output stream. This allows Membrane to perform very well in this
  * situation.
+ * <p>
+ * Repeatedly accessing the body (using streams or not) is supported. Body
+ * Streams do not have to be read completely. Accessing the body from multiple
+ * threads is illegal. Using a Body Stream after the Body as been accessed by
+ * someone else (using streams or not) is illegal.
  */
 public abstract class AbstractBody {
 	private static final Logger log = LoggerFactory.getLogger(AbstractBody.class.getName());
