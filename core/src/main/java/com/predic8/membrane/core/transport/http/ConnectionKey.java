@@ -16,7 +16,7 @@ package com.predic8.membrane.core.transport.http;
 import com.google.common.base.Objects;
 import com.predic8.membrane.core.transport.http.client.ProxyConfiguration;
 import com.predic8.membrane.core.transport.ssl.SSLProvider;
-
+import java.util.Arrays;
 import javax.annotation.Nullable;
 
 public class ConnectionKey {
