@@ -48,7 +48,7 @@ public class ConnectionKey {
 
     @Override
     public int hashCode() {
-        return Objects.hashCode(host, port, sslProvider, serverName, proxy, proxySSLProvider, applicationProtocols);
+        return Objects.hashCode(host, port, sslProvider, serverName, proxy, proxySSLProvider) * Arrays.hashCode(applicationProtocols);
     }
 
     @Override
@@ -62,7 +62,7 @@ public class ConnectionKey {
                 && Objects.equal(serverName, other.serverName)
                 && Objects.equal(proxy, other.proxy)
                 && Objects.equal(proxySSLProvider, other.proxySSLProvider)
-                && Objects.equal(applicationProtocols, other.applicationProtocols);
+                && Arrays.equals(applicationProtocols, other.applicationProtocols);
     }
 
     @Override
