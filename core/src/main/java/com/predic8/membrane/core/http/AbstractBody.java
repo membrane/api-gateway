@@ -41,6 +41,7 @@ import static java.nio.charset.StandardCharsets.*;
 public abstract class AbstractBody {
 	private static final Logger log = LoggerFactory.getLogger(AbstractBody.class.getName());
 
+	// whether the body has been read completely from the wire
 	boolean read;
 
 	protected List<Chunk> chunks = new ArrayList<>();

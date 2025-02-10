@@ -179,15 +179,9 @@ public class ChunkedBody extends AbstractBody {
                 trailer = readTrailer(inputStream);
 
                 // After the trailer(0 + CRLF + CRLF) is read we mark the body read
-                read = true;
-                bodyComplete = true;
-
-                for (MessageObserver observer : observers)
-                    observer.bodyComplete(ChunkedBody.this);
-                observers.clear();
+                markAsRead();
 
                 return null;
-
             }
         };
     }
