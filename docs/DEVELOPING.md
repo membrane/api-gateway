@@ -68,7 +68,7 @@ if you have a Docker Engine available.
 Examples Tests
 ==============
 
-The example tests try to run the service-proxy.sh/bat scripts in the examples folders of a
+The example tests try to run the membrane.sh/bat scripts in the examples folders of a
 distribution build in the target folder. Remember to build after any change otherwise old code
 is tested:
 

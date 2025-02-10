@@ -16,8 +16,8 @@ To run the example execute the following steps:
 
 2. Start Membrane:
 
-`service-proxy.sh` or 
-`service-proxy.ps1`
+`membrane.sh` or 
+`membrane.cmd`
 
 3. Send an order XML document to the API:
 

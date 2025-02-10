@@ -4,9 +4,9 @@
 	Use that configuration if you do not have an internet connection or you are behind a firewall.
 
 	Start Membrane with:
-	./service-proxy.sh -c conf/proxies-offline.xml
+	./membrane.sh -c conf/proxies-offline.xml
 	or
-	service-proxy.ps1 -c conf/proxies-offline.xml
+	membrane.cmd -c conf/proxies-offline.xml
 
 -->
 <spring:beans xmlns="http://membrane-soa.org/proxies/1/"

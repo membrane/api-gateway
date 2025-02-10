@@ -12,7 +12,7 @@ Execute the following steps:
 
 2. Have a look at `proxies.xml`.
 
-2. Open a commandline and execute `service-proxy.sh` or `service-proxy.ps1` 
+2. Open a commandline and execute `membrane.sh` or `membrane.cmd` 
 
 3. Run this command from a second commandline: 
 

@@ -4,7 +4,7 @@ This example demonstrates how to send requests to multiple shadow hosts. A reque
 
 ## Running the Example
 
-1. Run `service-proxy.ps1` or `service-proxy.sh`
+1. Run `membrane.cmd` or `membrane.sh`
 2. Open [localhost:2000](http://localhost:2000) in your browser or use `curl`:
 
       ```                                                                                                    

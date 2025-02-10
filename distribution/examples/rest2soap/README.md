@@ -15,7 +15,7 @@ To run the example execute the following steps:
 
 1. Go to the `examples/rest2soap` directory.
 
-2. Execute `service-proxy.ps1` or `service-proxy.sh`
+2. Execute `membrane.cmd` or `membrane.sh`
 
 3. Open the URL http://localhost:2000/bank/37050198 in your browser.
 

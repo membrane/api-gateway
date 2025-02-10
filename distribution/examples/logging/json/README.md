@@ -11,7 +11,7 @@ To run the example execute the following steps:
 
 1. Go to the `examples/logging-json` directory.
 
-2. Execute `service-proxy.sh`
+2. Execute `membrane.sh`
 
 3. Notice the file `membrane_json.log` that is created in the `logging-json` directory.
 
@@ -24,7 +24,7 @@ To run the example execute the following steps:
 
 The following part describes the example in detail.
 
-Let's take a look at the `service-proxy.sh` file.
+Let's take a look at the `membrane.sh` file.
 
 ```
  java -Dlog4j.configurationFile=$(pwd)/log4j2_json.xml  -Dlog4j.debug=true -classpath "$CLASSPATH" com.predic8.membrane.core.Starter -c proxies.xml

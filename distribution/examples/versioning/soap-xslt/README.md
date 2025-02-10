@@ -17,10 +17,10 @@ In many enterprise environments, services evolve over time, resulting in differe
    Run the following command based on your operating system:
    ```sh
    # For Unix/Mac
-   ./service-proxy.sh
+   ./membrane.sh
    
    # For Windows
-   service-proxy.ps1
+   membrane.cmd
    ```
 
 3. **Send a SOAP Request (New Version)**

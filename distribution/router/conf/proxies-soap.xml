@@ -2,9 +2,9 @@
 	*** Web Services with SOAP and WSDL ***
 
 	Start Membrane with:
-	./service-proxy.sh -c conf/proxies-soap.xml
+	./membrane.sh -c conf/proxies-soap.xml
 	or
-    service-proxy.ps1 -c conf/proxies-soap.xml
+    membrane.cmd -c conf/proxies-soap.xml
 
 -->
 <spring:beans xmlns="http://membrane-soa.org/proxies/1/"

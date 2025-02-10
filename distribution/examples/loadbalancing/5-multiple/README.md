@@ -24,7 +24,7 @@ To run the example execute the following steps:
 
 1. Go to the `examples/loadbalancer-multiple-4` directory.
 
-2. Execute `service-proxy.ps1`
+2. Execute `membrane.cmd`
 
 3. Open the URL http://localhost:8080/service in your browser and repeatedly refresh (F5). Observe that the response alternates
    between Mock Node 1 and 2.

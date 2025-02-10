@@ -14,7 +14,7 @@ Make sure to use Membrane version 5 or newer.
 2. Start Membrane with the script inside this directory:
 
 ```shell
-./service-proxy.sh
+./membrane.sh
 ```
 
 or:

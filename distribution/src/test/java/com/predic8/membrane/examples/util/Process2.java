@@ -75,7 +75,7 @@ public class Process2 implements AutoCloseable {
 			if (id != null)
 				throw new IllegalStateException("executable or script is already set.");
 			id = script;
-			line = isWindows() ? "PowerShell -ExecutionPolicy Bypass -File " + script + ".ps1" : "bash " + script + ".sh";
+			line = isWindows() ? "cmd /c " + script + ".cmd" : "bash " + script + ".sh";
 			return this;
 		}
 

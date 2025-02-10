@@ -11,13 +11,13 @@ Membrane can identify misuse in JSON documents such as duplicate fields, unusual
     **Linux:**
     ```shell
     cd examples/security/json-protection
-    ./service-proxy.sh
+    ./membrane.sh
     ```
 
     **Windows**:
     ```shell
     cd examples/security/json-protection
-    service-proxy.ps1
+    membrane.cmd
     ```
 
 2. Send a message violating the configuration. Depth is set to a maximum of 3.

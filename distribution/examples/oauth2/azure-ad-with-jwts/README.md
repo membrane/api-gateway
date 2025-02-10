@@ -102,7 +102,7 @@ Look at the file ``token.json`` and extract the token (Format should be similar 
 
 3. Replace ``2axxxx16-xxxx-xxxx-xxxx-faxxxxxxxxf0`` by your backend's Application ID URI (see section 1.)
 4. Open a console in the same directory.
-5. Execute ``service-proxy.ps1`` in the console and keep it running.
+5. Execute ``membrane.cmd`` in the console and keep it running.
 
 ## Token Validation
 

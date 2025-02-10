@@ -74,7 +74,7 @@ public class Loadbalancing3ClientExampleTest extends DistributionExtractingTestc
 			assertEquals(3, getRespondingNode("http://localhost:3023/service"));
 		}
 
-		try(Process2 ignored = startServiceProxyScript(null,"service-proxy-secured"); HttpAssertions ha = new HttpAssertions()) {
+		try(Process2 ignored = startServiceProxyScript(null,"membrane-secured"); HttpAssertions ha = new HttpAssertions()) {
 			controlNodeViaScript(1, baseDir, "up", "localhost", 4000); // 1 indicates failure
 
 			File propFile = new File(baseDir, "client.properties");

@@ -6,7 +6,7 @@ Convert scoped API keys to JWTs dynamically with customizable payload.
 ***Note:*** *The requests are also available in the requests.http file.*
 
 1. **Navigate** to the `examples/security/jwt/apikey-to-jwt-conversion` directory.
-2. **Start** the API Gateway by executing `service-proxy.sh` (Linux/Mac) or `service-proxy.ps1` (Windows).
+2. **Start** the API Gateway by executing `membrane.sh` (Linux/Mac) or `membrane.cmd` (Windows).
 3. **Fetch JWT**:
    ```
    curl http://localhost:2000 -H "X-Api-Key: 123456789"

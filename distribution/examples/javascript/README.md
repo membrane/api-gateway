@@ -8,7 +8,7 @@ JavaScript is a powerful tool for manipulating messages and customizing the beha
 
 1. Review the [proxies.xml](proxies.xml) file to see how the APIs are configured with the `javascript` plugin.
 2. Open a command-line session or terminal.
-3. Run `service-proxy.ps1` (Windows) or `./service-proxy.sh` (Linux/Mac) in this folder.
+3. Run `membrane.cmd` (Windows) or `./membrane.sh` (Linux/Mac) in this folder.
 4. Open a second terminal and execute the following commands:
 
 ### Create JSON with JavaScript
@@ -53,7 +53,7 @@ curl http://localhost:2020 -v
 Greatings from Javascript       
 ```
 
-The response should include an `X-Javascript` header. Additionally, the console output of `service-proxy.sh` or `service-proxy.ps1` will display the request header fields logged by the script:
+The response should include an `X-Javascript` header. Additionally, the console output of `membrane.sh` or `membrane.cmd` will display the request header fields logged by the script:
 
 ```
 Request headers:
