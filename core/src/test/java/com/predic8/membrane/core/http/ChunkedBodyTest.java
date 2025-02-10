@@ -78,6 +78,11 @@ public class ChunkedBodyTest {
                         cont = cont.replaceAll("\n", "").replaceAll("\r", "").replaceAll("\\\\n", "\n").replaceAll("\\\\r", "\r");
                         s.getOutputStream().write(cont.getBytes(US_ASCII));
                         s.getOutputStream().flush();
+                        try {
+                            Thread.sleep(100); // a TCP close may outpace the TCP data paket elsewise
+                        } catch (InterruptedException e) {
+                            Thread.currentThread().interrupt();
+                        }
                     }
                 } catch (IOException e) {
                     e.printStackTrace();
@@ -92,6 +97,8 @@ public class ChunkedBodyTest {
             e.getResponse().getBodyAsStringDecoded(); // read body
 
             assertEquals("Mon, 12 Dec 2022 09:28:00 GMT", e.getResponse().getBody().getTrailer().getFirstValue("Expires"));
+
+            t.interrupt();
         }
     }
 
@@ -311,6 +318,29 @@ public class ChunkedBodyTest {
         assertTrue(cb.read);
     }
 
+    @Test
+    void readStreamRepeatedly() throws IOException {
+        ByteArrayInputStream bis = getJSONBodyWithSingleChunk();
+        ChunkedBody cb = new ChunkedBody(bis);
+
+        // Read the JSON from the body
+        assertEquals(42, om.readTree(cb.getContentAsStream()).get("foo").asInt());
+
+        // Re-Read JSON from the body (both reads will leave the final end-chunk unread)
+        assertEquals(42, om.readTree(cb.getContentAsStream()).get("foo").asInt());
+
+        if(!(cb.getContentAsStream() instanceof BodyInputStream bodyIs)) {
+            fail();
+            return;
+        }
+
+        // Try to read next chunk which does not exist. Now chunk trailer should be read
+        assertNull(bodyIs.readNextChunk());
+
+        // Message is now completely read
+        assertTrue(cb.read);
+    }
+
     private static @NotNull ByteArrayInputStream getJSONBodyWithSingleChunk() {
         return new ByteArrayInputStream(chunks().add("""
                 { "foo": 42 }""").build());
@@ -333,25 +363,16 @@ public class ChunkedBodyTest {
     }
 
     @Test
-    void readStream2() throws IOException {
-        ByteArrayInputStream bis = new ByteArrayInputStream(chunks().add("""
-                { "foo": 42 }""").add("""
-                { "foo": 43 }""").build());
+    void readStreamWith2ConcatenatedJSON() throws IOException {
+        ByteArrayInputStream bis = createBodyWith2ConcatenatedJSONs();
         ChunkedBody cb = new ChunkedBody(bis);
         InputStream is = cb.getContentAsStream();
 
-
-        // Read the complete JSON from the body
+        // Read the first JSON from the body
         assertEquals(42, om.readTree(is).get("foo").asInt());
 
-        // But 0 + CRLF + CRLF is still not read from stream
-        assertEquals(23, bis.available());
-
-        // No data is available that means no more chunks, but the input stream is still not read completely
-        assertEquals(0, is.available());
-
-        //  0 + CRLF + CRLF is not read yet
-        assertFalse(cb.read);
+        // Read the second JSON from the body
+        assertEquals(43, om.readTree(is).get("foo").asInt());
 
         if(!(is instanceof BodyInputStream bodyIs)) {
             fail();
@@ -363,8 +384,48 @@ public class ChunkedBodyTest {
 
         // Message is now completely read
         assertTrue(cb.read);
-
-
-        cb.read();
     }
+
+    @Test
+    void readHalfStreamAndThenTheRest() throws IOException {
+        ByteArrayInputStream bis = createBodyWith2ConcatenatedJSONs();
+        ChunkedBody cb = new ChunkedBody(bis);
+        InputStream is = cb.getContentAsStream();
+
+        // Read the first JSON from the body
+        assertEquals(42, om.readTree(is).get("foo").asInt());
+
+        // now switch to read() which reads everything which is left
+        cb.read();
+
+        // now assert that everything is actually there
+        assertEquals(26, cb.getContent().length);
+    }
+
+    @Test
+    void readEverythingAndThenStream() throws IOException {
+        ByteArrayInputStream bis = createBodyWith2ConcatenatedJSONs();
+        ChunkedBody cb = new ChunkedBody(bis);
+
+        // read() everything
+        cb.read();
+
+        // assert that everything is actually there
+        assertEquals(26, cb.getContent().length);
+
+        InputStream is = cb.getContentAsStream();
+        // Read the first JSON from the body
+        assertEquals(42, om.readTree(is).get("foo").asInt());
+        // Read the second JSON from the body
+        assertEquals(43, om.readTree(is).get("foo").asInt());
+        // now the end of stream has been reached
+        assertEquals(-1, is.read());
+    }
+
+    private static @NotNull ByteArrayInputStream createBodyWith2ConcatenatedJSONs() {
+        return new ByteArrayInputStream(chunks().add("""
+                { "foo": 42 }""").add("""
+                { "foo": 43 }""").build());
+    }
+
 }
