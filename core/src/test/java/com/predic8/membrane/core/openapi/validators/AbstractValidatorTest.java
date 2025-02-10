@@ -19,19 +19,14 @@ package com.predic8.membrane.core.openapi.validators;
 import com.fasterxml.jackson.databind.*;
 import com.predic8.membrane.core.openapi.*;
 import com.predic8.membrane.core.openapi.serviceproxy.*;
-import com.predic8.membrane.core.openapi.util.*;
 import com.predic8.membrane.core.util.*;
-import io.swagger.parser.*;
-import io.swagger.v3.oas.models.*;
 import org.junit.jupiter.api.*;
 
 import java.io.*;
-import java.net.*;
-import java.util.HashMap;
+import java.util.*;
 
 import static com.predic8.membrane.core.openapi.serviceproxy.APIProxy.*;
-import static com.predic8.membrane.core.openapi.util.TestUtils.parseOpenAPI;
-import static com.predic8.membrane.core.util.FileUtil.readInputStream;
+import static com.predic8.membrane.core.openapi.util.TestUtils.*;
 
 public abstract class AbstractValidatorTest {
 
@@ -40,9 +35,8 @@ public abstract class AbstractValidatorTest {
     protected OpenAPIValidator validator;
 
     @BeforeEach
-    void setUp() throws URISyntaxException {
-
-        validator = new OpenAPIValidator(new URIFactory(), new OpenAPIRecord(parseOpenAPI(getResourceAsStream(getOpenAPIFileName())),null,new OpenAPISpec()));
+    void setUp() throws Exception {
+        validator = new OpenAPIValidator(new URIFactory(), new OpenAPIRecord(parseOpenAPI(getResourceAsStream(getOpenAPIFileName())),new OpenAPISpec()));
         validator.getApi().setExtensions(new HashMap<>() {{
             put(X_MEMBRANE_VALIDATION, new HashMap<>() {{
                 put(SECURITY, true);

@@ -23,6 +23,7 @@ import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.*;
 import org.junit.jupiter.params.provider.*;
 
+import java.io.*;
 import java.util.stream.*;
 
 import static com.predic8.membrane.core.http.MimeType.*;
@@ -34,8 +35,8 @@ public class MultipleTypesNestedTest {
     OpenAPIValidator validator;
 
     @BeforeEach
-    void setUp() {
-        OpenAPIRecord apiRecord = new OpenAPIRecord(parseOpenAPI(getResourceAsStream(this, "/openapi/specs/oas31/multiple-types-nested.yaml")), null, new OpenAPISpec());
+    void setUp() throws IOException {
+        OpenAPIRecord apiRecord = new OpenAPIRecord(parseOpenAPI(getResourceAsStream(this, "/openapi/specs/oas31/multiple-types-nested.yaml")), new OpenAPISpec());
         validator = new OpenAPIValidator(new URIFactory(), apiRecord);
     }
 

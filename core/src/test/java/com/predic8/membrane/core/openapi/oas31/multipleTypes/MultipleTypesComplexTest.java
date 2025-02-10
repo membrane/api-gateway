@@ -23,6 +23,7 @@ import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.*;
 import org.junit.jupiter.params.provider.*;
 
+import java.io.*;
 import java.util.stream.*;
 
 import static com.predic8.membrane.core.http.MimeType.*;
@@ -34,9 +35,9 @@ public class MultipleTypesComplexTest {
     OpenAPIValidator validator;
 
     @BeforeEach
-    void setUp() {
+    void setUp() throws IOException {
         validator = new OpenAPIValidator(new URIFactory(),
-                new OpenAPIRecord(parseOpenAPI(getResourceAsStream(this, "/openapi/specs/oas31/multiple-types-complex.yaml")), null, new OpenAPISpec()));
+                new OpenAPIRecord(parseOpenAPI(getResourceAsStream(this, "/openapi/specs/oas31/multiple-types-complex.yaml")), new OpenAPISpec()));
     }
 
     static Stream<Arguments> requestBodyProvider() {

@@ -13,20 +13,17 @@
    limitations under the License. */
 package com.predic8.membrane.core.openapi.validators;
 
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Header;
-import com.predic8.membrane.core.http.Request;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.*;
 import org.junit.jupiter.api.*;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.Arguments;
-import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.*;
+import org.junit.jupiter.params.provider.*;
 
-import java.net.*;
-import java.util.stream.Stream;
+import java.util.stream.*;
 
-import static com.predic8.membrane.core.openapi.util.Utils.getOpenapiValidatorRequest;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.params.provider.Arguments.arguments;
+import static com.predic8.membrane.core.openapi.util.Utils.*;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.params.provider.Arguments.*;
 
 class HeaderParameterTest extends AbstractValidatorTest {
 
@@ -39,7 +36,7 @@ class HeaderParameterTest extends AbstractValidatorTest {
     }
 
     @BeforeEach
-    public void setUp() throws URISyntaxException {
+    public void setUp() throws Exception {
         request = Request.get("/cities").build();
         exc.setOriginalRequestUri("/cities");
         super.setUp();
