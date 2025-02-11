@@ -36,9 +36,7 @@ mongosh --eval "use('apiKeyDB'); db.apikey.insertMany([
    ```xml
     <api port="2000">
         <apiKey>
-            <mongoDBApiKeyStore connectionString="yourConnectionString" databaseName="apiKeyDB">
-                <keyCollection>apikey</keyCollection>
-            </mongoDBApiKeyStore>
+            <mongoDBApiKeyStore connection="yourConnection" database="apiKeyDB" collection="apikey" />
             <headerExtractor/>
         </apiKey>
         <target url="https://api.predic8.de"/>

@@ -18,29 +18,29 @@ import static com.mongodb.client.model.Filters.eq;
 @MCElement(name = "mongoDBApiKeyStore", topLevel = false)
 public class MongoDBApiKeyStore implements ApiKeyStore {
 
-    private String connectionString;
-    private String databaseName;
-    private KeyCollection keyCollection;
+    private String connection;
+    private String database;
+    private String collection;
 
     private MongoClient mongoClient;
-    private MongoDatabase database;
+    private MongoDatabase mongoDatabase;
 
     @Override
     public void init(Router router) {
         try {
-            mongoClient = MongoClients.create(connectionString);
-            database = mongoClient.getDatabase(databaseName);
+            mongoClient = MongoClients.create(connection);
+            mongoDatabase = mongoClient.getDatabase(database);
         } catch (Exception e) {
             throw new ConfigurationException("""
                             Failed to initialize MongoDB connection.
                             Please check the connection string: %s
-                    """.formatted(connectionString), e);
+                    """.formatted(connection), e);
         }
     }
 
     @Override
     public Optional<List<String>> getScopes(String apiKey) throws UnauthorizedApiKeyException {
-        Document apiKeyDoc = database.getCollection(keyCollection.getName()).find(eq("_id", apiKey)).first();
+        Document apiKeyDoc = mongoDatabase.getCollection(collection).find(eq("_id", apiKey)).first();
 
         if (apiKeyDoc == null) {
             throw new UnauthorizedApiKeyException();
@@ -50,29 +50,29 @@ public class MongoDBApiKeyStore implements ApiKeyStore {
     }
 
     @MCAttribute()
-    public void setConnectionString(String connectionString) {
-        this.connectionString = connectionString;
+    public void setConnection(String connection) {
+        this.connection = connection;
     }
 
     @MCAttribute()
-    public void setDatabaseName(String databaseName) {
-        this.databaseName = databaseName;
+    public void setDatabase(String database) {
+        this.database = database;
     }
 
-    @MCChildElement(order = 0)
-    public void setKeyCollection(KeyCollection keyCollection) {
-        this.keyCollection = keyCollection;
+    @MCAttribute()
+    public void setCollection(String collection) {
+        this.collection = collection;
     }
 
-    public String getConnectionString() {
-        return connectionString;
+    public String getConnection() {
+        return connection;
     }
 
-    public String getDatabaseName() {
-        return databaseName;
+    public String getDatabase() {
+        return database;
     }
 
-    public String getKeyCollection() {
-        return keyCollection.getName();
+    public String getCollection() {
+        return collection;
     }
 }
