@@ -7,7 +7,7 @@
     <router>
         <api port="2000">
             <apiKey>
-                <mongoDBApiKeyStore connection="yourConnection" database="apiKeyDB" collection="apikey" />
+                <mongoDBApiKeyStore connection="mongodb://localhost:27017/" database="apiKeyDB" collection="apikey" />
                 <headerExtractor />
             </apiKey>
             <target url="https://api.predic8.de"/>
