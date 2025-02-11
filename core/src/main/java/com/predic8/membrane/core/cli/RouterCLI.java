@@ -18,7 +18,6 @@ import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.openapi.serviceproxy.*;
 import com.predic8.membrane.core.resolver.*;
-import com.predic8.membrane.core.util.ExceptionUtil;
 import org.apache.commons.cli.*;
 import org.jetbrains.annotations.*;
 import org.slf4j.*;
@@ -30,9 +29,9 @@ import java.util.*;
 import static com.predic8.membrane.core.Constants.*;
 import static com.predic8.membrane.core.config.spring.TrackingFileSystemXmlApplicationContext.*;
 import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPISpec.YesNoOpenAPIOption.*;
-import static com.predic8.membrane.core.util.ExceptionUtil.concatMessageAndCauseMessages;
+import static com.predic8.membrane.core.util.ExceptionUtil.*;
 import static com.predic8.membrane.core.util.OSUtil.*;
-import static com.predic8.membrane.core.util.URIUtil.pathFromFileURI;
+import static com.predic8.membrane.core.util.URIUtil.*;
 import static java.lang.Integer.*;
 
 public class RouterCLI {
@@ -103,7 +102,7 @@ public class RouterCLI {
 
     private static Router initRouterByConfig(MembraneCommandLine commandLine) throws Exception {
         try {
-            return Router.init(getRulesFile(commandLine), RouterCLI.class.getClassLoader());
+            return Router.init(getRulesFile(commandLine));
         } catch (XmlBeanDefinitionStoreException e) {
             handleXmlBeanDefinitionStoreException(e);
         }
@@ -179,10 +178,9 @@ public class RouterCLI {
             log.error("Could not resolve path to configuration (attempt 1).", e);
         }
 
-        String membraneHome = System.getenv(MEMBRANE_HOME);
         String try2 = null;
-        if (membraneHome != null) {
-            try2 = pathFromFileURI(ResolverMap.combine(prefix(membraneHome), relativeFile));
+        if (System.getenv(MEMBRANE_HOME) != null) {
+            try2 = pathFromFileURI(ResolverMap.combine(prefix(System.getenv(MEMBRANE_HOME)), relativeFile));
             try(InputStream ignored =  rm.resolve(try2)) {
                 return try2;
             } catch (Exception e) {

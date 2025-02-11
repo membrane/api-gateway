@@ -14,6 +14,7 @@
 
 package com.predic8.membrane.core.config.spring;
 
+import org.jetbrains.annotations.*;
 import org.slf4j.*;
 import org.springframework.beans.*;
 import org.springframework.beans.factory.support.*;
@@ -51,13 +52,17 @@ TrackingApplicationContext, BaseLocationApplicationContext, CheckableBeanFactory
 
 	@Override
 	public Resource getResource(String location) {
-		final Resource r = super.getResource(location);
-		try {
-			files.add(r.getFile());
-		} catch (IOException e) {
-			log.debug("",e);
-		}
-		return new Resource() {
+
+		Resource r = string2Resource(location);
+
+        try {
+            files.add(r.getFile());
+        } catch (IOException e) {
+			log.error("Cloud not init from {}.", e);
+            throw new RuntimeException("Cloud not init from %s".formatted(location) ,e);
+        }
+
+        return new Resource() {
 			final Resource r2 = r;
 
 			public boolean exists() {
@@ -115,6 +120,35 @@ TrackingApplicationContext, BaseLocationApplicationContext, CheckableBeanFactory
 				return r2.toString();
 			}
 		};
+	}
+
+	/**
+	 *
+	 * @param location String like /foo, file:/foo, classpath:/foo
+	 * @return Resource Spring Resource
+	 */
+	private @NotNull Resource string2Resource(String location) {
+		if (location.startsWith("/")) {
+			return new FileSystemResource(location);
+		}
+		if (location.startsWith("classpath:")) {
+			return new ClassPathResource(location.substring("classpath:".length()));
+		}
+		if (location.startsWith("file:")) {
+            try {
+                return new FileUrlResource(location);
+            } catch (MalformedURLException e) {
+				log.error("Failed to resolve file {}. Trying something else.",location, e);
+            }
+        }
+		if (location.startsWith("file:") || location.startsWith("http:") || location.startsWith("https:")) {
+            try {
+                return new UrlResource(location);
+            } catch (MalformedURLException e) {
+				log.error("Failed to resolve file {}. Trying something else.",location, e);
+            }
+        }
+		return super.getResource(location);
 	}
 
 	public List<File> getFiles() {
