@@ -237,7 +237,7 @@ public class TemplateInterceptorTest {
                   "age" : 30
                 }""";
         String result = ti.prettifyJson(inputJson);
-        assertEquals(expectedPrettyJson, result);
+        assertEquals(expectedPrettyJson, result); // TODO om
     }
 
     @Test

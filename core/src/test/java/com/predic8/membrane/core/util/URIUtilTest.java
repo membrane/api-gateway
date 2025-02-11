@@ -179,8 +179,14 @@ public class URIUtilTest {
 
     @Test
     void toFileURIStringTest() throws URISyntaxException {
-        assertEquals("file:/swig/jig", toFileURIString(new File("/swig/jig")));
+        assertEquals(wl("file:/C:/swig/jig","file:/swig/jig"), toFileURIString(new File("/swig/jig")));
         assertEquals("file:/jag%20sag/runt", toFileURIString(new File("/jag sag/runt")));
+    }
+
+    String wl(String windows, String linux) {
+        if (OSUtil.isWindows())
+            return windows;
+        return linux;
     }
 
     @Test

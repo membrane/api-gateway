@@ -81,8 +81,9 @@ public class ResolverMap implements Cloneable, Resolver {
         if (relativeChild.contains(":/") || relativeChild.contains(":\\") || parent == null || parent.isEmpty())
             return relativeChild;
         if (parent.startsWith("file://")) {
-            if (relativeChild.startsWith("\\") || relativeChild.startsWith("/"))
-                return "file://" + new File(relativeChild).getAbsolutePath();
+            if (relativeChild.startsWith("\\") || relativeChild.startsWith("/")) {
+                return  convertPath2FilePathString( new File(relativeChild).getAbsolutePath());
+            }
             File parentFile = new File(pathFromFileURI(parent));
             if (!parent.endsWith("/") && !parent.endsWith("\\"))
                 parentFile = parentFile.getParentFile();
@@ -95,6 +96,8 @@ public class ResolverMap implements Cloneable, Resolver {
         if (parent.contains(":/")) {
             try {
                 if (parent.startsWith("http"))
+                    return new URI(parent).resolve(prepare4Uri(relativeChild)).toString();
+                if (parent.startsWith("classpath:"))
                     return new URI(parent).resolve(prepare4Uri(relativeChild)).toString();
                 return convertPath2FileURI(parent).resolve(prepare4Uri(relativeChild)).toString();
             } catch (Exception e) {

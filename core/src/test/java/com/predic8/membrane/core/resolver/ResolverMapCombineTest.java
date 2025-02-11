@@ -13,6 +13,7 @@
    limitations under the License. */
 package com.predic8.membrane.core.resolver;
 
+import com.predic8.membrane.core.util.OSUtil;
 import org.junit.jupiter.api.*;
 
 import java.io.File;
@@ -52,7 +53,14 @@ public class ResolverMapCombineTest {
 
     @Test
     void relativeWithSpacePlusFile() {
-        assertEquals(current + "/a b/e", combine("a b/c d","e"));
+        assertEquals(current + wl("\\a b\\e","/a b/e"), combine("a b/c d","e"));
+    }
+
+    // OSUtil
+    String wl(String windows, String linux) {
+        if (OSUtil.isWindows())
+            return windows;
+        return linux;
     }
 
     // File paths
@@ -134,12 +142,18 @@ public class ResolverMapCombineTest {
 
     @Test
     void combineRelativeParentWithRelativeChild() {
-        assertEquals(current + "/src/test/resources/openapi/specs/array.yml", combine("src/test/resources/openapi/specs/", "array.yml"));
+        assertEquals(wl(
+                current + "\\src\\test\\resources\\openapi\\specs\\array.yml",
+                current + "/src/test/resources/openapi/specs/array.yml"
+                ), combine("src/test/resources/openapi/specs/", "array.yml"));
     }
 
     @Test
     void combineRelativeParentWithRelativeChildParentDoesNotEndWithSlash() {
-        assertEquals(current + "/src/test/resources/openapi/specs/array.yml", combine("src/test/resources/openapi/specs/foo", "array.yml"));
+        assertEquals(wl(
+                current + "\\src\\test\\resources\\openapi\\specs\\array.yml",
+                current + "/src/test/resources/openapi/specs/array.yml"
+                ), combine("src/test/resources/openapi/specs/foo", "array.yml"));
     }
 
     @Test
@@ -151,7 +165,10 @@ public class ResolverMapCombineTest {
 
     @Test
     void relativeWithSlashPlusFileWithSpace() {
-        assertEquals(current + "/a/chi cha/cock lock", combine("a/chi cha/","cock lock"));
+        assertEquals(wl(
+                current + "\\a\\chi cha\\cock lock",
+                current + "/a/chi cha/cock lock"
+                ), combine("a/chi cha/","cock lock"));
     }
 
     @Test
@@ -166,7 +183,10 @@ public class ResolverMapCombineTest {
 
     @Test
     void pathPlusPathSpace() {
-        assertEquals(current + "/chi cha/cock lock", combine("chi cha/cock","cock lock"));
+        assertEquals(wl(
+                current + "\\chi cha\\cock lock",
+                current + "/chi cha/cock lock"
+                ), combine("chi cha/cock","cock lock"));
     }
 
     @Test
