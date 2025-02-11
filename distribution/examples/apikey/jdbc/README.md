@@ -6,8 +6,8 @@ A quick guide to setting up a JDBC-based API key store using PostgreSQL.
 
 - **Docker installed:**
 
-    - If Docker us already installed, skip to the next step.
-    - Otherwise, install Docker from [https://docs.docker.com/get-started/get-docker/](Get Docker).
+    - If Docker is already installed, skip to the next step.
+    - Otherwise, install Docker from [https://docs.docker.com/get-started/get-docker/](https://docs.docker.com/get-started/get-docker/).
 
 ---
 
@@ -56,7 +56,7 @@ A quick guide to setting up a JDBC-based API key store using PostgreSQL.
 ./membrane.sh
 ```
 
-5. **Run SQL File in your Docker Container**
+5. **Run SQL File in your Docker Container:**
 
 - Run this command:
 
