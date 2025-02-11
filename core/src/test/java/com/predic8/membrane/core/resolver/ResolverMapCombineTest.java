@@ -15,6 +15,7 @@ package com.predic8.membrane.core.resolver;
 
 import org.junit.jupiter.api.*;
 
+import java.io.File;
 import java.nio.file.*;
 import java.security.*;
 
@@ -46,7 +47,7 @@ public class ResolverMapCombineTest {
 
     @Test
     void relativeWithSlashPlusFile() {
-        assertEquals(current + "/a/b/c", combine("a/b/","c"));
+        assertEquals(current + "/a/b/c".replaceAll("/", "\\\\"), combine("a/b/","c"));
     }
 
     @Test

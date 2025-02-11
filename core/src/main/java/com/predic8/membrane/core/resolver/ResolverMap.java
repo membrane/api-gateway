@@ -94,7 +94,9 @@ public class ResolverMap implements Cloneable, Resolver {
         }
         if (parent.contains(":/")) {
             try {
-                return new URI(parent).resolve(prepare4Uri(relativeChild)).toString();
+                if (parent.startsWith("http"))
+                    return new URI(parent).resolve(prepare4Uri(relativeChild)).toString();
+                return convertPath2FileURI(parent).resolve(prepare4Uri(relativeChild)).toString();
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
@@ -119,6 +121,7 @@ public class ResolverMap implements Cloneable, Resolver {
 
     /**
      * Prepares a path string to be used to construct a URI
+     *
      * @param path
      * @return
      */
@@ -128,7 +131,7 @@ public class ResolverMap implements Cloneable, Resolver {
         return path;
     }
 
-   protected static @NotNull String keepTrailingSlash(File parentFile, String relativeChild) throws URISyntaxException {
+    protected static @NotNull String keepTrailingSlash(File parentFile, String relativeChild) throws URISyntaxException {
         String res = toFileURIString(new File(parentFile, relativeChild));
         if (endsWithSlash(relativeChild))
             return res + "/";

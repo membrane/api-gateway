@@ -185,8 +185,12 @@ public class URIUtilTest {
 
     @Test
     void toFileURIStringSpaceTest() throws URISyntaxException {
-        assertEquals("file:/chip%20clip", toFileURIString(new File("/chip clip")));
+        assertEquals(os("file:/chip%20clip"), toFileURIString(new File("/chip clip")));
     }
+
+     static String os(String s) {
+        return s.formatted("C:/");
+     }
 
     @Test
     void convertPath2FileURITest() throws URISyntaxException {
