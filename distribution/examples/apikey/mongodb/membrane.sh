@@ -6,7 +6,7 @@ start() {
     membrane_home="$1"
     export CLASSPATH="$membrane_home/conf:$membrane_home/lib/*"
     echo "Starting: $membrane_home CL: $CLASSPATH"
-    java -cp "$CLASSPATH" com.predic8.membrane.core.cli.RouterCLI -c lb-client-secured.proxies.xml
+    java -cp "$CLASSPATH" com.predic8.membrane.core.cli.RouterCLI -c proxies.xml
 }
 
 find_membrane_directory() {
