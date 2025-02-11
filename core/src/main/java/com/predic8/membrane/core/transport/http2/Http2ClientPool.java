@@ -47,7 +47,7 @@ public class Http2ClientPool {
     }
 
     public Http2Client reserveStream(String host, int port, SSLProvider sslProvider, String sniServerName, ProxyConfiguration proxy, SSLContext proxySSLContext) {
-        ConnectionKey key = new ConnectionKey(host, port, sslProvider, sniServerName, proxy, proxySSLContext, null);
+        ConnectionKey key = new ConnectionKey(host, port, sslProvider, sniServerName, proxy, proxySSLContext);
         synchronized(availableConnections) {
             ArrayList<Http2Client> http2Clients = availableConnections.get(key);
             if (http2Clients == null)
@@ -61,7 +61,7 @@ public class Http2ClientPool {
     }
 
     public void share(String host, int port, SSLProvider sslProvider, String sniServerName, ProxyConfiguration proxy, SSLContext proxySSLContext, Http2Client h2c) {
-        ConnectionKey key = new ConnectionKey(host, port, sslProvider, sniServerName, proxy, proxySSLContext, null);
+        ConnectionKey key = new ConnectionKey(host, port, sslProvider, sniServerName, proxy, proxySSLContext);
         synchronized(availableConnections) {
             ArrayList<Http2Client> http2Clients = availableConnections.computeIfAbsent(key, k -> new ArrayList<>());
             http2Clients.add(h2c);
