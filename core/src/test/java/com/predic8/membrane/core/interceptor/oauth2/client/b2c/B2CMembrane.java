@@ -64,10 +64,11 @@ public class B2CMembrane {
 
     public void init() {
         oauth2Resource = new HttpRouter();
+        oauth2Resource.getTransport().setConcurrentConnectionLimitPerIp(10000);
         oauth2Resource.getTransport().setBacklog(10000);
         oauth2Resource.getTransport().setSocketTimeout(10000);
         oauth2Resource.setHotDeploy(false);
-        oauth2Resource.getTransport().setConcurrentConnectionLimitPerIp(tc.limit);
+        oauth2Resource.getTransport().setConcurrentConnectionLimitPerIp(tc.limit * 100);
 
         ServiceProxy sp1_oauth2resource2 = createOAuth2Resource2ServiceProxy();
         ServiceProxy sp2_flowInitiator_logoutBeforeFlow = createFlowInitiatorServiceProxy("/pe/", tc.peFlowId, true);

@@ -440,16 +440,8 @@ public class StaticSSLContext extends SSLContext {
     }
 
     private void setApplicationProtocols(@NotNull SSLSocket ssls, @NotNull String[] applicationProtocols) {
-        if (setApplicationProtocols == null || getApplicationProtocols == null) {
-            log.debug("Could not call setApplicationProtocols(), as method is not available. We will not be using ALPN.");
-            return;
-        }
         SSLParameters sslp = ssls.getSSLParameters();
-        try {
-            setApplicationProtocols.invoke(sslp, new Object[] { applicationProtocols });
-        } catch (IllegalAccessException | InvocationTargetException e) {
-            throw new RuntimeException(e);
-        }
+        sslp.setApplicationProtocols(applicationProtocols);
         ssls.setSSLParameters(sslp);
     }
 

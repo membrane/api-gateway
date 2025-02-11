@@ -46,16 +46,6 @@ import java.util.*;
 public abstract class SSLContext implements SSLProvider {
     private static final Logger log = LoggerFactory.getLogger(SSLContext.class.getName());
 
-    protected static Method getApplicationProtocols, setApplicationProtocols;
-
-    static {
-        try {
-            getApplicationProtocols = SSLParameters.class.getDeclaredMethod("getApplicationProtocols");
-            setApplicationProtocols = SSLParameters.class.getDeclaredMethod("setApplicationProtocols", String[].class);
-        } catch (NoSuchMethodException e) {
-        }
-    }
-
     protected String[] ciphers;
     protected String[] protocols;
     protected boolean wantClientAuth, needClientAuth;
@@ -297,13 +287,7 @@ public abstract class SSLContext implements SSLProvider {
     public String[] getApplicationProtocols(Socket socket) {
         if (!(socket instanceof SSLSocket))
             return null;
-        if (setApplicationProtocols == null || getApplicationProtocols == null)
-            return null;
-        try {
-            return (String[]) getApplicationProtocols.invoke(((SSLSocket) socket).getSSLParameters(), new Object[0]);
-        } catch (IllegalAccessException | InvocationTargetException e) {
-            throw new RuntimeException(e);
-        }
+        return ((SSLSocket)socket).getSSLParameters().getApplicationProtocols();
     }
 
     protected void checkKeyMatchesCert(Key key, List<Certificate> certs) {
