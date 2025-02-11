@@ -1,4 +1,4 @@
-/* Copyright 2009, 2012 predic8 GmbH, www.predic8.com
+   /* Copyright 2009, 2012 predic8 GmbH, www.predic8.com
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -80,11 +80,12 @@ public class HttpClient implements AutoCloseable {
 	 */
 //	private HttpClientStatusEventBus httpClientStatusEventBus = HttpClientStatusEventBus.getService();
 
-	private static final String[] HTTP2_PROTOCOLS = new String[] { "h2" };
-
-	public HttpClient() {
-		this(null, null);
-	}
+    private static final String[] HTTP2_PROTOCOLS = new String[]{"h2"};
+    private static final String[] HTTP1_PROTOCOLS = new String[]{"http/1.1"};
+   
+    public HttpClient() {
+        this(null, null);
+    }
 
 	public HttpClient(@Nullable HttpClientConfiguration configuration) {
 		this(configuration, null);
@@ -375,13 +376,6 @@ public class HttpClient implements AutoCloseable {
 		return false;
 	}
 
-	private String[] getApplicationProtocols() {
-		if (useHttp2) {
-			return HTTP2_PROTOCOLS;
-		}
-		return null;
-	}
-
 	private String upgradeProtocol(Exchange exc, Response response, String newProtocol) {
 		if (exc.getProperty(ALLOW_WEBSOCKET) == TRUE && isUpgradeToResponse(response, "websocket")) {
 			log.debug("Upgrading to WebSocket protocol.");
@@ -398,6 +392,13 @@ public class HttpClient implements AutoCloseable {
 		}
 		return newProtocol;
 	}
+
+    private String[] getApplicationProtocols() {
+        if (useHttp2) {
+            return HTTP2_PROTOCOLS;
+        }
+        return HTTP1_PROTOCOLS;
+    }
 
 	private String getSNIServerName(Exchange exc) {
 		Object sniObject = exc.getProperty(SNI_SERVER_NAME);
