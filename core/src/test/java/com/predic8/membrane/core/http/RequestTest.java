@@ -68,7 +68,7 @@ public class RequestTest {
 	}
 	
 	@Test
-	void parseStartLineChunked() throws IOException, EndOfStreamException {
+	void parseStartLineChunked() throws IOException {
 		reqChunked.parseStartLine(inChunked);
 		assertTrue(reqChunked.isPOSTRequest());
 		assertEquals("/axis2/services/BLZService", reqChunked.getUri());
@@ -200,6 +200,7 @@ public class RequestTest {
 		AbstractBody originalBody = readMessageAndGetBody();
 		reqPost.setBodyContent("ABC".getBytes(UTF_8));
 		assertTrue(originalBody.isRead()); // Assert that the original body is read
+		assertEquals(0,inPost.available()); // Check that all bytes are read from the stream
 	}
 
 	private AbstractBody readMessageAndGetBody() throws IOException, EndOfStreamException {

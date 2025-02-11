@@ -15,11 +15,11 @@
 
 package com.predic8.membrane.core.util;
 
-import com.predic8.membrane.core.*;
 import org.junit.jupiter.api.*;
 
 import java.io.*;
 
+import static com.predic8.membrane.core.Constants.*;
 import static com.predic8.membrane.core.util.ByteUtil.*;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -27,12 +27,12 @@ public class ByteUtilTest {
 
 	private static final String message1 = "This is a test message";
 
-	private static final String message2 = "This is a test message with carriage return and linefeed " + Constants.CRLF;
+	private static final String message2 = "This is a test message with carriage return and linefeed " + CRLF;
 
 	private InputStream in1, in2;
 
 	@BeforeEach
-	public void setUp() throws Exception {
+	public void setUp() {
 		in1 = new ByteArrayInputStream(message1.getBytes());
 		in2 = new ByteArrayInputStream(message2.getBytes());
 	}
