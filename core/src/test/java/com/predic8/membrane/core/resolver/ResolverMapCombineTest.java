@@ -21,6 +21,7 @@ import java.nio.file.*;
 import java.security.*;
 
 import static com.predic8.membrane.core.resolver.ResolverMap.*;
+import static com.predic8.membrane.core.util.OSUtil.wl;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class ResolverMapCombineTest {
@@ -48,19 +49,15 @@ public class ResolverMapCombineTest {
 
     @Test
     void relativeWithSlashPlusFile() {
-        assertEquals(current + "/a/b/c".replaceAll("/", "\\\\"), combine("a/b/","c"));
+        assertEquals(wl(
+                current + "/a/b/c".replaceAll("/", "\\\\"),
+                current + "/a/b/c"
+                ), combine("a/b/","c"));
     }
 
     @Test
     void relativeWithSpacePlusFile() {
         assertEquals(current + wl("\\a b\\e","/a b/e"), combine("a b/c d","e"));
-    }
-
-    // OSUtil
-    String wl(String windows, String linux) {
-        if (OSUtil.isWindows())
-            return windows;
-        return linux;
     }
 
     // File paths
@@ -82,12 +79,18 @@ public class ResolverMapCombineTest {
 
     @Test
     void fileWithAbsoluteChild() {
-        assertEquals("file:///array.yml", combine("file://src/test/resources/openapi/specs", "/array.yml"));
+        assertEquals(wl(
+                "file:///array.yml",
+                "file:/array.yml"
+                ), combine("file://src/test/resources/openapi/specs", "/array.yml"));
     }
 
     @Test
     void fileUriPlusAbsolutePath() {
-        assertEquals("file:///chi/elm", combine("file:///foo","/chi/elm"));
+        assertEquals(wl(
+                "file:///chi/elm",
+                "file:/chi/elm"
+                 ), combine("file:///foo","/chi/elm"));
     }
 
 
