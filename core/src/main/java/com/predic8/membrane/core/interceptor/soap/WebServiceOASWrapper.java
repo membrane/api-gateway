@@ -2,6 +2,7 @@ package com.predic8.membrane.core.interceptor.soap;
 
 import com.predic8.membrane.core.openapi.serviceproxy.OpenAPIRecord;
 import com.predic8.membrane.core.openapi.serviceproxy.OpenAPISpec;
+import com.predic8.membrane.core.openapi.serviceproxy.Rewrite;
 import com.predic8.wsdl.Port;
 import com.predic8.wsdl.Service;
 import io.swagger.v3.oas.models.Components;
@@ -53,7 +54,9 @@ class WebServiceOASWrapper {
     Stream<Entry<String, OpenAPIRecord>> getApiRecords() {
         return services.values().stream().collect(toMap(
                 e -> getIdFromAPI(e.api),
-                e -> new OpenAPIRecord(e.api, null)
+                e -> new OpenAPIRecord(e.api, new OpenAPISpec() {{
+                    setRewrite(new Rewrite());
+                }})
         )).entrySet().stream();
     }
 
