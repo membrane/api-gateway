@@ -14,7 +14,10 @@
 package com.predic8.membrane.core.util;
 
 import java.util.*;
+import java.util.Map.Entry;
 import java.util.stream.*;
+
+import static java.util.stream.Collectors.toMap;
 
 public class CollectionsUtil {
 
@@ -28,5 +31,9 @@ public class CollectionsUtil {
             list.add(iterator.next());
         }
         return list;
+    }
+
+    public static <k, v> Map<k, v> mapOf(Stream<Entry<k, v>> stream) {
+        return stream.collect(toMap(Entry::getKey, Entry::getValue));
     }
 }

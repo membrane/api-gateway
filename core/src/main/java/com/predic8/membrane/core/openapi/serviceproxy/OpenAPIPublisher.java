@@ -40,8 +40,8 @@ public class OpenAPIPublisher {
 
     public static final String PATH = "/api-docs";
     public static final String PATH_UI = "/api-docs/ui";
-    private static final Pattern PATTERN_META = Pattern.compile(PATH + "?/(.*)");
-    private static final Pattern PATTERN_UI = Pattern.compile(PATH + "?/ui/(.*)");
+    public static final Pattern PATTERN_META = Pattern.compile(PATH + "?/(.*)");
+    public static final Pattern PATTERN_UI = Pattern.compile(PATH + "?/ui/(.*)");
 
     private final Template swaggerUiHtmlTemplate;
     private final Template apiOverviewHtmlTemplate;
@@ -58,7 +58,7 @@ public class OpenAPIPublisher {
         apiOverviewHtmlTemplate = createTemplate("/openapi/overview.html");
     }
 
-    Outcome handleSwaggerUi(Exchange exc) {
+    public Outcome handleSwaggerUi(Exchange exc) {
         Matcher m = PATTERN_UI.matcher(exc.getRequest().getUri());
 
         // No id specified
@@ -87,7 +87,7 @@ public class OpenAPIPublisher {
         return RETURN;
     }
 
-    Outcome handleOverviewOpenAPIDoc(Exchange exc, Router router, Logger log) throws IOException, URISyntaxException {
+    public Outcome handleOverviewOpenAPIDoc(Exchange exc, Router router, Logger log) throws IOException, URISyntaxException {
         Matcher m = PATTERN_META.matcher(exc.getRequest().getUri());
         if (!m.matches()) { // No id specified
             if (acceptsHtmlExplicit(exc)) {
