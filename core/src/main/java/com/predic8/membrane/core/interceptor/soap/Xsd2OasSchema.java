@@ -23,24 +23,25 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.Supplier;
 
 import static java.util.Map.entry;
 import static java.util.Map.ofEntries;
 
 public class Xsd2OasSchema {
 
-    private static final Map<String, Schema> TYPE_MAPPINGS = ofEntries(
-            entry("string", new StringSchema()),
-            entry("integer", new IntegerSchema()),
-            entry("int", new IntegerSchema()),
-            entry("long", new IntegerSchema()),
-            entry("decimal", new NumberSchema()),
-            entry("float", new NumberSchema()),
-            entry("double", new NumberSchema()),
-            entry("boolean", new BooleanSchema()),
-            entry("date", new StringSchema()),
-            entry("dateTime", new StringSchema()),
-            entry("time", new StringSchema())
+    private static final Map<String, Supplier<Schema<?>>> TYPE_MAPPINGS = ofEntries(
+            Map.entry("string", StringSchema::new),
+            Map.entry("integer", IntegerSchema::new),
+            Map.entry("int", IntegerSchema::new),
+            Map.entry("long", IntegerSchema::new),
+            Map.entry("decimal", NumberSchema::new),
+            Map.entry("float", NumberSchema::new),
+            Map.entry("double", NumberSchema::new),
+            Map.entry("boolean", BooleanSchema::new),
+            Map.entry("date", StringSchema::new),
+            Map.entry("dateTime", StringSchema::new),
+            Map.entry("time", StringSchema::new)
     );
 
     private final DocumentBuilder documentBuilder;
@@ -123,7 +124,7 @@ public class Xsd2OasSchema {
     private Schema<?> createSchemaFromType(String xsdType) {
         String baseType = xsdType.contains(":") ? xsdType.split(":", 2)[1] : xsdType;
         try {
-            Schema<?> schema = TYPE_MAPPINGS.getOrDefault(baseType, new StringSchema());
+            Schema<?> schema = TYPE_MAPPINGS.getOrDefault(baseType, StringSchema::new).get();
             if (schema instanceof StringSchema && ("date".equals(baseType)
                     || "dateTime".equals(baseType) || "time".equals(baseType))) {
                 schema.setFormat(baseType);
