@@ -29,18 +29,18 @@ import static java.util.Map.ofEntries;
 
 public class Xsd2OasSchema {
 
-    private static final Map<String, Class<? extends Schema<?>>> TYPE_MAPPINGS = ofEntries(
-            entry("string", StringSchema.class),
-            entry("integer", IntegerSchema.class),
-            entry("int", IntegerSchema.class),
-            entry("long", IntegerSchema.class),
-            entry("decimal", NumberSchema.class),
-            entry("float", NumberSchema.class),
-            entry("double", NumberSchema.class),
-            entry("boolean", BooleanSchema.class),
-            entry("date", StringSchema.class),
-            entry("dateTime", StringSchema.class),
-            entry("time", StringSchema.class)
+    private static final Map<String, Schema> TYPE_MAPPINGS = ofEntries(
+            entry("string", new StringSchema()),
+            entry("integer", new IntegerSchema()),
+            entry("int", new IntegerSchema()),
+            entry("long", new IntegerSchema()),
+            entry("decimal", new NumberSchema()),
+            entry("float", new NumberSchema()),
+            entry("double", new NumberSchema()),
+            entry("boolean", new BooleanSchema()),
+            entry("date", new StringSchema()),
+            entry("dateTime", new StringSchema()),
+            entry("time", new StringSchema())
     );
 
     private final DocumentBuilder documentBuilder;
@@ -52,8 +52,7 @@ public class Xsd2OasSchema {
     }
 
     public Schema<?> convert(InputStream xsdStream) throws Exception {
-        Document doc = documentBuilder.parse(xsdStream);
-        Element root = doc.getDocumentElement();
+        Element root = documentBuilder.parse(xsdStream).getDocumentElement();
         String schemaPrefix = root.getPrefix() != null ? root.getPrefix() + ":" : "";
 
         if ("element".equals(root.getLocalName())) {
@@ -94,38 +93,37 @@ public class Xsd2OasSchema {
     private Schema<?> processComplexType(Element complexType, String schemaPrefix) {
         Element sequence = getFirstChildByTagNameNS(complexType, "sequence");
         if (sequence != null) {
-            ObjectSchema objectSchema = new ObjectSchema();
             Map<String, Schema> properties = new HashMap<>();
             NodeList elements = sequence.getElementsByTagNameNS("*", "element");
+
             for (int i = 0, n = elements.getLength(); i < n; i++) {
                 Element element = (Element) elements.item(i);
                 String name = element.getAttribute("name");
-                String maxOccurs = element.getAttribute("maxOccurs");
 
                 Schema<?> property = processElement(element, schemaPrefix);
-                if ("unbounded".equals(maxOccurs)) {
-                    ArraySchema arraySchema = new ArraySchema();
-                    arraySchema.setItems(property);
-                    var xml = new XML();
-                    xml.setName(name);
-                    xml.setWrapped(true);
-                    arraySchema.setXml(xml);
-                    properties.put(name, arraySchema);
+                if ("unbounded".equals(element.getAttribute("maxOccurs"))) {
+                    properties.put(name, new ArraySchema() {{
+                        setItems(property);
+                        setXml(new XML() {{
+                            setName(name);
+                            setWrapped(true);
+                        }});
+                    }});
                 } else {
                     properties.put(name, property);
                 }
             }
-            objectSchema.setProperties(properties);
-            return objectSchema;
+            return new ObjectSchema() {{
+                setProperties(properties);
+            }};
         }
         return new ObjectSchema();
     }
 
     private Schema<?> createSchemaFromType(String xsdType) {
         String baseType = xsdType.contains(":") ? xsdType.split(":", 2)[1] : xsdType;
-        Class<? extends Schema<?>> schemaClass = TYPE_MAPPINGS.getOrDefault(baseType, StringSchema.class);
         try {
-            Schema<?> schema = schemaClass.getDeclaredConstructor().newInstance();
+            Schema<?> schema = TYPE_MAPPINGS.getOrDefault(baseType, new StringSchema());
             if (schema instanceof StringSchema && ("date".equals(baseType)
                     || "dateTime".equals(baseType) || "time".equals(baseType))) {
                 schema.setFormat(baseType);

@@ -28,6 +28,7 @@ import io.swagger.v3.oas.models.parameters.RequestBody;
 import io.swagger.v3.oas.models.responses.ApiResponse;
 import io.swagger.v3.oas.models.responses.ApiResponses;
 import io.swagger.v3.oas.models.servers.Server;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.HashMap;
 import java.util.List;
@@ -43,31 +44,34 @@ import static org.apache.commons.io.IOUtils.toInputStream;
 
 class WebServiceOASWrapper {
 
-    // All ports aggregated and mapped by unique context url; will be equal to services to the user.
+    // Aggregated ports mapped by unique context url.
     private final Map<String, PortMapping> services;
 
-    WebServiceOASWrapper(Service serv) {
+    WebServiceOASWrapper(Service svc) {
         services = new HashMap<>();
-        var aggregatedPorts = serv.getPorts().stream()
-            .collect(groupingBy(Port::getBinding))
-            .entrySet().stream()
-            .collect(toMap(
-        entry -> entry.getValue().getFirst(),
-        entry -> entry.getValue().stream()
-                .map(p -> p.getAddress().getLocation())
-                .toList()
-        ));
-
-        aggregatedPorts.forEach((port, addresses) -> {
+        getAggregatedPorts(svc).forEach((port, addresses) -> {
             try {
-                PortMapping mapping = PortMapping.of(serv, port, addresses);
+                PortMapping mapping = PortMapping.of(svc, port, addresses);
                 mapping.api.getServers().forEach(server ->
                         services.put(server.getUrl(), mapping)
                 );
             } catch (Exception e) {
+                // TODO ConfigurationException?
                 throw new RuntimeException(e);
             }
         });
+    }
+
+    private static @NotNull Map<Port, @NotNull List<String>> getAggregatedPorts(Service svc) {
+        return svc.getPorts().stream()
+                .collect(groupingBy(Port::getBinding))
+                .entrySet().stream()
+                .collect(toMap(
+            entry -> entry.getValue().getFirst(),
+            entry -> entry.getValue().stream()
+                    .map(p -> p.getAddress().getLocation())
+                    .toList()
+                ));
     }
 
     PortMapping getMapping(String context) {
@@ -86,102 +90,107 @@ class WebServiceOASWrapper {
     record PortMapping(Port port, OpenAPI api) {
 
         static PortMapping of(Service svc, Port port, List<String> contexts) throws Exception {
-                return new PortMapping(port, new OpenAPI() {{
-                    setInfo(new Info() {{
-                            setTitle("%s-%s".formatted(svc.getName(), port.getName()));
-                            setDescription("Service %s provided as API through Membrane API Gateway.\n%s".formatted(svc.getName(), getDocumentationOrEmpty()));
-                            setVersion("1.0.0");
-                        }
-
-                        private String getDocumentationOrEmpty() {
-                            if (port.getDocumentation() != null) {
-                                return port.getDocumentation().getContent();
-                            }
-                            return "";
-                        }
-                    });
-
-                    setServers(contexts.stream().map(server ->
-                            (Server) new Server() {{
-                                setUrl(server);
-                            }}
-                    ).toList());
-
-                    Components comp = new Components();
-                    Paths paths = new Paths();
-                    Map<String, RequestBody> rb = new HashMap<>();
-                    Map<String, ApiResponse> res = new HashMap<>();
-
-                    Xsd2OasSchema x2o = new Xsd2OasSchema();
-                    Binding binding = port.getBinding();
-                    binding.getPortType().getOperations().forEach(operation -> {
-                        String opName = operation.getName();
-                        String requestBodyName = opName + "RequestBody";
-                        String responseName = opName + "Response";
-
-                        Schema xmlSchema;
-                        try {
-                            xmlSchema = x2o.convert(
-                                    toInputStream(operation.getInput().getMessage().getParts().getFirst().getElement().getAsString(), UTF_8)
-                            );
-                        } catch (Exception e) {
-                            throw new RuntimeException(e);
-                        }
-
-                        rb.put(requestBodyName, new RequestBody() {{
-                            setContent(new Content() {{
-                                addMediaType("application/xml", new MediaType() {{
-                                    setSchema(xmlSchema);
-                                }});
-                                addMediaType("application/json", new MediaType() {{
-                                    setSchema(xmlSchema);
-                                }});
-                            }});
-                            setDescription("Request for operation " + opName);
-                            setRequired(true);
-                        }});
-
-                        res.put(responseName, new ApiResponse() {{
-                            setDescription("Successful response from " + opName);
-                            if (operation.getOutput() != null && operation.getOutput().getMessage() != null) {
-                                String outputXsd = operation.getOutput().getMessage().getParts().get(0).getElement().getAsString();
-                                try {
-                                    Schema<?> outputXmlSchema = x2o.convert(toInputStream(outputXsd, UTF_8));
-                                    setContent(new Content() {{
-                                        addMediaType("application/xml", new MediaType() {{
-                                            setSchema(outputXmlSchema);
-                                        }});
-                                        addMediaType("application/json", new MediaType() {{
-                                            setSchema(outputXmlSchema);
-                                        }});
-                                    }});
-                                } catch (Exception e) {
-                                    throw new RuntimeException(e);
-                                }
-                            }
-                        }});
-
-                        paths.addPathItem("/" + opName.toLowerCase(), new PathItem() {{
-                            setPost(new Operation() {{
-                                setOperationId(opName);
-                                setSummary("Invoke operation " + opName);
-                                setRequestBody(new RequestBody() {{
-                                    $ref("#/components/requestBodies/" + requestBodyName);
-                                }});
-                                setResponses(new ApiResponses() {{
-                                    addApiResponse("200", new ApiResponse() {{
-                                        $ref("#/components/responses/" + responseName);
-                                    }});
-                                }});
-                            }});
-                        }});
-                    });
-
-                    comp.setRequestBodies(rb);
-                    comp.setResponses(res);
-                    setComponents(comp);
-                    setPaths(paths);
+            return new PortMapping(port, new OpenAPI() {{
+                setInfo(new Info() {{
+                    setTitle("%s-%s".formatted(svc.getName(), port.getName()));
+                    setDescription("Service %s provided as API through Membrane API Gateway.\n%s"
+                            .formatted(svc.getName(), getDocumentationOrEmpty(port)));
+                    setVersion("1.0.0");
                 }});
-            }
+
+                setServers(contexts.stream().map(url -> (Server) new Server() {{ setUrl(url); }}).toList());
+
+                Components comp = new Components();
+                Paths paths = new Paths();
+                Map<String, RequestBody> requestBodies = new HashMap<>();
+                Map<String, ApiResponse> responses = new HashMap<>();
+
+                Xsd2OasSchema xsd2oas = new Xsd2OasSchema();
+                Binding binding = port.getBinding();
+                binding.getPortType().getOperations().forEach(operation -> {
+                    String opName = operation.getName();
+                    String requestBodyName = opName + "RequestBody";
+                    String responseName = opName + "Response";
+
+                    Schema requestSchema;
+                    try {
+                        requestSchema = xsd2oas.convert(toInputStream(
+                                operation.getInput().getMessage().getParts().getFirst().getElement().getAsString(), UTF_8)
+                        );
+                    } catch (Exception e) {
+                        // TODO ConfigurationException?
+                        throw new RuntimeException(e);
+                    }
+                    requestBodies.put(requestBodyName, buildRequestBody(opName, requestSchema));
+
+                    Schema<?> outputSchema;
+                    try {
+                        outputSchema = xsd2oas.convert(toInputStream(
+                                operation.getOutput().getMessage().getParts().getFirst().getElement().getAsString(), UTF_8)
+                        );
+                    } catch (Exception e) {
+                        // TODO ConfigurationException?
+                        throw new RuntimeException(e);
+                    }
+                    responses.put(responseName, buildApiResponse(opName, outputSchema));
+
+                    paths.addPathItem("/" + opName, new PathItem() {{
+                        setPost(new Operation() {{
+                            setOperationId(opName);
+                            setSummary("Invoke operation " + opName);
+                            setRequestBody(new RequestBody() {{
+                                $ref("#/components/requestBodies/" + requestBodyName);
+                            }});
+                            setResponses(new ApiResponses() {{
+                                addApiResponse("200", new ApiResponse() {{
+                                    $ref("#/components/responses/" + responseName);
+                                }});
+                            }});
+                        }});
+                    }});
+                });
+
+                comp.setRequestBodies(requestBodies);
+                comp.setResponses(responses);
+                setComponents(comp);
+                setPaths(paths);
+            }});
         }
+
+        private static RequestBody buildRequestBody(String opName, Schema schema) {
+            var mediaType = new MediaType();
+            mediaType.setSchema(schema);
+
+            return new RequestBody() {{
+                setContent(new Content() {{
+                    addMediaType("application/xml", mediaType);
+                    addMediaType("application/json", mediaType);
+                }});
+                setDescription("Request for operation " + opName);
+                setRequired(true);
+            }};
+        }
+
+        private static ApiResponse buildApiResponse(String opName, Schema<?> outputSchema) {
+            return new ApiResponse() {{
+                setDescription("Successful response from " + opName);
+                if (outputSchema != null) {
+                    var mediaType = new MediaType();
+                    mediaType.setSchema(outputSchema);
+
+                    setContent(new Content() {{
+                        addMediaType("application/xml", mediaType);
+                        addMediaType("application/json", mediaType);
+                    }});
+                }
+            }};
+        }
+
+        private static String getDocumentationOrEmpty(Port port) {
+            if (port.getDocumentation() != null) {
+                return port.getDocumentation().getContent();
+            }
+            return "";
+        }
+    }
 }
