@@ -9,6 +9,7 @@ import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.openapi.serviceproxy.OpenAPIPublisher;
 import com.predic8.membrane.core.openapi.serviceproxy.OpenAPIRecord;
 import com.predic8.membrane.core.util.ConfigurationException;
+import com.predic8.wsdl.Definitions;
 import com.predic8.wsdl.WSDLParser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -40,7 +41,8 @@ public class LegacyServicePublisher extends AbstractInterceptor {
     @Override
     public void init() {
         super.init();
-        new WSDLParser().parse(wsdlLocation).getServices().forEach(svc -> services.add(new WebServiceOASWrapper(svc)));
+        Definitions defs = new WSDLParser().parse(wsdlLocation);
+        defs.getServices().forEach(svc -> services.add(new WebServiceOASWrapper(defs, svc)));
         try {
             publisher = new OpenAPIPublisher(mapOf(services.stream().flatMap(WebServiceOASWrapper::getApiRecords)));
         } catch (Exception e) {

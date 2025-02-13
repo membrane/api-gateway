@@ -3,12 +3,14 @@ package com.predic8.membrane.core.interceptor.soap;
 import com.predic8.membrane.core.openapi.serviceproxy.OpenAPIRecord;
 import com.predic8.membrane.core.openapi.serviceproxy.OpenAPISpec;
 import com.predic8.membrane.core.openapi.serviceproxy.Rewrite;
+import com.predic8.wsdl.Binding;
+import com.predic8.wsdl.Definitions;
 import com.predic8.wsdl.Port;
 import com.predic8.wsdl.Service;
-import io.swagger.v3.oas.models.Components;
-import io.swagger.v3.oas.models.OpenAPI;
-import io.swagger.v3.oas.models.Paths;
+import io.swagger.v3.oas.models.*;
 import io.swagger.v3.oas.models.info.Info;
+import io.swagger.v3.oas.models.media.Content;
+import io.swagger.v3.oas.models.parameters.RequestBody;
 import io.swagger.v3.oas.models.servers.Server;
 
 import java.util.ArrayList;
@@ -27,7 +29,7 @@ class WebServiceOASWrapper {
     // All ports aggregated and mapped by unique context url; will be equal to services to the user.
     private final Map<String, PortMapping> services;
 
-    WebServiceOASWrapper(Service serv) {
+    WebServiceOASWrapper(Definitions defs, Service serv) {
         services = new HashMap<>();
         var aggregatedPorts = serv.getPorts().stream()
             .collect(groupingBy(Port::getBinding))
@@ -40,7 +42,7 @@ class WebServiceOASWrapper {
         ));
 
         aggregatedPorts.forEach((port, addresses) -> {
-            PortMapping mapping = PortMapping.of(serv, port, addresses);
+            PortMapping mapping = PortMapping.of(defs, serv, port, addresses);
             mapping.api.getServers().forEach(server ->
                 services.put(server.getUrl(), mapping)
             );
@@ -62,7 +64,7 @@ class WebServiceOASWrapper {
 
     record PortMapping(Port port, OpenAPI api) {
 
-        static PortMapping of(Service svc, Port port, List<String> contexts) {
+        static PortMapping of(Definitions defs, Service svc, Port port, List<String> contexts) {
                 return new PortMapping(port, new OpenAPI() {{
                     setInfo(new Info() {{
                             setTitle("%s-%s".formatted(svc.getName(), port.getName()));
@@ -82,12 +84,26 @@ class WebServiceOASWrapper {
                                 setUrl(server);
                             }}
                     ).toList());
-                    setComponents(new Components() {{
+                    Components comp = new Components();
+                    Paths paths = new Paths();
+                    Map<String, RequestBody> rb = new HashMap<>();
+                    Binding binding = port.getBinding();
+                    binding.getPortType().getOperations().forEach(operation -> {
+                        rb.put("RequestBodyName?", new RequestBody() {{
+                            setContent(new Content() {{
 
-                    }});
-                    setPaths(new Paths() {{
+                            }});
+                        }});
 
-                    }});
+                        paths.addPathItem("PathItemName?", new PathItem() {{
+                            setPost(new Operation() {{
+
+                            }});
+                        }});
+                    });
+                    comp.setRequestBodies(rb);
+                    setComponents(comp);
+                    setPaths(paths);
                 }});
             }
         }
