@@ -27,6 +27,12 @@ import static org.junit.jupiter.api.Assertions.*;
 public class URLUtilTest {
 
 	@Test
+	void getBaseUrlTest() {
+		assertEquals("http://www.foobar.com/base/path/", getBaseUrl("http://www.foobar.com/base/path/stuff", 1));
+		assertEquals("http://www.foobar2.com/base/", getBaseUrl("http://www.foobar2.com/base/path/stuff", 2));
+	}
+
+	@Test
 	void host() {
 		assertEquals(getHost("internal:a"), "a");
 		assertEquals(getHost("internal://a"), "a");

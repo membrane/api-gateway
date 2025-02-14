@@ -14,9 +14,23 @@
 
 package com.predic8.membrane.core.util;
 
+import org.apache.commons.lang3.StringUtils;
+
 import java.net.*;
 
+import static org.apache.commons.lang3.StringUtils.stripEnd;
+
 public class URLUtil {
+
+	public static String getBaseUrl(String url, int depth) {
+		String path = stripEnd(url, "/");
+		for (int i = 0; i < depth; i++) {
+			int lastSlash = path.lastIndexOf('/');
+			if (lastSlash == -1) return path;
+			path = path.substring(0, lastSlash);
+		}
+		return path + "/";
+	}
 
 	public static String getHost(String uri) {
 		int i = uri.indexOf(":") + 1;

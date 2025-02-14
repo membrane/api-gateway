@@ -1,0 +1,321 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<wsdl:definitions xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/" xmlns="http://schemas.xmlsoap.org/wsdl/" xmlns:wsaw="http://www.w3.org/2006/05/addressing/wsdl" xmlns:tns="http://thomas-bayer.com/blz/" xmlns:http="http://schemas.xmlsoap.org/wsdl/http/" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:mime="http://schemas.xmlsoap.org/wsdl/mime/" xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/" xmlns:soap12="http://schemas.xmlsoap.org/wsdl/soap12/" targetNamespace="http://thomas-bayer.com/blz/">
+    <wsdl:documentation>BLZService</wsdl:documentation>
+    <wsdl:types>
+        <xsd:schema attributeFormDefault="unqualified" elementFormDefault="qualified" targetNamespace="http://thomas-bayer.com/blz/">
+            <xsd:element name="getBank" type="tns:getBankType"/>
+            <xsd:element name="getBankResponse" type="tns:getBankResponseType"/>
+            <xsd:complexType name="getBankType">
+                <xsd:sequence>
+                    <xsd:element name="blz" type="xsd:string"/>
+                </xsd:sequence>
+            </xsd:complexType>
+            <xsd:complexType name="getBankResponseType">
+                <xsd:sequence>
+                    <xsd:element name="details" type="tns:detailsType"/>
+                </xsd:sequence>
+            </xsd:complexType>
+            <xsd:complexType name="detailsType">
+                <xsd:sequence>
+                    <xsd:element minOccurs="0" name="bezeichnung" type="xsd:string"/>
+                    <xsd:element minOccurs="0" name="bic" type="xsd:string"/>
+                    <xsd:element minOccurs="0" name="ort" type="xsd:string"/>
+                    <xsd:element minOccurs="0" name="plz" type="xsd:string"/>
+                </xsd:sequence>
+            </xsd:complexType>
+        </xsd:schema>
+    </wsdl:types>
+    <wsdl:message name="getBank">
+        <wsdl:part name="parameters" element="tns:getBank"/>
+    </wsdl:message>
+    <wsdl:message name="getBankResponse">
+        <wsdl:part name="parameters" element="tns:getBankResponse"/>
+    </wsdl:message>
+    <wsdl:portType name="BLZServicePortType">
+        <wsdl:operation name="getBank">
+            <wsdl:input message="tns:getBank"/>
+            <wsdl:output message="tns:getBankResponse" wsaw:Action="http://thomas-bayer.com/blz/BLZService/getBankResponse"/>
+        </wsdl:operation>
+    </wsdl:portType>
+    <wsdl:binding name="BLZServiceSOAPBinding" type="tns:BLZServicePortType">
+        <soap:binding transport="http://schemas.xmlsoap.org/soap/http" style="document"/>
+        <wsdl:operation name="getBank">
+            <soap:operation soapAction="" style="document"/>
+            <wsdl:input>
+                <soap:body use="literal"/>
+            </wsdl:input>
+            <wsdl:output>
+                <soap:body use="literal"/>
+            </wsdl:output>
+        </wsdl:operation>
+    </wsdl:binding>
+    <wsdl:binding name="BLZServiceHttpBinding" type="tns:BLZServicePortType">
+        <http:binding verb="POST"/>
+        <wsdl:operation name="getBank">
+            <http:operation location="BLZService/getBank"/>
+            <wsdl:input>
+                <mime:content type="text/xml" part="getBank"/>
+            </wsdl:input>
+            <wsdl:output>
+                <mime:content type="text/xml" part="getBank"/>
+            </wsdl:output>
+        </wsdl:operation>
+    </wsdl:binding>
+    <wsdl:service name="BLZService">
+        <wsdl:port name="BLZServiceSOAP11port_http" binding="tns:BLZServiceSOAPBinding">
+            <soap:address location="http://www.thomas-bayer.com:80/axis2/services/BLZService"/>
+        </wsdl:port>
+        <wsdl:port name="BLZServiceSOAP12port_http" binding="tns:BLZServiceSOAPBinding">
+            <soap12:address location="http://www.thomas-bayer.com:80/axis2/services/BLZService"/>
+        </wsdl:port>
+        <wsdl:port name="BLZServiceHttpport" binding="tns:BLZServiceHttpBinding">
+            <http:address location="http://www.thomas-bayer.com:80/axis2/services/BLZServiceHTTP"/>
+        </wsdl:port>
+    </wsdl:service>
+</wsdl:definitions>
+<!--<?xml version="1.0" encoding="utf-8"?>
+        <wsdl:definitions xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/" xmlns:tm="http://microsoft.com/wsdl/mime/textMatching/" xmlns:soapenc="http://schemas.xmlsoap.org/soap/encoding/" xmlns:mime="http://schemas.xmlsoap.org/wsdl/mime/" xmlns:tns="http://tempuri.org/" xmlns:s="http://www.w3.org/2001/XMLSchema" xmlns:soap12="http://schemas.xmlsoap.org/wsdl/soap12/" xmlns:http="http://schemas.xmlsoap.org/wsdl/http/" targetNamespace="http://tempuri.org/" xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/">
+            <wsdl:types>
+                <s:schema elementFormDefault="qualified" targetNamespace="http://tempuri.org/">
+                    <s:element name="Add">
+                        <s:complexType>
+                            <s:sequence>
+                                <s:element minOccurs="1" maxOccurs="1" name="intA" type="s:int" />
+                                <s:element minOccurs="1" maxOccurs="1" name="intB" type="s:int" />
+                            </s:sequence>
+                        </s:complexType>
+                    </s:element>
+                    <s:element name="AddResponse">
+                        <s:complexType>
+                            <s:sequence>
+                                <s:element minOccurs="1" maxOccurs="1" name="AddResult" type="s:int" />
+                            </s:sequence>
+                        </s:complexType>
+                    </s:element>
+                    <s:element name="Subtract">
+                        <s:complexType>
+                            <s:sequence>
+                                <s:element minOccurs="1" maxOccurs="1" name="intA" type="s:int" />
+                                <s:element minOccurs="1" maxOccurs="1" name="intB" type="s:int" />
+                            </s:sequence>
+                        </s:complexType>
+                    </s:element>
+                    <s:element name="SubtractResponse">
+                        <s:complexType>
+                            <s:sequence>
+                                <s:element minOccurs="1" maxOccurs="1" name="SubtractResult" type="s:int" />
+                            </s:sequence>
+                        </s:complexType>
+                    </s:element>
+                    <s:element name="Multiply">
+                        <s:complexType>
+                            <s:sequence>
+                                <s:element minOccurs="1" maxOccurs="1" name="intA" type="s:int" />
+                                <s:element minOccurs="1" maxOccurs="1" name="intB" type="s:int" />
+                            </s:sequence>
+                        </s:complexType>
+                    </s:element>
+                    <s:element name="MultiplyResponse">
+                        <s:complexType>
+                            <s:sequence>
+                                <s:element minOccurs="1" maxOccurs="1" name="MultiplyResult" type="s:int" />
+                            </s:sequence>
+                        </s:complexType>
+                    </s:element>
+                    <s:element name="Divide">
+                        <s:complexType>
+                            <s:sequence>
+                                <s:element minOccurs="1" maxOccurs="1" name="intA" type="s:int" />
+                                <s:element minOccurs="1" maxOccurs="1" name="intB" type="s:int" />
+                            </s:sequence>
+                        </s:complexType>
+                    </s:element>
+                    <s:element name="DivideResponse">
+                        <s:complexType>
+                            <s:sequence>
+                                <s:element minOccurs="1" maxOccurs="1" name="DivideResult" type="s:int" />
+                            </s:sequence>
+                        </s:complexType>
+                    </s:element>
+                </s:schema>
+            </wsdl:types>
+            <wsdl:message name="AddSoapIn">
+                <wsdl:part name="parameters" element="tns:Add" />
+            </wsdl:message>
+            <wsdl:message name="AddSoapOut">
+                <wsdl:part name="parameters" element="tns:AddResponse" />
+            </wsdl:message>
+            <wsdl:message name="SubtractSoapIn">
+                <wsdl:part name="parameters" element="tns:Subtract" />
+            </wsdl:message>
+            <wsdl:message name="SubtractSoapOut">
+                <wsdl:part name="parameters" element="tns:SubtractResponse" />
+            </wsdl:message>
+            <wsdl:message name="MultiplySoapIn">
+                <wsdl:part name="parameters" element="tns:Multiply" />
+            </wsdl:message>
+            <wsdl:message name="MultiplySoapOut">
+                <wsdl:part name="parameters" element="tns:MultiplyResponse" />
+            </wsdl:message>
+            <wsdl:message name="DivideSoapIn">
+                <wsdl:part name="parameters" element="tns:Divide" />
+            </wsdl:message>
+            <wsdl:message name="DivideSoapOut">
+                <wsdl:part name="parameters" element="tns:DivideResponse" />
+            </wsdl:message>
+            <wsdl:portType name="CalculatorSoap">
+                <wsdl:operation name="Add">
+                    <wsdl:documentation xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/">Adds two integers. This is a test WebService. ©DNE Online</wsdl:documentation>
+                    <wsdl:input message="tns:AddSoapIn" />
+                    <wsdl:output message="tns:AddSoapOut" />
+                </wsdl:operation>
+                <wsdl:operation name="Subtract">
+                    <wsdl:input message="tns:SubtractSoapIn" />
+                    <wsdl:output message="tns:SubtractSoapOut" />
+                </wsdl:operation>
+                <wsdl:operation name="Multiply">
+                    <wsdl:input message="tns:MultiplySoapIn" />
+                    <wsdl:output message="tns:MultiplySoapOut" />
+                </wsdl:operation>
+                <wsdl:operation name="Divide">
+                    <wsdl:input message="tns:DivideSoapIn" />
+                    <wsdl:output message="tns:DivideSoapOut" />
+                </wsdl:operation>
+            </wsdl:portType>
+            <wsdl:binding name="CalculatorSoap" type="tns:CalculatorSoap">
+                <soap:binding transport="http://schemas.xmlsoap.org/soap/http" />
+                <wsdl:operation name="Add">
+                    <soap:operation soapAction="http://tempuri.org/Add" style="document" />
+                    <wsdl:input>
+                        <soap:body use="literal" />
+                    </wsdl:input>
+                    <wsdl:output>
+                        <soap:body use="literal" />
+                    </wsdl:output>
+                </wsdl:operation>
+                <wsdl:operation name="Subtract">
+                    <soap:operation soapAction="http://tempuri.org/Subtract" style="document" />
+                    <wsdl:input>
+                        <soap:body use="literal" />
+                    </wsdl:input>
+                    <wsdl:output>
+                        <soap:body use="literal" />
+                    </wsdl:output>
+                </wsdl:operation>
+                <wsdl:operation name="Multiply">
+                    <soap:operation soapAction="http://tempuri.org/Multiply" style="document" />
+                    <wsdl:input>
+                        <soap:body use="literal" />
+                    </wsdl:input>
+                    <wsdl:output>
+                        <soap:body use="literal" />
+                    </wsdl:output>
+                </wsdl:operation>
+                <wsdl:operation name="Divide">
+                    <soap:operation soapAction="http://tempuri.org/Divide" style="document" />
+                    <wsdl:input>
+                        <soap:body use="literal" />
+                    </wsdl:input>
+                    <wsdl:output>
+                        <soap:body use="literal" />
+                    </wsdl:output>
+                </wsdl:operation>
+            </wsdl:binding>
+            <wsdl:binding name="CalculatorSoap12" type="tns:CalculatorSoap">
+                <soap12:binding transport="http://schemas.xmlsoap.org/soap/http" />
+                <wsdl:operation name="Add">
+                    <soap12:operation soapAction="http://tempuri.org/Add" style="document" />
+                    <wsdl:input>
+                        <soap12:body use="literal" />
+                    </wsdl:input>
+                    <wsdl:output>
+                        <soap12:body use="literal" />
+                    </wsdl:output>
+                </wsdl:operation>
+                <wsdl:operation name="Subtract">
+                    <soap12:operation soapAction="http://tempuri.org/Subtract" style="document" />
+                    <wsdl:input>
+                        <soap12:body use="literal" />
+                    </wsdl:input>
+                    <wsdl:output>
+                        <soap12:body use="literal" />
+                    </wsdl:output>
+                </wsdl:operation>
+                <wsdl:operation name="Multiply">
+                    <soap12:operation soapAction="http://tempuri.org/Multiply" style="document" />
+                    <wsdl:input>
+                        <soap12:body use="literal" />
+                    </wsdl:input>
+                    <wsdl:output>
+                        <soap12:body use="literal" />
+                    </wsdl:output>
+                </wsdl:operation>
+                <wsdl:operation name="Divide">
+                    <soap12:operation soapAction="http://tempuri.org/Divide" style="document" />
+                    <wsdl:input>
+                        <soap12:body use="literal" />
+                    </wsdl:input>
+                    <wsdl:output>
+                        <soap12:body use="literal" />
+                    </wsdl:output>
+                </wsdl:operation>
+            </wsdl:binding>
+            <wsdl:service name="Calculator">
+                <wsdl:port name="CalculatorSoap" binding="tns:CalculatorSoap">
+                    <soap:address location="http://www.dneonline.com/calculator.asmx" />
+                </wsdl:port>
+                <wsdl:port name="CalculatorSoap12" binding="tns:CalculatorSoap12">
+                    <soap12:address location="http://www.dneonline.com/calculator.asmx" />
+                </wsdl:port>
+            </wsdl:service>
+        </wsdl:definitions>-->
+<!--<?xml version="1.0" encoding="UTF-8"?><wsdl:definitions xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/" xmlns:cs="https://predic8.de/cities" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:s="http://schemas.xmlsoap.org/wsdl/soap/" targetNamespace="https://predic8.de/cities" name="cities">
+    <wsdl:types>
+        <xsd:schema targetNamespace="https://predic8.de/cities">
+            <xsd:element name="getCity">
+                <xsd:complexType>
+                    <xsd:sequence>
+                        <xsd:element name="name" type="xsd:string"></xsd:element>
+                    </xsd:sequence>
+                </xsd:complexType>
+            </xsd:element>
+            <xsd:element name="getCityResponse">
+                <xsd:complexType>
+                    <xsd:sequence>
+                        <xsd:element name="country" type="xsd:string"></xsd:element>
+                        <xsd:element name="population" type="xsd:integer"></xsd:element>
+                    </xsd:sequence>
+                </xsd:complexType>
+            </xsd:element>
+        </xsd:schema>
+    </wsdl:types>
+    <wsdl:message name="City">
+        <wsdl:part name="getCity" element="cs:getCity"></wsdl:part>
+    </wsdl:message>
+    <wsdl:message name="CityResponse">
+        <wsdl:part name="getCityResponse" element="cs:getCityResponse"></wsdl:part>
+    </wsdl:message>
+    <wsdl:portType name="CityPort">
+        <wsdl:operation name="getCity">
+            <wsdl:input message="cs:City"></wsdl:input>
+            <wsdl:output message="cs:CityResponse"></wsdl:output>
+        </wsdl:operation>
+    </wsdl:portType>
+    <wsdl:binding name="CitySoapBinding" type="cs:CityPort">
+        <s:binding style="document" transport="http://schemas.xmlsoap.org/soap/http"></s:binding>
+        <wsdl:operation name="getCity">
+            <s:operation soapAction="https://predic8.de/cities"></s:operation>
+            <wsdl:input>
+                <s:body use="literal" namespace="https://predic8.de/cities"></s:body>
+            </wsdl:input>
+            <wsdl:output>
+                <s:body use="literal" namespace="https://predic8.de/cities"></s:body>
+            </wsdl:output>
+        </wsdl:operation>
+    </wsdl:binding>
+    <wsdl:service name="CityService">
+        <wsdl:port name="CityPortHTTP" binding="cs:CitySoapBinding">
+            <s:address location="http://www.predic8.de/city-service"></s:address>
+        </wsdl:port>
+    </wsdl:service>
+</wsdl:definitions>-->

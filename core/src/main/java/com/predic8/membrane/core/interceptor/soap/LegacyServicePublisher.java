@@ -19,27 +19,40 @@ import com.predic8.membrane.core.exceptions.ProblemDetails;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
+import com.predic8.membrane.core.interceptor.soap.WebServiceOASWrapper.PortMapping;
 import com.predic8.membrane.core.openapi.serviceproxy.OpenAPIPublisher;
-import com.predic8.membrane.core.openapi.serviceproxy.OpenAPIRecord;
 import com.predic8.membrane.core.util.ConfigurationException;
-import com.predic8.wsdl.Definitions;
 import com.predic8.wsdl.WSDLParser;
+import org.json.JSONObject;
+import org.json.XML;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.xml.sax.InputSource;
+import org.xml.sax.SAXException;
 
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerException;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
+import java.io.IOException;
+import java.io.StringReader;
+import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 import static com.predic8.membrane.core.exceptions.ProblemDetails.internal;
+import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
+import static com.predic8.membrane.core.http.MimeType.APPLICATION_XML;
 import static com.predic8.membrane.core.http.Request.METHOD_GET;
 import static com.predic8.membrane.core.http.Request.METHOD_POST;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
-import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPIPublisher.PATTERN_UI;
 import static com.predic8.membrane.core.util.CollectionsUtil.mapOf;
+import static com.predic8.membrane.core.util.URLUtil.getBaseUrl;
 import static java.lang.String.valueOf;
-import static java.util.stream.Collectors.toMap;
 
 @MCElement(name = "legacyServicePublisher")
 public class LegacyServicePublisher extends AbstractInterceptor {
@@ -47,6 +60,9 @@ public class LegacyServicePublisher extends AbstractInterceptor {
     private static final Logger log = LoggerFactory.getLogger(LegacyServicePublisher.class);
 
     private final List<WebServiceOASWrapper> services = new ArrayList<>();
+    private final TransformerFactory transformerFactory = TransformerFactory.newInstance();
+    private final DocumentBuilderFactory documentBuilderFactory = DocumentBuilderFactory.newInstance();
+
 
     private String wsdlLocation;
     private OpenAPIPublisher publisher;
@@ -69,21 +85,112 @@ public class LegacyServicePublisher extends AbstractInterceptor {
             return handleOpenAPIServing(exc);
         }
         if (exc.getRequest().getMethod().equals(METHOD_POST)) {
-            handleServiceRouting();
+            return handleServiceRouting(exc);
         }
-        ProblemDetails.user(
-                router.isProduction(),
-                getDisplayName()
-        ).title("Invalid HTTP method").buildAndSetResponse(exc);
+        ProblemDetails.user(router.isProduction(), getDisplayName())
+                .title("Invalid HTTP method")
+                .buildAndSetResponse(exc);
         return RETURN;
     }
 
     @Override
     public Outcome handleResponse(Exchange exc) {
+        String accept = exc.getResponse().getHeader().getAccept();
+        if (APPLICATION_XML.equals(accept)) {
+            setSOAPResponseToXML(exc);
+        } else if (APPLICATION_JSON.equals(accept)) {
+            setSOAPResponseToJSON(exc);
+        }
         return CONTINUE;
     }
 
-    private void handleServiceRouting() {
+    private Outcome handleServiceRouting(Exchange exc) {
+        String contentType = exc.getRequest().getHeader().getContentType();
+        if (APPLICATION_XML.equals(contentType)) {
+            setSOAPRequestFromXML(exc);
+        } else if (APPLICATION_JSON.equals(contentType)) {
+            setSOAPRequestFromJSON(exc);
+        }
+        return CONTINUE;
+    }
+
+    private void setSOAPRequestFromXML(Exchange exc) {
+        String xml = exc.getRequest().getBodyAsStringDecoded();
+        if (!xml.contains("soap:Envelope")) {
+            // TODO Probably has to be adjusted according to the PortMapping
+            String baseUrl = getBaseUrl(exc.getRequest().getUri(), 1);
+            String soapEnvelope = "<soap:Envelope xmlns:soap=\"http://schemas.xmlsoap.org/soap/envelope/\">" +
+                    "<soap:Body>" + xml + "</soap:Body>" +
+                    "</soap:Envelope>";
+            exc.getRequest().setBodyContent(soapEnvelope.getBytes());
+        }
+    }
+
+    private void setSOAPRequestFromJSON(Exchange exc) {
+        String json = exc.getRequest().getBodyAsStringDecoded();
+        // TODO Probably has to be adjusted according to the PortMapping
+        String baseUrl = getBaseUrl(exc.getRequest().getUri(), 1);
+        String soapEnvelope = "<soap:Envelope xmlns:soap=\"http://schemas.xmlsoap.org/soap/envelope/\">" +
+                "<soap:Body><jsonInput>" + convertJsonToXml(json) + "</jsonInput></soap:Body>" +
+                "</soap:Envelope>";
+        exc.getRequest().setBodyContent(soapEnvelope.getBytes());
+    }
+
+    private void setSOAPResponseToXML(Exchange exc) {
+        exc.getResponse().setBodyContent(
+                extractBodyFromSoap(
+                        exc.getResponse().getBodyAsStringDecoded()
+                ).getBytes()
+        );
+    }
+
+    private void setSOAPResponseToJSON(Exchange exc) {
+        exc.getResponse().setBodyContent(
+                convertXmlToJson(
+                        extractBodyFromSoap(
+                                exc.getResponse().getBodyAsStringDecoded()
+                        )
+                ).getBytes()
+        );
+    }
+
+    private PortMapping getMapping(String baseUrl) {
+        for (WebServiceOASWrapper service : services) {
+            PortMapping mapping = service.getMapping(baseUrl);
+            if (mapping != null) {
+                return mapping;
+            }
+        }
+        // TODO Maybe handle "service not found" user error
+        return null;
+    }
+
+    // TODO Optimize
+    private String extractBodyFromSoap(String soap) {
+        return soap.substring(soap.indexOf("<soap:Body>") + "<soap:Body>".length(), soap.indexOf("</soap:Body>")).trim();
+    }
+
+    private String convertJsonToXml(String json) {
+        try {
+            Transformer tr = transformerFactory.newTransformer();
+            tr.setOutputProperty("indent", "yes");
+            tr.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "2");
+            tr.transform(new DOMSource(
+                    documentBuilderFactory.newDocumentBuilder().parse(
+                            new InputSource(new StringReader(XML.toString(new JSONObject(json)))))
+                    ), new StreamResult(new StringWriter())
+            );
+        } catch (TransformerException | SAXException | IOException | ParserConfigurationException e) {
+            // TODO Handle better
+            throw new RuntimeException(e);
+        }
+
+        return new StringWriter().toString();
+    }
+
+    private String convertXmlToJson(String xml) {
+        JSONObject jsonObject = XML.toJSONObject(xml);
+        return jsonObject.toString(2);
     }
 
     private Outcome handleOpenAPIServing(Exchange exc) {
@@ -95,7 +202,7 @@ public class LegacyServicePublisher extends AbstractInterceptor {
             return publisher.handleOverviewOpenAPIDoc(exc, router, log);
         } catch (Exception e) {
             log.error("", e);
-            internal(router.isProduction(),getDisplayName())
+            internal(router.isProduction(), getDisplayName())
                     .detail("Error generating OpenAPI overview!")
                     .exception(e)
                     .buildAndSetResponse(exc);
