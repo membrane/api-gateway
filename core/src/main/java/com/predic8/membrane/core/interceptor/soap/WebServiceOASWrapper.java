@@ -62,7 +62,7 @@ class WebServiceOASWrapper {
         });
     }
 
-    private static @NotNull Map<Port, @NotNull List<String>> getAggregatedPorts(Service svc) {
+    static @NotNull Map<Port, @NotNull List<String>> getAggregatedPorts(Service svc) {
         return svc.getPorts().stream()
                 .collect(groupingBy(Port::getBinding))
                 .entrySet().stream()
@@ -191,6 +191,16 @@ class WebServiceOASWrapper {
                 return port.getDocumentation().getContent();
             }
             return "";
+        }
+
+        @Override
+        public Port port() {
+            return port;
+        }
+
+        @Override
+        public OpenAPI api() {
+            return api;
         }
     }
 }
