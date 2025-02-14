@@ -23,6 +23,7 @@ public class ConnectionConfiguration {
 
 	private long keepAliveTimeout = 4000;
 	private int connectTimeout = 10000;
+	private int soTimeout = 0;
 	private String localAddr;
 
 	@Override
@@ -32,12 +33,13 @@ public class ConnectionConfiguration {
 		ConnectionConfiguration that = (ConnectionConfiguration) o;
 		return keepAliveTimeout == that.keepAliveTimeout
 				&& connectTimeout == that.connectTimeout
+				&& soTimeout == that.soTimeout
 				&& Objects.equals(localAddr, that.localAddr);
 	}
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(keepAliveTimeout, connectTimeout, localAddr);
+		return Objects.hash(keepAliveTimeout, connectTimeout, soTimeout, localAddr);
 	}
 
 	public long getKeepAliveTimeout() {
@@ -60,12 +62,25 @@ public class ConnectionConfiguration {
 	}
 
 	/**
-	 * @description Socket timeout (connect, read, etc.) in milliseconds.
+	 * @description Socket timeout (connect) in milliseconds.
 	 * @default 10000
 	 */
 	@MCAttribute
 	public void setTimeout(int timeout) {
 		this.connectTimeout = timeout;
+	}
+
+	public int getSoTimeout() {
+		return soTimeout;
+	}
+
+	/**
+	 * @description Socket timeout (read, etc.) in milliseconds. A value of 0 means 'unlimited'.
+	 * @default 0
+	 */
+	@MCAttribute
+	public void setSoTimeout(int soTimeout) {
+		this.soTimeout = soTimeout;
 	}
 
 	public String getLocalAddr() {
