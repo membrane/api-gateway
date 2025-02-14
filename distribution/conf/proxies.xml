@@ -15,6 +15,7 @@
             <!--<legacyServicePublisher wsdl="./city-service.wsdl">
                 <serverTarget serverName="CityService" targetIp="localhost:5000" />
             </legacyServicePublisher>-->
+            <target host="localhost" port="5000" />
         </api>
 
         <api port="5000">
