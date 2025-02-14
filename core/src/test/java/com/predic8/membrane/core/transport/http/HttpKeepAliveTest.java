@@ -67,11 +67,15 @@ public class HttpKeepAliveTest {
 	}
 
 	private HttpClient createHttpClient(int defaultKeepAliveTimeout) {
-		HttpClientConfiguration configuration = new HttpClientConfiguration();
-		ConnectionConfiguration connection = new ConnectionConfiguration();
-		connection.setKeepAliveTimeout(defaultKeepAliveTimeout);
-		configuration.setConnection(connection);
+		HttpClientConfiguration configuration = createConfig();
+		configuration.getConnection().setKeepAliveTimeout(defaultKeepAliveTimeout);
         return new HttpClient(configuration);
+	}
+
+	private HttpClientConfiguration createConfig() {
+		HttpClientConfiguration hcc = new HttpClientConfiguration();
+		hcc.getConnection().setSoTimeout(80); // this tests that connections kept alive do not die after soTimeout
+		return hcc;
 	}
 
 	private Exchange createExchange() throws IOException, URISyntaxException {
@@ -92,7 +96,7 @@ public class HttpKeepAliveTest {
 
 	@Test
 	public void testKeepAlive() throws Exception {
-		HttpClient client = new HttpClient();
+		HttpClient client = new HttpClient(createConfig());
 
 		assertEquals(200, issueRequest(client));
 		assertEquals(200, issueRequest(client));
@@ -136,8 +140,10 @@ public class HttpKeepAliveTest {
 		assertEquals(200, issueRequest(client)); // opens connection 1
 		assertEquals(1, set.size());
 
+		Thread.sleep(200);
+
 		assertEquals(1, client.getConnectionManager().getNumberInPool());
-		Thread.sleep(600); // connection closer did not yet run
+		Thread.sleep(600); // connection closer did not yet run (runs at 2*keep_alive_timeout)
 		// connection 1 is now dead, but still in pool
 		assertEquals(1, client.getConnectionManager().getNumberInPool());
 
