@@ -27,11 +27,16 @@ import org.json.JSONObject;
 import org.json.XML;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.w3c.dom.Document;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
+import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.transform.OutputKeys;
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
@@ -53,6 +58,8 @@ import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPIPublisher.PA
 import static com.predic8.membrane.core.util.CollectionsUtil.mapOf;
 import static com.predic8.membrane.core.util.URLUtil.getBaseUrl;
 import static java.lang.String.valueOf;
+import static javax.xml.transform.OutputKeys.INDENT;
+import static javax.xml.transform.OutputKeys.OMIT_XML_DECLARATION;
 
 @MCElement(name = "legacyServicePublisher")
 public class LegacyServicePublisher extends AbstractInterceptor {
@@ -95,7 +102,7 @@ public class LegacyServicePublisher extends AbstractInterceptor {
 
     @Override
     public Outcome handleResponse(Exchange exc) {
-        String accept = exc.getResponse().getHeader().getAccept();
+        String accept = exc.getRequest().getHeader().getAccept();
         if (APPLICATION_XML.equals(accept)) {
             setSOAPResponseToXML(exc);
         } else if (APPLICATION_JSON.equals(accept)) {
@@ -115,7 +122,7 @@ public class LegacyServicePublisher extends AbstractInterceptor {
     }
 
     private void setSOAPRequestFromXML(Exchange exc) {
-        String xml = exc.getRequest().getBodyAsStringDecoded();
+        String xml = exc.getRequest().getBodyAsStringDecoded().replaceFirst("<\\?xml.*?\\?>", "");
         if (!xml.contains("soap:Envelope")) {
             // TODO Probably has to be adjusted according to the PortMapping
             String baseUrl = getBaseUrl(exc.getRequest().getUri(), 1);
@@ -131,7 +138,7 @@ public class LegacyServicePublisher extends AbstractInterceptor {
         // TODO Probably has to be adjusted according to the PortMapping
         String baseUrl = getBaseUrl(exc.getRequest().getUri(), 1);
         String soapEnvelope = "<soap:Envelope xmlns:soap=\"http://schemas.xmlsoap.org/soap/envelope/\">" +
-                "<soap:Body><jsonInput>" + convertJsonToXml(json) + "</jsonInput></soap:Body>" +
+                "<soap:Body>" + convertJsonToXml(json) + "</soap:Body>" +
                 "</soap:Envelope>";
         exc.getRequest().setBodyContent(soapEnvelope.getBytes());
     }
@@ -167,25 +174,36 @@ public class LegacyServicePublisher extends AbstractInterceptor {
 
     // TODO Optimize
     private String extractBodyFromSoap(String soap) {
-        return soap.substring(soap.indexOf("<soap:Body>") + "<soap:Body>".length(), soap.indexOf("</soap:Body>")).trim();
+        try {
+            DocumentBuilder db = documentBuilderFactory.newDocumentBuilder();
+            Document doc = db.parse(new InputSource(new StringReader(soap)));
+            NodeList bodies = doc.getElementsByTagNameNS("http://schemas.xmlsoap.org/soap/envelope/", "Body");
+            Node body = bodies.item(0);
+            TransformerFactory tf = TransformerFactory.newInstance();
+            StringWriter writer = new StringWriter();
+            tf.newTransformer().transform(new DOMSource(body.getFirstChild()), new StreamResult(writer));
+            return writer.toString();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private String convertJsonToXml(String json) {
         try {
+            StringWriter writer = new StringWriter();
             Transformer tr = transformerFactory.newTransformer();
-            tr.setOutputProperty("indent", "yes");
+            tr.setOutputProperty(INDENT, "yes");
+            tr.setOutputProperty(OMIT_XML_DECLARATION, "yes");
             tr.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "2");
             tr.transform(new DOMSource(
-                    documentBuilderFactory.newDocumentBuilder().parse(
-                            new InputSource(new StringReader(XML.toString(new JSONObject(json)))))
-                    ), new StreamResult(new StringWriter())
+                            documentBuilderFactory.newDocumentBuilder().parse(
+                                    new InputSource(new StringReader(XML.toString(new JSONObject(json)))))
+                    ), new StreamResult(writer)
             );
+            return writer.toString();
         } catch (TransformerException | SAXException | IOException | ParserConfigurationException e) {
-            // TODO Handle better
             throw new RuntimeException(e);
         }
-
-        return new StringWriter().toString();
     }
 
     private String convertXmlToJson(String xml) {
