@@ -1,0 +1,161 @@
+/* Copyright 2025 predic8 GmbH, www.predic8.com
+
+   Licensed under the Apache License, Version 2.0 (the "License");
+   you may not use this file except in compliance with the License.
+   You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License. */
+package com.predic8.membrane.core.interceptor.soap;
+
+import org.json.JSONObject;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.xml.sax.InputSource;
+
+import javax.xml.parsers.DocumentBuilderFactory;
+import java.io.StringReader;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+class LegacyServicePublisherTest {
+
+    private DocumentBuilderFactory dbf;
+    private LegacyServicePublisher publisher;
+
+    @BeforeEach
+    void setUp() {
+        dbf = DocumentBuilderFactory.newInstance();
+        dbf.setNamespaceAware(true);
+        publisher = new LegacyServicePublisher();
+    }
+
+    @Test
+    void extractBodyFromSoap_validInput_returnsCleanXml() {
+        String soapMessage = """
+            <?xml version="1.0" encoding="UTF-8"?>
+            <s11:Envelope xmlns:s11="http://schemas.xmlsoap.org/soap/envelope/">
+                <s11:Body>
+                    <getCityResponse>
+                        <country>Germany</country>
+                        <population>327000</population>
+                    </getCityResponse>
+                </s11:Body>
+            </s11:Envelope>
+            """;
+
+        String result = publisher.extractBodyFromSoap(soapMessage);
+
+        assertTrue(result.contains("<getCityResponse>"));
+        assertTrue(result.contains("<country>Germany</country>"));
+        assertTrue(result.contains("<population>327000</population>"));
+        assertFalse(result.contains("s11:Envelope"));
+        assertFalse(result.contains("s11:Body"));
+    }
+
+    @Test
+    void domToString_validDocument_returnsFormattedXml() throws Exception {
+        Document doc = dbf.newDocumentBuilder()
+                .parse(new InputSource(new StringReader("<root><child>value</child></root>")));
+
+        String result = publisher.domToString(doc);
+
+        assertTrue(result.contains("<?xml"));
+        assertTrue(result.contains("<root>"));
+        assertTrue(result.contains("<child>value</child>"));
+    }
+
+    @Test
+    void appendChildren_validInput_appendsAllElements() throws Exception {
+        Document sourceDoc = dbf.newDocumentBuilder()
+                .parse(new InputSource(new StringReader("<root><a>1</a><b>2</b></root>")));
+        Document targetDoc = dbf.newDocumentBuilder().newDocument();
+        Element targetRoot = targetDoc.createElement("newRoot");
+        targetDoc.appendChild(targetRoot);
+
+        LegacyServicePublisher.appendChildren(sourceDoc.getDocumentElement(), targetDoc, targetRoot);
+
+        assertEquals(2, targetRoot.getChildNodes().getLength());
+        assertEquals("1", targetRoot.getElementsByTagName("a").item(0).getTextContent());
+        assertEquals("2", targetRoot.getElementsByTagName("b").item(0).getTextContent());
+    }
+
+    @Test
+    void domFromString_validSoap_returnsFirstElement() throws Exception {
+        String soap = """
+            <s11:Envelope xmlns:s11="http://schemas.xmlsoap.org/soap/envelope/">
+                <s11:Body>
+                    <response>
+                        <data>test</data>
+                    </response>
+                </s11:Body>
+            </s11:Envelope>
+            """;
+
+        Node result = publisher.domFromString(soap);
+
+        assertEquals("response", result.getLocalName());
+        assertTrue(result.hasChildNodes());
+    }
+
+    @Test
+    void getFirstRealElement_withMixedContent_returnsFirstElement() throws Exception {
+        Document doc = dbf.newDocumentBuilder().newDocument();
+        Element root = doc.createElement("root");
+        root.appendChild(doc.createTextNode("\n    "));
+        Element element = doc.createElement("realElement");
+        root.appendChild(element);
+
+        Node result = LegacyServicePublisher.getFirstRealElement(root.getFirstChild());
+
+        assertEquals("realElement", result.getNodeName());
+    }
+
+    @Test
+    void convertXmlToJson_singleRootElement_stripsWrapper() {
+        String xml = """
+            <?xml version="1.0" encoding="UTF-8"?>
+            <root>
+                <name>test</name>
+                <value>123</value>
+            </root>
+            """;
+
+        String result = publisher.convertXmlToJson(xml);
+        JSONObject json = new JSONObject(result);
+
+        assertTrue(json.has("name"));
+        assertTrue(json.has("value"));
+        assertEquals("test", json.getString("name"));
+        assertEquals("123", json.getString("value"));
+    }
+
+    @Test
+    void convertXmlToJson_multipleRootElements_keepsStructure() {
+        String xml = """
+            <?xml version="1.0" encoding="UTF-8"?>
+            <root>
+                <element1>
+                    <name>test1</name>
+                </element1>
+                <element2>
+                    <name>test2</name>
+                </element2>
+            </root>
+            """;
+
+        String result = publisher.convertXmlToJson(xml);
+        JSONObject json = new JSONObject(result);
+
+        assertTrue(json.has("element1"));
+        assertTrue(json.has("element2"));
+    }
+}

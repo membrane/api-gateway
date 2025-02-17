@@ -22,6 +22,7 @@ import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.openapi.serviceproxy.OpenAPIPublisher;
 import com.predic8.membrane.core.util.ConfigurationException;
 import com.predic8.wsdl.WSDLParser;
+import org.jetbrains.annotations.NotNull;
 import org.json.JSONObject;
 import org.json.XML;
 import org.slf4j.Logger;
@@ -33,10 +34,8 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
-import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.transform.OutputKeys;
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
@@ -56,10 +55,8 @@ import static com.predic8.membrane.core.http.Request.METHOD_POST;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPIPublisher.PATTERN_UI;
 import static com.predic8.membrane.core.util.CollectionsUtil.mapOf;
-import static com.predic8.membrane.core.util.URLUtil.getBaseUrl;
 import static java.lang.String.valueOf;
-import static javax.xml.transform.OutputKeys.INDENT;
-import static javax.xml.transform.OutputKeys.OMIT_XML_DECLARATION;
+import static javax.xml.transform.OutputKeys.*;
 
 @MCElement(name = "legacyServicePublisher")
 public class LegacyServicePublisher extends AbstractInterceptor {
@@ -74,10 +71,11 @@ public class LegacyServicePublisher extends AbstractInterceptor {
     private OpenAPIPublisher publisher;
 
     // TODO These should probably be extracted into utils and then replaced in SoapBodyTemplateInterceptor as well.
+    public static final String SOAP_ENVELOPE = "http://schemas.xmlsoap.org/soap/envelope/";
     private static final String SOAP11_PREFIX = """
-                <s11:Envelope xmlns:s11="http://schemas.xmlsoap.org/soap/envelope/">
+                <s11:Envelope xmlns:s11="%s">
                     <s11:Body>
-                """;
+                """.formatted(SOAP_ENVELOPE);
     private static final String SOAP11_POSTFIX = """
                     </s11:Body>
                 </s11:Envelope>
@@ -93,6 +91,7 @@ public class LegacyServicePublisher extends AbstractInterceptor {
             log.error("OpenAPI Publisher failed to initialize.", e);
             throw new ConfigurationException("Unable to initialize Swagger UI.", e);
         }
+        documentBuilderFactory.setNamespaceAware(true);
     }
 
     @Override
@@ -182,48 +181,66 @@ public class LegacyServicePublisher extends AbstractInterceptor {
         return null;
     }
 
-    // TODO Optimize
-    private String extractBodyFromSoap(String soap) {
+    String extractBodyFromSoap(String soap) {
         try {
-            DocumentBuilderFactory documentBuilderFactory = DocumentBuilderFactory.newInstance();
-            documentBuilderFactory.setNamespaceAware(true);
-            DocumentBuilder db = documentBuilderFactory.newDocumentBuilder();
-            Document doc = db.parse(new InputSource(new StringReader(soap)));
-            String soapNamespace = "http://schemas.xmlsoap.org/soap/envelope/";
-            NodeList bodies = doc.getElementsByTagNameNS(soapNamespace, "Body");
-            if (bodies.getLength() == 0) {
-                throw new RuntimeException("No SOAP Body found");
-            }
-            Node body = bodies.item(0);
-            Node responseNode = body.getFirstChild();
-            while (responseNode != null && responseNode.getNodeType() != Node.ELEMENT_NODE) {
-                responseNode = responseNode.getNextSibling();
-            }
-            if (responseNode == null) {
-                throw new RuntimeException("Body content is null");
-            }
+            Node responseNode = domFromString(soap);
+
             Document newDoc = documentBuilderFactory.newDocumentBuilder().newDocument();
             Element newResponse = newDoc.createElement(responseNode.getLocalName());
-            NodeList children = responseNode.getChildNodes();
-            for (int i = 0; i < children.getLength(); i++) {
-                Node child = children.item(i);
-                if (child.getNodeType() == Node.ELEMENT_NODE) {
-                    Element newElement = newDoc.createElement(child.getLocalName());
-                    newElement.setTextContent(child.getTextContent());
-                    newResponse.appendChild(newElement);
-                }
-            }
             newDoc.appendChild(newResponse);
-            TransformerFactory tf = TransformerFactory.newInstance();
-            Transformer transformer = tf.newTransformer();
-            transformer.setOutputProperty(OutputKeys.ENCODING, "UTF-8");
-            transformer.setOutputProperty(OutputKeys.INDENT, "yes");
-            StringWriter writer = new StringWriter();
-            transformer.transform(new DOMSource(newDoc), new StreamResult(writer));
-            return writer.toString();
+
+            appendChildren(responseNode, newDoc, newResponse);
+
+            return domToString(newDoc);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+    }
+
+    String domToString(Document newDoc) throws TransformerException {
+        Transformer transformer = transformerFactory.newTransformer();
+        transformer.setOutputProperty(ENCODING, "UTF-8");
+        transformer.setOutputProperty(INDENT, "yes");
+        StringWriter writer = new StringWriter();
+        transformer.transform(new DOMSource(newDoc), new StreamResult(writer));
+        return writer.toString();
+    }
+
+    static void appendChildren(Node responseNode, Document newDoc, Element newResponse) {
+        NodeList children = responseNode.getChildNodes();
+        for (int i = 0; i < children.getLength(); i++) {
+            Node child = children.item(i);
+            if (child.getNodeType() == Node.ELEMENT_NODE) {
+                Element e = newDoc.createElement(child.getLocalName());
+                e.setTextContent(child.getTextContent());
+                newResponse.appendChild(e);
+            }
+        }
+    }
+
+    @NotNull Node domFromString(String soap) throws SAXException, IOException, ParserConfigurationException {
+        return getFirstRealElement(
+            documentBuilderFactory.newDocumentBuilder()
+                .parse(new InputSource(new StringReader(soap)))
+                .getElementsByTagNameNS(SOAP_ENVELOPE, "Body")
+                .item(0).getFirstChild()
+        );
+    }
+
+    static @NotNull Node getFirstRealElement(Node responseNode) {
+        while (responseNode != null && responseNode.getNodeType() != Node.ELEMENT_NODE) {
+            responseNode = responseNode.getNextSibling();
+        }
+        if (responseNode == null) throw new RuntimeException("Body content is null");
+        return responseNode;
+    }
+
+    String convertXmlToJson(String xml) {
+        JSONObject jsonObject = XML.toJSONObject(xml);
+        if (jsonObject.length() == 1) {
+            return jsonObject.getJSONObject(jsonObject.keys().next()).toString(2);
+        }
+        return jsonObject.toString(2);
     }
 
     private String convertJsonToXml(String json) {
@@ -243,16 +260,6 @@ public class LegacyServicePublisher extends AbstractInterceptor {
             throw new RuntimeException(e);
         }
     }
-
-    private String convertXmlToJson(String xml) {
-        JSONObject jsonObject = XML.toJSONObject(xml);
-        if (jsonObject.length() == 1) {
-            String key = jsonObject.keys().next();
-            return jsonObject.getJSONObject(key).toString(2);
-        }
-        return jsonObject.toString(2);
-    }
-
 
     private Outcome handleOpenAPIServing(Exchange exc) {
         if (exc.getRequest().getUri().matches(valueOf(PATTERN_UI))) {
