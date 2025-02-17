@@ -69,6 +69,7 @@ public class HttpClient implements AutoCloseable {
      */
     private final int maxRetries;
     private final int connectTimeout;
+    private final int soTimeout;
     private final String localAddr;
     private final SSLContext sslContext;
     private final boolean useHttp2;
@@ -106,6 +107,7 @@ public class HttpClient implements AutoCloseable {
         maxRetries = configuration.getMaxRetries();
 
         connectTimeout = configuration.getConnection().getTimeout();
+        soTimeout = configuration.getConnection().getSoTimeout();
         localAddr = configuration.getConnection().getLocalAddr();
 
         conMgr = new ConnectionManager(configuration.getConnection().getKeepAliveTimeout(), timerManager);
@@ -466,6 +468,7 @@ public class HttpClient implements AutoCloseable {
     }
 
     private Response doCall(Exchange exc, Connection con) throws IOException, EndOfStreamException {
+        con.socket.setSoTimeout(soTimeout);
         exc.getRequest().write(con.out, maxRetries > 1);
         exc.setTimeReqSent(System.currentTimeMillis());
 

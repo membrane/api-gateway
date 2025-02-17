@@ -38,9 +38,11 @@ public class Http2ClientServerTest {
     private volatile AbstractHttpHandler handler;
     private HttpClient hc;
     private HttpRouter router;
+    private static ConcurrentHashMap<String, Boolean> connectionHashes = new ConcurrentHashMap<>();
 
     @BeforeEach
     public void setup() {
+        connectionHashes.clear();
         SSLParser sslParser = new SSLParser();
         sslParser.setUseExperimentalHttp2(true);
         sslParser.setEndpointIdentificationAlgorithm("");
@@ -57,6 +59,7 @@ public class Http2ClientServerTest {
             @Override
             public Outcome handleRequest(Exchange exc) {
                 handler = exc.getHandler();
+                connectionHashes.put("" + ((HttpServerHandler)exc.getHandler()).getSrcOut().hashCode(), true);
                 if (requestAsserter != null)
                     requestAsserter.accept(exc.getRequest());
                 exc.setResponse(response);
@@ -169,6 +172,8 @@ public class Http2ClientServerTest {
             assertEquals(200, r.getStatusCode());
             assertEquals("", r.getBodyAsStringDecoded());
         }
+
+        assertEquals(1, connectionHashes.size());
     }
 
     private void test200(String body) throws Exception {
