@@ -9,8 +9,8 @@ import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
-import com.predic8.membrane.core.proxies.ServiceProxy;
 import com.predic8.membrane.core.resolver.ResolverMap;
+import com.predic8.membrane.core.rules.ServiceProxy;
 import com.predic8.membrane.core.transport.http.HttpClient;
 import com.predic8.membrane.core.transport.http.HttpServerHandler;
 import org.junit.jupiter.api.AfterAll;
@@ -45,7 +45,11 @@ public class HttpsKeepAliveTest {
         sp.getInterceptors().add(new AbstractInterceptor() {
             @Override
             public Outcome handleRequest(Exchange exc) {
-                exc.setResponse(Response.ok("ssltest").build());
+                try {
+                    exc.setResponse(Response.ok("ssltest").build());
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
                 connectionHashes.put("" + ((HttpServerHandler)exc.getHandler()).getSrcOut().hashCode(), true);
                 return RETURN;
             }
