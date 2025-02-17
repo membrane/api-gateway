@@ -39,7 +39,7 @@ class LegacyServicePublisherTest {
     }
 
     @Test
-    void extractBodyFromSoap_validInput_returnsCleanXml() {
+    void extractBodyFromSoapValidInputReturnsCleanXml() {
         String soapMessage = """
             <?xml version="1.0" encoding="UTF-8"?>
             <s11:Envelope xmlns:s11="http://schemas.xmlsoap.org/soap/envelope/">
@@ -62,7 +62,7 @@ class LegacyServicePublisherTest {
     }
 
     @Test
-    void domToString_validDocument_returnsFormattedXml() throws Exception {
+    void domToStringValidDocumentReturnsFormattedXml() throws Exception {
         Document doc = dbf.newDocumentBuilder()
                 .parse(new InputSource(new StringReader("<root><child>value</child></root>")));
 
@@ -74,7 +74,7 @@ class LegacyServicePublisherTest {
     }
 
     @Test
-    void appendChildren_validInput_appendsAllElements() throws Exception {
+    void appendChildrenValidInputAppendsAllElements() throws Exception {
         Document sourceDoc = dbf.newDocumentBuilder()
                 .parse(new InputSource(new StringReader("<root><a>1</a><b>2</b></root>")));
         Document targetDoc = dbf.newDocumentBuilder().newDocument();
@@ -89,7 +89,7 @@ class LegacyServicePublisherTest {
     }
 
     @Test
-    void domFromString_validSoap_returnsFirstElement() throws Exception {
+    void domFromStringValidSoapReturnsFirstElement() throws Exception {
         String soap = """
             <s11:Envelope xmlns:s11="http://schemas.xmlsoap.org/soap/envelope/">
                 <s11:Body>
@@ -107,7 +107,7 @@ class LegacyServicePublisherTest {
     }
 
     @Test
-    void getFirstRealElement_withMixedContent_returnsFirstElement() throws Exception {
+    void getFirstRealElementWithMixedContentReturnsFirstElement() throws Exception {
         Document doc = dbf.newDocumentBuilder().newDocument();
         Element root = doc.createElement("root");
         root.appendChild(doc.createTextNode("\n    "));
@@ -120,7 +120,7 @@ class LegacyServicePublisherTest {
     }
 
     @Test
-    void convertXmlToJson_singleRootElement_stripsWrapper() {
+    void convertXmlToJsonSingleRootElementStripsWrapper() {
         String xml = """
             <?xml version="1.0" encoding="UTF-8"?>
             <root>
@@ -139,7 +139,7 @@ class LegacyServicePublisherTest {
     }
 
     @Test
-    void convertXmlToJson_multipleRootElements_keepsStructure() {
+    void convertXmlToJsonMultipleRootElementsKeepsStructure() {
         String xml = """
             <?xml version="1.0" encoding="UTF-8"?>
             <root>
