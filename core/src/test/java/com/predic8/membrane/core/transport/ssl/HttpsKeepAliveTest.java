@@ -37,9 +37,8 @@ public class HttpsKeepAliveTest {
         sp.setPort(3063);
         SSLParser sslIB = new SSLParser();
         KeyStore ksIB = new KeyStore();
-        ksIB.setLocation("classpath:/alias-keystore.p12");
+        ksIB.setLocation("classpath:/ssl-rsa.keystore");
         ksIB.setKeyPassword("secret");
-        ksIB.setKeyAlias("key1");
         sslIB.setKeyStore(ksIB);
         sp.setSslInboundParser(sslIB);
         sp.getInterceptors().add(new AbstractInterceptor() {
@@ -62,7 +61,7 @@ public class HttpsKeepAliveTest {
         SSLParser sslOB = new SSLParser();
         sslOB.setEndpointIdentificationAlgorithm("");
         TrustStore tsOB = new TrustStore();
-        tsOB.setLocation("classpath:/alias-truststore.p12");
+        tsOB.setLocation("classpath:/ssl-rsa-pub.keystore");
         tsOB.setPassword("secret");
         sslOB.setTrustStore(tsOB);
         return new StaticSSLContext(sslOB, new ResolverMap(), "/");
