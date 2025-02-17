@@ -128,7 +128,7 @@ public class ConnectionManager {
 			cachePort = 0;
 		}
 
-		ConnectionKey key = new ConnectionKey(cacheHost, cachePort, sslProvider, sniServerName, proxy, proxySSLContext, applicationProtocols);
+		ConnectionKey key = new ConnectionKey(cacheHost, cachePort, sslProvider, sniServerName, proxy, proxySSLContext);
 		long now = System.currentTimeMillis();
 
 		synchronized(this) {
@@ -168,7 +168,7 @@ public class ConnectionManager {
 
 		ConnectionKey key = new ConnectionKey(connection.getHost(), connection.socket.getPort(),
 				connection.getSslProvider(), connection.getSniServerName(), connection.getProxyConfiguration(),
-				connection.getProxySSLProvider(), connection.getApplicationProtocols());
+				connection.getProxySSLProvider());
 		OldConnection o = new OldConnection(connection, keepAliveTimeout);
 		ArrayList<OldConnection> l;
 		synchronized(this) {
