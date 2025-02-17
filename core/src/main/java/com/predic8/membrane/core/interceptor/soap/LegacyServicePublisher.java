@@ -19,7 +19,6 @@ import com.predic8.membrane.core.exceptions.ProblemDetails;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
-import com.predic8.membrane.core.interceptor.soap.WebServiceOASWrapper.PortMapping;
 import com.predic8.membrane.core.openapi.serviceproxy.OpenAPIPublisher;
 import com.predic8.membrane.core.util.ConfigurationException;
 import com.predic8.wsdl.WSDLParser;
@@ -28,6 +27,7 @@ import org.json.XML;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
+import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
@@ -70,9 +70,18 @@ public class LegacyServicePublisher extends AbstractInterceptor {
     private final TransformerFactory transformerFactory = TransformerFactory.newInstance();
     private final DocumentBuilderFactory documentBuilderFactory = DocumentBuilderFactory.newInstance();
 
-
     private String wsdlLocation;
     private OpenAPIPublisher publisher;
+
+    // TODO These should probably be extracted into utils and then replaced in SoapBodyTemplateInterceptor as well.
+    private static final String SOAP11_PREFIX = """
+                <s11:Envelope xmlns:s11="http://schemas.xmlsoap.org/soap/envelope/">
+                    <s11:Body>
+                """;
+    private static final String SOAP11_POSTFIX = """
+                    </s11:Body>
+                </s11:Envelope>
+                """;
 
     @Override
     public void init() {
@@ -112,42 +121,43 @@ public class LegacyServicePublisher extends AbstractInterceptor {
     }
 
     private Outcome handleServiceRouting(Exchange exc) {
-        String contentType = exc.getRequest().getHeader().getContentType();
-        if (APPLICATION_XML.equals(contentType)) {
+        if (exc.getRequest().isXML()) {
             setSOAPRequestFromXML(exc);
-        } else if (APPLICATION_JSON.equals(contentType)) {
+        } else if (exc.getRequest().isJSON()) {
             setSOAPRequestFromJSON(exc);
         }
         return CONTINUE;
     }
 
+    // TODO Probably has to be adjusted according to the PortMapping
+    //  String baseUrl = getBaseUrl(exc.getRequest().getUri(), 1);
+
     private void setSOAPRequestFromXML(Exchange exc) {
         String xml = exc.getRequest().getBodyAsStringDecoded().replaceFirst("<\\?xml.*?\\?>", "");
-        if (!xml.contains("soap:Envelope")) {
-            // TODO Probably has to be adjusted according to the PortMapping
-            String baseUrl = getBaseUrl(exc.getRequest().getUri(), 1);
-            String soapEnvelope = "<soap:Envelope xmlns:soap=\"http://schemas.xmlsoap.org/soap/envelope/\">" +
-                    "<soap:Body>" + xml + "</soap:Body>" +
-                    "</soap:Envelope>";
-            exc.getRequest().setBodyContent(soapEnvelope.getBytes());
+        if (!xml.contains(":Envelope")) {
+            exc.getRequest().setBodyContent(
+                buildSoapBody(xml).getBytes()
+            );
         }
     }
 
     private void setSOAPRequestFromJSON(Exchange exc) {
-        String json = exc.getRequest().getBodyAsStringDecoded();
-        // TODO Probably has to be adjusted according to the PortMapping
-        String baseUrl = getBaseUrl(exc.getRequest().getUri(), 1);
-        String soapEnvelope = "<soap:Envelope xmlns:soap=\"http://schemas.xmlsoap.org/soap/envelope/\">" +
-                "<soap:Body>" + convertJsonToXml(json) + "</soap:Body>" +
-                "</soap:Envelope>";
-        exc.getRequest().setBodyContent(soapEnvelope.getBytes());
+        exc.getRequest().setBodyContent(
+                buildSoapBody(convertJsonToXml(exc.getRequest().getBodyAsStringDecoded())).getBytes()
+        );
     }
+
+    private String buildSoapBody(String content) {
+        return SOAP11_PREFIX + content + SOAP11_POSTFIX;
+    }
+
+    // TODO /////////////////////////////////////////////////////////////
 
     private void setSOAPResponseToXML(Exchange exc) {
         exc.getResponse().setBodyContent(
-                extractBodyFromSoap(
-                        exc.getResponse().getBodyAsStringDecoded()
-                ).getBytes()
+            extractBodyFromSoap(
+                    exc.getResponse().getBodyAsStringDecoded()
+            ).getBytes()
         );
     }
 
@@ -175,13 +185,41 @@ public class LegacyServicePublisher extends AbstractInterceptor {
     // TODO Optimize
     private String extractBodyFromSoap(String soap) {
         try {
+            DocumentBuilderFactory documentBuilderFactory = DocumentBuilderFactory.newInstance();
+            documentBuilderFactory.setNamespaceAware(true);
             DocumentBuilder db = documentBuilderFactory.newDocumentBuilder();
             Document doc = db.parse(new InputSource(new StringReader(soap)));
-            NodeList bodies = doc.getElementsByTagNameNS("http://schemas.xmlsoap.org/soap/envelope/", "Body");
+            String soapNamespace = "http://schemas.xmlsoap.org/soap/envelope/";
+            NodeList bodies = doc.getElementsByTagNameNS(soapNamespace, "Body");
+            if (bodies.getLength() == 0) {
+                throw new RuntimeException("No SOAP Body found");
+            }
             Node body = bodies.item(0);
+            Node responseNode = body.getFirstChild();
+            while (responseNode != null && responseNode.getNodeType() != Node.ELEMENT_NODE) {
+                responseNode = responseNode.getNextSibling();
+            }
+            if (responseNode == null) {
+                throw new RuntimeException("Body content is null");
+            }
+            Document newDoc = documentBuilderFactory.newDocumentBuilder().newDocument();
+            Element newResponse = newDoc.createElement(responseNode.getLocalName());
+            NodeList children = responseNode.getChildNodes();
+            for (int i = 0; i < children.getLength(); i++) {
+                Node child = children.item(i);
+                if (child.getNodeType() == Node.ELEMENT_NODE) {
+                    Element newElement = newDoc.createElement(child.getLocalName());
+                    newElement.setTextContent(child.getTextContent());
+                    newResponse.appendChild(newElement);
+                }
+            }
+            newDoc.appendChild(newResponse);
             TransformerFactory tf = TransformerFactory.newInstance();
+            Transformer transformer = tf.newTransformer();
+            transformer.setOutputProperty(OutputKeys.ENCODING, "UTF-8");
+            transformer.setOutputProperty(OutputKeys.INDENT, "yes");
             StringWriter writer = new StringWriter();
-            tf.newTransformer().transform(new DOMSource(body.getFirstChild()), new StreamResult(writer));
+            transformer.transform(new DOMSource(newDoc), new StreamResult(writer));
             return writer.toString();
         } catch (Exception e) {
             throw new RuntimeException(e);
@@ -208,8 +246,13 @@ public class LegacyServicePublisher extends AbstractInterceptor {
 
     private String convertXmlToJson(String xml) {
         JSONObject jsonObject = XML.toJSONObject(xml);
+        if (jsonObject.length() == 1) {
+            String key = jsonObject.keys().next();
+            return jsonObject.getJSONObject(key).toString(2);
+        }
         return jsonObject.toString(2);
     }
+
 
     private Outcome handleOpenAPIServing(Exchange exc) {
         if (exc.getRequest().getUri().matches(valueOf(PATTERN_UI))) {
