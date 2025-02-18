@@ -32,6 +32,18 @@ public class URLUtil {
 		return path + "/";
 	}
 
+	public static String getResourcePath(String url, int depth) {
+		String path = stripEnd(url, "/");
+		StringBuilder resourcePath = new StringBuilder();
+		for (int i = 0; i < depth; i++) {
+			int lastSlash = path.lastIndexOf('/');
+			if (lastSlash == -1) return resourcePath.toString();
+			resourcePath.insert(0, path.substring(lastSlash));
+			path = path.substring(0, lastSlash);
+		}
+		return resourcePath.substring(1);
+	}
+
 	public static String getHost(String uri) {
 		int i = uri.indexOf(":") + 1;
 		while (uri.charAt(i) == '/')

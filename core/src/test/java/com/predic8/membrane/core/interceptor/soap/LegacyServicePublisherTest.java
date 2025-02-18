@@ -13,9 +13,6 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.soap;
 
-import com.predic8.membrane.core.openapi.serviceproxy.OpenAPIPublisher;
-import com.predic8.membrane.core.util.ConfigurationException;
-import com.predic8.wsdl.WSDLParser;
 import org.json.JSONObject;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -27,7 +24,6 @@ import org.xml.sax.InputSource;
 import javax.xml.parsers.DocumentBuilderFactory;
 import java.io.StringReader;
 
-import static com.predic8.membrane.core.util.CollectionsUtil.mapOf;
 import static org.junit.jupiter.api.Assertions.*;
 
 class LegacyServicePublisherTest {

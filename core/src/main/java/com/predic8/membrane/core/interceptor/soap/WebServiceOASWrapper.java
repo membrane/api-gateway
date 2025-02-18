@@ -83,7 +83,8 @@ class WebServiceOASWrapper {
                 e -> getIdFromAPI(e.getApi()),
                 e -> new OpenAPIRecord(e.getApi(), new OpenAPISpec() {{
                     setRewrite(new Rewrite());
-                }})
+                }}),
+                (existing, replacement) -> existing
         )).entrySet().stream();
     }
 }

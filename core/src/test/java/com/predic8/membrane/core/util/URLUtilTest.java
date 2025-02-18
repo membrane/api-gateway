@@ -33,6 +33,12 @@ public class URLUtilTest {
 	}
 
 	@Test
+	void getResourcePathTest() {
+		assertEquals("stuff", getResourcePath("http://www.foobar.com/base/path/stuff", 1));
+		assertEquals("path/stuff", getResourcePath("http://www.foobar2.com/base/path/stuff", 2));
+	}
+
+	@Test
 	void host() {
 		assertEquals(getHost("internal:a"), "a");
 		assertEquals(getHost("internal://a"), "a");

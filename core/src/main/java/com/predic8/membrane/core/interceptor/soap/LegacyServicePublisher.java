@@ -55,6 +55,7 @@ import static com.predic8.membrane.core.http.Request.METHOD_POST;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPIPublisher.PATTERN_UI;
 import static com.predic8.membrane.core.util.CollectionsUtil.mapOf;
+import static com.predic8.membrane.core.util.URLUtil.getResourcePath;
 import static java.lang.String.valueOf;
 import static javax.xml.transform.OutputKeys.*;
 
@@ -145,7 +146,7 @@ public class LegacyServicePublisher extends AbstractInterceptor {
 
     private void setSOAPRequestFromJSON(Exchange exc) {
         exc.getRequest().setBodyContent(
-                buildSoapBody(convertJsonToXml(exc.getRequest().getBodyAsStringDecoded())).getBytes()
+                buildSoapBody(convertJsonToXml(exc.getRequest().getBodyAsStringDecoded(), getResourcePath(exc.getRequest().getUri(), 1))).getBytes()
         );
     }
 
@@ -250,18 +251,23 @@ public class LegacyServicePublisher extends AbstractInterceptor {
         return jsonObject.toString(2);
     }
 
-    private String convertJsonToXml(String json) {
+    private String convertJsonToXml(String json, String opName) {
         try {
+            JSONObject wrappedJson = new JSONObject();
+            wrappedJson.put(opName, new JSONObject(json));
+
             StringWriter writer = new StringWriter();
             Transformer tr = transformerFactory.newTransformer();
             tr.setOutputProperty(INDENT, "yes");
-            tr.setOutputProperty(OMIT_XML_DECLARATION, "yes");
+            tr.setOutputProperty(OMIT_XML_DECLARATION, "no");
             tr.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "2");
-            tr.transform(new DOMSource(
-                            documentBuilderFactory.newDocumentBuilder().parse(
-                                    new InputSource(new StringReader(XML.toString(new JSONObject(json)))))
-                    ), new StreamResult(writer)
+            tr.transform(
+                    new DOMSource(documentBuilderFactory.newDocumentBuilder().parse(
+                            new InputSource(new StringReader(XML.toString(wrappedJson)))
+                    )),
+                    new StreamResult(writer)
             );
+
             return writer.toString();
         } catch (TransformerException | SAXException | IOException | ParserConfigurationException e) {
             throw new RuntimeException(e);

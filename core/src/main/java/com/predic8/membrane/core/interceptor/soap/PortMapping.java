@@ -71,6 +71,7 @@ record PortMapping(Port port, OpenAPI api) {
                     setPost(new Operation() {{
                         setOperationId(opName);
                         setSummary("Invoke operation " + opName);
+                        setDescription(getDocumentationOrEmpty(operation));
                         setRequestBody(new RequestBody() {{
                             $ref("#/components/requestBodies/" + requestBodyName);
                         }});
@@ -85,6 +86,7 @@ record PortMapping(Port port, OpenAPI api) {
 
             comp.setRequestBodies(requestBodies);
             comp.setResponses(responses);
+            comp.setSchemas(xsd2oas.getGlobalComponents());
             setComponents(comp);
             setPaths(paths);
         }});
@@ -117,6 +119,13 @@ record PortMapping(Port port, OpenAPI api) {
                 }});
             }
         }};
+    }
+
+    private static String getDocumentationOrEmpty(com.predic8.wsdl.Operation op) {
+        if (op.getDocumentation() != null) {
+            return op.getDocumentation().getContent();
+        }
+        return "";
     }
 
     private static String getDocumentationOrEmpty(Port port) {

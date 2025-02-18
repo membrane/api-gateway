@@ -13,7 +13,7 @@
         <api port="2000">
             <legacyServicePublisher wsdl="./conf/city-service.wsdl" />
             <!--<legacyServicePublisher wsdl="./city-service.wsdl">
-                <serverTarget serverName="CityService" targetIp="localhost:5000" />
+                <serverTarget portName="CityService" targetIp="localhost:5000" />
             </legacyServicePublisher>-->
             <target host="localhost" port="5000" />
         </api>
