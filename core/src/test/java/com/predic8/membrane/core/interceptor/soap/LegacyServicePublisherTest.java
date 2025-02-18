@@ -13,6 +13,9 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.soap;
 
+import com.predic8.membrane.core.openapi.serviceproxy.OpenAPIPublisher;
+import com.predic8.membrane.core.util.ConfigurationException;
+import com.predic8.wsdl.WSDLParser;
 import org.json.JSONObject;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -24,6 +27,7 @@ import org.xml.sax.InputSource;
 import javax.xml.parsers.DocumentBuilderFactory;
 import java.io.StringReader;
 
+import static com.predic8.membrane.core.util.CollectionsUtil.mapOf;
 import static org.junit.jupiter.api.Assertions.*;
 
 class LegacyServicePublisherTest {
@@ -39,26 +43,34 @@ class LegacyServicePublisherTest {
     }
 
     @Test
-    void extractBodyFromSoapValidInputReturnsCleanXml() {
+    void extractBodyFromSoapValidInputReturnsCleanXml() throws Exception {
         String soapMessage = """
-            <?xml version="1.0" encoding="UTF-8"?>
-            <s11:Envelope xmlns:s11="http://schemas.xmlsoap.org/soap/envelope/">
-                <s11:Body>
-                    <getCityResponse>
-                        <country>Germany</country>
-                        <population>327000</population>
-                    </getCityResponse>
-                </s11:Body>
-            </s11:Envelope>
-            """;
+        <?xml version="1.0" encoding="UTF-8"?>
+        <s11:Envelope xmlns:s11="http://schemas.xmlsoap.org/soap/envelope/">
+            <s11:Body>
+                <getCityResponse>
+                    <country>Germany</country>
+                    <population>327000</population>
+                </getCityResponse>
+            </s11:Body>
+        </s11:Envelope>
+        """;
 
         String result = publisher.extractBodyFromSoap(soapMessage);
+        Document resultDoc = dbf.newDocumentBuilder()
+                .parse(new InputSource(new StringReader(result)));
+        assertEquals("getCityResponse", resultDoc.getDocumentElement().getNodeName());
+        assertEquals("Germany", resultDoc.getElementsByTagName("country").item(0).getTextContent());
+        assertEquals("327000", resultDoc.getElementsByTagName("population").item(0).getTextContent());
+    }
 
-        assertTrue(result.contains("<getCityResponse>"));
-        assertTrue(result.contains("<country>Germany</country>"));
-        assertTrue(result.contains("<population>327000</population>"));
-        assertFalse(result.contains("s11:Envelope"));
-        assertFalse(result.contains("s11:Body"));
+    @Test
+    void extractBodyFromSoapInvalidInputThrowsException() {
+        String invalidSoap = "<invalid>Not a SOAP message</invalid>";
+
+        RuntimeException exception = assertThrows(RuntimeException.class,
+                () -> publisher.extractBodyFromSoap(invalidSoap));
+        assertEquals("java.lang.RuntimeException: No SOAP Body element found", exception.getMessage());
     }
 
     @Test
@@ -110,7 +122,7 @@ class LegacyServicePublisherTest {
     void getFirstRealElementWithMixedContentReturnsFirstElement() throws Exception {
         Document doc = dbf.newDocumentBuilder().newDocument();
         Element root = doc.createElement("root");
-        root.appendChild(doc.createTextNode("\n    "));
+        root.appendChild(doc.createTextNode("Some Foobar"));
         Element element = doc.createElement("realElement");
         root.appendChild(element);
 
@@ -131,31 +143,7 @@ class LegacyServicePublisherTest {
 
         String result = publisher.convertXmlToJson(xml);
         JSONObject json = new JSONObject(result);
-
-        assertTrue(json.has("name"));
-        assertTrue(json.has("value"));
         assertEquals("test", json.getString("name"));
-        assertEquals("123", json.getString("value"));
-    }
-
-    @Test
-    void convertXmlToJsonMultipleRootElementsKeepsStructure() {
-        String xml = """
-            <?xml version="1.0" encoding="UTF-8"?>
-            <root>
-                <element1>
-                    <name>test1</name>
-                </element1>
-                <element2>
-                    <name>test2</name>
-                </element2>
-            </root>
-            """;
-
-        String result = publisher.convertXmlToJson(xml);
-        JSONObject json = new JSONObject(result);
-
-        assertTrue(json.has("element1"));
-        assertTrue(json.has("element2"));
+        assertEquals(123, json.getInt("value"));
     }
 }

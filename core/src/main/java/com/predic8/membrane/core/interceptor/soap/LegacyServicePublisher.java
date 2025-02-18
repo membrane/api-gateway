@@ -81,6 +81,10 @@ public class LegacyServicePublisher extends AbstractInterceptor {
                 </s11:Envelope>
                 """;
 
+    public LegacyServicePublisher() {
+        documentBuilderFactory.setNamespaceAware(true);
+    }
+
     @Override
     public void init() {
         super.init();
@@ -91,7 +95,6 @@ public class LegacyServicePublisher extends AbstractInterceptor {
             log.error("OpenAPI Publisher failed to initialize.", e);
             throw new ConfigurationException("Unable to initialize Swagger UI.", e);
         }
-        documentBuilderFactory.setNamespaceAware(true);
     }
 
     @Override
@@ -155,19 +158,21 @@ public class LegacyServicePublisher extends AbstractInterceptor {
     private void setSOAPResponseToXML(Exchange exc) {
         exc.getResponse().setBodyContent(
             extractBodyFromSoap(
-                    exc.getResponse().getBodyAsStringDecoded()
+                exc.getResponse().getBodyAsStringDecoded()
             ).getBytes()
         );
+        exc.getResponse().getHeader().setContentType(APPLICATION_XML);
     }
 
     private void setSOAPResponseToJSON(Exchange exc) {
         exc.getResponse().setBodyContent(
-                convertXmlToJson(
-                        extractBodyFromSoap(
-                                exc.getResponse().getBodyAsStringDecoded()
-                        )
-                ).getBytes()
+            convertXmlToJson(
+                extractBodyFromSoap(
+                    exc.getResponse().getBodyAsStringDecoded()
+                )
+            ).getBytes()
         );
+        exc.getResponse().getHeader().setContentType(APPLICATION_JSON);
     }
 
     private PortMapping getMapping(String baseUrl) {
@@ -218,13 +223,15 @@ public class LegacyServicePublisher extends AbstractInterceptor {
         }
     }
 
+    // TODO Maybe better name as this also extracts the body from the SOAP envelope.
     @NotNull Node domFromString(String soap) throws SAXException, IOException, ParserConfigurationException {
-        return getFirstRealElement(
-            documentBuilderFactory.newDocumentBuilder()
+        Node bodyNode = documentBuilderFactory.newDocumentBuilder()
                 .parse(new InputSource(new StringReader(soap)))
                 .getElementsByTagNameNS(SOAP_ENVELOPE, "Body")
-                .item(0).getFirstChild()
-        );
+                .item(0);
+        // TODO Better Exception
+        if (bodyNode == null) throw new RuntimeException("No SOAP Body element found");
+        return getFirstRealElement(bodyNode.getFirstChild());
     }
 
     static @NotNull Node getFirstRealElement(Node responseNode) {
