@@ -32,23 +32,22 @@ public class ConnectionKey {
     public final ProxyConfiguration proxy;
     @Nullable
     private final SSLProvider proxySSLProvider;
-    @Nullable
-    private final String[] applicationProtocols;
+    // 'applicationProtocols' is not part of the key, as HTTP/2 connections are never returned to the ConnectionManager
+    // pool: They are shared using the Http2ClientPool instead.
 
     public ConnectionKey(String host, int port, SSLProvider sslProvider, String serverName, ProxyConfiguration proxy,
-                         @Nullable SSLProvider proxySSLProvider, @Nullable String[] applicationProtocols) {
+                         @Nullable SSLProvider proxySSLProvider) {
         this.host = host;
         this.port = port;
         this.sslProvider = sslProvider;
         this.serverName = serverName;
         this.proxy = proxy;
         this.proxySSLProvider = proxySSLProvider;
-        this.applicationProtocols = applicationProtocols;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hashCode(host, port, sslProvider, serverName, proxy, proxySSLProvider, Arrays.hashCode(applicationProtocols));
+        return Objects.hashCode(host, port, sslProvider, serverName, proxy, proxySSLProvider);
     }
 
     @Override
@@ -61,8 +60,7 @@ public class ConnectionKey {
                 && Objects.equal(sslProvider, other.sslProvider)
                 && Objects.equal(serverName, other.serverName)
                 && Objects.equal(proxy, other.proxy)
-                && Objects.equal(proxySSLProvider, other.proxySSLProvider)
-                && Arrays.equals(applicationProtocols, other.applicationProtocols);
+                && Objects.equal(proxySSLProvider, other.proxySSLProvider);
     }
 
     @Override

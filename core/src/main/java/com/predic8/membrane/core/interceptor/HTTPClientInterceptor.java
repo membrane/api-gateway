@@ -76,6 +76,7 @@ public class HTTPClientInterceptor extends AbstractInterceptor {
             String msg = "Target %s is not reachable.".formatted(getDestination(exc));
             log.warn(msg + PROXIES_HINT);
             ProblemDetails.gateway(router.isProduction(), getDisplayName())
+                    .addSubSee("connect")
                     .statusCode(502)
                     .detail(msg)
                     .buildAndSetResponse(exc);
@@ -83,6 +84,7 @@ public class HTTPClientInterceptor extends AbstractInterceptor {
         } catch (SocketTimeoutException e) {
             // Details are logged further down in the HTTPClient
             internal(router.isProduction(), getDisplayName())
+                    .addSubSee("socket-timeout")
                     .detail("Target %s is not reachable.".formatted(exc.getDestinations()))
                     .buildAndSetResponse(exc);
             return ABORT;
@@ -90,6 +92,7 @@ public class HTTPClientInterceptor extends AbstractInterceptor {
             String msg = "Target host %s of API %s is unknown. DNS was unable to resolve host name.".formatted(URLUtil.getHost(getDestination(exc)), exc.getProxy().getName());
             log.warn(msg + PROXIES_HINT);
             ProblemDetails.gateway(router.isProduction(), getDisplayName())
+                    .addSubSee("unknown-host")
                     .statusCode(502)
                     .detail(msg)
                     .buildAndSetResponse(exc);
@@ -97,6 +100,7 @@ public class HTTPClientInterceptor extends AbstractInterceptor {
         } catch (MalformedURLException e) {
             log.error("", e);
             internal(router.isProduction(), getDisplayName())
+                    .addSubSee("malformed-url")
                     .exception(e)
                     .internal("proxy", exc.getProxy().getName())
                     .buildAndSetResponse(exc);

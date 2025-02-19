@@ -61,6 +61,7 @@ public class TemplateInterceptor extends StaticInterceptor {
         catch (TemplateExecutionException e) {
             log.warn("Groovy template error: {}", e.getMessage());
             gateway( router.isProduction(),getDisplayName())
+                    .addSubSee("template")
                     .detail("Error during template rendering.")
                     .internal("line", e.getLineNumber())
                     .exception(e)

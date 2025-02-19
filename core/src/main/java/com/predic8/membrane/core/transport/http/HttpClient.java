@@ -69,6 +69,7 @@ public class HttpClient implements AutoCloseable {
      */
     private final int maxRetries;
     private final int connectTimeout;
+    private final int soTimeout;
     private final String localAddr;
     private final SSLContext sslContext;
     private final boolean useHttp2;
@@ -78,7 +79,7 @@ public class HttpClient implements AutoCloseable {
     private StreamPump.StreamPumpStats streamPumpStats;
 
     private static final String[] HTTP2_PROTOCOLS = new String[]{"h2"};
-    private static final String[] HTTP1_PROTOCOLS = new String[]{"http/1.1"};
+    private static final String[] HTTP1_PROTOCOLS = new String[]{};
    
     public HttpClient() {
         this(null, null);
@@ -106,6 +107,7 @@ public class HttpClient implements AutoCloseable {
         maxRetries = configuration.getMaxRetries();
 
         connectTimeout = configuration.getConnection().getTimeout();
+        soTimeout = configuration.getConnection().getSoTimeout();
         localAddr = configuration.getConnection().getLocalAddr();
 
         conMgr = new ConnectionManager(configuration.getConnection().getKeepAliveTimeout(), timerManager);
@@ -466,6 +468,7 @@ public class HttpClient implements AutoCloseable {
     }
 
     private Response doCall(Exchange exc, Connection con) throws IOException, EndOfStreamException {
+        con.socket.setSoTimeout(soTimeout);
         exc.getRequest().write(con.out, maxRetries > 1);
         exc.setTimeReqSent(System.currentTimeMillis());
 
