@@ -119,7 +119,12 @@ public class ResolverMap implements Cloneable, Resolver {
         File parentFile = new File(parent);
         if (!parent.endsWith("/") && !parent.endsWith("\\"))
             parentFile = parentFile.getParentFile();
-        return new File(parentFile, relativeChild).getAbsolutePath();
+        try {
+            return new File(parentFile, relativeChild).getCanonicalPath();
+        } catch (IOException e) {
+            // TODO
+            throw new RuntimeException(e);
+        }
     }
 
     /**

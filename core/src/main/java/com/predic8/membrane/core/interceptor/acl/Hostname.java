@@ -14,6 +14,7 @@
 package com.predic8.membrane.core.interceptor.acl;
 
 import com.predic8.membrane.core.Router;
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -81,13 +82,23 @@ public class Hostname extends AbstractClientAddress {
 					lastWarningSlowReverseDNSUsed = now;
 				}
 			}
-			String canonicalHostName = router.getDnsCache().getCanonicalHostName(InetAddress.getByName(ip));
-            log.debug("CanonicalHostname for {} / {} is {}", hostname, ip, canonicalHostName);
+			String canonicalHostName = getCanonicalHostName(ip);
+
+			log.debug("CanonicalHostname for {} / {} is {}", hostname, ip, canonicalHostName);
 			return Pattern.compile(schema).matcher(canonicalHostName).matches();
 		} catch (UnknownHostException e) {
             log.warn("Could not reverse lookup canonical hostname for {} {}.", hostname, ip);
 			return false;
 		}
+	}
+
+	private @NotNull String getCanonicalHostName(String ip) throws UnknownHostException {
+		String canonicalHostName = router.getDnsCache().getCanonicalHostName(InetAddress.getByName(ip));
+
+		// Fix for Windows. On Windows getCanonicalHostName() returns 127.0.0.1 instead of localhost
+		if (canonicalHostName.startsWith("127.")) // TODO
+			return  "localhost";
+		return canonicalHostName;
 	}
 
 	@Override
