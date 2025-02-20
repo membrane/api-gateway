@@ -18,10 +18,12 @@ import com.predic8.membrane.core.config.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.interceptor.server.*;
 import com.predic8.membrane.test.*;
+import io.restassured.filter.log.LogDetail;
 import org.junit.jupiter.api.*;
 
 import static com.predic8.membrane.test.TestUtil.getPathFromResource;
 import static io.restassured.RestAssured.*;
+import static io.restassured.filter.log.LogDetail.ALL;
 import static org.hamcrest.Matchers.*;
 
 @SuppressWarnings("HttpUrlsUsage")
@@ -69,13 +71,17 @@ public class ServiceProxyWSDLInterceptorsTest {
         given()
             .get("http://localhost:2000/articles?wsdl")
         .then()
+                .log().all()
             .body("definitions.service.port.address.@location",
-                    equalTo("http://%s/material/ArticleService".formatted(host)));
+                    equalTo("http://%s/material/ArticleService".formatted(host)))
+            .body("definitions.types.schema.import[0].@schemaLocation", equalTo("./articles?xsd=1"))
+            .body("definitions.types.schema.import[1].@schemaLocation", equalTo("./articles?xsd=2"));
 
         given()
             .get("http://localhost:2000/articles?xsd=1")
         .then()
-            .body("definitions.import.@schemaLocation",equalTo("./articles?xsd=3"));
+            .log().ifValidationFails(ALL)
+            .body("schema.import.@schemaLocation",equalTo("./articles?xsd=3"));
 
         given()
             .get("http://localhost:2000/articles?xsd=2")

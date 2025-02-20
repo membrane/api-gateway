@@ -44,7 +44,8 @@ public class ResolverMapCombineTest {
 
     @Test
     void relativePlusFile() {
-        assertEquals(current + "/a/c", combine("a/b","c"));
+        assertEquals(wl(current + "\\a\\c",
+                current + "/a/c"), combine("a/b","c"));
     }
 
     @Test
@@ -69,18 +70,21 @@ public class ResolverMapCombineTest {
 
     @Test
     void fileRelativePlusFile() {
-        assertEquals("file:/chi/gnat", combine("file:///chi/elm","gnat"));
+        assertEquals(wl("file:/C:/chi/gnat",
+                "file:/chi/gnat"),
+                combine("file:///chi/elm","gnat"));
     }
 
     @Test
     void fileRelativeWithSlashPlusFile() {
-        assertEquals("file:/chi/elm/gnat", combine("file:///chi/elm/","gnat"));
+        assertEquals(wl("file:/C:/chi/elm/gnat",
+                "file:/chi/elm/gnat"), combine("file:///chi/elm/","gnat"));
     }
 
     @Test
     void fileWithAbsoluteChild() {
         assertEquals(wl(
-                "file:///array.yml",
+                "file:/C:/array.yml",
                 "file:/array.yml"
                 ), combine("file://src/test/resources/openapi/specs", "/array.yml"));
     }
@@ -88,7 +92,7 @@ public class ResolverMapCombineTest {
     @Test
     void fileUriPlusAbsolutePath() {
         assertEquals(wl(
-                "file:///chi/elm",
+                "file:/C:/chi/elm",
                 "file:/chi/elm"
                  ), combine("file:///foo","/chi/elm"));
     }
@@ -96,7 +100,8 @@ public class ResolverMapCombineTest {
 
     @Test
     void fileWithSpacheAbsoluteChild() {
-        assertEquals("file:/tang%20ting/yap%20lob.yml", combine("file:///tang%20ting/slob", "yap lob.yml"));
+        assertEquals(wl("file:/C:/tang%20ting/yap%20lob.yml",
+                "file:/tang%20ting/yap%20lob.yml"), combine("file:///tang%20ting/slob", "yap lob.yml"));
     }
 
     // URLS
@@ -124,13 +129,21 @@ public class ResolverMapCombineTest {
     // Special
 
     @Test
+    void pathMergeWithParent() {
+        assertEquals("C:\\Users\\win11\\IdeaProjects\\api-gateway\\core\\target\\test-classes\\validation\\ArticleType.xsd",
+                combine("C:\\Users\\win11\\IdeaProjects\\api-gateway\\core\\target\\test-classes\\validation\\ArticleService.wsdl", "../validation/ArticleType.xsd"));
+    }
+
+    @Test
     void moreThanTwoParameters() {
-        assertEquals(current + "/src/test/resources/openapi/specs/array.yml", combine("src/test/resources/", "openapi/specs/foo", "array.yml"));
+        assertEquals(wl(current + "\\src\\test\\resources\\openapi\\specs\\array.yml",
+                current + "/src/test/resources/openapi/specs/array.yml"), combine("src/test/resources/", "openapi/specs/foo", "array.yml"));
     }
 
     @Test
     void combineParentFileProtocolWithRelativeChildWithoutTrailingSlash() {
-        assertEquals("file:/src/test/resources/openapi/array.yml", combine("file://src/test/resources/openapi/specs.wsdl", "array.yml"));
+        assertEquals( wl("file:/C:/src/test/resources/openapi/array.yml",
+                "file:/src/test/resources/openapi/array.yml"), combine("file://src/test/resources/openapi/specs.wsdl", "array.yml"));
     }
 
     @Test
