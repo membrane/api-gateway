@@ -122,7 +122,6 @@ public class ResolverMap implements Cloneable, Resolver {
         try {
             return new File(parentFile, relativeChild).getCanonicalPath();
         } catch (IOException e) {
-            // TODO
             throw new RuntimeException(e);
         }
     }

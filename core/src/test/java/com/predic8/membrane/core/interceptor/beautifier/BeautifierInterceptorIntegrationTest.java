@@ -23,9 +23,11 @@ import java.io.*;
 
 import static com.predic8.membrane.core.http.Header.*;
 import static com.predic8.membrane.core.http.MimeType.*;
+import static com.predic8.membrane.core.util.Util.lineCount;
 import static io.restassured.RestAssured.*;
 import static io.restassured.filter.log.LogDetail.*;
 import static org.hamcrest.Matchers.equalTo;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class BeautifierInterceptorIntegrationTest extends AbstractTestWithRouter {
 
@@ -46,7 +48,7 @@ public class BeautifierInterceptorIntegrationTest extends AbstractTestWithRouter
     @Test
     void t1() {
         // @formatter:off
-        given()
+        String body = given()
             .body("""
                 { "foo": { "boo": { "baz": "taz" }}}
                 """)
@@ -55,12 +57,11 @@ public class BeautifierInterceptorIntegrationTest extends AbstractTestWithRouter
         .then()
             .log().ifValidationFails(ALL)
             .contentType(APPLICATION_JSON)
-         //   .header(CONTENT_LENGTH,"59")
-                .body("foo.boo.baz",equalTo("taz"))
-            .statusCode(200);
+            .body("foo.boo.baz",equalTo("taz"))
+            .statusCode(200)
+            .extract().body().asPrettyString();
         // @formatter:on
-
-        // TODO body split by LF StringUtils lineCount
+        assertEquals(7, lineCount(body));
     }
 
 }
