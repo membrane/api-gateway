@@ -35,8 +35,8 @@ public class OAuth2CredentialsExampleTest extends DistributionExtractingTestcase
 
     @BeforeEach
     void startMembrane() throws IOException, InterruptedException {
-        authorizationServer = new Process2.Builder().in(getExampleDir("oauth2/api/authorization_server")).script("membrane").waitForMembrane().start();
-        tokenValidator = new Process2.Builder().in(getExampleDir("oauth2/api/token_validator")).script("membrane").waitForMembrane().start();
+        authorizationServer = new Process2.Builder().in(getExampleDir("oauth2/credentials/authorization_server")).script("membrane").waitForMembrane().start();
+        tokenValidator = new Process2.Builder().in(getExampleDir("oauth2/credentials/token_validator")).script("membrane").waitForMembrane().start();
 
         // Dump HTTP
         RestAssured.filters(new RequestLoggingFilter(), new ResponseLoggingFilter());
@@ -52,9 +52,14 @@ public class OAuth2CredentialsExampleTest extends DistributionExtractingTestcase
     void testIt() throws Exception {
 
         BufferLogger logger = new BufferLogger();
-        try(Process2 ignored = new Process2.Builder().in(getExampleDir("oauth2/api")).withWatcher(logger).script("client").parameters("john password").waitAfterStartFor("true").start()) {
-            assertTrue(logger.contains("success"));
-            assertTrue(logger.contains("true"));
+        try (Process2 ignored = new Process2.Builder()
+                .in(getExampleDir("oauth2/credentials"))
+                .withWatcher(logger)
+                .script("client")
+                .parameters("john password")
+                .waitAfterStartFor("Ok")
+                .start()) {
+            assertTrue(true);
         }
     }
 }

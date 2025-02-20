@@ -179,13 +179,22 @@ public class URIUtilTest {
 
     @Test
     void toFileURIStringTest() throws URISyntaxException {
-        assertEquals("file:/swig/jig", toFileURIString(new File("/swig/jig")));
-        assertEquals("file:/jag%20sag/runt", toFileURIString(new File("/jag sag/runt")));
+        assertEquals(wl("file:/C:/swig/jig","file:/swig/jig"), toFileURIString(new File("/swig/jig")));
+        assertEquals(wl("file:/C:/jag%20sag/runt","file:/jag%20sag/runt"), toFileURIString(new File("/jag sag/runt")));
+    }
+
+    String wl(String windows, String linux) {
+        if (OSUtil.isWindows())
+            return windows;
+        return linux;
     }
 
     @Test
     void toFileURIStringSpaceTest() throws URISyntaxException {
-        assertEquals("file:/chip%20clip", toFileURIString(new File("/chip clip")));
+        assertEquals(wl(
+                "file:/C:/chip%20clip",
+                "file:/chip%20clip"
+                ), toFileURIString(new File("/chip clip")));
     }
 
     @Test

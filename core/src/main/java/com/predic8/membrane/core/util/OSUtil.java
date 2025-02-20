@@ -43,4 +43,10 @@ public class OSUtil {
     public static String fixBackslashes(String s) {
         return s.replaceAll("\\\\", "/");
     }
+
+    public  static String wl(String windows, String linux) {
+        if (OSUtil.isWindows())
+            return windows;
+        return linux;
+    }
 }

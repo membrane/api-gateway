@@ -57,7 +57,7 @@ public class URIUtil {
 
     public static String convertPath2FilePathString(String path) {
         path = addFilePrefix(path);
-        return path.replaceAll(" ","%20");
+        return path.replaceAll(" ","%20").replaceAll("\\\\","/");
     }
 
     /**

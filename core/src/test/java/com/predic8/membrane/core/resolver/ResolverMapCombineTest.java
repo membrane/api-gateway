@@ -13,12 +13,15 @@
    limitations under the License. */
 package com.predic8.membrane.core.resolver;
 
+import com.predic8.membrane.core.util.OSUtil;
 import org.junit.jupiter.api.*;
 
+import java.io.File;
 import java.nio.file.*;
 import java.security.*;
 
 import static com.predic8.membrane.core.resolver.ResolverMap.*;
+import static com.predic8.membrane.core.util.OSUtil.wl;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class ResolverMapCombineTest {
@@ -41,17 +44,21 @@ public class ResolverMapCombineTest {
 
     @Test
     void relativePlusFile() {
-        assertEquals(current + "/a/c", combine("a/b","c"));
+        assertEquals(wl(current + "\\a\\c",
+                current + "/a/c"), combine("a/b","c"));
     }
 
     @Test
     void relativeWithSlashPlusFile() {
-        assertEquals(current + "/a/b/c", combine("a/b/","c"));
+        assertEquals(wl(
+                current + "/a/b/c".replaceAll("/", "\\\\"),
+                current + "/a/b/c"
+                ), combine("a/b/","c"));
     }
 
     @Test
     void relativeWithSpacePlusFile() {
-        assertEquals(current + "/a b/e", combine("a b/c d","e"));
+        assertEquals(current + wl("\\a b\\e","/a b/e"), combine("a b/c d","e"));
     }
 
     // File paths
@@ -63,28 +70,38 @@ public class ResolverMapCombineTest {
 
     @Test
     void fileRelativePlusFile() {
-        assertEquals("file:/chi/gnat", combine("file:///chi/elm","gnat"));
+        assertEquals(wl("file:/C:/chi/gnat",
+                "file:/chi/gnat"),
+                combine("file:///chi/elm","gnat"));
     }
 
     @Test
     void fileRelativeWithSlashPlusFile() {
-        assertEquals("file:/chi/elm/gnat", combine("file:///chi/elm/","gnat"));
+        assertEquals(wl("file:/C:/chi/elm/gnat",
+                "file:/chi/elm/gnat"), combine("file:///chi/elm/","gnat"));
     }
 
     @Test
     void fileWithAbsoluteChild() {
-        assertEquals("file:///array.yml", combine("file://src/test/resources/openapi/specs", "/array.yml"));
+        assertEquals(wl(
+                "file:/C:/array.yml",
+                "file:/array.yml"
+                ), combine("file://src/test/resources/openapi/specs", "/array.yml"));
     }
 
     @Test
     void fileUriPlusAbsolutePath() {
-        assertEquals("file:///chi/elm", combine("file:///foo","/chi/elm"));
+        assertEquals(wl(
+                "file:/C:/chi/elm",
+                "file:/chi/elm"
+                 ), combine("file:///foo","/chi/elm"));
     }
 
 
     @Test
     void fileWithSpacheAbsoluteChild() {
-        assertEquals("file:/tang%20ting/yap%20lob.yml", combine("file:///tang%20ting/slob", "yap lob.yml"));
+        assertEquals(wl("file:/C:/tang%20ting/yap%20lob.yml",
+                "file:/tang%20ting/yap%20lob.yml"), combine("file:///tang%20ting/slob", "yap lob.yml"));
     }
 
     // URLS
@@ -112,13 +129,22 @@ public class ResolverMapCombineTest {
     // Special
 
     @Test
+    void pathMergeWithParent() {
+        assertEquals(wl("C:\\Users\\win11\\IdeaProjects\\api-gateway\\core\\target\\test-classes\\validation\\ArticleType.xsd",
+                        "/home/christian/IdeaProjects/api-gateway/validation/ArticleType.xsd"),
+                combine("C:\\Users\\win11\\IdeaProjects\\api-gateway\\core\\target\\test-classes\\validation\\ArticleService.wsdl", "../validation/ArticleType.xsd"));
+    }
+
+    @Test
     void moreThanTwoParameters() {
-        assertEquals(current + "/src/test/resources/openapi/specs/array.yml", combine("src/test/resources/", "openapi/specs/foo", "array.yml"));
+        assertEquals(wl(current + "\\src\\test\\resources\\openapi\\specs\\array.yml",
+                current + "/src/test/resources/openapi/specs/array.yml"), combine("src/test/resources/", "openapi/specs/foo", "array.yml"));
     }
 
     @Test
     void combineParentFileProtocolWithRelativeChildWithoutTrailingSlash() {
-        assertEquals("file:/src/test/resources/openapi/array.yml", combine("file://src/test/resources/openapi/specs.wsdl", "array.yml"));
+        assertEquals( wl("file:/C:/src/test/resources/openapi/array.yml",
+                "file:/src/test/resources/openapi/array.yml"), combine("file://src/test/resources/openapi/specs.wsdl", "array.yml"));
     }
 
     @Test
@@ -133,12 +159,18 @@ public class ResolverMapCombineTest {
 
     @Test
     void combineRelativeParentWithRelativeChild() {
-        assertEquals(current + "/src/test/resources/openapi/specs/array.yml", combine("src/test/resources/openapi/specs/", "array.yml"));
+        assertEquals(wl(
+                current + "\\src\\test\\resources\\openapi\\specs\\array.yml",
+                current + "/src/test/resources/openapi/specs/array.yml"
+                ), combine("src/test/resources/openapi/specs/", "array.yml"));
     }
 
     @Test
     void combineRelativeParentWithRelativeChildParentDoesNotEndWithSlash() {
-        assertEquals(current + "/src/test/resources/openapi/specs/array.yml", combine("src/test/resources/openapi/specs/foo", "array.yml"));
+        assertEquals(wl(
+                current + "\\src\\test\\resources\\openapi\\specs\\array.yml",
+                current + "/src/test/resources/openapi/specs/array.yml"
+                ), combine("src/test/resources/openapi/specs/foo", "array.yml"));
     }
 
     @Test
@@ -150,7 +182,10 @@ public class ResolverMapCombineTest {
 
     @Test
     void relativeWithSlashPlusFileWithSpace() {
-        assertEquals(current + "/a/chi cha/cock lock", combine("a/chi cha/","cock lock"));
+        assertEquals(wl(
+                current + "\\a\\chi cha\\cock lock",
+                current + "/a/chi cha/cock lock"
+                ), combine("a/chi cha/","cock lock"));
     }
 
     @Test
@@ -165,7 +200,10 @@ public class ResolverMapCombineTest {
 
     @Test
     void pathPlusPathSpace() {
-        assertEquals(current + "/chi cha/cock lock", combine("chi cha/cock","cock lock"));
+        assertEquals(wl(
+                current + "\\chi cha\\cock lock",
+                current + "/chi cha/cock lock"
+                ), combine("chi cha/cock","cock lock"));
     }
 
     @Test

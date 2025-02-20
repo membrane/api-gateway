@@ -16,14 +16,18 @@ package com.predic8.membrane.core.interceptor.beautifier;
 import com.predic8.membrane.*;
 import com.predic8.membrane.core.interceptor.flow.*;
 import com.predic8.membrane.core.openapi.serviceproxy.*;
+import org.hamcrest.Matchers;
 import org.junit.jupiter.api.*;
 
 import java.io.*;
 
 import static com.predic8.membrane.core.http.Header.*;
 import static com.predic8.membrane.core.http.MimeType.*;
+import static com.predic8.membrane.core.util.Util.lineCount;
 import static io.restassured.RestAssured.*;
 import static io.restassured.filter.log.LogDetail.*;
+import static org.hamcrest.Matchers.equalTo;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class BeautifierInterceptorIntegrationTest extends AbstractTestWithRouter {
 
@@ -44,7 +48,7 @@ public class BeautifierInterceptorIntegrationTest extends AbstractTestWithRouter
     @Test
     void t1() {
         // @formatter:off
-        given()
+        String body = given()
             .body("""
                 { "foo": { "boo": { "baz": "taz" }}}
                 """)
@@ -53,9 +57,11 @@ public class BeautifierInterceptorIntegrationTest extends AbstractTestWithRouter
         .then()
             .log().ifValidationFails(ALL)
             .contentType(APPLICATION_JSON)
-            .header(CONTENT_LENGTH,"59")
-        .statusCode(200);
+            .body("foo.boo.baz",equalTo("taz"))
+            .statusCode(200)
+            .extract().body().asPrettyString();
         // @formatter:on
+        assertEquals(7, lineCount(body));
     }
 
 }
