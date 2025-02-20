@@ -41,6 +41,10 @@ public class Util {
 
 	private static final Logger LOG = LoggerFactory.getLogger(Util.class);
 
+	public static int lineCount(String s) {
+		return s.split("\n").length;
+	}
+
 	public static void shutdownOutput(Socket socket) throws IOException {
 		if (!(socket instanceof SSLSocket) &&
 				!socket.isClosed() &&

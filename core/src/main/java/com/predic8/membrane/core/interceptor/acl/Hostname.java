@@ -95,8 +95,8 @@ public class Hostname extends AbstractClientAddress {
 	private @NotNull String getCanonicalHostName(String ip) throws UnknownHostException {
 		String canonicalHostName = router.getDnsCache().getCanonicalHostName(InetAddress.getByName(ip));
 
-		// Fix for Windows. On Windows getCanonicalHostName() returns 127.0.0.1 instead of localhost
-		if (canonicalHostName.startsWith("127.")) // TODO
+		// Fix for Windows. On Windows getCanonicalHostName() can likely return 127.0.0.1 instead of localhost.
+		if (canonicalHostName.startsWith("127."))
 			return  "localhost";
 		return canonicalHostName;
 	}
