@@ -1,41 +1,43 @@
 @echo off
-setlocal EnableDelayedExpansion
+setlocal
 
-REM Variablen definieren
-set "clientId=abc"
-set "clientSecret=def"
-set "tokenEndpoint=http://localhost:7000/oauth2/token"
-set "target=http://localhost:2000"
+:: Variablen setzen
+set clientId=abc
+set clientSecret=def
+set tokenEndpoint=http://localhost:7000/oauth2/token
+set target=http://localhost:2000
 
-echo 1.) Requesting Token
-REM POST-Parameter für client_credentials zusammenbauen (Escape des &-Zeichens mit ^)
-set "postParams=grant_type=client_credentials^&client_id=%clientId%^&client_secret=%clientSecret%"
-echo %postParams%
-echo.
+:: OAuth2-Token per POST anfordern und in token.json speichern
+curl -s -X POST -d "grant_type=client_credentials&client_id=%clientId%&client_secret=%clientSecret%" %tokenEndpoint% -o token.json
 
-REM Token anfordern und Antwort in token.json speichern
-curl -s -X POST -d "%postParams%" "%tokenEndpoint%" -o token.json
-
+:: Falls die Token-Datei nicht erstellt wurde, Skript beenden
 if not exist token.json (
-    echo Fehler beim Abrufen des Tokens.
-    exit /b 1
+    echo Fehler: Token konnte nicht abgerufen werden.
+    goto :EOF
 )
 
-REM Mit PowerShell den token_type und access_token extrahieren und zu einem Header zusammenfügen
-for /f "delims=" %%i in ('powershell -NoProfile -Command "Get-Content token.json | ConvertFrom-Json | ForEach-Object { Write-Output ($_.token_type + ' ' + $_.access_token) }"') do set "authToken=%%i"
+:: JSON-Ausgabe parsen – token_type und access_token über PowerShell extrahieren
+for /f "usebackq delims=" %%A in (`powershell -NoProfile -Command "(Get-Content token.json | ConvertFrom-Json).token_type"`) do set token_type=%%A
+for /f "usebackq delims=" %%A in (`powershell -NoProfile -Command "(Get-Content token.json | ConvertFrom-Json).access_token"`) do set access_token=%%A
 
-echo Got Token: %authToken%
-echo.
+:: Authorization-Header zusammensetzen (z.B. "Bearer xyz")
+set authHeader=%token_type% %access_token%
 
-echo 2.) Calling API
-echo GET %target%
-echo Authorization: %authToken%
-echo.
+:: Zielanfrage durchführen – Header speichern und HTTP-Antwortstatus ermitteln
+curl -s -D headers.txt -o nul -H "Authorization: %authHeader%" %target%
 
-REM API-Aufruf an das Ziel mit dem Authorization-Header; Statuscode wird ausgegeben
-curl -s -o response.txt -w "HTTPSTATUS: %%{http_code}" -H "Authorization: %authToken%" "%target%" > output.txt
+:: Aus der ersten Header-Zeile (z.B. "HTTP/1.1 200 OK") den Statusbeschreibungs-Teil extrahieren
+set "statusDesc="
+for /f "tokens=1,2,3* delims= " %%a in (headers.txt) do (
+    set statusDesc=%%c
+    goto :gotStatus
+)
+:gotStatus
 
-REM Aus der Ausgabe den HTTP-Status-Code extrahieren
-for /f "tokens=2 delims=:" %%a in ('findstr "HTTPSTATUS:" output.txt') do set "status=%%a"
+echo %statusDesc%
 
-echo HTTP Status Description: %status%
+:: Temporäre Dateien aufräumen
+del token.json
+del headers.txt
+
+endlocal
