@@ -130,7 +130,8 @@ public class ResolverMapCombineTest {
 
     @Test
     void pathMergeWithParent() {
-        assertEquals("C:\\Users\\win11\\IdeaProjects\\api-gateway\\core\\target\\test-classes\\validation\\ArticleType.xsd",
+        assertEquals(wl("C:\\Users\\win11\\IdeaProjects\\api-gateway\\core\\target\\test-classes\\validation\\ArticleType.xsd",
+                        "/home/christian/IdeaProjects/api-gateway/validation/ArticleType.xsd"),
                 combine("C:\\Users\\win11\\IdeaProjects\\api-gateway\\core\\target\\test-classes\\validation\\ArticleService.wsdl", "../validation/ArticleType.xsd"));
     }
 
