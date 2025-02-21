@@ -20,8 +20,7 @@ import java.util.List;
 import jakarta.servlet.ServletContext;
 
 import com.predic8.membrane.core.util.functionalInterfaces.ExceptionThrowingConsumer;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.*;
 
 import com.google.common.collect.Lists;
 import com.predic8.membrane.core.resolver.ResourceRetrievalException;
@@ -29,7 +28,7 @@ import com.predic8.membrane.core.resolver.SchemaResolver;
 
 public class FileSchemaWebAppResolver implements SchemaResolver {
 
-	private static final Log log = LogFactory.getLog(FileSchemaWebAppResolver.class.getName());
+	private static final Logger log = LoggerFactory.getLogger(FileSchemaWebAppResolver.class.getName());
 
 	private final ServletContext ctx;
 

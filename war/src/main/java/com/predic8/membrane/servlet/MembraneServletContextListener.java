@@ -14,20 +14,18 @@
 
 package com.predic8.membrane.servlet;
 
-import jakarta.servlet.ServletContextEvent;
-import jakarta.servlet.ServletContextListener;
-
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-import org.springframework.web.context.support.XmlWebApplicationContext;
-
 import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.servlet.config.spring.BaseLocationXmlWebApplicationContext;
+import jakarta.servlet.ServletContextEvent;
+import jakarta.servlet.ServletContextListener;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.web.context.support.XmlWebApplicationContext;
 
 public class MembraneServletContextListener implements ServletContextListener {
 
-	private static Log log = LogFactory.getLog(MembraneServletContextListener.class);
+	private static Logger log = LoggerFactory.getLogger(MembraneServletContextListener.class);
 
 	private XmlWebApplicationContext appCtx;
 
