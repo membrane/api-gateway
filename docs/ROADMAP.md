@@ -46,14 +46,6 @@
 
 ## TODOs
 
-### Tests
-- Is SessionResumptionTest still needed?
-
-### Examples / Documentation
-- Check
-  - Is example embedded-java still running?
-    - Update to Java 21 needed?
-- Restructure samples
   
 ### Features
 

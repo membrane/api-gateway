@@ -1,0 +1,20 @@
+
+MEMBRANE is the foldere where Membrane Service Proxy is unpacked
+WRAPPER is the folder where the Tanuki wrapper is unpacked
+
+1.  Download and extract Membrane
+    http://www.membrane-soa.org/downloads/
+2.  Download and extract Tanuki Wrapper
+    http://wrapper.tanukisoftware.com/
+    You probably want Linux, Community. 64 bit
+3.  Create a folder MEMBRANE/bin
+4.  Copy WRAPPER/bin/wrapper to MEMBRANE/bin/
+5.  Copy WRAPPER/src/bin/sh.script.in to MEMBRANE/bin/membrane
+6.  Add the following lines to the correct position in MEMBRANE/bin/membrane
+    APP_NAME="membrane"
+    APP_LONG_NAME="Membrane Service Proxy"
+7.  Make both files in MEMBRANE/bin/ executable with chmod
+8.  Copy MEMBRANE/conf/wrapper.conf to MEMBRANE/bin/
+9.  Copy WRAPPER/lib/wrapper.jar to MEMBRANE/lib/
+10. Copy WRAPPER/lib/libwrapper.so to MEMBRANE/lib/
+11. Create a symbolic link ln -s /etc/init.d/membrane MEMBRANE/bin/membrane

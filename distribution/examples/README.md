@@ -4,7 +4,7 @@
 
 | Example                                                                | Description                                                                                                                                                            |
 |------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| [docker](docker)                                                       | How to create a Membrane docker image.                                                                                                                                 |
+| [docker](deployment/docker)                                                       | How to create a Membrane docker image.                                                                                                                                 |
 | [embedding-java](extending-membrane/embedding-java)                                       | How to embed Membrane into Java applications.                                                                                                                          |
 
 ## Basic

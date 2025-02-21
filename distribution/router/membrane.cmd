@@ -87,8 +87,6 @@ if defined membrane_home (
 set "membrane_home=%~1"
 set "MEMBRANE_HOME=%membrane_home%"
 set "CLASSPATH=%membrane_home%\conf;%membrane_home%\lib\*"
-echo Starting: %membrane_home% CL: %CLASSPATH%
-echo Java CMD: java -cp "%CLASSPATH%" com.predic8.membrane.core.cli.RouterCLI %CMDARGS%
 java -cp "%CLASSPATH%" com.predic8.membrane.core.cli.RouterCLI %CMDARGS%
 goto :eof
 
