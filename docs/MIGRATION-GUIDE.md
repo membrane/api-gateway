@@ -1,48 +1,51 @@
 # Migration from 5.X to 6
 
-# Swagger 2
+## Swagger 2
 
-The old `<swagger>` proxy is no longer supported. The new `api` proxy also supports Swagger version 2.
-See example...
+The `<swagger>` proxy is no longer supported. The new `api` proxy also supports Swagger version 2.
+
+## Scripting
+
+Spring Expression Language (SpEL) is now the default for `<setHeader>`, `<if>`, `<setProperty>`. ...
+
+## setHeader
+
+If there is no message to set a header, now an exception is thrown.
 
 ## InternalProxy
 
-<internalProxy name="foo"/>  -> <internal name="foo"></internal>
+`<internalProxy>` is renamed to `<internal>`. To reference an internal proxy use the protocol `internal://name`.
 
-<target url="service:a"/> -> <target url="internal://a"/>
+Instead of:
 
-# Scripting
+```xml
+<target url="service:a"/>
+```
 
-SpeL default für setHeader, if, setProperty
+use:
 
-# setHeader
+```xml
+<target url="internal://a"/>
+```
 
-Now if there is no message to set a header, an exception is thrown.
+See: examples/routing-traffic/internalproxy
 
-# Internal API
+## xPAth and xPathExtractor
+Both plugins were removed. Use `<setHeader>` or `<setProperty>` with language `xpath` instead.
 
-- Interceptor.handleRquest() and handleRquest() aren't throwing any exception anymore
-- ConditionalInterceptor is renamed in IfInterceptor
+## Content Based Router
 
-# <xPAth> and <xPathExtractor>
-- Use `<setHeader>` or `<setProperty>` with language `xpath` instead.
+The content based router has been removed. Use `<if>` and `<destination>` instead.
 
-# CBR
+See: examples/routing-traffic/content-based-router
 
-# Log
+## Log
 
-- Instead of headerOnly="true" body="false"
-
-# Internal API
-
-- exchange.destinations can now be set exchange.setDestination() with an immutable list
-  => no getDestinations().clear() anymore
-
-# Scripting 
+Instead of `headerOnly="true"` use `body="false"` in the `<log>` plugin.
 
 ## Groovy
 
-Use $property.foo instead of $foo. Fields are not accessible just by name!
+Use `$property.foo` instead of `$foo`. Fields are not accessible just by name.
 
 ## OAuth2Resource removal
 
@@ -50,11 +53,15 @@ Rename `<oauth2Resource>` to `<oauth2Resource2>`.
 
 Remove the `publicURL` attribute from it: It will be automatically computed from the incoming `Host` header.
 
-# Error Messages
+## Error Messages
 
-In ProblemJson 
-also Validators
+Almost all error messages are now in ProblemJson format.
 
-# Monitoring
+## Monitoring
 
-Default naming scheme for serviceProxys has changed. This might affect existing filters in log aggregation systems and/or monitoring dashboards, e.g. in Prometheus/Grafana.")
+Default naming scheme for `<serviceProxys>` has changed. This might affect existing filters in log aggregation systems and/or monitoring dashboards, e.g. in Prometheus/Grafana.")
+
+## Internal API
+
+- `Interceptor.handleRquest()` and `handleRquest()` aren't throwing any exception anymore
+- `ConditionalInterceptor` is renamed in `IfInterceptor`

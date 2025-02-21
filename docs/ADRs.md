@@ -2,9 +2,7 @@
 
 ## ADR-001 ProblemDetails
 
-Status: PROPOSED
-
-### Context:
+Status: ACCEPTED
 
 ### Decision:
 
