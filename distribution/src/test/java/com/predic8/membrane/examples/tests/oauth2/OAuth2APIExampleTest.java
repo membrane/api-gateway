@@ -48,15 +48,15 @@ public class OAuth2APIExampleTest extends DistributionExtractingTestcase {
         authorizationServer.killScript();
     }
 
+    // Can fail due to powershell execution policy. Can be ignored
     @Test
     void testIt() throws Exception {
-       // Thread.sleep(999999999);
         BufferLogger logger = new BufferLogger();
         // client.sh prints true when the script was successful. The logger waits for this string "true"
         try(Process2 ignored = new Process2.Builder()
                 .in(getExampleDir("oauth2/api"))
                 .withWatcher(logger)
-                .script("client.ps1")
+                .script("client")
                 .parameters("john password")
                 .waitAfterStartFor("true")
                 .start()) {

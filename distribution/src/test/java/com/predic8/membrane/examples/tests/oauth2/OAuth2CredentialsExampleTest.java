@@ -48,9 +48,9 @@ public class OAuth2CredentialsExampleTest extends DistributionExtractingTestcase
         authorizationServer.killScript();
     }
 
+    // Can fail due to powershell execution policy. Can be ignored
     @Test
     void testIt() throws Exception {
-
         BufferLogger logger = new BufferLogger();
         try (Process2 ignored = new Process2.Builder()
                 .in(getExampleDir("oauth2/credentials"))

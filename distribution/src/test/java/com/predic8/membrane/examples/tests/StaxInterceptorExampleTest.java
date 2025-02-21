@@ -13,10 +13,12 @@
    limitations under the License. */
 package com.predic8.membrane.examples.tests;
 
+import com.predic8.membrane.core.util.OSUtil;
 import com.predic8.membrane.examples.util.*;
 import org.junit.jupiter.api.*;
 
 import static com.predic8.membrane.core.http.MimeType.*;
+import static com.predic8.membrane.core.util.OSUtil.isWindows;
 import static io.restassured.RestAssured.*;
 import static org.hamcrest.Matchers.*;
 
@@ -49,7 +51,7 @@ public class StaxInterceptorExampleTest extends DistributionExtractingTestcase {
 
     private void compileCustomInterceptor() throws Exception {
         BufferLogger logger = new BufferLogger();
-        try(Process2 mvn = new Process2.Builder().in(baseDir).executable("mvn package").withWatcher(logger).start())  {
+        try(Process2 mvn = new Process2.Builder().in(baseDir).executable(isWindows() ? "cmd /c mvn package" : "mvn package").withWatcher(logger).start())  {
             if (mvn.waitForExit(60000) != 0)
                 throw new RuntimeException("Maven exited with code " + mvn.waitForExit(60000) + ": " + logger);
         }
