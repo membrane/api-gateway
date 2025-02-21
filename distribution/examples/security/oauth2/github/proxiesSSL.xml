@@ -22,7 +22,7 @@
 
 			<!-- this will act as the secret resource to make the example simple. See below in the comments for an alternative -->
 			<groovy>
-				def email = exc.properties.oauth2.userinfo.email
+				def email = exc.properties.'membrane.oauth2'.userinfo.email
 				exc.response = Response.ok("Hello " + email + ".").build()
 				RETURN
 			</groovy>

@@ -15,7 +15,7 @@
 
             <!-- Use the information from the authentication server and pass it to the resource server (optional) -->
             <groovy>
-                def oauth2 = exc.properties['oauth2']
+                def oauth2 = exc.properties.'membrane.oauth2'
                 <!-- Put the eMail into the header X-EMAIL and pass it to the protected server. -->
                 exc.request.getHeader().setValue('X-EMAIL',oauth2.userinfo.email)
                 CONTINUE
