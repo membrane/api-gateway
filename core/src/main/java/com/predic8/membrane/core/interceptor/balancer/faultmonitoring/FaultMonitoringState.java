@@ -14,8 +14,8 @@
 
 package com.predic8.membrane.core.interceptor.balancer.faultmonitoring;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Iterator;
 import java.util.Timer;
@@ -36,7 +36,7 @@ import java.util.concurrent.ConcurrentMap;
  */
 class FaultMonitoringState {
 
-	private static Log log = LogFactory.getLog(FaultMonitoringState.class.getName());
+	private static Logger log = LoggerFactory.getLogger(FaultMonitoringState.class.getName());
 
 	/**
 	 * Key = destination "host:port"

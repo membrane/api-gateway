@@ -40,8 +40,8 @@ public class OpenAPIPublisher {
 
     public static final String PATH = "/api-docs";
     public static final String PATH_UI = "/api-docs/ui";
-    private static final Pattern PATTERN_META = Pattern.compile(PATH + "?/(.*)");
-    private static final Pattern PATTERN_UI = Pattern.compile(PATH + "?/ui/(.*)");
+    private static final Pattern PATTERN_META = Pattern.compile(PATH + "?/(.+)");
+    private static final Pattern PATTERN_UI = Pattern.compile(PATH + "?/ui/(.+)");
 
     private final Template swaggerUiHtmlTemplate;
     private final Template apiOverviewHtmlTemplate;

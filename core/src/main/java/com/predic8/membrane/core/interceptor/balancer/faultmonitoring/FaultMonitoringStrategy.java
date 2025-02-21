@@ -22,14 +22,16 @@ import com.predic8.membrane.core.exchange.AbstractExchange;
 import com.predic8.membrane.core.interceptor.balancer.*;
 import com.predic8.membrane.core.transport.http.HttpClientStatusEventBus;
 import com.predic8.membrane.core.transport.http.HttpClientStatusEventListener;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Random;
 
 /**
  * @description
@@ -104,7 +106,7 @@ import java.util.*;
 @MCElement(name="faultMonitoringStrategy")
 public class FaultMonitoringStrategy extends AbstractXmlElement implements DispatchingStrategy {
 
-	private static Log log = LogFactory.getLog(FaultMonitoringStrategy.class.getName());
+	private static Logger log = LoggerFactory.getLogger(FaultMonitoringStrategy.class.getName());
 
 	private double minFlawlessServerRatioForRoundRobin = 0.5d;
 

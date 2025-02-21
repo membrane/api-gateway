@@ -14,6 +14,7 @@
     </Appenders>
     <Loggers>
         <Logger name="com.predic8" level="info" additivity="false">
+            <AppenderRef ref="STDOUT" />
             <AppenderRef ref="FILE" />
         </Logger>
         <Root level="info">

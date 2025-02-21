@@ -14,23 +14,28 @@
 
 package com.predic8.membrane.servlet.embedded;
 
-import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.transport.*;
-import com.predic8.membrane.core.transport.http.*;
-import com.predic8.membrane.core.util.*;
-import jakarta.servlet.*;
-import jakarta.servlet.http.*;
-import org.apache.commons.logging.*;
+import com.predic8.membrane.core.transport.Transport;
+import com.predic8.membrane.core.transport.http.AbortException;
+import com.predic8.membrane.core.transport.http.AbstractHttpHandler;
+import com.predic8.membrane.core.transport.http.EOFWhileReadingFirstLineException;
+import com.predic8.membrane.core.util.DNSCache;
+import com.predic8.membrane.core.util.EndOfStreamException;
+import jakarta.servlet.ServletOutputStream;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.io.*;
-import java.net.*;
-import java.util.*;
+import java.io.IOException;
+import java.net.InetAddress;
+import java.util.Enumeration;
 
 import static com.predic8.membrane.core.http.Header.TRANSFER_ENCODING;
 
 class HttpServletHandler extends AbstractHttpHandler {
-	private static final Log log = LogFactory.getLog(HttpServletHandler.class);
+	private static final Logger log = LoggerFactory.getLogger(HttpServletHandler.class);
 
 	private final HttpServletRequest request;
 	private final HttpServletResponse response;
