@@ -29,7 +29,7 @@ public class IfInterceptorExampleTest extends AbstractSampleMembraneStartStopTes
 
     @Override
     protected String getExampleDirName() {
-        return "if";
+        return "extending-membrane/if";
     }
 
     @ParameterizedTest

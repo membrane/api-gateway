@@ -28,7 +28,7 @@ public class ToBackendExampleTest extends DistributionExtractingTestcase {
 
 	@Override
 	protected String getExampleDirName() {
-		return "ssl/to-backend";
+		return "security/ssl-tls/to-backend";
 	}
 
 	@BeforeEach

@@ -9,7 +9,7 @@ In this example we will configure membrane to log in `JSON` format
 
 To run the example execute the following steps:
 
-1. Go to the `examples/logging-json` directory.
+1. Go to the `examples/logging/json` directory.
 
 2. Execute `membrane.sh`
 

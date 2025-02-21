@@ -34,7 +34,7 @@ public class XsltExampleTest extends DistributionExtractingTestcase {
 
     @Override
     protected String getExampleDirName() {
-        return "versioning/soap-xslt";
+        return "web-services-soap/versioning-soap-xslt";
     }
 
     @Test

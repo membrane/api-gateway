@@ -9,7 +9,7 @@ In this example we will visit a website and take a look at the logs that have be
 
 To run the example execute the following steps:
 
-1. Go to the `examples/logging-csv` directory.
+1. Go to the `examples/logging/csv` directory.
 
 2. Execute `membrane.sh` or membrane.cmd`
 

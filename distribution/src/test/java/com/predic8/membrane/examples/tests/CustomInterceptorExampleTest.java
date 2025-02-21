@@ -14,22 +14,18 @@
 
 package com.predic8.membrane.examples.tests;
 
-import com.predic8.membrane.core.util.OSUtil;
-import com.predic8.membrane.examples.util.BufferLogger;
-import com.predic8.membrane.examples.util.DistributionExtractingTestcase;
-import com.predic8.membrane.examples.util.Process2;
-import com.predic8.membrane.examples.util.SubstringWaitableConsoleEvent;
-import com.predic8.membrane.test.HttpAssertions;
-import org.junit.jupiter.api.Test;
+import com.predic8.membrane.examples.util.*;
+import com.predic8.membrane.test.*;
+import org.junit.jupiter.api.*;
 
-import static com.predic8.membrane.core.util.OSUtil.isWindows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static com.predic8.membrane.core.util.OSUtil.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class CustomInterceptorExampleTest extends DistributionExtractingTestcase {
 
     @Override
     protected String getExampleDirName() {
-        return "custom-interceptor";
+        return "extending-membrane/custom-interceptor";
     }
 
     @Test

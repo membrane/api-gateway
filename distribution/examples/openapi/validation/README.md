@@ -9,7 +9,7 @@ For a basic example see the _validation-simple_ folder.
 
 Make sure to use Membrane version 5 or newer.
 
-1. Go to the _examples/openapi/validation_ directory
+1. Go to the `examples/openapi/validation` directory
 
 2. Start Membrane with the script inside this directory:
 

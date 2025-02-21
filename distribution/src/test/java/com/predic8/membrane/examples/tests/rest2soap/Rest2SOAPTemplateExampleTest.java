@@ -24,7 +24,7 @@ public class Rest2SOAPTemplateExampleTest extends DistributionExtractingTestcase
 
     @Override
     protected String getExampleDirName() {
-        return "rest2soap-template";
+        return "web-services-soap/rest2soap-template";
     }
 
     @Test

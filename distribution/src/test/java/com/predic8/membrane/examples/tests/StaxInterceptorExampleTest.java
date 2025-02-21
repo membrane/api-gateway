@@ -13,12 +13,11 @@
    limitations under the License. */
 package com.predic8.membrane.examples.tests;
 
-import com.predic8.membrane.core.util.OSUtil;
 import com.predic8.membrane.examples.util.*;
 import org.junit.jupiter.api.*;
 
 import static com.predic8.membrane.core.http.MimeType.*;
-import static com.predic8.membrane.core.util.OSUtil.isWindows;
+import static com.predic8.membrane.core.util.OSUtil.*;
 import static io.restassured.RestAssured.*;
 import static org.hamcrest.Matchers.*;
 
@@ -26,7 +25,7 @@ public class StaxInterceptorExampleTest extends DistributionExtractingTestcase {
 
     @Override
     protected String getExampleDirName() {
-        return "stax-interceptor";
+        return "xml/stax-interceptor";
     }
 
     @Test

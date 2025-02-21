@@ -29,7 +29,7 @@ public class XSLTExampleTest extends AbstractSampleMembraneStartStopTestcase {
 
     @Override
     protected String getExampleDirName() {
-        return "xslt";
+        return "xml/xslt";
     }
 
     @Test

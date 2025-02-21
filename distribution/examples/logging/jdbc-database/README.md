@@ -15,7 +15,7 @@ To run the example execute the following steps:
 
 3. Extract the zip file and copy the `DERBY_HOME/lib/derbyclient.jar` into the `MEMBRANE_HOME/lib` directory.
 
-4. Go to the `examples/logging-jdbc` directory.
+4. Go to the `examples/logging/jdbc-database` directory.
 
 5. Start the network server using the following command:    
 ```

@@ -25,7 +25,7 @@ public class ThrottleExampleTest extends DistributionExtractingTestcase {
 
 	@Override
 	protected String getExampleDirName() {
-		return "throttle";
+		return "routing-traffic/throttle";
 	}
 
 	@Test

@@ -14,21 +14,20 @@
 
 package com.predic8.membrane.examples.tests;
 
-import com.predic8.membrane.core.util.OSUtil;
 import com.predic8.membrane.examples.util.*;
 import org.junit.jupiter.api.*;
 
-import static com.predic8.membrane.core.util.OSUtil.isWindows;
-import static io.restassured.RestAssured.given;
-import static io.restassured.http.ContentType.XML;
-import static org.hamcrest.CoreMatchers.containsString;
-import static org.hamcrest.MatcherAssert.assertThat;
+import static com.predic8.membrane.core.util.OSUtil.*;
+import static io.restassured.RestAssured.*;
+import static io.restassured.http.ContentType.*;
+import static org.hamcrest.CoreMatchers.*;
+import static org.hamcrest.MatcherAssert.*;
 
 public class BasicXmlInterceptorExampleTest extends DistributionExtractingTestcase {
 
     @Override
     protected String getExampleDirName() {
-        return "basic-xml-interceptor";
+        return "xml/basic-xml-interceptor";
     }
 
     @Test

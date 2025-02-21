@@ -33,7 +33,7 @@ public class OAuth2MembraneExampleTest extends DistributionExtractingTestcase {
 
     @Override
     protected String getExampleDirName() {
-        return "oauth2/membrane";
+        return "security/oauth2/membrane";
     }
 
     Process2 authorizationServer;
@@ -41,8 +41,8 @@ public class OAuth2MembraneExampleTest extends DistributionExtractingTestcase {
 
     @BeforeEach
     void startMembrane() throws IOException, InterruptedException {
-        authorizationServer = new Process2.Builder().in(getExampleDir("oauth2/membrane/authorization_server")).script("membrane").waitForMembrane().start();
-        oauth2Client = new Process2.Builder().in(getExampleDir("oauth2/membrane/client")).script("membrane").waitForMembrane().start();
+        authorizationServer = new Process2.Builder().in(getExampleDir( getExampleDirName() + "/authorization_server")).script("membrane").waitForMembrane().start();
+        oauth2Client = new Process2.Builder().in(getExampleDir(getExampleDirName() + "/client")).script("membrane").waitForMembrane().start();
 
         // Dump HTTP
         RestAssured.filters(new RequestLoggingFilter(), new ResponseLoggingFilter());

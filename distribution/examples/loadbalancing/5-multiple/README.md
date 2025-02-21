@@ -22,7 +22,7 @@ The second LB is balancing between our third and fourth counter.
 
 To run the example execute the following steps:
 
-1. Go to the `examples/loadbalancer-multiple-4` directory.
+1. Go to the `examples/loadbalancer/5-multiple` directory.
 
 2. Execute `membrane.cmd`
 

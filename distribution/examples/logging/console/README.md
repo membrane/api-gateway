@@ -7,7 +7,7 @@ Membrane can log the access to APIs to a CSV file. The fields will be separated 
 
 To run the example execute the following steps:
 
-1. Go to the `examples/logging-csv` directory.
+1. Go to the `examples/logging/console` directory.
 2. Run `membrane.sh` or `membrane.cmd`
 4. Route a request through Membrane:
 

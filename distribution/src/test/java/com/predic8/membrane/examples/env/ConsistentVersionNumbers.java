@@ -133,12 +133,11 @@ public class ConsistentVersionNumbers {
 	private static void transformRecursively(File baseDirectory, VersionTransformer versionTransformer) throws Exception {
 		recurse(baseDirectory, versionTransformer, 2);
 
-		handlePOM(new File(baseDirectory.getAbsolutePath(), "/distribution/examples/embedding-java/pom.xml"), false, versionTransformer);
-		handlePOM(new File(baseDirectory.getAbsolutePath(), "/distribution/examples/custom-interceptor/pom.xml"), false, versionTransformer);
-		handlePOM(new File(baseDirectory.getAbsolutePath(), "/distribution/examples/stax-interceptor/pom.xml"), false, versionTransformer);
-		handlePOM(new File(baseDirectory.getAbsolutePath(), "/distribution/examples/soap/add-soap-header/pom.xml"), false, versionTransformer);
-		handlePOM(new File(baseDirectory.getAbsolutePath(), "/distribution/examples/embedding-java/pom.xml"), false, versionTransformer);
-		handlePOM(new File(baseDirectory.getAbsolutePath(), "/distribution/examples/basic-xml-interceptor/pom.xml"), false, versionTransformer);
+		handlePOM(new File(baseDirectory.getAbsolutePath(), "/distribution/examples/extending-membrane/embedding-java/pom.xml"), false, versionTransformer);
+		handlePOM(new File(baseDirectory.getAbsolutePath(), "/distribution/examples/extending-membrane/custom-interceptor/pom.xml"), false, versionTransformer);
+		handlePOM(new File(baseDirectory.getAbsolutePath(), "/distribution/examples/xml/stax-interceptor/pom.xml"), false, versionTransformer);
+		handlePOM(new File(baseDirectory.getAbsolutePath(), "/distribution/examples/web-services-soap/add-soap-header/pom.xml"), false, versionTransformer);
+		handlePOM(new File(baseDirectory.getAbsolutePath(), "/distribution/examples/xml/basic-xml-interceptor/pom.xml"), false, versionTransformer);
 
 		handleHelpReference(new File(baseDirectory.getAbsolutePath(), "/annot/src/main/java/com/predic8/membrane/annot/generator/HelpReference.java"), versionTransformer);
 		handleRpmSpec(new File(baseDirectory.getAbsolutePath(), "/membrane.spec"), versionTransformer);

@@ -27,7 +27,7 @@ public class LoginExampleTest extends DistributionExtractingTestcase {
 
 	@Override
 	protected String getExampleDirName() {
-		return "login";
+		return "security/login";
 	}
 
 	@Test

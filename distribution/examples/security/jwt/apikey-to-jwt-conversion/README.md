@@ -22,7 +22,7 @@ Convert scoped API keys to JWTs dynamically with customizable payload.
 To build a JWT, we first need to authenticate the client and store the associated scopes. 
 We use the [\<apiKey\>](../../api-key/rbac/README.md) element to extract the value of the `X-Api-Key` header and verify its validity by checking if the `<apiKeyFileStore>` contains the appropriate key. 
 If the key is found, we continue with the process and store the API key's scopes in a property named `scopes`.
-This property is then used in a [\<template\>](../../../template/json/README.md) to construct our JWT payload. 
+This property is then used in a [\<template\>](../../../templating/json/README.md) to construct our JWT payload. 
 After constructing the JWT payload, we pass it to the `<jwtSign>` plugin, which uses the private key from the `jwk.json` file to sign and generate a valid JWT. 
 The resulting JWT is stored in the body and returned via `<return>`.
 

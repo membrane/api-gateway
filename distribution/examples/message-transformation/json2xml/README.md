@@ -7,7 +7,7 @@ The `json2xml` plugin converts JSON content to XML documents.
 
 To run the example, execute the following steps:
 
-1. Go to the examples/message-transformation/json2xml directory
+1. Go to the `examples/message-transformation/json2xml` directory
 
 2. Run `membrane.sh` or `membrane.cmd` to start the API Gateway.
 

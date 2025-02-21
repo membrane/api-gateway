@@ -10,7 +10,7 @@ This sample demonstrates:
 
 Make sure to use Membrane version 5 or newer.
 
-1. Go to the _examples/openapi/openapi-proxy_ directory and start Membrane:
+1. Go to the `examples/openapi/openapi-proxy` directory and start Membrane:
 
 ```shell
 ./membrane.sh

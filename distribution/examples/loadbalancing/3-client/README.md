@@ -10,7 +10,7 @@ that are sent.
 
 To run the example execute the following steps:
 
-1. Go to the `examples/loadbalancing/3-node-api` directory.
+1. Go to the `examples/loadbalancing/3-client` directory.
 
 2. Run `membrane.cmd` or `membrane.sh`
 

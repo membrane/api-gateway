@@ -7,7 +7,7 @@ Using `xml2json` interceptor you can convert XML content to JSON in both request
 
 To run the example execute the following steps: 
 
-1. Go to the examples/xml-2-json directory.
+1. Go to the `examples/message-transformation/xml2json` directory.
 
 2. Execute membrane.sh
 

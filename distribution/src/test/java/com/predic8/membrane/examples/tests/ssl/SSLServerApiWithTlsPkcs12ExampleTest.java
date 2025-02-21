@@ -25,7 +25,7 @@ public class SSLServerApiWithTlsPkcs12ExampleTest extends DistributionExtracting
 
 	@Override
 	protected String getExampleDirName() {
-		return "ssl/api-with-tls-pkcs12";
+		return "security/ssl-tls/api-with-tls-pkcs12";
 	}
 
 	@Test
