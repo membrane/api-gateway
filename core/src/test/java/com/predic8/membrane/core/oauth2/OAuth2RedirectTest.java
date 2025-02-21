@@ -66,15 +66,16 @@ public class OAuth2RedirectTest {
 
     @Test
     void testGet() {
-        OAuth2AuthFlowClient OAuth2 = new OAuth2AuthFlowClient();
+        OAuth2AuthFlowClient OAuth2 = new OAuth2AuthFlowClient("http://localhost:2002");
         // Step 1: Initial request to the client
-        Response clientResponse = OAuth2.step1originalRequestGET();
+        Response clientResponse = OAuth2.step1originalRequestGET("/a?b=c&d=ä");
         // Step 2: Send to authentication at OAuth2 server
         String loginLocation = OAuth2.step2sendAuthToOAuth2Server(clientResponse);
+        System.out.println("loginLocation = " + loginLocation);
         // Step 3: Open login page
         OAuth2.step3openLoginPage(loginLocation);
         // Step 4: Submit login
-        OAuth2.step4submitLogin(loginLocation);
+        OAuth2.step4submitLogin(loginLocation, "user", "password");
         // Step 5: Redirect to consent
         String consentLocation = OAuth2.step5redirectToConsent();
         // Step 6: Open consent dialog
@@ -96,15 +97,15 @@ public class OAuth2RedirectTest {
 
     @Test
     void testPost() {
-        OAuth2AuthFlowClient OAuth2 = new OAuth2AuthFlowClient();
+        OAuth2AuthFlowClient OAuth2 = new OAuth2AuthFlowClient("http://localhost:2002");
         // Step 1: Initial request to the client
-        Response clientResponse = OAuth2.step1originalRequestPOST();
+        Response clientResponse = OAuth2.step1originalRequestPOST("/a?b=c&d=ä");
         // Step 2: Send to authentication at OAuth2 server
         String loginLocation = OAuth2.step2sendAuthToOAuth2Server(clientResponse);
         // Step 3: Open login page
         OAuth2.step3openLoginPage(loginLocation);
         // Step 4: Submit login
-        OAuth2.step4submitLogin(loginLocation);
+        OAuth2.step4submitLogin(loginLocation, "user", "password");
         // Step 5: Redirect to consent
         String consentLocation = OAuth2.step5redirectToConsent();
         // Step 6: Open consent dialog

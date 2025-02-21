@@ -15,19 +15,17 @@
 package com.predic8.membrane.examples.tests.oauth2;
 
 import com.predic8.membrane.examples.util.*;
+import com.predic8.membrane.test.OAuth2AuthFlowClient;
 import io.restassured.*;
-import io.restassured.filter.log.*;
+import io.restassured.filter.log.RequestLoggingFilter;
+import io.restassured.filter.log.ResponseLoggingFilter;
 import io.restassured.response.*;
 import org.hamcrest.*;
 import org.junit.jupiter.api.*;
 
 import java.io.*;
-import java.util.*;
 
-import static com.predic8.membrane.core.http.MimeType.*;
 import static io.restassured.RestAssured.*;
-import static io.restassured.filter.log.LogDetail.ALL;
-import static org.hamcrest.CoreMatchers.*;
 
 public class OAuth2MembraneExampleTest extends DistributionExtractingTestcase {
 
@@ -49,7 +47,7 @@ public class OAuth2MembraneExampleTest extends DistributionExtractingTestcase {
     }
 
     @AfterEach
-    void stopMembrane() throws IOException, InterruptedException {
+    void stopMembrane() {
         oauth2Client.killScript();
         authorizationServer.killScript();
     }
@@ -69,99 +67,28 @@ public class OAuth2MembraneExampleTest extends DistributionExtractingTestcase {
 
     @Test
     void loginPage() {
-        Map<String, String> cookies = new HashMap<>();
-        callOAuth2Auth(cookies, tryToAccessSite(cookies));
-        requestLoginPage(cookies);
-        postLogin(cookies);
-        sendConsent(cookies);
-        accessTargetResource(cookies);
-    }
-
-    private static void accessTargetResource(Map<String, String> cookies) {
-
-        System.out.println("Cookies: " + cookies);
-
-        // @formatter:off
-        given()
-            .cookies(cookies)
-            .get("http://localhost:8000")
-        .then().assertThat()
-            .log().ifValidationFails(ALL)
-            .statusCode(200)
-            .body(containsString("accessed"))
-            .body(containsString("john@predic8.de"));
-        // @formatter:on
-    }
-
-    private static void requestLoginPage(Map<String, String> cookies) {
-        // @formatter:off
-        given().cookies(cookies).get("http://localhost:8000/login/").then().assertThat()
-                .statusCode(200)
-                .contentType(TEXT_HTML);
-
-        // @formatter:on
-    }
-
-    private static void sendConsent(Map<String, String> cookies) {
-        // @formatter:off
-        given()
-                .cookies(cookies)
-                .contentType(APPLICATION_X_WWW_FORM_URLENCODED)
-                .formParam("target","")
-                .formParam("consent","Accept")
-                .redirects().follow(false)
-                .post("http://localhost:8000/login/consent")
-        .then().assertThat()
-                .statusCode(200)
-                .header("Location",equalTo("/"))
-                .body(containsString("http-equiv=\"refresh\""));
-        // @formatter:on
-    }
-
-    private static void postLogin(Map<String, String> cookies) {
-        // @formatter:off
-        given()
-            .cookies(cookies)
-            .contentType(APPLICATION_X_WWW_FORM_URLENCODED)
-            .formParam("target","")
-            .formParam("username","john")
-            .formParam("password","password")
-        .post("http://localhost:8000/login/")
-        .then().assertThat()
-            .statusCode(200)
-            .contentType(TEXT_HTML)
-            .header("Location","/");
-        // @formatter:on
-    }
-
-    private static void callOAuth2Auth(Map<String, String> cookies, String authUrl) {
-        // @formatter:off
-        Response loginPage = given().redirects().follow(false)
-                .cookies(cookies)
-                .urlEncodingEnabled(false)
-                .get(authUrl);
-
-        loginPage.then().assertThat()
-                .statusCode(307)
-                .header("Location",equalTo("/login/"))
-                .contentType(TEXT_HTML);
-        // @formatter:on
-
-        cookies.putAll(loginPage.cookies());
-    }
-
-    private static String tryToAccessSite(Map<String, String> cookies) {
-        // @formatter:off
-       Response response = given()
-               .redirects().follow(false)
-               .get("http://localhost:2000/");
-
-       response.then().assertThat()
-               .statusCode(307)
-               .header("Location", startsWith("http://localhost:8000/oauth2/auth"));
-        // @formatter:on
-
-        cookies.putAll(response.cookies());
-        return response.getHeader("Location");
+        OAuth2AuthFlowClient OAuth2 = new OAuth2AuthFlowClient("http://localhost:8000");
+        // Step 1: Initial request to the client
+        Response clientResponse = OAuth2.step1originalRequestGET("/");
+        // Step 2: Send to authentication at OAuth2 server
+        String loginLocation = OAuth2.step2sendAuthToOAuth2Server(clientResponse);
+        System.out.println("loginLocation = " + loginLocation);
+        // Step 3: Open login page
+        OAuth2.step3openLoginPage(loginLocation);
+        // Step 4: Submit login
+        OAuth2.step4submitLogin(loginLocation, "john", "password");
+        // Step 5: Redirect to consent
+        String consentLocation = OAuth2.step5redirectToConsent();
+        // Step 6: Open consent dialog
+        OAuth2.step6openConsentDialog(consentLocation);
+        // Step 7: Submit consent
+        OAuth2.step7submitConsent(consentLocation);
+        // Step 8: Redirect back to client
+        String callbackUrl = OAuth2.step8redirectToClient();
+        // Step 9: Exchange Code for Token & continue original request.·
+        OAuth2.step9exchangeCodeForToken(
+                callbackUrl,
+                "You accessed the protected resource! Hello john@predic8.de"
+        );
     }
 }
