@@ -14,8 +14,8 @@
 
 package com.predic8.membrane.core.transport.http;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -35,7 +35,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
  */
 public class HttpClientStatusEventBus {
 
-    static final Log log = LogFactory.getLog(HttpClientStatusEventBus.class.getName());
+    static final Logger log = LoggerFactory.getLogger(HttpClientStatusEventBus.class.getName());
 
     public static final String EXCHANGE_PROPERTY_NAME = "HttpClientStatusEventBus";
 
