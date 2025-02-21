@@ -23,7 +23,7 @@ public class ACLExampleTest extends DistributionExtractingTestcase {
 
 	@Override
 	protected String getExampleDirName() {
-		return "acl";
+		return "security/access-control-list";
 	}
 
 	@Test

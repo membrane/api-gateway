@@ -28,7 +28,7 @@ public class XMLTemplateExampleTest extends AbstractSampleMembraneStartStopTestc
 
     @Override
     protected String getExampleDirName() {
-        return "template/xml";
+        return "templating/xml";
     }
 
     @Test

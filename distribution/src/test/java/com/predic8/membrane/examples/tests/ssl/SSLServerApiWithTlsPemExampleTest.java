@@ -24,7 +24,7 @@ public class SSLServerApiWithTlsPemExampleTest extends DistributionExtractingTes
 
     @Override
     protected String getExampleDirName() {
-        return "ssl/api-with-tls-pem";
+        return "security/ssl-tls/api-with-tls-pem";
     }
 
     @Test

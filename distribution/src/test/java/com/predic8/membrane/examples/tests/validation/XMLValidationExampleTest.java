@@ -25,7 +25,7 @@ public class XMLValidationExampleTest extends DistributionExtractingTestcase {
 
 	@Override
 	protected String getExampleDirName() {
-		return "validation" + separator + "xml";
+		return "xml" + separator + "xml-validation";
 	}
 
 	@Test

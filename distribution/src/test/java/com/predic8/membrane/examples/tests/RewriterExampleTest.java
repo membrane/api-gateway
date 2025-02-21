@@ -24,7 +24,7 @@ public class RewriterExampleTest extends DistributionExtractingTestcase {
 
 	@Override
 	protected String getExampleDirName() {
-		return "rewriter/regex";
+		return "routing-traffic/rewriter/regex";
 	}
 
 	@Test

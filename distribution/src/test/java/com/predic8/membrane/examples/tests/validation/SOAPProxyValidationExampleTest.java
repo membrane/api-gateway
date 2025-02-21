@@ -27,7 +27,7 @@ public class SOAPProxyValidationExampleTest extends DistributionExtractingTestca
 
     @Override
     protected String getExampleDirName() {
-        return "validation" + separator + "soap-Proxy";
+        return "web-services-soap" + separator + "soap-wsdl-validation" ;
     }
 
     @Test

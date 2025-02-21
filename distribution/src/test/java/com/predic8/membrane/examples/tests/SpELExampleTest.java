@@ -23,7 +23,7 @@ public class SpELExampleTest extends DistributionExtractingTestcase {
 
 	@Override
 	protected String getExampleDirName() {
-		return "spel";
+		return "extending-membrane/configuration-properties";
 	}
 
 	@Test

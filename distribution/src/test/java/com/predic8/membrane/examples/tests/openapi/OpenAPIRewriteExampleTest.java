@@ -23,7 +23,7 @@ public class OpenAPIRewriteExampleTest extends AbstractSampleMembraneStartStopTe
 
     @Override
     protected String getExampleDirName() {
-        return "rewriter/openapi";
+        return "routing-traffic/rewriter/openapi";
     }
 
     // @formatter:off

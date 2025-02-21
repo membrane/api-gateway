@@ -29,7 +29,7 @@ public class SampleSoapServiceExampleTest extends AbstractSampleMembraneStartSto
 
     @Override
     protected String getExampleDirName() {
-        return "soap/sample-soap-service";
+        return "web-services-soap/sample-soap-service";
     }
 
     private final HashMap<String, String> methodGETmap = new HashMap<>() {{

@@ -25,7 +25,7 @@ public class JsonTemplateExampleTest extends AbstractSampleMembraneStartStopTest
 
     @Override
     protected String getExampleDirName() {
-        return "template/json";
+        return "templating/json";
     }
 
     @Test

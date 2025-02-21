@@ -36,7 +36,7 @@ public class GroovyExampleTest extends AbstractSampleMembraneStartStopTestcase {
 
     @Override
     protected String getExampleDirName() {
-        return "groovy";
+        return "scripting/groovy";
     }
 
     BufferLogger logger;

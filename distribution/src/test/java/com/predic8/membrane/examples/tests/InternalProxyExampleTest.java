@@ -27,7 +27,7 @@ public class InternalProxyExampleTest extends DistributionExtractingTestcase {
 
     @Override
     protected String getExampleDirName() {
-        return "internalproxy";
+        return "routing-traffic/internalproxy";
     }
 
     @Test

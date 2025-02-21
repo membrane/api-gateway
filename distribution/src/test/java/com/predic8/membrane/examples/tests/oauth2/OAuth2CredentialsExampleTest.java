@@ -27,7 +27,7 @@ public class OAuth2CredentialsExampleTest extends DistributionExtractingTestcase
 
     @Override
     protected String getExampleDirName() {
-        return "oauth2/credentials";
+        return "security/oauth2/credentials";
     }
 
     Process2 authorizationServer;
@@ -35,8 +35,8 @@ public class OAuth2CredentialsExampleTest extends DistributionExtractingTestcase
 
     @BeforeEach
     void startMembrane() throws IOException, InterruptedException {
-        authorizationServer = new Process2.Builder().in(getExampleDir("oauth2/credentials/authorization_server")).script("membrane").waitForMembrane().start();
-        tokenValidator = new Process2.Builder().in(getExampleDir("oauth2/credentials/token_validator")).script("membrane").waitForMembrane().start();
+        authorizationServer = new Process2.Builder().in(getExampleDir( getExampleDirName() + "/authorization_server")).script("membrane").waitForMembrane().start();
+        tokenValidator = new Process2.Builder().in(getExampleDir(getExampleDirName() + "/token_validator")).script("membrane").waitForMembrane().start();
 
         // Dump HTTP
         RestAssured.filters(new RequestLoggingFilter(), new ResponseLoggingFilter());
@@ -53,7 +53,7 @@ public class OAuth2CredentialsExampleTest extends DistributionExtractingTestcase
     void testIt() throws Exception {
         BufferLogger logger = new BufferLogger();
         try (Process2 ignored = new Process2.Builder()
-                .in(getExampleDir("oauth2/credentials"))
+                .in(getExampleDir( getExampleDirName()))
                 .withWatcher(logger)
                 .script("client")
                 .parameters("john password")

@@ -24,7 +24,7 @@ public class TextTemplateExampleTest extends AbstractSampleMembraneStartStopTest
 
     @Override
     protected String getExampleDirName() {
-        return "template/text";
+        return "templating/text";
     }
 
     @Test

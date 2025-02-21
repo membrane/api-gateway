@@ -34,7 +34,7 @@ public class FileExchangeStoreExampleTest extends DistributionExtractingTestcase
 
 	@Override
 	protected String getExampleDirName() {
-		return "file-exchangestore";
+		return "extending-membrane/file-exchangestore";
 	}
 
 	@Test

@@ -36,7 +36,7 @@ public class JavascriptExampleTest extends AbstractSampleMembraneStartStopTestca
 
     @Override
     protected String getExampleDirName() {
-        return "javascript";
+        return "scripting/javascript";
     }
 
     BufferLogger logger;

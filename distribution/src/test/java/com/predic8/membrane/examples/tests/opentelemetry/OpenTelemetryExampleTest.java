@@ -32,7 +32,7 @@ public class OpenTelemetryExampleTest extends AbstractSampleMembraneStartStopTes
 
     @Override
     protected String getExampleDirName() {
-        return "opentelemetry";
+        return "monitoring-tracing/opentelemetry";
     }
 
     BufferLogger logger;

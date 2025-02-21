@@ -25,7 +25,7 @@ public class CBRXPathExampleTest extends DistributionExtractingTestcase {
 
 	@Override
 	protected String getExampleDirName() {
-		return "cbr";
+		return "routing-traffic/content-based-router";
 	}
 
 	@Test

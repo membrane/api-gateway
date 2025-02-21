@@ -24,7 +24,7 @@ public class CustomErrorHandlingExampleTest extends AbstractSampleMembraneStartS
 
     @Override
     protected String getExampleDirName() {
-        return "error-handling/custom-error-messages";
+        return "extending-membrane/error-handling/custom-error-messages";
     }
 
     // @formatter:off
