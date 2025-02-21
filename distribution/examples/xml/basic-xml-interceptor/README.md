@@ -14,7 +14,7 @@ The example installs a plugin called `BasicXmlInterceptor` which adds a date-ele
 
 To run the example execute the following steps:
 
-1. Goto the examples/basic-xml-interceptor directory
+1. Goto the `examples/xml/basic-xml-interceptor` directory
 2. Run below command
 
   ``` 

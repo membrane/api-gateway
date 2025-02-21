@@ -10,7 +10,7 @@ https://api.predic8.de/shop/v2/products/
 
 We want to access this API with the path `store/products/`. To do this we have to replace the part `/store/` from the context path with `/shop/v2`. We can achieve this by using the rewriter plugin as follows:
 
-1. Go to the `examples/rewriter/regex` directory.
+1. Go to the `examples/routing-traffic/rewriter/regex` directory.
 
 2. Execute `membrane.cmd`
 

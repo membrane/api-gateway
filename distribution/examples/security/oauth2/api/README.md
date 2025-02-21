@@ -7,7 +7,7 @@ The following images shows the flow of this example.
 
 ## How to Run the Example
 
-This example is located in the `$MEMBRANE_HOME/examples/oauth2/api` folder. Follow the instructions below to set up and test the flow:
+This example is located in the `$MEMBRANE_HOME/examples/security/oauth2/api` folder. Follow the instructions below to set up and test the flow:
 
 ### 1. Start the Authorization Server
 

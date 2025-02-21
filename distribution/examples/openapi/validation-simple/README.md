@@ -6,7 +6,7 @@ Membrane can validate requests and responses against OpenAPI descriptions. The s
 
 Use Membrane version 5 or newer.
 
-1. Go to the _examples/openapi/validation-simple_ directory
+1. Go to the `examples/openapi/validation-simple` directory
 
 2. Start Membrane:
 

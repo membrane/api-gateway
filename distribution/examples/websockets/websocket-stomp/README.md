@@ -23,7 +23,7 @@ the Running instructions.
 	  
 2.	Start ActiveMQ by executing `bin/activemq start` in the ActiveMQ directory.
 	  
-3.	Go to the `examples/websocket-stomp directory`.
+3.	Go to the `examples/websockets/websocket-stomp directory`.
 	  
 4.	Execute `membrane.sh` / `membrane.cmd`
 	  

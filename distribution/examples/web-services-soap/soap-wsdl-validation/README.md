@@ -5,7 +5,7 @@ This sample explains how to set up and use the `validator` plugin within a `soap
 
 ## Running the Example
 
-1. Go to `<membrane-root>/examples/validation/soap-Proxy`
+1. Go to `<membrane-root>/examples/web-services-soap/soap-wsdl-validation`
 
 
 2. Start `membrane.cmd` or `membrane.sh`

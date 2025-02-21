@@ -4,7 +4,7 @@ Using the rewriter in the [OpenAPI](../../../openapi) element, you can rewrite t
 
 ### Running the Example
 
-1. Go to the `examples/rewriter/openapi` directory.
+1. Go to the `examples/routing-traffic/rewriter/openapi` directory.
 
 2. Take a look at the base URL in the `demo-api-v1.yml`:
     ```yaml

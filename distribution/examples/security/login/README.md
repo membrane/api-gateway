@@ -9,7 +9,7 @@ In this example we will visit a website and take a look at the logs in the conso
 
 To run the example execute the following steps:
 
-1. Go to the `examples/login` directory.
+1. Go to the `examples/security/login` directory.
 
 2. Execute `membrane.cmd`
 

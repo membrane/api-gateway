@@ -13,7 +13,7 @@ In this example we will start a self-publishing service that responds with "hell
    
 2. Extract etcd in any directory and start etcd
    
-3. In the membrane folder go to `examples/service-discovery-with-etcd/`
+3. In the membrane folder go to `examples/extending-membrane/service-discovery-with-etcd/`
    
 4. Execute `configurator/start.bat`
    

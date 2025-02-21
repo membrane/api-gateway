@@ -10,7 +10,7 @@ In many enterprise environments, services evolve over time, resulting in differe
 1. **Navigate to the Example Directory**
    Open a terminal and set the working directory to:
    ```sh
-   cd <membrane-root>/examples/versioning/soap-xslt
+   cd <membrane-root>/examples/web-services-soap/versioning-soap-xslt
    ```
 
 2. **Start Membrane**

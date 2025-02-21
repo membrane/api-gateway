@@ -6,7 +6,7 @@ Route requests to internal proxies for reusable functionality across multiple AP
 
 ***Note:*** *You can test these requests using the provided HTTP file or cURL snippets.*
 
-1. **Navigate** to the `examples/internalproxy` directory.
+1. **Navigate** to the `examples/routing-traffic/internalproxy` directory.
 2. **Start** Membrane by executing `membrane.sh` (Linux/Mac) or `membrane.cmd` (Windows).
 3. **Execute the following requests** (alternatively, use the `requests.http` file):
 - **Normal Processing**:

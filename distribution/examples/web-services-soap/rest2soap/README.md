@@ -13,7 +13,7 @@ http://www.thomas-bayer.com/axis2/services/BLZService?wsdl
 
 To run the example execute the following steps:
 
-1. Go to the `examples/rest2soap` directory.
+1. Go to the `examples/web-services-soap/rest2soap` directory.
 
 2. Execute `membrane.cmd` or `membrane.sh`
 

@@ -9,7 +9,7 @@ In this example we will send 4 requests to the service with a rate limit of 3 re
 
 1. Get curl from https://curl.se/ and install it
 
-2. Go to the `examples/rateLimiter` directory.
+2. Go to the `examples/rate-limiting` directory.
 
 3. Execute `membrane.cmd`
 

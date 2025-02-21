@@ -7,7 +7,7 @@ This example demonstrates how to install and configure a custom interceptor, `St
 Follow the steps below to build and deploy the custom StAX interceptor:
 
 ### Step 1: Compile the Interceptor
-1. Navigate to the `examples/stax-interceptor/` directory:
+1. Navigate to the `examples/xml/stax-interceptor/` directory:
    ```sh
    cd <membrane-root>/examples/stax-interceptor
    ```

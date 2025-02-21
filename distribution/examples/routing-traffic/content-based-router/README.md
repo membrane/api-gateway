@@ -12,7 +12,7 @@ http://curl.haxx.se/download.html
 
 To run the example execute the following steps:
 
-1. Go to the folder `examples/cbr`
+1. Go to the folder `examples/routing-traffic/content-based-router`
 
 2. Start Membrane:
 

@@ -5,7 +5,7 @@ Modify JSON documents by injecting random fields or shuffling field order withou
 ## Running the Sample
 ***Note:*** *The request is also available in the requests.http file.*
 
-1. **Navigate** to the `examples/greasing` directory.
+1. **Navigate** to the `examples/api-testing/api-greasing` directory.
 2. **Start** the API Gateway by executing `membrane.sh` (Linux/Mac) or `membrane.cmd` (Windows).
 3. **Access** the greased API:
    ```

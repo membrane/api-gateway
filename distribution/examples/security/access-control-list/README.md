@@ -11,7 +11,7 @@ In this example we will make an HTTP GET request call to secured resources.
 
 To run the example execute the following steps:
 
-1. Go to the `examples/acl` directory.
+1. Go to the `examples/security/access-control-list` directory.
 
 2. Execute `membrane.cmd`
 

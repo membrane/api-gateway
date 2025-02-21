@@ -5,7 +5,7 @@ Check GraphQL-over-HTTP requests, enforcing several limits and restrictions to m
 
 ## Running the Example
 
-1. **Navigate** to the `examples/validation/graphql` directory in a terminal.
+1. **Navigate** to the `examples/graphql/graphql-validation` directory in a terminal.
 2. **Start** the API Gateway by executing `membrane.sh` (Linux/Mac) or `membrane.cmd` (Windows).
 3. **Query** the protected API by opening the `requests.http` file in VS Code or IntelliJ IDEA to execute the querries.
 

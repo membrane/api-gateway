@@ -18,7 +18,7 @@ To run the example execute the following steps:
      set JAVA_HOME=C:\Program Files\Java\jdk-17.0.2
      set PATH=%PATH%;C:\work\apache-maven-3.8.6\bin;C:\Program Files\Java\jdk-17.0.2\bin
     ```
-2. Go to the `examples/loadbalancer-session-3` directory.
+2. Go to the `examples/loadbalancer/4-xml-session` directory.
 
 3. Execute
 

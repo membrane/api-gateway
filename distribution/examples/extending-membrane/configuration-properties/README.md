@@ -9,7 +9,7 @@ http://docs.spring.io/spring/docs/3.1.x/spring-framework-reference/html/expressi
 
 In this example we will visit a website and take a look at the logs in the console. 
 
-1. Go to the `examples/spel` directory.
+1. Go to the `examples/extending-membrane/configuration-properties` directory.
 
 2. Look at file `proxies.xml` ( maybe change some properties )
 

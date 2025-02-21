@@ -9,7 +9,7 @@ In this example we will install a custom interceptor called `MyInterceptor` that
 
 To run the example execute the following steps:
 
-1. Goto the `examples/custom-interceptor/` directory
+1. Goto the `examples/extending-membrane/custom-interceptor/` directory
 
 2. Run below command
 

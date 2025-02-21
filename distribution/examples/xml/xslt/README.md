@@ -7,7 +7,7 @@ With the XSLTInterceptor you can apply XSLT stylesheets to requests and response
 
 Execute the following steps:
 
-1. Go to the `examples/xslt` directory.
+1. Go to the `examples/xml/xslt` directory.
 
 2. Execute `membrane.cmd` or `membrane.sh`
 

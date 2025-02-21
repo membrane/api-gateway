@@ -7,7 +7,7 @@ This sample demonstrates how to throttle requests to an API or web app using the
 
 Execute the following steps:
 
-1. Set sample directory (`<membrane-root>/examples/throttle/`) as working directory.
+1. Set sample directory (`<membrane-root>/examples/routing-traffic/throttle/`) as working directory.
 
 2. Execute the `membrane.sh` script or its Windows batch file equivalent.
 

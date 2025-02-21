@@ -6,7 +6,7 @@ Conditionally apply plugins using expressions.
 
 ***Note:*** *You can test these requests using the provided HTTP request snippets.*
 
-1. **Navigate** to the `examples/if` directory.
+1. **Navigate** to the `examples/extending-membrane/if` directory.
 2. **Start** the Router by executing `router-service.sh` (Linux/Mac) or `router-service.bat` (Windows).
 3. **Execute the following requests** (alternatively, use the `requests.http` file):
 

@@ -8,7 +8,7 @@ Use the `template` plugin to create body content from a template. Placeholders i
 
 Execute the following steps:
 
-1. Go to the `examples/template/text` directory.
+1. Go to the `examples/templating/text` directory.
 
 2. Have a look at `proxies.xml`.
 

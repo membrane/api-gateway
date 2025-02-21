@@ -5,7 +5,7 @@ This sample explains how to set up and use the `validator` plugin, utilizing XML
 
 ## Running the Example
 
-1. Go to the directory `<membrane-root>/examples/validation/xml`.
+1. Go to the directory `<membrane-root>/examples/xml/xml-validation`.
 
 
 2. Start `membrane.cmd` or `membrane.sh`.
