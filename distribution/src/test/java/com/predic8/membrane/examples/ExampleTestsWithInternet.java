@@ -14,16 +14,16 @@
 
 package com.predic8.membrane.examples;
 
-import com.predic8.membrane.examples.config.*;
-import com.predic8.membrane.examples.env.*;
-import com.predic8.membrane.examples.tests.*;
-import com.predic8.membrane.examples.tests.loadbalancing.*;
 import com.predic8.membrane.examples.tests.openapi.*;
 import com.predic8.membrane.examples.tests.rest2soap.*;
 import com.predic8.membrane.examples.tests.ssl.*;
-import com.predic8.membrane.examples.tests.validation.*;
-import com.predic8.membrane.examples.tests.versioning.*;
 import com.predic8.membrane.examples.tutorials.rest.*;
+import com.predic8.membrane.examples.withinternet.config.GettingStartedExampleTest;
+import com.predic8.membrane.examples.withinternet.config.ProxiesXMLExampleTest;
+import com.predic8.membrane.examples.withinternet.config.ProxiesXMLFullExampleTest;
+import com.predic8.membrane.examples.withinternet.config.ProxiesXMLSoapExampleTest;
+import com.predic8.membrane.examples.withinternet.env.HelpLinkExistenceTest;
+import com.predic8.membrane.examples.withinternet.test.*;
 import org.junit.platform.suite.api.*;
 
 @Suite
@@ -67,6 +67,6 @@ import org.junit.platform.suite.api.*;
         Rest2SOAPTemplateExampleTest.class
 
 })
-@ExcludeClassNamePatterns("com.predic8.membrane.examples.env.HelpLinkExistenceTest")
+@ExcludeClassNamePatterns("com.predic8.membrane.examples.withinternet.env.HelpLinkExistenceTest")
 class ExampleTestsWithInternet {
 }

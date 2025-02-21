@@ -15,31 +15,32 @@
 package com.predic8.membrane.examples;
 
 import com.predic8.membrane.errorhandling.OpenAPIConfigErrorTest;
-import com.predic8.membrane.examples.config.ProxiesXMLOfflineExampleTest;
-import com.predic8.membrane.examples.config.ProxiesXMLSecurityExampleTest;
-import com.predic8.membrane.examples.env.ConsistentVersionNumbers;
-import com.predic8.membrane.examples.env.JavaLicenseInfoTest;
+import com.predic8.membrane.examples.withoutinternet.config.ProxiesXMLOfflineExampleTest;
+import com.predic8.membrane.examples.withoutinternet.config.ProxiesXMLSecurityExampleTest;
+import com.predic8.membrane.examples.withoutinternet.env.ConsistentVersionNumbers;
+import com.predic8.membrane.examples.withoutinternet.env.JavaLicenseInfoTest;
 import com.predic8.membrane.examples.tests.*;
-import com.predic8.membrane.examples.tests.loadbalancing.Loadbalancing1StaticExampleTest;
-import com.predic8.membrane.examples.tests.loadbalancing.Loadbalancing3ClientExampleTest;
-import com.predic8.membrane.examples.tests.loadbalancing.Loadbalancing5MultipleExampleTest;
-import com.predic8.membrane.examples.tests.log.AccessLogExampleTest;
-import com.predic8.membrane.examples.tests.message_transformation.Json2XmlExampleTest;
+import com.predic8.membrane.examples.withoutinternet.test.Loadbalancing1StaticExampleTest;
+import com.predic8.membrane.examples.withoutinternet.test.Loadbalancing3ClientExampleTest;
+import com.predic8.membrane.examples.withoutinternet.test.Loadbalancing5MultipleExampleTest;
+import com.predic8.membrane.examples.withoutinternet.test.AccessLogExampleTest;
+import com.predic8.membrane.examples.withoutinternet.test.Json2XmlExampleTest;
 import com.predic8.membrane.examples.tests.message_transformation.TransformationUsingJavascriptExampleTest;
 import com.predic8.membrane.examples.tests.message_transformation.Xml2JsonExampleTest;
-import com.predic8.membrane.examples.tests.oauth2.OAuth2APIExampleTest;
-import com.predic8.membrane.examples.tests.oauth2.OAuth2CredentialsExampleTest;
-import com.predic8.membrane.examples.tests.oauth2.OAuth2MembraneExampleTest;
+import com.predic8.membrane.examples.withoutinternet.test.OAuth2APIExampleTest;
+import com.predic8.membrane.examples.withoutinternet.test.OAuth2CredentialsExampleTest;
+import com.predic8.membrane.examples.tests.oauth2.OAuth2Membrane2ExampleTest;
 import com.predic8.membrane.examples.tests.openapi.OpenAPIRewriteExampleTest;
 import com.predic8.membrane.examples.tests.openapi.OpenAPIValidationSimpleExampleTest;
 import com.predic8.membrane.examples.tests.openapi.OpenAPIValidationExampleTest;
 import com.predic8.membrane.examples.tests.opentelemetry.OpenTelemetryExampleTest;
-import com.predic8.membrane.examples.tests.template.json.JsonTemplateExampleTest;
-import com.predic8.membrane.examples.tests.template.text.TextTemplateExampleTest;
-import com.predic8.membrane.examples.tests.template.xml.XMLTemplateExampleTest;
+import com.predic8.membrane.examples.withoutinternet.test.JsonTemplateExampleTest;
+import com.predic8.membrane.examples.withoutinternet.test.TextTemplateExampleTest;
+import com.predic8.membrane.examples.withoutinternet.test.XMLTemplateExampleTest;
 import com.predic8.membrane.examples.tests.validation.JSONSchemaValidationExampleTest;
 import com.predic8.membrane.examples.tests.validation.SOAPProxyValidationExampleTest;
-import com.predic8.membrane.examples.tests.validation.XMLValidationExampleTest;
+import com.predic8.membrane.examples.withoutinternet.test.XMLValidationExampleTest;
+import com.predic8.membrane.examples.withoutinternet.test.*;
 import org.junit.platform.suite.api.SelectClasses;
 import org.junit.platform.suite.api.Suite;
 
@@ -81,7 +82,7 @@ import org.junit.platform.suite.api.Suite;
 
         // OAuth2
         OAuth2APIExampleTest.class,
-        OAuth2MembraneExampleTest.class,
+        OAuth2Membrane2ExampleTest.class,
         OAuth2CredentialsExampleTest.class,
 
         // OpenAPI
