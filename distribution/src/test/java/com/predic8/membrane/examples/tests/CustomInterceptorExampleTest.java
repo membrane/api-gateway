@@ -14,6 +14,7 @@
 
 package com.predic8.membrane.examples.tests;
 
+import com.predic8.membrane.core.util.OSUtil;
 import com.predic8.membrane.examples.util.BufferLogger;
 import com.predic8.membrane.examples.util.DistributionExtractingTestcase;
 import com.predic8.membrane.examples.util.Process2;
@@ -21,6 +22,7 @@ import com.predic8.membrane.examples.util.SubstringWaitableConsoleEvent;
 import com.predic8.membrane.test.HttpAssertions;
 import org.junit.jupiter.api.Test;
 
+import static com.predic8.membrane.core.util.OSUtil.isWindows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class CustomInterceptorExampleTest extends DistributionExtractingTestcase {
@@ -33,7 +35,7 @@ public class CustomInterceptorExampleTest extends DistributionExtractingTestcase
     @Test
     public void test() throws Exception {
         BufferLogger logger = new BufferLogger();
-        try(Process2 mvn = new Process2.Builder().in(baseDir).executable("mvn package").withWatcher(logger).start()) {
+        try(Process2 mvn = new Process2.Builder().in(baseDir).executable(isWindows() ? "cmd /c mvn package" : "mvn package").withWatcher(logger).start()) {
             if (mvn.waitForExit(60000) != 0)
                 throw new RuntimeException("Maven exited with code " + mvn.waitForExit(60000) + ": " + logger);
         }

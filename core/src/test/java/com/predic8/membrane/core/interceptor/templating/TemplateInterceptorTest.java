@@ -34,6 +34,7 @@ import java.util.*;
 
 import static com.predic8.membrane.core.http.MimeType.*;
 import static java.io.File.separator;
+import static java.lang.System.lineSeparator;
 import static java.nio.file.StandardCopyOption.*;
 import static javax.xml.xpath.XPathConstants.*;
 import static org.junit.jupiter.api.Assertions.*;
@@ -231,11 +232,13 @@ public class TemplateInterceptorTest {
     @Test
     void testPrettify() {
         String inputJson = "\t{\n\n\t\t\"name\":\"John\"\t\t,\"age\":30}";
-        String expectedPrettyJson = """
-                {
-                  "name" : "John",
-                  "age" : 30
-                }""";
+
+        String lineBreak = lineSeparator();
+        String expectedPrettyJson = "{"
+                + lineBreak + "  \"name\" : \"John\","
+                + lineBreak + "  \"age\" : 30"
+                + lineBreak + "}";
+
         String result = ti.prettifyJson(inputJson);
         assertEquals(expectedPrettyJson, result);
     }

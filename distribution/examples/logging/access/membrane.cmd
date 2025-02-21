@@ -85,7 +85,7 @@ set "membrane_home=%~1"
 set "MEMBRANE_HOME=%membrane_home%"
 set "CLASSPATH=%membrane_home%\conf;%membrane_home%\lib\*"
 echo Starting: %membrane_home% CL: %CLASSPATH%
-java -cp "%CLASSPATH%" com.predic8.membrane.core.cli.RouterCLI -c proxies.xml
+java "-Dlog4j.configurationFile=%CD%/log4j2_access.xml" -cp "%CLASSPATH%" com.predic8.membrane.core.cli.RouterCLI -c proxies.xml
 goto :eof
 
 :finish

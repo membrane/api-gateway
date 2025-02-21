@@ -48,6 +48,7 @@ public class OAuth2APIExampleTest extends DistributionExtractingTestcase {
         authorizationServer.killScript();
     }
 
+    // Can fail due to powershell execution policy. Can be ignored
     @Test
     void testIt() throws Exception {
         BufferLogger logger = new BufferLogger();

@@ -81,8 +81,9 @@ public class ResolverMap implements Cloneable, Resolver {
         if (relativeChild.contains(":/") || relativeChild.contains(":\\") || parent == null || parent.isEmpty())
             return relativeChild;
         if (parent.startsWith("file://")) {
-            if (relativeChild.startsWith("\\") || relativeChild.startsWith("/"))
-                return "file://" + new File(relativeChild).getAbsolutePath();
+            if (relativeChild.startsWith("\\") || relativeChild.startsWith("/")) {
+                return  convertPath2FilePathString( new File(relativeChild).getAbsolutePath());
+            }
             File parentFile = new File(pathFromFileURI(parent));
             if (!parent.endsWith("/") && !parent.endsWith("\\"))
                 parentFile = parentFile.getParentFile();
@@ -94,7 +95,11 @@ public class ResolverMap implements Cloneable, Resolver {
         }
         if (parent.contains(":/")) {
             try {
-                return new URI(parent).resolve(prepare4Uri(relativeChild)).toString();
+                if (parent.startsWith("http"))
+                    return new URI(parent).resolve(prepare4Uri(relativeChild)).toString();
+                if (parent.startsWith("classpath:"))
+                    return new URI(parent).resolve(prepare4Uri(relativeChild)).toString();
+                return convertPath2FileURI(parent).resolve(prepare4Uri(relativeChild)).toString();
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
@@ -114,11 +119,16 @@ public class ResolverMap implements Cloneable, Resolver {
         File parentFile = new File(parent);
         if (!parent.endsWith("/") && !parent.endsWith("\\"))
             parentFile = parentFile.getParentFile();
-        return new File(parentFile, relativeChild).getAbsolutePath();
+        try {
+            return new File(parentFile, relativeChild).getCanonicalPath();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     /**
      * Prepares a path string to be used to construct a URI
+     *
      * @param path
      * @return
      */
@@ -128,7 +138,7 @@ public class ResolverMap implements Cloneable, Resolver {
         return path;
     }
 
-   protected static @NotNull String keepTrailingSlash(File parentFile, String relativeChild) throws URISyntaxException {
+    protected static @NotNull String keepTrailingSlash(File parentFile, String relativeChild) throws URISyntaxException {
         String res = toFileURIString(new File(parentFile, relativeChild));
         if (endsWithSlash(relativeChild))
             return res + "/";

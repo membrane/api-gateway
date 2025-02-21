@@ -3,8 +3,8 @@ $clientSecret = "def"
 $tokenEndpoint = "http://localhost:7000/oauth2/token"
 $target = "http://localhost:2000"
 
-function getToken{ 
-    
+function getToken{
+
     $postParams = @{grant_type="client_credentials";client_id=$clientId;client_secret=$clientSecret}
     return Invoke-WebRequest -Uri $tokenEndpoint -Method POST -Body $postParams | ConvertFrom-Json
 }

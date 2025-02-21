@@ -1,1 +1,0 @@
-powershell client.ps1

@@ -12,7 +12,7 @@ License:          Membrane
 Group:            System
 Packager:         predic8 GmbH
 BuildRoot:        %{_tmppath}/build-%{name}-%{version}
-Requires:         java-headless >= 17
+Requires:         java-headless >= 21
 Requires(pre):    %{_sbindir}/useradd, %{_sbindir}/groupadd
 Requires(post):   systemd
 Requires(preun):  systemd
