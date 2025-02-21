@@ -14,11 +14,13 @@
 
 package com.predic8.membrane.examples.tests.loadbalancing;
 
+import com.predic8.membrane.core.util.OSUtil;
 import com.predic8.membrane.examples.util.BufferLogger;
 import com.predic8.membrane.examples.util.DistributionExtractingTestcase;
 import com.predic8.membrane.examples.util.Process2;
 import org.junit.jupiter.api.Test;
 
+import static com.predic8.membrane.core.util.OSUtil.isWindows;
 import static com.predic8.membrane.examples.tests.loadbalancing.LoadBalancerUtil.addLBNodeViaHTML;
 import static com.predic8.membrane.test.StringAssertions.assertContains;
 import static com.predic8.membrane.test.StringAssertions.assertContainsNot;
@@ -45,7 +47,7 @@ public class Loadbalancing4XmlSessionExampleTest extends DistributionExtractingT
 		try(Process2 ignored = startServiceProxyScript()) {
 			// call "mvn package" now so that both antNodeX processes do call it at the same time
 			BufferLogger loggerCompile = new BufferLogger();
-			try(Process2  mvnPackage = new Process2.Builder().in(baseDir).withWatcher(loggerCompile).executable("mvn package").start()) {
+			try(Process2  mvnPackage = new Process2.Builder().in(baseDir).withWatcher(loggerCompile).executable(isWindows() ? "cmd /c mvn package" : "mvn package").start()) {
 				int result = mvnPackage.waitForExit(40000);
 				if (result != 0)
 					throw new AssertionError("'mvn package' returned non-zero " + result + ":\r\n" + loggerCompile);
@@ -53,15 +55,15 @@ public class Loadbalancing4XmlSessionExampleTest extends DistributionExtractingT
 
 			BufferLogger loggerNode1 = new BufferLogger();
 			BufferLogger loggerNode2 = new BufferLogger();
-			try(Process2 ignored1 = new Process2.Builder().in(baseDir).withWatcher(loggerNode1).executable("mvn exec:java@node1").start()) {
-				try(Process2 ignored2 = new Process2.Builder().in(baseDir).withWatcher(loggerNode2).executable("mvn exec:java@node2").start()) {
+			try(Process2 ignored1 = new Process2.Builder().in(baseDir).withWatcher(loggerNode1).executable(isWindows() ? "cmd /c mvn exec:java@node1" : "mvn exec:java@node1").start()) {
+				try(Process2 ignored2 = new Process2.Builder().in(baseDir).withWatcher(loggerNode2).executable(isWindows() ? "cmd /c mvn exec:java@node2" :"mvn exec:java@node2").start()) {
 
 					addLBNodeViaHTML("http://localhost:9000/admin/", "localhost", 4000);
 					addLBNodeViaHTML("http://localhost:9000/admin/", "localhost", 4001);
 
 					sleep(200); // wait for nodes to come up
 
-					try(Process2 mvnExec = new Process2.Builder().in(baseDir).executable("mvn exec:java@client").start()) {
+					try(Process2 mvnExec = new Process2.Builder().in(baseDir).executable(isWindows() ? "cmd /c mvn exec:java@client" : "mvn exec:java@client").start()) {
 						mvnExec.waitForExit(30000);
 					}
 				}
