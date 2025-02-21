@@ -14,28 +14,26 @@
 
 package com.predic8.membrane.servlet.embedded;
 
-import java.io.IOException;
-
+import com.predic8.membrane.core.Router;
+import com.predic8.membrane.servlet.RouterUtil;
+import com.predic8.membrane.servlet.config.spring.BaseLocationXmlWebApplicationContext;
 import jakarta.servlet.ServletConfig;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.web.context.support.XmlWebApplicationContext;
 
-import com.predic8.membrane.core.Router;
-import com.predic8.membrane.servlet.RouterUtil;
-import com.predic8.membrane.servlet.config.spring.BaseLocationXmlWebApplicationContext;
+import java.io.IOException;
 
 /**
  * This embeds Membrane as a servlet.
  */
 public class MembraneServlet extends HttpServlet {
 	private static final long serialVersionUID = 1L;
-	private static final Log log = LogFactory.getLog(MembraneServlet.class);
+	private static final Logger log = LoggerFactory.getLogger(MembraneServlet.class);
 
 	private XmlWebApplicationContext appCtx;
 	private Router router;
