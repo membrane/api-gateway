@@ -14,6 +14,7 @@
 
 package com.predic8.membrane.core.config.spring;
 
+import com.predic8.membrane.core.util.*;
 import org.jetbrains.annotations.*;
 import org.slf4j.*;
 import org.springframework.beans.*;
@@ -25,10 +26,12 @@ import org.springframework.core.io.*;
 import org.xml.sax.*;
 
 import java.io.*;
+import java.net.URI;
 import java.net.*;
 import java.util.*;
 
 import static com.predic8.membrane.core.util.ExceptionUtil.*;
+import static java.util.Arrays.stream;
 
 /**
  * Delegates everything to {@link FileSystemXmlApplicationContext}.
@@ -43,11 +46,15 @@ TrackingApplicationContext, BaseLocationApplicationContext, CheckableBeanFactory
 	private final List<File> files = new ArrayList<>();
 
 	public TrackingFileSystemXmlApplicationContext(String[] configLocations, boolean refresh) throws BeansException {
-		super(configLocations, refresh);
+		super(convertFileURIsToPaths(configLocations), refresh);
 	}
 
 	public TrackingFileSystemXmlApplicationContext(String[] configLocations, boolean refresh, ApplicationContext parent) throws BeansException {
-		super(configLocations, refresh, parent);
+		super(convertFileURIsToPaths(configLocations), refresh, parent);
+	}
+
+	private static String[] convertFileURIsToPaths(String[] uris) {
+		return stream(uris).map(URIUtil::pathFromFileURI).toArray(String[]::new);
 	}
 
 	@Override
