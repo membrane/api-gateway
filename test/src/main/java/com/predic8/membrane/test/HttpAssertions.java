@@ -21,6 +21,8 @@ import org.apache.http.auth.Credentials;
 import org.apache.http.auth.UsernamePasswordCredentials;
 import org.apache.http.client.CredentialsProvider;
 import org.apache.http.client.HttpClient;
+import org.apache.http.client.config.CookieSpecs;
+import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.*;
 import org.apache.http.client.utils.HttpClientUtils;
 import org.apache.http.conn.ssl.NoopHostnameVerifier;
@@ -49,7 +51,11 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class HttpAssertions implements AutoCloseable {
 
-    private HttpClient hc = HttpClientBuilder.create().build();
+    private HttpClient hc = HttpClientBuilder.create().setDefaultCookieStore(new BasicCookieStore())
+            .setDefaultRequestConfig(RequestConfig.custom()
+                    .setCookieSpec(CookieSpecs.STANDARD)
+                    .build())
+            .build();
 
     public String getAndAssert200(String url) throws ParseException, IOException {
         return getAndAssert(200, url);
