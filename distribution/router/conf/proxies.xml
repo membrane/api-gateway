@@ -3,14 +3,10 @@
 
 	 For more see:
 	 - proxies-*.xml files in this folder
-	 - The examples/* folders with working samples for proxies.xml
-	 - Configuration Reference: https://membrane-soa.org/api-gateway-doc/current/configuration/reference/
-	 - https://www.membrane-soa.org/service-proxy-doc/current/configuration/samples.html
+	 - The examples/* folders with working samples
+	 - Configuration Reference: https://www.membrane-api.io/docs/
 
-	 Start Membrane with:
-	 ./membrane.sh or membrane.cmd
-
-	 A direct Internet access is needed to run this configuration!
+	 Direct Internet access is needed to run this configuration!
      Otherwise, see proxies-offline.xml
 
      Use an XML editor with XML Schema syntax completion for easy editing like
