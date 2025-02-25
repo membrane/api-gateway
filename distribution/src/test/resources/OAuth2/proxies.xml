@@ -34,7 +34,7 @@
 			</oauth2Resource2>
 
 			<groovy>
-				exc.response = Response.ok("Hello " + exc.properties.oauth2.userinfo.username + ".").build()
+				exc.response = Response.ok("Hello " + exc.properties.'membrane.oauth2'.userinfo.username + ".").build()
 				RETURN
 			</groovy>
 

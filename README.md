@@ -828,7 +828,7 @@ Use OAuth2/OpenID to secure endpoints against Google, Azure AD, GitHub, Keycloak
   </oauth2Resource>
   <groovy>
     // Get email from OAuth2 and forward it to the backend
-    def oauth2 = exc.properties.oauth2
+    def oauth2 = exc.properties.'membrane.oauth2'
     header.setValue('X-EMAIL',oauth2.userinfo.email)
     CONTINUE
   </groovy>
