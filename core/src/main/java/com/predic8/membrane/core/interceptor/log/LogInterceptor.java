@@ -20,6 +20,7 @@ import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.interceptor.lang.*;
 import com.predic8.membrane.core.lang.*;
+import org.slf4j.*;
 
 import java.io.*;
 
@@ -202,5 +203,21 @@ public class LogInterceptor extends AbstractExchangeExpressionInterceptor {
 
     public String getMessage() {
         return expression;
+    }
+
+    public boolean isHeaderOnly() {
+        return false;
+    }
+
+    /**
+     * Deprecated and sunsetted!
+     * Do not use this attribute. It is only there for the proxies.xml to be compatible with versions prior to 6.X.X
+     * It has no effect at all!
+     * @default false
+     * @description It is ignored
+     */
+    @MCAttribute
+    public void setHeaderOnly(boolean headerOnly) {
+        LoggerFactory.getLogger(this.getClass()).warn("Configuration option `headerOnly` is not supported anymore. Use `body` instead.");
     }
 }
