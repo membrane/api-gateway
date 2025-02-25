@@ -20,7 +20,7 @@ import com.predic8.membrane.examples.util.Process2;
 import org.junit.jupiter.api.Test;
 
 import static com.predic8.membrane.core.util.OSUtil.isWindows;
-import static com.predic8.membrane.examples.tests.loadbalancing.LoadBalancerUtil.addLBNodeViaHTML;
+import static com.predic8.membrane.examples.util.LoadBalancerUtil.addLBNodeViaHTML;
 import static com.predic8.membrane.test.StringAssertions.assertContains;
 import static com.predic8.membrane.test.StringAssertions.assertContainsNot;
 import static java.lang.Thread.sleep;

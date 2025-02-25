@@ -14,59 +14,10 @@
 
 package com.predic8.membrane.examples;
 
-import com.predic8.membrane.examples.tests.openapi.*;
-import com.predic8.membrane.examples.tests.rest2soap.*;
-import com.predic8.membrane.examples.tests.ssl.*;
-import com.predic8.membrane.examples.tutorials.rest.*;
-import com.predic8.membrane.examples.withinternet.config.GettingStartedExampleTest;
-import com.predic8.membrane.examples.withinternet.config.ProxiesXMLExampleTest;
-import com.predic8.membrane.examples.withinternet.config.ProxiesXMLFullExampleTest;
-import com.predic8.membrane.examples.withinternet.config.ProxiesXMLSoapExampleTest;
-import com.predic8.membrane.examples.withinternet.env.HelpLinkExistenceTest;
-import com.predic8.membrane.examples.withinternet.test.*;
-import org.junit.platform.suite.api.*;
+import org.junit.platform.suite.api.SelectPackages;
+import org.junit.platform.suite.api.Suite;
 
 @Suite
-@SelectClasses({
-        GettingStartedExampleTest.class,  // See: https://membrane-api.io/getting-started
-        HelpLinkExistenceTest.class,
-
-        ACLExampleTest.class,
-        BasicAuthExampleTest.class,
-        FileExchangeStoreExampleTest.class,
-        Loadbalancing4XmlSessionExampleTest.class,
-        LoggingCSVExampleTest.class,
-        LoggingJDBCExampleTest.class,
-        LoggingExampleTest.class,
-        LoginExampleTest.class,
-        RewriterExampleTest.class,
-        SSLServerApiWithTlsPkcs12ExampleTest.class,
-        SSLServerApiWithTlsPemExampleTest.class,
-        ToBackendExampleTest.class,
-        ThrottleExampleTest.class,
-        XSLTExampleTest.class,
-
-        FormValidationExampleTest.class,
-        CustomInterceptorExampleTest.class,
-        BasicXmlInterceptorExampleTest.class,
-
-        XsltExampleTest.class,
-
-        // OpenAPI
-        APIProxyExampleTest.class,
-
-        // Tutorials
-        TutorialRestStepsExampleTest.class,
-        TutorialRestInitialExampleTest.class,
-
-        // Configuration
-        ProxiesXMLExampleTest.class,
-        ProxiesXMLSoapExampleTest.class,
-        ProxiesXMLFullExampleTest.class,
-
-        Rest2SOAPTemplateExampleTest.class
-
-})
-@ExcludeClassNamePatterns("com.predic8.membrane.examples.withinternet.env.HelpLinkExistenceTest")
+@SelectPackages("com.predic8.membrane.examples.withinternet")
 class ExampleTestsWithInternet {
 }

@@ -19,7 +19,7 @@ import com.predic8.membrane.examples.util.Process2;
 import com.predic8.membrane.test.HttpAssertions;
 import org.junit.jupiter.api.Test;
 
-import static com.predic8.membrane.examples.tests.loadbalancing.LoadBalancerUtil.*;
+import static com.predic8.membrane.examples.util.LoadBalancerUtil.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class Loadbalancing5MultipleExampleTest extends DistributionExtractingTestcase {

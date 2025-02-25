@@ -21,9 +21,9 @@ import org.junit.jupiter.api.Test;
 
 import java.io.File;
 
-import static com.predic8.membrane.examples.tests.loadbalancing.BalancerClientScriptUtil.*;
-import static com.predic8.membrane.examples.tests.loadbalancing.LoadBalancerUtil.assertNodeStatus;
-import static com.predic8.membrane.examples.tests.loadbalancing.LoadBalancerUtil.getRespondingNode;
+import static com.predic8.membrane.examples.util.BalancerClientScriptUtil.*;
+import static com.predic8.membrane.examples.util.LoadBalancerUtil.assertNodeStatus;
+import static com.predic8.membrane.examples.util.LoadBalancerUtil.getRespondingNode;
 import static com.predic8.membrane.test.StringAssertions.assertContains;
 import static java.lang.Thread.sleep;
 import static java.nio.charset.StandardCharsets.UTF_8;

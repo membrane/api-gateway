@@ -17,7 +17,7 @@ package com.predic8.membrane.examples.withoutinternet.test;
 import com.predic8.membrane.examples.util.*;
 import org.junit.jupiter.api.*;
 
-import static com.predic8.membrane.examples.tests.loadbalancing.LoadBalancerUtil.*;
+import static com.predic8.membrane.examples.util.LoadBalancerUtil.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class Loadbalancing1StaticExampleTest extends DistributionExtractingTestcase {
