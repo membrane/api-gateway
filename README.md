@@ -5,7 +5,51 @@
 [![GitHub release](https://img.shields.io/github/release/membrane/service-proxy.svg)](https://github.com/membrane/service-proxy/releases/latest)
 [![Hex.pm](https://img.shields.io/hexpm/l/plug.svg)](https://raw.githubusercontent.com/membrane/service-proxy/master/distribution/router/LICENSE.txt)
 
-A versatile and lightweight **API Gateway** for **REST** and **legacy SOAP Web Services**, built in Java.
+Lightweight **API Gateway** for **REST**, **GraphQL** and **legacy SOAP Web Services**, easily extended with powerful plugins and Java.
+
+Solve even complex custom API requirements with simple configurations.
+
+**Forwarding Requests from Port 2000 to a Backend:** 
+```xml
+<api port="2000">
+  <target url="https://api.predic8.de"/>
+</api>
+```
+
+**Deploy OpenAPI and enable Request Validation:** 
+```xml
+<api port="2000">
+    <openapi location="fruitshop-api.yml" validateRequests="yes"/>
+</api>
+```
+
+**Issue JSON Web Tokens for API Keys:**
+
+Simple implementation of a token server. A request is authenticated by API key and a JWT for the user is created, signed and returned. By changing the template you can decide whats included in the JWT. 
+
+```xml
+<api port="2000">
+   <apiKey required="true">
+       <apiKeyFileStore location="keys.txt" />
+   </apiKey>
+   <request>
+       <setProperty name="scopes" value="${scopes()}"/> 
+       <template>
+           {
+              "sub": "user@example.com",
+              "aud": "order",
+              "scope": "${property.scopes}"   <!-- Scopes defined in keys.txt -->
+           }
+       </template>
+       <jwtSign>
+           <jwk location="jwk.json"/> <!-- Sign with RS256 -->
+       </jwtSign>
+   </request>
+   <return /> <!-- return token-->
+</api>
+```
+
+These are just a few examples; see the descriptions below for more.
 
 ## Features
 
@@ -83,54 +127,58 @@ A versatile and lightweight **API Gateway** for **REST** and **legacy SOAP Web S
 ## Java
 
 ### Prerequisites
-- Ensure **Java 17** or newer is installed.
+- Ensure **Java 21** or newer is installed.
 
 ### Setup and Run
 1. **Download and Extract**
-  - Get the latest [binary release](https://github.com/membrane/service-proxy/releases).
-  - Unzip the downloaded file to a directory of your choice.
+  - Get the latest [binary release](https://github.com/membrane/service-proxy/releases) and unzip it.
 
 2. **Start the Gateway**
   - Open a terminal in the extracted directory.
-  - Run the appropriate command for your operating system:
+  - Run the appropriate command:
     - **Linux/Mac:** `./membrane.sh`
     - **Windows:** `membrane.cmd`
 
 3. **Access the Gateway**
-  - Open your browser and navigate to [http://localhost:2000](http://localhost:2000).
+  - Open [http://localhost:2000](http://localhost:2000) in your browser.
   - The gateway will forward traffic to [https://api.predic8.de](https://api.predic8.de) by default.
 
 4. **Modify Configuration**
-  - To customize the behavior, edit the file located at `conf/proxies.xml`.
+  - Customize the behavior, by editing the file `conf/proxies.xml`.
 
 
 ## Docker
 
 ### Quick Start
-Run the Membrane API Gateway in a Docker container:
-```bash
-docker run -p 2000:2000 predic8/membrane
-```  
 
-### Access the Gateway
-- Open [http://localhost:2000](http://localhost:2000) in your browser, or use `curl`:
-  ```bash
-  curl http://localhost:2000
-  ```  
-- The response will match the output of directly calling [https://api.predic8.de](https://api.predic8.de).
+1. **Start the Gateway**
 
-### Changing the Configuration
-To use a custom [proxies.xml](distribution/router/conf/proxies.xml) configuration file, bind it to the Membrane container.
+   Run Membrane in a container:
+   ```bash
+   docker run -p 2000:2000 predic8/membrane
+   ```  
 
-#### For Windows/Linux:
-```bash
-docker run -v proxies.xml:/opt/membrane/conf/proxies.xml -p 2000:2000 predic8/membrane
-```  
+2. **Access the Gateway**
 
-#### For Mac:
-```bash
-docker run -v "$(pwd)/proxies.xml:/opt/membrane/conf/proxies.xml" -p 2000:2000 predic8/membrane
-```  
+   Open [http://localhost:2000](http://localhost:2000) in your browser, or use `curl`:
+     ```bash
+     curl http://localhost:2000
+     ```  
+   The response will match the output of directly calling [https://api.predic8.de](https://api.predic8.de).
+
+3. **Changing the Configuration**
+   
+   To use a custom [proxies.xml](distribution/router/conf/proxies.xml) configuration file, bind it to the Membrane container.
+
+   #### For Windows/Linux:
+   ```bash
+   docker run -v proxies.xml:/opt/membrane/conf/proxies.xml -p 2000:2000 predic8/membrane
+   ```  
+   
+   #### For Mac:
+   ```bash
+   docker run -v "$(pwd)/proxies.xml:/opt/membrane/conf/proxies.xml" -p 2000:2000 predic8/membrane
+   ```  
 
 ### Learn More
 For detailed Docker setup instructions, see the [Membrane Deployment Guide](https://membrane-api.io/deployment/#docker).
@@ -140,7 +188,7 @@ For detailed Docker setup instructions, see the [Membrane Deployment Guide](http
 
 ### Explore and Experiment
 - Try the code snippets below.
-- Run the provided [examples](distribution/examples#readme) to see Membrane in action.
+- Run the samples in the `examples` folder of the unzipped distribution.
 
 ### Dive into Tutorials
 - Follow the [REST API Tutorial](https://membrane-api.io/tutorials/rest/) to learn about deploying and securing RESTful services.
@@ -148,7 +196,7 @@ For detailed Docker setup instructions, see the [Membrane Deployment Guide](http
 
 ### Read the Documentation
 
-- For detailed guidance, visit the [official documentation](https://www.membrane-soa.org/service-proxy-doc/).
+- For detailed guidance, visit the [official documentation](https://www.membrane-api.io).
 
 # Basics
 
@@ -172,19 +220,21 @@ To forward requests from the API Gateway to a backend, use a simple `api` config
   <path>/shop</path>
   <target url="https://api.predic8.de"/>
 </api>
-```  
+```
 
 ### Testing the Configuration
-After adding the configuration to the `proxies.xml` file, open the following URL in your browser to test the API: [http://localhost:2000/shop/v2/](http://localhost:2000/shop/v2/)
+After modifying and saving the `proxies.xml` file, open [http://localhost:2000/shop/v2/](http://localhost:2000/shop/v2/)
 
 
 ## OpenAPI Support
+
+Membrane natively supports OpenAPI, allowing you to easily configure the gateway with OpenAPI documents and automatically validate both requests and responses.
 
 ### Deploy APIs with OpenAPI
 Membrane allows you to configure APIs directly from OpenAPI documents in the `proxies.xml` file. Backend addresses and other details are automatically derived from the OpenAPI description.
 
 #### Example Configuration
-The snippet below shows how to deploy an API using an OpenAPI file (`fruitshop-api.yml`) with request validation enabled:
+The snippet below shows how to deploy an API using an OpenAPI (`fruitshop-api.yml`) with request validation enabled:
 
 ```xml
 <api port="2000">
@@ -193,9 +243,7 @@ The snippet below shows how to deploy an API using an OpenAPI file (`fruitshop-a
 ```  
 
 #### Viewing Deployed APIs
-Once configured, a list of deployed APIs is available at:  
-
-[http://localhost:2000/api-docs](http://localhost:2000/api-docs)
+Once configured, a list of deployed APIs is available at: [http://localhost:2000/api-docs](http://localhost:2000/api-docs)
 
 ![List of OpenAPI Deployments](distribution/examples/openapi/openapi-proxy/api-overview.png)
 
@@ -206,17 +254,15 @@ Click on an API title in the list to open the Swagger UI for interactive explora
 ### Learn More
 For additional details and a working example, check out the [OpenAPI Example](distribution/examples/openapi).
 
-
-## Routing
-
-Membrane offers versatile routing options. Its fallthrough mechanism ensures that only the first matching API rule is applied, skipping the rest. This enables precise and efficient routing based on criteria such as paths, HTTP methods, or hostnames.
+## Routing  
+Membrane provides versatile routing with a fallthrough mechanism that applies only the first matching API rule, ensuring precise and efficient routing based on path, HTTP method, or hostname or many other criterias.
 
 ### Example: Advanced Routing
 
-The configuration below demonstrates several routing rules, with comments explaining their behavior:
+The configuration below demonstrates several routing rules:
 
 ```xml
-<!-- Block POST requests -->
+<!-- Block POST -->
 <api port="2000" method="POST">
     <response>
         <static>POST is blocked!</static>
@@ -224,7 +270,7 @@ The configuration below demonstrates several routing rules, with comments explai
     <return statusCode="405"/>
 </api>
 
-<!-- Requests matching "/shop/v2/products/.*" -->
+<!-- Paths matching "/shop/v2/products/.*" -->
 <api port="2000">
     <path isRegExp="true">/shop/v2/products/.*</path>
     <target url="https://api.predic8.de" />
@@ -236,37 +282,40 @@ The configuration below demonstrates several routing rules, with comments explai
     <target url="https://api.predic8.de" />
 </api>
 
-<!-- Requests with a HOST header of "www.predic8.de" -->
+<!-- HOST header of "www.predic8.de" -->
 <api port="2000" host="www.predic8.de">
     <response>
-        <static>Calling Web Server</static>
+        <static>Homepage</static>
     </response>
     <return/>
 </api>
 
-<!-- Requests to "api.predic8.de" -->
-<api port="2000" host="api.predic8.de">
-    <response>
-        <static>Calling API</static>
-    </response>
-    <return/>
+<!-- Query parameter ?city=Paris -->
+<api port="2000" test="params.city =='Paris'">
+   <response>
+      <static>Oui!</static>
+   </response>
+   <return/>
 </api>
 ```  
 
 ### Configuration Options
 
-- **`port`**: The port Membrane listens on for incoming connections.
-- **`method`**: Matches the HTTP method (e.g., `GET`, `POST`, `DELETE`). Use `*` to match any method.
-- **`host`**: Specifies hostnames for routing. Supports basic globbing with `*`.
-- **`path`**: Matches request paths. Regular expressions can be enabled with `isRegExp="true"`.
+| Option   | Description                                                                |
+|----------|----------------------------------------------------------------------------|
+| `port`   | port Membrane listens for incoming connections.                            |
+| `method` | - HTTP method (e.g., `GET`, `POST`, `DELETE`).<br>- `*` matchs any method. |
+| `host`   | - Hostname e.g. `api.predic8.de`<br> - Supports basic globbing with `*`    |
+| `test` | - Custum script e.g. `$pathParm.id == '42'`, `$header.contentType == '...'`     |
+| `path`   | - Request path<br>- Regular expressions can be used with `isRegExp="true"` |
 
 For more routing options, see the [Membrane API documentation](https://www.membrane-api.io/docs/current/api.html).
 
 ### Short Circuit
 
-Sometimes, you may need an endpoint that does not forward requests to a backend. Membrane makes it easy to create such endpoints.
+Membrane lets you create endpoints that return immediately without forwarding requests to a backend.
 
-#### Example: Health Check Endpoint
+#### Example: Health Check
 The following configuration creates a health check endpoint that responds to requests at [http://localhost:2000/health](http://localhost:2000/health):
 
 ```xml
@@ -280,7 +329,7 @@ The following configuration creates a health check endpoint that responds to req
 ```
 
 #### Example: Blocking Specific Paths
-You can block specific paths (e.g., `/nothing`) while allowing other calls to pass through.
+Block paths (e.g., `/nothing`) while allowing other calls to pass through.
 
 **Routing Note:** APIs are matched from top to bottom. When multiple APIs share the same port, place the APIs with stricter routing conditions higher in the configuration.
 
@@ -297,7 +346,7 @@ You can block specific paths (e.g., `/nothing`) while allowing other calls to pa
   <response>
     <static>Other call to port 2000</static>
   </response>
-  <return statusCode="404"/>
+  <return/>
 </api>
 ```
 
