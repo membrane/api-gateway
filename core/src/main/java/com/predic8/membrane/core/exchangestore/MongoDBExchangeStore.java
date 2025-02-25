@@ -1,15 +1,14 @@
 package com.predic8.membrane.core.exchangestore;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
+import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.exchange.AbstractExchange;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.BodyCollectingMessageObserver;
-import com.predic8.membrane.core.http.Message;
 import com.predic8.membrane.core.interceptor.Interceptor;
 import com.predic8.membrane.core.proxies.Proxy;
 import com.predic8.membrane.core.proxies.RuleKey;
@@ -19,25 +18,28 @@ import org.bson.Document;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.nio.charset.StandardCharsets;
+import java.io.IOException;
 import java.util.List;
 
-@MCElement(name = "mongoDBFileExchangeStore")
-public class MongoDBFileExchangeStore extends AbstractExchangeStore {
+@MCElement(name="mongoDBExchangeStore")
+public class MongoDBExchangeStore extends AbstractExchangeStore {
 
-    private static final Logger log = LoggerFactory.getLogger(MongoDBFileExchangeStore.class);
+    private static final Logger log = LoggerFactory.getLogger(MongoDBExchangeStore.class);
+
     private String connection;
     private String database;
     private String collection;
 
     private MongoClient mongoClient;
     private MongoDatabase mongoDatabase;
+    private ObjectMapper objectMapper = new ObjectMapper();
 
     @Override
     public void init(Router router) {
         try {
             mongoClient = MongoClients.create(connection);
             mongoDatabase = mongoClient.getDatabase(database);
+            log.info("mongodb initialized!");
         } catch (Exception e) {
             throw new ConfigurationException("""
                             Failed to initialize MongoDB connection.
@@ -46,29 +48,45 @@ public class MongoDBFileExchangeStore extends AbstractExchangeStore {
         }
     }
 
-    public void storeExchange(AbstractExchange exchange) {
+    @Override
+    public void snap(AbstractExchange exchange, Interceptor.Flow flow) {
         try {
-            Document document = new Document()
-                    .append("request", messageToJson(exchange.getRequest()))
-                    .append("response", messageToJson(exchange.getResponse()))
-                    .append("timestamp", System.currentTimeMillis());
-
-            mongoDatabase.getCollection(collection).insertOne(document);
-            log.info("Exchange saved successfully to MongoDB.");
-        } catch (Exception e) {
-            log.error("Failed to save exchange to MongoDB", e);
+            mongoDatabase.getCollection(collection).insertOne(Document.parse(objectMapper.writeValueAsString(exchange)));
+            log.info("Exchange saved to MongoDB: " + exchange.getId());
+        } catch (IOException e) {
+            log.error("Error while converting exchange to JSON", e);
         }
     }
 
-    private String messageToJson(Message message) {
-        if (message == null || message.getBody() == null) {
-            return "{}";
+    @Override
+    public AbstractExchange getExchangeById(long id) {
+        Document result = mongoDatabase.getCollection(collection).find(new Document("id", id)).first();
+        if (result != null) {
+            try {
+                return objectMapper.readValue(result.toJson(), AbstractExchange.class);
+            } catch (IOException e) {
+                log.error("Error while converting JSON to Exchange", e);
+            }
         }
-        try {
-            return new String(message.getBody().getContent(), StandardCharsets.UTF_8);
-        } catch (Exception e) {
-            log.error("Failed to convert message to JSON", e);
-            return "{}";
+        return null;
+    }
+
+    @Override
+    public void remove(AbstractExchange exchange) {
+        mongoDatabase.getCollection(collection).deleteOne(new Document("id", exchange.getId()));
+        log.info("Exchange removed from MongoDB: " + exchange.getId());
+    }
+
+    @Override
+    public void removeAllExchanges(Proxy proxy) {
+        mongoDatabase.getCollection(collection).deleteMany(new Document("proxy", proxy.getName()));
+        log.info("All exchanges for proxy " + proxy.getName() + " removed from MongoDB");
+    }
+
+    @Override
+    public void removeAllExchanges(AbstractExchange[] exchanges) {
+        for (AbstractExchange exchange : exchanges) {
+            remove(exchange);
         }
     }
 
@@ -97,26 +115,6 @@ public class MongoDBFileExchangeStore extends AbstractExchangeStore {
 
     public String getCollection() {
         return collection;
-    }
-
-    @Override
-    public void snap(AbstractExchange exchange, Interceptor.Flow flow) {
-        storeExchange(exchange);
-    }
-
-    @Override
-    public void remove(AbstractExchange exchange) {
-        throw new UnsupportedOperationException("Method remove() is not supported by MongoExchangeStore");
-    }
-
-    @Override
-    public void removeAllExchanges(Proxy proxy) {
-
-    }
-
-    @Override
-    public void removeAllExchanges(AbstractExchange[] exchanges) {
-
     }
 
     @Override
