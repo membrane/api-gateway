@@ -17,7 +17,6 @@ package com.predic8.membrane.core;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.exchangestore.*;
 import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.lang.*;
 import com.predic8.membrane.core.model.*;
 import com.predic8.membrane.core.openapi.serviceproxy.*;
 import com.predic8.membrane.core.proxies.Proxy;
@@ -32,7 +31,7 @@ import java.io.*;
 import java.net.*;
 import java.util.*;
 
-import static com.predic8.membrane.core.util.URIUtil.normalizeSingleDot;
+import static com.predic8.membrane.core.util.URIUtil.*;
 
 public class RuleManager {
 
@@ -204,13 +203,9 @@ public class RuleManager {
                 continue;
             if (key.isUsePathPattern() && !key.matchesPath(uri))
                 continue;
-            try {
-                if (!key.complexMatch(exc))
-                    continue;
-            } catch (ExchangeExpressionException eee) {
-                log.warn("Error evaluating test expression {} of API {}. Ignoring test. Please check configuration.", getTestExpression(proxy), proxy.getName());
+            if (!key.complexMatch(exc))
                 continue;
-            }
+
             if (log.isDebugEnabled())
                 log.debug("Matching Rule {} found for RuleKey {} {} {} {} {}", proxy, hostHeader, method, uri, port, localIP);
             return proxy;

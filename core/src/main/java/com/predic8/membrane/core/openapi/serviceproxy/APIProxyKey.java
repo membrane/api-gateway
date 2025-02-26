@@ -66,13 +66,17 @@ public class APIProxyKey extends ServiceProxyKey {
         basePaths.add(OpenAPIPublisherInterceptor.PATH_UI); // "
         basePaths.add("/api-doc");                          // old to stay compatible
         basePaths.add("/api-doc/ui");                       // "
-
     }
 
     @Override
     public boolean complexMatch(Exchange exc) {
-        if (!testCondition(exc))
+        try {
+            if (!testCondition(exc))
+                return false;
+        } catch (Exception e) {
+            log.warn("Error evaluating test expression '{}' of API '{}'. Ignoring test. Please check configuration. Error was: {}", exchangeExpression.getExpression(), this, e.getMessage());
             return false;
+        }
 
         if (basePaths.isEmpty())
             return true;
