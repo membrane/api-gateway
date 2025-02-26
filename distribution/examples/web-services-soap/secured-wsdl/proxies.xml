@@ -10,13 +10,9 @@
 
         <!-- Access to some WSDL documents is protected by TLS or password.
              Because there are so many authentication mechanisms soapProxy
-             does not provide one. Instead route the WSDL requests to an
+             does not provide one. Instead, route the WSDL requests to an
              internal Proxy where you can use any authentication that is needed.
         -->
-
-        <soapProxy port="2010" wsdl="internal://wsdl-proxy/?wsdl">
-        </soapProxy>
-
         <internal name="wsdl-proxy">
             <sampleSoapService/>
             <!--
@@ -31,6 +27,8 @@
             </target>
             -->
         </internal>
+
+        <soapProxy port="2010" wsdl="internal://wsdl-proxy/?wsdl" />
 
     </router>
 
