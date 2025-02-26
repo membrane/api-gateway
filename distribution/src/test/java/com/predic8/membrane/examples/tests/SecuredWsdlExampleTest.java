@@ -27,6 +27,6 @@ public class SecuredWsdlExampleTest extends AbstractSampleMembraneStartStopTestc
             .statusCode(200)
             .contentType(XML)
             .body(containsString("wsdl:definitions"));
+        // @formatter:on
     }
-    // @formatter:on
 }
