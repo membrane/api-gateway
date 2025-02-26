@@ -1,4 +1,4 @@
-FROM amazoncorretto:21-bookworm
+FROM openjdk:21-bookworm
 LABEL authors="info@predic8.de"
 ARG USERNAME=membrane
 ARG USER_UID=1000
