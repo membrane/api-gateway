@@ -20,6 +20,7 @@ import java.io.InputStreamReader;
 import java.lang.annotation.Annotation;
 import java.util.*;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import com.predic8.membrane.annot.MCElement;
@@ -37,6 +38,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * This test unfortunately fails if there are new classes in the project
  * for which there is no documentation available in the online docs yet!
  */
+@Disabled
 public class HelpLinkExistenceTest {
 
 	private static final String CACHE_FILE_FORMAT_VERSION = "1";
