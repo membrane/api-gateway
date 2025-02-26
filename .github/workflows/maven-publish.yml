@@ -2,6 +2,7 @@ name: Publish package to the Maven Central Repository
 on:
   release:
     types: [published]
+  workflow_dispatch:
 jobs:
   publish:
     runs-on: ubuntu-latest
@@ -12,7 +13,7 @@ jobs:
       - name: Set up Maven Central Repository
         uses: actions/setup-java@v3
         with:
-          java-version: '17'
+          java-version: '21'
           distribution: 'temurin'
           server-id: ossrh
           server-username: MAVEN_USERNAME
