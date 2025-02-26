@@ -1,4 +1,4 @@
-FROM docker.io/eclipse-temurin:17.0.8_7-jre
+FROM maven:3.9.8-amazoncorretto-21-al2023
 LABEL authors="info@predic8.de"
 ARG USERNAME=membrane
 ARG USER_UID=1000
