@@ -36,7 +36,8 @@ class WebServiceOASWrapperIntegrationTest {
     @BeforeAll
     static void setup() {
         service = new ArrayList<>(new WSDLParser().parse(
-                WebServiceOASWrapperIntegrationTest.class.getResourceAsStream("/blz-service-double-binding.wsdl")
+                WebServiceOASWrapperIntegrationTest.class.getResourceAsStream("/validation/ArticleService.wsdl")
+                //WebServiceOASWrapperIntegrationTest.class.getResourceAsStream("/blz-service-double-binding.wsdl")
         ).getServices()).getFirst();
         wrapper = new WebServiceOASWrapper(service);
     }
