@@ -101,7 +101,6 @@ public class HTTPClientInterceptor extends AbstractInterceptor {
         } catch (MalformedURLException e) {
             log.info("Malformed URL. Requested path is: {} {}",exc.getRequest().getUri() , e.getMessage());
             log.debug("",e);
-            // User provided probably a path that is not valid
             user(router.isProduction(), getDisplayName())
                     .title("Request path or 'Host' header is malformed")
                     .addSubSee("malformed-url")
