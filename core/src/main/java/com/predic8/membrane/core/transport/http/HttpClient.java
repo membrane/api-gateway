@@ -144,11 +144,7 @@ public class HttpClient implements AutoCloseable {
                     """.formatted(dest));
         }
         String originalUri = req.getUri();
-        try {
-            req.setUri(HttpUtil.getPathAndQueryString(dest));
-        } catch (MalformedURLException e) {
-            throw new RuntimeException("while handling destination '" + dest + "'", e);
-        }
+        req.setUri(HttpUtil.getPathAndQueryString(dest));
 
         // Make sure if the request had no path and the destination has also no path
         // to continue with no path. Maybe for STOMP?

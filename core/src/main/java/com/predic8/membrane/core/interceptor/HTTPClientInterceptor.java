@@ -98,11 +98,13 @@ public class HTTPClientInterceptor extends AbstractInterceptor {
                     .buildAndSetResponse(exc);
             return ABORT;
         } catch (MalformedURLException e) {
-            log.error("", e);
+            log.info("Malformed URL. Requested path is: {} {}",exc.getRequest().getUri() , e.getMessage());
+            log.debug("",e);
             internal(router.isProduction(), getDisplayName())
                     .addSubSee("malformed-url")
                     .exception(e)
                     .internal("proxy", exc.getProxy().getName())
+                    .internal("url",exc.getRequest().getUri())
                     .buildAndSetResponse(exc);
             return ABORT;
         } catch (Exception e) {
