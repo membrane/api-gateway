@@ -17,6 +17,8 @@ import com.predic8.membrane.core.http.Header;
 import org.springframework.expression.EvaluationContext;
 import org.springframework.expression.TypedValue;
 
+import static com.predic8.membrane.core.util.TextUtil.camelToKebab;
+
 public class SpELHeader implements SpELLablePropertyAware {
 
     private final Header header;

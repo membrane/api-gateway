@@ -40,6 +40,9 @@ public class TextUtil {
 		replace = new String[] { ".*",   ".",  "\\.",  "\\\\",   "\\(",   "\\)",   "\\+",   "\\|",  "\\^",   "\\$",    "\\%",   "\\@"   };
 	}
 
+	public static String camelToKebab(String string) {
+		return string.replaceAll("([a-z0-9]|(?=[A-Z]))([A-Z])", "$1-$2").toLowerCase();
+	}
 
 	/**
 	 *

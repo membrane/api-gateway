@@ -17,6 +17,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static com.predic8.membrane.core.util.TextUtil.camelToKebab;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.apache.commons.io.IOUtils.toInputStream;
 
@@ -47,8 +48,9 @@ record PortMapping(Port port, OpenAPI api) {
 
                 Schema requestSchema;
                 try {
+                    String asString = operation.getInput().getMessage().getParts().getFirst().getElement().getAsString();
                     requestSchema = xsd2oas.convert(toInputStream(
-                            operation.getInput().getMessage().getParts().getFirst().getElement().getAsString(), UTF_8)
+                            asString, UTF_8)
                     );
                 } catch (Exception e) {
                     // TODO ConfigurationException?
@@ -67,7 +69,7 @@ record PortMapping(Port port, OpenAPI api) {
                 }
                 responses.put(responseName, buildApiResponse(opName, outputSchema));
 
-                paths.addPathItem("/" + opName, new PathItem() {{
+                paths.addPathItem("/" + camelToKebab(opName), new PathItem() {{
                     setPost(new Operation() {{
                         setOperationId(opName);
                         setSummary("Invoke operation " + opName);
@@ -86,7 +88,7 @@ record PortMapping(Port port, OpenAPI api) {
 
             comp.setRequestBodies(requestBodies);
             comp.setResponses(responses);
-            comp.setSchemas(xsd2oas.getGlobalComponents());
+            comp.setResponses(responses);
             setComponents(comp);
             setPaths(paths);
         }});
