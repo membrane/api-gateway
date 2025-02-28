@@ -21,10 +21,12 @@ import com.predic8.membrane.core.lang.*;
 import org.jetbrains.annotations.*;
 
 import java.util.*;
+import java.util.stream.Stream;
 
 import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.*;
+import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 import static java.util.stream.Stream.*;
 
 @MCElement(name = "choose")
@@ -37,7 +39,7 @@ public class ChooseInterceptor extends AbstractFlowInterceptor {
     public void init() {
         cases.forEach(c -> c.init(router));
         interceptors.addAll(concat(
-            otherwise.getInterceptors().stream(),
+            otherwise != null ? otherwise.getInterceptors().stream() : empty(),
             cases.stream()
                 .map(InterceptorContainer::getInterceptors)
                 .flatMap(Collection::stream)
@@ -64,7 +66,7 @@ public class ChooseInterceptor extends AbstractFlowInterceptor {
     private Outcome handleInternal(Exchange exc, Flow flow) {
         return Optional.ofNullable(findTrueCase(exc, flow))
                 .map(choice -> choice.invokeFlow(exc, flow, router))
-                .orElseGet(() -> otherwise.invokeFlow(exc, flow, router));
+                .orElseGet(() -> otherwise != null ? otherwise.invokeFlow(exc, flow, router) : CONTINUE);
     }
 
     private @Nullable Case findTrueCase(Exchange exc, Flow flow) {
@@ -89,6 +91,7 @@ public class ChooseInterceptor extends AbstractFlowInterceptor {
         return cases;
     }
 
+    @MCChildElement(order = 1)
     public void setCases(List<Case> cases) {
         this.cases.addAll(cases);
     }
@@ -97,12 +100,12 @@ public class ChooseInterceptor extends AbstractFlowInterceptor {
         return otherwise;
     }
 
-    @MCChildElement(order = 1)
+    @MCChildElement(order = 2)
     public void setOtherwise(Otherwise otherwise) {
         this.otherwise = otherwise;
     }
 
-    @MCChildElement(order = 2, allowForeign = true)
+    @MCChildElement(order = 3, allowForeign = true)
     public void setInterceptors(List<Interceptor> interceptors) {
         // We use <case> and <otherwise> child elements to set interceptors, not child interceptors.
         // Therefore, we have to overwrite this so interceptors cannot be added through direct child elements.
