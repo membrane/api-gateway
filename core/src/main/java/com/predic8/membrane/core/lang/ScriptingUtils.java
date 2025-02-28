@@ -57,7 +57,9 @@ public class ScriptingUtils {
 
         if (flow == REQUEST) {
             try {
-                params.put("params", getParams(router.getUriFactory(), exc, MERGE_USING_COMMA));
+                Map<String, String> qParams = getParams(router.getUriFactory(), exc, MERGE_USING_COMMA);
+                params.put("params", qParams);
+                params.put("param", qParams);
             } catch (Exception e) {
                 log.info("Cannot parse query parameter from {}", exc.getRequest().getUri());
             }
