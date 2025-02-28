@@ -28,6 +28,7 @@ import java.io.*;
 import java.net.*;
 
 import static com.predic8.membrane.core.exceptions.ProblemDetails.internal;
+import static com.predic8.membrane.core.exceptions.ProblemDetails.user;
 import static com.predic8.membrane.core.http.Header.*;
 import static com.predic8.membrane.core.http.Request.METHOD_GET;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.*;
@@ -98,11 +99,14 @@ public class HTTPClientInterceptor extends AbstractInterceptor {
                     .buildAndSetResponse(exc);
             return ABORT;
         } catch (MalformedURLException e) {
-            log.error("", e);
-            internal(router.isProduction(), getDisplayName())
+            log.info("Malformed URL. Requested path is: {} {}",exc.getRequest().getUri() , e.getMessage());
+            log.debug("",e);
+            user(router.isProduction(), getDisplayName())
+                    .title("Request path or 'Host' header is malformed")
                     .addSubSee("malformed-url")
                     .exception(e)
                     .internal("proxy", exc.getProxy().getName())
+                    .internal("url",exc.getRequest().getUri())
                     .buildAndSetResponse(exc);
             return ABORT;
         } catch (Exception e) {
