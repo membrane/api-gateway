@@ -89,6 +89,7 @@ public class ChooseInterceptor extends AbstractFlowInterceptor {
         return cases;
     }
 
+    @MCChildElement(order = 1)
     public void setCases(List<Case> cases) {
         this.cases.addAll(cases);
     }
@@ -97,12 +98,12 @@ public class ChooseInterceptor extends AbstractFlowInterceptor {
         return otherwise;
     }
 
-    @MCChildElement(order = 1)
+    @MCChildElement(order = 2)
     public void setOtherwise(Otherwise otherwise) {
         this.otherwise = otherwise;
     }
 
-    @MCChildElement(order = 2, allowForeign = true)
+    @MCChildElement(order = 3, allowForeign = true)
     public void setInterceptors(List<Interceptor> interceptors) {
         // We use <case> and <otherwise> child elements to set interceptors, not child interceptors.
         // Therefore, we have to overwrite this so interceptors cannot be added through direct child elements.
