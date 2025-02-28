@@ -50,7 +50,7 @@ class ServiceProxyTest {
             .get("http://localhost:2000/foo")
         .then()
             .log().ifValidationFails()
-            .statusCode(500)
+            .statusCode(400)
             .contentType(APPLICATION_PROBLEM_JSON)
             .body("type", equalTo("https://membrane-api.io/problems/internal"))
             .body("message", Matchers.containsString("/foo"))
