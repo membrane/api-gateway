@@ -13,18 +13,13 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.soap;
 
-import com.predic8.wsdl.Port;
-import com.predic8.wsdl.Service;
-import com.predic8.wsdl.WSDLParser;
-import io.swagger.v3.oas.models.OpenAPI;
-import io.swagger.v3.oas.models.info.Info;
-import org.jetbrains.annotations.NotNull;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
+import com.predic8.membrane.test.*;
+import com.predic8.schema.*;
+import com.predic8.wsdl.*;
+import org.jetbrains.annotations.*;
+import org.junit.jupiter.api.*;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -35,11 +30,42 @@ class WebServiceOASWrapperIntegrationTest {
 
     @BeforeAll
     static void setup() {
-        service = new ArrayList<>(new WSDLParser().parse(
-                WebServiceOASWrapperIntegrationTest.class.getResourceAsStream("/validation/ArticleService.wsdl")
+        service = new ArrayList<>(new WSDLParser().parse(TestUtil.getPathFromResource("/validation/ArticleService.wsdl")
+//                WebServiceOASWrapperIntegrationTest.class.getResourceAsStream()
                 //WebServiceOASWrapperIntegrationTest.class.getResourceAsStream("/blz-service-double-binding.wsdl")
         ).getServices()).getFirst();
         wrapper = new WebServiceOASWrapper(service);
+    }
+
+    @Test
+    void foo() {
+        var qnt =service.getPorts().getFirst().getBinding().getPortType().getOperations().getFirst().getInput().getMessage().getParts().getFirst().getElement().getType();
+        System.out.println(qnt);
+
+        var def = new WSDLParser().parse(TestUtil.getPathFromResource("/validation/ArticleService.wsdl"));
+        ComplexType ct = (ComplexType) def.getSchemaType(qnt);
+        System.out.println(ct);
+
+        var m = ct.getModel();
+        if (m instanceof Sequence s) {
+            s.getElements().forEach(e -> {
+                System.out.println(e);
+                var tqn = e.getType();
+                var type = def.getSchemaType(tqn);
+                System.out.println("type = " + type);
+            });
+        }
+
+        var t = ct.getRequestTemplate();
+        System.out.println(t);
+
+        var x = new WSDLParser().parse(TestUtil.getPathFromResource("/validation/ArticleService.wsdl")
+//                WebServiceOASWrapperIntegrationTest.class.getResourceAsStream()
+                //WebServiceOASWrapperIntegrationTest.class.getResourceAsStream("/blz-service-double-binding.wsdl")
+        );
+
+        //var e = x.getElement(new QName(en.getNamespaceURI(), en.getLocalPart()) );
+
     }
 
     @Test
