@@ -21,6 +21,7 @@ import com.predic8.membrane.core.lang.*;
 import com.predic8.membrane.core.util.ConfigurationException;
 import groovy.lang.*;
 import org.codehaus.groovy.control.*;
+import org.slf4j.*;
 
 import java.util.*;
 import java.util.function.*;
@@ -28,6 +29,8 @@ import java.util.function.*;
 import static com.predic8.membrane.core.lang.ScriptingUtils.*;
 
 public class GroovyExchangeExpression extends AbstractExchangeExpression {
+
+    private static final Logger log = LoggerFactory.getLogger(GroovyExchangeExpression.class);
 
     private final Function<Map<String, Object>, Object> script;
     private final Router router;
@@ -48,6 +51,7 @@ public class GroovyExchangeExpression extends AbstractExchangeExpression {
         try {
             o = script.apply(createParameterBindings(router, exchange, flow, false));
         } catch (MissingPropertyException mpe) {
+            log.info("Expression {} tries to access non existing property {}",expression,mpe.getMessage());
             if (type.getName().equals(Object.class.getName())) {
                 return null;
             }
@@ -55,12 +59,17 @@ public class GroovyExchangeExpression extends AbstractExchangeExpression {
                 return type.cast("");
             }
         }
+        // Convert to String
         if (type.getName().equals(String.class.getName())) {
             if (o == null) {
                 return type.cast("");
             }
+            if (o instanceof Number n) {
+                return type.cast(String.valueOf(n));
+            }
             if (type.isInstance(o))
                 return type.cast(o);
+            return type.cast(o.toString());
         }
         if (o == null) {
             return null;

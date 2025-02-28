@@ -211,15 +211,18 @@ public class APIProxy extends ServiceProxy implements Polyglot {
         this.description = description;
     }
 
-    @Override
-    public Language getLanguage() {
-        return language;
-    }
-
     @MCAttribute
     @Override
-    public void setLanguage(Language language) {
-        this.language = language;
+    public void setLanguage(String language) {
+        try {
+            this.language = Language.valueOf(language);
+        } catch (Exception e) {
+            throw new ConfigurationException("""
+                    Wrong Language
+                    
+                    Language %s is not supported as an expression language for %s. Use one of {}.
+                    """.formatted(language,getName(),Language.values()));
+        }
     }
 
     @MCElement(name = "description", topLevel = false, mixed = true)

@@ -21,7 +21,7 @@ import org.junit.jupiter.api.*;
 import java.net.*;
 import java.util.*;
 
-import static com.predic8.membrane.core.http.Request.get;
+import static com.predic8.membrane.core.http.Request.*;
 import static com.predic8.membrane.core.lang.ExchangeExpression.Language.*;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -86,5 +86,16 @@ class GroovyExchangeExpressionTest extends AbstractExchangeExpressionTest {
     void pathParameter() {
         assertEquals("314",evalString("pathParam.fid"));
         assertEquals("new york",evalString("pathParam.gid"));
+    }
+
+    @Test
+    void evalNumberToString() {
+        assertEquals("7", evalString("7"));
+        assertEquals("7.8", evalString("7.8"));
+    }
+
+    @Test
+    void objectToString() {
+        assertTrue(evalString("java.time.LocalDate.now()").length() > 6);
     }
 }
