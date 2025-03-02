@@ -216,6 +216,7 @@
             <artifactId>js</artifactId>
             <version>24.1.2</version>
             <scope>test</scope>
+            <type>pom</type>
         </dependency>
 
         <dependency>
