@@ -86,7 +86,8 @@ public class SpELExchangeEvaluationContext extends StandardEvaluationContext {
 
     private void addTypeConverters() {
         GenericConversionService cs = new DefaultConversionService();
-        cs.addConverter(new HeaderToStringTypeConverter());
+        cs.addConverter(new SpELHeaderToStringTypeConverter());
+        cs.addConverter(new SpELMapToStringTypeConverter());
         setTypeConverter(new StandardTypeConverter(cs));
     }
 
