@@ -24,22 +24,22 @@ import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
  */
 @MCElement(name="logContext")
 public class LoggingContextInterceptor extends AbstractInterceptor{
-    private final String proxyName = "proxyName";
+    private static final String API_LABEL = "api";
 
     @Override
     public Outcome handleRequest(Exchange exc) {
-        ThreadContext.put(proxyName, exc.getProxy().getName());
+        ThreadContext.put(API_LABEL, exc.getProxy().getName());
         return CONTINUE;
     }
 
     @Override
     public Outcome handleResponse(Exchange exc) {
-        ThreadContext.remove(proxyName);
+        ThreadContext.remove(API_LABEL);
         return CONTINUE;
     }
 
     @Override
     public void handleAbort(Exchange exchange) {
-        ThreadContext.remove(proxyName);
+        ThreadContext.remove(API_LABEL);
     }
 }

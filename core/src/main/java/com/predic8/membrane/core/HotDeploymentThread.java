@@ -38,7 +38,7 @@ public class HotDeploymentThread extends Thread {
 
 
 	public HotDeploymentThread(AbstractRefreshableApplicationContext applicationContext) {
-		super("Membrane Hot Deployment Thread");
+		super("hotdeploy");
 		this.applicationContext = applicationContext;
 	}
 
