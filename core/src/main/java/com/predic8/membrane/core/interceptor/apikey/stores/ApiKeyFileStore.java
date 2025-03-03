@@ -16,6 +16,7 @@ package com.predic8.membrane.core.interceptor.apikey.stores;
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.Router;
+import com.predic8.membrane.core.util.ConfigurationException;
 
 import java.io.IOException;
 import java.util.AbstractMap.SimpleEntry;
@@ -60,7 +61,7 @@ public class ApiKeyFileStore implements ApiKeyStore {
                             SimpleEntry::getKey,
                             SimpleEntry::getValue));
         } catch (Exception e) {
-            throw new RuntimeException("Cannot read file with API keys. Please make sure that there are no multiple entries with the same key! " + e);
+            throw new ConfigurationException("Failed to read API key file: " + e);
         }
         return collect;
     }
