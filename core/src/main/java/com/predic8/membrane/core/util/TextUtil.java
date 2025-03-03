@@ -41,7 +41,11 @@ public class TextUtil {
 	}
 
 	public static String camelToKebab(String string) {
-		return string.replaceAll("([a-z0-9])([A-Z])", "$1-$2").toLowerCase();
+		// lower/digit to uppercase
+		String kebab = string.replaceAll("([a-z0-9])([A-Z])", "$1-$2");
+		// uppercase followed by uppercase to lowercase
+		kebab = kebab.replaceAll("([A-Z])([A-Z][a-z])", "$1-$2");
+		return kebab.toLowerCase();
 	}
 
 	/**
