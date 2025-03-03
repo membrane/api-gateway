@@ -81,6 +81,11 @@ public class GraphQLoverHttpValidator {
         checkExtension(data);
 
         ExecutableDocument ed = getExecutableDocument(getQuery(data));
+
+        if (featureBlacklist != null) {
+            featureBlacklist.checkFilters(ed);
+        }
+
         checkMutations(ed);
         validate(ed);
 
@@ -104,10 +109,6 @@ public class GraphQLoverHttpValidator {
     private void checkMutations(ExecutableDocument ed) {
         if (countMutations(ed.getExecutableDefinitions()) > maxMutations)
             throw new GraphQLOverHttpValidationException("Too many mutations defined in document.");
-
-        if (featureBlacklist != null) {
-            featureBlacklist.checkFilters(getMutationOperations(ed.getExecutableDefinitions()));
-        }
     }
 
     private void checkExtensions(Map<String, Object> data) {
@@ -271,7 +272,7 @@ public class GraphQLoverHttpValidator {
         return (int) getMutationOperations(definitions).map(OperationDefinition::getSelections).mapToLong(List::size).sum();
     }
 
-    private static @NotNull Stream<OperationDefinition> getMutationOperations(List<ExecutableDefinition> definitions) {
+    public static @NotNull Stream<OperationDefinition> getMutationOperations(List<ExecutableDefinition> definitions) {
         return definitions.stream()
                 .filter(isOperationDefinition())
                 .map(definition -> (OperationDefinition) definition)

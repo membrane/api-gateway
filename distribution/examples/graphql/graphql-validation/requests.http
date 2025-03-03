@@ -67,3 +67,11 @@ Content-Type: application/json
 {
   "query": "mutation { addProduct1: addProduct(name: \"Apple\", price: 1.99) { id } addProduct2: addProduct(name: \"Orange\", price: 2.99) { id } addProduct3: addProduct(name: \"Banana\", price: 3.99) { id } addProduct4: addProduct(name: \"Grape\", price: 4.99) { id } addProduct5: addProduct(name: \"Mango\", price: 5.99) { id } }"
 }
+
+### REMOVE AGAIN
+POST http://localhost:2000
+Content-Type: application/json
+
+{
+  "query": "query IntrospectionQuery{__schema{queryType{name}mutationType{name}subscriptionType{name}types{name description fields{name description args{name description type{name}defaultValue}type{name kind ofType{name kind}}}inputFields{name description type{name kind}defaultValue}interfaces{name}enumValues{name description}possibleTypes{name}}directives{name description locations args{name description type{name kind}defaultValue}}}}"
+}

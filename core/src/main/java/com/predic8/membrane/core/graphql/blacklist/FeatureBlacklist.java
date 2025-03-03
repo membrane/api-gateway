@@ -3,26 +3,27 @@ package com.predic8.membrane.core.graphql.blacklist;
 import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.graphql.GraphQLOverHttpValidationException;
-import com.predic8.membrane.core.graphql.model.OperationDefinition;
+import com.predic8.membrane.core.graphql.blacklist.filters.GraphQLFeatureFilter;
+import com.predic8.membrane.core.graphql.model.ExecutableDocument;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.Collection;
 import java.util.List;
-import java.util.stream.Stream;
 
 @MCElement(name = "disallow")
 public class FeatureBlacklist {
 
-    private List<MutationFilter> filters;
+    private List<GraphQLFeatureFilter> filters;
 
-    public void checkFilters(@NotNull Stream<OperationDefinition> ed) throws GraphQLOverHttpValidationException {
-        ed.map(OperationDefinition::getSelections).flatMap(Collection::stream).forEach(selection ->
-                filters.forEach(f -> f.filter(selection))
-        );
+    public void checkFilters(@NotNull ExecutableDocument document) throws GraphQLOverHttpValidationException {
+        filters.forEach(f -> f.filter(document));
     }
 
     @MCChildElement(allowForeign = true)
-    public void setFilters(List<MutationFilter> filters) {this.filters = filters;}
+    public void setFilters(List<GraphQLFeatureFilter> filters) {
+        this.filters = filters;
+    }
 
-    public List<MutationFilter> getFilters() {return filters;}
+    public List<GraphQLFeatureFilter> getFilters() {
+        return filters;
+    }
 }
