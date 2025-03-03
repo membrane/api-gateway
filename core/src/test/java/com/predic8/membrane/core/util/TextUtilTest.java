@@ -13,16 +13,30 @@
    limitations under the License. */
 package com.predic8.membrane.core.util;
 
+import org.junit.jupiter.api.Test;
+
+import java.util.regex.Pattern;
+
 import static com.predic8.membrane.core.util.TextUtil.*;
 import static java.lang.Integer.MAX_VALUE;
 import static org.junit.jupiter.api.Assertions.*;
 
-import java.util.regex.Pattern;
-
-import com.predic8.membrane.core.interceptor.log.AccessLogInterceptorService;
-import org.junit.jupiter.api.Test;
-
 public class TextUtilTest {
+
+    @Test
+    void camelToKebabSimple() {
+        assertEquals("tasty-kebab", camelToKebab("tastyKebab"));
+    }
+
+    @Test
+    void camelToKebabMulti() {
+        assertEquals("a-lot-of-tasty-kebab", camelToKebab("aLotOfTastyKebab"));
+    }
+
+    @Test
+    void camelToKebabNoChange() {
+        assertEquals("kebab", camelToKebab("Kebab"));
+    }
 
     @Test
     void testGlobToExpStarPrefixHost() {
