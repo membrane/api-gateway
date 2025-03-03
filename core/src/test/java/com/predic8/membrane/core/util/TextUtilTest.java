@@ -34,6 +34,11 @@ public class TextUtilTest {
     }
 
     @Test
+    void camelToKebabMultiWithSingleChars() {
+        assertEquals("a-bar-c-duuq-e-foo", camelToKebab("aBarCDuuqEFoo"));
+    }
+
+    @Test
     void camelToKebabNoChange() {
         assertEquals("kebab", camelToKebab("Kebab"));
     }
