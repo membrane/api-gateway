@@ -18,6 +18,7 @@ import com.fasterxml.jackson.databind.*;
 import com.google.common.collect.*;
 import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.graphql.blacklist.FeatureBlacklist;
 import com.predic8.membrane.core.graphql.model.*;
 import com.predic8.membrane.core.http.*;
 import jakarta.mail.internet.*;
@@ -58,13 +59,15 @@ public class GraphQLoverHttpValidator {
     private final int maxDepth;
     private final int maxMutations;
     private final Router router;
+    private final FeatureBlacklist featureBlacklist;
 
-    public GraphQLoverHttpValidator(boolean allowExtensions, List<String> allowedMethods, int maxRecursion, int maxDepth, int maxMutations, Router router) {
+    public GraphQLoverHttpValidator(boolean allowExtensions, List<String> allowedMethods, int maxRecursion, int maxDepth, int maxMutations, FeatureBlacklist featureBlacklist, Router router) {
         this.allowExtensions = allowExtensions;
         this.allowedMethods = allowedMethods;
         this.maxRecursion = maxRecursion;
         this.maxDepth = maxDepth;
         this.maxMutations = maxMutations;
+        this.featureBlacklist = featureBlacklist;
         this.router = router;
     }
 
@@ -101,6 +104,10 @@ public class GraphQLoverHttpValidator {
     private void checkMutations(ExecutableDocument ed) {
         if (countMutations(ed.getExecutableDefinitions()) > maxMutations)
             throw new GraphQLOverHttpValidationException("Too many mutations defined in document.");
+
+        if (featureBlacklist != null) {
+            featureBlacklist.checkFilters(getMutationOperations(ed.getExecutableDefinitions()));
+        }
     }
 
     private void checkExtensions(Map<String, Object> data) {
