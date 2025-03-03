@@ -17,7 +17,7 @@ import java.util.concurrent.ThreadFactory;
 
 public class HttpServerThreadFactory implements ThreadFactory {
 
-	public static final String DEFAULT_THREAD_NAME = "RouterThread";
+	public static final String DEFAULT_THREAD_NAME = "router";
 
 	public final String defaultThreadName;
 
