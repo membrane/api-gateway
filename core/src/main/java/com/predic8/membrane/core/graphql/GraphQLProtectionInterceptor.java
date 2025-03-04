@@ -17,7 +17,7 @@ package com.predic8.membrane.core.graphql;
 import com.google.common.collect.*;
 import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.graphql.blacklist.FeatureBlacklist;
+import com.predic8.membrane.core.graphql.blocklist.FeatureBlocklist;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.util.*;
@@ -57,7 +57,7 @@ public class GraphQLProtectionInterceptor extends AbstractInterceptor {
     private int maxRecursion = 3;
     private int maxDepth = 7;
     private int maxMutations = 5;
-    private FeatureBlacklist featureBlacklist;
+    private FeatureBlocklist featureBlocklist;
 
     private GraphQLoverHttpValidator validator;
 
@@ -68,7 +68,7 @@ public class GraphQLProtectionInterceptor extends AbstractInterceptor {
     @Override
     public void init() {
         super.init();
-        validator = new GraphQLoverHttpValidator( allowExtensions, allowedMethods,  maxRecursion,  maxDepth,  maxMutations, featureBlacklist, router);
+        validator = new GraphQLoverHttpValidator( allowExtensions, allowedMethods,  maxRecursion,  maxDepth,  maxMutations, featureBlocklist, router);
     }
 
     @Override
@@ -159,14 +159,14 @@ public class GraphQLProtectionInterceptor extends AbstractInterceptor {
         this.maxDepth = maxDepth;
     }
 
-    public FeatureBlacklist getBlacklist() {return featureBlacklist;}
+    public FeatureBlocklist getBlacklist() {return featureBlocklist;}
 
     /**
-     * @description Blacklist individual or all mutations.
+     * @description Block GraphL features like mutations, introspection, and subscriptions.
      * @default not present
      */
     @MCChildElement
-    public void setBlacklist(FeatureBlacklist featureBlacklist) {this.featureBlacklist = featureBlacklist;}
+    public void setBlocklist(FeatureBlocklist featureBlocklist) {this.featureBlocklist = featureBlocklist;}
 
     @Override
     public String toString() {

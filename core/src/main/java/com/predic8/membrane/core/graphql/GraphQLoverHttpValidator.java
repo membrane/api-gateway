@@ -18,7 +18,7 @@ import com.fasterxml.jackson.databind.*;
 import com.google.common.collect.*;
 import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.graphql.blacklist.FeatureBlacklist;
+import com.predic8.membrane.core.graphql.blocklist.FeatureBlocklist;
 import com.predic8.membrane.core.graphql.model.*;
 import com.predic8.membrane.core.http.*;
 import jakarta.mail.internet.*;
@@ -59,15 +59,15 @@ public class GraphQLoverHttpValidator {
     private final int maxDepth;
     private final int maxMutations;
     private final Router router;
-    private final FeatureBlacklist featureBlacklist;
+    private final FeatureBlocklist featureBlocklist;
 
-    public GraphQLoverHttpValidator(boolean allowExtensions, List<String> allowedMethods, int maxRecursion, int maxDepth, int maxMutations, FeatureBlacklist featureBlacklist, Router router) {
+    public GraphQLoverHttpValidator(boolean allowExtensions, List<String> allowedMethods, int maxRecursion, int maxDepth, int maxMutations, FeatureBlocklist featureBlocklist, Router router) {
         this.allowExtensions = allowExtensions;
         this.allowedMethods = allowedMethods;
         this.maxRecursion = maxRecursion;
         this.maxDepth = maxDepth;
         this.maxMutations = maxMutations;
-        this.featureBlacklist = featureBlacklist;
+        this.featureBlocklist = featureBlocklist;
         this.router = router;
     }
 
@@ -82,8 +82,8 @@ public class GraphQLoverHttpValidator {
 
         ExecutableDocument ed = getExecutableDocument(getQuery(data));
 
-        if (featureBlacklist != null) {
-            featureBlacklist.checkFilters(ed);
+        if (featureBlocklist != null) {
+            featureBlocklist.checkFilters(ed);
         }
 
         checkMutations(ed);
