@@ -11,34 +11,59 @@
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
    See the License for the specific language governing permissions and
    limitations under the License. */
-
 package com.predic8.membrane.core.graphql;
 
-import com.predic8.membrane.core.*;
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.graphql.model.*;
-import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.interceptor.*;
-import org.junit.jupiter.api.*;
+import com.predic8.membrane.core.HttpRouter;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.graphql.blocklist.FeatureBlocklist;
+import com.predic8.membrane.core.graphql.blocklist.filters.*;
+import com.predic8.membrane.core.graphql.model.OperationDefinition;
+import com.predic8.membrane.core.graphql.model.OperationType;
+import com.predic8.membrane.core.http.Request;
+import com.predic8.membrane.core.interceptor.Outcome;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
 
-import static com.predic8.membrane.core.http.MimeType.*;
+import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
-import static java.net.URLEncoder.*;
-import static java.nio.charset.StandardCharsets.*;
-import static org.junit.jupiter.api.Assertions.*;
+import static java.net.URLEncoder.encode;
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class GraphQLProtectionInterceptorTest {
 
     private static GraphQLProtectionInterceptor i;
+    private static HttpRouter router;
+
 
     @BeforeAll
-    static void init() throws Exception {
-        HttpRouter router = new HttpRouter();
+    static void init() {
+        router = new HttpRouter();
         i = new GraphQLProtectionInterceptor();
         i.init(router);
+    }
+
+    @Test
+    void blockSpecificMutation() throws Exception {
+        var gpi = buildGraphQLProtectionInterceptor(List.of(
+                new MutationFilter() {{
+                    setName("addItem");
+                }}
+        ));
+        verifyPost(gpi, "/",
+                APPLICATION_JSON,
+                """
+                        {"query":"mutation abc{ addItem(name: \\"Apple\\", price: 1.99) }"}""",
+                RETURN);
+        verifyPost(gpi, "/",
+                APPLICATION_JSON,
+                """
+                        {"query":"mutation abc{ addProduct(name: \\"Apple\\", price: 1.99) }"}""",
+                CONTINUE);
     }
 
     @Test
@@ -48,6 +73,47 @@ public class GraphQLProtectionInterceptorTest {
                 """
                         {"query":"{a}"}""",
                 CONTINUE);
+    }
+
+    @Test
+    void blockAllMutation() throws Exception {
+        var gpi = buildGraphQLProtectionInterceptor(List.of(
+                new AllMutationsFilter()
+        ));
+        verifyPost(gpi, "/",
+                APPLICATION_JSON,
+                """
+                        {"query":"mutation abc{ addItem(name: \\"Apple\\", price: 1.99) }"}""",
+                RETURN);
+        verifyPost(gpi, "/",
+                APPLICATION_JSON,
+                """
+                        {"query":"mutation abc{ addProduct(name: \\"Apple\\", price: 1.99) }"}""",
+                RETURN);
+    }
+
+    @Test
+    void blockIntrospection() throws Exception {
+        var gpi = buildGraphQLProtectionInterceptor(List.of(
+                new IntrospectionFilter()
+        ));
+        verifyPost(gpi, "/",
+                APPLICATION_JSON,
+                """
+                        {"query":"{ __type(name: \\"Mutation\\") { fields() { name description args { name description type { name kind ofType { name kind } } } } } }"}""",
+                RETURN);
+    }
+
+    @Test
+    void blockSubscription() throws Exception {
+        var gpi = buildGraphQLProtectionInterceptor(List.of(
+                new SubscriptionFilter()
+        ));
+        verifyPost(gpi, "/",
+                APPLICATION_JSON,
+                """
+                        subscription{onUpdate{id field1 field2}}""",
+                RETURN);
     }
 
     @Test
@@ -403,13 +469,27 @@ public class GraphQLProtectionInterceptorTest {
         assertEquals(expectedOutcome, outcome);
     }
 
+    private GraphQLProtectionInterceptor buildGraphQLProtectionInterceptor(List<GraphQLFeatureFilter> filters) {
+        var gpi = new GraphQLProtectionInterceptor() {{
+            setBlocklist(new FeatureBlocklist() {{
+                setFilters(filters);
+            }});
+        }};
+        gpi.init(router);
+        return gpi;
+    }
+
     private void verifyPost(String url, String contentType, String body, Outcome expectedOutcome) throws Exception {
+        verifyPost(i, url, contentType, body, expectedOutcome);
+    }
+
+    private void verifyPost(GraphQLProtectionInterceptor gpi, String url, String contentType, String body, Outcome expectedOutcome) throws Exception {
         Request.Builder builder = new Request.Builder().post(url);
         if (contentType != null)
             builder.header("Content-Type", contentType);
         Exchange e = builder.body(body).buildExchange();
 
-        Outcome outcome = i.handleRequest(e);
+        Outcome outcome = gpi.handleRequest(e);
 
         assertEquals(expectedOutcome, outcome);
     }

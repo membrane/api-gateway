@@ -31,7 +31,7 @@ public class GraphQLoverHttpValidatorTest {
     @BeforeEach
     void setup() {
         Router router = new Router();
-        validator1 = new GraphQLoverHttpValidator(false, Lists.newArrayList("GET", "POST"), 3, 3, 2, router);
+        validator1 = new GraphQLoverHttpValidator(false, Lists.newArrayList("GET", "POST"), 3, 3, 2, null, router);
     }
 
     @Test

@@ -18,6 +18,7 @@ import com.fasterxml.jackson.databind.*;
 import com.google.common.collect.*;
 import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.graphql.blocklist.FeatureBlocklist;
 import com.predic8.membrane.core.graphql.model.*;
 import com.predic8.membrane.core.http.*;
 import jakarta.mail.internet.*;
@@ -58,13 +59,15 @@ public class GraphQLoverHttpValidator {
     private final int maxDepth;
     private final int maxMutations;
     private final Router router;
+    private final FeatureBlocklist featureBlocklist;
 
-    public GraphQLoverHttpValidator(boolean allowExtensions, List<String> allowedMethods, int maxRecursion, int maxDepth, int maxMutations, Router router) {
+    public GraphQLoverHttpValidator(boolean allowExtensions, List<String> allowedMethods, int maxRecursion, int maxDepth, int maxMutations, FeatureBlocklist featureBlocklist, Router router) {
         this.allowExtensions = allowExtensions;
         this.allowedMethods = allowedMethods;
         this.maxRecursion = maxRecursion;
         this.maxDepth = maxDepth;
         this.maxMutations = maxMutations;
+        this.featureBlocklist = featureBlocklist;
         this.router = router;
     }
 
@@ -78,6 +81,11 @@ public class GraphQLoverHttpValidator {
         checkExtension(data);
 
         ExecutableDocument ed = getExecutableDocument(getQuery(data));
+
+        if (featureBlocklist != null) {
+            featureBlocklist.checkFilters(ed);
+        }
+
         checkMutations(ed);
         validate(ed);
 
@@ -264,7 +272,7 @@ public class GraphQLoverHttpValidator {
         return (int) getMutationOperations(definitions).map(OperationDefinition::getSelections).mapToLong(List::size).sum();
     }
 
-    private static @NotNull Stream<OperationDefinition> getMutationOperations(List<ExecutableDefinition> definitions) {
+    public static @NotNull Stream<OperationDefinition> getMutationOperations(List<ExecutableDefinition> definitions) {
         return definitions.stream()
                 .filter(isOperationDefinition())
                 .map(definition -> (OperationDefinition) definition)
