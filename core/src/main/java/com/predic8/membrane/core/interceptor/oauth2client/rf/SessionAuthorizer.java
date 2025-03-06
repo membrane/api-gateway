@@ -116,15 +116,9 @@ public class SessionAuthorizer {
         return jwks;
     }
 
-    public void retrieveUserInfo(String tokenType, String token, OAuth2AnswerParameters oauth2Answer, Session session) throws Exception {
-        Exchange e2 = new Request.Builder()
-                .get(auth.getUserInfoEndpoint())
-                .header(AUTHORIZATION, tokenType + " " + token)
-                .header(USER_AGENT, USERAGENT)
-                .header(ACCEPT, APPLICATION_JSON)
-                .buildExchange();
+    public void retrieveUserInfo(OAuth2TokenResponseBody tokenResponse, OAuth2AnswerParameters oauth2Answer, Session session) throws Exception {
 
-        Response response2 = auth.doRequest(e2);
+        Response response2 = auth.requestUserEndpoint(tokenResponse.getTokenType(), tokenResponse.getAccessToken());
 
         if (response2.getStatusCode() != 200) {
             statistics.accessTokenInvalid();

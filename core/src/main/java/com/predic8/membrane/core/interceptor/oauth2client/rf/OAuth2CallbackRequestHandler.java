@@ -104,7 +104,7 @@ public class OAuth2CallbackRequestHandler {
                     // assume access token is JWT
                     sessionAuthorizer.verifyJWT(exc, tokenResponse.getAccessToken(), createFrom(tokenResponse), session);
                 } else {
-                    sessionAuthorizer.retrieveUserInfo(tokenResponse.getTokenType(), tokenResponse.getAccessToken(), createFrom(tokenResponse), session);
+                    sessionAuthorizer.retrieveUserInfo(tokenResponse, createFrom(tokenResponse), session);
                 }
             }
 

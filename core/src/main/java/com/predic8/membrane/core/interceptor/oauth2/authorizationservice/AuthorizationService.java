@@ -44,6 +44,7 @@ import org.slf4j.LoggerFactory;
 import javax.annotation.concurrent.GuardedBy;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URISyntaxException;
 import java.util.List;
 import java.util.UUID;
 
@@ -247,10 +248,10 @@ public abstract class AuthorizationService {
         return tokenEndpoint;
     }
 
-    public Response requestUserEndpoint(OAuth2AnswerParameters params) throws Exception {
+    public Response requestUserEndpoint(String tokenType, String token) throws Exception {
         return doRequest(new Request.Builder()
                 .get(getUserInfoEndpoint())
-                .header("Authorization", params.getTokenType() + " " + params.getAccessToken())
+                .header("Authorization", tokenType + " " + token)
                 .header("User-Agent", USERAGENT)
                 .header(ACCEPT, APPLICATION_JSON)
                 .buildExchange());
@@ -334,4 +335,5 @@ public abstract class AuthorizationService {
         }
         return response;
     }
+
 }
