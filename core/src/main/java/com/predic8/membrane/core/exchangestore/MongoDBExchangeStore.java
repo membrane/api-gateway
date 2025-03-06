@@ -104,14 +104,17 @@ public class MongoDBExchangeStore extends AbstractExchangeStore {
         try {
             Document requestDoc = new Document();
             requestDoc.append("method", exchange.getRequest() != null ? exchange.getRequest().toRequest().getMethod() : "UNKNOWN");
-            requestDoc.append("headers", exchange.getRequest() != null ? exchange.getRequest().toRequest().getHeader() : "{}");
-            requestDoc.append("body", exchange.getRequest() != null ? objectMapper.writeValueAsString(exchange.getRequest()) : "{}");
-            doc.append("request", requestDoc);
+            requestDoc.append("headers", exchange.getRequest() != null ? objectMapper.writeValueAsString(exchange.getRequest().toRequest().getHeader()) : "{}");
+            requestDoc.append("body", exchange.getRequest() != null ? exchange.getRequest().toRequest().getBodyAsStringDecoded() : "{}");
+            log.info("Request Body: {}", exchange.getRequest().toRequest().getBodyAsStringDecoded());
 
             Document responseDoc = new Document();
             responseDoc.append("status", exchange.getResponse() != null ? exchange.getResponse().getStatusCode() : 0);
             responseDoc.append("headers", exchange.getResponse() != null ? exchange.getResponse().getHeader() : "{}");
-            responseDoc.append("body", exchange.getResponse() != null ? objectMapper.writeValueAsString(exchange.getResponse().toResponse().getBodyAsStringDecoded()) : "{}");
+            responseDoc.append("body", exchange.getResponse() != null ? exchange.getResponse().toResponse().getBodyAsStringDecoded() : "{}");
+            log.info("Response Body: {}", exchange.getResponse().toResponse().getBodyAsStringDecoded());
+
+            doc.append("request", requestDoc);
             doc.append("response", responseDoc);
 
         } catch (Exception e) {
@@ -127,15 +130,12 @@ public class MongoDBExchangeStore extends AbstractExchangeStore {
         AbstractExchangeSnapshot excCopy;
         try {
             if (flow == Interceptor.Flow.REQUEST) {
-                excCopy = new DynamicAbstractExchangeSnapshot(exc, flow, this::addForMongoDB, BodyCollectingMessageObserver.Strategy.ERROR, 100000);
-                addForMongoDB(excCopy);
+                excCopy = new DynamicAbstractExchangeSnapshot(exc, flow, this::addForMongoDB, BodyCollectingMessageObserver.Strategy.TRUNCATE, 100000);
             } else {
-                excCopy = cacheToWaitForMongoIndex.getIfPresent(exc.getId());
-                if (excCopy == null) {
-                    excCopy = new DynamicAbstractExchangeSnapshot(exc, flow, this::addForMongoDB, BodyCollectingMessageObserver.Strategy.ERROR, 100000);
-                }
-                addForMongoDB(excCopy);
+                excCopy = cacheToWaitForMongoIndex.get(exc.getId(), () -> new DynamicAbstractExchangeSnapshot(exc, flow, this::addForMongoDB, BodyCollectingMessageObserver.Strategy.TRUNCATE, 100000));
             }
+            excCopy = excCopy.updateFrom(exc, flow);
+            addForMongoDB(excCopy);
         } catch (Exception e) {
             log.error("Error while processing exchange snapshot", e);
         }
