@@ -24,32 +24,21 @@ public class TestCreator extends AbstractSchemaCreator<TestCreatorContext> {
             ctx.add(element.getName() + ":");
             ctx.indent();
             ctx.add("type: object");
-//            ctx.add("properties:");
-//            ctx.indent();
             type.create(this, ctx);
             return;
         }
 
-        // embedded element
 
         ctx.add(element.getName() + ":");
         ctx.indent();
         ctx.add("type: " + element.getType().getLocalPart());
 
-        //writeInputForBuildInType(element, ctx)
     }
 
     @Override
     public void createAnnotation(Annotation annotation, TestCreatorContext ctx) {
         annotation.getDocumentations().forEach(d -> ctx.add("description: "+ d.getContent()));
     }
-
-//    @Override
-//    public void createSimpleType(SimpleType simpleType, TestCreatorContext ctx) {
-//        ctx.add(simpleType.getRestriction().getBuildInTypeName());
-//        simpleType.getRestriction().create(this,ctx);
-//    }
-
 
     @Override
     public void createPatternFacet(PatternFacet facet, Object ctx) {
@@ -89,16 +78,12 @@ public class TestCreator extends AbstractSchemaCreator<TestCreatorContext> {
     @Override
     public void createSimpleRestriction(BaseRestriction restriction, TestCreatorContext  ctx){
         if(restriction.getBase() == null && restriction.getChildSimpleType() != null) {
-//            builder.'xsd:restriction'{
                 restriction.getChildSimpleType().create(this, ctx);
                 restriction.getFacets().forEach(facet -> facet.create(this, ctx));
-//                }
 
         } else {
             var prefix = restriction.getBase().getNamespaceURI() == SCHEMA_NS ? "xsd" : restriction.getPrefix(restriction.getBase().getNamespaceURI());
-//            builder.'xsd:restriction'(base : "$prefix${prefix?':':''}${restriction.base.localPart}"){
                 restriction.getFacets().forEach(facet -> facet.create(this, ctx));
-//            }
         }
     }
 
