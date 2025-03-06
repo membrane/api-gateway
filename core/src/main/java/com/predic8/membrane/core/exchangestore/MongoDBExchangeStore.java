@@ -106,13 +106,11 @@ public class MongoDBExchangeStore extends AbstractExchangeStore {
             requestDoc.append("method", exchange.getRequest() != null ? exchange.getRequest().toRequest().getMethod() : "UNKNOWN");
             requestDoc.append("headers", exchange.getRequest() != null ? objectMapper.writeValueAsString(exchange.getRequest().toRequest().getHeader()) : "{}");
             requestDoc.append("body", exchange.getRequest() != null ? exchange.getRequest().toRequest().getBodyAsStringDecoded() : "{}");
-            log.info("Request Body: {}", exchange.getRequest().toRequest().getBodyAsStringDecoded());
 
             Document responseDoc = new Document();
             responseDoc.append("status", exchange.getResponse() != null ? exchange.getResponse().getStatusCode() : 0);
             responseDoc.append("headers", exchange.getResponse() != null ? exchange.getResponse().getHeader() : "{}");
             responseDoc.append("body", exchange.getResponse() != null ? exchange.getResponse().toResponse().getBodyAsStringDecoded() : "{}");
-            log.info("Response Body: {}", exchange.getResponse().toResponse().getBodyAsStringDecoded());
 
             doc.append("request", requestDoc);
             doc.append("response", responseDoc);
