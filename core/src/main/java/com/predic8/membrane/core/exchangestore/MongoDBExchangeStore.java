@@ -106,6 +106,7 @@ public class MongoDBExchangeStore extends AbstractExchangeStore {
             requestDoc.append("method", exchange.getRequest() != null ? exchange.getRequest().toRequest().getMethod() : "UNKNOWN");
             requestDoc.append("headers", exchange.getRequest() != null ? objectMapper.writeValueAsString(exchange.getRequest().toRequest().getHeader()) : "{}");
             requestDoc.append("body", exchange.getRequest() != null ? exchange.getRequest().toRequest().getBodyAsStringDecoded() : "{}");
+            log.info("Request Body: {}", exchange.getRequest().toRequest().getBodyAsStringDecoded());
 
             Document responseDoc = new Document();
             responseDoc.append("status", exchange.getResponse() != null ? exchange.getResponse().getStatusCode() : 0);
@@ -133,6 +134,9 @@ public class MongoDBExchangeStore extends AbstractExchangeStore {
                 excCopy = cacheToWaitForMongoIndex.get(exc.getId(), () -> new DynamicAbstractExchangeSnapshot(exc, flow, this::addForMongoDB, BodyCollectingMessageObserver.Strategy.TRUNCATE, 100000));
             }
             excCopy = excCopy.updateFrom(exc, flow);
+            log.info("Updating exchange snapshot - Flow: {}", flow);
+            log.info("Exchange Response: {}", exc.getResponse());
+            log.info("Exchange Response Body: {}", exc.getResponse() != null ? exc.getResponse().getBodyAsStringDecoded() : "NULL");
             addForMongoDB(excCopy);
         } catch (Exception e) {
             log.error("Error while processing exchange snapshot", e);
