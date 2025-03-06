@@ -26,14 +26,17 @@ import com.predic8.membrane.core.interceptor.oauth2.OAuth2AnswerParameters;
 import com.predic8.membrane.core.interceptor.oauth2.OAuth2Statistics;
 import com.predic8.membrane.core.interceptor.oauth2.authorizationservice.AuthorizationService;
 import com.predic8.membrane.core.interceptor.session.Session;
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Map;
 
 import static com.predic8.membrane.core.Constants.USERAGENT;
-import static com.predic8.membrane.core.http.Header.ACCEPT;
+import static com.predic8.membrane.core.http.Header.*;
 import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
 import static com.predic8.membrane.core.interceptor.oauth2client.rf.JsonUtils.isJson;
 import static com.predic8.membrane.core.interceptor.oauth2client.temp.OAuth2Constants.OAUTH2_ANSWER;
@@ -76,12 +79,17 @@ public class SessionAuthorizer {
         if (!userInfo.containsKey(auth.getSubject()))
             throw new RuntimeException("User object does not contain " + auth.getSubject() + " key.");
 
-        Map<String, Object> userAttributes = session.get();
-        String userIdPropertyFixed = auth.getSubject().substring(0, 1).toUpperCase() + auth.getSubject().substring(1);
-        String username = (String) userInfo.get(auth.getSubject());
-        userAttributes.put("headerX-Authenticated-" + userIdPropertyFixed, username);
+        session.get().put("headerX-Authenticated-" + convertFirstLetterToUpper(auth.getSubject()), getUsername(userInfo, auth));
 
-        session.authorize(username);
+        session.authorize(getUsername(userInfo, auth));
+    }
+
+    private static String getUsername(Map<String, Object> userInfo, AuthorizationService auth) {
+        return (String) userInfo.get(auth.getSubject());
+    }
+
+    private static @NotNull String convertFirstLetterToUpper(String subject) {
+        return subject.substring(0, 1).toUpperCase() + subject.substring(1);
     }
 
     public JwtAuthInterceptor getJwtAuthInterceptor() {
@@ -89,13 +97,13 @@ public class SessionAuthorizer {
     }
 
     private JwtAuthInterceptor createJwtAuthInterceptor() throws Exception {
-        var jwtAuthInterceptor = new JwtAuthInterceptor();
+        var r = new JwtAuthInterceptor();
 
-        jwtAuthInterceptor.setJwks(createJwks());
-        jwtAuthInterceptor.setExpectedAud("any!!");
-        jwtAuthInterceptor.init(router);
+        r.setJwks(createJwks());
+        r.setExpectedAud("any!!");
+        r.init(router);
 
-        return jwtAuthInterceptor;
+        return r;
     }
 
     private Jwks createJwks() throws Exception {
@@ -111,16 +119,12 @@ public class SessionAuthorizer {
     public void retrieveUserInfo(String tokenType, String token, OAuth2AnswerParameters oauth2Answer, Session session) throws Exception {
         Exchange e2 = new Request.Builder()
                 .get(auth.getUserInfoEndpoint())
-                .header("Authorization", tokenType + " " + token)
-                .header("User-Agent", USERAGENT)
+                .header(AUTHORIZATION, tokenType + " " + token)
+                .header(USER_AGENT, USERAGENT)
                 .header(ACCEPT, APPLICATION_JSON)
                 .buildExchange();
 
-        logHelper.handleRequest(e2);
-
         Response response2 = auth.doRequest(e2);
-
-        logHelper.handleResponse(e2);
 
         if (response2.getStatusCode() != 200) {
             statistics.accessTokenInvalid();
@@ -133,13 +137,17 @@ public class SessionAuthorizer {
             throw new RuntimeException("Userinfo response is no JSON.");
         }
 
-        Map<String, Object> json2 = new ObjectMapper().readValue(response2.getBodyAsStreamDecoded(), new TypeReference<>(){});
+        Map<String, Object> json2 = parseResponse(response2.getBodyAsStreamDecoded());
 
         oauth2Answer.setUserinfo(json2);
 
         authorizeSession(json2, session, auth);
 
         session.put(OAUTH2_ANSWER, oauth2Answer.serialize());
+    }
+
+    private static Map<String, Object> parseResponse(InputStream body) throws IOException {
+        return new ObjectMapper().readValue(body, new TypeReference<>() {});
     }
 
     public void verifyJWT(Exchange exc, String token, OAuth2AnswerParameters oauth2Answer, Session session) throws Exception {

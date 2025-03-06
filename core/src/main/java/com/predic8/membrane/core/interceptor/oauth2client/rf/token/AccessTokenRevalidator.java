@@ -23,6 +23,8 @@ import com.predic8.membrane.core.interceptor.oauth2.authorizationservice.Authori
 import com.predic8.membrane.core.interceptor.oauth2client.rf.JsonUtils;
 import com.predic8.membrane.core.interceptor.session.Session;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
@@ -56,15 +58,18 @@ public class AccessTokenRevalidator {
         if (response.getStatusCode() != 200) {
             statistics.accessTokenValid();
             return null;
-        } else {
-            statistics.accessTokenValid();
-
-            if (!JsonUtils.isJson(response)) {
-                throw new RuntimeException("Response is no JSON.");
-            }
-
-            return new ObjectMapper().readValue(response.getBodyAsStreamDecoded(), new TypeReference<>() {});
         }
+        statistics.accessTokenValid();
+
+        if (!JsonUtils.isJson(response)) {
+            throw new RuntimeException("Response is no JSON.");
+        }
+
+        return parseResponse(response.getBodyAsStreamDecoded());
+    }
+
+    private static Map<String, Object> parseResponse(InputStream body) throws IOException {
+        return new ObjectMapper().readValue(body, new TypeReference<>() {});
     }
 
     private boolean tokenNeedsRevalidation(Session session, String wantedScope) {
