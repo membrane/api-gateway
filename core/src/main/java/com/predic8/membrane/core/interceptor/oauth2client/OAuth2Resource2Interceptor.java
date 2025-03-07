@@ -85,6 +85,7 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
         try {
             auth.init(router);
         } catch (Exception e) {
+            log.error("", e);
             throw new ConfigurationException("Could not init auth in OAuth2Resource2Interceptor",e);
         }
         statistics = new OAuth2Statistics();
