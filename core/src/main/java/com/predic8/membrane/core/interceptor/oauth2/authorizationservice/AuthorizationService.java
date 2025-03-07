@@ -23,6 +23,7 @@ import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.oauth2.OAuth2AnswerParameters;
 import com.predic8.membrane.core.interceptor.oauth2.tokengenerators.JwtGenerator;
 import com.predic8.membrane.core.interceptor.oauth2client.rf.LogHelper;
+import com.predic8.membrane.core.interceptor.oauth2client.rf.OAuth2TokenResponseBody;
 import com.predic8.membrane.core.interceptor.oauth2client.rf.token.JWSSigner;
 import com.predic8.membrane.core.interceptor.session.Session;
 import com.predic8.membrane.core.resolver.ResolverMap;
@@ -31,6 +32,7 @@ import com.predic8.membrane.core.transport.http.client.HttpClientConfiguration;
 import com.predic8.membrane.core.transport.ssl.PEMSupport;
 import com.predic8.membrane.core.transport.ssl.SSLContext;
 import com.predic8.membrane.core.transport.ssl.StaticSSLContext;
+import jakarta.mail.internet.ParseException;
 import org.apache.commons.codec.binary.Base64;
 import org.jose4j.jwt.JwtClaims;
 import org.jose4j.jwt.MalformedClaimException;
@@ -40,8 +42,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.concurrent.GuardedBy;
+import java.io.IOException;
 import java.io.InputStream;
-import java.net.URLEncoder;
+import java.net.URISyntaxException;
 import java.util.List;
 import java.util.UUID;
 
@@ -49,7 +52,10 @@ import static com.predic8.membrane.core.Constants.USERAGENT;
 import static com.predic8.membrane.core.http.Header.*;
 import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
 import static com.predic8.membrane.core.http.MimeType.APPLICATION_X_WWW_FORM_URLENCODED;
-import static java.nio.charset.StandardCharsets.UTF_8;
+import static com.predic8.membrane.core.interceptor.oauth2.OAuth2TokenBody.authorizationCodeBodyBuilder;
+import static com.predic8.membrane.core.interceptor.oauth2.OAuth2TokenBody.refreshTokenBodyBuilder;
+import static com.predic8.membrane.core.interceptor.oauth2client.rf.JsonUtils.isJson;
+import static java.net.URLEncoder.encode;
 
 public abstract class AuthorizationService {
     protected Logger log;
@@ -189,9 +195,12 @@ public abstract class AuthorizationService {
     }
 
     public Response doRequest(Exchange e) throws Exception {
+        logHelper.handleRequest(e);
         if (sslContext != null)
             e.setProperty(Exchange.SSL_CONTEXT, sslContext);
-        return getHttpClient().call(e).getResponse();
+        Response response = getHttpClient().call(e).getResponse();
+        logHelper.handleResponse(e);
+        return response;
     }
 
     public SSLParser getSslParser() {
@@ -229,31 +238,20 @@ public abstract class AuthorizationService {
         return requestBuilder;
     }
 
-    public Response refreshTokenRequest(Session session, OAuth2AnswerParameters params, String wantedScope) throws Exception {
+
+
+    public String getTokenEndpoint(Session session) {
         String tokenEndpoint = getTokenEndpoint();
         if (session.get("defaultFlow") != null) {
             tokenEndpoint = tokenEndpoint.replaceAll(session.get("defaultFlow"), session.get("triggerFlow"));
         }
-
-        Exchange e = applyAuth(
-                new Request.Builder().post(tokenEndpoint)
-                        .contentType(APPLICATION_X_WWW_FORM_URLENCODED)
-                        .header(ACCEPT, APPLICATION_JSON)
-                        .header(USER_AGENT, USERAGENT),
-                "grant_type=refresh_token" + "&refresh_token=" + params.getRefreshToken() +
-                        (wantedScope != null ? "&scope=" + URLEncoder.encode(wantedScope, UTF_8) : ""))
-                .buildExchange();
-
-        logHelper.handleRequest(e);
-        Response response = doRequest(e);
-        logHelper.handleResponse(e);
-        return response;
+        return tokenEndpoint;
     }
 
-    public Response requestUserEndpoint(OAuth2AnswerParameters params) throws Exception {
+    public Response requestUserEndpoint(String tokenType, String token) throws Exception {
         return doRequest(new Request.Builder()
                 .get(getUserInfoEndpoint())
-                .header("Authorization", params.getTokenType() + " " + params.getAccessToken())
+                .header("Authorization", tokenType + " " + token)
                 .header("User-Agent", USERAGENT)
                 .header(ACCEPT, APPLICATION_JSON)
                 .buildExchange());
@@ -286,7 +284,8 @@ public abstract class AuthorizationService {
             jwtClaims.setExpirationTime(expiration);
             jwtClaims.setNotBeforeMinutesInThePast(2f);
 
-            return JWSSigner.signToCompactSerialization(jwtClaims.toJson());
+            String payload = jwtClaims.toJson();
+            return JWSSigner.generateSignedJWS(payload);
         } catch (JoseException | MalformedClaimException e) {
             throw new RuntimeException(e);
         }
@@ -299,4 +298,42 @@ public abstract class AuthorizationService {
             return httpClient.call(Request.get(url).buildExchange()).getResponse().getBodyAsStreamDecoded();
         return rm.resolve(url);
     }
+
+    public OAuth2TokenResponseBody refreshTokenRequest(Session session, String wantedScope, String refreshToken) throws Exception {
+        return parseTokenResponse(checkTokenResponse(doRequest(applyAuth(
+                new Request.Builder().post(getTokenEndpoint(session))
+                        .contentType(APPLICATION_X_WWW_FORM_URLENCODED)
+                        .header(ACCEPT, APPLICATION_JSON)
+                        .header(USER_AGENT, USERAGENT),
+                refreshTokenBodyBuilder(refreshToken).scope(wantedScope).build())
+                .buildExchange())));
+    }
+
+    public OAuth2TokenResponseBody codeTokenRequest(String redirectUri, String code) throws Exception {
+        return parseTokenResponse(checkTokenResponse(doRequest(applyAuth(
+                new Request.Builder()
+                        .post(getTokenEndpoint())
+                        .contentType(APPLICATION_X_WWW_FORM_URLENCODED)
+                        .header(ACCEPT, APPLICATION_JSON)
+                        .header(USER_AGENT, USERAGENT),
+                authorizationCodeBodyBuilder(code).redirectUri(redirectUri).build()).buildExchange())));
+    }
+
+    private OAuth2TokenResponseBody parseTokenResponse(Response response) throws IOException {
+        return OAuth2TokenResponseBody.parse(this, response.getBodyAsStreamDecoded());
+    }
+
+    private Response checkTokenResponse(Response response) throws IOException, ParseException {
+        if (response.getStatusCode() != 200) {
+            response.getBody().read();
+            throw new RuntimeException("Authorization server returned " + response.getStatusCode() + ".");
+        }
+
+        if (!isJson(response)) {
+            response.getBody().read();
+            throw new RuntimeException("Token response is no JSON.");
+        }
+        return response;
+    }
+
 }

@@ -18,11 +18,14 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.predic8.membrane.core.http.Response;
+import com.predic8.membrane.core.interceptor.oauth2.OAuth2AnswerParameters;
 import com.predic8.membrane.core.interceptor.oauth2.OAuth2Statistics;
 import com.predic8.membrane.core.interceptor.oauth2.authorizationservice.AuthorizationService;
 import com.predic8.membrane.core.interceptor.oauth2client.rf.JsonUtils;
 import com.predic8.membrane.core.interceptor.session.Session;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
@@ -51,20 +54,24 @@ public class AccessTokenRevalidator {
     }
 
     public Map<String, Object> revalidate(Session session, OAuth2Statistics statistics, String wantedScope) throws Exception {
-        Response response = auth.requestUserEndpoint(session.getOAuth2AnswerParameters(wantedScope));
+        OAuth2AnswerParameters params = session.getOAuth2AnswerParameters(wantedScope);
+        Response response = auth.requestUserEndpoint(params.getTokenType(), params.getAccessToken());
 
         if (response.getStatusCode() != 200) {
-            statistics.accessTokenValid();
+            statistics.accessTokenInvalid();
             return null;
-        } else {
-            statistics.accessTokenValid();
-
-            if (!JsonUtils.isJson(response)) {
-                throw new RuntimeException("Response is no JSON.");
-            }
-
-            return new ObjectMapper().readValue(response.getBodyAsStreamDecoded(), new TypeReference<>() {});
         }
+        statistics.accessTokenValid();
+
+        if (!JsonUtils.isJson(response)) {
+            throw new RuntimeException("Response is no JSON.");
+        }
+
+        return parseResponse(response.getBodyAsStreamDecoded());
+    }
+
+    private static Map<String, Object> parseResponse(InputStream body) throws IOException {
+        return new ObjectMapper().readValue(body, new TypeReference<>() {});
     }
 
     private boolean tokenNeedsRevalidation(Session session, String wantedScope) {
