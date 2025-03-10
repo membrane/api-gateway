@@ -10,8 +10,11 @@ import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.exchange.AbstractExchange;
+import com.predic8.membrane.core.exchange.ExchangeState;
 import com.predic8.membrane.core.exchange.snapshots.AbstractExchangeSnapshot;
 import com.predic8.membrane.core.exchange.snapshots.DynamicAbstractExchangeSnapshot;
+import com.predic8.membrane.core.exchange.snapshots.RequestSnapshot;
+import com.predic8.membrane.core.exchange.snapshots.ResponseSnapshot;
 import com.predic8.membrane.core.http.BodyCollectingMessageObserver;
 import com.predic8.membrane.core.interceptor.Interceptor;
 import com.predic8.membrane.core.proxies.Proxy;
@@ -23,10 +26,7 @@ import org.bson.types.ObjectId;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 @MCElement(name = "mongoDBExchangeStore")
@@ -77,6 +77,24 @@ public class MongoDBExchangeStore extends AbstractExchangeStore {
         }
     }
 
+    @Override
+    public void snap(AbstractExchange exc, Interceptor.Flow flow) {
+        AbstractExchangeSnapshot excCopy;
+        try {
+            if (flow == Interceptor.Flow.REQUEST) {
+                excCopy = new DynamicAbstractExchangeSnapshot(exc, flow, this::addForMongoDB, BodyCollectingMessageObserver.Strategy.TRUNCATE, 100000);
+                addForMongoDB(excCopy);
+            } else {
+                excCopy = getForMongoDB((int) exc.getId());
+                DynamicAbstractExchangeSnapshot.addObservers(exc, excCopy, this::addForMongoDB, flow);
+                excCopy = excCopy.updateFrom(exc, flow);
+                addForMongoDB(excCopy);
+            }
+        } catch (Exception e) {
+            log.error("Error while processing exchange snapshot", e);
+        }
+    }
+
     private void storeExchangesInMongo(List<AbstractExchangeSnapshot> exchanges) {
         List<Document> documents = new ArrayList<>();
         for (AbstractExchangeSnapshot exchange : exchanges) {
@@ -102,13 +120,12 @@ public class MongoDBExchangeStore extends AbstractExchangeStore {
             requestDoc.append("method", exchange.getRequest() != null ? exchange.getRequest().toRequest().getMethod() : "UNKNOWN");
             requestDoc.append("headers", exchange.getRequest() != null ? objectMapper.writeValueAsString(exchange.getRequest().toRequest().getHeader()) : "{}");
             requestDoc.append("body", exchange.getRequest() != null ? exchange.getRequest().toRequest().getBodyAsStringDecoded() : "{}");
+            doc.append("request", requestDoc);
 
             Document responseDoc = new Document();
             responseDoc.append("status", exchange.getResponse() != null ? exchange.getResponse().getStatusCode() : 0);
             responseDoc.append("headers", exchange.getResponse() != null ? exchange.getResponse().getHeader() : "{}");
             responseDoc.append("body", exchange.getResponse() != null ? exchange.getResponse().toResponse().getBodyAsStringDecoded() : "{}");
-
-            doc.append("request", requestDoc);
             doc.append("response", responseDoc);
 
         } catch (Exception e) {
@@ -117,28 +134,20 @@ public class MongoDBExchangeStore extends AbstractExchangeStore {
         return doc;
     }
 
-
-    @Override
-    public void snap(AbstractExchange exc, Interceptor.Flow flow) {
-        AbstractExchangeSnapshot excCopy;
-        try {
-            if (flow == Interceptor.Flow.REQUEST) {
-                excCopy = new DynamicAbstractExchangeSnapshot(exc, flow, this::addForMongoDB, BodyCollectingMessageObserver.Strategy.ERROR, 100000);
-                addForMongoDB(excCopy);
-            } else {
-                excCopy = cacheToWaitForMongoIndex.get(exc.getId(), () -> new DynamicAbstractExchangeSnapshot(exc, flow, this::addForMongoDB, BodyCollectingMessageObserver.Strategy.ERROR, 100000));
-                excCopy = excCopy.updateFrom(exc, flow);
-                addForMongoDB(excCopy);
-            }
-        } catch (Exception e) {
-            log.error("Error while processing exchange snapshot", e);
-        }
-    }
-
     private void addForMongoDB(AbstractExchangeSnapshot exc) {
         synchronized (shortTermMemoryForBatching) {
             shortTermMemoryForBatching.put(exc.getId(), exc);
         }
+    }
+
+    public AbstractExchangeSnapshot getForMongoDB(long id) {
+        if (shortTermMemoryForBatching.get(id) != null) {
+            return shortTermMemoryForBatching.get(id);
+        }
+        if (cacheToWaitForMongoIndex.getIfPresent(id) != null) {
+            return cacheToWaitForMongoIndex.getIfPresent(id);
+        }
+        return null;
     }
 
     @Override
@@ -178,7 +187,7 @@ public class MongoDBExchangeStore extends AbstractExchangeStore {
 
     @Override
     public List<AbstractExchange> getAllExchangesAsList() {
-      return null;
+        return null;
     }
 
     @MCAttribute
