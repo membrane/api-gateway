@@ -4,8 +4,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
-import com.mongodb.client.*;
-import com.mongodb.client.model.Filters;
+import com.mongodb.client.MongoClients;
+import com.mongodb.client.MongoCollection;
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.Router;
@@ -23,9 +23,11 @@ import org.bson.types.ObjectId;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.nio.charset.StandardCharsets;
-import java.util.*;
-import java.util.concurrent.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 @MCElement(name = "mongoDBExchangeStore")
 public class MongoDBExchangeStore extends AbstractExchangeStore {
@@ -45,14 +47,9 @@ public class MongoDBExchangeStore extends AbstractExchangeStore {
     @Override
     public void init(Router router) {
         try {
-            MongoClient mongoClient = MongoClients.create(connection);
-            MongoDatabase mongoDatabase = mongoClient.getDatabase(database);
-            collection = mongoDatabase.getCollection(collectionName);
-
+            collection = MongoClients.create(connection).getDatabase(database).getCollection(collectionName);
             objectMapper.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
-
             log.info("MongoDB initialized with database '{}' and collection '{}'", database, collectionName);
-
             Thread updateJob = new Thread(() -> {
                 while (true) {
                     try {
@@ -84,8 +81,7 @@ public class MongoDBExchangeStore extends AbstractExchangeStore {
         List<Document> documents = new ArrayList<>();
         for (AbstractExchangeSnapshot exchange : exchanges) {
             try {
-                Document doc = createMongoDocument(exchange);
-                documents.add(doc);
+                documents.add(createMongoDocument(exchange));
             } catch (Exception e) {
                 log.error("Error converting exchange to MongoDB document", e);
             }
@@ -106,7 +102,6 @@ public class MongoDBExchangeStore extends AbstractExchangeStore {
             requestDoc.append("method", exchange.getRequest() != null ? exchange.getRequest().toRequest().getMethod() : "UNKNOWN");
             requestDoc.append("headers", exchange.getRequest() != null ? objectMapper.writeValueAsString(exchange.getRequest().toRequest().getHeader()) : "{}");
             requestDoc.append("body", exchange.getRequest() != null ? exchange.getRequest().toRequest().getBodyAsStringDecoded() : "{}");
-            log.info("Request Body: {}", exchange.getRequest().toRequest().getBodyAsStringDecoded());
 
             Document responseDoc = new Document();
             responseDoc.append("status", exchange.getResponse() != null ? exchange.getResponse().getStatusCode() : 0);
@@ -119,7 +114,6 @@ public class MongoDBExchangeStore extends AbstractExchangeStore {
         } catch (Exception e) {
             log.error("Error serializing request/response to JSON", e);
         }
-
         return doc;
     }
 
@@ -129,15 +123,13 @@ public class MongoDBExchangeStore extends AbstractExchangeStore {
         AbstractExchangeSnapshot excCopy;
         try {
             if (flow == Interceptor.Flow.REQUEST) {
-                excCopy = new DynamicAbstractExchangeSnapshot(exc, flow, this::addForMongoDB, BodyCollectingMessageObserver.Strategy.TRUNCATE, 100000);
+                excCopy = new DynamicAbstractExchangeSnapshot(exc, flow, this::addForMongoDB, BodyCollectingMessageObserver.Strategy.ERROR, 100000);
+                addForMongoDB(excCopy);
             } else {
-                excCopy = cacheToWaitForMongoIndex.get(exc.getId(), () -> new DynamicAbstractExchangeSnapshot(exc, flow, this::addForMongoDB, BodyCollectingMessageObserver.Strategy.TRUNCATE, 100000));
+                excCopy = cacheToWaitForMongoIndex.get(exc.getId(), () -> new DynamicAbstractExchangeSnapshot(exc, flow, this::addForMongoDB, BodyCollectingMessageObserver.Strategy.ERROR, 100000));
+                excCopy = excCopy.updateFrom(exc, flow);
+                addForMongoDB(excCopy);
             }
-            excCopy = excCopy.updateFrom(exc, flow);
-            log.info("Updating exchange snapshot - Flow: {}", flow);
-            log.info("Exchange Response: {}", exc.getResponse());
-            log.info("Exchange Response Body: {}", exc.getResponse() != null ? exc.getResponse().getBodyAsStringDecoded() : "NULL");
-            addForMongoDB(excCopy);
         } catch (Exception e) {
             log.error("Error while processing exchange snapshot", e);
         }
@@ -151,73 +143,42 @@ public class MongoDBExchangeStore extends AbstractExchangeStore {
 
     @Override
     public AbstractExchange getExchangeById(long id) {
-        Document result = collection.find(Filters.eq("id", id)).first();
-        if (result != null) {
-            try {
-                return objectMapper.readValue(result.toJson(), AbstractExchange.class);
-            } catch (Exception e) {
-                log.error("Error converting JSON to Exchange", e);
-            }
-        }
         return null;
     }
 
     @Override
     public void remove(AbstractExchange exchange) {
-        collection.deleteOne(Filters.eq("id", exchange.getId()));
-        log.info("Exchange removed from MongoDB: {}", exchange.getId());
+
     }
 
     @Override
     public void removeAllExchanges(Proxy proxy) {
-        collection.deleteMany(Filters.eq("proxy", proxy.getName()));
-        log.info("All exchanges for proxy '{}' removed from MongoDB", proxy.getName());
+
     }
 
     @Override
     public void removeAllExchanges(AbstractExchange[] exchanges) {
-        List<Long> ids = new ArrayList<>();
-        for (AbstractExchange exchange : exchanges) {
-            ids.add(exchange.getId());
-        }
-        collection.deleteMany(Filters.in("id", ids));
-        log.info("Removed {} exchanges from MongoDB", ids.size());
+
     }
 
     @Override
     public AbstractExchange[] getExchanges(RuleKey ruleKey) {
-        List<AbstractExchange> exchanges = new ArrayList<>();
-        for (Document doc : collection.find(Filters.eq("ruleKey", ruleKey.toString()))) {
-            try {
-                exchanges.add(objectMapper.readValue(doc.toJson(), AbstractExchange.class));
-            } catch (Exception e) {
-                log.error("Error converting JSON to Exchange", e);
-            }
-        }
-        return exchanges.toArray(new AbstractExchange[0]);
+        return null;
     }
 
     @Override
     public StatisticCollector getStatistics(RuleKey ruleKey) {
-        return new StatisticCollector(false);
+        return null;
     }
 
     @Override
     public Object[] getAllExchanges() {
-        return getAllExchangesAsList().toArray();
+        return null;
     }
 
     @Override
     public List<AbstractExchange> getAllExchangesAsList() {
-        List<AbstractExchange> exchanges = new ArrayList<>();
-        for (Document doc : collection.find()) {
-            try {
-                exchanges.add(objectMapper.readValue(doc.toJson(), AbstractExchange.class));
-            } catch (Exception e) {
-                log.error("Error converting JSON to Exchange", e);
-            }
-        }
-        return exchanges;
+      return null;
     }
 
     @MCAttribute
