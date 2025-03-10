@@ -65,7 +65,7 @@ public class OAuth2AnswerParameters {
         return tokenType;
     }
 
-    public String serialize() throws JsonProcessingException, UnsupportedEncodingException {
+    public String serialize() throws JsonProcessingException {
         return OAuth2Util.urlencode(getObjectMapper().writeValueAsString(this));
     }
 
