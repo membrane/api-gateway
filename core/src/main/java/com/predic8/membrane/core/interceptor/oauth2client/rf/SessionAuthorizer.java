@@ -72,16 +72,20 @@ public class SessionAuthorizer {
         this.skip = skip;
     }
 
-    public void authorizeSession(Map<String, Object> userInfo, Session session, AuthorizationService auth) {
-        if (!userInfo.containsKey(auth.getSubject()))
-            throw new RuntimeException("User object does not contain " + auth.getSubject() + " key.");
+    public void authorizeSession(Map<String, Object> userInfo, Session session, String authSubject) {
+        String username = extractUsername(userInfo, authSubject);
+        String userIdPropertyFixed = authSubject.substring(0, 1).toUpperCase() + authSubject.substring(1);
 
         Map<String, Object> userAttributes = session.get();
-        String userIdPropertyFixed = auth.getSubject().substring(0, 1).toUpperCase() + auth.getSubject().substring(1);
-        String username = (String) userInfo.get(auth.getSubject());
         userAttributes.put("headerX-Authenticated-" + userIdPropertyFixed, username);
 
         session.authorize(username);
+    }
+
+    private static String extractUsername(Map<String, Object> userInfo, String authSubject) {
+        if (!userInfo.containsKey(authSubject))
+            throw new RuntimeException("User object does not contain " + authSubject + " key.");
+        return (String) userInfo.get(authSubject);
     }
 
     public JwtAuthInterceptor getJwtAuthInterceptor() {
@@ -137,7 +141,7 @@ public class SessionAuthorizer {
 
         oauth2Answer.setUserinfo(json2);
 
-        authorizeSession(json2, session, auth);
+        authorizeSession(json2, session, auth.getSubject());
 
         session.put(OAUTH2_ANSWER, oauth2Answer.serialize());
     }
@@ -148,7 +152,7 @@ public class SessionAuthorizer {
         if (getJwtAuthInterceptor().handleJwt(exc, token) != Outcome.CONTINUE)
             throw new RuntimeException("Access token is not a JWT.");
 
-        authorizeSession((Map<String, Object>) exc.getProperty("jwt"), session, auth);
+        authorizeSession((Map<String, Object>) exc.getProperty("jwt"), session, auth.getSubject());
 
     }
 }
