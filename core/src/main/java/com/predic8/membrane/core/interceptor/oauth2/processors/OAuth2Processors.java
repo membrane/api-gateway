@@ -25,7 +25,6 @@ public class OAuth2Processors {
 
     public OAuth2Processors add(EndpointProcessor excProc){
         processors.add(excProc);
-
         return this;
     }
 
