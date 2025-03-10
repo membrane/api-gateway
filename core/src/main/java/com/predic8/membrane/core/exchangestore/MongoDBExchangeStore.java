@@ -128,6 +128,18 @@ public class MongoDBExchangeStore extends AbstractExchangeStore {
             responseDoc.append("body", exchange.getResponse() != null ? exchange.getResponse().toResponse().getBodyAsStringDecoded() : "{}");
             doc.append("response", responseDoc);
 
+            if (exchange.getResponse() != null) {
+                try {
+                    String body = exchange.getResponse().toResponse().getBodyAsStringDecoded();
+                    log.debug("Response body length: {}", body.length());
+                    responseDoc.append("body", body);
+                } catch (Exception e) {
+                    log.error("Error extracting response body", e);
+                    responseDoc.append("body", "Error extracting body: " + e.getMessage());
+                }
+            } else {
+                responseDoc.append("body", "No response available");
+            }
         } catch (Exception e) {
             log.error("Error serializing request/response to JSON", e);
         }
