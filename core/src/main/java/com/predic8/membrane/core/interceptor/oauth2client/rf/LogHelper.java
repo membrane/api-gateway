@@ -25,7 +25,7 @@ public class LogHelper {
     public LogHelper() {
         if (log.isDebugEnabled()) {
             logi = new LogInterceptor();
-            logi.setBody(false);
+            logi.setBody(true);
         }
     }
 

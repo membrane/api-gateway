@@ -28,7 +28,7 @@ import java.util.Optional;
 
 import static com.mongodb.client.model.Filters.eq;
 
-@MCElement(name = "mongoDBApiKeyStore", topLevel = false)
+@MCElement(name = "mongoDBApiKeyStore")
 public class MongoDBApiKeyStore implements ApiKeyStore {
 
     private String connection;

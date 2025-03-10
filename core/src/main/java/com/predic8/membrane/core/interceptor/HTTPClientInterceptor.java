@@ -27,7 +27,7 @@ import org.slf4j.*;
 import java.io.*;
 import java.net.*;
 
-import static com.predic8.membrane.core.exceptions.ProblemDetails.internal;
+import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
 import static com.predic8.membrane.core.http.Header.*;
 import static com.predic8.membrane.core.http.Request.METHOD_GET;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.*;
@@ -75,7 +75,7 @@ public class HTTPClientInterceptor extends AbstractInterceptor {
         } catch (ConnectException e) {
             String msg = "Target %s is not reachable.".formatted(getDestination(exc));
             log.warn(msg + PROXIES_HINT);
-            ProblemDetails.gateway(router.isProduction(), getDisplayName())
+            gateway(router.isProduction(), getDisplayName())
                     .addSubSee("connect")
                     .statusCode(502)
                     .detail(msg)
@@ -91,18 +91,32 @@ public class HTTPClientInterceptor extends AbstractInterceptor {
         } catch (UnknownHostException e) {
             String msg = "Target host %s of API %s is unknown. DNS was unable to resolve host name.".formatted(URLUtil.getHost(getDestination(exc)), exc.getProxy().getName());
             log.warn(msg + PROXIES_HINT);
-            ProblemDetails.gateway(router.isProduction(), getDisplayName())
+            gateway(router.isProduction(), getDisplayName())
                     .addSubSee("unknown-host")
                     .statusCode(502)
                     .detail(msg)
                     .buildAndSetResponse(exc);
             return ABORT;
         } catch (MalformedURLException e) {
-            log.error("", e);
-            internal(router.isProduction(), getDisplayName())
+            log.info("Malformed URL. Requested path is: {} {}",exc.getRequest().getUri() , e.getMessage());
+            log.debug("",e);
+            user(router.isProduction(), getDisplayName())
+                    .title("Request path or 'Host' header is malformed")
                     .addSubSee("malformed-url")
                     .exception(e)
                     .internal("proxy", exc.getProxy().getName())
+                    .internal("url",exc.getRequest().getUri())
+                    .buildAndSetResponse(exc);
+            return ABORT;
+        } catch (ProtocolUpgradeDeniedException e) {
+            log.debug("Denied protocol upgrade request. uri={} protocol={}", exc.getRequest().getUri(), e.getProtocol());
+            gateway(router.isProduction(), getDisplayName())
+                    .statusCode(401)
+                    .title("Protocol upgrade has been denied.")
+                    .addSubSee("denied-protocol-upgrade")
+                    .internal("hint", "Protocol upgrades are supported by Membrane for 'websocket' and 'tcp', but have to be allowed in the configuration explicitly.")
+                    .internal("proxy", exc.getProxy().getName())
+                    .internal("url",exc.getRequest().getUri())
                     .buildAndSetResponse(exc);
             return ABORT;
         } catch (Exception e) {

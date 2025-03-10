@@ -64,7 +64,6 @@ public class SOAPProxy extends AbstractServiceProxy {
     // configuration attributes
     protected String wsdl;
     protected String portName;
-    protected String targetPath;
     protected HttpClientConfiguration httpClientConfig;
     protected String serviceName;
 
@@ -77,10 +76,6 @@ public class SOAPProxy extends AbstractServiceProxy {
 
     @Override
     public void init() {
-        super.init();
-        if (wsdl == null) {
-            return;
-        }
         resolverMap = router.getResolverMap();
         if (httpClientConfig != null) {
             HTTPSchemaResolver httpSR = new HTTPSchemaResolver(router.getHttpClientFactory());
@@ -88,11 +83,25 @@ public class SOAPProxy extends AbstractServiceProxy {
             resolverMap = resolverMap.clone();
             resolverMap.addSchemaResolver(httpSR);
         }
-        configure();
+        configureFromWSDL();
+        super.init(); // Must be called last! Otherwise SSL will not be configured!
     }
 
-    protected void configure() {
-        parseWSDL();
+    protected void configureFromWSDL() {
+
+        Definitions definitions = parseWSDLOnly();
+        Service service = getService(definitions);
+        setProxyName(service, definitions);
+
+        String location = getLocation(service);
+
+        // Signal to the later processing that the outgoing connection is using TLS
+        if (location.startsWith("https")) {
+            target.setSslParser(new SSLParser());
+        }
+
+        prepareRouting(location);
+
         // remove previously added interceptors TODO Why, What?
         for (; automaticallyAddedInterceptorCount > 0; automaticallyAddedInterceptorCount--)
             interceptors.removeFirst();
@@ -102,47 +111,52 @@ public class SOAPProxy extends AbstractServiceProxy {
         addWSDLPublisherInterceptor();
         addWSDLInterceptor();
         renameMe();
-        if (targetPath != null) {
-            RewriteInterceptor ri = new RewriteInterceptor();
-            ri.setMappings(Lists.newArrayList(new RewriteInterceptor.Mapping("^" + Pattern.quote(key.getPath()), Matcher.quoteReplacement(targetPath), "rewrite")));
-            interceptors.addFirst(ri);
-            automaticallyAddedInterceptorCount++;
-        }
+
     }
 
-    void parseWSDL() {
-        Definitions definitions;
+    private Definitions parseWSDLOnly() {
         try {
-            definitions = getWsdlParser().parse(getWsdlParserContext());
+            return getWsdlParser().parse(getWsdlParserContext());
         } catch (Exception e) {
             String msg = "Could not parse WSDL from %s.".formatted(getWsdlParserContext().getInput());
             log.error("{}: {}", msg, e.getMessage());
             throw new ConfigurationException(msg, e);
         }
-        Service service = getService(definitions);
-        setProxyName(service, definitions);
-        String location = getLocation(service);
+    }
+
+    private void prepareRouting(String location) {
         try {
             URL url = new URL(location);
-            setTarget(url);
-            if (key.getPath() == null) {
+            setTarget(url); // Set target URL from WSDL location
+            if (key.getPath() == null) { // If the config does not contain a path, use the path from the WSDL(address/@location) for the proxy key
                 key.setUsePathPattern(true);
                 key.setPathRegExp(false);
                 key.setPath(url.getPath());
             } else {
-                String query = "";
-                if (url.getQuery() != null) {
-                    query = "?" + url.getQuery();
-                }
-                targetPath = url.getPath() + query;
+                configureRewritingOfPath(getTargetPath(url));
             }
-            if (location.startsWith("https")) {
-                target.setSslParser(new SSLParser());
-            }
+
             ((ServiceProxyKey) key).setMethod("*"); // GET and POST are used for SOAP
         } catch (MalformedURLException e) {
             throw new ConfigurationException("WSDL endpoint location '" + location + "' is not an URL.");
         }
+    }
+
+    private void configureRewritingOfPath(String targetPath) {
+        if (targetPath == null)
+            return;
+
+        RewriteInterceptor ri = new RewriteInterceptor();
+        ri.setMappings(Lists.newArrayList(new RewriteInterceptor.Mapping("^" + Pattern.quote(key.getPath()), Matcher.quoteReplacement(targetPath), "rewrite")));
+        interceptors.addFirst(ri);
+        automaticallyAddedInterceptorCount++;
+    }
+
+    private static @NotNull String getTargetPath(URL url) {
+        if (url.getQuery() != null) {
+            return url.getPath() + "?" + url.getQuery();
+        }
+        return url.getPath();
     }
 
     private @NotNull String getLocation(Service service) {

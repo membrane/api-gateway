@@ -19,6 +19,7 @@ import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.lang.Polyglot;
 import com.predic8.membrane.core.lang.ExchangeExpression;
+import com.predic8.membrane.core.util.*;
 
 import java.util.Optional;
 
@@ -53,14 +54,17 @@ public class ApiKeyExpressionExtractor implements ApiKeyExtractor, Polyglot {
     }
 
     @Override
-    public ExchangeExpression.Language getLanguage() {
-        return language;
-    }
-
-    @Override
     @MCAttribute
-    public void setLanguage(ExchangeExpression.Language language) {
-        this.language = language;
+    public void setLanguage(String language) {
+        try {
+            this.language = ExchangeExpression.Language.valueOf(language);
+        } catch (IllegalArgumentException e) {
+            throw new ConfigurationException("""
+                    Wrong Language
+                    
+                    Language %s is not supported by this API key extractor. Use one of {}
+                    """.formatted(language, ExchangeExpression.Language.values()));
+        }
     }
 
     public String getExpression() {

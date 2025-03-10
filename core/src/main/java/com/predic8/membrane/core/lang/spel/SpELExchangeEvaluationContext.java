@@ -20,8 +20,10 @@ import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.Interceptor.*;
 import com.predic8.membrane.core.lang.spel.functions.*;
 import com.predic8.membrane.core.lang.spel.spelable.*;
+import com.predic8.membrane.core.lang.spel.typeconverters.*;
 import com.predic8.membrane.core.util.*;
 import org.slf4j.*;
+import org.springframework.core.convert.support.*;
 import org.springframework.expression.spel.support.*;
 
 import java.io.*;
@@ -30,6 +32,7 @@ import java.util.*;
 import static com.predic8.membrane.core.util.URLParamUtil.DuplicateKeyOrInvalidFormStrategy.*;
 
 public class SpELExchangeEvaluationContext extends StandardEvaluationContext {
+
     private static final Logger log = LoggerFactory.getLogger(SpELExchangeEvaluationContext.class);
 
     private static final ObjectMapper om = new ObjectMapper();
@@ -77,6 +80,15 @@ public class SpELExchangeEvaluationContext extends StandardEvaluationContext {
 
         // Enables Membrane functions in SpEL scripts like 'hasScopes("admin")'
         setMethodResolvers(List.of(new BuiltInFunctionResolver()));
+
+        addTypeConverters();
+    }
+
+    private void addTypeConverters() {
+        GenericConversionService cs = new DefaultConversionService();
+        cs.addConverter(new SpELHeaderToStringTypeConverter());
+        cs.addConverter(new SpELMapToStringTypeConverter());
+        setTypeConverter(new StandardTypeConverter(cs));
     }
 
     private void extractFromResponse(Exchange exchange) {
@@ -98,7 +110,8 @@ public class SpELExchangeEvaluationContext extends StandardEvaluationContext {
         try {
             params = new SpELMap<>(URLParamUtil.getParams(new URIFactory(), exchange, ERROR));
         } catch (Exception e) {
-            log.warn("Error parsing query parameters: {}", e.getMessage());
+            // Details are logged in URLParamUtil.getParams
+            log.info("Error parsing query parameters");
         }
         this.request = new SpELMessageWrapper(exchange.getRequest());
     }

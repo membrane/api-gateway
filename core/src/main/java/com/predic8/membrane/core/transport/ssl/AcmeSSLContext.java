@@ -62,7 +62,7 @@ public class AcmeSSLContext extends SSLContext {
         initAndSchedule();
     }
 
-    private String[] computeHostList(String[] hostsWantedByRule, String hostsRequestedForCertificate) {
+    public static String[] computeHostList(String[] hostsWantedByRule, String hostsRequestedForCertificate) {
         if (hostsRequestedForCertificate == null)
             return hostsWantedByRule;
         String[] cs = hostsRequestedForCertificate.split(" +");
@@ -77,7 +77,7 @@ public class AcmeSSLContext extends SSLContext {
         return cs;
     }
 
-    private boolean hostMatches(String host, String certificateHost) {
+    private static boolean hostMatches(String host, String certificateHost) {
         if (host.equals(certificateHost))
             return true;
         if (certificateHost.startsWith("*.") && host.endsWith(certificateHost.substring(2)) && host.length() >= certificateHost.length() && host.codePointAt(host.length() - certificateHost.length() + 1) == TLS_CERTIFICATE_UNKNOWN && isHostname(host.substring(0, host.length() - certificateHost.length() + 1)))
@@ -88,7 +88,7 @@ public class AcmeSSLContext extends SSLContext {
     /**
      * Note that we not only allow digits, letters and hyphens, but also the asterisk, as this will translate to a hostname pattern.
      */
-    private boolean isHostname(String expr) {
+    private static boolean isHostname(String expr) {
         for (int i = 0; i < expr.length(); i++)
             if (! (Character.isDigit(expr.codePointAt(i)) || Character.isLetter(expr.codePointAt(i)) || (expr.codePointAt(i) == 45) || (expr.codePointAt(i) == 42)))
                 return false;

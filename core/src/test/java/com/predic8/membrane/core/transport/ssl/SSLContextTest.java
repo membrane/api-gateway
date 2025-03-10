@@ -13,12 +13,12 @@
    limitations under the License. */
 package com.predic8.membrane.core.transport.ssl;
 
+import com.google.common.io.Resources;
 import com.predic8.membrane.core.HttpRouter;
 import com.predic8.membrane.core.Router;
-import com.predic8.membrane.core.config.security.KeyStore;
-import com.predic8.membrane.core.config.security.SSLParser;
-import com.predic8.membrane.core.config.security.TrustStore;
-import org.apache.commons.lang3.NotImplementedException;
+import com.predic8.membrane.core.config.security.*;
+import com.predic8.membrane.core.resolver.ResolverMap;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -27,11 +27,15 @@ import org.junit.platform.commons.util.UnrecoverableExceptions;
 
 import javax.net.ssl.SSLHandshakeException;
 import java.io.BufferedReader;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
+import java.util.List;
 
+import static com.google.common.io.Resources.getResource;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -225,5 +229,35 @@ public class SSLContextTest {
 
 		if (ex[0] != null)
 			throw ex[0];
+	}
+
+	@Test
+	public void readPEMFiles() throws Exception {
+        testCombination(createPEMServerSSLContext(), createPEMClientSSLContext());
+	}
+
+	private static @NotNull StaticSSLContext createPEMServerSSLContext() throws IOException {
+		SSLParser sslParser = new SSLParser();
+		Key key = new Key();
+		Key.Private priv = new Key.Private();
+		priv.setContent(Resources.toString(getResource("ca/server-key.pem"), UTF_8));
+		key.setPrivate(priv);
+		Certificate cert = new Certificate();
+		cert.setContent(Resources.toString(getResource("ca/server.pem"), UTF_8));
+		key.setCertificates(List.of(cert));
+		sslParser.setKey(key);
+		StaticSSLContext ctx = new StaticSSLContext(sslParser, new ResolverMap(), "");
+		return ctx;
+	}
+
+	private static @NotNull StaticSSLContext createPEMClientSSLContext() throws IOException {
+		SSLParser sslParser = new SSLParser();
+		Trust trust = new Trust();
+		Certificate cert = new Certificate();
+		cert.setContent(Resources.toString(getResource("ca/ca.pem"), UTF_8));
+		trust.setCertificateList(List.of(cert));
+		sslParser.setTrust(trust);
+		StaticSSLContext ctx = new StaticSSLContext(sslParser, new ResolverMap(), "");
+		return ctx;
 	}
 }
