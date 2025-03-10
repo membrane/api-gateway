@@ -76,9 +76,7 @@ public class SessionAuthorizer {
         String username = extractUsername(userInfo, authSubject);
         String userIdPropertyFixed = authSubject.substring(0, 1).toUpperCase() + authSubject.substring(1);
 
-        Map<String, Object> userAttributes = session.get();
-        userAttributes.put("headerX-Authenticated-" + userIdPropertyFixed, username);
-
+        session.put("headerX-Authenticated-" + userIdPropertyFixed, username);
         session.authorize(username);
     }
 
