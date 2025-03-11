@@ -90,7 +90,7 @@ public class ElasticSearchExchangeStore extends AbstractPersistentExchangeStore 
         super.init(router);
     }
 
-    protected void sendToElasticSearch(List<AbstractExchangeSnapshot> exchanges) {
+    protected void writeToStore(List<AbstractExchangeSnapshot> exchanges) {
         String data = exchanges
                 .stream()
                 .map(exchange -> wrapForBulkOperationElasticSearch(index,getLocalMachineNameWithSuffix()+"-"+exchange.getId(),collectExchangeDataFrom(exchange)))
@@ -180,7 +180,7 @@ public class ElasticSearchExchangeStore extends AbstractPersistentExchangeStore 
     }
 
 
-    public AbstractExchangeSnapshot getFromElasticSearchById(long id) {
+    public AbstractExchangeSnapshot getFromStoreById(long id) {
         try {
             String body = """
                     {
@@ -236,7 +236,7 @@ public class ElasticSearchExchangeStore extends AbstractPersistentExchangeStore 
 
     @Override
     public AbstractExchange getExchangeById(long id) {
-        return getFromElasticSearchById(id).toAbstractExchange();
+        return getFromStoreById(id).toAbstractExchange();
     }
 
     @Override

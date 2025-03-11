@@ -27,9 +27,7 @@ import org.slf4j.*;
 import java.util.*;
 import java.util.concurrent.*;
 
-/**
- *
- */
+
 public abstract class AbstractPersistentExchangeStore extends AbstractExchangeStore {
 
     private static final Logger log = LoggerFactory.getLogger(AbstractPersistentExchangeStore.class);
@@ -37,7 +35,7 @@ public abstract class AbstractPersistentExchangeStore extends AbstractExchangeSt
     int updateIntervalMs = 1000;
 
     private final Map<Long, AbstractExchangeSnapshot> shortTermMemoryForBatching = new HashMap<>();
-    private final Cache<Long, AbstractExchangeSnapshot> cacheToWaitForElasticSearchIndex = CacheBuilder.newBuilder().expireAfterWrite(5, TimeUnit.SECONDS).build();
+    private final Cache<Long, AbstractExchangeSnapshot> cacheToWait = CacheBuilder.newBuilder().expireAfterWrite(5, TimeUnit.SECONDS).build();
 
     protected long startTime;
     boolean init = false;
@@ -56,11 +54,11 @@ public abstract class AbstractPersistentExchangeStore extends AbstractExchangeSt
                     List<AbstractExchangeSnapshot> exchanges;
                     synchronized (shortTermMemoryForBatching) {
                         exchanges = new ArrayList<>(shortTermMemoryForBatching.values());
-                        shortTermMemoryForBatching.values().forEach(exc -> cacheToWaitForElasticSearchIndex.put(exc.getId(), exc));
+                        shortTermMemoryForBatching.values().forEach(exc -> cacheToWait.put(exc.getId(), exc));
                         shortTermMemoryForBatching.clear();
                     }
                     if (!exchanges.isEmpty()) {
-                        sendToElasticSearch(exchanges);
+                        writeToStore(exchanges);
                     } else
                         Thread.sleep(updateIntervalMs);
                 } catch (InterruptedException e) {
@@ -74,7 +72,7 @@ public abstract class AbstractPersistentExchangeStore extends AbstractExchangeSt
         init = true;
     }
 
-    protected abstract void sendToElasticSearch(List<AbstractExchangeSnapshot> exchanges);
+    protected abstract void writeToStore(List<AbstractExchangeSnapshot> exchanges);
 
 
     @Override
@@ -82,21 +80,24 @@ public abstract class AbstractPersistentExchangeStore extends AbstractExchangeSt
         AbstractExchangeSnapshot excCopy;
         try {
             if (flow == Interceptor.Flow.REQUEST) {
-                excCopy = new DynamicAbstractExchangeSnapshot(exc, flow, this::addForElasticSearch, bodyExceedingMaxSizeStrategy, maxBodySize);
-                addForElasticSearch(excCopy);
+                excCopy = new DynamicAbstractExchangeSnapshot(exc, flow, this::addForStorage, bodyExceedingMaxSizeStrategy, maxBodySize);
+                addForStorage(excCopy);
             } else {
                 excCopy = getExchangeDtoById((int) exc.getId());
-                DynamicAbstractExchangeSnapshot.addObservers(exc, excCopy, this::addForElasticSearch, flow);
+                DynamicAbstractExchangeSnapshot.addObservers(exc, excCopy, this::addForStorage, flow);
                 excCopy = excCopy.updateFrom(exc, flow);
-                addForElasticSearch(excCopy);
+                addForStorage(excCopy);
             }
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }
 
-    // Rename addForStorage
-    protected void addForElasticSearch(AbstractExchangeSnapshot exc) {
+    /**
+     *
+     * @param exc To add to batch cache
+     */
+    protected void addForStorage(AbstractExchangeSnapshot exc) {
         synchronized (shortTermMemoryForBatching) {
             shortTermMemoryForBatching.put(exc.getId(), exc);
         }
@@ -109,13 +110,13 @@ public abstract class AbstractPersistentExchangeStore extends AbstractExchangeSt
         Long idBox = (long) id;
         if (shortTermMemoryForBatching.get(idBox) != null)
             return shortTermMemoryForBatching.get(idBox);
-        if (cacheToWaitForElasticSearchIndex.getIfPresent(idBox) != null)
-            return cacheToWaitForElasticSearchIndex.getIfPresent(idBox);
+        if (cacheToWait.getIfPresent(idBox) != null)
+            return cacheToWait.getIfPresent(idBox);
 
-        return getFromElasticSearchById(id);
+        return getFromStoreById(id);
     }
 
-    public abstract AbstractExchangeSnapshot getFromElasticSearchById(long id);
+    public abstract AbstractExchangeSnapshot getFromStoreById(long id);
 
 
     @Override
