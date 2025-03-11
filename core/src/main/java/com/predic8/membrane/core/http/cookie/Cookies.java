@@ -42,7 +42,7 @@ public final class Cookies {
 
 	// expected average number of cookies per request
 	public static final int INITIAL_SIZE=4;
-	ServerCookie[] scookies = new ServerCookie[INITIAL_SIZE];
+	ServerCookie[] scookies  = new ServerCookie[INITIAL_SIZE];
 	int cookieCount = 0;
 	boolean unprocessed = true;
 
