@@ -15,6 +15,9 @@ package com.predic8.membrane.core.http.cookie;
 
 import com.predic8.membrane.core.http.*;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import static java.nio.charset.StandardCharsets.*;
 
 /**
@@ -37,6 +40,20 @@ public class MimeHeaders {
 				return pos;
 			pos++;
 		}
+	}
+
+	public List<MessageBytes> findHeaders(String string) {
+		List<MessageBytes> result = new ArrayList<>();
+		int pos = 0;
+		while (true) {
+			pos = findHeader(string, pos);
+			if (pos < 0)
+				return result;
+			MessageBytes cookieValue = getValue(pos++);
+			if (cookieValue != null && !cookieValue.isNull())
+				result.add(cookieValue);
+		}
+
 	}
 
 	public MessageBytes getValue(int pos) {

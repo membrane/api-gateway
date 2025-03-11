@@ -42,9 +42,9 @@ public final class Cookies {
 
 	// expected average number of cookies per request
 	public static final int INITIAL_SIZE=4;
-	ServerCookie scookies[]=new ServerCookie[INITIAL_SIZE];
-	int cookieCount=0;
-	boolean unprocessed=true;
+	ServerCookie scookies[] = new ServerCookie[INITIAL_SIZE];
+	int cookieCount = 0;
+	boolean unprocessed = true;
 
 	MimeHeaders headers;
 
@@ -131,43 +131,33 @@ public final class Cookies {
 
 	/** Add all Cookie found in the headers of a request.
 	 */
-	public  void processCookies( MimeHeaders headers ) {
-		if( headers==null ) {
-			return;// nothing to process
+	public void processCookies(MimeHeaders headers) {
+		if (headers == null) {
+			return; // nothing to process
 		}
-		// process each "cookie" header
-		int pos=0;
-		while( pos>=0 ) {
-			// Cookie2: version ? not needed
-			pos=headers.findHeader( "Cookie", pos );
-			// no more cookie headers headers
-			if( pos<0 ) {
-				break;
-			}
-
-			MessageBytes cookieValue=headers.getValue( pos );
-			if( cookieValue==null || cookieValue.isNull() ) {
-				pos++;
-				continue;
-			}
-
-			/*
-            if( cookieValue.getType() != MessageBytes.T_BYTES ) {
-                Exception e = new Exception();
-                log.warn("Cookies: Parsing cookie as String. Expected bytes.",
-                        e);
-                cookieValue.toBytes();
-            }
-			 */
-			if(log.isDebugEnabled()) {
-				log.debug("Cookies: Parsing b[]: " + cookieValue.toString());
-			}
-			ByteChunk bc=cookieValue.getByteChunk();
-			processCookieHeader( bc.getBytes(),
-					bc.getOffset(),
-					bc.getLength());
-			pos++;// search from the next position
-		}
+		headers.findHeaders("Cookie").forEach(cookieValue -> processCookieHeader(cookieValue.getByteChunk()));
+//		// process each "cookie" header
+//		int pos = 0;
+//		while (pos >= 0) {
+//			// Cookie2: version ? not needed
+//			pos = headers.findHeader("Cookie", pos);
+//			// no more cookie headers headers
+//			if (pos < 0) {
+//				break;
+//			}
+//
+//			MessageBytes cookieValue = headers.getValue(pos);
+//			if (cookieValue == null || cookieValue.isNull()) {
+//				pos++;
+//				continue;
+//			}
+//
+//			if (log.isDebugEnabled()) {
+//				log.debug("Cookies: Parsing b[]: {}", cookieValue);
+//			}
+//            processCookieHeader(cookieValue.getByteChunk());
+//			pos++;// search from the next position
+//		}
 	}
 
 	// XXX will be refactored soon!
@@ -207,11 +197,7 @@ public final class Cookies {
             return false;
         }
 		 */
-		if (c == ' ' || c == '\t' || c == '\n' || c == '\r' || c == '\f') {
-			return true;
-		} else {
-			return false;
-		}
+        return c == ' ' || c == '\t' || c == '\n' || c == '\r' || c == '\f';
 	}
 
 	/**
@@ -231,7 +217,7 @@ public final class Cookies {
 		byte[] buffer = bc.getBuffer();
 
 		while (src < end) {
-			if (buffer[src] == '\\' && src < end && buffer[src+1]  == '"') {
+			if (buffer[src] == '\\' && buffer[src + 1] == '"') {
 				src++;
 			}
 			buffer[dest] = buffer[src];
@@ -247,7 +233,10 @@ public final class Cookies {
 	 * RFC 2965
 	 * JVK
 	 */
-	protected final void processCookieHeader(byte bytes[], int off, int len){
+	private void processCookieHeader(ByteChunk bc) {
+		byte[] bytes = bc.getBytes();
+		int off = bc.getOffset();
+		int len = bc.getLength();
 		if( len<=0 || bytes==null ) {
 			return;
 		}
@@ -470,8 +459,8 @@ public final class Cookies {
 	 * token, with no separator characters in between.
 	 * JVK
 	 */
-	private static final int getTokenEndPosition(byte bytes[], int off, int end,
-			int version, boolean isName){
+	private static int getTokenEndPosition(byte[] bytes, int off, int end,
+                                           int version, boolean isName){
 		int pos = off;
 		while (pos < end &&
 				(!CookieSupport.isHttpSeparator((char)bytes[pos]) ||
@@ -492,7 +481,7 @@ public final class Cookies {
 	 * the position of the end quote. This escapes anything after a '\' char
 	 * JVK RFC 2616
 	 */
-	private static final int getQuotedValueEndPosition(byte bytes[], int off, int end){
+	private static int getQuotedValueEndPosition(byte[] bytes, int off, int end){
 		int pos = off;
 		while (pos < end) {
 			if (bytes[pos] == '"') {
