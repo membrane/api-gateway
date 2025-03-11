@@ -256,8 +256,8 @@ public abstract class SSLContext implements SSLProvider {
             StringBuilder sb = new StringBuilder();
             sb.append("Certificate chain is not valid:\n");
             for (int i = 0; i < certs.size(); i++) {
-                sb.append("Cert " + String.format("%2d", i) + ": Subject: " + ((X509Certificate)certs.get(i)).getSubjectX500Principal().toString() + "\n");
-                sb.append("         Issuer: " + ((X509Certificate)certs.get(i)).getIssuerX500Principal().toString() + "\n");
+                sb.append("Cert %2d: Subject: %s\n".formatted(i, ((X509Certificate) certs.get(i)).getSubjectX500Principal()));
+                sb.append("         Issuer: %s\n".formatted(((X509Certificate) certs.get(i)).getIssuerX500Principal()));
             }
             log.warn(sb.toString());
         }
