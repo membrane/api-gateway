@@ -268,11 +268,9 @@ public class AcmeClient {
     }
 
     private static GeneralName @NotNull [] getGeneralNames(String[] hosts) {
-        GeneralName[] altNames = new GeneralName[hosts.length];
-        for (int i = 0; i < hosts.length; i++) {
-            altNames[i] = new GeneralName(GeneralName.dNSName, hosts[i]);
-        }
-        return altNames;
+        return Arrays.stream(hosts)
+                .map(host -> new GeneralName(GeneralName.dNSName, host))
+                .toArray(GeneralName[]::new);
     }
 
     private static PrivateKey getPrivateKeyFromString(String privateKey) throws NoSuchAlgorithmException, NoSuchProviderException, IOException, InvalidKeySpecException {
