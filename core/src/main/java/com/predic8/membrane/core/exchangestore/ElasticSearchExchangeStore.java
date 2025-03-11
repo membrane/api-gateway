@@ -15,14 +15,12 @@
 package com.predic8.membrane.core.exchangestore;
 
 import com.fasterxml.jackson.databind.*;
-import com.google.common.cache.*;
 import com.google.common.collect.*;
 import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.exchange.snapshots.*;
 import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.interceptor.administration.*;
 import com.predic8.membrane.core.interceptor.rest.*;
 import com.predic8.membrane.core.proxies.Proxy;
@@ -34,12 +32,11 @@ import org.slf4j.*;
 
 import java.io.*;
 import java.net.*;
-import java.nio.charset.*;
 import java.util.*;
-import java.util.concurrent.*;
 import java.util.stream.*;
 
 import static com.predic8.membrane.core.http.MimeType.*;
+import static java.nio.charset.StandardCharsets.*;
 import static java.util.stream.Collectors.*;
 
 /**
@@ -51,23 +48,17 @@ import static java.util.stream.Collectors.*;
  * @topic 4. Monitoring, Logging and Statistics
  */
 @MCElement(name="elasticSearchExchangeStore")
-public class ElasticSearchExchangeStore extends AbstractExchangeStore {
+public class ElasticSearchExchangeStore extends AbstractPersistentExchangeStore {
 
-    HttpClient client;
-    static Logger log = LoggerFactory.getLogger(ElasticSearchExchangeStore.class);
-    int updateIntervalMs = 1000;
-    private final Map<Long,AbstractExchangeSnapshot> shortTermMemoryForBatching = new HashMap<>();
-    Cache<Long,AbstractExchangeSnapshot> cacheToWaitForElasticSearchIndex = CacheBuilder.newBuilder().expireAfterWrite(5, TimeUnit.SECONDS).build();
-    Thread updateJob;
+    private HttpClient client;
+    private static final Logger log = LoggerFactory.getLogger(ElasticSearchExchangeStore.class);
+
     String index = "membrane";
     ObjectMapper mapper;
 
     String location = "http://localhost:9200";
     private String documentPrefix;
-    private long startTime;
-    boolean init = false;
-    private int maxBodySize = 100000;
-    private BodyCollectingMessageObserver.Strategy bodyExceedingMaxSizeStrategy = BodyCollectingMessageObserver.Strategy.TRUNCATE;
+
     ImmutableMap<String, String> queryToElasticMap = ImmutableMap.<String, String>builder().putAll(Stream.of(new String[][] {
             {"method", "request.method.keyword"},
             {"server", "server.keyword" },
@@ -84,7 +75,7 @@ public class ElasticSearchExchangeStore extends AbstractExchangeStore {
 
     @Override
     public void init(Router router) {
-        super.init(router);
+
         if(client == null)
             client = router.getHttpClientFactory().createClient(null);
         if(mapper == null)
@@ -93,49 +84,32 @@ public class ElasticSearchExchangeStore extends AbstractExchangeStore {
         if(documentPrefix == null)
             documentPrefix = getLocalHostname();
         documentPrefix = documentPrefix.toLowerCase();
-        startTime = System.nanoTime();
-
 
         this.setUpIndex();
 
-        updateJob = new Thread(() -> {
-            while(true) {
-                try {
-                    List<AbstractExchangeSnapshot> exchanges;
-                    synchronized (shortTermMemoryForBatching){
-                        exchanges = new ArrayList<>(shortTermMemoryForBatching.values());
-                        shortTermMemoryForBatching.values().forEach(exc -> cacheToWaitForElasticSearchIndex.put(exc.getId(),exc));
-                        shortTermMemoryForBatching.clear();
-                    }
-                    if(!exchanges.isEmpty()){
-                        sendToElasticSearch(exchanges);
-                    }
-                    else
-                        Thread.sleep(updateIntervalMs);
-                } catch (InterruptedException e) {
-                    break;
-                } catch(Exception e){
-                    throw new RuntimeException(e);
-                }
-            }
-        });
-        updateJob.start();
-        init = true;
+        super.init(router);
     }
 
-    private void sendToElasticSearch(List<AbstractExchangeSnapshot> exchanges) throws Exception {
+    protected void sendToElasticSearch(List<AbstractExchangeSnapshot> exchanges) {
         String data = exchanges
                 .stream()
                 .map(exchange -> wrapForBulkOperationElasticSearch(index,getLocalMachineNameWithSuffix()+"-"+exchange.getId(),collectExchangeDataFrom(exchange)))
                 .collect(joining());
 
-        Exchange elasticSearchExc = new Request.Builder()
-                .post(location + "/_bulk")
-                .header("Content-Type","application/x-ndjson")
-                .body(data)
-                .buildExchange();
+        try {
+            Exchange elasticSearchExc = new Request.Builder()
+                    .post(location + "/_bulk")
+                    .header("Content-Type","application/x-ndjson")
+                    .body(data)
+                    .buildExchange();
 
-        client.call(elasticSearchExc);
+            client.call(elasticSearchExc);
+
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+
+
     }
 
     private static String getLocalHostname() {
@@ -143,7 +117,7 @@ public class ElasticSearchExchangeStore extends AbstractExchangeStore {
             return InetAddress.getLocalHost().getHostName();
         } catch (UnknownHostException e) {
             try {
-                return IOUtils.toString(Runtime.getRuntime().exec("hostname").getInputStream());
+                return IOUtils.toString(Runtime.getRuntime().exec(new String[]{"hostname"}).getInputStream(), UTF_8);
             } catch (IOException e1) {
                 log.error("Unable to get hostname of localhost.", e1);
                 return "localhost";
@@ -159,30 +133,6 @@ public class ElasticSearchExchangeStore extends AbstractExchangeStore {
         return "{ \"index\" : { \"_index\" : \"" + index + "\", \"_id\" : \""+id+"\" } }\n" + value + "\n";
     }
 
-    @Override
-    public void snap(AbstractExchange exc, Interceptor.Flow flow) {
-        AbstractExchangeSnapshot excCopy;
-        try {
-            if (flow == Interceptor.Flow.REQUEST) {
-                excCopy = new DynamicAbstractExchangeSnapshot(exc, flow, this::addForElasticSearch, bodyExceedingMaxSizeStrategy, maxBodySize);
-                addForElasticSearch(excCopy);
-            }
-            else {
-                excCopy = getExchangeDtoById((int) exc.getId());
-                DynamicAbstractExchangeSnapshot.addObservers(exc,excCopy,this::addForElasticSearch, flow);
-                excCopy = excCopy.updateFrom(exc, flow);
-                addForElasticSearch(excCopy);
-            }
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    private void addForElasticSearch(AbstractExchangeSnapshot exc) {
-        synchronized (shortTermMemoryForBatching){
-            shortTermMemoryForBatching.put(exc.getId(),exc);
-        }
-    }
 
     @SuppressWarnings({"unchecked"})
     private String collectExchangeDataFrom(AbstractExchangeSnapshot exc) {
@@ -191,25 +141,9 @@ public class ElasticSearchExchangeStore extends AbstractExchangeStore {
             value.put("issuer",documentPrefix);
             return mapper.writeValueAsString(value);
         } catch (IOException e) {
-            log.error("While collecting data from %s", exc.getRequest().getUri(), e);
+            log.error("While collecting data from {}", exc.getRequest().getUri(), e);
             return "";
         }
-    }
-
-    @Override
-    public synchronized void collect(ExchangeCollector collector) {
-        try {
-            ((PropertyValueCollector) collector).getProxies().addAll(getPropertyValueArray("rule.name.keyword"));
-            ((PropertyValueCollector) collector).getMethods().addAll(getPropertyValueArray("request.method.keyword"));
-            ((PropertyValueCollector) collector).getClients().addAll(getPropertyValueArray("remoteAddr.keyword"));
-            ((PropertyValueCollector) collector).getReqContentTypes().addAll(getPropertyValueArray("request.header.Content-Type.keyword"));
-            ((PropertyValueCollector) collector).getStatusCodes().addAll(getPropertyValueArray("response.statusCode").stream().map(Integer::parseInt).collect(Collectors.toSet()));
-            ((PropertyValueCollector) collector).getRespContentTypes().addAll(getPropertyValueArray("response.header.Content-Type.keyword"));
-            ((PropertyValueCollector) collector).getServers().addAll(getPropertyValueArray("server.keyword"));
-        } catch (Exception e) {
-            log.error("", e);
-        }
-
     }
 
     private JSONObject getFilterDistinctQueryJson(String field){
@@ -245,17 +179,8 @@ public class ElasticSearchExchangeStore extends AbstractExchangeStore {
                 .map(q -> ((JSONObject) q).get("key").toString()).collect(Collectors.toList());
     }
 
-    public AbstractExchangeSnapshot getExchangeDtoById(int id){
-        Long idBox = (long) id;
-        if(shortTermMemoryForBatching.get(idBox) != null)
-            return shortTermMemoryForBatching.get(idBox);
-        if(cacheToWaitForElasticSearchIndex.getIfPresent(idBox) != null)
-            return cacheToWaitForElasticSearchIndex.getIfPresent(idBox);
 
-        return getFromElasticSearchById(id);
-    }
-
-    private AbstractExchangeSnapshot getFromElasticSearchById(long id) {
+    public AbstractExchangeSnapshot getFromElasticSearchById(long id) {
         try {
             String body = """
                     {
@@ -442,18 +367,6 @@ public class ElasticSearchExchangeStore extends AbstractExchangeStore {
     }
 
     @Override
-    public StatisticCollector getStatistics(RuleKey ruleKey) {
-        StatisticCollector statistics = new StatisticCollector(false);
-        List<AbstractExchange> exchangesList = Arrays.asList(getExchanges(ruleKey));
-        if (exchangesList == null || exchangesList.isEmpty())
-            return statistics;
-
-        for (AbstractExchange abstractExchange : exchangesList) statistics.collectFrom(abstractExchange);
-
-        return statistics;
-    }
-
-    @Override
     public Object[] getAllExchanges() {
         return getAllExchangesAsList().toArray();
     }
@@ -565,6 +478,21 @@ public class ElasticSearchExchangeStore extends AbstractExchangeStore {
 
     }
 
+    @Override
+    public synchronized void collect(ExchangeCollector collector) {
+        try {
+            ((PropertyValueCollector) collector).getProxies().addAll(getPropertyValueArray("rule.name.keyword"));
+            ((PropertyValueCollector) collector).getMethods().addAll(getPropertyValueArray("request.method.keyword"));
+            ((PropertyValueCollector) collector).getClients().addAll(getPropertyValueArray("remoteAddr.keyword"));
+            ((PropertyValueCollector) collector).getReqContentTypes().addAll(getPropertyValueArray("request.header.Content-Type.keyword"));
+            ((PropertyValueCollector) collector).getStatusCodes().addAll(getPropertyValueArray("response.statusCode").stream().map(Integer::parseInt).collect(Collectors.toSet()));
+            ((PropertyValueCollector) collector).getRespContentTypes().addAll(getPropertyValueArray("response.header.Content-Type.keyword"));
+            ((PropertyValueCollector) collector).getServers().addAll(getPropertyValueArray("server.keyword"));
+        } catch (Exception e) {
+            log.error("", e);
+        }
+    }
+
     private void setUpIndex() {
         try {
             log.info("Setting up elastic search index");
@@ -591,7 +519,7 @@ public class ElasticSearchExchangeStore extends AbstractExchangeStore {
             }
 
             log.info("Setting up elastic search mappings");
-            String mapping = IOUtils.toString(getClass().getClassLoader().getResourceAsStream("com.predic8.membrane.core.exchangestore/mapping.json"), StandardCharsets.UTF_8);
+            String mapping = IOUtils.toString(getClass().getClassLoader().getResourceAsStream("com.predic8.membrane.core.exchangestore/mapping.json"), UTF_8);
 
             Exchange currentMappingExc = client.call(new Request.Builder().get(getElasticSearchIndexPath() + "_mapping")
                     .buildExchange());
@@ -641,15 +569,6 @@ public class ElasticSearchExchangeStore extends AbstractExchangeStore {
         this.client = client;
     }
 
-    public int getUpdateIntervalMs() {
-        return updateIntervalMs;
-    }
-
-    @MCAttribute
-    public void setUpdateIntervalMs(int updateIntervalMs) {
-        this.updateIntervalMs = updateIntervalMs;
-    }
-
     public String getLocation() {
         return location;
     }
@@ -689,28 +608,4 @@ public class ElasticSearchExchangeStore extends AbstractExchangeStore {
         this.documentPrefix = documentPrefix;
     }
 
-    public int getMaxBodySize() {
-        return maxBodySize;
-    }
-
-    /**
-     * @default 100000
-     */
-    @MCAttribute
-    public void setMaxBodySize(int maxBodySize) {
-        this.maxBodySize = maxBodySize;
-    }
-
-    public BodyCollectingMessageObserver.Strategy getBodyExceedingMaxSizeStrategy() {
-        return bodyExceedingMaxSizeStrategy;
-    }
-
-    /**
-     * @description The strategy to use (TRUNCATE or ERROR) when a HTTP message body is larger than the <tt>maxBodySize</tt>.
-     * @default TRUNCATE
-     */
-    @MCAttribute
-    public void setBodyExceedingMaxSizeStrategy(BodyCollectingMessageObserver.Strategy bodyExceedingMaxSizeStrategy) {
-        this.bodyExceedingMaxSizeStrategy = bodyExceedingMaxSizeStrategy;
-    }
 }
