@@ -75,9 +75,9 @@ public class SessionAuthorizer {
         this.skip = skip;
     }
 
-    public void authorizeSession(Map<String, Object> userInfo, Session session, AuthorizationService auth) {
-        if (!userInfo.containsKey(auth.getSubject()))
-            throw new RuntimeException("User object does not contain " + auth.getSubject() + " key.");
+    public void authorizeSession(Map<String, Object> userInfo, Session session, String authSubject) {
+        String username = extractUsername(userInfo, authSubject);
+        String userIdPropertyFixed = authSubject.substring(0, 1).toUpperCase() + authSubject.substring(1);
 
         session.get().put("headerX-Authenticated-" + convertFirstLetterToUpper(auth.getSubject()), getUsername(userInfo, auth));
 
@@ -90,6 +90,12 @@ public class SessionAuthorizer {
 
     private static @NotNull String convertFirstLetterToUpper(String subject) {
         return subject.substring(0, 1).toUpperCase() + subject.substring(1);
+    }
+
+    private static String extractUsername(Map<String, Object> userInfo, String authSubject) {
+        if (!userInfo.containsKey(authSubject))
+            throw new RuntimeException("User object does not contain " + authSubject + " key.");
+        return (String) userInfo.get(authSubject);
     }
 
     public JwtAuthInterceptor getJwtAuthInterceptor() {
@@ -135,7 +141,7 @@ public class SessionAuthorizer {
 
         oauth2Answer.setUserinfo(json2);
 
-        authorizeSession(json2, session, auth);
+        authorizeSession(json2, session, auth.getSubject());
 
         session.put(OAUTH2_ANSWER, oauth2Answer.serialize());
     }
@@ -150,7 +156,7 @@ public class SessionAuthorizer {
         if (getJwtAuthInterceptor().handleJwt(exc, token) != Outcome.CONTINUE)
             throw new RuntimeException("Access token is not a JWT.");
 
-        authorizeSession((Map<String, Object>) exc.getProperty("jwt"), session, auth);
+        authorizeSession((Map<String, Object>) exc.getProperty("jwt"), session, auth.getSubject());
 
     }
 }

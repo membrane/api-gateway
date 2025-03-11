@@ -46,89 +46,89 @@ public class ByteStreamLogging {
         log.info(sb.toString());
     }
 
-    public static OutputStream wrapConnectionOutputStream(Connection con, String name) {
+    public static OutputStream wrapConnectionOutputStream(OutputStream out, String name) {
         return new OutputStream() {
             @Override
             public void write(int b) throws IOException {
                 log(name, b);
-                con.out.write(b);
+                out.write(b);
             }
 
             @Override
             public void write(byte[] b) throws IOException {
                 log(name, b);
-                con.out.write(b);
+                out.write(b);
             }
 
             @Override
             public void write(byte[] b, int off, int len) throws IOException {
                 log(name, b,off,len);
-                con.out.write(b, off, len);
+                out.write(b, off, len);
             }
 
             @Override
             public void close() throws IOException {
-                con.out.close();
+                out.close();
             }
 
             @Override
             public void flush() throws IOException {
-                con.out.flush();
+                out.flush();
             }
         };
     }
 
-    public static InputStream wrapConnectionInputStream(Connection con, String name) {
+    public static InputStream wrapConnectionInputStream(InputStream in, String name) {
         return new InputStream() {
             @Override
             public int read() throws IOException {
-                int res = con.in.read();
+                int res = in.read();
                 log(name, res);
                 return res;
             }
 
             @Override
             public int read(byte[] b) throws IOException {
-                int res = con.in.read(b);
+                int res = in.read(b);
                 log(name, b);
                 return res;
             }
 
             @Override
             public int read(byte[] b, int off, int len) throws IOException {
-                int res = con.in.read(b, off, len);
+                int res = in.read(b, off, len);
                 log(name, b,off,len);
                 return res;
             }
 
             @Override
             public void close() throws IOException {
-                con.in.close();
+                in.close();
             }
 
             @Override
             public boolean markSupported() {
-                return con.in.markSupported();
+                return in.markSupported();
             }
 
             @Override
             public int available() throws IOException {
-                return con.in.available();
+                return in.available();
             }
 
             @Override
             public long skip(long n) throws IOException {
-                return con.in.skip(n);
+                return in.skip(n);
             }
 
             @Override
             public synchronized void mark(int readlimit) {
-                con.in.mark(readlimit);
+                in.mark(readlimit);
             }
 
             @Override
             public synchronized void reset() throws IOException {
-                con.in.reset();
+                in.reset();
             }
         };
     }

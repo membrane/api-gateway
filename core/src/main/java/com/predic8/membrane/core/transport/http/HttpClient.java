@@ -200,6 +200,8 @@ public class HttpClient implements AutoCloseable {
         if (exc.getDestinations().isEmpty())
             throw new IllegalStateException("List of destinations is empty. Please specify at least one destination.");
 
+        denyUnsupportedUpgrades(exc);
+
         HttpClientStatusEventBus httpClientStatusEventBus = (HttpClientStatusEventBus) exc.getProperty(HttpClientStatusEventBus.EXCHANGE_PROPERTY_NAME);
 
         int counter = 0;
@@ -351,6 +353,17 @@ public class HttpClient implements AutoCloseable {
             }
         }
         throw exception;
+    }
+
+    private void denyUnsupportedUpgrades(Exchange exc) throws ProtocolUpgradeDeniedException {
+        String upgradeProtocol = getUpgradeProtocol(exc.getRequest());
+        if (upgradeProtocol == null)
+            return;
+        if (upgradeProtocol.equalsIgnoreCase("websocket") && exc.getProperty(ALLOW_WEBSOCKET) == TRUE)
+            return;
+        if (upgradeProtocol.equalsIgnoreCase("tcp") && exc.getProperty(ALLOW_TCP) == TRUE)
+            return;
+        throw new ProtocolUpgradeDeniedException(upgradeProtocol);
     }
 
     private static @org.jetbrains.annotations.Nullable Connection getConnection(Exchange exc, int counter, HostColonPort target) throws IOException {
@@ -526,6 +539,15 @@ public class HttpClient implements AutoCloseable {
                 log.debug("", e);
             }
         }
+    }
+
+    private String getUpgradeProtocol(Request req) {
+        if (!req.getHeader().getValues(new HeaderName(Header.CONNECTION)).stream()
+                .flatMap(v -> Arrays.stream(v.getValue().toLowerCase().split(",")))
+                .map(v -> v.trim().toLowerCase())
+                .anyMatch(v -> v.equals("upgrade")))
+            return null;
+        return req.getHeader().getFirstValue("Upgrade");
     }
 
     private boolean isUpgradeToResponse(Response res, String protocol) {
