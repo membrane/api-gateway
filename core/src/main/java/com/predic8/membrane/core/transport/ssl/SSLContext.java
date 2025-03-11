@@ -69,13 +69,12 @@ public abstract class SSLContext implements SSLProvider {
             }
         } else {
             // use all default ciphers except those using RC4
-            String supportedCiphers[] = sslc.getSocketFactory().getDefaultCipherSuites();
-            ArrayList<String> ciphers = new ArrayList<>(supportedCiphers.length);
-            for (String cipher : supportedCiphers)
-                if (!cipher.contains("_RC4_") && !cipher.contains("_3DES_"))
-                    ciphers.add(cipher);
-            sortCiphers(ciphers);
-            this.ciphers = ciphers.toArray(new String[ciphers.size()]);
+            ciphers = Arrays.stream(sslc.getSocketFactory().getDefaultCipherSuites())
+                    .filter(cipher -> (!cipher.contains("_RC4_") && !cipher.contains("_3DES_")))
+                    .map(CipherInfo::new)
+                    .sorted((ci1, ci2) -> ci2.points - ci1.points)
+                    .map(cipherInfo -> cipherInfo.cipher)
+                    .toArray(String[]::new);
         }
 
         if (sslParser.getProtocols() != null) {
@@ -115,15 +114,11 @@ public abstract class SSLContext implements SSLProvider {
         if (getProtocols() != null) {
             serviceSocket.setEnabledProtocols(getProtocols());
         } else {
-            String[] protocols = serviceSocket.getEnabledProtocols();
-            Set<String> set = new HashSet<>();
-            for (String protocol : protocols) {
-                if (protocol.equals("SSLv3") || protocol.equals("SSLv2Hello")) {
-                    continue;
-                }
-                set.add(protocol);
-            }
-            serviceSocket.setEnabledProtocols(set.toArray(new String[0]));
+            serviceSocket.setEnabledProtocols(
+                    Arrays.stream(serviceSocket.getEnabledProtocols())
+                            .filter(protocol -> !(protocol.equals("SSLv3") || protocol.equals("SSLv2Hello")))
+                            .toArray(String[]::new)
+            );
         }
         serviceSocket.setWantClientAuth(isWantClientAuth());
         serviceSocket.setNeedClientAuth(isNeedClientAuth());
@@ -160,18 +155,6 @@ public abstract class SSLContext implements SSLProvider {
 
     boolean isWantClientAuth() {
         return wantClientAuth;
-    }
-
-    private void sortCiphers(ArrayList<String> ciphers) {
-        ArrayList<SSLContext.CipherInfo> cipherInfos = new ArrayList<>(ciphers.size());
-
-        for (String cipher : ciphers)
-            cipherInfos.add(new SSLContext.CipherInfo(cipher));
-
-        cipherInfos.sort((cipher1, cipher2) -> cipher2.points - cipher1.points);
-
-        for (int i = 0; i < ciphers.size(); i++)
-            ciphers.set(i, cipherInfos.get(i).cipher);
     }
 
     public String constructHostNamePattern() {
