@@ -80,7 +80,7 @@ public class HttpClient implements AutoCloseable {
 
     private static final String[] HTTP2_PROTOCOLS = new String[]{"h2"};
     private static final String[] HTTP1_PROTOCOLS = new String[]{};
-   
+
     public HttpClient() {
         this(null, null);
     }
