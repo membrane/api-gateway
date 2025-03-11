@@ -18,12 +18,14 @@ import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.http.cookie.*;
 import com.predic8.membrane.core.util.*;
 import jakarta.mail.internet.*;
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.*;
 
 import java.io.*;
 import java.security.*;
 import java.util.*;
 import java.util.regex.*;
+import java.util.stream.Collectors;
 
 import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.util.HttpUtil.readLine;
@@ -169,20 +171,17 @@ public class Header {
 	}
 
 	public List<HeaderField> getValues(HeaderName headerName) {
-		List<HeaderField> res = new ArrayList<>();
-		for (HeaderField headerField : fields) {
-			if (headerField.getHeaderName().equals(headerName))
-				res.add(headerField);
-		}
-		return res;
+		return fields.stream()
+				.filter(field -> field.getHeaderName().equals(headerName))
+				.toList();
 	}
 
 	public String getFirstValue(String name) {
-		for (HeaderField field : fields) {
-			if (field.getHeaderName().hasName(name))
-				return field.getValue();
-		}
-		return null;
+        return fields.stream()
+				.filter(field -> field.getHeaderName().hasName(name))
+				.findFirst()
+				.map(HeaderField::getValue)
+				.orElse(null);
 	}
 
 	public String getFirstValue(HeaderName name) {
@@ -207,14 +206,10 @@ public class Header {
 	 * converting it to char-by-char, we use ISO-8859-1 for output here.
 	 */
 	public void write(OutputStream out) throws IOException {
-		StringBuilder buffer = new StringBuilder();
-		for (HeaderField field : fields) {
-			String name = field.getHeaderName().toString();
-			String value = field.getValue();
-			buffer.append(name).append(": ").append(value)
-			.append(Constants.CRLF);
-		}
-		out.write(buffer.toString().getBytes(ISO_8859_1));
+		byte[] bytes = fields.stream()
+				.map(f -> "%s: %s%s".formatted(f.getHeaderName(), f.getValue(), Constants.CRLF))
+				.collect(Collectors.joining()).getBytes(ISO_8859_1);
+		out.write(bytes);
 	}
 
 	public void setValue(String name, String value) {
@@ -340,11 +335,9 @@ public class Header {
 
 	@Override
 	public String toString() {
-		StringBuilder res = new StringBuilder();
-		for (HeaderField field : fields) {
-			res.append(field.toString());
-		}
-		return res.toString();
+		return fields.stream()
+				.map(HeaderField::toString)
+				.collect(Collectors.joining());
 	}
 
 	public void setAuthorization(String user, String password) {
@@ -403,10 +396,9 @@ public class Header {
 	}
 
 	public int estimateHeapSize() {
-		int size = 10;
-		for (HeaderField hf : fields)
-			size += 4 + hf.estimateHeapSize();
-		return size;
+		return 10 + fields.stream()
+				.map(f -> 4 + f.estimateHeapSize())
+				.reduce(0, Integer::sum);
 	}
 
 	public int getNumberOf(String headerName) {
@@ -423,18 +415,21 @@ public class Header {
 	 * @return the extracted parameter value of the "Keep-Alive" header
 	 */
 	public static long parseKeepAliveHeader(String keepAliveHeaderValue, String paramName) {
-		Pattern p;
-		if (paramName.equals(TIMEOUT)) {
-			p = timeoutPattern;
-		} else if (paramName.equals(MAX)) {
-			p = maxPattern;
-		} else {
-			throw new InvalidParameterException("paramName must be one of Header.TIMEOUT and .MAX .");
-		}
+		Pattern p = choosePattern(paramName);
 		Matcher m = p.matcher(keepAliveHeaderValue);
 		if (!m.find())
 			return -1;
 		return Long.parseLong(m.group(1));
+	}
+
+	private static @NotNull Pattern choosePattern(String paramName) {
+		if (paramName.equals(TIMEOUT)) {
+			return timeoutPattern;
+		} else if (paramName.equals(MAX)) {
+			return maxPattern;
+		} else {
+			throw new InvalidParameterException("paramName must be one of Header.TIMEOUT and .MAX .");
+		}
 	}
 
 	public void clear() {
@@ -457,15 +452,11 @@ public class Header {
 	}
 
 	public String getNormalizedValue(String headerName) {
-		StringBuilder sb = new StringBuilder();
-		for (HeaderField headerField : fields) {
-			if (headerField.getHeaderName().hasName(headerName)) {
-				if (!sb.isEmpty())
-					sb.append(",");
-				sb.append(headerField.getValue());
-			}
-		}
-		return sb.isEmpty() ? null : sb.toString();
+		var s = fields.stream()
+				.filter(f -> f.getHeaderName().hasName(headerName))
+				.map(HeaderField::getValue)
+				.collect(Collectors.joining(","));
+		return s.isEmpty() ? null : s;
 	}
 
 	public boolean isBinaryContentType() {
