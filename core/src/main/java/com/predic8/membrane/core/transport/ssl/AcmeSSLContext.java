@@ -179,13 +179,7 @@ public class AcmeSSLContext extends SSLContext {
     }
 
     private String constructHostsString() {
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < hosts.length; i++) {
-            if (i > 0)
-                sb.append(",");
-            sb.append(hosts[i]);
-        }
-        return sb.toString();
+        return String.join(",", hosts);
     }
 
     private void initAndSchedule() {
