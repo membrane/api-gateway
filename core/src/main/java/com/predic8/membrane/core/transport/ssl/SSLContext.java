@@ -237,7 +237,7 @@ public abstract class SSLContext implements SSLProvider {
             return 0;
         }
 
-        private boolean supportsPFS(String cipher2) {
+        private boolean supportsPFS(String cipher) {
             // see https://en.wikipedia.org/wiki/Forward_secrecy#Protocols
             return cipher.contains("_DHE_RSA_") || cipher.contains("_DHE_DSS_") || cipher.contains("_ECDHE_RSA_") || cipher.contains("_ECDHE_ECDSA_");
         }
