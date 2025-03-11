@@ -36,8 +36,15 @@ import static java.nio.charset.StandardCharsets.*;
  */
 public class SSLContextCollection implements SSLProvider {
 
-	public static final byte[] ALERT_UNRECOGNIZED_NAME = new byte[]{ 21 /* alert */, 3, 1 /* TLS 1.0 */, 0, 2 /* length: 2 bytes */,
-			2 /* fatal */, 112 /* unrecognized_name */ };
+	public static final byte[] ALERT_UNRECOGNIZED_NAME = new byte[]{
+			21 /* alert */,
+			3,
+			1 /* TLS 1.0 */,
+			0,
+			2 /* length: 2 bytes */,
+			2 /* fatal */,
+			112 /* unrecognized_name */
+	};
 	private static final Logger log = LoggerFactory.getLogger(SSLContextCollection.class.getName());
 
 	public static class Builder {

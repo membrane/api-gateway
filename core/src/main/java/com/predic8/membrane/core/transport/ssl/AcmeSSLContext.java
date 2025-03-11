@@ -162,8 +162,15 @@ public class AcmeSSLContext extends SSLContext {
 
     private void check(Socket socket) throws IOException {
         if (getSocketFactory() == null) {
-            byte[] certificate_unknown = { 21 /* alert */, 3, 1 /* TLS 1.0 */, 0, 2 /* length: 2 bytes */,
-                    2 /* fatal */, TLS_CERTIFICATE_UNKNOWN /* certificate_unknown */ };
+            byte[] certificate_unknown = {
+                    21 /* alert */,
+                    3,
+                    1 /* TLS 1.0 */,
+                    0,
+                    2 /* length: 2 bytes */,
+                    2 /* fatal */,
+                    TLS_CERTIFICATE_UNKNOWN /* certificate_unknown */
+            };
 
             try (socket) {
                 socket.getOutputStream().write(certificate_unknown);
@@ -188,7 +195,7 @@ public class AcmeSSLContext extends SSLContext {
         try {
             tryLoad();
         } catch (Exception e) {
-            log.info("ACME: do not yet have a certificate for " + constructHostsString(), e);
+            log.info("ACME: do not yet have a certificate for {}", constructHostsString(), e);
         }
         schedule();
     }
@@ -199,11 +206,11 @@ public class AcmeSSLContext extends SSLContext {
         String keyS = client.getKey(hosts);
         String certsS = client.getCertificates(hosts);
         if (keyS == null) {
-            log.debug("ACME: do not yet have a key for " + constructHostsString());
+            log.debug("ACME: do not yet have a key for {}", constructHostsString());
             return;
         }
         if (certsS == null) {
-            log.debug("ACME: do not yet have a certificate for " + constructHostsString());
+            log.debug("ACME: do not yet have a certificate for {}", constructHostsString());
             return;
         }
         AcmeKeyCert existing = this.keyCert;
@@ -239,7 +246,7 @@ public class AcmeSSLContext extends SSLContext {
         init(parser, sslc);
 
         this.keyCert = new AcmeKeyCert(keyS, certsS, validFrom, validUntil, sslc);
-        log.info("ACME: installed key and certificate for " + constructHostsString());
+        log.info("ACME: installed key and certificate for {}", constructHostsString());
     }
 
     private static Key getKey(String keyS) throws IOException {

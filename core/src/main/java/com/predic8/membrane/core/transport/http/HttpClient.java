@@ -215,7 +215,7 @@ public class HttpClient implements AutoCloseable {
             try {
                 Connection con = getConnection(exc, counter, target);
                 boolean usingHttp2 = false;
-                
+
                 SSLProvider sslProvider = getOutboundSSLProvider(exc, target);
                 Http2Client h2c = null;
                 String sniServerName = getSNIServerName(exc);
@@ -235,11 +235,11 @@ public class HttpClient implements AutoCloseable {
                         exc.setTargetConnection(con);
                     con.setKeepAttachedToExchange(usingHttp2 || exc.getRequest().isBindTargetConnectionToIncoming());
                 }
-                
+
                 if (proxy != null && sslProvider == null)
                     // if we use a proxy for a plain HTTP (=non-HTTPS) request, attach the proxy credentials.
                     exc.getRequest().getHeader().setProxyAuthorization(proxy.getCredentials());
-                
+
                 Response response;
 
                 if (usingHttp2) {
