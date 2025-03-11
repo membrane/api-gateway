@@ -67,11 +67,7 @@ public class AcmeSSLContext extends SSLContext {
             return hostsWantedByRule;
         String[] cs = hostsRequestedForCertificate.split(" +");
         for (String h : hostsWantedByRule) {
-            boolean fulfilled = false;
-            for (String c : cs)
-                if (hostMatches(h, c))
-                    fulfilled = true;
-            if (!fulfilled)
+            if (Arrays.stream(cs).noneMatch(c -> hostMatches(h, c)))
                 throw new RuntimeException("Hostname " + h + " seems not to be fulfillable by a certificate issued for " + hostsRequestedForCertificate);
         }
         return cs;
