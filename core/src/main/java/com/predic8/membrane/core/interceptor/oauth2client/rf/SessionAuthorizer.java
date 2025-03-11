@@ -76,10 +76,8 @@ public class SessionAuthorizer {
     }
 
     public void authorizeSession(Map<String, Object> userInfo, Session session, String authSubject) {
-        String username = extractUsername(userInfo, authSubject);
-        String userIdPropertyFixed = authSubject.substring(0, 1).toUpperCase() + authSubject.substring(1);
 
-        session.get().put("headerX-Authenticated-" + convertFirstLetterToUpper(auth.getSubject()), getUsername(userInfo, auth));
+        session.put("headerX-Authenticated-" + convertFirstLetterToUpper(authSubject), getUsername(userInfo, auth));
 
         session.authorize(getUsername(userInfo, auth));
     }
@@ -90,12 +88,6 @@ public class SessionAuthorizer {
 
     private static @NotNull String convertFirstLetterToUpper(String subject) {
         return subject.substring(0, 1).toUpperCase() + subject.substring(1);
-    }
-
-    private static String extractUsername(Map<String, Object> userInfo, String authSubject) {
-        if (!userInfo.containsKey(authSubject))
-            throw new RuntimeException("User object does not contain " + authSubject + " key.");
-        return (String) userInfo.get(authSubject);
     }
 
     public JwtAuthInterceptor getJwtAuthInterceptor() {
