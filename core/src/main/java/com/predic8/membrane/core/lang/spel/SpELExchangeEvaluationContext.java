@@ -39,6 +39,7 @@ public class SpELExchangeEvaluationContext extends StandardEvaluationContext {
 
     private final Exchange exchange;
     private final Message message;
+    private final SpELBody body; // Is used by SpEL in scripts
 
     // Avoid the common plural error
     private final SpELLablePropertyAware headers;
@@ -55,7 +56,7 @@ public class SpELExchangeEvaluationContext extends StandardEvaluationContext {
 
     private int statusCode;
 
-    private String scopes;
+    private String scopes; // Is used by SpEL in scripts
 
     private SpELMessageWrapper request;
     private SpELMessageWrapper response;
@@ -67,6 +68,7 @@ public class SpELExchangeEvaluationContext extends StandardEvaluationContext {
         this.exchange = exchange;
         this.flow = flow;
         this.message = exchange.getMessage(flow);
+        this.body = new SpELBody(message);
 
         pathParam = new SpELPathParameters(exchange);
         properties = new SpELProperties(exchange.getProperties());
@@ -88,6 +90,7 @@ public class SpELExchangeEvaluationContext extends StandardEvaluationContext {
         GenericConversionService cs = new DefaultConversionService();
         cs.addConverter(new SpELHeaderToStringTypeConverter());
         cs.addConverter(new SpELMapToStringTypeConverter());
+        cs.addConverter(new SpELBodyToStringTypeConverter());
         setTypeConverter(new StandardTypeConverter(cs));
     }
 
