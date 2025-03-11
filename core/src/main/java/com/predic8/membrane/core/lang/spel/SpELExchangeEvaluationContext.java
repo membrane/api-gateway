@@ -157,6 +157,8 @@ public class SpELExchangeEvaluationContext extends StandardEvaluationContext {
         return message;
     }
 
+    public SpELBody getBody() { return body; }
+
     public String getPath() {
         return path;
     }
