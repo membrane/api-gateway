@@ -80,9 +80,11 @@ public class AcmeSSLContext extends SSLContext {
     private static boolean hostMatches(String host, String certificateHost) {
         if (host.equals(certificateHost))
             return true;
-        if (certificateHost.startsWith("*.") && host.endsWith(certificateHost.substring(2)) && host.length() >= certificateHost.length() && host.codePointAt(host.length() - certificateHost.length() + 1) == TLS_CERTIFICATE_UNKNOWN && isHostname(host.substring(0, host.length() - certificateHost.length() + 1)))
-            return true;
-        return false;
+        return certificateHost.startsWith("*.")
+                && host.endsWith(certificateHost.substring(2))
+                && host.length() >= certificateHost.length()
+                && host.codePointAt(host.length() - certificateHost.length() + 1) == TLS_CERTIFICATE_UNKNOWN
+                && isHostname(host.substring(0, host.length() - certificateHost.length() + 1));
     }
 
     /**
