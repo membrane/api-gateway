@@ -83,12 +83,9 @@ public class AdminApiInterceptor extends AbstractInterceptor {
                     gen.writeBooleanField("active", p.isActive());
                     if (!p.isActive())
                         gen.writeStringField("error", p.getErrorState());
-                    gen.writeNumberField("listenPort", p.getKey().getPort());
-                    gen.writeStringField("virtualHost", p.getKey().getHost());
                     gen.writeStringField("method", p.getKey().getMethod());
-                    gen.writeStringField("path", p.getKey().getPath());
-                    gen.writeStringField("targetHost", p.getTargetHost());
-                    gen.writeNumberField("targetPort", p.getTargetPort());
+                    gen.writeStringField("proxy", generateProxy(p));
+                    gen.writeStringField("target", generateTarget(p));
                     gen.writeNumberField("count", p.getStatisticCollector().getCount());
                     gen.writeEndObject();
                 } catch (IOException e) {
@@ -102,6 +99,14 @@ public class AdminApiInterceptor extends AbstractInterceptor {
             throw new RuntimeException(e);
         }
         return RETURN;
+    }
+
+    static String generateProxy(AbstractServiceProxy p) {
+        return p.getHost() + ":" + p.getPort() + (p.getPath().getValue() != null ? p.getPath().getValue() : "/");
+    }
+
+    static String generateTarget(AbstractServiceProxy p) {
+        return (p.getTargetHost() == null) ?  p.getTargetURL() : p.getTargetHost() + ":" + p.getTargetPort();
     }
 
     private Outcome handleCalls(Exchange exc) {
