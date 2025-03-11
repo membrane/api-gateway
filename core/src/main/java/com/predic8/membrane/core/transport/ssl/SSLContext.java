@@ -29,8 +29,6 @@ import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.net.Socket;
 import java.security.InvalidParameterException;
 import java.security.Key;
@@ -65,9 +63,9 @@ public abstract class SSLContext implements SSLProvider {
                 if (!supportedCiphers.contains(cipher))
                     throw new InvalidParameterException("Unknown cipher " + cipher);
                 if (cipher.contains("_RC4_"))
-                    log.warn("Cipher " + cipher + " uses RC4, which is deprecated.");
+                    log.warn("Cipher {} uses RC4, which is deprecated.", cipher);
                 if (cipher.contains("_3DES_"))
-                    log.warn("Cipher " + cipher + " uses 3DES, which is deprecated.");
+                    log.warn("Cipher {} uses 3DES, which is deprecated.", cipher);
             }
         } else {
             // use all default ciphers except those using RC4
@@ -148,7 +146,6 @@ public abstract class SSLContext implements SSLProvider {
         sslParameters.setUseCipherSuitesOrder(true);
     }
 
-
     String[] getCiphers() {
         return ciphers;
     }
@@ -178,22 +175,14 @@ public abstract class SSLContext implements SSLProvider {
     }
 
     public String constructHostNamePattern() {
-        StringBuilder sb = null;
         List<String> dnsNames = getDnsNames();
         if (dnsNames == null)
             throw new RuntimeException("Could not extract DNS names from the first key's certificate in " + getLocation());
-        for (String dnsName : dnsNames) {
-            if (sb == null)
-                sb = new StringBuilder();
-            else
-                sb.append(" ");
-            sb.append(dnsName);
-        }
-        if (sb == null) {
-            log.warn("Could not retrieve DNS hostname for certificate, using '*': " + getLocation());
+        if (dnsNames.isEmpty()) {
+            log.warn("Could not retrieve DNS hostname for certificate, using '*': {}", getLocation());
             return "*";
         }
-        return sb.toString();
+        return String.join(" ", dnsNames);
     }
 
     private static class CipherInfo {
