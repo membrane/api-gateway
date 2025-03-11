@@ -191,18 +191,21 @@ public abstract class SSLContext implements SSLProvider {
 
         public CipherInfo(String cipher) {
             this.cipher = cipher;
+            this.points = calculatePoints(cipher);
+        }
+
+        private int calculatePoints(String cipher) {
             int points = 0;
             if (supportsPFS(cipher))
-                points = 100;
-            points += getAESStrength(cipher) * 5;
-            points += getSHAStrength(cipher) * 2;
-            points += getChaChaPoly1305Strength(cipher) * 25;
+                points += 100;
             if (supportsAESGCM(cipher))
                 points += 15;
             if (!supportsAESCBC(cipher))
                 points += 150;
-
-            this.points = points;
+            points += getAESStrength(cipher) * 5;
+            points += getSHAStrength(cipher) * 2;
+            points += getChaChaPoly1305Strength(cipher) * 25;
+            return points;
         }
 
         private boolean supportsAESGCM(String cipher) {
