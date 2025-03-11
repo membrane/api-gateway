@@ -291,45 +291,39 @@ public abstract class SSLContext implements SSLProvider {
     }
 
     protected void checkKeyMatchesCert(Key key, List<Certificate> certs) {
-        if (key instanceof RSAPrivateCrtKey && certs.get(0).getPublicKey() instanceof RSAPublicKey) {
-            RSAPrivateCrtKey privkey = (RSAPrivateCrtKey)key;
-            RSAPublicKey pubkey = (RSAPublicKey) certs.get(0).getPublicKey();
-            if (!(privkey.getModulus().equals(pubkey.getModulus()) && privkey.getPublicExponent().equals(pubkey.getPublicExponent())))
+        if (key instanceof RSAPrivateCrtKey privKey && certs.getFirst().getPublicKey() instanceof RSAPublicKey pubKey) {
+            if (!(privKey.getModulus().equals(pubKey.getModulus()) && privKey.getPublicExponent().equals(pubKey.getPublicExponent())))
                 throw new RuntimeException("Certificate does not fit to key: " + getLocation());
         }
 
-        if (key instanceof ECPrivateKey && certs.get(0).getPublicKey() instanceof ECPublicKey) {
-            ECPrivateKey privkey = (ECPrivateKey) key;
-            ECPublicKey pubkey = (ECPublicKey) certs.get(0).getPublicKey();
+        if (key instanceof ECPrivateKey privKey && certs.getFirst().getPublicKey() instanceof ECPublicKey pubKey) {
 
-            if (pubkey.getParams().getCurve().getField() instanceof ECFieldFp) {
-                ECFieldFp pubfield = (ECFieldFp) pubkey.getParams().getCurve().getField();
-                if (!(privkey.getParams().getCurve().getField() instanceof ECFieldFp))
+            if (pubKey.getParams().getCurve().getField() instanceof ECFieldFp pubField) {
+                if (!(privKey.getParams().getCurve().getField() instanceof ECFieldFp privField))
                     throw new RuntimeException("Elliptic curve differs between private key and public key (ECFieldFp vs ECFieldF2m).");
-                ECFieldFp privfield = (ECFieldFp) privkey.getParams().getCurve().getField();
-                if (!pubfield.getP().equals(privfield.getP()))
+                if (!pubField.getP().equals(privField.getP()))
                     throw new RuntimeException("Elliptic curve differs between private key and public key (p).");
             }
-            // "pubkey.getParams().getCurve().getField() instanceof ECFieldF2m" is not handled
+            // "pubKey.getParams().getCurve().getField() instanceof ECFieldF2m" is not handled
 
-            if (!pubkey.getParams().getCurve().getA().equals(privkey.getParams().getCurve().getA()))
+            if (!pubKey.getParams().getCurve().getA().equals(privKey.getParams().getCurve().getA()))
                 throw new RuntimeException("Elliptic curve differs between private key and public key (a).");
-            if (!pubkey.getParams().getCurve().getB().equals(privkey.getParams().getCurve().getB()))
+            if (!pubKey.getParams().getCurve().getB().equals(privKey.getParams().getCurve().getB()))
                 throw new RuntimeException("Elliptic curve differs between private key and public key (b).");
-            if (!pubkey.getParams().getGenerator().equals(privkey.getParams().getGenerator())) // = G = (x,y)
+            if (!pubKey.getParams().getGenerator().equals(privKey.getParams().getGenerator())) // = G = (x,y)
                 throw new RuntimeException("Elliptic curve differs between private key and public key (generator).");
-            if (!pubkey.getParams().getOrder().equals(privkey.getParams().getOrder())) // = n
+            if (!pubKey.getParams().getOrder().equals(privKey.getParams().getOrder())) // = n
                 throw new RuntimeException("Elliptic curve differs between private key and public key (order).");
-            if (pubkey.getParams().getCofactor() != privkey.getParams().getCofactor()) // = h
+            if (pubKey.getParams().getCofactor() != privKey.getParams().getCofactor()) // = h
                 throw new RuntimeException("Elliptic curve differs between private key and public key (cofactor).");
 
             ECMultiplier ecMultiplier = new FixedPointCombMultiplier();
 
-            ECPoint correspondingPubKey = ecMultiplier.multiply(((BCECPublicKey) pubkey).getParameters().getG(), privkey.getS()).normalize();
+            ECPoint correspondingPubKey = ecMultiplier.multiply(((BCECPublicKey) pubKey).getParameters().getG(), privKey.getS()).normalize();
 
             // check 'pubKey = privKey * generator'
-            if (!correspondingPubKey.getAffineXCoord().toBigInteger().equals(pubkey.getW().getAffineX()) ||
-                !correspondingPubKey.getAffineYCoord().toBigInteger().equals(pubkey.getW().getAffineY()))
+            if (!correspondingPubKey.getAffineXCoord().toBigInteger().equals(pubKey.getW().getAffineX()) ||
+                !correspondingPubKey.getAffineYCoord().toBigInteger().equals(pubKey.getW().getAffineY()))
                 throw new RuntimeException("Elliptic curve private key does not match public key.");
         }
     }
