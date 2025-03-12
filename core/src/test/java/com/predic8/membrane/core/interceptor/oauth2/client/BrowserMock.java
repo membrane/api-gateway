@@ -14,14 +14,12 @@
 package com.predic8.membrane.core.interceptor.oauth2.client;
 
 import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.HeaderField;
-import com.predic8.membrane.core.http.HeaderName;
-import com.predic8.membrane.core.http.MimeType;
-import com.predic8.membrane.core.http.Request;
+import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.resolver.ResolverMap;
 import com.predic8.membrane.core.transport.http.HttpClient;
 import com.predic8.membrane.core.transport.http.client.ConnectionConfiguration;
 import com.predic8.membrane.core.transport.http.client.HttpClientConfiguration;
+import org.jetbrains.annotations.NotNull;
 import org.jose4j.jwt.JwtClaims;
 import org.jose4j.jwt.consumer.InvalidJwtException;
 import org.jose4j.jwt.consumer.JwtConsumer;
@@ -30,17 +28,15 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.MalformedURLException;
+import java.net.URI;
 import java.net.URISyntaxException;
-import java.net.URL;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 import static java.net.URLEncoder.encode;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -49,163 +45,217 @@ import static org.apache.commons.text.StringEscapeUtils.unescapeXml;
 
 public class BrowserMock implements Function<Exchange, Exchange> {
 
+    public static final Pattern INPUT_PATTERN = Pattern.compile("<input type=\"hidden\" name=\"([-a-zA-Z0-9&;_]*)\" value=\"([-a-zA-Z ._=0-9&/;]*)\"/>");
+    public static final Pattern FORM_PATTERN = Pattern.compile("<form method=\"post\" action=\"([a-z:/0-9]*)\"");
     Logger LOG = LoggerFactory.getLogger(BrowserMock.class);
     Map<String, Map<String, String>> cookie = new HashMap<>();
-    Function<Exchange, Exchange> cookieHandlingHttpClient = cookieManager(httpClient());
-    Function<Exchange, Exchange> cookieHandlingRedirectingHttpClient = handleFormPost(handleRedirect(cookieHandlingHttpClient));
+    Function<Exchange, Exchange> cookieHandlingHttpClient = exc -> cookeManager(httpClient(), exc);
+    Function<Exchange, Exchange> cookieHandlingRedirectingHttpClient = outerExc -> handleFormPost(innerExc -> handleRedirect(cookieHandlingHttpClient, innerExc, new ArrayList<>()), outerExc);
 
-    private Function<Exchange, Exchange> handleFormPost(Function<Exchange, Exchange> consumer) {
-        return exc -> {
-            while (true) {
-                exc = consumer.apply(exc);
+    private @NotNull Exchange handleFormPost(Function<Exchange, Exchange> redirectHandler, Exchange exc) {
+        exc = redirectHandler.apply(exc);
 
-                int statusCode = exc.getResponse().getStatusCode();
-                String response = exc.getResponse().getBodyAsStringDecoded();
-                if (statusCode != 200)
-                    break;
-                if (!response.contains("javascript:document.forms[0].submit()"))
-                    break;
-                System.out.println(response);
-                // this is a self-submitting form
-                Matcher m1 = Pattern.compile("<form method=\"post\" action=\"([a-z:/0-9]*)\"").matcher(response);
-                if (!m1.find()) {
-                    LOG.warn("did not find form action");
-                    break;
-                }
-                String target = m1.group(1);
-                System.out.println("target = " + target);
-                if (!target.contains(":")) {
-                    target = ResolverMap.combine(exc.getDestinations().get(0), target);
-                    System.out.println("target = " + target);
-                }
-                // the regex is just good enough for the tests
-                Matcher m2 = Pattern.compile("<input type=\"hidden\" name=\"([-a-zA-Z0-9&;_]*)\" value=\"([-a-zA-Z ._=0-9&/;_]*)\"/>").matcher(response);
-                Map<String, String> parameters = new HashMap<>();
-                while (m2.find()) {
-                    parameters.put(unescapeXml(m2.group(1)), unescapeXml(m2.group(2)));
-                }
-                System.out.println("parameters = " + parameters);
-
-                try {
-                    exc = new Request.Builder().post(target).contentType(MimeType.APPLICATION_X_WWW_FORM_URLENCODED)
-                            .body(parameters.entrySet().stream().map(e ->
-                                    encode(e.getKey(), UTF_8) + "=" + encode(e.getValue(), UTF_8)).collect(joining("&")))
-                            .buildExchange();
-                } catch (URISyntaxException e) {
-                    throw new RuntimeException(e);
-                }
-
-                LOG.debug("posting form to " + exc.getDestinations().get(0));
-            }
+        int statusCode = exc.getResponse().getStatusCode();
+        String response = exc.getResponse().getBodyAsStringDecoded();
+        if (statusCode != 200)
             return exc;
-        };
+        if (!response.contains("javascript:document.forms[0].submit()"))
+            return exc;
+        System.out.println(response);
+        // this is a self-submitting form
+        Matcher m1 = FORM_PATTERN.matcher(response);
+        if (!m1.find()) {
+            LOG.warn("did not find form action");
+            return exc;
+        }
+        String target = m1.group(1);
+        System.out.println("target = " + target);
+        String firstDestination = exc.getDestinations().getFirst();
+        if (!target.contains(":")) {
+            target = ResolverMap.combine(firstDestination, target);
+            System.out.println("target = " + target);
+        }
+
+        LOG.debug("posting form to {}", firstDestination);
+        try {
+            return handleFormPost(
+                    redirectHandler,
+                    new Request.Builder()
+                            .post(target)
+                            .contentType(MimeType.APPLICATION_X_WWW_FORM_URLENCODED)
+                            .body(encodeMapAsBody(gatherInputFields(response)))
+                            .buildExchange()
+            );
+        } catch (URISyntaxException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private static @NotNull Map<String, String> gatherInputFields(String response) {
+        // the regex is just good enough for the tests
+        Matcher m2 = INPUT_PATTERN.matcher(response);
+        Map<String, String> parameters = new HashMap<>();
+        while (m2.find()) {
+            parameters.put(unescapeXml(m2.group(1)), unescapeXml(m2.group(2)));
+        }
+        System.out.println("parameters = " + parameters);
+        return parameters;
+    }
+
+    private static @NotNull String encodeMapAsBody(Map<String, String> parameters) {
+        return parameters.entrySet().stream().map(BrowserMock::encodeMapEntry).collect(joining("&"));
+    }
+
+    private static @NotNull String encodeMapEntry(Map.Entry<String, String> e) {
+        return encode(e.getKey(), UTF_8) + "=" + encode(e.getValue(), UTF_8);
     }
 
     // this implementation does NOT implement a correct cookie manager, but fulfills this test's requirements
-    private Function<Exchange, Exchange> cookieManager(Function<Exchange, Exchange> consumer) {
-        return exc -> {
-            String domain = null;
-            try {
-                domain = new URL(exc.getDestinations().get(0)).getHost();
-            } catch (MalformedURLException e) {
-                throw new RuntimeException(e);
-            }
-            Map<String, String> cookies;
-            synchronized (cookie) {
-                cookies = cookie.get(domain);
-            }
-            if (cookies != null)
-                synchronized (cookies) {
-                    Exchange finalExc = exc;
-                    cookies.forEach((k, v) -> finalExc.getRequest().getHeader().add("Cookie", k + "=" + v));
-                }
-            exc = consumer.apply(exc);
 
-            for (HeaderField headerField : exc.getResponse().getHeader().getValues(new HeaderName("Set-Cookie"))) {
-                LOG.debug("from " + domain + " got Set-Cookie: " + headerField.getValue());
+    private @NotNull Exchange cookeManager(Function<Exchange, Exchange> consumer, final Exchange exc) {
+        String domain = getDomain(exc);
+        Map<String, String> cookies = getCookies1(domain);
+        addCookiesToExchange(exc, cookies);
+        var result = consumer.apply(exc);
 
-                String value = headerField.getValue().substring(0, headerField.getValue().indexOf(";"));
-                boolean expired = headerField.getValue().contains("01 Jan 1970");
+        for (HeaderField setCookieField : result.getResponse().getHeader().getValues(new HeaderName("Set-Cookie"))) {
+            cookies = manipulateCookies(setCookieField, domain, cookies);
+        }
 
-                String key = value.substring(0, value.indexOf("=")).trim();
-                value = value.substring(value.indexOf("=") + 1).trim();
-
-                if (cookies == null) {
-                    cookies = new HashMap<>();
-                    synchronized (cookie) {
-                        // recheck whether there are still no cookies yet
-                        Map<String, String> cookies2 = cookie.get(domain);
-                        if (cookies2 != null)
-                            cookies = cookies2;
-                        else
-                            cookie.put(domain, cookies);
-                    }
-                }
-
-                if (expired) {
-                    LOG.debug("removing cookie.");
-                    synchronized (cookies) {
-                        cookies.remove(key);
-                    }
-                } else {
-                    try {
-                        JwtConsumer jwtc = new JwtConsumerBuilder()
-                                .setSkipSignatureVerification()
-                                .build();
-
-                        String v = headerField.getValue();
-                        JwtClaims claims = jwtc.processToClaims(v.substring(0, v.indexOf("=")));
-                        for (Map.Entry<String, Object> entry : claims.getClaimsMap().entrySet()) {
-                            LOG.debug(entry.getKey() + ": " + entry.getValue());
-                        }
-                    } catch (InvalidJwtException e) {
-                        //ignore
-                    }
-
-                    synchronized (cookies) {
-                        cookies.put(key, value);
-                    }
-                }
-            }
-
-            return exc;
-        };
+        return result;
     }
 
-    private Function<Exchange, Exchange> handleRedirect(Function<Exchange, Exchange> consumer) {
-        return exc -> {
-            ArrayList<Object> urls = new ArrayList<>();
-            while (true) {
-                if (urls.size() == 19)
-                    throw new RuntimeException("Too many redirects: " + urls);
-                exc = consumer.apply(exc);
+    private static void addCookiesToExchange(Exchange exc, Map<String, String> cookies) {
+        if (cookies != null)
+            cookies.forEach(addCookieToExchange(exc));
+    }
 
-                int statusCode = exc.getResponse().getStatusCode();
-                String location = exc.getResponse().getHeader().getFirstValue("Location");
-                if (statusCode < 300 || statusCode >= 400 || location == null)
-                    break;
-                if (!location.contains("://"))
-                    location = ResolverMap.combine(exc.getDestinations().get(0), location);
-                urls.add(location);
-                try {
-                    exc = new Request.Builder().get(location).buildExchange();
-                } catch (URISyntaxException e) {
-                    throw new RuntimeException(e);
-                }
+    private static @NotNull BiConsumer<String, String> addCookieToExchange(Exchange exc) {
+        return (k, v) -> exc.getRequest().getHeader().add("Cookie", k + "=" + v);
+    }
 
-                LOG.debug("redirected to " + exc.getDestinations().get(0));
-            }
+    private Map<String, String> getCookies1(String domain) {
+        return cookie.get(domain);
+    }
+
+    private @NotNull Map<String, String> manipulateCookies(final HeaderField headerField, final String domain, Map<String, String> cookies) {
+        LOG.debug("from {} got Set-Cookie: {}", domain, headerField.getValue());
+
+        KeyValue result = getKeyValue(headerField);
+
+        if (cookies == null) {
+            cookies = getDefaultCookies(domain);
+        }
+
+        if (isExpired(headerField)) {
+            LOG.debug("removing cookie.");
+            cookies.remove(result.key());
+            return cookies;
+        }
+        logJwtClaims(headerField);
+
+        cookies.put(result.key(), result.value());
+        return cookies;
+    }
+
+    private void logJwtClaims(HeaderField headerField) {
+        try {
+            String v = headerField.getValue();
+            JwtClaims claims = nonVerifyingJwtConsumer().processToClaims(v.substring(0, v.indexOf("=")));
+            claims.getClaimsMap().forEach((key, value) -> LOG.debug("{}: {}", key, value));
+        } catch (InvalidJwtException e) {
+            //ignore
+        }
+    }
+
+    private static JwtConsumer nonVerifyingJwtConsumer() {
+        return new JwtConsumerBuilder()
+                .setSkipSignatureVerification()
+                .build();
+    }
+
+    private static @NotNull KeyValue getKeyValue(HeaderField headerField) {
+        String headerValue = headerField.getValue().substring(0, headerField.getValue().indexOf(";"));
+
+        return new KeyValue(
+                getHeaderName(headerValue),
+                getHeaderValue(headerValue)
+        );
+    }
+
+    private static @NotNull String getHeaderValue(String headerValue) {
+        return headerValue.substring(headerValue.indexOf("=") + 1).trim();
+    }
+
+    private static @NotNull String getHeaderName(String headerValue) {
+        return headerValue.substring(0, headerValue.indexOf("=")).trim();
+    }
+
+    private record KeyValue(String key, String value) {
+    }
+
+    private @NotNull Map<String, String> getDefaultCookies(String domain) {
+        Map<String, String> cookies;
+        cookies = new HashMap<>();
+        synchronized (cookie) {
+            // recheck whether there are still no cookies yet
+            Map<String, String> cookies2 = cookie.get(domain);
+            if (cookies2 != null)
+                cookies = cookies2;
+            else
+                cookie.put(domain, cookies);
+        }
+        return cookies;
+    }
+
+    private static String getDomain(Exchange exc) {
+        try {
+            return new URI(exc.getDestinations().getFirst()).toURL().getHost();
+        } catch (MalformedURLException | URISyntaxException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private static boolean isExpired(HeaderField headerField) {
+        return headerField.getValue().contains("01 Jan 1970");
+    }
+
+    private @NotNull Exchange handleRedirect(Function<Exchange, Exchange> consumer, Exchange exc, ArrayList<Object> urls) {
+        if (urls.size() == 19)
+            throw new RuntimeException("Too many redirects: " + urls);
+        exc = consumer.apply(exc);
+
+        String location = extractRedirectLocation(exc.getResponse());
+        if (location == null)
             return exc;
-        };
+        String nextDestination = exc.getDestinations().getFirst();
+        if (!location.contains("://"))
+            location = ResolverMap.combine(nextDestination, location);
+        LOG.debug("redirected to {}", nextDestination);
+        try {
+            return handleRedirect(consumer, new Request.Builder().get(location).buildExchange(), append(urls, location));
+        } catch (URISyntaxException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private static <T> ArrayList<T> append(final ArrayList<T> list, T element) {
+        var result = new ArrayList<>(list);
+        result.add(element);
+        return result;
+    }
+
+    private String extractRedirectLocation(Response response) {
+        int statusCode = response.getStatusCode();
+        String location = response.getHeader().getFirstValue("Location");
+        if (statusCode < 300 || statusCode >= 400 || location == null)
+            return null;
+        return location;
     }
 
     private Function<Exchange, Exchange> httpClient() {
-        HttpClientConfiguration configuration = new HttpClientConfiguration();
-        ConnectionConfiguration connection = new ConnectionConfiguration();
-        connection.setTimeout(10000);
-        configuration.setConnection(connection);
         return new Function<>() {
-            HttpClient httpClient = new HttpClient(configuration);
+            final HttpClient httpClient = new HttpClient(getHttpClientConfiguration());
 
             @Override
             public Exchange apply(Exchange exchange) {
@@ -218,13 +268,29 @@ public class BrowserMock implements Function<Exchange, Exchange> {
         };
     }
 
+    private static @NotNull HttpClientConfiguration getHttpClientConfiguration() {
+        HttpClientConfiguration configuration = new HttpClientConfiguration();
+        ConnectionConfiguration connection = new ConnectionConfiguration();
+        connection.setTimeout(10000);
+        configuration.setConnection(connection);
+        return configuration;
+    }
+
     @Override
     public Exchange apply(Exchange exchange) {
         return cookieHandlingRedirectingHttpClient.apply(exchange);
     }
 
+    public Exchange apply(Request.Builder rb) {
+        return apply(rb.buildExchange());
+    }
+
     public Exchange applyWithoutRedirect(Exchange exchange) {
         return cookieHandlingHttpClient.apply(exchange);
+    }
+
+    public Exchange applyWithoutRedirect(Request.Builder rb) {
+        return applyWithoutRedirect(rb.buildExchange());
     }
 
     public void clearCookies() {

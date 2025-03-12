@@ -67,7 +67,7 @@ public class MockAuthorizationServer {
     }
 
     public void init() throws IOException, JoseException {
-        baseServerAddr = "http://localhost:" + getServerPort() + "/" + tc.tenantId.toString();
+        baseServerAddr = "http://localhost:" + getServerPort() + "/" + tc.tenantId;
         issuer = baseServerAddr + "/v2.0/";
         createKey();
 
@@ -111,47 +111,46 @@ public class MockAuthorizationServer {
             @Override
             public Outcome handleRequest(Exchange exc) {
                 try {
-                    return handleRequestInternal(exc);
+                    exc.setResponse(handleRequestInternal(exc));
+                    return Outcome.RETURN;
                 } catch (Exception e) {
                     throw new RuntimeException(e);
                 }
             }
 
-            public synchronized Outcome handleRequestInternal(Exchange exc) throws Exception {
+            public synchronized Response handleRequestInternal(Exchange exc) throws Exception {
                 Map<String, String> params = URLParamUtil.getParams(new URIFactory(), exc, URLParamUtil.DuplicateKeyOrInvalidFormStrategy.ERROR);
-                if (exc.getRequestURI().endsWith("/.well-known/openid-configuration")) {
-                    exc.setResponse(Response.ok(wkf.getWellknown()).build());
-                } else if (exc.getRequestURI().equalsIgnoreCase(baseUri + "/discovery/v2.0/keys")) {
+                String requestURI = exc.getRequestURI();
+                if (requestURI.endsWith("/.well-known/openid-configuration")) {
+                    return Response.ok(wkf.getWellknown()).build();
+                } else if (requestURI.equalsIgnoreCase(baseUri + "/discovery/v2.0/keys")) {
                     String payload = "{ \"keys\":  [" + jwksResponse + "]}";
-                    exc.setResponse(Response.ok(payload).contentType(APPLICATION_JSON).build());
-                } else if (exc.getRequestURI().contains("/authorize?")) {
+                    return Response.ok(payload).contentType(APPLICATION_JSON).build();
+                } else if (requestURI.contains("/authorize?")) {
                     if (abortSignIn.get()) {
-                        exc.setResponse(Response.internalServerError().body("signin aborted").build());
-                        return Outcome.RETURN;
+                        return Response.internalServerError().body("signin aborted").build();
                     }
                     if (returnOAuth2ErrorFromSignIn.get()) {
-                        exc.setResponse(Response.redirect(tc.getClientAddress() + "/oauth2callback?error=DEMO-123&error_description=This+is+a+demo+error.&state=" + params.get("state"), false).build());
+                        return Response.redirect(tc.getClientAddress() + "/oauth2callback?error=DEMO-123&error_description=This+is+a+demo+error.&state=" + params.get("state"), false).build();
                     } else {
                         onLogin.run();
-                        exc.setResponse(Response.redirect(tc.getClientAddress() + "/oauth2callback?code=1234&state=" + params.get("state"), false).build());
+                        return Response.redirect(tc.getClientAddress() + "/oauth2callback?code=1234&state=" + params.get("state"), false).build();
                     }
-                } else if (exc.getRequestURI().contains("/token")) {
-                    handleTokenRequest(flowId, exc);
-                } else if (exc.getRequestURI().contains("/logout")) {
+                } else if (requestURI.contains("/token")) {
+                    return handleTokenRequest(flowId, exc);
+                } else if (requestURI.contains("/logout")) {
                     onLogout.run();
-                    exc.setResponse(Response.redirect( params.get("post_logout_redirect_uri"), false).build());
+                    return Response.redirect( params.get("post_logout_redirect_uri"), false).build();
+                } else {
+                    return Response.notFound().build();
                 }
-
-                if (exc.getResponse() == null)
-                    exc.setResponse(Response.notFound().build());
-                return Outcome.RETURN;
             }
         });
 
         return sp;
     }
 
-    private void handleTokenRequest(String flowId, Exchange exc) throws Exception {
+    private Response handleTokenRequest(String flowId, Exchange exc) throws Exception {
         Map<String, String> params = URLParamUtil.getParams(new URIFactory(), exc, URLParamUtil.DuplicateKeyOrInvalidFormStrategy.ERROR);
         String grantType = params.get("grant_type");
         if (grantType.equals("authorization_code")) {
@@ -168,9 +167,10 @@ public class MockAuthorizationServer {
 
         assertEquals("Basic " + Base64.getEncoder().encodeToString(secret.getBytes(StandardCharsets.UTF_8)) , exc.getRequest().getHeader().getFirstValue("Authorization"));
 
-        exc.setResponse(Response.ok(om.writeValueAsString(
-                createTokenResponse(flowId, params)
-        )).contentType(APPLICATION_JSON).build());
+        return Response
+                .ok(om.writeValueAsString(createTokenResponse(flowId, params)))
+                .contentType(APPLICATION_JSON)
+                .build();
     }
 
     private @NotNull Map<String, Object> createTokenResponse(String flowId, Map<String, String> params) throws JoseException, JsonProcessingException {
@@ -181,35 +181,39 @@ public class MockAuthorizationServer {
         if (scope != null) {
             res.put("access_token", createToken(accessToken(flowId, scope.contains(tc.api1Id) ? tc.api1Id : tc.api2Id)));
             res.put("expires_in", expiresIn);
-            var expires = NumericDate.now();
-            expires.addSeconds(expiresIn);
-            res.put("expires_on", expires.getValueInMillis());
+            res.put("expires_on", expiresInMillis(expiresIn));
             res.put("resource", tc.api1Id);
             res.put("scope", "https://localhost/" + tc.api1Id + "/Read");
         } else {
             res.put("scope", "offline_access openid");
-        }
-        res.put("token_type", "Bearer");
-
-        var nbf = NumericDate.now();
-        nbf.setValue(nbf.getValue() - 60);
-        res.put("not_before", nbf);
-
-        if (scope == null) {
             res.put("refresh_token", new BigInteger(130, rand).toString(32));
             res.put("refresh_token_expires_in", 1209600);
-
             res.put("id_token", createToken(idToken(flowId)));
             res.put("id_token_expires_in", expiresIn);
         }
-
-        String profileInfo = om.writeValueAsString(createProfileInfo());
-
-        res.put("profile_info", Base64.getUrlEncoder().encodeToString(profileInfo.getBytes(StandardCharsets.UTF_8)));
+        res.put("token_type", "Bearer");
+        res.put("not_before", notBefore());
+        res.put("profile_info", urlEncode(createProfileInfo()));
         return res;
     }
 
-    private @NotNull HashMap<String, Object> createProfileInfo() {
+    private String urlEncode(Map<String, Object> map) throws JsonProcessingException {
+        return Base64.getUrlEncoder().encodeToString(om.writeValueAsString(map).getBytes(StandardCharsets.UTF_8));
+    }
+
+    private static @NotNull NumericDate notBefore() {
+        var nbf = NumericDate.now();
+        nbf.setValue(nbf.getValue() - 60);
+        return nbf;
+    }
+
+    private static long expiresInMillis(int seconds) {
+        var expires = NumericDate.now();
+        expires.addSeconds(seconds);
+        return expires.getValueInMillis();
+    }
+
+    private @NotNull Map<String, Object> createProfileInfo() {
         HashMap<String, Object> pi = new HashMap<>();
         pi.put("ver", "1.0");
         pi.put("tid", tc.tenantId);
