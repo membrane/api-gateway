@@ -11,18 +11,15 @@
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
    See the License for the specific language governing permissions and
    limitations under the License. */
-package com.predic8.membrane.examples.tests;
+package com.predic8.membrane.examples.withoutinternet;
 
 import com.predic8.membrane.examples.util.AbstractSampleMembraneStartStopTestcase;
-import io.restassured.RestAssured;
-import io.restassured.http.ContentType;
 import org.junit.jupiter.api.Test;
 
 import static io.restassured.RestAssured.given;
 import static io.restassured.http.ContentType.XML;
 import static org.hamcrest.Matchers.containsString;
 
-// TODO move to `withoutinternet` directory when pr #1631 is merged
 public class SecuredWsdlExampleTest extends AbstractSampleMembraneStartStopTestcase {
 
     @Override
