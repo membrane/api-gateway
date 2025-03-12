@@ -44,14 +44,14 @@
 	</licenses>
 
 	<scm>
-		<connection>scm:git:https://github.com/membrane/service-proxy/</connection>
+		<connection>scm:git:https://github.com/membrane/api-gateway/</connection>
 		<tag>HEAD</tag>
-		<url>https://github.com/membrane/service-proxy</url>
+		<url>https://github.com/membrane/api-gateway</url>
 	</scm>
 
 	<issueManagement>
 		<system>Github Issue Tracker</system>
-		<url>https://github.com/membrane/service-proxy/issues</url>
+		<url>https://github.com/membrane/api-gateway/issues</url>
 	</issueManagement>
 
 	<mailingLists>
