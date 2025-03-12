@@ -15,6 +15,7 @@
 package com.predic8.membrane.core.util;
 
 import com.predic8.membrane.core.exchange.*;
+import org.slf4j.*;
 
 import java.io.*;
 import java.net.*;
@@ -28,6 +29,9 @@ import static java.net.URLDecoder.*;
 import static java.nio.charset.StandardCharsets.*;
 
 public class URLParamUtil {
+
+	private static final Logger log = LoggerFactory.getLogger(URLParamUtil.class);
+
 	private static final Pattern paramsPat = Pattern.compile("([^=]*)=?(.*)");
 
 	public static Map<String, String> getParams(URIFactory uriFactory, Exchange exc, DuplicateKeyOrInvalidFormStrategy duplicateKeyOrInvalidFormStrategy) throws URISyntaxException, IOException {
@@ -37,7 +41,14 @@ public class URLParamUtil {
 		if (uri == null || uri.isEmpty())
 			return Collections.emptyMap();
 
-		URI jUri = uriFactory.create(uri);
+		URI jUri;
+		try {
+			jUri = uriFactory.create(uri);
+		} catch (URISyntaxException e) {
+			log.info("Error parsing query params: {} URI: {}",e.getMessage(),  uri);
+			throw e;
+		}
+
 		String q = jUri.getRawQuery();
 		if (q == null) {
 			if (hasNoFormParams(exc))
@@ -134,7 +145,7 @@ public class URLParamUtil {
 	}
 
 	public static class ParamBuilder {
-		HashMap<String, String> params = new HashMap<>();
+		final HashMap<String, String> params = new HashMap<>();
 
 		public ParamBuilder add(String key, String value) {
 			params.put(key, value);

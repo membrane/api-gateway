@@ -24,7 +24,6 @@ import org.slf4j.*;
 
 import java.io.*;
 
-import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.RESPONSE;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
@@ -130,12 +129,7 @@ public class LogInterceptor extends AbstractExchangeExpressionInterceptor {
             return;
         }
 
-        String mt = msg.getHeader().getContentType();
-        if (isJson(mt) ||
-            isXML(mt) ||
-            isText(mt)) {
-            writeLog(dumpBody(msg));
-        }
+        writeLog(dumpBody(msg));
     }
     private static String dumpBody(Message msg) {
         return "Body:\n%s\n".formatted(msg.getBodyAsStringDecoded());

@@ -26,7 +26,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-@MCElement(name = "databaseApiKeyStore", topLevel = false)
+@MCElement(name = "databaseApiKeyStore")
 public class JDBCApiKeyStore extends AbstractJdbcSupport implements ApiKeyStore {
 
     private KeyTable keyTable;
