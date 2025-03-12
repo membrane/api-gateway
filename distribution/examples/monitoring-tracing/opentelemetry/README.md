@@ -57,22 +57,16 @@ Take a look at the `proxies.xml`.
    </api>
 
    <api port="2002" name="Validation">
-      <target url="http://localhost:3000" />
+      <target url="http://localhost:2003" />
    </api>
 
-   <api port="3000" name="Replace with your Backend">
+   <api port="2003" name="Replace with your Backend">
       <request>
          <!-- Print the request headers.
               traceparents will be added to them
               showing which spans were involved
               in the exchange.                   -->
-         <groovy>
-            println "Request headers:"
-            header.allHeaderFields.each {
-            print it
-            }
-            CONTINUE
-         </groovy>
+        <log message="Header: ${header}"/>
       </request>
       <response>
          <template>Hello from a faked backend!</template>
