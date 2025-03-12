@@ -18,7 +18,7 @@
 1. Create a `proxies.xml` in the `distribution/conf` directory
 2. Open `src/main/java/com/predic8/membrane/core/IDEStarter.java`.
 3. Right-click -> Run as Java Application.
-4. **Note:** Ensure the working directory is set to /distribution.
+**Note:** Ensure the working directory is set to /distribution.
 
 # Integration & Example Tests
 - If using Docker: `docker build .`
