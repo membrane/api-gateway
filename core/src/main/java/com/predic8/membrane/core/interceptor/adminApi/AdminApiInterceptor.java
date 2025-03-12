@@ -2,12 +2,9 @@ package com.predic8.membrane.core.interceptor.adminApi;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.exchange.AbstractExchange;
 import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.exchange.ExchangeState;
-import com.predic8.membrane.core.exchange.ExchangesUtil;
 import com.predic8.membrane.core.exchangestore.ExchangeQueryResult;
 import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.http.Request;
@@ -18,13 +15,14 @@ import com.predic8.membrane.core.interceptor.rest.QueryParameter;
 import com.predic8.membrane.core.interceptor.statistics.util.JDBCUtil;
 import com.predic8.membrane.core.openapi.util.PathDoesNotMatchException;
 import com.predic8.membrane.core.proxies.AbstractServiceProxy;
-import com.predic8.membrane.core.proxies.Proxy;
 
 import java.io.IOException;
 import java.io.StringWriter;
 import java.io.UncheckedIOException;
 import java.net.URI;
-import java.util.LinkedList;
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.stream.IntStream;
 
@@ -33,16 +31,14 @@ import static com.predic8.membrane.core.http.Header.X_FORWARDED_FOR;
 import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.openapi.util.UriTemplateMatcher.matchTemplate;
-import static com.predic8.membrane.core.transport.http2.Http2ServerHandler.HTTP2;
 
 @MCElement(name = "adminApi")
 public class AdminApiInterceptor extends AbstractInterceptor {
 
+    public static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+    public static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm:ss");
+    
     private static final ObjectMapper om = new ObjectMapper();
-
-    static {
-        om.disable(SerializationFeature.FAIL_ON_EMPTY_BEANS);
-    }
 
     @Override
     public Outcome handleRequest(Exchange exc) {
@@ -136,54 +132,34 @@ public class AdminApiInterceptor extends AbstractInterceptor {
         gen.writeNumberField("id", exc.getId());
         if (exc.getResponse() != null) {
             gen.writeNumberField("statusCode", exc.getResponse().getStatusCode());
-            if (exc.getResponseContentLength()!=-1) {
-                gen.writeNumberField("respContentLength", exc.getResponseContentLength());
-            } else {
-                gen.writeNullField("respContentLength");
-            }
         } else {
             gen.writeNullField("statusCode");
             gen.writeNullField("respContentLength");
         }
-        gen.writeStringField("time", ExchangesUtil.getTime(exc));
+        gen.writeStringField("time", getTimeOrDate(exc));
         gen.writeStringField("proxy", exc.getProxy().toString());
         gen.writeNumberField("listenPort", exc.getProxy().getKey().getPort());
         if (exc.getRequest() != null) {
             gen.writeStringField("method", exc.getRequest().getMethod());
             gen.writeStringField("path", exc.getRequest().getUri());
-            gen.writeStringField("reqContentType", exc.getRequestContentType());
-            gen.writeStringField("protocol", exc.getProperty(HTTP2) != null? "2" : exc.getRequest().getVersion());
         } else {
             gen.writeNullField("method");
             gen.writeNullField("path");
-            gen.writeNullField("reqContentType");
-            if (exc.getProperty(HTTP2) != null)
-                gen.writeStringField("protocol", "2");
-            else
-                gen.writeNullField("protocol");
         }
         gen.writeStringField("client", getClientAddr(false, exc));
         gen.writeStringField("server", exc.getServer());
         gen.writeNumberField("serverPort",  getServerPort(exc));
-        if (exc.getRequest() != null && exc.getRequestContentLength()!=-1) {
-            gen.writeNumberField("reqContentLength", exc.getRequestContentLength());
-        } else {
-            gen.writeNullField("reqContentLength");
-        }
-        gen.writeStringField("respContentType", exc.getResponseContentType());
-        if(exc.getStatus() == ExchangeState.RECEIVED || exc.getStatus() == ExchangeState.COMPLETED)
-            if (exc.getResponse() != null && exc.getResponseContentLength()!=-1) {
-                gen.writeNumberField("respContentLength", exc.getResponseContentLength());
-            } else {
-                gen.writeNullField("respContentLength");
-            }
-        else
-            gen.writeStringField("respContentLength", "Not finished");
-
         gen.writeNumberField("duration",
                 exc.getTimeResReceived() - exc.getTimeReqSent());
         gen.writeStringField("msgFilePath", JDBCUtil.getFilePath(exc));
         gen.writeEndObject();
+    }
+
+    private String getTimeOrDate(AbstractExchange exc) {
+        if (exc.getTime().toInstant().isBefore(LocalDate.now().atStartOfDay(ZoneId.systemDefault()).toInstant())) {
+            return DATE_FORMATTER.withZone(ZoneId.systemDefault()).format(exc.getTime().toInstant());
+        }
+        return TIME_FORMATTER.withZone(ZoneId.systemDefault()).format(exc.getTime().toInstant());
     }
 
     public static String getClientAddr(boolean useXForwardedForAsClientAddr, AbstractExchange exc) {
@@ -203,14 +179,5 @@ public class AdminApiInterceptor extends AbstractInterceptor {
 
     private int getServerPort(AbstractExchange exc) {
         return exc.getProxy()instanceof AbstractServiceProxy?((AbstractServiceProxy) exc.getProxy()).getTargetPort():-1;
-    }
-
-    private List<AbstractServiceProxy> getServiceProxies() {
-        List<AbstractServiceProxy> rules = new LinkedList<>();
-        for (Proxy r : router.getRuleManager().getRules()) {
-            if (!(r instanceof AbstractServiceProxy)) continue;
-            rules.add((AbstractServiceProxy) r);
-        }
-        return rules;
     }
 }
