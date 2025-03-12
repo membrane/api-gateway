@@ -47,7 +47,7 @@ public class JwtSMOAuth2R2Test extends OAuth2ResourceTest {
 
         AtomicInteger goodTests = new AtomicInteger();
 
-        mockAuthServer.getTransport().getInterceptors().add(0, new AbstractInterceptor() {
+        mockAuthServer.getTransport().getInterceptors().addFirst(new AbstractInterceptor() {
             @Override
             public Outcome handleRequest(Exchange exc) {
                 cdl.countDown();
@@ -72,7 +72,7 @@ public class JwtSMOAuth2R2Test extends OAuth2ResourceTest {
 
         int j = limit + 1;
         Exchange excCallResource = new Request.Builder().get(getClientAddress() + "/init" + j).buildExchange();
-        LOG.debug("getting " + excCallResource.getDestinations().get(0));
+        LOG.debug("getting " + excCallResource.getDestinations().getFirst());
         excCallResource = browser.apply(excCallResource);
         Map body2 = om.readValue(excCallResource.getResponse().getBodyAsStream(), Map.class);
         assertEquals("/init" + j, body2.get("path"));
@@ -90,7 +90,7 @@ public class JwtSMOAuth2R2Test extends OAuth2ResourceTest {
                 try {
 
                     Exchange excCallResource = new Request.Builder().get(getClientAddress() + "/init" + j).buildExchange();
-                    LOG.debug("getting " + excCallResource.getDestinations().get(0));
+                    LOG.debug("getting " + excCallResource.getDestinations().getFirst());
                     excCallResource = browser.apply(excCallResource);
                     Map body2 = om.readValue(excCallResource.getResponse().getBodyAsStream(), Map.class);
                     assertEquals("/init" + j, body2.get("path"));
@@ -111,7 +111,7 @@ public class JwtSMOAuth2R2Test extends OAuth2ResourceTest {
     public void testConsecutiveCalls() throws Exception {
         AtomicInteger authCounter = new AtomicInteger(0);
 
-        mockAuthServer.getTransport().getInterceptors().add(0, new AbstractInterceptor() {
+        mockAuthServer.getTransport().getInterceptors().addFirst(new AbstractInterceptor() {
             @Override
             public Outcome handleRequest(Exchange exc) {
                 if (exc.getRequest().getUri().startsWith("/auth"))
@@ -123,7 +123,7 @@ public class JwtSMOAuth2R2Test extends OAuth2ResourceTest {
 
         for (int j = 0; j < 2; j++) {
             Exchange excCallResource = new Request.Builder().get(getClientAddress() + "/init" + j).buildExchange();
-            LOG.debug("getting " + excCallResource.getDestinations().get(0));
+            LOG.debug("getting " + excCallResource.getDestinations().getFirst());
             excCallResource = browser.apply(excCallResource);
             Map body2 = om.readValue(excCallResource.getResponse().getBodyAsStream(), Map.class);
             assertEquals("/init" + j, body2.get("path"));
@@ -145,11 +145,11 @@ public class JwtSMOAuth2R2Test extends OAuth2ResourceTest {
 
         for (Map.Entry<String, Map<String, String>> c : browser.cookie.entrySet()) {
             for (Map.Entry<String, String> d : c.getValue().entrySet()) {
-                LOG.debug(c.getKey() + " " + d.getKey() + " " + d.getValue());
+                LOG.debug("{} {} {}", c.getKey(), d.getKey(), d.getValue());
                 try {
                     JwtClaims jwtClaims = jwtc.processToClaims(d.getKey());
                     for (Map.Entry<String, Object> entry : jwtClaims.getClaimsMap().entrySet()) {
-                        LOG.debug(" " + entry.getKey() + ": " + entry.getValue());
+                        LOG.debug(" {}: {}", entry.getKey(), entry.getValue());
                     }
                     LOG.debug("mine");
                     count++;

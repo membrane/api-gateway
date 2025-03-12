@@ -13,6 +13,7 @@
 
 package com.predic8.membrane.core.interceptor.oauth2.client.b2c;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.*;
 import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.exchange.*;
@@ -29,8 +30,12 @@ import org.slf4j.*;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.*;
+import java.util.function.Consumer;
 
 import static com.predic8.membrane.core.http.Header.*;
+import static com.predic8.membrane.core.http.Request.get;
+import static com.predic8.membrane.core.util.URLParamUtil.DuplicateKeyOrInvalidFormStrategy.ERROR;
+import static com.predic8.membrane.core.util.URLParamUtil.parseQueryString;
 import static org.junit.jupiter.api.Assertions.*;
 
 public abstract class OAuth2ResourceB2CTest {
@@ -60,9 +65,7 @@ public abstract class OAuth2ResourceB2CTest {
 
     @Test
     public void getOriginalRequest() throws Exception {
-        Exchange excCallResource = new Request.Builder().get(tc.getClientAddress() + "/init").buildExchange();
-
-        excCallResource = browser.apply(excCallResource);
+        var excCallResource = browser.apply(get(tc.getClientAddress() + "/init"));
         var body2 = om.readValue(excCallResource.getResponse().getBodyAsStream(), Map.class);
         assertEquals("/init", body2.get("path"));
         assertEquals("", body2.get("body"));
@@ -72,9 +75,7 @@ public abstract class OAuth2ResourceB2CTest {
 
     @Test
     public void postOriginalRequest() throws Exception {
-        Exchange excCallResource = new Request.Builder().post(tc.getClientAddress() + "/init").body("demobody").buildExchange();
-
-        excCallResource = browser.apply(excCallResource);
+        var excCallResource = browser.apply(new Request.Builder().post(tc.getClientAddress() + "/init").body("demobody"));
         var body2 = om.readValue(excCallResource.getResponse().getBodyAsStream(), Map.class); // No
         assertEquals("/init", body2.get("path"));
         assertEquals("demobody", body2.get("body"));
@@ -86,34 +87,22 @@ public abstract class OAuth2ResourceB2CTest {
     public void testUseRefreshTokenOnTokenExpiration() throws Exception {
         mockAuthorizationServer.expiresIn = 1;
 
-        Exchange excCallResource = new Request.Builder().get(tc.getClientAddress() + "/init").buildExchange();
-
-        excCallResource = browser.apply(excCallResource);
+        var excCallResource = browser.apply(get(tc.getClientAddress() + "/init"));
         var body2 = om.readValue(excCallResource.getResponse().getBodyAsStream(), Map.class);
         assertEquals("/init", body2.get("path"));
 
         Set<String> accessTokens = new HashSet<>();
-        List<Thread> threadList = new ArrayList<>();
-        CountDownLatch cdl = new CountDownLatch(tc.limit);
-        for (int i = 0; i < tc.limit; i++) {
-            threadList.add(new Thread(() -> {
-                try {
-                    cdl.countDown();
-                    cdl.await();
-                    String uuid = UUID.randomUUID().toString();
-                    Exchange excCallResource2 = new Request.Builder().get(tc.getClientAddress() + "/api/" + uuid).buildExchange();
-                    excCallResource2 = browser.apply(excCallResource2);
-                    var body = om.readValue(excCallResource2.getResponse().getBodyAsStringDecoded(), Map.class);
-                    String path = (String) body.get("path");
-                    assertEquals("/api/" + uuid, path);
-                    synchronized (accessTokens) {
-                        accessTokens.add((String) body.get("accessToken"));
-                    }
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            }));
+        runInParallel((cdl) -> parallelTestWorker(cdl, accessTokens), tc.limit);
+        synchronized (accessTokens) {
+            assertEquals(accessTokens.size(), tc.limit);
+        }
+    }
 
+    private void runInParallel(Consumer<CountDownLatch> job, int threadCount) {
+        List<Thread> threadList = new ArrayList<>();
+        CountDownLatch cdl = new CountDownLatch(threadCount);
+        for (int i = 0; i < threadCount; i++) {
+            threadList.add(new Thread(() -> job.accept(cdl)));
         }
         threadList.forEach(Thread::start);
         threadList.forEach(thread -> {
@@ -123,8 +112,24 @@ public abstract class OAuth2ResourceB2CTest {
                 e.printStackTrace();
             }
         });
-        synchronized (accessTokens) {
-            assertEquals(accessTokens.size(), tc.limit);
+    }
+
+    private void parallelTestWorker(CountDownLatch cdl, Set<String> accessTokens) {
+        try {
+            cdl.countDown();
+            cdl.await();
+
+            String uuid = UUID.randomUUID().toString();
+            var excCallResource2 = browser.apply(get(tc.getClientAddress() + "/api/" + uuid));
+
+            var body = om.readValue(excCallResource2.getResponse().getBodyAsStringDecoded(), Map.class);
+            String path = (String) body.get("path");
+            assertEquals("/api/" + uuid, path);
+            synchronized (accessTokens) {
+                accessTokens.add((String) body.get("accessToken"));
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 
@@ -151,13 +156,14 @@ public abstract class OAuth2ResourceB2CTest {
         });
 
 
-        Exchange excCallResource = new Request.Builder().get(tc.getClientAddress() + "/malicious").buildExchange();
+        Exchange excCallResource = get(tc.getClientAddress() + "/malicious").buildExchange();
         LOG.debug("getting {}", excCallResource.getDestinations().getFirst());
         browser.apply(excCallResource); // will be aborted
 
-        browser.clearCookies(); // send the auth link to some helpless (other) user
+        browser.clearCookies();
 
-        excCallResource = browser.apply(new Request.Builder().get("http://localhost:1337" + ref.get()).buildExchange());
+        // send the auth link to some helpless (other) user
+        excCallResource = browser.apply(get("http://localhost:1337" + ref.get()));
 
         assertEquals(400, excCallResource.getResponse().getStatusCode());
 
@@ -166,17 +172,15 @@ public abstract class OAuth2ResourceB2CTest {
 
     @Test
     public void logout() throws Exception {
-        browser.apply(new Request.Builder()
-                .get(tc.getClientAddress() + "/init").buildExchange());
+        browser.apply(get(tc.getClientAddress() + "/init"));
 
-        var ili = browser.apply(new Request.Builder().get(tc.getClientAddress() + "/is-logged-in").buildExchange());
+        var ili = browser.apply(get(tc.getClientAddress() + "/is-logged-in"));
 
         assertTrue(ili.getResponse().getBodyAsStringDecoded().contains("true"));
 
-        browser.apply(new Request.Builder()
-                .get(tc.getClientAddress() + "/logout").buildExchange());
+        browser.apply(get(tc.getClientAddress() + "/logout"));
 
-        ili = browser.apply(new Request.Builder().get(tc.getClientAddress() + "/is-logged-in").buildExchange());
+        ili = browser.apply(get(tc.getClientAddress() + "/is-logged-in"));
 
         assertTrue(ili.getResponse().getBodyAsStringDecoded().contains("false"));
 
@@ -186,15 +190,14 @@ public abstract class OAuth2ResourceB2CTest {
 
     @Test
     public void staleSessionLogout() throws Exception {
-        var ili = browser.apply(new Request.Builder().get(tc.getClientAddress() + "/is-logged-in").buildExchange());
+        var ili = browser.apply(get(tc.getClientAddress() + "/is-logged-in"));
 
         assertTrue(ili.getResponse().getBodyAsStringDecoded().contains("false"));
 
         // call to /logout uses cookieHandlingHttpClient: *NOT* following the redirect (which would auto-login again)
-        browser.applyWithoutRedirect(new Request.Builder()
-                .get(tc.getClientAddress() + "/logout").buildExchange());
+        browser.applyWithoutRedirect(get(tc.getClientAddress() + "/logout"));
 
-        ili = browser.apply(new Request.Builder().get(tc.getClientAddress() + "/is-logged-in").buildExchange());
+        ili = browser.apply(get(tc.getClientAddress() + "/is-logged-in"));
 
         assertTrue(ili.getResponse().getBodyAsStringDecoded().contains("false"));
 
@@ -203,67 +206,57 @@ public abstract class OAuth2ResourceB2CTest {
 
     @Test
     public void requestAuth() throws Exception {
-        Exchange exc = new Request.Builder().get(tc.getClientAddress() + "/api/init").buildExchange();
-        exc = browser.apply(exc);
+        var exc = browser.apply(get(tc.getClientAddress() + "/api/init"));
 
         assertEquals(200, exc.getResponse().getStatusCode());
 
         b2cMembrane.requireAuth.setExpectedAud(UUID.randomUUID().toString());
-        Exchange exc2 = new Request.Builder().get(tc.getClientAddress() + "/api/init").buildExchange();
-        exc2 = browser.apply(exc2);
+        var exc2 = browser.apply(get(tc.getClientAddress() + "/api/init"));
 
         assertTrue(exc2.getResponse().getStatusCode() >= 400);
     }
 
     @Test
     public void userFlowTest() throws Exception {
-        Exchange exc = new Request.Builder().get(tc.getClientAddress() + "/init").buildExchange();
-        exc = browser.apply(exc);
+        var exc = browser.apply(get(tc.getClientAddress() + "/init"));
 
-        String a1 = (String) om.readValue(exc.getResponse().getBodyAsStringDecoded(), Map.class).get("accessToken");
-        assertNull(a1);
+        assertNull(getAccessToken(exc));
 
-        exc = new Request.Builder().get(tc.getClientAddress() + "/api/").buildExchange();
-        exc = browser.apply(exc);
+        exc = browser.apply(get(tc.getClientAddress() + "/api/"));
 
-        String a2 = (String) om.readValue(exc.getResponse().getBodyAsStringDecoded(), Map.class).get("accessToken");
-        JwtClaims c2 = createJwtConsumer().processToClaims(a2);
+        JwtClaims c2 = createJwtConsumer().processToClaims(getAccessToken(exc));
         assertEquals(12, c2.getClaimsMap().size());
         assertEquals("b2c_1_susi", c2.getClaimValue("tfp"));
     }
 
     @Test
     public void userFlowViaInitiatorTest() throws Exception {
-        Exchange exc = new Request.Builder().get(tc.getClientAddress() + "/init").buildExchange();
-        browser.apply(exc);
+        browser.apply(get(tc.getClientAddress() + "/init"));
 
-        exc = new Request.Builder().get(tc.getClientAddress() + "/pe/init").buildExchange();
-        exc = browser.apply(exc);
+        var exc = browser.apply(get(tc.getClientAddress() + "/pe/init"));
 
-        String a1 = (String) om.readValue(exc.getResponse().getBodyAsStringDecoded(), Map.class).get("accessToken");
-        assertNull(a1);
+        assertNull(getAccessToken(exc));
 
-        exc = new Request.Builder().get(tc.getClientAddress() + "/api/").buildExchange();
-        exc = browser.apply(exc);
+        exc = browser.apply(get(tc.getClientAddress() + "/api/"));
 
-        String a2 = (String) om.readValue(exc.getResponse().getBodyAsStringDecoded(), Map.class).get("accessToken");
-        JwtClaims c2 = createJwtConsumer().processToClaims(a2);
+        JwtClaims c2 = createJwtConsumer().processToClaims(getAccessToken(exc));
         assertEquals(11, c2.getClaimsMap().size());
         assertEquals("b2c_1_profile_editing", c2.getClaimValue("tfp"));
     }
 
+    private String getAccessToken(Exchange exc) throws JsonProcessingException {
+        return (String) om.readValue(exc.getResponse().getBodyAsStringDecoded(), Map.class).get("accessToken");
+    }
+
     @Test
     public void multipleUserFlowsTest() throws Exception {
-        Exchange exc = new Request.Builder().get(tc.getClientAddress() + "/init").buildExchange();
-        browser.apply(exc);
+        var exc = browser.apply(get(tc.getClientAddress() + "/init"));
 
-        exc = new Request.Builder().get(tc.getClientAddress() + "/pe2/init").buildExchange();
-        browser.apply(exc);
+        browser.apply(get(tc.getClientAddress() + "/pe2/init"));
 
-        exc = new Request.Builder().get(tc.getClientAddress() + "/api/").buildExchange();
-        exc = browser.apply(exc);
+        exc = browser.apply(get(tc.getClientAddress() + "/api/"));
 
-        String a2 = (String) om.readValue(exc.getResponse().getBodyAsStringDecoded(), Map.class).get("accessToken");
+        String a2 = getAccessToken(exc);
         JwtClaims c2 = createJwtConsumer().processToClaims(a2);
         assertEquals(11, c2.getClaimsMap().size());
         assertEquals("b2c_1_profile_editing2", c2.getClaimValue("tfp"));
@@ -271,78 +264,67 @@ public abstract class OAuth2ResourceB2CTest {
 
     @Test
     public void multipleUserFlowsWithErrorTest() throws Exception {
-        Exchange exc = new Request.Builder().get(tc.getClientAddress() + "/init").buildExchange();
-        browser.apply(exc);
+        browser.apply(get(tc.getClientAddress() + "/init"));
 
         mockAuthorizationServer.returnOAuth2ErrorFromSignIn.set(true);
 
-        exc = new Request.Builder().get(tc.getClientAddress() + "/pe2/init").buildExchange();
-        browser.apply(exc);
+        browser.apply(get(tc.getClientAddress() + "/pe2/init"));
 
         // here, an error is returned (as checked by {@link #errorDuringSignIn()}) and the user is logged out
 
-        exc = new Request.Builder().get(tc.getClientAddress() + "/api-no-auth-needed/").buildExchange();
-        exc = browser.apply(exc);
+        var exc = browser.apply(get(tc.getClientAddress() + "/api-no-auth-needed/"));
 
-        String a2 = (String) om.readValue(exc.getResponse().getBodyAsStringDecoded(), Map.class).get("accessToken");
+        String a2 = getAccessToken(exc);
         assertEquals("null", a2); // no access token, because user is logged out.
     }
 
     @Test
     public void stayLoggedInAfterProfileEditing2() throws Exception {
-        Exchange exc = new Request.Builder().get(tc.getClientAddress() + "/init").buildExchange();
-        browser.apply(exc);
+        browser.apply(get(tc.getClientAddress() + "/init"));
 
         mockAuthorizationServer.abortSignIn.set(true);
 
         // /pe2/init keeps the user logged in while sending her to the AS
-        exc = new Request.Builder().get(tc.getClientAddress() + "/pe2/init").buildExchange();
-        exc = browser.apply(exc);
+        var exc = browser.apply(get(tc.getClientAddress() + "/pe2/init"));
 
         assertEquals("signin aborted", exc.getResponse().getBodyAsStringDecoded());
 
-        exc = new Request.Builder().get(tc.getClientAddress() + "/api-no-auth-needed/").buildExchange();
-        exc = browser.apply(exc);
+        exc = browser.apply(get(tc.getClientAddress() + "/api-no-auth-needed/"));
 
         // valid access token, since still logged in
-        String a2 = (String) om.readValue(exc.getResponse().getBodyAsStringDecoded(), Map.class).get("accessToken");
-        JwtClaims c2 = createJwtConsumer().processToClaims(a2);
+        JwtClaims c2 = createJwtConsumer().processToClaims(getAccessToken(exc));
         assertEquals(11, c2.getClaimsMap().size());
         assertEquals("b2c_1_profile_editing2", c2.getClaimValue("tfp"));
     }
 
     @Test
     public void notLoggedInAfterProfileEditing() throws Exception {
-        Exchange exc = new Request.Builder().get(tc.getClientAddress() + "/init").buildExchange();
-        browser.apply(exc);
+        browser.apply(get(tc.getClientAddress() + "/init"));
 
         mockAuthorizationServer.abortSignIn.set(true);
 
         // /pe/init logs the user out before sending her to the AS
-        exc = new Request.Builder().get(tc.getClientAddress() + "/pe/init").buildExchange();
-        exc = browser.apply(exc);
+        var exc = browser.apply(get(tc.getClientAddress() + "/pe/init"));
 
         assertEquals("signin aborted", exc.getResponse().getBodyAsStringDecoded());
 
-        exc = new Request.Builder().get(tc.getClientAddress() + "/api-no-auth-needed/").buildExchange();
-        exc = browser.apply(exc);
+        exc = browser.apply(get(tc.getClientAddress() + "/api-no-auth-needed/"));
 
-        String a2 = (String) om.readValue(exc.getResponse().getBodyAsStringDecoded(), Map.class).get("accessToken");
+        String a2 = getAccessToken(exc);
         assertEquals("null", a2); // no access token, because user is logged out.
     }
 
 
     @Test
     public void loginParams() throws Exception {
-        Exchange exc = new Request.Builder().get(tc.getClientAddress() + "/init?login_hint=def&illegal=true").buildExchange();
-        browser.applyWithoutRedirect(exc);
+        var exc = browser.applyWithoutRedirect(get(tc.getClientAddress() + "/init?login_hint=def&illegal=true"));
 
         String location = exc.getResponse().getHeader().getFirstValue("Location");
 
         URI jUri = new URIFactory().create(location);
         String q = jUri.getRawQuery();
 
-        var params = URLParamUtil.parseQueryString(q, URLParamUtil.DuplicateKeyOrInvalidFormStrategy.ERROR);
+        var params = parseQueryString(q, ERROR);
 
         System.out.println(location);
         System.out.println(params);
@@ -356,15 +338,9 @@ public abstract class OAuth2ResourceB2CTest {
 
     @Test
     public void loginParamsPerFlow() throws Exception {
-        Exchange exc = new Request.Builder().get(tc.getClientAddress() + "/pe/init?domain_hint=flow&illegal=true").buildExchange();
-        browser.applyWithoutRedirect(exc);
+        var exc = browser.applyWithoutRedirect(get(tc.getClientAddress() + "/pe/init?domain_hint=flow&illegal=true"));
 
-        String location = exc.getResponse().getHeader().getFirstValue("Location");
-
-        URI jUri = new URIFactory().create(location);
-        String q = jUri.getRawQuery();
-
-        var params = URLParamUtil.parseQueryString(q, URLParamUtil.DuplicateKeyOrInvalidFormStrategy.ERROR);
+        var params = parseQueryString(new URIFactory().create(exc.getResponse().getHeader().getLocation()).getRawQuery(), ERROR);
 
         assertTrue(params.containsKey("fooflow"));
         assertEquals("bar", params.get("foo"));
@@ -376,19 +352,17 @@ public abstract class OAuth2ResourceB2CTest {
     @Test
     public void loginNotRequired() throws Exception {
         // access 1: not authenticated, expecting no token
-        Exchange exc = new Request.Builder().get(tc.getClientAddress() + "/api-no-auth-needed/").buildExchange();
-        exc = browser.applyWithoutRedirect(exc);
+        var exc = browser.applyWithoutRedirect(get(tc.getClientAddress() + "/api-no-auth-needed/"));
 
         assertEquals(200, exc.getResponse().getStatusCode());
         assertEquals("Ok", exc.getResponse().getStatusMessage());
         var res = om.readValue(exc.getResponse().getBodyAsStringDecoded(), Map.class);
         assertEquals("null", res.get("accessToken"));
 
-        browser.apply(new Request.Builder().get(tc.getClientAddress() + "/pe/init").buildExchange());
+        browser.apply(get(tc.getClientAddress() + "/pe/init"));
 
         // access 2: authenticated, expecting JWT
-        exc = new Request.Builder().get(tc.getClientAddress() + "/api-no-auth-needed/").buildExchange();
-        exc = browser.applyWithoutRedirect(exc);
+        exc = browser.applyWithoutRedirect(get(tc.getClientAddress() + "/api-no-auth-needed/"));
         assertEquals(200, exc.getResponse().getStatusCode());
         assertEquals("Ok", exc.getResponse().getStatusMessage());
         res = om.readValue(exc.getResponse().getBodyAsStringDecoded(), Map.class);
@@ -398,18 +372,16 @@ public abstract class OAuth2ResourceB2CTest {
     @Test
     public void returning4xx() throws Exception {
         // access 1: not authenticated, expecting 4xx
-        Exchange exc = new Request.Builder().get(tc.getClientAddress() + "/api-no-redirect/").buildExchange();
-        exc = browser.applyWithoutRedirect(exc);
+        var exc = browser.applyWithoutRedirect(get(tc.getClientAddress() + "/api-no-redirect/"));
 
         assertEquals(403, exc.getResponse().getStatusCode());
         assertEquals("Forbidden", exc.getResponse().getStatusMessage());
         assertNull(exc.getResponse().getHeader().getFirstValue(SET_COOKIE));
 
-        browser.apply(new Request.Builder().get(tc.getClientAddress() + "/pe/init").buildExchange());
+        browser.apply(get(tc.getClientAddress() + "/pe/init"));
 
         // access 2: authenticated, expecting JWT
-        exc = new Request.Builder().get(tc.getClientAddress() + "/api-no-redirect/").buildExchange();
-        exc = browser.applyWithoutRedirect(exc);
+        exc = browser.applyWithoutRedirect(get(tc.getClientAddress() + "/api-no-redirect/"));
         assertEquals(200, exc.getResponse().getStatusCode());
         assertEquals("Ok", exc.getResponse().getStatusMessage());
         var res = om.readValue(exc.getResponse().getBodyAsStringDecoded(), Map.class);
@@ -418,9 +390,7 @@ public abstract class OAuth2ResourceB2CTest {
 
     @Test
     public void requireAuthRedirects() throws Exception {
-        Exchange excCallResource = new Request.Builder().get(tc.getClientAddress() + "/api/").buildExchange();
-
-        excCallResource = browser.applyWithoutRedirect(excCallResource);
+        var excCallResource = browser.applyWithoutRedirect(get(tc.getClientAddress() + "/api/"));
         assertEquals(307, excCallResource.getResponse().getStatusCode());
         assertTrue(excCallResource.getResponse().getHeader().getFirstValue(Header.LOCATION).contains(
                 ":"+mockAuthorizationServer.getServerPort()+"/"));
@@ -430,8 +400,7 @@ public abstract class OAuth2ResourceB2CTest {
     @Test
     public void errorDuringSignIn() throws Exception {
         mockAuthorizationServer.returnOAuth2ErrorFromSignIn.set(true);
-        Exchange exc = new Request.Builder().get(tc.getClientAddress() + "/api/").buildExchange();
-        exc = browser.apply(exc);
+        var exc = browser.apply(get(tc.getClientAddress() + "/api/"));
 
         ProblemDetails pd = ProblemDetails.parse(exc.getResponse());
         assertEquals("https://membrane-api.io/problems/security", pd.getType());
@@ -440,16 +409,14 @@ public abstract class OAuth2ResourceB2CTest {
 
     @Test
     public void api1and2() throws Exception {
-        Exchange exc = new Request.Builder().get(tc.getClientAddress() + "/api/").buildExchange();
-        exc = browser.apply(exc);
+        var exc = browser.apply(get(tc.getClientAddress() + "/api/"));
         Map body = om.readValue(exc.getResponse().getBodyAsStream(), Map.class);
         assertEquals("/api/", body.get("path"));
         assertEquals("", body.get("body"));
         assertEquals("GET", body.get("method"));
         assertTrue(((String)body.get("accessToken")).startsWith("eyJ"));
 
-        exc = new Request.Builder().get(tc.getClientAddress() + "/api2/").buildExchange();
-        exc = browser.apply(exc);
+        exc = browser.apply(get(tc.getClientAddress() + "/api2/"));
         body = om.readValue(exc.getResponse().getBodyAsStream(), Map.class);
         assertEquals("/api2/", body.get("path"));
         assertEquals("", body.get("body"));
