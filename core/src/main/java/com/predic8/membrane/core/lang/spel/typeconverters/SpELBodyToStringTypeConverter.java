@@ -28,7 +28,7 @@ public class SpELBodyToStringTypeConverter implements Converter<SpELBody, String
             return new String(MessageUtil.getContent(body.getMessage()));
         } catch (Exception e) {
             log.warn("Cannot log body content", e);
-            return "";
+            throw new RuntimeException(e);
         }
 
     }
