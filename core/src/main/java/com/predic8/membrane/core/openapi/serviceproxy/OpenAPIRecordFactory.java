@@ -86,7 +86,7 @@ public class OpenAPIRecordFactory {
             return;
 
         try {
-            log.info("Parsing spec {}",spec.location);
+            log.debug("Parsing spec {}",spec.location);
             OpenAPIRecord rec = create(spec);
             apiRecords.put(getUniqueId(apiRecords, rec), rec);
         } catch (Exception e) {

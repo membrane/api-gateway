@@ -36,7 +36,7 @@ abstract class AbstractSetPropertyInterceptorTest {
     @BeforeEach
     void setUp() throws URISyntaxException {
         interceptor = new SetPropertyInterceptor();
-        interceptor.setLanguage(getLanguage());
+        interceptor.setLanguage(getLanguage().name());
         router = new Router();
         exc = Request.get("/dummy")
                 .contentType(APPLICATION_JSON)
