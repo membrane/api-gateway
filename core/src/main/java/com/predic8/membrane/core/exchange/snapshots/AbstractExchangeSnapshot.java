@@ -81,7 +81,11 @@ public class AbstractExchangeSnapshot {
     }
 
     public <T extends AbstractExchangeSnapshot> T updateFrom(AbstractExchange source, Interceptor.Flow flow) throws IOException {
+        updateMetadata(source);
+
         switch (flow) {
+            case null:
+                break;
             case REQUEST:
                 if(source.getRequest() != null)
                     setRequest(new RequestSnapshot(source.getRequest(), bodyCopiedCallback, this, strategy, limit));
@@ -93,6 +97,10 @@ public class AbstractExchangeSnapshot {
                 break;
         }
 
+        return (T)this;
+    }
+
+    private void updateMetadata(AbstractExchange source) {
         setOriginalRequestUri(source.getOriginalRequestUri());
         setTime(source.getTime());
         setErrorMessage(source.getErrorMessage());
@@ -107,8 +115,6 @@ public class AbstractExchangeSnapshot {
         setId(source.getId());
         setRule(new FakeProxy(source.getProxy()));
         setServer(source.getServer());
-
-        return (T)this;
     }
 
     public AbstractExchange toAbstractExchange(){

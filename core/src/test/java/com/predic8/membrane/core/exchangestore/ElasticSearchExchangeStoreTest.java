@@ -1,6 +1,7 @@
 package com.predic8.membrane.core.exchangestore;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.predic8.membrane.core.HttpRouter;
 import com.predic8.membrane.core.exchange.Exchange;
@@ -15,57 +16,75 @@ import com.predic8.membrane.core.interceptor.templating.StaticInterceptor;
 import com.predic8.membrane.core.proxies.ServiceProxy;
 import com.predic8.membrane.core.proxies.ServiceProxyKey;
 import com.predic8.membrane.core.transport.http.HttpClient;
+import org.jetbrains.annotations.NotNull;
+import org.jose4j.base64url.Base64;
 import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
+import static com.predic8.membrane.core.http.Header.AUTHORIZATION;
+import static com.predic8.membrane.core.http.Header.CONTENT_TYPE;
+import static com.predic8.membrane.core.http.MimeType.TEXT_PLAIN;
 import static com.predic8.membrane.core.http.Response.ok;
 import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.*;
 
 class ElasticSearchExchangeStoreTest {
 
-    private static HttpRouter router;
+    private static HttpRouter gateway;
     private static HttpRouter back;
     private static HttpRouter elasticMock;
     private static ElasticSearchExchangeStore es;
 
-    private static final List<Map<?,?>> insertedObjects = new ArrayList<>();
+    private static final List<JsonNode> insertedObjects = new ArrayList<>();
+    private static String RESPONSE_BODY = """
+            {"demo": true}""";
+    private String REQUEST_BODY = """
+            {"where":"there"}""";
 
     @BeforeAll
     public static void start() throws IOException {
         initializeElasticSearchMock();
         initializeBackend();
-        initializeGateway();
     }
 
     private static void initializeElasticSearchMock() throws IOException {
         elasticMock = new HttpRouter();
         elasticMock.setHotDeploy(false);
         ServiceProxy sp = new ServiceProxy(new ServiceProxyKey(3066), null, 0);
-        LogInterceptor log = new LogInterceptor();
-        log.setBody(true);
-        sp.getInterceptors().add(log);
+        sp.getInterceptors().add(createBodyLoggingInterceptor());
         sp.getInterceptors().add(createElasticSearchMockInterceptor());
         elasticMock.add(sp);
         elasticMock.start();
     }
 
-    private static void initializeGateway() throws IOException {
-        router = new HttpRouter();
-        router.setHotDeploy(false);
+    private static @NotNull LogInterceptor createBodyLoggingInterceptor() {
+        LogInterceptor log = new LogInterceptor();
+        log.setBody(true);
+        return log;
+    }
+
+    private static void initializeGateway(boolean addLoggingInterceptors) throws IOException {
+        gateway = new HttpRouter();
+        gateway.setHotDeploy(false);
         es = new ElasticSearchExchangeStore();
         es.setLocation("http://localhost:3066");
         es.setUpdateIntervalMs(100);
-        router.setExchangeStore(es);
-        router.getTransport().getInterceptors().add(4, new ExchangeStoreInterceptor());
-        router.add(new ServiceProxy(new ServiceProxyKey(3064), "localhost", 3065));
-        router.start();
+        gateway.setExchangeStore(es);
+        int index = 4;
+        if (addLoggingInterceptors)
+            gateway.getTransport().getInterceptors().add(index++, createBodyLoggingInterceptor());
+        gateway.getTransport().getInterceptors().add(index++, new ExchangeStoreInterceptor());
+        if (addLoggingInterceptors)
+            gateway.getTransport().getInterceptors().add(index++, createBodyLoggingInterceptor());
+        gateway.add(new ServiceProxy(new ServiceProxyKey(3064), "localhost", 3065));
+        gateway.start();
     }
 
     private static void initializeBackend() throws IOException {
@@ -73,8 +92,7 @@ class ElasticSearchExchangeStoreTest {
         back.setHotDeploy(false);
         ServiceProxy sp = new ServiceProxy(new ServiceProxyKey(3065), null, 0);
         StaticInterceptor si = new StaticInterceptor();
-        si.setTextTemplate("""
-                {"demo": true}""");
+        si.setTextTemplate(RESPONSE_BODY);
         sp.getInterceptors().add(si);
         ReturnInterceptor ri = new ReturnInterceptor();
         ri.setStatusCode(200);
@@ -85,7 +103,6 @@ class ElasticSearchExchangeStoreTest {
 
     @AfterAll
     public static void done() {
-        router.stop();
         back.stop();
         elasticMock.stop();
     }
@@ -108,7 +125,7 @@ class ElasticSearchExchangeStoreTest {
                 if (exc.getRequest().getMethod().equals("POST") && exc.getRequest().getUri().equals("/_bulk")) {
                     for (String line : exc.getRequest().getBodyAsStringDecoded().split("\n")) {
                         try {
-                            Map<?,?> obj = om.readValue(line, Map.class);
+                            JsonNode obj = om.readTree(line);
                             synchronized (insertedObjects) {
                                 insertedObjects.add(obj);
                             }
@@ -126,35 +143,56 @@ class ElasticSearchExchangeStoreTest {
         };
     }
 
-    public static List<Map<?, ?>> getInsertedObjectsAndClearList() {
+    public static List<JsonNode> getInsertedObjectsAndClearList() {
         synchronized (insertedObjects) {
-            List<Map<?, ?>> insertedObjects1 = new ArrayList(insertedObjects);
+            List<JsonNode> insertedObjects1 = new ArrayList(insertedObjects);
             insertedObjects.clear();
             return insertedObjects1;
         }
     }
 
     @Test
-    public void testIt() throws Exception {
+    public void testWithoutLogging() throws Exception {
+        runTest(false);
+    }
+
+    @Test
+    public void testWithLogging() throws Exception {
+        runTest(true);
+    }
+
+    private void runTest(boolean addLoggingInterceptors) throws Exception {
+        initializeGateway(addLoggingInterceptors);
+
         try (var client = new HttpClient()) {
-            client.call(Request.post("http://localhost:3064").body("""
-                    {"where":"there"}""").buildExchange());
+            client.call(Request.post("http://localhost:3064")
+                    .header(AUTHORIZATION, "Demo")
+                    .body(REQUEST_BODY).buildExchange());
         }
 
         waitForExchangeStoreToFlush();
 
-        List<Map<?, ?>> insertedObjects = getInsertedObjectsAndClearList();
+        List<JsonNode> insertedObjects = getInsertedObjectsAndClearList();
         assertEquals(2, insertedObjects.size());
         assertNotNull(insertedObjects.get(0).get("index")); // assert first inserted object is the 'index'
 
+        assertArrayEquals(REQUEST_BODY.getBytes(UTF_8), Base64.decode(insertedObjects.get(1).get("request").get("body").textValue()));
+        assertArrayEquals(RESPONSE_BODY.getBytes(UTF_8), Base64.decode(insertedObjects.get(1).get("response").get("body").textValue()));
 
+        assertEquals("Demo", insertedObjects.get(1).get("request").get("header").get(AUTHORIZATION).textValue());
+        assertEquals(TEXT_PLAIN, insertedObjects.get(1).get("response").get("header").get(CONTENT_TYPE).textValue());
 
-        // {"request":{"header":{"X-Forwarded-Host":"localhost:3064","X-Forwarded-Proto":"http","X-Forwarded-For":"127.0.0.1","Host":"localhost:3065","Content-Length":"17"},
-        //             "body":"eyJ3aGVyZSI6InRoZXJlIn0=","method":"POST","uri":"/"},
-        //  "response":{"header":{"Content-Length":"14","Content-Type":"text/plain"},"body":"","statusCode":200,"statusMessage":"Ok"},
-        //              "originalRequestUri":"/","time":1741773085707,"errorMessage":"","status":"COMPLETED","timeReqSent":1741773085721,"timeReqReceived":1741773085707,"timeResSent":1741773085724,
-        //              "timeResReceived":1741773085722,"destinations":["http://localhost:3065/"],"remoteAddr":"127.0.0.1","remoteAddrIp":"127.0.0.1",
-        //              "rule":{"name":"com.predic8.membrane.core.exchange.snapshots.FakeKey@3f44624a","port":3064},"server":"localhost","id":34271583,"issuer":"interlaken"}
+        assertEquals("COMPLETED", insertedObjects.get(1).get("status").textValue());
+        assertTrue(insertedObjects.get(1).get("time").longValue() > 1740000000000L);
+        assertTrue(insertedObjects.get(1).get("timeReqReceived").longValue() > 1740000000000L);
+        assertTrue(insertedObjects.get(1).get("timeReqSent").longValue() > 1740000000000L);
+        assertTrue(insertedObjects.get(1).get("timeResReceived").longValue() > 1740000000000L);
+        assertTrue(insertedObjects.get(1).get("timeResSent").longValue() > 1740000000000L);
+    }
+
+    @AfterEach
+    public void done2() {
+        gateway.stop();
     }
 
     private void waitForExchangeStoreToFlush() {
