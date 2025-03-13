@@ -1,95 +1,32 @@
 package com.predic8.membrane.core.exchangestore;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.google.common.cache.Cache;
-import com.google.common.cache.CacheBuilder;
 import com.mongodb.client.MongoClients;
-import com.mongodb.client.MongoCollection;
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.exchange.AbstractExchange;
 import com.predic8.membrane.core.exchange.snapshots.AbstractExchangeSnapshot;
-import com.predic8.membrane.core.exchange.snapshots.DynamicAbstractExchangeSnapshot;
-import com.predic8.membrane.core.http.BodyCollectingMessageObserver;
-import com.predic8.membrane.core.interceptor.Interceptor;
 import com.predic8.membrane.core.proxies.Proxy;
 import com.predic8.membrane.core.proxies.RuleKey;
-import com.predic8.membrane.core.proxies.StatisticCollector;
 import org.bson.Document;
 import org.bson.types.ObjectId;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.*;
-import java.util.concurrent.TimeUnit;
+import java.util.ArrayList;
+import java.util.List;
 
 @MCElement(name = "mongoDBExchangeStore")
-public class MongoDBExchangeStore extends AbstractExchangeStore {
+public class MongoDBExchangeStore extends AbstractPersistentExchangeStore {
     private static final Logger log = LoggerFactory.getLogger(MongoDBExchangeStore.class);
 
     private String connection;
     private String database;
     private String collectionName;
-    private MongoCollection<Document> collection;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
-    private final Map<Long, AbstractExchangeSnapshot> shortTermMemoryForBatching = Collections.synchronizedMap(new HashMap<>());
-    private final Cache<Long, AbstractExchangeSnapshot> cacheToWaitForMongoIndex =
-            CacheBuilder.newBuilder().expireAfterWrite(5, TimeUnit.SECONDS).build();
-
     @Override
-    public void init(Router router) {
-        try {
-            collection = MongoClients.create(connection).getDatabase(database).getCollection(collectionName);
-            objectMapper.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
-            log.info("MongoDB initialized with database '{}' and collection '{}'", database, collectionName);
-
-            Thread updateJob = new Thread(() -> {
-                while (!Thread.currentThread().isInterrupted()) {
-                    try {
-                        List<AbstractExchangeSnapshot> exchanges;
-                        synchronized (shortTermMemoryForBatching) {
-                            exchanges = new ArrayList<>(shortTermMemoryForBatching.values());
-                            shortTermMemoryForBatching.clear();
-                        }
-                        if (!exchanges.isEmpty()) {
-                            storeExchangesInMongo(exchanges);
-                        } else {
-                            Thread.sleep(1000);
-                        }
-                    } catch (InterruptedException e) {
-                        Thread.currentThread().interrupt();
-                    } catch (Exception e) {
-                        log.error("Error in MongoDBExchangeStore update job", e);
-                    }
-                }
-            });
-            updateJob.start();
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to initialize MongoDB connection: " + connection, e);
-        }
-    }
-
-    @Override
-    public void snap(AbstractExchange exc, Interceptor.Flow flow) {
-        try {
-            if (flow == Interceptor.Flow.RESPONSE && exc.getResponse() != null) {
-                exc.getResponse().getBody().read();
-            }
-            synchronized (shortTermMemoryForBatching) {
-                if (!shortTermMemoryForBatching.containsKey(exc.getId())) {
-                    addForMongoDB(new DynamicAbstractExchangeSnapshot(exc, flow, this::addForMongoDB,
-                            BodyCollectingMessageObserver.Strategy.TRUNCATE, 100000));
-                }
-            }
-        } catch (Exception e) {
-            log.error("Error while processing exchange snapshot", e);
-        }
-    }
-
-    private void storeExchangesInMongo(List<AbstractExchangeSnapshot> exchanges) {
+    protected void writeToStore(List<AbstractExchangeSnapshot> exchanges) {
         List<Document> documents = new ArrayList<>();
         for (AbstractExchangeSnapshot exchange : exchanges) {
             try {
@@ -99,7 +36,7 @@ public class MongoDBExchangeStore extends AbstractExchangeStore {
             }
         }
         if (!documents.isEmpty()) {
-            collection.insertMany(documents);
+            MongoClients.create(connection).getDatabase(database).getCollection(collectionName).insertMany(documents);
         }
     }
 
@@ -130,12 +67,6 @@ public class MongoDBExchangeStore extends AbstractExchangeStore {
         return doc;
     }
 
-    private void addForMongoDB(AbstractExchangeSnapshot exc) {
-        synchronized (shortTermMemoryForBatching) {
-            shortTermMemoryForBatching.put(exc.getId(), exc);
-        }
-    }
-
     @Override
     public void remove(AbstractExchange exchange) {
 
@@ -157,18 +88,18 @@ public class MongoDBExchangeStore extends AbstractExchangeStore {
     }
 
     @Override
-    public StatisticCollector getStatistics(RuleKey ruleKey) {
-        return null;
-    }
-
-    @Override
-    public Object[] getAllExchanges() {
-        return new Object[0];
-    }
-
-    @Override
     public List<AbstractExchange> getAllExchangesAsList() {
         return List.of();
+    }
+
+    @Override
+    public void collect(ExchangeCollector collector) {
+
+    }
+
+    @Override
+    public AbstractExchangeSnapshot getFromStoreById(long id) {
+        return null;
     }
 
     @MCAttribute

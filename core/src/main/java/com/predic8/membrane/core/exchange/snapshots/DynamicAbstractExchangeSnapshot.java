@@ -88,13 +88,18 @@ public class DynamicAbstractExchangeSnapshot extends AbstractExchangeSnapshot{
 
     public static void update(ExceptionThrowingConsumer<AbstractExchangeSnapshot> callback, AbstractExchangeSnapshot excCopy, AbstractExchange exc, Interceptor.Flow flow) {
         try {
-            excCopy = excCopy.updateFrom(exc, flow);
-            if(callback != null)
+            if (excCopy.getResponse() == null) {
+                excCopy = excCopy.updateFrom(exc, flow);
+            }
+
+            if (callback != null) {
                 callback.accept(excCopy);
+            }
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
+
 
     private static class UpdateExchangeCopyObserver extends BodyCollectingMessageObserver {
         private final ExceptionThrowingConsumer<AbstractExchangeSnapshot> callback;
@@ -117,7 +122,24 @@ public class DynamicAbstractExchangeSnapshot extends AbstractExchangeSnapshot{
 
         @Override
         public void bodyComplete(AbstractBody body) {
-            // TODO: handle getBody(body)
+            try {
+                byte[] content = body.getContent();
+                if (content != null && content.length > 0) {
+                    if (flow == Interceptor.Flow.REQUEST) {
+                        if (excCopy.getRequest() == null) {
+                            excCopy.setRequest(new RequestSnapshot());
+                        }
+                        excCopy.getRequest().setBody(content);
+                    } else {
+                        if (excCopy.getResponse() == null) {
+                            excCopy.setResponse(new ResponseSnapshot());
+                        }
+                        excCopy.getResponse().setBody(content);
+                    }
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
             update(callback, excCopy, exc, flow);
         }
     }
