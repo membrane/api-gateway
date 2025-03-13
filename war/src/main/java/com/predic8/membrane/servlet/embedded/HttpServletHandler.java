@@ -176,7 +176,7 @@ class HttpServletHandler extends AbstractHttpHandler {
 	public String getContextPath(Exchange exc) {
 		if (!getTransport().isRemoveContextRoot())
 			return "";
-		return ((HttpServletRequest)exc.getProperty(Exchange.HTTP_SERVLET_REQUEST)).getContextPath();
+		return exc.getProperty(Exchange.HTTP_SERVLET_REQUEST, HttpServletRequest.class).getContextPath();
 	}
 
 }

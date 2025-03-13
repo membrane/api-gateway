@@ -142,7 +142,7 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
     @Override
     public Outcome handleResponse(Exchange exc) {
 
-        OpenAPIRecord rec = (OpenAPIRecord) exc.getProperty(OPENAPI_RECORD);
+        OpenAPIRecord rec = exc.getProperty(OPENAPI_RECORD, OpenAPIRecord.class);
 
         try {
             ValidationErrors errors = validateResponse(rec, exc);
