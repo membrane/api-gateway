@@ -133,6 +133,10 @@ public class Request extends Message {
 		return METHOD_POST.equals(method);
 	}
 
+	public boolean isPUTRequest() {
+		return METHOD_PUT.equals(method);
+	}
+
 	public boolean isDELETERequest() {
 		return METHOD_DELETE.equals(method);
 	}

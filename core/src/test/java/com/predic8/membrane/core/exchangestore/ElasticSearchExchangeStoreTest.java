@@ -95,17 +95,17 @@ class ElasticSearchExchangeStoreTest {
         return new AbstractInterceptor() {
             @Override
             public Outcome handleRequest(Exchange exc) {
-                if (exc.getRequest().getMethod().equals("PUT") && exc.getRequest().getUri().equals("/membrane/")) {
+                if (exc.getRequest().isPUTRequest() && exc.getRequest().getUri().equals("/membrane/")) {
                     exc.setResponse(ok("""
                         {"acknowledged": true}""").build());
                     return RETURN;
                 }
-                if (exc.getRequest().getMethod().equals("GET") && exc.getRequest().getUri().equals("/membrane/_mapping")) {
+                if (exc.getRequest().isGETRequest() && exc.getRequest().getUri().equals("/membrane/_mapping")) {
                     exc.setResponse(ok("""
                         {"membrane": {"mappings": {"something":true}}}""").build());
                     return RETURN;
                 }
-                if (exc.getRequest().getMethod().equals("POST") && exc.getRequest().getUri().equals("/_bulk")) {
+                if (exc.getRequest().isPOSTRequest() && exc.getRequest().getUri().equals("/_bulk")) {
                     for (String line : exc.getRequest().getBodyAsStringDecoded().split("\n")) {
                         try {
                             Map<?,?> obj = om.readValue(line, Map.class);
