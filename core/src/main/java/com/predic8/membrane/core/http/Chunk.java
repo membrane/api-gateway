@@ -29,20 +29,11 @@ import static java.nio.charset.StandardCharsets.*;
  * Used (independently of whether "Transfer-Encoding: chunked" is actually
  * present) to store the message body's data.
  */
-public class Chunk {
+public record Chunk(byte[] content) {
 
-	private final byte[] content;
-
-	public Chunk(byte[] content) {
-		this.content = content;
-	}
-
-	public byte[] getContent() {
-		return content;
-	}
 
 	public int getLength() {
-		if (content == null ) {
+		if (content == null) {
 			return 0;
 		}
 		return content.length;
@@ -54,7 +45,7 @@ public class Chunk {
 
 		out.write(getLengthBytes());
 		out.write(Constants.CRLF_BYTES);
-		out.write(getContent(), 0, getLength());
+		out.write(content, 0, getLength());
 		out.write(Constants.CRLF_BYTES);
 		out.flush();
 	}
