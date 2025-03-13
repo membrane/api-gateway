@@ -323,7 +323,7 @@ public class StringCache {
      * Compare given byte chunk with byte array.
      * Return -1, 0 or +1 if inferior, equal, or superior to the String.
      */
-    protected static final int compare(ByteChunk name, byte[] compareTo) {
+    protected static int compare(ByteChunk name, byte[] compareTo) {
         int result = 0;
 
         byte[] b = name.getBuffer();
@@ -356,7 +356,7 @@ public class StringCache {
      * Find an entry given its name in the cache and return the associated
      * String.
      */
-    protected static final String find(ByteChunk name) {
+    protected static String find(ByteChunk name) {
         int pos = findClosest(name, bcCache, bcCache.length);
         if ((pos < 0) || (compare(name, bcCache[pos].name) != 0)
                 || !(name.getCharset().equals(bcCache[pos].charset))) {
@@ -372,8 +372,8 @@ public class StringCache {
      * This will return the index for the closest inferior or equal item in the
      * given array.
      */
-    protected static final int findClosest(ByteChunk name, ByteEntry[] array,
-                                           int len) {
+    protected static int findClosest(ByteChunk name, ByteEntry[] array,
+                                     int len) {
 
         int a = 0;
         int b = len - 1;
