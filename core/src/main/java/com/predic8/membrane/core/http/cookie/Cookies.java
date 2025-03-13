@@ -255,13 +255,7 @@ public final class Cookies {
 			isSpecial = false;
 			isQuoted = false;
 
-			// Skip whitespace and non-token characters (separators)
-			while (pos < end &&
-					(CookieSupport.isHttpSeparator((char) bytes[pos]) &&
-							!CookieSupport.ALLOW_HTTP_SEPARATORS_IN_V0 ||
-							CookieSupport.isV0Separator((char) bytes[pos]) ||
-							isWhiteSpace(bytes[pos])))
-			{pos++; }
+			pos += bc.followingBytesMatching(pos, Cookies::isWhitespaceOrNonTokenCharacter);
 
 			if (pos >= end) {
 				return;
@@ -278,7 +272,7 @@ public final class Cookies {
 			pos = nameEnd = getTokenEndPosition(bytes,pos,end,version,true);
 
 			// Skip whitespace
-			while (pos < end && isWhiteSpace(bytes[pos])) {pos++; }
+			pos += bc.followingBytesMatching(pos, Cookies::isWhiteSpace);
 
 
 			// Check for an '=' -- This could also be a name-only
@@ -288,9 +282,7 @@ public final class Cookies {
 			if (pos < (end - 1) && bytes[pos] == '=') {
 
 				// Skip whitespace
-				do {
-					pos++;
-				} while (pos < end && isWhiteSpace(bytes[pos]));
+				pos += (bc.followingBytesMatching(pos, Cookies::isWhitespaceOrNonTokenCharacter) + 1);
 
 				if (pos >= end) {
 					return;
@@ -368,14 +360,12 @@ public final class Cookies {
 			// in a good state.
 
 			// Skip whitespace
-			while (pos < end && isWhiteSpace(bytes[pos])) {pos++; }
+			pos += bc.followingBytesMatching(pos, Cookies::isWhiteSpace);
 
 
 			// Make sure that after the cookie we have a separator. This
 			// is only important if this is not the last cookie pair
-			while (pos < end && bytes[pos] != ';' && bytes[pos] != ',') {
-				pos++;
-			}
+			pos += bc.followingBytesMatching(pos, b -> (b != ';' && b != ','));
 
 			pos++;
 
@@ -452,6 +442,13 @@ public final class Cookies {
 				continue;
 			}
 		}
+	}
+
+	private static boolean isWhitespaceOrNonTokenCharacter(byte bytes) {
+		return CookieSupport.isHttpSeparator((char) bytes) &&
+				!CookieSupport.ALLOW_HTTP_SEPARATORS_IN_V0 ||
+				CookieSupport.isV0Separator((char) bytes) ||
+				isWhiteSpace(bytes);
 	}
 
 	/**

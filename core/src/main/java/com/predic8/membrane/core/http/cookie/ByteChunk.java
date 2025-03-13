@@ -22,6 +22,7 @@ import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.util.function.Predicate;
 
 /*
  * In a server it is very important to be able to operate on
@@ -552,6 +553,14 @@ public final class ByteChunk implements Cloneable, Serializable {
 
 	public long getLong() {
 		return Ascii.parseLong(buff, start,end-start);
+	}
+
+	public int followingBytesMatching(final int startPos, Predicate<Byte> condition) {
+		int pos = startPos;
+		while (pos < end && condition.test(buff[pos])) {
+			pos++;
+		}
+		return pos - startPos;
 	}
 
 
