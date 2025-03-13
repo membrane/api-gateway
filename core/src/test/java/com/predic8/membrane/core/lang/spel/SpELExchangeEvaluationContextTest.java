@@ -159,4 +159,9 @@ public class SpELExchangeEvaluationContextTest {
     void jsonUnknown() {
         assertEquals("", keyExpression("json['unknown']"));
     }
+
+    @Test
+    void body() {
+        assertTrue(keyExpression("body").contains("Snake oil"));
+    }
 }
