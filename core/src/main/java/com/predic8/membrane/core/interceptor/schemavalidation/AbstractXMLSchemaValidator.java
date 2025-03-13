@@ -110,7 +110,7 @@ public abstract class AbstractXMLSchemaValidator extends AbstractMessageValidato
 		}
 		exc.setProperty("error", errorMsg); // TODO Search for usage. If it is used rename property. See properties in class Exchange
 		setErrorResponse(exc,flow,exceptions);
-		msg.getHeader().add(VALIDATION_ERROR_SOURCE, flow.name());
+		exc.getResponse().getHeader().add(VALIDATION_ERROR_SOURCE, flow.name());
 		invalid.incrementAndGet();
 		return ABORT;
 	}
