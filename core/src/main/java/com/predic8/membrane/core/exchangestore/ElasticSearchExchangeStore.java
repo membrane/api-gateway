@@ -36,6 +36,7 @@ import java.util.*;
 import java.util.stream.*;
 
 import static com.predic8.membrane.core.http.MimeType.*;
+import static com.predic8.membrane.core.http.Request.put;
 import static java.nio.charset.StandardCharsets.*;
 import static java.util.stream.Collectors.*;
 
@@ -496,11 +497,9 @@ public class ElasticSearchExchangeStore extends AbstractPersistentExchangeStore 
     private void setUpIndex() {
         try {
             log.info("Setting up elastic search index");
-            Exchange indexExc = new Request.Builder().put(getElasticSearchIndexPath())
+            JSONObject indexRes = new JSONObject(client.call(put(getElasticSearchIndexPath())
                     .body("")
-                    .buildExchange();
-            indexExc = client.call(indexExc);
-            JSONObject indexRes = new JSONObject(indexExc.getResponse().getBodyAsStringDecoded());
+                    .buildExchange()).getResponse().getBodyAsStringDecoded());
 
 
             try {

@@ -2,6 +2,7 @@ package com.predic8.membrane.core.exchangestore;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mongodb.client.MongoClients;
+import com.mongodb.client.MongoCollection;
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.exchange.AbstractExchange;
@@ -9,12 +10,15 @@ import com.predic8.membrane.core.exchange.snapshots.AbstractExchangeSnapshot;
 import com.predic8.membrane.core.proxies.Proxy;
 import com.predic8.membrane.core.proxies.RuleKey;
 import org.bson.Document;
+import org.bson.conversions.Bson;
 import org.bson.types.ObjectId;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import static com.mongodb.client.model.Filters.eq;
 
 @MCElement(name = "mongoDBExchangeStore")
 public class MongoDBExchangeStore extends AbstractPersistentExchangeStore {
@@ -23,10 +27,12 @@ public class MongoDBExchangeStore extends AbstractPersistentExchangeStore {
     private String connection;
     private String database;
     private String collectionName;
+    private MongoCollection<Document> collection;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Override
     protected void writeToStore(List<AbstractExchangeSnapshot> exchanges) {
+        collection = MongoClients.create(connection).getDatabase(database).getCollection(collectionName);
         List<Document> documents = new ArrayList<>();
         for (AbstractExchangeSnapshot exchange : exchanges) {
             try {
@@ -36,7 +42,7 @@ public class MongoDBExchangeStore extends AbstractPersistentExchangeStore {
             }
         }
         if (!documents.isEmpty()) {
-            MongoClients.create(connection).getDatabase(database).getCollection(collectionName).insertMany(documents);
+            collection.insertMany(documents);
         }
     }
 
@@ -69,27 +75,44 @@ public class MongoDBExchangeStore extends AbstractPersistentExchangeStore {
 
     @Override
     public void remove(AbstractExchange exchange) {
-
+        collection.deleteOne(eq("id", exchange.getId()));
     }
 
     @Override
     public void removeAllExchanges(Proxy proxy) {
-
+        collection.deleteMany(new Document());
     }
 
     @Override
     public void removeAllExchanges(AbstractExchange[] exchanges) {
-
+        List<Bson> filters = new ArrayList<>();
+        for (AbstractExchange exchange : exchanges) {
+            filters.add(eq("id", exchange.getId()));
+        }
+        collection.deleteMany(eq("id", filters));
     }
 
     @Override
     public AbstractExchange[] getExchanges(RuleKey ruleKey) {
-        return new AbstractExchange[0];
+        return collection.find()
+                .into(new ArrayList<>())
+                .stream()
+                .map(this::convertToExchange)
+                .toList().toArray(new AbstractExchange[0]);
+    }
+
+    private AbstractExchange convertToExchange(Document doc) {
+        try {
+            return objectMapper.readValue(objectMapper.writeValueAsString(doc), AbstractExchange.class);
+        } catch (Exception e) {
+            log.error("Error converting MongoDB document to AbstractExchange", e);
+            return null;
+        }
     }
 
     @Override
     public List<AbstractExchange> getAllExchangesAsList() {
-        return List.of();
+        return List.of(getExchanges(null));
     }
 
     @Override
@@ -99,6 +122,15 @@ public class MongoDBExchangeStore extends AbstractPersistentExchangeStore {
 
     @Override
     public AbstractExchangeSnapshot getFromStoreById(long id) {
+        try {
+            Document doc = collection.find(eq("id", id)).first();
+            if (doc != null) {
+                return objectMapper.readValue(objectMapper.writeValueAsString(doc), AbstractExchangeSnapshot.class);
+            }
+        } catch (Exception e) {
+            log.error("Error retrieving exchange from MongoDB", e);
+            throw new RuntimeException(e);
+        }
         return null;
     }
 

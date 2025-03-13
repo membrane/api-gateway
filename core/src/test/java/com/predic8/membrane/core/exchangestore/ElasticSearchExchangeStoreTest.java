@@ -112,7 +112,7 @@ class ElasticSearchExchangeStoreTest {
         return new AbstractInterceptor() {
             @Override
             public Outcome handleRequest(Exchange exc) {
-                if (exc.getRequest().getMethod().equals("PUT") && exc.getRequest().getUri().equals("/membrane/")) {
+                if (exc.getRequest().isGETRequest()) {
                     exc.setResponse(ok("""
                         {"acknowledged": true}""").build());
                     return RETURN;
@@ -122,25 +122,29 @@ class ElasticSearchExchangeStoreTest {
                         {"membrane": {"mappings": {"something":true}}}""").build());
                     return RETURN;
                 }
-                if (exc.getRequest().getMethod().equals("POST") && exc.getRequest().getUri().equals("/_bulk")) {
-                    for (String line : exc.getRequest().getBodyAsStringDecoded().split("\n")) {
-                        try {
-                            JsonNode obj = om.readTree(line);
-                            synchronized (insertedObjects) {
-                                insertedObjects.add(obj);
-                            }
-                        } catch (JsonProcessingException e) {
-                            throw new RuntimeException(e);
-                        }
-                    }
-                    exc.setResponse(ok("{}").build());
-                    return RETURN;
-                }
-                exc.setResponse(ok("""
-                        {}""").build());
-                return RETURN;
+                return getOutcome(exc, om);
             }
         };
+    }
+
+    private static @NotNull Outcome getOutcome(Exchange exc, ObjectMapper om) {
+        if (exc.getRequest().getMethod().equals("POST") && exc.getRequest().getUri().equals("/_bulk")) {
+            for (String line : exc.getRequest().getBodyAsStringDecoded().split("\n")) {
+                try {
+                    JsonNode obj = om.readTree(line);
+                    synchronized (insertedObjects) {
+                        insertedObjects.add(obj);
+                    }
+                } catch (JsonProcessingException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+            exc.setResponse(ok("{}").build());
+            return RETURN;
+        }
+        exc.setResponse(ok("""
+                {}""").build());
+        return RETURN;
     }
 
     public static List<JsonNode> getInsertedObjectsAndClearList() {
