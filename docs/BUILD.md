@@ -10,7 +10,7 @@
 You can skip the tests for speed.
 
 ```sh
-git clone https://github.com/membrane/service-proxy
+git clone https://github.com/membrane/api-gateway
 cd api-gateway
 mvn install -DskipTests
 ```

@@ -1,4 +1,4 @@
-# any VIM swap file
+-# any VIM swap file
 .*.swp
 _*.swp
 
@@ -124,3 +124,4 @@ maven-plugin/target/surefire/
 # Mac
 .DS_Store
 /distribution/docker/release-bin/
+/docs/router-conf.xsd

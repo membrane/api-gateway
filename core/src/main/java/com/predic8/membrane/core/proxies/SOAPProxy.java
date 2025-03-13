@@ -84,7 +84,7 @@ public class SOAPProxy extends AbstractServiceProxy {
             resolverMap.addSchemaResolver(httpSR);
         }
         configureFromWSDL();
-        super.init(); // Must be called last! Otherwise SSL will not be configured!
+        super.init(); // Must be called last! Otherwise, SSL will not be configured!
     }
 
     protected void configureFromWSDL() {
@@ -101,10 +101,6 @@ public class SOAPProxy extends AbstractServiceProxy {
         }
 
         prepareRouting(location);
-
-        // remove previously added interceptors TODO Why, What?
-        for (; automaticallyAddedInterceptorCount > 0; automaticallyAddedInterceptorCount--)
-            interceptors.removeFirst();
 
         // add interceptors (in reverse order) to position 0.
         addWebServiceExplorer();

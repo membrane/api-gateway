@@ -28,4 +28,5 @@ import org.junit.platform.suite.api.Suite;
     ExampleTestsWithoutInternet.class
 })
 public class ExampleTests {
+
 }

@@ -1,6 +1,6 @@
 # Membrane API Gateway
-[![GitHub release](https://img.shields.io/github/release/membrane/service-proxy.svg)](https://github.com/membrane/service-proxy/releases/latest)
-[![Hex.pm](https://img.shields.io/hexpm/l/plug.svg)](https://raw.githubusercontent.com/membrane/service-proxy/master/distribution/router/LICENSE.txt)
+[![GitHub release](https://img.shields.io/github/release/membrane/service-proxy.svg)](https://github.com/membrane/api-gateway/releases/latest)
+[![Hex.pm](https://img.shields.io/hexpm/l/plug.svg)](https://raw.githubusercontent.com/membrane/api-gateway/master/distribution/router/LICENSE.txt)
 
 Simple & extensible API gateway for REST and legacy services, written in Java
 
@@ -42,8 +42,8 @@ docker run -v "$(pwd)/proxies.xml:/opt/membrane/conf/proxies.xml" -p 2000:2000 p
 
 ## More examples
 
-https://github.com/membrane/service-proxy/blob/master/README.md
+https://github.com/membrane/api-gateway/blob/master/README.md
 
 ## Source Code
 
-https://github.com/membrane/service-proxy/
+https://github.com/membrane/api-gateway/
