@@ -246,8 +246,11 @@ public final class Cookies {
 			// skip to the name-only part.
 			if (pos < (end - 1) && bytes[pos] == '=') {
 
+				// Skip '='
+				pos++;
+
 				// Skip whitespace
-				pos += (bc.followingBytesMatching(pos, Cookies::isWhitespaceOrNonTokenCharacter) + 1);
+				pos += bc.followingBytesMatching(pos, Cookies::isWhitespaceOrNonTokenCharacter);
 
 				if (pos >= end) {
 					return;
