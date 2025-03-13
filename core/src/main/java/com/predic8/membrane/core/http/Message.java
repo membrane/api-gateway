@@ -301,10 +301,10 @@ public abstract class Message {
 	public boolean isBodyEmpty() throws IOException {
 		if (header.hasContentLength())
 			return header.getContentLength() == 0;
-		
+
 		if (getBody().read)
 			return getBody().getLength() == 0;
-		
+
 		return getBody() instanceof EmptyBody;
 	}
 
