@@ -70,14 +70,17 @@ public class OAuth2Util {
     }
 
     public static @NotNull String getPublicURL(Exchange exc) {
-        return (isHTTPS(exc.getProxy(), getxForwardedProto(exc)) ? "https://" : "http://") + exc.getOriginalHostHeader();
+        return getProtocol(exc.getProxy(), getxForwardedProto(exc))+ "://" + exc.getOriginalHostHeader();
     }
 
-    private static boolean isHTTPS(Proxy proxy, String xForwardedProto) {
+    private static String getProtocol(Proxy proxy, String xForwardedProto) {
         if (!(proxy instanceof SSLableProxy sp)) {
-            return false;
+            return "http";
         }
-        return xForwardedProto != null ? "https".equals(xForwardedProto) : sp.isInboundSSL();
+        if (xForwardedProto != null) {
+            return "https".equals(xForwardedProto) ? "https" : "http";
+        }
+        return sp.getProtocol() ;
     }
 
     private static String getxForwardedProto(Exchange exc) {
