@@ -29,8 +29,6 @@ import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.net.Socket;
 import java.security.InvalidParameterException;
 import java.security.Key;
@@ -65,19 +63,18 @@ public abstract class SSLContext implements SSLProvider {
                 if (!supportedCiphers.contains(cipher))
                     throw new InvalidParameterException("Unknown cipher " + cipher);
                 if (cipher.contains("_RC4_"))
-                    log.warn("Cipher " + cipher + " uses RC4, which is deprecated.");
+                    log.warn("Cipher {} uses RC4, which is deprecated.", cipher);
                 if (cipher.contains("_3DES_"))
-                    log.warn("Cipher " + cipher + " uses 3DES, which is deprecated.");
+                    log.warn("Cipher {} uses 3DES, which is deprecated.", cipher);
             }
         } else {
             // use all default ciphers except those using RC4
-            String supportedCiphers[] = sslc.getSocketFactory().getDefaultCipherSuites();
-            ArrayList<String> ciphers = new ArrayList<>(supportedCiphers.length);
-            for (String cipher : supportedCiphers)
-                if (!cipher.contains("_RC4_") && !cipher.contains("_3DES_"))
-                    ciphers.add(cipher);
-            sortCiphers(ciphers);
-            this.ciphers = ciphers.toArray(new String[ciphers.size()]);
+            ciphers = Arrays.stream(sslc.getSocketFactory().getDefaultCipherSuites())
+                    .filter(cipher -> (!cipher.contains("_RC4_") && !cipher.contains("_3DES_")))
+                    .map(CipherInfo::new)
+                    .sorted((ci1, ci2) -> ci2.points - ci1.points)
+                    .map(cipherInfo -> cipherInfo.cipher)
+                    .toArray(String[]::new);
         }
 
         if (sslParser.getProtocols() != null) {
@@ -117,15 +114,11 @@ public abstract class SSLContext implements SSLProvider {
         if (getProtocols() != null) {
             serviceSocket.setEnabledProtocols(getProtocols());
         } else {
-            String[] protocols = serviceSocket.getEnabledProtocols();
-            Set<String> set = new HashSet<>();
-            for (String protocol : protocols) {
-                if (protocol.equals("SSLv3") || protocol.equals("SSLv2Hello")) {
-                    continue;
-                }
-                set.add(protocol);
-            }
-            serviceSocket.setEnabledProtocols(set.toArray(new String[0]));
+            serviceSocket.setEnabledProtocols(
+                    Arrays.stream(serviceSocket.getEnabledProtocols())
+                            .filter(protocol -> !(protocol.equals("SSLv3") || protocol.equals("SSLv2Hello")))
+                            .toArray(String[]::new)
+            );
         }
         serviceSocket.setWantClientAuth(isWantClientAuth());
         serviceSocket.setNeedClientAuth(isNeedClientAuth());
@@ -148,7 +141,6 @@ public abstract class SSLContext implements SSLProvider {
         sslParameters.setUseCipherSuitesOrder(true);
     }
 
-
     String[] getCiphers() {
         return ciphers;
     }
@@ -165,35 +157,15 @@ public abstract class SSLContext implements SSLProvider {
         return wantClientAuth;
     }
 
-    private void sortCiphers(ArrayList<String> ciphers) {
-        ArrayList<SSLContext.CipherInfo> cipherInfos = new ArrayList<>(ciphers.size());
-
-        for (String cipher : ciphers)
-            cipherInfos.add(new SSLContext.CipherInfo(cipher));
-
-        cipherInfos.sort((cipher1, cipher2) -> cipher2.points - cipher1.points);
-
-        for (int i = 0; i < ciphers.size(); i++)
-            ciphers.set(i, cipherInfos.get(i).cipher);
-    }
-
     public String constructHostNamePattern() {
-        StringBuilder sb = null;
         List<String> dnsNames = getDnsNames();
         if (dnsNames == null)
             throw new RuntimeException("Could not extract DNS names from the first key's certificate in " + getLocation());
-        for (String dnsName : dnsNames) {
-            if (sb == null)
-                sb = new StringBuilder();
-            else
-                sb.append(" ");
-            sb.append(dnsName);
-        }
-        if (sb == null) {
-            log.warn("Could not retrieve DNS hostname for certificate, using '*': " + getLocation());
+        if (dnsNames.isEmpty()) {
+            log.warn("Could not retrieve DNS hostname for certificate, using '*': {}", getLocation());
             return "*";
         }
-        return sb.toString();
+        return String.join(" ", dnsNames);
     }
 
     private static class CipherInfo {
@@ -202,18 +174,21 @@ public abstract class SSLContext implements SSLProvider {
 
         public CipherInfo(String cipher) {
             this.cipher = cipher;
+            this.points = calculatePoints(cipher);
+        }
+
+        private int calculatePoints(String cipher) {
             int points = 0;
             if (supportsPFS(cipher))
-                points = 100;
-            points += getAESStrength(cipher) * 5;
-            points += getSHAStrength(cipher) * 2;
-            points += getChaChaPoly1305Strength(cipher) * 25;
+                points += 100;
             if (supportsAESGCM(cipher))
                 points += 15;
             if (!supportsAESCBC(cipher))
                 points += 150;
-
-            this.points = points;
+            points += getAESStrength(cipher) * 5;
+            points += getSHAStrength(cipher) * 2;
+            points += getChaChaPoly1305Strength(cipher) * 25;
+            return points;
         }
 
         private boolean supportsAESGCM(String cipher) {
@@ -248,7 +223,7 @@ public abstract class SSLContext implements SSLProvider {
             return 0;
         }
 
-        private boolean supportsPFS(String cipher2) {
+        private boolean supportsPFS(String cipher) {
             // see https://en.wikipedia.org/wiki/Forward_secrecy#Protocols
             return cipher.contains("_DHE_RSA_") || cipher.contains("_DHE_DSS_") || cipher.contains("_ECDHE_RSA_") || cipher.contains("_ECDHE_ECDSA_");
         }
@@ -267,8 +242,8 @@ public abstract class SSLContext implements SSLProvider {
             StringBuilder sb = new StringBuilder();
             sb.append("Certificate chain is not valid:\n");
             for (int i = 0; i < certs.size(); i++) {
-                sb.append("Cert " + String.format("%2d", i) + ": Subject: " + ((X509Certificate)certs.get(i)).getSubjectX500Principal().toString() + "\n");
-                sb.append("         Issuer: " + ((X509Certificate)certs.get(i)).getIssuerX500Principal().toString() + "\n");
+                sb.append("Cert %2d: Subject: %s\n".formatted(i, ((X509Certificate) certs.get(i)).getSubjectX500Principal()));
+                sb.append("         Issuer: %s\n".formatted(((X509Certificate) certs.get(i)).getIssuerX500Principal()));
             }
             log.warn(sb.toString());
         }
@@ -291,45 +266,39 @@ public abstract class SSLContext implements SSLProvider {
     }
 
     protected void checkKeyMatchesCert(Key key, List<Certificate> certs) {
-        if (key instanceof RSAPrivateCrtKey && certs.get(0).getPublicKey() instanceof RSAPublicKey) {
-            RSAPrivateCrtKey privkey = (RSAPrivateCrtKey)key;
-            RSAPublicKey pubkey = (RSAPublicKey) certs.get(0).getPublicKey();
-            if (!(privkey.getModulus().equals(pubkey.getModulus()) && privkey.getPublicExponent().equals(pubkey.getPublicExponent())))
+        if (key instanceof RSAPrivateCrtKey privKey && certs.getFirst().getPublicKey() instanceof RSAPublicKey pubKey) {
+            if (!(privKey.getModulus().equals(pubKey.getModulus()) && privKey.getPublicExponent().equals(pubKey.getPublicExponent())))
                 throw new RuntimeException("Certificate does not fit to key: " + getLocation());
         }
 
-        if (key instanceof ECPrivateKey && certs.get(0).getPublicKey() instanceof ECPublicKey) {
-            ECPrivateKey privkey = (ECPrivateKey) key;
-            ECPublicKey pubkey = (ECPublicKey) certs.get(0).getPublicKey();
+        if (key instanceof ECPrivateKey privKey && certs.getFirst().getPublicKey() instanceof ECPublicKey pubKey) {
 
-            if (pubkey.getParams().getCurve().getField() instanceof ECFieldFp) {
-                ECFieldFp pubfield = (ECFieldFp) pubkey.getParams().getCurve().getField();
-                if (!(privkey.getParams().getCurve().getField() instanceof ECFieldFp))
+            if (pubKey.getParams().getCurve().getField() instanceof ECFieldFp pubField) {
+                if (!(privKey.getParams().getCurve().getField() instanceof ECFieldFp privField))
                     throw new RuntimeException("Elliptic curve differs between private key and public key (ECFieldFp vs ECFieldF2m).");
-                ECFieldFp privfield = (ECFieldFp) privkey.getParams().getCurve().getField();
-                if (!pubfield.getP().equals(privfield.getP()))
+                if (!pubField.getP().equals(privField.getP()))
                     throw new RuntimeException("Elliptic curve differs between private key and public key (p).");
             }
-            // "pubkey.getParams().getCurve().getField() instanceof ECFieldF2m" is not handled
+            // "pubKey.getParams().getCurve().getField() instanceof ECFieldF2m" is not handled
 
-            if (!pubkey.getParams().getCurve().getA().equals(privkey.getParams().getCurve().getA()))
+            if (!pubKey.getParams().getCurve().getA().equals(privKey.getParams().getCurve().getA()))
                 throw new RuntimeException("Elliptic curve differs between private key and public key (a).");
-            if (!pubkey.getParams().getCurve().getB().equals(privkey.getParams().getCurve().getB()))
+            if (!pubKey.getParams().getCurve().getB().equals(privKey.getParams().getCurve().getB()))
                 throw new RuntimeException("Elliptic curve differs between private key and public key (b).");
-            if (!pubkey.getParams().getGenerator().equals(privkey.getParams().getGenerator())) // = G = (x,y)
+            if (!pubKey.getParams().getGenerator().equals(privKey.getParams().getGenerator())) // = G = (x,y)
                 throw new RuntimeException("Elliptic curve differs between private key and public key (generator).");
-            if (!pubkey.getParams().getOrder().equals(privkey.getParams().getOrder())) // = n
+            if (!pubKey.getParams().getOrder().equals(privKey.getParams().getOrder())) // = n
                 throw new RuntimeException("Elliptic curve differs between private key and public key (order).");
-            if (pubkey.getParams().getCofactor() != privkey.getParams().getCofactor()) // = h
+            if (pubKey.getParams().getCofactor() != privKey.getParams().getCofactor()) // = h
                 throw new RuntimeException("Elliptic curve differs between private key and public key (cofactor).");
 
             ECMultiplier ecMultiplier = new FixedPointCombMultiplier();
 
-            ECPoint correspondingPubKey = ecMultiplier.multiply(((BCECPublicKey) pubkey).getParameters().getG(), privkey.getS()).normalize();
+            ECPoint correspondingPubKey = ecMultiplier.multiply(((BCECPublicKey) pubKey).getParameters().getG(), privKey.getS()).normalize();
 
             // check 'pubKey = privKey * generator'
-            if (!correspondingPubKey.getAffineXCoord().toBigInteger().equals(pubkey.getW().getAffineX()) ||
-                !correspondingPubKey.getAffineYCoord().toBigInteger().equals(pubkey.getW().getAffineY()))
+            if (!correspondingPubKey.getAffineXCoord().toBigInteger().equals(pubKey.getW().getAffineX()) ||
+                !correspondingPubKey.getAffineYCoord().toBigInteger().equals(pubKey.getW().getAffineY()))
                 throw new RuntimeException("Elliptic curve private key does not match public key.");
         }
     }
