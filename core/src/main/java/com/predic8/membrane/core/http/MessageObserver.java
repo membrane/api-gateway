@@ -32,7 +32,8 @@ import java.io.IOException;
  * {@link MessageObserver} will then write the body into permanent storage.
  */
 public interface MessageObserver {
-	public void bodyRequested(AbstractBody body);
+
+	void bodyRequested(AbstractBody body);
 
 	/**
 	 * Observes a piece of the body.

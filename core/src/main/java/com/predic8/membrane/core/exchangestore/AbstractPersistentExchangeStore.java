@@ -34,13 +34,14 @@ public abstract class AbstractPersistentExchangeStore extends AbstractExchangeSt
 
     int updateIntervalMs = 1000;
 
-    private final Map<Long, AbstractExchangeSnapshot> shortTermMemoryForBatching = new HashMap<>();
-    private final Cache<Long, AbstractExchangeSnapshot> cacheToWait = CacheBuilder.newBuilder().expireAfterWrite(5, TimeUnit.SECONDS).build();
+    final Map<Long, AbstractExchangeSnapshot> shortTermMemoryForBatching = new HashMap<>();
+    final Cache<Long, AbstractExchangeSnapshot> cacheToWait = CacheBuilder.newBuilder().expireAfterWrite(5, TimeUnit.SECONDS).build();
 
     protected long startTime;
     boolean init = false;
     protected int maxBodySize = 100000;
     protected BodyCollectingMessageObserver.Strategy bodyExceedingMaxSizeStrategy = BodyCollectingMessageObserver.Strategy.TRUNCATE;
+    volatile boolean updateThreadWorking;
 
     @Override
     public void init(Router router) {
@@ -52,6 +53,7 @@ public abstract class AbstractPersistentExchangeStore extends AbstractExchangeSt
             while (true) {
                 try {
                     List<AbstractExchangeSnapshot> exchanges;
+                    updateThreadWorking = true;
                     synchronized (shortTermMemoryForBatching) {
                         exchanges = new ArrayList<>(shortTermMemoryForBatching.values());
                         shortTermMemoryForBatching.values().forEach(exc -> cacheToWait.put(exc.getId(), exc));
@@ -59,8 +61,10 @@ public abstract class AbstractPersistentExchangeStore extends AbstractExchangeSt
                     }
                     if (!exchanges.isEmpty()) {
                         writeToStore(exchanges);
-                    } else
+                    } else {
+                        updateThreadWorking = false;
                         Thread.sleep(updateIntervalMs);
+                    }
                 } catch (InterruptedException e) {
                     break;
                 } catch (Exception e) {
@@ -108,10 +112,15 @@ public abstract class AbstractPersistentExchangeStore extends AbstractExchangeSt
 
     public AbstractExchangeSnapshot getExchangeDtoById(int id) {
         Long idBox = (long) id;
-        if (shortTermMemoryForBatching.get(idBox) != null)
-            return shortTermMemoryForBatching.get(idBox);
-        if (cacheToWait.getIfPresent(idBox) != null)
-            return cacheToWait.getIfPresent(idBox);
+        AbstractExchangeSnapshot memorizedExchangeSnapshot;
+        synchronized (shortTermMemoryForBatching) {
+            memorizedExchangeSnapshot = shortTermMemoryForBatching.get(idBox);
+        }
+        if (memorizedExchangeSnapshot != null)
+            return memorizedExchangeSnapshot;
+        AbstractExchangeSnapshot cachedExchangeSnapshot = cacheToWait.getIfPresent(idBox);
+        if (cachedExchangeSnapshot != null)
+            return cachedExchangeSnapshot;
 
         return getFromStoreById(id);
     }
