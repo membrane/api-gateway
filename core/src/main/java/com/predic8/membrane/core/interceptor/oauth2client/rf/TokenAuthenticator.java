@@ -16,7 +16,6 @@ package com.predic8.membrane.core.interceptor.oauth2client.rf;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.oauth2.OAuth2AnswerParameters;
 import com.predic8.membrane.core.interceptor.oauth2.OAuth2Statistics;
-import com.predic8.membrane.core.interceptor.oauth2.ParamNames;
 import com.predic8.membrane.core.interceptor.oauth2.authorizationservice.AuthorizationService;
 import com.predic8.membrane.core.interceptor.oauth2client.rf.token.AccessTokenRevalidator;
 import com.predic8.membrane.core.interceptor.session.Session;
@@ -69,7 +68,7 @@ public class TokenAuthenticator {
                 oauth2Answer.setUserinfo(userinfo);
 
                 session.setOAuth2Answer(wantedScope, oauth2Answer.serialize());
-                sessionAuthorizer.authorizeSession(userinfo, session, authService);
+                sessionAuthorizer.authorizeSession(userinfo, session, authService.getSubject());
             }
         }
         return false;
