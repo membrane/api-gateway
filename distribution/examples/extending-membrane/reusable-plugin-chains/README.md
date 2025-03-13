@@ -1,4 +1,4 @@
-# Reuseable Plugin Chains
+# Reusable Plugin Chains
 
 This example demonstrates how using a shared chain helps standardize both request and response handling while letting each API define its own behavior.  Chains group plugins and interceptors into reusable components, significantly reducing redundancy and the overall size of your proxies.xml configuration, especially when managing multiple APIs.
 
