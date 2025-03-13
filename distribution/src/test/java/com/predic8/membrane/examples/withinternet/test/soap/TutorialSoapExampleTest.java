@@ -1,4 +1,4 @@
-package com.predic8.membrane.examples.tutorials.soap;
+package com.predic8.membrane.examples.withinternet.test.soap;
 
 import com.predic8.membrane.examples.util.AbstractSampleMembraneStartStopTestcase;
 import org.junit.jupiter.api.BeforeEach;
@@ -12,7 +12,6 @@ import static io.restassured.RestAssured.given;
 import static io.restassured.http.ContentType.HTML;
 import static org.hamcrest.Matchers.containsString;
 
-// TODO move to `withinternet` directory when pr #1631 is merged
 public class TutorialSoapExampleTest extends AbstractSampleMembraneStartStopTestcase {
 
     @Override
