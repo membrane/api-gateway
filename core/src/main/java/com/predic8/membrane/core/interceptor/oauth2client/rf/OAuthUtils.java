@@ -47,7 +47,8 @@ public class OAuthUtils {
         session.put(OAuth2Constants.OAUTH2_ANSWER, answer.substring(0, indexOfTopLevelComma));
     }
 
-    private static int getIndexOfTopLevelComma(String answer) {
+    // TODO: test this
+    public static int getIndexOfTopLevelComma(String answer) {
         int curlyBraceLevel = 0;
         boolean inString = false;
         boolean escapeNext = false;

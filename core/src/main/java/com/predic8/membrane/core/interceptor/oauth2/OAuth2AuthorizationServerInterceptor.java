@@ -21,6 +21,7 @@ import com.predic8.membrane.core.interceptor.oauth2.processors.*;
 import com.predic8.membrane.core.interceptor.oauth2.tokengenerators.*;
 import com.predic8.membrane.core.proxies.*;
 import com.predic8.membrane.core.util.*;
+import org.jetbrains.annotations.NotNull;
 import org.jose4j.lang.*;
 import org.slf4j.*;
 
@@ -31,6 +32,7 @@ import java.util.*;
 @MCElement(name = "oauth2authserver")
 public class OAuth2AuthorizationServerInterceptor extends AbstractInterceptor {
     private static final Logger log = LoggerFactory.getLogger(OAuth2AuthorizationServerInterceptor.class.getName());
+    public static final Set<@NotNull String> SUPPORTED_AUTHORIZATION_GRANTS = Set.of("code", "token", "id_token token");
 
     private String issuer;
     private String location;
@@ -130,23 +132,24 @@ public class OAuth2AuthorizationServerInterceptor extends AbstractInterceptor {
     }
 
     private void addDefaultProcessors() {
-        getProcessors()
-                .add(new InvalidMethodProcessor(this))
-                .add(new FaviconEndpointProcessor(this))
-                .add(new AuthEndpointProcessor(this))
-                .add(new TokenEndpointProcessor(this))
-                .add(new UserinfoEndpointProcessor(this))
-                .add(new RevocationEndpointProcessor(this))
-                .add(new LoginDialogEndpointProcessor(this))
-                .add(new WellknownEndpointProcessor(this))
-                .add(new CertsEndpointProcessor(this))
-                .add(new EmptyEndpointProcessor(this))
-                .add(new DefaultEndpointProcessor(this));
+        List.of(
+                new InvalidMethodProcessor(this),
+                new FaviconEndpointProcessor(this),
+                new AuthEndpointProcessor(this),
+                new TokenEndpointProcessor(this),
+                new UserinfoEndpointProcessor(this),
+                new RevocationEndpointProcessor(this),
+                new LoginDialogEndpointProcessor(this),
+                new WellknownEndpointProcessor(this),
+                new CertsEndpointProcessor(this),
+                new EmptyEndpointProcessor(this),
+                new DefaultEndpointProcessor(this)
+        ).forEach(processors::add);
     }
 
     @Override
     public Outcome handleRequest(Exchange exc) {
-        Outcome outcome = getProcessors().runProcessors(exc);
+        Outcome outcome = processors.runProcessors(exc);
         if (outcome != Outcome.CONTINUE)
             sessionManager.postProcess(exc);
         return outcome;
@@ -327,9 +330,7 @@ public class OAuth2AuthorizationServerInterceptor extends AbstractInterceptor {
     }
 
     public void addSupportedAuthorizationGrants() {
-        getSupportedAuthorizationGrants().add("code");
-        getSupportedAuthorizationGrants().add("token");
-        getSupportedAuthorizationGrants().add("id_token token");
+        getSupportedAuthorizationGrants().addAll(SUPPORTED_AUTHORIZATION_GRANTS);
     }
 
     public OAuth2Statistics getStatistics() {

@@ -15,15 +15,19 @@ package com.predic8.membrane.core.interceptor.oauth2;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jsr310.JSR310Module;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.predic8.membrane.core.interceptor.oauth2client.rf.OAuth2TokenResponseBody;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 
 public class OAuth2AnswerParameters {
+
+    private final static ObjectMapper om = createObjectMapper();
 
     private String accessToken;
     private String tokenType;
@@ -32,6 +36,12 @@ public class OAuth2AnswerParameters {
     private String expiration;
     private LocalDateTime receivedAt;
     private String refreshToken;
+
+    public static OAuth2AnswerParameters createFrom(OAuth2TokenResponseBody tokenResponse) {
+        var r = new OAuth2AnswerParameters();
+        r.readFrom(tokenResponse);
+        return r;
+    }
 
     public String getAccessToken() {
         return accessToken;
@@ -65,17 +75,18 @@ public class OAuth2AnswerParameters {
         return tokenType;
     }
 
-    public String serialize() throws JsonProcessingException, UnsupportedEncodingException {
-        return OAuth2Util.urlencode(getObjectMapper().writeValueAsString(this));
+    public String serialize() throws JsonProcessingException {
+        return OAuth2Util.urlencode(om.writeValueAsString(this));
     }
 
     public static OAuth2AnswerParameters deserialize(String oauth2answer) throws IOException {
-        return getObjectMapper().readValue(OAuth2Util.urldecode(oauth2answer),OAuth2AnswerParameters.class);
+        return om.readValue(OAuth2Util.urldecode(oauth2answer),OAuth2AnswerParameters.class);
     }
 
-    private static ObjectMapper getObjectMapper() {
+    private static ObjectMapper createObjectMapper() {
         ObjectMapper mapper = new ObjectMapper();
-        mapper.registerModule(new JSR310Module());
+        mapper.registerModule(new JavaTimeModule());
+        mapper.enable(SerializationFeature.WRITE_DATES_WITH_ZONE_ID);
         return mapper;
     }
 
@@ -106,9 +117,35 @@ public class OAuth2AnswerParameters {
     @Override
     public String toString() {
         try {
-            return getObjectMapper().writeValueAsString(this);
+            return om.writeValueAsString(this);
         } catch (JsonProcessingException e) {
             return "";
         }
+    }
+
+    public void updateReceivedAt() {
+        setReceivedAt(computeReceivedAt());
+    }
+
+    private static @NotNull LocalDateTime computeReceivedAt() {
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime receivedAt = now.withSecond(floorTo30ies(now)).withNano(0);
+        return receivedAt;
+    }
+
+    private static int floorTo30ies(LocalDateTime now) {
+        return now.getSecond() / 30 * 30;
+    }
+
+    public void readFrom(OAuth2TokenResponseBody tokenResponse) {
+        updateReceivedAt();
+
+        setAccessToken(tokenResponse.getAccessToken());
+        setTokenType(tokenResponse.getTokenType());
+        setRefreshToken(tokenResponse.getRefreshToken());
+        // TODO: "refresh_token_expires_in":1209600
+        setExpiration(tokenResponse.getExpiresIn());
+        if (tokenResponse.getIdToken() != null)
+            setIdToken(tokenResponse.getVerifiedIdToken());
     }
 }
