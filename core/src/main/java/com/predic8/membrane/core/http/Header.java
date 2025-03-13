@@ -127,26 +127,30 @@ public class Header {
 
 	public Header(InputStream in) throws IOException, EndOfStreamException {
 		String line;
-
 		while (!(line = readLine(in)).isEmpty()) {
 			try {
 				add(new HeaderField(line));
 			} catch (StringIndexOutOfBoundsException sie) {
-				log.error("Header read line that caused problems: " + line);
+                log.error("Header read line that caused problems: {}", line);
 			}
 		}
 	}
 
 	public Header(String header) throws IOException, EndOfStreamException {
-		for (String line : header.split("\r?\n"))
-			if (!line.isEmpty())
-				add(new HeaderField(line));
+		this(
+				Arrays.stream(header.split("\r?\n"))
+						.filter(s -> !s.isEmpty())
+						.map(HeaderField::new)
+						.toList()
+		);
 	}
 
 	public Header(Header header) {
-		for (HeaderField field : header.fields) {
-			fields.add(new HeaderField(field));
-		}
+		this(header.fields.stream().map(HeaderField::new).toList());
+	}
+
+	public Header(List<HeaderField> fields) {
+		this.fields.addAll(fields);
 	}
 
 	public void add(String key, String val) {
