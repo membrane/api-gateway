@@ -166,11 +166,9 @@ public class Header {
 	}
 
 	public void removeFields(String name) {
-		List<HeaderField> deleteValues = new ArrayList<>();
-		for (HeaderField field : fields) {
-			if (field.getHeaderName().hasName(name))
-				deleteValues.add(field);
-		}
+		List<HeaderField> deleteValues = fields.stream()
+				.filter(f -> f.getHeaderName().hasName(name))
+				.toList();
 		fields.removeAll(deleteValues);
 	}
 
@@ -406,11 +404,9 @@ public class Header {
 	}
 
 	public int getNumberOf(String headerName) {
-		int res = 0;
-		for (HeaderField headerField : fields)
-			if (headerField.getHeaderName().hasName(headerName))
-				res++;
-		return res;
+		return (int) fields.stream()
+				.filter(f -> f.getHeaderName().hasName(headerName))
+				.count();
 	}
 
 	/**
