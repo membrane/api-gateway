@@ -21,6 +21,7 @@ import java.io.Serializable;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 
 /*
  * In a server it is very important to be able to operate on
@@ -75,24 +76,24 @@ public final class ByteChunk implements Cloneable, Serializable {
 	 * <p>
 	 * Same as java.nio.channel.ReadableByteChannel
 	 */
-	public static interface ByteInputChannel {
+	public interface ByteInputChannel {
 		/**
 		 * Read new bytes ( usually the internal conversion buffer ).
 		 * The implementation is allowed to ignore the parameters,
 		 * and mutate the chunk if it wishes to implement its own buffering.
 		 */
-		public int realReadBytes(byte cbuf[], int off, int len)
+        int realReadBytes(byte[] cbuf, int off, int len)
 				throws IOException;
 	}
 
 	/** Same as java.nio.channel.WrittableByteChannel.
 	 */
-	public static interface ByteOutputChannel {
+	public interface ByteOutputChannel {
 		/**
 		 * Send the bytes ( usually the internal conversion buffer ).
 		 * Expect 8k output if the buffer is full.
 		 */
-		public void realWriteBytes(byte cbuf[], int off, int len)
+        void realWriteBytes(byte[] cbuf, int off, int len)
 				throws IOException;
 	}
 
@@ -102,7 +103,7 @@ public final class ByteChunk implements Cloneable, Serializable {
         as most standards seem to converge, but the servlet API requires
         8859_1, and this object is used mostly for servlets.
 	 */
-	public static final Charset DEFAULT_CHARSET = Charset.forName("ISO-8859-1");
+	public static final Charset DEFAULT_CHARSET = StandardCharsets.ISO_8859_1;
 
 	// byte[]
 	private byte[] buff;
@@ -323,7 +324,7 @@ public final class ByteChunk implements Cloneable, Serializable {
 
 	/** Add data to the buffer
 	 */
-	public void append( byte src[], int off, int len )
+	public void append(byte[] src, int off, int len )
 			throws IOException
 	{
 		// will grow, up to limit
@@ -424,7 +425,7 @@ public final class ByteChunk implements Cloneable, Serializable {
 
 	}
 
-	public int substract( byte src[], int off, int len )
+	public int substract(byte[] src, int off, int len )
 			throws IOException {
 
 		if ((end - start) == 0) {
@@ -603,7 +604,7 @@ public final class ByteChunk implements Cloneable, Serializable {
 		return equals( bb.getBytes(), bb.getStart(), bb.getLength());
 	}
 
-	public boolean equals( byte b2[], int off2, int len2) {
+	public boolean equals(byte[] b2, int off2, int len2) {
 		byte b1[]=buff;
 		if( b1==null && b2==null ) {
 			return true;
@@ -625,7 +626,7 @@ public final class ByteChunk implements Cloneable, Serializable {
 	}
 
 
-	public boolean equals( char c2[], int off2, int len2) {
+	public boolean equals(char[] c2, int off2, int len2) {
 		// XXX works only for enc compatible with ASCII/UTF !!!
 		byte b1[]=buff;
 		if( c2==null && b1==null ) {
@@ -749,7 +750,7 @@ public final class ByteChunk implements Cloneable, Serializable {
 		return hashBytesIC( buff, start, end-start );
 	}
 
-	private static int hashBytes( byte buff[], int start, int bytesLen ) {
+	private static int hashBytes(byte[] buff, int start, int bytesLen ) {
 		int max=start+bytesLen;
 		byte bb[]=buff;
 		int code=0;
@@ -759,8 +760,8 @@ public final class ByteChunk implements Cloneable, Serializable {
 		return code;
 	}
 
-	private static int hashBytesIC( byte bytes[], int start,
-			int bytesLen )
+	private static int hashBytesIC(byte[] bytes, int start,
+                                   int bytesLen )
 	{
 		int max=start+bytesLen;
 		byte bb[]=bytes;
@@ -801,7 +802,7 @@ public final class ByteChunk implements Cloneable, Serializable {
 	 * @return      The position of the first instance of the character or -1
 	 *                  if the character is not found.
 	 */
-	public static int indexOf(byte bytes[], int start, int end, char c) {
+	public static int indexOf(byte[] bytes, int start, int end, char c) {
 		int offset = start;
 
 		while (offset < end) {
@@ -825,7 +826,7 @@ public final class ByteChunk implements Cloneable, Serializable {
 	 * @return      The position of the first instance of the byte or -1 if the
 	 *                  byte is not found.
 	 */
-	public static int findByte(byte bytes[], int start, int end, byte b) {
+	public static int findByte(byte[] bytes, int start, int end, byte b) {
 		int offset = start;
 		while (offset < end) {
 			if (bytes[offset] == b) {
@@ -847,7 +848,7 @@ public final class ByteChunk implements Cloneable, Serializable {
 	 * @return      The position of the first instance of the byte or -1 if the
 	 *                  byte is not found.
 	 */
-	public static int findBytes(byte bytes[], int start, int end, byte b[]) {
+	public static int findBytes(byte[] bytes, int start, int end, byte[] b) {
 		int blen = b.length;
 		int offset = start;
 		while (offset < end) {
@@ -875,7 +876,7 @@ public final class ByteChunk implements Cloneable, Serializable {
 	 * @deprecated Unused. Will be removed in Tomcat 8.0.x onwards.
 	 */
 	@Deprecated
-	public static int findNotBytes(byte bytes[], int start, int end, byte b[]) {
+	public static int findNotBytes(byte[] bytes, int start, int end, byte[] b) {
 		int blen = b.length;
 		int offset = start;
 		boolean found;
@@ -904,7 +905,7 @@ public final class ByteChunk implements Cloneable, Serializable {
 	 * @param value to convert to byte array
 	 * @return the byte array value
 	 */
-	public static final byte[] convertToBytes(String value) {
+	public static byte[] convertToBytes(String value) {
 		byte[] result = new byte[value.length()];
 		for (int i = 0; i < value.length(); i++) {
 			result[i] = (byte) value.charAt(i);
