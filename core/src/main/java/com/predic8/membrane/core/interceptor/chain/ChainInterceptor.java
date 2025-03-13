@@ -24,6 +24,7 @@ import com.predic8.membrane.core.interceptor.flow.AbstractFlowInterceptor;
 import com.predic8.membrane.core.util.ConfigurationException;
 
 import java.util.List;
+import java.util.Optional;
 
 /**
  *  @description A Chain groups multiple interceptors into reusable components, reducing redundancy in API configurations.
@@ -31,26 +32,19 @@ import java.util.List;
 @MCElement(name = "chain")
 public class ChainInterceptor extends AbstractFlowInterceptor {
 
-    private String id;
+    private String ref;
 
     @Override
     public void init() {
-        interceptors = getInterceptorChainForId();
+        interceptors = getInterceptorChainForRef(ref);
 
         super.init();
     }
 
-    private List<Interceptor> getInterceptorChainForId() {
-        return router.getBeanFactory()
-                .getBeansOfType(ChainDef.class)
-                .values()
-                .stream()
-                .filter(e -> e.getId().equals(id))
-                .findFirst()
-                .orElseThrow(() ->
-                        new ConfigurationException("No chain with reference %s found".formatted(id))
-                )
-                .getInterceptors();
+    private List<Interceptor> getInterceptorChainForRef(String ref) {
+        return Optional.of(router.getBeanFactory().getBean(ref, ChainDef.class))
+                .map(ChainDef::getInterceptors)
+                .orElseThrow(() -> new ConfigurationException("No chain found for reference: " + ref));
     }
 
     @Override
@@ -68,12 +62,12 @@ public class ChainInterceptor extends AbstractFlowInterceptor {
      */
     @Required
     @MCAttribute
-    public void setId(String id) {
-        this.id = id;
+    public void setRef(String ref) {
+        this.ref = ref;
     }
 
-    public String getId() {
-        return id;
+    public String getRef() {
+        return ref;
     }
 
 }

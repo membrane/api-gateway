@@ -27,8 +27,6 @@ import java.util.List;
 @MCElement(name = "chainDef")
 public class ChainDef {
 
-    private String id;
-
     List<Interceptor> interceptors;
 
     /**
@@ -47,12 +45,6 @@ public class ChainDef {
      * @description The id for referencing the chain.
      */
     @MCAttribute
-    public void setId(String id) {
-        this.id = id;
-    }
-
-    public String getId() {
-        return id;
-    }
+    public void setRef(ChainDef chainDef) {}
 
 }

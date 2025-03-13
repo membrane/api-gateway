@@ -22,12 +22,12 @@
     <router>
 
         <api port="2000">
-            <chain id="cors" />
+            <chain ref="cors" />
             <return statusCode="200"/>
         </api>
 
         <api port="2001">
-            <chain id="cors" />
+            <chain ref="cors" />
             <return statusCode="404" />
         </api>
 
