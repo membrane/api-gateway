@@ -8,13 +8,13 @@
 
     <router>
         <global>
+            <log />
             <request>
                 <setHeader name="Access-Control-Allow-Origin" value="*" />
                 <setHeader name="Access-Control-Allow-Methods" value="*" />
                 <setHeader name="Access-Control-Allow-Headers" value="*" />
                 <setHeader name="Access-Control-Allow-Credentials" value="*" />
             </request>
-            <log />
             <template>
                 CORS headers applied
             </template>
