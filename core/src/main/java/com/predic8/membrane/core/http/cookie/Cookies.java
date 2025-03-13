@@ -42,7 +42,7 @@ public final class Cookies {
 
 	// expected average number of cookies per request
 	public static final int INITIAL_SIZE=4;
-	ServerCookie scookies[] = new ServerCookie[INITIAL_SIZE];
+	ServerCookie[] scookies = new ServerCookie[INITIAL_SIZE];
 	int cookieCount = 0;
 	boolean unprocessed = true;
 
@@ -112,7 +112,7 @@ public final class Cookies {
 	 */
 	private ServerCookie addCookie() {
 		if( cookieCount >= scookies.length  ) {
-			ServerCookie scookiesTmp[]=new ServerCookie[2*cookieCount];
+			ServerCookie[] scookiesTmp =new ServerCookie[2*cookieCount];
 			System.arraycopy( scookies, 0, scookiesTmp, 0, cookieCount);
 			scookies=scookiesTmp;
 		}
@@ -161,7 +161,7 @@ public final class Cookies {
 	}
 
 	// XXX will be refactored soon!
-	private static boolean equals( String s, byte b[], int start, int end) {
+	private static boolean equals(String s, byte[] b, int start, int end) {
 		int blen = end-start;
 		if (b == null || blen != s.length()) {
 			return false;
@@ -181,22 +181,7 @@ public final class Cookies {
 	 * defined in RFC2619
 	 * JVK
 	 */
-	private static final boolean isWhiteSpace(final byte c) {
-		// This switch statement is slightly slower
-		// for my vm than the if statement.
-		// Java(TM) 2 Runtime Environment, Standard Edition (build 1.5.0_07-164)
-		/*
-        switch (c) {
-        case ' ':;
-        case '\t':;
-        case '\n':;
-        case '\r':;
-        case '\f':;
-            return true;
-        default:;
-            return false;
-        }
-		 */
+	private static boolean isWhiteSpace(final byte c) {
         return c == ' ' || c == '\t' || c == '\n' || c == '\r' || c == '\f';
 	}
 
@@ -439,8 +424,7 @@ public final class Cookies {
 					// Name Only
 					sc.getValue().setEmpty();
 				}
-				continue;
-			}
+            }
 		}
 	}
 
