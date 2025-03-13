@@ -13,7 +13,7 @@
    limitations under the License. */
 package com.predic8.membrane.examples;
 
-import com.predic8.membrane.examples.tests.integration.OAuth2ExampleTest;
+import com.predic8.membrane.examples.withoutinternet.integration.OAuth2ExampleTest;
 import org.junit.platform.suite.api.SelectClasses;
 import org.junit.platform.suite.api.Suite;
 
