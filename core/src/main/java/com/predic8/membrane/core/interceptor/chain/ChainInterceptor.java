@@ -18,19 +18,15 @@ import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.annot.Required;
 import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.interceptor.Interceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.flow.AbstractFlowInterceptor;
 import com.predic8.membrane.core.util.ConfigurationException;
 
+import java.util.List;
+
 /**
- * Interceptor for applying a predefined chain of interceptors to requests and responses.
- *
- * <p>Chains group multiple interceptors into reusable components, reducing redundancy in API configurations.</p>
- *
- * <ul>
- *     <li>Finds and applies the referenced chain using its ID.</li>
- *     <li>Handles both request and response processing.</li>
- * </ul>
+ *  @description A Chain groups multiple interceptors into reusable components, reducing redundancy in API configurations.
  */
 @MCElement(name = "chain")
 public class ChainInterceptor extends AbstractFlowInterceptor {
@@ -39,8 +35,14 @@ public class ChainInterceptor extends AbstractFlowInterceptor {
 
     @Override
     public void init() {
-        interceptors = router.getBeanFactory()
-                .getBeansOfType(Chain.class)
+        interceptors = getInterceptorChainForId();
+
+        super.init();
+    }
+
+    private List<Interceptor> getInterceptorChainForId() {
+        return router.getBeanFactory()
+                .getBeansOfType(ChainDef.class)
                 .values()
                 .stream()
                 .filter(e -> e.getId().equals(id))
@@ -49,8 +51,6 @@ public class ChainInterceptor extends AbstractFlowInterceptor {
                         new ConfigurationException("No chain with reference %s found".formatted(id))
                 )
                 .getInterceptors();
-
-        super.init();
     }
 
     @Override
@@ -63,6 +63,9 @@ public class ChainInterceptor extends AbstractFlowInterceptor {
         return router.getFlowController().invokeResponseHandlers(exc, interceptors);
     }
 
+    /**
+     * @description The id of the referenced chain.
+     */
     @Required
     @MCAttribute
     public void setId(String id) {
