@@ -30,12 +30,26 @@ public class JsonUtils {
     }
 
     public static String numberToString(Object number) {
-        if (number == null) return null;
-        if (number instanceof Integer in) return in.toString();
-        if (number instanceof Long ln) return ln.toString();
-        if (number instanceof Double) return number.toString();
-        if (number instanceof String s) return s;
-        log.warn("Unhandled number type " + number.getClass().getName());
-        return null;
+        switch (number) {
+            case null -> {
+                return null;
+            }
+            case Integer in -> {
+                return in.toString();
+            }
+            case Long ln -> {
+                return ln.toString();
+            }
+            case Double v -> {
+                return number.toString();
+            }
+            case String s -> {
+                return s;
+            }
+            default -> {
+                log.warn("Unhandled number type {}", number.getClass().getName());
+                return null;
+            }
+        }
     }
 }
