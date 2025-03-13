@@ -67,6 +67,7 @@ public abstract class Transport {
 		}
 
 		for (Interceptor interceptor : interceptors) {
+			// In case the globalInterceptor is not set
 			if(interceptor != null)
 				interceptor.init(router);
 		}
