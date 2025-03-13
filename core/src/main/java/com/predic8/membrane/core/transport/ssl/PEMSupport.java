@@ -105,18 +105,21 @@ public abstract class PEMSupport {
 
         public Key getPrivateKey(String pemBlock) throws IOException {
             PEMParser p = new PEMParser(new StringReader(unifyIndent(pemBlock)));
-            Object o = p.readObject();
-            if (o == null)
-                throw new InvalidParameterException("Could not read certificate. Expected the certificate to begin with '-----BEGIN CERTIFICATE-----'.");
-            if (o instanceof PEMKeyPair) {
-                JcaPEMKeyConverter converter = new JcaPEMKeyConverter().setProvider("BC");
-                return converter.getPrivateKey(((PEMKeyPair) o).getPrivateKeyInfo());
+            switch (p.readObject()) {
+                case null ->
+                        throw new InvalidParameterException("Could not read certificate. Expected the certificate to begin with '-----BEGIN CERTIFICATE-----'.");
+                case PEMKeyPair pemKeyPair -> {
+                    JcaPEMKeyConverter converter = new JcaPEMKeyConverter().setProvider("BC");
+                    return converter.getPrivateKey(pemKeyPair.getPrivateKeyInfo());
+                }
+                case Key key -> {
+                    return key;
+                }
+                case KeyPair keyPair -> {
+                    return keyPair.getPrivate();
+                }
+                default -> throw new InvalidParameterException("Expected KeyPair or Key.");
             }
-            if (o instanceof Key)
-                return (Key) o;
-            if (o instanceof KeyPair)
-                return ((KeyPair) o).getPrivate();
-            throw new InvalidParameterException("Expected KeyPair or Key.");
         }
 
         public Object parseKey(String pemBlock) throws IOException {
@@ -144,7 +147,7 @@ public abstract class PEMSupport {
                     }
                 }
                 JcaPEMKeyConverter converter = new JcaPEMKeyConverter().setProvider("BC");
-                return converter.getKeyPair((PEMKeyPair) o);
+                return converter.getKeyPair(keyPair);
             }
             if (o instanceof Key)
                 return o;

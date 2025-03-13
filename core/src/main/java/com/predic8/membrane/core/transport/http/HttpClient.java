@@ -80,7 +80,7 @@ public class HttpClient implements AutoCloseable {
 
     private static final String[] HTTP2_PROTOCOLS = new String[]{"h2"};
     private static final String[] HTTP1_PROTOCOLS = new String[]{};
-   
+
     public HttpClient() {
         this(null, null);
     }
@@ -93,16 +93,8 @@ public class HttpClient implements AutoCloseable {
         if (configuration == null)
             configuration = new HttpClientConfiguration();
         proxy = configuration.getProxy();
-        if (proxy != null && proxy.getSslParser() != null)
-            proxySSLContext = new StaticSSLContext(proxy.getSslParser(), new ResolverMap(), null);
-        else
-            proxySSLContext = null;
-        if (configuration.getSslParser() != null) {
-            if (configuration.getBaseLocation() == null)
-                throw new RuntimeException("Cannot find keystores as base location is unknown");
-            sslContext = new StaticSSLContext(configuration.getSslParser(), new ResolverMap(), configuration.getBaseLocation());
-        } else
-            sslContext = null;
+        proxySSLContext = getProxySSLContext(proxy);
+        sslContext = getSSLContext(configuration);
         authentication = configuration.getAuthentication();
         maxRetries = configuration.getMaxRetries();
 
@@ -114,6 +106,21 @@ public class HttpClient implements AutoCloseable {
 
         useHttp2 = configuration.isUseExperimentalHttp2();
         http2ClientPool = getHttp2ClientPool( useHttp2,configuration);
+    }
+
+    private static @org.jetbrains.annotations.Nullable SSLContext getSSLContext(@NotNull HttpClientConfiguration configuration) {
+        if (configuration.getSslParser() != null) {
+            if (configuration.getBaseLocation() == null)
+                throw new RuntimeException("Cannot find keystores as base location is unknown");
+            return new StaticSSLContext(configuration.getSslParser(), new ResolverMap(), configuration.getBaseLocation());
+        }
+        return null;
+    }
+
+    private static @org.jetbrains.annotations.Nullable SSLContext getProxySSLContext(ProxyConfiguration proxy) {
+        if (proxy != null && proxy.getSslParser() != null)
+            return new StaticSSLContext(proxy.getSslParser(), new ResolverMap(), null);
+        return null;
     }
 
     private @org.jetbrains.annotations.Nullable Http2ClientPool getHttp2ClientPool(boolean useHttp2, @NotNull HttpClientConfiguration configuration) {
@@ -215,7 +222,7 @@ public class HttpClient implements AutoCloseable {
             try {
                 Connection con = getConnection(exc, counter, target);
                 boolean usingHttp2 = false;
-                
+
                 SSLProvider sslProvider = getOutboundSSLProvider(exc, target);
                 Http2Client h2c = null;
                 String sniServerName = getSNIServerName(exc);
@@ -235,11 +242,11 @@ public class HttpClient implements AutoCloseable {
                         exc.setTargetConnection(con);
                     con.setKeepAttachedToExchange(usingHttp2 || exc.getRequest().isBindTargetConnectionToIncoming());
                 }
-                
+
                 if (proxy != null && sslProvider == null)
                     // if we use a proxy for a plain HTTP (=non-HTTPS) request, attach the proxy credentials.
                     exc.getRequest().getHeader().setProxyAuthorization(proxy.getCredentials());
-                
+
                 Response response;
 
                 if (usingHttp2) {

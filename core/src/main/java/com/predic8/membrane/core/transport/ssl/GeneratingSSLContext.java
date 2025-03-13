@@ -78,16 +78,16 @@ public class GeneratingSSLContext extends SSLContext {
 
             for (com.predic8.membrane.core.config.security.Certificate cert : sslParser.getKeyGenerator().getKey().getCertificates())
                 certs.add(PEMSupport.getInstance().parseCertificate(cert.get(resourceResolver, baseLocation)));
-            if (certs.size() == 0)
+            if (certs.isEmpty())
                 throw new RuntimeException("At least one //ssl/keyGenerator/certificate is required.");
 
             checkChainValidity(certs);
             Object key = PEMSupport.getInstance().parseKey(sslParser.getKeyGenerator().getKey().getPrivate().get(resourceResolver, baseLocation));
             Key k = key instanceof Key ? (Key) key : ((KeyPair) key).getPrivate();
             checkKeyMatchesCert(k, certs);
-            if (k instanceof RSAPrivateCrtKey && certs.get(0).getPublicKey() instanceof RSAPublicKey) {
+            if (k instanceof RSAPrivateCrtKey && certs.getFirst().getPublicKey() instanceof RSAPublicKey) {
                 caPrivate = (RSAPrivateCrtKey) k;
-                caPublic = (X509Certificate) certs.get(0);
+                caPublic = (X509Certificate) certs.getFirst();
             } else {
                 throw new RuntimeException("Key is a " + k.getClass().getName() + ", which is not yet supported.");
             }
@@ -103,7 +103,7 @@ public class GeneratingSSLContext extends SSLContext {
             cache = CacheBuilder.newBuilder().maximumSize(100).build(new CacheLoader<>() {
                 @Override
                 public SSLContext load(String s) throws Exception {
-                    log.info("Generating certificate for " + s);
+                    log.info("Generating certificate for {}", s);
                     return getSSLContextForHostname(s);
                 }
             });
