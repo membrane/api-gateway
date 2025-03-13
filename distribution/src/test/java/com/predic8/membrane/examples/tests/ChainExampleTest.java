@@ -1,4 +1,4 @@
-package com.predic8.membrane.examples.tests.versioning;
+package com.predic8.membrane.examples.tests;
 
 import com.predic8.membrane.examples.util.AbstractSampleMembraneStartStopTestcase;
 import org.junit.jupiter.api.Test;
@@ -11,7 +11,7 @@ public class ChainExampleTest extends AbstractSampleMembraneStartStopTestcase {
 
     @Override
     protected String getExampleDirName() {
-        return "/extending-membrane/using-chains";
+        return "/extending-membrane/reusable-plugin-chains";
     }
 
     // @formatter:off
@@ -22,7 +22,7 @@ public class ChainExampleTest extends AbstractSampleMembraneStartStopTestcase {
             .get("http://localhost:2000")
         .then()
             .assertThat()
-            .body(containsString("Response set by chain"))
+            .body(containsString("CORS headers applied"))
             .statusCode(200);
     }
 
@@ -33,7 +33,7 @@ public class ChainExampleTest extends AbstractSampleMembraneStartStopTestcase {
             .get("http://localhost:2001")
         .then()
             .assertThat()
-            .body(containsString("Response set by chain"))
+            .body(containsString("CORS headers applied"))
             .statusCode(404);
     }
     // @formatter:on

@@ -5,25 +5,29 @@
 	                    http://www.springframework.org/schema/beans/spring-beans-4.2.xsd
 	                    http://membrane-soa.org/proxies/1/ http://membrane-soa.org/schemas/proxies-1.xsd">
 
-    <chainDef id="foo">
+    <chainDef id="cors">
         <request>
-            <setHeader name="Foo" value="Bar" />
+            <setHeader name="Access-Control-Allow-Origin" value="*" />
+            <setHeader name="Access-Control-Allow-Methods" value="*" />
+            <setHeader name="Access-Control-Allow-Headers" value="*" />
+            <setHeader name="Access-Control-Allow-Credentials" value="*" />
         </request>
         <log />
         <template>
-            Response set by chain
+            CORS headers applied
         </template>
     </chainDef>
+
 
     <router>
 
         <api port="2000">
-            <chain id="foo" />
+            <chain id="cors" />
             <return statusCode="200"/>
         </api>
 
         <api port="2001">
-            <chain id="foo" />
+            <chain id="cors" />
             <return statusCode="404" />
         </api>
 
