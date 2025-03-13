@@ -496,7 +496,9 @@ public class ElasticSearchExchangeStore extends AbstractPersistentExchangeStore 
     private void setUpIndex() {
         try {
             log.info("Setting up elastic search index");
-            Exchange indexExc = new Request.Builder().put(getElasticSearchIndexPath()).buildExchange();
+            Exchange indexExc = new Request.Builder().put(getElasticSearchIndexPath())
+                    .body("")
+                    .buildExchange();
             indexExc = client.call(indexExc);
             JSONObject indexRes = new JSONObject(indexExc.getResponse().getBodyAsStringDecoded());
 
@@ -539,6 +541,7 @@ public class ElasticSearchExchangeStore extends AbstractPersistentExchangeStore 
                 if (isElasticAcked(res)){
                     log.info("Elastic store mapping update completed");
                 }
+                // TODO: nothing happens, if this is not acknowledged
             } catch (JSONException e) {
                 log.error("There is an error while updating mapping for elastic search. Response from elastic search: {}", res, e);
             }
