@@ -135,29 +135,9 @@ public final class Cookies {
 		if (headers == null) {
 			return; // nothing to process
 		}
-		headers.findHeaders("Cookie").forEach(cookieValue -> processCookieHeader(cookieValue.getByteChunk()));
-//		// process each "cookie" header
-//		int pos = 0;
-//		while (pos >= 0) {
-//			// Cookie2: version ? not needed
-//			pos = headers.findHeader("Cookie", pos);
-//			// no more cookie headers headers
-//			if (pos < 0) {
-//				break;
-//			}
-//
-//			MessageBytes cookieValue = headers.getValue(pos);
-//			if (cookieValue == null || cookieValue.isNull()) {
-//				pos++;
-//				continue;
-//			}
-//
-//			if (log.isDebugEnabled()) {
-//				log.debug("Cookies: Parsing b[]: {}", cookieValue);
-//			}
-//            processCookieHeader(cookieValue.getByteChunk());
-//			pos++;// search from the next position
-//		}
+		headers.findHeaders("Cookie").stream()
+				.map(MessageBytes::getByteChunk)
+				.forEach(this::processCookieHeader);
 	}
 
 	// XXX will be refactored soon!
