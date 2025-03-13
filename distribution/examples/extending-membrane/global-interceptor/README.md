@@ -1,7 +1,6 @@
 # Global Interceptor
 
-This example demonstrates how to use **global interceptors** to apply modifications, logging, and transformations **to all APIs**. Global interceptors ensure consistent request and response handling across all API rules, reducing redundancy and simplifying configuration.
-
+This example demonstrates how to use global interceptors to apply plugins for request and response processing, such as authentication, modifications, logging, and transformations, across all APIs. Global interceptors ensure consistent behavior, reduce redundancy, and simplify configuration.
 ### **Running the Example**
 1. **Start the Router**
    ```sh
