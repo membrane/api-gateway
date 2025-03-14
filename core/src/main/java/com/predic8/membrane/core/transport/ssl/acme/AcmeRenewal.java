@@ -55,12 +55,16 @@ public class AcmeRenewal {
     }
 
     public void doWork() {
-        if (!requiresWork())
+        if (!requiresWork()) {
+            LOG.atDebug().setMessage("acme {}: requires no work").addArgument(this::id).log();
             return;
+        }
+        LOG.atDebug().setMessage("acme {}: working").addArgument(this::id).log();
         withMasterLease(() -> {
             try {
                 tryGetCertificate();
             } catch (InterruptedException e) {
+                LOG.atDebug().setMessage("acme {}: interrupted").addArgument(this::id).log();
                 Thread.currentThread().interrupt();
             } catch (Exception e) {
                 e.printStackTrace();
@@ -74,7 +78,9 @@ public class AcmeRenewal {
     }
 
     private void tryGetCertificate() throws Exception {
+        LOG.atDebug().setMessage("acme {}: tryGetCertificate").addArgument(this::id).log();
         client.loadDirectory();
+        LOG.atDebug().setMessage("acme {}: directory loaded.").addArgument(this::id).log();
 
         verifyAccountContact();
         if (getAccountURL() == null) {
@@ -118,6 +124,7 @@ public class AcmeRenewal {
     }
 
     private void makeOrderValid(AtomicReference<OrderAndLocation> oal) throws Exception {
+        LOG.atDebug().setMessage("acme {}: makeOrderValid()").addArgument(this::id).log();
         oal.set(client.getOrder(getAccountURL(), oal.get().getLocation()));
         if (LOG.isDebugEnabled())
             LOG.debug("acme ("+id()+"): order is " + oal.get().getOrder().getStatus());
@@ -296,8 +303,10 @@ public class AcmeRenewal {
     }
 
     private boolean withMasterLease(Runnable runnable) {
-        if (!client.getAsse().acquireLease(LEASE_DURATION_MILLISECONDS))
+        if (!client.getAsse().acquireLease(LEASE_DURATION_MILLISECONDS)) {
+            LOG.atDebug().setMessage("acme {}: could not acquire lease.").addArgument(this::id).log();
             return false;
+        }
         AtomicReference<Throwable> error = new AtomicReference<>();
         Thread t = new Thread(() -> {
             try {
@@ -313,6 +322,7 @@ public class AcmeRenewal {
             try {
                 t.join(LEASE_RENEW_MILLISECONDS);
                 if (!t.isAlive()) {
+                    LOG.atDebug().setMessage("acme {}: releasing lease.").addArgument(this::id).log();
                     client.getAsse().releaseLease();
                     if (error.get() != null)
                         throw new RuntimeException(error.get());
@@ -323,6 +333,7 @@ public class AcmeRenewal {
                 Thread.currentThread().interrupt();
             }
             if (!client.getAsse().prolongLease(LEASE_DURATION_MILLISECONDS)) {
+                LOG.atDebug().setMessage("acme {}: could not prolong lease.").addArgument(this::id).log();
                 t.interrupt();
                 return true;
             }

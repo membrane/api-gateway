@@ -113,6 +113,7 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
 	private String id;
 	private final KubernetesWatcher kubernetesWatcher = new KubernetesWatcher(this);
 	private final TimerManager timerManager = new TimerManager();
+	private final TimerManager timerManager2 = new TimerManager();
 	private final HttpClientFactory httpClientFactory = new HttpClientFactory(timerManager);
 	private final KubernetesClientFactory kubernetesClientFactory = new KubernetesClientFactory(httpClientFactory);
 
@@ -606,6 +607,9 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
 
 	public TimerManager getTimerManager() {
 		return timerManager;
+	}
+	public TimerManager getTimerManager2() {
+		return timerManager2;
 	}
 
 	public KubernetesClientFactory getKubernetesClientFactory() {

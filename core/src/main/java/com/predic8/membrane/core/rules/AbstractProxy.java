@@ -184,7 +184,7 @@ public abstract class AbstractProxy implements Rule {
             AcmeSSLContext acmeCtx = (AcmeSSLContext) getSslInboundContext(); // TODO: remove this.
             // getSslInboundContext() of an inactive rule should not be called in the first place.
             if (acmeCtx == null)
-                acmeCtx = new AcmeSSLContext(sslInboundParser, host, router.getHttpClientFactory(), router.getTimerManager());
+                acmeCtx = new AcmeSSLContext(sslInboundParser, host, router.getHttpClientFactory(), router.getTimerManager2());
             setSslInboundContext(acmeCtx);
             acmeCtx.init(router.getKubernetesClientFactory(), router.getHttpClientFactory());
             return;

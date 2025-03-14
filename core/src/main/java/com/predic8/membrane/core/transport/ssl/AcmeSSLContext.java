@@ -265,11 +265,15 @@ public class AcmeSSLContext extends SSLContext {
         if (shutdown.get())
             return;
 
+        log.atDebug().setMessage("acme {}: scheduling for {}").addArgument(this::getLocation).addArgument(nextRun).log();
         timerManager.schedule(new TimerTask() {
             @Override
             public void run() {
+                log.atDebug().setMessage("acme {}: running").addArgument(AcmeSSLContext.this::getLocation).log();
                 if (!"never".equals(parser.getAcme().getRenewal()))
                     new AcmeRenewal(client, hosts).doWork();
+                else
+                    log.atDebug().setMessage("acme {}: not running because renewal is 'never'").addArgument(AcmeSSLContext.this::getLocation).log();
                 initAndSchedule();
             }
         }, nextRun, "ACME timer " + constructHostsString());
