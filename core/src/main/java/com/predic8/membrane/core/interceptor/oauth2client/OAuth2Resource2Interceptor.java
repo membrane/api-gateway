@@ -124,7 +124,7 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
             String endSessionEndpoint = auth.getEndSessionEndpoint();
             if (endSessionEndpoint != null && session.getOAuth2Answer(null) != null) {
                 String redirectUri = logoutUrl;
-                redirectUri = replaceUrlPath(publicUrlManager.getPublicURL(exc), redirectUri + "/back");
+                redirectUri = replaceUrlPath(publicUrlManager.getPublicURLAndReregister(exc), redirectUri + "/back");
                 String uri = endSessionEndpoint + "?post_logout_redirect_uri=" + encode(redirectUri, UTF_8);
 
                 OAuth2AnswerParameters ap = session.getOAuth2AnswerParameters();
@@ -285,7 +285,7 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
                         new LoginParameter(e.getKey(), e.getValue())
                 ).toList();
 
-        exc.setResponse(Response.redirect(auth.getLoginURL(state, publicUrlManager.getPublicURL(exc) + callbackPath, exc.getRequestURI()) + LoginParameter.copyLoginParameters(exc, combinedLoginParameters), false).build());
+        exc.setResponse(Response.redirect(auth.getLoginURL(state, publicUrlManager.getPublicURLAndReregister(exc) + callbackPath, exc.getRequestURI()) + LoginParameter.copyLoginParameters(exc, combinedLoginParameters), false).build());
 
         readBodyFromStreamIntoMemory(exc);
 
@@ -312,7 +312,8 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
         }
 
         if (path.endsWith("/" + callbackPath)) {
-            return oAuth2CallbackRequestHandler.handleRequest(exc, session);
+            oAuth2CallbackRequestHandler.handleRequest(exc, session);
+            return true;
         }
 
         return false;
