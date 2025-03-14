@@ -122,24 +122,7 @@ public abstract class OAuth2ResourceTest {
         List<Thread> threadList = new ArrayList<>();
         CountDownLatch cdl = new CountDownLatch(limit);
         for (int i = 0; i < limit; i++) {
-            threadList.add(new Thread(() -> {
-                try {
-                    cdl.countDown();
-                    cdl.await();
-                    String uuid = UUID.randomUUID().toString();
-                    Exchange excCallResource2 = new Request.Builder().get(getClientAddress() + "/" + uuid).buildExchange();
-                    excCallResource2 = browser.apply(excCallResource2);
-                    var body = om.readValue(excCallResource2.getResponse().getBodyAsStringDecoded(), Map.class);
-                    String path = (String) body.get("path");
-                    assertEquals("/" + uuid, path);
-                    synchronized (accessTokens) {
-                        accessTokens.add((String) body.get("accessToken"));
-                    }
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            }));
-
+            threadList.add(new Thread(() -> refreshTokenOnExpirationWorkerThread(cdl, accessTokens)));
         }
         threadList.forEach(Thread::start);
         threadList.forEach(thread -> {
@@ -151,6 +134,24 @@ public abstract class OAuth2ResourceTest {
         });
         synchronized (accessTokens) {
             assertEquals(limit, accessTokens.size());
+        }
+    }
+
+    private void refreshTokenOnExpirationWorkerThread(CountDownLatch cdl, Set<String> accessTokens) {
+        try {
+            cdl.countDown();
+            cdl.await();
+            String uuid = UUID.randomUUID().toString();
+            Exchange excCallResource2 = new Request.Builder().get(getClientAddress() + "/" + uuid).buildExchange();
+            excCallResource2 = browser.apply(excCallResource2);
+            var body = om.readValue(excCallResource2.getResponse().getBodyAsStringDecoded(), Map.class);
+            String path = (String) body.get("path");
+            assertEquals("/" + uuid, path);
+            synchronized (accessTokens) {
+                accessTokens.add((String) body.get("accessToken"));
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 
@@ -178,7 +179,7 @@ public abstract class OAuth2ResourceTest {
 
 
         Exchange excCallResource = new Request.Builder().get(getClientAddress() + "/malicious").buildExchange();
-        LOG.debug("getting " + excCallResource.getDestinations().get(0));
+        LOG.debug("getting {}", excCallResource.getDestinations().getFirst());
         browser.apply(excCallResource); // will be aborted
 
         browser.clearCookies(); // send the auth link to some helpless (other) user
@@ -274,40 +275,38 @@ public abstract class OAuth2ResourceTest {
             @Override
             public synchronized Outcome handleRequest(Exchange exc) {
                 try {
-                    return handleRequestInternal(exc);
+                    exc.setResponse(handleRequestInternal(exc));
+                    return Outcome.RETURN;
                 } catch (URISyntaxException | IOException e) {
                     throw new RuntimeException(e);
                 }
             }
 
-            public synchronized Outcome handleRequestInternal(Exchange exc) throws URISyntaxException, IOException {
+            public synchronized Response handleRequestInternal(Exchange exc) throws URISyntaxException, IOException {
                 if (exc.getRequestURI().endsWith("/.well-known/openid-configuration")) {
-                    exc.setResponse(Response.ok(wkf.getWellknown()).build());
+                    return Response.ok(wkf.getWellknown()).build();
                 } else if (exc.getRequestURI().startsWith("/auth?")) {
                     Map<String, String> params = URLParamUtil.getParams(new URIFactory(), exc, URLParamUtil.DuplicateKeyOrInvalidFormStrategy.ERROR);
-                    exc.setResponse(new FormPostGenerator(getClientAddress() + "/oauth2callback")
+                    return new FormPostGenerator(getClientAddress() + "/oauth2callback")
                         .withParameter("state", params.get("state"))
                         .withParameter("code", params.get("1234"))
-                        .build());
+                        .build();
                 } else if (exc.getRequestURI().startsWith("/token")) {
                     ObjectMapper om = new ObjectMapper();
-                    Map<String, String> res = new HashMap<>();
-                    res.put("access_token", new BigInteger(130, rand).toString(32));
-                    res.put("token_type", "bearer");
-                    res.put("expires_in", "1");
-                    res.put("refresh_token", new BigInteger(130, rand).toString(32));
-                    exc.setResponse(Response.ok(om.writeValueAsString(res)).contentType(APPLICATION_JSON).build());
-
+                    var responseData = Map.ofEntries(
+                            Map.entry("access_token", new BigInteger(130, rand).toString(32)),
+                            Map.entry("token_type", "bearer"),
+                            Map.entry("expires_in", "1"),
+                            Map.entry("refresh_token", new BigInteger(130, rand).toString(32))
+                    );
+                    return Response.ok(om.writeValueAsString(responseData)).contentType(APPLICATION_JSON).build();
                 } else if (exc.getRequestURI().startsWith("/userinfo")) {
                     ObjectMapper om = new ObjectMapper();
-                    Map<String, String> res = new HashMap<>();
-                    res.put("username", "dummy");
-                    exc.setResponse(Response.ok(om.writeValueAsString(res)).contentType(APPLICATION_JSON).build());
+                    Map<String, String> res = Map.of("username", "dummy");
+                    return Response.ok(om.writeValueAsString(res)).contentType(APPLICATION_JSON).build();
+                } else {
+                    return Response.notFound().build();
                 }
-
-                if (exc.getResponse() == null)
-                    exc.setResponse(Response.notFound().build());
-                return Outcome.RETURN;
             }
         });
 
