@@ -23,7 +23,7 @@
         <groupId>org.membrane-soa</groupId>
         <artifactId>service-proxy-parent</artifactId>
         <relativePath>../pom.xml</relativePath>
-        <version>6.0.4-SNAPSHOT</version>
+        <version>6.0.5-SNAPSHOT</version>
     </parent>
 
     <!-- Open Telemetry -->
@@ -47,6 +47,12 @@
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-layout-template-json</artifactId>
+            <version>${log4j.version}</version>
+            <scope>runtime</scope>
         </dependency>
         <dependency>
             <groupId>commons-cli</groupId>
@@ -176,6 +182,11 @@
             <groupId>com.jayway.jsonpath</groupId>
             <artifactId>json-path</artifactId>
             <version>2.9.0</version>
+        </dependency>
+        <dependency>
+            <groupId>net.minidev</groupId>
+            <artifactId>json-smart</artifactId>
+            <version>2.5.2</version>
         </dependency>
         <dependency>
             <groupId>com.squareup.okhttp3</groupId>

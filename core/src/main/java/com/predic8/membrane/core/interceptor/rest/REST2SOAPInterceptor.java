@@ -243,7 +243,7 @@ public class REST2SOAPInterceptor extends SOAPRESTHelper {
     }
 
     private Mapping getRESTURL(Exchange exc) {
-        return (Mapping) exc.getProperty("mapping");
+        return exc.getProperty("mapping", Mapping.class);
     }
 
     private Mapping findFirstMatchingRegEx(String uri) {
