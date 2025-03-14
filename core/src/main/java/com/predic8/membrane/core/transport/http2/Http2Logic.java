@@ -290,7 +290,7 @@ public class Http2Logic {
             headerFrames.add(last);
         }
 
-        log.debug("header isTrailer=" + isTrailer);
+        log.debug("header isTrailer={}", isTrailer);
         Message request;
         Header header;
         if (isTrailer) {
@@ -357,7 +357,7 @@ public class Http2Logic {
 
     public InputStream getPackedHeaderStream(List<HeaderBlockFragment> headerFrames) {
         if (headerFrames.size() == 1) {
-            HeaderBlockFragment one = headerFrames.get(0);
+            HeaderBlockFragment one = headerFrames.getFirst();
             return new ByteArrayInputStream(one.getContent(), one.getHeaderBlockStartIndex(), one.getHeaderBlockLength());
         }
 
@@ -390,7 +390,7 @@ public class Http2Logic {
             throw new FatalConnectionException(ERROR_PROTOCOL_ERROR);
 
         if (settings.isAck()) {
-            ourSettings.copyFrom(wantedSettings.remove(0));
+            ourSettings.copyFrom(wantedSettings.removeFirst());
             return;
         }
 
