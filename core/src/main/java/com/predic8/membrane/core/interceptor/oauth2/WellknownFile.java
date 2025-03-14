@@ -80,7 +80,7 @@ public class WellknownFile {
         return resolver.combine(getOauth2Issuer() + "/","oauth2/");
     }
 
-    private void getValuesFromOasi() throws UnsupportedEncodingException {
+    private void getValuesFromOasi() {
         if(oasi == null)
             return;
 

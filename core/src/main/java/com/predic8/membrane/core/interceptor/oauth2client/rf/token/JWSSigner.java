@@ -16,7 +16,6 @@ package com.predic8.membrane.core.interceptor.oauth2client.rf.token;
 import com.predic8.membrane.core.transport.ssl.PEMSupport;
 import org.jose4j.jws.AlgorithmIdentifiers;
 import org.jose4j.jws.JsonWebSignature;
-import org.jose4j.jwt.JwtClaims;
 import org.jose4j.lang.JoseException;
 
 import java.io.IOException;
@@ -39,10 +38,10 @@ public class JWSSigner {
         throw new IllegalArgumentException("Unsupported PEM type " + pemObj.getClass());
     }
 
-    public String generateSignedJWS(JwtClaims claims) throws JoseException {
+    public String generateSignedJWS(String json) throws JoseException {
         JsonWebSignature jws = new JsonWebSignature();
 
-        jws.setPayload(claims.toJson());
+        jws.setPayload(json);
         jws.setKey(key);
         jws.setX509CertSha1ThumbprintHeaderValue(certificate);
         jws.setAlgorithmHeaderValue(AlgorithmIdentifiers.RSA_USING_SHA256);
@@ -51,14 +50,4 @@ public class JWSSigner {
         return jws.getCompactSerialization();
     }
 
-    public String signToCompactSerialization(String payload) throws JoseException {
-        JsonWebSignature jws = new JsonWebSignature();
-        jws.setPayload(payload);
-        jws.setKey(key);
-        jws.setX509CertSha1ThumbprintHeaderValue(certificate);
-        jws.setAlgorithmHeaderValue(AlgorithmIdentifiers.RSA_USING_SHA256);
-        jws.setHeader("typ", "JWT");
-
-        return jws.getCompactSerialization();
-    }
 }

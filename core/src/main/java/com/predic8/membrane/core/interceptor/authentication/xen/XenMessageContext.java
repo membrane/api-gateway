@@ -46,7 +46,7 @@ public class XenMessageContext {
     private static String KEY = "xenMessageContext";
 
     public static XenMessageContext get(Exchange exchange, Interceptor.Flow flow) {
-        XenMessageContext xmc = (XenMessageContext) exchange.getProperty(KEY + flow.toString());
+        XenMessageContext xmc = exchange.getPropertyOrNull(KEY + flow.toString(), XenMessageContext.class);
         if (xmc != null)
             return xmc;
 
@@ -66,14 +66,11 @@ public class XenMessageContext {
     }
 
     private static Message getMessage(Exchange exchange, Interceptor.Flow flow) {
-        switch (flow) {
-            case RESPONSE:
-                return exchange.getResponse();
-            case REQUEST:
-                return exchange.getRequest();
-            default:
-                throw new RuntimeException("not implemented");
-        }
+        return switch (flow) {
+            case RESPONSE -> exchange.getResponse();
+            case REQUEST -> exchange.getRequest();
+            default -> throw new RuntimeException("not implemented");
+        };
     }
 
     private XenMessageContext(Exchange exchange, Document doc, Interceptor.Flow flow) {

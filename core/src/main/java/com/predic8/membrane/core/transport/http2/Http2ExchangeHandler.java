@@ -224,7 +224,7 @@ public class Http2ExchangeHandler implements Runnable {
 
             @Override
             public void write(Chunk chunk) {
-                sendData(chunk.getContent(), 0, chunk.getLength());
+                sendData(chunk.content(), 0, chunk.getLength());
             }
 
             @Override

@@ -101,10 +101,10 @@ public class OAuth2PermissionCheckerInterceptor extends AbstractInterceptor {
 
         @Override
         public Object evaluate(Exchange exc) {
-            Object oauth2prop = exc.getProperty(OAUTH2);
+            OAuth2AnswerParameters oauth2prop = exc.getPropertyOrNull(OAUTH2, OAuth2AnswerParameters.class);
             if (oauth2prop == null)
                 return null;
-            return ((OAuth2AnswerParameters)oauth2prop).getUserinfo().get("groups");
+            return oauth2prop.getUserinfo().get("groups");
         }
     }
 
