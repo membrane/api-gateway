@@ -65,17 +65,17 @@ class JWSSignerTest {
 
     @Test
     void generateSignedJWSTestNotNull() throws JoseException {
-        assertNotNull(JWSSigner.generateSignedJWS(jwtClaims));
+        assertNotNull(JWSSigner.generateSignedJWS(jwtClaims.toJson()));
     }
 
     @Test
     void headerContainsFingerPrint() throws JoseException, IOException {
-        assertTrue(decodeJWTChunks(getJWTChunks(JWSSigner.generateSignedJWS(jwtClaims))).get("header").containsKey("x5t"));
+        assertTrue(decodeJWTChunks(getJWTChunks(JWSSigner.generateSignedJWS(jwtClaims.toJson()))).get("header").containsKey("x5t"));
     }
 
     @Test
     void headerContainsSub() throws JoseException, IOException {
-        assertTrue(decodeJWTChunks(getJWTChunks(JWSSigner.generateSignedJWS(jwtClaims))).get("payload").containsKey("sub"));
+        assertTrue(decodeJWTChunks(getJWTChunks(JWSSigner.generateSignedJWS(jwtClaims.toJson()))).get("payload").containsKey("sub"));
     }
 
     private void generateJwtClaims() {
