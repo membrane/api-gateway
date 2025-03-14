@@ -43,7 +43,7 @@ public class ByteStreamLogging {
         }
         sb.append("] ");
         sb.append(new String(b,off,len));
-        log.info(sb.toString());
+        log.trace(sb.toString());
     }
 
     public static OutputStream wrapConnectionOutputStream(OutputStream out, String name) {
@@ -131,5 +131,9 @@ public class ByteStreamLogging {
                 in.reset();
             }
         };
+    }
+
+    public static boolean isLoggingEnabled() {
+        return log.isTraceEnabled();
     }
 }

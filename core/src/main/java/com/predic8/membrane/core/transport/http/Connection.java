@@ -24,8 +24,11 @@ import javax.annotation.Nullable;
 import javax.net.ssl.*;
 import java.io.*;
 import java.net.*;
+import java.util.Random;
 
 import static com.predic8.membrane.core.Constants.*;
+import static com.predic8.membrane.core.transport.http.ByteStreamLogging.wrapConnectionInputStream;
+import static com.predic8.membrane.core.transport.http.ByteStreamLogging.wrapConnectionOutputStream;
 import static com.predic8.membrane.core.util.TextUtil.*;
 
 /**
@@ -45,6 +48,7 @@ import static com.predic8.membrane.core.util.TextUtil.*;
 public class Connection implements Closeable, MessageObserver, NonRelevantBodyObserver {
 
 	private static final Logger log = LoggerFactory.getLogger(Connection.class.getName());
+	private static volatile ThreadLocal<Random> random = ByteStreamLogging.isLoggingEnabled() ? new ThreadLocal<>() : null;
 
 	public final ConnectionManager mgr;
 	public final String host;
@@ -106,11 +110,27 @@ public class Connection implements Closeable, MessageObserver, NonRelevantBodyOb
 		}
 
 		log.debug("Opened connection on localPort: {}", con.socket.getLocalPort());
+
 		//Creating output stream before input stream is suggested.
-		con.out = new BufferedOutputStream(con.socket.getOutputStream(), 2048);
-		con.in = new BufferedInputStream(con.socket.getInputStream(), 2048);
+		if (ByteStreamLogging.isLoggingEnabled()) {
+			String connectionName = chooseNewConnectionName();
+			con.out = new BufferedOutputStream(wrapConnectionOutputStream(con.socket.getOutputStream(), connectionName + " out"), 2048);
+			con.in = new BufferedInputStream(wrapConnectionInputStream(con.socket.getInputStream(), connectionName + " in"), 2048);
+		} else {
+			con.out = new BufferedOutputStream(con.socket.getOutputStream(), 2048);
+			con.in = new BufferedInputStream(con.socket.getInputStream(), 2048);
+		}
 
 		return con;
+	}
+
+	private static String chooseNewConnectionName() {
+		Random rand = random.get();
+		if (rand == null) {
+			rand = new Random();
+			random.set(rand);
+		}
+		return "c" + rand.nextInt();
 	}
 
 	public static Connection open(String host, int port, String localHost, SSLProvider sslProvider, ConnectionManager mgr, int connectTimeout) throws IOException {
