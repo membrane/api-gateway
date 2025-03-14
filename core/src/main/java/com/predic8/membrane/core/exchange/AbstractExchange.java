@@ -234,6 +234,11 @@ public abstract class AbstractExchange {
         return properties.get(key);
 	}
 
+	public <T> T getPropertyOrNull(String key, Class<T> clazz) {
+		Object value = properties.get(key);
+		return (clazz.isInstance(value)) ? clazz.cast(value) : null;
+	}
+
 	public <T> T getProperty(String key, Class<T> clazz) {
 		Object value = properties.get(key);
 		if (clazz.isInstance(value)) {
