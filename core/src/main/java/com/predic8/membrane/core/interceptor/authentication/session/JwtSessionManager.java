@@ -167,14 +167,14 @@ public class JwtSessionManager extends SessionManager {
 
     @Override
     public void postProcess(Exchange exc) {
-        Session session = (Session) exc.getProperty(SESSION);
+        Session session = exc.getPropertyOrNull(SESSION, Session.class);
         if (session != null && exc.getResponse() != null)
             exc.getResponse().getHeader().addCookieSession(getCookieName(), signSession(session, exc));
     }
 
     @Override
     public Session getSession(Exchange exc) {
-        Session s = (Session) exc.getProperty(SESSION);
+        Session s = exc.getPropertyOrNull(SESSION, Session.class);
         if (s != null)
             return s;
         String singedSession = exc.getRequest().getHeader().getFirstCookie(getCookieName());
@@ -200,7 +200,7 @@ public class JwtSessionManager extends SessionManager {
 
     @Override
     public void removeSession(Exchange exc) {
-        Session s = (Session) exc.getProperty(SESSION);
+        Session s = exc.getPropertyOrNull(SESSION, Session.class);
         if (s == null)
             return;
         s.clear();

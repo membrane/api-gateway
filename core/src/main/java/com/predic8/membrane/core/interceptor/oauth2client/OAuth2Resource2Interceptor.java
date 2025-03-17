@@ -124,7 +124,7 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
             String endSessionEndpoint = auth.getEndSessionEndpoint();
             if (endSessionEndpoint != null && session.getOAuth2Answer(null) != null) {
                 String redirectUri = logoutUrl;
-                redirectUri = replaceUrlPath(publicUrlManager.getPublicURL(exc), redirectUri + "/back");
+                redirectUri = replaceUrlPath(publicUrlManager.getPublicURLAndReregister(exc), redirectUri + "/back");
                 String uri = endSessionEndpoint + "?post_logout_redirect_uri=" + encode(redirectUri, UTF_8);
 
                 OAuth2AnswerParameters ap = session.getOAuth2AnswerParameters();
@@ -151,7 +151,7 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
             handleOriginalRequest(exc);
         }
 
-        String wantedScope = (String) exc.getProperty(WANTED_SCOPE);
+        String wantedScope = exc.getPropertyOrNull(WANTED_SCOPE, String.class);
         if (tokenAuthenticator.userInfoIsNullAndShouldRedirect(session, exc, wantedScope)) {
             return respondWithRedirect(exc);
         }
@@ -261,7 +261,7 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
     }
 
     public Outcome respondWithRedirect(Exchange exc) throws Exception {
-        Integer errorStatus = (Integer) exc.getProperty(ERROR_STATUS);
+        Integer errorStatus = exc.getPropertyOrNull(ERROR_STATUS, Integer.class);
         if (errorStatus != null) {
             exc.setResponse(Response.statusCode(errorStatus).header(CONTENT_LENGTH, "0").build());
             return RETURN;
@@ -285,7 +285,7 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
                         new LoginParameter(e.getKey(), e.getValue())
                 ).toList();
 
-        exc.setResponse(Response.redirect(auth.getLoginURL(state, publicUrlManager.getPublicURL(exc) + callbackPath, exc.getRequestURI()) + LoginParameter.copyLoginParameters(exc, combinedLoginParameters), false).build());
+        exc.setResponse(Response.redirect(auth.getLoginURL(state, publicUrlManager.getPublicURLAndReregister(exc) + callbackPath, exc.getRequestURI()) + LoginParameter.copyLoginParameters(exc, combinedLoginParameters), false).build());
 
         readBodyFromStreamIntoMemory(exc);
 
@@ -312,7 +312,8 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
         }
 
         if (path.endsWith("/" + callbackPath)) {
-            return oAuth2CallbackRequestHandler.handleRequest(exc, session);
+            oAuth2CallbackRequestHandler.handleRequest(exc, session);
+            return true;
         }
 
         return false;
@@ -337,7 +338,7 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
             return;
         if (exc.getProperty(OAUTH2) == null)
             return;
-        OAuth2AnswerParameters params = (OAuth2AnswerParameters) exc.getProperty(OAUTH2);
+        OAuth2AnswerParameters params = exc.getPropertyOrNull(OAUTH2, OAuth2AnswerParameters.class);
         if (params.getAccessToken() == null)
             return;
         exc.getRequest().getHeader().setValue(AUTHORIZATION, "Bearer " + params.getAccessToken());

@@ -80,7 +80,7 @@ public class HttpClient implements AutoCloseable {
 
     private static final String[] HTTP2_PROTOCOLS = new String[]{"h2"};
     private static final String[] HTTP1_PROTOCOLS = new String[]{};
-   
+
     public HttpClient() {
         this(null, null);
     }
@@ -175,9 +175,9 @@ public class HttpClient implements AutoCloseable {
     }
 
     private SSLProvider getOutboundSSLProvider(Exchange exc, HostColonPort hcp) {
-        Object sslPropObj = exc.getProperty(SSL_CONTEXT);
+        SSLProvider sslPropObj = exc.getPropertyOrNull(SSL_CONTEXT, SSLProvider.class);
         if (sslPropObj != null)
-            return (SSLProvider) sslPropObj;
+            return sslPropObj;
         if (hcp.useSSL())
             if (sslContext != null)
                 return sslContext;
@@ -202,7 +202,7 @@ public class HttpClient implements AutoCloseable {
 
         denyUnsupportedUpgrades(exc);
 
-        HttpClientStatusEventBus httpClientStatusEventBus = (HttpClientStatusEventBus) exc.getProperty(HttpClientStatusEventBus.EXCHANGE_PROPERTY_NAME);
+        HttpClientStatusEventBus httpClientStatusEventBus = exc.getPropertyOrNull(HttpClientStatusEventBus.EXCHANGE_PROPERTY_NAME, HttpClientStatusEventBus.class);
 
         int counter = 0;
         Exception exception = null;
@@ -215,10 +215,10 @@ public class HttpClient implements AutoCloseable {
             try {
                 Connection con = getConnection(exc, counter, target);
                 boolean usingHttp2 = false;
-                
+
                 SSLProvider sslProvider = getOutboundSSLProvider(exc, target);
                 Http2Client h2c = null;
-                String sniServerName = getSNIServerName(exc);
+                String sniServerName = exc.getPropertyOrNull(SNI_SERVER_NAME, String.class);
                 if (con == null && useHttp2) {
                     h2c = http2ClientPool.reserveStream(target.host(), target.port(), sslProvider, sniServerName, proxy, proxySSLContext);
                     if (h2c != null) {
@@ -235,11 +235,11 @@ public class HttpClient implements AutoCloseable {
                         exc.setTargetConnection(con);
                     con.setKeepAttachedToExchange(usingHttp2 || exc.getRequest().isBindTargetConnectionToIncoming());
                 }
-                
+
                 if (proxy != null && sslProvider == null)
                     // if we use a proxy for a plain HTTP (=non-HTTPS) request, attach the proxy credentials.
                     exc.getRequest().getHeader().setProxyAuthorization(proxy.getCredentials());
-                
+
                 Response response;
 
                 if (usingHttp2) {
@@ -423,12 +423,6 @@ public class HttpClient implements AutoCloseable {
     }
 
     // TODO Inline method
-    private String getSNIServerName(Exchange exc) {
-        Object sniObject = exc.getProperty(SNI_SERVER_NAME);
-        if (sniObject == null)
-            return null;
-        return (String) sniObject;
-    }
 
     private boolean is5xx(Integer responseStatusCode) {
         return 500 <= responseStatusCode && responseStatusCode < 600;

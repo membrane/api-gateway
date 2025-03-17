@@ -43,7 +43,7 @@ public class BodyInputStream extends InputStream {
 		currentChunk = chunks.isEmpty() ? null : chunks.getFirst();
 		if (currentChunk != null) {
 			currentChunkLength = currentChunk.getLength();
-			currentChunkData = currentChunk.getContent();
+			currentChunkData = currentChunk.content();
 		} else {
 			currentChunkIndex = -1;
 		}
@@ -61,7 +61,7 @@ public class BodyInputStream extends InputStream {
 			chunks.add(currentChunk);
 			currentChunkIndex = chunks.size() - 1;
 			currentChunkLength = currentChunk.getLength();
-			currentChunkData = currentChunk.getContent();
+			currentChunkData = currentChunk.content();
 		}
 
 		positionWithinChunk++;
@@ -80,7 +80,7 @@ public class BodyInputStream extends InputStream {
 			}
 			currentChunk = chunks.get(currentChunkIndex);
 			currentChunkLength = currentChunk.getLength();
-			currentChunkData = currentChunk.getContent();
+			currentChunkData = currentChunk.content();
 			positionWithinChunk = 0;
 		}
 		return true;
