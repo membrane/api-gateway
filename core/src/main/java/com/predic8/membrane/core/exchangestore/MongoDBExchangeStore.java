@@ -28,7 +28,7 @@ public class MongoDBExchangeStore extends AbstractPersistentExchangeStore {
     private String database;
     private String collectionName;
     private MongoCollection<Document> collection;
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    private static final ObjectMapper objectMapper = new ObjectMapper();
 
     @Override
     protected void writeToStore(List<AbstractExchangeSnapshot> exchanges) {
@@ -36,7 +36,7 @@ public class MongoDBExchangeStore extends AbstractPersistentExchangeStore {
         List<Document> documents = new ArrayList<>();
         for (AbstractExchangeSnapshot exchange : exchanges) {
             try {
-                documents.add(createMongoDocument(exchange));
+                documents.add(exchangeDoc(exchange));
             } catch (Exception e) {
                 log.error("Error converting exchange to MongoDB document", e);
             }
@@ -46,31 +46,32 @@ public class MongoDBExchangeStore extends AbstractPersistentExchangeStore {
         }
     }
 
-    private Document createMongoDocument(AbstractExchangeSnapshot exchange) {
+    private static Document exchangeDoc(AbstractExchangeSnapshot exchange) {
         Document doc = new Document();
         doc.append("_id", new ObjectId());
         doc.append("id", exchange.getId());
         doc.append("timestamp", exchange.getTime().getTime());
         doc.append("requestUri", exchange.getOriginalRequestUri());
         doc.append("status", exchange.getStatus());
-
-        try {
-            Document requestDoc = new Document();
-            requestDoc.append("method", exchange.getRequest() != null ? exchange.getRequest().toRequest().getMethod() : "UNKNOWN");
-            requestDoc.append("headers", exchange.getRequest() != null ? objectMapper.writeValueAsString(exchange.getRequest().toRequest().getHeader()) : "{}");
-            requestDoc.append("body", exchange.getRequest() != null ? exchange.getRequest().toRequest().getBodyAsStringDecoded() : "{}");
-            doc.append("request", requestDoc);
-
-            Document responseDoc = new Document();
-            responseDoc.append("status", exchange.getResponse() != null ? exchange.getResponse().getStatusCode() : 0);
-            responseDoc.append("headers", exchange.getResponse() != null ? exchange.getResponse().getHeader() : "{}");
-            responseDoc.append("body", exchange.getResponse() != null ? exchange.getResponse().toResponse().getBodyAsStringDecoded() : "{}");
-            doc.append("response", responseDoc);
-
-        } catch (Exception e) {
-            log.error("Error serializing request/response to JSON", e);
-        }
+        doc.append("request", requestDoc(exchange));
+        doc.append("response", responseDoc(exchange));
         return doc;
+    }
+
+    private static Document requestDoc(AbstractExchangeSnapshot exchange) {
+        Document requestDoc = new Document();
+        requestDoc.append("method", exchange.getRequest().toRequest().getMethod());
+        requestDoc.append("headers", exchange.getRequest().getHeader());
+        requestDoc.append("body", exchange.getRequest().toRequest().getBodyAsStringDecoded());
+        return requestDoc;
+    }
+
+    private static Document responseDoc(AbstractExchangeSnapshot exchange) {
+        Document responseDoc = new Document();
+        responseDoc.append("status", exchange.getResponse().getStatusCode());
+        responseDoc.append("headers", exchange.getResponse().getHeader());
+        responseDoc.append("body", exchange.getResponse().toResponse().getBodyAsStringDecoded());
+        return responseDoc;
     }
 
     @Override
