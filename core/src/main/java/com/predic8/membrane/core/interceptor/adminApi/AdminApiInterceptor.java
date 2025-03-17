@@ -6,9 +6,7 @@ import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.exchange.AbstractExchange;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.exchangestore.ExchangeQueryResult;
-import com.predic8.membrane.core.http.Header;
-import com.predic8.membrane.core.http.Request;
-import com.predic8.membrane.core.http.Response;
+import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.rest.QueryParameter;
@@ -24,6 +22,8 @@ import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
 import java.util.stream.IntStream;
 
 import static com.bornium.http.util.UriUtil.queryToParameters;
@@ -31,28 +31,34 @@ import static com.predic8.membrane.core.http.Header.X_FORWARDED_FOR;
 import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.openapi.util.UriTemplateMatcher.matchTemplate;
+import static com.predic8.membrane.core.transport.http2.Http2ServerHandler.HTTP2;
 
 @MCElement(name = "adminApi")
 public class AdminApiInterceptor extends AbstractInterceptor {
 
-    public static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-    public static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm:ss");
-    
+    static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+    static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm:ss");
+
     private static final ObjectMapper om = new ObjectMapper();
 
     @Override
     public Outcome handleRequest(Exchange exc) {
         try {
-            return switch (matchTemplate(".*/{action}", exc.getRequestURI()).get("action")) {
-                case "health" -> handleHealth(exc);
-                case "apis" -> handleApis(exc);
-                case "calls" -> handleCalls(exc);
-                default -> CONTINUE;
-            };
+            String uri = exc.getRequestURI();
+            if (uri.matches(".*/health.*")) {
+                return handleHealth(exc);
+            } else if (uri.matches(".*/apis.*")) {
+                return handleApis(exc);
+            } else if (uri.matches(".*/calls.*")) {
+                return handleCalls(exc);
+            } else if (uri.matches(".*/exchange/\\d*")) {
+                Map<String, String> params = matchTemplate(".*/exchange/{id}", uri);
+                return handleExchangeDetails(exc, params.get("id"));
+            }
         } catch (PathDoesNotMatchException e) {
-            // ProblemDetails
             return ABORT;
         }
+        return CONTINUE;
     }
 
     private Outcome handleHealth(Exchange exc) {
@@ -127,6 +133,28 @@ public class AdminApiInterceptor extends AbstractInterceptor {
         return RETURN;
     }
 
+    private Outcome handleExchangeDetails(Exchange exc, String id) {
+        try {
+            long exchangeId = Long.parseLong(id);
+            AbstractExchange exchange = router.getExchangeStore().getExchangeById(exchangeId);
+
+            if (exchange == null) {
+                exc.setResponse(Response.notFound().build());
+                return RETURN;
+            }
+
+            StringWriter writer = new StringWriter();
+            JsonGenerator gen = om.getFactory().createGenerator(writer);
+            writeExchangeDetailed(exchange, gen);
+            gen.close();
+
+            exc.setResponse(Response.ok().body(writer.toString()).contentType(APPLICATION_JSON).build());
+            return RETURN;
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     private void writeExchange(AbstractExchange exc, JsonGenerator gen) throws IOException {
         gen.writeStartObject();
         gen.writeNumberField("id", exc.getId());
@@ -151,6 +179,68 @@ public class AdminApiInterceptor extends AbstractInterceptor {
         gen.writeNumberField("serverPort",  getServerPort(exc));
         gen.writeNumberField("duration",
                 exc.getTimeResReceived() - exc.getTimeReqSent());
+        gen.writeStringField("msgFilePath", JDBCUtil.getFilePath(exc));
+        gen.writeEndObject();
+    }
+
+    private void writeExchangeDetailed(AbstractExchange exc, JsonGenerator gen) throws IOException {
+        gen.writeStartObject();
+        gen.writeObjectFieldStart("request");
+        if (exc.getRequest() != null) {
+            Message request = exc.getRequest();
+            gen.writeStringField("protocol", exc.getProperty(HTTP2) != null ? "HTTP/2" : request.getVersion());
+            gen.writeObjectFieldStart("headers");
+            for (HeaderField hf : request.getHeader().getAllHeaderFields()) {
+                gen.writeStringField(hf.getHeaderName().toString(), hf.getValue());
+            }
+            gen.writeEndObject();
+            gen.writeStringField("contentType", exc.getRequestContentType());
+            if (exc.getRequestContentLength() != -1) {
+                gen.writeNumberField("contentLength", exc.getRequestContentLength());
+            } else {
+                gen.writeNullField("contentLength");
+            }
+            if (!request.isBodyEmpty()) {
+                gen.writeStringField("bodyRaw", request.getBodyAsStringDecoded());
+            } else {
+                gen.writeNullField("bodyRaw");
+            }
+        } else {
+            gen.writeNullField("protocol");
+            gen.writeNullField("headers");
+            gen.writeNullField("contentType");
+            gen.writeNullField("contentLength");
+            gen.writeNullField("bodyRaw");
+        }
+        gen.writeEndObject();
+        gen.writeObjectFieldStart("response");
+        if (exc.getResponse() != null) {
+            gen.writeStringField("statusMessage", exc.getResponse().getStatusMessage());
+            gen.writeObjectFieldStart("headers");
+            for (HeaderField hf : exc.getResponse().getHeader().getAllHeaderFields()) {
+                gen.writeStringField(hf.getHeaderName().toString(), hf.getValue());
+            }
+            gen.writeEndObject();
+            gen.writeStringField("contentType", exc.getResponseContentType());
+            if (exc.getResponseContentLength() != -1) {
+                gen.writeNumberField("contentLength", exc.getResponseContentLength());
+            } else {
+                gen.writeNullField("contentLength");
+            }
+            if (!exc.getResponse().isBodyEmpty()) {
+                gen.writeStringField("bodyRaw", exc.getResponse().getBodyAsStringDecoded());
+            } else {
+                gen.writeNullField("bodyRaw");
+            }
+        } else {
+            gen.writeNullField("statusMessage");
+            gen.writeNullField("headers");
+            gen.writeNullField("contentType");
+            gen.writeNullField("contentLength");
+            gen.writeNullField("bodyRaw");
+        }
+        gen.writeEndObject();
+        gen.writeStringField("state", exc.getStatus().toString());
         gen.writeStringField("msgFilePath", JDBCUtil.getFilePath(exc));
         gen.writeEndObject();
     }
