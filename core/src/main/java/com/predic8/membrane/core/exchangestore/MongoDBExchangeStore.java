@@ -59,14 +59,14 @@ public class MongoDBExchangeStore extends AbstractPersistentExchangeStore {
         doc.append("_id", new ObjectId());
         doc.append("id", exchange.getId());
         doc.append("method", exchange.getRequest().getMethod());
-        doc.append("respContentLength", exchange.toAbstractExchange().getResponseContentLength());
-        doc.append("reqContentLength", exchange.toAbstractExchange().getRequestContentLength());
-        doc.append("reqContentType", exchange.toAbstractExchange().getRequestContentType());
-        doc.append("respContentType", exchange.toAbstractExchange().getResponseContentType());
+        doc.append("key", exchange.getRule().getKey().toString());
+        doc.append("respContentLength", exchange.toAbstractExchange().getRequestContentLength());
+        doc.append("respContentType", exchange.toAbstractExchange().getRequestContentType());
         doc.append("protocol", exchange.toAbstractExchange().getRequest().getVersion());
         doc.append("client", getClientAddr(false, exchange.toAbstractExchange()));
-        doc.append("server", exchange.toAbstractExchange().getServer());
+        doc.append("server", exchange.getServer());
         doc.append("duration", exchange.toAbstractExchange().getTimeReqSent() - exchange.toAbstractExchange().getTimeReqReceived());
+        doc.append("proxy", exchange.toAbstractExchange().getProxy().toString());
         doc.append("timestamp", exchange.getTime().getTime());
         doc.append("msgFilePath", "");
         doc.append("requestUri", exchange.getOriginalRequestUri());
@@ -89,6 +89,8 @@ public class MongoDBExchangeStore extends AbstractPersistentExchangeStore {
         responseDoc.append("status", exchange.getResponse() != null ? exchange.getResponse().getStatusCode() : 0);
         responseDoc.append("headers", exchange.getResponse() != null ? exchange.getResponse().getHeader() : "{}");
         responseDoc.append("body", exchange.getResponse() != null ? Base64.getEncoder().encodeToString(exchange.getResponse().toResponse().getBodyAsStringDecoded().getBytes(StandardCharsets.UTF_8)) : "{}");
+        responseDoc.append("resContentLength", exchange.toAbstractExchange().getResponseContentLength());
+        responseDoc.append("resContentType", exchange.toAbstractExchange().getResponseContentType());
         return responseDoc;
     }
 
@@ -144,19 +146,15 @@ public class MongoDBExchangeStore extends AbstractPersistentExchangeStore {
 
     @Override
     public List<AbstractExchange> getAllExchangesAsList() {
-        return null;
+        return List.of(getExchanges(null));
     }
 
     @Override
     public void collect(ExchangeCollector collector) {
         ensureCollectionIsInitialized();
-        List<Document> docs = collection.find().into(new ArrayList<>());
-        for (Document doc : docs) {
+        for (Document doc : collection.find().into(new ArrayList<>())) {
             try {
-                AbstractExchangeSnapshot snapshot = objectMapper.readValue(objectMapper.writeValueAsString(doc), AbstractExchangeSnapshot.class);
-                if (snapshot != null) {
-                    collector.collect(snapshot.toAbstractExchange());
-                }
+                collector.collect(objectMapper.readValue(objectMapper.writeValueAsString(doc), AbstractExchangeSnapshot.class).toAbstractExchange());
             } catch (JsonProcessingException e) {
                 log.error("Error parsing MongoDB document to exchange", e);
             }
@@ -179,7 +177,7 @@ public class MongoDBExchangeStore extends AbstractPersistentExchangeStore {
 
     private void ensureCollectionIsInitialized() {
         if (this.collection == null) {
-           initMongoConnection();
+            initMongoConnection();
         }
     }
 
