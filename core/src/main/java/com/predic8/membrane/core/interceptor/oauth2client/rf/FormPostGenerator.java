@@ -14,6 +14,7 @@
 package com.predic8.membrane.core.interceptor.oauth2client.rf;
 
 import com.predic8.membrane.core.http.Response;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -34,13 +35,14 @@ public class FormPostGenerator {
     public Response build() {
         return Response.ok().contentType(TEXT_HTML_UTF8).body(
                 "<html><head><title>Submit This Form</title></head>"
-                        + "<body onload=\"javascript:document.forms[0].submit()\"><form method=\"post\" action=\""
-                        + escapeXml11(url) + "\">" +
-                        parameters.entrySet().stream().map(e ->
-                                "<input type=\"hidden\" name=\""
-                                        + escapeXml11(e.getKey()) + "\" value=\""
-                                        + escapeXml11(e.getValue()) + "\"/>").collect(Collectors.joining())
+                        + "<body onload=\"javascript:document.forms[0].submit()\">"
+                        + "<form method=\"post\" action=\"" + escapeXml11(url) + "\">" +
+                        parameters.entrySet().stream().map(FormPostGenerator::toHiddenInput).collect(Collectors.joining())
                         + "</form></body></html>").build();
+    }
+
+    private static @NotNull String toHiddenInput(Map.Entry<String, String> e) {
+        return "<input type=\"hidden\" name=\"" + escapeXml11(e.getKey()) + "\" value=\"" + escapeXml11(e.getValue()) + "\"/>";
     }
 
     public FormPostGenerator withParameter(String key, String value) {
