@@ -7,10 +7,8 @@ import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoCollection;
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.exchange.AbstractExchange;
 import com.predic8.membrane.core.exchange.snapshots.AbstractExchangeSnapshot;
-import com.predic8.membrane.core.interceptor.statistics.util.JDBCUtil;
 import com.predic8.membrane.core.proxies.Proxy;
 import com.predic8.membrane.core.proxies.RuleKey;
 import org.bson.Document;
@@ -20,12 +18,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Base64;
-import java.util.List;
+import java.util.*;
 
 import static com.mongodb.client.model.Filters.eq;
 import static com.predic8.membrane.core.interceptor.administration.AdminRESTInterceptor.getClientAddr;
+
 
 @MCElement(name = "mongoDBExchangeStore")
 public class MongoDBExchangeStore extends AbstractPersistentExchangeStore {
@@ -54,23 +51,19 @@ public class MongoDBExchangeStore extends AbstractPersistentExchangeStore {
         }
     }
 
-    private static Document exchangeDoc(AbstractExchangeSnapshot exchange) {
+    private Document exchangeDoc(AbstractExchangeSnapshot exchange) throws JsonProcessingException {
         Document doc = new Document();
         doc.append("_id", new ObjectId());
         doc.append("id", exchange.getId());
-        doc.append("method", exchange.getRequest().getMethod());
-        doc.append("key", exchange.getRule().getKey().toString());
-        doc.append("respContentLength", exchange.toAbstractExchange().getRequestContentLength());
-        doc.append("respContentType", exchange.toAbstractExchange().getRequestContentType());
-        doc.append("protocol", exchange.toAbstractExchange().getRequest().getVersion());
-        doc.append("client", getClientAddr(false, exchange.toAbstractExchange()));
-        doc.append("server", exchange.getServer());
-        doc.append("duration", exchange.toAbstractExchange().getTimeReqSent() - exchange.toAbstractExchange().getTimeReqReceived());
-        doc.append("proxy", exchange.toAbstractExchange().getProxy().toString());
+        doc.append("method", exchange.getRequest().getMethod() != null ? exchange.getRequest().getMethod() : "UNKNOWN");
+        doc.append("listenPort", exchange.getRule().getKey().getPort() != 0 ? exchange.getRule().getKey().getPort() : 0);
+        doc.append("protocol", exchange.toAbstractExchange().getRequest().getVersion() != null ? exchange.toAbstractExchange().getRequest().getVersion() : "UNKNOWN" );
+        doc.append("client", getClientAddr(false, exchange.toAbstractExchange()) != null ? getClientAddr(false, exchange.toAbstractExchange()) : "UNKNOWN");
+        doc.append("server", exchange.getServer() != null ? exchange.getServer() : "UNKNOWN");
+        doc.append("proxy", exchange.toAbstractExchange() != null ? objectMapper.writeValueAsString(exchange.toAbstractExchange().getProxy().getKey())  : "UNKNOWN");
         doc.append("timestamp", exchange.getTime().getTime());
-        doc.append("msgFilePath", "");
-        doc.append("requestUri", exchange.getOriginalRequestUri());
-        doc.append("status", exchange.getStatus());
+        doc.append("requestUri", exchange.getOriginalRequestUri() != null ? exchange.getOriginalRequestUri() : "UNKNOWN" );
+        doc.append("status", exchange.getStatus() != null ? exchange.getStatus() : 0);
         doc.append("request", requestDoc(exchange));
         doc.append("response", responseDoc(exchange));
         return doc;
@@ -79,7 +72,9 @@ public class MongoDBExchangeStore extends AbstractPersistentExchangeStore {
     private static Document requestDoc(AbstractExchangeSnapshot exchange) {
         Document requestDoc = new Document();
         requestDoc.append("method", exchange.getRequest() != null ? exchange.getRequest().toRequest().getMethod() : "UNKNOWN");
-        requestDoc.append("headers", exchange.getRequest() != null ? exchange.getRequest().getHeader() : "{}");
+        requestDoc.append("header", exchange.getRequest() != null ? exchange.getRequest().getHeader() : "{}");
+        requestDoc.append("reqContentLength", exchange.toAbstractExchange() != null ? exchange.toAbstractExchange().getRequestContentLength() : 0);
+        requestDoc.append("reqContentType", exchange.toAbstractExchange().getRequestContentType() != null ? exchange.toAbstractExchange().getRequestContentType() : "UNKNOWN");
         requestDoc.append("body", exchange.getRequest() != null ? Base64.getEncoder().encodeToString(exchange.getRequest().toRequest().getBodyAsStringDecoded().getBytes(StandardCharsets.UTF_8)) : "{}");
         return requestDoc;
     }
@@ -87,10 +82,10 @@ public class MongoDBExchangeStore extends AbstractPersistentExchangeStore {
     private static Document responseDoc(AbstractExchangeSnapshot exchange) {
         Document responseDoc = new Document();
         responseDoc.append("status", exchange.getResponse() != null ? exchange.getResponse().getStatusCode() : 0);
-        responseDoc.append("headers", exchange.getResponse() != null ? exchange.getResponse().getHeader() : "{}");
+        responseDoc.append("header", exchange.getResponse() != null ? exchange.getResponse().getHeader() : "{}");
         responseDoc.append("body", exchange.getResponse() != null ? Base64.getEncoder().encodeToString(exchange.getResponse().toResponse().getBodyAsStringDecoded().getBytes(StandardCharsets.UTF_8)) : "{}");
-        responseDoc.append("resContentLength", exchange.toAbstractExchange().getResponseContentLength());
-        responseDoc.append("resContentType", exchange.toAbstractExchange().getResponseContentType());
+        responseDoc.append("respContentLength", exchange.toAbstractExchange() == null ? 0 : exchange.toAbstractExchange().getResponseContentLength());
+        responseDoc.append("respContentType", exchange.toAbstractExchange().getResponseContentType());
         return responseDoc;
     }
 
@@ -115,38 +110,22 @@ public class MongoDBExchangeStore extends AbstractPersistentExchangeStore {
 
     @Override
     public AbstractExchange[] getExchanges(RuleKey ruleKey) {
-        try {
-            List<Document> documents = collection.find(eq("key", ruleKey)).into(new ArrayList<>());
-            if (documents.isEmpty()) {
-                return new AbstractExchange[0];
+        return new ArrayList<>(collection.find().into(new ArrayList<>())).stream().map(doc -> {
+            AbstractExchangeSnapshot result;
+            try {
+                result = objectMapper.readValue(objectMapper.writeValueAsString(doc), AbstractExchangeSnapshot.class);
+            } catch (Exception e) {
+                log.error("Error converting MongoDB document to AbstractExchangeSnapshot", e);
+                throw new RuntimeException(e);
             }
-
-            return documents.stream()
-                    .map(this::convertToExchangeSnapshot)
-                    .map(AbstractExchangeSnapshot::toAbstractExchange)
-                    .toArray(AbstractExchange[]::new);
-
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    private AbstractExchangeSnapshot convertToExchangeSnapshot(Document doc) {
-        try {
-            AbstractExchangeSnapshot snapshot = objectMapper.readValue(objectMapper.writeValueAsString(doc), AbstractExchangeSnapshot.class);
-            if (snapshot.getDestinations() == null) {
-                snapshot.setDestinations(new ArrayList<>());
-            }
-            return snapshot;
-        } catch (Exception e) {
-            log.error("Error converting MongoDB document to AbstractExchangeSnapshot", e);
-            throw new RuntimeException(e);
-        }
+            return Objects.requireNonNull(result).toAbstractExchange();
+        }).toArray(AbstractExchange[]::new);
     }
 
     @Override
     public List<AbstractExchange> getAllExchangesAsList() {
-        return List.of(getExchanges(null));
+        ensureCollectionIsInitialized();
+        return getTotals();
     }
 
     @Override
