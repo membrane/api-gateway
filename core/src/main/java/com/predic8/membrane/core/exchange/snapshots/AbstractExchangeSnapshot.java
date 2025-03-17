@@ -133,7 +133,7 @@ public class AbstractExchangeSnapshot {
         exc.setTimeReqReceived(getTimeReqReceived());
         exc.setTimeResSent(getTimeResSent());
         exc.setTimeResReceived(getTimeResReceived());
-        exc.setDestinations(new ArrayList<>(getDestinations()));
+        exc.setDestinations(getDestinations());
         exc.setRemoteAddr(getRemoteAddr());
         exc.setRemoteAddrIp(getRemoteAddrIp());
         exc.setId(getId());
