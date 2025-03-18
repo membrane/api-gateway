@@ -124,8 +124,10 @@ public class MockAuthorizationServer {
                 if (requestURI.endsWith("/.well-known/openid-configuration")) {
                     return Response.ok(wkf.getWellknown()).build();
                 } else if (requestURI.equalsIgnoreCase(baseUri + "/discovery/v2.0/keys")) {
-                    String payload = "{ \"keys\":  [" + jwksResponse + "]}";
-                    return Response.ok(payload).contentType(APPLICATION_JSON).build();
+                    return Response
+                            .ok("{ \"keys\":  [" + jwksResponse + "]}")
+                            .contentType(APPLICATION_JSON)
+                            .build();
                 } else if (requestURI.contains("/authorize?")) {
                     if (abortSignIn.get()) {
                         return Response.internalServerError().body("signin aborted").build();
