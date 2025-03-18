@@ -19,9 +19,9 @@ import com.predic8.membrane.core.interceptor.authentication.session.SessionManag
 import com.predic8.membrane.core.interceptor.oauth2.OAuth2AuthorizationServerInterceptor;
 
 public abstract class OAuth2Flow {
-    protected OAuth2AuthorizationServerInterceptor authServer;
-    protected Exchange exc;
-    protected SessionManager.Session session;
+    protected final OAuth2AuthorizationServerInterceptor authServer;
+    protected final Exchange exc;
+    protected final SessionManager.Session session;
 
 
     public OAuth2Flow(OAuth2AuthorizationServerInterceptor authServer, Exchange exc, SessionManager.Session s) {

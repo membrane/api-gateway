@@ -22,10 +22,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class SessionCleanupThread extends Thread {
-	private static Logger log = LoggerFactory.getLogger(SessionCleanupThread.class.getName());
+	private static final Logger log = LoggerFactory.getLogger(SessionCleanupThread.class.getName());
 	public static final long DEFAULT_TIMEOUT = 60 * 60000;
 
-	private Map<String, Cluster> clusters;
+	private final Map<String, Cluster> clusters;
 	private long sessionTimeout = DEFAULT_TIMEOUT;
 
 	public SessionCleanupThread(Map<String, Cluster> clusters) {

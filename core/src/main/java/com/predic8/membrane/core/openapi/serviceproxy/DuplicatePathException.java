@@ -18,7 +18,7 @@ package com.predic8.membrane.core.openapi.serviceproxy;
 
 public class DuplicatePathException extends RuntimeException {
 
-    String path;
+    final String path;
 
     public DuplicatePathException(String path) {
         super("More than one OpenAPI document of an API share the same path %s.".formatted(path));

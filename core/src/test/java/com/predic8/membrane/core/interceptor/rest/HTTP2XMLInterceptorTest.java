@@ -34,9 +34,9 @@ public class HTTP2XMLInterceptorTest {
 
 	private Exchange exc;
 
-	private HTTP2XMLInterceptor interceptor = new HTTP2XMLInterceptor();
+	private final HTTP2XMLInterceptor interceptor = new HTTP2XMLInterceptor();
 
-	XPath xpath = XPathFactory.newInstance().newXPath();
+	final XPath xpath = XPathFactory.newInstance().newXPath();
 
 	@BeforeEach
 	protected void setUp() throws Exception {

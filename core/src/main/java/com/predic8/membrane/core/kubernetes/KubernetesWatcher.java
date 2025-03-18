@@ -41,7 +41,7 @@ public class KubernetesWatcher {
     private final BeanCache beanCache;
     private KubernetesClient client;
     private ExecutorService executors;
-    private ConcurrentHashMap<String, Closeable> watches = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, Closeable> watches = new ConcurrentHashMap<>();
 
     public KubernetesWatcher(Router router) {
         this.router = router;

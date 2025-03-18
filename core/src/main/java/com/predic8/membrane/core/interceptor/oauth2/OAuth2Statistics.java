@@ -26,9 +26,9 @@ public class OAuth2Statistics {
 
 
     private int refreshTokenFlow;
-    private StringBuilder builder = new StringBuilder();
+    private final StringBuilder builder = new StringBuilder();
 
-    private String newLine = "<br/>";
+    private final String newLine = "<br/>";
 
     @Override
     public synchronized String toString() {

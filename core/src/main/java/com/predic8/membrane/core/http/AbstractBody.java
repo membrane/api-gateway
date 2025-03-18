@@ -49,8 +49,8 @@ public abstract class AbstractBody {
 	// whether the body has been read completely from the wire
 	boolean read;
 
-	protected List<Chunk> chunks = new ArrayList<>();
-	protected List<MessageObserver> observers = new ArrayList<>(1);
+	protected final List<Chunk> chunks = new ArrayList<>();
+	protected final List<MessageObserver> observers = new ArrayList<>(1);
 	private boolean wasStreamed = false;
 
 	public void read() throws IOException {

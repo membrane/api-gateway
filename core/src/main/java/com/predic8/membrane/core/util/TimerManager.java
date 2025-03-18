@@ -20,7 +20,7 @@ import java.util.TimerTask;
  * Manages periodic tasks with a single timer.
  */
 public class TimerManager {
-    protected java.util.Timer timer = new Timer(true);
+    protected final java.util.Timer timer = new Timer(true);
 
     public void schedulePeriodicTask(TimerTask task, long period, String title) {
         timer.schedule(task, period, period);

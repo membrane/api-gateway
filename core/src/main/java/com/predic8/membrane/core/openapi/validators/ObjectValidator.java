@@ -40,7 +40,7 @@ public class ObjectValidator implements IJSONSchemaValidator {
     private static final Logger log = LoggerFactory.getLogger(ObjectValidator.class.getName());
 
     @SuppressWarnings("rawtypes")
-    private Schema schema;
+    private final Schema schema;
     private JsonNode node;
 
     private final OpenAPI api;

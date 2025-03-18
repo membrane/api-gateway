@@ -72,7 +72,7 @@ public class FileUserDataProvider implements UserDataProvider {
     }
 
     public static class User {
-        Map<String, String> attributes = new HashMap<>();
+        final Map<String, String> attributes = new HashMap<>();
 
         public User(String username, String password){
             setUsername(username);

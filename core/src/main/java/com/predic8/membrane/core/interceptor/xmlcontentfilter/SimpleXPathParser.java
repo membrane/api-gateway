@@ -51,7 +51,7 @@ public class SimpleXPathParser {
 	}
 
 	public static class UnparsedStringNode extends Node {
-		protected String s;
+		protected final String s;
 
 		public UnparsedStringNode(String s) {
 			this.s = s;
@@ -64,7 +64,7 @@ public class SimpleXPathParser {
 	}
 
 	public static class StringNode extends Node {
-		protected String s;
+		protected final String s;
 
 		public StringNode(String s) {
 			this.s = s;
@@ -77,7 +77,7 @@ public class SimpleXPathParser {
 	}
 
 	public static class CommentNode extends Node {
-		protected String s;
+		protected final String s;
 
 		public CommentNode(String s) {
 			this.s = s;
@@ -90,7 +90,7 @@ public class SimpleXPathParser {
 	}
 
 	public static class ContainerNode extends Node {
-		protected Node[] nodes;
+		protected final Node[] nodes;
 
 		public ContainerNode(Node... nodes) {
 			this.nodes = nodes;
@@ -108,7 +108,7 @@ public class SimpleXPathParser {
 	}
 
 	public static class SquareBracketNode extends Node {
-		protected ContainerNode node;
+		protected final ContainerNode node;
 
 		private SquareBracketNode(ContainerNode node) {
 			this.node = node;
@@ -123,7 +123,7 @@ public class SimpleXPathParser {
 	}
 
 	public static class RoundBracketNode extends Node {
-		protected ContainerNode node;
+		protected final ContainerNode node;
 
 		private RoundBracketNode(ContainerNode node) {
 			this.node = node;

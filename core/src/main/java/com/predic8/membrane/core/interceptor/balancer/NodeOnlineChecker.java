@@ -121,7 +121,7 @@ public class NodeOnlineChecker {
 
     private static final Logger log = LoggerFactory.getLogger(NodeOnlineChecker.class.getName());
     LoadBalancingInterceptor lbi;
-    ConcurrentHashMap<String, BadNode> badNodesForDestinations = new ConcurrentHashMap<>();
+    final ConcurrentHashMap<String, BadNode> badNodesForDestinations = new ConcurrentHashMap<>();
     private final HashSet<BadNode> offlineNodes = new HashSet<>();
     private int retryTimeInSeconds = -1;
     private int nodeCounterLimit5XX = 10;

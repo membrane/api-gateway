@@ -42,7 +42,7 @@ class OpenAPIInterceptorTest {
     OpenAPISpec specInfo3Servers;
     OpenAPISpec specCustomers;
 
-    Exchange exc = new Exchange(null);
+    final Exchange exc = new Exchange(null);
     OpenAPIInterceptor interceptor1Server;
     OpenAPIInterceptor interceptor3Server;
 

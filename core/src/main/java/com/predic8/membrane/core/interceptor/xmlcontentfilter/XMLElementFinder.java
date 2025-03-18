@@ -34,7 +34,7 @@ import javax.xml.stream.events.XMLEvent;
  */
 @ThreadSafe
 public class XMLElementFinder {
-	private static XMLInputFactory xmlInputFactory = XMLInputFactory.newInstance();
+	private static final XMLInputFactory xmlInputFactory = XMLInputFactory.newInstance();
 
 	static {
 		xmlInputFactory.setProperty(XMLInputFactory.IS_REPLACING_ENTITY_REFERENCES, false);

@@ -29,7 +29,7 @@ import static java.util.Collections.*;
 
 public class OpenApiRewriteIntegrationTest {
 
-    private Router r = new HttpRouter();
+    private final Router r = new HttpRouter();
 
     @BeforeEach
     public void setUp() throws Exception {

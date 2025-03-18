@@ -23,7 +23,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class LazyRateLimitTest {
 
-    int requestLimit = 100;
+    final int requestLimit = 100;
     LazyRateLimit limiter;
 
     @BeforeEach

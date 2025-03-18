@@ -52,7 +52,7 @@ public class RouterIpResolverInterceptor implements SSLInterceptor {
     private final Logger LOG = LoggerFactory.getLogger(RouterIpResolverInterceptor.class);
 
     private List<String> routerIps = new ArrayList<>();
-    private ObjectMapper om = new ObjectMapper();
+    private final ObjectMapper om = new ObjectMapper();
     private HttpClientConfiguration httpClientConfiguration = new HttpClientConfiguration();
     private SSLParser sslParser;
     private HttpClient httpClient;

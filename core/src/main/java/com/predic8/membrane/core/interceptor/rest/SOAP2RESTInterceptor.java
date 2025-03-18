@@ -39,8 +39,8 @@ public class SOAP2RESTInterceptor extends SOAPRESTHelper {
 	private String requestXSLT;
 	private String responseXSLT;
 
-	private SoapOperationExtractor soe = new SoapOperationExtractor();
-	private DispatchingInterceptor di = new DispatchingInterceptor();
+	private final SoapOperationExtractor soe = new SoapOperationExtractor();
+	private final DispatchingInterceptor di = new DispatchingInterceptor();
 
 	public SOAP2RESTInterceptor() {
 		name = "soap 2 rest gateway";

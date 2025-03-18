@@ -75,7 +75,7 @@ public class CacheInterceptor extends AbstractInterceptor {
 
 	@MCElement(name="inMemoryStore")
 	public static class InMemoryStore extends Store {
-		HashMap<String, Node> cache = new HashMap<>();
+		final HashMap<String, Node> cache = new HashMap<>();
 
 		@Override
 		public Node get(String url) {

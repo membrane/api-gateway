@@ -44,11 +44,11 @@ public class KubernetesClientBuilder {
 
     HttpClientFactory httpClientFactory;
     String baseURL;
-    String ca;
-    String cert;
-    String key;
-    String token;
-    String namespace;
+    final String ca;
+    final String cert;
+    final String key;
+    final String token;
+    final String namespace;
 
     KubernetesClientBuilder(String baseURL, String ca, String cert, String key, String token, String namespace) {
         this.baseURL = baseURL;

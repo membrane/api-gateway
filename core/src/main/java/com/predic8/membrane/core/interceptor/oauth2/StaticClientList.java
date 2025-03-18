@@ -25,7 +25,7 @@ import java.util.NoSuchElementException;
 @MCElement(name="staticClientList")
 public class StaticClientList implements ClientList {
 
-    private HashMap<String,Client> clientIdsToClients = new HashMap<>();
+    private final HashMap<String,Client> clientIdsToClients = new HashMap<>();
     private List<Client> clients = new ArrayList<>();
 
     @Override

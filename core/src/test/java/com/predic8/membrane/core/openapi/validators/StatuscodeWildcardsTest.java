@@ -26,7 +26,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class StatuscodeWildcardsTest extends AbstractValidatorTest {
 
-    Request<?> two = Request.get().path("/two");
+    final Request<?> two = Request.get().path("/two");
 
     @Override
 protected String getOpenAPIFileName() {

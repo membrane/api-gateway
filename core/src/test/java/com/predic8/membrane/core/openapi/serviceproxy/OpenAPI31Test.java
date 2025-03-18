@@ -34,7 +34,7 @@ public class OpenAPI31Test {
 
     OpenAPISpec petstore_v3_1;
 
-    Exchange exc = new Exchange(null);
+    final Exchange exc = new Exchange(null);
 
     @BeforeEach
     public void setUp() {

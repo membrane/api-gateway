@@ -20,7 +20,7 @@ public class AcmeMemoryStorageEngine implements AcmeSynchronizedStorageEngine {
 
     public AcmeMemoryStorageEngine() {}
 
-    private HashMap<String, String> files = new HashMap<>();
+    private final HashMap<String, String> files = new HashMap<>();
     private long lockedUntil = 0;
 
     @Override

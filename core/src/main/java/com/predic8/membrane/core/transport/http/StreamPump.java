@@ -25,7 +25,7 @@ import java.util.concurrent.atomic.*;
 
 public class StreamPump implements Runnable {
 
-	protected static Logger log = LoggerFactory.getLogger(StreamPump.class.getName());
+	protected static final Logger log = LoggerFactory.getLogger(StreamPump.class.getName());
 
 	public static class StreamPumpStats {
 		private static final ArrayList<StreamPump> pumps = new ArrayList<>();
@@ -52,9 +52,9 @@ public class StreamPump implements Runnable {
 	// operational members
 	protected final InputStream in;
 	protected final OutputStream out;
-	protected StreamPumpStats stats;
+	protected final StreamPumpStats stats;
 	// statistical members
-	protected AtomicLong bytesTransferred;
+	protected final AtomicLong bytesTransferred;
 	private final String pumpName;
 	private final long creationTime;
 	private final Proxy proxy;

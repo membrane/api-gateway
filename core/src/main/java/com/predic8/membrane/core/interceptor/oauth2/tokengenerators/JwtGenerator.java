@@ -70,7 +70,7 @@ public class JwtGenerator {
         }
     }
 
-    private SecureRandom random = new SecureRandom();
+    private final SecureRandom random = new SecureRandom();
     private RsaJsonWebKey rsaJsonWebKey;
 
     public JwtGenerator() throws JoseException {

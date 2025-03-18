@@ -39,7 +39,7 @@ class ApiDocsInterceptorTest {
     private final ObjectMapper om = new ObjectMapper();
 
     Router router;
-    Exchange exc = new Exchange(null);
+    final Exchange exc = new Exchange(null);
     ApiDocsInterceptor interceptor;
     APIProxy rule;
 

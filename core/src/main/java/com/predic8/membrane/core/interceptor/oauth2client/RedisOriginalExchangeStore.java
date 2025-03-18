@@ -34,7 +34,7 @@ import java.io.IOException;
 public class RedisOriginalExchangeStore extends OriginalExchangeStore {
     private int maxBodySize = 100000;
     private String prefix;
-    private ObjectMapper objMapper;
+    private final ObjectMapper objMapper;
     private RedisConnector connector;
 
 

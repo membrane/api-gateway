@@ -23,7 +23,7 @@ import org.junit.jupiter.api.Test;
 public class RequestPerformanceVersion1 {
 
 	private int bufferSize;
-	private byte[] buffer = new byte[1024];
+	private final byte[] buffer = new byte[1024];
 
 
 	@BeforeEach

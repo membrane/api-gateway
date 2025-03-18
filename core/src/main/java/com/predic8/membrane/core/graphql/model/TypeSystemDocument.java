@@ -28,7 +28,7 @@ import static com.predic8.membrane.core.graphql.Tokenizer.Type.STRING_VALUE;
 
 public class TypeSystemDocument {
 
-    List<TypeSystemDefinition> typeSystemDefinitions = new ArrayList<>();
+    final List<TypeSystemDefinition> typeSystemDefinitions = new ArrayList<>();
 
     public TypeSystemDocument() {
     }

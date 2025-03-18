@@ -30,11 +30,11 @@ public class ConcurrentConnectionLimitTest {
 
     private HttpRouter router;
     private ExecutorService executor;
-    private int concurrency = 100;
-    private int concurrentLimit = 10;
-    private CountDownLatch countDownLatchStart = new CountDownLatch(concurrency);
-    private CountDownLatch countDownLatchEnd = new CountDownLatch(concurrency);
-    private int port = 3026;
+    private final int concurrency = 100;
+    private final int concurrentLimit = 10;
+    private final CountDownLatch countDownLatchStart = new CountDownLatch(concurrency);
+    private final CountDownLatch countDownLatchEnd = new CountDownLatch(concurrency);
+    private final int port = 3026;
 
     @BeforeEach
     public void setup() throws Exception{

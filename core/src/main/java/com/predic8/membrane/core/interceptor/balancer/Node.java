@@ -43,10 +43,10 @@ public class Node extends AbstractXmlElement {
 
 	private volatile long lastUpTime;
 	private volatile Status status;
-	private AtomicInteger counter = new AtomicInteger();
-	private AtomicInteger threads = new AtomicInteger();
+	private final AtomicInteger counter = new AtomicInteger();
+	private final AtomicInteger threads = new AtomicInteger();
 
-	private ConcurrentHashMap<Integer, StatisticCollector> statusCodes = new ConcurrentHashMap<>();
+	private final ConcurrentHashMap<Integer, StatisticCollector> statusCodes = new ConcurrentHashMap<>();
 
 	public Node(String host, int port) {
 		this.host = host;

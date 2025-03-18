@@ -39,11 +39,11 @@ import java.io.IOException;
 
 public class XenMessageContext {
 
-    private static DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
-    private Exchange exchange;
-    private Document doc;
-    private Interceptor.Flow flow;
-    private static String KEY = "xenMessageContext";
+    private static final DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+    private final Exchange exchange;
+    private final Document doc;
+    private final Interceptor.Flow flow;
+    private static final String KEY = "xenMessageContext";
 
     public static XenMessageContext get(Exchange exchange, Interceptor.Flow flow) {
         XenMessageContext xmc = exchange.getPropertyOrNull(KEY + flow.toString(), XenMessageContext.class);
