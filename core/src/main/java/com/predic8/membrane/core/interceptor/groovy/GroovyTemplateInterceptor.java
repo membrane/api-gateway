@@ -68,7 +68,7 @@ public class GroovyTemplateInterceptor extends AbstractInterceptor {
     @Override
     public Outcome handleRequest(Exchange exc) {
         groovyInterceptor.handleRequest(exc);
-        String html = (String) exc.getProperty("GROOVY_TEMPLATE");
+        String html = exc.getProperty("GROOVY_TEMPLATE", String.class);
         exc.setResponse(Response.ok(html).contentType(TEXT_HTML_UTF8).build());
         return RETURN;
     }

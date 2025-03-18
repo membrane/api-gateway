@@ -13,7 +13,9 @@
 
 package com.predic8.membrane.core.interceptor.oauth2.client;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.*;
+import com.google.code.yanf4j.util.ConcurrentHashSet;
 import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
@@ -24,7 +26,6 @@ import com.predic8.membrane.core.interceptor.oauth2client.*;
 import com.predic8.membrane.core.interceptor.oauth2client.rf.*;
 import com.predic8.membrane.core.proxies.*;
 import com.predic8.membrane.core.util.*;
-import com.predic8.membrane.core.util.URI;
 import org.jetbrains.annotations.*;
 import org.junit.jupiter.api.*;
 import org.slf4j.*;
@@ -36,8 +37,11 @@ import java.security.*;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.*;
+import java.util.stream.IntStream;
 
 import static com.predic8.membrane.core.http.MimeType.*;
+import static com.predic8.membrane.core.http.Request.get;
+import static com.predic8.membrane.core.http.Request.post;
 import static org.junit.jupiter.api.Assertions.*;
 
 public abstract class OAuth2ResourceTest {
@@ -66,7 +70,7 @@ public abstract class OAuth2ResourceTest {
         mockAuthServer.getTransport().setBacklog(10000);
         mockAuthServer.getTransport().setSocketTimeout(10000);
         mockAuthServer.setHotDeploy(false);
-        mockAuthServer.getTransport().setConcurrentConnectionLimitPerIp(limit);
+        mockAuthServer.getTransport().setConcurrentConnectionLimitPerIp(limit+1);
         mockAuthServer.getRuleManager().addProxyAndOpenPortIfNew(getMockAuthServiceProxy());
         mockAuthServer.start();
 
@@ -74,7 +78,7 @@ public abstract class OAuth2ResourceTest {
         oauth2Resource.getTransport().setBacklog(10000);
         oauth2Resource.getTransport().setSocketTimeout(10000);
         oauth2Resource.setHotDeploy(false);
-        oauth2Resource.getTransport().setConcurrentConnectionLimitPerIp(limit);
+        oauth2Resource.getTransport().setConcurrentConnectionLimitPerIp(limit+1);
         oauth2Resource.getRuleManager().addProxyAndOpenPortIfNew(getConfiguredOAuth2Resource());
         oauth2Resource.start();
     }
@@ -89,71 +93,65 @@ public abstract class OAuth2ResourceTest {
 
     @Test
     public void getOriginalRequest() throws Exception {
-        Exchange excCallResource = new Request.Builder().get(getClientAddress() + "/init").buildExchange();
-
-        excCallResource = browser.apply(excCallResource);
-        var body2 = om.readValue(excCallResource.getResponse().getBodyAsStream(), Map.class);
-        assertEquals("/init", body2.get("path"));
-        assertEquals("", body2.get("body"));
-        assertEquals("GET", body2.get("method"));
+        var response = browser.apply(get(getClientAddress() + "/init")).getResponse();
+        var body = om.readValue(response.getBodyAsStream(), new TypeReference<Map<String, String>>() {});
+        assertEquals("/init", body.get("path"));
+        assertEquals("", body.get("body"));
+        assertEquals("GET", body.get("method"));
     }
 
     @Test
     public void postOriginalRequest() throws Exception {
-        Exchange excCallResource = new Request.Builder().post(getClientAddress() + "/init").body("demobody").buildExchange();
-
-        excCallResource = browser.apply(excCallResource);
-        var body2 = om.readValue(excCallResource.getResponse().getBodyAsStream(), Map.class);
-        assertEquals("/init", body2.get("path"));
-        assertEquals("demobody", body2.get("body"));
-        assertEquals("POST", body2.get("method"));
+        var response = browser.apply(post(getClientAddress() + "/init").body("demobody")).getResponse();
+        var body = om.readValue(response.getBodyAsStream(), new TypeReference<Map<String, String>>() {});
+        assertEquals("/init", body.get("path"));
+        assertEquals("demobody", body.get("body"));
+        assertEquals("POST", body.get("method"));
     }
 
     // this test also implicitly tests concurrency on oauth2resource
     @Test
     public void testUseRefreshTokenOnTokenExpiration() throws Exception {
-        Exchange excCallResource = new Request.Builder().get(getClientAddress() + "/init").buildExchange();
+        var response = browser.apply(get(getClientAddress() + "/init")).getResponse();
+        var body = om.readValue(response.getBodyAsStream(), new TypeReference<Map<String, String>>() {});
+        assertEquals("/init", body.get("path"));
 
-        excCallResource = browser.apply(excCallResource);
-        var body2 = om.readValue(excCallResource.getResponse().getBodyAsStream(), Map.class);
-        assertEquals("/init", body2.get("path"));
-
-        Set<String> accessTokens = new HashSet<>();
-        List<Thread> threadList = new ArrayList<>();
         CountDownLatch cdl = new CountDownLatch(limit);
-        for (int i = 0; i < limit; i++) {
-            threadList.add(new Thread(() -> {
-                try {
-                    cdl.countDown();
-                    cdl.await();
-                    String uuid = UUID.randomUUID().toString();
-                    Exchange excCallResource2 = new Request.Builder().get(getClientAddress() + "/" + uuid).buildExchange();
-                    excCallResource2 = browser.apply(excCallResource2);
-                    var body = om.readValue(excCallResource2.getResponse().getBodyAsStringDecoded(), Map.class);
-                    String path = (String) body.get("path");
-                    assertEquals("/" + uuid, path);
-                    synchronized (accessTokens) {
-                        accessTokens.add((String) body.get("accessToken"));
-                    }
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            }));
+        Set<String> accessTokens = new ConcurrentHashSet<>();
+        IntStream.range(0, limit)
+                .mapToObj(i -> getStartedThread(() -> accessTokens.add(getToken(cdl))))
+                .toList() // required to avoid stream execution deadlocking on CountDownLatch.await()
+                .forEach(OAuth2ResourceTest::joinThread);
+        assertEquals(limit, accessTokens.size());
+    }
 
-        }
-        threadList.forEach(Thread::start);
-        threadList.forEach(thread -> {
-            try {
-                thread.join();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        });
-        synchronized (accessTokens) {
-            assertEquals(limit, accessTokens.size());
+    private String getToken(CountDownLatch cdl) {
+        try {
+            cdl.countDown();
+            cdl.await();
+            String path = "/" + UUID.randomUUID();
+            var response = browser.apply(get(getClientAddress() + path)).getResponse();
+            var body = om.readValue(response.getBodyAsStringDecoded(), new TypeReference<Map<String, String>>() {});
+            assertEquals(path, body.get("path"));
+            return body.get("accessToken");
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
     }
 
+    protected static Thread getStartedThread(Runnable runnable) {
+        var thread = new Thread(runnable);
+        thread.start();
+        return thread;
+    }
+
+    protected static void joinThread(Thread thread) {
+        try {
+            thread.join();
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+    }
 
     @Test
     public void testStateAttack() throws Exception {
@@ -177,17 +175,15 @@ public abstract class OAuth2ResourceTest {
         });
 
 
-        Exchange excCallResource = new Request.Builder().get(getClientAddress() + "/malicious").buildExchange();
-        LOG.debug("getting " + excCallResource.getDestinations().get(0));
-        browser.apply(excCallResource); // will be aborted
+        var malicious = get(getClientAddress() + "/malicious").buildExchange();
+        LOG.debug("getting {}", malicious.getDestinations().getFirst());
+        browser.apply(malicious); // will be aborted
 
         browser.clearCookies(); // send the auth link to some helpless (other) user
 
-        excCallResource = browser.apply(new Request.Builder().get("http://localhost:" + serverPort + ref.get()).buildExchange());
-
-        assertEquals(400, excCallResource.getResponse().getStatusCode());
-
-        assertTrue(excCallResource.getResponse().getBodyAsStringDecoded().contains("CSRF"));
+        var response = browser.apply(get("http://localhost:" + serverPort + ref.get())).getResponse();
+        assertEquals(400, response.getStatusCode());
+        assertTrue(response.getBodyAsStringDecoded().contains("CSRF"));
     }
 
     @Test
@@ -205,58 +201,51 @@ public abstract class OAuth2ResourceTest {
         });
 
         // hit the client, do not continue at AS with login
-        Exchange excCallResource = new Request.Builder().get(getClientAddress() + "/init" + 0).buildExchange();
-        excCallResource = browser.apply(excCallResource);
+        var response = browser.apply(get(getClientAddress() + "/init" + 0)).getResponse();
 
-        assertEquals(200, excCallResource.getResponse().getStatusCode());
-        assertTrue(excCallResource.getResponse().getBodyAsStringDecoded().contains("Login aborted"));
+        assertEquals(200, response.getStatusCode());
+        assertTrue(response.getBodyAsStringDecoded().contains("Login aborted"));
 
         blocked.set(false);
 
         // hit client again, login
-        excCallResource = new Request.Builder().get(getClientAddress() + "/init" + 1).buildExchange();
-        excCallResource = browser.apply(excCallResource);
+        var secondResponse = browser.apply(get(getClientAddress() + "/init" + 1)).getResponse();
 
         // works
-        assertEquals(200, excCallResource.getResponse().getStatusCode());
-        assertTrue(excCallResource.getResponse().getBodyAsStringDecoded().contains("/init1"));
+        assertEquals(200, secondResponse.getStatusCode());
+        assertTrue(secondResponse.getBodyAsStringDecoded().contains("/init1"));
     }
 
     @Test
     public void logout() throws Exception {
-        browser.apply(new Request.Builder()
-                .get(getClientAddress() + "/init").buildExchange());
+        browser.apply(get(getClientAddress() + "/init"));
 
-        var ili = browser.apply(new Request.Builder().get(getClientAddress() + "/is-logged-in").buildExchange());
-
-        assertTrue(ili.getResponse().getBodyAsStringDecoded().contains("true"));
+        var isLoggedInResponse = browser.apply(get(getClientAddress() + "/is-logged-in")).getResponse();
+        assertTrue(isLoggedInResponse.getBodyAsStringDecoded().contains("true"));
 
         // call to /logout uses cookieHandlingHttpClient: *NOT* following the redirect (which would auto-login again)
-        browser.applyWithoutRedirect(new Request.Builder()
-                .get(getClientAddress() + "/logout").buildExchange());
+        browser.applyWithoutRedirect(get(getClientAddress() + "/logout"));
 
-        ili = browser.apply(new Request.Builder().get(getClientAddress() + "/is-logged-in").buildExchange());
-
-        assertTrue(ili.getResponse().getBodyAsStringDecoded().contains("false"));
+        var secondIsLoggedInResponse = browser.apply(get(getClientAddress() + "/is-logged-in")).getResponse();
+        assertTrue(secondIsLoggedInResponse.getBodyAsStringDecoded().contains("false"));
     }
 
     @Test
     public void loginParams() throws Exception {
-        Exchange exc = new Request.Builder().get(getClientAddress() + "/init?login_hint=def&illegal=true").buildExchange();
-        browser.applyWithoutRedirect(exc);
+        var response = browser.applyWithoutRedirect(get(getClientAddress() + "/init?login_hint=def&illegal=true")).getResponse();
 
-        String location = exc.getResponse().getHeader().getFirstValue("Location");
-
-        URI jUri = new URIFactory().create(location);
-        String q = jUri.getRawQuery();
-
-        var params = URLParamUtil.parseQueryString(q, URLParamUtil.DuplicateKeyOrInvalidFormStrategy.ERROR);
+        var params = extractQueryParameters(response.getHeader().getFirstValue("Location"));
 
         assertTrue(params.containsKey("foo"));
         assertEquals("bar", params.get("foo"));
         assertTrue(params.containsKey("login_hint"));
         assertEquals("def", params.get("login_hint"));
         assertFalse(params.containsKey("illegal"));
+    }
+
+    private static @NotNull Map<String, String> extractQueryParameters(String urlString) throws URISyntaxException {
+        String rawQuery = new URIFactory().create(urlString).getRawQuery();
+        return URLParamUtil.parseQueryString(rawQuery, URLParamUtil.DuplicateKeyOrInvalidFormStrategy.ERROR);
     }
 
 
@@ -274,40 +263,38 @@ public abstract class OAuth2ResourceTest {
             @Override
             public synchronized Outcome handleRequest(Exchange exc) {
                 try {
-                    return handleRequestInternal(exc);
+                    exc.setResponse(handleRequestInternal(exc));
+                    return Outcome.RETURN;
                 } catch (URISyntaxException | IOException e) {
                     throw new RuntimeException(e);
                 }
             }
 
-            public synchronized Outcome handleRequestInternal(Exchange exc) throws URISyntaxException, IOException {
+            public synchronized Response handleRequestInternal(Exchange exc) throws URISyntaxException, IOException {
                 if (exc.getRequestURI().endsWith("/.well-known/openid-configuration")) {
-                    exc.setResponse(Response.ok(wkf.getWellknown()).build());
+                    return Response.ok(wkf.getWellknown()).build();
                 } else if (exc.getRequestURI().startsWith("/auth?")) {
                     Map<String, String> params = URLParamUtil.getParams(new URIFactory(), exc, URLParamUtil.DuplicateKeyOrInvalidFormStrategy.ERROR);
-                    exc.setResponse(new FormPostGenerator(getClientAddress() + "/oauth2callback")
+                    return new FormPostGenerator(getClientAddress() + "/oauth2callback")
                         .withParameter("state", params.get("state"))
                         .withParameter("code", params.get("1234"))
-                        .build());
+                        .build();
                 } else if (exc.getRequestURI().startsWith("/token")) {
                     ObjectMapper om = new ObjectMapper();
-                    Map<String, String> res = new HashMap<>();
-                    res.put("access_token", new BigInteger(130, rand).toString(32));
-                    res.put("token_type", "bearer");
-                    res.put("expires_in", "1");
-                    res.put("refresh_token", new BigInteger(130, rand).toString(32));
-                    exc.setResponse(Response.ok(om.writeValueAsString(res)).contentType(APPLICATION_JSON).build());
-
+                    var responseData = Map.ofEntries(
+                            Map.entry("access_token", new BigInteger(130, rand).toString(32)),
+                            Map.entry("token_type", "bearer"),
+                            Map.entry("expires_in", "1"),
+                            Map.entry("refresh_token", new BigInteger(130, rand).toString(32))
+                    );
+                    return Response.ok(om.writeValueAsString(responseData)).contentType(APPLICATION_JSON).build();
                 } else if (exc.getRequestURI().startsWith("/userinfo")) {
                     ObjectMapper om = new ObjectMapper();
-                    Map<String, String> res = new HashMap<>();
-                    res.put("username", "dummy");
-                    exc.setResponse(Response.ok(om.writeValueAsString(res)).contentType(APPLICATION_JSON).build());
+                    Map<String, String> res = Map.of("username", "dummy");
+                    return Response.ok(om.writeValueAsString(res)).contentType(APPLICATION_JSON).build();
+                } else {
+                    return Response.notFound().build();
                 }
-
-                if (exc.getResponse() == null)
-                    exc.setResponse(Response.notFound().build());
-                return Outcome.RETURN;
             }
         });
 
