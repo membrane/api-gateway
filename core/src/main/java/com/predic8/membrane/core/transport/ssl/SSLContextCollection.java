@@ -36,8 +36,15 @@ import static java.nio.charset.StandardCharsets.*;
  */
 public class SSLContextCollection implements SSLProvider {
 
-	public static final byte[] ALERT_UNRECOGNIZED_NAME = new byte[]{ 21 /* alert */, 3, 1 /* TLS 1.0 */, 0, 2 /* length: 2 bytes */,
-			2 /* fatal */, 112 /* unrecognized_name */ };
+	public static final byte[] ALERT_UNRECOGNIZED_NAME = new byte[]{
+			21 /* alert */,
+			3,
+			1 /* TLS 1.0 */,
+			0,
+			2 /* length: 2 bytes */,
+			2 /* fatal */,
+			112 /* unrecognized_name */
+	};
 	private static final Logger log = LoggerFactory.getLogger(SSLContextCollection.class.getName());
 
 	public static class Builder {
@@ -111,15 +118,7 @@ public class SSLContextCollection implements SSLProvider {
 		if (capabilities != null) {
 			List<SNIServerName> serverNames = capabilities.getServerNames();
 			if (serverNames != null && !serverNames.isEmpty()) {
-				OUTER:
-					for (SNIServerName snisn : serverNames) {
-						String hostname = new String(snisn.getEncoded(), UTF_8);
-						for (int i = 0; i < dnsNames.size(); i++)
-							if (dnsNames.get(i).matcher(hostname).matches()) {
-								sslContext = sslContexts.get(i);
-								break OUTER;
-							}
-					}
+				sslContext = getMatchingSslContext(serverNames);
 				if (sslContext == null) {
 					// no hostname matched: send 'unrecognized_name' alert and close socket
 
@@ -134,16 +133,26 @@ public class SSLContextCollection implements SSLProvider {
 		// no Server Name Indication used by the client: fall back to first sslContext marked as 'useAsDefault'
 		// (or the first, if none is marked)
 		if (sslContext == null) {
-			for (SSLContext sc : sslContexts)
-				if (sc.isUseAsDefault()) {
-					sslContext = sc;
-					break;
-				}
+			sslContext = sslContexts.stream()
+					.filter(SSLContext::isUseAsDefault)
+					.findFirst()
+					.orElse(null);
 		}
 		if (sslContext == null)
 			sslContext = sslContexts.getFirst();
 
 		return sslContext.wrap(socket, buffer, position);
+	}
+
+	private SSLContext getMatchingSslContext(List<SNIServerName> serverNames) {
+		for (SNIServerName snisn : serverNames) {
+			String hostname = new String(snisn.getEncoded(), UTF_8);
+			for (int i = 0; i < dnsNames.size(); i++)
+				if (dnsNames.get(i).matcher(hostname).matches()) {
+					return sslContexts.get(i);
+				}
+		}
+		return null;
 	}
 
 	private static int readTLSRecordHeader(int position, int recordHeaderSize, InputStream ins, byte[] buffer) throws IOException, EndOfStreamException {
