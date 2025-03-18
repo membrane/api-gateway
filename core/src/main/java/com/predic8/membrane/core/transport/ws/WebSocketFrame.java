@@ -89,17 +89,15 @@ public class WebSocketFrame {
         if (additionalPayloadBytes == 2) {
             byte[] extendedPayloadLength = ByteBuffer.allocate(4).putInt((int) payloadLength).array();
             byte[] correctedExtendedPayloadLength = new byte[2];
-            for (int i = 2; i < extendedPayloadLength.length; i++)
-                correctedExtendedPayloadLength[i - 2] = extendedPayloadLength[i];
+            if (extendedPayloadLength.length - 2 >= 0)
+                System.arraycopy(extendedPayloadLength, 2, correctedExtendedPayloadLength, 0, extendedPayloadLength.length - 2);
             additionalPayloadLength = correctedExtendedPayloadLength;
         }
         if (additionalPayloadBytes == 8) {
             additionalPayloadLength = ByteBuffer.allocate(8).putLong((int) payloadLength).array();
         }
         if (additionalPayloadLength != null)
-            for (int i = 0; i < additionalPayloadBytes; i++) {
-                result[2 + i] = additionalPayloadLength[i];
-            }
+            System.arraycopy(additionalPayloadLength, 0, result, 2, additionalPayloadBytes);
 
 
         int maskKeyLength = isMasked ? maskKey.length : 0;

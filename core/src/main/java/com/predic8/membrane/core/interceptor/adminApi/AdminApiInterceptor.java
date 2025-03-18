@@ -47,7 +47,7 @@ import static com.predic8.membrane.core.transport.http2.Http2ServerHandler.HTTP2
 @MCElement(name = "adminApi")
 public class AdminApiInterceptor extends AbstractInterceptor {
 
-    static final DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+    static final DateTimeFormatter isoFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSXXX");
 
     private static final ObjectMapper om = new ObjectMapper();
 
@@ -109,15 +109,20 @@ public class AdminApiInterceptor extends AbstractInterceptor {
                     gen.writeStringField("port", String.valueOf(p.getKey().getPort()));
                     gen.writeEndObject();
 
-                    gen.writeObjectFieldStart("target");
-                    if (p.getTargetHost() != null) {
-                        gen.writeStringField("host", p.getTargetHost());
-                        gen.writeNumberField("port", p.getTargetPort());
+                    if (p.getTargetHost() != null || p.getTargetURL() != null) {
+                        gen.writeObjectFieldStart("target");
+
+                        if (p.getTargetHost() != null) {
+                            gen.writeStringField("host", p.getTargetHost());
+                            gen.writeNumberField("port", p.getTargetPort());
+                        } else {
+                            gen.writeStringField("url", p.getTargetURL());
+                        }
+
+                        gen.writeEndObject();
+                    } else {
+                        gen.writeNullField("target");
                     }
-                    if (p.getTargetURL() != null) {
-                        gen.writeStringField("url", p.getTargetURL());
-                    }
-                    gen.writeEndObject();
 
                     gen.writeObjectFieldStart("stats");
                     gen.writeNumberField("count", p.getStatisticCollector().getCount());
@@ -213,7 +218,7 @@ public class AdminApiInterceptor extends AbstractInterceptor {
         }
 
         gen.writeObjectFieldStart("stats");
-        gen.writeStringField("time", dateFormatter.format(exc.getTime().toInstant().atZone(ZoneId.systemDefault())));
+        gen.writeStringField("time", isoFormatter.format(exc.getTime().toInstant().atZone(ZoneId.systemDefault())));
         gen.writeNumberField("duration", exc.getTimeResReceived() - exc.getTimeReqSent());
         gen.writeEndObject();
 

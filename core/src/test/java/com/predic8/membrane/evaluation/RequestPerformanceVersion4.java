@@ -123,7 +123,7 @@ public class RequestPerformanceVersion4 {
 				}
 			}
 			String k = new String(buf, s, e - s);
-			if ("".equals(k))
+			if (k.isEmpty())
 				break;
 
 			s = ++e;
