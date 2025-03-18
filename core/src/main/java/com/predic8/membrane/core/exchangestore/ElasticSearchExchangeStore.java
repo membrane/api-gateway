@@ -59,18 +59,18 @@ public class ElasticSearchExchangeStore extends AbstractPersistentExchangeStore 
     String location = "http://localhost:9200";
     private String documentPrefix;
 
-    ImmutableMap<String, String> queryToElasticMap = ImmutableMap.<String, String>builder().putAll(Stream.of(new String[][] {
-            {"method", "request.method.keyword"},
-            {"server", "server.keyword" },
-            {"client", "remoteAddr.keyword" },
-            {"respcontenttype", "response.header.Content-Type.keyword" },
-            {"reqcontenttype", "request.header.Content-Type.keyword" },
-            {"reqcontentlength", "request.header.Content-Length.keyword"},
-            {"respcontentlength", "response.header.Content-Length.keyword"},
-            {"statuscode", "response.statusCode" },
-            {"path", "request.uri.keyword" },
-            {"proxy", "rule.name.keyword" }})
-            .collect(Collectors.toMap(data -> data[0], data -> data[1]))).build();
+    ImmutableMap<String, String> queryToElasticMap = ImmutableMap.ofEntries(
+            Map.entry("method", "request.method.keyword"),
+            Map.entry("server", "server.keyword" ),
+            Map.entry("client", "remoteAddr.keyword" ),
+            Map.entry("respcontenttype", "response.header.Content-Type.keyword" ),
+            Map.entry("reqcontenttype", "request.header.Content-Type.keyword" ),
+            Map.entry("reqcontentlength", "request.header.Content-Length.keyword"),
+            Map.entry("respcontentlength", "response.header.Content-Length.keyword"),
+            Map.entry("statuscode", "response.statusCode" ),
+            Map.entry("path", "request.uri.keyword" ),
+            Map.entry("proxy", "rule.name.keyword" )
+        );
 
 
     @Override

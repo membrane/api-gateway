@@ -121,18 +121,15 @@ public class AcmeClient {
     }
 
     public void init(@Nullable KubernetesClientFactory kubernetesClientFactory, @Nullable HttpClientFactory httpClientFactory) {
-        if (ass == null) {
-            throw new RuntimeException("<acme> is used, but to storage is configured.");
-        } else if (ass instanceof FileStorage) {
-            asse = new AcmeFileStorageEngine((FileStorage)ass);
-        } else if (ass instanceof KubernetesStorage) {
-            asse = new AcmeKubernetesStorageEngine((KubernetesStorage) ass, kubernetesClientFactory);
-        } else if (ass instanceof MemoryStorage) {
-            asse = new AcmeMemoryStorageEngine();
-        } else if (ass instanceof AzureTableStorage) {
-            asse = new AcmeAzureTableApiStorageEngine((AzureTableStorage) ass, (AzureDns) acmeValidation, httpClientFactory);
-        } else {
-            throw new RuntimeException("Unsupported: Storage type " + ass.getClass().getName());
+        switch (ass) {
+            case null -> throw new RuntimeException("<acme> is used, but to storage is configured.");
+            case FileStorage fileStorage -> asse = new AcmeFileStorageEngine(fileStorage);
+            case KubernetesStorage kubernetesStorage ->
+                    asse = new AcmeKubernetesStorageEngine(kubernetesStorage, kubernetesClientFactory);
+            case MemoryStorage memoryStorage -> asse = new AcmeMemoryStorageEngine();
+            case AzureTableStorage azureTableStorage ->
+                    asse = new AcmeAzureTableApiStorageEngine(azureTableStorage, (AzureDns) acmeValidation, httpClientFactory);
+            default -> throw new RuntimeException("Unsupported: Storage type " + ass.getClass().getName());
         }
 
         if (challengeType.equals(TYPE_DNS_01) && !(asse instanceof DnsProvisionable)) {
@@ -271,11 +268,9 @@ public class AcmeClient {
     }
 
     private static GeneralName @NotNull [] getGeneralNames(String[] hosts) {
-        GeneralName[] altNames = new GeneralName[hosts.length];
-        for (int i = 0; i < hosts.length; i++) {
-            altNames[i] = new GeneralName(GeneralName.dNSName, hosts[i]);
-        }
-        return altNames;
+        return Arrays.stream(hosts)
+                .map(host -> new GeneralName(GeneralName.dNSName, host))
+                .toArray(GeneralName[]::new);
     }
 
     private static PrivateKey getPrivateKeyFromString(String privateKey) throws NoSuchAlgorithmException, NoSuchProviderException, IOException, InvalidKeySpecException {

@@ -108,7 +108,7 @@ public class ApiKeysInterceptorTest {
 
     @SuppressWarnings("unchecked")
     private static Set<String> getScopes(Exchange exc) {
-        return ((List<SecurityScheme>) exc.getProperty(SECURITY_SCHEMES)).get(0).getScopes();
+        return ((List<SecurityScheme>) exc.getProperty(SECURITY_SCHEMES)).getFirst().getScopes();
     }
 
     @Test
