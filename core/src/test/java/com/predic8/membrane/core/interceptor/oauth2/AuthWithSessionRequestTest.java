@@ -25,8 +25,8 @@ public class AuthWithSessionRequestTest extends RequestParameterizedTest {
     @BeforeEach
     public void setUp() throws Exception{
         super.setUp();
-        oasit.runUntilGoodAuthRequest().run();
-        exc = oasit.getMockAuthRequestExchange().call();
+        OAuth2AuthorizationServerInterceptorBase.runUntilGoodAuthRequest().run();
+        exc = OAuth2AuthorizationServerInterceptorBase.getMockAuthRequestExchange().call();
     }
 
     public static Stream<Named<RequestTestData>> data() {

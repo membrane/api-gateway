@@ -77,7 +77,7 @@ public class WellknownFile {
     }
 
     private String baseOauth2Url(){
-        return resolver.combine(getOauth2Issuer() + "/","oauth2/");
+        return ResolverMap.combine(getOauth2Issuer() + "/","oauth2/");
     }
 
     private void getValuesFromOasi() {

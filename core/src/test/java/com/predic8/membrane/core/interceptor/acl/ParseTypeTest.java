@@ -32,32 +32,32 @@ public class ParseTypeTest {
 
     @Test
     public void matchesBlobSchema() throws UnknownHostException{
-        assertEquals(true, pt.GLOB.getMatcher().matches("192.168.0.1", blobSchema));
+        assertEquals(true, ParseType.GLOB.getMatcher().matches("192.168.0.1", blobSchema));
     }
 
     @Test
     public void notMatchesBlobSchema() throws UnknownHostException{
-        assertEquals(false, pt.GLOB.getMatcher().matches("192.168.1.1", blobSchema));
+        assertEquals(false, ParseType.GLOB.getMatcher().matches("192.168.1.1", blobSchema));
     }
 
     @Test
     public void matchesRegexSchema() throws UnknownHostException{
-        assertEquals(true, pt.REGEX.getMatcher().matches("192.168.0.8", regexSchema));
+        assertEquals(true, ParseType.REGEX.getMatcher().matches("192.168.0.8", regexSchema));
     }
 
     @Test
     public void notMatchesRegexSchema() throws UnknownHostException{
-        assertEquals(false, pt.REGEX.getMatcher().matches("192.168.0.9", regexSchema));
+        assertEquals(false, ParseType.REGEX.getMatcher().matches("192.168.0.9", regexSchema));
     }
 
     @Test
     public void matchesCidrSchema() throws UnknownHostException{
-        assertEquals(true, pt.CIDR.getMatcher().matches("192.168.15.254", cidrSchema));
+        assertEquals(true, ParseType.CIDR.getMatcher().matches("192.168.15.254", cidrSchema));
     }
 
     @Test
     public void notMatchesCidrSchema() throws UnknownHostException{
-        assertEquals(false, pt.CIDR.getMatcher().matches("192.168.16.254", cidrSchema));
+        assertEquals(false, ParseType.CIDR.getMatcher().matches("192.168.16.254", cidrSchema));
     }
 
 }

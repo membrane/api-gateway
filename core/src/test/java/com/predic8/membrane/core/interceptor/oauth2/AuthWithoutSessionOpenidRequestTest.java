@@ -46,7 +46,7 @@ public class AuthWithoutSessionOpenidRequestTest extends RequestParameterizedTes
 
     private static Supplier<Object> sessionHasNoClaimsParam() {
         return () -> {
-            SessionManager.Session s = oasit.oasi.getSessionManager().getOrCreateSession(exc);
+            SessionManager.Session s = OAuth2AuthorizationServerInterceptorBase.oasi.getSessionManager().getOrCreateSession(exc);
             Map<String, String> userAttributes = s.getUserAttributes();
             synchronized (userAttributes) {
                 return !userAttributes.containsKey(ParamNames.CLAIMS);

@@ -26,7 +26,7 @@ public class RevocationRequestTest extends RequestParameterizedTest{
     @BeforeEach
     public void setUp() throws Exception{
         super.setUp();
-        oasit.runUntilGoodTokenRequest().run();
+        OAuth2AuthorizationServerInterceptorBase.runUntilGoodTokenRequest().run();
         exc = OAuth2AuthorizationServerInterceptorNormalTest.getMockRevocationRequest().call();
     }
 
@@ -65,7 +65,7 @@ public class RevocationRequestTest extends RequestParameterizedTest{
     }
 
     private static Callable<String> getTokenQuery(){
-        return () -> "token=" + oasit.afterTokenGenerationToken + "&";
+        return () -> "token=" + OAuth2AuthorizationServerInterceptorBase.afterTokenGenerationToken + "&";
     }
 
     private static Callable<String> getWrongTokenQuery(){

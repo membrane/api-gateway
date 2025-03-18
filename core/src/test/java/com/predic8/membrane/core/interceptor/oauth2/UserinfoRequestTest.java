@@ -29,7 +29,7 @@ public class UserinfoRequestTest extends RequestParameterizedTest {
     @BeforeEach
     public void setUp() throws Exception{
         super.setUp();
-        oasit.runUntilGoodTokenRequest().run();
+        OAuth2AuthorizationServerInterceptorBase.runUntilGoodTokenRequest().run();
         exc = OAuth2AuthorizationServerInterceptorNormalTest.getMockUserinfoRequest().call();
     }
 

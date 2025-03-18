@@ -25,7 +25,7 @@ public class AuthWithoutSessionRequestTest extends RequestParameterizedTest{
     @BeforeEach
     public void setUp() throws Exception{
         super.setUp();
-        exc = oasit.getMockAuthRequestExchange().call();
+        exc = OAuth2AuthorizationServerInterceptorBase.getMockAuthRequestExchange().call();
     }
 
     public static Stream<Named<RequestTestData>> data() {

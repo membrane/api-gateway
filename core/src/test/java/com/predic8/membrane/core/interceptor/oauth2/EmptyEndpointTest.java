@@ -26,7 +26,7 @@ public class EmptyEndpointTest extends RequestParameterizedTest{
     @BeforeEach
     public void setUp() throws Exception{
         super.setUp();
-        oasit.runUntilGoodAuthRequest().run();
+        OAuth2AuthorizationServerInterceptorBase.runUntilGoodAuthRequest().run();
         exc = OAuth2AuthorizationServerInterceptorNormalTest.getMockEmptyEndpointRequest().call();
     }
 
