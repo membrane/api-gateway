@@ -60,8 +60,7 @@ public class ByThreadStrategy extends AbstractXmlElement implements DispatchingS
 					endpointCount.put(hostColonPort, counter);
 					return ep;
 				} else {
-					continue;
-				}
+                }
 
 			}
 			try {
