@@ -176,7 +176,7 @@ public abstract class SessionManager {
     private void dropRedundantCookieHeaders(Exchange exc) {
         Map<String, List<String>> setCookieHeaders = getAllRelevantSetCookieHeaders(exc)
                 .map(HeaderField::getValue)
-                .map(v -> new AbstractMap.SimpleEntry(v.split("=true")[0], Arrays.asList(v)))
+                .map(v -> new AbstractMap.SimpleEntry(v.split("=true")[0], List.of(v)))
                 .collect(Collectors.toMap(e -> (String)e.getKey(), e -> (List)e.getValue(), (a,b) -> Stream.concat(a.stream(),b.stream()).collect(Collectors.toList())));
 
         removeRedundantExpireCookieIfRefreshed(exc, setCookieHeaders);
