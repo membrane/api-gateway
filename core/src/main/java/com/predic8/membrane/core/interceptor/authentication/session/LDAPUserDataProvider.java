@@ -469,12 +469,12 @@ public class LDAPUserDataProvider implements UserDataProvider {
 			return instance;
 		}
 
-		public Socket createSocket(String host, int port) throws IOException, UnknownHostException {
+		public Socket createSocket(String host, int port) throws IOException {
 			return sslContext.createSocket(host, port, connectTimeout, host, null);
 		}
 
 		@Override
-		public Socket createSocket(String host, int port, InetAddress localHost, int localPort) throws IOException, UnknownHostException {
+		public Socket createSocket(String host, int port, InetAddress localHost, int localPort) throws IOException {
 			return sslContext.createSocket(host, port, localHost, localPort, connectTimeout, host, null);
 		}
 
