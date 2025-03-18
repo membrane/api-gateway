@@ -13,6 +13,7 @@
 
 package com.predic8.membrane.core.interceptor.oauth2.client;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.*;
 import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.*;
@@ -38,6 +39,8 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.*;
 
 import static com.predic8.membrane.core.http.MimeType.*;
+import static com.predic8.membrane.core.http.Request.get;
+import static com.predic8.membrane.core.http.Request.post;
 import static org.junit.jupiter.api.Assertions.*;
 
 public abstract class OAuth2ResourceTest {
@@ -89,24 +92,20 @@ public abstract class OAuth2ResourceTest {
 
     @Test
     public void getOriginalRequest() throws Exception {
-        Exchange excCallResource = new Request.Builder().get(getClientAddress() + "/init").buildExchange();
-
-        excCallResource = browser.apply(excCallResource);
-        var body2 = om.readValue(excCallResource.getResponse().getBodyAsStream(), Map.class);
-        assertEquals("/init", body2.get("path"));
-        assertEquals("", body2.get("body"));
-        assertEquals("GET", body2.get("method"));
+        var response = browser.apply(get(getClientAddress() + "/init")).getResponse();
+        var body = om.readValue(response.getBodyAsStream(), new TypeReference<Map<String, String>>() {});
+        assertEquals("/init", body.get("path"));
+        assertEquals("", body.get("body"));
+        assertEquals("GET", body.get("method"));
     }
 
     @Test
     public void postOriginalRequest() throws Exception {
-        Exchange excCallResource = new Request.Builder().post(getClientAddress() + "/init").body("demobody").buildExchange();
-
-        excCallResource = browser.apply(excCallResource);
-        var body2 = om.readValue(excCallResource.getResponse().getBodyAsStream(), Map.class);
-        assertEquals("/init", body2.get("path"));
-        assertEquals("demobody", body2.get("body"));
-        assertEquals("POST", body2.get("method"));
+        var response = browser.apply(post(getClientAddress() + "/init").body("demobody")).getResponse();
+        var body = om.readValue(response.getBodyAsStream(), new TypeReference<Map<String, String>>() {});
+        assertEquals("/init", body.get("path"));
+        assertEquals("demobody", body.get("body"));
+        assertEquals("POST", body.get("method"));
     }
 
     // this test also implicitly tests concurrency on oauth2resource
@@ -155,7 +154,6 @@ public abstract class OAuth2ResourceTest {
         }
     }
 
-
     @Test
     public void testStateAttack() throws Exception {
         AtomicReference<String> ref = new AtomicReference<>();
@@ -178,17 +176,15 @@ public abstract class OAuth2ResourceTest {
         });
 
 
-        Exchange excCallResource = new Request.Builder().get(getClientAddress() + "/malicious").buildExchange();
-        LOG.debug("getting {}", excCallResource.getDestinations().getFirst());
-        browser.apply(excCallResource); // will be aborted
+        var malicious = get(getClientAddress() + "/malicious").buildExchange();
+        LOG.debug("getting {}", malicious.getDestinations().getFirst());
+        browser.apply(malicious); // will be aborted
 
         browser.clearCookies(); // send the auth link to some helpless (other) user
 
-        excCallResource = browser.apply(new Request.Builder().get("http://localhost:" + serverPort + ref.get()).buildExchange());
-
-        assertEquals(400, excCallResource.getResponse().getStatusCode());
-
-        assertTrue(excCallResource.getResponse().getBodyAsStringDecoded().contains("CSRF"));
+        var response = browser.apply(get("http://localhost:" + serverPort + ref.get())).getResponse();
+        assertEquals(400, response.getStatusCode());
+        assertTrue(response.getBodyAsStringDecoded().contains("CSRF"));
     }
 
     @Test
@@ -206,58 +202,51 @@ public abstract class OAuth2ResourceTest {
         });
 
         // hit the client, do not continue at AS with login
-        Exchange excCallResource = new Request.Builder().get(getClientAddress() + "/init" + 0).buildExchange();
-        excCallResource = browser.apply(excCallResource);
+        var response = browser.apply(get(getClientAddress() + "/init" + 0)).getResponse();
 
-        assertEquals(200, excCallResource.getResponse().getStatusCode());
-        assertTrue(excCallResource.getResponse().getBodyAsStringDecoded().contains("Login aborted"));
+        assertEquals(200, response.getStatusCode());
+        assertTrue(response.getBodyAsStringDecoded().contains("Login aborted"));
 
         blocked.set(false);
 
         // hit client again, login
-        excCallResource = new Request.Builder().get(getClientAddress() + "/init" + 1).buildExchange();
-        excCallResource = browser.apply(excCallResource);
+        var secondResponse = browser.apply(get(getClientAddress() + "/init" + 1)).getResponse();
 
         // works
-        assertEquals(200, excCallResource.getResponse().getStatusCode());
-        assertTrue(excCallResource.getResponse().getBodyAsStringDecoded().contains("/init1"));
+        assertEquals(200, secondResponse.getStatusCode());
+        assertTrue(secondResponse.getBodyAsStringDecoded().contains("/init1"));
     }
 
     @Test
     public void logout() throws Exception {
-        browser.apply(new Request.Builder()
-                .get(getClientAddress() + "/init").buildExchange());
+        browser.apply(get(getClientAddress() + "/init"));
 
-        var ili = browser.apply(new Request.Builder().get(getClientAddress() + "/is-logged-in").buildExchange());
-
-        assertTrue(ili.getResponse().getBodyAsStringDecoded().contains("true"));
+        var isLoggedInResponse = browser.apply(get(getClientAddress() + "/is-logged-in")).getResponse();
+        assertTrue(isLoggedInResponse.getBodyAsStringDecoded().contains("true"));
 
         // call to /logout uses cookieHandlingHttpClient: *NOT* following the redirect (which would auto-login again)
-        browser.applyWithoutRedirect(new Request.Builder()
-                .get(getClientAddress() + "/logout").buildExchange());
+        browser.applyWithoutRedirect(get(getClientAddress() + "/logout"));
 
-        ili = browser.apply(new Request.Builder().get(getClientAddress() + "/is-logged-in").buildExchange());
-
-        assertTrue(ili.getResponse().getBodyAsStringDecoded().contains("false"));
+        var secondIsLoggedInResponse = browser.apply(get(getClientAddress() + "/is-logged-in")).getResponse();
+        assertTrue(secondIsLoggedInResponse.getBodyAsStringDecoded().contains("false"));
     }
 
     @Test
     public void loginParams() throws Exception {
-        Exchange exc = new Request.Builder().get(getClientAddress() + "/init?login_hint=def&illegal=true").buildExchange();
-        browser.applyWithoutRedirect(exc);
+        var response = browser.applyWithoutRedirect(get(getClientAddress() + "/init?login_hint=def&illegal=true")).getResponse();
 
-        String location = exc.getResponse().getHeader().getFirstValue("Location");
-
-        URI jUri = new URIFactory().create(location);
-        String q = jUri.getRawQuery();
-
-        var params = URLParamUtil.parseQueryString(q, URLParamUtil.DuplicateKeyOrInvalidFormStrategy.ERROR);
+        var params = extractQueryParameters(response.getHeader().getFirstValue("Location"));
 
         assertTrue(params.containsKey("foo"));
         assertEquals("bar", params.get("foo"));
         assertTrue(params.containsKey("login_hint"));
         assertEquals("def", params.get("login_hint"));
         assertFalse(params.containsKey("illegal"));
+    }
+
+    private static @NotNull Map<String, String> extractQueryParameters(String urlString) throws URISyntaxException {
+        String rawQuery = new URIFactory().create(urlString).getRawQuery();
+        return URLParamUtil.parseQueryString(rawQuery, URLParamUtil.DuplicateKeyOrInvalidFormStrategy.ERROR);
     }
 
 
