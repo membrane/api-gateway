@@ -257,7 +257,7 @@ public class SimpleXPathParser {
 			int q = m.s.indexOf(terminator, m.p);
 			if (q == -1)
 				throw new RuntimeException("Unbalanced string.");
-			sb.append(m.s.substring(m.p, q));
+			sb.append(m.s, m.p, q);
 			if (q == m.s.length() - 1 || m.s.codePointAt(q + 1) != terminator) {
 				m.p = q + 1;
 				break;
