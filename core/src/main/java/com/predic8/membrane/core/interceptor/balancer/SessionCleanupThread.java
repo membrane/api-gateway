@@ -63,7 +63,7 @@ public class SessionCleanupThread extends Thread {
 					}
 				}
 				if (cleaned != 0)
-					log.debug(""+ cleaned +" sessions removed of "+ size +" in " +(System.currentTimeMillis()-time)+"ms");
+					log.debug(cleaned +" sessions removed of "+ size +" in " +(System.currentTimeMillis()-time)+"ms");
 			}
 
 			try {

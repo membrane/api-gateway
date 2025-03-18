@@ -58,9 +58,9 @@ public class Node extends AbstractXmlElement {
 
 	@Override
 	public boolean equals(Object obj) {
-		return obj!=null && obj instanceof Node &&
-				host.equals(((Node)obj).getHost()) &&
-				port == ((Node)obj).getPort();
+		return obj instanceof Node &&
+                host.equals(((Node) obj).getHost()) &&
+                port == ((Node) obj).getPort();
 	}
 
 	@Override
