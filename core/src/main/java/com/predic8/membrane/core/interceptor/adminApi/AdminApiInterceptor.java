@@ -32,12 +32,10 @@ import java.io.IOException;
 import java.io.StringWriter;
 import java.io.UncheckedIOException;
 import java.net.URI;
-import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Function;
 import java.util.stream.IntStream;
 
 import static com.bornium.http.util.UriUtil.queryToParameters;
@@ -50,8 +48,7 @@ import static com.predic8.membrane.core.transport.http2.Http2ServerHandler.HTTP2
 @MCElement(name = "adminApi")
 public class AdminApiInterceptor extends AbstractInterceptor {
 
-    static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-    static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm:ss");
+    static final DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
 
     private static final ObjectMapper om = new ObjectMapper();
 
@@ -75,6 +72,7 @@ public class AdminApiInterceptor extends AbstractInterceptor {
         return CONTINUE;
     }
 
+    // TODO Use actual current membrane version, add memory, disk usage, etc.
     private Outcome handleHealth(Exchange exc) {
         exc.setResponse(Response.ok().body("{\"version\": \"6.0.0\", \"status\": \"ok\"}").contentType(APPLICATION_JSON).build());
         return RETURN;
@@ -94,15 +92,38 @@ public class AdminApiInterceptor extends AbstractInterceptor {
                 AbstractServiceProxy p = rules.get(i);
                 try {
                     gen.writeStartObject();
+
                     gen.writeNumberField("order", i + 1);
                     gen.writeStringField("name", p.toString());
                     gen.writeBooleanField("active", p.isActive());
                     if (!p.isActive())
                         gen.writeStringField("error", p.getErrorState());
+
+                    gen.writeObjectFieldStart("key");
                     gen.writeStringField("method", p.getKey().getMethod());
-                    gen.writeStringField("proxy", generateProxy(p));
-                    gen.writeStringField("target", generateTarget(p));
+                    gen.writeStringField("path", p.getKey().getMethod());
+                    if (p.getKey().getHost() != null) {
+                        gen.writeStringField("host", p.getKey().getHost());
+                    } else {
+                        gen.writeStringField("address", p.getKey().getIp());
+                    }
+                    gen.writeStringField("port", String.valueOf(p.getKey().getPort()));
+                    gen.writeEndObject();
+
+                    gen.writeObjectFieldStart("target");
+                    if (p.getTargetHost() != null) {
+                        gen.writeStringField("host", p.getTargetHost());
+                        gen.writeNumberField("port", p.getTargetPort());
+                    }
+                    if (p.getTargetURL() != null) {
+                        gen.writeStringField("url", p.getTargetURL());
+                    }
+                    gen.writeEndObject();
+
+                    gen.writeObjectFieldStart("stats");
                     gen.writeNumberField("count", p.getStatisticCollector().getCount());
+                    gen.writeEndObject();
+
                     gen.writeEndObject();
                 } catch (IOException e) {
                     throw new UncheckedIOException(e);
@@ -117,13 +138,6 @@ public class AdminApiInterceptor extends AbstractInterceptor {
         return RETURN;
     }
 
-    static String generateProxy(AbstractServiceProxy p) {
-        return p.getHost() + ":" + p.getPort() + (p.getPath().getValue() != null ? p.getPath().getValue() : "/");
-    }
-
-    static String generateTarget(AbstractServiceProxy p) {
-        return (p.getTargetHost() == null) ?  p.getTargetURL() : p.getTargetHost() + ":" + p.getTargetPort();
-    }
 
     private Outcome handleCalls(Exchange exc) {
         ExchangeQueryResult res = null;
@@ -171,29 +185,39 @@ public class AdminApiInterceptor extends AbstractInterceptor {
 
     private void writeExchange(AbstractExchange exc, JsonGenerator gen) throws IOException {
         gen.writeStartObject();
+
         gen.writeNumberField("id", exc.getId());
-        if (exc.getResponse() != null) {
-            gen.writeNumberField("statusCode", exc.getResponse().getStatusCode());
-        } else {
-            gen.writeNullField("statusCode");
-            gen.writeNullField("respContentLength");
-        }
-        gen.writeStringField("time", getTimeOrDate(exc));
-        gen.writeStringField("proxy", exc.getProxy().toString());
-        gen.writeNumberField("listenPort", exc.getProxy().getKey().getPort());
-        if (exc.getRequest() != null) {
-            gen.writeStringField("method", exc.getRequest().getMethod());
-            gen.writeStringField("path", exc.getRequest().getUri());
-        } else {
-            gen.writeNullField("method");
-            gen.writeNullField("path");
-        }
+        gen.writeStringField("api", exc.getProxy().toString());
+
+        gen.writeObjectFieldStart("request");
+        gen.writeNumberField("port", exc.getProxy().getKey().getPort());
+        gen.writeStringField("method", exc.getRequest().getMethod());
+        gen.writeStringField("path", exc.getRequest().getUri());
         gen.writeStringField("client", getClientAddr(false, exc));
-        gen.writeStringField("server", exc.getServer());
-        gen.writeNumberField("serverPort",  getServerPort(exc));
-        gen.writeNumberField("duration",
-                exc.getTimeResReceived() - exc.getTimeReqSent());
-        gen.writeStringField("msgFilePath", JDBCUtil.getFilePath(exc));
+        gen.writeEndObject();
+
+        if (exc.getResponse() != null) {
+            gen.writeObjectFieldStart("response");
+            gen.writeNumberField("statusCode", exc.getResponse().getStatusCode());
+            gen.writeEndObject();
+        } else {
+            gen.writeNullField("response");
+        }
+
+        if (exc.getServer() != null) {
+            gen.writeObjectFieldStart("target");
+            gen.writeStringField("host", exc.getServer());
+            gen.writeNumberField("port",  getServerPort(exc));
+            gen.writeEndObject();
+        } else {
+            gen.writeNullField("target");
+        }
+
+        gen.writeObjectFieldStart("stats");
+        gen.writeStringField("time", dateFormatter.format(exc.getTime().toInstant().atZone(ZoneId.systemDefault())));
+        gen.writeNumberField("duration", exc.getTimeResReceived() - exc.getTimeReqSent());
+        gen.writeEndObject();
+
         gen.writeEndObject();
     }
 
@@ -255,15 +279,7 @@ public class AdminApiInterceptor extends AbstractInterceptor {
         }
         gen.writeEndObject();
         gen.writeStringField("state", exc.getStatus().toString());
-        gen.writeStringField("msgFilePath", JDBCUtil.getFilePath(exc));
         gen.writeEndObject();
-    }
-
-    private String getTimeOrDate(AbstractExchange exc) {
-        if (exc.getTime().toInstant().isBefore(LocalDate.now().atStartOfDay(ZoneId.systemDefault()).toInstant())) {
-            return DATE_FORMATTER.withZone(ZoneId.systemDefault()).format(exc.getTime().toInstant());
-        }
-        return TIME_FORMATTER.withZone(ZoneId.systemDefault()).format(exc.getTime().toInstant());
     }
 
     public static String getClientAddr(boolean useXForwardedForAsClientAddr, AbstractExchange exc) {
