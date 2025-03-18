@@ -56,7 +56,7 @@ public class ExchangeComparator implements Comparator<AbstractExchange> {
 	}
 
 	public void addAccessors(ExchangeAccessor[] excAccessors) {
-		if (excAccessors == null || excAccessors.length == 0)
+		if (excAccessors == null)
 			return;
 		for (ExchangeAccessor accessor : excAccessors) {
 			if (accessor!= null)
