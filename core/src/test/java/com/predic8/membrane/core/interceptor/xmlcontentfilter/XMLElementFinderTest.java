@@ -15,6 +15,7 @@ package com.predic8.membrane.core.interceptor.xmlcontentfilter;
 
 import java.io.ByteArrayInputStream;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import javax.xml.namespace.QName;
@@ -29,8 +30,7 @@ public class XMLElementFinderTest {
 
 	private void testIt(String doc, boolean isExpectedToContainOneOf, QName... names) {
 		List<QName> names2 = new ArrayList<>();
-		for (QName name : names)
-			names2.add(name);
+        names2.addAll(Arrays.asList(names));
 		assertEquals(isExpectedToContainOneOf,
 				new XMLElementFinder(names2).matches(new ByteArrayInputStream(doc.getBytes())));
 	}
