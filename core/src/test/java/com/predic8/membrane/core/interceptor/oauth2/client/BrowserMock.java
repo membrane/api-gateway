@@ -48,7 +48,7 @@ public class BrowserMock implements Function<Exchange, Exchange> {
     public static final Pattern INPUT_PATTERN = Pattern.compile("<input type=\"hidden\" name=\"([-a-zA-Z0-9&;_]*)\" value=\"([-a-zA-Z ._=0-9&/;]*)\"/>");
     public static final Pattern FORM_PATTERN = Pattern.compile("<form method=\"post\" action=\"([a-z:/0-9]*)\"");
     Logger LOG = LoggerFactory.getLogger(BrowserMock.class);
-    Map<String, Map<String, String>> cookie = new HashMap<>();
+    final Map<String, Map<String, String>> cookie = new HashMap<>();
     Function<Exchange, Exchange> cookieHandlingHttpClient = exc -> cookeManager(httpClient(), exc);
     Function<Exchange, Exchange> cookieHandlingRedirectingHttpClient = outerExc -> handleFormPost(innerExc -> handleRedirect(cookieHandlingHttpClient, innerExc, new ArrayList<>()), outerExc);
 
@@ -131,7 +131,12 @@ public class BrowserMock implements Function<Exchange, Exchange> {
     }
 
     private static @NotNull BiConsumer<String, String> addCookieToExchange(Exchange exc) {
-        return (k, v) -> exc.getRequest().getHeader().add("Cookie", k + "=" + v);
+        return (k, v) -> {
+            Header header = exc.getRequest().getHeader();
+            synchronized (header) {
+                header.add("Cookie", k + "=" + v);
+            }
+        };
     }
 
     private Map<String, String> getCookies1(String domain) {
