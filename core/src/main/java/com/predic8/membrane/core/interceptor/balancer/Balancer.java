@@ -97,13 +97,12 @@ public class Balancer extends AbstractXmlElement {
 		return clusters.get(name);
 	}
 
-	public boolean addCluster(String name) {
+	public void addCluster(String name) {
 		if (clusters.containsKey(name))
-			return false;
+			return;
 		log.debug("adding cluster with name [" + name + "] to balancer ["
 				+ name + "]");
 		clusters.put(name, new Cluster(name));
-		return true;
 	}
 
 	/**

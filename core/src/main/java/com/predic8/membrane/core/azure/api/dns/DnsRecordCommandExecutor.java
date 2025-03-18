@@ -13,7 +13,6 @@
    limitations under the License. */
 package com.predic8.membrane.core.azure.api.dns;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.util.ArrayList;
@@ -51,7 +50,7 @@ public class DnsRecordCommandExecutor {
         return this;
     }
 
-    public JsonNode create() throws Exception {
+    public void create() throws Exception {
         Map<String, Object> properties = new HashMap<>(Map.of("TTL", ttl));
 
         records.forEach(record -> properties.putAll(record.payload()));
@@ -67,7 +66,7 @@ public class DnsRecordCommandExecutor {
                 )
                 .getResponse();
 
-        return new ObjectMapper().readTree(response.getBodyAsStringDecoded());
+        new ObjectMapper().readTree(response.getBodyAsStringDecoded());
     }
 
     public TxtRecordBuilder addRecord() {

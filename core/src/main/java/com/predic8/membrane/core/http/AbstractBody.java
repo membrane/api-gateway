@@ -233,10 +233,9 @@ public abstract class AbstractBody {
 	}
 
 	/**
-	 * @return true, when the body supports trailers and the trailer was therefore set.
+	 *
 	 */
-	public boolean setTrailer(Header trailer) {
-		return false;
+	public void setTrailer(Header trailer) {
 	}
 
 	public boolean hasTrailer() {

@@ -271,9 +271,8 @@ public class StreamInfo {
         }
 
         @Override
-        public boolean setTrailer(Header trailer) {
+        public void setTrailer(Header trailer) {
             this.trailer = trailer;
-            return true;
         }
     }
 

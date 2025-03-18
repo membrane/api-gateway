@@ -295,9 +295,9 @@ public class AcmeRenewal {
         return false;
     }
 
-    private boolean withMasterLease(Runnable runnable) {
+    private void withMasterLease(Runnable runnable) {
         if (!client.getAsse().acquireLease(LEASE_DURATION_MILLISECONDS))
-            return false;
+            return;
         AtomicReference<Throwable> error = new AtomicReference<>();
         Thread t = new Thread(() -> {
             try {
@@ -316,7 +316,7 @@ public class AcmeRenewal {
                     client.getAsse().releaseLease();
                     if (error.get() != null)
                         throw new RuntimeException(error.get());
-                    return true;
+                    return;
                 }
             } catch (InterruptedException e) {
                 t.interrupt();
@@ -324,7 +324,7 @@ public class AcmeRenewal {
             }
             if (!client.getAsse().prolongLease(LEASE_DURATION_MILLISECONDS)) {
                 t.interrupt();
-                return true;
+                return;
             }
         }
     }
