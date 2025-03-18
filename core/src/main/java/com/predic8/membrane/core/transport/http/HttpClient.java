@@ -182,9 +182,9 @@ public class HttpClient implements AutoCloseable {
     }
 
     private SSLProvider getOutboundSSLProvider(Exchange exc, HostColonPort hcp) {
-        Object sslPropObj = exc.getProperty(SSL_CONTEXT);
+        SSLProvider sslPropObj = exc.getPropertyOrNull(SSL_CONTEXT, SSLProvider.class);
         if (sslPropObj != null)
-            return (SSLProvider) sslPropObj;
+            return sslPropObj;
         if (hcp.useSSL())
             if (sslContext != null)
                 return sslContext;
@@ -209,7 +209,7 @@ public class HttpClient implements AutoCloseable {
 
         denyUnsupportedUpgrades(exc);
 
-        HttpClientStatusEventBus httpClientStatusEventBus = (HttpClientStatusEventBus) exc.getProperty(HttpClientStatusEventBus.EXCHANGE_PROPERTY_NAME);
+        HttpClientStatusEventBus httpClientStatusEventBus = exc.getPropertyOrNull(HttpClientStatusEventBus.EXCHANGE_PROPERTY_NAME, HttpClientStatusEventBus.class);
 
         int counter = 0;
         Exception exception = null;
@@ -225,7 +225,7 @@ public class HttpClient implements AutoCloseable {
 
                 SSLProvider sslProvider = getOutboundSSLProvider(exc, target);
                 Http2Client h2c = null;
-                String sniServerName = getSNIServerName(exc);
+                String sniServerName = exc.getPropertyOrNull(SNI_SERVER_NAME, String.class);
                 if (con == null && useHttp2) {
                     h2c = http2ClientPool.reserveStream(target.host(), target.port(), sslProvider, sniServerName, proxy, proxySSLContext);
                     if (h2c != null) {
@@ -430,12 +430,6 @@ public class HttpClient implements AutoCloseable {
     }
 
     // TODO Inline method
-    private String getSNIServerName(Exchange exc) {
-        Object sniObject = exc.getProperty(SNI_SERVER_NAME);
-        if (sniObject == null)
-            return null;
-        return (String) sniObject;
-    }
 
     private boolean is5xx(Integer responseStatusCode) {
         return 500 <= responseStatusCode && responseStatusCode < 600;

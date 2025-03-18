@@ -16,30 +16,26 @@ package com.predic8.membrane.core.interceptor.adminApi;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.exchange.AbstractExchange;
 import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.exchange.ExchangeState;
-import com.predic8.membrane.core.exchange.ExchangesUtil;
 import com.predic8.membrane.core.exchangestore.ExchangeQueryResult;
-import com.predic8.membrane.core.http.Header;
-import com.predic8.membrane.core.http.Request;
-import com.predic8.membrane.core.http.Response;
+import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.rest.QueryParameter;
 import com.predic8.membrane.core.interceptor.statistics.util.JDBCUtil;
 import com.predic8.membrane.core.openapi.util.PathDoesNotMatchException;
 import com.predic8.membrane.core.proxies.AbstractServiceProxy;
-import com.predic8.membrane.core.proxies.Proxy;
 
 import java.io.IOException;
 import java.io.StringWriter;
 import java.io.UncheckedIOException;
 import java.net.URI;
-import java.util.LinkedList;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.IntStream;
 
 import static com.bornium.http.util.UriUtil.queryToParameters;
@@ -52,27 +48,31 @@ import static com.predic8.membrane.core.transport.http2.Http2ServerHandler.HTTP2
 @MCElement(name = "adminApi")
 public class AdminApiInterceptor extends AbstractInterceptor {
 
-    private static final ObjectMapper om = new ObjectMapper();
+    static final DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
 
-    static {
-        om.disable(SerializationFeature.FAIL_ON_EMPTY_BEANS);
-    }
+    private static final ObjectMapper om = new ObjectMapper();
 
     @Override
     public Outcome handleRequest(Exchange exc) {
         try {
-            return switch (matchTemplate(".*/{action}", exc.getRequestURI()).get("action")) {
-                case "health" -> handleHealth(exc);
-                case "apis" -> handleApis(exc);
-                case "calls" -> handleCalls(exc);
-                default -> CONTINUE;
-            };
+            String uri = exc.getRequestURI();
+            if (uri.matches(".*/health.*")) {
+                return handleHealth(exc);
+            } else if (uri.matches(".*/apis.*")) {
+                return handleApis(exc);
+            } else if (uri.matches(".*/calls.*")) {
+                return handleCalls(exc);
+            } else if (uri.matches(".*/exchange/\\d*")) {
+                Map<String, String> params = matchTemplate(".*/exchange/{id}", uri);
+                return handleExchangeDetails(exc, params.get("id"));
+            }
         } catch (PathDoesNotMatchException e) {
-            // ProblemDetails
             return ABORT;
         }
+        return CONTINUE;
     }
 
+    // TODO Use actual current membrane version, add memory, disk usage, etc.
     private Outcome handleHealth(Exchange exc) {
         exc.setResponse(Response.ok().body("{\"version\": \"6.0.0\", \"status\": \"ok\"}").contentType(APPLICATION_JSON).build());
         return RETURN;
@@ -92,18 +92,38 @@ public class AdminApiInterceptor extends AbstractInterceptor {
                 AbstractServiceProxy p = rules.get(i);
                 try {
                     gen.writeStartObject();
+
                     gen.writeNumberField("order", i + 1);
                     gen.writeStringField("name", p.toString());
                     gen.writeBooleanField("active", p.isActive());
                     if (!p.isActive())
                         gen.writeStringField("error", p.getErrorState());
-                    gen.writeNumberField("listenPort", p.getKey().getPort());
-                    gen.writeStringField("virtualHost", p.getKey().getHost());
+
+                    gen.writeObjectFieldStart("key");
                     gen.writeStringField("method", p.getKey().getMethod());
-                    gen.writeStringField("path", p.getKey().getPath());
-                    gen.writeStringField("targetHost", p.getTargetHost());
-                    gen.writeNumberField("targetPort", p.getTargetPort());
+                    gen.writeStringField("path", p.getKey().getMethod());
+                    if (p.getKey().getHost() != null) {
+                        gen.writeStringField("host", p.getKey().getHost());
+                    } else {
+                        gen.writeStringField("address", p.getKey().getIp());
+                    }
+                    gen.writeStringField("port", String.valueOf(p.getKey().getPort()));
+                    gen.writeEndObject();
+
+                    gen.writeObjectFieldStart("target");
+                    if (p.getTargetHost() != null) {
+                        gen.writeStringField("host", p.getTargetHost());
+                        gen.writeNumberField("port", p.getTargetPort());
+                    }
+                    if (p.getTargetURL() != null) {
+                        gen.writeStringField("url", p.getTargetURL());
+                    }
+                    gen.writeEndObject();
+
+                    gen.writeObjectFieldStart("stats");
                     gen.writeNumberField("count", p.getStatisticCollector().getCount());
+                    gen.writeEndObject();
+
                     gen.writeEndObject();
                 } catch (IOException e) {
                     throw new UncheckedIOException(e);
@@ -117,6 +137,7 @@ public class AdminApiInterceptor extends AbstractInterceptor {
         }
         return RETURN;
     }
+
 
     private Outcome handleCalls(Exchange exc) {
         ExchangeQueryResult res = null;
@@ -140,58 +161,124 @@ public class AdminApiInterceptor extends AbstractInterceptor {
         return RETURN;
     }
 
+    private Outcome handleExchangeDetails(Exchange exc, String id) {
+        try {
+            long exchangeId = Long.parseLong(id);
+            AbstractExchange exchange = router.getExchangeStore().getExchangeById(exchangeId);
+
+            if (exchange == null) {
+                exc.setResponse(Response.notFound().build());
+                return RETURN;
+            }
+
+            StringWriter writer = new StringWriter();
+            JsonGenerator gen = om.getFactory().createGenerator(writer);
+            writeExchangeDetailed(exchange, gen);
+            gen.close();
+
+            exc.setResponse(Response.ok().body(writer.toString()).contentType(APPLICATION_JSON).build());
+            return RETURN;
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     private void writeExchange(AbstractExchange exc, JsonGenerator gen) throws IOException {
         gen.writeStartObject();
-        gen.writeNumberField("id", exc.getId());
-        if (exc.getResponse() != null) {
-            gen.writeNumberField("statusCode", exc.getResponse().getStatusCode());
-            if (exc.getResponseContentLength()!=-1) {
-                gen.writeNumberField("respContentLength", exc.getResponseContentLength());
-            } else {
-                gen.writeNullField("respContentLength");
-            }
-        } else {
-            gen.writeNullField("statusCode");
-            gen.writeNullField("respContentLength");
-        }
-        gen.writeStringField("time", ExchangesUtil.getTime(exc));
-        gen.writeStringField("proxy", exc.getProxy().toString());
-        gen.writeNumberField("listenPort", exc.getProxy().getKey().getPort());
-        if (exc.getRequest() != null) {
-            gen.writeStringField("method", exc.getRequest().getMethod());
-            gen.writeStringField("path", exc.getRequest().getUri());
-            gen.writeStringField("reqContentType", exc.getRequestContentType());
-            gen.writeStringField("protocol", exc.getProperty(HTTP2) != null? "2" : exc.getRequest().getVersion());
-        } else {
-            gen.writeNullField("method");
-            gen.writeNullField("path");
-            gen.writeNullField("reqContentType");
-            if (exc.getProperty(HTTP2) != null)
-                gen.writeStringField("protocol", "2");
-            else
-                gen.writeNullField("protocol");
-        }
-        gen.writeStringField("client", getClientAddr(false, exc));
-        gen.writeStringField("server", exc.getServer());
-        gen.writeNumberField("serverPort",  getServerPort(exc));
-        if (exc.getRequest() != null && exc.getRequestContentLength()!=-1) {
-            gen.writeNumberField("reqContentLength", exc.getRequestContentLength());
-        } else {
-            gen.writeNullField("reqContentLength");
-        }
-        gen.writeStringField("respContentType", exc.getResponseContentType());
-        if(exc.getStatus() == ExchangeState.RECEIVED || exc.getStatus() == ExchangeState.COMPLETED)
-            if (exc.getResponse() != null && exc.getResponseContentLength()!=-1) {
-                gen.writeNumberField("respContentLength", exc.getResponseContentLength());
-            } else {
-                gen.writeNullField("respContentLength");
-            }
-        else
-            gen.writeStringField("respContentLength", "Not finished");
 
-        gen.writeNumberField("duration",
-                exc.getTimeResReceived() - exc.getTimeReqSent());
-        gen.writeStringField("msgFilePath", JDBCUtil.getFilePath(exc));
+        gen.writeNumberField("id", exc.getId());
+        gen.writeStringField("api", exc.getProxy().toString());
+
+        gen.writeObjectFieldStart("request");
+        gen.writeNumberField("port", exc.getProxy().getKey().getPort());
+        gen.writeStringField("method", exc.getRequest().getMethod());
+        gen.writeStringField("path", exc.getRequest().getUri());
+        gen.writeStringField("client", getClientAddr(false, exc));
+        gen.writeEndObject();
+
+        if (exc.getResponse() != null) {
+            gen.writeObjectFieldStart("response");
+            gen.writeNumberField("statusCode", exc.getResponse().getStatusCode());
+            gen.writeEndObject();
+        } else {
+            gen.writeNullField("response");
+        }
+
+        if (exc.getServer() != null) {
+            gen.writeObjectFieldStart("target");
+            gen.writeStringField("host", exc.getServer());
+            gen.writeNumberField("port",  getServerPort(exc));
+            gen.writeEndObject();
+        } else {
+            gen.writeNullField("target");
+        }
+
+        gen.writeObjectFieldStart("stats");
+        gen.writeStringField("time", dateFormatter.format(exc.getTime().toInstant().atZone(ZoneId.systemDefault())));
+        gen.writeNumberField("duration", exc.getTimeResReceived() - exc.getTimeReqSent());
+        gen.writeEndObject();
+
+        gen.writeEndObject();
+    }
+
+    private void writeExchangeDetailed(AbstractExchange exc, JsonGenerator gen) throws IOException {
+        gen.writeStartObject();
+        gen.writeObjectFieldStart("request");
+        if (exc.getRequest() != null) {
+            Message request = exc.getRequest();
+            gen.writeStringField("protocol", exc.getProperty(HTTP2) != null ? "HTTP/2" : request.getVersion());
+            gen.writeObjectFieldStart("headers");
+            for (HeaderField hf : request.getHeader().getAllHeaderFields()) {
+                gen.writeStringField(hf.getHeaderName().toString(), hf.getValue());
+            }
+            gen.writeEndObject();
+            gen.writeStringField("contentType", exc.getRequestContentType());
+            if (exc.getRequestContentLength() != -1) {
+                gen.writeNumberField("contentLength", exc.getRequestContentLength());
+            } else {
+                gen.writeNullField("contentLength");
+            }
+            if (!request.isBodyEmpty()) {
+                gen.writeStringField("bodyRaw", request.getBodyAsStringDecoded());
+            } else {
+                gen.writeNullField("bodyRaw");
+            }
+        } else {
+            gen.writeNullField("protocol");
+            gen.writeNullField("headers");
+            gen.writeNullField("contentType");
+            gen.writeNullField("contentLength");
+            gen.writeNullField("bodyRaw");
+        }
+        gen.writeEndObject();
+        gen.writeObjectFieldStart("response");
+        if (exc.getResponse() != null) {
+            gen.writeStringField("statusMessage", exc.getResponse().getStatusMessage());
+            gen.writeObjectFieldStart("headers");
+            for (HeaderField hf : exc.getResponse().getHeader().getAllHeaderFields()) {
+                gen.writeStringField(hf.getHeaderName().toString(), hf.getValue());
+            }
+            gen.writeEndObject();
+            gen.writeStringField("contentType", exc.getResponseContentType());
+            if (exc.getResponseContentLength() != -1) {
+                gen.writeNumberField("contentLength", exc.getResponseContentLength());
+            } else {
+                gen.writeNullField("contentLength");
+            }
+            if (!exc.getResponse().isBodyEmpty()) {
+                gen.writeStringField("bodyRaw", exc.getResponse().getBodyAsStringDecoded());
+            } else {
+                gen.writeNullField("bodyRaw");
+            }
+        } else {
+            gen.writeNullField("statusMessage");
+            gen.writeNullField("headers");
+            gen.writeNullField("contentType");
+            gen.writeNullField("contentLength");
+            gen.writeNullField("bodyRaw");
+        }
+        gen.writeEndObject();
+        gen.writeStringField("state", exc.getStatus().toString());
         gen.writeEndObject();
     }
 
@@ -212,14 +299,5 @@ public class AdminApiInterceptor extends AbstractInterceptor {
 
     private int getServerPort(AbstractExchange exc) {
         return exc.getProxy()instanceof AbstractServiceProxy?((AbstractServiceProxy) exc.getProxy()).getTargetPort():-1;
-    }
-
-    private List<AbstractServiceProxy> getServiceProxies() {
-        List<AbstractServiceProxy> rules = new LinkedList<>();
-        for (Proxy r : router.getRuleManager().getRules()) {
-            if (!(r instanceof AbstractServiceProxy)) continue;
-            rules.add((AbstractServiceProxy) r);
-        }
-        return rules;
     }
 }

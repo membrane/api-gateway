@@ -103,7 +103,7 @@ public abstract class Message {
 	/**
 	 * <p>Returns the logical body content.</p>
 	 *
-	 * <p>Any Transfer-Encodings (e.g. chunking) and/or Content-Encodings (e.g. gzip) have been unapplied.</p>
+	 * <p>No Transfer-Encodings (e.g. chunking) and/or Content-Encodings (e.g. gzip) have been applied.</p>
 	 *
 	 * <p>Supports streaming: The HTTP message does not have to be completely received yet for this method to return.</p>
 	 */
@@ -301,10 +301,10 @@ public abstract class Message {
 	public boolean isBodyEmpty() throws IOException {
 		if (header.hasContentLength())
 			return header.getContentLength() == 0;
-		
+
 		if (getBody().read)
 			return getBody().getLength() == 0;
-		
+
 		return getBody() instanceof EmptyBody;
 	}
 

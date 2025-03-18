@@ -21,7 +21,6 @@ import com.predic8.membrane.core.proxies.*;
 
 import javax.annotation.concurrent.*;
 import java.util.*;
-import java.util.stream.*;
 
 @MCElement(name = "publicURL")
 public class PublicUrlManager {
@@ -71,12 +70,8 @@ public class PublicUrlManager {
         return url;
     }
 
-    public String getPublicURL(Exchange exc) throws Exception {
-        String publicURL = OAuth2Util.getPublicURL(exc);
-
-        RuleKey key = exc.getProxy().getKey();
-        if (!key.isPathRegExp() && key.getPath() != null) publicURL += key.getPath();
-        publicURL = normalizePublicURL(publicURL);
+    public String getPublicURLAndReregister(Exchange exc) throws Exception {
+        String publicURL = extractPublicURLFromExchange(exc);
 
         synchronized (publicURLs) {
             if (publicURLs.contains(publicURL)) return publicURL;
@@ -84,8 +79,17 @@ public class PublicUrlManager {
         }
 
         if (firstInitWhenDynamicAuthorizationService && addPublicURL(publicURL) != null)
-            auth.dynamicRegistration(getPublicURLs().stream().map(url -> url + callbackPath).collect(Collectors.toList()));
+            auth.dynamicRegistration(getPublicURLs().stream().map(url -> url + callbackPath).toList());
 
+        return publicURL;
+    }
+
+    private String extractPublicURLFromExchange(Exchange exc) {
+        String publicURL = OAuth2Util.getPublicURL(exc);
+
+        RuleKey key = exc.getProxy().getKey();
+        if (!key.isPathRegExp() && key.getPath() != null) publicURL += key.getPath();
+        publicURL = normalizePublicURL(publicURL);
         return publicURL;
     }
 
