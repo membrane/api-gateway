@@ -235,7 +235,8 @@ public abstract class AbstractBody {
 	/**
 	 *
 	 */
-	public void setTrailer(Header trailer) {
+	public boolean setTrailer(Header trailer) {
+		return false;
 	}
 
 	public boolean hasTrailer() {

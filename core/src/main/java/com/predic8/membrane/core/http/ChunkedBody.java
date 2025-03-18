@@ -301,7 +301,8 @@ public class ChunkedBody extends AbstractBody {
     }
 
     @Override
-    public void setTrailer(Header trailer) {
+    public boolean setTrailer(Header trailer) {
         this.trailer = trailer;
+        return true;
     }
 }
