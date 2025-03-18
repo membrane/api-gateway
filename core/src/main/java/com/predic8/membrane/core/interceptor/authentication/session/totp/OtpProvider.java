@@ -38,7 +38,7 @@ import org.slf4j.LoggerFactory;
  * @author Cem Paya (cemp@google.com)
  */
 public class OtpProvider {
-	private static Logger log = LoggerFactory.getLogger(OtpProvider.class.getName());
+	private static final Logger log = LoggerFactory.getLogger(OtpProvider.class.getName());
 
 	private static final int PIN_LENGTH = 6; // HOTP or TOTP
 

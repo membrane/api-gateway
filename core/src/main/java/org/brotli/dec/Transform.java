@@ -80,7 +80,7 @@ final class Transform {
     int index = 1;
     int j = 0;
     for (int i = 0; i < n; ++i) {
-      final int c = (int) prefixSuffixSrc.charAt(i);
+      final int c = prefixSuffixSrc.charAt(i);
       if (c == 35) { // == #
         prefixSuffixHeads[index++] = j;
       } else {
@@ -167,7 +167,7 @@ final class Transform {
       }
     } else if (transformType == SHIFT_FIRST || transformType == SHIFT_ALL) {
       int shiftOffset = offset - len;
-      final int param = (int) transforms.params[transformIndex];
+      final int param = transforms.params[transformIndex];
       /* Limited sign extension: scalar < (1 << 24). */
       int scalar = (param & 0x7FFF) + (0x1000000 - (param & 0x8000));
       while (len > 0) {
@@ -182,7 +182,7 @@ final class Transform {
         } else if (c0 < 0xE0) {
           /* 2-byte rune / 110sssss AAssssss / 11 bit scalar. */
           if (len >= 2) {
-            final int c1 = (int) dst[shiftOffset + 1];
+            final int c1 = dst[shiftOffset + 1];
             scalar += (c1 & 0x3F) | ((c0 & 0x1F) << 6);
             dst[shiftOffset] = (byte) (0xC0 | ((scalar >> 6) & 0x1F));
             dst[shiftOffset + 1] = (byte) ((c1 & 0xC0) | (scalar & 0x3F));
@@ -193,8 +193,8 @@ final class Transform {
         } else if (c0 < 0xF0) {
           /* 3-byte rune / 1110ssss AAssssss BBssssss / 16 bit scalar. */
           if (len >= 3) {
-            final int c1 = (int) dst[shiftOffset + 1];
-            final int c2 = (int) dst[shiftOffset + 2];
+            final int c1 = dst[shiftOffset + 1];
+            final int c2 = dst[shiftOffset + 2];
             scalar += (c2 & 0x3F) | ((c1 & 0x3F) << 6) | ((c0 & 0x0F) << 12);
             dst[shiftOffset] = (byte) (0xE0 | ((scalar >> 12) & 0x0F));
             dst[shiftOffset + 1] = (byte) ((c1 & 0xC0) | ((scalar >> 6) & 0x3F));
@@ -206,9 +206,9 @@ final class Transform {
         } else if (c0 < 0xF8) {
           /* 4-byte rune / 11110sss AAssssss BBssssss CCssssss / 21 bit scalar. */
           if (len >= 4) {
-            final int c1 = (int) dst[shiftOffset + 1];
-            final int c2 = (int) dst[shiftOffset + 2];
-            final int c3 = (int) dst[shiftOffset + 3];
+            final int c1 = dst[shiftOffset + 1];
+            final int c2 = dst[shiftOffset + 2];
+            final int c3 = dst[shiftOffset + 3];
             scalar += (c3 & 0x3F) | ((c2 & 0x3F) << 6) | ((c1 & 0x3F) << 12) | ((c0 & 0x07) << 18);
             dst[shiftOffset] = (byte) (0xF0 | ((scalar >> 18) & 0x07));
             dst[shiftOffset + 1] = (byte) ((c1 & 0xC0) | ((scalar >> 12) & 0x3F));

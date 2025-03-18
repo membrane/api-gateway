@@ -22,7 +22,7 @@ import java.util.Map;
 public class SSLExchange {
     protected Proxy proxy;
     protected String remoteAddrIp;
-    protected Map<String, Object> properties = new HashMap<>();
+    protected final Map<String, Object> properties = new HashMap<>();
     protected TLSError error;
     private int remotePort;
 

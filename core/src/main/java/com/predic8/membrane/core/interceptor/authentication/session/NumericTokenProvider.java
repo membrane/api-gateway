@@ -22,7 +22,7 @@ import java.util.NoSuchElementException;
 
 public abstract class NumericTokenProvider implements TokenProvider {
 
-	Logger log = LoggerFactory.getLogger(NumericTokenProvider.class);
+	final Logger log = LoggerFactory.getLogger(NumericTokenProvider.class);
 
 	private final SecureRandom r = new SecureRandom();
 

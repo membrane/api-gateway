@@ -17,8 +17,6 @@ package com.predic8.membrane.core.graphql.model;
 import com.predic8.membrane.core.graphql.ParsingException;
 import com.predic8.membrane.core.graphql.Tokenizer;
 
-import java.util.Objects;
-
 public class NullValue implements Value {
     public NullValue() {
     }

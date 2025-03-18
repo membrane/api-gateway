@@ -28,7 +28,7 @@ import static com.predic8.membrane.core.util.XMLUtil.groovyToJavaxQName;
 
 public class WSDLUtil {
 
-    static Logger log = LoggerFactory.getLogger(WSDLUtil.class.getName());
+    static final Logger log = LoggerFactory.getLogger(WSDLUtil.class.getName());
 
     /**
      * Searches a service in a WSDL. Does not consider namespaces

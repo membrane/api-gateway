@@ -31,7 +31,7 @@ public class InMemorySessionManager extends SessionManager {
     final static String ID_NAME = "_in_memory_session_id";
     Cache<String, Session> sessions;
 
-    protected String cookieNamePrefix = UUID.randomUUID().toString().substring(0,8);
+    protected final String cookieNamePrefix = UUID.randomUUID().toString().substring(0,8);
 
     @Override
     public void init(Router router) throws Exception {

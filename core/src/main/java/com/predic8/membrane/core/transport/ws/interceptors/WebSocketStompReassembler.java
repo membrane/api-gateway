@@ -70,7 +70,7 @@ public class WebSocketStompReassembler implements WebSocketInterceptorInterface 
         sender.handleFrame(wsStompFrame);
     }
 
-    private ByteArrayOutputStream baos = new ByteArrayOutputStream();
+    private final ByteArrayOutputStream baos = new ByteArrayOutputStream();
 
     private void modifyOriginalFrameWithExchange(WebSocketFrame wsStompFrame, Exchange exc) throws IOException {
         baos.reset();

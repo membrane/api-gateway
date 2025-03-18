@@ -33,7 +33,7 @@ public class Challenge {
     String status;
     String url;
     String token;
-    Map<String,Object> other = new HashMap<>();
+    final Map<String,Object> other = new HashMap<>();
 
     public String getType() {
         return type;

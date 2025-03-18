@@ -79,8 +79,8 @@ public class BeanCache implements BeanRegistry {
     }
 
     // uid -> bean definition
-    Map<String, BeanDefinition> bds = new HashMap<>();
-    Set<String> uidsToActivate = new HashSet<>();
+    final Map<String, BeanDefinition> bds = new HashMap<>();
+    final Set<String> uidsToActivate = new HashSet<>();
 
     void handle(BeanDefinition bd) {
         if (bd.getAction() == WatchAction.DELETED)

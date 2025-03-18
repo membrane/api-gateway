@@ -492,8 +492,8 @@ public class AcmeClient {
         return om.readValue(response.getBodyAsStreamDecoded(), Order.class);
     }
 
-    private Challenge parseChallenge(Response response) throws IOException {
-        return om.readValue(response.getBodyAsStreamDecoded(), Challenge.class);
+    private void parseChallenge(Response response) throws IOException {
+        om.readValue(response.getBodyAsStreamDecoded(), Challenge.class);
     }
 
     public Order finalizeOrder(String accountUrl, String finalizationUrl, String csr) throws Exception {

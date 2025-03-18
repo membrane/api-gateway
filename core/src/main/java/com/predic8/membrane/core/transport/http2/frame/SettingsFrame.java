@@ -17,12 +17,6 @@ package com.predic8.membrane.core.transport.http2.frame;
 import com.predic8.membrane.core.transport.http2.Settings;
 import org.apache.commons.lang3.NotImplementedException;
 
-import java.util.HashMap;
-import java.util.Map;
-
-import static com.predic8.membrane.core.transport.http2.frame.Error.ERROR_FRAME_SIZE_ERROR;
-import static com.predic8.membrane.core.transport.http2.frame.Error.ERROR_PROTOCOL_ERROR;
-
 public class SettingsFrame {
     public static final int FLAG_ACK = 0x1;
 
@@ -63,7 +57,7 @@ public class SettingsFrame {
                         (frame.content[i * 6 + 4] & 0xFF) << 8 |
                         (frame.content[i * 6 + 5] & 0xFF);
     }
-    
+
     public String getSettingsIdAsString(int i) {
         switch (getSettingsId(i)) {
             case ID_SETTINGS_HEADER_TABLE_SIZE: return "SETTINGS_HEADER_TABLE_SIZE";

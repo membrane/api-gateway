@@ -46,7 +46,7 @@ public class JwtSessionManager extends SessionManager {
 
     private Cache<Map, String> jwtCache;
 
-    private SecureRandom random = new SecureRandom();
+    private final SecureRandom random = new SecureRandom();
     private RsaJsonWebKey rsaJsonWebKey;
 
     private Duration validTime;

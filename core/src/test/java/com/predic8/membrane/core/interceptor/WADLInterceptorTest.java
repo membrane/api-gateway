@@ -34,7 +34,7 @@ import com.predic8.membrane.core.util.MessageUtil;
 
 public class WADLInterceptorTest {
 
-	static NamespaceContext nsCtx = new NamespaceContext() {
+	static final NamespaceContext nsCtx = new NamespaceContext() {
 		public String getNamespaceURI(String prefix) {
 			if (prefix.equals("wadl")) {
 				return "http://wadl.dev.java.net/2009/02";
@@ -53,7 +53,7 @@ public class WADLInterceptorTest {
 		}
 	};
 
-	private static XPath xpath = XPathFactory.newInstance().newXPath();
+	private static final XPath xpath = XPathFactory.newInstance().newXPath();
 	private static WADLInterceptor interceptor;
 
 	@BeforeAll

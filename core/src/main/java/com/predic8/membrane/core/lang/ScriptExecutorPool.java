@@ -24,7 +24,7 @@ public abstract class ScriptExecutorPool<T, R> implements Function<Map<String, O
 	private static final Logger log = LoggerFactory.getLogger(ScriptExecutorPool.class);
 
 	private static final int concurrency = Runtime.getRuntime().availableProcessors() * 2;
-	ArrayBlockingQueue<T> scripts = new ArrayBlockingQueue<>(concurrency);
+	final ArrayBlockingQueue<T> scripts = new ArrayBlockingQueue<>(concurrency);
 
 	public void init(ExecutorService executorService) {
 		scripts.add(createOneScript());

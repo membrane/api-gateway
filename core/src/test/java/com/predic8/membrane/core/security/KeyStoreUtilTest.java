@@ -17,7 +17,6 @@ import com.predic8.membrane.core.HttpRouter;
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.config.security.KeyStore;
 import com.predic8.membrane.core.config.security.SSLParser;
-import com.predic8.membrane.core.resolver.ResolverMap;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;

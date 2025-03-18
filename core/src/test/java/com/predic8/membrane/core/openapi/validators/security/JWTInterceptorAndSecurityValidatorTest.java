@@ -24,7 +24,6 @@ import com.predic8.membrane.core.interceptor.jwt.*;
 import com.predic8.membrane.core.openapi.serviceproxy.*;
 import com.predic8.membrane.core.security.*;
 import com.predic8.membrane.core.transport.http.*;
-import com.predic8.membrane.test.*;
 import org.jetbrains.annotations.*;
 import org.jose4j.jwk.*;
 import org.jose4j.jws.*;

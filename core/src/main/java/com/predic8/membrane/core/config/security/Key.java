@@ -18,7 +18,6 @@ import com.google.common.base.Objects;
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.annot.MCTextContent;
 import com.predic8.membrane.annot.Required;
 
 import java.util.ArrayList;

@@ -19,7 +19,6 @@ import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.interceptor.schemavalidation.*;
 import com.predic8.membrane.core.interceptor.server.*;
 import com.predic8.membrane.core.proxies.*;
-import com.predic8.membrane.test.*;
 import com.predic8.schema.*;
 import com.predic8.wsdl.*;
 import org.junit.jupiter.api.*;
@@ -79,7 +78,7 @@ public class ResolverTest {
 		return res;
 	}
 
-	public static ResolverMap resolverMap = new ResolverMap();
+	public static final ResolverMap resolverMap = new ResolverMap();
 
 	private String wsdlLocation;
 	private String xsdLocation;
@@ -236,13 +235,13 @@ public class ResolverTest {
 		return System.getProperty("os.name").contains("Windows");
 	}
 
-	static HttpRouter router = new HttpRouter();
+	static final HttpRouter router = new HttpRouter();
 	static volatile boolean hit = false;
 
 	public static final String STANDALONE = "standalone";
 	public static final String J2EE = "J2EE";
 
-	public static String deployment = STANDALONE;
+	public static final String deployment = STANDALONE;
 
 	@BeforeAll
 	public static void setup() throws Exception {

@@ -47,7 +47,7 @@ public class AcmeCASimulation {
     private KeyPair caKeyPair;
     private X509Certificate caCert;
 
-    X500Name caName = new X500NameBuilder(BCStyle.INSTANCE)
+    final X500Name caName = new X500NameBuilder(BCStyle.INSTANCE)
             .addRDN(BCStyle.CN, "Membrane Service Proxy Test CA")
             .build();
 

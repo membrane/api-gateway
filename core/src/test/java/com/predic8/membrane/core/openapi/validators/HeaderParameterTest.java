@@ -27,7 +27,7 @@ import static org.junit.jupiter.params.provider.Arguments.*;
 
 class HeaderParameterTest extends AbstractValidatorTest {
 
-    Exchange exc = new Exchange(null);
+    final Exchange exc = new Exchange(null);
     Request request;
 
     @Override

@@ -20,7 +20,7 @@ import com.predic8.membrane.core.http.Response;
 class NegativeNode extends Node {
 	private static final long serialVersionUID = 1L;
 
-	int status;
+	final int status;
 
 	public NegativeNode(Exchange exc) {
 		status = exc.getResponse().getStatusCode();

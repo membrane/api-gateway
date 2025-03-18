@@ -59,7 +59,7 @@ public class ElasticSearchExchangeStore extends AbstractPersistentExchangeStore 
     String location = "http://localhost:9200";
     private String documentPrefix;
 
-    ImmutableMap<String, String> queryToElasticMap = ImmutableMap.ofEntries(
+    final ImmutableMap<String, String> queryToElasticMap = ImmutableMap.ofEntries(
             Map.entry("method", "request.method.keyword"),
             Map.entry("server", "server.keyword" ),
             Map.entry("client", "remoteAddr.keyword" ),

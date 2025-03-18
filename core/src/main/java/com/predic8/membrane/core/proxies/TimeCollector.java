@@ -28,7 +28,7 @@ public class TimeCollector {
             .collect(Collectors.toList());
 
     private final Map<String, Map<String, Long>> trackedTimes;
-    private Map<String, Long> membraneReqProcess;
+    private final Map<String, Long> membraneReqProcess;
     private final Map<String, Long> membraneResProcess;
     private final Map<String, Long> responseProcess;
     private final Map<String, Long> totalTimeProcess;

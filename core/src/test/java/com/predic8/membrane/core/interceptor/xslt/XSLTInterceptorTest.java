@@ -31,7 +31,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 public class XSLTInterceptorTest {
 
 	Exchange exc = new Exchange(null);
-	XPath xpath = XPathFactory.newInstance().newXPath();
+	final XPath xpath = XPathFactory.newInstance().newXPath();
 
 	@Test
 	public void testRequest() throws Exception {

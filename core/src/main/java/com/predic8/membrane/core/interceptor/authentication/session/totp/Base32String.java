@@ -46,11 +46,11 @@ public class Base32String {
 	}
 
 	// 32 alpha-numeric characters.
-	private String ALPHABET;
-	private char[] DIGITS;
-	private int MASK;
-	private int SHIFT;
-	private HashMap<Character, Integer> CHAR_MAP;
+	private final String ALPHABET;
+	private final char[] DIGITS;
+	private final int MASK;
+	private final int SHIFT;
+	private final HashMap<Character, Integer> CHAR_MAP;
 
 	static final String SEPARATOR = "-";
 

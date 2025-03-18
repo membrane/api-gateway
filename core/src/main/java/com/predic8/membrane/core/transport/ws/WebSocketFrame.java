@@ -27,7 +27,7 @@ import java.util.Arrays;
 
 public class WebSocketFrame {
 
-    protected static Logger log = LoggerFactory.getLogger(WebSocketFrame.class.getName());
+    protected static final Logger log = LoggerFactory.getLogger(WebSocketFrame.class.getName());
 
     final static int INITIAL_BUFFER_SIZE = 8192;
 

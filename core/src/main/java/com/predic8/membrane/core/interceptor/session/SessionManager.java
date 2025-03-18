@@ -51,7 +51,7 @@ public abstract class SessionManager {
     public static final String SESSION = "SESSION";
     public static final String SESSION_COOKIE_ORIGINAL = "SESSION_COOKIE_ORIGINAL";
 
-    protected String usernameKeyName = "username";
+    protected final String usernameKeyName = "username";
     protected long expiresAfterSeconds = 15 * 60;
     protected String domain;
     protected boolean httpOnly = false;

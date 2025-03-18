@@ -47,10 +47,10 @@ public class BrowserMock implements Function<Exchange, Exchange> {
 
     public static final Pattern INPUT_PATTERN = Pattern.compile("<input type=\"hidden\" name=\"([-a-zA-Z0-9&;_]*)\" value=\"([-a-zA-Z ._=0-9&/;]*)\"/>");
     public static final Pattern FORM_PATTERN = Pattern.compile("<form method=\"post\" action=\"([a-z:/0-9]*)\"");
-    Logger LOG = LoggerFactory.getLogger(BrowserMock.class);
+    final Logger LOG = LoggerFactory.getLogger(BrowserMock.class);
     final Map<String, Map<String, String>> cookie = new HashMap<>();
-    Function<Exchange, Exchange> cookieHandlingHttpClient = exc -> cookeManager(httpClient(), exc);
-    Function<Exchange, Exchange> cookieHandlingRedirectingHttpClient = outerExc -> handleFormPost(innerExc -> handleRedirect(cookieHandlingHttpClient, innerExc, new ArrayList<>()), outerExc);
+    final Function<Exchange, Exchange> cookieHandlingHttpClient = exc -> cookeManager(httpClient(), exc);
+    final Function<Exchange, Exchange> cookieHandlingRedirectingHttpClient = outerExc -> handleFormPost(innerExc -> handleRedirect(cookieHandlingHttpClient, innerExc, new ArrayList<>()), outerExc);
 
     private @NotNull Exchange handleFormPost(Function<Exchange, Exchange> redirectHandler, Exchange exc) {
         exc = redirectHandler.apply(exc);

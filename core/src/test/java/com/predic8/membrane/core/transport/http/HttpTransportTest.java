@@ -29,13 +29,13 @@ import static org.mockito.Mockito.*;
 public class HttpTransportTest {
 
 	private HttpClient httpClient = mock(HttpClient.class);
-	private HTTPSchemaResolver httpSchemaResolver = mock(HTTPSchemaResolver.class);
-	private ResolverMap resolverMap = mock(ResolverMap.class);
-	private SSLProvider sslProvider = mock(SSLProvider.class);
-	private RuleManager ruleManager = mock(RuleManager.class);
-	private Router router = mock(Router.class);
-	private ExchangeStore exchangeStore = mock(ExchangeStore.class);
-	private Statistics statistics = new Statistics();
+	private final HTTPSchemaResolver httpSchemaResolver = mock(HTTPSchemaResolver.class);
+	private final ResolverMap resolverMap = mock(ResolverMap.class);
+	private final SSLProvider sslProvider = mock(SSLProvider.class);
+	private final RuleManager ruleManager = mock(RuleManager.class);
+	private final Router router = mock(Router.class);
+	private final ExchangeStore exchangeStore = mock(ExchangeStore.class);
+	private final Statistics statistics = new Statistics();
 	private HttpTransport transport;
 
 	@BeforeEach

@@ -27,7 +27,7 @@ import static java.lang.String.*;
 
 public abstract class AbstractBodyValidator<T extends Message<? extends Body,?>> {
 
-    protected OpenAPI api;
+    protected final OpenAPI api;
 
     public abstract int getDefaultStatusCode();
 

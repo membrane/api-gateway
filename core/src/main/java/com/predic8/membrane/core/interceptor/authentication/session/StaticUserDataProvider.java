@@ -98,7 +98,7 @@ public class StaticUserDataProvider implements UserDataProvider {
 
 	@MCElement(name="user", topLevel=false, id="staticUserDataProvider-user")
 	public static class User {
-		Map<String, String> attributes = new HashMap<>();
+		final Map<String, String> attributes = new HashMap<>();
 
 		public User() {}
 

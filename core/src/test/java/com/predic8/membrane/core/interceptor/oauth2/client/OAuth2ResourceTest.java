@@ -49,9 +49,9 @@ public abstract class OAuth2ResourceTest {
     protected final BrowserMock browser = new BrowserMock();
     private final int limit = 500;
     protected HttpRouter mockAuthServer;
-    protected ObjectMapper om = new ObjectMapper();
-    Logger LOG = LoggerFactory.getLogger(OAuth2ResourceTest.class);
-    int serverPort = 3062;
+    protected final ObjectMapper om = new ObjectMapper();
+    final Logger LOG = LoggerFactory.getLogger(OAuth2ResourceTest.class);
+    final int serverPort = 3062;
     private final String serverHost = "localhost";
     private final int clientPort = 31337;
     private HttpRouter oauth2Resource;

@@ -16,7 +16,6 @@ package com.predic8.membrane.core.interceptor.authentication.session;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.Socket;
-import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Hashtable;
@@ -95,7 +94,7 @@ import com.predic8.membrane.core.Router;
 @MCElement(name="ldapUserDataProvider", topLevel=false)
 public class LDAPUserDataProvider implements UserDataProvider {
 
-	private static Logger log = LoggerFactory.getLogger(LDAPUserDataProvider.class.getName());
+	private static final Logger log = LoggerFactory.getLogger(LDAPUserDataProvider.class.getName());
 
 	String url; // the LDAP server
 	String base; // the base DN
@@ -457,7 +456,7 @@ public class LDAPUserDataProvider implements UserDataProvider {
 
 	public static class CustomSocketFactory extends SocketFactory {
 		public static SSLContext sslContext;
-		public static int connectTimeout = 60000;
+		public static final int connectTimeout = 60000;
 
 		private static CustomSocketFactory instance;
 
@@ -469,12 +468,12 @@ public class LDAPUserDataProvider implements UserDataProvider {
 			return instance;
 		}
 
-		public Socket createSocket(String host, int port) throws IOException, UnknownHostException {
+		public Socket createSocket(String host, int port) throws IOException {
 			return sslContext.createSocket(host, port, connectTimeout, host, null);
 		}
 
 		@Override
-		public Socket createSocket(String host, int port, InetAddress localHost, int localPort) throws IOException, UnknownHostException {
+		public Socket createSocket(String host, int port, InetAddress localHost, int localPort) throws IOException {
 			return sslContext.createSocket(host, port, localHost, localPort, connectTimeout, host, null);
 		}
 

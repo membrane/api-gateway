@@ -15,7 +15,6 @@ package com.predic8.membrane.core.proxies;
 
 import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.config.*;
-import com.predic8.membrane.test.*;
 import org.junit.jupiter.api.*;
 
 import static com.predic8.membrane.test.TestUtil.getPathFromResource;
@@ -26,7 +25,7 @@ import static org.hamcrest.Matchers.*;
 public class SOAPProxyWSDLPublisherInterceptorTest {
 
     static Router router;
-    
+
     @BeforeAll
     static void setUp() {
         router = new HttpRouter();

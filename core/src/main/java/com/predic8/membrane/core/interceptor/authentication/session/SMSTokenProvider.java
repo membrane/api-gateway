@@ -22,7 +22,7 @@ import org.slf4j.LoggerFactory;
 import com.predic8.membrane.annot.MCAttribute;
 
 public abstract class SMSTokenProvider extends NumericTokenProvider {
-	private static Logger log = LoggerFactory.getLogger(SMSTokenProvider.class.getName());
+	private static final Logger log = LoggerFactory.getLogger(SMSTokenProvider.class.getName());
 
 	protected String prefixText = "Token: ";
 	private boolean simulate;

@@ -48,7 +48,7 @@ import static org.junit.jupiter.api.Assertions.*;
 public class ProxyTest {
 
     static HttpRouter router;
-    static AtomicReference<String> lastMethod = new AtomicReference<>();
+    static final AtomicReference<String> lastMethod = new AtomicReference<>();
 
     @BeforeAll
     public static void init() {

@@ -16,7 +16,7 @@ package com.predic8.membrane.core;
 import com.predic8.membrane.core.transport.http.StreamPump;
 
 public class Statistics {
-	private StreamPump.StreamPumpStats streamPumpStats = new StreamPump.StreamPumpStats();
+	private final StreamPump.StreamPumpStats streamPumpStats = new StreamPump.StreamPumpStats();
 
 	public StreamPump.StreamPumpStats getStreamPumpStats() {
 		return streamPumpStats;

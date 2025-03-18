@@ -64,7 +64,7 @@ public class WsaEndpointRewriter {
 						exc.setProperty("messageId", id);
 						addMessageIdElement(eventWriter, id, e.asStartElement());
 
-						continue skip;
+						continue;
 					}
 				}
 

@@ -28,7 +28,7 @@ import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class ReverseProxyingInterceptorTest {
-	ReverseProxyingInterceptor rp = new ReverseProxyingInterceptor();
+	final ReverseProxyingInterceptor rp = new ReverseProxyingInterceptor();
 
 	@Test
 	public void localRedirect() {

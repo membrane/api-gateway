@@ -25,7 +25,7 @@ import com.predic8.membrane.core.http.Request;
 public class RequestPerformanceVersion3 {
 
 	private int bufferSize;
-	private byte[] buffer = new byte[1024];
+	private final byte[] buffer = new byte[1024];
 
 	@BeforeEach
 	public void setUp() throws Exception {

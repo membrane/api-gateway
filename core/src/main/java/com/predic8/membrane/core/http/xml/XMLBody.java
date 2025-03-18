@@ -24,7 +24,7 @@ import com.predic8.membrane.core.http.Message;
 
 class XMLBody extends AbstractXmlElement {
 
-	private static XMLInputFactory xmlInputFactory = XMLInputFactory.newInstance();
+	private static final XMLInputFactory xmlInputFactory = XMLInputFactory.newInstance();
 	static {
 		xmlInputFactory.setProperty(XMLInputFactory.IS_REPLACING_ENTITY_REFERENCES, false);
 		xmlInputFactory.setProperty(XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES, false);

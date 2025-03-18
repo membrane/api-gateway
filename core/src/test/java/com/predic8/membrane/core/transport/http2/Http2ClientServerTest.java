@@ -38,7 +38,7 @@ public class Http2ClientServerTest {
     private volatile AbstractHttpHandler handler;
     private HttpClient hc;
     private HttpRouter router;
-    private static ConcurrentHashMap<String, Boolean> connectionHashes = new ConcurrentHashMap<>();
+    private static final ConcurrentHashMap<String, Boolean> connectionHashes = new ConcurrentHashMap<>();
 
     @BeforeEach
     public void setup() {

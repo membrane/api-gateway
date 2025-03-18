@@ -25,12 +25,12 @@ import javax.xml.stream.events.XMLEvent;
 
 class Technology {
 	public String name;
-	public List<Technology> children = new LinkedList<>();
+	public final List<Technology> children = new LinkedList<>();
 }
 
 public class Magic {
 
-	List<QName> technologies = new LinkedList<>();
+	final List<QName> technologies = new LinkedList<>();
 
 	public List<Technology> scan( InputStream istream ) throws Exception {
 		XMLInputFactory factory = XMLInputFactory.newInstance();
@@ -60,5 +60,3 @@ public class Magic {
 		}
 	}
 }
-
-

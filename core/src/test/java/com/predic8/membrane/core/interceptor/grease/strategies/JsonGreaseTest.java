@@ -30,10 +30,10 @@ public class JsonGreaseTest {
 
     private static final ObjectMapper objectMapper = new ObjectMapper();
 
-    JsonGrease jsonGrease = new JsonGrease();
-    String jsonString = """
+    final JsonGrease jsonGrease = new JsonGrease();
+    final String jsonString = """
             {"name":"John","age":30,"city":"New York","country":{"name":"USA","population":31415}}""";
-    Message msg = new Request();
+    final Message msg = new Request();
 
     @Test
     void testJsonGrease() throws Exception {
