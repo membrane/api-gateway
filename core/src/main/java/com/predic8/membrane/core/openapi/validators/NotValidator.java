@@ -19,11 +19,6 @@ package com.predic8.membrane.core.openapi.validators;
 import io.swagger.v3.oas.models.*;
 import io.swagger.v3.oas.models.media.*;
 
-import java.util.*;
-import java.util.concurrent.atomic.*;
-
-import static com.predic8.membrane.core.openapi.util.Utils.*;
-
 @SuppressWarnings("rawtypes")
 public class NotValidator {
 

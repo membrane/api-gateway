@@ -15,10 +15,7 @@ package com.predic8.membrane.core.interceptor.acl;
 
 import java.net.UnknownHostException;
 
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-
-import com.predic8.membrane.core.Router;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 

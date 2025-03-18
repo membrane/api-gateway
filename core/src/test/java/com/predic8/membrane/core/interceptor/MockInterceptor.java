@@ -16,7 +16,6 @@ package com.predic8.membrane.core.interceptor;
 import com.predic8.membrane.core.exchange.*;
 import org.slf4j.*;
 
-import java.util.ArrayList;
 import java.util.*;
 
 import static com.predic8.membrane.core.interceptor.Outcome.*;

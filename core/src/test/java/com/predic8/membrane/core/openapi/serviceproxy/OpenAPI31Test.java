@@ -21,7 +21,6 @@ import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.util.*;
-import com.predic8.membrane.test.*;
 import org.junit.jupiter.api.*;
 
 import static com.predic8.membrane.core.openapi.util.TestUtils.createProxy;

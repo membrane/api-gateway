@@ -18,7 +18,6 @@ import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.Router;
 import java.io.*;
 import java.nio.file.*;
-import java.security.NoSuchAlgorithmException;
 import java.util.*;
 
 import static com.predic8.membrane.core.interceptor.registration.SecurityUtils.createPasswdCompatibleHash;

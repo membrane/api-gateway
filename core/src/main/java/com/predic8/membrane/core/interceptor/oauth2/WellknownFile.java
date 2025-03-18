@@ -18,7 +18,6 @@ import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.resolver.ResolverMap;
 
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.util.Set;
 import java.util.stream.Collectors;
 

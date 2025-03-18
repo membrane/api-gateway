@@ -24,7 +24,6 @@ import com.predic8.membrane.core.interceptor.authentication.*;
 import com.predic8.membrane.core.interceptor.authentication.session.*;
 import com.predic8.membrane.core.openapi.serviceproxy.*;
 import com.predic8.membrane.core.util.*;
-import com.predic8.membrane.test.*;
 import org.junit.jupiter.api.*;
 
 import java.util.*;
@@ -77,7 +76,7 @@ public class BasicAuthSecurityValidationTest {
         exc.setOriginalRequestUri("/v1/foo");
 
         Outcome outcome = baInterceptor.handleRequest(exc);
-        
+
         assertEquals(CONTINUE,outcome);
 
         outcome = oasInterceptor.handleRequest(exc);

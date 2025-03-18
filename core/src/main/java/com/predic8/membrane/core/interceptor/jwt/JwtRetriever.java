@@ -13,7 +13,6 @@
 
 package com.predic8.membrane.core.interceptor.jwt;
 
-import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.exchange.ExchangeValueRetriever;
 
 public interface JwtRetriever extends ExchangeValueRetriever {

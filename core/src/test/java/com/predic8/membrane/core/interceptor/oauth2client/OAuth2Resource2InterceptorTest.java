@@ -17,8 +17,6 @@ import com.predic8.membrane.core.http.Request;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.net.URISyntaxException;
-
 class OAuth2Resource2InterceptorTest {
 
     private OAuth2Resource2Interceptor oauth2;

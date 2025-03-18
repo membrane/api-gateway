@@ -18,8 +18,6 @@ import com.predic8.membrane.core.interceptor.authentication.session.SessionManag
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Named;
 
-import java.util.Arrays;
-import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.stream.Stream;

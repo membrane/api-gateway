@@ -16,8 +16,6 @@ package com.predic8.membrane.core.interceptor.oauth2;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Named;
 
-import java.util.Arrays;
-import java.util.Collection;
 import java.util.stream.Stream;
 
 public class AuthWithoutSessionRequestTest extends RequestParameterizedTest{

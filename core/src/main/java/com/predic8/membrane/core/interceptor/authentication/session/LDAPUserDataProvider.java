@@ -16,7 +16,6 @@ package com.predic8.membrane.core.interceptor.authentication.session;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.Socket;
-import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Hashtable;

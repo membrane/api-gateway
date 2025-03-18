@@ -22,7 +22,6 @@ import java.io.IOException;
 import java.io.InputStream;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.junit.jupiter.api.Assertions.*;
 
 public class WebSocketFrameTest {
     static final int numberOfFrames = 100000;

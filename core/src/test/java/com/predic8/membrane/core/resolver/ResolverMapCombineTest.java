@@ -13,10 +13,8 @@
    limitations under the License. */
 package com.predic8.membrane.core.resolver;
 
-import com.predic8.membrane.core.util.OSUtil;
 import org.junit.jupiter.api.*;
 
-import java.io.File;
 import java.nio.file.*;
 import java.security.*;
 

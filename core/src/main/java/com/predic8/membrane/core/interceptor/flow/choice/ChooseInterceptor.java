@@ -21,7 +21,6 @@ import com.predic8.membrane.core.lang.*;
 import org.jetbrains.annotations.*;
 
 import java.util.*;
-import java.util.stream.Stream;
 
 import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
