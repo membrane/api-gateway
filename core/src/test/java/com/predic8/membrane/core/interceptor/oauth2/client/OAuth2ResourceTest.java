@@ -15,6 +15,7 @@ package com.predic8.membrane.core.interceptor.oauth2.client;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.*;
+import com.google.code.yanf4j.util.ConcurrentHashSet;
 import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
@@ -25,7 +26,6 @@ import com.predic8.membrane.core.interceptor.oauth2client.*;
 import com.predic8.membrane.core.interceptor.oauth2client.rf.*;
 import com.predic8.membrane.core.proxies.*;
 import com.predic8.membrane.core.util.*;
-import com.predic8.membrane.core.util.URI;
 import org.jetbrains.annotations.*;
 import org.junit.jupiter.api.*;
 import org.slf4j.*;
@@ -37,6 +37,7 @@ import java.security.*;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.*;
+import java.util.stream.IntStream;
 
 import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.http.Request.get;
@@ -111,46 +112,44 @@ public abstract class OAuth2ResourceTest {
     // this test also implicitly tests concurrency on oauth2resource
     @Test
     public void testUseRefreshTokenOnTokenExpiration() throws Exception {
-        Exchange excCallResource = new Request.Builder().get(getClientAddress() + "/init").buildExchange();
+        var response = browser.apply(get(getClientAddress() + "/init")).getResponse();
+        var body = om.readValue(response.getBodyAsStream(), new TypeReference<Map<String, String>>() {});
+        assertEquals("/init", body.get("path"));
 
-        excCallResource = browser.apply(excCallResource);
-        var body2 = om.readValue(excCallResource.getResponse().getBodyAsStream(), Map.class);
-        assertEquals("/init", body2.get("path"));
-
-        Set<String> accessTokens = new HashSet<>();
-        List<Thread> threadList = new ArrayList<>();
         CountDownLatch cdl = new CountDownLatch(limit);
-        for (int i = 0; i < limit; i++) {
-            threadList.add(new Thread(() -> refreshTokenOnExpirationWorkerThread(cdl, accessTokens)));
-        }
-        threadList.forEach(Thread::start);
-        threadList.forEach(thread -> {
-            try {
-                thread.join();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        });
-        synchronized (accessTokens) {
-            assertEquals(limit, accessTokens.size());
-        }
+        Set<String> accessTokens = new ConcurrentHashSet<>();
+        IntStream.range(0, limit)
+                .mapToObj(i -> getStartedThread(() -> accessTokens.add(getToken(cdl))))
+                .toList() // required to avoid stream execution deadlocking on CountDownLatch.await()
+                .forEach(OAuth2ResourceTest::joinThread);
+        assertEquals(limit, accessTokens.size());
     }
 
-    private void refreshTokenOnExpirationWorkerThread(CountDownLatch cdl, Set<String> accessTokens) {
+    private String getToken(CountDownLatch cdl) {
         try {
             cdl.countDown();
             cdl.await();
-            String uuid = UUID.randomUUID().toString();
-            Exchange excCallResource2 = new Request.Builder().get(getClientAddress() + "/" + uuid).buildExchange();
-            excCallResource2 = browser.apply(excCallResource2);
-            var body = om.readValue(excCallResource2.getResponse().getBodyAsStringDecoded(), Map.class);
-            String path = (String) body.get("path");
-            assertEquals("/" + uuid, path);
-            synchronized (accessTokens) {
-                accessTokens.add((String) body.get("accessToken"));
-            }
+            String path = "/" + UUID.randomUUID();
+            var response = browser.apply(get(getClientAddress() + path)).getResponse();
+            var body = om.readValue(response.getBodyAsStringDecoded(), new TypeReference<Map<String, String>>() {});
+            assertEquals(path, body.get("path"));
+            return body.get("accessToken");
         } catch (Exception e) {
-            e.printStackTrace();
+            throw new RuntimeException(e);
+        }
+    }
+
+    protected static Thread getStartedThread(Runnable runnable) {
+        var thread = new Thread(runnable);
+        thread.start();
+        return thread;
+    }
+
+    protected static void joinThread(Thread thread) {
+        try {
+            thread.join();
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
         }
     }
 
