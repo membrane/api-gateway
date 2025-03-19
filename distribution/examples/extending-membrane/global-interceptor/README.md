@@ -1,6 +1,7 @@
 # Global Chain
 
-This example demonstrates how to use a global chain to apply plugins for request and response processing, such as authentication, modifications, logging, and transformations, across all APIs. The global chain ensures consistent behavior, reduces redundancy, and simplifies configuration.
+Some functionalities, such as authentication and rate limiting, are required across all APIs, not just individually. By adding plugins to the global interceptor chain rather than configuring them for each API separately, these functionalities become universally active for all APIs. Global interceptors ensure consistent behavior, eliminate redundancy, and simplify configuration.
+
 ### **Running the Example**
 1. **Start the Router**
    ```sh
@@ -16,5 +17,5 @@ This example demonstrates how to use a global chain to apply plugins for request
       ```sh
       curl -i http://localhost:2001
       ```  
-      **Check the response headers** to see how the global chain influences all requests.
+      **Check the response:** both APIs set CORS headers
 3. **Check `proxies.xml`** to see how the global interceptors are applied.
