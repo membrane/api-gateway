@@ -16,8 +16,8 @@ import static java.net.http.HttpResponse.BodyHandlers.discarding;
 
 public class RequestPerformanceTest {
 
-    private static final int THREAD_COUNT = 16;
-    private static final int REQUESTS_PER_THREAD = 10000;
+    private static final int THREAD_COUNT = 10000;
+    private static final int REQUESTS_PER_THREAD = 10;
     private static final String TARGET_URL = "http://localhost:2000";
 
     public static void main(String[] args) throws InterruptedException, ExecutionException {
@@ -30,6 +30,7 @@ public class RequestPerformanceTest {
         HttpClient client = HttpClient.newHttpClient();
 
         for (int i = 0; i < threadCount; i++) {
+            Thread.sleep(5);
             final int threadId = i;
             futures.add(executor.submit(() -> getThreadResult(requestsPerThread, targetUrl, client, threadId)));
         }
@@ -58,14 +59,21 @@ public class RequestPerformanceTest {
         double minDuration = Double.MAX_VALUE;
         double maxDuration = 0;
 
+        HttpRequest build = HttpRequest.newBuilder()
+                .version(HTTP_1_1)
+                .uri(URI.create(targetUrl))
+                .GET()
+                .build();
+
         for (int j = 0; j < requestsPerThread; j++) {
             long reqStart = System.nanoTime();
             try {
-                client.send(HttpRequest.newBuilder()
-                        .version(HTTP_1_1)
-                        .uri(URI.create(targetUrl))
-                        .GET()
-                        .build(), discarding());
+
+                var res = client.send(build, discarding());
+                if (res.statusCode() != 200) {
+                    System.out.println("res = " + res.statusCode());
+                    throw new RuntimeException("Request failed: " + res.body());
+                };
             } catch (Exception e) {
                 System.err.println("Thread " + threadId + " Request " + j + " failed: " + e.getMessage());
             }
