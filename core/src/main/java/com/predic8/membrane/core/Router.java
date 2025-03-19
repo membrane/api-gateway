@@ -88,8 +88,8 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
     protected ExchangeStore exchangeStore = new LimitedMemoryExchangeStore();
     protected Transport transport;
     protected GlobalInterceptor globalInterceptor = new GlobalInterceptor();
-    protected ResolverMap resolverMap;
-    protected DNSCache dnsCache = new DNSCache();
+    protected final ResolverMap resolverMap;
+    protected final DNSCache dnsCache = new DNSCache();
     protected final ExecutorService backgroundInitializer =
             newSingleThreadExecutor(new HttpServerThreadFactory("Router Background Initializer"));
     protected HotDeploymentThread hdt;

@@ -10,12 +10,12 @@
 
         <global>
             <log/>
-            <request>
+            <response>
                 <setHeader name="Access-Control-Allow-Origin" value="*" />
                 <setHeader name="Access-Control-Allow-Methods" value="*" />
                 <setHeader name="Access-Control-Allow-Headers" value="*" />
                 <setHeader name="Access-Control-Allow-Credentials" value="*" />
-            </request>
+            </response>
         </global>
 
         <api port="2000">

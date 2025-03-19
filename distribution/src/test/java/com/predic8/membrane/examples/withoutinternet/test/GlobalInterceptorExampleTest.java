@@ -34,6 +34,10 @@ public class GlobalInterceptorExampleTest extends AbstractSampleMembraneStartSto
             .get("http://localhost:2000")
         .then()
             .assertThat()
+            .header("Access-Control-Allow-Origin", "*")
+            .header("Access-Control-Allow-Methods", "*")
+            .header("Access-Control-Allow-Headers", "*")
+            .header("Access-Control-Allow-Credentials", "*")
             .statusCode(200);
     }
 
@@ -44,6 +48,10 @@ public class GlobalInterceptorExampleTest extends AbstractSampleMembraneStartSto
             .get("http://localhost:2001")
         .then()
             .assertThat()
+            .header("Access-Control-Allow-Origin", "*")
+            .header("Access-Control-Allow-Methods", "*")
+            .header("Access-Control-Allow-Headers", "*")
+            .header("Access-Control-Allow-Credentials", "*")
             .statusCode(404);
     }
     // @formatter:on
