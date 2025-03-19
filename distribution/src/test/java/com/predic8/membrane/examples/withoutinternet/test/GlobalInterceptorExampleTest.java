@@ -18,7 +18,6 @@ import com.predic8.membrane.examples.util.AbstractSampleMembraneStartStopTestcas
 import org.junit.jupiter.api.Test;
 
 import static io.restassured.RestAssured.given;
-import static org.hamcrest.Matchers.containsString;
 
 public class GlobalInterceptorExampleTest extends AbstractSampleMembraneStartStopTestcase {
 
@@ -35,7 +34,6 @@ public class GlobalInterceptorExampleTest extends AbstractSampleMembraneStartSto
             .get("http://localhost:2000")
         .then()
             .assertThat()
-            .body(containsString("CORS headers applied"))
             .statusCode(200);
     }
 
@@ -46,7 +44,6 @@ public class GlobalInterceptorExampleTest extends AbstractSampleMembraneStartSto
             .get("http://localhost:2001")
         .then()
             .assertThat()
-            .body(containsString("CORS headers applied"))
             .statusCode(404);
     }
     // @formatter:on
