@@ -37,18 +37,19 @@ public class RequestPerformanceTest {
     }
 
     private static void printResults(List<Future<ThreadResult>> futures, int threadCount, int requestsPerThread) {
+        double totalTime = 0;
         for (Future<ThreadResult> future : futures) {
             try {
                 ThreadResult result = future.get();
                 System.out.printf("Thread %2d | Total Duration: %7.3f sec | RPS: %8.2f | Min Req: %8.6f sec | Max Req: %8.6f sec%n",
                         result.threadId, result.durationSeconds, result.requestsPerSecond, result.minRequestDuration, result.maxRequestDuration);
+                totalTime += result.durationSeconds;
             } catch (Exception e) {
                 System.err.println("Error retrieving result: " + e.getMessage());
             }
         }
+        System.out.printf("RPS = %.2f | Total Requests: %d%n", (threadCount * requestsPerThread / (totalTime / threadCount)), (threadCount * requestsPerThread));
 
-        System.out.println("Average per thread: Duration = " + averageTime + " sec, RPS = " + (threadCount*requestsPerThread / averageTime));
-        System.out.println("Total Requests: " + threadCount * requestsPerThread);
     }
 
     private static @NotNull ThreadResult getThreadResult(int requestsPerThread, String targetUrl, HttpClient client, int threadId) {
