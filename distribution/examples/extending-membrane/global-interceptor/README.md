@@ -17,5 +17,5 @@ Some functionalities, such as authentication and rate limiting, are required acr
       ```sh
       curl -i http://localhost:2001
       ```  
-      **Check the response:** both APIs set CORS headers
+      **Check the request:** both contain CORS headers
 3. **Check `proxies.xml`** to see how the global interceptors are applied.
