@@ -9,6 +9,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.*;
 
+import static java.lang.Math.max;
+import static java.lang.Math.min;
 import static java.net.http.HttpResponse.BodyHandlers.discarding;
 
 public class RequestPerformanceTest {
@@ -27,55 +29,67 @@ public class RequestPerformanceTest {
         HttpClient client = HttpClient.newHttpClient();
 
         for (int i = 0; i < threadCount; i++) {
-            int finalI = i;
-            futures.add(executor.submit(() -> getThreadResult(requestsPerThread, targetUrl, client, finalI)));
+            final int threadId = i;
+            futures.add(executor.submit(() -> getThreadResult(requestsPerThread, targetUrl, client, threadId)));
         }
         executor.shutdown();
         printResults(futures, threadCount, requestsPerThread);
     }
 
     private static void printResults(List<Future<ThreadResult>> futures, int threadCount, int requestsPerThread) {
-        double totalTime = futures.stream().mapToDouble(future -> {
+        for (Future<ThreadResult> future : futures) {
             try {
                 ThreadResult result = future.get();
-                System.out.printf("Thread %d: Duration = %.3f sec, RPS = %.2f%n", result.threadId, result.durationSeconds, result.requestsPerMinute);
-                return result.durationSeconds;
+                System.out.printf("Thread %2d | Total Duration: %7.3f sec | RPS: %8.2f | Min Req: %8.6f sec | Max Req: %8.6f sec%n",
+                        result.threadId, result.durationSeconds, result.requestsPerSecond, result.minRequestDuration, result.maxRequestDuration);
             } catch (Exception e) {
                 System.err.println("Error retrieving result: " + e.getMessage());
-                return 0.0;
             }
-        }).sum();
+        }
 
-        final double averageTime = totalTime / threadCount;
         System.out.println("Average per thread: Duration = " + averageTime + " sec, RPS = " + (threadCount*requestsPerThread / averageTime));
         System.out.println("Total Requests: " + threadCount * requestsPerThread);
     }
 
     private static @NotNull ThreadResult getThreadResult(int requestsPerThread, String targetUrl, HttpClient client, int threadId) {
-        long startTime = System.nanoTime();
+        long threadStartTime = System.nanoTime();
+        double minDuration = Double.MAX_VALUE;
+        double maxDuration = 0;
+
         for (int j = 0; j < requestsPerThread; j++) {
+            long reqStart = System.nanoTime();
             try {
-                client.send(HttpRequest.newBuilder().uri(URI.create(targetUrl)).GET().build(), discarding());
+                client.send(HttpRequest.newBuilder()
+                        .uri(URI.create(targetUrl))
+                        .GET()
+                        .build(), discarding());
             } catch (Exception e) {
                 System.err.println("Thread " + threadId + " Request " + j + " failed: " + e.getMessage());
             }
+            long reqEnd = System.nanoTime();
+            double reqDuration = (reqEnd - reqStart) / 1_000_000_000.0;
+            minDuration = min(minDuration, reqDuration);
+            maxDuration = max(maxDuration, reqDuration);
         }
-        return new ThreadResult(
-                threadId,
-                (System.nanoTime() - startTime) / 1_000_000_000.0,
-                (requestsPerThread / ((System.nanoTime() - startTime) / 1_000_000_000.0))
-        );
+        long threadEndTime = System.nanoTime();
+        double totalDurationSeconds = (threadEndTime - threadStartTime) / 1_000_000_000.0;
+        double requestsPerSecond = requestsPerThread / totalDurationSeconds;
+        return new ThreadResult(threadId, totalDurationSeconds, requestsPerSecond, minDuration, maxDuration);
     }
 
     private static class ThreadResult {
         int threadId;
         double durationSeconds;
-        double requestsPerMinute;
+        double requestsPerSecond;
+        double minRequestDuration;
+        double maxRequestDuration;
 
-        ThreadResult(int threadId, double durationSeconds, double requestsPerMinute) {
+        ThreadResult(int threadId, double durationSeconds, double requestsPerSecond, double minRequestDuration, double maxRequestDuration) {
             this.threadId = threadId;
             this.durationSeconds = durationSeconds;
-            this.requestsPerMinute = requestsPerMinute;
+            this.requestsPerSecond = requestsPerSecond;
+            this.minRequestDuration = minRequestDuration;
+            this.maxRequestDuration = maxRequestDuration;
         }
     }
 }
