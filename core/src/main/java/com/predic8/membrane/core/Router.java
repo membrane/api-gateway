@@ -583,6 +583,14 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
         this.id = s;
     }
 
+    /**
+     * @description Sets a global interceptor that applies to all requests and responses.
+     */
+    @MCChildElement(order = 2)
+    public void setGlobalInterceptor(GlobalInterceptor globalInterceptor) {
+        this.globalInterceptor = globalInterceptor;
+    }
+
     public String getId() {
         return id;
     }
@@ -611,5 +619,9 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
 
     public FlowController getFlowController() {
         return flowController;
+    }
+
+    public GlobalInterceptor getGlobalInterceptor() {
+        return globalInterceptor;
     }
 }
