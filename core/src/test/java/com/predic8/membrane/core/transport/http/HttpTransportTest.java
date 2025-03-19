@@ -16,6 +16,7 @@ package com.predic8.membrane.core.transport.http;
 
 import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchangestore.*;
+import com.predic8.membrane.core.interceptor.GlobalInterceptor;
 import com.predic8.membrane.core.resolver.*;
 import com.predic8.membrane.core.transport.ssl.*;
 import org.junit.jupiter.api.*;
@@ -25,10 +26,8 @@ import java.io.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-@SuppressWarnings("javadoc")
 public class HttpTransportTest {
 
-	private HttpClient httpClient = mock(HttpClient.class);
 	private final HTTPSchemaResolver httpSchemaResolver = mock(HTTPSchemaResolver.class);
 	private final ResolverMap resolverMap = mock(ResolverMap.class);
 	private final SSLProvider sslProvider = mock(SSLProvider.class);
@@ -37,6 +36,7 @@ public class HttpTransportTest {
 	private final ExchangeStore exchangeStore = mock(ExchangeStore.class);
 	private final Statistics statistics = new Statistics();
 	private HttpTransport transport;
+	private final GlobalInterceptor globalInterceptor = new GlobalInterceptor();
 
 	@BeforeEach
 	public void before() throws Exception {
@@ -44,6 +44,7 @@ public class HttpTransportTest {
 		when(router.getResolverMap()).thenReturn(resolverMap);
 		when(router.getRuleManager()).thenReturn(ruleManager);
 		when(router.getExchangeStore()).thenReturn(exchangeStore);
+		when(router.getGlobalInterceptor()).thenReturn(globalInterceptor);
 		when(router.getHttpClientFactory()).thenReturn(new HttpClientFactory(null));
 		when(router.getStatistics()).thenReturn(statistics);
 

@@ -60,6 +60,7 @@ public abstract class Transport {
 			interceptors.add(new ExchangeStoreInterceptor(router.getExchangeStore()));
 			interceptors.add(new DispatchingInterceptor());
 			interceptors.add(new ReverseProxyingInterceptor());
+			interceptors.add(router.getGlobalInterceptor());
 			interceptors.add(new UserFeatureInterceptor());
 			interceptors.add(new InternalRoutingInterceptor());
 			interceptors.add(new HTTPClientInterceptor());

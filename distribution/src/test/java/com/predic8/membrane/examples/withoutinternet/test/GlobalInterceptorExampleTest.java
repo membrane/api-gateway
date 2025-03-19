@@ -12,19 +12,18 @@
    See the License for the specific language governing permissions and
    limitations under the License. */
 
-package com.predic8.membrane.examples.withoutinternet;
+package com.predic8.membrane.examples.withoutinternet.test;
 
 import com.predic8.membrane.examples.util.AbstractSampleMembraneStartStopTestcase;
 import org.junit.jupiter.api.Test;
 
 import static io.restassured.RestAssured.given;
-import static org.hamcrest.Matchers.containsString;
 
-public class ChainExampleTest extends AbstractSampleMembraneStartStopTestcase {
+public class GlobalInterceptorExampleTest extends AbstractSampleMembraneStartStopTestcase {
 
     @Override
     protected String getExampleDirName() {
-        return "/extending-membrane/reusable-plugin-chains";
+        return "/extending-membrane/global-interceptor";
     }
 
     // @formatter:off
@@ -35,7 +34,10 @@ public class ChainExampleTest extends AbstractSampleMembraneStartStopTestcase {
             .get("http://localhost:2000")
         .then()
             .assertThat()
-            .body(containsString("CORS headers applied"))
+            .header("Access-Control-Allow-Origin", "*")
+            .header("Access-Control-Allow-Methods", "*")
+            .header("Access-Control-Allow-Headers", "*")
+            .header("Access-Control-Allow-Credentials", "*")
             .statusCode(200);
     }
 
@@ -46,7 +48,10 @@ public class ChainExampleTest extends AbstractSampleMembraneStartStopTestcase {
             .get("http://localhost:2001")
         .then()
             .assertThat()
-            .body(containsString("CORS headers applied"))
+            .header("Access-Control-Allow-Origin", "*")
+            .header("Access-Control-Allow-Methods", "*")
+            .header("Access-Control-Allow-Headers", "*")
+            .header("Access-Control-Allow-Credentials", "*")
             .statusCode(404);
     }
     // @formatter:on
