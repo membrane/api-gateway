@@ -11,6 +11,7 @@ import java.util.concurrent.*;
 
 import static java.lang.Math.max;
 import static java.lang.Math.min;
+import static java.net.http.HttpClient.Version.HTTP_1_1;
 import static java.net.http.HttpResponse.BodyHandlers.discarding;
 
 public class RequestPerformanceTest {
@@ -61,6 +62,7 @@ public class RequestPerformanceTest {
             long reqStart = System.nanoTime();
             try {
                 client.send(HttpRequest.newBuilder()
+                        .version(HTTP_1_1)
                         .uri(URI.create(targetUrl))
                         .GET()
                         .build(), discarding());
