@@ -6,8 +6,9 @@
 
 	<router>
 
+		<!-- Applies to all APIs in this configuration -->
 		<global>
-			<!-- Use client IP to count requests -->
+			<!-- Use client IP (default) to count requests -->
 			<rateLimiter requestLimit="10" requestLimitDuration="PT1M"/>
 		</global>
 
@@ -25,5 +26,5 @@
 		</api>
 
 	</router>
-	
+
 </spring:beans>
