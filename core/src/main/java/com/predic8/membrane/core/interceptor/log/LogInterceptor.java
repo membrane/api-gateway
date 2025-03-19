@@ -24,8 +24,8 @@ import org.slf4j.*;
 
 import java.io.*;
 
-import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
-import static com.predic8.membrane.core.interceptor.Interceptor.Flow.RESPONSE;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.ABORT;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.interceptor.log.LogInterceptor.Level.*;
 import static org.slf4j.LoggerFactory.*;
@@ -69,7 +69,7 @@ public class LogInterceptor extends AbstractExchangeExpressionInterceptor {
     public void handleAbort(Exchange exc) {
         try {
             writeLog("==== Response(Exchange aborted) %s ===".formatted(label));
-           logMessage(exc, Flow.ABORT);
+            logMessage(exc, ABORT);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -164,7 +164,7 @@ public class LogInterceptor extends AbstractExchangeExpressionInterceptor {
     @Override
     public String getShortDescription() {
         return "Logs the " + (body ? "headers of " : "") + "requests and responses" +
-               " using Log4J's " + level.toString() + " level.";
+                " using Log4J's " + level.toString() + " level.";
     }
 
     public String getLabel() {
