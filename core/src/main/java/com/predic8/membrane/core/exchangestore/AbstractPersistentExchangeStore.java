@@ -100,7 +100,6 @@ public abstract class AbstractPersistentExchangeStore extends AbstractExchangeSt
     }
 
     /**
-     *
      * @param exc To add to batch cache
      */
     protected void addForStorage(AbstractExchangeSnapshot exc) {

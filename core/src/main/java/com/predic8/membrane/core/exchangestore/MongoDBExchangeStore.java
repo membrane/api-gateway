@@ -57,12 +57,12 @@ public class MongoDBExchangeStore extends AbstractPersistentExchangeStore {
         doc.append("id", exchange.getId());
         doc.append("method", exchange.getRequest().getMethod() != null ? exchange.getRequest().getMethod() : "UNKNOWN");
         doc.append("listenPort", exchange.getRule().getKey().getPort() != 0 ? exchange.getRule().getKey().getPort() : 0);
-        doc.append("protocol", exchange.toAbstractExchange().getRequest().getVersion() != null ? exchange.toAbstractExchange().getRequest().getVersion() : "UNKNOWN" );
+        doc.append("protocol", exchange.toAbstractExchange().getRequest().getVersion() != null ? exchange.toAbstractExchange().getRequest().getVersion() : "UNKNOWN");
         doc.append("client", getClientAddr(false, exchange.toAbstractExchange()) != null ? getClientAddr(false, exchange.toAbstractExchange()) : "UNKNOWN");
         doc.append("server", exchange.getServer() != null ? exchange.getServer() : "UNKNOWN");
-        doc.append("proxy", exchange.toAbstractExchange() != null ? objectMapper.writeValueAsString(exchange.toAbstractExchange().getProxy().getKey())  : "UNKNOWN");
+        doc.append("proxy", exchange.toAbstractExchange() != null ? objectMapper.writeValueAsString(exchange.toAbstractExchange().getProxy().getKey())  : new LinkedHashMap<>());
         doc.append("timestamp", exchange.getTime().getTime());
-        doc.append("requestUri", exchange.getOriginalRequestUri() != null ? exchange.getOriginalRequestUri() : "UNKNOWN" );
+        doc.append("requestUri", exchange.getOriginalRequestUri() != null ? exchange.getOriginalRequestUri() : "UNKNOWN");
         doc.append("status", exchange.getStatus() != null ? exchange.getStatus() : 0);
         doc.append("request", requestDoc(exchange));
         doc.append("response", responseDoc(exchange));
@@ -81,9 +81,17 @@ public class MongoDBExchangeStore extends AbstractPersistentExchangeStore {
 
     private static Document responseDoc(AbstractExchangeSnapshot exchange) {
         Document responseDoc = new Document();
-        responseDoc.append("status", exchange.getResponse() != null ? exchange.getResponse().getStatusCode() : 0);
-        responseDoc.append("header", exchange.getResponse() != null ? exchange.getResponse().getHeader() : "{}");
-        responseDoc.append("body", exchange.getResponse() != null ? Base64.getEncoder().encodeToString(exchange.getResponse().toResponse().getBodyAsStringDecoded().getBytes(StandardCharsets.UTF_8)) : "{}");
+        if (exchange.getResponse() == null) {
+            responseDoc.append("status", 0);
+            responseDoc.append("header", "{}");
+            responseDoc.append("body", "{}");
+            responseDoc.append("respContentLength", 0);
+            responseDoc.append("respContentType", "UNKNOWN");
+            return responseDoc;
+        }
+        responseDoc.append("status", exchange.getResponse() == null ? 0 : exchange.getResponse().getStatusCode());
+        responseDoc.append("header", exchange.getResponse().getHeader() == null ? new LinkedHashMap<>() : exchange.getResponse().getHeader());
+        responseDoc.append("body", exchange.getResponse() == null ? "{}" : Base64.getEncoder().encodeToString(exchange.getResponse().toResponse().getBodyAsStringDecoded().getBytes(StandardCharsets.UTF_8)));
         responseDoc.append("respContentLength", exchange.toAbstractExchange() == null ? 0 : exchange.toAbstractExchange().getResponseContentLength());
         responseDoc.append("respContentType", exchange.toAbstractExchange().getResponseContentType());
         return responseDoc;
@@ -133,11 +141,12 @@ public class MongoDBExchangeStore extends AbstractPersistentExchangeStore {
         ensureCollectionIsInitialized();
         for (Document doc : collection.find().into(new ArrayList<>())) {
             try {
-                collector.collect(objectMapper.readValue(objectMapper.writeValueAsString(doc), AbstractExchangeSnapshot.class).toAbstractExchange());
+                collector.collect(objectMapper.readValue(doc.toJson(), AbstractExchangeSnapshot.class).toAbstractExchange());
             } catch (JsonProcessingException e) {
                 log.error("Error parsing MongoDB document to exchange", e);
             }
         }
+
     }
 
     @Override

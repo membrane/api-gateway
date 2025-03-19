@@ -24,6 +24,8 @@ import java.io.*;
 /**
  * TODO for what?
  */
+@JsonSerialize(using = FakeProxy.Serializer.class)
+@JsonDeserialize(using = FakeProxy.Deserializer.class)
 public class FakeProxy extends AbstractProxy {
 
     public FakeProxy(Proxy proxy) {
@@ -34,4 +36,20 @@ public class FakeProxy extends AbstractProxy {
         this.key = new FakeKey(port);
     }
 
+    public static class Serializer extends JsonSerializer<FakeProxy>{
+        @Override
+        public void serialize(FakeProxy fakeRule, JsonGenerator jsonGenerator, SerializerProvider serializerProvider) throws IOException {
+            jsonGenerator.writeStartObject();
+            jsonGenerator.writeStringField("name",fakeRule.toString());
+            jsonGenerator.writeNumberField("port",fakeRule.getKey().getPort());
+            jsonGenerator.writeEndObject();
+        }
+    }
+
+    public static class Deserializer extends JsonDeserializer<FakeProxy>{
+        @Override
+        public FakeProxy deserialize(JsonParser jsonParser, DeserializationContext deserializationContext) throws IOException {
+            return new FakeProxy(jsonParser.getCodec().<JsonNode>readTree(jsonParser).get("port").asInt());
+        }
+    }
 }
