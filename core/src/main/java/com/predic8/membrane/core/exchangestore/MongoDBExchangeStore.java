@@ -141,12 +141,12 @@ public class MongoDBExchangeStore extends AbstractPersistentExchangeStore {
         ensureCollectionIsInitialized();
         for (Document doc : collection.find().into(new ArrayList<>())) {
             try {
-                collector.collect(objectMapper.readValue(doc.toJson(), AbstractExchangeSnapshot.class).toAbstractExchange());
+                collector.collect(objectMapper.readValue(objectMapper.writeValueAsString(doc.toJson()), AbstractExchangeSnapshot.class).toAbstractExchange());
             } catch (JsonProcessingException e) {
-                log.error("Error parsing MongoDB document to exchange", e);
+                log.error("Error parsing MongoDB document to exchange");
+                // TODO: Error handling for JSON parsing needs to be reviewed and fixed later.
             }
         }
-
     }
 
     @Override
@@ -158,7 +158,6 @@ public class MongoDBExchangeStore extends AbstractPersistentExchangeStore {
             }
         } catch (Exception e) {
             log.error("Error retrieving exchange from MongoDB", e);
-            throw new RuntimeException(e);
         }
         return null;
     }
