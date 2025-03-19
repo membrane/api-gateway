@@ -12,7 +12,6 @@
             <setHeader name="Access-Control-Allow-Headers" value="*" />
             <setHeader name="Access-Control-Allow-Credentials" value="*" />
         </request>
-        <log />
         <template>
             CORS headers applied
         </template>
@@ -20,6 +19,10 @@
 
 
     <router>
+
+        <global>
+            <log />
+        </global>
 
         <api port="2000">
             <chain ref="cors" />
