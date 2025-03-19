@@ -13,8 +13,8 @@ import static java.net.http.HttpResponse.BodyHandlers.discarding;
 
 public class RequestPerformanceTest {
 
-    private static final int THREAD_COUNT = 10;
-    private static final int REQUESTS_PER_THREAD = 100;
+    private static final int THREAD_COUNT = 16;
+    private static final int REQUESTS_PER_THREAD = 10000;
     private static final String TARGET_URL = "http://localhost:2000";
 
     public static void main(String[] args) throws InterruptedException, ExecutionException {
@@ -38,7 +38,7 @@ public class RequestPerformanceTest {
         double totalTime = futures.stream().mapToDouble(future -> {
             try {
                 ThreadResult result = future.get();
-                System.out.printf("Thread %d: Duration = %.3f sec, RPM = %.2f%n", result.threadId, result.durationSeconds, result.requestsPerMinute);
+                System.out.printf("Thread %d: Duration = %.3f sec, RPS = %.2f%n", result.threadId, result.durationSeconds, result.requestsPerMinute);
                 return result.durationSeconds;
             } catch (Exception e) {
                 System.err.println("Error retrieving result: " + e.getMessage());
@@ -47,7 +47,7 @@ public class RequestPerformanceTest {
         }).sum();
 
         final double averageTime = totalTime / threadCount;
-        System.out.println("Average per thread: Duration = " + averageTime + " sec, RPM = " + (requestsPerThread / averageTime) * 60);
+        System.out.println("Average per thread: Duration = " + averageTime + " sec, RPS = " + (threadCount*requestsPerThread / averageTime));
         System.out.println("Total Requests: " + threadCount * requestsPerThread);
     }
 
@@ -63,7 +63,7 @@ public class RequestPerformanceTest {
         return new ThreadResult(
                 threadId,
                 (System.nanoTime() - startTime) / 1_000_000_000.0,
-                (requestsPerThread / ((System.nanoTime() - startTime) / 1_000_000_000.0)) * 60
+                (requestsPerThread / ((System.nanoTime() - startTime) / 1_000_000_000.0))
         );
     }
 
