@@ -19,7 +19,8 @@ import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.flow.AbstractFlowInterceptor;
 
 /**
- * @description A GlobalInterceptor applies interceptors to all requests and responses for consistent processing.
+ * @description The GlobalInterceptor applies plugins to all endpoints, enabling centralized features
+ *              such as global user authentication, logging, and other cross-cutting concerns.
  */
 @MCElement(name = "global")
 public class GlobalInterceptor extends AbstractFlowInterceptor {
