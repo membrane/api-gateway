@@ -584,7 +584,7 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
     }
 
     /**
-     * @description Sets a global interceptor that applies to all requests and responses.
+     * @description Sets a global chain that applies to all requests and responses.
      */
     @MCChildElement(order = 2)
     public void setGlobalInterceptor(GlobalInterceptor globalInterceptor) {
