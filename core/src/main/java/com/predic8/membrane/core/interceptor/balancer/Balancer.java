@@ -29,7 +29,7 @@ import com.predic8.membrane.core.config.AbstractXmlElement;
 @MCElement(name="clusters", topLevel=false)
 public class Balancer extends AbstractXmlElement {
 	public static final String DEFAULT_NAME = "Default";
-	private static Logger log = LoggerFactory.getLogger(Balancer.class.getName());
+	private static final Logger log = LoggerFactory.getLogger(Balancer.class.getName());
 
 	private final Map<String, Cluster> clusters = new Hashtable<>();
 	private String name = DEFAULT_NAME;
@@ -97,13 +97,12 @@ public class Balancer extends AbstractXmlElement {
 		return clusters.get(name);
 	}
 
-	public boolean addCluster(String name) {
+	public void addCluster(String name) {
 		if (clusters.containsKey(name))
-			return false;
+			return;
 		log.debug("adding cluster with name [" + name + "] to balancer ["
 				+ name + "]");
 		clusters.put(name, new Cluster(name));
-		return true;
 	}
 
 	/**

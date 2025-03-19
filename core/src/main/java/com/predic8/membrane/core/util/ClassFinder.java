@@ -45,7 +45,7 @@ public class ClassFinder {
     }
 
     public static Class<?> getClasses(ResourcePatternResolver resolver, String scannedPackage, String s) throws ClassNotFoundException {
-        if(s == null || s.isEmpty() || s.contains("$") || !s.contains(CLASS_FILE_SUFFIX))
+        if(s == null || s.contains("$") || !s.contains(CLASS_FILE_SUFFIX))
             return null;
         s = scannedPackage + "." +  s.replaceFirst(Pattern.quote(CLASS_FILE_SUFFIX),"");
         return resolver.getClassLoader().loadClass(s);

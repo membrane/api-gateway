@@ -36,7 +36,7 @@ import static java.util.concurrent.TimeUnit.*;
 @MCElement(id = "sslProxy-gatekeeper", name = "gatekeeper", topLevel = false)
 public class GateKeeperClientInterceptor implements SSLInterceptor {
 
-    protected String name;
+    protected final String name;
     private String url;
     private HttpClientConfiguration httpClientConfiguration;
 
@@ -52,7 +52,7 @@ public class GateKeeperClientInterceptor implements SSLInterceptor {
         httpClient = router.getHttpClientFactory().createClient(httpClientConfiguration);
     }
 
-    Cache<String, Map> cache = CacheBuilder.newBuilder().expireAfterWrite(1, MINUTES).build();
+    final Cache<String, Map> cache = CacheBuilder.newBuilder().expireAfterWrite(1, MINUTES).build();
 
     public Outcome handleRequest(SSLExchange exc) throws Exception {
 

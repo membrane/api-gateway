@@ -17,7 +17,6 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.jwt.Jwks;
@@ -35,9 +34,6 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Map;
 
-import static com.predic8.membrane.core.Constants.USERAGENT;
-import static com.predic8.membrane.core.http.Header.*;
-import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
 import static com.predic8.membrane.core.interceptor.oauth2client.rf.JsonUtils.isJson;
 import static com.predic8.membrane.core.interceptor.oauth2client.temp.OAuth2Constants.OAUTH2_ANSWER;
 

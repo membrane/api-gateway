@@ -33,7 +33,6 @@ package com.oracle.util.ssl;
 import java.io.IOException;
 import java.nio.BufferUnderflowException;
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -82,7 +81,7 @@ public final class SSLExplorer {
 	 *         bytes remaining in {@code source}
 	 * @return the required size in byte to explore an SSL/TLS connection
 	 */
-	public final static int getRequiredSize(ByteBuffer source) {
+	public static int getRequiredSize(ByteBuffer source) {
 
 		ByteBuffer input = source.duplicate();
 
@@ -125,8 +124,8 @@ public final class SSLExplorer {
 	 *         bytes remaining in {@code source}
 	 * @return the required size in byte to explore an SSL/TLS connection
 	 */
-	public final static int getRequiredSize(byte[] source,
-			int offset, int length) throws IOException {
+	public static int getRequiredSize(byte[] source,
+                                      int offset, int length) throws IOException {
 
 		ByteBuffer byteBuffer =
 				ByteBuffer.wrap(source, offset, length).asReadOnlyBuffer();
@@ -159,7 +158,7 @@ public final class SSLExplorer {
 	 * @return the explored {@link SSLCapabilities} of the SSL/TLS
 	 *         connection
 	 */
-	public final static SSLCapabilities explore(ByteBuffer source)
+	public static SSLCapabilities explore(ByteBuffer source)
 			throws IOException {
 
 		ByteBuffer input = source.duplicate();
@@ -211,8 +210,8 @@ public final class SSLExplorer {
 	 *
 	 * @see #explore(ByteBuffer)
 	 */
-	public final static SSLCapabilities explore(byte[] source,
-			int offset, int length) throws IOException {
+	public static SSLCapabilities explore(byte[] source,
+                                          int offset, int length) throws IOException {
 		ByteBuffer byteBuffer =
 				ByteBuffer.wrap(source, offset, length).asReadOnlyBuffer();
 		return explore(byteBuffer);
@@ -629,4 +628,3 @@ public final class SSLExplorer {
 		}
 	}
 }
-

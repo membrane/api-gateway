@@ -1,7 +1,5 @@
 package com.predic8.membrane.core.interceptor.oauth2;
 
-import com.predic8.membrane.core.interceptor.oauth2client.rf.FormPostGenerator;
-
 import java.util.function.Function;
 
 import static java.net.URLEncoder.encode;

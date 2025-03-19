@@ -15,7 +15,6 @@
 package com.predic8.membrane.core.http;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 

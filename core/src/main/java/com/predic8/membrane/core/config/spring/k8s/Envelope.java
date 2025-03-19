@@ -28,7 +28,7 @@ public class Envelope {
     String apiVersion;
     Metadata metadata;
     Object spec;
-    Map<String, Object> additionalProperties = new HashMap<>();
+    final Map<String, Object> additionalProperties = new HashMap<>();
 
     public void parse(Iterator<Event> events, BeanRegistry registry) {
         int state = 0;
@@ -81,7 +81,7 @@ public class Envelope {
         String name;
         String namespace;
         String uid;
-        Map additionalProperties = new HashMap();
+        final Map additionalProperties = new HashMap();
 
         public String getUid() {
             return uid;

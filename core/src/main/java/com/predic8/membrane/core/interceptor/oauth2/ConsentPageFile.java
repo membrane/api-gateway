@@ -36,8 +36,8 @@ public class ConsentPageFile {
 
     private String productName;
     private String logoUrl;
-    ConcurrentHashMap<String,String> scopesToDescriptions = new ConcurrentHashMap<>();
-    ConcurrentHashMap<String,String> claimsToDescriptions = new ConcurrentHashMap<>();
+    final ConcurrentHashMap<String,String> scopesToDescriptions = new ConcurrentHashMap<>();
+    final ConcurrentHashMap<String,String> claimsToDescriptions = new ConcurrentHashMap<>();
     private Map<String, Object> json;
 
 
@@ -47,7 +47,7 @@ public class ConsentPageFile {
             createDefaults();
             return;
         }
-        parseFile(getFromUrl(resolver.combine(router.getBaseLocation(),url)));
+        parseFile(getFromUrl(ResolverMap.combine(router.getBaseLocation(),url)));
     }
 
     private void parseFile(String consentPageFile) throws IOException {

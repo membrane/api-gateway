@@ -543,10 +543,10 @@ public class HttpClient implements AutoCloseable {
     }
 
     private String getUpgradeProtocol(Request req) {
-        if (!req.getHeader().getValues(new HeaderName(Header.CONNECTION)).stream()
+        if (req.getHeader().getValues(new HeaderName(Header.CONNECTION)).stream()
                 .flatMap(v -> Arrays.stream(v.getValue().toLowerCase().split(",")))
                 .map(v -> v.trim().toLowerCase())
-                .anyMatch(v -> v.equals("upgrade")))
+                .noneMatch(v -> v.equals("upgrade")))
             return null;
         return req.getHeader().getFirstValue("Upgrade");
     }

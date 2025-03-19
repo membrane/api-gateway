@@ -27,8 +27,8 @@ import static java.lang.String.format;
 
 public class ResponseHeaderValidator {
 
-    OpenAPI api;
-    ApiResponse apiResponse;
+    final OpenAPI api;
+    final ApiResponse apiResponse;
 
     public ResponseHeaderValidator(OpenAPI api, ApiResponse apiResponse) {
         this.api = api;

@@ -18,13 +18,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.oauth2.ClaimRenamer;
 import com.predic8.membrane.core.interceptor.oauth2.Client;
 import com.predic8.membrane.core.interceptor.oauth2.OAuth2Util;
 import com.predic8.membrane.core.interceptor.oauth2.parameter.ClaimsParameter;
 import com.predic8.membrane.core.resolver.ResolverMap;
-import com.predic8.membrane.core.resolver.ResourceRetrievalException;
 import org.apache.commons.io.IOUtils;
 import com.predic8.membrane.annot.Required;
 import org.jetbrains.annotations.NotNull;
@@ -35,7 +33,6 @@ import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.util.List;
 import java.util.Map;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 @MCElement(name="membrane")

@@ -18,8 +18,6 @@ import com.predic8.membrane.core.interceptor.authentication.session.SessionManag
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Named;
 
-import java.util.Arrays;
-import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.stream.Stream;
@@ -28,7 +26,7 @@ public class EmptyEndpointOpenidTest extends RequestParameterizedTest{
     @BeforeEach
     public void setUp() throws Exception{
         super.setUp();
-        oasit.runUntilGoodAuthOpenidRequest().run();
+        OAuth2AuthorizationServerInterceptorBase.runUntilGoodAuthOpenidRequest().run();
         exc = OAuth2AuthorizationServerInterceptorNormalTest.getMockEmptyEndpointRequest().call();
     }
 
@@ -50,7 +48,7 @@ public class EmptyEndpointOpenidTest extends RequestParameterizedTest{
         return new Callable<>() {
             @Override
             public Object call() throws Exception {
-                SessionManager.Session s = oasit.oasi.getSessionManager().getSession(exc);
+                SessionManager.Session s = OAuth2AuthorizationServerInterceptorBase.oasi.getSessionManager().getSession(exc);
                 Map<String, String> userAttributes = s.getUserAttributes();
                 synchronized (userAttributes) {
                     userAttributes.put("consent", "false");

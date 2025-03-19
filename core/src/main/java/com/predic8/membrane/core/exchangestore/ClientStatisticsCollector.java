@@ -22,7 +22,7 @@ public class ClientStatisticsCollector implements ClientStatistics {
 	private long minDuration = Long.MAX_VALUE;
 	private long maxDuration = Long.MIN_VALUE;
 	private long total;
-	private String client;
+	private final String client;
 
 	public ClientStatisticsCollector(String client) {
 

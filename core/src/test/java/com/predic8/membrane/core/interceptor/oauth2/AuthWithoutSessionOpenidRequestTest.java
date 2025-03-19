@@ -17,10 +17,7 @@ import com.predic8.membrane.core.interceptor.authentication.session.SessionManag
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Named;
 
-import java.util.Arrays;
-import java.util.Collection;
 import java.util.Map;
-import java.util.concurrent.Callable;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
@@ -46,7 +43,7 @@ public class AuthWithoutSessionOpenidRequestTest extends RequestParameterizedTes
 
     private static Supplier<Object> sessionHasNoClaimsParam() {
         return () -> {
-            SessionManager.Session s = oasit.oasi.getSessionManager().getOrCreateSession(exc);
+            SessionManager.Session s = OAuth2AuthorizationServerInterceptorBase.oasi.getSessionManager().getOrCreateSession(exc);
             Map<String, String> userAttributes = s.getUserAttributes();
             synchronized (userAttributes) {
                 return !userAttributes.containsKey(ParamNames.CLAIMS);

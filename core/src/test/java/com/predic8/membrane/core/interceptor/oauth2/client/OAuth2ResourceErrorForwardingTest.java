@@ -43,8 +43,8 @@ public class OAuth2ResourceErrorForwardingTest {
     protected final BrowserMock browser = new BrowserMock();
     private final int limit = 500;
     protected HttpRouter mockAuthServer;
-    protected ObjectMapper om = new ObjectMapper();
-    int serverPort = 3062;
+    protected final ObjectMapper om = new ObjectMapper();
+    final int serverPort = 3062;
     private final String serverHost = "localhost";
     private final int clientPort = 31337;
     private HttpRouter oauth2Resource;
@@ -102,7 +102,7 @@ public class OAuth2ResourceErrorForwardingTest {
         assertEquals("This is a demo error.", errorDescription.get());
 
         assertEquals(200, exc.getResponse().getStatusCode());
-        
+
         assertEquals("{\"errorsCaptured\":true}", exc.getResponse().getBodyAsStringDecoded());
     }
 

@@ -17,6 +17,7 @@ import com.predic8.membrane.core.interceptor.oauth2.parameter.ClaimsParameter;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.HashSet;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -27,8 +28,7 @@ public class ClaimsParameterTest {
 
     private HashSet<String> createSupportedClaims(String... claims){
         HashSet<String> supportedClaims = new HashSet<>();
-        for(String claim : claims)
-            supportedClaims.add(claim);
+        supportedClaims.addAll(Arrays.asList(claims));
         return supportedClaims;
     }
 

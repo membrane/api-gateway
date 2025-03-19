@@ -21,7 +21,6 @@ import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.util.*;
-import com.predic8.membrane.test.*;
 import org.jetbrains.annotations.*;
 import org.junit.jupiter.api.*;
 
@@ -42,7 +41,7 @@ class OpenAPIInterceptorTest {
     OpenAPISpec specInfo3Servers;
     OpenAPISpec specCustomers;
 
-    Exchange exc = new Exchange(null);
+    final Exchange exc = new Exchange(null);
     OpenAPIInterceptor interceptor1Server;
     OpenAPIInterceptor interceptor3Server;
 

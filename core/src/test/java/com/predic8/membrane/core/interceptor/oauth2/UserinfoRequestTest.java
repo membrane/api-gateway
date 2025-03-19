@@ -17,8 +17,6 @@ import com.predic8.membrane.core.exchange.Exchange;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Named;
 
-import java.util.Arrays;
-import java.util.Collection;
 import java.util.concurrent.Callable;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
@@ -29,7 +27,7 @@ public class UserinfoRequestTest extends RequestParameterizedTest {
     @BeforeEach
     public void setUp() throws Exception{
         super.setUp();
-        oasit.runUntilGoodTokenRequest().run();
+        OAuth2AuthorizationServerInterceptorBase.runUntilGoodTokenRequest().run();
         exc = OAuth2AuthorizationServerInterceptorNormalTest.getMockUserinfoRequest().call();
     }
 

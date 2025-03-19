@@ -25,7 +25,7 @@ import org.junit.jupiter.api.BeforeEach;
 
 class OpenAPIRecordTest {
 
-    Exchange get = new Exchange(null);
+    final Exchange get = new Exchange(null);
 
     @BeforeEach
     void setUp() {

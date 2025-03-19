@@ -15,7 +15,6 @@ package com.predic8.membrane.core.interceptor.apikey;
 
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.interceptor.apikey.extractors.ApiKeyExpressionExtractor;
 import com.predic8.membrane.core.interceptor.apikey.extractors.ApiKeyHeaderExtractor;
 import com.predic8.membrane.core.interceptor.apikey.extractors.ApiKeyQueryParamExtractor;

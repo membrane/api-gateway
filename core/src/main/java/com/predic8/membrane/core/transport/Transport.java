@@ -30,7 +30,7 @@ public abstract class Transport {
 	/**
 	 * SSL and Non-SSL are mixed here, maybe split that in future
 	 */
-	protected Set<IPortChangeListener> menuListeners = new HashSet<>();
+	protected final Set<IPortChangeListener> menuListeners = new HashSet<>();
 
 	private List<Interceptor> interceptors = new Vector<>();
 	private Router router;

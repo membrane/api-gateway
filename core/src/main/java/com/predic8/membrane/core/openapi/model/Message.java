@@ -55,7 +55,7 @@ public abstract class Message<T extends Body, S extends Message<T,S>> {
             }
         }
 
-        private Map<HeaderKey,String> fields = new HashMap<>();
+        private final Map<HeaderKey,String> fields = new HashMap<>();
 
         public void put(String key, String value) {
             fields.put(new HeaderKey(key),value);

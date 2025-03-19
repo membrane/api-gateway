@@ -18,7 +18,6 @@ import com.predic8.membrane.core.http.MimeType;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.authentication.session.SessionManager;
 import com.predic8.membrane.core.interceptor.oauth2.*;
-import com.predic8.membrane.core.interceptor.oauth2.OAuth2AuthorizationServerInterceptor;
 import com.predic8.membrane.core.interceptor.oauth2.parameter.ClaimsParameter;
 import com.predic8.membrane.core.interceptor.oauth2.request.NoResponse;
 import com.predic8.membrane.core.interceptor.oauth2.tokengenerators.JwtGenerator;
@@ -72,7 +71,7 @@ public class PasswordFlow extends TokenRequest {
         } catch (Exception e) {
             return OAuth2Util.createParameterizedJsonErrorResponse("error", "invalid_client");
         }
-        
+
         String grantTypes = client.getGrantTypes();
         if (!grantTypes.contains(getGrantType())) {
 			return OAuth2Util.createParameterizedJsonErrorResponse("error", "invalid_grant_type");
@@ -86,10 +85,10 @@ public class PasswordFlow extends TokenRequest {
         }
 
         exc.setResponse(getEarlyResponse());
-        
+
         return new NoResponse();
     }
-    
+
     private JwtGenerator.Claim[] getValidIdTokenClaims(SessionManager.Session session){
         ClaimsParameter cp = new ClaimsParameter(authServer.getClaimList().getSupportedClaims(),session.getUserAttributes().get(ParamNames.CLAIMS));
         ArrayList<JwtGenerator.Claim> claims = new ArrayList<>();
@@ -99,7 +98,7 @@ public class PasswordFlow extends TokenRequest {
         }
         return claims.toArray(new JwtGenerator.Claim[0]);
     }
-    
+
     private String createSignedIdToken(SessionManager.Session session, String username, Client client) throws JoseException {
         return getSignedIdToken(username, client, getValidIdTokenClaims(session));
     }

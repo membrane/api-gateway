@@ -21,7 +21,7 @@ import com.predic8.membrane.core.util.URIFactory;
 public abstract class EndpointProcessor {
 
     protected final OAuth2AuthorizationServerInterceptor authServer;
-    URIFactory uriFactory;
+    final URIFactory uriFactory;
 
     public abstract boolean isResponsible(Exchange exc);
     public abstract Outcome process(Exchange exc);

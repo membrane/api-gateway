@@ -46,9 +46,9 @@ public class OAuth2RedirectTest {
     static Router authorizationServerRouter;
     static Router oauth2ResourceRouter;
     static Router backendRouter;
-    static AtomicReference<String> firstUrlHit = new AtomicReference<>();
-    static AtomicReference<String> targetUrlHit = new AtomicReference<>();
-    static AtomicReference<String> interceptorChainHit = new AtomicReference<>();
+    static final AtomicReference<String> firstUrlHit = new AtomicReference<>();
+    static final AtomicReference<String> targetUrlHit = new AtomicReference<>();
+    static final AtomicReference<String> interceptorChainHit = new AtomicReference<>();
 
     @BeforeEach
     void init() throws Exception {

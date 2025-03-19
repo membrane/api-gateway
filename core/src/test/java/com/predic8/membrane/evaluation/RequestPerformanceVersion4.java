@@ -26,7 +26,7 @@ import com.predic8.membrane.core.http.Request;
 public class RequestPerformanceVersion4 {
 
 	private int bufferSize;
-	private byte[] buffer = new byte[1024];
+	private final byte[] buffer = new byte[1024];
 
 	@BeforeEach
 	public void setUp() throws Exception {
@@ -123,7 +123,7 @@ public class RequestPerformanceVersion4 {
 				}
 			}
 			String k = new String(buf, s, e - s);
-			if ("".equals(k))
+			if (k.isEmpty())
 				break;
 
 			s = ++e;

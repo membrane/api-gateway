@@ -22,7 +22,6 @@ import com.predic8.membrane.core.interceptor.templating.*;
 import com.predic8.membrane.core.proxies.AbstractServiceProxy.*;
 import com.predic8.membrane.core.transport.http.*;
 import com.predic8.membrane.core.util.*;
-import com.predic8.membrane.test.*;
 import org.hamcrest.*;
 import org.jetbrains.annotations.*;
 import org.junit.jupiter.api.*;

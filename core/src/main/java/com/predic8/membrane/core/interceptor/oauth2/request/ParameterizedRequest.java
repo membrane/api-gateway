@@ -31,8 +31,8 @@ import static com.predic8.membrane.core.util.URLParamUtil.DuplicateKeyOrInvalidF
 
 public abstract class ParameterizedRequest {
 
-    protected Exchange exc;
-    protected OAuth2AuthorizationServerInterceptor authServer;
+    protected final Exchange exc;
+    protected final OAuth2AuthorizationServerInterceptor authServer;
     protected Map<String,String> params;
 
     protected abstract Response checkForMissingParameters() throws Exception;

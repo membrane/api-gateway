@@ -106,7 +106,7 @@ import java.util.Random;
 @MCElement(name="faultMonitoringStrategy")
 public class FaultMonitoringStrategy extends AbstractXmlElement implements DispatchingStrategy {
 
-	private static Logger log = LoggerFactory.getLogger(FaultMonitoringStrategy.class.getName());
+	private static final Logger log = LoggerFactory.getLogger(FaultMonitoringStrategy.class.getName());
 
 	private double minFlawlessServerRatioForRoundRobin = 0.5d;
 

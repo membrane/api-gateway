@@ -50,7 +50,7 @@ public class OpenAPIPublisher {
     private final ObjectWriter ow = new ObjectMapper().writerWithDefaultPrettyPrinter();
     private final ObjectMapper omYaml = ObjectMapperFactory.createYaml();
 
-    protected Map<String, OpenAPIRecord> apis;
+    protected final Map<String, OpenAPIRecord> apis;
 
     public OpenAPIPublisher(Map<String, OpenAPIRecord> apis) throws IOException, ClassNotFoundException {
         this.apis = apis;

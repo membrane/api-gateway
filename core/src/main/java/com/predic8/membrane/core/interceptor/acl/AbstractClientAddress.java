@@ -20,7 +20,7 @@ import javax.xml.stream.XMLStreamReader;
 
 public abstract class AbstractClientAddress extends AbstractXmlElement {
 
-	protected Router router;
+	protected final Router router;
 	protected String schema;
 
 	public AbstractClientAddress(Router router) {
