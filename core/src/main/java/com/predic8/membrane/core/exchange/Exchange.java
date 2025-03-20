@@ -31,6 +31,11 @@ public class Exchange extends AbstractExchange {
 	public static final String HTTP_SERVLET_REQUEST = "membrane.servlet.request";
 	public static final String ALLOW_WEBSOCKET = "membrane.use.websocket";
 	public static final String ALLOW_TCP = "membrane.use.tcp";
+	/**
+	 * Please note that this is a relic from RFC7540 and has been removed in RFC9113. It is present for backward
+	 * compatibility (i.e. for Java's internal HTTP client).
+	 */
+	public static final String ALLOW_H2 = "membrane.use.h2";
 	public static final String TRACK_NODE_STATUS = "membrane.track.node.status";
 	public static final String SSL_CONTEXT = "membrane.ssl.context";
 	public static final String OAUTH2 = "membrane.oauth2";
