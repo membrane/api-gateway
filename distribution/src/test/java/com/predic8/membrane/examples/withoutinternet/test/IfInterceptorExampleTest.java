@@ -23,6 +23,7 @@ import java.util.*;
 import java.util.stream.*;
 
 import static io.restassured.RestAssured.*;
+import static io.restassured.filter.log.LogDetail.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class IfInterceptorExampleTest extends AbstractSampleMembraneStartStopTestcase {
@@ -56,6 +57,7 @@ public class IfInterceptorExampleTest extends AbstractSampleMembraneStartStopTes
 
                 case "POST":
                     given()
+                        .log().ifValidationFails(ALL)
                         .headers(parseHeader(headers))
                         .body(body)
                     .when()
@@ -81,7 +83,7 @@ public class IfInterceptorExampleTest extends AbstractSampleMembraneStartStopTes
                 Arguments.of("POST", "", "", "", 404, "Request method was POST."),
                 Arguments.of("GET", "", "", "?param1=value2", 404, "Query Parameter Given!"),
                 Arguments.of("GET", "X-Test-Header:foobar", "", "/", 404, "X-Test-Header contains 'bar'"),
-                Arguments.of("POST", "Content-Type:application/xml", "", "/", 404, ""),
+                Arguments.of("POST", "Content-Type:application/xml", "<foo/>", "/", 404, ""),
                 Arguments.of("POST", "Content-Type:application/json", "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.", "?param1=value1", 404, "Long body"),
                 Arguments.of("GET", "Content-Type:application/json", "", "?param1=value2", 404, "Status code changed")
         );
