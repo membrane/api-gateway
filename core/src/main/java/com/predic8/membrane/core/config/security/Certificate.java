@@ -14,10 +14,7 @@
 
 package com.predic8.membrane.core.config.security;
 
-import com.google.common.base.Objects;
-import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.annot.MCTextContent;
 
 @MCElement(name="certificate", mixed=true)
 public class Certificate extends Blob {

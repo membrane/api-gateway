@@ -17,7 +17,7 @@ import com.predic8.membrane.core.http.Message;
 
 public class TokenAuthorizationHeader {
 
-    protected String value;
+    protected final String value;
 
     public TokenAuthorizationHeader(Message msg) {
         value = msg.getHeader().getAuthorization();

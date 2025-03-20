@@ -27,8 +27,8 @@ import static com.predic8.membrane.core.openapi.validators.ValidationContext.Val
 
 public class PathParametersValidator {
 
-    OpenAPI api;
-    ValidationErrors errors = new ValidationErrors();
+    final OpenAPI api;
+    final ValidationErrors errors = new ValidationErrors();
 
     public PathParametersValidator(OpenAPI api) {
         this.api = api;

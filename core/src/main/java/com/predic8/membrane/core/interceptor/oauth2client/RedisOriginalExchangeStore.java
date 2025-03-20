@@ -22,7 +22,6 @@ import com.predic8.membrane.core.exchange.snapshots.AbstractExchangeSnapshot;
 import com.predic8.membrane.core.interceptor.session.Session;
 import com.predic8.membrane.core.util.RedisConnector;
 import redis.clients.jedis.Jedis;
-import redis.clients.jedis.JedisCluster;
 
 import java.io.IOException;
 
@@ -34,7 +33,7 @@ import java.io.IOException;
 public class RedisOriginalExchangeStore extends OriginalExchangeStore {
     private int maxBodySize = 100000;
     private String prefix;
-    private ObjectMapper objMapper;
+    private final ObjectMapper objMapper;
     private RedisConnector connector;
 
 

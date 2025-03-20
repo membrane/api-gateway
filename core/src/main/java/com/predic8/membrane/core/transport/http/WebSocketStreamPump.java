@@ -30,7 +30,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class WebSocketStreamPump extends StreamPump {
-    protected static Logger log = LoggerFactory.getLogger(WebSocketStreamPump.class.getName());
+    protected static final Logger log = LoggerFactory.getLogger(WebSocketStreamPump.class.getName());
 
     //pumpsToRight == true: from sender to recipient "sender -> recipient"
     public WebSocketStreamPump(InputStream in, OutputStream out, StreamPumpStats stats, String name, Proxy proxy, boolean pumpsToRight, Exchange originalExchange) {
@@ -60,7 +60,7 @@ public class WebSocketStreamPump extends StreamPump {
     WebSocketStreamPump otherStreamPump;
     private final boolean pumpsToRight;
     boolean connectionIsOpen = true;
-    WebSocketFrameAssembler frameAssembler;
+    final WebSocketFrameAssembler frameAssembler;
 
     @Override
     public void run() {

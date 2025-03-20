@@ -16,7 +16,6 @@ package com.predic8.membrane.core.interceptor;
 import com.predic8.membrane.core.*;
 import org.junit.jupiter.api.*;
 
-import java.util.ArrayList;
 import java.util.*;
 
 import static io.restassured.RestAssured.*;

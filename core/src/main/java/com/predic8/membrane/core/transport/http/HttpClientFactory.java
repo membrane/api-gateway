@@ -13,12 +13,10 @@
    limitations under the License. */
 package com.predic8.membrane.core.transport.http;
 
-import com.predic8.membrane.core.kubernetes.client.KubernetesClient;
 import com.predic8.membrane.core.transport.http.client.HttpClientConfiguration;
 import com.predic8.membrane.core.util.TimerManager;
 
 import javax.annotation.Nullable;
-import javax.validation.constraints.Null;
 import java.util.Objects;
 import java.util.WeakHashMap;
 

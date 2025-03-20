@@ -18,11 +18,11 @@ public class ApiKeySecurityScheme extends AbstractSecurityScheme {
     /**
      * Name of the header, query or cookie parameter
      */
-    public String parameterName;
+    public final String parameterName;
 
     public enum In {HEADER, QUERY, COOKIE, EXPRESSION}
 
-    public In in;
+    public final In in;
 
     /**
      * @param in   Location of the key

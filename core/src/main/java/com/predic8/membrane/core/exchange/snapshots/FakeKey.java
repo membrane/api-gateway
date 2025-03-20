@@ -19,7 +19,7 @@ import com.predic8.membrane.core.proxies.RuleKey;
 
 public class FakeKey implements RuleKey {
 
-    int port;
+    final int port;
 
     public FakeKey(int port) {
         this.port = port;

@@ -55,22 +55,22 @@ public class PrometheusInterceptor extends AbstractInterceptor {
     }
 
     private static class Context {
-        StringBuilder sb = new StringBuilder();
+        final StringBuilder sb = new StringBuilder();
 
-        List<StringBuilder> dynamic = new ArrayList<>();
+        final List<StringBuilder> dynamic = new ArrayList<>();
 
-        StringBuilder s1 = new StringBuilder();
-        StringBuilder s2 = new StringBuilder();
-        StringBuilder s3 = new StringBuilder();
-        StringBuilder s4 = new StringBuilder();
-        StringBuilder s5 = new StringBuilder();
-        StringBuilder s6 = new StringBuilder();
-        StringBuilder s7 = new StringBuilder();
-        StringBuilder s8 = new StringBuilder();
-        StringBuilder s9 = new StringBuilder();
-        StringBuilder s10 = new StringBuilder();
+        final StringBuilder s1 = new StringBuilder();
+        final StringBuilder s2 = new StringBuilder();
+        final StringBuilder s3 = new StringBuilder();
+        final StringBuilder s4 = new StringBuilder();
+        final StringBuilder s5 = new StringBuilder();
+        final StringBuilder s6 = new StringBuilder();
+        final StringBuilder s7 = new StringBuilder();
+        final StringBuilder s8 = new StringBuilder();
+        final StringBuilder s9 = new StringBuilder();
+        final StringBuilder s10 = new StringBuilder();
 
-        HashSet<String> seenRules = new HashSet<>();
+        final HashSet<String> seenRules = new HashSet<>();
 
         private StringBuilder getNew() {
             StringBuilder b = new StringBuilder();
@@ -323,10 +323,10 @@ public class PrometheusInterceptor extends AbstractInterceptor {
         sb.append("\n");
     }
 
-    ConcurrentHashMap<String, String> names = new ConcurrentHashMap<>();
+    final ConcurrentHashMap<String, String> names = new ConcurrentHashMap<>();
     // see https://prometheus.io/docs/concepts/data_model/
-    Pattern ILLEGAL_FIRST_CHAR = Pattern.compile("^[^a-zA-Z_:]");
-    Pattern ILLEGAL_CHARS = Pattern.compile("[^a-zA-Z0-9_:]");
+    final Pattern ILLEGAL_FIRST_CHAR = Pattern.compile("^[^a-zA-Z_:]");
+    final Pattern ILLEGAL_CHARS = Pattern.compile("[^a-zA-Z0-9_:]");
 
     private String prometheusCompatibleName(String name) {
         String result = names.get(name);

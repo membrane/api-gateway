@@ -47,7 +47,7 @@ public class OpenAPIPublisherInterceptorTest {
     OpenAPIRecordFactory openAPIRecordFactory;
     OpenAPIPublisherInterceptor interceptor;
     Map<String, OpenAPIRecord> records;
-    Exchange get = new Exchange(null);
+    final Exchange get = new Exchange(null);
 
     @BeforeEach
     void setUp() {

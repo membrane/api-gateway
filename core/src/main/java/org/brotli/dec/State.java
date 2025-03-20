@@ -20,7 +20,7 @@ final class State {
   short[] shortBuffer; // BitReader
 
   int[] intBuffer;  // BitReader
-  int[] rings;
+  final int[] rings;
   int[] blockTrees;
   int[] literalTreeGroup;
   int[] commandTreeGroup;

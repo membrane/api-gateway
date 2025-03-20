@@ -17,7 +17,6 @@ import com.predic8.membrane.core.interceptor.flow.*;
 import com.predic8.membrane.core.interceptor.log.*;
 import com.predic8.membrane.core.openapi.serviceproxy.*;
 import com.predic8.membrane.core.proxies.*;
-import com.predic8.membrane.test.*;
 import org.hamcrest.*;
 import org.jetbrains.annotations.*;
 import org.junit.jupiter.api.*;
@@ -29,7 +28,7 @@ import static java.util.Collections.*;
 
 public class OpenApiRewriteIntegrationTest {
 
-    private Router r = new HttpRouter();
+    private final Router r = new HttpRouter();
 
     @BeforeEach
     public void setUp() throws Exception {

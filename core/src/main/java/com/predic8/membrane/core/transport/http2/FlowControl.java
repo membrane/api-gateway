@@ -33,7 +33,7 @@ public class FlowControl {
     @GuardedBy("this")
     public long ourWindowPositionProcessed;
     @GuardedBy("this")
-    public int ourWindowSizeStep;
+    public final int ourWindowSizeStep;
 
 
     public FlowControl(int streamId, FrameSender sender, Settings ourSettings) {

@@ -13,10 +13,7 @@
    limitations under the License. */
 package com.predic8.membrane.core.config.security.acme;
 
-import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
-
-import java.util.Objects;
 
 /**
  * @description

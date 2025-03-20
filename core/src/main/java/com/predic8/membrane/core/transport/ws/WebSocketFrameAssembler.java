@@ -29,7 +29,7 @@ public class WebSocketFrameAssembler {
     final static int BUFFER_SIZE = 8192;
     private final Exchange originalExchange;
 
-    InputStream in;
+    final InputStream in;
 
     byte[] buffer = new byte[BUFFER_SIZE];
 

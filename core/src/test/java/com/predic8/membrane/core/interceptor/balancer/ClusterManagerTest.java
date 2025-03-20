@@ -20,7 +20,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class ClusterManagerTest {
 
-	private Balancer cm;
+	private final Balancer cm;
 
 	public ClusterManagerTest() {
 		cm = new Balancer();

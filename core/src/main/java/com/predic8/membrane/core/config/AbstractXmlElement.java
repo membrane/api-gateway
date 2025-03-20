@@ -26,7 +26,7 @@ import org.slf4j.LoggerFactory;
 
 public abstract class AbstractXmlElement implements XMLElement {
 
-	private static Logger log = LoggerFactory.getLogger(AbstractXmlElement.class
+	private static final Logger log = LoggerFactory.getLogger(AbstractXmlElement.class
 			.getName());
 
 	/**

@@ -22,11 +22,9 @@ import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.config.security.SSLParser;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Response;
-import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.transport.http.HttpClient;
-import com.predic8.membrane.core.transport.http.HttpServerHandler;
 import com.predic8.membrane.core.transport.http.client.HttpClientConfiguration;
 import com.predic8.membrane.core.transport.ssl.SSLContext;
 import com.predic8.membrane.core.transport.ssl.SSLExchange;
@@ -52,7 +50,7 @@ public class RouterIpResolverInterceptor implements SSLInterceptor {
     private final Logger LOG = LoggerFactory.getLogger(RouterIpResolverInterceptor.class);
 
     private List<String> routerIps = new ArrayList<>();
-    private ObjectMapper om = new ObjectMapper();
+    private final ObjectMapper om = new ObjectMapper();
     private HttpClientConfiguration httpClientConfiguration = new HttpClientConfiguration();
     private SSLParser sslParser;
     private HttpClient httpClient;

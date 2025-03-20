@@ -21,7 +21,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class SimpleXPathParserTest {
 
-	SimpleXPathParser p = new SimpleXPathParser();
+	final SimpleXPathParser p = new SimpleXPathParser();
 
 	@Test
 	public void valid1() {

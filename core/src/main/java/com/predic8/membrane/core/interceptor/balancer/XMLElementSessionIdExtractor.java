@@ -30,11 +30,11 @@ import com.predic8.membrane.core.http.Message;
 @MCElement(name="xmlSessionIdExtractor")
 public class XMLElementSessionIdExtractor extends AbstractSessionIdExtractor {
 
-	private static Logger log = LoggerFactory.getLogger(XMLElementSessionIdExtractor.class.getName());
+	private static final Logger log = LoggerFactory.getLogger(XMLElementSessionIdExtractor.class.getName());
 
 	private String localName;
 	private String namespace;
-	private XMLInputFactory fac = XMLInputFactory.newInstance();
+	private final XMLInputFactory fac = XMLInputFactory.newInstance();
 
 	@Override
 	public String getSessionId(Message msg) throws Exception {

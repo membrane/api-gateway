@@ -41,10 +41,10 @@ public class CookieOriginialExchangeStore extends OriginalExchangeStore {
     public static final String ORIGINAL_REQUEST_PREFIX = "_original_request_for_state_";
     private static final Logger log = LoggerFactory.getLogger(CookieOriginialExchangeStore.class);
 
-    long expiresAfterSeconds = 15 * 60;
+    final long expiresAfterSeconds = 15 * 60;
     String domain;
-    boolean httpOnly = true;
-    String sameSite = null;
+    final boolean httpOnly = true;
+    final String sameSite = null;
 
     private String originalRequestKeyNameInSession(String state) {
         return ORIGINAL_REQUEST_PREFIX + state;
@@ -91,7 +91,7 @@ public class CookieOriginialExchangeStore extends OriginalExchangeStore {
     public void store(Exchange exchange, Session session, String state, Exchange exchangeToStore) throws IOException {
         try {
             AbstractExchangeSnapshot trimmedAbstractExchangeSnapshot = getTrimmedAbstractExchangeSnapshot(exchangeToStore, 3000);
-            
+
             var r = trimmedAbstractExchangeSnapshot.getRule();
 
             String currentSessionCookieValue = originalRequestKeyNameInSession(state) + "=" + escapeForCookie(new ObjectMapper().writeValueAsString(trimmedAbstractExchangeSnapshot));

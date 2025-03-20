@@ -17,7 +17,6 @@
 package com.predic8.membrane.core.openapi.serviceproxy;
 
 import com.predic8.membrane.core.*;
-import com.predic8.membrane.test.*;
 import org.junit.jupiter.api.*;
 
 import java.util.*;

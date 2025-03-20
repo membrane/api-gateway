@@ -44,8 +44,8 @@ class OAuth2Test {
     static ServiceProxy jwtAuthProxy;
     static JwtAuthInterceptor jwtAuthInterceptor;
 
-    static String clientId = "abc";
-    static String clientSecret = "def";
+    static final String clientId = "abc";
+    static final String clientSecret = "def";
 
     @BeforeAll
     static void startup() throws Exception {

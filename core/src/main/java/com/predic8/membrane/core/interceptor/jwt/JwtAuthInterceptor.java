@@ -39,7 +39,7 @@ public class JwtAuthInterceptor extends AbstractInterceptor {
     public static final String ERROR_UNKNOWN_KEY = "JWT signed by unknown key";
     public static final String ERROR_VALIDATION_FAILED = "JWT validation failed";
 
-    ObjectMapper mapper = new ObjectMapper();
+    final ObjectMapper mapper = new ObjectMapper();
     JwtRetriever jwtRetriever;
     Jwks jwks;
     String expectedAud;

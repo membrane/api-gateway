@@ -18,7 +18,6 @@ package com.predic8.membrane.core.openapi.serviceproxy;
 
 import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.util.*;
-import com.predic8.membrane.test.*;
 import io.swagger.v3.oas.models.*;
 import org.jetbrains.annotations.*;
 import org.junit.jupiter.api.*;

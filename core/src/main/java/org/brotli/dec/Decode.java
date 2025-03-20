@@ -692,7 +692,7 @@ final class Decode {
     final int literalBlockType = s.rings[5];
     s.contextMapSlice = literalBlockType << LITERAL_CONTEXT_BITS;
     s.literalTreeIdx = (int) s.contextMap[s.contextMapSlice] & 0xFF;
-    final int contextMode = (int) s.contextModes[literalBlockType];
+    final int contextMode = s.contextModes[literalBlockType];
     s.contextLookupOffset1 = contextMode << 9;
     s.contextLookupOffset2 = s.contextLookupOffset1 + 256;
   }
@@ -1024,7 +1024,7 @@ final class Decode {
     if (s.cdBlockBits == -1) {
       initializeCompoundDictionary(s);
     }
-    int index = (int) s.cdBlockMap[address >>> s.cdBlockBits];
+    int index = s.cdBlockMap[address >>> s.cdBlockBits];
     while (address >= s.cdChunkOffsets[index + 1]) {
       index++;
     }
@@ -1126,10 +1126,10 @@ final class Decode {
           s.commandBlockLength--;
           BitReader.fillBitWindow(s);
           final int cmdCode = readSymbol(s.commandTreeGroup, s.commandTreeIdx, s) << 2;
-          final int insertAndCopyExtraBits = (int) CMD_LOOKUP[cmdCode];
-          final int insertLengthOffset = (int) CMD_LOOKUP[cmdCode + 1];
-          final int copyLengthOffset = (int) CMD_LOOKUP[cmdCode + 2];
-          s.distanceCode = (int) CMD_LOOKUP[cmdCode + 3];
+          final int insertAndCopyExtraBits = CMD_LOOKUP[cmdCode];
+          final int insertLengthOffset = CMD_LOOKUP[cmdCode + 1];
+          final int copyLengthOffset = CMD_LOOKUP[cmdCode + 2];
+          s.distanceCode = CMD_LOOKUP[cmdCode + 3];
           BitReader.fillBitWindow(s);
           {
             final int insertLengthExtraBits = insertAndCopyExtraBits & 0xFF;
@@ -1219,7 +1219,7 @@ final class Decode {
                 throw new BrotliRuntimeException("Negative distance"); // COV_NF_LINE
               }
             } else {
-              final int extraBits = (int) s.distExtraBits[distanceCode];
+              final int extraBits = s.distExtraBits[distanceCode];
               int bits;
               if (s.bitOffset + extraBits <= BitReader.BITNESS) {
                 bits = BitReader.readFewBits(s, extraBits);

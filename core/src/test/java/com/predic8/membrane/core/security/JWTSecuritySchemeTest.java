@@ -23,12 +23,9 @@ import org.jose4j.jws.*;
 import org.jose4j.jwt.*;
 import org.jose4j.lang.*;
 import org.junit.jupiter.api.*;
-import org.junit.jupiter.params.*;
-import org.junit.jupiter.params.provider.*;
 
 import java.util.*;
 
-import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 

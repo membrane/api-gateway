@@ -15,7 +15,6 @@
 package com.predic8.membrane.core.graphql;
 
 import com.predic8.membrane.core.graphql.model.*;
-import org.checkerframework.checker.units.qual.A;
 import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayInputStream;

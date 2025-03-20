@@ -25,7 +25,7 @@ import java.io.OutputStream;
 
 public class ByteStreamLogging {
 
-    static Logger log = LoggerFactory.getLogger(ByteStreamLogging.class);
+    static final Logger log = LoggerFactory.getLogger(ByteStreamLogging.class);
 
     public static void log(String name, int b){
         log(name, new byte[]{(byte)b});

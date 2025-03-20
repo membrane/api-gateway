@@ -92,7 +92,7 @@ public class PriorityTree {
     }
 
     private static StringBuilder toStringBuilder(StreamInfo node) {
-        return new StringBuilder(""+node.getStreamId() + " w" + node.getWeight() + " " + node.getState());
+        return new StringBuilder(node.getStreamId() + " w" + node.getWeight() + " " + node.getState());
     }
 
     private static StringBuilder fill(StringBuilder sb, int length) {
