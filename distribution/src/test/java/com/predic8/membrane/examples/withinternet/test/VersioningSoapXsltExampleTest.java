@@ -21,7 +21,7 @@ import java.io.*;
 
 import static io.restassured.RestAssured.*;
 
-public class XsltExampleTest extends DistributionExtractingTestcase {
+public class VersioningSoapXsltExampleTest extends DistributionExtractingTestcase {
 
     String request_old;
     String request_new;
