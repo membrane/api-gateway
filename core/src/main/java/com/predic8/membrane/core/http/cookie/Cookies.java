@@ -42,11 +42,11 @@ public final class Cookies {
 
 	// expected average number of cookies per request
 	public static final int INITIAL_SIZE=4;
-	ServerCookie scookies[]=new ServerCookie[INITIAL_SIZE];
-	int cookieCount=0;
-	boolean unprocessed=true;
+	ServerCookie[] scookies  = new ServerCookie[INITIAL_SIZE];
+	int cookieCount = 0;
+	boolean unprocessed = true;
 
-	MimeHeaders headers;
+	final MimeHeaders headers;
 
 	/**
 	 *  Construct a new cookie collection, that will extract
@@ -112,7 +112,7 @@ public final class Cookies {
 	 */
 	private ServerCookie addCookie() {
 		if( cookieCount >= scookies.length  ) {
-			ServerCookie scookiesTmp[]=new ServerCookie[2*cookieCount];
+			ServerCookie[] scookiesTmp =new ServerCookie[2*cookieCount];
 			System.arraycopy( scookies, 0, scookiesTmp, 0, cookieCount);
 			scookies=scookiesTmp;
 		}
@@ -131,47 +131,17 @@ public final class Cookies {
 
 	/** Add all Cookie found in the headers of a request.
 	 */
-	public  void processCookies( MimeHeaders headers ) {
-		if( headers==null ) {
-			return;// nothing to process
+	public void processCookies(MimeHeaders headers) {
+		if (headers == null) {
+			return; // nothing to process
 		}
-		// process each "cookie" header
-		int pos=0;
-		while( pos>=0 ) {
-			// Cookie2: version ? not needed
-			pos=headers.findHeader( "Cookie", pos );
-			// no more cookie headers headers
-			if( pos<0 ) {
-				break;
-			}
-
-			MessageBytes cookieValue=headers.getValue( pos );
-			if( cookieValue==null || cookieValue.isNull() ) {
-				pos++;
-				continue;
-			}
-
-			/*
-            if( cookieValue.getType() != MessageBytes.T_BYTES ) {
-                Exception e = new Exception();
-                log.warn("Cookies: Parsing cookie as String. Expected bytes.",
-                        e);
-                cookieValue.toBytes();
-            }
-			 */
-			if(log.isDebugEnabled()) {
-				log.debug("Cookies: Parsing b[]: " + cookieValue.toString());
-			}
-			ByteChunk bc=cookieValue.getByteChunk();
-			processCookieHeader( bc.getBytes(),
-					bc.getOffset(),
-					bc.getLength());
-			pos++;// search from the next position
-		}
+		headers.findHeaders("Cookie").stream()
+				.map(MessageBytes::getByteChunk)
+				.forEach(this::processCookieHeader);
 	}
 
 	// XXX will be refactored soon!
-	private static boolean equals( String s, byte b[], int start, int end) {
+	private static boolean equals(String s, byte[] b, int start, int end) {
 		int blen = end-start;
 		if (b == null || blen != s.length()) {
 			return false;
@@ -191,27 +161,8 @@ public final class Cookies {
 	 * defined in RFC2619
 	 * JVK
 	 */
-	private static final boolean isWhiteSpace(final byte c) {
-		// This switch statement is slightly slower
-		// for my vm than the if statement.
-		// Java(TM) 2 Runtime Environment, Standard Edition (build 1.5.0_07-164)
-		/*
-        switch (c) {
-        case ' ':;
-        case '\t':;
-        case '\n':;
-        case '\r':;
-        case '\f':;
-            return true;
-        default:;
-            return false;
-        }
-		 */
-		if (c == ' ' || c == '\t' || c == '\n' || c == '\r' || c == '\f') {
-			return true;
-		} else {
-			return false;
-		}
+	private static boolean isWhiteSpace(final byte c) {
+        return c == ' ' || c == '\t' || c == '\n' || c == '\r' || c == '\f';
 	}
 
 	/**
@@ -231,7 +182,7 @@ public final class Cookies {
 		byte[] buffer = bc.getBuffer();
 
 		while (src < end) {
-			if (buffer[src] == '\\' && src < end && buffer[src+1]  == '"') {
+			if (buffer[src] == '\\' && buffer[src + 1] == '"') {
 				src++;
 			}
 			buffer[dest] = buffer[src];
@@ -247,7 +198,10 @@ public final class Cookies {
 	 * RFC 2965
 	 * JVK
 	 */
-	protected final void processCookieHeader(byte bytes[], int off, int len){
+	private void processCookieHeader(ByteChunk bc) {
+		byte[] bytes = bc.getBytes();
+		int off = bc.getOffset();
+		int len = bc.getLength();
 		if( len<=0 || bytes==null ) {
 			return;
 		}
@@ -266,13 +220,7 @@ public final class Cookies {
 			isSpecial = false;
 			isQuoted = false;
 
-			// Skip whitespace and non-token characters (separators)
-			while (pos < end &&
-					(CookieSupport.isHttpSeparator((char) bytes[pos]) &&
-							!CookieSupport.ALLOW_HTTP_SEPARATORS_IN_V0 ||
-							CookieSupport.isV0Separator((char) bytes[pos]) ||
-							isWhiteSpace(bytes[pos])))
-			{pos++; }
+			pos += bc.followingBytesMatching(pos, Cookies::isWhitespaceOrNonTokenCharacter);
 
 			if (pos >= end) {
 				return;
@@ -289,7 +237,7 @@ public final class Cookies {
 			pos = nameEnd = getTokenEndPosition(bytes,pos,end,version,true);
 
 			// Skip whitespace
-			while (pos < end && isWhiteSpace(bytes[pos])) {pos++; }
+			pos += bc.followingBytesMatching(pos, Cookies::isWhiteSpace);
 
 
 			// Check for an '=' -- This could also be a name-only
@@ -298,10 +246,11 @@ public final class Cookies {
 			// skip to the name-only part.
 			if (pos < (end - 1) && bytes[pos] == '=') {
 
+				// Skip '='
+				pos++;
+
 				// Skip whitespace
-				do {
-					pos++;
-				} while (pos < end && isWhiteSpace(bytes[pos]));
+				pos += bc.followingBytesMatching(pos, Cookies::isWhitespaceOrNonTokenCharacter);
 
 				if (pos >= end) {
 					return;
@@ -379,14 +328,12 @@ public final class Cookies {
 			// in a good state.
 
 			// Skip whitespace
-			while (pos < end && isWhiteSpace(bytes[pos])) {pos++; }
+			pos += bc.followingBytesMatching(pos, Cookies::isWhiteSpace);
 
 
 			// Make sure that after the cookie we have a separator. This
 			// is only important if this is not the last cookie pair
-			while (pos < end && bytes[pos] != ';' && bytes[pos] != ',') {
-				pos++;
-			}
+			pos += bc.followingBytesMatching(pos, b -> (b != ';' && b != ','));
 
 			pos++;
 
@@ -460,9 +407,15 @@ public final class Cookies {
 					// Name Only
 					sc.getValue().setEmpty();
 				}
-				continue;
-			}
+            }
 		}
+	}
+
+	private static boolean isWhitespaceOrNonTokenCharacter(byte bytes) {
+		return CookieSupport.isHttpSeparator((char) bytes) &&
+				!CookieSupport.ALLOW_HTTP_SEPARATORS_IN_V0 ||
+				CookieSupport.isV0Separator((char) bytes) ||
+				isWhiteSpace(bytes);
 	}
 
 	/**
@@ -470,8 +423,8 @@ public final class Cookies {
 	 * token, with no separator characters in between.
 	 * JVK
 	 */
-	private static final int getTokenEndPosition(byte bytes[], int off, int end,
-			int version, boolean isName){
+	private static int getTokenEndPosition(byte[] bytes, int off, int end,
+                                           int version, boolean isName){
 		int pos = off;
 		while (pos < end &&
 				(!CookieSupport.isHttpSeparator((char)bytes[pos]) ||
@@ -492,7 +445,7 @@ public final class Cookies {
 	 * the position of the end quote. This escapes anything after a '\' char
 	 * JVK RFC 2616
 	 */
-	private static final int getQuotedValueEndPosition(byte bytes[], int off, int end){
+	private static int getQuotedValueEndPosition(byte[] bytes, int off, int end){
 		int pos = off;
 		while (pos < end) {
 			if (bytes[pos] == '"') {

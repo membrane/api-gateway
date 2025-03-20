@@ -15,9 +15,7 @@ package com.predic8.membrane.core.interceptor.acl.matchers.Cidr;
 
 import com.predic8.membrane.core.interceptor.acl.TypeMatcher;
 
-import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.nio.ByteBuffer;
 
 public class CidrMatcher implements TypeMatcher {
     @Override

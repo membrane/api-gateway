@@ -18,7 +18,6 @@ import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.resolver.ResolverMap;
 
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -77,10 +76,10 @@ public class WellknownFile {
     }
 
     private String baseOauth2Url(){
-        return resolver.combine(getOauth2Issuer() + "/","oauth2/");
+        return ResolverMap.combine(getOauth2Issuer() + "/","oauth2/");
     }
 
-    private void getValuesFromOasi() throws UnsupportedEncodingException {
+    private void getValuesFromOasi() {
         if(oasi == null)
             return;
 

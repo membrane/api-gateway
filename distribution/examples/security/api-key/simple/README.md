@@ -42,20 +42,20 @@ Key stores maintain API keys and their corresponding scopes through various meth
 ```
 
 ### Mandatory API Key Authentication
-This part of the configuration sets up an API on port `2000`, where providing an API key is mandatory. The setup allows API keys to be received either as HTTP headers or query parameters.  
-On successful authentication the request is routed to the destination server.
+This configuration enables mandatory API key authentication globally. It defines valid API keys and allows clients to provide their keys either via HTTP headers or query parameters. Upon successful authentication, requests are forwarded to the intended destination.
 
 ```xml
-<api port="2000">
-    <apiKey>
-       <keys>
-          <secret value="123" />
-       </keys>
-        <headerExtractor />
-        <queryParamExtractor />
-    </apiKey>
-    <target url="https://api.predic8.de"/>
-</api>
+<global>
+   <apiKey>
+      <keys>
+         <secret value="demokey" />
+         <secret value="aed8bcc4-7c83-44d5-8789-21e4024ac873" />
+         <secret value="abc123" />
+      </keys>
+      <headerExtractor />
+      <queryParamExtractor />
+   </apiKey>
+</global>
 ```
 ###  More Complex Examples
 See:

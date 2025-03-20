@@ -16,7 +16,6 @@ package com.predic8.membrane.core.config.security.acme;
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.interceptor.session.JwtSessionManager;
 import com.predic8.membrane.core.transport.http.client.HttpClientConfiguration;
 import org.joda.time.Duration;
 

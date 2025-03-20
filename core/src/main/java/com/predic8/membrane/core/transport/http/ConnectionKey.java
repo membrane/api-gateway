@@ -13,55 +13,22 @@
    limitations under the License. */
 package com.predic8.membrane.core.transport.http;
 
-import com.google.common.base.Objects;
 import com.predic8.membrane.core.transport.http.client.ProxyConfiguration;
 import com.predic8.membrane.core.transport.ssl.SSLProvider;
-import java.util.Arrays;
+
 import javax.annotation.Nullable;
 
-public class ConnectionKey {
+public record ConnectionKey (
     // SSLProvider and ProxyConfiguration do not override equals() or hashCode(), but this is OK, as only a few will exist and are used read-only
-
-    public final String host;
-    public final int port;
-    @Nullable
-    private final SSLProvider sslProvider;
-    @Nullable
-    public final String serverName;
-    @Nullable
-    public final ProxyConfiguration proxy;
-    @Nullable
-    private final SSLProvider proxySSLProvider;
+    String host,
+    int port,
+    @Nullable SSLProvider sslProvider,
+    @Nullable String serverName,
+    @Nullable ProxyConfiguration proxy,
+    @Nullable SSLProvider proxySSLProvider
     // 'applicationProtocols' is not part of the key, as HTTP/2 connections are never returned to the ConnectionManager
     // pool: They are shared using the Http2ClientPool instead.
-
-    public ConnectionKey(String host, int port, SSLProvider sslProvider, String serverName, ProxyConfiguration proxy,
-                         @Nullable SSLProvider proxySSLProvider) {
-        this.host = host;
-        this.port = port;
-        this.sslProvider = sslProvider;
-        this.serverName = serverName;
-        this.proxy = proxy;
-        this.proxySSLProvider = proxySSLProvider;
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hashCode(host, port, sslProvider, serverName, proxy, proxySSLProvider);
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        if (!(obj instanceof ConnectionKey) || obj == null)
-            return false;
-        ConnectionKey other = (ConnectionKey) obj;
-        return host.equals(other.host)
-                && port == other.port
-                && Objects.equal(sslProvider, other.sslProvider)
-                && Objects.equal(serverName, other.serverName)
-                && Objects.equal(proxy, other.proxy)
-                && Objects.equal(proxySSLProvider, other.proxySSLProvider);
-    }
+) {
 
     @Override
     public String toString() {

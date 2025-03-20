@@ -1,0 +1,40 @@
+<spring:beans xmlns="http://membrane-soa.org/proxies/1/"
+              xmlns:spring="http://www.springframework.org/schema/beans"
+              xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+              xsi:schemaLocation="http://www.springframework.org/schema/beans
+	                    http://www.springframework.org/schema/beans/spring-beans-4.2.xsd
+	                    http://membrane-soa.org/proxies/1/ http://membrane-soa.org/schemas/proxies-1.xsd">
+
+    <chainDef id="cors">
+        <request>
+            <setHeader name="Access-Control-Allow-Origin" value="*" />
+            <setHeader name="Access-Control-Allow-Methods" value="*" />
+            <setHeader name="Access-Control-Allow-Headers" value="*" />
+            <setHeader name="Access-Control-Allow-Credentials" value="*" />
+        </request>
+        <template>
+            CORS headers applied
+        </template>
+    </chainDef>
+
+
+    <router>
+
+        <global>
+            <log />
+        </global>
+
+        <api port="2000">
+            <chain ref="cors" />
+            <return statusCode="200"/>
+        </api>
+
+        <api port="2001">
+            <chain ref="cors" />
+            <return statusCode="404" />
+        </api>
+
+    </router>
+
+
+</spring:beans>

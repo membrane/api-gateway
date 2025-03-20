@@ -74,7 +74,7 @@ public class ClaimList {
     }
 
     private List<Scope> scopes = new ArrayList<>();
-    HashMap<String,HashSet<String>> scopesToClaims = new HashMap<>();
+    final HashMap<String,HashSet<String>> scopesToClaims = new HashMap<>();
 
     private String value;
     private HashSet<String> supportedClaims = new HashSet<>();

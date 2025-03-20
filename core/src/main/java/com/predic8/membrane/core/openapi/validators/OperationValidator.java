@@ -30,8 +30,8 @@ import static java.lang.String.*;
 
 public class OperationValidator {
 
-    OpenAPI api;
-    ValidationErrors errors = new ValidationErrors();
+    final OpenAPI api;
+    final ValidationErrors errors = new ValidationErrors();
 
     public OperationValidator(OpenAPI api) {
         this.api = api;

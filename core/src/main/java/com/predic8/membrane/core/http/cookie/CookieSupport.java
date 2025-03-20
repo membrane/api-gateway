@@ -152,7 +152,7 @@ public final class CookieSupport {
 	 * Returns true if the byte is a separator as defined by V0 of the cookie
 	 * spec.
 	 */
-	public static final boolean isV0Separator(final char c) {
+	public static boolean isV0Separator(final char c) {
 		if (c < 0x20 || c >= 0x7f) {
 			if (c != 0x09) {
 				throw new IllegalArgumentException(
@@ -192,7 +192,7 @@ public final class CookieSupport {
 	 * @throws IllegalArgumentException if a control character was supplied as
 	 *         input
 	 */
-	public static final boolean isHttpSeparator(final char c) {
+	public static boolean isHttpSeparator(final char c) {
 		if (c < 0x20 || c >= 0x7f) {
 			if (c != 0x09) {
 				throw new IllegalArgumentException(

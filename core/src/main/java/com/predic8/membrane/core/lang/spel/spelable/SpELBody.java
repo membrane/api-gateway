@@ -20,7 +20,7 @@ public class SpELBody {
     /**
      * Store message instead of body to be able to extract even zipped bodies
      */
-    Message message;
+    final Message message;
 
     public SpELBody(Message msg) {
         message = msg;

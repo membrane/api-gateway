@@ -15,8 +15,6 @@ package com.predic8.membrane.core.http;
 
 import com.predic8.membrane.core.interceptor.ExchangeStoreInterceptor;
 
-import java.io.IOException;
-
 /**
  * A {@link MessageObserver} may be registered on a HTTP {@link Message} and
  * will be called, when the message's body becomes fully known to Membrane.
@@ -32,18 +30,18 @@ import java.io.IOException;
  * {@link MessageObserver} will then write the body into permanent storage.
  */
 public interface MessageObserver {
-	public void bodyRequested(AbstractBody body);
+	void bodyRequested(AbstractBody body);
 
 	/**
 	 * Observes a piece of the body.
 	 * @param chunk
 	 */
-	public void bodyChunk(Chunk chunk);
+    void bodyChunk(Chunk chunk);
 
 	/**
 	 * Observes a piece of the body. Note that the buffer content may change after the method completes.
 	 */
-	public void bodyChunk(byte[] buffer, int offset, int length);
+    void bodyChunk(byte[] buffer, int offset, int length);
 
 	/**
 	 * Notification that the body has fully been received.
@@ -54,6 +52,6 @@ public interface MessageObserver {
 	 * <p>
 	 * This is the last event that will be fired on any MessageObserver.
 	 */
-	public void bodyComplete(AbstractBody body);
+    void bodyComplete(AbstractBody body);
 
 }

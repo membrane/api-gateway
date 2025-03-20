@@ -84,9 +84,10 @@ public class MessageSnapshot {
     }
 
     public Header convertHeader(){
-        Header result = new Header();
-        header.keySet().forEach(key -> result.add(key,header.get(key)));
-        return result;
+        return new Header(header.entrySet().stream()
+                .map(entry -> new HeaderField(entry.getKey(), entry.getValue()))
+                .toList()
+        );
     }
 
     public AbstractBody convertBody(){

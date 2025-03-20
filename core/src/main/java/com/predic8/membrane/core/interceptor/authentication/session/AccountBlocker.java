@@ -64,14 +64,14 @@ import com.predic8.membrane.core.interceptor.authentication.session.CleanupThrea
  */
 @MCElement(name="accountBlocker")
 public class AccountBlocker extends AbstractXmlElement implements Cleaner {
-	private static Logger log = LoggerFactory.getLogger(AccountBlocker.class.getName());
+	private static final Logger log = LoggerFactory.getLogger(AccountBlocker.class.getName());
 
 	private int blockWholeSystemAfter = 1000000;
 	private int afterFailedLogins = 5;
 	private long afterFailedLoginsWithin = Long.MAX_VALUE;
 	private long blockFor = 3600000;
 
-	private HashMap<String, Info> users = new HashMap<>();
+	private final HashMap<String, Info> users = new HashMap<>();
 
 	private class Info {
 		private final long tries[];

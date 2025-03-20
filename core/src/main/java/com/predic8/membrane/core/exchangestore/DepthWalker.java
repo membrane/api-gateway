@@ -22,7 +22,7 @@ import org.apache.commons.io.DirectoryWalker;
 
 class DepthWalker extends DirectoryWalker<File> {
 
-	int depth;
+	final int depth;
 
 	public DepthWalker(int depth) {
 		super();

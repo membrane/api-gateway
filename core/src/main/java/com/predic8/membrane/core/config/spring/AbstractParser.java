@@ -169,8 +169,7 @@ public abstract class AbstractParser extends AbstractSingleBeanDefinitionParser 
 	}
 
 	protected boolean isMembraneNamespace(String namespace) {
-		return MEMBRANE_BEANS_NAMESPACE.equals(namespace) ||
-				MEMBRANE_PROXIES_NAMESPACE.equals(namespace);
+		return MEMBRANE_PROXIES_NAMESPACE.equals(namespace);
 	}
 
 	protected void setProperty(BeanDefinitionBuilder builder, String propertyName, Object value) {

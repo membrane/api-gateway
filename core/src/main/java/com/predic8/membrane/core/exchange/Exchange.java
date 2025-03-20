@@ -25,6 +25,8 @@ import org.slf4j.*;
 import java.net.*;
 import java.util.*;
 
+import static java.util.stream.Collectors.toMap;
+
 public class Exchange extends AbstractExchange {
 
 	/* Exchange Properties */
@@ -45,9 +47,9 @@ public class Exchange extends AbstractExchange {
 	private String originalHostHeader = "";
 
 	private Connection targetConnection;
-	
+
 	private int[] nodeStatusCodes;
-	
+
 	private Exception[] nodeExceptions;
 
 	private long id;
@@ -163,23 +165,18 @@ public class Exchange extends AbstractExchange {
 	}
 
 	public Map<String, String> getStringProperties() {
-		Map<String, String> map = new HashMap<>();
-
-		for (Map.Entry<String, Object> e : properties.entrySet()) {
-			if (e.getValue() instanceof String) {
-				map.put(e.getKey(), (String) e.getValue());
-			}
-		}
-		return map;
+		return properties.entrySet().stream()
+				.filter(entry -> entry.getValue() instanceof String)
+				.collect(toMap(Map.Entry::getKey, e -> (String) e.getValue()));
 	}
-	
+
 	public void setNodeStatusCode(int tryCounter, int code){
 		if(nodeStatusCodes == null){
 			nodeStatusCodes = new int[getDestinations().size()];
 		}
 		nodeStatusCodes[tryCounter % getDestinations().size()] = code;
 	}
-	
+
 	public void setNodeException(int tryCounter, Exception e){
 		if(nodeExceptions == null){
 			nodeExceptions = new Exception[getDestinations().size()];

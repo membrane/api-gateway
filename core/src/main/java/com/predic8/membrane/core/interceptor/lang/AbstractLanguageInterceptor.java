@@ -37,7 +37,7 @@ abstract class AbstractLanguageInterceptor extends AbstractInterceptor implement
 
     /**
      * @description the language of the 'test' condition
-     * @default groovy
+     * @default SpEL
      * @example SpEL, groovy, jsonpath, xpath
      */
     @MCAttribute

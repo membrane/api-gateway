@@ -15,18 +15,18 @@ package com.predic8.membrane.core.interceptor.oauth2client.rf;
 
 import com.predic8.membrane.core.interceptor.oauth2.ParamNames;
 import com.predic8.membrane.core.interceptor.session.Session;
-import com.predic8.membrane.core.util.URLParamUtil;
 import org.jetbrains.annotations.NotNull;
 
 import java.math.BigInteger;
-import java.net.URLDecoder;
-import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.Optional;
 
 import static com.predic8.membrane.core.interceptor.session.SessionManager.SESSION_VALUE_SEPARATOR;
+import static com.predic8.membrane.core.util.URLParamUtil.DuplicateKeyOrInvalidFormStrategy.ERROR;
+import static com.predic8.membrane.core.util.URLParamUtil.parseQueryString;
+import static java.net.URLDecoder.decode;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 public class StateManager {
@@ -42,7 +42,7 @@ public class StateManager {
         if (state2 == null)
             throw new RuntimeException("No CSRF token.");
 
-        Map<String, String> param = URLParamUtil.parseQueryString(URLDecoder.decode(state2, UTF_8), URLParamUtil.DuplicateKeyOrInvalidFormStrategy.ERROR);
+        Map<String, String> param = parseQueryString(decode(state2, UTF_8), ERROR);
 
         if (!param.containsKey("security_token"))
             throw new RuntimeException("No CSRF token.");

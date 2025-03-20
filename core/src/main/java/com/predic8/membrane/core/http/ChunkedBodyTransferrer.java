@@ -20,7 +20,7 @@ import java.io.*;
 import static java.nio.charset.StandardCharsets.*;
 
 public class ChunkedBodyTransferrer extends AbstractBodyTransferrer {
-	OutputStream out;
+	final OutputStream out;
 
 	public ChunkedBodyTransferrer(OutputStream out) {
 		this.out = out;

@@ -27,7 +27,7 @@ import org.xml.sax.InputSource;
 
 public class RelocatorWADLTest {
 
-	NamespaceContext nsCtx = new NamespaceContext() {
+	final NamespaceContext nsCtx = new NamespaceContext() {
 		public String getNamespaceURI(String prefix) {
 			if (prefix.equals("wadl")) {
 				return "http://wadl.dev.java.net/2009/02";
@@ -48,7 +48,7 @@ public class RelocatorWADLTest {
 
 	private Relocator relocator;
 	private StringWriter writer;
-	private XPath xpath = XPathFactory.newInstance().newXPath();
+	private final XPath xpath = XPathFactory.newInstance().newXPath();
 
 	@BeforeEach
 	public void setUp() throws Exception {

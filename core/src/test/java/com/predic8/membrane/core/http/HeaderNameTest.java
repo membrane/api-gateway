@@ -19,7 +19,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class HeaderNameTest {
 
-    HeaderName hn = new HeaderName("Test-Header");
+    final HeaderName hn = new HeaderName("Test-Header");
 
     @Test
     void testEquals() {

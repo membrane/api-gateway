@@ -22,10 +22,9 @@ import java.io.IOException;
 import java.io.InputStream;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.junit.jupiter.api.Assertions.*;
 
 public class WebSocketFrameTest {
-    static int numberOfFrames = 100000;
+    static final int numberOfFrames = 100000;
 
     @Test
     public void testDynamicBuffer() throws Exception {
@@ -35,7 +34,7 @@ public class WebSocketFrameTest {
             int sentFrames = 0;
             boolean first = true;
 
-            byte[] frame = new WebSocketFrame(false, false, false, false, 2, true, new byte[4], new byte[8192 - 8 + 1]).toBytes();
+            final byte[] frame = new WebSocketFrame(false, false, false, false, 2, true, new byte[4], new byte[8192 - 8 + 1]).toBytes();
             int counter = 0;
 
             @Override

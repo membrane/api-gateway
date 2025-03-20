@@ -193,10 +193,10 @@ public class AcmeKubernetesStorageEngine implements AcmeSynchronizedStorageEngin
                     le.put("spec", spec);
                 }
                 String oldHolder = (String) spec.get("holderIdentity");
-                if (oldHolder != null && !"".equals(oldHolder)) {
+                if (oldHolder != null && !oldHolder.isEmpty()) {
                     // check expiry
                     String oldRenew = (String) spec.get("renewTime");
-                    if (oldRenew == null || "".equals(oldRenew))
+                    if (oldRenew == null || oldRenew.isEmpty())
                         throw new LeaseException("holder, but no renew time is set.");
                     try {
                         if (new Date().getTime() < parse(oldRenew).getTime())

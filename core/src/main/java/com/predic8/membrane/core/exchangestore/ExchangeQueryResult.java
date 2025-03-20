@@ -18,9 +18,9 @@ import com.predic8.membrane.core.exchange.AbstractExchange;
 import java.util.List;
 
 public class ExchangeQueryResult {
-    List<AbstractExchange> exchanges;
-    int count;
-    long lastModified;
+    final List<AbstractExchange> exchanges;
+    final int count;
+    final long lastModified;
 
     public ExchangeQueryResult(List<AbstractExchange> exchanges, int count, long lastModified) {
         this.exchanges = exchanges;

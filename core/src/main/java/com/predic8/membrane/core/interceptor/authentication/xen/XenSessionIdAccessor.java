@@ -19,7 +19,7 @@ import com.predic8.membrane.core.interceptor.Interceptor;
 import javax.xml.xpath.*;
 
 public class XenSessionIdAccessor implements SessionIdAccessor {
-    private XPathFactory xPathFactory = XPathFactory.newInstance();
+    private final XPathFactory xPathFactory = XPathFactory.newInstance();
 
     @Override
     public String getSessionId(Exchange exchange, Interceptor.Flow flow) {

@@ -51,7 +51,7 @@ public abstract class SessionManager {
     public static final String SESSION = "SESSION";
     public static final String SESSION_COOKIE_ORIGINAL = "SESSION_COOKIE_ORIGINAL";
 
-    protected String usernameKeyName = "username";
+    protected final String usernameKeyName = "username";
     protected long expiresAfterSeconds = 15 * 60;
     protected String domain;
     protected boolean httpOnly = false;
@@ -176,7 +176,7 @@ public abstract class SessionManager {
     private void dropRedundantCookieHeaders(Exchange exc) {
         Map<String, List<String>> setCookieHeaders = getAllRelevantSetCookieHeaders(exc)
                 .map(HeaderField::getValue)
-                .map(v -> new AbstractMap.SimpleEntry(v.split("=true")[0], Arrays.asList(v)))
+                .map(v -> new AbstractMap.SimpleEntry(v.split("=true")[0], List.of(v)))
                 .collect(Collectors.toMap(e -> (String)e.getKey(), e -> (List)e.getValue(), (a,b) -> Stream.concat(a.stream(),b.stream()).collect(Collectors.toList())));
 
         removeRedundantExpireCookieIfRefreshed(exc, setCookieHeaders);
@@ -303,7 +303,7 @@ public abstract class SessionManager {
 
 
     private Optional<Session> getSessionFromExchange(Exchange exc) {
-        return Optional.ofNullable((Session) exc.getProperty(SESSION));
+        return Optional.ofNullable(exc.getPropertyOrNull(SESSION, Session.class));
     }
 
     public List<String> createCookieAttributes(Exchange exc) {

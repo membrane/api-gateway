@@ -30,7 +30,7 @@ public abstract class Transport {
 	/**
 	 * SSL and Non-SSL are mixed here, maybe split that in future
 	 */
-	protected Set<IPortChangeListener> menuListeners = new HashSet<>();
+	protected final Set<IPortChangeListener> menuListeners = new HashSet<>();
 
 	private List<Interceptor> interceptors = new Vector<>();
 	private Router router;
@@ -60,6 +60,7 @@ public abstract class Transport {
 			interceptors.add(new ExchangeStoreInterceptor(router.getExchangeStore()));
 			interceptors.add(new DispatchingInterceptor());
 			interceptors.add(new ReverseProxyingInterceptor());
+			interceptors.add(router.getGlobalInterceptor());
 			interceptors.add(new UserFeatureInterceptor());
 			interceptors.add(new InternalRoutingInterceptor());
 			interceptors.add(new HTTPClientInterceptor());

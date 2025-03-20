@@ -87,8 +87,9 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
     protected final FlowController flowController;
     protected ExchangeStore exchangeStore = new LimitedMemoryExchangeStore();
     protected Transport transport;
-    protected ResolverMap resolverMap;
-    protected DNSCache dnsCache = new DNSCache();
+    protected GlobalInterceptor globalInterceptor = new GlobalInterceptor();
+    protected final ResolverMap resolverMap;
+    protected final DNSCache dnsCache = new DNSCache();
     protected final ExecutorService backgroundInitializer =
             newSingleThreadExecutor(new HttpServerThreadFactory("Router Background Initializer"));
     protected HotDeploymentThread hdt;
@@ -582,6 +583,14 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
         this.id = s;
     }
 
+    /**
+     * @description Sets a global chain that applies to all requests and responses.
+     */
+    @MCChildElement(order = 2)
+    public void setGlobalInterceptor(GlobalInterceptor globalInterceptor) {
+        this.globalInterceptor = globalInterceptor;
+    }
+
     public String getId() {
         return id;
     }
@@ -610,5 +619,9 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
 
     public FlowController getFlowController() {
         return flowController;
+    }
+
+    public GlobalInterceptor getGlobalInterceptor() {
+        return globalInterceptor;
     }
 }

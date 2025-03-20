@@ -17,7 +17,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 
 public class PlainBodyTransferrer extends AbstractBodyTransferrer {
-	OutputStream out;
+	final OutputStream out;
 
 	public PlainBodyTransferrer(OutputStream out) {
 		this.out = out;
@@ -30,7 +30,7 @@ public class PlainBodyTransferrer extends AbstractBodyTransferrer {
 
 	@Override
 	public void write(Chunk chunk) throws IOException {
-		out.write(chunk.getContent());
+		out.write(chunk.content());
 	}
 
 	@Override

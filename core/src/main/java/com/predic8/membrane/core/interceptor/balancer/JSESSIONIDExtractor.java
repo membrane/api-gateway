@@ -30,9 +30,9 @@ import com.predic8.membrane.core.http.Message;
 @MCElement(name="jSessionIdExtractor")
 public class JSESSIONIDExtractor extends AbstractSessionIdExtractor {
 
-	private static Logger log = LoggerFactory.getLogger(JSESSIONIDExtractor.class.getName());
+	private static final Logger log = LoggerFactory.getLogger(JSESSIONIDExtractor.class.getName());
 
-	Pattern pattern = Pattern.compile(".*JSESSIONID\\s*=([^;]*)");
+	final Pattern pattern = Pattern.compile(".*JSESSIONID\\s*=([^;]*)");
 
 	@Override
 	public String getSessionId(Message msg) throws Exception {
