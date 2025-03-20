@@ -35,6 +35,7 @@ import java.nio.*;
 import java.util.*;
 
 import static com.predic8.membrane.core.exchange.Exchange.*;
+import static com.predic8.membrane.core.http.Header.*;
 import static java.lang.Boolean.*;
 import static java.nio.charset.StandardCharsets.*;
 
@@ -80,6 +81,7 @@ public class HttpClient implements AutoCloseable {
 
     private static final String[] HTTP2_PROTOCOLS = new String[]{"h2"};
     private static final String[] HTTP1_PROTOCOLS = new String[]{};
+    private static volatile boolean infoOnHttp2Downgrade = true;
 
     public HttpClient() {
         this(null, null);
@@ -265,7 +267,7 @@ public class HttpClient implements AutoCloseable {
                         if (trackNodeStatus)
                             exc.setNodeStatusCode(counter, response.getStatusCode());
 
-                        newProtocol = upgradeProtocol(exc, response, newProtocol); // 3rd parameter is always null!
+                        newProtocol = upgradeProtocol(exc, response);
                     }
 
                     if (newProtocol != null) {
@@ -370,6 +372,24 @@ public class HttpClient implements AutoCloseable {
             return;
         if (upgradeProtocol.equalsIgnoreCase("tcp") && exc.getProperty(ALLOW_TCP) == TRUE)
             return;
+        if (upgradeProtocol.equalsIgnoreCase("h2c")) {
+            if (exc.getProperty(ALLOW_H2) == TRUE) {
+                // note that this has been deprecated by RFC9113 superseeding RFC7540, and therefore should not happen.
+                return;
+            }
+            // RFC750 section 3.2 specifies that servers not supporting this can respond "as though the Upgrade header
+            // field were absent". Therefore, we remove it.
+            if (infoOnHttp2Downgrade) {
+                infoOnHttp2Downgrade = false;
+                log.info("Your client sent a 'Connection: Upgrade' with 'Upgrade: h2c'. Please note that RFC7540 has "+
+                        "been superseeded by RFC9113, which removes this option. The header was and will be removed.");
+            }
+            exc.getRequest().getHeader().removeFields(UPGRADE);
+            exc.getRequest().getHeader().removeFields(HTTP2_SETTINGS);
+            exc.getRequest().getHeader().keepOnly(CONNECTION, value -> !value.equalsIgnoreCase(UPGRADE) && !value.equalsIgnoreCase(HTTP2_SETTINGS) );
+            return;
+        }
+
         throw new ProtocolUpgradeDeniedException(upgradeProtocol);
     }
 
@@ -421,7 +441,7 @@ public class HttpClient implements AutoCloseable {
         return HTTP1_PROTOCOLS;
     }
 
-    private String upgradeProtocol(Exchange exc, Response response, String newProtocol) {
+    private String upgradeProtocol(Exchange exc, Response response) {
         if (exc.getProperty(ALLOW_WEBSOCKET) == TRUE && isUpgradeToResponse(response, "websocket")) {
             log.debug("Upgrading to WebSocket protocol.");
             return "WebSocket";
@@ -431,7 +451,7 @@ public class HttpClient implements AutoCloseable {
             log.debug("Upgrading to TCP protocol.");
             return "TCP";
         }
-        return newProtocol;
+        return null;
     }
 
     // TODO Inline method
@@ -548,18 +568,15 @@ public class HttpClient implements AutoCloseable {
     }
 
     private String getUpgradeProtocol(Request req) {
-        if (req.getHeader().getValues(new HeaderName(Header.CONNECTION)).stream()
-                .flatMap(v -> Arrays.stream(v.getValue().toLowerCase().split(",")))
-                .map(v -> v.trim().toLowerCase())
-                .noneMatch(v -> v.equals("upgrade")))
+        if (req.getHeader().getSingleValues(CONNECTION).noneMatch(v -> v.equalsIgnoreCase(UPGRADE)))
             return null;
-        return req.getHeader().getFirstValue("Upgrade");
+        return req.getHeader().getFirstValue(UPGRADE);
     }
 
     private boolean isUpgradeToResponse(Response res, String protocol) {
         return res.getStatusCode() == 101 &&
-               "upgrade".equalsIgnoreCase(res.getHeader().getFirstValue(Header.CONNECTION)) &&
-               protocol.equalsIgnoreCase(res.getHeader().getFirstValue(Header.UPGRADE));
+               "upgrade".equalsIgnoreCase(res.getHeader().getFirstValue(CONNECTION)) &&
+               protocol.equalsIgnoreCase(res.getHeader().getFirstValue(UPGRADE));
     }
 
     private void handleConnectRequest(Exchange exc, Connection con) throws IOException, EndOfStreamException {

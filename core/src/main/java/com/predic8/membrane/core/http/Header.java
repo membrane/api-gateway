@@ -24,12 +24,15 @@ import org.slf4j.*;
 import java.io.*;
 import java.security.*;
 import java.util.*;
+import java.util.function.Predicate;
 import java.util.regex.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.util.HttpUtil.readLine;
 import static java.nio.charset.StandardCharsets.*;
+import static java.util.Arrays.stream;
 import static java.util.regex.Pattern.*;
 import static org.apache.commons.codec.binary.Base64.*;
 
@@ -109,6 +112,12 @@ public class Header {
 
 	public static final String X_HTTP_METHOD_OVERRIDE = "X-HTTP-Method-Override";
 
+	/**
+	 * Please note that this is a relic from RFC7540 and has been removed in RFC9113. It is present for backward
+	 * compatibility (i.e. for Java's internal HTTP client).
+	 */
+	public static final String HTTP2_SETTINGS = "HTTP2-Settings";
+
 	// Header field values
 	public static final String CHUNKED = "chunked";
 
@@ -138,7 +147,7 @@ public class Header {
 
 	public Header(String header) throws IOException, EndOfStreamException {
 		this(
-				Arrays.stream(header.split("\r?\n"))
+				stream(header.split("\r?\n"))
 						.filter(s -> !s.isEmpty())
 						.map(HeaderField::new)
 						.toList()
@@ -511,6 +520,18 @@ public class Header {
 			version = version * 10 + (c - '0');
 		}
 		return version;
+	}
+
+	public Stream<String> getSingleValues(String headerName) {
+		return getValues(new HeaderName(headerName)).stream()
+				.flatMap(v -> stream(v.getValue().split(",")))
+				.map(String::trim);
+	}
+
+	public void keepOnly(String headerName, Predicate<String> valueFilter) {
+		List<String> valuesToKeep = getSingleValues(headerName).filter(valueFilter).toList();
+		removeFields(headerName);
+		valuesToKeep.forEach(value -> add(headerName, value));
 	}
 
 }
