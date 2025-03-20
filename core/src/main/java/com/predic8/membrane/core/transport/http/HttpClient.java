@@ -222,7 +222,7 @@ public class HttpClient implements AutoCloseable {
             log.debug("try # {} to {}", counter, dest);
             HostColonPort target = init(exc, dest, adjustHostHeader);
             try {
-                Connection con = getConnection(exc, counter, target);
+                Connection con = getConnectionFromExchange(exc, counter, target);
                 boolean usingHttp2 = false;
 
                 SSLProvider sslProvider = getOutboundSSLProvider(exc, target);
@@ -393,7 +393,12 @@ public class HttpClient implements AutoCloseable {
         throw new ProtocolUpgradeDeniedException(upgradeProtocol);
     }
 
-    private static @org.jetbrains.annotations.Nullable Connection getConnection(Exchange exc, int counter, HostColonPort target) throws IOException {
+    /**
+     * E.g. for protocols like NTLM, an outbound TCP connection gets bound to an inbound TCP connection. This
+     * is realized by binding the TCP connection to the Exchange here, and binding it to the next Exchange in
+     * {@link HttpServerHandler}.
+     */
+    private static @org.jetbrains.annotations.Nullable Connection getConnectionFromExchange(Exchange exc, int counter, HostColonPort target) throws IOException {
         Connection con = null;
         if (counter == 0) {
             con = exc.getTargetConnection();
