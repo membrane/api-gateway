@@ -107,7 +107,7 @@ public abstract class AbstractBody {
 	 */
 	public byte[] getContent() throws IOException {
 		if (wasStreamed)
-			throw new IllegalStateException();
+			throw new IllegalStateException("Cannot read body after it was streamed.");
 		read();
 		byte[] content = new byte[getLength()];
 		int destPos = 0;
@@ -119,7 +119,7 @@ public abstract class AbstractBody {
 
 	public InputStream getContentAsStream() throws IOException {
 		if (wasStreamed)
-			throw new IllegalStateException();
+			throw new IllegalStateException("Cannot read body after it was streamed.");
 		read();
 		return new BodyInputStream(chunks);
 	}

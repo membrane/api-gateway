@@ -159,7 +159,7 @@ public class ChunkedBody extends AbstractBody {
 
     public InputStream getContentAsStream() {
         if (wasStreamed())
-            throw new IllegalStateException();
+            throw new IllegalStateException("Cannot read body after it was streamed.");
         if (!bodyObserved) {
             bodyObserved = true;
             for (MessageObserver observer : observers)
