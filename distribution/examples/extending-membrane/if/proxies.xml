@@ -8,30 +8,36 @@
 
         <api port="2000">
             <request>
-                <if test="headers['Content-Type'] == 'application/json'" language="SpEL">
-                    <groovy>println("JSON Request!")</groovy>
+                <if test="request.isJSON()" language="SpEL">
+                    <log message="JSON Request!"/>
                 </if>
                 <if test="jsonPath('$.name') != null" language="SpEL">
-                    <groovy>println("The JSON request contains the key 'name', and it is not null.")</groovy>
+                    <log message="The JSON request contains the key 'name', and it is not null."/>
                 </if>
-                <if test="jsonPath('$.name') == 'foo'" language="SpEL">
-                    <groovy>println("The JSON request contains the key 'name' with the value 'foo'.")</groovy>
+                <if test="$.name" language="jsonpath">
+                    <log message="The JSON request contains the key 'name' with the value 'foo'."/>
                 </if>
                 <if test="method == 'POST'" language="SpEL">
-                    <groovy>println("Request method was POST.")</groovy>
+                    <log message="Request method was POST."/>
                 </if>
                 <if test="params['param1'] == 'value2'" language="SpEL">
-                    <groovy>println("Query Parameter Given!")</groovy>
+                    <log message="Query Parameter Given!"/>
                 </if>
-                <if test="headers['X-Test-Header'] != null and headers['X-Test-Header'] matches '.*bar.*'" language="SpEL">
-                    <groovy>println("X-Test-Header contains 'bar'")</groovy>
+                <if test="headers['X-Test-Header'] != null and headers['X-Test-Header'] matches '.*bar.*'">
+                    <log message="X-Test-Header contains 'bar'"/>
                 </if>
-                <if test="request.getBody.getLength gt 64" language="SpEL">
-                    <groovy>println("Long body")</groovy>
+<!--                <if test="request.getBody.getLength gt 64">-->
+<!--                    <log message="Long body"/>-->
+<!--                </if>-->
+                <if test="request.isXML()">
+                    <log message="XML Request!"/>
+                    <if test="//foo" language="xpath">
+                        <log message="Has foo element!"/>
+                    </if>
                 </if>
             </request>
             <response>
-                <if test="statusCode matches '[45]\d\d'" language="spel">
+                <if test="statusCode matches '[45]\d\d'">
                     <template pretty="yes" contentType="application/json">
                         {
                         "type": "https://membrane-api.io/error/",
@@ -40,9 +46,11 @@
                         }
                     </template>
                 </if>
-                <if test="statusCode == 302" language="SpEL">
-                    <groovy>println("Status code changed")
-                        exc.getResponse().setStatusCode(404)</groovy>
+                <if test="statusCode == 302">
+                    <groovy>
+                        println("Status code changed")
+                        exc.getResponse().setStatusCode(404) // Changing it!
+                    </groovy>
                 </if>
             </response>
 
