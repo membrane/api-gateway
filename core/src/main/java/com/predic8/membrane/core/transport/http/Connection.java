@@ -32,7 +32,7 @@ import static com.predic8.membrane.core.transport.http.ByteStreamLogging.wrapCon
 import static com.predic8.membrane.core.util.TextUtil.*;
 
 /**
- * A {@link Connection} is an outbound TCP/IP connection, possibly managed
+ * A {@link Connection} is an outbound TCP/IP (with or without TLS) connection, possibly managed
  * by a {@link ConnectionManager}.
  * <p>
  * It is symbiotic to an {@link Exchange} during the exchange's HTTP client
@@ -44,11 +44,14 @@ import static com.predic8.membrane.core.util.TextUtil.*;
  * {@link MessageObserver} on the {@link Response} to get notified when the HTTP
  * response body has fully been read and it should deassociate itself from the
  * exchange.
+ * <p>
+ * See {@link ByteStreamLogging} on how to enable traffic logging.
  */
 public class Connection implements Closeable, MessageObserver, NonRelevantBodyObserver {
 
 	private static final Logger log = LoggerFactory.getLogger(Connection.class.getName());
 	private static volatile ThreadLocal<Random> random = ByteStreamLogging.isLoggingEnabled() ? new ThreadLocal<>() : null;
+	private static int BUFFER_SIZE = getDefaultBufferSize();
 
 	public final ConnectionManager mgr;
 	public final String host;
@@ -111,17 +114,25 @@ public class Connection implements Closeable, MessageObserver, NonRelevantBodyOb
 
 		log.debug("Opened connection on localPort: {}", con.socket.getLocalPort());
 
-		//Creating output stream before input stream is suggested.
+		setupStreams(con);
+		return con;
+	}
+
+	private static void setupStreams(Connection con) throws IOException {
 		if (ByteStreamLogging.isLoggingEnabled()) {
 			String connectionName = chooseNewConnectionName();
-			con.out = new BufferedOutputStream(wrapConnectionOutputStream(con.socket.getOutputStream(), connectionName + " out"), 2048);
-			con.in = new BufferedInputStream(wrapConnectionInputStream(con.socket.getInputStream(), connectionName + " in"), 2048);
+			con.out = new BufferedOutputStream(wrapConnectionOutputStream(con.socket.getOutputStream(), connectionName + " out"), BUFFER_SIZE);
+            con.in = new BufferedInputStream(wrapConnectionInputStream(con.socket.getInputStream(), connectionName + " in"), BUFFER_SIZE);
 		} else {
-			con.out = new BufferedOutputStream(con.socket.getOutputStream(), 2048);
-			con.in = new BufferedInputStream(con.socket.getInputStream(), 2048);
+			con.out = new BufferedOutputStream(con.socket.getOutputStream(), BUFFER_SIZE);
+			con.in = new BufferedInputStream(con.socket.getInputStream(), BUFFER_SIZE);
 		}
+	}
 
-		return con;
+	private static int getDefaultBufferSize() {
+		if (System.getProperty("membrane.httpclient.buffer.size") != null)
+			return Integer.parseInt(System.getProperty("membrane.httpclient.buffer.size"));
+		return 2048;
 	}
 
 	private static String chooseNewConnectionName() {
