@@ -14,8 +14,16 @@
 
 package com.predic8.membrane.core.cli;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import com.fasterxml.jackson.dataformat.yaml.YAMLParser;
 import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.config.spring.k8s.Envelope;
+import com.predic8.membrane.core.config.spring.k8s.YamlLoader;
 import com.predic8.membrane.core.exceptions.*;
+import com.predic8.membrane.core.kubernetes.BeanCache;
+import com.predic8.membrane.core.kubernetes.BeanDefinition;
+import com.predic8.membrane.core.kubernetes.client.WatchAction;
 import com.predic8.membrane.core.openapi.serviceproxy.*;
 import com.predic8.membrane.core.resolver.*;
 import org.apache.commons.cli.*;
@@ -59,11 +67,11 @@ public class RouterCLI {
 
     private static @NotNull Router getRouter(MembraneCommandLine commandLine) {
         try {
-            if (commandLine.getCommand().getName().equals("oas")) {
-                return initRouterByOpenApiSpec(commandLine);
-            } else {
-                return initRouterByConfig(commandLine);
-            }
+            return switch (commandLine.getCommand().getName()) {
+                case "oas" -> initRouterByOpenApiSpec(commandLine);
+                case "yaml" -> initRouterByYAML(commandLine);
+                default -> initRouterByConfig(commandLine);
+            };
         } catch (InvalidConfigurationException e) {
             log.error("Fatal error: {}", concatMessageAndCauseMessages(e));
         }
@@ -79,6 +87,34 @@ public class RouterCLI {
         Router router = new HttpRouter();
         router.getRuleManager().addProxyAndOpenPortIfNew(getApiProxy(commandLine));
         router.init();
+        return router;
+    }
+
+    private static Router initRouterByYAML(MembraneCommandLine commandLine) throws Exception {
+        String location = commandLine.getCommand().getOptionValue("l");
+        var fileReader = new FileReader(location);
+
+        var router = new HttpRouter();
+        router.setBaseLocation(location);
+        router.setHotDeploy(false);
+        router.start();
+
+        var beanCache = new BeanCache(router);
+        beanCache.start();
+
+        YAMLParser parser = new YAMLFactory().createParser(new File(location));
+        var om = new ObjectMapper();
+        while (!parser.isClosed()) {
+            Map<?, ?> m = om.readValue(parser, Map.class);
+            Map<Object, Object> meta = (Map<Object, Object>) m.get("metadata");
+
+            // fake UID
+            meta.put("uid", location + "-" + meta.get("name"));
+
+            beanCache.handle(WatchAction.ADDED, m);
+            parser.nextToken();
+        }
+
         return router;
     }
 
