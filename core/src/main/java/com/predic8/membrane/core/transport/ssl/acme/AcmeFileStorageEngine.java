@@ -293,7 +293,7 @@ public class AcmeFileStorageEngine implements AcmeSynchronizedStorageEngine {
                     return false;
                 }
                 if (Long.parseLong(lines.get(1)) > System.currentTimeMillis())
-                    return false;
+                    return false; // not yet expired => cannot acquire
                 Files.delete(f.toPath());
             } catch (IOException e) {
                 return false;
@@ -318,8 +318,8 @@ public class AcmeFileStorageEngine implements AcmeSynchronizedStorageEngine {
                 return false;
             if (!lines.get(0).equals(id))
                 return false;
-            if (Long.parseLong(lines.get(1)) > System.currentTimeMillis())
-                return false;
+            if (Long.parseLong(lines.get(1)) < System.currentTimeMillis())
+                return false; // expired => cannot prolong
             Files.write(f.toPath(), ImmutableList.of(id, "" + (System.currentTimeMillis() + durationMillis)), StandardOpenOption.TRUNCATE_EXISTING);
             return true;
         } catch (IOException e) {
