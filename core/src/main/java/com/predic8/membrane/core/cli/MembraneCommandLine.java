@@ -16,6 +16,7 @@ package com.predic8.membrane.core.cli;
 import org.apache.commons.cli.*;
 import org.jetbrains.annotations.*;
 
+import static com.predic8.membrane.core.util.OSUtil.isWindows;
 import static org.apache.commons.cli.Option.*;
 
 public class MembraneCommandLine {
@@ -33,13 +34,16 @@ public class MembraneCommandLine {
     }
 
     private static @NotNull CliCommand getRootNamespace(Options rootOptions) {
-        return new CliCommand("membrane.sh", "Membrane Service Proxy") {{
+        String ext = isWindows() ? "cmd" : "sh";
+        return new CliCommand("membrane." + ext, "Membrane Service Proxy") {{
             setOptions(rootOptions);
 
-            addExample("Start gateway configured from OpenAPI file",
-                    "membrane.sh oas -l conf/fruitshop-api.yml")
+            addExample("Start gateway with its default configuration file in conf/proxies.xml",
+                "membrane." + ext)
+                    .addExample("Start gateway configured from OpenAPI file",
+                            "membrane." + ext + " oas -l conf/fruitshop-api.yml")
                     .addExample("Start gateway configured from OpenAPI URL and validate requests",
-                            "membrane.sh oas -v -l https://api.predic8.de/shop/v2/api-docs");
+                            "membrane." + ext + " oas -v -l https://api.predic8.de/shop/v2/api-docs");
 
             addSubcommand(new CliCommand("start", " (Default) Same function as command omitted. Start gateway with configuration from proxies.xml") {{
                 setOptions(rootOptions);
