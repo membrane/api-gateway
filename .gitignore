@@ -13,7 +13,6 @@ _*.swp
 *.eml
 *.idea
 /.m2
-/.run
 
 # /annot/
 /annot/.classpath
