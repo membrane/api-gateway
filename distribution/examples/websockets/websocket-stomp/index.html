@@ -32,8 +32,6 @@ Messages:
 			};
 
 			exampleSocket.onmessage = (event) => {
-				console.log(event);
-				console.log(event.data);
 				$("#messages").append("<p>" + event.data + "</p>");
 			};
 
@@ -45,29 +43,6 @@ Messages:
 				console.log(event);
 			}
 
-/*
-			var client = Stomp.client("wss://localhost:4443/");
-
-			client.debug = function(str) {
-				$("#debug").append(str + "\n");
-			};
-
-			console.log("connecting...");
-			client.connect("system", "manager", function (frame) {
-				console.log("connected.");
-				client.subscribe("/queue/foo", function (msg) {
-					$("#messages").append("<p>" + msg.body + "</p>");
-				});
-			}, function () {
-				// connect failed
-				console.log("disconnecting...");
-				client.disconnect(function() {
-					console.log("disconnected.");
-					window.setTimeout(connectNow, 1000);
-				});
-			});
-
- */
 		};
 		connectNow();
 	});

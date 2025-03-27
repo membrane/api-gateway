@@ -51,6 +51,14 @@ public class AdminApiInterceptor extends AbstractInterceptor {
 
     private static final ObjectMapper om = new ObjectMapper();
 
+    private MemoryWatcher memoryWatcher = new MemoryWatcher();
+    private WebSocketConnectionCollection connections = new WebSocketConnectionCollection();
+
+    @Override
+    public void init() {
+        memoryWatcher.init(router.getTimerManager(), connections);
+    }
+
     @Override
     public Outcome handleRequest(Exchange exc) {
         try {
@@ -61,6 +69,8 @@ public class AdminApiInterceptor extends AbstractInterceptor {
                 return handleApis(exc);
             } else if (uri.matches(".*/calls.*")) {
                 return handleCalls(exc);
+            } else if (uri.matches(".*/ws.*")) {
+                return new AdminApiObserver().handle(exc, connections);
             } else if (uri.matches(".*/exchange/\\d*")) {
                 Map<String, String> params = matchTemplate(".*/exchange/{id}", uri);
                 return handleExchangeDetails(exc, params.get("id"));
