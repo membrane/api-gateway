@@ -24,6 +24,7 @@ import org.slf4j.*;
 import javax.net.ssl.*;
 import java.io.*;
 import java.net.*;
+import java.util.Random;
 import java.util.concurrent.atomic.*;
 
 import static com.predic8.membrane.core.util.StringUtil.truncateAfter;
@@ -66,8 +67,9 @@ public class HttpServerHandler extends AbstractHttpHandler implements Runnable {
 			showSSLExceptions = false;
 		}
 		log.debug("New ServerThread created. {}", counter.incrementAndGet());
-		srcIn = new BufferedInputStream(sourceSocket.getInputStream(), 2048);
-		srcOut = new BufferedOutputStream(sourceSocket.getOutputStream(), 2048);
+		String c = "s-" + new Random().nextInt();
+		srcIn = new BufferedInputStream(ByteStreamLogging.wrapConnectionInputStream(sourceSocket.getInputStream(), c + " in"), 2048);
+		srcOut = new BufferedOutputStream(ByteStreamLogging.wrapConnectionOutputStream(sourceSocket.getOutputStream(), c + " out"), 2048);
 		sourceSocket.setSoTimeout(endpointListener.getTransport().getSocketTimeout());
 		sourceSocket.setTcpNoDelay(endpointListener.getTransport().isTcpNoDelay());
 	}

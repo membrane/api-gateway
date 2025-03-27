@@ -6,6 +6,9 @@
         </Console>
     </Appenders>
     <Loggers>
+<!--        <Logger name="com.predic8.membrane.core.transport.http.ByteStreamLogging" level="trace" additivity="false">-->
+<!--            <AppenderRef ref="STDOUT" />-->
+<!--        </Logger>-->
         <Logger name="com.predic8.membrane.core" level="info" additivity="false">
             <AppenderRef ref="STDOUT" />
         </Logger>

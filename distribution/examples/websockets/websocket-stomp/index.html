@@ -5,6 +5,9 @@
 	<script src="stomp.js"></script>
 </head>
 <body>
+
+<button id="send" name="Send">Send</button>
+
 Messages:
 
 <div id="messages"></div>
@@ -15,6 +18,33 @@ Messages:
 
 		connectNow = function() {
 
+			const exampleSocket = new WebSocket(
+					"wss://localhost:4443/"
+			);
+
+			exampleSocket.onopen = (event) => {
+				exampleSocket.send("Here's some text that the server is urgently awaiting!");
+				$("#send").click(function() {
+					console.log("here");
+					exampleSocket.send("Message from client.");
+				});
+			};
+
+			exampleSocket.onmessage = (event) => {
+				console.log(event);
+				console.log(event.data);
+				$("#messages").append("<p>" + event.data + "</p>");
+			};
+
+			exampleSocket.onclose = (event) => {
+				console.log(event);
+			}
+
+			exampleSocket.onerror = (event) => {
+				console.log(event);
+			}
+
+/*
 			var client = Stomp.client("wss://localhost:4443/");
 
 			client.debug = function(str) {
@@ -35,6 +65,8 @@ Messages:
 					window.setTimeout(connectNow, 1000);
 				});
 			});
+
+ */
 		};
 		connectNow();
 	});
