@@ -1,14 +1,24 @@
 # MongoDB Exchange Store
 
-A quick guide to setting up a MongoDB Exchange Store.
+Track and store all your Exchanges, even after restarts by connecting Membrane to MongoDB. View live data in the
+Admin Console and dig deeper later with tools like Compass. Great for debugging, audits, or traffic insights.
+This quick guide shows you how to set it up in minutes.
 
 ### Prerequisite
 
 - **MongoDB installed:**
 
     - If MongoDB is already installed, skip to the next step.
-    - Otherwise, install MongoDB
-      from [https://www.mongodb.com/try/download/community](https://www.mongodb.com/try/download/community).
+- You need a running MongoDB instance. You can either:
+- **Option 1: Use Docker**
+    - Run the following command to start MongoDB in a Docker container:
+
+  ```shell
+    docker run --name mongo-exchange-store -p 27017:27017 -d mongo:latest
+  ```
+- This starts MongoDB in the background, accessible at ```mongodb://localhost:27017```.
+- **Option 2: Otherwise, install MongoDB**
+  - Download and install MongoDB from: [https://www.mongodb.com/try/download/community](https://www.mongodb.com/try/download/community).
 
 ---
 
@@ -55,5 +65,7 @@ curl -X POST http://localhost:2000 -H "Content-Type: application/json" -d '{"mes
 7. **Verify Exchange Storage via Admin Console:**
 
 - Open the Admin Console by navigating to ```http://localhost:9000``` in your browser.
-- Under the ```Call``` section, you will see a list of exchanges. These are the same entries stored in the MongoDB collection.
-- Even if you stop Membrane and restart it, the exchanges will still appear in the Admin Console. This is because Membrane pulls the exchange data from MongoDB on startup.
+- Under the ```Call``` section, you will see a list of exchanges. These are the same entries stored in the MongoDB
+  collection.
+- Even if you stop Membrane and restart it, the exchanges will still appear in the Admin Console. This is because
+  Membrane pulls the exchange data from MongoDB on startup.
