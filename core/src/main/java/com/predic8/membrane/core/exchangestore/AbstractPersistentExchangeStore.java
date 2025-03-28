@@ -30,8 +30,6 @@ import java.util.concurrent.*;
 
 public abstract class AbstractPersistentExchangeStore extends AbstractExchangeStore {
 
-    private static final Logger log = LoggerFactory.getLogger(AbstractPersistentExchangeStore.class);
-
     int updateIntervalMs = 1000;
 
     final Map<Long, AbstractExchangeSnapshot> shortTermMemoryForBatching = new HashMap<>();
