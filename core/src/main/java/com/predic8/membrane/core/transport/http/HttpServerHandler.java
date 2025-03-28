@@ -29,7 +29,7 @@ import java.util.concurrent.atomic.*;
 
 import static com.predic8.membrane.core.util.StringUtil.truncateAfter;
 
-public class HttpServerHandler extends AbstractHttpHandler implements Runnable {
+public class HttpServerHandler extends AbstractHttpHandler implements Runnable, TwoWayStreaming {
 
 	private static final Logger log = LoggerFactory.getLogger(HttpServerHandler.class);
 	private static final AtomicInteger counter = new AtomicInteger();
@@ -298,6 +298,26 @@ public class HttpServerHandler extends AbstractHttpHandler implements Runnable {
 
 	public OutputStream getSrcOut() {
 		return srcOut;
+	}
+
+	@Override
+	public String getRemoteDescription() {
+		return sourceSocket.getRemoteSocketAddress().toString();
+	}
+
+	@Override
+	public void removeSocketSoTimeout() throws SocketException {
+		sourceSocket.setSoTimeout(0);
+	}
+
+	@Override
+	public boolean isClosed() {
+		return sourceSocket.isClosed();
+	}
+
+	@Override
+	public void close() throws IOException {
+		sourceSocket.close();
 	}
 
 	public Socket getSourceSocket() {

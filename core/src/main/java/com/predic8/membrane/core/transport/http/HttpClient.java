@@ -524,24 +524,24 @@ public class HttpClient implements AutoCloseable {
     }
 
     public static void setupConnectionForwarding(Exchange exc, final Connection con, final String protocol, StreamPump.StreamPumpStats streamPumpStats) throws SocketException {
-        final HttpServerHandler hsr = (HttpServerHandler) exc.getHandler();
-        String source = hsr.getSourceSocket().getRemoteSocketAddress().toString();
+        final TwoWayStreaming tws = (TwoWayStreaming) exc.getHandler();
+        String source = tws.getRemoteDescription();
         String dest = con.toString();
         final StreamPump a;
         final StreamPump b;
         if ("WebSocket".equals(protocol)) {
-            WebSocketStreamPump aTemp = new WebSocketStreamPump(hsr.getSrcIn(), con.out, streamPumpStats, protocol + " " + source + " -> " + dest, exc.getProxy(), true, exc);
-            WebSocketStreamPump bTemp = new WebSocketStreamPump(con.in, hsr.getSrcOut(), streamPumpStats, protocol + " " + source + " <- " + dest, exc.getProxy(), false, null);
+            WebSocketStreamPump aTemp = new WebSocketStreamPump(tws.getSrcIn(), con.out, streamPumpStats, protocol + " " + source + " -> " + dest, exc.getProxy(), true, exc);
+            WebSocketStreamPump bTemp = new WebSocketStreamPump(con.in, tws.getSrcOut(), streamPumpStats, protocol + " " + source + " <- " + dest, exc.getProxy(), false, null);
             aTemp.init(bTemp);
             bTemp.init(aTemp);
             a = aTemp;
             b = bTemp;
         } else {
-            a = new StreamPump(hsr.getSrcIn(), con.out, streamPumpStats, protocol + " " + source + " -> " + dest, exc.getProxy());
-            b = new StreamPump(con.in, hsr.getSrcOut(), streamPumpStats, protocol + " " + source + " <- " + dest, exc.getProxy());
+            a = new StreamPump(tws.getSrcIn(), con.out, streamPumpStats, protocol + " " + source + " -> " + dest, exc.getProxy());
+            b = new StreamPump(con.in, tws.getSrcOut(), streamPumpStats, protocol + " " + source + " <- " + dest, exc.getProxy());
         }
 
-        hsr.getSourceSocket().setSoTimeout(0);
+        tws.removeSocketSoTimeout();
 
         exc.addExchangeViewerListener(new AbstractExchangeViewerListener() {
 

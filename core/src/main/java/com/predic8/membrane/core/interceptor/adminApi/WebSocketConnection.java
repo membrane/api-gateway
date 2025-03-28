@@ -5,7 +5,7 @@ import com.predic8.membrane.core.http.EmptyBody;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.Outcome;
-import com.predic8.membrane.core.transport.http.HttpServerHandler;
+import com.predic8.membrane.core.transport.http.TwoWayStreaming;
 import com.predic8.membrane.core.transport.ws.WebSocketFrame;
 import com.predic8.membrane.core.transport.ws.WebSocketFrameAssembler;
 import org.jetbrains.annotations.NotNull;
@@ -15,13 +15,10 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.OutputStream;
-import java.net.InetAddress;
-import java.net.Socket;
 import java.net.SocketException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.TimeUnit;
 
 import static com.predic8.membrane.core.http.Header.CONNECTION;
 import static com.predic8.membrane.core.http.Header.UPGRADE;
@@ -33,11 +30,11 @@ public abstract class WebSocketConnection {
     private static final byte[] mask = new byte[4];
 
     private ArrayBlockingQueue<String> messagesToSend = new ArrayBlockingQueue<>(1000);
-    private Socket sourceSocket;
     private WebSocketConnectionCollection connections;
     private WebSocketFrameAssembler frameAssembler;
     private OutputStream srcOut;
     private Thread readerThread;
+    private TwoWayStreaming twoWayStreaming;
 
     public abstract void onMessage(WebSocketFrame frame);
 
@@ -70,7 +67,7 @@ public abstract class WebSocketConnection {
 
     private void sendMessagesFromQueueOrWait() throws InterruptedException, IOException {
         while(!Thread.currentThread().isInterrupted()) {
-            if (sourceSocket.isClosed())
+            if (twoWayStreaming.isClosed())
                 return;
 
             String msg = messagesToSend.poll(60, SECONDS);
@@ -85,13 +82,12 @@ public abstract class WebSocketConnection {
     }
 
     private void initialize(Exchange exc) throws SocketException {
-        HttpServerHandler handler = (HttpServerHandler) exc.getHandler();
-        sourceSocket = handler.getSourceSocket();
-        sourceSocket.setSoTimeout(0);
-        frameAssembler = new WebSocketFrameAssembler(handler.getSrcIn(), exc);
+        twoWayStreaming = (TwoWayStreaming) exc.getHandler();
+        twoWayStreaming.removeSocketSoTimeout();
+        frameAssembler = new WebSocketFrameAssembler(twoWayStreaming.getSrcIn(), exc);
         readerThread = new Thread(new FrameReader());
-        readerThread.setName(getThreadName(handler));
-        srcOut = handler.getSrcOut();
+        readerThread.setName(getThreadName(twoWayStreaming));
+        srcOut = twoWayStreaming.getSrcOut();
     }
 
     private static @NotNull Response getUpgradeResponse(Exchange exc) {
@@ -105,15 +101,8 @@ public abstract class WebSocketConnection {
         return res;
     }
 
-    private static @NotNull String getThreadName(HttpServerHandler handler) {
-        StringBuilder sb = new StringBuilder();
-        sb.append("WebSocket Reader ");
-        InetAddress ia = handler.getSourceSocket().getInetAddress();
-        if (ia != null)
-            sb.append(ia);
-        sb.append(":");
-        sb.append(handler.getSourceSocket().getPort());
-        return sb.toString();
+    private static @NotNull String getThreadName(TwoWayStreaming handler) {
+        return "WebSocket Reader " + handler.getRemoteDescription();
     }
 
 
@@ -146,9 +135,9 @@ public abstract class WebSocketConnection {
         } catch (IllegalStateException e) {
             log.error("Closing websocket connection in adminApi: Queue is full.");
             try {
-                if (sourceSocket.isClosed())
+                if (twoWayStreaming.isClosed())
                     return;
-                sourceSocket.close();
+                twoWayStreaming.close();
             } catch (IOException ex) {
                 log.error("Could not close source socket.", ex);
             }
@@ -167,13 +156,18 @@ public abstract class WebSocketConnection {
                     }
                 });
 
+            } catch (SocketException e) {
+                if (e.getMessage().contains("Connection reset"))
+                    log.debug("AdminApi WebSocket connection closed.");
+                else
+                    log.error("Error while reading frames.", e);
             } catch (IOException e) {
                 log.error("Error while reading frames.", e);
             } finally {
                 connections.unregister(WebSocketConnection.this);
                 try {
-                    if (!sourceSocket.isClosed())
-                        sourceSocket.close();
+                    if (!twoWayStreaming.isClosed())
+                        twoWayStreaming.close();
                 } catch (IOException e) {
                     log.error("Error while closing handler", e);
                 }

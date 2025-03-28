@@ -397,7 +397,7 @@ public abstract class AbstractExchange {
 
 	@Override
 	public String toString() {
-		return "[time:" + DateFormat.getDateInstance().format(time.getTime()) + (request != null ? ",requestURI:"+ request.getUri() : "") + "]";
+		return "[time:" + DateFormat.getDateTimeInstance().format(time.getTime()) + (request != null ? ",requestURI:"+ request.getUri() : "") + "]";
 	}
 
 	public int getHeapSizeEstimation() {
