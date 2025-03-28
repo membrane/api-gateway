@@ -1,7 +1,7 @@
 # MongoDB Exchange Store
 
 Track and store all your Exchanges, even after restarts by connecting Membrane to MongoDB. View live data in the
-Admin Console and dig deeper later with tools like Compass. Great for debugging, audits, or traffic insights.
+Admin Console. Great for debugging, audits, or traffic insights.
 This quick guide shows you how to set it up in minutes.
 
 ### Prerequisite
