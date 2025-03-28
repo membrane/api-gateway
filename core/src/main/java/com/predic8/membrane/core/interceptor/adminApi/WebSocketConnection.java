@@ -23,9 +23,12 @@ import java.util.concurrent.ArrayBlockingQueue;
 import static com.predic8.membrane.core.http.Header.CONNECTION;
 import static com.predic8.membrane.core.http.Header.UPGRADE;
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 public abstract class WebSocketConnection {
+    public static final String WEBSOCKET_CLOSED_POLL_INTERVAL_MILLISECONDS = "websocket.closed-poll-interval-ms";
+
     private static final Logger log = LoggerFactory.getLogger(WebSocketConnection.class);
     private static final byte[] mask = new byte[4];
 
@@ -35,10 +38,13 @@ public abstract class WebSocketConnection {
     private OutputStream srcOut;
     private Thread readerThread;
     private TwoWayStreaming twoWayStreaming;
+    private int closedPollIntervalMilliSeconds = 60000;
 
     public abstract void onMessage(WebSocketFrame frame);
 
     public Outcome handle(Exchange exc, WebSocketConnectionCollection connections) {
+        if (exc.getProperty(WEBSOCKET_CLOSED_POLL_INTERVAL_MILLISECONDS) != null)
+            closedPollIntervalMilliSeconds = (int) exc.getProperty(WEBSOCKET_CLOSED_POLL_INTERVAL_MILLISECONDS);
         this.connections = connections;
         if (isRelevantForMe(exc))
             handleInternal(exc);
@@ -70,7 +76,7 @@ public abstract class WebSocketConnection {
             if (twoWayStreaming.isClosed())
                 return;
 
-            String msg = messagesToSend.poll(60, SECONDS);
+            String msg = messagesToSend.poll(closedPollIntervalMilliSeconds, MILLISECONDS);
             if (msg == null)
                 continue;
 

@@ -314,4 +314,8 @@ public class AdminApiInterceptor extends AbstractInterceptor {
     private int getServerPort(AbstractExchange exc) {
         return exc.getProxy()instanceof AbstractServiceProxy?((AbstractServiceProxy) exc.getProxy()).getTargetPort():-1;
     }
+
+    public MemoryWatcher getMemoryWatcher() {
+        return memoryWatcher;
+    }
 }

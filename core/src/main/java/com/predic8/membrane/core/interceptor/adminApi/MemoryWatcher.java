@@ -1,7 +1,6 @@
 package com.predic8.membrane.core.interceptor.adminApi;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.google.common.collect.ImmutableMap;
 import com.predic8.membrane.core.util.TimerManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,6 +14,7 @@ public class MemoryWatcher {
     private final static Logger LOG = LoggerFactory.getLogger(MemoryWatcher.class.getName());
 
     private WebSocketConnectionCollection connections;
+    private int intervalMilliseconds = 10000;
 
     public void init(TimerManager timerManager, WebSocketConnectionCollection connections) {
         this.connections = connections;
@@ -23,7 +23,7 @@ public class MemoryWatcher {
             public void run() {
                 getMemoryStats();
             }
-        }, 10000, "DiskWatcher");
+        }, intervalMilliseconds, "DiskWatcher");
     }
 
     private void getMemoryStats() {
@@ -36,5 +36,9 @@ public class MemoryWatcher {
         } catch (JsonProcessingException e) {
             LOG.error("", e); // should not happen
         }
+    }
+
+    public void setIntervalMilliseconds(int intervalMilliseconds) {
+        this.intervalMilliseconds = intervalMilliseconds;
     }
 }

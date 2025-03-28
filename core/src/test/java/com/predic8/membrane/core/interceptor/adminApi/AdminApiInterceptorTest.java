@@ -2,56 +2,62 @@ package com.predic8.membrane.core.interceptor.adminApi;
 
 import com.predic8.membrane.core.HttpRouter;
 import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.exchange.snapshots.FakeProxy;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
+import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.proxies.NullProxy;
 import com.predic8.membrane.core.proxies.ServiceProxy;
 import com.predic8.membrane.core.proxies.ServiceProxyKey;
-import com.predic8.membrane.core.transport.http.AbstractHttpHandler;
 import com.predic8.membrane.core.transport.http.FakeHttpHandler;
 import com.predic8.membrane.core.transport.http.HttpClient;
 import com.predic8.membrane.core.transport.http.TwoWayStreaming;
+import com.predic8.membrane.core.transport.ws.WebSocketFrameAssembler;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.net.InetAddress;
+import java.io.*;
 import java.net.SocketException;
 import java.net.URISyntaxException;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.predic8.membrane.core.exchange.Exchange.ALLOW_WEBSOCKET;
 import static com.predic8.membrane.core.http.Header.CONNECTION;
 import static com.predic8.membrane.core.http.Header.UPGRADE;
+import static com.predic8.membrane.core.interceptor.adminApi.WebSocketConnection.WEBSOCKET_CLOSED_POLL_INTERVAL_MILLISECONDS;
 import static com.predic8.membrane.core.interceptor.adminApi.WebSocketConnection.computeKeyResponse;
 import static org.junit.jupiter.api.Assertions.*;
 
 class AdminApiInterceptorTest {
 
+    private static HttpRouter router;
+
     @BeforeAll
     static void setUp() {
-        HttpRouter router = new HttpRouter();
+        router = new HttpRouter();
         router.setHotDeploy(false);
         ServiceProxy sp = new ServiceProxy(new ServiceProxyKey(3065), null, 0);
-        sp.getInterceptors().add(new AdminApiInterceptor());
+        sp.getInterceptors().add(new FastWebSocketClosingInterceptor());
+        AdminApiInterceptor e = new AdminApiInterceptor();
+        e.getMemoryWatcher().setIntervalMilliseconds(50);
+        sp.getInterceptors().add(e);
         router.getRules().add(sp);
         router.start();
+    }
+
+    @AfterAll
+    static void tearDown() {
+        router.stop();
     }
 
     @Test
     public void testWebSocket() throws Exception {
         try (HttpClient client = new HttpClient()) {
-            var mth = new MyTestHandler(0);
-            var exc = Request.get("http://localhost:3065/ws/")
-                    .header("Sec-WebSocket-Key", "0KhkDyGsK+qtDANJAp3lgQ==")
-                    .header("Connection", "upgrade")
-                    .header("Sec-WebSocket-Version", "13")
-                    .header("Upgrade", "websocket")
-                    .buildExchange(mth);
+            var testHandler = new TestHandler();
+            var exc = createWSRequest(testHandler);
             exc.setProxy(new NullProxy());
             exc.setProperty(ALLOW_WEBSOCKET, Boolean.TRUE);
+            exc.setProperty(WEBSOCKET_CLOSED_POLL_INTERVAL_MILLISECONDS, 10);
 
             client.call(exc);
 
@@ -60,8 +66,34 @@ class AdminApiInterceptorTest {
             assertEquals("websocket", exc.getResponse().getHeader().getFirstValue(UPGRADE));
             assertEquals("OETFqiZtABzji+GByUi/SEyzJS0=", exc.getResponse().getHeader().getFirstValue("Sec-WebSocket-Accept"));
 
-            System.out.println(exc.getResponse());
+            new Thread(exc::setCompleted).start(); // this starts the web socket pumps and blocks the thread
+
+            testHandler.outputStream.waitForData(); // this waits for WebSocket data to arrive
+
+            parseAndVerifyWebSocketData(exc, testHandler.outputStream.toByteArray());
+
+            testHandler.close();
         }
+    }
+
+    private static void parseAndVerifyWebSocketData(Exchange exc, byte[] dataReceived) throws IOException {
+        WebSocketFrameAssembler wsfa = new WebSocketFrameAssembler(new ByteArrayInputStream(dataReceived), exc);
+
+        AtomicBoolean receivedMemoryStats = new AtomicBoolean();
+        wsfa.readFrames(webSocketFrame -> {
+            if (new String(webSocketFrame.getPayload()).contains("\"type\":\"MemoryStats\""))
+                receivedMemoryStats.set(true);
+        });
+        assertTrue(receivedMemoryStats.get());
+    }
+
+    private static Exchange createWSRequest(TestHandler testHandler) throws URISyntaxException {
+        return Request.get("http://localhost:3065/ws/")
+                .header("Sec-WebSocket-Key", "0KhkDyGsK+qtDANJAp3lgQ==")
+                .header("Connection", "upgrade")
+                .header("Sec-WebSocket-Version", "13")
+                .header("Upgrade", "websocket")
+                .buildExchange(testHandler);
     }
 
     @Test
@@ -70,19 +102,37 @@ class AdminApiInterceptorTest {
                 computeKeyResponse("+2chusljI/LtPLXb4+gMZg=="));
     }
 
-    private static class MyTestHandler extends FakeHttpHandler implements TwoWayStreaming {
-        public MyTestHandler(int port) {
-            super(port);
+    private static class TestHandler extends FakeHttpHandler implements TwoWayStreaming {
+        private volatile boolean closed = false;
+        private final NotifyingByteArrayOutputStream outputStream = new NotifyingByteArrayOutputStream();
+        private InputStream inputStream = new InputStream() {
+            @Override
+            public int read() throws IOException {
+                while (!closed) {
+                    synchronized (TestHandler.this) {
+                        try {
+                            TestHandler.this.wait();
+                        } catch (InterruptedException e) {
+                            Thread.currentThread().interrupt();
+                        }
+                    }
+                }
+                return -1;
+            }
+        };
+
+        public TestHandler() {
+            super(0);
         }
 
         @Override
         public InputStream getSrcIn() {
-            return null;
+            return inputStream;
         }
 
         @Override
         public OutputStream getSrcOut() {
-            return null;
+            return outputStream;
         }
 
         @Override
@@ -97,12 +147,23 @@ class AdminApiInterceptorTest {
 
         @Override
         public boolean isClosed() {
-            return false;
+            return closed;
         }
 
         @Override
         public void close() throws IOException {
+            closed = true;
+            synchronized (this) {
+                notifyAll();
+            }
+        }
+    }
 
+    private static class FastWebSocketClosingInterceptor extends AbstractInterceptor {
+        @Override
+        public Outcome handleRequest(Exchange exc) {
+            exc.setProperty(WEBSOCKET_CLOSED_POLL_INTERVAL_MILLISECONDS, 10);
+            return Outcome.CONTINUE;
         }
     }
 }
