@@ -1,5 +1,6 @@
 package com.predic8.membrane.core.interceptor.adminApi;
 
+import com.predic8.membrane.core.transport.ws.WebSocketConnection;
 import com.predic8.membrane.core.transport.ws.WebSocketFrame;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

@@ -22,10 +22,8 @@ import java.net.URISyntaxException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.predic8.membrane.core.exchange.Exchange.ALLOW_WEBSOCKET;
-import static com.predic8.membrane.core.http.Header.CONNECTION;
-import static com.predic8.membrane.core.http.Header.UPGRADE;
-import static com.predic8.membrane.core.interceptor.adminApi.WebSocketConnection.WEBSOCKET_CLOSED_POLL_INTERVAL_MILLISECONDS;
-import static com.predic8.membrane.core.interceptor.adminApi.WebSocketConnection.computeKeyResponse;
+import static com.predic8.membrane.core.http.Header.*;
+import static com.predic8.membrane.core.transport.ws.WebSocketConnection.WEBSOCKET_CLOSED_POLL_INTERVAL_MILLISECONDS;
 import static org.junit.jupiter.api.Assertions.*;
 
 class AdminApiInterceptorTest {
@@ -37,9 +35,9 @@ class AdminApiInterceptorTest {
         router = new HttpRouter();
         router.setHotDeploy(false);
         ServiceProxy sp = new ServiceProxy(new ServiceProxyKey(3065), null, 0);
-        sp.getInterceptors().add(new FastWebSocketClosingInterceptor());
+        sp.getInterceptors().add(new FastWebSocketClosingInterceptor()); // speeds up test execution
         AdminApiInterceptor e = new AdminApiInterceptor();
-        e.getMemoryWatcher().setIntervalMilliseconds(50);
+        e.getMemoryWatcher().setIntervalMilliseconds(50); // speeds up test execution
         sp.getInterceptors().add(e);
         router.getRules().add(sp);
         router.start();
@@ -57,22 +55,23 @@ class AdminApiInterceptorTest {
             var exc = createWSRequest(testHandler);
             exc.setProxy(new NullProxy());
             exc.setProperty(ALLOW_WEBSOCKET, Boolean.TRUE);
-            exc.setProperty(WEBSOCKET_CLOSED_POLL_INTERVAL_MILLISECONDS, 10);
+            exc.setProperty(WEBSOCKET_CLOSED_POLL_INTERVAL_MILLISECONDS, 10);  // speeds up test execution
 
             client.call(exc);
 
             assertEquals(101, exc.getResponse().getStatusCode());
             assertEquals(UPGRADE, exc.getResponse().getHeader().getFirstValue(CONNECTION));
             assertEquals("websocket", exc.getResponse().getHeader().getFirstValue(UPGRADE));
-            assertEquals("OETFqiZtABzji+GByUi/SEyzJS0=", exc.getResponse().getHeader().getFirstValue("Sec-WebSocket-Accept"));
+            assertEquals("OETFqiZtABzji+GByUi/SEyzJS0=", exc.getResponse().getHeader().getFirstValue(SEC_WEBSOCKET_ACCEPT));
 
-            new Thread(exc::setCompleted).start(); // this starts the web socket pumps and blocks the thread
+            new Thread(exc::setCompleted).start(); // this starts the web socket pumps and blocks the thread created
 
             testHandler.outputStream.waitForData(); // this waits for WebSocket data to arrive
 
             parseAndVerifyWebSocketData(exc, testHandler.outputStream.toByteArray());
 
-            testHandler.close();
+            testHandler.close(); // this interrupts the WebSocket connection, closing it down
+            // This allows the HttpClient and HttpRouter to be shut down.
         }
     }
 
@@ -89,19 +88,20 @@ class AdminApiInterceptorTest {
 
     private static Exchange createWSRequest(TestHandler testHandler) throws URISyntaxException {
         return Request.get("http://localhost:3065/ws/")
-                .header("Sec-WebSocket-Key", "0KhkDyGsK+qtDANJAp3lgQ==")
+                .header(SEC_WEBSOCKET_KEY, "0KhkDyGsK+qtDANJAp3lgQ==")
                 .header("Connection", "upgrade")
                 .header("Sec-WebSocket-Version", "13")
                 .header("Upgrade", "websocket")
                 .buildExchange(testHandler);
     }
 
-    @Test
-    public void testKeyResponse() {
-        assertEquals("vvtlPs9jLaZ5KqY6wzvtYznMEpQ=",
-                computeKeyResponse("+2chusljI/LtPLXb4+gMZg=="));
-    }
-
+    /**
+     * This Handler
+     * 1. collects all streaming data received in a byte buffer
+     * 2. supports waiting for data to be received (via <code>.outputStream.waitForData()</code>)
+     * 3. has no data to transmit (=blocks indefinitely)
+     * 4. only supports closing (which interrupts step 3)
+     */
     private static class TestHandler extends FakeHttpHandler implements TwoWayStreaming {
         private volatile boolean closed = false;
         private final NotifyingByteArrayOutputStream outputStream = new NotifyingByteArrayOutputStream();
@@ -162,7 +162,7 @@ class AdminApiInterceptorTest {
     private static class FastWebSocketClosingInterceptor extends AbstractInterceptor {
         @Override
         public Outcome handleRequest(Exchange exc) {
-            exc.setProperty(WEBSOCKET_CLOSED_POLL_INTERVAL_MILLISECONDS, 10);
+            exc.setProperty(WEBSOCKET_CLOSED_POLL_INTERVAL_MILLISECONDS, 10);  // speeds up test execution
             return Outcome.CONTINUE;
         }
     }

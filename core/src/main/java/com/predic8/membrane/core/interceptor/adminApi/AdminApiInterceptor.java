@@ -26,6 +26,7 @@ import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.rest.QueryParameter;
 import com.predic8.membrane.core.openapi.util.PathDoesNotMatchException;
 import com.predic8.membrane.core.proxies.AbstractServiceProxy;
+import com.predic8.membrane.core.transport.ws.WebSocketConnectionCollection;
 
 import java.io.IOException;
 import java.io.StringWriter;

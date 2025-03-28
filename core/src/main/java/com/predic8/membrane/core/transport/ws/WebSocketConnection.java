@@ -1,14 +1,11 @@
-package com.predic8.membrane.core.interceptor.adminApi;
+package com.predic8.membrane.core.transport.ws;
 
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.EmptyBody;
-import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.model.AbstractExchangeViewerListener;
 import com.predic8.membrane.core.transport.http.TwoWayStreaming;
-import com.predic8.membrane.core.transport.ws.WebSocketFrame;
-import com.predic8.membrane.core.transport.ws.WebSocketFrameAssembler;
 import org.jetbrains.annotations.NotNull;
 import org.jose4j.base64url.Base64;
 import org.slf4j.Logger;
@@ -21,19 +18,21 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.concurrent.ArrayBlockingQueue;
 
-import static com.predic8.membrane.core.http.Header.CONNECTION;
-import static com.predic8.membrane.core.http.Header.UPGRADE;
+import static com.predic8.membrane.core.http.Header.*;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
-import static java.util.concurrent.TimeUnit.SECONDS;
 
+/**
+ * An RFC 6455 implementation.
+ */
 public abstract class WebSocketConnection {
     public static final String WEBSOCKET_CLOSED_POLL_INTERVAL_MILLISECONDS = "websocket.closed-poll-interval-ms";
 
     private static final Logger log = LoggerFactory.getLogger(WebSocketConnection.class);
     private static final byte[] mask = new byte[4];
+    private static final String WEBSOCKET_PROTOCOL_UUID = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
 
-    private ArrayBlockingQueue<String> messagesToSend = new ArrayBlockingQueue<>(1000);
+    private final ArrayBlockingQueue<String> messagesToSend = new ArrayBlockingQueue<>(1000);
     private WebSocketConnectionCollection connections;
     private WebSocketFrameAssembler frameAssembler;
     private OutputStream srcOut;
@@ -112,7 +111,7 @@ public abstract class WebSocketConnection {
         res.setStatusMessage("Switching Protocols");
         res.getHeader().add(CONNECTION, UPGRADE);
         res.getHeader().add(UPGRADE, "websocket");
-        res.getHeader().add("Sec-WebSocket-Accept", computeKeyResponse(exc.getRequest().getHeader().getFirstValue("Sec-WebSocket-Key")));
+        res.getHeader().add(SEC_WEBSOCKET_ACCEPT, computeKeyResponse(exc.getRequest().getHeader().getFirstValue(SEC_WEBSOCKET_KEY)));
         res.setBody(new EmptyBody());
         return res;
     }
@@ -121,21 +120,14 @@ public abstract class WebSocketConnection {
         return "WebSocket Reader " + handler.getRemoteDescription();
     }
 
-
     private boolean isRelevantForMe(Exchange exc) {
-        return exc.getRequest().getMethod().equals("GET") &&
-                "websocket".equalsIgnoreCase(getUpgradeProtocol(exc.getRequest()));
-    }
-
-    private String getUpgradeProtocol(Request req) {
-        if (req.getHeader().getSingleValues(CONNECTION).noneMatch(v -> v.equalsIgnoreCase(UPGRADE)))
-            return null;
-        return req.getHeader().getFirstValue(UPGRADE);
+        return exc.getRequest().isGETRequest() &&
+                "websocket".equalsIgnoreCase(exc.getRequest().getHeader().getUpgradeProtocol());
     }
 
     static String computeKeyResponse(String key) {
-        String t = key + "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
-        MessageDigest dig = null;
+        String t = key + WEBSOCKET_PROTOCOL_UUID;
+        MessageDigest dig;
         try {
             dig = MessageDigest.getInstance("SHA1");
         } catch (NoSuchAlgorithmException e) {

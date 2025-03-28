@@ -1,4 +1,4 @@
-package com.predic8.membrane.core.interceptor.adminApi;
+package com.predic8.membrane.core.transport.ws;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -7,6 +7,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Collects a bunch of active {@link WebSocketConnection} instances.
+ * <p>
+ * Supports broadcasting of JSON messages.
+ */
 public class WebSocketConnectionCollection {
     private List<WebSocketConnection> connections = new ArrayList<>();
     private ObjectMapper om = new ObjectMapper();

@@ -365,7 +365,7 @@ public class HttpClient implements AutoCloseable {
     }
 
     private void denyUnsupportedUpgrades(Exchange exc) throws ProtocolUpgradeDeniedException {
-        String upgradeProtocol = getUpgradeProtocol(exc.getRequest());
+        String upgradeProtocol = exc.getRequest().getHeader().getUpgradeProtocol();
         if (upgradeProtocol == null)
             return;
         if (upgradeProtocol.equalsIgnoreCase("websocket") && exc.getProperty(ALLOW_WEBSOCKET) == TRUE)
@@ -565,12 +565,6 @@ public class HttpClient implements AutoCloseable {
                 log.debug("", e);
             }
         }
-    }
-
-    private String getUpgradeProtocol(Request req) {
-        if (req.getHeader().getSingleValues(CONNECTION).noneMatch(v -> v.equalsIgnoreCase(UPGRADE)))
-            return null;
-        return req.getHeader().getFirstValue(UPGRADE);
     }
 
     private boolean isUpgradeToResponse(Response res, String protocol) {

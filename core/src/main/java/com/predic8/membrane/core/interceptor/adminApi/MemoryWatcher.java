@@ -1,6 +1,7 @@
 package com.predic8.membrane.core.interceptor.adminApi;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.predic8.membrane.core.transport.ws.WebSocketConnectionCollection;
 import com.predic8.membrane.core.util.TimerManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
