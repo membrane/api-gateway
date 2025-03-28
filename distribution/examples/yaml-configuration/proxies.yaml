@@ -1,0 +1,20 @@
+apiVersion: membrane-soa.org/v1beta1
+kind: api
+metadata:
+  name: fruitshop-demo
+spec:
+  port: 2000
+  specs:
+    - openapi:
+        location: ../../conf/fruitshop-api.yml
+
+---
+
+apiVersion: membrane-soa.org/v1beta1
+kind: serviceProxy
+metadata:
+  name: admin-console
+spec:
+  port: 9000
+  interceptors:
+    - adminConsole: {}

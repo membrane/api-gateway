@@ -57,6 +57,10 @@ public class MembraneCommandLine {
                         .addOption(builder("V").longOpt("validate-responses").desc("Validate responses against OpenAPI").build());
 
             }});
+
+            addSubcommand(new CliCommand("yaml", "Use a YAML-based configuration file.") {{
+                addOption(builder("l").longOpt("location").argName("YAML config location").hasArg().required().desc("(Required) Set URL or path to a YAML configuration file").build());
+            }});
         }};
     }
 
