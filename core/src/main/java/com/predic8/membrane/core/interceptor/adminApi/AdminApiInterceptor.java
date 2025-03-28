@@ -75,11 +75,37 @@ public class AdminApiInterceptor extends AbstractInterceptor {
             } else if (uri.matches(".*/exchange/\\d*")) {
                 Map<String, String> params = matchTemplate(".*/exchange/{id}", uri);
                 return handleExchangeDetails(exc, params.get("id"));
+            } else if (uri.matches(".*/suggestions/\\w*")) {
+                Map<String, String> params = matchTemplate(".*/suggestions/{field}", uri);
+                return handleFilterSuggestions(exc, params.get("field"));
             }
         } catch (PathDoesNotMatchException e) {
             return ABORT;
         }
         return CONTINUE;
+    }
+
+    private Outcome handleFilterSuggestions(Exchange exc, String field) {
+        StringWriter writer = new StringWriter();
+        try {
+            JsonGenerator gen = om.getFactory().createGenerator(writer);
+            gen.writeStartArray();
+
+            getRouter().getExchangeStore().getUniqueValuesOf(field).forEach(i -> {
+                try {
+                    gen.writeString(i);
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            });
+
+            gen.writeEndArray();
+            gen.close();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+        exc.setResponse(Response.ok().body(writer.toString()).contentType(APPLICATION_JSON).build());
+        return RETURN;
     }
 
     // TODO Use actual current membrane version, add memory, disk usage, etc.
