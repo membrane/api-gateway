@@ -7,13 +7,12 @@ This quick guide shows you how to set it up in minutes.
 ### Prerequisite
 
 - **Run MongoDB:**
-  - Use Docker
   - Run the following command to start MongoDB in a Docker container:
 
     ```shell
-    docker run --name mongo -p 27017:27017 -d mongo:latest
+    docker run --name mongo -p 27017:27017 mongo:latest
     ```
-  - This starts MongoDB in the background, accessible at ```mongodb://localhost:27017```.
+  - This starts MongoDB, accessible at ```mongodb://localhost:27017```.
 
 ---
 
