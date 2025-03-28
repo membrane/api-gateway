@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoCollection;
+import com.mongodb.client.model.ReplaceOptions;
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.Router;
@@ -12,6 +13,7 @@ import com.predic8.membrane.core.exchange.AbstractExchange;
 import com.predic8.membrane.core.exchange.snapshots.AbstractExchangeSnapshot;
 import com.predic8.membrane.core.proxies.Proxy;
 import com.predic8.membrane.core.proxies.RuleKey;
+import org.bson.BsonDocument;
 import org.bson.Document;
 import org.bson.conversions.Bson;
 import org.bson.types.ObjectId;
@@ -59,8 +61,8 @@ public class MongoDBExchangeStore extends AbstractPersistentExchangeStore {
                 log.error("Error converting exchange to MongoDB document", e);
             }
         }
-        if (!documents.isEmpty()) {
-            collection.insertMany(documents);
+        for (Document doc : documents) {
+            collection.replaceOne(new Document("id", doc.get("id")), doc, new ReplaceOptions().upsert(true));
         }
     }
 
@@ -106,11 +108,6 @@ public class MongoDBExchangeStore extends AbstractPersistentExchangeStore {
     private static AbstractExchangeSnapshot convertMongoJSONToAbstractExchange(Document doc) {
         AbstractExchangeSnapshot result;
         try {
-            System.out.println("doc = " + doc.toJson());
-            System.out.println("==============================");
-            System.out.println("objectMapper.writeValueAsString(doc.toJson()) = " + objectMapper.writeValueAsString(doc.toJson()));
-
-
             result = objectMapper.readValue(doc.toJson(), AbstractExchangeSnapshot.class);
         } catch (Exception e) {
             log.error("Error converting MongoDB document to AbstractExchangeSnapshot", e);
