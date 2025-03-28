@@ -6,19 +6,14 @@ This quick guide shows you how to set it up in minutes.
 
 ### Prerequisite
 
-- **MongoDB installed:**
+- **Run MongoDB:**
+  - Use Docker
+  - Run the following command to start MongoDB in a Docker container:
 
-    - If MongoDB is already installed, skip to the next step.
-- You need a running MongoDB instance. You can either:
-- **Option 1: Use Docker**
-    - Run the following command to start MongoDB in a Docker container:
-
-  ```shell
-    docker run --name mongo-exchange-store -p 27017:27017 -d mongo:latest
-  ```
-- This starts MongoDB in the background, accessible at ```mongodb://localhost:27017```.
-- **Option 2: Otherwise, install MongoDB**
-  - Download and install MongoDB from: [https://www.mongodb.com/try/download/community](https://www.mongodb.com/try/download/community).
+    ```shell
+    docker run --name mongo -p 27017:27017 -d mongo:latest
+    ```
+  - This starts MongoDB in the background, accessible at ```mongodb://localhost:27017```.
 
 ---
 
@@ -33,9 +28,9 @@ This quick guide shows you how to set it up in minutes.
 - Example configuration for MongoDB:
 
    ```xml
-   <mongoDBExchangeStore id="es" connection="mongodb://localhost:27017/" database="exchange"
+   <mongoDBExchangeStore id="store" connection="mongodb://localhost:27017/" database="membrane"
                           collection="exchanges" />
-    <router exchangeStore="es">
+    <router exchangeStore="store">
         <serviceProxy name="predic8.com" port="2000">
             <target url="https://membrane-soa.org" />
         </serviceProxy>
@@ -51,18 +46,13 @@ This quick guide shows you how to set it up in minutes.
 ./membrane.sh
 ```
 
-5. **You can test it using curl:**
+4. **You can test it using curl:**
 
 ```shell
 curl -X POST http://localhost:2000 -H "Content-Type: application/json" -d '{"message": "Hallo"}'
 ```
 
-6. **Verify Exchange Storage via MongoDB:**
-
-- Once an exchange has been processed, it is stored in MongoDB under the database ```exchange```. in
-  the collection ```exchanges```. You can verify using and MongoDB UI  (e.g., MongoDB Compass).
-
-7. **Verify Exchange Storage via Admin Console:**
+5. **Verify Exchange Storage via Admin Console:**
 
 - Open the Admin Console by navigating to ```http://localhost:9000``` in your browser.
 - Under the ```Call``` section, you will see a list of exchanges. These are the same entries stored in the MongoDB
