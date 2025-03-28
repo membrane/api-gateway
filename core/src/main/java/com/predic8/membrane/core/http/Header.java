@@ -112,6 +112,10 @@ public class Header {
 
 	public static final String X_HTTP_METHOD_OVERRIDE = "X-HTTP-Method-Override";
 
+	public static final String SEC_WEBSOCKET_ACCEPT = "Sec-WebSocket-Accept";
+
+	public static final String SEC_WEBSOCKET_KEY = "Sec-WebSocket-Key";
+
 	/**
 	 * Please note that this is a relic from RFC7540 and has been removed in RFC9113. It is present for backward
 	 * compatibility (i.e. for Java's internal HTTP client).
@@ -532,6 +536,12 @@ public class Header {
 		List<String> valuesToKeep = getSingleValues(headerName).filter(valueFilter).toList();
 		removeFields(headerName);
 		valuesToKeep.forEach(value -> add(headerName, value));
+	}
+
+	public String getUpgradeProtocol() {
+		if (getSingleValues(CONNECTION).noneMatch(v -> v.equalsIgnoreCase(UPGRADE)))
+			return null;
+		return getFirstValue(UPGRADE);
 	}
 
 }

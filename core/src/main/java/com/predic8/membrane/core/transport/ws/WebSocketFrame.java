@@ -55,8 +55,8 @@ public class WebSocketFrame {
         this.opcode = opcode;
         this.isMasked = isMasked;
         payloadLength = payload.length;
-        System.arraycopy(this.maskKey,0,maskingKey,0,maskingKey.length);
-        System.arraycopy(this.payload,0,payload,0,payload.length);
+        System.arraycopy(maskingKey,0,this.maskKey,0,maskingKey.length);
+        System.arraycopy(payload,0,this.payload,0,payload.length);
     }
 
     private String calcError() {

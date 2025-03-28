@@ -24,11 +24,14 @@ import org.slf4j.*;
 import javax.net.ssl.*;
 import java.io.*;
 import java.net.*;
+import java.util.Random;
 import java.util.concurrent.atomic.*;
 
+import static com.predic8.membrane.core.transport.http.ByteStreamLogging.wrapConnectionInputStream;
+import static com.predic8.membrane.core.transport.http.ByteStreamLogging.wrapConnectionOutputStream;
 import static com.predic8.membrane.core.util.StringUtil.truncateAfter;
 
-public class HttpServerHandler extends AbstractHttpHandler implements Runnable {
+public class HttpServerHandler extends AbstractHttpHandler implements Runnable, TwoWayStreaming {
 
 	private static final Logger log = LoggerFactory.getLogger(HttpServerHandler.class);
 	private static final AtomicInteger counter = new AtomicInteger();
@@ -66,10 +69,20 @@ public class HttpServerHandler extends AbstractHttpHandler implements Runnable {
 			showSSLExceptions = false;
 		}
 		log.debug("New ServerThread created. {}", counter.incrementAndGet());
-		srcIn = new BufferedInputStream(sourceSocket.getInputStream(), 2048);
-		srcOut = new BufferedOutputStream(sourceSocket.getOutputStream(), 2048);
+		setupInAndOut();
 		sourceSocket.setSoTimeout(endpointListener.getTransport().getSocketTimeout());
 		sourceSocket.setTcpNoDelay(endpointListener.getTransport().isTcpNoDelay());
+	}
+
+	private void setupInAndOut() throws IOException {
+		if (ByteStreamLogging.isLoggingEnabled()) {
+			String c = "s-" + new Random().nextInt();
+			srcIn = new BufferedInputStream(wrapConnectionInputStream(sourceSocket.getInputStream(), c + " in"), 2048);
+			srcOut = new BufferedOutputStream(wrapConnectionOutputStream(sourceSocket.getOutputStream(), c + " out"), 2048);
+		} else {
+			srcIn = new BufferedInputStream(sourceSocket.getInputStream(), 2048);
+			srcOut = new BufferedOutputStream(sourceSocket.getOutputStream(), 2048);
+		}
 	}
 
 	public void run() {
@@ -296,6 +309,26 @@ public class HttpServerHandler extends AbstractHttpHandler implements Runnable {
 
 	public OutputStream getSrcOut() {
 		return srcOut;
+	}
+
+	@Override
+	public String getRemoteDescription() {
+		return sourceSocket.getRemoteSocketAddress().toString();
+	}
+
+	@Override
+	public void removeSocketSoTimeout() throws SocketException {
+		sourceSocket.setSoTimeout(0);
+	}
+
+	@Override
+	public boolean isClosed() {
+		return sourceSocket.isClosed();
+	}
+
+	@Override
+	public void close() throws IOException {
+		sourceSocket.close();
 	}
 
 	public Socket getSourceSocket() {

@@ -26,6 +26,7 @@ import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.rest.QueryParameter;
 import com.predic8.membrane.core.openapi.util.PathDoesNotMatchException;
 import com.predic8.membrane.core.proxies.AbstractServiceProxy;
+import com.predic8.membrane.core.transport.ws.WebSocketConnectionCollection;
 
 import java.io.IOException;
 import java.io.StringWriter;
@@ -51,6 +52,14 @@ public class AdminApiInterceptor extends AbstractInterceptor {
 
     private static final ObjectMapper om = new ObjectMapper();
 
+    private MemoryWatcher memoryWatcher = new MemoryWatcher();
+    private WebSocketConnectionCollection connections = new WebSocketConnectionCollection();
+
+    @Override
+    public void init() {
+        memoryWatcher.init(router.getTimerManager(), connections);
+    }
+
     @Override
     public Outcome handleRequest(Exchange exc) {
         try {
@@ -61,6 +70,8 @@ public class AdminApiInterceptor extends AbstractInterceptor {
                 return handleApis(exc);
             } else if (uri.matches(".*/calls.*")) {
                 return handleCalls(exc);
+            } else if (uri.matches(".*/ws.*")) {
+                return new AdminApiObserver().handle(exc, connections);
             } else if (uri.matches(".*/exchange/\\d*")) {
                 Map<String, String> params = matchTemplate(".*/exchange/{id}", uri);
                 return handleExchangeDetails(exc, params.get("id"));
@@ -303,5 +314,9 @@ public class AdminApiInterceptor extends AbstractInterceptor {
 
     private int getServerPort(AbstractExchange exc) {
         return exc.getProxy()instanceof AbstractServiceProxy?((AbstractServiceProxy) exc.getProxy()).getTargetPort():-1;
+    }
+
+    public MemoryWatcher getMemoryWatcher() {
+        return memoryWatcher;
     }
 }
