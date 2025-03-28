@@ -7,6 +7,7 @@ import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoCollection;
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.exchange.AbstractExchange;
 import com.predic8.membrane.core.exchange.snapshots.AbstractExchangeSnapshot;
 import com.predic8.membrane.core.proxies.Proxy;
@@ -36,6 +37,16 @@ public class MongoDBExchangeStore extends AbstractPersistentExchangeStore {
             .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
     @Override
+    public void init(Router router) {
+        super.init(router);
+        if (this.collection == null) {
+            this.collection = MongoClients.create(connection)
+                    .getDatabase(database)
+                    .getCollection(collectionName);
+        }
+    }
+
+    @Override
     protected void writeToStore(List<AbstractExchangeSnapshot> exchanges) {
         collection = MongoClients.create(connection).getDatabase(database).getCollection(collectionName);
         List<Document> documents = new ArrayList<>();
@@ -60,7 +71,18 @@ public class MongoDBExchangeStore extends AbstractPersistentExchangeStore {
         doc.append("protocol", exchange.toAbstractExchange().getRequest().getVersion() != null ? exchange.toAbstractExchange().getRequest().getVersion() : "UNKNOWN");
         doc.append("client", getClientAddr(false, exchange.toAbstractExchange()) != null ? getClientAddr(false, exchange.toAbstractExchange()) : "UNKNOWN");
         doc.append("server", exchange.getServer() != null ? exchange.getServer() : "UNKNOWN");
-        doc.append("proxy", exchange.toAbstractExchange() != null ? objectMapper.writeValueAsString(exchange.toAbstractExchange().getProxy().getKey())  : new LinkedHashMap<>());
+        doc.append("proxy",
+                Optional.ofNullable(exchange.toAbstractExchange())
+                        .map(AbstractExchange::getProxy)
+                        .map(proxy -> {
+                            try {
+                                return objectMapper.writeValueAsString(proxy.getKey());
+                            } catch (JsonProcessingException e) {
+                                log.warn("Failed to serialize proxy key", e);
+                                return "{}";
+                            }
+                        }).orElse("{}")
+        );
         doc.append("timestamp", exchange.getTime().getTime());
         doc.append("requestUri", exchange.getOriginalRequestUri() != null ? exchange.getOriginalRequestUri() : "UNKNOWN");
         doc.append("status", exchange.getStatus() != null ? exchange.getStatus() : 0);
@@ -72,7 +94,7 @@ public class MongoDBExchangeStore extends AbstractPersistentExchangeStore {
     private static Document requestDoc(AbstractExchangeSnapshot exchange) {
         Document requestDoc = new Document();
         requestDoc.append("method", exchange.getRequest() != null ? exchange.getRequest().toRequest().getMethod() : "UNKNOWN");
-        requestDoc.append("header", exchange.getRequest() != null ? exchange.getRequest().getHeader() : "{}");
+        requestDoc.append("header", exchange.getRequest() != null ? exchange.getRequest().getHeader() : new LinkedHashMap<>());
         requestDoc.append("reqContentLength", exchange.toAbstractExchange() != null ? exchange.toAbstractExchange().getRequestContentLength() : 0);
         requestDoc.append("reqContentType", exchange.toAbstractExchange().getRequestContentType() != null ? exchange.toAbstractExchange().getRequestContentType() : "UNKNOWN");
         requestDoc.append("body", exchange.getRequest() != null ? Base64.getEncoder().encodeToString(exchange.getRequest().toRequest().getBodyAsStringDecoded().getBytes(StandardCharsets.UTF_8)) : "{}");
@@ -83,8 +105,8 @@ public class MongoDBExchangeStore extends AbstractPersistentExchangeStore {
         Document responseDoc = new Document();
         if (exchange.getResponse() == null) {
             responseDoc.append("status", 0);
-            responseDoc.append("header", "{}");
-            responseDoc.append("body", "{}");
+            responseDoc.append("header", new LinkedHashMap<>());
+            responseDoc.append("body", "");
             responseDoc.append("respContentLength", 0);
             responseDoc.append("respContentType", "UNKNOWN");
             return responseDoc;
@@ -132,13 +154,11 @@ public class MongoDBExchangeStore extends AbstractPersistentExchangeStore {
 
     @Override
     public List<AbstractExchange> getAllExchangesAsList() {
-        ensureCollectionIsInitialized();
         return getTotals();
     }
 
     @Override
     public void collect(ExchangeCollector collector) {
-        ensureCollectionIsInitialized();
         for (Document doc : collection.find().into(new ArrayList<>())) {
             try {
                 collector.collect(objectMapper.readValue(objectMapper.writeValueAsString(doc.toJson()), AbstractExchangeSnapshot.class).toAbstractExchange());
@@ -150,31 +170,20 @@ public class MongoDBExchangeStore extends AbstractPersistentExchangeStore {
     }
 
     @Override
+    public AbstractExchange getExchangeById(long id) {
+        return getFromStoreById(id).toAbstractExchange();
+    }
+
+    @Override
     public AbstractExchangeSnapshot getFromStoreById(long id) {
         try {
-            Document doc = collection.find(eq("id", id)).first();
-            if (doc != null) {
-                return objectMapper.readValue(objectMapper.writeValueAsString(doc), AbstractExchangeSnapshot.class);
-            }
-        } catch (Exception e) {
-            log.error("Error retrieving exchange from MongoDB", e);
+            return objectMapper.readValue(Objects.requireNonNull(collection.find(eq("id", id)).first()).toJson(), AbstractExchangeSnapshot.class);
+        } catch (JsonProcessingException e) {
+            log.error("JSON serialization error for id: {}", id, e);
         }
         return null;
     }
 
-    private void ensureCollectionIsInitialized() {
-        if (this.collection == null) {
-            initMongoConnection();
-        }
-    }
-
-    public void initMongoConnection() {
-        if (this.collection == null) {
-            this.collection = MongoClients.create(connection)
-                    .getDatabase(database)
-                    .getCollection(collectionName);
-        }
-    }
 
     @MCAttribute
     public void setConnection(String connection) {
