@@ -36,7 +36,6 @@ public abstract class AbstractPersistentExchangeStore extends AbstractExchangeSt
 
     final Map<Long, AbstractExchangeSnapshot> shortTermMemoryForBatching = new HashMap<>();
     final Cache<Long, AbstractExchangeSnapshot> cacheToWait = CacheBuilder.newBuilder().expireAfterWrite(5, TimeUnit.SECONDS).build();
-    private final List<AbstractExchange> totals = new Vector<>();
 
     protected long startTime;
     boolean init = false;
@@ -93,7 +92,6 @@ public abstract class AbstractPersistentExchangeStore extends AbstractExchangeSt
                 excCopy = excCopy.updateFrom(exc, flow);
                 addForStorage(excCopy);
             }
-            totals.add(exc);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -148,10 +146,6 @@ public abstract class AbstractPersistentExchangeStore extends AbstractExchangeSt
 
     public int getUpdateIntervalMs() {
         return updateIntervalMs;
-    }
-
-    public List<AbstractExchange> getTotals() {
-        return totals;
     }
 
     @MCAttribute

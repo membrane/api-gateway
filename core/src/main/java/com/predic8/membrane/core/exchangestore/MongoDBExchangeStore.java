@@ -52,7 +52,9 @@ public class MongoDBExchangeStore extends AbstractPersistentExchangeStore {
         List<Document> documents = new ArrayList<>();
         for (AbstractExchangeSnapshot exchange : exchanges) {
             try {
-                documents.add(exchangeDoc(exchange));
+                Document doc = exchangeDoc(exchange);
+                if (doc!=null)
+                    documents.add(doc);
             } catch (Exception e) {
                 log.error("Error converting exchange to MongoDB document", e);
             }
@@ -62,61 +64,13 @@ public class MongoDBExchangeStore extends AbstractPersistentExchangeStore {
         }
     }
 
-    private Document exchangeDoc(AbstractExchangeSnapshot exchange) throws JsonProcessingException {
-        Document doc = new Document();
-        doc.append("_id", new ObjectId());
-        doc.append("id", exchange.getId());
-        doc.append("method", exchange.getRequest().getMethod() != null ? exchange.getRequest().getMethod() : "UNKNOWN");
-        doc.append("listenPort", exchange.getRule().getKey().getPort() != 0 ? exchange.getRule().getKey().getPort() : 0);
-        doc.append("protocol", exchange.toAbstractExchange().getRequest().getVersion() != null ? exchange.toAbstractExchange().getRequest().getVersion() : "UNKNOWN");
-        doc.append("client", getClientAddr(false, exchange.toAbstractExchange()) != null ? getClientAddr(false, exchange.toAbstractExchange()) : "UNKNOWN");
-        doc.append("server", exchange.getServer() != null ? exchange.getServer() : "UNKNOWN");
-        doc.append("proxy",
-                Optional.ofNullable(exchange.toAbstractExchange())
-                        .map(AbstractExchange::getProxy)
-                        .map(proxy -> {
-                            try {
-                                return objectMapper.writeValueAsString(proxy.getKey());
-                            } catch (JsonProcessingException e) {
-                                log.warn("Failed to serialize proxy key", e);
-                                return "{}";
-                            }
-                        }).orElse("{}")
-        );
-        doc.append("timestamp", exchange.getTime().getTime());
-        doc.append("requestUri", exchange.getOriginalRequestUri() != null ? exchange.getOriginalRequestUri() : "UNKNOWN");
-        doc.append("status", exchange.getStatus() != null ? exchange.getStatus() : 0);
-        doc.append("request", requestDoc(exchange));
-        doc.append("response", responseDoc(exchange));
-        return doc;
-    }
-
-    private static Document requestDoc(AbstractExchangeSnapshot exchange) {
-        Document requestDoc = new Document();
-        requestDoc.append("method", exchange.getRequest() != null ? exchange.getRequest().toRequest().getMethod() : "UNKNOWN");
-        requestDoc.append("header", exchange.getRequest() != null ? exchange.getRequest().getHeader() : new LinkedHashMap<>());
-        requestDoc.append("reqContentLength", exchange.toAbstractExchange() != null ? exchange.toAbstractExchange().getRequestContentLength() : 0);
-        requestDoc.append("reqContentType", exchange.toAbstractExchange().getRequestContentType() != null ? exchange.toAbstractExchange().getRequestContentType() : "UNKNOWN");
-        requestDoc.append("body", exchange.getRequest() != null ? Base64.getEncoder().encodeToString(exchange.getRequest().toRequest().getBodyAsStringDecoded().getBytes(StandardCharsets.UTF_8)) : "{}");
-        return requestDoc;
-    }
-
-    private static Document responseDoc(AbstractExchangeSnapshot exchange) {
-        Document responseDoc = new Document();
-        if (exchange.getResponse() == null) {
-            responseDoc.append("status", 0);
-            responseDoc.append("header", new LinkedHashMap<>());
-            responseDoc.append("body", "");
-            responseDoc.append("respContentLength", 0);
-            responseDoc.append("respContentType", "UNKNOWN");
-            return responseDoc;
+    private Document exchangeDoc(AbstractExchangeSnapshot exchange) {
+        try {
+            return Document.parse(objectMapper.writeValueAsString(exchange));
+        } catch (JsonProcessingException e) {
+            log.error("Error converting exchange to JSON", e);
+            return null;
         }
-        responseDoc.append("status", exchange.getResponse() == null ? 0 : exchange.getResponse().getStatusCode());
-        responseDoc.append("header", exchange.getResponse().getHeader() == null ? new LinkedHashMap<>() : exchange.getResponse().getHeader());
-        responseDoc.append("body", exchange.getResponse() == null ? "{}" : Base64.getEncoder().encodeToString(exchange.getResponse().toResponse().getBodyAsStringDecoded().getBytes(StandardCharsets.UTF_8)));
-        responseDoc.append("respContentLength", exchange.toAbstractExchange() == null ? 0 : exchange.toAbstractExchange().getResponseContentLength());
-        responseDoc.append("respContentType", exchange.toAbstractExchange().getResponseContentType());
-        return responseDoc;
     }
 
     @Override
@@ -140,34 +94,38 @@ public class MongoDBExchangeStore extends AbstractPersistentExchangeStore {
 
     @Override
     public AbstractExchange[] getExchanges(RuleKey ruleKey) {
-        return new ArrayList<>(collection.find().into(new ArrayList<>())).stream().map(doc -> {
-            AbstractExchangeSnapshot result;
-            try {
-                result = objectMapper.readValue(objectMapper.writeValueAsString(doc), AbstractExchangeSnapshot.class);
-            } catch (Exception e) {
-                log.error("Error converting MongoDB document to AbstractExchangeSnapshot", e);
-                throw new RuntimeException(e);
-            }
-            return Objects.requireNonNull(result).toAbstractExchange();
-        }).toArray(AbstractExchange[]::new);
+        return new ArrayList<>(collection.find().into(new ArrayList<>())).stream().map(doc -> convertMongoJSONToAbstractExchange(doc).toAbstractExchange()).toArray(AbstractExchange[]::new);
     }
+
 
     @Override
     public List<AbstractExchange> getAllExchangesAsList() {
-        return getTotals();
+       return new ArrayList<>(collection.find().into(new ArrayList<>())).stream().map(doc -> convertMongoJSONToAbstractExchange(doc).toAbstractExchange()).toList();
+    }
+
+    private static AbstractExchangeSnapshot convertMongoJSONToAbstractExchange(Document doc) {
+        AbstractExchangeSnapshot result;
+        try {
+            System.out.println("doc = " + doc.toJson());
+            System.out.println("==============================");
+            System.out.println("objectMapper.writeValueAsString(doc.toJson()) = " + objectMapper.writeValueAsString(doc.toJson()));
+
+
+            result = objectMapper.readValue(doc.toJson(), AbstractExchangeSnapshot.class);
+        } catch (Exception e) {
+            log.error("Error converting MongoDB document to AbstractExchangeSnapshot", e);
+            throw new RuntimeException(e);
+        }
+        return Objects.requireNonNull(result);
     }
 
     @Override
     public void collect(ExchangeCollector collector) {
         for (Document doc : collection.find().into(new ArrayList<>())) {
-            try {
-                collector.collect(objectMapper.readValue(objectMapper.writeValueAsString(doc.toJson()), AbstractExchangeSnapshot.class).toAbstractExchange());
-            } catch (JsonProcessingException e) {
-                log.error("Error parsing MongoDB document to exchange");
-                // TODO: Error handling for JSON parsing needs to be reviewed and fixed later.
-            }
+            collector.collect(convertMongoJSONToAbstractExchange(doc).toAbstractExchange());
         }
     }
+
 
     @Override
     public AbstractExchange getExchangeById(long id) {
@@ -176,12 +134,7 @@ public class MongoDBExchangeStore extends AbstractPersistentExchangeStore {
 
     @Override
     public AbstractExchangeSnapshot getFromStoreById(long id) {
-        try {
-            return objectMapper.readValue(Objects.requireNonNull(collection.find(eq("id", id)).first()).toJson(), AbstractExchangeSnapshot.class);
-        } catch (JsonProcessingException e) {
-            log.error("JSON serialization error for id: {}", id, e);
-        }
-        return null;
+        return convertMongoJSONToAbstractExchange(Objects.requireNonNull(collection.find(eq("id", id)).first()));
     }
 
 
