@@ -5,6 +5,9 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.SocketException;
 
+/**
+ * Something supporting Two-Way-Streaming (like an incoming TCP connection).
+ */
 public interface TwoWayStreaming {
     InputStream getSrcIn();
     OutputStream getSrcOut();
