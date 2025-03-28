@@ -5,6 +5,7 @@ import com.predic8.membrane.core.http.EmptyBody;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.Outcome;
+import com.predic8.membrane.core.model.AbstractExchangeViewerListener;
 import com.predic8.membrane.core.transport.http.TwoWayStreaming;
 import com.predic8.membrane.core.transport.ws.WebSocketFrame;
 import com.predic8.membrane.core.transport.ws.WebSocketFrameAssembler;
@@ -46,54 +47,63 @@ public abstract class WebSocketConnection {
         if (exc.getProperty(WEBSOCKET_CLOSED_POLL_INTERVAL_MILLISECONDS) != null)
             closedPollIntervalMilliSeconds = (int) exc.getProperty(WEBSOCKET_CLOSED_POLL_INTERVAL_MILLISECONDS);
         this.connections = connections;
-        if (isRelevantForMe(exc))
+        if (isRelevantForMe(exc)) {
             handleInternal(exc);
+            return Outcome.RETURN;
+        }
         return Outcome.CONTINUE;
     }
 
     private void handleInternal(Exchange exc) {
-        try {
-            initialize(exc);
+        initialize(exc);
 
-            exc.setResponse(getUpgradeResponse(exc));
-            exc.getResponse().write(srcOut, false);
-            readerThread.start();
-            connections.register(this);
-            sendMessagesFromQueueOrWait();
-            // do not return from this method
+        exc.setResponse(getUpgradeResponse(exc));
+        connections.register(this);
+
+        exc.addExchangeViewerListener(new AbstractExchangeViewerListener() {
+
+            @Override
+            public void setExchangeFinished() {
+                readerThread.start();
+                sendMessagesFromQueueOrWait();
+            }
+        });
+    }
+
+    private void sendMessagesFromQueueOrWait() {
+        try {
+            while (!Thread.currentThread().isInterrupted()) {
+                if (twoWayStreaming.isClosed())
+                    return;
+
+                String msg = messagesToSend.poll(closedPollIntervalMilliSeconds, MILLISECONDS);
+                if (msg == null)
+                    continue;
+
+                WebSocketFrame wsf = new WebSocketFrame(true, false, false, false, 1, false, mask, msg.getBytes(UTF_8));
+                log.trace("sending {}", wsf);
+
+                wsf.write(srcOut);
+            }
+        } catch (InterruptedException e) {
+            // do nothing
         } catch (IOException e) {
             throw new RuntimeException(e);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-        } finally {
-            System.out.println("returned from a method i should not return");
-        }
-
-    }
-
-    private void sendMessagesFromQueueOrWait() throws InterruptedException, IOException {
-        while(!Thread.currentThread().isInterrupted()) {
-            if (twoWayStreaming.isClosed())
-                return;
-
-            String msg = messagesToSend.poll(closedPollIntervalMilliSeconds, MILLISECONDS);
-            if (msg == null)
-                continue;
-
-            WebSocketFrame wsf = new WebSocketFrame(true, false, false, false, 1, false, mask, msg.getBytes(UTF_8));
-            log.info("sending {}", wsf);
-
-            wsf.write(srcOut);
         }
     }
 
-    private void initialize(Exchange exc) throws SocketException {
+    private void initialize(Exchange exc) {
         twoWayStreaming = (TwoWayStreaming) exc.getHandler();
-        twoWayStreaming.removeSocketSoTimeout();
         frameAssembler = new WebSocketFrameAssembler(twoWayStreaming.getSrcIn(), exc);
         readerThread = new Thread(new FrameReader());
         readerThread.setName(getThreadName(twoWayStreaming));
         srcOut = twoWayStreaming.getSrcOut();
+
+        try {
+            twoWayStreaming.removeSocketSoTimeout();
+        } catch (SocketException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private static @NotNull Response getUpgradeResponse(Exchange exc) {
