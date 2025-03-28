@@ -19,6 +19,8 @@ import org.jetbrains.annotations.*;
 
 import java.util.*;
 
+import static org.apache.commons.lang3.StringUtils.trim;
+
 public class CliCommand {
     private final String name;
     private final String description;
@@ -146,7 +148,7 @@ public class CliCommand {
     }
 
     public String getOptionValue(String opt) {
-        return commandLine != null ? commandLine.getOptionValue(opt) : null;
+        return commandLine != null ? trim(commandLine.getOptionValue(opt)) : null;
     }
 
     public String getName() {

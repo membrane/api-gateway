@@ -223,7 +223,7 @@ public class RouterCLI {
                 log.error("Could not resolve path to configuration (attempt 2).", e);
             }
         }
-        System.err.println("Could not find Membrane's configuration file at " + try1 + (try2 == null ? "" : " and not at " + try2) + " . " + errorNotice);
+        System.err.println("Could not find Membrane's configuration file at " + try1 + (try2 == null ? "" : " and not at " + try2) + " " + errorNotice);
         System.exit(1);
         throw new RuntimeException();
     }
