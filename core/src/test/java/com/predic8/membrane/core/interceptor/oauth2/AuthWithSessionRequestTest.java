@@ -16,8 +16,6 @@ package com.predic8.membrane.core.interceptor.oauth2;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Named;
 
-import java.util.Arrays;
-import java.util.Collection;
 import java.util.stream.Stream;
 
 public class AuthWithSessionRequestTest extends RequestParameterizedTest {
@@ -25,8 +23,8 @@ public class AuthWithSessionRequestTest extends RequestParameterizedTest {
     @BeforeEach
     public void setUp() throws Exception{
         super.setUp();
-        oasit.runUntilGoodAuthRequest().run();
-        exc = oasit.getMockAuthRequestExchange().call();
+        OAuth2AuthorizationServerInterceptorBase.runUntilGoodAuthRequest().run();
+        exc = OAuth2AuthorizationServerInterceptorBase.getMockAuthRequestExchange().call();
     }
 
     public static Stream<Named<RequestTestData>> data() {

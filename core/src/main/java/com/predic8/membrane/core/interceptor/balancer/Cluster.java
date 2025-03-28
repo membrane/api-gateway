@@ -60,8 +60,8 @@ public class Cluster {
 		getNodeCreateIfNeeded(n).setStatus(Status.TAKEOUT);
 	}
 
-	public boolean removeNode(Node node) {
-		return nodes.remove(node);
+	public void removeNode(Node node) {
+		nodes.remove(node);
 	}
 
 	public List<Node> getAvailableNodes(long timeout) {

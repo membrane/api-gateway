@@ -24,13 +24,13 @@ import static com.predic8.membrane.core.interceptor.administration.AdminRESTInte
 
 public class PropertyValueCollector implements ExchangeCollector{
 
-	Set<Integer> statusCodes = new HashSet<>();
-	Set<String> proxies = new HashSet<>();
-	Set<String> reqContentTypes = new HashSet<>();
-	Set<String> respContentTypes = new HashSet<>();
-	Set<String> methods = new HashSet<>();
-	Set<String> clients = new HashSet<>();
-	Set<String> servers = new HashSet<>();
+	final Set<Integer> statusCodes = new HashSet<>();
+	final Set<String> proxies = new HashSet<>();
+	final Set<String> reqContentTypes = new HashSet<>();
+	final Set<String> respContentTypes = new HashSet<>();
+	final Set<String> methods = new HashSet<>();
+	final Set<String> clients = new HashSet<>();
+	final Set<String> servers = new HashSet<>();
 
     boolean useXForwardedForAsClientAddr;
 

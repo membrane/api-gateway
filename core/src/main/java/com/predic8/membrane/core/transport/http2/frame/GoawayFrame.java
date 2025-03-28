@@ -14,7 +14,6 @@
 
 package com.predic8.membrane.core.transport.http2.frame;
 
-import static com.predic8.membrane.core.transport.http2.frame.Frame.TYPE_DATA;
 import static com.predic8.membrane.core.transport.http2.frame.Frame.TYPE_GOAWAY;
 
 public class GoawayFrame {

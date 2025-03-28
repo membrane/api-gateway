@@ -26,9 +26,9 @@ public class OAuth2Statistics {
 
 
     private int refreshTokenFlow;
-    private StringBuilder builder = new StringBuilder();
+    private final StringBuilder builder = new StringBuilder();
 
-    private String newLine = "<br/>";
+    private final String newLine = "<br/>";
 
     @Override
     public synchronized String toString() {
@@ -46,8 +46,8 @@ public class OAuth2Statistics {
         return builder.substring(0,builder.length() - newLine.length());
     }
 
-    private StringBuilder writeLine(int value, String text){
-        return builder.append(value > 0 ? text +": " + value : "").append(value > 0 ? newLine : "");
+    private void writeLine(int value, String text){
+        builder.append(value > 0 ? text + ": " + value : "").append(value > 0 ? newLine : "");
     }
 
     public synchronized void successfulRequest(){

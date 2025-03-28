@@ -16,7 +16,6 @@ package com.predic8.membrane.core.transport;
 
 import java.util.Map;
 
-import com.predic8.membrane.core.http.xml.Request;
 import org.junit.jupiter.api.Test;
 
 import com.predic8.membrane.core.exchange.Exchange;

@@ -25,7 +25,7 @@ import java.util.*;
 
 public class Http2ClientPool {
 
-    private static Logger log = LoggerFactory.getLogger(Http2ClientPool.class.getName());
+    private static final Logger log = LoggerFactory.getLogger(Http2ClientPool.class.getName());
 
     private final long keepAliveTimeout;
     @GuardedBy("availableConnections")

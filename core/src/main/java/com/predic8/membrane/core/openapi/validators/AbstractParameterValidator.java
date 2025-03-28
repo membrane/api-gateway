@@ -27,8 +27,8 @@ import static com.predic8.membrane.core.util.CollectionsUtil.*;
 import static java.lang.String.*;
 
 public abstract class AbstractParameterValidator {
-    OpenAPI api;
-    PathItem pathItem;
+    final OpenAPI api;
+    final PathItem pathItem;
 
     public AbstractParameterValidator(OpenAPI api, PathItem pathItem) {
         this.api = api;

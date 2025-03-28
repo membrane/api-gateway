@@ -14,7 +14,6 @@
 
 package com.predic8.membrane.core.graphql.model;
 
-import com.predic8.membrane.core.graphql.ParserUtil;
 import com.predic8.membrane.core.graphql.ParsingException;
 import com.predic8.membrane.core.graphql.Tokenizer;
 

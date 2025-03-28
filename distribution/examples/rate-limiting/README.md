@@ -1,43 +1,18 @@
 ### RATE LIMITER
 
-The `RateLimiter` limits the number of requests in a given interval.
-
+The `rateLimiter` helps you maintain stable and reliable API performance by limiting the number of allowed requests within a defined interval. This approach protects your services from resource overuse and contributes to consistent uptime. By applying global or endpoint-specific rate limits, you gain flexibility and precise control over request management.
 
 #### RUNNING THE EXAMPLE
 
-In this example we will send 4 requests to the service with a rate limit of 3 requests per 30 seconds. The first 3 requests will go through while the last one will be blocked with code `429`. NOTICE: The RateLimiter limits in a given interval and then resets the interval. That means you could send 3 requests, the interval is reset, you send the fourth request and the RateLimiter doesn't block because it is in a new interval. Just repeat the requests if this happens. 
+In this example, the global rate limit is set to 10 requests per minute (per client IP), with an additional specific limit of 3 requests per 30 seconds based on the JSON field `user` for the `/reset-pwd` endpoint. To test this:
 
-1. Get curl from https://curl.se/ and install it
+1. Start Membrane from this directory by executing `membrane.sh` or `membrane.cmd`.
+2. Send requests to test global limit:
+    - Execute `curl localhost:2000 -I` 11 times within one minute. The first 10 requests succeed; the 11th will be blocked with HTTP status `429`.
+3. end requests to test endpoint-specific limit:
+    - Execute `curl -X POST localhost:2010/reset-pwd -H "Content-Type: application/json" -d '{"user":"testuser"}'` 4 times within 30 seconds. The first 3 requests succeed; the 4th request will be blocked with HTTP status `429`.
 
-2. Go to the `examples/rate-limiting` directory.
-
-3. Execute `membrane.cmd`
-
-4. Run the command line
-
-5. Repeat 4 times within 30 seconds: Request the header of localhost:2000 with `curl localhost:2000 -I`
-
-
-#### HOW IT IS DONE
-
-This section describes the example in detail.  
-
-First take a look at the proxies.xml file.
-```
-<router>
-  <serviceProxy port="2000">
-    <rateLimiter requestLimit="3" requestLimitDuration="PT30S"/>
-    <target host="www.google.de" port="80" />
-  </serviceProxy>
-</router>
-```
-You will see that there is a `serviceProxy` on port `2000`. Additionally, the `RateLimiter` is added to the proxy and configured to 3 requests per 30 seconds.
-
-The rateLimiter element has 2 values that you can set and by default it is set to 1000 requests per hour.
-
-* `requestLimit="x"` can be any positive number. Specifies the number of requests per interval.
-* `requestLimitDuration="PTxS"` can be any duration in seconds. Specifies the interval in which `requestLimit` requests can be done. Format is "PTxS" where x is the duration in seconds.
- 
---- 
+---
 See:
-- [rateLimiter](https://membrane-soa.org/api-gateway-doc/current/configuration/reference/rateLimiter.htm) reference
+- [rateLimiter Documentation](https://www.membrane-api.io/docs/current/rateLimiter.html)
+

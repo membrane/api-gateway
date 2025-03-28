@@ -41,9 +41,9 @@ public class AcmeException extends Exception {
     }
 
     public static class SubProblem {
-        String type;
-        String detail;
-        Map identifier;
+        final String type;
+        final String detail;
+        final Map identifier;
 
         public SubProblem(String type, String detail, Map identifier) {
             this.type = type;

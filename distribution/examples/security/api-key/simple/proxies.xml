@@ -6,8 +6,8 @@
 
     <router>
 
-        <!--API key authentication, providing key is mandatory.-->
-        <api port="2000">
+        <global>
+            <!--Global API key authentication, providing key is mandatory.-->
             <apiKey>
                 <!-- API keys that permit access -->
                 <keys>
@@ -28,7 +28,10 @@
                 -->
                 <queryParamExtractor />
             </apiKey>
+        </global>
 
+
+        <api port="2000">
             <!-- Use your backend instead of static and return.
                  e.g. <target url="https://example.com"/>
             -->

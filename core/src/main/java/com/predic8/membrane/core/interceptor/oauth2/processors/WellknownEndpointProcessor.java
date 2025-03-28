@@ -29,7 +29,7 @@ public class WellknownEndpointProcessor extends EndpointProcessor {
 
     private static final Logger log = LoggerFactory.getLogger(WellknownEndpointProcessor.class);
 
-    private JSONBeautifier jsonBeautifier = new JSONBeautifier();
+    private final JSONBeautifier jsonBeautifier = new JSONBeautifier();
 
     public WellknownEndpointProcessor(OAuth2AuthorizationServerInterceptor authServer) {
         super(authServer);

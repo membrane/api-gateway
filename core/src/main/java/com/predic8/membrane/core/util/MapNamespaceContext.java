@@ -24,7 +24,7 @@ import javax.xml.namespace.NamespaceContext;
  */
 public class MapNamespaceContext implements NamespaceContext {
 
-	private Map<String, String> namespaces;
+	private final Map<String, String> namespaces;
 
 	public MapNamespaceContext(Map<String, String> namespaces) {
 		this.namespaces = namespaces;

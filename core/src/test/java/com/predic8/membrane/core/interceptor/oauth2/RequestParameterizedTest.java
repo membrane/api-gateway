@@ -60,7 +60,7 @@ public abstract class RequestParameterizedTest {
     public void test(RequestTestData data) throws Exception {
         data.modification().call();
         OAuth2TestUtil.makeExchangeValid(exc);
-        oasit.oasi.handleRequest(exc);
+        OAuth2AuthorizationServerInterceptorBase.oasi.handleRequest(exc);
 
         assertEquals(data.expectedStatusCode(),exc.getResponse().getStatusCode());
         assertEquals(data.expectedResult().get(),data.actualResult().get());
@@ -163,7 +163,7 @@ public abstract class RequestParameterizedTest {
     }
 
     public static void modifySessionAttributes(String name, String value){
-        SessionManager.Session s = oasit.oasi.getSessionManager().getOrCreateSession(exc);
+        SessionManager.Session s = OAuth2AuthorizationServerInterceptorBase.oasi.getSessionManager().getOrCreateSession(exc);
         Map<String, String> userAttributes = s.getUserAttributes();
         synchronized (userAttributes) {
             userAttributes.put(name, value);

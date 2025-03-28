@@ -36,7 +36,7 @@ import java.util.concurrent.ConcurrentMap;
  */
 class FaultMonitoringState {
 
-	private static Logger log = LoggerFactory.getLogger(FaultMonitoringState.class.getName());
+	private static final Logger log = LoggerFactory.getLogger(FaultMonitoringState.class.getName());
 
 	/**
 	 * Key = destination "host:port"

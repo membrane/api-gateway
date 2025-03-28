@@ -23,7 +23,7 @@ import org.junit.jupiter.api.Test;
 public class RequestPerformanceVersion2 {
 
 	private int bufferSize;
-	private byte[] buffer = new byte[1024];
+	private final byte[] buffer = new byte[1024];
 
 	@BeforeEach
 	public void setUp() throws Exception {
@@ -89,7 +89,7 @@ public class RequestPerformanceVersion2 {
 			s = e + 2;
 			e = nextToken(buf, s, ':');
 			String k = new String(buf, s, e - s);
-			if ("".equals(k))
+			if (k.isEmpty())
 				break;
 
 			s = ++e;

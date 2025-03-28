@@ -23,7 +23,7 @@ import java.util.*;
 import static com.predic8.membrane.core.graphql.Tokenizer.Type.*;
 
 public class ExecutableDocument {
-    List<ExecutableDefinition> executableDefinitions = new ArrayList<>();
+    final List<ExecutableDefinition> executableDefinitions = new ArrayList<>();
 
     public ExecutableDocument() {
     }

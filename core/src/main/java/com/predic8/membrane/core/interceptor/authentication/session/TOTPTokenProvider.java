@@ -47,7 +47,7 @@ import org.slf4j.LoggerFactory;
 @MCElement(name="totpTokenProvider", topLevel=false)
 public class TOTPTokenProvider implements TokenProvider {
 
-	Logger log = LoggerFactory.getLogger(TOTPTokenProvider.class);
+	final Logger log = LoggerFactory.getLogger(TOTPTokenProvider.class);
 
 	@Override
 	public void init(Router router) {

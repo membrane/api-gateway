@@ -16,7 +16,6 @@ package com.predic8.membrane.core.interceptor.oauth2.tokengenerators;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.interceptor.oauth2.authorizationservice.AuthorizationService;
-import com.predic8.membrane.core.transport.http.HttpClient;
 import org.jose4j.jwk.HttpsJwks;
 import org.jose4j.jwk.JsonWebKeySet;
 import org.jose4j.jwk.RsaJsonWebKey;
@@ -70,7 +69,7 @@ public class JwtGenerator {
         }
     }
 
-    private SecureRandom random = new SecureRandom();
+    private final SecureRandom random = new SecureRandom();
     private RsaJsonWebKey rsaJsonWebKey;
 
     public JwtGenerator() throws JoseException {
@@ -117,7 +116,7 @@ public class JwtGenerator {
         return claims;
     }
 
-    public List<Claim> getClaimsFromSignedIdToken(String idToken, String iss, String aud) throws InvalidJwtException {
+    public void getClaimsFromSignedIdToken(String idToken, String iss, String aud) throws InvalidJwtException {
         ArrayList<Claim> result = new ArrayList<>();
         JwtClaims claims = processIdTokenToClaims(idToken,iss,aud);
 
@@ -125,7 +124,6 @@ public class JwtGenerator {
             result.add(new Claim(claim,String.valueOf(claims.getClaimValue(claim))));
         }
 
-        return result;
     }
 
     public static List<Claim> getClaimsFromSignedIdToken(String idToken, String iss, String aud, Key key) throws InvalidJwtException {
@@ -148,11 +146,11 @@ public class JwtGenerator {
         return getClaimsFromClaimsMap(claims);
     }
 
-    public static List<Claim> getClaimsFromSignedIdToken(String idToken, String iss, String aud, String jwksUrl, AuthorizationService as) throws Exception {
+    public static void getClaimsFromSignedIdToken(String idToken, String iss, String aud, String jwksUrl, AuthorizationService as) throws Exception {
         Exchange getJwks = new Request.Builder().get(jwksUrl).buildExchange();
         JwtClaims claims = processIdTokenToClaims(idToken,iss,aud,new JwksVerificationKeyResolver(new JsonWebKeySet(as.doRequest(getJwks).getBodyAsStringDecoded()).getJsonWebKeys()));
 
-        return getClaimsFromClaimsMap(claims);
+        getClaimsFromClaimsMap(claims);
     }
 
     private static List<Claim> getClaimsFromClaimsMap(JwtClaims claims) {

@@ -31,12 +31,12 @@ import java.util.stream.Collectors;
  */
 public class FakeSyncSessionStoreManager extends SessionManager {
 
-    protected String cookiePrefix = UUID.randomUUID().toString().substring(0,8);
+    protected final String cookiePrefix = UUID.randomUUID().toString().substring(0,8);
     private static final String ID_NAME = "_in_memory_session_id";
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
-    private ConcurrentHashMap<String, String> remoteContent = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, String> remoteContent = new ConcurrentHashMap<>();
 
     @Override
     public void init(Router router) throws Exception {

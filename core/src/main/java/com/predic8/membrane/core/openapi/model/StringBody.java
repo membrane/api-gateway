@@ -23,7 +23,7 @@ import java.io.*;
 
 public class StringBody implements Body {
 
-    private String payload;
+    private final String payload;
 
     public StringBody(String s) {
         payload=s;

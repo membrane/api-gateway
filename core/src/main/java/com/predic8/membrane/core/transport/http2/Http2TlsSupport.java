@@ -17,8 +17,6 @@ package com.predic8.membrane.core.transport.http2;
 import javax.net.ssl.SSLParameters;
 import javax.net.ssl.SSLServerSocket;
 import javax.net.ssl.SSLSocket;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.net.Socket;
 
 public class Http2TlsSupport {

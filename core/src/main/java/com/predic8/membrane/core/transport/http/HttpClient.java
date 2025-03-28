@@ -35,6 +35,7 @@ import java.nio.*;
 import java.util.*;
 
 import static com.predic8.membrane.core.exchange.Exchange.*;
+import static com.predic8.membrane.core.http.Header.*;
 import static java.lang.Boolean.*;
 import static java.nio.charset.StandardCharsets.*;
 
@@ -80,6 +81,7 @@ public class HttpClient implements AutoCloseable {
 
     private static final String[] HTTP2_PROTOCOLS = new String[]{"h2"};
     private static final String[] HTTP1_PROTOCOLS = new String[]{};
+    private static volatile boolean infoOnHttp2Downgrade = true;
 
     public HttpClient() {
         this(null, null);
@@ -93,16 +95,8 @@ public class HttpClient implements AutoCloseable {
         if (configuration == null)
             configuration = new HttpClientConfiguration();
         proxy = configuration.getProxy();
-        if (proxy != null && proxy.getSslParser() != null)
-            proxySSLContext = new StaticSSLContext(proxy.getSslParser(), new ResolverMap(), null);
-        else
-            proxySSLContext = null;
-        if (configuration.getSslParser() != null) {
-            if (configuration.getBaseLocation() == null)
-                throw new RuntimeException("Cannot find keystores as base location is unknown");
-            sslContext = new StaticSSLContext(configuration.getSslParser(), new ResolverMap(), configuration.getBaseLocation());
-        } else
-            sslContext = null;
+        proxySSLContext = getProxySSLContext(proxy);
+        sslContext = getSSLContext(configuration);
         authentication = configuration.getAuthentication();
         maxRetries = configuration.getMaxRetries();
 
@@ -114,6 +108,21 @@ public class HttpClient implements AutoCloseable {
 
         useHttp2 = configuration.isUseExperimentalHttp2();
         http2ClientPool = getHttp2ClientPool( useHttp2,configuration);
+    }
+
+    private static @org.jetbrains.annotations.Nullable SSLContext getSSLContext(@NotNull HttpClientConfiguration configuration) {
+        if (configuration.getSslParser() != null) {
+            if (configuration.getBaseLocation() == null)
+                throw new RuntimeException("Cannot find keystores as base location is unknown");
+            return new StaticSSLContext(configuration.getSslParser(), new ResolverMap(), configuration.getBaseLocation());
+        }
+        return null;
+    }
+
+    private static @org.jetbrains.annotations.Nullable SSLContext getProxySSLContext(ProxyConfiguration proxy) {
+        if (proxy != null && proxy.getSslParser() != null)
+            return new StaticSSLContext(proxy.getSslParser(), new ResolverMap(), null);
+        return null;
     }
 
     private @org.jetbrains.annotations.Nullable Http2ClientPool getHttp2ClientPool(boolean useHttp2, @NotNull HttpClientConfiguration configuration) {
@@ -213,7 +222,7 @@ public class HttpClient implements AutoCloseable {
             log.debug("try # {} to {}", counter, dest);
             HostColonPort target = init(exc, dest, adjustHostHeader);
             try {
-                Connection con = getConnection(exc, counter, target);
+                Connection con = getConnectionFromExchange(exc, counter, target);
                 boolean usingHttp2 = false;
 
                 SSLProvider sslProvider = getOutboundSSLProvider(exc, target);
@@ -258,7 +267,7 @@ public class HttpClient implements AutoCloseable {
                         if (trackNodeStatus)
                             exc.setNodeStatusCode(counter, response.getStatusCode());
 
-                        newProtocol = upgradeProtocol(exc, response, newProtocol); // 3rd parameter is always null!
+                        newProtocol = upgradeProtocol(exc, response);
                     }
 
                     if (newProtocol != null) {
@@ -363,10 +372,33 @@ public class HttpClient implements AutoCloseable {
             return;
         if (upgradeProtocol.equalsIgnoreCase("tcp") && exc.getProperty(ALLOW_TCP) == TRUE)
             return;
+        if (upgradeProtocol.equalsIgnoreCase("h2c")) {
+            if (exc.getProperty(ALLOW_H2) == TRUE) {
+                // note that this has been deprecated by RFC9113 superseeding RFC7540, and therefore should not happen.
+                return;
+            }
+            // RFC750 section 3.2 specifies that servers not supporting this can respond "as though the Upgrade header
+            // field were absent". Therefore, we remove it.
+            if (infoOnHttp2Downgrade) {
+                infoOnHttp2Downgrade = false;
+                log.info("Your client sent a 'Connection: Upgrade' with 'Upgrade: h2c'. Please note that RFC7540 has "+
+                        "been superseeded by RFC9113, which removes this option. The header was and will be removed.");
+            }
+            exc.getRequest().getHeader().removeFields(UPGRADE);
+            exc.getRequest().getHeader().removeFields(HTTP2_SETTINGS);
+            exc.getRequest().getHeader().keepOnly(CONNECTION, value -> !value.equalsIgnoreCase(UPGRADE) && !value.equalsIgnoreCase(HTTP2_SETTINGS) );
+            return;
+        }
+
         throw new ProtocolUpgradeDeniedException(upgradeProtocol);
     }
 
-    private static @org.jetbrains.annotations.Nullable Connection getConnection(Exchange exc, int counter, HostColonPort target) throws IOException {
+    /**
+     * E.g. for protocols like NTLM, an outbound TCP connection gets bound to an inbound TCP connection. This
+     * is realized by binding the TCP connection to the Exchange here, and binding it to the next Exchange in
+     * {@link HttpServerHandler}.
+     */
+    private static @org.jetbrains.annotations.Nullable Connection getConnectionFromExchange(Exchange exc, int counter, HostColonPort target) throws IOException {
         Connection con = null;
         if (counter == 0) {
             con = exc.getTargetConnection();
@@ -409,7 +441,7 @@ public class HttpClient implements AutoCloseable {
         return HTTP1_PROTOCOLS;
     }
 
-    private String upgradeProtocol(Exchange exc, Response response, String newProtocol) {
+    private String upgradeProtocol(Exchange exc, Response response) {
         if (exc.getProperty(ALLOW_WEBSOCKET) == TRUE && isUpgradeToResponse(response, "websocket")) {
             log.debug("Upgrading to WebSocket protocol.");
             return "WebSocket";
@@ -419,7 +451,7 @@ public class HttpClient implements AutoCloseable {
             log.debug("Upgrading to TCP protocol.");
             return "TCP";
         }
-        return newProtocol;
+        return null;
     }
 
     // TODO Inline method
@@ -536,18 +568,15 @@ public class HttpClient implements AutoCloseable {
     }
 
     private String getUpgradeProtocol(Request req) {
-        if (!req.getHeader().getValues(new HeaderName(Header.CONNECTION)).stream()
-                .flatMap(v -> Arrays.stream(v.getValue().toLowerCase().split(",")))
-                .map(v -> v.trim().toLowerCase())
-                .anyMatch(v -> v.equals("upgrade")))
+        if (req.getHeader().getSingleValues(CONNECTION).noneMatch(v -> v.equalsIgnoreCase(UPGRADE)))
             return null;
-        return req.getHeader().getFirstValue("Upgrade");
+        return req.getHeader().getFirstValue(UPGRADE);
     }
 
     private boolean isUpgradeToResponse(Response res, String protocol) {
         return res.getStatusCode() == 101 &&
-               "upgrade".equalsIgnoreCase(res.getHeader().getFirstValue(Header.CONNECTION)) &&
-               protocol.equalsIgnoreCase(res.getHeader().getFirstValue(Header.UPGRADE));
+               "upgrade".equalsIgnoreCase(res.getHeader().getFirstValue(CONNECTION)) &&
+               protocol.equalsIgnoreCase(res.getHeader().getFirstValue(UPGRADE));
     }
 
     private void handleConnectRequest(Exchange exc, Connection con) throws IOException, EndOfStreamException {

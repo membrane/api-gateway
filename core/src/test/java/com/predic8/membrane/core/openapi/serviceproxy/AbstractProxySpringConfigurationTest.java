@@ -19,7 +19,7 @@ import org.springframework.core.io.*;
 
 abstract class AbstractProxySpringConfigurationTest {
 
-    static String config = """
+    static final String config = """
             <spring:beans xmlns:spring="http://www.springframework.org/schema/beans"
                           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                           xmlns="http://membrane-soa.org/proxies/1/" xmlns:lang="http://www.springframework.org/schema/lang"

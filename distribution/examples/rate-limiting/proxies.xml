@@ -6,14 +6,19 @@
 
 	<router>
 
+		<!-- Applies to all APIs in this configuration -->
+		<global>
+			<!-- Use client IP (default) to count requests -->
+			<rateLimiter requestLimit="10" requestLimitDuration="PT1M"/>
+		</global>
+
 		<api port="2000">
-			<!-- Use client IP to count requests -->
-			<rateLimiter requestLimit="3" requestLimitDuration="PT30S"/>
 			<static>Success</static>
 			<return/>
 		</api>
 
 		<api port="2010">
+			<path>/reset-pwd</path>
 			<!-- Use the content of the field 'user' to count requests -->
 			<rateLimiter requestLimit="3" requestLimitDuration="PT30S" language="jsonpath" keyExpression="$.user"/>
 			<static>Success</static>
@@ -21,5 +26,5 @@
 		</api>
 
 	</router>
-	
+
 </spring:beans>

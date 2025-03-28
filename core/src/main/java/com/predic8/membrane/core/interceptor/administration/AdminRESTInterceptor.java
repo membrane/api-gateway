@@ -19,6 +19,7 @@ import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.exchangestore.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.http.Response.*;
+import com.predic8.membrane.core.interceptor.adminApi.AdminApiInterceptor;
 import com.predic8.membrane.core.interceptor.rest.*;
 import com.predic8.membrane.core.interceptor.statistics.util.*;
 import com.predic8.membrane.core.proxies.*;
@@ -309,18 +310,7 @@ public class AdminRESTInterceptor extends RESTInterceptor {
 	}
 
 	public static String getClientAddr(boolean useXForwardedForAsClientAddr, AbstractExchange exc) {
-		if (useXForwardedForAsClientAddr) {
-			Request request = exc.getRequest();
-			if (request != null) {
-				Header header = request.getHeader();
-				if (header != null) {
-					String value = header.getFirstValue(X_FORWARDED_FOR);
-					if (value != null)
-						return value;
-				}
-			}
-		}
-		return exc.getRemoteAddr();
+        return AdminApiInterceptor.getClientAddr(useXForwardedForAsClientAddr, exc);
 	}
 
 	private int getServerPort(AbstractExchange exc) {

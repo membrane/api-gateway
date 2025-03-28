@@ -33,14 +33,14 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class RewriteTest {
 
-    Rewrite rewriteAll = new Rewrite();
-    Rewrite rewriteNothing = new Rewrite();
+    final Rewrite rewriteAll = new Rewrite();
+    final Rewrite rewriteNothing = new Rewrite();
 
     OpenAPISpec rewritesAllSpec;
 
     Map<String, OpenAPIRecord> records;
 
-    Exchange get = new Exchange(null);
+    final Exchange get = new Exchange(null);
 
     @BeforeEach
     void setUp() {

@@ -44,7 +44,7 @@ public class AcmeStepTest {
     }
 
     private AcmeServerSimulator sim;
-    public String baseUrl = "http://localhost:3050/directory";
+    public final String baseUrl = "http://localhost:3050/directory";
 
     @BeforeEach
     public void init() throws IOException {

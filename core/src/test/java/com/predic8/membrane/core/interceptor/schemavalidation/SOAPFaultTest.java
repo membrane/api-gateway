@@ -16,7 +16,6 @@ package com.predic8.membrane.core.interceptor.schemavalidation;
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.util.SOAPUtil;
-import com.predic8.membrane.test.*;
 import org.junit.jupiter.api.Test;
 
 import java.util.Map;

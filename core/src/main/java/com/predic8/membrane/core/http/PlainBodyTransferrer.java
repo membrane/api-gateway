@@ -17,7 +17,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 
 public class PlainBodyTransferrer extends AbstractBodyTransferrer {
-	OutputStream out;
+	final OutputStream out;
 
 	public PlainBodyTransferrer(OutputStream out) {
 		this.out = out;

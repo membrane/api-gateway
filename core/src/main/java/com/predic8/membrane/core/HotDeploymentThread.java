@@ -28,7 +28,7 @@ public class HotDeploymentThread extends Thread {
 	private static final Logger log = LoggerFactory.getLogger(HotDeploymentThread.class.getName());
 
 	private final List<HotDeploymentThread.FileInfo> files = new ArrayList<>();
-	protected AbstractRefreshableApplicationContext applicationContext;
+	protected final AbstractRefreshableApplicationContext applicationContext;
 	private boolean reloading;
 
 	private static class FileInfo {
@@ -91,7 +91,7 @@ public class HotDeploymentThread extends Thread {
 				// InterruptedException clears interrupt flag. see javadoc Thread.interrupt();
 				// So reset it.
 				interrupt();
-			} 
+			}
 			catch (Exception e) {
 				log.error("Could not redeploy, there are errors in the configuration.");
 				SpringConfigurationErrorHandler.handleRootCause(e,log);

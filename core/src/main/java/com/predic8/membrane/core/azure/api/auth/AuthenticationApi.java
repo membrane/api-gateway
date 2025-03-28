@@ -17,7 +17,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.predic8.membrane.core.azure.AzureIdentity;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Request;
-import com.predic8.membrane.core.openapi.serviceproxy.ApiDocsInterceptor;
 import com.predic8.membrane.core.transport.http.HttpClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

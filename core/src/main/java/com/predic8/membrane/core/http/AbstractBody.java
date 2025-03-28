@@ -49,8 +49,8 @@ public abstract class AbstractBody {
 	// whether the body has been read completely from the wire
 	boolean read;
 
-	protected List<Chunk> chunks = new ArrayList<>();
-	protected List<MessageObserver> observers = new ArrayList<>(1);
+	protected final List<Chunk> chunks = new ArrayList<>();
+	protected final List<MessageObserver> observers = new ArrayList<>(1);
 	private boolean wasStreamed = false;
 
 	public void read() throws IOException {
@@ -106,6 +106,8 @@ public abstract class AbstractBody {
 	 * you should therefore use {@link #getContentAsStream()} instead.
 	 */
 	public byte[] getContent() throws IOException {
+		if (wasStreamed)
+			throw new IllegalStateException("Cannot read body after it was streamed.");
 		read();
 		byte[] content = new byte[getLength()];
 		int destPos = 0;
@@ -116,6 +118,8 @@ public abstract class AbstractBody {
 	}
 
 	public InputStream getContentAsStream() throws IOException {
+		if (wasStreamed)
+			throw new IllegalStateException("Cannot read body after it was streamed.");
 		read();
 		return new BodyInputStream(chunks);
 	}
@@ -233,7 +237,7 @@ public abstract class AbstractBody {
 	}
 
 	/**
-	 * @return true, when the body supports trailers and the trailer was therefore set.
+	 *
 	 */
 	public boolean setTrailer(Header trailer) {
 		return false;

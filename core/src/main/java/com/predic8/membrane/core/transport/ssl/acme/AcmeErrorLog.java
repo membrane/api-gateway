@@ -15,8 +15,6 @@ package com.predic8.membrane.core.transport.ssl.acme;
 
 import org.joda.time.DateTime;
 
-import java.util.Date;
-
 public class AcmeErrorLog {
     String message;
     boolean fatal;

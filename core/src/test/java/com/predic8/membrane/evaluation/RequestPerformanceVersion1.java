@@ -23,7 +23,7 @@ import org.junit.jupiter.api.Test;
 public class RequestPerformanceVersion1 {
 
 	private int bufferSize;
-	private byte[] buffer = new byte[1024];
+	private final byte[] buffer = new byte[1024];
 
 
 	@BeforeEach
@@ -94,7 +94,7 @@ public class RequestPerformanceVersion1 {
 			read = nextToken(reader, buf, ':');
 			String k = new String(buf,0,read);
 
-			if (k.equals("")) break;
+			if (k.isEmpty()) break;
 
 			read = nextToken(reader, buf, '\n');
 			String v = new String(buf,0,read);
@@ -119,7 +119,7 @@ public class RequestPerformanceVersion1 {
 		while (true) {
 			String k = nextStringToken(reader, ':');
 
-			if (k.equals("")) break;
+			if (k.isEmpty()) break;
 
 			String v = nextStringToken(reader, '\n');
 

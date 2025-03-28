@@ -29,7 +29,7 @@ import com.predic8.membrane.core.http.Chunk;
 
 public class ByteUtil {
 
-	private static Logger log = LoggerFactory.getLogger(ByteUtil.class.getName());
+	private static final Logger log = LoggerFactory.getLogger(ByteUtil.class.getName());
 
 	public static byte[] readByteArray(InputStream in, int length) throws IOException {
 		if (length < 0)

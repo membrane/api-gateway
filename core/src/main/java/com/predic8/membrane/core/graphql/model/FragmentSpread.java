@@ -22,7 +22,6 @@ import java.util.List;
 import java.util.Objects;
 
 import static com.predic8.membrane.core.graphql.ParserUtil.parseDirectivesOpt;
-import static com.predic8.membrane.core.graphql.ParserUtil.parseName;
 import static com.predic8.membrane.core.graphql.Tokenizer.Type.NAME;
 
 public class FragmentSpread extends Selection {

@@ -16,8 +16,6 @@ package com.predic8.membrane.core.http;
 
 import org.junit.jupiter.api.*;
 
-import java.io.*;
-
 import static org.junit.jupiter.api.Assertions.*;
 
 public class ResponseBuilderTest {

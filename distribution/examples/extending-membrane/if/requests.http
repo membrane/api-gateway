@@ -1,49 +1,63 @@
 // All requests will return 404
 
 ### Will be detected as a JSON request.
-POST / HTTP/2
+POST /
 Host: localhost:2000
 Content-Type: application/json
 
 {"foo":  "bar"}
 
 ### Will be detected as a JSON request where the 'name' key is not null.
-POST / HTTP/2
+POST /
 Host: localhost:2000
 Content-Type: application/json
 
 {"name": "bar"}
 
 ### Will be detected as a JSON request where the 'name' key has the value 'foo'.
-POST / HTTP/2
+POST /
 Host: localhost:2000
 Content-Type: application/json
 
 {"name": "foo"}
 
 ### Query parameter value will be checked.
-GET /?param1=value1 HTTP/2
+GET /?param1=value1
 Host: localhost:2000
 
 ###
-GET /?param1=value2 HTTP/2
+GET /?param1=value2
 Host: localhost:2000
 
 ### Does X-Test-Header contain 'bar'?
-GET / HTTP/2
+GET /
 Host: localhost:2000
 X-Test-Header: foo
 
 ###
-GET / HTTP/2
+GET /
 Host: localhost:2000
 X-Test-Header: foobar
 
 ### Body will be detected to be larger than 64 characters.
-POST / HTTP/2
+POST /
 Host: localhost:2000
+Content-Type: text/plain
 
 Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
 Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
 Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.
 Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+
+### XML
+POST /
+Host: localhost:2000
+Content-Type: text/xml
+
+<foo>42</foo>
+
+
+### XML
+POST /
+Host: localhost:2000
+Content-Type: text/xml

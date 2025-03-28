@@ -15,12 +15,9 @@ package com.predic8.membrane.core.interceptor.oauth2client.rf;
 
 import com.predic8.membrane.core.interceptor.oauth2.ParamNames;
 import com.predic8.membrane.core.interceptor.session.Session;
-import com.predic8.membrane.core.util.URLParamUtil;
 import org.jetbrains.annotations.NotNull;
 
 import java.math.BigInteger;
-import java.net.URLDecoder;
-import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
 import java.util.Arrays;
 import java.util.Map;

@@ -25,12 +25,19 @@ import org.slf4j.*;
 import java.net.*;
 import java.util.*;
 
+import static java.util.stream.Collectors.toMap;
+
 public class Exchange extends AbstractExchange {
 
 	/* Exchange Properties */
 	public static final String HTTP_SERVLET_REQUEST = "membrane.servlet.request";
 	public static final String ALLOW_WEBSOCKET = "membrane.use.websocket";
 	public static final String ALLOW_TCP = "membrane.use.tcp";
+	/**
+	 * Please note that this is a relic from RFC7540 and has been removed in RFC9113. It is present for backward
+	 * compatibility (i.e. for Java's internal HTTP client).
+	 */
+	public static final String ALLOW_H2 = "membrane.use.h2";
 	public static final String TRACK_NODE_STATUS = "membrane.track.node.status";
 	public static final String SSL_CONTEXT = "membrane.ssl.context";
 	public static final String OAUTH2 = "membrane.oauth2";
@@ -45,9 +52,9 @@ public class Exchange extends AbstractExchange {
 	private String originalHostHeader = "";
 
 	private Connection targetConnection;
-	
+
 	private int[] nodeStatusCodes;
-	
+
 	private Exception[] nodeExceptions;
 
 	private long id;
@@ -163,23 +170,18 @@ public class Exchange extends AbstractExchange {
 	}
 
 	public Map<String, String> getStringProperties() {
-		Map<String, String> map = new HashMap<>();
-
-		for (Map.Entry<String, Object> e : properties.entrySet()) {
-			if (e.getValue() instanceof String) {
-				map.put(e.getKey(), (String) e.getValue());
-			}
-		}
-		return map;
+		return properties.entrySet().stream()
+				.filter(entry -> entry.getValue() instanceof String)
+				.collect(toMap(Map.Entry::getKey, e -> (String) e.getValue()));
 	}
-	
+
 	public void setNodeStatusCode(int tryCounter, int code){
 		if(nodeStatusCodes == null){
 			nodeStatusCodes = new int[getDestinations().size()];
 		}
 		nodeStatusCodes[tryCounter % getDestinations().size()] = code;
 	}
-	
+
 	public void setNodeException(int tryCounter, Exception e){
 		if(nodeExceptions == null){
 			nodeExceptions = new Exception[getDestinations().size()];

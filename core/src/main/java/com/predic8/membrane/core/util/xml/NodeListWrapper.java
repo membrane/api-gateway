@@ -21,7 +21,7 @@ import org.w3c.dom.*;
  */
 public class NodeListWrapper implements NodeList {
 
-    NodeList nodeList;
+    final NodeList nodeList;
 
     public NodeListWrapper(NodeList nodeList) {
         this.nodeList = nodeList;
