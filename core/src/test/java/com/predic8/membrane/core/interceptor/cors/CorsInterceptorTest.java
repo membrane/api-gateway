@@ -5,70 +5,67 @@ import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.Outcome;
+import com.predic8.membrane.core.util.URIFactory;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.net.URISyntaxException;
+
+import static com.predic8.membrane.core.interceptor.cors.CorsInterceptor.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class CorsInterceptorTest {
 
-    CorsInterceptor corsInterceptor;
+    CorsInterceptor interceptor;
 
     @BeforeEach
     void setUp() {
-        corsInterceptor = new CorsInterceptor();
-        corsInterceptor.setAllowAll(false);
-        corsInterceptor.setAllowOrigin("https://foo.example");
-        corsInterceptor.setAllowMethods("POST, GET, OPTIONS");
-        corsInterceptor.setAllowHeaders("X-PINGOTHER, Content-Type");
-        corsInterceptor.setMaxAge(86400);
-        corsInterceptor.setAllowCredentials(false);
+        interceptor = new CorsInterceptor();
+        interceptor.setAllowAll(false);
+        interceptor.setAllowOrigin("https://foo.example");
+        interceptor.setAllowMethods("POST, GET, OPTIONS");
+        interceptor.setAllowHeaders("X-PINGOTHER, Content-Type");
+        interceptor.setMaxAge(86400);
+        interceptor.setAllowCredentials(false);
     }
 
     @Test
-    void handle() {
+    void handle() throws URISyntaxException {
 
         Exchange preflight = new Exchange(null);
-        Request preflightReq = new Request();
+        preflight.setRequest(new Request.Builder()
+                .method(Request.METHOD_OPTIONS)
+                .url(new URIFactory(), "http://example.com/doc")
+                .header("Origin", "https://foo.example")
+                .header(ACCESS_CONTROL_ALLOW_METHODS, "POST")
+                .header(ACCESS_CONTROL_ALLOW_HEADERS, "content-type,x-pingother")
+                .build());
 
-        preflightReq.setMethod("OPTIONS");
-        preflightReq.setUri("/doc");
-        preflightReq.setVersion("1.1");
-        preflightReq.setHeader(new Header());
-
-        preflightReq.getHeader().add("Origin", "https://foo.example");
-        preflightReq.getHeader().add("Access-Control-Request-Method", "POST");
-        preflightReq.getHeader().add("Access-Control-Request-Headers", "content-type,x-pingother");
-
-        preflight.setRequest(preflightReq);
-
-        assertEquals(Outcome.ABORT, corsInterceptor.handleRequest(preflight));
+        assertEquals(Outcome.RETURN, interceptor.handleRequest(preflight));
         Response preflightResp = preflight.getResponse();
         Header preRespHeader = preflightResp.getHeader();
 
         assertEquals(204, preflightResp.getStatusCode());
-        assertEquals("https://foo.example", preRespHeader.getFirstValue("Access-Control-Allow-Origin"));
-        assertTrue(preRespHeader.getFirstValue("Access-Control-Allow-Methods").contains("POST"));
-        assertTrue(preRespHeader.getFirstValue("Access-Control-Allow-Headers").toLowerCase().contains("x-pingother"));
-        assertEquals("86400", preRespHeader.getFirstValue("Access-Control-Max-Age"));
+        assertEquals("https://foo.example", preRespHeader.getFirstValue(ACCESS_CONTROL_ALLOW_ORIGIN));
+        assertTrue(preRespHeader.getFirstValue(ACCESS_CONTROL_ALLOW_METHODS).contains("POST"));
+        assertTrue(preRespHeader.getFirstValue(ACCESS_CONTROL_ALLOW_HEADERS).toLowerCase().contains("x-pingother"));
+        assertEquals("86400", preRespHeader.getFirstValue(ACCESS_CONTROL_MAX_AGE));
 
         Exchange main = new Exchange(null);
-        Request mainReq = new Request();
-        mainReq.setMethod("POST");
-        mainReq.setUri("/doc");
-        mainReq.setVersion("1.1");
-        mainReq.setHeader(new Header());
 
-        mainReq.getHeader().add("Origin", "https://foo.example");
-        mainReq.getHeader().add("X-PINGOTHER", "pingpong");
-        mainReq.getHeader().add("Content-Type", "text/xml; charset=UTF-8");
-        mainReq.getHeader().add("Cache-Control", "no-cache");
-        main.setRequest(mainReq);
+        main.setRequest(new Request.Builder()
+                .method(Request.METHOD_POST)
+                .url(new URIFactory(), "http://example.com/doc")  // Extracts /doc from the URL
+                .header("Origin", "https://foo.example")
+                .header("X-PINGOTHER", "pingpong")
+                .header("Content-Type", "text/xml; charset=UTF-8")
+                .header("Cache-Control", "no-cache")
+                .build());
         main.setResponse(Response.ok("lorem ipsum").build());
 
-        assertEquals(Outcome.CONTINUE, corsInterceptor.handleRequest(main));
-        assertEquals(Outcome.CONTINUE, corsInterceptor.handleResponse(main));
-        assertEquals("https://foo.example", main.getResponse().getHeader().getFirstValue("Access-Control-Allow-Origin"));
+        assertEquals(Outcome.CONTINUE, interceptor.handleRequest(main));
+        assertEquals(Outcome.CONTINUE, interceptor.handleResponse(main));
+        assertEquals("https://foo.example", main.getResponse().getHeader().getFirstValue(ACCESS_CONTROL_ALLOW_ORIGIN));
     }
 }

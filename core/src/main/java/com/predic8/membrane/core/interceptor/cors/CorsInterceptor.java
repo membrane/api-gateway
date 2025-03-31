@@ -8,12 +8,16 @@ import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 
-import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
-import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
+import static com.predic8.membrane.core.interceptor.Outcome.*;
 
 @MCElement(name = "corsInterceptor")
 public class CorsInterceptor extends AbstractInterceptor {
 
+    public static final String ACCESS_CONTROL_ALLOW_ORIGIN = "Access-Control-Allow-Origin";
+    public static final String ACCESS_CONTROL_ALLOW_METHODS = "Access-Control-Allow-Methods";
+    public static final String ACCESS_CONTROL_ALLOW_HEADERS = "Access-Control-Allow-Headers";
+    public static final String ACCESS_CONTROL_MAX_AGE = "Access-Control-Max-Age";
+    public static final String ACCESS_CONTROL_ALLOW_CREDENTIALS = "Access-Control-Allow-Credentials";
     private boolean allowAll;
     private String allowOrigin;
     private String allowMethods;
@@ -25,27 +29,25 @@ public class CorsInterceptor extends AbstractInterceptor {
     public Outcome handleRequest(Exchange exc) {
         if (exc.getRequest().getHeader().getFirstValue("Origin") != null && "OPTIONS".equalsIgnoreCase(exc.getRequest().getMethod())) {
             Header header = Response.noContent().build().getHeader();
-            header.add("Access-Control-Allow-Origin", getAllowOrigin());
-            header.add("Access-Control-Allow-Methods", allowMethods);
-            header.add("Access-Control-Allow-Headers", allowHeaders);
-            header.add("Access-Control-Max-Age", String.valueOf(maxAge));
+            header.add(ACCESS_CONTROL_ALLOW_ORIGIN, getAllowOrigin());
+            header.add(ACCESS_CONTROL_ALLOW_METHODS, allowMethods);
+            header.add(ACCESS_CONTROL_ALLOW_HEADERS, allowHeaders);
+            header.add(ACCESS_CONTROL_MAX_AGE, String.valueOf(maxAge));
             if (allowCredentials) {
-                header.add("Access-Control-Allow-Credentials", "true");
+                header.add(ACCESS_CONTROL_ALLOW_CREDENTIALS, "true");
             }
             exc.setResponse(Response.noContent().header(header).build());
-            return ABORT;
+            return RETURN;
         }
         return CONTINUE;
     }
 
     @Override
     public Outcome handleResponse(Exchange exc) {
-        if (exc.getRequest().getHeader().getFirstValue("Origin") != null) {
-            Header header = exc.getResponse().getHeader();
-            header.add("Access-Control-Allow-Origin", getAllowOrigin());
-            if (allowCredentials) {
-                header.add("Access-Control-Allow-Credentials", "true");
-            }
+        Header header = exc.getResponse().getHeader();
+        header.add(ACCESS_CONTROL_ALLOW_ORIGIN, getAllowOrigin());
+        if (allowCredentials) {
+            header.add(ACCESS_CONTROL_ALLOW_CREDENTIALS, "true");
         }
         return CONTINUE;
     }
@@ -82,5 +84,25 @@ public class CorsInterceptor extends AbstractInterceptor {
     @MCAttribute
     public void setMaxAge(int maxAge) {
         this.maxAge = maxAge;
+    }
+
+    public boolean isAllowAll() {
+        return allowAll;
+    }
+
+    public String getAllowMethods() {
+        return allowMethods;
+    }
+
+    public String getAllowHeaders() {
+        return allowHeaders;
+    }
+
+    public boolean isAllowCredentials() {
+        return allowCredentials;
+    }
+
+    public int getMaxAge() {
+        return maxAge;
     }
 }
