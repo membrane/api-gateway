@@ -23,33 +23,33 @@ public class CorsInterceptor extends AbstractInterceptor {
     private String allowMethods;
     private String allowHeaders;
     private boolean allowCredentials;
-    private int maxAge;
+    private String maxAge;
 
     @Override
     public Outcome handleRequest(Exchange exc) {
-        if (exc.getRequest().getHeader().getFirstValue("Origin") != null && "OPTIONS".equalsIgnoreCase(exc.getRequest().getMethod())) {
-            Header header = Response.noContent().build().getHeader();
-            header.add(ACCESS_CONTROL_ALLOW_ORIGIN, getAllowOrigin());
-            header.add(ACCESS_CONTROL_ALLOW_METHODS, allowMethods);
-            header.add(ACCESS_CONTROL_ALLOW_HEADERS, allowHeaders);
-            header.add(ACCESS_CONTROL_MAX_AGE, String.valueOf(maxAge));
-            if (allowCredentials) {
-                header.add(ACCESS_CONTROL_ALLOW_CREDENTIALS, "true");
-            }
-            exc.setResponse(Response.noContent().header(header).build());
-            return RETURN;
+        if ("OPTIONS".equalsIgnoreCase(exc.getRequest().getMethod())) {
+           handleInternal(exc);
+           return RETURN;
         }
         return CONTINUE;
     }
 
     @Override
     public Outcome handleResponse(Exchange exc) {
-        Header header = exc.getResponse().getHeader();
-        header.add(ACCESS_CONTROL_ALLOW_ORIGIN, getAllowOrigin());
-        if (allowCredentials) {
-            header.add(ACCESS_CONTROL_ALLOW_CREDENTIALS, "true");
-        }
+        handleInternal(exc);
         return CONTINUE;
+    }
+
+    private void handleInternal(Exchange exc) {
+        Header header = Response.noContent().build().getHeader();
+        header.addIfPresent(ACCESS_CONTROL_ALLOW_ORIGIN, getAllowOrigin());
+        header.addIfPresent(ACCESS_CONTROL_ALLOW_METHODS, allowMethods);
+        header.addIfPresent(ACCESS_CONTROL_ALLOW_HEADERS, allowHeaders);
+        header.addIfPresent(ACCESS_CONTROL_MAX_AGE, maxAge);
+        if (allowCredentials) {
+            header.addIfPresent(ACCESS_CONTROL_ALLOW_CREDENTIALS, "true");
+        }
+        exc.setResponse(Response.noContent().header(header).build());
     }
 
     private String getAllowOrigin() {
@@ -82,7 +82,7 @@ public class CorsInterceptor extends AbstractInterceptor {
     }
 
     @MCAttribute
-    public void setMaxAge(int maxAge) {
+    public void setMaxAge(String maxAge) {
         this.maxAge = maxAge;
     }
 
@@ -102,7 +102,7 @@ public class CorsInterceptor extends AbstractInterceptor {
         return allowCredentials;
     }
 
-    public int getMaxAge() {
+    public String getMaxAge() {
         return maxAge;
     }
 }

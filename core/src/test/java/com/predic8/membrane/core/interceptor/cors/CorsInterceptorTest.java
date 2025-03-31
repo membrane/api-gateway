@@ -26,7 +26,7 @@ class CorsInterceptorTest {
         interceptor.setAllowOrigin("https://foo.example");
         interceptor.setAllowMethods("POST, GET, OPTIONS");
         interceptor.setAllowHeaders("X-PINGOTHER, Content-Type");
-        interceptor.setMaxAge(86400);
+        interceptor.setMaxAge("86400");
         interceptor.setAllowCredentials(false);
     }
 

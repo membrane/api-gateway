@@ -174,6 +174,12 @@ public class Header {
 		fields.add(field);
 	}
 
+	public void addIfPresent(String key, String val) {
+		if (val != null) {
+			add(key, val);
+		}
+	}
+
 	public void remove(HeaderField field) {
 		fields.remove(field);
 	}
