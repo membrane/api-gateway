@@ -22,12 +22,12 @@ class CorsInterceptorTest {
     @BeforeEach
     void setUp() {
         interceptor = new CorsInterceptor();
-        interceptor.setAllowAll(false);
-        interceptor.setAllowOrigin("https://foo.example");
-        interceptor.setAllowMethods("POST, GET, OPTIONS");
-        interceptor.setAllowHeaders("X-PINGOTHER, Content-Type");
+        interceptor.setAll(false);
+        interceptor.setOrigin("https://foo.example");
+        interceptor.setMethods("POST, GET, OPTIONS");
+        interceptor.setHeaders("X-PINGOTHER, Content-Type");
         interceptor.setMaxAge("86400");
-        interceptor.setAllowCredentials(false);
+        interceptor.setCredentials(false);
     }
 
     @Test
