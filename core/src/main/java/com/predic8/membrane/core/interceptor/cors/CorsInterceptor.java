@@ -32,7 +32,7 @@ public class CorsInterceptor extends AbstractInterceptor {
     @Override
     public Outcome handleRequest(Exchange exc) {
         if ("OPTIONS".equalsIgnoreCase(exc.getRequest().getMethod())) {
-            exc.setResponse(Response.noContent().header(createCORSHeader(false, "")).build());
+            exc.setResponse(Response.noContent().header(createCORSHeader()).build());
            return RETURN;
         }
         return CONTINUE;
@@ -40,7 +40,7 @@ public class CorsInterceptor extends AbstractInterceptor {
 
     @Override
     public Outcome handleResponse(Exchange exc) {
-        exc.getResponse().setHeader(createCORSHeader(true, exc.getRequest().getMethod()));
+        exc.getResponse().setHeader(createCORSHeader());
         return CONTINUE;
     }
 
@@ -50,10 +50,10 @@ public class CorsInterceptor extends AbstractInterceptor {
         return "CORS";
     }
 
-    private Header createCORSHeader(Boolean isResponse, String method) {
+    private Header createCORSHeader() {
         Header header = Response.noContent().build().getHeader();
         header.addIfPresent(ACCESS_CONTROL_ALLOW_ORIGIN, getAllowOrigin());
-        header.addIfPresent(ACCESS_CONTROL_ALLOW_METHODS, isResponse ? method : String.join(", ", getMethods()));
+        header.addIfPresent(ACCESS_CONTROL_ALLOW_METHODS, String.join(", ", getMethods()));
         header.addIfPresent(ACCESS_CONTROL_ALLOW_HEADERS, getHeaders());
         header.addIfPresent(ACCESS_CONTROL_MAX_AGE, getMaxAge());
         if (credentials) {
