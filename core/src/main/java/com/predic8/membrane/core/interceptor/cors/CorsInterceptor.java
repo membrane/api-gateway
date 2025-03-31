@@ -28,7 +28,7 @@ public class CorsInterceptor extends AbstractInterceptor {
     @Override
     public Outcome handleRequest(Exchange exc) {
         if ("OPTIONS".equalsIgnoreCase(exc.getRequest().getMethod())) {
-           handleInternal(exc);
+            exc.setResponse(Response.noContent().header(createCORSHeader()).build());
            return RETURN;
         }
         return CONTINUE;
@@ -36,11 +36,11 @@ public class CorsInterceptor extends AbstractInterceptor {
 
     @Override
     public Outcome handleResponse(Exchange exc) {
-        handleInternal(exc);
+        exc.getResponse().setHeader(createCORSHeader());
         return CONTINUE;
     }
 
-    private void handleInternal(Exchange exc) {
+    private Header createCORSHeader() {
         Header header = Response.noContent().build().getHeader();
         header.addIfPresent(ACCESS_CONTROL_ALLOW_ORIGIN, getAllowOrigin());
         header.addIfPresent(ACCESS_CONTROL_ALLOW_METHODS, allowMethods);
@@ -49,7 +49,7 @@ public class CorsInterceptor extends AbstractInterceptor {
         if (allowCredentials) {
             header.addIfPresent(ACCESS_CONTROL_ALLOW_CREDENTIALS, "true");
         }
-        exc.setResponse(Response.noContent().header(header).build());
+        return header;
     }
 
     private String getAllowOrigin() {
