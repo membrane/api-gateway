@@ -8,6 +8,10 @@ import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
+
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 
 @MCElement(name = "cors")
@@ -20,7 +24,7 @@ public class CorsInterceptor extends AbstractInterceptor {
     public static final String ACCESS_CONTROL_ALLOW_CREDENTIALS = "Access-Control-Allow-Credentials";
     private boolean all;
     private String origin;
-    private String methods;
+    private List<String> methods;
     private String headers;
     private boolean credentials;
     private String maxAge;
@@ -28,7 +32,7 @@ public class CorsInterceptor extends AbstractInterceptor {
     @Override
     public Outcome handleRequest(Exchange exc) {
         if ("OPTIONS".equalsIgnoreCase(exc.getRequest().getMethod())) {
-            exc.setResponse(Response.noContent().header(createCORSHeader()).build());
+            exc.setResponse(Response.noContent().header(createCORSHeader(false, "")).build());
            return RETURN;
         }
         return CONTINUE;
@@ -36,21 +40,22 @@ public class CorsInterceptor extends AbstractInterceptor {
 
     @Override
     public Outcome handleResponse(Exchange exc) {
-        exc.getResponse().setHeader(createCORSHeader());
+        exc.getResponse().setHeader(createCORSHeader(true, exc.getRequest().getMethod()));
         return CONTINUE;
     }
+
 
     @Override
     public String getDisplayName() {
         return "CORS";
     }
 
-    private Header createCORSHeader() {
+    private Header createCORSHeader(Boolean isResponse, String method) {
         Header header = Response.noContent().build().getHeader();
         header.addIfPresent(ACCESS_CONTROL_ALLOW_ORIGIN, getAllowOrigin());
-        header.addIfPresent(ACCESS_CONTROL_ALLOW_METHODS, methods);
-        header.addIfPresent(ACCESS_CONTROL_ALLOW_HEADERS, headers);
-        header.addIfPresent(ACCESS_CONTROL_MAX_AGE, maxAge);
+        header.addIfPresent(ACCESS_CONTROL_ALLOW_METHODS, isResponse ? method : String.join(", ", getMethods()));
+        header.addIfPresent(ACCESS_CONTROL_ALLOW_HEADERS, getHeaders());
+        header.addIfPresent(ACCESS_CONTROL_MAX_AGE, getMaxAge());
         if (credentials) {
             header.addIfPresent(ACCESS_CONTROL_ALLOW_CREDENTIALS, "true");
         }
@@ -73,7 +78,9 @@ public class CorsInterceptor extends AbstractInterceptor {
 
     @MCAttribute
     public void setMethods(String methods) {
-        this.methods = methods;
+        this.methods = Arrays.stream(methods.split(","))
+                .map(String::trim)
+                .collect(Collectors.toList());
     }
 
     @MCAttribute
@@ -95,7 +102,7 @@ public class CorsInterceptor extends AbstractInterceptor {
         return all;
     }
 
-    public String getMethods() {
+    public List<String> getMethods() {
         return methods;
     }
 
