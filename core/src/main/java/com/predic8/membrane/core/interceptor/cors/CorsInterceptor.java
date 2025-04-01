@@ -52,18 +52,24 @@ public class CorsInterceptor extends AbstractInterceptor {
 
     private Header createCORSHeader() {
         Header header = Response.noContent().build().getHeader();
-        header.addIfPresent(ACCESS_CONTROL_ALLOW_ORIGIN, getAllowOrigin());
-        header.addIfPresent(ACCESS_CONTROL_ALLOW_METHODS, String.join(", ", getMethods()));
-        header.addIfPresent(ACCESS_CONTROL_ALLOW_HEADERS, getHeaders());
-        header.addIfPresent(ACCESS_CONTROL_MAX_AGE, getMaxAge());
+        addIfPresent(header, ACCESS_CONTROL_ALLOW_ORIGIN, getAllowOrigin());
+        addIfPresent(header, ACCESS_CONTROL_ALLOW_METHODS, String.join(", ", getMethods()));
+        addIfPresent(header, ACCESS_CONTROL_ALLOW_HEADERS, getHeaders());
+        addIfPresent(header, ACCESS_CONTROL_MAX_AGE, getMaxAge());
         if (credentials) {
-            header.addIfPresent(ACCESS_CONTROL_ALLOW_CREDENTIALS, "true");
+            addIfPresent(header, ACCESS_CONTROL_ALLOW_CREDENTIALS, "true");
         }
         return header;
     }
 
     private String getAllowOrigin() {
         return all ? "*" : origin;
+    }
+
+    public void addIfPresent(Header header, String key, String val) {
+        if (val != null) {
+            header.add(key, val);
+        }
     }
 
     @MCAttribute
