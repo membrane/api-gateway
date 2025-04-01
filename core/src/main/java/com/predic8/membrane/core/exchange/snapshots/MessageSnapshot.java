@@ -28,7 +28,7 @@ import java.util.stream.Stream;
 
 public class MessageSnapshot {
 
-    Map<String,String> header;
+    Map<String,String> header = new HashMap<>();
     byte[] body = null;
 
     /**

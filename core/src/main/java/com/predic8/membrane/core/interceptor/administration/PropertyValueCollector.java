@@ -42,8 +42,7 @@ public class PropertyValueCollector implements ExchangeCollector{
 		if (exc.getResponse() != null) {
 			statusCodes.add(exc.getResponse().getStatusCode());
 		}
-
-		proxies.add(exc.getProxy().toString());
+        proxies.add(exc.getProxy() != null ? exc.getProxy().toString() : "No Proxy");
 		reqContentTypes.add(exc.getRequestContentType());
 		respContentTypes.add(exc.getResponseContentType());
 		methods.add(exc.getRequest().getMethod());

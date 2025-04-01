@@ -22,7 +22,7 @@ import com.predic8.membrane.core.proxies.*;
 import java.io.*;
 
 /**
- * TODO for what?
+ * Used to store a reference to Proxys in a PersistentExchangeStore.
  */
 @JsonSerialize(using = FakeProxy.Serializer.class)
 @JsonDeserialize(using = FakeProxy.Deserializer.class)
@@ -30,6 +30,7 @@ public class FakeProxy extends AbstractProxy {
 
     public FakeProxy(Proxy proxy) {
         this(proxy.getKey().getPort());
+        setName(proxy.getName());
     }
 
     public FakeProxy(int port) {
@@ -40,7 +41,7 @@ public class FakeProxy extends AbstractProxy {
         @Override
         public void serialize(FakeProxy fakeRule, JsonGenerator jsonGenerator, SerializerProvider serializerProvider) throws IOException {
             jsonGenerator.writeStartObject();
-            jsonGenerator.writeStringField("name",fakeRule.toString());
+            jsonGenerator.writeStringField("name",fakeRule.getName());
             jsonGenerator.writeNumberField("port",fakeRule.getKey().getPort());
             jsonGenerator.writeEndObject();
         }
@@ -49,7 +50,10 @@ public class FakeProxy extends AbstractProxy {
     public static class Deserializer extends JsonDeserializer<FakeProxy>{
         @Override
         public FakeProxy deserialize(JsonParser jsonParser, DeserializationContext deserializationContext) throws IOException {
-            return new FakeProxy(jsonParser.getCodec().<JsonNode>readTree(jsonParser).get("port").asInt());
+            JsonNode jsonNode = jsonParser.getCodec().<JsonNode>readTree(jsonParser);
+            FakeProxy fp = new FakeProxy(jsonNode.get("port").asInt());
+            fp.setName(jsonNode.get("name").asText());
+            return fp;
         }
     }
 }
