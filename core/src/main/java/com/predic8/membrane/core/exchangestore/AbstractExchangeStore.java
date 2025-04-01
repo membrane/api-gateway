@@ -102,9 +102,10 @@ public abstract class AbstractExchangeStore implements ExchangeStore {
 		synchronized (getAllExchangesAsList()) {
 			exchanges = new ArrayList<>(getAllExchangesAsList());
 		}
-
 		return exchanges.stream().map(switch (field) {
-            case "path" -> (AbstractExchange exc) -> exc.getRequest().getUri();
+			case "statuscode" -> (AbstractExchange exc) -> exc.getResponse() == null ? "0" :  String.valueOf(exc.getResponse().getStatusCode());
+			case "method" -> (AbstractExchange exc) -> exc.getRequest().getMethod();
+			case "path" -> (AbstractExchange exc) -> exc.getRequest().getUri();
 			default -> throw new IllegalStateException("Unexpected value: " + field);
 		}).distinct().toList();
 	}
