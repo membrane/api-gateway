@@ -77,4 +77,7 @@ public class ForgetfulExchangeStore implements ExchangeStore {
         return null;
     }
 
+    @Override
+    public List<String> getUniqueValuesOf(String field) {return List.of();}
+
 }

@@ -71,4 +71,6 @@ public interface ExchangeStore {
 	void waitForModification(long lastKnownModification) throws InterruptedException;
 
     ExchangeQueryResult getFilteredSortedPaged(QueryParameter params, boolean useXForwardedForAsClientAddr) throws Exception;
+
+    List<String> getUniqueValuesOf(String field);
 }

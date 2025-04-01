@@ -292,7 +292,7 @@
         <dependency>
             <groupId>com.github.spotbugs</groupId>
             <artifactId>spotbugs-annotations</artifactId>
-            <version>4.9.1</version>
+            <version>4.9.2</version>
         </dependency>
         <dependency>
             <groupId>io.swagger</groupId>
@@ -347,12 +347,12 @@
         <dependency>
             <groupId>io.opentelemetry</groupId>
             <artifactId>opentelemetry-sdk</artifactId>
-            <version>1.47.0</version>
+            <version>1.48.0</version>
         </dependency>
         <dependency>
             <groupId>io.opentelemetry</groupId>
             <artifactId>opentelemetry-exporter-otlp</artifactId>
-            <version>1.47.0</version>
+            <version>1.48.0</version>
         </dependency>
         <dependency>
             <groupId>io.opentelemetry.instrumentation</groupId>
