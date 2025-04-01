@@ -58,6 +58,7 @@ public class AdminApiInterceptor extends AbstractInterceptor {
     @Override
     public void init() {
         memoryWatcher.init(router.getTimerManager(), connections);
+        super.init();
     }
 
     @Override
