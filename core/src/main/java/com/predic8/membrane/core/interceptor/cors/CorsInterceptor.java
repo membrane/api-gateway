@@ -32,7 +32,7 @@ public class CorsInterceptor extends AbstractInterceptor {
     @Override
     public Outcome handleRequest(Exchange exc) {
         if ("OPTIONS".equalsIgnoreCase(exc.getRequest().getMethod())) {
-            exc.setResponse(Response.noContent().header(createCORSHeader()).build());
+            exc.setResponse(Response.noContent().header(createCORSHeader(new Header())).build());
            return RETURN;
         }
         return CONTINUE;
@@ -40,7 +40,7 @@ public class CorsInterceptor extends AbstractInterceptor {
 
     @Override
     public Outcome handleResponse(Exchange exc) {
-        exc.getResponse().setHeader(createCORSHeader());
+        exc.getResponse().setHeader(createCORSHeader(exc.getResponse().getHeader()));
         return CONTINUE;
     }
 
@@ -50,8 +50,7 @@ public class CorsInterceptor extends AbstractInterceptor {
         return "CORS";
     }
 
-    private Header createCORSHeader() {
-        Header header = Response.noContent().build().getHeader();
+    private Header createCORSHeader(Header header) {
         addIfPresent(header, ACCESS_CONTROL_ALLOW_ORIGIN, getAllowOrigin());
         addIfPresent(header, ACCESS_CONTROL_ALLOW_METHODS, String.join(", ", getMethods()));
         addIfPresent(header, ACCESS_CONTROL_ALLOW_HEADERS, getHeaders());
