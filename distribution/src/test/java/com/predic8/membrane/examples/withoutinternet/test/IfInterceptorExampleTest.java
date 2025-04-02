@@ -14,7 +14,6 @@
 package com.predic8.membrane.examples.withoutinternet.test;
 
 import com.predic8.membrane.examples.util.*;
-import io.restassured.response.*;
 import org.junit.jupiter.params.*;
 import org.junit.jupiter.params.provider.*;
 
@@ -46,7 +45,7 @@ public class IfInterceptorExampleTest extends AbstractSampleMembraneStartStopTes
         try {
             switch (method) {
                 case "GET":
-                ExtractableResponse<Response> r=    given()
+                    given()
                         .headers(parseHeader(headers))
                     .when()
                         .get("http://localhost:2000" + params)
@@ -77,15 +76,14 @@ public class IfInterceptorExampleTest extends AbstractSampleMembraneStartStopTes
 
     private static Stream<Arguments> provideApiTestCases() {
         return Stream.of(
-                Arguments.of("GET", "Content-Type:application/json", "", "/", 404, "JSON Request!"),
-                Arguments.of("POST", "Content-Type:application/json", "{\"name\": \"bar\"}", "/", 404, "The JSON request contains the key 'name', and it is not null."),
-                Arguments.of("POST", "Content-Type:application/json", "{\"name\": \"foo\"}", "/", 404, "The JSON request contains the key 'name' with the value 'foo'."),
+                Arguments.of("GET", "Content-Type: application/json", "", "/", 404, "JSON Request!"),
+                Arguments.of("POST", "Content-Type: application/json", "{\"name\": \"foo\"}", "/", 404, "The JSON request contains the key 'name' with the value 'foo'."),
                 Arguments.of("POST", "", "", "", 404, "Request method was POST."),
                 Arguments.of("GET", "", "", "?param1=value2", 404, "Query Parameter Given!"),
-                Arguments.of("GET", "X-Test-Header:foobar", "", "/", 404, "X-Test-Header contains 'bar'"),
-                Arguments.of("POST", "Content-Type:application/xml", "<foo/>", "/", 404, ""),
-                Arguments.of("POST", "Content-Type:application/json", "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.", "?param1=value1", 404, "Long body"),
-                Arguments.of("GET", "Content-Type:application/json", "", "?param1=value2", 404, "Status code changed")
+                Arguments.of("GET", "X-Test-Header: foobar", "", "/", 404, "X-Test-Header contains 'bar'"),
+                Arguments.of("POST", "Content-Type: application/xml", "<foo/>", "/", 404, ""),
+                Arguments.of("POST", "Content-Type: text/plain", "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.", "?param1=value1", 404, "Long body"),
+                Arguments.of("GET", "Content-Type: application/json", "", "?param1=value2", 404, "Status code changed")
         );
     }
 
