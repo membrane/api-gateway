@@ -251,4 +251,19 @@ public class TextUtil {
 		return minIndent;
 	}
 
+	/**
+	 * Checks whether the given string is a valid JSON structure.
+	 *
+	 * @param json the string to check
+	 * @return true if the string is valid JSON (object or array), false otherwise
+	 */
+	public static boolean isValidJson(String json) {
+		try {
+			new com.fasterxml.jackson.databind.ObjectMapper().readTree(json);
+			return true;
+		} catch (Exception e) {
+			return false;
+		}
+	}
+
 }

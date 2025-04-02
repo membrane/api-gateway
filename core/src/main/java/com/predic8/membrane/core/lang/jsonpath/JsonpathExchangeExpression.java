@@ -64,7 +64,7 @@ public class JsonpathExchangeExpression extends AbstractExchangeExpression {
 
         // Guard against empty body and other Content-Types
         try {
-            if (exchange.getMessage(flow).isBodyEmpty() || !exchange.getMessage(flow).isJSON()) {
+            if (exchange.getMessage(flow).isBodyEmpty() || !exchange.getMessage(flow).isJSON() || !TextUtil.isValidJson(exchange.getRequest().getBodyAsStringDecoded())) {
                 log.debug("Body is empty or Content-Type not JSON. Nothing to evaluate for expression: {}", expression); // Normal
                 return resultForNoEvaluation(type);
             }

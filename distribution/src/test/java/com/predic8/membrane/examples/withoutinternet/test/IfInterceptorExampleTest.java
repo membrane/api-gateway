@@ -84,7 +84,7 @@ public class IfInterceptorExampleTest extends AbstractSampleMembraneStartStopTes
                 Arguments.of("GET", "", "", "?param1=value2", 404, "Query Parameter Given!"),
                 Arguments.of("GET", "X-Test-Header:foobar", "", "/", 404, "X-Test-Header contains 'bar'"),
                 Arguments.of("POST", "Content-Type:application/xml", "<foo/>", "/", 404, ""),
-                Arguments.of("POST", "Content-Type:application/json", "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.", "?param1=value1", 404, "Long body"),
+                Arguments.of("POST", "Content-Type:application/json", "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.", "?param1=value1", 404, ""),
                 Arguments.of("GET", "Content-Type:application/json", "", "?param1=value2", 404, "Status code changed")
         );
     }
