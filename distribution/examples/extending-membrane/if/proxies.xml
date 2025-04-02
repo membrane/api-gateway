@@ -10,12 +10,9 @@
             <request>
                 <if test="request.isJSON()" language="SpEL">
                     <log message="JSON Request!"/>
-                </if>
-                <if test="jsonPath('$.name') != null" language="SpEL">
-                    <log message="The JSON request contains the key 'name', and it is not null."/>
-                </if>
-                <if test="$.name" language="jsonpath">
-                    <log message="The JSON request contains the key 'name' with the value 'foo'."/>
+                    <if test="$.name" language="jsonpath">
+                        <log message="The JSON request contains the key 'name' with the value 'foo'."/>
+                    </if>
                 </if>
                 <if test="method == 'POST'" language="SpEL">
                     <log message="Request method was POST."/>
@@ -26,9 +23,9 @@
                 <if test="headers['X-Test-Header'] != null and headers['X-Test-Header'] matches '.*bar.*'">
                     <log message="X-Test-Header contains 'bar'"/>
                 </if>
-<!--                <if test="request.getBody.getLength gt 64">-->
-<!--                    <log message="Long body"/>-->
-<!--                </if>-->
+                <if test="request.getBody.getLength gt 64">
+                    <log message="Long body"/>
+                </if>
                 <if test="request.isXML()">
                     <log message="XML Request!"/>
                     <if test="//foo" language="xpath">
