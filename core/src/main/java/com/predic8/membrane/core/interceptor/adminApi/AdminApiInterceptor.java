@@ -31,8 +31,11 @@ import java.io.IOException;
 import java.io.StringWriter;
 import java.io.UncheckedIOException;
 import java.net.URI;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.IntStream;
@@ -43,6 +46,7 @@ import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.openapi.util.UriTemplateMatcher.matchTemplate;
 import static com.predic8.membrane.core.transport.http2.Http2ServerHandler.HTTP2;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 @MCElement(name = "adminApi")
 public class AdminApiInterceptor extends AbstractInterceptor {
@@ -55,7 +59,9 @@ public class AdminApiInterceptor extends AbstractInterceptor {
     public Outcome handleRequest(Exchange exc) {
         try {
             String uri = exc.getRequestURI();
-            if (uri.matches(".*/health.*")) {
+            if (uri.matches(".*/ws.*")) {
+                return handleWebSocket(exc);
+            } else if (uri.matches(".*/health.*")) {
                 return handleHealth(exc);
             } else if (uri.matches(".*/apis.*")) {
                 return handleApis(exc);
@@ -68,7 +74,48 @@ public class AdminApiInterceptor extends AbstractInterceptor {
         } catch (PathDoesNotMatchException e) {
             return ABORT;
         }
+        System.out.println("exc.getResponse().getBodyAsStringDecoded() = " + exc.getResponse().getBodyAsStringDecoded());
         return CONTINUE;
+    }
+
+    private Outcome handleWebSocket(Exchange exc) {
+        Header header = exc.getRequest().getHeader();
+        if (!header.getFirstValue("Connection").equals("upgrade") || !header.getFirstValue("Upgrade").equals("websocket")) {
+            exc.getResponse().setBodyContent("Protocol not supported".getBytes(UTF_8));
+            exc.getResponse().setStatusCode(400);
+            return RETURN;
+        }
+
+        String wsKey = header.getFirstValue("Sec-WebSocket-Key");
+        if (wsKey == null) {
+            exc.getResponse().setBodyContent("Missing Sec-WebSocket-Key".getBytes(UTF_8));
+            exc.getResponse().setStatusCode(400);
+            return RETURN;
+        }
+
+        exc.getResponse().setStatusCode(101);
+        exc.getResponse().getHeader().setValue("Upgrade", "websocket");
+        exc.getResponse().getHeader().setValue("Connection", "Upgrade");
+        exc.getResponse().getHeader().setValue("Sec-WebSocket-Accept", generateWebSocketAccept(wsKey));
+
+
+        AdminApiWebSocketServer wsHandler = new AdminApiWebSocketServer();
+        // TODO
+
+
+
+        return null;
+    }
+
+    private String generateWebSocketAccept(String key) {
+        try {
+            String concatenated = key + "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
+            MessageDigest md = MessageDigest.getInstance("SHA-1");
+            byte[] hash = md.digest(concatenated.getBytes(UTF_8));
+            return Base64.getEncoder().encodeToString(hash);
+        } catch (NoSuchAlgorithmException e) {
+            throw new UncheckedIOException(new IOException("SHA-1 not supported", e));
+        }
     }
 
     // TODO Use actual current membrane version, add memory, disk usage, etc.
