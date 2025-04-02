@@ -660,7 +660,7 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 				.onchange("membrane.onFilterUpdate();");
 				option("*", "*", !params.containsKey("proxy"));
 				for (String s : sort(propertyValues.getProxies())) {
-					option(s, s, s.equals(params.get("proxy")));
+					option(s, s, Objects.equals(s, params.get("proxy")));
 				}
 				end();
 				span().text("Client").end()
@@ -668,7 +668,7 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 				.onchange("membrane.onFilterUpdate();");
 				option("*", "*", !params.containsKey("client"));
 				for (String s : sort(propertyValues.getClients())) {
-					option(s, s, s.equals(params.get("client")));
+					option(s, s, Objects.equals(s, params.get("client")));
 				}
 				end();
 				span().text("Server").end()

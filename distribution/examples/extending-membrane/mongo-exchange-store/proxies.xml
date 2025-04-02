@@ -1,0 +1,14 @@
+<spring:beans xmlns="http://membrane-soa.org/proxies/1/" xmlns:spring="http://www.springframework.org/schema/beans"
+              xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+              xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.2.xsd                    http://membrane-soa.org/proxies/1/ http://membrane-soa.org/schemas/proxies-1.xsd">
+    <mongoDBExchangeStore id="es" connection="mongodb://localhost:27017/" database="exchange"
+                          collection="exchanges"/>
+    <router exchangeStore="es">
+        <serviceProxy name="predic8.com" port="2000">
+            <target url="https://membrane-soa.org" />
+        </serviceProxy>
+        <serviceProxy port="9000">
+            <adminConsole />
+        </serviceProxy>
+    </router>
+</spring:beans>

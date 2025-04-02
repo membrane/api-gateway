@@ -26,6 +26,7 @@ import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.rest.QueryParameter;
 import com.predic8.membrane.core.openapi.util.PathDoesNotMatchException;
 import com.predic8.membrane.core.proxies.AbstractServiceProxy;
+import com.predic8.membrane.core.transport.ws.WebSocketConnectionCollection;
 
 import java.io.IOException;
 import java.io.StringWriter;
@@ -51,6 +52,15 @@ public class AdminApiInterceptor extends AbstractInterceptor {
 
     private static final ObjectMapper om = new ObjectMapper();
 
+    private MemoryWatcher memoryWatcher = new MemoryWatcher();
+    private WebSocketConnectionCollection connections = new WebSocketConnectionCollection();
+
+    @Override
+    public void init() {
+        memoryWatcher.init(router.getTimerManager(), connections);
+        super.init();
+    }
+
     @Override
     public Outcome handleRequest(Exchange exc) {
         try {
@@ -61,14 +71,42 @@ public class AdminApiInterceptor extends AbstractInterceptor {
                 return handleApis(exc);
             } else if (uri.matches(".*/calls.*")) {
                 return handleCalls(exc);
+            } else if (uri.matches(".*/ws.*")) {
+                return new AdminApiObserver().handle(exc, connections);
             } else if (uri.matches(".*/exchange/\\d*")) {
                 Map<String, String> params = matchTemplate(".*/exchange/{id}", uri);
                 return handleExchangeDetails(exc, params.get("id"));
+            } else if (uri.matches(".*/suggestions/\\w*")) {
+                Map<String, String> params = matchTemplate(".*/suggestions/{field}", uri);
+                return handleFilterSuggestions(exc, params.get("field"));
             }
         } catch (PathDoesNotMatchException e) {
             return ABORT;
         }
         return CONTINUE;
+    }
+
+    private Outcome handleFilterSuggestions(Exchange exc, String field) {
+        StringWriter writer = new StringWriter();
+        try {
+            JsonGenerator gen = om.getFactory().createGenerator(writer);
+            gen.writeStartArray();
+
+            getRouter().getExchangeStore().getUniqueValuesOf(field).forEach(i -> {
+                try {
+                    gen.writeString(i);
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            });
+
+            gen.writeEndArray();
+            gen.close();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+        exc.setResponse(Response.ok().body(writer.toString()).contentType(APPLICATION_JSON).build());
+        return RETURN;
     }
 
     // TODO Use actual current membrane version, add memory, disk usage, etc.
@@ -303,5 +341,9 @@ public class AdminApiInterceptor extends AbstractInterceptor {
 
     private int getServerPort(AbstractExchange exc) {
         return exc.getProxy()instanceof AbstractServiceProxy?((AbstractServiceProxy) exc.getProxy()).getTargetPort():-1;
+    }
+
+    public MemoryWatcher getMemoryWatcher() {
+        return memoryWatcher;
     }
 }

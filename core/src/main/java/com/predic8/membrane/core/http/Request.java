@@ -230,7 +230,11 @@ public class Request extends Message {
 		}
 
 		public Exchange buildExchange() {
-			Exchange exc = new Exchange(null);
+			return buildExchange(null);
+		}
+
+		public Exchange buildExchange(AbstractHttpHandler handler) {
+			Exchange exc = new Exchange(handler);
 			Request req = build();
 			exc.setRequest(req);
 			exc.getDestinations().add(fullURL);

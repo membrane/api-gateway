@@ -14,19 +14,24 @@
 
 package com.predic8.membrane.core.exchangestore;
 
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.interceptor.rest.*;
-import com.predic8.membrane.core.model.*;
-import com.predic8.membrane.core.proxies.*;
-import org.slf4j.*;
+import com.predic8.membrane.core.exchange.AbstractExchange;
+import com.predic8.membrane.core.http.HeaderField;
+import com.predic8.membrane.core.http.Message;
+import com.predic8.membrane.core.interceptor.rest.QueryParameter;
+import com.predic8.membrane.core.model.IExchangesStoreListener;
+import com.predic8.membrane.core.proxies.Proxy;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
-import static com.predic8.membrane.core.interceptor.administration.AdminRESTInterceptor.*;
-import static com.predic8.membrane.core.util.ComparatorFactory.*;
-import static java.util.stream.Collectors.*;
-import static org.apache.commons.lang3.StringUtils.*;
+import static com.predic8.membrane.core.interceptor.administration.AdminRESTInterceptor.getClientAddr;
+import static com.predic8.membrane.core.util.ComparatorFactory.getAbstractExchangeComparator;
+import static java.util.stream.Collectors.toList;
+import static org.apache.commons.lang3.StringUtils.containsIgnoreCase;
 
 public abstract class AbstractExchangeStore implements ExchangeStore {
 
@@ -89,6 +94,20 @@ public abstract class AbstractExchangeStore implements ExchangeStore {
 	@Override
 	public void waitForModification(long lastKnownModification) throws InterruptedException {
 		// nothing
+	}
+
+	@Override
+	public List<String> getUniqueValuesOf(String field) {
+		List<AbstractExchange> exchanges;
+		synchronized (getAllExchangesAsList()) {
+			exchanges = new ArrayList<>(getAllExchangesAsList());
+		}
+		return exchanges.stream().map(switch (field) {
+			case "statuscode" -> (AbstractExchange exc) -> exc.getResponse() == null ? "0" :  String.valueOf(exc.getResponse().getStatusCode());
+			case "method" -> (AbstractExchange exc) -> exc.getRequest().getMethod();
+			case "path" -> (AbstractExchange exc) -> exc.getRequest().getUri();
+			default -> throw new IllegalStateException("Unexpected value: " + field);
+		}).distinct().toList();
 	}
 
 	@Override
