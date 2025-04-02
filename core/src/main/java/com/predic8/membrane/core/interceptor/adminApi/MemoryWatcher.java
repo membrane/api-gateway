@@ -43,10 +43,10 @@ public class MemoryWatcher {
     private void getMemoryStats() {
         try {
             connections.broadcast(of(
-                    "type", "MemoryStats",
-                    "memory", of(
-                            "total", Runtime.getRuntime().totalMemory(),
-                            "free", Runtime.getRuntime().freeMemory())));
+                    "subject", "liveUpdate",
+                    "data", of(
+                            "totalMemory", Runtime.getRuntime().totalMemory(),
+                            "freeMemory", Runtime.getRuntime().freeMemory())));
         } catch (JsonProcessingException e) {
             LOG.error("", e); // should not happen
         }

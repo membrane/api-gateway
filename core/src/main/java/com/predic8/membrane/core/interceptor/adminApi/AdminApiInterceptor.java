@@ -1,4 +1,4 @@
-/* Copyright 2012 predic8 GmbH, www.predic8.com
+/* Copyright 2025 predic8 GmbH, www.predic8.com
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -11,7 +11,6 @@
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
    See the License for the specific language governing permissions and
    limitations under the License. */
-
 package com.predic8.membrane.core.interceptor.adminApi;
 
 import com.fasterxml.jackson.core.JsonGenerator;
@@ -52,12 +51,15 @@ public class AdminApiInterceptor extends AbstractInterceptor {
 
     private static final ObjectMapper om = new ObjectMapper();
 
-    private MemoryWatcher memoryWatcher = new MemoryWatcher();
-    private WebSocketConnectionCollection connections = new WebSocketConnectionCollection();
+    private final MemoryWatcher memoryWatcher = new MemoryWatcher();
+    private final WebSocketExchangeWatcher wsExchangeWatcher = new WebSocketExchangeWatcher();
+    private final WebSocketConnectionCollection connections = new WebSocketConnectionCollection();
 
     @Override
     public void init() {
         memoryWatcher.init(router.getTimerManager(), connections);
+        wsExchangeWatcher.init(connections);
+        router.getExchangeStore().addExchangesStoreListener(wsExchangeWatcher);
         super.init();
     }
 
@@ -225,7 +227,7 @@ public class AdminApiInterceptor extends AbstractInterceptor {
         }
     }
 
-    private void writeExchange(AbstractExchange exc, JsonGenerator gen) throws IOException {
+    static void writeExchange(AbstractExchange exc, JsonGenerator gen) throws IOException {
         gen.writeStartObject();
 
         gen.writeNumberField("id", exc.getId());
@@ -339,7 +341,7 @@ public class AdminApiInterceptor extends AbstractInterceptor {
         return exc.getRemoteAddr();
     }
 
-    private int getServerPort(AbstractExchange exc) {
+    private static int getServerPort(AbstractExchange exc) {
         return exc.getProxy()instanceof AbstractServiceProxy?((AbstractServiceProxy) exc.getProxy()).getTargetPort():-1;
     }
 

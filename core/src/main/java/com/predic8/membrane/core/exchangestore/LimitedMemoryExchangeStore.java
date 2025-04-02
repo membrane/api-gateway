@@ -129,8 +129,10 @@ public class LimitedMemoryExchangeStore extends AbstractExchangeStore {
 			}
 			Exchange.updateCopy(orig, exc, null, null, 0);
 		}
-
 		modify();
+
+		notifyListenersOnExchangeAdd(exc.getProxy(), exc);
+
 		return exc;
 	}
 

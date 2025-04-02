@@ -26,21 +26,19 @@ import java.util.Map;
  * Supports broadcasting of JSON messages.
  */
 public class WebSocketConnectionCollection {
-    private List<WebSocketConnection> connections = new ArrayList<>();
-    private ObjectMapper om = new ObjectMapper();
+    private final List<WebSocketConnection> connections = new ArrayList<>();
+    private final ObjectMapper om = new ObjectMapper();
 
     /**
      * Sends the 'data' as a JSON object to all connected WebSocket listeners.
      */
-    public void broadcast(Map data) throws JsonProcessingException {
-        String msg = om.writeValueAsString(data);
-
+    public void broadcast(Map<?, ?> data) throws JsonProcessingException {
         ArrayList<WebSocketConnection> connectionsToNotify;
         synchronized (connections) {
             connectionsToNotify = new ArrayList<>(connections);
         }
         for (WebSocketConnection connection : connectionsToNotify) {
-            connection.enqueueForSending(msg);
+            connection.enqueueForSending(om.writeValueAsString(data));
         }
     }
 
