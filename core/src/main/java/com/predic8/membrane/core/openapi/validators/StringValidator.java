@@ -76,38 +76,120 @@ public class StringValidator implements IJSONSchemaValidator {
             switch (schema.getFormat()) {
                 case "uuid": {
                     if (!isValidUUID(value)) {
-                        errors.add(ctx,format("The string '%s' is not a valid UUID.",value));
+                        errors.add(ctx, format("The string '%s' is not a valid UUID.", value));
                     }
                     break;
                 }
                 case "email": {
                     if (!isValidEMail(value)) {
-                        errors.add(ctx,format("The string '%s' is not a valid email.",value));
+                        errors.add(ctx, format("The string '%s' is not a valid E-Mail.", value));
                     }
                     break;
                 }
                 case "uri": {
                     if (!isValidUri(value)) {
-                        errors.add(ctx,format("The string '%s' is not a valid URI.",value));
+                        errors.add(ctx, format("The string '%s' is not a valid URI.", value));
                     }
                     break;
                 }
                 case "date": {
                     if (!isValidDate(value)) {
-                        errors.add(ctx,format("The string '%s' is not a valid date of the pattern YYYY-MM-DD.",value));
+                        errors.add(ctx,format("The string '%s' is not a valid date of the pattern YYYY-MM-DD.", value));
                     }
                     break;
                 }
                 case "date-time": {
                     if (!isValidDateTime(value)) {
-                        errors.add(ctx,format("The string '%s' is not a valid date-time according to ISO 8601.",value));
+                        errors.add(ctx, format("The string '%s' is not a valid date-time according to ISO 8601.", value));
+                    }
+                    break;
+                }
+                case "duration": {
+                    if (!isValidDuration(value)) {
+                        errors.add(ctx, format("The string '%s' is not a valid duration.", value));
                     }
                     break;
                 }
                 case "ip": {
                     if (!isValidIp(value)) {
-                        errors.add(ctx,format("The string '%s' is not a valid ip address.",value));
+                        errors.add(ctx, format("The string '%s' is not a valid IPv4 address.", value));
                     }
+                }
+                case "ipv4": {
+                    if (!isValidIp(value)) {
+                        errors.add(ctx, format("The string '%s' is not a valid IPv4 address.", value));
+                    }
+                }
+                case "ipv6": {
+                    if (!isValidIpV6(value)) {
+                        errors.add(ctx, format("The string '%s' is not a valid IPv6 address.", value));
+                    }
+                }
+                case "idn-email": {
+                    if (!isValidEMail(value)) {
+                        errors.add(ctx, format("The string '%s' is not a valid E-Mail address.", value));
+                    }
+                }
+                case "uri-reference": {
+                    if (!isValidUri(value)) {
+                        errors.add(ctx, format("The string '%s' is not a valid URI reference.", value));
+                    }
+                }
+                case "iri": {
+                    if (!isValidUri(value)) {
+                        errors.add(ctx, format("The string '%s' is not a valid IRI.", value));
+                    }
+                }
+                case "iri-reference": {
+                    if (!isValidUri(value)) {
+                        errors.add(ctx, format("The string '%s' is not a valid IRI reference.", value));
+                    }
+                }
+                case "hostname": {
+                    if (!isValidHostname(value)) {
+                        errors.add(ctx, format("The string '%s' is not a valid hostname.", value));
+                    }
+                }
+                case "idn-hostname": {
+                    if (!isValidHostname(value)) {
+                        errors.add(ctx, format("The string '%s' is not a valid hostname.", value));
+                    }
+                }
+                case "json-pointer": {
+                    if (!isValidJsonPointer(value)) {
+                        errors.add(ctx, format("The string '%s' is not a valid JSON pointer.", value));
+                    }
+                }
+                case "relative-json-pointer": {
+                    if (!isValidRelativeJsonPointer(value)) {
+                        errors.add(ctx, format("The string '%s' is not a valid relative JSON pointer.", value));
+                    }
+                }
+                case "gtin-13": {
+                    if (!isValidGlobalTradeItemNumber(value)) {
+                        errors.add(ctx, format("The string '%s' is not a valid GTIN-13 number.", value));
+                    }
+                }
+                case "iso-3166-alpha-2": {
+                    if (!isValidIso3166Alpha2(value)) {
+                        errors.add(ctx, format("The string '%s' is not a valid ISO-3166-1-alpha-2 number.", value));
+                    }
+                }
+                case "iso-4217": {
+                    if (!isValidIso4217(value))
+                        errors.add(ctx, format("The string '%s' is not a valid currency code according to ISO 4217.", value));
+                }
+                case "bcp47": {
+                    if (!isValidBCP47(value))
+                        errors.add(ctx, format("The string '%s' is not a valid multi letter language tag according to BCP47.", value));
+                }
+                case "iso-639": {
+                    if (!isValidIso639(value))
+                        errors.add(ctx, format("The string '%s' is not a valid language code according to ISO 639.", value));
+                }
+                case "iso-639-1": {
+                    if (!isValidIso639_1(value))
+                        errors.add(ctx, format("The string '%s' is not a valid two letter language code according to ISO 639-1.", value));
                 }
                 default:
                     log.warn("Unknown string format of {}.", schema.getFormat());
