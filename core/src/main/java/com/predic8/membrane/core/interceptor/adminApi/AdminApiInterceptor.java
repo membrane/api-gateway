@@ -53,11 +53,13 @@ public class AdminApiInterceptor extends AbstractInterceptor {
     private static final ObjectMapper om = new ObjectMapper();
 
     private MemoryWatcher memoryWatcher = new MemoryWatcher();
+    private DiskWatcher diskWatcher = new DiskWatcher();
     private WebSocketConnectionCollection connections = new WebSocketConnectionCollection();
 
     @Override
     public void init() {
         memoryWatcher.init(router.getTimerManager(), connections);
+        diskWatcher.init(router.getTimerManager(), connections);
         super.init();
     }
 
