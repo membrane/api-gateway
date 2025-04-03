@@ -19,13 +19,14 @@ import com.predic8.membrane.core.util.TimerManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
 import java.util.TimerTask;
 
 import static com.google.common.collect.ImmutableMap.of;
 
-public class MemoryWatcher {
+public class DiskWatcher {
 
-    private final static Logger LOG = LoggerFactory.getLogger(MemoryWatcher.class.getName());
+    private final static Logger LOG = LoggerFactory.getLogger(DiskWatcher.class.getName());
 
     private WebSocketConnectionCollection connections;
     private int intervalMilliseconds = 10000;
@@ -35,19 +36,19 @@ public class MemoryWatcher {
         timerManager.schedulePeriodicTask(new TimerTask() {
             @Override
             public void run() {
-                getMemoryStats();
+                getDiskStats();
             }
-        }, intervalMilliseconds, "MemoryWatcher");
+        }, intervalMilliseconds, "DiskWatcher");
     }
 
-    private void getMemoryStats() {
+    private void getDiskStats() {
         try {
             connections.broadcast(of(
                     "subject", "metricUpdate",
                     "data", of(
                             "metrics", of(
-                                "totalMemory", Runtime.getRuntime().totalMemory(),
-                                "freeMemory", Runtime.getRuntime().freeMemory()
+                                    "totalDiskSpace", new File("/").getTotalSpace(),
+                                    "freeDiskSpace", new File("/").getFreeSpace()
                             )
                     )
             ));
