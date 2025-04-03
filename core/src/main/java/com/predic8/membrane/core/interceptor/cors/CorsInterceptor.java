@@ -1,22 +1,20 @@
 package com.predic8.membrane.core.interceptor.cors;
 
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Header;
-import com.predic8.membrane.core.http.Response;
-import com.predic8.membrane.core.interceptor.AbstractInterceptor;
-import com.predic8.membrane.core.interceptor.Outcome;
+import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.interceptor.*;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.stream.Collectors;
+import java.util.*;
+import java.util.stream.*;
 
+import static com.predic8.membrane.core.http.Response.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 
 @MCElement(name = "cors")
 public class CorsInterceptor extends AbstractInterceptor {
 
+    public static final String ORIGIN = "Origin";
     public static final String ACCESS_CONTROL_ALLOW_ORIGIN = "Access-Control-Allow-Origin";
     public static final String ACCESS_CONTROL_ALLOW_METHODS = "Access-Control-Allow-Methods";
     public static final String ACCESS_CONTROL_ALLOW_HEADERS = "Access-Control-Allow-Headers";
@@ -31,8 +29,8 @@ public class CorsInterceptor extends AbstractInterceptor {
 
     @Override
     public Outcome handleRequest(Exchange exc) {
-        if ("OPTIONS".equalsIgnoreCase(exc.getRequest().getMethod())) {
-            exc.setResponse(Response.noContent().header(createCORSHeader(new Header())).build());
+        if (exc.getRequest().isOPTIONSRequest()) {
+            exc.setResponse(noContent().header(createCORSHeader(new Header())).build());
            return RETURN;
         }
         return CONTINUE;
@@ -51,7 +49,14 @@ public class CorsInterceptor extends AbstractInterceptor {
     }
 
     private Header createCORSHeader(Header header) {
+        if (all) {
+            // TODO
+            return header;
+        }
+
+        // Match origin aga
         addIfPresent(header, ACCESS_CONTROL_ALLOW_ORIGIN, getAllowOrigin());
+
         addIfPresent(header, ACCESS_CONTROL_ALLOW_METHODS, String.join(", ", getMethods()));
         addIfPresent(header, ACCESS_CONTROL_ALLOW_HEADERS, getHeaders());
         addIfPresent(header, ACCESS_CONTROL_MAX_AGE, getMaxAge());
@@ -65,7 +70,7 @@ public class CorsInterceptor extends AbstractInterceptor {
         return all ? "*" : origin;
     }
 
-    public void addIfPresent(Header header, String key, String val) {
+    private void addIfPresent(Header header, String key, String val) {
         if (val != null) {
             header.add(key, val);
         }

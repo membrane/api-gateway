@@ -11,6 +11,7 @@ import org.junit.jupiter.api.Test;
 
 import java.net.URISyntaxException;
 
+import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
 import static com.predic8.membrane.core.interceptor.cors.CorsInterceptor.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -30,6 +31,38 @@ class CorsInterceptorTest {
         interceptor.setCredentials(false);
     }
 
+
+    /**
+     * Tests if response contains concrete hostname even if ACAO is *
+     * @throws URISyntaxException
+     */
+    @Test
+    void preflight() throws URISyntaxException {
+        
+        CorsInterceptor i = new CorsInterceptor();
+        i.setOrigin("*");
+        i.setMethods("POST, GET, OPTIONS");
+        
+        Exchange exc = Request.options("/foo")
+                .header(ORIGIN, "https://foo.example")
+                .header(ACCESS_CONTROL_ALLOW_METHODS, "POST")
+                .buildExchange();
+
+        assertEquals(RETURN, i.handleRequest(exc));
+        
+        Response res = exc.getResponse();
+        Header hheader = res.getHeader();
+
+        assertEquals(204, res.getStatusCode());
+
+        // Should be same as origin even configuration is *
+        assertEquals("https://foo.example", hheader.getFirstValue(ACCESS_CONTROL_ALLOW_ORIGIN));
+
+        System.out.println("hheader.getFirstValue(ACCESS_CONTROL_ALLOW_METHODS) = " + hheader.getFirstValue(ACCESS_CONTROL_ALLOW_METHODS));
+//        assertTrue(hheader.getFirstValue(ACCESS_CONTROL_ALLOW_METHODS).contains("POST"));
+
+    }
+
     @Test
     void handle() throws URISyntaxException {
 
@@ -42,7 +75,7 @@ class CorsInterceptorTest {
                 .header(ACCESS_CONTROL_ALLOW_HEADERS, "content-type,x-pingother")
                 .build());
 
-        assertEquals(Outcome.RETURN, interceptor.handleRequest(preflight));
+        assertEquals(RETURN, interceptor.handleRequest(preflight));
         Response preflightResp = preflight.getResponse();
         Header preRespHeader = preflightResp.getHeader();
 
@@ -51,6 +84,9 @@ class CorsInterceptorTest {
         assertTrue(preRespHeader.getFirstValue(ACCESS_CONTROL_ALLOW_METHODS).contains("POST"));
         assertTrue(preRespHeader.getFirstValue(ACCESS_CONTROL_ALLOW_HEADERS).toLowerCase().contains("x-pingother"));
         assertEquals("86400", preRespHeader.getFirstValue(ACCESS_CONTROL_MAX_AGE));
+
+
+
 
         Exchange main = new Exchange(null);
 
