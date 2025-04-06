@@ -34,6 +34,7 @@ class CorsInterceptorTest {
 
     /**
      * Tests if response contains concrete hostname even if ACAO is *
+     *
      * @throws URISyntaxException
      */
     @Test
