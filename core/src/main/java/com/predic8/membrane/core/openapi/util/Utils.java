@@ -57,7 +57,29 @@ public class Utils {
 
     static final Pattern datePattern = compile("\\d{4}-\\d{2}-\\d{2}");
 
-    static final Pattern ipPattern = compile("^(([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\.){3}([01]?\\d\\d?|2[0-4]\\d|25[0-5])$");
+    static final Pattern iso4217Pattern = compile("^[A-Za-z]{3}$");
+
+    static final Pattern iso639Pattern = compile("^[a-z]{2}(-[A-Z]{2})?$");
+
+    static final Pattern iso639_1Pattern = Pattern.compile("^[a-zA-Z]{2}$");
+
+    static final Pattern BCP47_PATTERN = Pattern.compile("^[A-Za-z0-9]{1,10}(?:-[A-Za-z0-9]{1,10})*$");
+
+    static final Pattern ipv4Pattern = compile("^(([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\.){3}([01]?\\d\\d?|2[0-4]\\d|25[0-5])$");
+
+    static final Pattern ipv6Pattern = Pattern.compile("^(?!.*(::.*::))(?=.*:.*:)[0-9A-Fa-f:]+$");
+
+    static final Pattern hostnamePattern = Pattern.compile("^(?=.{1,253}$)(?:(?!-)[a-z0-9-]{1,63}(?<!-)\\.)+[a-z]{2,63}$");
+
+    static final Pattern jsonPointerPattern = compile("^(/([^~/]|~0|~1)*)*$");
+
+    static final Pattern relativeJsonPointerPattern = compile("^(0|[1-9][0-9]*)(#|(/(([^~/]|~0|~1)*))*)$");
+
+    static final Pattern globalTradeItemNumberPattern = compile("^\\d{13}$");
+
+    static final Pattern iso3166Alpha2Pattern = compile("^[a-zA-Z]{2}$");
+
+    static final Pattern durationPattern = compile("^P[0-9YMWDTHS]+$");
 
     // DateTimeFormatter is thread safe!
     static final DateTimeFormatter dateFormat = DateTimeFormatter.ofPattern("uuuu-MM-dd").withResolverStyle(ResolverStyle.STRICT);
@@ -120,8 +142,52 @@ public class Utils {
         }
     }
 
+    public static boolean isValidDuration(String s) {
+        return durationPattern.matcher(s).matches();
+    }
+
     public static boolean isValidIp(String s) {
-        return ipPattern.matcher(s).matches();
+        return ipv4Pattern.matcher(s).matches();
+    }
+
+    public static boolean isValidIpV6(String s) {
+        return ipv6Pattern.matcher(s).matches();
+    }
+
+    public static boolean isValidHostname(String s) {
+        return hostnamePattern.matcher(s).matches();
+    }
+
+    public static boolean isValidJsonPointer(String s) {
+        return jsonPointerPattern.matcher(s).matches();
+    }
+
+    public static boolean isValidRelativeJsonPointer(String s) {
+        return relativeJsonPointerPattern.matcher(s).matches();
+    }
+
+    public static boolean isValidGlobalTradeItemNumber(String s) {
+        return globalTradeItemNumberPattern.matcher(s).matches();
+    }
+
+    public static boolean isValidIso3166Alpha2(String s) {
+        return iso3166Alpha2Pattern.matcher(s).matches();
+    }
+
+    public static boolean isValidIso4217(String s) {
+        return iso4217Pattern.matcher(s).matches();
+    }
+
+    public static boolean isValidIso639(String s) {
+        return iso639Pattern.matcher(s).matches();
+    }
+
+    public static boolean isValidIso639_1(String s) {
+        return iso639_1Pattern.matcher(s).matches();
+    }
+
+    public static boolean isValidBCP47(String s) {
+        return BCP47_PATTERN.matcher(s).matches();
     }
 
     public static boolean isValidDateTime(String s) {
