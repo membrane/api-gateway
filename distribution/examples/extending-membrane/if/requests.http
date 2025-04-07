@@ -7,13 +7,6 @@ Content-Type: application/json
 
 {"foo":  "bar"}
 
-### Will be detected as a JSON request where the 'name' key is not null.
-POST /
-Host: localhost:2000
-Content-Type: application/json
-
-{"name": "bar"}
-
 ### Will be detected as a JSON request where the 'name' key has the value 'foo'.
 POST /
 Host: localhost:2000
