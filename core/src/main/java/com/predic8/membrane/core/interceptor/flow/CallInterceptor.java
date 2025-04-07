@@ -15,6 +15,9 @@ package com.predic8.membrane.core.interceptor.flow;
 
 import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.HeaderField;
+import com.predic8.membrane.core.http.Request;
+import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.interceptor.lang.*;
 import com.predic8.membrane.core.lang.*;
@@ -69,8 +72,10 @@ public class CallInterceptor extends AbstractExchangeExpressionInterceptor {
     }
 
     private @NotNull Outcome doCall(Exchange exc) {
+        Exchange newExc = new Request.Builder().method(exc.getRequest().getMethod()).buildExchange();
+        newExc.setProxy(exc.getProxy());
         try {
-            exc.setDestinations(List.of(exchangeExpression.evaluate(exc, REQUEST, String.class)));
+            newExc.setDestinations(List.of(exchangeExpression.evaluate(exc, REQUEST, String.class)));
         } catch (ExchangeExpressionException e) {
             e.provideDetails(
                     internal(getRouter().isProduction(),getDisplayName()))
@@ -78,16 +83,15 @@ public class CallInterceptor extends AbstractExchangeExpressionInterceptor {
                     .buildAndSetResponse(exc);
             return ABORT;
         }
-        log.debug("Calling {}", exc.getDestinations());
+        log.info("Calling {} {}", newExc.getRequest().getMethod(), newExc.getDestinations());
         try {
-            Outcome outcome = hcInterceptor.handleRequest(exc);
+            Outcome outcome = hcInterceptor.handleRequest(newExc);
             if (outcome == ABORT) {
-                log.warn("Aborting. Error calling {}", exc.getDestinations());
+                log.warn("Aborting. Error calling {}", newExc.getDestinations());
                 return ABORT;
             }
-            exc.getRequest().setBodyContent(exc.getResponse().getBody().getContent()); // TODO Optimize?
-            copyHeadersFromResponseToRequest(exc);
-            exc.getRequest().getHeader().setContentType(exc.getResponse().getHeader().getContentType());
+            exc.getRequest().setBodyContent(newExc.getResponse().getBody().getContent()); // TODO Optimize?
+            mapHeader(exc, newExc);
             log.debug("Outcome of call {}", outcome);
             return CONTINUE;
         } catch (Exception e) {
@@ -101,15 +105,8 @@ public class CallInterceptor extends AbstractExchangeExpressionInterceptor {
         }
     }
 
-    static void copyHeadersFromResponseToRequest(Exchange exc) {
-        Arrays.stream(exc.getResponse().getHeader().getAllHeaderFields()).forEach(headerField -> {
-            // Filter out, what is definitely not needed like Server:
-            for (String rmHeader : REMOVE_HEADERS) {
-                if (headerField.getHeaderName().getName().equalsIgnoreCase(rmHeader))
-                    return;
-            }
-            exc.getRequest().getHeader().add(headerField);
-        });
+    private void mapHeader(Exchange exc, Exchange newExc) {
+        Arrays.stream(newExc.getResponse().getHeader().getAllHeaderFields()).forEach(exc.getRequest().getHeader()::add);
     }
 
     /**

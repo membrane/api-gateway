@@ -25,6 +25,7 @@ import org.slf4j.*;
 
 import java.io.*;
 import java.net.*;
+import java.util.Arrays;
 
 import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
 import static com.predic8.membrane.core.http.Header.*;

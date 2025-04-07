@@ -16,6 +16,7 @@ package com.predic8.membrane.core.interceptor.flow;
 import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.lang.*;
 import com.predic8.membrane.core.lang.ExchangeExpression.*;
@@ -81,7 +82,10 @@ public class ForInterceptor extends AbstractFlowInterceptor {
                 log.debug("type: {}, it: {}",o2.getClass(),o2);
                 if (flow.isRequest()) {
                     exc.setProperty("it", o2);
-                    getFlowController().invokeRequestHandlers(exc, interceptors);
+                    Exchange newExc = new Request.Builder().method(exc.getRequest().getMethod()).body(exc.getRequest().getBodyAsStream()).header(exc.getRequest().getHeader()).buildExchange();
+                    newExc.setProxy(exc.getProxy());
+                    newExc.setProperties(exc.getProperties());
+                    getFlowController().invokeRequestHandlers(newExc, interceptors);
                 }
             }
         }
