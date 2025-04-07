@@ -71,9 +71,7 @@ public abstract class AbstractExchange {
 
 	private int estimatedHeapSize = -1;
 
-	public AbstractExchange() {
-
-	}
+	public AbstractExchange() {}
 
 	/**
 	 * For HttpResendRunnable

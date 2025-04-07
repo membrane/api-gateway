@@ -52,6 +52,7 @@ public class LimitedMemoryExchangeStore extends AbstractExchangeStore {
 
 	public void snap(final AbstractExchange exc, final Flow flow) {
 		newSnap(exc, flow);
+		notifyListenersOnExchangeAdd(exc.getProxy(), exc);
 	}
 
 	private void newSnap(AbstractExchange exc, Flow flow) {
@@ -129,8 +130,8 @@ public class LimitedMemoryExchangeStore extends AbstractExchangeStore {
 			}
 			Exchange.updateCopy(orig, exc, null, null, 0);
 		}
-
 		modify();
+
 		return exc;
 	}
 

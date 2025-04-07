@@ -55,7 +55,7 @@ public abstract class AbstractExchangeStore implements ExchangeStore {
 
 	public void notifyListenersOnExchangeAdd(Proxy proxy, AbstractExchange exchange) {
 		for (IExchangesStoreListener listener : exchangesStoreListeners) {
-			exchange.addExchangeStoreListener(listener);
+
 			listener.addExchange(proxy, exchange);
 		}
 	}
