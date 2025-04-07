@@ -103,9 +103,12 @@ public abstract class AbstractExchangeStore implements ExchangeStore {
 			exchanges = new ArrayList<>(getAllExchangesAsList());
 		}
 		return exchanges.stream().map(switch (field) {
+			case "api" -> (AbstractExchange exc) -> exc.getProxy().getName();
 			case "statuscode" -> (AbstractExchange exc) -> exc.getResponse() == null ? "0" :  String.valueOf(exc.getResponse().getStatusCode());
 			case "method" -> (AbstractExchange exc) -> exc.getRequest().getMethod();
 			case "path" -> (AbstractExchange exc) -> exc.getRequest().getUri();
+			case "client" -> AbstractExchange::getRemoteAddr;
+			case "server"  -> AbstractExchange::getServer;
 			default -> throw new IllegalStateException("Unexpected value: " + field);
 		}).distinct().toList();
 	}
@@ -149,6 +152,7 @@ public abstract class AbstractExchangeStore implements ExchangeStore {
 		boolean noRespcontenttype = !params.has("respcontenttype");
 		boolean noSearch =  !params.has("search");
 		boolean noStatuscode = !params.has("statuscode");
+		boolean noApi = !params.has("api");
 
 		String client = params.getString("client");
 		String server = params.getString("server");
@@ -157,6 +161,7 @@ public abstract class AbstractExchangeStore implements ExchangeStore {
 		String respcontenttype = params.getString("respcontenttype");
 		String search = params.getString("search");
 		int statuscode = noStatuscode ? -1 : params.getInt("statuscode");
+		String api = params.getString("api");
 
 		return exchanges.stream().filter(e -> filterExchanges(params,
 				useXForwardedForAsClientAddr,
@@ -166,17 +171,19 @@ public abstract class AbstractExchangeStore implements ExchangeStore {
 				noMethod,
 				noReqcontenttypn, noRespcontenttype,
 				noSearch,
+				noApi,
 				statuscode,
 				client,
 				server,
 				method,
 				reqcontenttype,
 				respcontenttype,
-				search, e)
+				search,
+				api, e)
 		).collect(toList()); // Do not simplify cause a mutable list is needed.
 	}
 
-	private static boolean filterExchanges(QueryParameter params, boolean useXForwardedForAsClientAddr, boolean noStatuscode, boolean noClient, boolean noServer, boolean noMethod, boolean noReqcontenttypn, boolean noRespcontenttype, boolean noSearch, int statuscode, String client, String server, String method, String reqcontenttype, String respcontenttype, String search, AbstractExchange e) {
+	private static boolean filterExchanges(QueryParameter params, boolean useXForwardedForAsClientAddr, boolean noStatuscode, boolean noClient, boolean noServer, boolean noMethod, boolean noReqcontenttypn, boolean noRespcontenttype, boolean noSearch, boolean noApi, int statuscode, String client, String server, String method, String reqcontenttype, String respcontenttype, String search, String api, AbstractExchange e) {
 		return (!params.has("proxy") || e.getProxy().toString().equals(params.getString("proxy"))) &&
                (noStatuscode || compareStatusCode(statuscode, e)) &&
                (noClient || getClientAddr(useXForwardedForAsClientAddr, e).equals(client)) &&
@@ -184,7 +191,8 @@ public abstract class AbstractExchangeStore implements ExchangeStore {
                (noMethod || e.getRequest().getMethod().equals(method)) &&
                (noReqcontenttypn || e.getRequestContentType().equals(reqcontenttype)) &&
                (noRespcontenttype || e.getResponseContentType().equals(respcontenttype)) &&
-               (noSearch || bodyContains(search, e) || requestHeaderContains(search, e) || responseHeaderContains(search, e));
+               (noSearch || bodyContains(search, e) || requestHeaderContains(search, e) || responseHeaderContains(search, e)) &&
+			   (noApi || e.getProxy().getName().equals(api));
 	}
 
 	private static boolean compareStatusCode(int statuscode, AbstractExchange e) {
