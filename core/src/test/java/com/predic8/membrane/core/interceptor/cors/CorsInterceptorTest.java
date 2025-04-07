@@ -75,7 +75,7 @@ class CorsInterceptorTest {
 
         assertEquals(204, exc.getResponse().getStatusCode());
         assertEquals("*", header.getFirstValue(ACCESS_CONTROL_ALLOW_ORIGIN));
-        assertEquals("GET POST OPTIONS", header.getFirstValue(ACCESS_CONTROL_ALLOW_METHODS));
+        assertEquals("GET, POST, OPTIONS", header.getFirstValue(ACCESS_CONTROL_ALLOW_METHODS));
     }
 
     @Test
