@@ -27,6 +27,7 @@ import java.io.IOException;
 import java.io.StringWriter;
 
 import static com.google.common.collect.ImmutableMap.of;
+import static com.predic8.membrane.core.interceptor.adminApi.AdminApiInterceptor.writeExchange;
 
 public class WebSocketExchangeWatcher implements IExchangesStoreListener {
 

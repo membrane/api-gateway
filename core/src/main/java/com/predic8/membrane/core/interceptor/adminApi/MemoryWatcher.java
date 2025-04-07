@@ -43,7 +43,7 @@ public class MemoryWatcher {
     private void getMemoryStats() {
         try {
             connections.broadcast(of(
-                    "subject", "liveUpdate",
+                    "subject", "metricUpdate",
                     "data", of(
                             "totalMemory", Runtime.getRuntime().totalMemory(),
                             "freeMemory", Runtime.getRuntime().freeMemory())));
