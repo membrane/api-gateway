@@ -1,6 +1,6 @@
-# ConditionalInterceptor
+# if Plugin
 
-Conditionally apply plugins using expressions.
+Control the execution of plugins with `if` conditionally. The SpEL expression language, Groovy, Jsonpath and XPath can be used to write the condition. 
 
 ## Running the Example
 
@@ -13,10 +13,6 @@ Conditionally apply plugins using expressions.
   - **JSON Request**:
     ```bash
     curl -X POST http://localhost:2000 -H "Content-Type: application/json" -d '{"foo": "bar"}' -v
-    ```
-  - **JSON with Non-null 'name' Key**:
-    ```bash
-    curl -X POST http://localhost:2000 -H "Content-Type: application/json" -d '{"name": "bar"}' -v
     ```
   - **JSON with 'name' Key as 'foo'**:
     ```bash
@@ -44,57 +40,24 @@ Conditionally apply plugins using expressions.
 4. **Review the Configuration**:
   - Take a look at `proxies.xml` to understand the configuration details and the conditional logic applied.
 
-## Configuration Overview
 
-### Request Handling
+## Response Manipulation
 
-The configuration applies various conditions to incoming requests:
-
-```xml
-<api port="2000">
-    <request>
-        <if test="headers['Content-Type'] == 'application/json'" language="SpEL">
-            <groovy>println("JSON Request!")</groovy>
-        </if>
-        <if test="jsonPath('$.name') != null" language="SpEL">
-            <groovy>println("The JSON request contains the key 'name', and it is not null.")</groovy>
-        </if>
-        <if test="jsonPath('$.name') == 'foo'" language="SpEL">
-            <groovy>println("The JSON request contains the key 'name' with the value 'foo'.")</groovy>
-        </if>
-        <if test="method == 'POST'" language="SpEL">
-            <groovy>println("Request method was POST.")</groovy>
-        </if>
-        <if test="params['param1'] == 'value2'" language="SpEL">
-            <groovy>println("Query Parameter Given!")</groovy>
-        </if>
-        <if test="headers['X-Test-Header'] matches '.*bar.*'" language="SpEL">
-            <groovy>println("X-Test-Header contains 'bar'")</groovy>
-        </if>
-        <if test="request.getBody.getLength gt 64" language="SpEL">
-            <groovy>println("Long body")</groovy>
-        </if>
-    </request>
-```
-
-### Response Manipulation
-
-Responses are manipulated based on status codes and request conditions:
+A common use case of the `if` plugin is the manipulation of responses based on the status code:
 
 ```xml
     <response>
-        <if test="statusCode matches '[45]\d\d'" language="SpEL">
+        <if test="statusCode matches '[45]\d\d'">
             <template pretty="yes" contentType="application/json">
                 {
-                "type": "https://membrane-api.io/error/",
-                "title": "${exc.response.statusMessage}",
-                "status": ${exc.response.statusCode}
+                  "type": "https://membrane-api.io/error/",
+                  "title": "${exc.response.statusMessage}"
                 }
             </template>
         </if>
         <if test="statusCode == 302" language="SpEL">
-            <groovy>println("Status code changed")
-                exc.getResponse().setStatusCode(404)</groovy>
+            <log message="Status code changed!"/>
+            <groovy>exc.getResponse().setStatusCode(404)</groovy>
         </if>
     </response>
 
@@ -103,4 +66,4 @@ Responses are manipulated based on status codes and request conditions:
 </api>
 ```
 
-This configuration allows you to dynamically handle requests and adjust responses based on specified conditions.
+`if` allows you to dynamically handle requests and adjust responses based on specified conditions.
