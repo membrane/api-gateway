@@ -27,7 +27,6 @@ import java.io.IOException;
 import java.io.StringWriter;
 
 import static com.google.common.collect.ImmutableMap.of;
-import static com.predic8.membrane.core.interceptor.adminApi.AdminApiInterceptor.writeExchange;
 
 public class WebSocketExchangeWatcher implements IExchangesStoreListener {
 
@@ -43,7 +42,7 @@ public class WebSocketExchangeWatcher implements IExchangesStoreListener {
 
     @Override
     public void addExchange(Proxy proxy, AbstractExchange exc) {
-        if (connections != null) {
+       if (connections != null) {
             try {
                 StringWriter writer = new StringWriter();
 
