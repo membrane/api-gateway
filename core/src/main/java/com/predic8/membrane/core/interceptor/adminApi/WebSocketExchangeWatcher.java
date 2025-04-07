@@ -48,11 +48,10 @@ public class WebSocketExchangeWatcher implements IExchangesStoreListener {
                 StringWriter writer = new StringWriter();
 
                 JsonGenerator gen = om.getFactory().createGenerator(writer);
-                gen.writeStartArray();
 
-                //writeExchange(exc, gen);
+                if (exc.getRequest() == null) return;
 
-                gen.writeEndArray();
+                writeExchange(exc, gen);
                 gen.close();
 
                 connections.broadcast(of(
