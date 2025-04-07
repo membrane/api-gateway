@@ -9,6 +9,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.net.URISyntaxException;
+import java.util.*;
 
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
@@ -26,7 +27,55 @@ class CorsInterceptorTest {
         interceptor.setMethods("GET, POST, OPTIONS");
         interceptor.setHeaders("Content-Type, Authorization");
         interceptor.setMaxAge("600");
-        interceptor.setCredentials(true);
+    }
+
+
+    @Test
+    void parseOriginIgnoreComma() {
+        interceptor.setOrigins("foo,bar,baz");
+        assertEquals(List.of("foo,bar,baz"), interceptor.getAllowedOrigins());
+    }
+
+    @Test
+    void parseOriginSpaces() {
+        interceptor.setOrigins("foo bar baz");
+        assertEquals(List.of("foo","bar","baz"), interceptor.getAllowedOrigins());
+    }
+
+    @Test
+    void originNull() throws URISyntaxException {
+
+        Exchange exc = Request.options("/test")
+                .header(ORIGIN, "null")
+                .buildExchange();
+
+        assertEquals(RETURN, interceptor.handleRequest(exc));
+        Header header = exc.getResponse().getHeader();
+
+        assertEquals(403, exc.getResponse().getStatusCode());
+
+
+    }
+
+    @Test
+    void restrictToRequested() throws URISyntaxException {
+
+        interceptor.setOrigins("*");
+
+        Exchange exc = Request.options("/test")
+                .header(ORIGIN, "https://trusted.example.com")
+                .header(ACCESS_CONTROL_ALLOW_METHODS, "POST")
+                .header(ACCESS_CONTROL_ALLOW_HEADERS, "X-Foo")
+                .buildExchange();
+
+        assertEquals(RETURN, interceptor.handleRequest(exc));
+        Header header = exc.getResponse().getHeader();
+
+        assertEquals(204, exc.getResponse().getStatusCode());
+        assertEquals("https://trusted.example.com", header.getFirstValue(ACCESS_CONTROL_ALLOW_ORIGIN));
+//        assertEquals("false", header.getFirstValue(ACCESS_CONTROL_ALLOW_CREDENTIALS));
+        assertEquals("POST", header.getFirstValue(ACCESS_CONTROL_ALLOW_METHODS));
+//        assertTrue(header.getFirstValue(ACCESS_CONTROL_ALLOW_HEADERS).contains("Authorization"));
     }
 
     @Test
@@ -40,7 +89,7 @@ class CorsInterceptorTest {
 
         assertEquals(204, exc.getResponse().getStatusCode());
         assertEquals("https://trusted.example.com", header.getFirstValue(ACCESS_CONTROL_ALLOW_ORIGIN));
-        assertEquals("true", header.getFirstValue(ACCESS_CONTROL_ALLOW_CREDENTIALS));
+        assertEquals("false", header.getFirstValue(ACCESS_CONTROL_ALLOW_CREDENTIALS));
         assertTrue(header.getFirstValue(ACCESS_CONTROL_ALLOW_METHODS).contains("POST"));
         assertTrue(header.getFirstValue(ACCESS_CONTROL_ALLOW_HEADERS).contains("Authorization"));
     }
@@ -57,7 +106,7 @@ class CorsInterceptorTest {
 
         Header header = exc.getResponse().getHeader();
         assertEquals("https://trusted.example.com", header.getFirstValue(ACCESS_CONTROL_ALLOW_ORIGIN));
-        assertEquals("true", header.getFirstValue(ACCESS_CONTROL_ALLOW_CREDENTIALS));
+        assertEquals("false", header.getFirstValue(ACCESS_CONTROL_ALLOW_CREDENTIALS));
     }
 
     @Test
