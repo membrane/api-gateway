@@ -212,10 +212,24 @@ public class Request extends Message {
 		return new Builder().post(url);
 	}
 
+	/**
+	 * Creates a new Builder configured for an HTTP DELETE request to the given URL.
+	 *
+	 * @param url the target URL for the DELETE request
+	 * @return a Builder instance preconfigured with the DELETE method and the specified URL
+	 * @throws URISyntaxException if the provided URL is not a valid URI
+	 */
 	public static Builder delete(String url) throws URISyntaxException {
 		return new Builder().delete(url);
 	}
 
+	/**
+	 * Creates a new Builder configured for an HTTP OPTIONS request with the specified URL.
+	 *
+	 * @param url the URL for the OPTIONS request
+	 * @return a Builder instance preconfigured for an OPTIONS request
+	 * @throws URISyntaxException if the provided URL is not a valid URI
+	 */
 	public static Builder options(String url) throws URISyntaxException {
 		return new Builder().options(url);
 	}
@@ -338,14 +352,39 @@ public class Request extends Message {
 			return method(Request.METHOD_PUT).url(uriFactory, url);
 		}
 
+		/**
+		 * Creates a Builder for constructing a PUT request with the specified URL using a default URIFactory.
+		 *
+		 * @param url the target URL for the PUT request
+		 * @return a Builder instance for further configuring the PUT request
+		 * @throws URISyntaxException if the provided URL has invalid syntax
+		 */
 		public Builder put(String url) throws URISyntaxException {
 			return put(new URIFactory(), url);
 		}
 
+		/**
+		 * Configures the Builder for an HTTP OPTIONS request using the specified URL.
+		 *
+		 * <p>This method instantiates a default {@code URIFactory} and delegates the URL parsing and configuration to
+		 * {@link #options(URIFactory, String)}.</p>
+		 *
+		 * @param url the URL for the OPTIONS request
+		 * @return the Builder instance configured with the OPTIONS method and the provided URL
+		 * @throws URISyntaxException if the URL is malformed
+		 */
 		public Builder options(String url) throws URISyntaxException {
 			return options(new URIFactory(), url);
 		}
 
+		/**
+		 * Configures the builder for an OPTIONS request by setting the HTTP method to OPTIONS
+		 * and assigning the request URL using the specified URI factory.
+		 *
+		 * @param url the URL for the request
+		 * @return the updated builder instance
+		 * @throws URISyntaxException if the URL string is malformed
+		 */
 		public Builder options(URIFactory uriFactory, String url) throws URISyntaxException {
 			return method(Request.METHOD_OPTIONS).url(uriFactory,url);
 		}
