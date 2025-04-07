@@ -1,14 +1,19 @@
 package com.predic8.membrane.core.interceptor.cors;
 
-import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.annot.MCAttribute;
+import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.Header;
+import com.predic8.membrane.core.interceptor.AbstractInterceptor;
+import com.predic8.membrane.core.interceptor.Outcome;
+import com.predic8.membrane.core.util.ConfigurationException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.*;
-import java.util.stream.*;
+import java.util.stream.Collectors;
 
-import static com.predic8.membrane.core.http.Response.*;
+import static com.predic8.membrane.core.http.Response.noContent;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 
 @MCElement(name = "cors")
@@ -20,8 +25,8 @@ public class CorsInterceptor extends AbstractInterceptor {
     public static final String ACCESS_CONTROL_ALLOW_HEADERS = "Access-Control-Allow-Headers";
     public static final String ACCESS_CONTROL_MAX_AGE = "Access-Control-Max-Age";
     public static final String ACCESS_CONTROL_ALLOW_CREDENTIALS = "Access-Control-Allow-Credentials";
-    private boolean all;
-    private String origin;
+
+    private List<String> allowedOrigins;
     private List<String> methods;
     private String headers;
     private boolean credentials;
@@ -29,61 +34,62 @@ public class CorsInterceptor extends AbstractInterceptor {
 
     @Override
     public Outcome handleRequest(Exchange exc) {
-        if (exc.getRequest().isOPTIONSRequest()) {
-            exc.setResponse(noContent().header(createCORSHeader(new Header())).build());
-           return RETURN;
-        }
-        return CONTINUE;
+        if (!exc.getRequest().isOPTIONSRequest())
+            return CONTINUE;
+
+        String requestOrigin = exc.getRequest().getHeader().getFirstValue(ORIGIN);
+        if (requestOrigin == null || isOriginAllowed(requestOrigin))
+            return CONTINUE;
+
+        exc.setResponse(noContent().header(createCORSHeader(new Header(), requestOrigin)).build());
+        return RETURN;
     }
 
     @Override
     public Outcome handleResponse(Exchange exc) {
-        exc.getResponse().setHeader(createCORSHeader(exc.getResponse().getHeader()));
+        String requestOrigin = exc.getRequest().getHeader().getFirstValue(ORIGIN);
+        if (requestOrigin == null || isOriginAllowed(requestOrigin)) {
+            return CONTINUE;
+        }
+        createCORSHeader(exc.getResponse().getHeader(), requestOrigin);
         return CONTINUE;
     }
 
-
-    @Override
-    public String getDisplayName() {
-        return "CORS";
+    private boolean isOriginAllowed(String origin) {
+        return !allowedOrigins.contains("*") && !allowedOrigins.contains(origin);
     }
 
-    private Header createCORSHeader(Header header) {
-        if (all) {
-            // TODO
-            return header;
+    private Header createCORSHeader(Header header, String requestOrigin) {
+        if (allowedOrigins.contains("*")) {
+            if (credentials) {
+                throw new ConfigurationException("UNSAFE CORS CONFIGURATION: 'credentials=true' and 'origins=*' is not allowed!");
+            } else {
+                header.setValue(ACCESS_CONTROL_ALLOW_ORIGIN, "*");
+            }
+        } else {
+            header.setValue(ACCESS_CONTROL_ALLOW_ORIGIN, requestOrigin);
         }
 
-        // Match origin aga
-        addIfPresent(header, ACCESS_CONTROL_ALLOW_ORIGIN, getAllowOrigin());
+        header.setValue(ACCESS_CONTROL_ALLOW_METHODS, String.join(", ", methods));
 
-        addIfPresent(header, ACCESS_CONTROL_ALLOW_METHODS, String.join(", ", getMethods()));
-        addIfPresent(header, ACCESS_CONTROL_ALLOW_HEADERS, getHeaders());
-        addIfPresent(header, ACCESS_CONTROL_MAX_AGE, getMaxAge());
-        if (credentials) {
-            addIfPresent(header, ACCESS_CONTROL_ALLOW_CREDENTIALS, "true");
-        }
+        if (headers != null)
+            header.setValue(ACCESS_CONTROL_ALLOW_HEADERS, headers);
+
+        if (maxAge != null)
+            header.setValue(ACCESS_CONTROL_MAX_AGE, maxAge);
+
+        if (credentials && !"*".equals(requestOrigin))
+            header.setValue(ACCESS_CONTROL_ALLOW_CREDENTIALS, "true");
+
+        header.setValue("Vary", ORIGIN);
         return header;
     }
 
-    private String getAllowOrigin() {
-        return all ? "*" : origin;
-    }
-
-    private void addIfPresent(Header header, String key, String val) {
-        if (val != null) {
-            header.add(key, val);
-        }
-    }
-
     @MCAttribute
-    public void setAll(boolean all) {
-        this.all = all;
-    }
-
-    @MCAttribute
-    public void setOrigin(String origin) {
-        this.origin = origin;
+    public void setOrigins(String origins) {
+        this.allowedOrigins = Arrays.stream(origins.split(","))
+                .map(String::trim)
+                .collect(Collectors.toList());
     }
 
     @MCAttribute
@@ -108,8 +114,8 @@ public class CorsInterceptor extends AbstractInterceptor {
         this.maxAge = maxAge;
     }
 
-    public boolean isAll() {
-        return all;
+    public List<String> getAllowedOrigins() {
+        return allowedOrigins;
     }
 
     public List<String> getMethods() {
@@ -126,5 +132,10 @@ public class CorsInterceptor extends AbstractInterceptor {
 
     public String getMaxAge() {
         return maxAge;
+    }
+
+    @Override
+    public String getDisplayName() {
+        return "CORS";
     }
 }
