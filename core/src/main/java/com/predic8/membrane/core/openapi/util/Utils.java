@@ -67,9 +67,9 @@ public class Utils {
 
     static final Pattern ipv4Pattern = compile("^(([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\.){3}([01]?\\d\\d?|2[0-4]\\d|25[0-5])$");
 
-    static final Pattern ipv6Pattern = compile("^([0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}|:(:[0-9a-fA-F]{1,4}){1,7}|[0-9a-fA-F]{1,4}:(:[0-9a-fA-F]{1,4}){1,6}|([0-9a-fA-F]{1,4}:){1,2}(:[0-9a-fA-F]{1,4}){1,5}|([0-9a-fA-F]{1,4}:){1,3}(:[0-9a-fA-F]{1,4}){1,4}|([0-9a-fA-F]{1,4}:){1,4}(:[0-9a-fA-F]{1,4}){1,3}|([0-9a-fA-F]{1,4}:){1,5}(:[0-9a-fA-F]{1,4}){1,2}|([0-9a-fA-F]{1,4}:){1,6}:[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,7}:|::$");
+    static final Pattern ipv6Pattern = Pattern.compile("^(?!.*(::.*::))(?=.*:.*:)[0-9A-Fa-f:]+$");
 
-    static final Pattern hostnamePattern = compile("^(?=^.{1,253}$)(([a-z\\d]([a-z\\d-]{0,62}[a-z\\d])*[\\.]){1,3}[a-z]{1,61})$");
+    static final Pattern hostnamePattern = Pattern.compile("^(?=.{1,253}$)(?:(?!-)[a-z0-9-]{1,63}(?<!-)\\.)+[a-z]{2,63}$");
 
     static final Pattern jsonPointerPattern = compile("^(/([^~/]|~0|~1)*)*$");
 
