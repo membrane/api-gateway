@@ -282,4 +282,102 @@ class UtilsTest {
     void testConvertToBigDecimal_withInvalidString() {
         assertThrows(NumberFormatException.class, () -> convertToBigDecimal("invalid"));
     }
+
+    @Test
+    void testIso4217Pattern() {
+        assertTrue(iso4217Pattern.matcher("USD").matches());
+        assertTrue(iso4217Pattern.matcher("eur").matches());
+        assertFalse(iso4217Pattern.matcher("US").matches());
+        assertFalse(iso4217Pattern.matcher("EURO").matches());
+    }
+
+    @Test
+    void testIso639Pattern() {
+        assertTrue(iso639Pattern.matcher("en").matches());
+        assertTrue(iso639Pattern.matcher("de-AT").matches());
+        assertFalse(iso639Pattern.matcher("EN").matches());
+        assertFalse(iso639Pattern.matcher("en-us").matches());
+    }
+
+    @Test
+    void testIso639_1Pattern() {
+        assertTrue(iso639_1Pattern.matcher("en").matches());
+        assertTrue(iso639_1Pattern.matcher("EN").matches());
+        assertFalse(iso639_1Pattern.matcher("eng").matches());
+        assertFalse(iso639_1Pattern.matcher("en-US").matches());
+    }
+
+    @Test
+    void testBCP47Pattern() {
+        assertTrue(BCP47_PATTERN.matcher("en").matches());
+        assertTrue(BCP47_PATTERN.matcher("enUS").matches());
+        assertTrue(BCP47_PATTERN.matcher("abc-123").matches());
+        assertFalse(BCP47_PATTERN.matcher("en_US").matches());
+        assertFalse(BCP47_PATTERN.matcher("abcdefghijk").matches());
+    }
+
+    @Test
+    void testIpv4Pattern() {
+        assertTrue(ipv4Pattern.matcher("192.168.0.1").matches());
+        assertTrue(ipv4Pattern.matcher("0.0.0.0").matches());
+        assertTrue(ipv4Pattern.matcher("255.255.255.255").matches());
+        assertFalse(ipv4Pattern.matcher("256.256.256.256").matches());
+        assertFalse(ipv4Pattern.matcher("192.168.0").matches());
+    }
+
+    @Test
+    void testIpv6Pattern() {
+        assertTrue(ipv6Pattern.matcher("2001:0db8:85a3:0000:0000:8a2e:0370:7334").matches());
+        assertTrue(ipv6Pattern.matcher("::1").matches());
+        assertFalse(ipv6Pattern.matcher("2001:db8:85a3::8a2e::7334").matches());
+    }
+
+    @Test
+    void testHostnamePattern() {
+        assertTrue(hostnamePattern.matcher("example.com").matches());
+        assertTrue(hostnamePattern.matcher("sub.example.com").matches());
+        assertFalse(hostnamePattern.matcher("example.com.").matches());
+        assertFalse(hostnamePattern.matcher("Example.com").matches());
+    }
+
+    @Test
+    void testJsonPointerPattern() {
+        assertTrue(jsonPointerPattern.matcher("").matches());
+        assertTrue(jsonPointerPattern.matcher("/foo").matches());
+        assertTrue(jsonPointerPattern.matcher("/~0").matches());
+        assertTrue(jsonPointerPattern.matcher("/~1").matches());
+        assertFalse(jsonPointerPattern.matcher("/~2").matches());
+    }
+
+    @Test
+    void testRelativeJsonPointerPattern() {
+        assertTrue(relativeJsonPointerPattern.matcher("0").matches());
+        assertTrue(relativeJsonPointerPattern.matcher("1/id").matches());
+        assertTrue(relativeJsonPointerPattern.matcher("2/~0").matches());
+        assertFalse(relativeJsonPointerPattern.matcher("1/~2").matches());
+    }
+
+    @Test
+    void testGlobalTradeItemNumberPattern() {
+        assertTrue(globalTradeItemNumberPattern.matcher("1234567890123").matches());
+        assertFalse(globalTradeItemNumberPattern.matcher("123456789012").matches());
+        assertFalse(globalTradeItemNumberPattern.matcher("12345678901234").matches());
+        assertFalse(globalTradeItemNumberPattern.matcher("ABCDEFGHIJKLM").matches());
+    }
+
+    @Test
+    void testIso3166Alpha2Pattern() {
+        assertTrue(iso3166Alpha2Pattern.matcher("US").matches());
+        assertTrue(iso3166Alpha2Pattern.matcher("de").matches());
+        assertFalse(iso3166Alpha2Pattern.matcher("USA").matches());
+        assertFalse(iso3166Alpha2Pattern.matcher("U").matches());
+    }
+
+    @Test
+    void testDurationPattern() {
+        assertTrue(durationPattern.matcher("P3Y6M4DT12H30M5S").matches());
+        assertTrue(durationPattern.matcher("P10D").matches());
+        assertFalse(durationPattern.matcher("3Y6M4DT12H30M5S").matches());
+        assertFalse(durationPattern.matcher("P").matches());
+    }
 }

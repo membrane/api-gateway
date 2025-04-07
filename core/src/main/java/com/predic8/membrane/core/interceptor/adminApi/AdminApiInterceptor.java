@@ -21,10 +21,16 @@ import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.exchangestore.ExchangeQueryResult;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
+import com.predic8.membrane.core.interceptor.Interceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
+import com.predic8.membrane.core.interceptor.flow.AbortInterceptor;
+import com.predic8.membrane.core.interceptor.flow.AbstractFlowInterceptor;
+import com.predic8.membrane.core.interceptor.flow.RequestInterceptor;
+import com.predic8.membrane.core.interceptor.flow.ResponseInterceptor;
 import com.predic8.membrane.core.interceptor.rest.QueryParameter;
 import com.predic8.membrane.core.openapi.util.PathDoesNotMatchException;
 import com.predic8.membrane.core.proxies.AbstractServiceProxy;
+import com.predic8.membrane.core.proxies.Proxy;
 import com.predic8.membrane.core.transport.ws.WebSocketConnectionCollection;
 
 import java.io.IOException;
@@ -40,9 +46,13 @@ import java.util.stream.IntStream;
 import static com.bornium.http.util.UriUtil.queryToParameters;
 import static com.predic8.membrane.core.http.Header.X_FORWARDED_FOR;
 import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
-import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
+import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
+import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
 import static com.predic8.membrane.core.openapi.util.UriTemplateMatcher.matchTemplate;
 import static com.predic8.membrane.core.transport.http2.Http2ServerHandler.HTTP2;
+import static java.net.URLDecoder.decode;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 @MCElement(name = "adminApi")
 public class AdminApiInterceptor extends AbstractInterceptor {
@@ -52,12 +62,14 @@ public class AdminApiInterceptor extends AbstractInterceptor {
     private static final ObjectMapper om = new ObjectMapper();
 
     private final MemoryWatcher memoryWatcher = new MemoryWatcher();
+    private final DiskWatcher diskWatcher = new DiskWatcher();
     private final WebSocketExchangeWatcher wsExchangeWatcher = new WebSocketExchangeWatcher();
     private final WebSocketConnectionCollection connections = new WebSocketConnectionCollection();
 
     @Override
     public void init() {
         memoryWatcher.init(router.getTimerManager(), connections);
+        diskWatcher.init(router.getTimerManager(), connections);
         wsExchangeWatcher.init(connections);
         router.getExchangeStore().addExchangesStoreListener(wsExchangeWatcher);
         super.init();
@@ -75,6 +87,9 @@ public class AdminApiInterceptor extends AbstractInterceptor {
                 return handleCalls(exc);
             } else if (uri.matches(".*/ws.*")) {
                 return new AdminApiObserver().handle(exc, connections);
+            } else if (uri.matches(".*/api/.*")) {
+                Map<String, String> params = matchTemplate(".*/api/{name}", uri);
+                return handleApiDetails(exc, params.get("name"));
             } else if (uri.matches(".*/exchange/\\d*")) {
                 Map<String, String> params = matchTemplate(".*/exchange/{id}", uri);
                 return handleExchangeDetails(exc, params.get("id"));
@@ -83,7 +98,7 @@ public class AdminApiInterceptor extends AbstractInterceptor {
                 return handleFilterSuggestions(exc, params.get("field"));
             }
         } catch (PathDoesNotMatchException e) {
-            return ABORT;
+            return Outcome.ABORT;
         }
         return CONTINUE;
     }
@@ -182,6 +197,48 @@ public class AdminApiInterceptor extends AbstractInterceptor {
         return RETURN;
     }
 
+    private Outcome handleApiDetails(Exchange exc, String name) {
+        try {
+            Proxy proxy = router.getRuleManager().getRules().stream().filter(p ->
+                    p.getName().equals(decode(name, UTF_8))
+            ).findFirst().orElse(null);
+
+            if (proxy == null) {
+                exc.setResponse(Response.notFound().build());
+                return RETURN;
+            }
+
+            StringWriter writer = new StringWriter();
+            JsonGenerator gen = om.getFactory().createGenerator(writer);
+            gen.writeStartArray();
+            writePluginRow(proxy.getInterceptors(), null, gen);
+            gen.writeEndArray();
+            gen.close();
+
+            exc.setResponse(Response.ok().body(writer.toString()).contentType(APPLICATION_JSON).build());
+            return RETURN;
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private void writePluginRow(List<Interceptor> plugins, Flow limitedFlow, JsonGenerator gen) throws IOException {
+        for (Interceptor p : plugins) {
+            switch (p) {
+                case RequestInterceptor rqi -> writePluginRow(rqi.getInterceptors(), REQUEST, gen);
+                case ResponseInterceptor rsi -> writePluginRow(rsi.getInterceptors(), RESPONSE, gen);
+                case AbortInterceptor ai -> writePluginRow(ai.getInterceptors(), ABORT, gen);
+                default -> {
+                    gen.writeStartObject();
+                    gen.writeStringField("flow", String.valueOf(limitedFlow != null ? limitedFlow : p.getFlow()));
+                    gen.writeStringField("name", p.getDisplayName());
+                    gen.writeStringField("shortDescription", p.getShortDescription());
+                    gen.writeStringField("longDescription", p.getLongDescription());
+                    gen.writeEndObject();
+                }
+            }
+        }
+    }
 
     private Outcome handleCalls(Exchange exc) {
         ExchangeQueryResult res = null;
