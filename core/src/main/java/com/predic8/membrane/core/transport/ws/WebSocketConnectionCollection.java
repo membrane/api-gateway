@@ -29,6 +29,10 @@ public class WebSocketConnectionCollection {
     private final List<WebSocketConnection> connections = new ArrayList<>();
     private final ObjectMapper om = new ObjectMapper();
 
+    public int getSize() {
+        return connections.size();
+    }
+
     /**
      * Sends the 'data' as a JSON object to all connected WebSocket listeners.
      */
