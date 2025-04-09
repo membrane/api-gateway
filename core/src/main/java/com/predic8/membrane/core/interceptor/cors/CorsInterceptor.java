@@ -9,6 +9,7 @@ import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.util.ConfigurationException;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
@@ -39,8 +40,8 @@ public class CorsInterceptor extends AbstractInterceptor {
     public static final String ACCESS_CONTROL_REQUEST_METHOD = "Access-Control-Request-Method";
     public static final String ACCESS_CONTROL_REQUEST_HEADERS = "Access-Control-Request-Headers";
 
-
-    private List<String> allowedOrigins;
+    private boolean allowAll = false;
+    private List<String> allowedOrigins = new ArrayList<>();
     private List<String> methods;
     private String headers;
     private boolean credentials;
@@ -58,6 +59,11 @@ public class CorsInterceptor extends AbstractInterceptor {
         if (requestOrigin == null)
             return CONTINUE;
 
+        if (allowAll) {
+            exc.setResponse(noContent().header(createCORSHeader(new Header(), requestOrigin, requestMethod, requestHeaders)).build());
+            return RETURN;
+        }
+
         if (!isOriginAllowed(requestOrigin)) {
             return getProblemDetails(exc, requestOrigin, "origin");
         }
@@ -70,7 +76,7 @@ public class CorsInterceptor extends AbstractInterceptor {
             return getProblemDetails(exc, requestOrigin, "headers");
         }
 
-        exc.setResponse(noContent().header(createCORSHeader(new Header(), requestOrigin,  requestMethod)).build());
+        exc.setResponse(noContent().header(createCORSHeader(new Header(), requestOrigin,  requestMethod, requestHeaders)).build());
         return RETURN;
     }
 
@@ -90,8 +96,13 @@ public class CorsInterceptor extends AbstractInterceptor {
         if (requestOrigin == null)
             return CONTINUE;
 
+        if (allowAll) {
+            createCORSHeader(exc.getResponse().getHeader(), requestOrigin, exc.getRequest().getHeader().getFirstValue(ACCESS_CONTROL_REQUEST_METHOD), exc.getRequest().getHeader().getFirstValue(ACCESS_CONTROL_REQUEST_HEADERS));
+            return CONTINUE;
+        }
+
         if (isOriginAllowed(requestOrigin)) {
-            createCORSHeader(exc.getResponse().getHeader(), requestOrigin, exc.getRequest().getHeader().getFirstValue(ACCESS_CONTROL_REQUEST_HEADERS));
+            createCORSHeader(exc.getResponse().getHeader(), requestOrigin, exc.getRequest().getHeader().getFirstValue(ACCESS_CONTROL_REQUEST_METHOD), exc.getRequest().getHeader().getFirstValue(ACCESS_CONTROL_REQUEST_HEADERS));
         }
 
         return CONTINUE;
@@ -126,7 +137,7 @@ public class CorsInterceptor extends AbstractInterceptor {
     }
 
 
-    private Header createCORSHeader(Header header, String requestOrigin, String requestedMethod) {
+    private Header createCORSHeader(Header header, String requestOrigin, String requestedMethod, String requestedHeaders) {
         if (allowedOrigins.contains("*")) {
             if (credentials) {
                 throw new ConfigurationException("UNSAFE CORS CONFIGURATION: 'credentials=true' and 'origins=*' is not allowed!");
@@ -138,9 +149,13 @@ public class CorsInterceptor extends AbstractInterceptor {
 
         header.setValue(ACCESS_CONTROL_ALLOW_METHODS, requestedMethod);
 
-        if (headers != null) {
+        if (allowAll) {
+            header.setValue(ACCESS_CONTROL_ALLOW_HEADERS,
+                    requestedHeaders != null ? requestedHeaders : "Content-Type, Authorization");
+        } else if (headers != null) {
             header.setValue(ACCESS_CONTROL_ALLOW_HEADERS, headers);
         }
+
 
         if (maxAge != null) {
             header.setValue(ACCESS_CONTROL_MAX_AGE, maxAge);
@@ -155,7 +170,11 @@ public class CorsInterceptor extends AbstractInterceptor {
     }
 
     @MCAttribute
-    @Required
+    public void setAllowAll(boolean allowAll) {
+        this.allowAll = allowAll;
+    }
+
+    @MCAttribute
     public void setOrigins(String origins) {
         this.allowedOrigins = Arrays.stream(origins.split(" "))
                 .map(String::trim)
@@ -163,7 +182,6 @@ public class CorsInterceptor extends AbstractInterceptor {
     }
 
     @MCAttribute
-    @Required
     public void setMethods(String methods) {
         this.methods = Arrays.stream(methods.split(", "))
                 .map(String::trim)
@@ -183,6 +201,10 @@ public class CorsInterceptor extends AbstractInterceptor {
     @MCAttribute
     public void setMaxAge(String maxAge) {
         this.maxAge = maxAge;
+    }
+
+    public boolean isAllowAll() {
+        return allowAll;
     }
 
     public List<String> getAllowedOrigins() {
