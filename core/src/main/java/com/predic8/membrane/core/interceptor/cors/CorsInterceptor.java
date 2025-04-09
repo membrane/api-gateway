@@ -3,6 +3,7 @@ package com.predic8.membrane.core.interceptor.cors;
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.annot.Required;
+import com.predic8.membrane.core.exceptions.ProblemDetails;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.http.Response;
@@ -40,11 +41,17 @@ public class CorsInterceptor extends AbstractInterceptor {
             return CONTINUE; // no preflight -> let pass
 
         String requestOrigin = exc.getRequest().getHeader().getFirstValue(ORIGIN);
+
         if (requestOrigin == null)
-            return CONTINUE; // no preflight -> let pass
+            return CONTINUE;
 
         if (!isOriginAllowed(requestOrigin)) {
-            exc.setResponse(Response.forbidden().build());
+            ProblemDetails.security(false, "cors-interceptor")
+                    .statusCode(403)
+                    .addSubType("origin-not-allowed")
+                    .detail("The origin '%s' is not allowed by the CORS policy.".formatted(requestOrigin))
+                    .topLevel("origin", requestOrigin)
+                    .buildAndSetResponse(exc);
             return RETURN;
         }
         exc.setResponse(noContent().header(createCORSHeader(new Header(), requestOrigin)).build());
@@ -60,10 +67,16 @@ public class CorsInterceptor extends AbstractInterceptor {
         if (isOriginAllowed(requestOrigin)) {
             createCORSHeader(exc.getResponse().getHeader(), requestOrigin);
         }
+
         return CONTINUE;
     }
 
+
     private boolean isOriginAllowed(String origin) {
+        if ("null".equals(origin)) {
+            return allowedOrigins.contains("null");
+        }
+
         return allowedOrigins.contains("*") || allowedOrigins.contains(origin);
     }
 
@@ -72,13 +85,12 @@ public class CorsInterceptor extends AbstractInterceptor {
             if (credentials) {
                 throw new ConfigurationException("UNSAFE CORS CONFIGURATION: 'credentials=true' and 'origins=*' is not allowed!");
             }
-            header.setValue(ACCESS_CONTROL_ALLOW_ORIGIN, "*");
+            header.setValue(ACCESS_CONTROL_ALLOW_ORIGIN, requestOrigin);
         } else {
             header.setValue(ACCESS_CONTROL_ALLOW_ORIGIN, requestOrigin);
         }
 
         header.setValue(ACCESS_CONTROL_ALLOW_METHODS, String.join(", ", methods));
-
         if (headers != null) {
             header.setValue(ACCESS_CONTROL_ALLOW_HEADERS, headers);
         }
