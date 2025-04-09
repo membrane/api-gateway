@@ -179,7 +179,7 @@ class CorsInterceptorTest {
     }
 
     @Test
-    void showOnlymethod() throws URISyntaxException {
+    void shouldReturnOnlyRequestedMethodInCorsResponse() throws URISyntaxException {
         CorsInterceptor i = new CorsInterceptor();
         i.setOrigins("https://trusted.example.com");
         i.setMethods("GET, POST");
@@ -196,7 +196,7 @@ class CorsInterceptorTest {
     }
 
     @Test
-    void originWithNull() throws URISyntaxException {
+    void shouldAllowNullOriginWhenExplicitlyConfigured() throws URISyntaxException {
         CorsInterceptor i = new CorsInterceptor();
         i.setOrigins("http://localhost:5173/ null");
         i.setMethods("GET, POST");
