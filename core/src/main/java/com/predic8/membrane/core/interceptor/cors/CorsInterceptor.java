@@ -108,7 +108,6 @@ public class CorsInterceptor extends AbstractInterceptor {
         return CONTINUE;
     }
 
-
     private boolean isOriginAllowed(String origin) {
         if ("null".equals(origin)) {
             return allowedOrigins.contains("null");
