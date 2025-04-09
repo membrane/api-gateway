@@ -19,6 +19,13 @@ import static com.predic8.membrane.core.http.Response.noContent;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
 
+
+/**
+ * @description
+ * <p>An interceptor for handling Cross-Origin Resource Sharing (CORS) requests.
+ * It allows control over which origins, methods, and headers are permitted
+ * during cross-origin requests.</p>
+ */
 @MCElement(name = "cors")
 public class CorsInterceptor extends AbstractInterceptor {
 
@@ -54,7 +61,7 @@ public class CorsInterceptor extends AbstractInterceptor {
                     .buildAndSetResponse(exc);
             return RETURN;
         }
-        exc.setResponse(noContent().header(createCORSHeader(new Header(), requestOrigin)).build());
+        exc.setResponse(noContent().header(createCORSHeader(new Header(), requestOrigin, exc.getRequest().getMethod())).build());
         return RETURN;
     }
 
@@ -65,7 +72,7 @@ public class CorsInterceptor extends AbstractInterceptor {
             return CONTINUE;
 
         if (isOriginAllowed(requestOrigin)) {
-            createCORSHeader(exc.getResponse().getHeader(), requestOrigin);
+            createCORSHeader(exc.getResponse().getHeader(), requestOrigin, exc.getRequest().getHeader().getFirstValue(ACCESS_CONTROL_ALLOW_METHODS));
         }
 
         return CONTINUE;
@@ -80,7 +87,7 @@ public class CorsInterceptor extends AbstractInterceptor {
         return allowedOrigins.contains("*") || allowedOrigins.contains(origin);
     }
 
-    private Header createCORSHeader(Header header, String requestOrigin) {
+    private Header createCORSHeader(Header header, String requestOrigin, String requestMethod) {
         if (allowedOrigins.contains("*")) {
             if (credentials) {
                 throw new ConfigurationException("UNSAFE CORS CONFIGURATION: 'credentials=true' and 'origins=*' is not allowed!");
@@ -90,7 +97,7 @@ public class CorsInterceptor extends AbstractInterceptor {
             header.setValue(ACCESS_CONTROL_ALLOW_ORIGIN, requestOrigin);
         }
 
-        header.setValue(ACCESS_CONTROL_ALLOW_METHODS, String.join(", ", methods));
+        header.setValue(ACCESS_CONTROL_ALLOW_METHODS, requestMethod);
         if (headers != null) {
             header.setValue(ACCESS_CONTROL_ALLOW_HEADERS, headers);
         }

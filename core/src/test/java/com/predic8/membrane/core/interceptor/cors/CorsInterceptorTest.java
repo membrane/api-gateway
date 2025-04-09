@@ -21,6 +21,7 @@ class CorsInterceptorTest {
     void parseOriginSpaces() {
         CorsInterceptor i = new CorsInterceptor();
         i.setOrigins("foo bar baz");
+
         assertEquals(List.of("foo", "bar", "baz"), i.getAllowedOrigins());
     }
 
@@ -28,6 +29,7 @@ class CorsInterceptorTest {
     void parseMethodSpaces() {
         CorsInterceptor i = new CorsInterceptor();
         i.setMethods("GET, POST");
+
         assertEquals(List.of("GET", "POST"), i.getMethods());
     }
 
@@ -36,6 +38,7 @@ class CorsInterceptorTest {
         CorsInterceptor i = new CorsInterceptor();
         i.setOrigins("foo bar null");
         i.setMethods("POST, GET");
+
         Exchange exc = Request.options("/test")
                 .header(ORIGIN, "null")
                 .buildExchange();
@@ -49,6 +52,7 @@ class CorsInterceptorTest {
         CorsInterceptor i = new CorsInterceptor();
         i.setOrigins("foo bar");
         i.setMethods("POST, GET");
+
         Exchange exc = Request.options("/test")
                 .header(ORIGIN, "null")
                 .buildExchange();
@@ -61,7 +65,7 @@ class CorsInterceptorTest {
     void restrictToRequested() throws URISyntaxException {
         CorsInterceptor i = new CorsInterceptor();
         i.setOrigins("*");
-        i.setMethods("GET, POST, OPTIONS");
+        i.setMethods("GET, POST");
 
         Exchange exc = Request.options("/test")
                 .header(ORIGIN, "https://trusted.example.com")
@@ -72,14 +76,14 @@ class CorsInterceptorTest {
         Header header = exc.getResponse().getHeader();
         assertEquals(204, exc.getResponse().getStatusCode());
         assertEquals("https://trusted.example.com", header.getFirstValue(ACCESS_CONTROL_ALLOW_ORIGIN));
-        assertEquals("GET, POST, OPTIONS", header.getFirstValue(ACCESS_CONTROL_ALLOW_METHODS));
+        assertEquals("OPTIONS", header.getFirstValue(ACCESS_CONTROL_ALLOW_METHODS));
     }
 
     @Test
     void preflightRequestAllowedOrigin() throws URISyntaxException {
         CorsInterceptor i = new CorsInterceptor();
         i.setOrigins("https://trusted.example.com");
-        i.setMethods("GET, POST, OPTIONS");
+        i.setMethods("GET, POST");
         i.setHeaders("Content-Type, Authorization");
 
         Exchange exc = Request.options("/test")
@@ -100,11 +104,11 @@ class CorsInterceptorTest {
     void normalRequestAddsCorsHeaders() throws URISyntaxException {
         CorsInterceptor i = new CorsInterceptor();
         i.setOrigins("https://trusted.example.com");
-        i.setMethods("GET, POST, OPTIONS");
-        i.setHeaders("Content-Type, Authorization");
+        i.setMethods("GET, POST");
 
         Exchange exc = Request.get("/test")
                 .header(ORIGIN, "https://trusted.example.com")
+                .header(ACCESS_CONTROL_ALLOW_METHODS, "POST")
                 .buildExchange();
         exc.setResponse(Response.ok("Hello").build());
 
@@ -113,9 +117,7 @@ class CorsInterceptorTest {
 
         Header header = exc.getResponse().getHeader();
         assertEquals("https://trusted.example.com", header.getFirstValue(ACCESS_CONTROL_ALLOW_ORIGIN));
-        assertEquals("GET, POST, OPTIONS", header.getFirstValue(ACCESS_CONTROL_ALLOW_METHODS));
-        assertFalse(header.getFirstValue(ACCESS_CONTROL_ALLOW_METHODS).contains("PUT"));
-        assertTrue(header.getFirstValue(ACCESS_CONTROL_ALLOW_METHODS).contains("GET"));
+        assertEquals("POST", header.getFirstValue(ACCESS_CONTROL_ALLOW_METHODS));
         assertNull(header.getFirstValue(ACCESS_CONTROL_ALLOW_CREDENTIALS));
     }
 
@@ -123,8 +125,7 @@ class CorsInterceptorTest {
     void requestFromUnauthorizedOriginGetsNoCorsHeaders() throws URISyntaxException {
         CorsInterceptor i = new CorsInterceptor();
         i.setOrigins("https://trusted.example.com");
-        i.setMethods("GET, POST, OPTIONS");
-        i.setHeaders("Content-Type, Authorization");
+        i.setMethods("GET, POST");
 
         Exchange exc = Request.get("/test")
                 .header(ORIGIN, "https://evil.example.com")
@@ -140,6 +141,7 @@ class CorsInterceptorTest {
     @Test
     void preflightRequestWithoutOriginGetsIgnored() throws URISyntaxException {
         CorsInterceptor i = new CorsInterceptor();
+
         Exchange exc = Request.options("/test").buildExchange();
 
         assertEquals(CONTINUE, i.handleRequest(exc));
@@ -164,6 +166,7 @@ class CorsInterceptorTest {
     @Test
     void wildcardOriginWithCredentialsThrowsException() {
         CorsInterceptor i = new CorsInterceptor();
+
         assertThrows(ConfigurationException.class, () -> {
             i.setOrigins("*");
             i.setMethods("GET, POST");
@@ -176,7 +179,7 @@ class CorsInterceptorTest {
     }
 
     @Test
-    void onlymethod() throws URISyntaxException {
+    void showOnlymethod() throws URISyntaxException {
         CorsInterceptor i = new CorsInterceptor();
         i.setOrigins("https://trusted.example.com");
         i.setMethods("GET, POST");
@@ -209,8 +212,10 @@ class CorsInterceptorTest {
     @Test
     void nonOptionsRequestWithoutOriginIsPassedThrough() throws URISyntaxException {
         CorsInterceptor i = new CorsInterceptor();
+
         Exchange exc = Request.get("/public").buildExchange();
         exc.setResponse(Response.ok("OK").build());
+
         assertEquals(CONTINUE, i.handleRequest(exc));
         assertEquals(CONTINUE, i.handleResponse(exc));
         assertNull(exc.getResponse().getHeader().getFirstValue(ACCESS_CONTROL_ALLOW_ORIGIN));
