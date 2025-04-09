@@ -2,7 +2,6 @@ package com.predic8.membrane.core.interceptor.cors;
 
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.annot.Required;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
@@ -97,12 +96,12 @@ public class CorsInterceptor extends AbstractInterceptor {
             return CONTINUE;
 
         if (allowAll) {
-            createCORSHeader(exc.getResponse().getHeader(), requestOrigin, exc.getRequest().getHeader().getFirstValue(ACCESS_CONTROL_REQUEST_METHOD), exc.getRequest().getHeader().getFirstValue(ACCESS_CONTROL_REQUEST_HEADERS));
+            createCORSHeader(exc.getResponse().getHeader(), requestOrigin, exc.getRequest().getMethod(), exc.getRequest().getHeader().getFirstValue(ACCESS_CONTROL_REQUEST_HEADERS));
             return CONTINUE;
         }
 
         if (isOriginAllowed(requestOrigin)) {
-            createCORSHeader(exc.getResponse().getHeader(), requestOrigin, exc.getRequest().getHeader().getFirstValue(ACCESS_CONTROL_REQUEST_METHOD), exc.getRequest().getHeader().getFirstValue(ACCESS_CONTROL_REQUEST_HEADERS));
+            createCORSHeader(exc.getResponse().getHeader(), requestOrigin, exc.getRequest().getMethod(), exc.getRequest().getHeader().getFirstValue(ACCESS_CONTROL_REQUEST_HEADERS));
         }
 
         return CONTINUE;
