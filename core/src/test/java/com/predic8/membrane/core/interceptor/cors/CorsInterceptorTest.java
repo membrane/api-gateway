@@ -10,6 +10,7 @@ import org.junit.jupiter.api.Test;
 import java.net.URISyntaxException;
 import java.util.List;
 
+import static com.predic8.membrane.core.http.Header.CONTENT_TYPE;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
 import static com.predic8.membrane.core.interceptor.cors.CorsInterceptor.*;
@@ -41,6 +42,7 @@ class CorsInterceptorTest {
 
         Exchange exc = Request.options("/test")
                 .header(ORIGIN, "null")
+                .header(ACCESS_CONTROL_ALLOW_METHODS, "POST")
                 .buildExchange();
 
         assertEquals(RETURN, i.handleRequest(exc));
@@ -76,7 +78,7 @@ class CorsInterceptorTest {
         Header header = exc.getResponse().getHeader();
         assertEquals(204, exc.getResponse().getStatusCode());
         assertEquals("https://trusted.example.com", header.getFirstValue(ACCESS_CONTROL_ALLOW_ORIGIN));
-        assertEquals("OPTIONS", header.getFirstValue(ACCESS_CONTROL_ALLOW_METHODS));
+        assertEquals("POST", header.getFirstValue(ACCESS_CONTROL_ALLOW_METHODS));
     }
 
     @Test
@@ -84,10 +86,12 @@ class CorsInterceptorTest {
         CorsInterceptor i = new CorsInterceptor();
         i.setOrigins("https://trusted.example.com");
         i.setMethods("GET, POST");
-        i.setHeaders("Content-Type, Authorization");
+        i.setHeaders(CONTENT_TYPE + ", Authorization");
 
         Exchange exc = Request.options("/test")
                 .header(ORIGIN, "https://trusted.example.com")
+                .header(ACCESS_CONTROL_ALLOW_METHODS, "POST")
+                .header(ACCESS_CONTROL_ALLOW_HEADERS, "Authorization")
                 .buildExchange();
 
         assertEquals(RETURN, i.handleRequest(exc));
@@ -96,7 +100,6 @@ class CorsInterceptorTest {
         assertEquals(204, exc.getResponse().getStatusCode());
         assertEquals("https://trusted.example.com", header.getFirstValue(ACCESS_CONTROL_ALLOW_ORIGIN));
         assertNull(header.getFirstValue(ACCESS_CONTROL_ALLOW_CREDENTIALS));
-        assertTrue(header.getFirstValue(ACCESS_CONTROL_ALLOW_METHODS).contains("OPTIONS"));
         assertTrue(header.getFirstValue(ACCESS_CONTROL_ALLOW_HEADERS).contains("Authorization"));
     }
 
@@ -156,6 +159,7 @@ class CorsInterceptorTest {
 
         Exchange exc = Request.options("/test")
                 .header(ORIGIN, "https://any.example.com")
+                .header(ACCESS_CONTROL_ALLOW_METHODS, "POST")
                 .buildExchange();
 
         assertEquals(RETURN, i.handleRequest(exc));
@@ -173,6 +177,7 @@ class CorsInterceptorTest {
             i.setCredentials(true);
             Exchange exc = Request.options("/test")
                     .header(ORIGIN, "https://my.site")
+                    .header(ACCESS_CONTROL_ALLOW_METHODS, "POST")
                     .buildExchange();
             i.handleRequest(exc);
         });
@@ -203,11 +208,45 @@ class CorsInterceptorTest {
 
         Exchange exc = Request.options("/test")
                 .header(ORIGIN, "null")
+                .header(ACCESS_CONTROL_ALLOW_METHODS, "POST")
                 .buildExchange();
         i.handleRequest(exc);
 
         assertEquals(204, exc.getResponse().getStatusCode());
     }
+
+    @Test
+    void shouldRejectRequestWithDisallowedHeaders() throws URISyntaxException {
+        CorsInterceptor i = new CorsInterceptor();
+        i.setOrigins("https://trusted.example.com");
+        i.setMethods("GET, POST");
+
+        Exchange exc = Request.options("/test")
+                .header(ORIGIN, "https://trusted.example.com")
+                .header(ACCESS_CONTROL_ALLOW_HEADERS, "Foo")
+                .buildExchange();
+
+        i.handleRequest(exc);
+
+        assertEquals(403, exc.getResponse().getStatusCode());
+    }
+
+    @Test
+    void shouldRejectRequestWithDisallowedMethod() throws URISyntaxException {
+        CorsInterceptor i = new CorsInterceptor();
+        i.setOrigins("https://trusted.example.com");
+        i.setMethods("GET");
+
+        Exchange exc = Request.options("/test")
+                .header(ORIGIN, "https://trusted.example.com")
+                .header(ACCESS_CONTROL_ALLOW_METHODS, "POST")
+                .buildExchange();
+
+        i.handleRequest(exc);
+
+        assertEquals(403, exc.getResponse().getStatusCode());
+    }
+
 
     @Test
     void nonOptionsRequestWithoutOriginIsPassedThrough() throws URISyntaxException {

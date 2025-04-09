@@ -3,26 +3,27 @@ package com.predic8.membrane.core.interceptor.cors;
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.annot.Required;
-import com.predic8.membrane.core.exceptions.ProblemDetails;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Header;
-import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.util.ConfigurationException;
 
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import static com.predic8.membrane.core.exceptions.ProblemDetails.security;
 import static com.predic8.membrane.core.http.Response.noContent;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
 
 
+
 /**
  * @description
- * <p>An interceptor for handling Cross-Origin Resource Sharing (CORS) requests.
+ * <p>A Plugin for handling Cross-Origin Resource Sharing (CORS) requests.
  * It allows control over which origins, methods, and headers are permitted
  * during cross-origin requests.</p>
  */
@@ -48,20 +49,35 @@ public class CorsInterceptor extends AbstractInterceptor {
             return CONTINUE; // no preflight -> let pass
 
         String requestOrigin = exc.getRequest().getHeader().getFirstValue(ORIGIN);
+        String requestMethod = exc.getRequest().getHeader().getFirstValue(ACCESS_CONTROL_ALLOW_METHODS);
+        String requestHeaders = exc.getRequest().getHeader().getFirstValue(ACCESS_CONTROL_ALLOW_HEADERS);
 
         if (requestOrigin == null)
             return CONTINUE;
 
         if (!isOriginAllowed(requestOrigin)) {
-            ProblemDetails.security(false, "cors-interceptor")
-                    .statusCode(403)
-                    .addSubType("origin-not-allowed")
-                    .detail("The origin '%s' is not allowed by the CORS policy.".formatted(requestOrigin))
-                    .topLevel("origin", requestOrigin)
-                    .buildAndSetResponse(exc);
-            return RETURN;
+            return getProblemDetails(exc, requestOrigin, "origin");
         }
-        exc.setResponse(noContent().header(createCORSHeader(new Header(), requestOrigin, exc.getRequest().getMethod())).build());
+
+        if (!isMethodAllowed(requestMethod)) {
+            return getProblemDetails(exc, requestOrigin, "method");
+        }
+
+        if (!areHeadersAllowed(requestHeaders)) {
+            return getProblemDetails(exc, requestOrigin, "headers");
+        }
+
+        exc.setResponse(noContent().header(createCORSHeader(new Header(), requestOrigin,  requestMethod)).build());
+        return RETURN;
+    }
+
+    private static Outcome getProblemDetails(Exchange exc, String requestOrigin, String type) {
+        security(false, "cors-interceptor")
+                .statusCode(403)
+                .addSubType("%s-not-allowed".formatted(type))
+                .detail("The %s '%s' is not allowed by the CORS policy.".formatted(type, requestOrigin))
+                .topLevel("origin", requestOrigin)
+                .buildAndSetResponse(exc);
         return RETURN;
     }
 
@@ -87,7 +103,27 @@ public class CorsInterceptor extends AbstractInterceptor {
         return allowedOrigins.contains("*") || allowedOrigins.contains(origin);
     }
 
-    private Header createCORSHeader(Header header, String requestOrigin, String requestMethod) {
+    private boolean isMethodAllowed(String method) {
+        return method != null && methods.contains(method);
+    }
+
+    private boolean areHeadersAllowed(String requestedHeaders) {
+        if (requestedHeaders == null || headers == null)
+            return true;
+
+        List<String> requested = Arrays.stream(requestedHeaders.split(","))
+                .map(String::trim)
+                .toList();
+
+        List<String> allowed = Arrays.stream(headers.split(","))
+                .map(String::trim)
+                .toList();
+
+        return new HashSet<>(allowed).containsAll(requested);
+    }
+
+
+    private Header createCORSHeader(Header header, String requestOrigin, String requestedMethod) {
         if (allowedOrigins.contains("*")) {
             if (credentials) {
                 throw new ConfigurationException("UNSAFE CORS CONFIGURATION: 'credentials=true' and 'origins=*' is not allowed!");
@@ -97,7 +133,8 @@ public class CorsInterceptor extends AbstractInterceptor {
             header.setValue(ACCESS_CONTROL_ALLOW_ORIGIN, requestOrigin);
         }
 
-        header.setValue(ACCESS_CONTROL_ALLOW_METHODS, requestMethod);
+        header.setValue(ACCESS_CONTROL_ALLOW_METHODS, requestedMethod);
+
         if (headers != null) {
             header.setValue(ACCESS_CONTROL_ALLOW_HEADERS, headers);
         }
