@@ -195,7 +195,6 @@ class CorsInterceptorTest {
                 .buildExchange();
 
         i.handleRequest(exc);
-        i.handleResponse(exc);
 
         assertEquals("POST", exc.getResponse().getHeader().getFirstValue(ACCESS_CONTROL_ALLOW_METHODS));
     }

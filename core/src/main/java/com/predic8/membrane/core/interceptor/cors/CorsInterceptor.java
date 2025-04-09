@@ -88,7 +88,7 @@ public class CorsInterceptor extends AbstractInterceptor {
             return CONTINUE;
 
         if (isOriginAllowed(requestOrigin)) {
-            createCORSHeader(exc.getResponse().getHeader(), requestOrigin, exc.getRequest().getHeader().getFirstValue(ACCESS_CONTROL_ALLOW_METHODS));
+            createCORSHeader(exc.getResponse().getHeader(), requestOrigin, exc.getRequest().getMethod());
         }
 
         return CONTINUE;
