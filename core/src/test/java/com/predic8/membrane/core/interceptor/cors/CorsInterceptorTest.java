@@ -42,7 +42,7 @@ class CorsInterceptorTest {
 
         Exchange exc = Request.options("/test")
                 .header(ORIGIN, "null")
-                .header(ACCESS_CONTROL_ALLOW_METHODS, "POST")
+                .header(ACCESS_CONTROL_REQUEST_METHOD, "POST")
                 .buildExchange();
 
         assertEquals(RETURN, i.handleRequest(exc));
@@ -71,7 +71,7 @@ class CorsInterceptorTest {
 
         Exchange exc = Request.options("/test")
                 .header(ORIGIN, "https://trusted.example.com")
-                .header(ACCESS_CONTROL_ALLOW_METHODS, "POST")
+                .header(ACCESS_CONTROL_REQUEST_METHOD, "POST")
                 .buildExchange();
 
         assertEquals(RETURN, i.handleRequest(exc));
@@ -90,8 +90,8 @@ class CorsInterceptorTest {
 
         Exchange exc = Request.options("/test")
                 .header(ORIGIN, "https://trusted.example.com")
-                .header(ACCESS_CONTROL_ALLOW_METHODS, "POST")
-                .header(ACCESS_CONTROL_ALLOW_HEADERS, "Authorization")
+                .header(ACCESS_CONTROL_REQUEST_METHOD, "POST")
+                .header(ACCESS_CONTROL_REQUEST_HEADERS, "Authorization")
                 .buildExchange();
 
         assertEquals(RETURN, i.handleRequest(exc));
@@ -111,7 +111,6 @@ class CorsInterceptorTest {
 
         Exchange exc = Request.get("/test")
                 .header(ORIGIN, "https://trusted.example.com")
-                .header(ACCESS_CONTROL_ALLOW_METHODS, "POST")
                 .buildExchange();
         exc.setResponse(Response.ok("Hello").build());
 
@@ -120,7 +119,6 @@ class CorsInterceptorTest {
 
         Header header = exc.getResponse().getHeader();
         assertEquals("https://trusted.example.com", header.getFirstValue(ACCESS_CONTROL_ALLOW_ORIGIN));
-        assertEquals("POST", header.getFirstValue(ACCESS_CONTROL_ALLOW_METHODS));
         assertNull(header.getFirstValue(ACCESS_CONTROL_ALLOW_CREDENTIALS));
     }
 
@@ -159,7 +157,7 @@ class CorsInterceptorTest {
 
         Exchange exc = Request.options("/test")
                 .header(ORIGIN, "https://any.example.com")
-                .header(ACCESS_CONTROL_ALLOW_METHODS, "POST")
+                .header(ACCESS_CONTROL_REQUEST_METHOD, "POST")
                 .buildExchange();
 
         assertEquals(RETURN, i.handleRequest(exc));
@@ -177,7 +175,7 @@ class CorsInterceptorTest {
             i.setCredentials(true);
             Exchange exc = Request.options("/test")
                     .header(ORIGIN, "https://my.site")
-                    .header(ACCESS_CONTROL_ALLOW_METHODS, "POST")
+                    .header(ACCESS_CONTROL_REQUEST_METHOD, "POST")
                     .buildExchange();
             i.handleRequest(exc);
         });
@@ -191,7 +189,7 @@ class CorsInterceptorTest {
 
         Exchange exc = Request.options("/test")
                 .header(ORIGIN, "https://trusted.example.com")
-                .header(ACCESS_CONTROL_ALLOW_METHODS, "POST")
+                .header(ACCESS_CONTROL_REQUEST_METHOD, "POST")
                 .buildExchange();
 
         i.handleRequest(exc);
@@ -207,7 +205,7 @@ class CorsInterceptorTest {
 
         Exchange exc = Request.options("/test")
                 .header(ORIGIN, "null")
-                .header(ACCESS_CONTROL_ALLOW_METHODS, "POST")
+                .header(ACCESS_CONTROL_REQUEST_METHOD, "POST")
                 .buildExchange();
         i.handleRequest(exc);
 

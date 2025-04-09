@@ -36,6 +36,9 @@ public class CorsInterceptor extends AbstractInterceptor {
     public static final String ACCESS_CONTROL_ALLOW_HEADERS = "Access-Control-Allow-Headers";
     public static final String ACCESS_CONTROL_MAX_AGE = "Access-Control-Max-Age";
     public static final String ACCESS_CONTROL_ALLOW_CREDENTIALS = "Access-Control-Allow-Credentials";
+    public static final String ACCESS_CONTROL_REQUEST_METHOD = "Access-Control-Request-Method";
+    public static final String ACCESS_CONTROL_REQUEST_HEADERS = "Access-Control-Request-Headers";
+
 
     private List<String> allowedOrigins;
     private List<String> methods;
@@ -49,8 +52,8 @@ public class CorsInterceptor extends AbstractInterceptor {
             return CONTINUE; // no preflight -> let pass
 
         String requestOrigin = exc.getRequest().getHeader().getFirstValue(ORIGIN);
-        String requestMethod = exc.getRequest().getHeader().getFirstValue(ACCESS_CONTROL_ALLOW_METHODS);
-        String requestHeaders = exc.getRequest().getHeader().getFirstValue(ACCESS_CONTROL_ALLOW_HEADERS);
+        String requestMethod = exc.getRequest().getHeader().getFirstValue(ACCESS_CONTROL_REQUEST_METHOD);
+        String requestHeaders = exc.getRequest().getHeader().getFirstValue(ACCESS_CONTROL_REQUEST_HEADERS);
 
         if (requestOrigin == null)
             return CONTINUE;
@@ -88,7 +91,7 @@ public class CorsInterceptor extends AbstractInterceptor {
             return CONTINUE;
 
         if (isOriginAllowed(requestOrigin)) {
-            createCORSHeader(exc.getResponse().getHeader(), requestOrigin, exc.getRequest().getMethod());
+            createCORSHeader(exc.getResponse().getHeader(), requestOrigin, exc.getRequest().getHeader().getFirstValue(ACCESS_CONTROL_REQUEST_HEADERS));
         }
 
         return CONTINUE;
@@ -112,11 +115,11 @@ public class CorsInterceptor extends AbstractInterceptor {
             return true;
 
         List<String> requested = Arrays.stream(requestedHeaders.split(","))
-                .map(String::trim)
+                .map(h -> h.trim().toLowerCase())
                 .toList();
 
         List<String> allowed = Arrays.stream(headers.split(","))
-                .map(String::trim)
+                .map(h -> h.trim().toLowerCase())
                 .toList();
 
         return new HashSet<>(allowed).containsAll(requested);
