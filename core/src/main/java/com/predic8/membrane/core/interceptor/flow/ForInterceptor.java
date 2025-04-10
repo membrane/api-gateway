@@ -16,15 +16,16 @@ package com.predic8.membrane.core.interceptor.flow;
 import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.lang.*;
 import com.predic8.membrane.core.lang.ExchangeExpression.*;
 import com.predic8.membrane.core.util.*;
 import org.slf4j.*;
 
+import java.io.IOException;
 import java.util.*;
 
+import static com.predic8.membrane.core.exchange.ExchangesUtil.copyRequestExchange;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.RESPONSE;
 import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
@@ -76,16 +77,23 @@ public class ForInterceptor extends AbstractFlowInterceptor {
             return ABORT;
         }
 
+        Exchange newExchange = copyRequestExchange(exc);
+        newExchange.getRequest().getHeader().clear();
+        try {
+            newExchange.getRequest().getBody().discard();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        newExchange.setProperty("name", "new");
+        exc.setProperty("name", "old");
         if (o instanceof List<?> l) {
             log.debug("List detected {}",l);
             for (Object o2 : l) {
                 log.debug("type: {}, it: {}",o2.getClass(),o2);
                 if (flow.isRequest()) {
-                    exc.setProperty("it", o2);
-                    Exchange newExc = new Request.Builder().method(exc.getRequest().getMethod()).body(exc.getRequest().getBodyAsStream()).header(exc.getRequest().getHeader()).buildExchange();
-                    newExc.setProxy(exc.getProxy());
-                    newExc.setProperties(exc.getProperties());
-                    getFlowController().invokeRequestHandlers(newExc, interceptors);
+                    Exchange newNewExchange = copyRequestExchange(newExchange);
+                    newNewExchange.setProperty("it", o2);
+                    getFlowController().invokeRequestHandlers(newNewExchange, interceptors);
                 }
             }
         }

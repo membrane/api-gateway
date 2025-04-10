@@ -27,6 +27,8 @@ import org.slf4j.*;
 import java.util.*;
 
 import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
+import static com.predic8.membrane.core.exchange.ExchangesUtil.copyHeader;
+import static com.predic8.membrane.core.exchange.ExchangesUtil.copyRequestExchange;
 import static com.predic8.membrane.core.http.Header.*;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
 import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
@@ -72,8 +74,7 @@ public class CallInterceptor extends AbstractExchangeExpressionInterceptor {
     }
 
     private @NotNull Outcome doCall(Exchange exc) {
-        Exchange newExc = new Request.Builder().method(exc.getRequest().getMethod()).buildExchange();
-        newExc.setProxy(exc.getProxy());
+        Exchange newExc = copyRequestExchange(exc);
         try {
             newExc.setDestinations(List.of(exchangeExpression.evaluate(exc, REQUEST, String.class)));
         } catch (ExchangeExpressionException e) {
@@ -83,7 +84,7 @@ public class CallInterceptor extends AbstractExchangeExpressionInterceptor {
                     .buildAndSetResponse(exc);
             return ABORT;
         }
-        log.info("Calling {} {}", newExc.getRequest().getMethod(), newExc.getDestinations());
+        log.debug("Calling {}", newExc.getDestinations());
         try {
             Outcome outcome = hcInterceptor.handleRequest(newExc);
             if (outcome == ABORT) {

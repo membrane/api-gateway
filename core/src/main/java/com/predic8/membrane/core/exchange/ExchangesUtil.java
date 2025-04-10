@@ -14,8 +14,15 @@
 
 package com.predic8.membrane.core.exchange;
 
+import com.predic8.membrane.core.http.Header;
+import com.predic8.membrane.core.http.HeaderField;
+import com.predic8.membrane.core.http.Request;
+
 import java.time.*;
 import java.time.format.*;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 
 import static com.predic8.membrane.core.Constants.*;
 
@@ -57,5 +64,23 @@ public class ExchangesUtil {
 
 	public static String getTimeDifference(AbstractExchange exc) {
 		return "" + (exc.getTimeResReceived() - exc.getTimeReqSent());
+	}
+
+	public static Exchange copyRequestExchange(AbstractExchange exc) {
+		Exchange newExc = new Request.Builder()
+				.method(exc.getRequest().getMethod())
+				.body(exc.getRequest().getBodyAsStream())
+				.header(copyHeader(exc))
+				.buildExchange();
+		newExc.setProxy(exc.getProxy());
+		newExc.setProperties(new HashMap<>(exc.getProperties()));
+		newExc.setDestinations(exc.getDestinations());
+		return newExc;
+	}
+
+	public static Header copyHeader(AbstractExchange exc) {
+		Header newHeader = new Header();
+		Arrays.stream(exc.getRequest().getHeader().getAllHeaderFields()).forEach(header -> newHeader.add(header.getHeaderName().getName(), header.getValue()));
+		return newHeader;
 	}
 }
