@@ -17,6 +17,7 @@ package com.predic8.membrane.core.lang.spel;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.interceptor.Interceptor.*;
 import com.predic8.membrane.core.lang.*;
+import com.predic8.membrane.core.lang.spel.functions.*;
 import com.predic8.membrane.core.lang.spel.spelable.*;
 import com.predic8.membrane.core.util.*;
 import org.jetbrains.annotations.*;
@@ -79,7 +80,7 @@ public class SpELExchangeExpression extends AbstractExchangeExpression {
             if (Object.class.isAssignableFrom(type)) {
                 return type.cast( toObject(o));
             }
-            throw new RuntimeException("Cannot cast {} to {}".formatted(o,type));
+            throw new RuntimeException("Cannot cast %s to %s".formatted(o,type));
         } catch (SpelEvaluationException see) {
             log.error("Error in expression '{}': {}",expression, see.getLocalizedMessage());
             ExchangeExpressionException eee = new ExchangeExpressionException(expression, see);
@@ -93,7 +94,11 @@ public class SpELExchangeExpression extends AbstractExchangeExpression {
     }
 
     private @Nullable Object evaluate(Exchange exchange, Flow flow) {
-        return spelExpression.getValue(new SpELExchangeEvaluationContext(exchange, flow), Object.class);
+        try {
+            return spelExpression.getValue(new SpELExchangeEvaluationContext(exchange, flow), Object.class);
+        } catch (BuildInFunctionException e) {
+            throw new ExchangeExpressionException(expression, e).extension("function", e.getFunction());
+        }
     }
 
     private static Object toObject(Object o) {

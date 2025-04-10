@@ -13,14 +13,11 @@
    limitations under the License. */
 package com.predic8.membrane.core.lang.spel.functions;
 
-import org.springframework.core.convert.TypeDescriptor;
-import org.springframework.expression.AccessException;
-import org.springframework.expression.EvaluationContext;
-import org.springframework.expression.MethodExecutor;
-import org.springframework.expression.MethodResolver;
+import org.springframework.core.convert.*;
+import org.springframework.expression.*;
 
-import java.lang.reflect.InvocationTargetException;
-import java.util.List;
+import java.lang.reflect.*;
+import java.util.*;
 
 public class BuiltInFunctionResolver implements MethodResolver {
 
@@ -37,7 +34,7 @@ public class BuiltInFunctionResolver implements MethodResolver {
            try {
                return functions.invokeFunction(ctx, name, argumentTypes, arguments);
            } catch (InvocationTargetException | IllegalAccessException | NoSuchMethodException e) {
-               throw new RuntimeException(e);
+               throw new BuildInFunctionException("Cannot invoke built-in function " + name, name, e);
            }
        };
     }

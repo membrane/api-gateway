@@ -107,7 +107,7 @@ public class LogInterceptor extends AbstractExchangeExpressionInterceptor {
             try {
                 writeLog(exchangeExpression.evaluate(exc,flow,String.class));
             } catch (ExchangeExpressionException e) {
-                getLogger(category).warn("Problems evaluating {} expression: {}",getMessage(),  e.getMessage());
+                getLogger(category).warn("Problems evaluating the expression {} . Message: {} Extentions: {}",getMessage(),  e.getMessage(), e.getExtensions());
             }
             return;
         }
