@@ -27,6 +27,8 @@ import org.jose4j.lang.*;
 import org.slf4j.*;
 
 import java.io.*;
+import java.util.Map;
+import java.util.Objects;
 
 import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
@@ -38,6 +40,7 @@ import static org.jose4j.jws.AlgorithmIdentifiers.*;
 public class JwtSignInterceptor extends AbstractInterceptor {
 
     private static final Logger log = LoggerFactory.getLogger(JwtSignInterceptor.class);
+    public static final String DEFAULT_PKEY = "wP1ITsKxAWOO03eywdOj73T5Po1OFXZlFgzf1CJaf8D3piuxS0C5JSHTKTO354_r9cg2WyQ3nEqJ6YScV3-NfW8xXbiyMr5Xokzn7YpuB9dtby0veEn4w7JHChH5lV2fwrjH2iL6IIOLrND9D_Dxoc3mmLMaie0mTW9-UHGOunk";
 
     private JwtSessionManager.Jwk jwk;
     private RsaJsonWebKey rsaJsonWebKey;
@@ -49,7 +52,14 @@ public class JwtSignInterceptor extends AbstractInterceptor {
     public void init() {
         super.init();
         try {
-            rsaJsonWebKey = new RsaJsonWebKey(JsonUtil.parseJson(jwk.get(router.getResolverMap(), router.getBaseLocation())));
+            Map<String, Object> params = JsonUtil.parseJson(jwk.get(router.getResolverMap(), router.getBaseLocation()));
+            if (Objects.equals(params.get("p"), DEFAULT_PKEY)) {
+                log.warn("""
+                    \n------------------------------------ DEFAULT JWK IN USE! ------------------------------------
+                            This key is for demonstration purposes only and UNSAFE for production use.          \s
+                    ---------------------------------------------------------------------------------------------""");
+            }
+            rsaJsonWebKey = new RsaJsonWebKey(params);
         } catch (JoseException e) {
             throw new ConfigurationException("Cannot create RSA JSON Web Key",e);
         } catch (IOException e) {
