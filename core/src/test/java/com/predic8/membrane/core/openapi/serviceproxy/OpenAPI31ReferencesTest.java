@@ -105,7 +105,7 @@ public class OpenAPI31ReferencesTest {
             .post("http://localhost:2000/users")
         .then()
             .statusCode(400)
-            .body(containsString("is not a valid email"));
+            .body(containsString("is not a valid E-Mail"));
     }
 
     @Test
