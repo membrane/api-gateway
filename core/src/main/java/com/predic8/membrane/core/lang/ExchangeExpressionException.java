@@ -75,4 +75,8 @@ public class ExchangeExpressionException extends RuntimeException {
         this.body = body;
         return this;
     }
+
+    public Map<String, Object> getExtensions() {
+        return extensions;
+    }
 }
