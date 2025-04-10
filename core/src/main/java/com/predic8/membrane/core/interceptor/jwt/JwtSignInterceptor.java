@@ -40,7 +40,7 @@ import static org.jose4j.jws.AlgorithmIdentifiers.*;
 public class JwtSignInterceptor extends AbstractInterceptor {
 
     private static final Logger log = LoggerFactory.getLogger(JwtSignInterceptor.class);
-    public static final String DEFAULT_PKEY = "wP1ITsKxAWOO03eywdOj73T5Po1OFXZlFgzf1CJaf8D3piuxS0C5JSHTKTO354_r9cg2WyQ3nEqJ6YScV3-NfW8xXbiyMr5Xokzn7YpuB9dtby0veEn4w7JHChH5lV2fwrjH2iL6IIOLrND9D_Dxoc3mmLMaie0mTW9-UHGOunk";
+    private static final String DEFAULT_PKEY = "wP1ITsKxAWOO03eywdOj73T5Po1OFXZlFgzf1CJaf8D3piuxS0C5JSHTKTO354_r9cg2WyQ3nEqJ6YScV3-NfW8xXbiyMr5Xokzn7YpuB9dtby0veEn4w7JHChH5lV2fwrjH2iL6IIOLrND9D_Dxoc3mmLMaie0mTW9-UHGOunk";
 
     private JwtSessionManager.Jwk jwk;
     private RsaJsonWebKey rsaJsonWebKey;
