@@ -15,24 +15,21 @@ package com.predic8.membrane.core.interceptor.flow;
 
 import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.HeaderField;
-import com.predic8.membrane.core.http.Request;
-import com.predic8.membrane.core.http.Response;
+import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.interceptor.lang.*;
-import com.predic8.membrane.core.lang.*;
+import com.predic8.membrane.core.transport.http.*;
 import org.jetbrains.annotations.*;
 import org.slf4j.*;
 
 import java.util.*;
 
 import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
-import static com.predic8.membrane.core.exchange.ExchangesUtil.copyHeader;
-import static com.predic8.membrane.core.exchange.ExchangesUtil.copyRequestExchange;
 import static com.predic8.membrane.core.http.Header.*;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
 import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static java.util.Arrays.*;
 
 @MCElement(name = "call")
 public class CallInterceptor extends AbstractExchangeExpressionInterceptor {
@@ -74,25 +71,45 @@ public class CallInterceptor extends AbstractExchangeExpressionInterceptor {
     }
 
     private @NotNull Outcome doCall(Exchange exc) {
-        Exchange newExc = copyRequestExchange(exc);
+//        Exchange newExc = copyRequestExchange(exc);
+        String uri = exchangeExpression.evaluate(exc, REQUEST, String.class);
+//        try {
+//            newExc.setDestinations(asList(uri));
+//        } catch (ExchangeExpressionException e) {
+//            e.provideDetails(
+//                    internal(getRouter().isProduction(),getDisplayName()))
+//                    .addSubSee("expression-evaluation")
+//                    .buildAndSetResponse(exc);
+//            return ABORT;
+//        }
+//        log.debug("Calling {}", newExc.getDestinations());
         try {
-            newExc.setDestinations(List.of(exchangeExpression.evaluate(exc, REQUEST, String.class)));
-        } catch (ExchangeExpressionException e) {
-            e.provideDetails(
-                    internal(getRouter().isProduction(),getDisplayName()))
-                    .addSubSee("expression-evaluation")
-                    .buildAndSetResponse(exc);
-            return ABORT;
-        }
-        log.debug("Calling {}", newExc.getDestinations());
-        try {
-            Outcome outcome = hcInterceptor.handleRequest(newExc);
-            if (outcome == ABORT) {
-                log.warn("Aborting. Error calling {}", newExc.getDestinations());
-                return ABORT;
-            }
-            exc.getRequest().setBodyContent(newExc.getResponse().getBody().getContent()); // TODO Optimize?
-            mapHeader(exc, newExc);
+//            Outcome outcome = hcInterceptor.handleRequest(newExc);
+
+            Exchange ne = new Exchange(null);
+            Request request = new Request.Builder()
+                    .method("POST")
+                    .contentType("application/json")
+                    .build();
+            //request.setUri("/foo");
+
+//            request.setBodyContent("Tee".getBytes());
+
+            AbstractBody body = exc.getRequest().getBody();
+            body.read();
+            request.setBodyContent(exc.getRequest().getBody().getContent());
+            System.out.println("request.getBodyAsStringDecoded() = " + request.getBodyAsStringDecoded());
+
+            ne.setRequest(request);
+
+            ne.setDestinations(asList(uri));
+
+
+            Exchange exchange = new HttpClient().call(ne);
+            Outcome outcome = CONTINUE;
+
+            exc.getRequest().setBodyContent(ne.getResponse().getBody().getContent()); // TODO Optimize?
+            mapHeader(exc,  ne);
             log.debug("Outcome of call {}", outcome);
             return CONTINUE;
         } catch (Exception e) {

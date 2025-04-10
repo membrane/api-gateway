@@ -13,6 +13,7 @@
    limitations under the License. */
 package com.predic8.membrane.core.lang.spel.typeconverters;
 
+import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.lang.spel.spelable.*;
 import com.predic8.membrane.core.util.*;
 import org.slf4j.*;
@@ -25,7 +26,9 @@ public class SpELBodyToStringTypeConverter implements Converter<SpELBody, String
     @Override
     public String convert(SpELBody body) {
         try {
-            return new String(MessageUtil.getContent(body.getMessage()));
+            Message message = body.getMessage();
+            message.readBody();
+            return new String(MessageUtil.getContent(message));
         } catch (Exception e) {
             log.warn("Cannot log body content", e);
             throw new RuntimeException(e);

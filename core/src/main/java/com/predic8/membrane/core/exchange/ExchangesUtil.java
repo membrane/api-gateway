@@ -14,15 +14,11 @@
 
 package com.predic8.membrane.core.exchange;
 
-import com.predic8.membrane.core.http.Header;
-import com.predic8.membrane.core.http.HeaderField;
-import com.predic8.membrane.core.http.Request;
+import com.predic8.membrane.core.http.*;
 
 import java.time.*;
 import java.time.format.*;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 import static com.predic8.membrane.core.Constants.*;
 
@@ -72,9 +68,12 @@ public class ExchangesUtil {
 				.body(exc.getRequest().getBodyAsStream())
 				.header(copyHeader(exc))
 				.buildExchange();
+
+		newExc.getRequest().setUri(exc.getRequest().getUri());
 		newExc.setProxy(exc.getProxy());
 		newExc.setProperties(new HashMap<>(exc.getProperties()));
 		newExc.setDestinations(exc.getDestinations());
+		newExc.setOriginalRequestUri(exc.getOriginalRequestUri());
 		return newExc;
 	}
 
