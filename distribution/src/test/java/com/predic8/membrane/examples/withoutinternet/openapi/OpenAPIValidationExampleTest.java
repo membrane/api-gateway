@@ -278,7 +278,7 @@ public class OpenAPIValidationExampleTest extends AbstractSampleMembraneStartSto
                           "schemaType" : "string"
                         } ],
                         "REQUEST/BODY#/email" : [ {
-                          "message" : "The string 'jan(at)schilderei.nl' is not a valid email.",
+                          "message" : "The string 'jan(at)schilderei.nl' is not a valid E-Mail.",
                           "complexType" : "Person",
                           "schemaType" : "string"
                         } ],
