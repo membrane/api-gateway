@@ -16,6 +16,8 @@ package com.predic8.membrane.core.util;
 
 import com.predic8.membrane.core.http.Request;
 import org.junit.jupiter.api.*;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 
 import java.io.*;
 import java.net.*;
@@ -109,5 +111,21 @@ public class HttpUtilTest {
 
 	private static int getPort(String uri) throws MalformedURLException, URISyntaxException {
 		return HttpUtil.getPort(new URI(uri).toURL());
+	}
+
+	@ParameterizedTest
+	@CsvSource({
+			"'http://localhost', '/'",
+			"'http://localhost/', '/'",
+			"'http://localhost?', '/?'",
+			"'http://localhost?foo=bar', '/?foo=bar'",
+			"'http://localhost:2000', '/'",
+			"'http://localhost:2000/', '/'",
+			"'http://localhost:2000?', '/?'",
+			"'http://localhost:2000?foor=bar', '/?foor=bar'",
+			"'http://localhost:2000/foor?bar', '/foor?bar'"
+	})
+	public void testGetPathAndQueryString(String url, String expected) throws MalformedURLException {
+		assertEquals(expected, HttpUtil.getPathAndQueryString(url));
 	}
 }
