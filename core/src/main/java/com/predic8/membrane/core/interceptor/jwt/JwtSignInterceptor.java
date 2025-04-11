@@ -48,6 +48,15 @@ public class JwtSignInterceptor extends AbstractInterceptor {
 
     private final ObjectMapper om = new ObjectMapper();
 
+    /**
+     * Initializes the JWT sign interceptor by loading and validating the JSON Web Key (JWK) configuration.
+     *
+     * <p>The method retrieves the JWK configuration as JSON, parses it into parameters, and logs a warning if the default key is detected.
+     * It then creates an RSA JSON Web Key based on the parsed parameters. If parsing or key creation fails, a
+     * {@code ConfigurationException} is thrown.</p>
+     *
+     * @throws ConfigurationException if the JWK cannot be parsed or the RSA JSON Web Key cannot be created
+     */
     @Override
     public void init() {
         super.init();
