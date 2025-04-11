@@ -174,6 +174,12 @@ public class Header {
 		fields.add(field);
 	}
 
+	public void addAll(List<HeaderField> fields) {
+		synchronized (this.fields) {
+			this.fields.addAll(fields);
+		}
+	}
+
 	public void remove(HeaderField field) {
 		fields.remove(field);
 	}
@@ -232,8 +238,8 @@ public class Header {
 		for (int i = 0; i < fields.size(); i++) {
 			if (fields.get(i).getHeaderName().hasName(name)) {
 				if (found) {
-					fields.set(i, fields.get(fields.size()-1));
-					fields.remove(fields.size()-1);
+					fields.set(i, fields.getLast());
+					fields.removeLast();
 					i--;
 				} else {
 					fields.get(i).setValue(value);
