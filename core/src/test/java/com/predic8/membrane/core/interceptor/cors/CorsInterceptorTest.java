@@ -105,36 +105,28 @@ class CorsInterceptorTest {
     class Preflight {
 
         @Test
-        void explicitlyAllowedNullOrigin() throws URISyntaxException {
+        void explicitlyAllowedNullOrigin() throws Exception {
             i.setOrigins("foo bar null");
 
-            Exchange exc = options("/test")
-                    .header(ORIGIN, "null")
-                    .header(ACCESS_CONTROL_REQUEST_METHOD, "POST")
-                    .buildExchange();
+            Exchange exc = createPreflight("null", METHOD_POST).buildExchange();
 
             assertEquals(RETURN, i.handleRequest(exc));
             assertEquals(204, exc.getResponse().getStatusCode());
         }
 
         @Test
-        void originNullNotAllowed() throws URISyntaxException {
+        void originNullNotAllowed() throws Exception {
             i.setOrigins("foo bar");
 
-            Exchange exc = options("/test")
-                    .header(ORIGIN, "null")
-                    .buildExchange();
+            Exchange exc = createPreflight("null", null).buildExchange();
 
             assertEquals(RETURN, i.handleRequest(exc));
             assertEquals(403, exc.getResponse().getStatusCode());
         }
 
         @Test
-        void restrictToRequestedMethod() throws URISyntaxException {
-            Exchange exc = options("/test")
-                    .header(ORIGIN, "https://trusted.example.com")
-                    .header(ACCESS_CONTROL_REQUEST_METHOD, "POST")
-                    .buildExchange();
+        void restrictToRequestedMethod() throws Exception {
+            Exchange exc = createPreflight("https://trusted.example.com", METHOD_POST).buildExchange();
 
             assertEquals(RETURN, i.handleRequest(exc));
             Header header = exc.getResponse().getHeader();
@@ -144,13 +136,10 @@ class CorsInterceptorTest {
         }
 
         @Test
-        void preflightRequestAllowedOrigin() throws URISyntaxException {
+        void preflightRequestAllowedOrigin() throws Exception {
             i.setOrigins("https://trusted.example.com");
 
-            Exchange exc = options("/test")
-                    .header(ORIGIN, "https://trusted.example.com")
-                    .header(ACCESS_CONTROL_REQUEST_METHOD, "POST")
-                    .buildExchange();
+            Exchange exc = createPreflight("https://trusted.example.com", METHOD_POST).buildExchange();
 
             assertEquals(RETURN, i.handleRequest(exc));
             Header header = exc.getResponse().getHeader();
@@ -168,14 +157,11 @@ class CorsInterceptorTest {
         }
 
         @Test
-        void wildcardOriginWithoutCredentialsSetsAsterisk() throws URISyntaxException {
+        void wildcardOriginWithoutCredentialsSetsAsterisk() throws Exception {
             i.setOrigins("*");
             i.setMethods("GET, POST");
 
-            Exchange exc = options("/test")
-                    .header(ORIGIN, "https://any.example.com")
-                    .header(ACCESS_CONTROL_REQUEST_METHOD, "POST")
-                    .buildExchange();
+            Exchange exc = createPreflight("https://any.example.com", METHOD_POST).buildExchange();
 
             assertEquals(RETURN, i.handleRequest(exc));
             assertEquals("https://any.example.com", exc.getResponse().getHeader().getFirstValue(ACCESS_CONTROL_ALLOW_ORIGIN));
@@ -188,23 +174,17 @@ class CorsInterceptorTest {
                 i.setOrigins("*");
                 i.setMethods("GET, POST");
                 i.setCredentials(true);
-                Exchange exc = options("/test")
-                        .header(ORIGIN, "https://my.site")
-                        .header(ACCESS_CONTROL_REQUEST_METHOD, "POST")
-                        .buildExchange();
+                Exchange exc =createPreflight("https://trusted.example.com", METHOD_POST).buildExchange();
                 i.handleRequest(exc);
             });
         }
 
         @Test
-        void shouldReturnOnlyRequestedMethodInCorsResponse() throws URISyntaxException {
+        void shouldReturnOnlyRequestedMethodInCorsResponse() throws Exception {
             i.setOrigins("https://trusted.example.com");
             i.setMethods("GET, POST");
 
-            Exchange exc = options("/test")
-                    .header(ORIGIN, "https://trusted.example.com")
-                    .header(ACCESS_CONTROL_REQUEST_METHOD, "POST")
-                    .buildExchange();
+            Exchange exc = createPreflight("https://trusted.example.com", METHOD_POST).buildExchange();
 
             i.handleRequest(exc);
 
@@ -212,14 +192,12 @@ class CorsInterceptorTest {
         }
 
         @Test
-        void shouldAllowNullOriginWhenExplicitlyConfigured() throws URISyntaxException {
+        void shouldAllowNullOriginWhenExplicitlyConfigured() throws Exception {
             i.setOrigins("http://localhost:5173/ null");
             i.setMethods("GET, POST");
 
-            Exchange exc = options("/test")
-                    .header(ORIGIN, "null")
-                    .header(ACCESS_CONTROL_REQUEST_METHOD, "POST")
-                    .buildExchange();
+            Exchange exc = createPreflight("null", METHOD_POST).buildExchange();
+
             i.handleRequest(exc);
 
             assertEquals(204, exc.getResponse().getStatusCode());
@@ -250,14 +228,11 @@ class CorsInterceptorTest {
 
 
         @Test
-        void shouldRejectRequestWithDisallowedMethod() throws URISyntaxException {
+        void shouldRejectRequestWithDisallowedMethod() throws Exception {
             i.setOrigins("https://trusted.example.com");
             i.setMethods("GET");
 
-            Exchange exc = options("/test")
-                    .header(ORIGIN, "https://trusted.example.com")
-                    .header(ACCESS_CONTROL_ALLOW_METHODS, "POST")
-                    .buildExchange();
+            Exchange exc = createPreflight("https://trusted.example.com", METHOD_POST).buildExchange();
 
             i.handleRequest(exc);
 
@@ -265,15 +240,12 @@ class CorsInterceptorTest {
         }
 
         @Test
-        void preflightResponseContainsMaxAge() throws URISyntaxException {
+        void preflightResponseContainsMaxAge() throws Exception {
             i.setOrigins("https://client.example.com");
             i.setMethods("POST, GET");
             i.setMaxAge("600");
 
-            Exchange exc = options("/test")
-                    .header(ORIGIN, "https://client.example.com")
-                    .header(ACCESS_CONTROL_REQUEST_METHOD, "POST")
-                    .buildExchange();
+            Exchange exc = createPreflight("https://client.example.com", METHOD_POST).buildExchange();
 
             assertEquals(RETURN, i.handleRequest(exc));
             assertEquals("600", i.getMaxAge());
@@ -281,13 +253,10 @@ class CorsInterceptorTest {
         }
 
         @Test
-        void allowAllSetTrue() throws URISyntaxException {
+        void allowAllSetTrue() throws Exception {
             i.setAllowAll(true);
 
-            Exchange exc = options("/test")
-                    .header(ORIGIN, "https://any.example.com")
-                    .header(ACCESS_CONTROL_ALLOW_METHODS, "POST")
-                    .buildExchange();
+            Exchange exc = createPreflight("https://any.example.com", METHOD_POST).buildExchange();
 
             i.handleRequest(exc);
             assertTrue(i.isAllowAll());
@@ -295,14 +264,11 @@ class CorsInterceptorTest {
         }
 
         @Test
-        void allowAll() throws URISyntaxException {
+        void allowAll() throws Exception {
             i.setAllowAll(true);
             i.setHeaders("X-Foo");
 
-            Exchange exc = options("/test")
-                    .header(ORIGIN, "https://any.example.com")
-                    .header(ACCESS_CONTROL_REQUEST_METHOD, "POST")
-                    .buildExchange();
+            Exchange exc = createPreflight("https://any.example.com", METHOD_POST).buildExchange();
 
             i.handleRequest(exc);
             assertTrue(i.isAllowAll());
@@ -310,7 +276,7 @@ class CorsInterceptorTest {
         }
     }
 
-    // TODO
+
     Builder createPreflight(String origin, String method) throws Exception {
         return createPreflight(origin, method, null);
     }
