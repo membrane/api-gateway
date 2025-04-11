@@ -51,6 +51,12 @@ class CorsInterceptorTest {
             i.setMethods("GET, POST");
             assertEquals(List.of("GET", "POST"), i.getMethods());
         }
+
+        @Test
+        void parseHeaderSpaces() {
+            i.setHeaders("foo bar baz");
+            assertEquals(List.of("foo", "bar", "baz"), i.getAllowedHeaders());
+        }
     }
 
     @Nested

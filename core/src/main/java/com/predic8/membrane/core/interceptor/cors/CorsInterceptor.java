@@ -266,7 +266,6 @@ public class CorsInterceptor extends AbstractInterceptor {
     /**
      * For tests
      */
-    @SuppressWarnings("unused")
     protected List<String> getAllowedHeaders() {
         return allowedHeaders;
     }
