@@ -270,4 +270,68 @@ class CorsInterceptorTest {
         assertEquals(CONTINUE, i.handleResponse(exc));
         assertNull(exc.getResponse().getHeader().getFirstValue(ACCESS_CONTROL_ALLOW_ORIGIN));
     }
+
+    @Test
+    void preflightResponseContainsMaxAge() throws URISyntaxException {
+        CorsInterceptor i = new CorsInterceptor();
+        i.setOrigins("https://client.example.com");
+        i.setMethods("POST, GET");
+        i.setMaxAge("600");
+
+        Exchange exc = Request.options("/test")
+                .header(ORIGIN, "https://client.example.com")
+                .header(ACCESS_CONTROL_REQUEST_METHOD, "POST")
+                .buildExchange();
+
+        assertEquals(RETURN, i.handleRequest(exc));
+        assertEquals("600", i.getMaxAge());
+        assertEquals("600", exc.getResponse().getHeader().getFirstValue(ACCESS_CONTROL_MAX_AGE));
+    }
+
+
+    @Test
+    void allowAllSetTrue() throws URISyntaxException {
+        CorsInterceptor i = new CorsInterceptor();
+        i.setAllowAll(true);
+
+        Exchange exc = Request.options("/test")
+                .header(ORIGIN, "https://any.example.com")
+                .header(ACCESS_CONTROL_ALLOW_METHODS, "POST")
+                .buildExchange();
+
+        i.handleRequest(exc);
+        assertTrue(i.isAllowAll());
+        assertEquals(204, exc.getResponse().getStatusCode());
+    }
+
+    @Test
+    void handleAllowAll() throws URISyntaxException {
+        CorsInterceptor i = new CorsInterceptor();
+        i.setAllowAll(true);
+        i.setHeaders("X-Foo");
+
+        Exchange exc = Request.options("/test")
+                .header(ORIGIN, "https://any.example.com")
+                .header(ACCESS_CONTROL_ALLOW_METHODS, "POST")
+                .buildExchange();
+
+        i.handleRequest(exc);
+        assertTrue(i.isAllowAll());
+        assertEquals(204, exc.getResponse().getStatusCode());
+    }
+
+    @Test
+    void allowAllSetFalse() throws URISyntaxException {
+        CorsInterceptor i = new CorsInterceptor();
+        i.setAllowAll(false);
+
+        Exchange exc = Request.options("/test")
+                .header(ORIGIN, "https://any.example.com")
+                .header(ACCESS_CONTROL_ALLOW_METHODS, "POST")
+                .buildExchange();
+
+        i.handleRequest(exc);
+        assertFalse(i.isAllowAll());
+        assertEquals(403, exc.getResponse().getStatusCode());
+    }
 }

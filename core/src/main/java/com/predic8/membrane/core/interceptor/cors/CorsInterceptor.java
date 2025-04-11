@@ -34,10 +34,8 @@ import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
 
 
-
 /**
- * @description
- * <p>A Plugin for handling Cross-Origin Resource Sharing (CORS) requests.
+ * @description <p>A Plugin for handling Cross-Origin Resource Sharing (CORS) requests.
  * It allows control over which origins, methods, and headers are permitted
  * during cross-origin requests.</p>
  */
@@ -89,7 +87,7 @@ public class CorsInterceptor extends AbstractInterceptor {
             return getProblemDetails(exc, requestOrigin, "headers");
         }
 
-        exc.setResponse(noContent().header(createCORSHeader(new Header(), requestOrigin,  requestMethod, requestHeaders)).build());
+        exc.setResponse(noContent().header(createCORSHeader(new Header(), requestOrigin, requestMethod, requestHeaders)).build());
         return RETURN;
     }
 
@@ -137,37 +135,24 @@ public class CorsInterceptor extends AbstractInterceptor {
         if (requestedHeaders == null || headers == null)
             return true;
 
-        List<String> requested = Arrays.stream(requestedHeaders.split(","))
-                .map(h -> h.trim().toLowerCase())
-                .toList();
-
-        List<String> allowed = Arrays.stream(headers.split(","))
-                .map(h -> h.trim().toLowerCase())
-                .toList();
-
-        return new HashSet<>(allowed).containsAll(requested);
+        return new HashSet<>(
+                Arrays.stream(headers.split(","))
+                        .map(alw -> alw.trim().toLowerCase())
+                        .toList()
+        ).containsAll(
+                Arrays.stream(requestedHeaders.split(","))
+                        .map(req -> req.trim().toLowerCase())
+                        .toList()
+        );
     }
 
 
     private Header createCORSHeader(Header header, String requestOrigin, String requestedMethod, String requestedHeaders) {
-        if (allowedOrigins.contains("*")) {
-            if (credentials) {
-                throw new ConfigurationException("UNSAFE CORS CONFIGURATION: 'credentials=true' and 'origins=*' is not allowed!");
-            }
-            header.setValue(ACCESS_CONTROL_ALLOW_ORIGIN, requestOrigin);
-        } else {
-            header.setValue(ACCESS_CONTROL_ALLOW_ORIGIN, requestOrigin);
-        }
+        validateCORSConfiguration();
 
+        header.setValue(ACCESS_CONTROL_ALLOW_ORIGIN, requestOrigin);
         header.setValue(ACCESS_CONTROL_ALLOW_METHODS, requestedMethod);
-
-        if (allowAll) {
-            header.setValue(ACCESS_CONTROL_ALLOW_HEADERS,
-                    requestedHeaders != null ? requestedHeaders : "Content-Type, Authorization");
-        } else if (headers != null) {
-            header.setValue(ACCESS_CONTROL_ALLOW_HEADERS, headers);
-        }
-
+        header.setValue(ACCESS_CONTROL_ALLOW_HEADERS, resolveAllowedHeaders(requestedHeaders));
 
         if (maxAge != null) {
             header.setValue(ACCESS_CONTROL_MAX_AGE, maxAge);
@@ -180,6 +165,17 @@ public class CorsInterceptor extends AbstractInterceptor {
         header.setValue("Vary", ORIGIN);
         return header;
     }
+
+    private void validateCORSConfiguration() {
+        if (allowedOrigins.contains("*") && credentials) {
+            throw new ConfigurationException("UNSAFE CORS CONFIGURATION: 'credentials=true' and 'origins=*' is not allowed!");
+        }
+    }
+
+    private String resolveAllowedHeaders(String requestedHeaders) {
+        return allowAll ? (requestedHeaders != null ? requestedHeaders : "Content-Type, Authorization") : (headers != null ? headers : "");
+    }
+
 
     @MCAttribute
     public void setAllowAll(boolean allowAll) {
