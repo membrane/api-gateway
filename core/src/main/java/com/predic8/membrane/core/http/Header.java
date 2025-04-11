@@ -196,9 +196,7 @@ public class Header {
 	 * @param fields the list of header fields to add
 	 */
 	public void addAll(List<HeaderField> fields) {
-		synchronized (this.fields) {
-			this.fields.addAll(fields);
-		}
+		this.fields.addAll(fields);
 	}
 
 	/**

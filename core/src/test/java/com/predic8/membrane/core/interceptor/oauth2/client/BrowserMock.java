@@ -168,9 +168,12 @@ public class BrowserMock implements Function<Exchange, Exchange> {
     private static void addCookiesToExchange(Exchange exc, Map<String, String> cookies) {
         if (cookies == null)
             return;
-        exc.getRequest().getHeader().addAll(cookies.entrySet().stream()
-                .map(BrowserMock::createCookieHeaderField)
-                .toList());
+        Header header = exc.getRequest().getHeader();
+        synchronized (header) {
+            header.addAll(cookies.entrySet().stream()
+                    .map(BrowserMock::createCookieHeaderField)
+                    .toList());
+        }
     }
 
     /**
