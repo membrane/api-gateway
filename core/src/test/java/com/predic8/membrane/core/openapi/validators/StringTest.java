@@ -88,7 +88,7 @@ protected String getOpenAPIFileName() {
         assertEquals(1,errors.size());
         ValidationError e = errors.get(0);
         assertEquals("/email", e.getContext().getJSONpointer());
-        assertTrue(e.getMessage().contains("email"));
+        assertTrue(e.getMessage().contains("E-Mail"));
     }
 
     @Test

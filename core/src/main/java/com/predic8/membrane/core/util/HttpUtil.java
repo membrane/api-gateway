@@ -148,10 +148,21 @@ public class HttpUtil {
 		return header;
 	}
 
+	/**
+	 * If there is no path like api.predic8.de it will return /
+	 *
+	 * @param dest URL e.g. http://predic8.de/foo?name=bar
+	 * @return Path and query string without protocol and host e.g. /foo?name=bar
+	 * @throws MalformedURLException
+	 */
 	public static String getPathAndQueryString(String dest) throws MalformedURLException {
 		URL url = new URL(dest);
-
 		String uri = url.getPath();
+
+		if(url.getPath().isEmpty()) {
+			uri = "/";
+		}
+
 		if (url.getQuery() != null) {
 			return uri + "?" + url.getQuery();
 		}

@@ -50,7 +50,7 @@ public class RequestReferenceTest {
                 Arguments.of("""
                         {}""", 1, "Required property email is missing."),
                 Arguments.of("""
-                        {"email": "invalid-email"}""", 1, "The string 'invalid-email' is not a valid email."),
+                        {"email": "invalid-email"}""", 1, "The string 'invalid-email' is not a valid E-Mail."),
                 Arguments.of("""
                         {"email": "max@example.com", "createdAt": "not-a-datetime"}""", 1, "The string 'not-a-datetime' is not a valid date-time according to ISO 8601."),
                 Arguments.of("""
