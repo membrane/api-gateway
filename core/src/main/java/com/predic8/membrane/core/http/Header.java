@@ -138,6 +138,17 @@ public class Header {
 	public Header() {
 	}
 
+	/**
+	 * Constructs a Header by reading and parsing HTTP header lines from the provided input stream.
+	 *
+	 * <p>This constructor reads the input stream line by line until an empty line is encountered,
+	 * creating and adding a HeaderField for each non-empty line. If a header line is malformed, resulting
+	 * in a StringIndexOutOfBoundsException, the error is logged and the line is skipped.</p>
+	 *
+	 * @param in the input stream containing HTTP header lines
+	 * @throws IOException if an I/O error occurs while reading the stream
+	 * @throws EndOfStreamException if the stream ends unexpectedly before a complete header is read
+	 */
 	public Header(InputStream in) throws IOException, EndOfStreamException {
 		String line;
 		while (!(line = readLine(in)).isEmpty()) {
@@ -170,16 +181,31 @@ public class Header {
 		fields.add(new HeaderField(key, val));
 	}
 
+	/**
+	 * Adds the specified header field to this Header.
+	 *
+	 * @param field the header field to add
+	 */
 	public void add(HeaderField field) {
 		fields.add(field);
 	}
 
+	/**
+	 * Adds all header fields from the given list to this header in a thread-safe manner.
+	 *
+	 * @param fields the list of header fields to add
+	 */
 	public void addAll(List<HeaderField> fields) {
 		synchronized (this.fields) {
 			this.fields.addAll(fields);
 		}
 	}
 
+	/**
+	 * Removes the specified header field from this header.
+	 *
+	 * @param field the header field to remove
+	 */
 	public void remove(HeaderField field) {
 		fields.remove(field);
 	}
@@ -191,12 +217,27 @@ public class Header {
 		fields.removeAll(deleteValues);
 	}
 
+	/**
+	 * Retrieves all header fields whose name matches the specified header name.
+	 *
+	 * @param headerName the header name used to filter header fields
+	 * @return a list of header fields that match the provided header name; returns an empty list if none are found
+	 */
 	public List<HeaderField> getValues(HeaderName headerName) {
 		return fields.stream()
 				.filter(field -> field.getHeaderName().equals(headerName))
 				.toList();
 	}
 
+	/**
+	 * Retrieves the first header value corresponding to the specified header name.
+	 *
+	 * Iterates through the header fields and returns the value of the first field that matches the given name.
+	 * If no matching header is found, returns {@code null}.
+	 *
+	 * @param name the header name to search for
+	 * @return the value of the matching header field, or {@code null} if not present
+	 */
 	public String getFirstValue(String name) {
 		return fields.stream()
 				.filter(field -> field.getHeaderName().hasName(name))
@@ -233,6 +274,15 @@ public class Header {
 		out.write(bytes);
 	}
 
+	/**
+	 * Sets the value of the header field, ensuring a single occurrence.
+	 *
+	 * <p>If one or more header fields with the specified name exist, the first match is updated with the new value
+	 * and any additional occurrences are removed. If no matching field is found, a new header field is added.</p>
+	 *
+	 * @param name  the header field name
+	 * @param value the new value to set for the header field
+	 */
 	public void setValue(String name, String value) {
 		boolean found = false;
 		for (int i = 0; i < fields.size(); i++) {
@@ -361,12 +411,26 @@ public class Header {
 				.collect(Collectors.joining());
 	}
 
+	/**
+	 * Sets the HTTP "Authorization" header using Basic Authentication.
+	 *
+	 * <p>This method concatenates the given username and password with a colon, encodes the resulting
+	 * string in Base64 using UTF-8, and prepends "Basic " to form the header value.</p>
+	 *
+	 * @param user the username for authentication
+	 * @param password the password for authentication
+	 */
 	public void setAuthorization(String user, String password) {
 		setValue("Authorization", "Basic "
 				+ new String(encodeBase64((user + ":" + password)
 				.getBytes(UTF_8)), UTF_8));
 	}
 
+	/**
+	 * Sets the X-Forwarded-For header field to the specified value, replacing any existing value.
+	 *
+	 * @param value the new header value, typically representing the originating client IP address.
+	 */
 	public void setXForwardedFor(String value) {
 		setValue(X_FORWARDED_FOR, value);
 	}
