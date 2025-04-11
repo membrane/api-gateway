@@ -33,7 +33,6 @@ import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -53,24 +52,24 @@ public class BrowserMock implements Function<Exchange, Exchange> {
     final Function<Exchange, Exchange> cookieHandlingRedirectingHttpClient = outerExc -> handleFormPost(innerExc -> handleRedirect(cookieHandlingHttpClient, innerExc, new ArrayList<>()), outerExc);
 
     private @NotNull Exchange handleFormPost(Function<Exchange, Exchange> redirectHandler, Exchange exc) {
-        exc = redirectHandler.apply(exc);
+        Exchange result = redirectHandler.apply(exc);
 
-        int statusCode = exc.getResponse().getStatusCode();
-        String response = exc.getResponse().getBodyAsStringDecoded();
+        int statusCode = result.getResponse().getStatusCode();
+        String response = result.getResponse().getBodyAsStringDecoded();
         if (statusCode != 200)
-            return exc;
+            return result;
         if (!response.contains("javascript:document.forms[0].submit()"))
-            return exc;
+            return result;
         System.out.println(response);
         // this is a self-submitting form
         Matcher m1 = FORM_PATTERN.matcher(response);
         if (!m1.find()) {
             LOG.warn("did not find form action");
-            return exc;
+            return result;
         }
         String target = m1.group(1);
         System.out.println("target = " + target);
-        String firstDestination = exc.getDestinations().getFirst();
+        String firstDestination = result.getDestinations().getFirst();
         if (!target.contains(":")) {
             target = ResolverMap.combine(firstDestination, target);
             System.out.println("target = " + target);
@@ -114,52 +113,46 @@ public class BrowserMock implements Function<Exchange, Exchange> {
 
     private @NotNull Exchange cookeManager(Function<Exchange, Exchange> consumer, final Exchange exc) {
         String domain = getDomain(exc);
-        Map<String, String> cookies = getCookies1(domain);
+        Map<String, String> cookies = cookie.get(domain);
         addCookiesToExchange(exc, cookies);
         var result = consumer.apply(exc);
 
         for (HeaderField setCookieField : result.getResponse().getHeader().getValues(new HeaderName("Set-Cookie"))) {
-            cookies = manipulateCookies(setCookieField, domain, cookies);
+            cookies = addOrExpireCookieFromHeader(setCookieField, domain, cookies);
         }
 
         return result;
     }
 
     private static void addCookiesToExchange(Exchange exc, Map<String, String> cookies) {
-        if (cookies != null)
-            cookies.forEach(addCookieToExchange(exc));
+        if (cookies == null)
+            return;
+        exc.getRequest().getHeader().addAll(cookies.entrySet().stream()
+                .map(BrowserMock::createCookieHeaderField)
+                .toList());
     }
 
-    private static @NotNull BiConsumer<String, String> addCookieToExchange(Exchange exc) {
-        return (k, v) -> {
-            Header header = exc.getRequest().getHeader();
-            synchronized (header) {
-                header.add("Cookie", k + "=" + v);
-            }
-        };
+    private static HeaderField createCookieHeaderField(Map.Entry<String, String> entry) {
+        return new HeaderField("Cookie", entry.getKey() + "=" + entry.getValue());
     }
 
-    private Map<String, String> getCookies1(String domain) {
-        return cookie.get(domain);
-    }
-
-    private @NotNull Map<String, String> manipulateCookies(final HeaderField headerField, final String domain, Map<String, String> cookies) {
+    private @NotNull Map<String, String> addOrExpireCookieFromHeader(final HeaderField headerField, final String domain, Map<String, String> cookies) {
         LOG.debug("from {} got Set-Cookie: {}", domain, headerField.getValue());
 
-        KeyValue result = getKeyValue(headerField);
+        KeyValue headerKeyValue = getKeyValue(headerField);
 
         if (cookies == null) {
-            cookies = getDefaultCookies(domain);
+            cookies = getOrInitializeCookies(domain);
         }
 
         if (isExpired(headerField)) {
             LOG.debug("removing cookie.");
-            cookies.remove(result.key());
+            cookies.remove(headerKeyValue.key());
             return cookies;
         }
         logJwtClaims(headerField);
 
-        cookies.put(result.key(), result.value());
+        cookies.put(headerKeyValue.key(), headerKeyValue.value());
         return cookies;
     }
 
@@ -199,18 +192,10 @@ public class BrowserMock implements Function<Exchange, Exchange> {
     private record KeyValue(String key, String value) {
     }
 
-    private @NotNull Map<String, String> getDefaultCookies(String domain) {
-        Map<String, String> cookies;
-        cookies = new HashMap<>();
+    private @NotNull Map<String, String> getOrInitializeCookies(String domain) {
         synchronized (cookie) {
-            // recheck whether there are still no cookies yet
-            Map<String, String> cookies2 = cookie.get(domain);
-            if (cookies2 != null)
-                cookies = cookies2;
-            else
-                cookie.put(domain, cookies);
+            return cookie.computeIfAbsent(domain, k -> new HashMap<>());
         }
-        return cookies;
     }
 
     private static String getDomain(Exchange exc) {

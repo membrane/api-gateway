@@ -144,7 +144,7 @@ public class Header {
 			try {
 				add(new HeaderField(line));
 			} catch (StringIndexOutOfBoundsException sie) {
-                log.error("Header read line that caused problems: {}", line);
+				log.error("Header read line that caused problems: {}", line);
 			}
 		}
 	}
@@ -174,6 +174,12 @@ public class Header {
 		fields.add(field);
 	}
 
+	public void addAll(List<HeaderField> fields) {
+		synchronized (this.fields) {
+			this.fields.addAll(fields);
+		}
+	}
+
 	public void remove(HeaderField field) {
 		fields.remove(field);
 	}
@@ -192,7 +198,7 @@ public class Header {
 	}
 
 	public String getFirstValue(String name) {
-        return fields.stream()
+		return fields.stream()
 				.filter(field -> field.getHeaderName().hasName(name))
 				.findFirst()
 				.map(HeaderField::getValue)
@@ -232,8 +238,8 @@ public class Header {
 		for (int i = 0; i < fields.size(); i++) {
 			if (fields.get(i).getHeaderName().hasName(name)) {
 				if (found) {
-					fields.set(i, fields.get(fields.size()-1));
-					fields.remove(fields.size()-1);
+					fields.set(i, fields.getLast());
+					fields.removeLast();
 					i--;
 				} else {
 					fields.get(i).setValue(value);
@@ -357,8 +363,8 @@ public class Header {
 
 	public void setAuthorization(String user, String password) {
 		setValue("Authorization", "Basic "
-								  + new String(encodeBase64((user + ":" + password)
-						.getBytes(UTF_8)), UTF_8));
+				+ new String(encodeBase64((user + ":" + password)
+				.getBytes(UTF_8)), UTF_8));
 	}
 
 	public void setXForwardedFor(String value) {
