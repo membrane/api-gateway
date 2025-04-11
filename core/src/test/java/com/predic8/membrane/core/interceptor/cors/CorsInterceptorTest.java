@@ -305,7 +305,7 @@ class CorsInterceptorTest {
     }
 
     @Test
-    void allowAllSetTrueAnd() throws URISyntaxException {
+    void handleAllowAll() throws URISyntaxException {
         CorsInterceptor i = new CorsInterceptor();
         i.setAllowAll(true);
         i.setHeaders("X-Foo");
