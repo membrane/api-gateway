@@ -42,6 +42,7 @@ public class BuiltInFunctionResolver implements MethodResolver {
                 }
             };
         } catch (InvocationTargetException | IllegalAccessException | NoSuchMethodException e) {
+            // Null is necessary to align with interface specification.
             return null;
         }
     }

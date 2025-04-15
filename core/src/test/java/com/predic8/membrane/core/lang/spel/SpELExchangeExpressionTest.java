@@ -92,6 +92,11 @@ class SpELExchangeExpressionTest extends AbstractExchangeExpressionTest {
         assertInstanceOf(Boolean.class, evalBool("weight(3.14)"));
     }
 
+    @Test
+    void listContainsTest() {
+        assertTrue(evalBool("property.tags.contains('animal')"));
+    }
+
     // String
 
     @Test
