@@ -49,7 +49,7 @@ public class ReflectiveMethodHandler {
     /**
      * Retrieves a previously stored method.
      */
-    public Method retrieveFunction(String func, List<TypeDescriptor> types) throws InvocationTargetException, IllegalAccessException, NoSuchMethodException {
+    public Method retrieveFunction(String func, List<TypeDescriptor> types) throws NoSuchMethodException {
         return getFunction(func, getParameterTypeDescriptors(types));
     }
 

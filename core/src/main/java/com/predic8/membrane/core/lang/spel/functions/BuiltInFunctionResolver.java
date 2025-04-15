@@ -30,6 +30,9 @@ public class BuiltInFunctionResolver implements MethodResolver {
         functions = new ReflectiveMethodHandler(BuiltInFunctions.class);
     }
 
+    /**
+     * @return Returns MethodExecutor or null in case no method can be found by this resolver
+     */
     @Override
     public MethodExecutor resolve(EvaluationContext context, Object targetObject, String name, List<TypeDescriptor> argumentTypes) throws AccessException {
         try {
@@ -41,8 +44,7 @@ public class BuiltInFunctionResolver implements MethodResolver {
                     throw new BuildInFunctionException("Cannot invoke built-in function " + name, name, e);
                 }
             };
-        } catch (InvocationTargetException | IllegalAccessException | NoSuchMethodException e) {
-            // Null is necessary to align with interface specification.
+        } catch (NoSuchMethodException e) {
             return null;
         }
     }
