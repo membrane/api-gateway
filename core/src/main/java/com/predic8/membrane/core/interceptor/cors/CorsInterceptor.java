@@ -182,9 +182,8 @@ public class CorsInterceptor extends AbstractInterceptor {
     }
 
     private static @NotNull List<String> parseCommaSeparated(String headers) {
-        return stream(headers.split("\\s*,\\s*"))
+        return stream(headers.split("\\s*,\\s*|\\s+"))
                 .map(String::trim)
-                .map(String::toLowerCase)
                 .filter(s -> !s.isEmpty())
                 .toList();
     }
@@ -253,9 +252,7 @@ public class CorsInterceptor extends AbstractInterceptor {
 
     @MCAttribute
     public void setMethods(String methods) {
-        this.allowedMethods = stream(methods.split("\\s*,\\s*"))
-                .map(String::trim)
-                .collect(Collectors.toList());
+        this.allowedMethods = parseCommaSeparated(methods);
     }
 
     @MCAttribute
