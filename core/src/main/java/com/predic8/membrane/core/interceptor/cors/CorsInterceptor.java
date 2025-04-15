@@ -181,8 +181,8 @@ public class CorsInterceptor extends AbstractInterceptor {
         return new HashSet<>(allowedHeaders).containsAll(parseCommaSeparated(headers));
     }
 
-    private static @NotNull List<String> parseCommaSeparated(String headers) {
-        return stream(headers.split("\\s*,\\s*|\\s+"))
+    private static @NotNull List<String> parseCommaSeparated(String value) {
+        return stream(value.split("\\s*,\\s*|\\s+"))
                 .map(String::trim)
                 .filter(s -> !s.isEmpty())
                 .toList();
