@@ -104,6 +104,8 @@ public class Header {
 
 	public static final String IF_MODIFIED_SINCE = "If-Modified-Since";
 
+	public static final String VARY = "VARY";
+
 	public static final String WWW_AUTHENTICATE = "WWW-Authenticate";
 
 	public static final String ACCESS_CONTROL_ALLOW_ORIGIN = "Access-Control-Allow-Origin";
@@ -232,8 +234,8 @@ public class Header {
 		for (int i = 0; i < fields.size(); i++) {
 			if (fields.get(i).getHeaderName().hasName(name)) {
 				if (found) {
-					fields.set(i, fields.get(fields.size()-1));
-					fields.remove(fields.size()-1);
+					fields.set(i, fields.getLast());
+					fields.removeLast();
 					i--;
 				} else {
 					fields.get(i).setValue(value);
