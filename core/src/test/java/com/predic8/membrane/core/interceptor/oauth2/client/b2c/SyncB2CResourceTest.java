@@ -13,7 +13,7 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.oauth2.client.b2c;
 
-import com.predic8.membrane.core.interceptor.oauth2.client.FakeSyncSessionStoreManager;
+import com.predic8.membrane.core.interceptor.session.FakeSyncSessionStoreManager;
 import com.predic8.membrane.core.interceptor.session.SessionManager;
 
 public class SyncB2CResourceTest extends OAuth2ResourceB2CTest {

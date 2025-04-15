@@ -38,7 +38,7 @@ public class MemcachedSessionManager extends SessionManager {
     private MemcachedConnector connector;
     private MemcachedClient client;
     protected String cookiePrefix = UUID.randomUUID().toString().substring(0,8);
-    private static final String ID_NAME = "_in_memory_session_id";
+    protected static final String ID_NAME = "_in_memory_session_id";
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -74,7 +74,7 @@ public class MemcachedSessionManager extends SessionManager {
                 .collect(Collectors.toMap(Function.identity(), s -> s.get(ID_NAME)));
     }
 
-    private void addSessions(Session[] sessions) {
+    protected void addSessions(Session[] sessions) {
         Arrays.stream(sessions).forEach(s -> {
             try {
                 client.set(s.get(ID_NAME), Math.toIntExact(getExpiresAfterSeconds()), stringify(s));
@@ -84,7 +84,7 @@ public class MemcachedSessionManager extends SessionManager {
         });
     }
 
-    private String stringify(Session session) {
+    protected String stringify(Session session) {
         try {
             return objectMapper.writeValueAsString(session);
         } catch (JsonProcessingException e) {
@@ -145,6 +145,10 @@ public class MemcachedSessionManager extends SessionManager {
                 throw new RuntimeException(e);
             }
         });
+        superRemoveSession(exc);
+    }
+
+    protected void superRemoveSession(Exchange exc) {
         super.removeSession(exc);
     }
 
@@ -157,7 +161,7 @@ public class MemcachedSessionManager extends SessionManager {
         return cookie.startsWith(cookiePrefix);
     }
 
-    private Optional<String> getCachedSession(String cookie) {
+    protected Optional<String> getCachedSession(String cookie) {
         try {
             return Optional.ofNullable(client.get(cookie.split("=true")[0]));
         } catch (TimeoutException | InterruptedException | MemcachedException e) {
