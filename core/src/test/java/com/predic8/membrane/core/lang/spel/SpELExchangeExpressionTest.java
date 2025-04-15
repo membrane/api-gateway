@@ -87,6 +87,11 @@ class SpELExchangeExpressionTest extends AbstractExchangeExpressionTest {
         assertFalse(evalBool("property['can-fly']"));
     }
 
+    @Test
+    void callBuiltInFunction() {
+        assertInstanceOf(Boolean.class, evalBool("weight(3.14)"));
+    }
+
     // String
 
     @Test
@@ -97,11 +102,6 @@ class SpELExchangeExpressionTest extends AbstractExchangeExpressionTest {
     @Test
     void callSpELMethod() {
         assertEquals("c", evalString("'abc'.substring(2, 3)"));
-    }
-
-    @Test
-    void callBuiltInFunction() {
-        assertInstanceOf(Boolean.class, evalBool("weight(3.14)"));
     }
 
     @Test
