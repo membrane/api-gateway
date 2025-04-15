@@ -104,7 +104,7 @@ public class Header {
 
 	public static final String IF_MODIFIED_SINCE = "If-Modified-Since";
 
-	public static final String VARY = "VARY";
+	public static final String VARY = "Vary";
 
 	public static final String WWW_AUTHENTICATE = "WWW-Authenticate";
 

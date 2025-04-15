@@ -216,9 +216,7 @@ public class CorsInterceptor extends AbstractInterceptor {
             header.setValue(ACCESS_CONTROL_ALLOW_CREDENTIALS, "true");
         }
 
-        header.add(VARY, ORIGIN);
-        header.add(VARY, ACCESS_CONTROL_REQUEST_METHOD);
-        header.add(VARY, ACCESS_CONTROL_REQUEST_HEADERS);
+        header.setValue(VARY, ORIGIN + ", " + ACCESS_CONTROL_REQUEST_METHOD + ", " + ACCESS_CONTROL_REQUEST_HEADERS);
 
         return header;
     }
