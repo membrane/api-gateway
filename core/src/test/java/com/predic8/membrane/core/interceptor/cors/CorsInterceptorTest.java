@@ -139,9 +139,8 @@ class CorsInterceptorTest {
             Exchange exc = createPreflight("https://trusted.example.com", METHOD_POST).buildExchange();
 
             assertEquals(RETURN, i.handleRequest(exc));
-            Header header = exc.getResponse().getHeader();
             assertEquals(204, exc.getResponse().getStatusCode());
-            assertEquals("https://trusted.example.com", getAllowOrigin(exc));
+            assertEquals("*", getAllowOrigin(exc));
             assertEquals("POST", getAllowMethods(exc));
         }
 

@@ -57,7 +57,9 @@ public class CorsInterceptor extends AbstractInterceptor {
 
 
     /**
-     * If true, all origins, methods and headers are allowed.
+     * If true, all origins, methods and headers are allowed **without validation**.
+     * This is more permissive than setting origins/methods/headers to '*',
+     * since it skips explicit validation checks. Not compatible with credentials=true.
      */
     private boolean allowAll = false;
 
@@ -197,7 +199,7 @@ public class CorsInterceptor extends AbstractInterceptor {
             throw new ConfigurationException("UNSAFE CORS CONFIGURATION: 'credentials=true' and 'origins=*' is not allowed!");
         }
 
-        header.setValue(ACCESS_CONTROL_ALLOW_ORIGIN, requestOrigin);
+        header.setValue(ACCESS_CONTROL_ALLOW_ORIGIN, getAllowOriginValue(requestOrigin));
         header.setValue(ACCESS_CONTROL_ALLOW_METHODS, requestedMethod);
 
         if (allowAll) {
@@ -221,6 +223,10 @@ public class CorsInterceptor extends AbstractInterceptor {
         header.add(VARY, ACCESS_CONTROL_REQUEST_HEADERS);
 
         return header;
+    }
+
+    private String getAllowOriginValue(String requestOrigin) {
+        return (allowedOrigins.contains("*") && !allowCredentials) ? "*" : requestOrigin;
     }
 
     private @NotNull String join(List<String> l) {
