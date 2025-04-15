@@ -120,6 +120,28 @@ class SpELExchangeExpressionTest extends AbstractExchangeExpressionTest {
         assertEquals("",evalString("property.unknown"));
     }
 
+    @Test
+    void substring() {
+        assertEquals("c", evalString( "'abc'.substring(2, 3)"));
+    }
+
+    // List
+
+    @Test
+    void inLineList() {
+        assertEquals(List.of("a","b","c"),evalObject("{'a','b','c'}"));
+    }
+
+    @Test
+    void emptyList() {
+        assertEquals(true,evalObject("{}.isEmpty()"));
+    }
+
+    @Test
+    void contains() {
+        assertTrue(evalBool("{'a','b','c'}.contains('b')"));
+    }
+
     // Object
 
     @Test

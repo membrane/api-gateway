@@ -49,8 +49,19 @@ public class ReflectiveMethodHandler {
     /**
      * Calls a previously stored method.
      */
-    public TypedValue invokeFunction(EvaluationContext ctx, String func, List<TypeDescriptor> types, Object... args) throws InvocationTargetException, IllegalAccessException, NoSuchMethodException {
-        return new TypedValue(getFunction(func, getParameterTypeDescriptors(types)).invoke(null, (getParameters(ctx, args))));
+    public TypedValue invokeFunction(EvaluationContext ctx, String func, List<TypeDescriptor> types, Object... args) throws InvocationTargetException, IllegalAccessException {
+        Method function;
+        try {
+            function = getFunction(func, getParameterTypeDescriptors(types));
+        } catch (NoSuchMethodException e) {
+            return null;
+        }
+
+        if (function == null) {
+            return null;
+        }
+
+        return new TypedValue(function.invoke(null, (getParameters(ctx, args))));
     }
 
     private static ArrayList<TypeDescriptor> getParameterTypeDescriptors(List<TypeDescriptor> types) {
