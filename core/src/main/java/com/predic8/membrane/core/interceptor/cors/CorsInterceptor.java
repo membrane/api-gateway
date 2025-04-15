@@ -34,8 +34,7 @@ import static java.util.Arrays.*;
 
 
 /**
- * @description
- * <p>Plugin that allows Cross-Origin Resource Sharing (CORS). It answers preflight
+ * @description <p>Plugin that allows Cross-Origin Resource Sharing (CORS). It answers preflight
  * requests with the options method and sets the CORS headers. Additionally requests
  * are validated against the CORS configuration.</p>
  */
@@ -44,14 +43,18 @@ public class CorsInterceptor extends AbstractInterceptor {
 
     private static final Logger log = LoggerFactory.getLogger(CorsInterceptor.class);
 
+    // Request headers
     public static final String ORIGIN = "Origin";
+    public static final String ACCESS_CONTROL_REQUEST_METHOD = "Access-Control-Request-Method";
+    public static final String ACCESS_CONTROL_REQUEST_HEADERS = "Access-Control-Request-Headers";
+
+    // Response headers
     public static final String ACCESS_CONTROL_ALLOW_ORIGIN = "Access-Control-Allow-Origin";
     public static final String ACCESS_CONTROL_ALLOW_METHODS = "Access-Control-Allow-Methods";
     public static final String ACCESS_CONTROL_ALLOW_HEADERS = "Access-Control-Allow-Headers";
     public static final String ACCESS_CONTROL_MAX_AGE = "Access-Control-Max-Age";
     public static final String ACCESS_CONTROL_ALLOW_CREDENTIALS = "Access-Control-Allow-Credentials";
-    public static final String ACCESS_CONTROL_REQUEST_METHOD = "Access-Control-Request-Method";
-    public static final String ACCESS_CONTROL_REQUEST_HEADERS = "Access-Control-Request-Headers";
+
 
     /**
      * If true, all origins, methods and headers are allowed.
@@ -63,6 +66,16 @@ public class CorsInterceptor extends AbstractInterceptor {
     private List<String> allowedHeaders = new ArrayList<>();
     private boolean allowCredentials;
     private String maxAge;
+
+    @Override
+    public void init() {
+        super.init();
+
+        // See: https://fetch.spec.whatwg.org/#cors-protocol-and-credentials
+        if (allowCredentials && originContainsWildcard()) {
+            throw new ConfigurationException("Access-Control-Allow-Credentials in combination with origin wildcard is forbidden");
+        }
+    }
 
     @Override
     public Outcome handleRequest(Exchange exc) {
@@ -96,7 +109,13 @@ public class CorsInterceptor extends AbstractInterceptor {
             return createProblemDetails(exc, origin, "headers");
         }
 
-        exc.setResponse(noContent().header(createCORSHeader(new Header(), origin,  requestMethod, requestHeaders)).build());
+        if (originContainsWildcard() && allowCredentials) {
+            return createProblemDetails(exc, origin, "credentials");
+        }
+
+        exc.setResponse(noContent()
+                .header(createCORSHeader(origin, requestMethod, requestHeaders))
+                .build());
         return RETURN;
     }
 
@@ -119,7 +138,7 @@ public class CorsInterceptor extends AbstractInterceptor {
                 .detail("The %s '%s' is not allowed by the CORS policy.".formatted(type, origin))
                 .topLevel("origin", origin)
                 .buildAndSetResponse(exc);
-        log.info("CORS request denied: type={}, origin={}",type,origin);
+        log.info("CORS request denied: type={}, origin={}", type, origin);
         return RETURN;
     }
 
@@ -138,6 +157,7 @@ public class CorsInterceptor extends AbstractInterceptor {
             createCORSHeader(exc.getResponse().getHeader(), origin, exc.getRequest().getMethod(), getRequestHeaders(exc));
         }
 
+        // Not allowed => Do not set any allow headers
         return CONTINUE;
     }
 
@@ -173,15 +193,11 @@ public class CorsInterceptor extends AbstractInterceptor {
     }
 
     private Header createCORSHeader(Header header, String requestOrigin, String requestedMethod, String requestedHeaders) {
-        if (allowedOrigins.contains("*")) {
-            if (allowCredentials) {
-                throw new ConfigurationException("UNSAFE CORS CONFIGURATION: 'credentials=true' and 'origins=*' is not allowed!");
-            }
-            header.setValue(ACCESS_CONTROL_ALLOW_ORIGIN, requestOrigin);
-        } else {
-            header.setValue(ACCESS_CONTROL_ALLOW_ORIGIN, requestOrigin);
+        if (allowedOrigins.contains("*") && allowCredentials) {
+            throw new ConfigurationException("UNSAFE CORS CONFIGURATION: 'credentials=true' and 'origins=*' is not allowed!");
         }
 
+        header.setValue(ACCESS_CONTROL_ALLOW_ORIGIN, requestOrigin);
         header.setValue(ACCESS_CONTROL_ALLOW_METHODS, requestedMethod);
 
         if (allowAll) {
@@ -211,6 +227,10 @@ public class CorsInterceptor extends AbstractInterceptor {
         return String.join(", ", l);
     }
 
+    private boolean originContainsWildcard() {
+        return allowedOrigins.contains("*");
+    }
+
     /**
      * If true, all origins, methods and headers are allowed except credentials like cookies
      */
@@ -235,7 +255,7 @@ public class CorsInterceptor extends AbstractInterceptor {
 
     @MCAttribute
     public void setHeaders(String headers) {
-        this.allowedHeaders = parseCommaSeparated( headers);
+        this.allowedHeaders = parseCommaSeparated(headers);
     }
 
     public String getHeaders() {

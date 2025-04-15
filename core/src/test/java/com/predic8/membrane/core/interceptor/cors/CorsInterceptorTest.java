@@ -57,13 +57,19 @@ class CorsInterceptorTest {
             i.setHeaders("foo bar baz");
             assertEquals(List.of("foo", "bar", "baz"), i.getAllowedHeaders());
         }
+
+        @Test
+        void credentialsWithOriginWildcard() {
+            i.setCredentials(true);
+            assertThrows(ConfigurationException.class, () -> i.init());
+        }
     }
 
     @Nested
     class Simple {
 
         @Test
-        void getRequest() throws URISyntaxException {
+        void setAllowHeadersOnResponse() throws URISyntaxException {
             i.setOrigins("https://trusted.example.com");
 
             Exchange exc = get("/test")
@@ -71,28 +77,12 @@ class CorsInterceptorTest {
                     .buildExchange();
             exc.setResponse(ok("Hello").build());
 
-            assertEquals(CONTINUE, i.handleRequest(exc));
+            assertEquals(CONTINUE, i.handleRequest(exc)); // Not an OPTIONS request just CONTINUE
             assertEquals(CONTINUE, i.handleResponse(exc));
 
             Header header = exc.getResponse().getHeader();
             assertEquals("https://trusted.example.com", header.getFirstValue(ACCESS_CONTROL_ALLOW_ORIGIN));
             assertNull(header.getFirstValue(ACCESS_CONTROL_ALLOW_CREDENTIALS));
-        }
-
-        @Test
-        void requestFromUnauthorizedOriginGetsNoCorsHeaders() throws URISyntaxException {
-            i.setOrigins("https://trusted.example.com");
-            i.setMethods("GET, POST");
-
-            Exchange exc = get("/test")
-                    .header(ORIGIN, "https://evil.example.com")
-                    .buildExchange();
-            exc.setResponse(ok("Nope").build());
-
-            assertEquals(CONTINUE, i.handleRequest(exc));
-            assertEquals(CONTINUE, i.handleResponse(exc));
-
-            assertNull(exc.getResponse().getHeader().getFirstValue(ACCESS_CONTROL_ALLOW_ORIGIN));
         }
 
         @Test
@@ -102,7 +92,23 @@ class CorsInterceptorTest {
 
             assertEquals(CONTINUE, i.handleRequest(exc));
             assertEquals(CONTINUE, i.handleResponse(exc));
-            assertNull(exc.getResponse().getHeader().getFirstValue(ACCESS_CONTROL_ALLOW_ORIGIN));
+            assertNull(getAllowOrigin(exc));
+        }
+
+        @Test
+        void unauthorizedOriginAllowHeadersShouldNotBeAddedToResponse() throws URISyntaxException {
+            i.setOrigins("https://trusted.example.com");
+            i.setMethods("GET, POST");
+
+            Exchange exc = get("/test")
+                    .header(ORIGIN, "https://evil.example.com")
+                    .buildExchange();
+
+            assertEquals(CONTINUE, i.handleRequest(exc));
+            exc.setResponse(ok("Nope").build());
+            assertEquals(CONTINUE, i.handleResponse(exc));
+
+            assertNull(getAllowOrigin(exc)); // AllowOrigin header must not be set
         }
 
     }
@@ -122,8 +128,6 @@ class CorsInterceptorTest {
 
         @Test
         void originNullNotAllowed() throws Exception {
-            i.setOrigins("foo bar");
-
             Exchange exc = createPreflight("null", null).buildExchange();
 
             assertEquals(RETURN, i.handleRequest(exc));
@@ -131,14 +135,14 @@ class CorsInterceptorTest {
         }
 
         @Test
-        void restrictToRequestedMethod() throws Exception {
+        void preflightReturnsOnlyRequestedMethod() throws Exception {
             Exchange exc = createPreflight("https://trusted.example.com", METHOD_POST).buildExchange();
 
             assertEquals(RETURN, i.handleRequest(exc));
             Header header = exc.getResponse().getHeader();
             assertEquals(204, exc.getResponse().getStatusCode());
-            assertEquals("https://trusted.example.com", header.getFirstValue(ACCESS_CONTROL_ALLOW_ORIGIN));
-            assertEquals("POST", header.getFirstValue(ACCESS_CONTROL_ALLOW_METHODS));
+            assertEquals("https://trusted.example.com", getAllowOrigin(exc));
+            assertEquals("POST", getAllowMethods(exc));
         }
 
         @Test
@@ -154,6 +158,10 @@ class CorsInterceptorTest {
             assertEquals("https://trusted.example.com", header.getFirstValue(ACCESS_CONTROL_ALLOW_ORIGIN));
         }
 
+        /**
+         * Normal OPTIONS request
+         * @throws URISyntaxException
+         */
         @Test
         void preflightRequestWithoutOriginGetsIgnored() throws URISyntaxException {
             Exchange exc = options("/test").buildExchange();
@@ -163,26 +171,15 @@ class CorsInterceptorTest {
         }
 
         @Test
-        void wildcardOriginWithoutCredentialsSetsAsterisk() throws Exception {
+        void wildcardOriginWithCredentialsShouldBeRejected() throws Exception {
             i.setOrigins("*");
             i.setMethods("GET, POST");
+            i.setCredentials(true);
 
             Exchange exc = createPreflight("https://any.example.com", METHOD_POST).buildExchange();
 
             assertEquals(RETURN, i.handleRequest(exc));
-            assertEquals("https://any.example.com", exc.getResponse().getHeader().getFirstValue(ACCESS_CONTROL_ALLOW_ORIGIN));
-            assertNull(exc.getResponse().getHeader().getFirstValue(ACCESS_CONTROL_ALLOW_CREDENTIALS));
-        }
-
-        @Test
-        void wildcardOriginWithCredentialsThrowsException() {
-            assertThrows(ConfigurationException.class, () -> {
-                i.setOrigins("*");
-                i.setMethods("GET, POST");
-                i.setCredentials(true);
-                Exchange exc =createPreflight("https://trusted.example.com", METHOD_POST).buildExchange();
-                i.handleRequest(exc);
-            });
+            assertEquals(403, exc.getResponse().getStatusCode());
         }
 
         @Test
@@ -194,7 +191,7 @@ class CorsInterceptorTest {
 
             i.handleRequest(exc);
 
-            assertEquals("POST", exc.getResponse().getHeader().getFirstValue(ACCESS_CONTROL_ALLOW_METHODS));
+            assertEquals("POST", getAllowMethods(exc));
         }
 
         @Test
@@ -210,7 +207,7 @@ class CorsInterceptorTest {
         }
 
         @Test
-        void disallowedHeader() throws Exception {
+        void shouldRejectDisallowedHeader() throws Exception {
             i.setOrigins("https://trusted.example.com");
 
             Exchange exc = createPreflight("https://trusted.example.com", METHOD_POST,"X-Foo").buildExchange();
@@ -221,7 +218,7 @@ class CorsInterceptorTest {
         }
 
         @Test
-        void allowedHeader() throws Exception {
+        void shouldAcceptAllowedHeader() throws Exception {
             i.setOrigins("https://trusted.example.com");
             i.setHeaders("X-Bar X-Foo X-Zoo");
 
@@ -254,34 +251,24 @@ class CorsInterceptorTest {
             Exchange exc = createPreflight("https://client.example.com", METHOD_POST).buildExchange();
 
             assertEquals(RETURN, i.handleRequest(exc));
-            assertEquals("600", i.getMaxAge());
-            assertEquals("600", exc.getResponse().getHeader().getFirstValue(ACCESS_CONTROL_MAX_AGE));
+            assertEquals("600", getMaxAge(exc));
         }
 
         @Test
-        void allowAllSetTrue() throws Exception {
-            i.setAllowAll(true);
-
-            Exchange exc = createPreflight("https://any.example.com", METHOD_POST).buildExchange();
-
-            i.handleRequest(exc);
-            assertTrue(i.isAllowAll());
-            assertEquals(204, exc.getResponse().getStatusCode());
-        }
-
-        @Test
-        void allowAll() throws Exception {
+        void allowAllPreflightRequestShouldSucceed() throws Exception {
             i.setAllowAll(true);
             i.setHeaders("X-Foo");
 
-            Exchange exc = createPreflight("https://any.example.com", METHOD_POST).buildExchange();
+            Exchange exc = createPreflight("https://any.example.com", METHOD_POST)
+                    .header(ACCESS_CONTROL_REQUEST_HEADERS, "X-Bar")
+                    .buildExchange();
 
             i.handleRequest(exc);
             assertTrue(i.isAllowAll());
             assertEquals(204, exc.getResponse().getStatusCode());
+            assertEquals("X-Bar", getAllowHeaders(exc));
         }
     }
-
 
     Builder createPreflight(String origin, String method) throws Exception {
         return createPreflight(origin, method, null);
@@ -295,5 +282,25 @@ class CorsInterceptorTest {
         if (headers != null)
             exc.header(ACCESS_CONTROL_REQUEST_HEADERS, headers);
         return exc;
+    }
+
+    private static String getAllowOrigin(Exchange exc) {
+        return exc.getResponse().getHeader().getFirstValue(ACCESS_CONTROL_ALLOW_ORIGIN);
+    }
+
+    private static String getAllowMethods(Exchange exc) {
+        return exc.getResponse().getHeader().getFirstValue(ACCESS_CONTROL_ALLOW_METHODS);
+    }
+
+    private static String getMaxAge(Exchange exc) {
+        return exc.getResponse().getHeader().getFirstValue(ACCESS_CONTROL_MAX_AGE);
+    }
+
+    private static String getAllowHeaders(Exchange exc) {
+        return exc.getResponse().getHeader().getFirstValue(ACCESS_CONTROL_ALLOW_HEADERS);
+    }
+
+    private static String getAllowCredentials(Exchange exc) {
+        return exc.getResponse().getHeader().getFirstValue(ACCESS_CONTROL_ALLOW_CREDENTIALS);
     }
 }
