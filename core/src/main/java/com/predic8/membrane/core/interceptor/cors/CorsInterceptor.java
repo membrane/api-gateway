@@ -167,8 +167,7 @@ public class CorsInterceptor extends AbstractInterceptor {
         if ("null".equals(origin)) {
             return allowedOrigins.contains("null");
         }
-
-        return allowedOrigins.contains("*") || allowedOrigins.contains(origin);
+        return originContainsWildcard() || allowedOrigins.contains(origin);
     }
 
     private boolean methodAllowed(String method) {
@@ -176,14 +175,14 @@ public class CorsInterceptor extends AbstractInterceptor {
     }
 
     private boolean headersAllowed(String headers) {
-        if (headers == null || this.allowedHeaders == null)
+        if (headers == null)
             return true;
 
         return new HashSet<>(allowedHeaders).containsAll(parseCommaSeparated(headers));
     }
 
     private static @NotNull List<String> parseCommaSeparated(String headers) {
-        return stream(headers.split("[, ]"))
+        return stream(headers.split("\\s*,\\s*"))
                 .map(String::trim)
                 .map(String::toLowerCase)
                 .filter(s -> !s.isEmpty())
@@ -226,7 +225,7 @@ public class CorsInterceptor extends AbstractInterceptor {
     }
 
     private String getAllowOriginValue(String requestOrigin) {
-        return (allowedOrigins.contains("*") && !allowCredentials) ? "*" : requestOrigin;
+        return (originContainsWildcard() && !allowCredentials) ? "*" : requestOrigin;
     }
 
     private @NotNull String join(List<String> l) {
@@ -254,7 +253,7 @@ public class CorsInterceptor extends AbstractInterceptor {
 
     @MCAttribute
     public void setMethods(String methods) {
-        this.allowedMethods = stream(methods.split(", "))
+        this.allowedMethods = stream(methods.split("\\s*,\\s*"))
                 .map(String::trim)
                 .collect(Collectors.toList());
     }
