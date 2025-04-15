@@ -19,6 +19,8 @@ import org.springframework.expression.*;
 import java.lang.reflect.*;
 import java.util.*;
 
+import static com.predic8.membrane.core.lang.spel.functions.ReflectiveMethodHandler.invokeFunction;
+
 public class BuiltInFunctionResolver implements MethodResolver {
 
     private final ReflectiveMethodHandler functions;
@@ -28,15 +30,23 @@ public class BuiltInFunctionResolver implements MethodResolver {
         functions = new ReflectiveMethodHandler(BuiltInFunctions.class);
     }
 
+    /**
+     * @return Returns MethodExecutor or null in case no method can be found by this resolver
+     */
     @Override
     public MethodExecutor resolve(EvaluationContext context, Object targetObject, String name, List<TypeDescriptor> argumentTypes) throws AccessException {
-       return (ctx, target, arguments) -> {
-           try {
-               return functions.invokeFunction(ctx, name, argumentTypes, arguments);
-           } catch (InvocationTargetException | IllegalAccessException | NoSuchMethodException e) {
-               throw new BuildInFunctionException("Cannot invoke built-in function " + name, name, e);
-           }
-       };
+        try {
+            Method m = functions.retrieveFunction(name, argumentTypes);
+            return (ctx, target, arguments) -> {
+                try {
+                    return invokeFunction(m, ctx, arguments);
+                } catch (InvocationTargetException | IllegalAccessException | NoSuchMethodException e) {
+                    throw new BuildInFunctionException("Cannot invoke built-in function " + name, name, e);
+                }
+            };
+        } catch (NoSuchMethodException e) {
+            return null;
+        }
     }
 }
 
