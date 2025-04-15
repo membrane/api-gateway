@@ -46,12 +46,6 @@ public class BuiltInFunctionsTest {
     }
 
     @Test
-    void testJsonPath() {
-        assertEquals("John", BuiltInFunctions.jsonPath("$.name", ctx));
-        assertNull(BuiltInFunctions.jsonPath("$.foo", ctx));
-    }
-
-    @Test
     void testRate() {
         assertEquals(0.01, calculateRate(1), 0.05);
         assertEquals(0.5, calculateRate(50), 0.05);

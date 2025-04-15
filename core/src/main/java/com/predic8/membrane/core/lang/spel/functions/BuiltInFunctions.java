@@ -44,16 +44,6 @@ import static java.util.Objects.requireNonNull;
 public class BuiltInFunctions {
     private static final Logger log = LoggerFactory.getLogger(BuiltInFunctions.class);
 
-    private static final ObjectMapper objectMapper = new ObjectMapper();
-
-    public static Object jsonPath(String jsonPath, SpELExchangeEvaluationContext ctx) {
-        try {
-            return JsonPath.read(objectMapper.readValue(ctx.getMessage().getBodyAsStringDecoded(), Map.class), jsonPath);
-        } catch (Exception ignored) {
-            return null;
-        }
-    }
-
     public static boolean weight(double weightInPercent, SpELExchangeEvaluationContext ignored) {
         return Math.max(0, Math.min(1, weightInPercent / 100.0)) > ThreadLocalRandom.current().nextDouble();
     }
