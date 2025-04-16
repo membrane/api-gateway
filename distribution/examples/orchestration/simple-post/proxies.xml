@@ -24,35 +24,6 @@
             <return />
         </api>
 
-        <api port="2000">
-            <!-- Call internal API to get API key -->
-            <call url="http://localhost:3000" />
-            <!-- Forward request to backend, now with API key attached -->
-            <target url="http://localhost:3001"/>
-        </api>
-
-        <!-- Simulates an auth service that returns the API key -->
-        <api port="3000">
-            <response>
-                <setHeader name="X-Api-Key" value="ABCDE" />
-            </response>
-            <return />
-        </api>
-
-        <!-- Backend that requires a valid API key in the header -->
-        <api port="3001">
-            <apiKey>
-                <keys>
-                    <secret value="ABCDE"/>
-                </keys>
-                <headerExtractor />
-            </apiKey>
-            <static>
-                Secured backend!
-            </static>
-            <return />
-        </api>
-
     </router>
 
 </spring:beans>
