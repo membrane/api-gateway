@@ -1,0 +1,23 @@
+<spring:beans xmlns:spring="http://www.springframework.org/schema/beans"
+              xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+              xmlns="http://membrane-soa.org/proxies/1/" xmlns:lang="http://www.springframework.org/schema/lang"
+              xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.2.xsd
+					    http://membrane-soa.org/proxies/1/ http://membrane-soa.org/schemas/proxies-1.xsd http://www.springframework.org/schema/lang http://www.springframework.org/schema/lang/spring-lang.xsd">
+
+    <router>
+
+        <api port="2000">
+            <request>
+                <!-- Gets the latest product by ID -->
+                <call url="https://api.predic8.de/shop/v2/products?sort=id&amp;order=desc&amp;limit=1"/>
+                <!-- Extracts the ID of the newest product -->
+                <setProperty name="id" value="${$.products[0].id}" language="jsonpath"/>
+                <!-- Fetches the full product details using the extracted ID -->
+                <call url="https://api.predic8.de/shop/v2/products/${properties.id}"/>
+            </request>
+            <return />
+        </api>
+
+    </router>
+
+</spring:beans>
