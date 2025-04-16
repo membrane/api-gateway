@@ -53,23 +53,4 @@ class CallInterceptorTest {
         assertNull(exc.getRequest().getHeader().getFirstValue(SERVER));
     }
 
-    @Test
-    public void testGetFilteredRequestHeader() throws URISyntaxException {
-        exc.setRequest(Request.get("/foo")
-                .header(AUTHORIZATION, "Bearer token")
-                .header(ACCEPT, APPLICATION_JSON)
-                .header("X-Test", "test value")
-                .header("Random", "random").build()
-        );
-
-
-        Header filteredHeader = getFilteredRequestHeader(exc);
-
-        assertEquals(2, filteredHeader.getAllHeaderFields().length);
-        assertNull(filteredHeader.getFirstValue("X-Test"));
-        assertNull(filteredHeader.getFirstValue("Random"));
-        assertNotNull(filteredHeader.getFirstValue(AUTHORIZATION));
-        assertNotNull(filteredHeader.getFirstValue(ACCEPT));
-    }
-
 }

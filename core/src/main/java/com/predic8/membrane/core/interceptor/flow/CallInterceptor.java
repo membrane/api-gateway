@@ -50,14 +50,6 @@ public class CallInterceptor extends AbstractExchangeExpressionInterceptor {
             SERVER, TRANSFER_ENCODING, CONTENT_ENCODING
     );
 
-    /**
-     * These headers are considered relevant for a call
-     * and will be copied from the original exchange if present.
-     */
-    private static final List<String> ALLOWED_REQUEST_HEADERS = Arrays.asList(
-            AUTHORIZATION, ACCEPT, CONTENT_TYPE, COOKIE, USER_AGENT, ORIGIN
-    );
-
     @Override
     public void init() {
         super.init();
@@ -80,6 +72,7 @@ public class CallInterceptor extends AbstractExchangeExpressionInterceptor {
         final Exchange newExc = createNewExchange(dest, getNewRequest(exc));
 
         try (HttpClient client = new HttpClient()) {
+            System.out.println("newExc = " + newExc.getRequest());
             client.call(newExc);
         } catch (Exception e) {
             log.error("Error during HTTP call to {}: {}", dest, e.getMessage(), e);
@@ -137,9 +130,14 @@ public class CallInterceptor extends AbstractExchangeExpressionInterceptor {
     static Header getFilteredRequestHeader(Exchange exc) {
         Header requestHeader = new Header();
         for (HeaderField field : exc.getRequest().getHeader().getAllHeaderFields()) {
-            if (ALLOWED_REQUEST_HEADERS.stream().anyMatch(h -> h.equalsIgnoreCase(field.getHeaderName().getName()))) {
-                requestHeader.add(field);
-            }
+            requestHeader.add(field.getHeaderName().getName(), field.getValue());
+        }
+        // Removes body-related headers when no body is present
+        if(!methodShouldHaveBody(exc.getRequest().getMethod())) {
+            requestHeader.removeFields(CONTENT_TYPE);
+            requestHeader.removeFields(CONTENT_LENGTH);
+            requestHeader.removeFields(TRANSFER_ENCODING);
+            requestHeader.removeFields(CONTENT_LENGTH);
         }
         return requestHeader;
     }
