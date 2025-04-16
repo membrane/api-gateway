@@ -72,7 +72,6 @@ public class CallInterceptor extends AbstractExchangeExpressionInterceptor {
         final Exchange newExc = createNewExchange(dest, getNewRequest(exc));
 
         try (HttpClient client = new HttpClient()) {
-            System.out.println("newExc = " + newExc.getRequest());
             client.call(newExc);
         } catch (Exception e) {
             log.error("Error during HTTP call to {}: {}", dest, e.getMessage(), e);
