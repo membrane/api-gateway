@@ -13,32 +13,34 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.flow;
 
-import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.annot.MCAttribute;
+import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.annot.Required;
+import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.http.HeaderField;
 import com.predic8.membrane.core.http.Request;
-import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.interceptor.lang.*;
+import com.predic8.membrane.core.interceptor.Outcome;
+import com.predic8.membrane.core.interceptor.lang.AbstractExchangeExpressionInterceptor;
 import com.predic8.membrane.core.transport.http.HttpClient;
-import org.jetbrains.annotations.*;
-import org.slf4j.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.Arrays;
+import java.util.List;
 
-import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
+import static com.predic8.membrane.core.exceptions.ProblemDetails.internal;
 import static com.predic8.membrane.core.http.Header.*;
-import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
 import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
-import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 import static java.util.Collections.singletonList;
 
 @MCElement(name = "call")
 public class CallInterceptor extends AbstractExchangeExpressionInterceptor {
 
-    private static final Logger log = LoggerFactory.getLogger(CallInterceptor.class.getName());
-
+    private static final Logger log = LoggerFactory.getLogger(CallInterceptor.class);
 
     /**
      * These headers are filtered out from the response of a called resource
@@ -72,14 +74,15 @@ public class CallInterceptor extends AbstractExchangeExpressionInterceptor {
     }
 
     private Outcome handleInternal(Exchange exc) {
-        String dest = exchangeExpression.evaluate(exc, REQUEST, String.class);
+        final String dest = exchangeExpression.evaluate(exc, REQUEST, String.class);
         log.debug("Calling {}", dest);
 
-        Exchange newExc = getNewExchange(dest, getNewRequest(exc));
+        final Exchange newExc = createNewExchange(dest, getNewRequest(exc));
 
-        try(HttpClient client = new HttpClient()) {
+        try (HttpClient client = new HttpClient()) {
             client.call(newExc);
         } catch (Exception e) {
+            log.error("Error during HTTP call to {}: {}", dest, e.getMessage(), e);
             return ABORT;
         }
 
@@ -88,8 +91,8 @@ public class CallInterceptor extends AbstractExchangeExpressionInterceptor {
             copyHeadersFromResponseToRequest(newExc, exc);
             return CONTINUE;
         } catch (Exception e) {
-            log.error("",e);
-            internal(router.isProduction(),getDisplayName())
+            log.error("Error processing response from {}: {}", dest, e.getMessage(), e);
+            internal(router.isProduction(), getDisplayName())
                     .addSubSee("internal-calling")
                     .detail("Internal call")
                     .exception(e)
@@ -98,37 +101,40 @@ public class CallInterceptor extends AbstractExchangeExpressionInterceptor {
         }
     }
 
-    private Request getNewRequest(Exchange exc) {
-        Request request = new Request.Builder()
-                .method(exc.getRequest().getMethod())
-                .header(getRequestHeader(exc))
-                .build();
-        setRequestBody(request, exc);
-        return request;
+    private Request getNewRequest(Exchange exchange) {
+        Request.Builder builder = new Request.Builder()
+                .method(exchange.getRequest().getMethod())
+                .header(getFilteredRequestHeader(exchange));
+        setRequestBody(builder, exchange);
+        return builder.build();
     }
 
-    private static @NotNull Exchange getNewExchange(String dest, Request request) {
+    private static Exchange createNewExchange(String dest, Request request) {
         Exchange newExc = new Exchange(null);
         newExc.setDestinations(singletonList(dest));
         newExc.setRequest(request);
         return newExc;
     }
 
-    private void setRequestBody(Request request, Exchange exc) {
-        if (!methodShouldHaveBody(exc.getRequest().getMethod()))
+    private static void setRequestBody(Request.Builder builder, Exchange exchange) {
+        if (!methodShouldHaveBody(exchange.getRequest().getMethod())) {
             return;
+        }
         try {
-            request.setBodyContent(exc.getRequest().getBody().getContent());
+            builder.body(exchange.getRequest().getBody().getContent());
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            throw new RuntimeException("Error setting request body", e);
         }
     }
 
     private static boolean methodShouldHaveBody(String method) {
-        return method.equals("POST") ||  method.equals("PUT") || method.equals("PATCH");
+        return "POST".equals(method) || "PUT".equals(method) || "PATCH".equals(method);
     }
 
-    private Header getRequestHeader(Exchange exc) {
+    /**
+     * Filters and returns the request headers relevant for the outgoing request.
+     */
+    private Header getFilteredRequestHeader(Exchange exc) {
         Header requestHeader = new Header();
         for (HeaderField field : exc.getRequest().getHeader().getAllHeaderFields()) {
             if (ALLOWED_REQUEST_HEADERS.stream().anyMatch(h -> h.equalsIgnoreCase(field.getHeaderName().getName()))) {
