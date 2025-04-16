@@ -18,11 +18,15 @@ import com.predic8.membrane.core.http.*;
 import org.junit.jupiter.api.*;
 
 import java.net.*;
+import java.util.Arrays;
+import java.util.List;
 
 import static com.predic8.membrane.core.http.Header.*;
+import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
 import static com.predic8.membrane.core.interceptor.flow.CallInterceptor.copyHeadersFromResponseToRequest;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
+import static com.predic8.membrane.core.interceptor.flow.CallInterceptor.getFilteredRequestHeader;
+import static org.bson.assertions.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 class CallInterceptorTest {
 
@@ -41,11 +45,31 @@ class CallInterceptorTest {
                 .header(SERVER, "dummy")
                 .header("X-FOO", "42").build());
 
-        copyHeadersFromResponseToRequest(exc);
+        copyHeadersFromResponseToRequest(exc, exc);
 
         assertEquals("42",exc.getRequest().getHeader().getFirstValue("X-FOO"));
         assertNull(exc.getRequest().getHeader().getFirstValue(TRANSFER_ENCODING));
         assertNull(exc.getRequest().getHeader().getFirstValue(CONTENT_ENCODING));
         assertNull(exc.getRequest().getHeader().getFirstValue(SERVER));
     }
+
+    @Test
+    public void testGetFilteredRequestHeader() throws URISyntaxException {
+        exc.setRequest(Request.get("/foo")
+                .header(AUTHORIZATION, "Bearer token")
+                .header(ACCEPT, APPLICATION_JSON)
+                .header("X-Test", "test value")
+                .header("Random", "random").build()
+        );
+
+
+        Header filteredHeader = getFilteredRequestHeader(exc);
+
+        assertEquals(2, filteredHeader.getAllHeaderFields().length);
+        assertNull(filteredHeader.getFirstValue("X-Test"));
+        assertNull(filteredHeader.getFirstValue("Random"));
+        assertNotNull(filteredHeader.getFirstValue(AUTHORIZATION));
+        assertNotNull(filteredHeader.getFirstValue(ACCEPT));
+    }
+
 }

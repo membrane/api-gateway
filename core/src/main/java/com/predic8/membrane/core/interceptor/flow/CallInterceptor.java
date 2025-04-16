@@ -134,7 +134,7 @@ public class CallInterceptor extends AbstractExchangeExpressionInterceptor {
     /**
      * Filters and returns the request headers relevant for the outgoing request.
      */
-    private Header getFilteredRequestHeader(Exchange exc) {
+    static Header getFilteredRequestHeader(Exchange exc) {
         Header requestHeader = new Header();
         for (HeaderField field : exc.getRequest().getHeader().getAllHeaderFields()) {
             if (ALLOWED_REQUEST_HEADERS.stream().anyMatch(h -> h.equalsIgnoreCase(field.getHeaderName().getName()))) {
