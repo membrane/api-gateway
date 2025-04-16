@@ -19,6 +19,8 @@ import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.time.*;
 import java.util.*;
@@ -27,6 +29,8 @@ import java.util.stream.*;
 
 @MCElement(name = "inMemorySessionManager2")
 public class InMemorySessionManager extends SessionManager {
+
+    private static final Logger log = LoggerFactory.getLogger(InMemorySessionManager.class);
 
     final static String ID_NAME = "_in_memory_session_id";
     Cache<String, Session> sessions;
@@ -42,9 +46,12 @@ public class InMemorySessionManager extends SessionManager {
 
     @Override
     protected Map<String, Object> cookieValueToAttributes(String cookie) {
+        log.info("inMemorySessionManager getting cookie: {}", cookie);
         try {
             synchronized (sessions) {
-                return sessions.get(cookie.split("=true")[0], () -> new Session(usernameKeyName, new HashMap<>())).get();
+                Map<String, Object> result = sessions.get(cookie.split("=true")[0], () -> new Session(usernameKeyName, new HashMap<>())).get();
+                result.forEach((key, value) -> log.info("inMemorySessionManager {} : {}", key, value));
+                return result;
             }
         } catch (ExecutionException e) {
             throw new RuntimeException(e);
