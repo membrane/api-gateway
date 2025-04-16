@@ -15,12 +15,16 @@ package com.predic8.membrane.core.interceptor.flow;
 
 import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.Header;
+import com.predic8.membrane.core.http.HeaderField;
+import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.interceptor.lang.*;
-import com.predic8.membrane.core.lang.*;
+import com.predic8.membrane.core.transport.http.HttpClient;
 import org.jetbrains.annotations.*;
 import org.slf4j.*;
 
+import java.io.IOException;
 import java.util.*;
 
 import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
@@ -28,13 +32,13 @@ import static com.predic8.membrane.core.http.Header.*;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
 import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static java.util.Collections.singletonList;
 
 @MCElement(name = "call")
 public class CallInterceptor extends AbstractExchangeExpressionInterceptor {
 
     private static final Logger log = LoggerFactory.getLogger(CallInterceptor.class.getName());
 
-    private static HTTPClientInterceptor hcInterceptor;
 
     /**
      * These headers are filtered out from the response of a called resource
@@ -44,11 +48,17 @@ public class CallInterceptor extends AbstractExchangeExpressionInterceptor {
             SERVER, TRANSFER_ENCODING, CONTENT_ENCODING
     );
 
+    /**
+     * These headers are considered relevant for a call
+     * and will be copied from the original exchange if present.
+     */
+    private static final List<String> ALLOWED_REQUEST_HEADERS = Arrays.asList(
+            AUTHORIZATION, ACCEPT, CONTENT_TYPE, COOKIE, USER_AGENT, ORIGIN
+    );
+
     @Override
     public void init() {
         super.init();
-        hcInterceptor = new HTTPClientInterceptor();
-        hcInterceptor.init(router);
     }
 
     @Override
@@ -62,33 +72,20 @@ public class CallInterceptor extends AbstractExchangeExpressionInterceptor {
     }
 
     private Outcome handleInternal(Exchange exc) {
-        List<String> oldDest = exc.getDestinations();
-        Outcome outcome = doCall(exc);
-        exc.setDestinations(oldDest);
-        return outcome;
-    }
+        String dest = exchangeExpression.evaluate(exc, REQUEST, String.class);
+        log.debug("Calling {}", dest);
 
-    private @NotNull Outcome doCall(Exchange exc) {
-        try {
-            exc.setDestinations(List.of(exchangeExpression.evaluate(exc, REQUEST, String.class)));
-        } catch (ExchangeExpressionException e) {
-            e.provideDetails(
-                    internal(getRouter().isProduction(),getDisplayName()))
-                    .addSubSee("expression-evaluation")
-                    .buildAndSetResponse(exc);
+        Exchange newExc = getNewExchange(dest, getNewRequest(exc));
+
+        try(HttpClient client = new HttpClient()) {
+            client.call(newExc);
+        } catch (Exception e) {
             return ABORT;
         }
-        log.debug("Calling {}", exc.getDestinations());
+
         try {
-            Outcome outcome = hcInterceptor.handleRequest(exc);
-            if (outcome == ABORT) {
-                log.warn("Aborting. Error calling {}", exc.getDestinations());
-                return ABORT;
-            }
-            exc.getRequest().setBodyContent(exc.getResponse().getBody().getContent()); // TODO Optimize?
-            copyHeadersFromResponseToRequest(exc);
-            exc.getRequest().getHeader().setContentType(exc.getResponse().getHeader().getContentType());
-            log.debug("Outcome of call {}", outcome);
+            exc.getRequest().setBodyContent(newExc.getResponse().getBody().getContent());
+            copyHeadersFromResponseToRequest(newExc, exc);
             return CONTINUE;
         } catch (Exception e) {
             log.error("",e);
@@ -101,8 +98,48 @@ public class CallInterceptor extends AbstractExchangeExpressionInterceptor {
         }
     }
 
-    static void copyHeadersFromResponseToRequest(Exchange exc) {
-        Arrays.stream(exc.getResponse().getHeader().getAllHeaderFields()).forEach(headerField -> {
+    private Request getNewRequest(Exchange exc) {
+        Request request = new Request.Builder()
+                .method(exc.getRequest().getMethod())
+                .header(getRequestHeader(exc))
+                .build();
+        setRequestBody(request, exc);
+        return request;
+    }
+
+    private static @NotNull Exchange getNewExchange(String dest, Request request) {
+        Exchange newExc = new Exchange(null);
+        newExc.setDestinations(singletonList(dest));
+        newExc.setRequest(request);
+        return newExc;
+    }
+
+    private void setRequestBody(Request request, Exchange exc) {
+        if (!methodShouldHaveBody(exc.getRequest().getMethod()))
+            return;
+        try {
+            request.setBodyContent(exc.getRequest().getBody().getContent());
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private static boolean methodShouldHaveBody(String method) {
+        return method.equals("POST") ||  method.equals("PUT") || method.equals("PATCH");
+    }
+
+    private Header getRequestHeader(Exchange exc) {
+        Header requestHeader = new Header();
+        for (HeaderField field : exc.getRequest().getHeader().getAllHeaderFields()) {
+            if (ALLOWED_REQUEST_HEADERS.stream().anyMatch(h -> h.equalsIgnoreCase(field.getHeaderName().getName()))) {
+                requestHeader.add(field);
+            }
+        }
+        return requestHeader;
+    }
+
+    static void copyHeadersFromResponseToRequest(Exchange newExc, Exchange exc) {
+        Arrays.stream(newExc.getResponse().getHeader().getAllHeaderFields()).forEach(headerField -> {
             // Filter out, what is definitely not needed like Server:
             for (String rmHeader : REMOVE_HEADERS) {
                 if (headerField.getHeaderName().getName().equalsIgnoreCase(rmHeader))
