@@ -5,6 +5,25 @@
 					    http://membrane-soa.org/proxies/1/ http://membrane-soa.org/schemas/proxies-1.xsd http://www.springframework.org/schema/lang http://www.springframework.org/schema/lang/spring-lang.xsd">
 
     <router>
+
+        <api port="2001">
+            <request>
+                <call url="https://api.predic8.de/shop/v2/products/14"/>
+                <!-- Extracts name and price from the JSON response and add 1 to the price -->
+                <setProperty name="name" value="${$.name}" language="jsonpath"/>
+                <setProperty name="price" value="${jsonPath('$.price')+1}"/>
+                <!-- Creates a new JSON body with the name and modified price -->
+                <template contentType="application/json">
+                    {
+                    "name": "${property.name}",
+                    "price": ${property.price}
+                    }
+                </template>
+                <call method="POST" url="https://api.predic8.de/shop/v2/products"/>
+            </request>
+            <return />
+        </api>
+
         <api port="2000">
             <!-- Call internal API to get API key -->
             <call url="http://localhost:3000" />

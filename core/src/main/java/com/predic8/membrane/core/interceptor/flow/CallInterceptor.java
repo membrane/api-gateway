@@ -30,6 +30,7 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 
+import static com.google.api.client.http.HttpMethods.*;
 import static com.predic8.membrane.core.exceptions.ProblemDetails.internal;
 import static com.predic8.membrane.core.http.Header.*;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
@@ -49,6 +50,8 @@ public class CallInterceptor extends AbstractExchangeExpressionInterceptor {
     private static final List<String> REMOVE_HEADERS = List.of(
             SERVER, TRANSFER_ENCODING, CONTENT_ENCODING
     );
+
+    private String method = GET;
 
     @Override
     public void init() {
@@ -95,7 +98,7 @@ public class CallInterceptor extends AbstractExchangeExpressionInterceptor {
 
     private Request getNewRequest(Exchange exchange) {
         Request.Builder builder = new Request.Builder()
-                .method(exchange.getRequest().getMethod())
+                .method(method)
                 .header(getFilteredRequestHeader(exchange));
         setRequestBody(builder, exchange);
         return builder.build();
@@ -108,8 +111,8 @@ public class CallInterceptor extends AbstractExchangeExpressionInterceptor {
         return newExc;
     }
 
-    private static void setRequestBody(Request.Builder builder, Exchange exchange) {
-        if (!methodShouldHaveBody(exchange.getRequest().getMethod())) {
+    private void setRequestBody(Request.Builder builder, Exchange exchange) {
+        if (!methodShouldHaveBody(method)) {
             return;
         }
         try {
@@ -120,19 +123,19 @@ public class CallInterceptor extends AbstractExchangeExpressionInterceptor {
     }
 
     private static boolean methodShouldHaveBody(String method) {
-        return "POST".equals(method) || "PUT".equals(method) || "PATCH".equals(method);
+        return method.equals(POST) || method.equals(PUT) || method.equals(PATCH);
     }
 
     /**
      * Filters and returns the request headers relevant for the outgoing request.
      */
-    static Header getFilteredRequestHeader(Exchange exc) {
+    Header getFilteredRequestHeader(Exchange exc) {
         Header requestHeader = new Header();
         for (HeaderField field : exc.getRequest().getHeader().getAllHeaderFields()) {
             requestHeader.add(field.getHeaderName().getName(), field.getValue());
         }
         // Removes body-related headers when no body is present
-        if(!methodShouldHaveBody(exc.getRequest().getMethod())) {
+        if(!methodShouldHaveBody(method)) {
             requestHeader.removeFields(CONTENT_TYPE);
             requestHeader.removeFields(CONTENT_LENGTH);
             requestHeader.removeFields(TRANSFER_ENCODING);
@@ -153,9 +156,8 @@ public class CallInterceptor extends AbstractExchangeExpressionInterceptor {
     }
 
     /**
-     * @default com.predic8.membrane.core.interceptor.log.LogInterceptor
-     * @description Sets the category of the logged message.
-     * @example Membrane
+     * @description Sets the url of the call
+     * @example "https://api.predic8.de"
      */
     @SuppressWarnings("unused")
     @MCAttribute
@@ -166,6 +168,20 @@ public class CallInterceptor extends AbstractExchangeExpressionInterceptor {
 
     public String getUrl() {
         return expression;
+    }
+
+    /**
+     * @default GET
+     * @description Sets the method for the call
+     * @example GET, POST, PUT, ...
+     */
+    @MCAttribute
+    public void setMethod(String method) {
+        this.method = method;
+    }
+
+    public String getMethod() {
+        return method;
     }
 
     @Override
