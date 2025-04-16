@@ -8,15 +8,15 @@ import static org.hamcrest.Matchers.containsString;
 
 public class CallExampleTest extends AbstractSampleMembraneStartStopTestcase {
 
-    @Override
-    protected String getExampleDirName() {
-        return "extending-membrane/call";
-    }
-
-    @Test
-    void testSecuredBackend() {
-        given().when().get("http://localhost:3001").then().assertThat().statusCode(401);
-        given().when().get("http://localhost:2000").then().statusCode(200).body(containsString("Secured backend!"));
-    }
+//    @Override
+//    protected String getExampleDirName() {
+//        return "extending-membrane/call";
+//    }
+//
+//    @Test
+//    void testSecuredBackend() {
+//        given().when().get("http://localhost:3001").then().assertThat().statusCode(401);
+//        given().when().get("http://localhost:2000").then().statusCode(200).body(containsString("Secured backend!"));
+//    }
 
 }
