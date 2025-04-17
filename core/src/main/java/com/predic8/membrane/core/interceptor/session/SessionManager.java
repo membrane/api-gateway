@@ -193,6 +193,8 @@ public abstract class SessionManager {
     }
 
     private Stream<HeaderField> getAllRelevantSetCookieHeaders(Exchange exc) {
+        var caller = StackWalker.getInstance().walk(s -> s.skip(1).map(StackWalker.StackFrame::getMethodName).limit(1).toList()).getFirst();
+        log.info("getAllRelevantSetCookieHeaders from {}", caller);
         return Arrays.stream(exc.getResponse().getHeader().getAllHeaderFields())
                 .filter(hf -> hf.getHeaderName().toString().contains(Header.SET_COOKIE))
                 .filter(hf -> hf.getValue().contains("=true"))
@@ -282,7 +284,6 @@ public abstract class SessionManager {
 
         Map<String, Map<String, Object>> validCookiesAsListOfMaps = convertValidCookiesToAttributes(exc);
         Session session = new Session(usernameKeyName, mergeCookies(new ArrayList<>(validCookiesAsListOfMaps.values())));
-        log.info("Session created: {}", session.getUsernameKeyName());
         session.content.forEach((key, value) -> log.info(" {}: {}", key, value));
 
         if(validCookiesAsListOfMaps.size() == 1)
