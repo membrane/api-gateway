@@ -142,7 +142,7 @@ public abstract class SessionManager {
     }
 
     private void handleSetCookieHeaderForResponse(Exchange exc, Session session) throws Exception {
-        log.info("handleSetCookieHeaderForResponse from {}", getCallingMethod(2));
+        log.info("\n\n-------\nhandleSetCookieHeaderForResponse from {}", getCallingMethod(4));
         log.info("RequestURI {}", exc.getRequestURI());
         session.getContent().forEach((key, value) -> log.info("* Session {}: {}", key, value));
         Optional<Object> originalCookieValueAtBeginning = Optional.ofNullable(exc.getProperty(SESSION_COOKIE_ORIGINAL));
@@ -177,7 +177,7 @@ public abstract class SessionManager {
         Optional<HeaderField> setCookie = getAllRelevantSetCookieHeaders(exc).filter(e -> e.getValue().contains(currentSessionCookieValue)).findFirst();
         if(setCookie.isPresent())
             synchronized (cookieExpireCache) {
-                log.info("Caching session cookie for: {}", setCookie.get().getValue());
+                log.info("Caching session cookie: {}", setCookie.get().getValue());
                 cookieExpireCache.put(currentSessionCookieValue, setCookie.get().getValue());
             }
     }
@@ -195,12 +195,12 @@ public abstract class SessionManager {
     }
 
     private Stream<HeaderField> getAllRelevantSetCookieHeaders(Exchange exc) {
-        log.info("getAllRelevantSetCookieHeaders from {}", getCallingMethod(1));
+//        log.info("getAllRelevantSetCookieHeaders from {}", getCallingMethod(1));
         return Arrays.stream(exc.getResponse().getHeader().getAllHeaderFields())
                 .filter(hf -> hf.getHeaderName().toString().contains(Header.SET_COOKIE))
                 .filter(hf -> hf.getValue().contains("=true"))
-                .filter(hf -> isValidCookieForThisSessionManager(Arrays.stream(hf.getValue().split(";")).filter(s -> s.contains("=true")).findFirst().get()))
-                .peek(hf -> log.info("Found {} header: {}", hf.getHeaderName(), hf.getValue()));
+                .filter(hf -> isValidCookieForThisSessionManager(Arrays.stream(hf.getValue().split(";")).filter(s -> s.contains("=true")).findFirst().get()));
+//                .peek(hf -> log.info("Found {} header: {}", hf.getHeaderName(), hf.getValue()));
     }
 
     private void removeRefreshIfNoChangeInExpireTime(Exchange exc, Map<String, List<String>> setCookieHeaders) {
@@ -335,7 +335,7 @@ public abstract class SessionManager {
                 sameSite != null ? "SameSite="+sameSite : null
         )
                 .filter(Objects::nonNull)
-                .peek(cookie -> log.info("Cookie created: {}", cookie))
+//                .peek(cookie -> log.info("Cookie created: {}", cookie))
                 .collect(Collectors.toList());
     }
 

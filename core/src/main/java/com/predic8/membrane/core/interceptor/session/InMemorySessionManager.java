@@ -76,9 +76,9 @@ public class InMemorySessionManager extends SessionManager {
     }
 
     private void addSessionToCache(Session[] session) {
-        log.info("addSessionToCache");
+        log.info("storing Session");
         Arrays.stream(session).forEach(s -> {
-            s.content.forEach((key, value) -> log.info(" {} : {}", key, value));
+            s.content.forEach((key, value) -> log.info("* {} : {}", key, value));
             sessions.put(s.get(ID_NAME), s);
         });
     }
