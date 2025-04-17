@@ -1,16 +1,15 @@
-# CORS
+# Cross-Origin Resource Sharing
 
-A brief overview of using the CORS interceptor.
-For an in-depth explanation of CORS, check out
-the [CORS Guide for API Developers](https://www.membrane-api.io/cors-api-gateway.html).
+The usage of APIs in web sides is restricted by the Cross-Origin restrictions of modern Web browsers. To allow calling APIs even with POST, HTTP headers or even credentials the addition of special CORS headers is needed. 
 
-1. Set up the CORS interceptor.
+The cors plugin makes it easy to add those headers and to answer preflight OPTIONS requests made by the browser. 
 
-   For advanced configuration options, refer to the official
-   documentation: [https://www.membrane-api.io/docs/current/cors.html](https://www.membrane-api.io/docs/current/cors.html)
+For an in-depth explanation of using CORS for APIs, check out the [CORS Guide for API Developers](https://www.membrane-api.io/cors-api-gateway.html).
+
+1. Set up CORS with Membrane
 
 ```xml
-<api name="cors" port="2000">
+<api port="2000">
     <cors origins="http://localhost:2001" methods="GET, POST"/>
     <target host="localhost" port="3000"/>
 </api>
@@ -50,3 +49,5 @@ Serves the HTML test page via a simple web server.
        response returned.
     5. The text "foo" should be clearly shown in the text field.
     6. CORS headers should be visible in the response.
+
+For all configuration options see [CORS](https://www.membrane-api.io/docs/current/cors.html) at the Membrane reference.

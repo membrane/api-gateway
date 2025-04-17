@@ -5,18 +5,19 @@
                 http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.2.xsd
                 http://membrane-soa.org/proxies/1/ http://membrane-soa.org/schemas/proxies-1.xsd">
     <router>
-        <api name="cors" port="2000">
-            <cors origins="http://localhost:2001" methods="GET, POST"/>
-            <target host="localhost" port="3000"/>
+
+        <api port="2001">
+            <cors allowAll="true"/> <!-- Handles preflight requests and adds CORS headers -->
+            <static>Hello from API 1!</static>
+            <return/>
         </api>
 
-        <api port="3000">
-            <static>foo</static>
-            <return statusCode="210"/>
+        <api port="2002">
+            <cors origins="null *"
+                  methods="GET,POST"
+                  headers="Content-Type,X-Foo"/> 
+            <return/>
         </api>
 
-        <api name="html" port="2001">
-            <webServer docBase="." />
-        </api>
     </router>
 </spring:beans>

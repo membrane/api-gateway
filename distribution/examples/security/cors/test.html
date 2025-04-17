@@ -10,7 +10,7 @@
 <div class="container">
     <h2 style="text-align: center;">API Request Example</h2>
     <button onclick="handleRequest()">Call API with Credentials</button>
-    <div class="response" id="responseText">(No response yet)</div>
+    Response: <div class="response" id="response">(No response yet)</div>
 </div>
 
 <script>
@@ -19,13 +19,13 @@
             method: "POST",
             body: JSON.stringify({ test: "test" }),
         })
-            .then(response => response.text())
+            .then(res => res.text())
             .then(data => {
-                document.getElementById("responseText").textContent = "Response: " + data;
+                document.getElementById("response").textContent = data;
             })
-            .catch(error => {
-                console.error("Request failed:", error);
-                document.getElementById("responseText").textContent = "Request failed (check console)";
+            .catch(err => {
+                console.error("Request failed:", err);
+                document.getElementById("response").textContent = "failed (check console)";
             });
     }
 </script>
