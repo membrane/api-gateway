@@ -105,10 +105,10 @@ public class CallInterceptor extends AbstractExchangeExpressionInterceptor {
     }
 
     private static Exchange createNewExchange(String dest, Request request) {
-        Exchange newExc = new Exchange(null);
-        newExc.setDestinations(singletonList(dest));
-        newExc.setRequest(request);
-        return newExc;
+        Exchange exc = new Exchange(null);
+        exc.setDestinations(singletonList(dest));
+        exc.setRequest(request);
+        return exc;
     }
 
     private void setRequestBody(Request.Builder builder, Exchange exchange) {
@@ -132,6 +132,7 @@ public class CallInterceptor extends AbstractExchangeExpressionInterceptor {
     Header getFilteredRequestHeader(Exchange exc) {
         Header requestHeader = new Header();
         for (HeaderField field : exc.getRequest().getHeader().getAllHeaderFields()) {
+            // Not using a reference on purpose
             requestHeader.add(field.getHeaderName().getName(), field.getValue());
         }
         // Removes body-related headers when no body is present
@@ -144,14 +145,14 @@ public class CallInterceptor extends AbstractExchangeExpressionInterceptor {
         return requestHeader;
     }
 
-    static void copyHeadersFromResponseToRequest(Exchange newExc, Exchange exc) {
-        Arrays.stream(newExc.getResponse().getHeader().getAllHeaderFields()).forEach(headerField -> {
+    static void copyHeadersFromResponseToRequest(Exchange responseExc, Exchange originalExc) {
+        Arrays.stream(responseExc.getResponse().getHeader().getAllHeaderFields()).forEach(headerField -> {
             // Filter out, what is definitely not needed like Server:
             for (String rmHeader : REMOVE_HEADERS) {
                 if (headerField.getHeaderName().getName().equalsIgnoreCase(rmHeader))
                     return;
             }
-            exc.getRequest().getHeader().add(headerField);
+            originalExc.getRequest().getHeader().add(headerField);
         });
     }
 
