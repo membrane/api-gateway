@@ -46,11 +46,11 @@ public class InMemorySessionManager extends SessionManager {
 
     @Override
     protected Map<String, Object> cookieValueToAttributes(String cookie) {
-        log.info("inMemorySessionManager getting cookie: {}", cookie);
+        log.info("Getting cookie: {}", cookie);
         try {
             synchronized (sessions) {
                 Map<String, Object> result = sessions.get(cookie.split("=true")[0], () -> new Session(usernameKeyName, new HashMap<>())).get();
-                result.forEach((key, value) -> log.info("cookieValueToAttributes {} : {}", key, value));
+                result.forEach((key, value) -> log.info("* {} : {}", key, value));
                 return result;
             }
         } catch (ExecutionException e) {

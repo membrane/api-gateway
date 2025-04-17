@@ -141,10 +141,10 @@ public abstract class SessionManager {
             exc.setResponse(Response.ok().build());
     }
 
-
     private void handleSetCookieHeaderForResponse(Exchange exc, Session session) throws Exception {
+        log.info("handleSetCookieHeaderForResponse from {}", getCallingMethod(2));
         log.info("RequestURI {}", exc.getRequestURI());
-        log.info("Session {}", session.getUsernameKeyName());
+        session.getContent().forEach((key, value) -> log.info("* Session {}: {}", key, value));
         Optional<Object> originalCookieValueAtBeginning = Optional.ofNullable(exc.getProperty(SESSION_COOKIE_ORIGINAL));
 
         if (originalCookieValueAtBeginning.isEmpty() && !session.isDirty)
@@ -195,8 +195,7 @@ public abstract class SessionManager {
     }
 
     private Stream<HeaderField> getAllRelevantSetCookieHeaders(Exchange exc) {
-        var caller = StackWalker.getInstance().walk(s -> s.skip(1).map(StackWalker.StackFrame::getMethodName).limit(1).toList()).getFirst();
-        log.info("getAllRelevantSetCookieHeaders from {}", caller);
+        log.info("getAllRelevantSetCookieHeaders from {}", getCallingMethod(1));
         return Arrays.stream(exc.getResponse().getHeader().getAllHeaderFields())
                 .filter(hf -> hf.getHeaderName().toString().contains(Header.SET_COOKIE))
                 .filter(hf -> hf.getValue().contains("=true"))
@@ -357,15 +356,14 @@ public abstract class SessionManager {
                 sameSite != null ? "SameSite="+sameSite : null
         )
                 .filter(Objects::nonNull)
-                .peek(attr -> log.info("Invalidation attribute: {}", attr))
+//                .peek(attr -> log.info("Invalidation attribute: {}", attr))
                 .collect(Collectors.toList());
     }
 
 
     protected Stream<String> getCookies(Exchange exc) {
-        var caller = StackWalker.getInstance().walk(s -> s.skip(1).map(StackWalker.StackFrame::getMethodName).limit(2).collect(Collectors.joining(";")));
-        log.info("getCookies from {}", caller);
-        return exc.getRequest().getHeader().getValues(new HeaderName(COOKIE)).stream().map(s -> s.getValue().split(";")).flatMap(Arrays::stream).map(String::trim).peek(cookie -> log.info("getCookies: {}", cookie));
+//        log.info("getCookies from {}", getCallingMethod(2));
+        return exc.getRequest().getHeader().getValues(new HeaderName(COOKIE)).stream().map(s -> s.getValue().split(";")).flatMap(Arrays::stream).map(String::trim); //.peek(cookie -> log.info("getCookies: {}", cookie));
     }
 
     public void removeSession(Exchange exc) {
@@ -467,5 +465,9 @@ public abstract class SessionManager {
     public SessionManager setSessionCookie(boolean sessionCookie) {
         this.sessionCookie = sessionCookie;
         return this;
+    }
+
+    private String getCallingMethod(int depth) {
+        return StackWalker.getInstance().walk(s -> s.skip(2).map(StackWalker.StackFrame::getMethodName).limit(depth).collect(Collectors.joining(";")));
     }
 }
