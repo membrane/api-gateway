@@ -81,7 +81,7 @@ public class SpELExchangeEvaluationContext extends StandardEvaluationContext {
         addPropertyAccessor(new AwareExchangePropertyAccessor());
 
         // Enables Membrane functions in SpEL scripts like 'hasScopes("admin")'
-        setMethodResolvers(List.of(new BuiltInFunctionResolver()));
+        addMethodResolver(new BuiltInFunctionResolver());
 
         addTypeConverters();
     }
