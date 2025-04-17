@@ -143,6 +143,8 @@ public abstract class SessionManager {
 
 
     private void handleSetCookieHeaderForResponse(Exchange exc, Session session) throws Exception {
+        log.info("RequestURI {}", exc.getRequestURI());
+        log.info("Session {}", session.getUsernameKeyName());
         Optional<Object> originalCookieValueAtBeginning = Optional.ofNullable(exc.getProperty(SESSION_COOKIE_ORIGINAL));
 
         if (originalCookieValueAtBeginning.isEmpty() && !session.isDirty)
