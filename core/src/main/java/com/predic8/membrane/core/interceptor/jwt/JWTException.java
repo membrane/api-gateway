@@ -15,7 +15,14 @@ package com.predic8.membrane.core.interceptor.jwt;
 
 public class JWTException extends Exception {
 
-    public JWTException(String message) {
+    private final String id;
+
+    public JWTException(String message, String id) {
         super(message);
+        this.id = id;
+    }
+
+    public String getId() {
+        return id;
     }
 }

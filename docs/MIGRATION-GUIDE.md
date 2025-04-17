@@ -65,3 +65,7 @@ Default naming scheme for `<serviceProxys>` has changed. This might affect exist
 
 - `Interceptor.handleRquest()` and `handleRquest()` aren't throwing any exception anymore
 - `ConditionalInterceptor` is renamed in `IfInterceptor`
+
+## `jwtSign`
+- `expiryTime` has been renamed to `expirySeconds`. 
+- HTTP response in case of JWT validation failure was changed to Problem JSON.

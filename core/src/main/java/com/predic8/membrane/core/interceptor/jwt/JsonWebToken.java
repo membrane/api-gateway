@@ -19,6 +19,10 @@ import org.slf4j.*;
 import java.io.*;
 import java.util.*;
 
+import static com.fasterxml.jackson.core.JsonParser.Feature.STRICT_DUPLICATE_DETECTION;
+import static com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_READING_DUP_TREE_KEY;
+import static com.predic8.membrane.core.interceptor.jwt.JwtAuthInterceptor.*;
+
 public class JsonWebToken {
 
     private static final Logger log = LoggerFactory.getLogger(JsonWebToken.class.getName());
@@ -32,7 +36,7 @@ public class JsonWebToken {
             if (data.containsKey(key)) {
                 return data.get(key);
             }
-            throw new JWTException(ERROR_JWT_VALUE_NOT_PRESENT(key));
+            throw new JWTException(ERROR_JWT_VALUE_NOT_PRESENT(key), ERROR_JWT_VALUE_NOT_PRESENT_ID);
         }
     }
 
@@ -54,29 +58,24 @@ public class JsonWebToken {
     private final Header header;
     private final Payload payload;
 
-    public static final String ERROR_MALFORMED_COMPACT_SERIALIZATION = "JWTs compact serialization not valid";
-    public static final String ERROR_DECODED_HEADER_NOT_JSON = "JWT header is not valid JSON";
-
-    public static String ERROR_JWT_VALUE_NOT_PRESENT(String key) {
-        return "JWT does not contain '" + key + "'";
-    }
+    private static Base64.Decoder decoder = Base64.getUrlDecoder();
+    private static ObjectMapper mapper = new ObjectMapper()
+            .configure(FAIL_ON_READING_DUP_TREE_KEY, true)
+            .configure(STRICT_DUPLICATE_DETECTION, true);
 
     public JsonWebToken(String jwt) throws JWTException {
         var chunks = jwt.split("\\.");
 
         if (chunks.length < 3) {
             log.warn("Less than 3 parts in JWT header: {}", jwt);
-            throw new JWTException(ERROR_MALFORMED_COMPACT_SERIALIZATION);
+            throw new JWTException(ERROR_MALFORMED_COMPACT_SERIALIZATION, ERROR_MALFORMED_COMPACT_SERIALIZATION_ID);
         }
-
-        var decoder = Base64.getUrlDecoder();
-        var mapper = new ObjectMapper();
 
         try {
             this.header = new Header(mapper.readValue(decoder.decode(chunks[0]), Map.class));
             this.payload = new Payload(mapper.readValue(decoder.decode(chunks[1]), Map.class));
         } catch (IOException e) {
-            throw new JWTException(ERROR_DECODED_HEADER_NOT_JSON);
+            throw new JWTException(ERROR_DECODED_HEADER_NOT_JSON, ERROR_DECODED_HEADER_NOT_JSON_ID);
         }
     }
 
