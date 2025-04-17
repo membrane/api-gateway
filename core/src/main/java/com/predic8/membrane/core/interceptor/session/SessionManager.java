@@ -243,7 +243,7 @@ public abstract class SessionManager {
             log.warn("Cookie is larger than 4093 bytes, this will not work some browsers.");
         String setCookieValue = currentSessionCookieValue
                 + ";" + String.join(";", createCookieAttributes(exc));
-        log.info("Setting session cookie for {}: {}", currentSessionCookieValue, setCookieValue);
+        log.info("Setting session cookie: {}", setCookieValue);
         exc.getResponse().getHeader().add(Header.SET_COOKIE, setCookieValue);
     }
 
@@ -361,7 +361,9 @@ public abstract class SessionManager {
 
 
     protected Stream<String> getCookies(Exchange exc) {
-        return exc.getRequest().getHeader().getValues(new HeaderName(COOKIE)).stream().map(s -> s.getValue().split(";")).flatMap(Arrays::stream).map(String::trim).peek(cookie -> log.info("getCookie: {}", cookie));
+        var caller = StackWalker.getInstance().walk(s -> s.skip(1).map(StackWalker.StackFrame::getMethodName).limit(2).collect(Collectors.joining(";")));
+        log.info("getCookies from {}", caller);
+        return exc.getRequest().getHeader().getValues(new HeaderName(COOKIE)).stream().map(s -> s.getValue().split(";")).flatMap(Arrays::stream).map(String::trim).peek(cookie -> log.info("getCookies: {}", cookie));
     }
 
     public void removeSession(Exchange exc) {
