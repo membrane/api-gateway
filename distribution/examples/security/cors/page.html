@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>API Request Example</title>
+    <link rel="stylesheet" href="style.css" type="text/css">
+</head>
+<body>
+
+<div class="container">
+    <h2 style="text-align: center;">CORS API Example</h2>
+    URL:
+    <select>
+        <option id="http://localhost:2000" label="http://localhost:2000">
+            <option id="http://localhost:2001" label="http://localhost:2001">
+    </select>
+
+    <select>
+        <option id="GET" label="GET">
+            <option id="POST" label="POST">
+    </select>
+    Headers:
+    <input type="checkbox" id="headers" name="Content-Type: application/json" value="Content-Type: application/json">Content-Type: application/json
+    <input type="checkbox" id="headers" name="X-Foo: 42" value="X-Foo: 42">X-Foo: 42
+    <button onclick="call()">Call API</button>
+    <div class="response" id="response">No response yet!</div>
+</div>
+
+<p>CORS Sample
+
+    Steps:
+
+    1.)
+    
+    Open developer tools with:
+
+Firefox (F12, Menü/...)
+Chrome
+Safari
+
+    2.) Click on Call
+    3.) Have a look at the requests in the nework tab, the message at the JavaScript console.
+    4.) Have a look the <a href="">proxies.xml</a>
+    5.) Try other calls and configurations.
+</p>
+
+<p></p>
+
+<script>
+    function call() {
+        fetch("http://localhost:2000", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ test: "test" }),
+        })
+            .then(res => res.text())
+            .then(data => {
+                document.getElementById("response").textContent = data;
+            })
+            .catch(err => {
+                console.error("Request failed:", err);
+                document.getElementById("response").textContent = "failed (check console)";
+            });
+    }
+</script>
+
+</body>
+</html>
