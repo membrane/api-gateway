@@ -154,12 +154,18 @@ public abstract class SessionManager {
                     originalCookieValueAtBeginning.get().toString().trim().equals(currentCookieValueOfSession))
                 return;
 
+            Header responseHeader = exc.getResponse().getHeader();
+            responseHeader.getValues(new HeaderName(Header.SET_COOKIE)).forEach(setCookie -> log.info("[PRE] {}", setCookie));
+
             // expires old cookies and sets new cookie for the current session
             setCookieForCurrentSession(exc, currentCookieValueOfSession);
+            responseHeader.getValues(new HeaderName(Header.SET_COOKIE)).forEach(setCookie -> log.info("[POST_SETCURRENT] {}", setCookie));
             setCookieForExpiredSessions(exc, currentCookieValueOfSession);
+            responseHeader.getValues(new HeaderName(Header.SET_COOKIE)).forEach(setCookie -> log.info("[POST_SETEXPIRED] {}", setCookie));
 
             // if old and new session are the same then drop redundant set cookie headers
             dropRedundantCookieHeaders(exc);
+            responseHeader.getValues(new HeaderName(Header.SET_COOKIE)).forEach(setCookie -> log.info("[POST_DROP] {}", setCookie));
 
             cacheSetCookie(exc, currentCookieValueOfSession);
         }
@@ -236,10 +242,7 @@ public abstract class SessionManager {
         String setCookieValue = currentSessionCookieValue
                 + ";" + String.join(";", createCookieAttributes(exc));
         log.info("Setting session cookie for {}: {}", currentSessionCookieValue, setCookieValue);
-        Header responseHeader = exc.getResponse().getHeader();
-        responseHeader.getValues(new HeaderName(Header.SET_COOKIE)).forEach(setCookie -> log.info("[PRE] {}", setCookie));
-        responseHeader.add(Header.SET_COOKIE, setCookieValue);
-        responseHeader.getValues(new HeaderName(Header.SET_COOKIE)).forEach(setCookie -> log.info("[POST] {}", setCookie));
+        exc.getResponse().getHeader().add(Header.SET_COOKIE, setCookieValue);
     }
 
     private void setCookieForExpiredSessions(Exchange exc, String currentSessionCookieValue) {
