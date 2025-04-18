@@ -47,18 +47,32 @@ public class MessageUtil {
 		}
 		return res.getBodyAsStream();
 	}
-
+	
 	public static byte[] getContent(Message res) throws Exception {
-		if (res.isGzip()) {
-			return ByteUtil.getByteArrayData(new GZIPInputStream(res.getBodyAsStream()));
-		} else if (res.isDeflate()) {
-			return ByteUtil.getDecompressedData(res.getBody().getContent());
-		} else if (res.isBrotli()) {
-			return new BrotliInputStream(res.getBodyAsStream()).readAllBytes();
-		}
-		return res.getBody().getContent();
-	}
+		byte[] lReturn;
 
+		if (res.isGzip()) {
+			try (InputStream lInputStream = res.getBodyAsStream();
+				 GZIPInputStream lGZIPInputStream = new GZIPInputStream(lInputStream)) {
+				lReturn = ByteUtil.getByteArrayData(lGZIPInputStream);
+			}
+		}
+		else if (res.isDeflate()) {
+			lReturn = ByteUtil.getDecompressedData(res.getBody().getContent());
+		}
+		else if (res.isBrotli()) {
+			try (InputStream lInputStream = res.getBodyAsStream();
+				 BrotliInputStream lBrotliInputStream = new BrotliInputStream(lInputStream)) {
+				lReturn = lBrotliInputStream.readAllBytes();
+			}
+		}
+		else {
+			lReturn = res.getBody().getContent();
+		}
+
+		return lReturn;
+	}
+	
 	public static Source getSOAPBody(InputStream stream) {
 		try {
             return new SAXSource(new SOAPXMLFilter(saxParserFactory.newSAXParser().getXMLReader()), new InputSource(stream));
