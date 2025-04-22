@@ -123,7 +123,7 @@ public class OAuth2CallbackRequestHandler {
 
     private static void continueOriginalExchange(Exchange exc, AbstractExchangeSnapshot originalRequest, Session session) throws Exception {
         if (originalRequest.getRequest().getMethod().equals("GET")) {
-            exc.setResponse(Response.redirect(originalRequest.getOriginalRequestUri(), false).build());
+            exc.setResponse(Response.redirect(originalRequest.getOriginalRequestUri(), false).status(302).build());
         } else {
             String oa2redirect = new BigInteger(130, new SecureRandom()).toString(32);
 
