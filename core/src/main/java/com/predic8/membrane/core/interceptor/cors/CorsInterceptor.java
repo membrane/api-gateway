@@ -186,8 +186,16 @@ public class CorsInterceptor extends AbstractInterceptor {
         if (headers == null)
             return true;
 
-        return new HashSet<>(allowedHeaders).containsAll(parseCommaSeparated(headers));
+        return allowedHeaders.stream()
+                .map(String::toLowerCase)
+                .collect(Collectors.toSet())
+                .containsAll(
+                        parseCommaSeparated(headers).stream()
+                        .map(String::toLowerCase)
+                        .collect(Collectors.toSet())
+                );
     }
+
 
     private static @NotNull List<String> parseCommaSeparated(String value) {
         return stream(value.split("\\s*,\\s*|\\s+"))
@@ -206,7 +214,8 @@ public class CorsInterceptor extends AbstractInterceptor {
         }
 
         header.setValue(ACCESS_CONTROL_ALLOW_ORIGIN, getAllowOriginValue(requestOrigin));
-        header.setValue(ACCESS_CONTROL_ALLOW_METHODS, requestedMethod);
+        header.setValue(ACCESS_CONTROL_ALLOW_METHODS,
+                requestedMethod != null ? requestedMethod : join(allowedMethods));
 
         if (allowAll) {
             header.setValue(ACCESS_CONTROL_ALLOW_HEADERS,
@@ -242,7 +251,7 @@ public class CorsInterceptor extends AbstractInterceptor {
     }
 
     /**
-     * If true, all origins, methods and headers are allowed except credentials like cookies
+     * If true, all origins, methods, and headers are allowed except credentials like cookies
      *
      * @description Allows all origins, methods, and headers without validation.
      * Not compatible with credentials=true.
