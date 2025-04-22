@@ -2,7 +2,7 @@
   <configuration default="false" name="IDEStarter" type="Application" factoryName="Application" nameIsGenerated="true">
     <option name="MAIN_CLASS_NAME" value="com.predic8.membrane.core.IDEStarter" />
     <module name="membrane-api-gateway" />
-    <option name="PROGRAM_PARAMETERS" value="-c proxies.xml" />
+    <option name="PROGRAM_PARAMETERS" value="-c proxies.xml generate-jwk -o jwk.json" />
     <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/distribution/conf" />
     <extension name="coverage">
       <pattern>

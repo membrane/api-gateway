@@ -18,20 +18,25 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.fasterxml.jackson.dataformat.yaml.YAMLParser;
 import com.predic8.membrane.core.*;
-import com.predic8.membrane.core.config.spring.k8s.Envelope;
-import com.predic8.membrane.core.config.spring.k8s.YamlLoader;
 import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.kubernetes.BeanCache;
-import com.predic8.membrane.core.kubernetes.BeanDefinition;
 import com.predic8.membrane.core.kubernetes.client.WatchAction;
 import com.predic8.membrane.core.openapi.serviceproxy.*;
 import com.predic8.membrane.core.resolver.*;
 import org.apache.commons.cli.*;
 import org.jetbrains.annotations.*;
+import org.jose4j.jwk.JsonWebKey;
+import org.jose4j.jwk.RsaJsonWebKey;
+import org.jose4j.jwk.RsaJwkGenerator;
 import org.slf4j.*;
 import org.springframework.beans.factory.xml.*;
 
 import java.io.*;
+import java.math.BigInteger;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.security.SecureRandom;
 import java.util.*;
 
 import static com.predic8.membrane.core.Constants.*;
@@ -70,6 +75,7 @@ public class RouterCLI {
             return switch (commandLine.getCommand().getName()) {
                 case "oas" -> initRouterByOpenApiSpec(commandLine);
                 case "yaml" -> initRouterByYAML(commandLine);
+                case "generate-jwk" -> initRouterByGenerateJWK(commandLine);
                 default -> initRouterByConfig(commandLine);
             };
         } catch (InvalidConfigurationException e) {
@@ -115,6 +121,30 @@ public class RouterCLI {
             parser.nextToken();
         }
 
+        return router;
+    }
+
+    private static Router initRouterByGenerateJWK(MembraneCommandLine commandLine) throws Exception {
+        var router = new HttpRouter();
+        router.init();
+        if (commandLine.getCommand().getName().equals("generate-jwk")) {
+
+            int bits = 2048;
+            String bitsArg = commandLine.getCommand().getOptionValue("b");
+            if (bitsArg != null) {
+                bits = Integer.parseInt(bitsArg);
+            }
+
+            String outputFile = commandLine.getCommand().getOptionValue("o");
+
+            RsaJsonWebKey rsaJsonWebKey = RsaJwkGenerator.generateJwk(bits);
+            rsaJsonWebKey.setKeyId(new BigInteger(130, new SecureRandom()).toString(32));
+            rsaJsonWebKey.setUse("sig");
+            rsaJsonWebKey.setAlgorithm("RS256");
+
+            Files.write(Paths.get(outputFile), rsaJsonWebKey.toJson(JsonWebKey.OutputControlLevel.INCLUDE_PRIVATE).getBytes(StandardCharsets.UTF_8));
+            System.out.println("JWK written to " + outputFile);
+        }
         return router;
     }
 
