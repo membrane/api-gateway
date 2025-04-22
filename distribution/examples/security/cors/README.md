@@ -46,7 +46,7 @@ the [CORS Guide for API Developers](https://www.membrane-api.io/cors-api-gateway
 - Requests with `Origin: null` are only allowed if:
    - The origin `"null"` is configured.
    - The request method is listed in `methods`.
-   - The custom headers match those listed in `headers` — **case-sensitive by default**.
+   - The custom headers match those listed in `headers`.
 - If any header is not allowed (or casing differs), the preflight fails with a **403 Forbidden**.
 - GET and POST requests **without custom headers** do not trigger preflights and are allowed.
 
