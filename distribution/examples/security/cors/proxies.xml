@@ -13,9 +13,10 @@
         </api>
 
         <api port="2002">
-            <cors origins="null *"
-                  methods="GET,POST"
-                  headers="Content-Type,X-Foo"/> 
+            <cors origins="null"
+                  methods="GET, POST"
+                  headers="Content-Type, X-Foo"/>
+            <static>Hello from API 2!</static>
             <return/>
         </api>
 

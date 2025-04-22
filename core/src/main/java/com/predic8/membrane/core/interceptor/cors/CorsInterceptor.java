@@ -219,11 +219,13 @@ public class CorsInterceptor extends AbstractInterceptor {
 
         if (allowAll) {
             header.setValue(ACCESS_CONTROL_ALLOW_HEADERS,
-                    requestedHeaders != null ? requestedHeaders : "Content-Type, Authorization");
+                    requestedHeaders != null ? requestedHeaders.toLowerCase() : "content-type, authorization");
         } else if (allowedHeaders != null) {
-            header.setValue(ACCESS_CONTROL_ALLOW_HEADERS, join(allowedHeaders));
+            header.setValue(ACCESS_CONTROL_ALLOW_HEADERS,
+                    join(allowedHeaders.stream()
+                            .map(String::toLowerCase)
+                            .collect(Collectors.toList())));
         }
-
 
         if (maxAge != null) {
             header.setValue(ACCESS_CONTROL_MAX_AGE, maxAge);
