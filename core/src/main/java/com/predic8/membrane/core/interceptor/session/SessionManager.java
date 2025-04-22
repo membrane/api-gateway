@@ -144,9 +144,9 @@ public abstract class SessionManager {
     private void handleSetCookieHeaderForResponse(Exchange exc, Session session) throws Exception {
         log.info("\n\n-------\nhandleSetCookieHeaderForResponse from {}", getCallingMethod(4));
         log.info("RequestURI {}", exc.getRequestURI());
-        log.info("* Request Headers: {}", exc.getRequest().getHeader());
-        log.info("* Response Headers: {}", exc.getResponse().getHeader());
-        session.getContent().forEach((key, value) -> log.info("* Session {}: {}", key, value));
+        log.info("* Request Headers: \n{}", exc.getRequest().getHeader());
+        log.info("* Response Headers: \n{}", exc.getResponse().getHeader());
+//        session.getContent().forEach((key, value) -> log.info("* Session {}: {}", key, value));
         Optional<Object> originalCookieValueAtBeginning = Optional.ofNullable(exc.getProperty(SESSION_COOKIE_ORIGINAL));
 
         if (originalCookieValueAtBeginning.isEmpty() && !session.isDirty)
