@@ -194,6 +194,7 @@ public class HttpUtil {
 			case 206 -> "Partial Content";
 			case 301 -> "Moved Permanently";
 			case 302 -> "Found";
+			case 303 -> "See Other";
 			case 304 -> "Not Modified";
 			case 307 -> "Temporary Redirect";
 			case 308 -> "Permanent Redirect";

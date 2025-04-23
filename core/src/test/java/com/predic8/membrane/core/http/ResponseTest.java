@@ -239,10 +239,10 @@ public class ResponseTest {
             of(notModified("ABC"), 304 , "Not Modified", false),
             of(serviceUnavailable("ABC"), 503 , "Service Unavailable", true),
             of(badGateway("ABC"), 502, "Bad Gateway", true),
-            of(unauthorized("ABC"),401 , "Unauthorized", true),
+            of(unauthorized("ABC"), 401 , "Unauthorized", true),
             of(gatewayTimeout("ABC"), 504, "Gateway Timeout", true),
-            of(redirect("ABC", false), 307, "Temporary Redirect", true),
-            of(redirect("ABC", true), 301, "Moved Permanently", true),
+            of(redirect("ABC", 307), 307, "Temporary Redirect", true),
+            of(redirect("ABC", 301), 301, "Moved Permanently", true),
             of(statusCode(999), 999, "", false)
         );
     }
@@ -262,7 +262,7 @@ public class ResponseTest {
                 <html><head><title>200 Ok.</title></head><body><h1>200 Ok.</h1><p>The Message <b>is</b> this!</p></body></html>""",
                 response.getBodyAsStringDecoded());
     }
-    
+
     @Test
     void redirectWithout300Test() {
         Response res = Response.redirectWithout300("http://localhost:2000/login","New <b>address</b>!").build();

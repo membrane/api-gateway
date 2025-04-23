@@ -32,15 +32,17 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import static java.net.URLEncoder.encode;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static java.util.stream.Collectors.joining;
+import static java.util.stream.Collectors.*;
 import static org.apache.commons.text.StringEscapeUtils.unescapeXml;
 
 public class BrowserMock implements Function<Exchange, Exchange> {
@@ -118,11 +120,22 @@ public class BrowserMock implements Function<Exchange, Exchange> {
         addCookiesToExchange(exc, cookies);
         var result = consumer.apply(exc);
 
-        for (HeaderField setCookieField : result.getResponse().getHeader().getValues(new HeaderName("Set-Cookie"))) {
+        List<HeaderField> setCookieInstructions = result.getResponse().getHeader().getValues(new HeaderName("Set-Cookie"));
+        checkSameForCookieKeyUsedMultipleTimes(setCookieInstructions);
+
+        for (HeaderField setCookieField : setCookieInstructions) {
             cookies = manipulateCookies(setCookieField, domain, cookies);
         }
 
         return result;
+    }
+
+    private void checkSameForCookieKeyUsedMultipleTimes(List<HeaderField> headers) {
+        var counts = headers.stream().map(BrowserMock::getKeyValue).collect(groupingBy(KeyValue::key, counting()));
+        var duplicates = counts.entrySet().stream().filter(e -> e.getValue() > 1).map(Map.Entry::getKey).toList();
+        if (!duplicates.isEmpty()) {
+            throw new RuntimeException("Same Cookie Key(s) "+String.join(", ", duplicates) + " used multiple times in response: " + headers);
+        }
     }
 
     private static void addCookiesToExchange(Exchange exc, Map<String, String> cookies) {
