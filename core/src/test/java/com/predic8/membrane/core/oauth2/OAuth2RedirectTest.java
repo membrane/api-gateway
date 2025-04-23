@@ -33,6 +33,7 @@ import io.restassured.response.*;
 import org.jetbrains.annotations.*;
 import org.junit.jupiter.api.*;
 
+import java.net.URI;
 import java.util.*;
 import java.util.concurrent.atomic.*;
 
@@ -43,6 +44,9 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class OAuth2RedirectTest {
 
+    static final URI AUTH_SERVER_BASE_URL = URI.create("http://localhost:2002");
+    static final URI BACKEND_BASE_URL = URI.create("http://localhost:2001");
+    static final URI CLIENT_BASE_URL = URI.create("http://localhost:2000");
     static Router authorizationServerRouter;
     static Router oauth2ResourceRouter;
     static Router backendRouter;
@@ -66,7 +70,7 @@ public class OAuth2RedirectTest {
 
     @Test
     void testGet() {
-        OAuth2AuthFlowClient OAuth2 = new OAuth2AuthFlowClient("http://localhost:2002");
+        OAuth2AuthFlowClient OAuth2 = new OAuth2AuthFlowClient(AUTH_SERVER_BASE_URL, CLIENT_BASE_URL);
         // Step 1: Initial request to the client
         Response clientResponse = OAuth2.step1originalRequestGET("/a?b=c&d=ä");
         // Step 2: Send to authentication at OAuth2 server
@@ -97,7 +101,7 @@ public class OAuth2RedirectTest {
 
     @Test
     void testPost() {
-        OAuth2AuthFlowClient OAuth2 = new OAuth2AuthFlowClient("http://localhost:2002");
+        OAuth2AuthFlowClient OAuth2 = new OAuth2AuthFlowClient(AUTH_SERVER_BASE_URL, CLIENT_BASE_URL);
         // Step 1: Initial request to the client
         Response clientResponse = OAuth2.step1originalRequestPOST("/a?b=c&d=ä");
         // Step 2: Send to authentication at OAuth2 server
@@ -151,7 +155,7 @@ public class OAuth2RedirectTest {
     }
 
     private static @NotNull SSLableProxy getBackendRule() {
-        SSLableProxy nginxRule = new ServiceProxy(new ServiceProxyKey("localhost", "*", ".*", 2001), "localhost", 80);
+        SSLableProxy nginxRule = new ServiceProxy(new ServiceProxyKey(BACKEND_BASE_URL.getHost(), "*", ".*", BACKEND_BASE_URL.getPort()), "localhost", 80);
         nginxRule.getInterceptors().add(new AbstractInterceptor() {
             @Override
             public Outcome handleRequest(Exchange exc) {
@@ -166,7 +170,7 @@ public class OAuth2RedirectTest {
     }
 
     private static @NotNull SSLableProxy getOAuth2ResourceRule() {
-        SSLableProxy membraneRule = new ServiceProxy(new ServiceProxyKey("localhost", "*", ".*", 2000), "localhost", 2001);
+        SSLableProxy membraneRule = new ServiceProxy(new ServiceProxyKey(CLIENT_BASE_URL.getHost(), "*", ".*", CLIENT_BASE_URL.getPort()), BACKEND_BASE_URL.getHost(), BACKEND_BASE_URL.getPort());
         membraneRule.getInterceptors().add(new AbstractInterceptor() {
             @Override
             public Outcome handleRequest(Exchange exc) {
@@ -178,7 +182,7 @@ public class OAuth2RedirectTest {
         membraneRule.getInterceptors().add(new OAuth2Resource2Interceptor() {{
             setSessionManager(new InMemorySessionManager());
             setAuthService(new MembraneAuthorizationService() {{
-                setSrc("http://localhost:2002");
+                setSrc(AUTH_SERVER_BASE_URL.toString());
                 setClientId("abc");
                 setClientSecret("def");
                 setScope("openid profile");
@@ -197,7 +201,7 @@ public class OAuth2RedirectTest {
     }
 
     private static @NotNull SSLableProxy getAuthorizationServerRule() {
-        SSLableProxy azureRule = new ServiceProxy(new ServiceProxyKey("localhost", "*", ".*", 2002), "localhost", 80);
+        SSLableProxy azureRule = new ServiceProxy(new ServiceProxyKey(AUTH_SERVER_BASE_URL.getHost(), "*", ".*", AUTH_SERVER_BASE_URL.getPort()), "localhost", 80);
         azureRule.getInterceptors().add(new LogInterceptor() {{
             setLevel(DEBUG);
         }});
@@ -205,7 +209,7 @@ public class OAuth2RedirectTest {
             setLocation(getPathFromResource("openId/dialog"));
             setConsentFile(getPathFromResource("openId/consentFile.json"));
             setTokenGenerator(new BearerTokenGenerator());
-            setIssuer("http://localhost:2002");
+            setIssuer(AUTH_SERVER_BASE_URL.toString());
             setUserDataProvider(new StaticUserDataProvider() {{
                 setUsers(List.of(new User() {{
                     setUsername("user");
@@ -216,7 +220,7 @@ public class OAuth2RedirectTest {
                 setClients(List.of(new Client() {{
                     setClientId("abc");
                     setClientSecret("def");
-                    setCallbackUrl("http://localhost:2000/oauth2callback");
+                    setCallbackUrl(CLIENT_BASE_URL.resolve("/oauth2callback").toString());
                 }}));
             }});
             setClaimList(new ClaimList() {{
