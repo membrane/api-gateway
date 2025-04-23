@@ -391,7 +391,7 @@ public abstract class OAuth2ResourceB2CTest {
     @Test
     public void requireAuthRedirects() throws Exception {
         var excCallResource = browser.applyWithoutRedirect(get(tc.getClientAddress() + "/api/"));
-        assertEquals(307, excCallResource.getResponse().getStatusCode());
+        assertEquals(302, excCallResource.getResponse().getStatusCode());
         assertTrue(excCallResource.getResponse().getHeader().getFirstValue(Header.LOCATION).contains(
                 ":"+mockAuthorizationServer.getServerPort()+"/"));
         assertFalse(didLogIn.get());

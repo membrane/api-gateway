@@ -71,11 +71,11 @@ public class OAuth2AuthorizationServerInterceptorNormalTest extends OAuth2Author
     }
 
     private static Object[] testGoodGrantedAuthCode() {
-        return new Object[]{"testGoodGrantedAuthCode", runUntilGoodAuthRequest(), getMockEmptyEndpointRequest(), 307, getCodeFromResponse()};
+        return new Object[]{"testGoodGrantedAuthCode", runUntilGoodAuthRequest(), getMockEmptyEndpointRequest(), 302, getCodeFromResponse()};
     }
 
     private static Object[] testGoodAuthRequest() {
-        return new Object[]{"testGoodAuthRequest", noPreprocessing(), getMockAuthRequestExchange(),307, loginAsJohn()};
+        return new Object[]{"testGoodAuthRequest", noPreprocessing(), getMockAuthRequestExchange(),302, loginAsJohn()};
     }
 
     private static Object[] testBadRequest() {
