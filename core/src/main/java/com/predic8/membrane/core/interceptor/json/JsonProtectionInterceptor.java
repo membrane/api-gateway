@@ -36,7 +36,8 @@ import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static java.util.EnumSet.*;
 
 /**
- * Enforces JSON restrictions in requests
+ * Enforces JSON restrictions in requests.
+ * @topic 3. Security and Validation
  */
 @SuppressWarnings("unused")
 @MCElement(name = "jsonProtection")
