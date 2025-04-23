@@ -22,6 +22,7 @@ import org.hamcrest.Matchers;
 import org.hamcrest.text.MatchesPattern;
 import org.jetbrains.annotations.NotNull;
 
+import java.net.URI;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -34,15 +35,15 @@ import static org.apache.http.HttpHeaders.LOCATION;
 
 public class OAuth2AuthFlowClient {
 
-    private static final String CLIENT_BASE_URL = "http://localhost:2000";
-
-    private final String authServerBaseUrl;
+    private final URI authServerBaseUrl;
+    private final URI clientBaseUrl;
 
     Map<String, String> cookies = new HashMap<>();
     Map<String, String> memCookies = new HashMap<>();
 
-    public OAuth2AuthFlowClient(String authServerBaseUrl) {
+    public OAuth2AuthFlowClient(URI authServerBaseUrl, URI clientBaseUrl) {
         this.authServerBaseUrl = authServerBaseUrl;
+        this.clientBaseUrl = clientBaseUrl;
     }
 
     // @formatter:off
@@ -51,7 +52,7 @@ public class OAuth2AuthFlowClient {
                 given()
                     .redirects().follow(false)
                 .when()
-                    .get(CLIENT_BASE_URL + url)
+                    .get(clientBaseUrl.resolve(url).toString())
                 .then()
                     .statusCode(307)
                     .header(LOCATION, MatchesPattern.matchesPattern(authServerBaseUrl + ".*"))
@@ -67,7 +68,7 @@ public class OAuth2AuthFlowClient {
                     .headers(CONTENT_TYPE, "text/x-json")
                     .body("[true]")
                 .when()
-                    .post(CLIENT_BASE_URL + url)
+                    .post(clientBaseUrl.resolve(url).toString())
                 .then()
                     .statusCode(307)
                     .header(LOCATION, MatchesPattern.matchesPattern(authServerBaseUrl + ".*"))
@@ -97,7 +98,7 @@ public class OAuth2AuthFlowClient {
             .redirects().follow(true)
             .cookies(cookies)
         .when()
-            .get(authServerBaseUrl + location)
+            .get(authServerBaseUrl.resolve(location).toString())
         .then()
             .statusCode(200)
             .extract().response();
@@ -113,7 +114,7 @@ public class OAuth2AuthFlowClient {
             .formParam("username", username)
             .formParam("password", password)
         .when()
-            .post(authServerBaseUrl + location)
+            .post(authServerBaseUrl.resolve(location).toString())
         .then()
             .statusCode(200)
             .header(LOCATION, "/")
@@ -126,7 +127,7 @@ public class OAuth2AuthFlowClient {
                 .redirects().follow(false)
                 .cookies(cookies)
             .when()
-                .get(authServerBaseUrl)
+                .get(authServerBaseUrl.toString())
             .then()
                 .statusCode(307)
                 .header(LOCATION, MatchesPattern.matchesPattern("/login/consent.*"))
@@ -140,7 +141,7 @@ public class OAuth2AuthFlowClient {
             .redirects().follow(false)
             .cookies(cookies)
         .when()
-            .get(authServerBaseUrl + location)
+            .get(authServerBaseUrl.resolve(location).toString())
         .then()
             .statusCode(200)
             .extract().response();
@@ -155,7 +156,7 @@ public class OAuth2AuthFlowClient {
             .header("Accept-Charset", "UTF-8")
             .formParam("consent", "Accept")
         .when()
-            .post(authServerBaseUrl + location)
+            .post(authServerBaseUrl.resolve(location).toString())
         .then()
             .statusCode(200)
             .header(LOCATION, "/")
@@ -168,10 +169,10 @@ public class OAuth2AuthFlowClient {
                 .redirects().follow(false)
                 .cookies(cookies)
             .when()
-                .post(authServerBaseUrl)
+                .post(authServerBaseUrl.toString())
             .then()
                 .statusCode(307)
-                .header(LOCATION, MatchesPattern.matchesPattern(CLIENT_BASE_URL + ".*"))
+                .header(LOCATION, MatchesPattern.matchesPattern(clientBaseUrl.toString() + ".*"))
                 .extract().response();
         doUserAgentCookieHandling(cookies, response.getDetailedCookies());
         return response.getHeader(LOCATION);
@@ -192,7 +193,7 @@ public class OAuth2AuthFlowClient {
         String location2 = response.getHeader(LOCATION);
 
         // this is what browsers seem to do
-        location2 = UrlDecoder.urlDecode(CLIENT_BASE_URL + location2, UTF_8, true);
+        location2 = UrlDecoder.urlDecode(clientBaseUrl.resolve(location2).toString(), UTF_8, true);
 
         given()
             .redirects().follow(false)
