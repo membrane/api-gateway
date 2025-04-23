@@ -24,6 +24,7 @@ import org.hamcrest.*;
 import org.junit.jupiter.api.*;
 
 import java.io.*;
+import java.net.URI;
 
 import static io.restassured.RestAssured.*;
 
@@ -67,7 +68,7 @@ public class OAuth2Membrane2ExampleTest extends DistributionExtractingTestcase {
 
     @Test
     void loginPage() {
-        OAuth2AuthFlowClient OAuth2 = new OAuth2AuthFlowClient("http://localhost:8000");
+        OAuth2AuthFlowClient OAuth2 = new OAuth2AuthFlowClient(URI.create("http://localhost:8000"), URI.create("http://localhost:2000"));
         // Step 1: Initial request to the client
         Response clientResponse = OAuth2.step1originalRequestGET("/");
         // Step 2: Send to authentication at OAuth2 server
