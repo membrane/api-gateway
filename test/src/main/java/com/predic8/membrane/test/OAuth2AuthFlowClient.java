@@ -54,8 +54,8 @@ public class OAuth2AuthFlowClient {
                 .when()
                     .get(clientBaseUrl.resolve(url).toString())
                 .then()
-                    .statusCode(307)
-                    .header(LOCATION, MatchesPattern.matchesPattern(authServerBaseUrl + ".*"))
+                    .statusCode(302)
+                    .header(LOCATION, MatchesPattern.matchesPattern(authServerBaseUrl.toString() + ".*"))
                     .extract().response();
         doUserAgentCookieHandling(memCookies, response.getDetailedCookies());
         return response;
@@ -70,8 +70,8 @@ public class OAuth2AuthFlowClient {
                 .when()
                     .post(clientBaseUrl.resolve(url).toString())
                 .then()
-                    .statusCode(307)
-                    .header(LOCATION, MatchesPattern.matchesPattern(authServerBaseUrl + ".*"))
+                    .statusCode(302)
+                    .header(LOCATION, MatchesPattern.matchesPattern(authServerBaseUrl.toString() + ".*"))
                     .extract().response();
         doUserAgentCookieHandling(memCookies, response.getDetailedCookies());
         return response;
@@ -86,7 +86,7 @@ public class OAuth2AuthFlowClient {
                 .when()
                     .get(response.getHeader(LOCATION))
                 .then()
-                    .statusCode(307)
+                    .statusCode(302)
                     .header(LOCATION, MatchesPattern.matchesPattern("/login.*"))
                     .extract().response();
         doUserAgentCookieHandling(cookies, formRedirect.getDetailedCookies());
@@ -129,7 +129,7 @@ public class OAuth2AuthFlowClient {
             .when()
                 .get(authServerBaseUrl.toString())
             .then()
-                .statusCode(307)
+                .statusCode(302)
                 .header(LOCATION, MatchesPattern.matchesPattern("/login/consent.*"))
                 .extract().response();
         doUserAgentCookieHandling(cookies, response.getDetailedCookies());
@@ -171,7 +171,7 @@ public class OAuth2AuthFlowClient {
             .when()
                 .post(authServerBaseUrl.toString())
             .then()
-                .statusCode(307)
+                .statusCode(302)
                 .header(LOCATION, MatchesPattern.matchesPattern(clientBaseUrl.toString() + ".*"))
                 .extract().response();
         doUserAgentCookieHandling(cookies, response.getDetailedCookies());
@@ -186,7 +186,7 @@ public class OAuth2AuthFlowClient {
             .post(location)
         .then()
             .log().ifValidationFails(LogDetail.ALL)
-            .statusCode(307)
+            .statusCode(302)
             .extract().response();
 
         doUserAgentCookieHandling(memCookies, response.getDetailedCookies());

@@ -52,11 +52,11 @@ public class OAuth2AuthorizationServerInterceptorOpenidTest extends OAuth2Author
     }
 
     private static Object[] testGoodGrantedAuthCode() {
-        return new Object[]{"testGoodGrantedAuthCode", runUntilGoodAuthOpenidRequest(), getMockEmptyEndpointRequest(), 307, getCodeFromResponse()};
+        return new Object[]{"testGoodGrantedAuthCode", runUntilGoodAuthOpenidRequest(), getMockEmptyEndpointRequest(), 302, getCodeFromResponse()};
     }
 
     private static Object[] testGoodAuthRequest() {
-        return new Object[]{"testGoodAuthRequest", noPreprocessing(), getMockAuthOpenidRequestExchange(),307, loginAsJohnOpenid()};
+        return new Object[]{"testGoodAuthRequest", noPreprocessing(), getMockAuthOpenidRequestExchange(),302, loginAsJohnOpenid()};
     }
 
     private static ExceptionThrowingConsumer<Exchange> loginAsJohnOpenid() {
