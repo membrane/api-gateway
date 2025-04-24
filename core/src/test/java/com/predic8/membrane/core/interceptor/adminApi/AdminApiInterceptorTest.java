@@ -93,7 +93,7 @@ class AdminApiInterceptorTest {
 
         AtomicBoolean receivedMemoryStats = new AtomicBoolean();
         wsfa.readFrames(webSocketFrame -> {
-            if (new String(webSocketFrame.getPayload()).contains("\"type\":\"MemoryStats\""))
+            if (new String(webSocketFrame.getPayload()).contains("\"subject\":\"metricUpdate\""))
                 receivedMemoryStats.set(true);
         });
         assertTrue(receivedMemoryStats.get());
