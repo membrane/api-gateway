@@ -16,6 +16,7 @@ package com.predic8.membrane.core.interceptor.jwt;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.predic8.membrane.core.HttpRouter;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.Request;
 import org.junit.jupiter.api.*;
@@ -44,7 +45,7 @@ public class JwtAuthInterceptorUnitTests {
     private String getErrorResponse(Exchange exc) {
         try {
             var map = new ObjectMapper().readValue(exc.getResponse().getBody().toString(), Map.class);
-            return map.get("description").toString();
+            return map.get("detail").toString();
         } catch (JsonProcessingException e) {
             throw new RuntimeException(e);
         }
@@ -54,9 +55,24 @@ public class JwtAuthInterceptorUnitTests {
     void noJwtInHeader() {
         var exchange = new Request.Builder().buildExchange();
         interceptor.setJwtRetriever(new HeaderJwtRetriever("Authorization", "Bearer"));
+        Jwks jwks = new Jwks();
+        Jwks.Jwk jwk = new Jwks.Jwk();
+        jwk.setContent("{\"kty\":\"RSA\", \"n\":\""+
+                "B".repeat(1024 * 8 / 6)
+                +"\", \"e\":\"BB\"}");
+        jwks.getJwks().add(jwk);
+        interceptor.setJwks(jwks);
+        interceptor.init(new HttpRouter());
         interceptor.handleRequest(exchange);
 
         assertEquals(ERROR_JWT_NOT_FOUND, getErrorResponse(exchange));
+    }
+
+    @Test
+    void invalidHeader() {
+        // {"typ":"A","typ":"B"}.{}
+        var exception = assertThrows(JWTException.class, () -> interceptor.handleJwt(exc, "eyJ0eXAiOiJBIiwidHlwIjoiQiJ9.e30=.BB"));
+        assertEquals(ERROR_DECODED_HEADER_NOT_JSON, exception.getMessage());
     }
 
     @Test
@@ -69,6 +85,6 @@ public class JwtAuthInterceptorUnitTests {
     void noKidGiven() {
         var token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c";
         var exception = assertThrows(JWTException.class, () -> interceptor.handleJwt(exc, token));
-        assertEquals(JsonWebToken.ERROR_JWT_VALUE_NOT_PRESENT("kid"), exception.getMessage());
+        assertEquals(ERROR_JWT_VALUE_NOT_PRESENT("kid"), exception.getMessage());
     }
 }

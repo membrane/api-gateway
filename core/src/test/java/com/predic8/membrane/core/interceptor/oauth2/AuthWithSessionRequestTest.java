@@ -43,6 +43,6 @@ public class AuthWithSessionRequestTest extends RequestParameterizedTest {
     }
 
     private static RequestTestData testPromptEqualsLogin() {
-        return new RequestTestData("testPromptEqualsLogin",addValueToRequestUri("prompt=login"),307,getBool(true),responseContainsValueInLocationHeader("/oauth2/auth"));
+        return new RequestTestData("testPromptEqualsLogin",addValueToRequestUri("prompt=login"),302,getBool(true),responseContainsValueInLocationHeader("/oauth2/auth"));
     }
 }

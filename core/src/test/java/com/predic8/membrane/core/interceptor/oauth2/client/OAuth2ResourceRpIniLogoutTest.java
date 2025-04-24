@@ -230,7 +230,7 @@ public class OAuth2ResourceRpIniLogoutTest {
                     assertEquals(8, claims.getClaimsMap().size());
                     String uri = params.get("post_logout_redirect_uri");
                     assertNotNull(uri);
-                    exc.setResponse(Response.redirect(uri, false).status(303).build());
+                    exc.setResponse(Response.redirect(uri, 303).build());
                     isLoggedOutAtOP.set(true);
                 }
 
