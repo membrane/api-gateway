@@ -72,17 +72,18 @@ public class RouterCLI {
 
     private static @NotNull Router getRouter(MembraneCommandLine commandLine) {
         try {
+            if (commandLine.getCommand().getName().equals("generate-jwk")) {
+                initRouterByGenerateJWK(commandLine);
+            }
             return switch (commandLine.getCommand().getName()) {
                 case "oas" -> initRouterByOpenApiSpec(commandLine);
                 case "yaml" -> initRouterByYAML(commandLine);
-                case "generate-jwk" -> initRouterByGenerateJWK(commandLine);
                 default -> initRouterByConfig(commandLine);
             };
         } catch (InvalidConfigurationException e) {
             log.error("Fatal error: {}", concatMessageAndCauseMessages(e));
-        }
-        catch (Exception ex) {
-            SpringConfigurationErrorHandler.handleRootCause(ex,log);
+        } catch (Exception ex) {
+            SpringConfigurationErrorHandler.handleRootCause(ex, log);
         }
         System.exit(1);
         // Will never be reached
@@ -124,9 +125,7 @@ public class RouterCLI {
         return router;
     }
 
-    private static Router initRouterByGenerateJWK(MembraneCommandLine commandLine) throws Exception {
-        var router = new HttpRouter();
-        router.init();
+    private static void initRouterByGenerateJWK(MembraneCommandLine commandLine) throws Exception {
         if (commandLine.getCommand().getName().equals("generate-jwk")) {
 
             int bits = 2048;
@@ -142,10 +141,9 @@ public class RouterCLI {
             rsaJsonWebKey.setUse("sig");
             rsaJsonWebKey.setAlgorithm("RS256");
 
-            Files.write(Paths.get(outputFile), rsaJsonWebKey.toJson(JsonWebKey.OutputControlLevel.INCLUDE_PRIVATE).getBytes(StandardCharsets.UTF_8));
-            System.out.println("JWK written to " + outputFile);
+            Files.writeString(Paths.get(outputFile), rsaJsonWebKey.toJson(JsonWebKey.OutputControlLevel.INCLUDE_PRIVATE));
         }
-        return router;
+        System.exit(0);
     }
 
     private static @NotNull APIProxy getApiProxy(MembraneCommandLine commandLine) {
@@ -198,7 +196,7 @@ public class RouterCLI {
             String filename = fixBackslashes(getConfiguration(cl));
             if (shouldResolveFile(filename)) {
                 // absolute
-                try(InputStream ignored = rm.resolve(filename)) {
+                try (InputStream ignored = rm.resolve(filename)) {
                     return filename;
                 } catch (ResourceRetrievalException e) {
                     System.err.println("Could not open Membrane's configuration file: " + filename + " not found.");
@@ -238,7 +236,7 @@ public class RouterCLI {
 
     private static String getRulesFileFromRelativeSpec(ResolverMap rm, String relativeFile, String errorNotice) {
         String try1 = pathFromFileURI(ResolverMap.combine(prefix(getUserDir()), relativeFile));
-        try(InputStream ignored = rm.resolve(try1)) {
+        try (InputStream ignored = rm.resolve(try1)) {
             return try1;
         } catch (Exception e) {
             log.error("Could not resolve path to configuration (attempt 1).", e);
@@ -247,7 +245,7 @@ public class RouterCLI {
         String try2 = null;
         if (System.getenv(MEMBRANE_HOME) != null) {
             try2 = pathFromFileURI(ResolverMap.combine(prefix(System.getenv(MEMBRANE_HOME)), relativeFile));
-            try(InputStream ignored =  rm.resolve(try2)) {
+            try (InputStream ignored = rm.resolve(try2)) {
                 return try2;
             } catch (Exception e) {
                 log.error("Could not resolve path to configuration (attempt 2).", e);
