@@ -80,10 +80,16 @@ public abstract class ParameterizedRequest {
         params.entrySet().removeIf(e -> e.getValue().isEmpty());
     }
 
-    protected Response createParameterizedFormUrlencodedRedirect(Exchange exc, String state, String url) {
+    protected Response createParameterizedFormUrlencodedRedirect(Exchange exc, String state, String url, String error) {
+        url = url + "?error=" + error;
         if (state != null)
             url += "&state=" + state;
-        return Response.redirect(url,false).header(Header.CONTENT_TYPE, "application/x-www-form-urlencoded").bodyEmpty().dontCache().build();
+        return Response
+                .redirect(url,302)
+                .header(Header.CONTENT_TYPE, "application/x-www-form-urlencoded")
+                .bodyEmpty()
+                .dontCache()
+                .build();
     }
 
     protected Response buildWwwAuthenticateErrorResponse(Response.ResponseBuilder builder, String errorValue) {

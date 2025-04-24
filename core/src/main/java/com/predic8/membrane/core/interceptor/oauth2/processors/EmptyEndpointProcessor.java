@@ -138,9 +138,10 @@ public class EmptyEndpointProcessor extends EndpointProcessor {
 
 
     private Outcome redirectToConsentPage(Exchange exc) {
-        exc.setResponse(Response.redirect(
-                (exc.getRequestURI().endsWith("/") ? exc.getRequestURI().substring(0,exc.getRequestURI().length()-1) : exc.getRequestURI())
-                        + "/login/consent",false).dontCache().bodyEmpty().build());
+        String redirectURI = (
+                exc.getRequestURI().endsWith("/") ? exc.getRequestURI().substring(0, exc.getRequestURI().length() - 1) : exc.getRequestURI()
+        ) + "/login/consent";
+        exc.setResponse(Response.redirect(redirectURI,302).dontCache().bodyEmpty().build());
         return Outcome.RETURN;
     }
 

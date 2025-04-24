@@ -40,7 +40,7 @@ public class AuthWithoutSessionRequest extends ParameterizedRequest {
             return OAuth2Util.createParameterizedJsonErrorResponse("error", "invalid_request");
 
         if(getResponseType() == null || getScope() == null)
-            return createParameterizedFormUrlencodedRedirect(exc, getState(), getRedirectUri() + "?error=invalid_request");
+            return createParameterizedFormUrlencodedRedirect(exc, getState(), getRedirectUri(), "invalid_request");
         return new NoResponse();
     }
 
@@ -57,20 +57,20 @@ public class AuthWithoutSessionRequest extends ParameterizedRequest {
             return OAuth2Util.createParameterizedJsonErrorResponse("error", "invalid_request");
 
         if (promptEqualsNone())
-            return createParameterizedFormUrlencodedRedirect(exc, getState(), client.getCallbackUrl() + "?error=login_required");
+            return createParameterizedFormUrlencodedRedirect(exc, getState(), client.getCallbackUrl(), "login_required");
 
 
         if (!authServer.getSupportedAuthorizationGrants().contains(getResponseType()))
-            return createParameterizedFormUrlencodedRedirect(exc, getState(), client.getCallbackUrl() + "?error=unsupported_response_type");
+            return createParameterizedFormUrlencodedRedirect(exc, getState(), client.getCallbackUrl(), "unsupported_response_type");
 
         String validScopes = verifyScopes(getScope());
 
         if (validScopes.isEmpty())
-            return createParameterizedFormUrlencodedRedirect(exc, getState(), client.getCallbackUrl() + "?error=invalid_scope");
+            return createParameterizedFormUrlencodedRedirect(exc, getState(), client.getCallbackUrl(), "invalid_scope");
 
         if(OAuth2Util.isOpenIdScope(validScopes)) {
             if (!isCodeRequest())
-                return createParameterizedFormUrlencodedRedirect(exc, getState(), client.getCallbackUrl() + "?error=invalid_request");
+                return createParameterizedFormUrlencodedRedirect(exc, getState(), client.getCallbackUrl(), "invalid_request");
 
             //Parses the claims parameter into a json object. Claim values are always ignored and set to "null" as it is optional to react to those values
             addValidClaimsToParams();
@@ -137,11 +137,11 @@ public class AuthWithoutSessionRequest extends ParameterizedRequest {
     }
 
     protected Response redirectToLogin() throws MalformedURLException, UnsupportedEncodingException {
-        Response resp = Response.
-                redirect(authServer.getBasePath() + authServer.getPath(),false).
-                dontCache().
-                body("").
-                build();
+        Response resp = Response
+                .redirect(authServer.getBasePath() + authServer.getPath(),302)
+                .dontCache()
+                .body("")
+                .build();
         return resp;
     }
 
