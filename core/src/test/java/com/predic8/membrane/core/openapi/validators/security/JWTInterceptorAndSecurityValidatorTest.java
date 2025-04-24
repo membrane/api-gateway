@@ -63,13 +63,21 @@ public class JWTInterceptorAndSecurityValidatorTest {
     }
 
     @Test
-    public void checkIfScopesFromTheJWTAreStoredInTheExchange() throws Exception {
-        Exchange exc = new Request.Builder().get("/foo").header("Authorization", "bearer " + getSignedJwt(privateKey, getJwtClaim())).buildExchange();
+    public void checkIfScopesAreStoredInProperty() throws Exception {
+        Exchange exc = new Request.Builder().get("/foo").header("Authorization", "bearer " + getSignedJwt(privateKey, getJwtClaimsStringScopesList())).buildExchange();
         callInterceptorChain(exc);
 
         //noinspection unchecked
         assertEquals(new HashSet<>(List.of("write","admin","read")), ((List<SecurityScheme>)exc.getProperty(SECURITY_SCHEMES)).getFirst().getScopes());
+    }
 
+    @Test
+    public void checkIfScopesCanBeReadFromListType() throws Exception {
+        Exchange exc = new Request.Builder().get("/foo").header("Authorization", "bearer " + getSignedJwt(privateKey, getJwtClaimsArrayScopesList())).buildExchange();
+        callInterceptorChain(exc);
+
+        //noinspection unchecked
+        assertEquals(new HashSet<>(List.of("write","admin","read")), ((List<SecurityScheme>)exc.getProperty(SECURITY_SCHEMES)).getFirst().getScopes());
     }
 
     private void callInterceptorChain(Exchange exc) {
@@ -122,10 +130,20 @@ public class JWTInterceptorAndSecurityValidatorTest {
     }
 
     @NotNull
-    private static JwtClaims getJwtClaim() {
+    private static JwtClaims getJwtClaimsStringScopesList() {
         JwtClaims claims = new JwtClaims();
         claims.setSubject("Alice");
         claims.setClaim("scp", "read write admin");
+        claims.setAudience("11235");
+        claims.setExpirationTime(expireIn5Minutes());
+        return claims;
+    }
+
+    @NotNull
+    private static JwtClaims getJwtClaimsArrayScopesList() {
+        JwtClaims claims = new JwtClaims();
+        claims.setSubject("Alice");
+        claims.setClaim("scp", List.of("read", "write", "admin"));
         claims.setAudience("11235");
         claims.setExpirationTime(expireIn5Minutes());
         return claims;
