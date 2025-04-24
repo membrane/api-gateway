@@ -18,12 +18,14 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.fasterxml.jackson.dataformat.yaml.YAMLParser;
 import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.config.spring.TrackingFileSystemXmlApplicationContext;
 import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.kubernetes.BeanCache;
 import com.predic8.membrane.core.kubernetes.client.WatchAction;
 import com.predic8.membrane.core.openapi.serviceproxy.*;
 import com.predic8.membrane.core.resolver.*;
 import org.apache.commons.cli.*;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.jetbrains.annotations.*;
 import org.jose4j.jwk.JsonWebKey;
 import org.jose4j.jwk.RsaJsonWebKey;
@@ -47,6 +49,8 @@ import static com.predic8.membrane.core.util.ExceptionUtil.*;
 import static com.predic8.membrane.core.util.OSUtil.*;
 import static com.predic8.membrane.core.util.URIUtil.*;
 import static java.lang.Integer.*;
+import static org.apache.commons.lang3.exception.ExceptionUtils.getMessage;
+import static org.apache.commons.lang3.exception.ExceptionUtils.getRootCauseMessage;
 
 public class RouterCLI {
 
@@ -61,6 +65,16 @@ public class RouterCLI {
 
         // Dry run
         if (commandLine.noCommand() && commandLine.getCommand().isOptionSet("t")) {
+            try {
+                String proxies = getRulesFile(commandLine);
+                TrackingFileSystemXmlApplicationContext bf =
+                        new TrackingFileSystemXmlApplicationContext(new String[]{proxies}, false);
+                bf.refresh();
+                System.out.println("memexit: 0");
+            } catch (Throwable e) {
+                System.err.println("memexit: 1\n" + getExceptionMessageWithCauses(e));
+                System.exit(1);
+            }
             System.exit(0);
         }
 
@@ -74,6 +88,16 @@ public class RouterCLI {
         } catch (InterruptedException e) {
             // do nothing
         }
+    }
+
+    public static String getExceptionMessageWithCauses(Throwable throwable) {
+        StringBuilder result = new StringBuilder();
+        result.append("Exception: ").append(getMessage(throwable)).append("\n");
+        String rootCauseMessage = getRootCauseMessage(throwable);
+        if (!rootCauseMessage.equals(getMessage(throwable))) {
+            result.append("Root cause: ").append(rootCauseMessage);
+        }
+        return result.toString();
     }
 
     private static @NotNull Router getRouter(MembraneCommandLine commandLine) {
