@@ -181,7 +181,7 @@ public class SecurityValidator {
             });
 
             if (!hasScope.get()) {
-                log.info("Caller of {} {} ist not in scope {} required by OpenAPI definition.", ctx.getMethod(), ctx.getPath(), scope);
+                log.info("Caller of {} {} is not in scope {} required by OpenAPI definition.", ctx.getMethod(), ctx.getPath(), scope);
                 errors.add(ctx, "Caller ist not in scope %s".formatted(scope));
             }
         }
