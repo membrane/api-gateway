@@ -17,6 +17,7 @@ package com.predic8.membrane.core.interceptor;
 import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.exchangestore.*;
+import com.predic8.membrane.core.interceptor.adminApi.AdminApiInterceptor;
 import com.predic8.membrane.core.interceptor.administration.*;
 import com.predic8.membrane.core.proxies.*;
 import org.springframework.beans.*;
@@ -134,6 +135,9 @@ public class ExchangeStoreInterceptor extends AbstractInterceptor implements App
 
 			for (Interceptor i : r.getInterceptors()) {
 				if (i instanceof AdminConsoleInterceptor) {
+					serviceProxiesContainingAdminConsole.add((AbstractServiceProxy)r);
+				}
+				if (i instanceof AdminApiInterceptor) {
 					serviceProxiesContainingAdminConsole.add((AbstractServiceProxy)r);
 				}
 			}
