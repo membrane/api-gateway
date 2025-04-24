@@ -40,11 +40,11 @@ public class EmptyEndpointTest extends RequestParameterizedTest{
     }
 
     private static RequestTestData testTokenResponse() {
-        return new RequestTestData("testTokenResponse", modifySessionToTokenResponseType(),307,getBool(true),responseContainsValueInLocationHeader("token="));
+        return new RequestTestData("testTokenResponse", modifySessionToTokenResponseType(),302,getBool(true),responseContainsValueInLocationHeader("token="));
     }
 
     private static RequestTestData testCodeResponse() {
-        return new RequestTestData("testCodeResponse", modifySessionToCodeResponseType(),307,getBool(true),responseContainsValueInLocationHeader("code="));
+        return new RequestTestData("testCodeResponse", modifySessionToCodeResponseType(),302,getBool(true),responseContainsValueInLocationHeader("code="));
     }
 
     private static Callable<Object> modifySessionToCodeResponseType() {

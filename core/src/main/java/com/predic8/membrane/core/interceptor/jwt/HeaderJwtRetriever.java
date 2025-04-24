@@ -40,7 +40,7 @@ public class HeaderJwtRetriever implements JwtRetriever{
             return null;
 
         for (String replaceMe : replace) {
-            header = header.replace(replaceMe.trim(),"");
+            header = header.replaceAll("(?i)" + replaceMe.trim(),"");
         }
         return header.trim();
     }

@@ -79,6 +79,15 @@ public class SessionAuthorizer {
     }
 
     private static String getUsername(Map<String, Object> userInfo, AuthorizationService auth) {
+        if (userInfo.get(auth.getSubject()) == null) {
+            log.error("Could not retrieve user identifier. The configured claim is {}. " +
+                    "The available claims are {}. Please set e.g. subject=\"{}\".",
+                    auth.getSubject(),
+                    String.join(",", userInfo.keySet()),
+                    userInfo.keySet().stream().findFirst().orElse("someClaim")
+                    );
+            throw new RuntimeException("Misconfiguration. Please see server log.");
+        }
         return (String) userInfo.get(auth.getSubject());
     }
 
