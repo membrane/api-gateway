@@ -45,6 +45,7 @@ import static com.predic8.membrane.core.interceptor.Outcome.*;
  * Only GraphQL documents conforming to the 'ExecutableDocument' of the grammar are allowed: This includes the usual
  * 'query', 'mutation', 'subscription' and 'fragment's.
  * </p>
+ * @topic 3. Security and Validation
  */
 @SuppressWarnings("unused")
 @MCElement(name = "graphQLProtection")

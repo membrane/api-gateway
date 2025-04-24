@@ -41,15 +41,15 @@ public class AuthWithoutSessionRequestTest extends RequestParameterizedTest{
     }
 
     private static RequestTestData testPromptIsNone() {
-        return new RequestTestData("testPromptIsNone",addValueToRequestUri("prompt=none"),307,getBool(true),responseContainsValueInLocationHeader("error=login_required"));
+        return new RequestTestData("testPromptIsNone",addValueToRequestUri("prompt=none"),302,getBool(true),responseContainsValueInLocationHeader("error=login_required"));
     }
 
     private static RequestTestData testEmptyScopeList() {
-        return new RequestTestData("testEmptyScopeList",replaceValueFromRequestUri("scope=profile","scope=123456789"),307,getBool(true),responseContainsValueInLocationHeader("error=invalid_scope"));
+        return new RequestTestData("testEmptyScopeList",replaceValueFromRequestUri("scope=profile","scope=123456789"),302,getBool(true),responseContainsValueInLocationHeader("error=invalid_scope"));
     }
 
     private static RequestTestData testUnsupportedResponseType() {
-        return new RequestTestData("testUnsupportedResponseType",replaceValueFromRequestUri("response_type=code","response_type=code123456789"),307,getBool(true),responseContainsValueInLocationHeader("error=unsupported_response_type"));
+        return new RequestTestData("testUnsupportedResponseType",replaceValueFromRequestUri("response_type=code","response_type=code123456789"),302,getBool(true),responseContainsValueInLocationHeader("error=unsupported_response_type"));
     }
 
     private static RequestTestData testRedirectUriNotEqauls() {
@@ -61,7 +61,7 @@ public class AuthWithoutSessionRequestTest extends RequestParameterizedTest{
     }
 
     private static RequestTestData testResponseTypeMissing() {
-        return new RequestTestData("testResponseTypeMissing",removeValueFromRequestUri("&response_type=code"),307,getBool(true),responseContainsValueInLocationHeader("error=invalid_request"));
+        return new RequestTestData("testResponseTypeMissing",removeValueFromRequestUri("&response_type=code"),302,getBool(true),responseContainsValueInLocationHeader("error=invalid_request"));
     }
 
     private static RequestTestData testRedirectUriMissing() {
@@ -77,6 +77,6 @@ public class AuthWithoutSessionRequestTest extends RequestParameterizedTest{
     }
 
     private static RequestTestData testScopeMissing() {
-        return new RequestTestData("testScopeMissing",removeValueFromRequestUri("&scope=profile"),307,getBool(true),responseContainsValueInLocationHeader("error=invalid_request"));
+        return new RequestTestData("testScopeMissing",removeValueFromRequestUri("&scope=profile"),302,getBool(true),responseContainsValueInLocationHeader("error=invalid_request"));
     }
 }
