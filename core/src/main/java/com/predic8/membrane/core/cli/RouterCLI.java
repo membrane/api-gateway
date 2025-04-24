@@ -28,13 +28,14 @@ import org.jetbrains.annotations.*;
 import org.jose4j.jwk.JsonWebKey;
 import org.jose4j.jwk.RsaJsonWebKey;
 import org.jose4j.jwk.RsaJwkGenerator;
+import org.jose4j.lang.JoseException;
 import org.slf4j.*;
 import org.springframework.beans.factory.xml.*;
 
 import java.io.*;
 import java.math.BigInteger;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.SecureRandom;
 import java.util.*;
@@ -63,6 +64,11 @@ public class RouterCLI {
             System.exit(0);
         }
 
+        if (commandLine.getCommand().getName().equals("generate-jwk")) {
+            generateJWK(commandLine);
+            System.exit(0);
+        }
+
         try {
             getRouter(commandLine).waitFor();
         } catch (InterruptedException e) {
@@ -72,10 +78,6 @@ public class RouterCLI {
 
     private static @NotNull Router getRouter(MembraneCommandLine commandLine) {
         try {
-            if (commandLine.getCommand().getName().equals("generate-jwk")) {
-                initRouterByGenerateJWK(commandLine);
-                System.exit(0);
-            }
             return switch (commandLine.getCommand().getName()) {
                 case "oas" -> initRouterByOpenApiSpec(commandLine);
                 case "yaml" -> initRouterByYAML(commandLine);
@@ -126,21 +128,37 @@ public class RouterCLI {
         return router;
     }
 
-    private static void initRouterByGenerateJWK(MembraneCommandLine commandLine) throws Exception {
+    private static void generateJWK(MembraneCommandLine commandLine) {
         int bits = 2048;
         String bitsArg = commandLine.getCommand().getOptionValue("b");
         if (bitsArg != null) {
             bits = Integer.parseInt(bitsArg);
         }
 
+        boolean overwrite = commandLine.getCommand().isOptionSet("overwrite");
         String outputFile = commandLine.getCommand().getOptionValue("o");
 
-        RsaJsonWebKey rsaJsonWebKey = RsaJwkGenerator.generateJwk(bits);
+        RsaJsonWebKey rsaJsonWebKey = null;
+        try {
+            rsaJsonWebKey = RsaJwkGenerator.generateJwk(bits);
+        } catch (JoseException e) {
+            throw new RuntimeException(e);
+        }
         rsaJsonWebKey.setKeyId(new BigInteger(130, new SecureRandom()).toString(32));
         rsaJsonWebKey.setUse("sig");
         rsaJsonWebKey.setAlgorithm("RS256");
 
-        Files.writeString(Paths.get(outputFile), rsaJsonWebKey.toJson(JsonWebKey.OutputControlLevel.INCLUDE_PRIVATE));
+        Path path = Paths.get(outputFile);
+        if (path.toFile().exists() && !overwrite) {
+            log.error("Output file ({}) already exists.", outputFile);
+            System.exit(1);
+        }
+        try {
+            Files.writeString(path, rsaJsonWebKey.toJson(JsonWebKey.OutputControlLevel.INCLUDE_PRIVATE));
+        } catch (IOException e) {
+            log.error(e.getMessage());
+            System.exit(1);
+        }
     }
 
     private static @NotNull APIProxy getApiProxy(MembraneCommandLine commandLine) {
