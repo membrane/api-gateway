@@ -11,7 +11,7 @@
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
    See the License for the specific language governing permissions and
    limitations under the License. */
-package com.predic8.membrane.core.oauth2;
+package com.predic8.membrane.core.interceptor.oauth2;
 
 import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.*;
@@ -20,7 +20,6 @@ import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.interceptor.authentication.session.*;
 import com.predic8.membrane.core.interceptor.flow.*;
 import com.predic8.membrane.core.interceptor.log.*;
-import com.predic8.membrane.core.interceptor.oauth2.*;
 import com.predic8.membrane.core.interceptor.oauth2.authorizationservice.*;
 import com.predic8.membrane.core.interceptor.oauth2.tokengenerators.*;
 import com.predic8.membrane.core.interceptor.oauth2client.*;
@@ -33,6 +32,7 @@ import io.restassured.response.*;
 import org.jetbrains.annotations.*;
 import org.junit.jupiter.api.*;
 
+import java.io.IOException;
 import java.net.URI;
 import java.util.*;
 import java.util.concurrent.atomic.*;
@@ -151,6 +151,24 @@ public class OAuth2RedirectTest {
         router.setTransport(new HttpTransport());
         router.getRuleManager().addProxyAndOpenPortIfNew(azureRule);
         router.init();
+        router.getRuleManager().getRules().stream()
+                .flatMap(rule -> rule.getInterceptors().stream())
+                .filter(interceptor -> interceptor.getDisplayName().equals("oauth2 authorization server"))
+                .map(interceptor -> (OAuth2AuthorizationServerInterceptor) interceptor)
+                .forEach(interceptor -> {
+                    var wkf = interceptor.getWellknownFile();
+                    wkf.setSupportedResponseModes(Set.of("query", "fragment", "form_post"));
+                    try {
+                        wkf.init(interceptor);
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                });
+        var clients = router.getRuleManager().getRules().stream()
+                .flatMap(rule -> rule.getInterceptors().stream())
+                .filter(interceptor -> interceptor.getDisplayName().equals("oauth2 client"))
+                .map(interceptor -> (OAuth2Resource2Interceptor) interceptor)
+                .toList();
         return router;
     }
 
@@ -236,7 +254,14 @@ public class OAuth2RedirectTest {
                     }});
                 }});
             }});
-        }});
+        }
+//
+//            @Override
+//            public void init() {
+//                super.init();
+//                getWellknownFile().setSupportedResponseModes(Set.of("query", "fragment", "form_post"));
+//            }
+        });
         return azureRule;
     }
 }

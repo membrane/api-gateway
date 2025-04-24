@@ -48,47 +48,44 @@ public class OAuth2AuthFlowClient {
 
     // @formatter:off
     @NotNull public Response step1originalRequestGET(String url) {
-        Response response =
-                given()
-                    .redirects().follow(false)
-                .when()
-                    .get(clientBaseUrl.resolve(url).toString())
-                .then()
-                    .statusCode(302)
-                    .header(LOCATION, MatchesPattern.matchesPattern(authServerBaseUrl.toString() + ".*"))
-                    .extract().response();
+        Response response = given()
+            .redirects().follow(false)
+        .when()
+            .get(clientBaseUrl.resolve(url).toString())
+        .then()
+            .statusCode(302)
+            .header(LOCATION, MatchesPattern.matchesPattern(authServerBaseUrl.toString() + ".*"))
+            .extract().response();
         doUserAgentCookieHandling(memCookies, response.getDetailedCookies());
         return response;
     }
 
     @NotNull public Response step1originalRequestPOST(String url) {
-        Response response =
-                given()
-                    .redirects().follow(false)
-                    .headers(CONTENT_TYPE, "text/x-json")
-                    .body("[true]")
-                .when()
-                    .post(clientBaseUrl.resolve(url).toString())
-                .then()
-                    .statusCode(302)
-                    .header(LOCATION, MatchesPattern.matchesPattern(authServerBaseUrl.toString() + ".*"))
-                    .extract().response();
+        Response response = given()
+            .redirects().follow(false)
+            .headers(CONTENT_TYPE, "text/x-json")
+            .body("[true]")
+        .when()
+            .post(clientBaseUrl.resolve(url).toString())
+        .then()
+            .statusCode(302)
+            .header(LOCATION, MatchesPattern.matchesPattern(authServerBaseUrl.toString() + ".*"))
+            .extract().response();
         doUserAgentCookieHandling(memCookies, response.getDetailedCookies());
         return response;
     }
 
     @NotNull public String step2sendAuthToOAuth2Server(Response response) {
-        Response formRedirect =
-                given()
-                    .redirects().follow(false)
-                    .cookies(cookies)
-                    .urlEncodingEnabled(false)
-                .when()
-                    .get(response.getHeader(LOCATION))
-                .then()
-                    .statusCode(302)
-                    .header(LOCATION, MatchesPattern.matchesPattern("/login.*"))
-                    .extract().response();
+        Response formRedirect = given()
+            .redirects().follow(false)
+            .cookies(cookies)
+            .urlEncodingEnabled(false)
+        .when()
+            .get(response.getHeader(LOCATION))
+        .then()
+            .statusCode(302)
+            .header(LOCATION, MatchesPattern.matchesPattern("/login.*"))
+            .extract().response();
         doUserAgentCookieHandling(cookies, formRedirect.getDetailedCookies());
         return formRedirect.getHeader(LOCATION);
     }
@@ -169,7 +166,7 @@ public class OAuth2AuthFlowClient {
                 .redirects().follow(false)
                 .cookies(cookies)
             .when()
-                .post(authServerBaseUrl.toString())
+                .get(authServerBaseUrl.toString())
             .then()
                 .statusCode(302)
                 .header(LOCATION, MatchesPattern.matchesPattern(clientBaseUrl.toString() + ".*"))
@@ -183,7 +180,7 @@ public class OAuth2AuthFlowClient {
             .redirects().follow(false)
             .cookies(memCookies)
         .when()
-            .post(location)
+            .get(location)
         .then()
             .log().ifValidationFails(LogDetail.ALL)
             .statusCode(302)
