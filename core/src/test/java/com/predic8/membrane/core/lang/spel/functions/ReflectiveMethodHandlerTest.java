@@ -45,42 +45,47 @@ public class ReflectiveMethodHandlerTest {
 
     @Test
     void testHelloWorld() throws Exception {
+        var m = rmh.retrieveFunction( "test", of());
         assertEquals(
                 new TypedValue("Hello World!"),
-                rmh.invokeFunction(ctx, "test", of())
-                );
+                invokeFunction(m, ctx)
+        );
     }
 
     @Test
     void testParam() throws Exception {
+        var m = rmh.retrieveFunction("hello", of(getTypeDescriptor(String.class)));
         assertEquals(
                 new TypedValue("Hello World!"),
-                rmh.invokeFunction(ctx, "hello", of(getTypeDescriptor(String.class)), "World!")
-                );
+                invokeFunction(m, ctx, "World!")
+        );
     }
 
     @Test
     void testTwoParams() throws Exception {
+        var m = rmh.retrieveFunction( "add", of(INT_TYPE_DESC, INT_TYPE_DESC));
         assertEquals(
                 new TypedValue(3),
-                rmh.invokeFunction(ctx, "add", of(INT_TYPE_DESC, INT_TYPE_DESC), 1, 2)
-                );
+                invokeFunction(m, ctx, 1, 2)
+        );
     }
 
     @Test
     void testOverload() throws Exception {
+        var m = rmh.retrieveFunction( "add", of(FLOAT_TYPE_DESC, FLOAT_TYPE_DESC));
         assertEquals(
                 new TypedValue(1),
-                rmh.invokeFunction(ctx, "add", of(FLOAT_TYPE_DESC, FLOAT_TYPE_DESC), 0.5f, 0.5f)
+                invokeFunction(m, ctx, 0.5f, 0.5f)
         );
     }
 
     @Test
     void testCtx() throws Exception {
+        var m = rmh.retrieveFunction( "getRequestUri", of());
         assertEquals(
                 new TypedValue("foo"),
-                rmh.invokeFunction(ctx, "getRequestUri", of())
-               );
+                invokeFunction(m, ctx)
+        );
     }
 
     @Test

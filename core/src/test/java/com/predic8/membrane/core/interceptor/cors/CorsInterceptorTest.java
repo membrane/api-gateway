@@ -110,11 +110,45 @@ class CorsInterceptorTest {
 
             assertNull(getAllowOrigin(exc)); // AllowOrigin header must not be set
         }
+        
+        @Test
+        void allowAll() throws URISyntaxException {
+            i.setAllowAll(true);
+
+            Exchange exc = post("/test")
+                    .header(ORIGIN, "https://evil.example.com")
+                    .header(ACCESS_CONTROL_REQUEST_HEADERS,"X-Foo")
+                    .buildExchange();
+            
+            assertEquals(CONTINUE, i.handleRequest(exc));
+            exc.setResponse(ok("Success").build());
+            assertEquals(CONTINUE, i.handleResponse(exc));
+
+            assertEquals("*", getAllowOrigin(exc));
+            assertEquals(METHOD_POST, getAllowMethods(exc));
+            assertTrue(getAllowHeaders(exc).contains("X-Foo"));
+        }
 
     }
 
     @Nested
     class Preflight {
+
+        @Test
+        void allowAllPreflight() throws Exception {
+            i.setAllowAll(true);
+
+            Exchange exc = createPreflight("https://evil.example.com", METHOD_POST)
+                    .header(ACCESS_CONTROL_REQUEST_HEADERS,"X-Foo")
+                    .buildExchange();
+
+            assertEquals(RETURN, i.handleRequest(exc));
+            assertEquals(204, exc.getResponse().getStatusCode());
+
+            assertEquals(METHOD_POST, getAllowMethods(exc));
+            assertTrue(getAllowHeaders(exc).contains("X-Foo"));
+            assertEquals("*", getAllowOrigin(exc));
+        }
 
         @Test
         void explicitlyAllowedNullOrigin() throws Exception {

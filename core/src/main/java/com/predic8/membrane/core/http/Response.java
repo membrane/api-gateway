@@ -235,10 +235,18 @@ public class Response extends Message {
 		return newInstance().status(100);
 	}
 
+	public static ResponseBuilder redirect(String uri) {
+		return redirect(uri, false);
+	}
+
 	public static ResponseBuilder redirect(String uri, boolean permanent) {
+		return redirect(uri, permanent ? 301 : 307);
+	}
+
+	public static ResponseBuilder redirect(String uri, int code) {
 		String escaped = StringEscapeUtils.escapeXml11(uri);
 		return ResponseBuilder.newInstance().
-				status(permanent ? 301 : 307, permanent ? "Moved Permanently" : "Temporary Redirect").
+				status(code).
 				header(LOCATION, uri).
 				contentType(TEXT_HTML_UTF8).
 				body(HttpUtil.unescapedHtmlMessage("Moved.", "This page has moved to <a href=\""+escaped+"\">"+escaped+"</a>."));
