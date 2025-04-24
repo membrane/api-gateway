@@ -111,7 +111,7 @@ public class OAuth2ResourceErrorForwardingTest {
         ServiceProxy sp = new ServiceProxy(new ServiceProxyKey(serverPort), null, 99999);
 
         WellknownFile wkf = getWellknownFile();
-        wkf.init(new HttpRouter());
+        wkf.init();
 
         sp.getInterceptors().add(new AbstractInterceptor() {
 
@@ -120,7 +120,7 @@ public class OAuth2ResourceErrorForwardingTest {
                 if (exc.getRequestURI().endsWith("/.well-known/openid-configuration")) {
                     exc.setResponse(Response.ok(wkf.getWellknown()).build());
                 } else if (exc.getRequestURI().startsWith("/auth?")) {
-                    Map<String, String> params = null;
+                    Map<String, String> params;
                     try {
                         params = URLParamUtil.getParams(new URIFactory(), exc, URLParamUtil.DuplicateKeyOrInvalidFormStrategy.ERROR);
                     } catch (URISyntaxException | IOException e) {
@@ -249,7 +249,7 @@ public class OAuth2ResourceErrorForwardingTest {
         sp.getInterceptors().add(new AbstractInterceptor() {
             @Override
             public Outcome handleRequest(Exchange exc) {
-                Map<String, String> params = null;
+                Map<String, String> params;
                 try {
                     params = URLParamUtil.getParams(new URIFactory(), exc, URLParamUtil.DuplicateKeyOrInvalidFormStrategy.ERROR);
                 } catch (URISyntaxException | IOException e) {

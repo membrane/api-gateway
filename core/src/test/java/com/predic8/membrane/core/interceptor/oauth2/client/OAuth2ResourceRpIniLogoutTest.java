@@ -181,7 +181,7 @@ public class OAuth2ResourceRpIniLogoutTest {
 
 
         WellknownFile wkf = getWellknownFile();
-        wkf.init(new HttpRouter());
+        wkf.init();
 
         sp.getInterceptors().add(new AbstractInterceptor() {
 
