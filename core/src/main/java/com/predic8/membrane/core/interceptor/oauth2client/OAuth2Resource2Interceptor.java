@@ -114,7 +114,7 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
         Session session = getSessionManager().getSession(exc);
 
         if (isLogoutBackRequest(exc)) {
-            exc.setResponse(Response.redirect(afterLogoutUrl, false).status(303).build());
+            exc.setResponse(Response.redirect(afterLogoutUrl, 303).build());
 
             logOutSession(exc);
 
@@ -130,9 +130,9 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
                 OAuth2AnswerParameters ap = session.getOAuth2AnswerParameters();
                 if (ap != null && ap.getIdToken() != null)
                     uri += "&id_token_hint=" + ap.getIdToken();
-                exc.setResponse(Response.redirect(uri, false).status(303).build());
+                exc.setResponse(Response.redirect(uri, 303).build());
             } else {
-                exc.setResponse(Response.redirect(afterLogoutUrl, false).status(303).build());
+                exc.setResponse(Response.redirect(afterLogoutUrl, 303).build());
             }
 
             logOutSession(exc);
@@ -285,7 +285,10 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
                         new LoginParameter(e.getKey(), e.getValue())
                 ).toList();
 
-        exc.setResponse(Response.redirect(auth.getLoginURL(state, publicUrlManager.getPublicURLAndReregister(exc) + callbackPath, exc.getRequestURI()) + LoginParameter.copyLoginParameters(exc, combinedLoginParameters), false).build());
+        Response redirectResponse = Response
+                .redirect(auth.getLoginURL(state, publicUrlManager.getPublicURLAndReregister(exc) + callbackPath, exc.getRequestURI()) + LoginParameter.copyLoginParameters(exc, combinedLoginParameters), 302)
+                .build();
+        exc.setResponse(redirectResponse);
 
         readBodyFromStreamIntoMemory(exc);
 
