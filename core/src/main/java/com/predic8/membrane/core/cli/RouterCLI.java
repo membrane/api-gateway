@@ -74,6 +74,7 @@ public class RouterCLI {
         try {
             if (commandLine.getCommand().getName().equals("generate-jwk")) {
                 initRouterByGenerateJWK(commandLine);
+                System.exit(0);
             }
             return switch (commandLine.getCommand().getName()) {
                 case "oas" -> initRouterByOpenApiSpec(commandLine);
@@ -126,24 +127,20 @@ public class RouterCLI {
     }
 
     private static void initRouterByGenerateJWK(MembraneCommandLine commandLine) throws Exception {
-        if (commandLine.getCommand().getName().equals("generate-jwk")) {
-
-            int bits = 2048;
-            String bitsArg = commandLine.getCommand().getOptionValue("b");
-            if (bitsArg != null) {
-                bits = Integer.parseInt(bitsArg);
-            }
-
-            String outputFile = commandLine.getCommand().getOptionValue("o");
-
-            RsaJsonWebKey rsaJsonWebKey = RsaJwkGenerator.generateJwk(bits);
-            rsaJsonWebKey.setKeyId(new BigInteger(130, new SecureRandom()).toString(32));
-            rsaJsonWebKey.setUse("sig");
-            rsaJsonWebKey.setAlgorithm("RS256");
-
-            Files.writeString(Paths.get(outputFile), rsaJsonWebKey.toJson(JsonWebKey.OutputControlLevel.INCLUDE_PRIVATE));
+        int bits = 2048;
+        String bitsArg = commandLine.getCommand().getOptionValue("b");
+        if (bitsArg != null) {
+            bits = Integer.parseInt(bitsArg);
         }
-        System.exit(0);
+
+        String outputFile = commandLine.getCommand().getOptionValue("o");
+
+        RsaJsonWebKey rsaJsonWebKey = RsaJwkGenerator.generateJwk(bits);
+        rsaJsonWebKey.setKeyId(new BigInteger(130, new SecureRandom()).toString(32));
+        rsaJsonWebKey.setUse("sig");
+        rsaJsonWebKey.setAlgorithm("RS256");
+
+        Files.writeString(Paths.get(outputFile), rsaJsonWebKey.toJson(JsonWebKey.OutputControlLevel.INCLUDE_PRIVATE));
     }
 
     private static @NotNull APIProxy getApiProxy(MembraneCommandLine commandLine) {
