@@ -23,6 +23,8 @@ import org.hamcrest.text.MatchesPattern;
 import org.jetbrains.annotations.NotNull;
 
 import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -30,13 +32,13 @@ import java.util.stream.Collectors;
 
 import static io.restassured.RestAssured.given;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.apache.http.HttpHeaders.CONTENT_TYPE;
-import static org.apache.http.HttpHeaders.LOCATION;
+import static org.apache.http.HttpHeaders.*;
 
-public class OAuth2AuthFlowClient {
+public abstract class OAuth2AuthFlowClient {
 
-    private final URI authServerBaseUrl;
-    private final URI clientBaseUrl;
+
+    protected final URI authServerBaseUrl;
+    protected final URI clientBaseUrl;
 
     Map<String, String> cookies = new HashMap<>();
     Map<String, String> memCookies = new HashMap<>();
@@ -56,6 +58,7 @@ public class OAuth2AuthFlowClient {
             .statusCode(302)
             .header(LOCATION, MatchesPattern.matchesPattern(authServerBaseUrl.toString() + ".*"))
             .extract().response();
+        checkStep1Response(response);
         doUserAgentCookieHandling(memCookies, response.getDetailedCookies());
         return response;
     }
@@ -71,9 +74,12 @@ public class OAuth2AuthFlowClient {
             .statusCode(302)
             .header(LOCATION, MatchesPattern.matchesPattern(authServerBaseUrl.toString() + ".*"))
             .extract().response();
+        checkStep1Response(response);
         doUserAgentCookieHandling(memCookies, response.getDetailedCookies());
         return response;
     }
+
+    abstract void checkStep1Response(Response response);
 
     @NotNull public String step2sendAuthToOAuth2Server(Response response) {
         Response formRedirect = given()
@@ -106,8 +112,8 @@ public class OAuth2AuthFlowClient {
         Response login = given()
             .redirects().follow(false)
             .cookies(cookies)
-            .header("Content-Type", "application/x-www-form-urlencoded")
-            .header("Accept-Charset", "UTF-8")
+            .header(CONTENT_TYPE, "application/x-www-form-urlencoded")
+            .header(ACCEPT_CHARSET, "UTF-8")
             .formParam("username", username)
             .formParam("password", password)
         .when()
@@ -149,8 +155,8 @@ public class OAuth2AuthFlowClient {
         var response = given()
             .redirects().follow(false)
             .cookies(cookies)
-            .header("Content-Type", "application/x-www-form-urlencoded")
-            .header("Accept-Charset", "UTF-8")
+            .header(CONTENT_TYPE, "application/x-www-form-urlencoded")
+            .header(ACCEPT_CHARSET, "UTF-8")
             .formParam("consent", "Accept")
         .when()
             .post(authServerBaseUrl.resolve(location).toString())
@@ -161,59 +167,46 @@ public class OAuth2AuthFlowClient {
         doUserAgentCookieHandling(cookies, response.getDetailedCookies());
     }
 
-    public String step8redirectToClient() {
-        var response = given()
-                .redirects().follow(false)
-                .cookies(cookies)
-            .when()
-                .get(authServerBaseUrl.toString())
-            .then()
-                .statusCode(302)
-                .header(LOCATION, MatchesPattern.matchesPattern(clientBaseUrl.toString() + ".*"))
-                .extract().response();
-        doUserAgentCookieHandling(cookies, response.getDetailedCookies());
-        return response.getHeader(LOCATION);
-    }
+    public abstract Response step8redirectToClient()throws URISyntaxException;
 
-    public void step9exchangeCodeForToken(String location, String expectedBody) {
-        Response response = given()
+    public abstract String step9executeCallback(Response callback);
+
+    public void step10callOriginalUrl(String redirectUri, String expectedBody) {
+        var location = UrlDecoder.urlDecode(clientBaseUrl.resolve(redirectUri).toString(), UTF_8, true);
+        given()
             .redirects().follow(false)
             .cookies(memCookies)
         .when()
             .get(location)
         .then()
             .log().ifValidationFails(LogDetail.ALL)
-            .statusCode(302)
-            .extract().response();
-
-        doUserAgentCookieHandling(memCookies, response.getDetailedCookies());
-        String location2 = response.getHeader(LOCATION);
-
-        // this is what browsers seem to do
-        location2 = UrlDecoder.urlDecode(clientBaseUrl.resolve(location2).toString(), UTF_8, true);
-
-        given()
-            .redirects().follow(false)
-            .cookies(memCookies)
-        .when()
-            .get(location2)
-        .then()
-            .log().ifValidationFails(LogDetail.ALL)
             .statusCode(200)
             .assertThat().body(Matchers.is(expectedBody));
+
     }
     // @formatter:on
 
     /**
      * Please note that the cookie handling on the User Agent side implemented only works exactly for this test.
      */
-    private void doUserAgentCookieHandling(Map<String, String> memCookies, Cookies cookies) {
+    void doUserAgentCookieHandling(Map<String, String> memCookies, Cookies cookies) {
         cookies.asList().stream()
                 .filter(e -> e.hasExpiryDate() && e.getExpiryDate().before(new Date()))
                 .forEach(c -> memCookies.remove(c.getName()));
         memCookies.putAll(cookies.asList().stream()
                 .filter(e -> !e.hasExpiryDate() || !e.getExpiryDate().before(new Date()))
                 .collect(Collectors.toMap(Cookie::getName, Cookie::getValue)));
+    }
+
+    static Map<String, String> readQuery(String query) {
+        return Arrays.stream(query.split("&"))
+                .map(OAuth2AuthFlowClient::splitQueryElement)
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+    }
+
+    static Map.Entry<String, String> splitQueryElement(String keyValue) {
+        var pos = keyValue.indexOf('=');
+        return Map.entry(keyValue.substring(0, pos), keyValue.substring(pos + 1));
     }
 
 }

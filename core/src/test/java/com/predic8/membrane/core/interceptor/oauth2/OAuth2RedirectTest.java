@@ -17,11 +17,8 @@ import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.exchangestore.*;
 import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.interceptor.authentication.session.*;
 import com.predic8.membrane.core.interceptor.flow.*;
-import com.predic8.membrane.core.interceptor.log.*;
 import com.predic8.membrane.core.interceptor.oauth2.authorizationservice.*;
-import com.predic8.membrane.core.interceptor.oauth2.tokengenerators.*;
 import com.predic8.membrane.core.interceptor.oauth2client.*;
 import com.predic8.membrane.core.interceptor.session.*;
 import com.predic8.membrane.core.interceptor.templating.*;
@@ -32,17 +29,15 @@ import io.restassured.response.*;
 import org.jetbrains.annotations.*;
 import org.junit.jupiter.api.*;
 
-import java.io.IOException;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.*;
 import java.util.concurrent.atomic.*;
 
-import static com.predic8.membrane.core.interceptor.log.LogInterceptor.Level.*;
 import static com.predic8.membrane.core.lang.ExchangeExpression.Language.*;
-import static com.predic8.membrane.test.TestUtil.getPathFromResource;
 import static org.junit.jupiter.api.Assertions.*;
 
-public class OAuth2RedirectTest {
+public abstract class OAuth2RedirectTest {
 
     static final URI AUTH_SERVER_BASE_URL = URI.create("http://localhost:2002");
     static final URI BACKEND_BASE_URL = URI.create("http://localhost:2001");
@@ -69,8 +64,8 @@ public class OAuth2RedirectTest {
     }
 
     @Test
-    void testGet() {
-        OAuth2AuthFlowClient OAuth2 = new OAuth2AuthFlowClient(AUTH_SERVER_BASE_URL, CLIENT_BASE_URL);
+    void testGet() throws Exception {
+        OAuth2AuthFlowClient OAuth2 = getOAuth2AuthFlowClient();
         // Step 1: Initial request to the client
         Response clientResponse = OAuth2.step1originalRequestGET("/a?b=c&d=ä");
         // Step 2: Send to authentication at OAuth2 server
@@ -87,10 +82,12 @@ public class OAuth2RedirectTest {
         // Step 7: Submit consent
         OAuth2.step7submitConsent(consentLocation);
         // Step 8: Redirect back to client
-        String callbackUrl = OAuth2.step8redirectToClient();
+        var callback = OAuth2.step8redirectToClient();
         // Step 9: Exchange Code for Token & continue original request.·
-        OAuth2.step9exchangeCodeForToken(
-                callbackUrl,
+        var redirectUrl = OAuth2.step9executeCallback(callback);
+
+        OAuth2.step10callOriginalUrl(
+                redirectUrl,
                 "GET | null | "
                 // method is 'GET', Content-Type is not set, body is empty
         );
@@ -99,9 +96,11 @@ public class OAuth2RedirectTest {
         assertEquals(firstUrlHit.get(), interceptorChainHit.get(), "Is interceptor chain correctly continued?");
     }
 
+    abstract OAuth2AuthFlowClient getOAuth2AuthFlowClient();
+
     @Test
-    void testPost() {
-        OAuth2AuthFlowClient OAuth2 = new OAuth2AuthFlowClient(AUTH_SERVER_BASE_URL, CLIENT_BASE_URL);
+    void testPost() throws Exception {
+        OAuth2AuthFlowClient OAuth2 = getOAuth2AuthFlowClient();
         // Step 1: Initial request to the client
         Response clientResponse = OAuth2.step1originalRequestPOST("/a?b=c&d=ä");
         // Step 2: Send to authentication at OAuth2 server
@@ -117,10 +116,12 @@ public class OAuth2RedirectTest {
         // Step 7: Submit consent
         OAuth2.step7submitConsent(consentLocation);
         // Step 8: Redirect back to client
-        String callbackUrl = OAuth2.step8redirectToClient();
+        var callback = OAuth2.step8redirectToClient();
         // Step 9: Exchange Code for Token & continue original request.·
-        OAuth2.step9exchangeCodeForToken(
-                callbackUrl,
+        var redirectUrl = OAuth2.step9executeCallback(callback);
+
+        OAuth2.step10callOriginalUrl(
+                redirectUrl,
                 "POST | text/x-json; charset=ISO-8859-1 | [true]"
                 // method is POST, Content-Type is 'text/x-json; charset=ISO-8859-1', body is '[true]'
         );
@@ -151,24 +152,6 @@ public class OAuth2RedirectTest {
         router.setTransport(new HttpTransport());
         router.getRuleManager().addProxyAndOpenPortIfNew(azureRule);
         router.init();
-        router.getRuleManager().getRules().stream()
-                .flatMap(rule -> rule.getInterceptors().stream())
-                .filter(interceptor -> interceptor.getDisplayName().equals("oauth2 authorization server"))
-                .map(interceptor -> (OAuth2AuthorizationServerInterceptor) interceptor)
-                .forEach(interceptor -> {
-                    var wkf = interceptor.getWellknownFile();
-                    wkf.setSupportedResponseModes(Set.of("query", "fragment", "form_post"));
-                    try {
-                        wkf.init(interceptor);
-                    } catch (IOException e) {
-                        throw new RuntimeException(e);
-                    }
-                });
-        var clients = router.getRuleManager().getRules().stream()
-                .flatMap(rule -> rule.getInterceptors().stream())
-                .filter(interceptor -> interceptor.getDisplayName().equals("oauth2 client"))
-                .map(interceptor -> (OAuth2Resource2Interceptor) interceptor)
-                .toList();
         return router;
     }
 
@@ -217,51 +200,5 @@ public class OAuth2RedirectTest {
         });
         return membraneRule;
     }
-
-    private static @NotNull SSLableProxy getAuthorizationServerRule() {
-        SSLableProxy azureRule = new ServiceProxy(new ServiceProxyKey(AUTH_SERVER_BASE_URL.getHost(), "*", ".*", AUTH_SERVER_BASE_URL.getPort()), "localhost", 80);
-        azureRule.getInterceptors().add(new LogInterceptor() {{
-            setLevel(DEBUG);
-        }});
-        azureRule.getInterceptors().add(new OAuth2AuthorizationServerInterceptor() {{
-            setLocation(getPathFromResource("openId/dialog"));
-            setConsentFile(getPathFromResource("openId/consentFile.json"));
-            setTokenGenerator(new BearerTokenGenerator());
-            setIssuer(AUTH_SERVER_BASE_URL.toString());
-            setUserDataProvider(new StaticUserDataProvider() {{
-                setUsers(List.of(new User() {{
-                    setUsername("user");
-                    setPassword("password");
-                }}));
-            }});
-            setClientList(new StaticClientList() {{
-                setClients(List.of(new Client() {{
-                    setClientId("abc");
-                    setClientSecret("def");
-                    setCallbackUrl(CLIENT_BASE_URL.resolve("/oauth2callback").toString());
-                }}));
-            }});
-            setClaimList(new ClaimList() {{
-                setValue("aud email iss sub username");
-                setScopes(new ArrayList<>() {{
-                    add(new Scope() {{
-                        setId("username");
-                        setClaims("username");
-                    }});
-                    add(new Scope() {{
-                        setId("profile");
-                        setClaims("username email");
-                    }});
-                }});
-            }});
-        }
-//
-//            @Override
-//            public void init() {
-//                super.init();
-//                getWellknownFile().setSupportedResponseModes(Set.of("query", "fragment", "form_post"));
-//            }
-        });
-        return azureRule;
-    }
+    abstract @NotNull SSLableProxy getAuthorizationServerRule();
 }
