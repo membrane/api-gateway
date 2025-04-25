@@ -72,7 +72,7 @@ public class OAuth2AuthFlowFormPostClient extends OAuth2AuthFlowClient {
             .formParams(gatherInputFields(callback.getBody().asString()))
             .cookies(memCookies)
         .when()
-            .get(extractTargetUrl(callback.getBody().asString()))
+            .post(extractTargetUrl(callback.getBody().asString()))
         .then()
             .log().ifValidationFails(LogDetail.ALL)
             .statusCode(302)
