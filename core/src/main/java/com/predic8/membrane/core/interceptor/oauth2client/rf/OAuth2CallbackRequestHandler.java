@@ -75,7 +75,10 @@ public class OAuth2CallbackRequestHandler {
             String stateFromUri = getSecurityTokenFromState(params.getState());
 
             if (!csrfTokenMatches(session, stateFromUri)) {
-                throw new RuntimeException("CSRF token mismatch.");
+                throw new OAuth2Exception(
+                        "MEMBRANE_CSRF_TOKEN_MISMATCH",
+                        "CSRF token mismatch.", // TODO
+                        Response.badRequest().body("CSRF token mismatch.").build());
             }
 
             // state in session can be "merged" -> save the selected state in session overwriting the possibly merged value
@@ -123,8 +126,10 @@ public class OAuth2CallbackRequestHandler {
 
     private static void continueOriginalExchange(Exchange exc, AbstractExchangeSnapshot originalRequest, Session session) throws Exception {
         if (originalRequest.getRequest().getMethod().equals("GET")) {
-            exc.setResponse(Response.redirect(originalRequest.getOriginalRequestUri(), false).build());
+            log.info("continueOriginalExchange: GET.");
+            exc.setResponse(Response.redirect(originalRequest.getOriginalRequestUri(), false).status(302).build());
         } else {
+            log.info("continueOriginalExchange: not GET.");
             String oa2redirect = new BigInteger(130, new SecureRandom()).toString(32);
 
             session.put(OAuthUtils.oa2redictKeyNameInSession(oa2redirect), new ObjectMapper().writeValueAsString(originalRequest));
