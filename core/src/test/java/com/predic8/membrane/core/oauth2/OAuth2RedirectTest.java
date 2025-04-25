@@ -29,7 +29,9 @@ import com.predic8.membrane.core.interceptor.templating.*;
 import com.predic8.membrane.core.proxies.*;
 import com.predic8.membrane.core.transport.http.*;
 import com.predic8.membrane.test.*;
+import io.restassured.filter.log.LogDetail;
 import io.restassured.response.*;
+import org.hamcrest.Matchers;
 import org.jetbrains.annotations.*;
 import org.junit.jupiter.api.*;
 
@@ -40,6 +42,7 @@ import java.util.concurrent.atomic.*;
 import static com.predic8.membrane.core.interceptor.log.LogInterceptor.Level.*;
 import static com.predic8.membrane.core.lang.ExchangeExpression.Language.*;
 import static com.predic8.membrane.test.TestUtil.getPathFromResource;
+import static io.restassured.RestAssured.given;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class OAuth2RedirectTest {
@@ -66,6 +69,19 @@ public class OAuth2RedirectTest {
         authorizationServerRouter.shutdown();
         oauth2ResourceRouter.shutdown();
         backendRouter.shutdown();
+    }
+
+    @Test
+    void invalidState() {
+        given()
+            .redirects().follow(false)
+            //.cookies(memCookies) TODO: create clone of this test with existing session
+        .when()
+            .get("http://localhost:2000/oauth2callback?code=b2296nh0navopaj5iq5slu7dje&state=security_token=miv38g9f80v7fiau029ctfel2o&url=/a?b=c&d=%C3%A4")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL)
+            .statusCode(400)
+            .body(Matchers.is("Missing session."));
     }
 
     @Test

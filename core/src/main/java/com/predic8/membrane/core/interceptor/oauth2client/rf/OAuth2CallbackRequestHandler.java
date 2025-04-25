@@ -75,7 +75,22 @@ public class OAuth2CallbackRequestHandler {
             String stateFromUri = getSecurityTokenFromState(params.getState());
 
             if (!csrfTokenMatches(session, stateFromUri)) {
-                throw new RuntimeException("CSRF token mismatch.");
+                if (session.isNew()) {
+                    throw new OAuth2Exception(
+                            "MEMBRANE_MISSING_SESSION",
+                            "Missing session.",
+                            Response.badRequest().body("Missing session.").build());
+                } else if (!session.get().containsKey(ParamNames.STATE)) {
+                    throw new OAuth2Exception(
+                            "MEMBRANE_CSRF_TOKEN_MISSING_IN_SESSION",
+                            "CSRF token missing in session.",
+                            Response.badRequest().body("CSRF token missing in session.").build());
+                }else {
+                    throw new OAuth2Exception(
+                            "MEMBRANE_CSRF_TOKEN_MISMATCH",
+                            "CSRF token mismatch.",
+                            Response.badRequest().body("CSRF token mismatch.").build());
+                }
             }
 
             // state in session can be "merged" -> save the selected state in session overwriting the possibly merged value
