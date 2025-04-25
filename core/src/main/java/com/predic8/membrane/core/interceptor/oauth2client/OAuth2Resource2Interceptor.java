@@ -218,8 +218,10 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
 
         Session session = getSessionManager().getSession(exc);
 
+        String valueFromSession = session.get(oa2redictKeyNameInSession(oa2redirect)).toString();
+        log.info("restored exchange from session = {}", valueFromSession);
         AbstractExchange originalExchange = new ObjectMapper().readValue(
-                        session.get(OAuthUtils.oa2redictKeyNameInSession(oa2redirect)).toString(),
+                        valueFromSession,
                         AbstractExchangeSnapshot.class)
                 .toAbstractExchange();
         session.remove(OAuthUtils.oa2redictKeyNameInSession(oa2redirect));
