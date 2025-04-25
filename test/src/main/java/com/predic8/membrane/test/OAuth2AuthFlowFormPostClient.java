@@ -37,7 +37,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class OAuth2AuthFlowFormPostClient extends OAuth2AuthFlowClient {
 
-    public static final Pattern INPUT_PATTERN = Pattern.compile("<input type=\"hidden\" name=\"(.*?)\" value=\"(.*?)\"\s*/>", Pattern.CASE_INSENSITIVE);
+    public static final Pattern INPUT_PATTERN = Pattern.compile("<input type=\"hidden\" name=\"(.*?)\" value=\"(.*?)\"\\s*/>", Pattern.CASE_INSENSITIVE);
     public static final Pattern FORM_PATTERN = Pattern.compile("<form method=\"post\" action=\"(.*?)\"", Pattern.CASE_INSENSITIVE);
 
     public OAuth2AuthFlowFormPostClient(URI authServerBaseUrl, URI clientBaseUrl) {
