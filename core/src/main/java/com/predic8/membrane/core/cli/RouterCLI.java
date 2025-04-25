@@ -1,4 +1,4 @@
-/* Copyright 2009, 2012 predic8 GmbH, www.predic8.com
+/* Copyright 2009, 2012, 2025 predic8 GmbH, www.predic8.com
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -70,9 +70,8 @@ public class RouterCLI {
                 TrackingFileSystemXmlApplicationContext bf =
                         new TrackingFileSystemXmlApplicationContext(new String[]{proxies}, false);
                 bf.refresh();
-                System.out.println("memexit: 0");
             } catch (Throwable e) {
-                System.err.println("memexit: 1\n" + getExceptionMessageWithCauses(e));
+                System.err.println(getExceptionMessageWithCauses(e));
                 System.exit(1);
             }
             System.exit(0);
