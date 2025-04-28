@@ -46,12 +46,9 @@ public class InMemorySessionManager extends SessionManager {
 
     @Override
     protected Map<String, Object> cookieValueToAttributes(String cookie) {
-        log.info("Getting cookie: {}", cookie);
         try {
             synchronized (sessions) {
-                Map<String, Object> result = sessions.get(cookie.split("=true")[0], () -> new Session(usernameKeyName, new HashMap<>())).get();
-                result.forEach((key, value) -> log.info("* {} : {}", key, value));
-                return result;
+                return sessions.get(cookie.split("=true")[0], () -> new Session(usernameKeyName, new HashMap<>())).get();
             }
         } catch (ExecutionException e) {
             throw new RuntimeException(e);
@@ -76,11 +73,7 @@ public class InMemorySessionManager extends SessionManager {
     }
 
     private void addSessionToCache(Session[] session) {
-        log.info("storing Session");
-        Arrays.stream(session).forEach(s -> {
-//            s.content.forEach((key, value) -> log.info("* {} : {}", key, value));
-            sessions.put(s.get(ID_NAME), s);
-        });
+        Arrays.stream(session).forEach(s -> sessions.put(s.get(ID_NAME), s));
     }
 
     private void createSessionIdsForNewSessions(Session[] session) {

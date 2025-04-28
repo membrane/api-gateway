@@ -142,11 +142,6 @@ public abstract class SessionManager {
     }
 
     private void handleSetCookieHeaderForResponse(Exchange exc, Session session) throws Exception {
-        log.info("\n\n-------\nhandleSetCookieHeaderForResponse from {}", getCallingMethod(4));
-        log.info("RequestURI {}", exc.getRequestURI());
-        log.info("* Request Headers: \n{}", exc.getRequest().getHeader());
-        log.info("* Response Headers: \n{}", exc.getResponse().getHeader());
-//        session.getContent().forEach((key, value) -> log.info("* Session {}: {}", key, value));
         Optional<Object> originalCookieValueAtBeginning = Optional.ofNullable(exc.getProperty(SESSION_COOKIE_ORIGINAL));
 
         if (originalCookieValueAtBeginning.isEmpty() && !session.isDirty)
@@ -158,18 +153,12 @@ public abstract class SessionManager {
                     originalCookieValueAtBeginning.get().toString().trim().equals(currentCookieValueOfSession))
                 return;
 
-            Header responseHeader = exc.getResponse().getHeader();
-            responseHeader.getValues(new HeaderName(Header.SET_COOKIE)).forEach(setCookie -> log.info("[PRE] {}", setCookie));
-
             // expires old cookies and sets new cookie for the current session
             setCookieForCurrentSession(exc, currentCookieValueOfSession);
-            responseHeader.getValues(new HeaderName(Header.SET_COOKIE)).forEach(setCookie -> log.info("[POST_SETCURRENT] {}", setCookie));
             setCookieForExpiredSessions(exc, currentCookieValueOfSession);
-            responseHeader.getValues(new HeaderName(Header.SET_COOKIE)).forEach(setCookie -> log.info("[POST_SETEXPIRED] {}", setCookie));
 
             // if old and new session are the same then drop redundant set cookie headers
             dropRedundantCookieHeaders(exc);
-            responseHeader.getValues(new HeaderName(Header.SET_COOKIE)).forEach(setCookie -> log.info("[POST_DROP] {}", setCookie));
 
             cacheSetCookie(exc, currentCookieValueOfSession);
         }
@@ -179,7 +168,6 @@ public abstract class SessionManager {
         Optional<HeaderField> setCookie = getAllRelevantSetCookieHeaders(exc).filter(e -> e.getValue().contains(currentSessionCookieValue)).findFirst();
         if(setCookie.isPresent())
             synchronized (cookieExpireCache) {
-                log.info("Caching session cookie: {}", setCookie.get().getValue());
                 cookieExpireCache.put(currentSessionCookieValue, setCookie.get().getValue());
             }
     }
@@ -197,12 +185,10 @@ public abstract class SessionManager {
     }
 
     private Stream<HeaderField> getAllRelevantSetCookieHeaders(Exchange exc) {
-//        log.info("getAllRelevantSetCookieHeaders from {}", getCallingMethod(1));
         return Arrays.stream(exc.getResponse().getHeader().getAllHeaderFields())
                 .filter(hf -> hf.getHeaderName().toString().contains(Header.SET_COOKIE))
                 .filter(hf -> hf.getValue().contains("=true"))
                 .filter(hf -> isValidCookieForThisSessionManager(Arrays.stream(hf.getValue().split(";")).filter(s -> s.contains("=true")).findFirst().get()));
-//                .peek(hf -> log.info("Found {} header: {}", hf.getHeaderName(), hf.getValue()));
     }
 
     private void removeRefreshIfNoChangeInExpireTime(Exchange exc, Map<String, List<String>> setCookieHeaders) {
@@ -246,7 +232,6 @@ public abstract class SessionManager {
             log.warn("Cookie is larger than 4093 bytes, this will not work some browsers.");
         String setCookieValue = currentSessionCookieValue
                 + ";" + String.join(";", createCookieAttributes(exc));
-        log.info("Setting session cookie: {}", setCookieValue);
         exc.getResponse().getHeader().add(Header.SET_COOKIE, setCookieValue);
     }
 
@@ -273,7 +258,6 @@ public abstract class SessionManager {
     private List<String> expireCookies(Exchange exc, List<String> invalidCookies) {
         return invalidCookies
                 .stream()
-                .peek(cookie -> log.info("Expiring cookie {}", cookie))
                 .map(cookie -> cookie + ";" + String.join(";", createInvalidationAttributes(exc)))
                 .collect(Collectors.toList());
     }
@@ -287,7 +271,6 @@ public abstract class SessionManager {
 
         Map<String, Map<String, Object>> validCookiesAsListOfMaps = convertValidCookiesToAttributes(exc);
         Session session = new Session(usernameKeyName, mergeCookies(new ArrayList<>(validCookiesAsListOfMaps.values())));
-        session.content.forEach((key, value) -> log.info(" {}: {}", key, value));
 
         if(validCookiesAsListOfMaps.size() == 1)
             exc.setProperty(SESSION_COOKIE_ORIGINAL,validCookiesAsListOfMaps.keySet().iterator().next());
@@ -315,7 +298,6 @@ public abstract class SessionManager {
 
     // TODO Side effect!
     private Session getSessionFromManager(Exchange exc) {
-        log.info("Getting session from manager");
         exc.setProperty(SESSION, getSessionInternal(exc));
         return getSessionFromExchange(exc).get();
     }
@@ -337,7 +319,6 @@ public abstract class SessionManager {
                 sameSite != null ? "SameSite="+sameSite : null
         )
                 .filter(Objects::nonNull)
-//                .peek(cookie -> log.info("Cookie created: {}", cookie))
                 .collect(Collectors.toList());
     }
 
@@ -358,14 +339,16 @@ public abstract class SessionManager {
                 sameSite != null ? "SameSite="+sameSite : null
         )
                 .filter(Objects::nonNull)
-//                .peek(attr -> log.info("Invalidation attribute: {}", attr))
                 .collect(Collectors.toList());
     }
 
 
     protected Stream<String> getCookies(Exchange exc) {
-//        log.info("getCookies from {}", getCallingMethod(2));
-        return exc.getRequest().getHeader().getValues(new HeaderName(COOKIE)).stream().map(s -> s.getValue().split(";")).flatMap(Arrays::stream).map(String::trim); //.peek(cookie -> log.info("getCookies: {}", cookie));
+        return exc.getRequest().getHeader().getValues(new HeaderName(COOKIE))
+                .stream()
+                .map(s -> s.getValue().split(";"))
+                .flatMap(Arrays::stream)
+                .map(String::trim);
     }
 
     public void removeSession(Exchange exc) {
@@ -467,9 +450,5 @@ public abstract class SessionManager {
     public SessionManager setSessionCookie(boolean sessionCookie) {
         this.sessionCookie = sessionCookie;
         return this;
-    }
-
-    private String getCallingMethod(int depth) {
-        return StackWalker.getInstance().walk(s -> s.skip(2).map(StackWalker.StackFrame::getMethodName).limit(depth).collect(Collectors.joining(";")));
     }
 }
