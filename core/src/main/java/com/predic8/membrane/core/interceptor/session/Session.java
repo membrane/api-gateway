@@ -25,6 +25,7 @@ import static com.predic8.membrane.core.interceptor.oauth2client.temp.OAuth2Cons
 
 public class Session {
 
+    @JsonIgnore  // we don't want this utility method to show up in JSON representations
     public boolean isNew() {
         if (isDirty)
             return false;
