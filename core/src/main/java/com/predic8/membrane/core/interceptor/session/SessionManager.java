@@ -212,7 +212,6 @@ public abstract class SessionManager {
                 .filter(e -> e.getValue().size() > 1)
                 .filter(e -> e.getValue().stream().filter(s -> s.contains(VALUE_TO_EXPIRE_SESSION_IN_BROWSER)).count() == 1)
                 .forEach(e -> {
-                    log.info("Removing redundant expire cookie for {}: {}", e.getKey(), e.getValue());
                     setCookieHeaders.get(e.getKey()).remove(e.getValue());  // TODO does this actually do anything?
                     exc.getResponse().getHeader().remove(getAllRelevantSetCookieHeaders(exc)
                             .filter(hf -> hf.getValue().contains(VALUE_TO_EXPIRE_SESSION_IN_BROWSER))
@@ -265,7 +264,6 @@ public abstract class SessionManager {
     protected Session getSessionInternal(Exchange exc) {
         exc.setProperty(SESSION_COOKIE_ORIGINAL,null);
         if (getCookieHeader(exc) == null) {
-            log.info("No session cookie found for {}, returning new Session", usernameKeyName);
             return new Session(usernameKeyName, new HashMap<>());
         }
 
