@@ -1,6 +1,6 @@
 # Orchestration: Calling an API with GET
 
-To provide simpler interfaces for clients you can create APIs that are calling multiple endpoints for each invocation.
+To provide simpler interfaces for clients, you can create APIs that are calling multiple endpoints for each invocation.
 
 The example illustrates how to chain API calls and dynamically extract data from a JSON response using the `jsonpath` expression language and property substitution.
 
