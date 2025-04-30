@@ -15,7 +15,7 @@
                 <!-- Creates a new JSON body with the name and modified price -->
                 <template contentType="application/json">
                     {
-                    "name": "${property.name}",
+                    "name": "${property.name} Big Pack",
                     "price": ${property.price}
                     }
                 </template>
