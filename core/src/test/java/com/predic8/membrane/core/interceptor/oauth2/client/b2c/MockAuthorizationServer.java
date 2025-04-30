@@ -244,7 +244,7 @@ public class MockAuthorizationServer {
         wkf.setSupportedTokenEndpointAuthMethods("client_secret_post");
         wkf.setSupportedClaims(ImmutableSet.of("name", "sub", "idp", "tfp", "iss", "iat", "exp", "aud", "acr", "nonce", "auth_time"));
 
-        wkf.init(mockAuthServer);
+        wkf.init();
 
         return wkf;
     }

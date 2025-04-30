@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>API Request Example</title>
+    <link rel="stylesheet" href="style.css" type="text/css">
+</head>
+<body>
+
+<div class="container">
+    <h2 style="text-align: center;">CORS API Example</h2>
+
+    <label for="urlSelect">URL:</label>
+    <select id="urlSelect">
+        <option value="http://localhost:2001">http://localhost:2001</option>
+        <option value="http://localhost:2002">http://localhost:2002</option>
+    </select>
+
+    <label for="methodSelect">Method:</label>
+    <select id="methodSelect">
+        <option value="GET">GET</option>
+        <option value="POST">POST</option>
+    </select>
+
+    <div>
+        <strong>Headers:</strong><br>
+        <label for="header1">Content-Type: application/json</label><input type="checkbox" id="header1"
+                                                                          value="Content-Type: application/json">
+        <label for="header2">X-Foo: 42</label><input type="checkbox" id="header2" value="X-Foo: 42">
+    </div>
+
+    <button onclick="call()">Call API</button>
+    <div class="response" id="response">No response yet!</div>
+</div>
+
+<p>CORS Sample</p>
+<ol>
+    <li>Open developer tools:
+        <ul>
+            <li>Firefox: F12 or Menu</li>
+            <li>Chrome: F12 or Menu</li>
+            <li>Safari: Dev Tools</li>
+        </ul>
+    </li>
+    <li>Click on Call</li>
+    <li>Check the requests in the Network tab and console logs</li>
+    <li>Check the <a href="proxies.xml">proxies.xml</a></li>
+    <li>Try other calls and configurations</li>
+</ol>
+
+<script>
+    function call() {
+        const url = document.getElementById("urlSelect").value;
+        const method = document.getElementById("methodSelect").value;
+
+        const headers = {};
+        if (document.getElementById("header1").checked) {
+            headers["Content-Type"] = "application/json";
+        }
+        if (document.getElementById("header2").checked) {
+            headers["X-Foo"] = "42";
+        }
+
+        const options = {
+            method: method,
+            headers: headers
+        };
+
+        if (method === "POST") {
+            options.body = JSON.stringify({test: "test"});
+        }
+
+        fetch(url, options)
+            .then(res => res.text())
+            .then(data => {
+                document.getElementById("response").textContent = data;
+            })
+            .catch(err => {
+                console.error("Request failed:", err);
+                document.getElementById("response").textContent = "Request failed (check console)";
+            });
+    }
+</script>
+
+</body>
+</html>
