@@ -23,8 +23,10 @@
                 </for>
             </request>
             <response>
-                <template>
-                    ${property.products}
+                <template contentType="application/json">
+                    {
+                        "products": ${property.products}
+                    }
                 </template>
             </response>
             <log/>
