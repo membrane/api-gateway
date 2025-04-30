@@ -12,7 +12,7 @@
    See the License for the specific language governing permissions and
    limitations under the License. */
 
-package com.predic8.membrane.examples.withinternet.test.orchestatrion;
+package com.predic8.membrane.examples.withinternet.test.orchestration;
 
 import com.predic8.membrane.examples.util.AbstractSampleMembraneStartStopTestcase;
 import org.junit.jupiter.api.Test;
