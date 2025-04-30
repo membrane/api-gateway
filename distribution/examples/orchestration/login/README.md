@@ -12,8 +12,8 @@ This example demonstrates how to dynamically inject an API key into outgoing req
 
 1. **Start the Router**
    ```sh
-   ./router-service.sh  # Linux/Mac  
-   router-service.bat   # Windows  
+   ./membrane.sh  # Linux/Mac  
+   membrane.bat   # Windows  
    ```
 
 2. **Test the flow:**
@@ -21,7 +21,7 @@ This example demonstrates how to dynamically inject an API key into outgoing req
    curl -i http://localhost:2000
    ```
 
-   ✅ Should return:
+   Should return:
    ```
    HTTP/1.1 200 OK
  
