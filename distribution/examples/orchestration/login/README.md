@@ -1,4 +1,4 @@
-# Using Calls
+# Using Calls for login
 
 This example demonstrates how to dynamically inject an API key into outgoing requests before forwarding them to a secured backend using the `call` plugin.
 
