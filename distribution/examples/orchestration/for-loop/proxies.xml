@@ -12,12 +12,11 @@
 
         <api port="2000">
             <request>
-                <!-- Fetch up to 1000 products from the upstream service -->
                 <call url="https://api.predic8.de/shop/v2/products?limit=1000"/>
-                <!-- Store the full products array in a flow property -->
+                <!-- Store the list of products in a property -->
                 <setProperty name="products" value="${$.products}" language="jsonpath"/>
 
-                <!-- Loop over each product in the stored array -->
+                <!-- Loop over each product in the list -->
                 <for in="properties.products">
                     <!-- Fetch detailed info for the current product by ID -->
                     <call url="https://api.predic8.de/shop/v2/products/${properties.it['id']}"/>
@@ -47,7 +46,6 @@
                 </template>
 
             </response>
-            <log/>
             <return/>
         </api>
 
