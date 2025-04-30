@@ -35,8 +35,16 @@ import static java.util.Arrays.*;
 
 /**
  * @description <p>Plugin that allows Cross-Origin Resource Sharing (CORS). It answers preflight
- * requests with the options method and sets the CORS headers. Additionally requests
+ * requests with the options method and sets the CORS headers. Additionally, requests
  * are validated against the CORS configuration.</p>
+ *
+ * <p>For a detailed explanation of CORS, see:</p>
+ * <ul>
+ *     <li><a href="https://www.membrane-api.io/cors-api-gateway.html" target="_blank">
+ *         CORS Guide for API Developers
+ *     </a></li>
+ * </ul>
+ * @topic 3. Security and Validation
  */
 @MCElement(name = "cors")
 public class CorsInterceptor extends AbstractInterceptor {
@@ -178,8 +186,16 @@ public class CorsInterceptor extends AbstractInterceptor {
         if (headers == null)
             return true;
 
-        return new HashSet<>(allowedHeaders).containsAll(parseCommaSeparated(headers));
+        return allowedHeaders.stream()
+                .map(String::toLowerCase)
+                .collect(Collectors.toSet())
+                .containsAll(
+                        parseCommaSeparated(headers).stream()
+                        .map(String::toLowerCase)
+                        .collect(Collectors.toSet())
+                );
     }
+
 
     private static @NotNull List<String> parseCommaSeparated(String value) {
         return stream(value.split("\\s*,\\s*|\\s+"))
@@ -198,15 +214,18 @@ public class CorsInterceptor extends AbstractInterceptor {
         }
 
         header.setValue(ACCESS_CONTROL_ALLOW_ORIGIN, getAllowOriginValue(requestOrigin));
-        header.setValue(ACCESS_CONTROL_ALLOW_METHODS, requestedMethod);
+        header.setValue(ACCESS_CONTROL_ALLOW_METHODS,
+                requestedMethod != null ? requestedMethod : join(allowedMethods));
 
         if (allowAll) {
             header.setValue(ACCESS_CONTROL_ALLOW_HEADERS,
-                    requestedHeaders != null ? requestedHeaders : "Content-Type, Authorization");
+                    requestedHeaders != null ? requestedHeaders.toLowerCase() : "content-type, authorization");
         } else if (allowedHeaders != null) {
-            header.setValue(ACCESS_CONTROL_ALLOW_HEADERS, join(allowedHeaders));
+            header.setValue(ACCESS_CONTROL_ALLOW_HEADERS,
+                    join(allowedHeaders.stream()
+                            .map(String::toLowerCase)
+                            .collect(Collectors.toList())));
         }
-
 
         if (maxAge != null) {
             header.setValue(ACCESS_CONTROL_MAX_AGE, maxAge);
@@ -234,13 +253,22 @@ public class CorsInterceptor extends AbstractInterceptor {
     }
 
     /**
-     * If true, all origins, methods and headers are allowed except credentials like cookies
+     * If true, all origins, methods, and headers are allowed except credentials like cookies
+     *
+     * @description Allows all origins, methods, and headers without validation.
+     * Not compatible with credentials=true.
+     * @default false
      */
     @MCAttribute
     public void setAllowAll(boolean allowAll) {
         this.allowAll = allowAll;
     }
 
+    /**
+     * @description Space-separated list of allowed origins. Use '*' to allow all.
+     * @default *
+     * @example https://example.com https://my.app
+     */
     @MCAttribute
     public void setOrigins(String origins) {
         this.allowedOrigins = stream(origins.split(" "))
@@ -248,29 +276,42 @@ public class CorsInterceptor extends AbstractInterceptor {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * @description Comma-separated list of allowed HTTP methods.
+     * @default *
+     * @example GET, POST, PUT
+     */
     @MCAttribute
     public void setMethods(String methods) {
         this.allowedMethods = parseCommaSeparated(methods);
     }
 
+    /**
+     * @description Comma-separated list of allowed request headers.
+     * @example X-Custom-Header, Authorization, Content-Type
+     */
     @MCAttribute
     public void setHeaders(String headers) {
         this.allowedHeaders = parseCommaSeparated(headers);
     }
 
-    public String getHeaders() {
-        return join(allowedHeaders);
-    }
-
+    /**
+     * @description Whether credentials like cookies or HTTP auth are allowed.
+     * @default false
+     */
     @MCAttribute
     public void setCredentials(boolean credentials) {
         this.allowCredentials = credentials;
     }
 
+    /**
+     * @description Max age (in seconds) for caching preflight responses.
+     */
     @MCAttribute
     public void setMaxAge(String maxAge) {
         this.maxAge = maxAge;
     }
+
 
     public boolean isAllowAll() {
         return allowAll;
@@ -288,6 +329,10 @@ public class CorsInterceptor extends AbstractInterceptor {
      */
     protected List<String> getAllowedHeaders() {
         return allowedHeaders;
+    }
+
+    public String getHeaders() {
+        return join(allowedHeaders);
     }
 
     public List<String> getMethods() {

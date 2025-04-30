@@ -61,6 +61,13 @@ public class MembraneCommandLine {
             addSubcommand(new CliCommand("yaml", "Use a YAML-based configuration file.") {{
                 addOption(builder("l").longOpt("location").argName("YAML config location").hasArg().required().desc("(Required) Set URL or path to a YAML configuration file").build());
             }});
+
+            addSubcommand(new CliCommand("generate-jwk", "Generate a JSON Web Key and write it to a file") {{
+                addOption(builder("o").longOpt("output").argName("file").hasArg().desc("Output file for JWK (default: jwk.json)").build());
+                addOption(builder("b").longOpt("bits").argName("bitlength").hasArg().desc("Key length in bits (default: 2048)").build());
+                addOption(builder("overwrite").desc("Overwrite the output file, if it exists.").build());
+            }});
+
         }};
     }
 

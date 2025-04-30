@@ -68,7 +68,7 @@ public class JwtAuthInterceptorTest{
                 (Exchange exc) -> {
                     assertTrue(exc.getResponse().isUserError());
                     assertNull(exc.getProperties().get("jwt"));
-                    assertEquals(JwtAuthInterceptor.ERROR_DECODED_HEADER_NOT_JSON, unpackBody(exc).get("description"));
+                    assertEquals(JwtAuthInterceptor.ERROR_DECODED_HEADER_NOT_JSON, unpackBody(exc).get("detail"));
                 }
         );
     }
@@ -83,7 +83,7 @@ public class JwtAuthInterceptorTest{
                 (Exchange exc) -> {
                     assertTrue(exc.getResponse().isUserError());
                     assertNull(exc.getProperties().get("jwt"));
-                    assertEquals(JsonWebToken.ERROR_MALFORMED_COMPACT_SERIALIZATION, unpackBody(exc).get("description"));
+                    assertEquals(JwtAuthInterceptor.ERROR_MALFORMED_COMPACT_SERIALIZATION, unpackBody(exc).get("detail"));
                 }
         );
     }
@@ -97,7 +97,7 @@ public class JwtAuthInterceptorTest{
                 (Exchange exc) -> {
                     assertTrue(exc.getResponse().isUserError());
                     assertNull(exc.getProperties().get("jwt"));
-                    assertEquals(JwtAuthInterceptor.ERROR_JWT_NOT_FOUND, unpackBody(exc).get("description"));
+                    assertEquals(JwtAuthInterceptor.ERROR_JWT_NOT_FOUND, unpackBody(exc).get("detail"));
                 }
         );
     }
@@ -116,7 +116,7 @@ public class JwtAuthInterceptorTest{
                 (Exchange exc) -> {
                     assertTrue(exc.getResponse().isUserError());
                     assertNull(exc.getProperties().get("jwt"));
-                    assertEquals(JwtAuthInterceptor.ERROR_VALIDATION_FAILED, unpackBody(exc).get("description"));
+                    assertEquals(JwtAuthInterceptor.ERROR_VALIDATION_FAILED, unpackBody(exc).get("detail"));
                 }
         );
     }
@@ -134,7 +134,7 @@ public class JwtAuthInterceptorTest{
                 (Exchange exc) -> {
                     assertTrue(exc.getResponse().isUserError());
                     assertNull(exc.getProperties().get("jwt"));
-                    assertEquals(JwtAuthInterceptor.ERROR_UNKNOWN_KEY, unpackBody(exc).get("description"));
+                    assertEquals(JwtAuthInterceptor.ERROR_UNKNOWN_KEY, unpackBody(exc).get("detail"));
                 }
         );
     }
@@ -153,7 +153,7 @@ public class JwtAuthInterceptorTest{
                 (Exchange exc) -> {
                     assertTrue(exc.getResponse().isUserError());
                     assertNull(exc.getProperties().get("jwt"));
-                    assertEquals(JwtAuthInterceptor.ERROR_UNKNOWN_KEY, unpackBody(exc).get("description"));
+                    assertEquals(JwtAuthInterceptor.ERROR_UNKNOWN_KEY, unpackBody(exc).get("detail"));
                 }
         );
     }
@@ -168,7 +168,7 @@ public class JwtAuthInterceptorTest{
                 (Exchange exc) -> {
                     assertTrue(exc.getResponse().isUserError());
                     assertNull(exc.getProperties().get("jwt"));
-                    assertEquals(JwtAuthInterceptor.ERROR_VALIDATION_FAILED, unpackBody(exc).get("description"));
+                    assertEquals(JwtAuthInterceptor.ERROR_VALIDATION_FAILED, unpackBody(exc).get("detail"));
                 }
         );
     }
@@ -183,7 +183,7 @@ public class JwtAuthInterceptorTest{
                 (Exchange exc) -> {
                     assertTrue(exc.getResponse().isUserError());
                     assertNull(exc.getProperties().get("jwt"));
-                    assertEquals(JwtAuthInterceptor.ERROR_VALIDATION_FAILED, unpackBody(exc).get("description"));
+                    assertEquals(JwtAuthInterceptor.ERROR_VALIDATION_FAILED, unpackBody(exc).get("detail"));
                 }
         );
     }

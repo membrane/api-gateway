@@ -37,7 +37,7 @@ public class EmptyEndpointOpenidTest extends RequestParameterizedTest{
     }
 
     private static RequestTestData testIdTokenTokenResponse() {
-        return new RequestTestData ("testIdTokenTokenResponse", modifySessionToIdTokenTokenResponseType(),307,getBool(true),responseContainsValueInLocationHeader("id_token="));
+        return new RequestTestData ("testIdTokenTokenResponse", modifySessionToIdTokenTokenResponseType(),302,getBool(true),responseContainsValueInLocationHeader("id_token="));
     }
 
     private static RequestTestData testConsentNotGiven() {
