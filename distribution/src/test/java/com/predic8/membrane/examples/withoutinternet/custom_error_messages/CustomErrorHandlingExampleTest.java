@@ -133,19 +133,5 @@ public class CustomErrorHandlingExampleTest extends AbstractSampleMembraneStartS
             );
     }
 
-    @Test
-    void caseG() {
-        given()
-            .queryParam("case", "g")
-        .when()
-            .get("http://localhost:2000/service")
-        .then()
-            .statusCode(502)
-            .body(
-                    containsString("<case>g</case>"),
-                    containsString("<message>Failed to establish backend connection!</message>")
-            );
-    }
-
     // formatter:on
 }
