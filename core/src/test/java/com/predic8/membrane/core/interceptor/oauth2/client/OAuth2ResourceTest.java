@@ -254,7 +254,7 @@ public abstract class OAuth2ResourceTest {
         ServiceProxy sp = new ServiceProxy(new ServiceProxyKey(serverPort), null, 99999);
 
         WellknownFile wkf = getWellknownFile();
-        wkf.init(new HttpRouter());
+        wkf.init();
 
         sp.getInterceptors().add(new AbstractInterceptor() {
 

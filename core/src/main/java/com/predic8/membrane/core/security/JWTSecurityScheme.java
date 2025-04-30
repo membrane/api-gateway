@@ -27,6 +27,9 @@ public class JWTSecurityScheme extends AbstractSecurityScheme {
             if (scopes instanceof String scopeString) {
                 this.scopes = new HashSet<>(Arrays.asList(scopeString.split(" +")));
             }
+            if (scopes instanceof List scopeList) {
+                this.scopes = new HashSet<>(scopeList);
+            }
         }
     }
 

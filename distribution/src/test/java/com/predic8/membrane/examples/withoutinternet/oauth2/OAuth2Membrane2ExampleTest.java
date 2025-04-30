@@ -16,6 +16,7 @@ package com.predic8.membrane.examples.withoutinternet.oauth2;
 
 import com.predic8.membrane.examples.util.*;
 import com.predic8.membrane.test.OAuth2AuthFlowClient;
+import com.predic8.membrane.test.OAuth2AuthFlowNormalClient;
 import io.restassured.*;
 import io.restassured.filter.log.RequestLoggingFilter;
 import io.restassured.filter.log.ResponseLoggingFilter;
@@ -24,6 +25,8 @@ import org.hamcrest.*;
 import org.junit.jupiter.api.*;
 
 import java.io.*;
+import java.net.URI;
+import java.net.URISyntaxException;
 
 import static io.restassured.RestAssured.*;
 
@@ -66,8 +69,8 @@ public class OAuth2Membrane2ExampleTest extends DistributionExtractingTestcase {
     }
 
     @Test
-    void loginPage() {
-        OAuth2AuthFlowClient OAuth2 = new OAuth2AuthFlowClient("http://localhost:8000");
+    void loginPage() throws Exception {
+        OAuth2AuthFlowClient OAuth2 = new OAuth2AuthFlowNormalClient(URI.create("http://localhost:8000"), URI.create("http://localhost:2000"));
         // Step 1: Initial request to the client
         Response clientResponse = OAuth2.step1originalRequestGET("/");
         // Step 2: Send to authentication at OAuth2 server
@@ -84,10 +87,12 @@ public class OAuth2Membrane2ExampleTest extends DistributionExtractingTestcase {
         // Step 7: Submit consent
         OAuth2.step7submitConsent(consentLocation);
         // Step 8: Redirect back to client
-        String callbackUrl = OAuth2.step8redirectToClient();
+        var callback = OAuth2.step8redirectToClient();
         // Step 9: Exchange Code for Token & continue original request.·
-        OAuth2.step9exchangeCodeForToken(
-                callbackUrl,
+        var redirectUrl = OAuth2.step9executeCallback(callback);
+
+        OAuth2.step10callOriginalUrl(
+                redirectUrl,
                 "You accessed the protected resource! Hello john@predic8.de"
         );
     }

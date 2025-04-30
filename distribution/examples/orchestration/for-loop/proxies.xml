@@ -12,7 +12,7 @@
 
         <api port="2000">
             <request>
-                <call url="https://api.predic8.de/shop/v2/products?limit=100"/>
+                <call url="https://api.predic8.de/shop/v2/products?limit=1000"/>
                 <setProperty name="products" value="${$.products}" language="jsonpath"/>
                 <for in="properties.products">
                     <call url="https://api.predic8.de/shop/v2/products/${properties.it['id']}"/>
@@ -23,10 +23,8 @@
                 </for>
             </request>
             <response>
-                <template contentType="application/json">
-                    {
-                        "products": ${property.products}
-                    }
+                <template>
+                    ${property.products}
                 </template>
             </response>
             <log/>

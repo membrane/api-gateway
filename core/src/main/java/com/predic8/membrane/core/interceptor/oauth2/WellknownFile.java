@@ -14,12 +14,13 @@
 package com.predic8.membrane.core.interceptor.oauth2;
 
 import com.fasterxml.jackson.core.JsonGenerator;
-import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.resolver.ResolverMap;
 
 import java.io.IOException;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import static java.util.stream.Collectors.joining;
 
 public class WellknownFile {
 
@@ -39,9 +40,7 @@ public class WellknownFile {
     private static final String TOKEN_ENDPOINT_AUTH_METHODS_SUPPORTED = "token_endpoint_auth_methods_supported";
     private static final String CLAIMS_SUPPORTED = "claims_supported";
 
-    private String wellknown;
     private OAuth2AuthorizationServerInterceptor oasi;
-    private ResolverMap resolver;
 
     private String authorizationEndpoint;
     private String issuer;
@@ -59,96 +58,64 @@ public class WellknownFile {
     private String supportedClaims;
 
 
-
-    public void init(Router router, OAuth2AuthorizationServerInterceptor oasi) throws IOException {
-        this.resolver = router.getResolverMap();
+    public void init(OAuth2AuthorizationServerInterceptor oasi) throws IOException {
         this.oasi = oasi;
         getValuesFromOasi();
-        writeWellknown();
     }
 
-    public void init(Router router) throws IOException {
-        init(router, null);
-    }
-
-    private String getOauth2Issuer(){
-        return oasi.getIssuer();
-    }
-
-    private String baseOauth2Url(){
-        return ResolverMap.combine(getOauth2Issuer() + "/","oauth2/");
+    public void init() throws IOException {
+        init(null);
     }
 
     private void getValuesFromOasi() {
         if(oasi == null)
             return;
+        String baseOauth2Url = ResolverMap.combine(oasi.getIssuer() + "/", "oauth2/");
 
-        setIssuer(getOauth2Issuer());
-        setAuthorizationEndpoint(baseOauth2Url() + "auth");
-        setTokenEndpoint(baseOauth2Url() + "token");
-        setUserinfoEndpoint(baseOauth2Url() + "userinfo");
-        setRevocationEndpoint(oasi.getTokenGenerator().supportsRevocation() ? baseOauth2Url() + "revoke" : null);
-        setJwksUri(baseOauth2Url() + "certs");
+        setIssuer(oasi.getIssuer());
+        setAuthorizationEndpoint(baseOauth2Url + "auth");
+        setTokenEndpoint(baseOauth2Url + "token");
+        setUserinfoEndpoint(baseOauth2Url + "userinfo");
+        setRevocationEndpoint(oasi.getTokenGenerator().supportsRevocation() ? baseOauth2Url + "revoke" : null);
+        setJwksUri(baseOauth2Url + "certs");
         setSupportedResponseTypes(oasi.getSupportedAuthorizationGrants());
         setSupportedResponseModes("query fragment");
         setSupportedSubjectType("public");
         setSupportedIdTokenSigningAlgValues("RS256");
-        setSupportedScopes(getSupportedOasiScopes());
+        setSupportedScopes(oasi.getClaimList().getSupportedScopes());
         setSupportedTokenEndpointAuthMethods("client_secret_post");
-        setSupportedClaims(getSupportedOasiClaims());
+        setSupportedClaims(oasi.getClaimList().getSupportedClaimsAsString());
     }
 
-    private String getSupportedOasiClaims() {
-        return oasi.getClaimList().getSupportedClaimsAsString();
-    }
-
-    private String getSupportedOasiScopes() {
-        return oasi.getClaimList().getSupportedScopes();
-    }
-
-    private void writeWellknown() throws IOException {
+    public String getWellknown() {
         try (var bufferedJsonGenerator = new BufferedJsonGenerator()) {
             var jg = bufferedJsonGenerator.getJsonGenerator();
             jg.writeStartObject();
 
-            writeIssuer(jg);
-            writeAuthorizationEndpoint(jg);
-            writeTokenEndpoint(jg);
-            writeUserinfoEndpoint(jg);
-            writeRevocationEndpoint(jg);
-            writeJwksUri(jg);
-            writeEndSessionEndpoint(jg);
-            writeSupportedResponseTypes(jg);
-            writeSupportedResponseModes(jg);
-            writeSupportedSubjectTypes(jg);
-            writeSupportedIdTokenSigningAlgValues(jg);
-            writeSupportedScopes(jg);
-            writeSupportedTokenEndpointAuthMethods(jg);
-            writeSupportedClaims(jg);
+            jg.writeObjectField(ISSUER, getIssuer());
+            jg.writeObjectField(AUTHORIZATION_ENDPOINT, getAuthorizationEndpoint());
+            jg.writeObjectField(TOKEN_ENDPOINT, getTokenEndpoint());
+            jg.writeObjectField(USERINFO_ENDPOINT, getUserinfoEndpoint());
+            String revocationEndpoint1 = getRevocationEndpoint();
+            if (revocationEndpoint1 != null)
+                jg.writeObjectField(REVOCATION_ENDPOINT, revocationEndpoint1);
+            jg.writeObjectField(JWKS_URI, getJwksUri());
+            if (getEndSessionEndpoint() != null)
+                jg.writeObjectField(END_SESSION_ENDPOINT, getEndSessionEndpoint());
+            stringEnumToJson(jg, RESPONSE_TYPES_SUPPORTED, getSupportedResponseTypes().split(" "));
+            if (supportedResponseModes != null)
+                stringEnumToJson(jg, RESPONSE_MODES_SUPPORTED, getSupportedResponseModes().split(" "));
+            stringEnumToJson(jg, SUBJECT_TYPES_SUPPORTED, getSupportedSubjectType().split(" "));
+            stringEnumToJson(jg, ID_TOKEN_SIGNING_ALG_VALUES_SUPPORTED, getSupportedIdTokenSigningAlgValues().split(" "));
+            stringEnumToJson(jg, SCOPES_SUPPORTED, getSupportedScopes().split(" "));
+            stringEnumToJson(jg, TOKEN_ENDPOINT_AUTH_METHODS_SUPPORTED, getSupportedTokenEndpointAuthMethods().split(" "));
+            stringEnumToJson(jg, CLAIMS_SUPPORTED, getSupportedClaims().split(" "));
 
             jg.writeEndObject();
-            setWellknown(bufferedJsonGenerator.getJson());
+            return bufferedJsonGenerator.getJson();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
-    }
-
-    private void writeSupportedClaims(JsonGenerator jg) throws IOException {
-        stringEnumToJson(jg, CLAIMS_SUPPORTED, getSupportedClaims().split(" "));
-    }
-
-    private void writeSupportedTokenEndpointAuthMethods(JsonGenerator jg) throws IOException {
-        stringEnumToJson(jg, TOKEN_ENDPOINT_AUTH_METHODS_SUPPORTED, getSupportedTokenEndpointAuthMethods().split(" "));
-    }
-
-    private void writeSupportedScopes(JsonGenerator jg) throws IOException {
-        stringEnumToJson(jg, SCOPES_SUPPORTED, getSupportedScopes().split(" "));
-    }
-
-    private void writeSupportedIdTokenSigningAlgValues(JsonGenerator jg) throws IOException {
-        stringEnumToJson(jg, ID_TOKEN_SIGNING_ALG_VALUES_SUPPORTED, getSupportedIdTokenSigningAlgValues().split(" "));
-    }
-
-    private void writeSupportedSubjectTypes(JsonGenerator jg) throws IOException {
-        stringEnumToJson(jg, SUBJECT_TYPES_SUPPORTED, getSupportedSubjectType().split(" "));
     }
 
     private void stringEnumToJson(JsonGenerator jg, String name, String... enumeration) throws IOException {
@@ -156,50 +123,6 @@ public class WellknownFile {
         for(String value : enumeration)
             jg.writeString(OAuth2Util.urldecode(value));
         jg.writeEndArray();
-    }
-
-    private void writeSupportedResponseTypes(JsonGenerator jg) throws IOException {
-        stringEnumToJson(jg, RESPONSE_TYPES_SUPPORTED, getSupportedResponseTypes().split(" "));
-    }
-
-    private void writeSupportedResponseModes(JsonGenerator jg) throws IOException {
-        if (supportedResponseModes != null)
-            stringEnumToJson(jg, RESPONSE_MODES_SUPPORTED, getSupportedResponseModes().split(" "));
-    }
-
-    private void writeJwksUri(JsonGenerator jg) throws IOException {
-        writeSingleJsonField(jg, JWKS_URI, getJwksUri());
-    }
-
-    private void writeEndSessionEndpoint(JsonGenerator jg) throws IOException {
-        if (getEndSessionEndpoint() != null)
-            writeSingleJsonField(jg, END_SESSION_ENDPOINT, getEndSessionEndpoint());
-    }
-
-    private void writeSingleJsonField(JsonGenerator jg, String name, String value) throws IOException {
-        jg.writeObjectField(name, value);
-    }
-
-    private void writeRevocationEndpoint(JsonGenerator jg) throws IOException {
-        String revocationEndpoint1 = getRevocationEndpoint();
-        if (revocationEndpoint1 != null)
-            writeSingleJsonField(jg, REVOCATION_ENDPOINT, revocationEndpoint1);
-    }
-
-    private void writeUserinfoEndpoint(JsonGenerator jg) throws IOException {
-        writeSingleJsonField(jg, USERINFO_ENDPOINT, getUserinfoEndpoint());
-    }
-
-    private void writeTokenEndpoint(JsonGenerator jg) throws IOException {
-        writeSingleJsonField(jg, TOKEN_ENDPOINT, getTokenEndpoint());
-    }
-
-    private void writeAuthorizationEndpoint(JsonGenerator jg) throws IOException {
-        writeSingleJsonField(jg, AUTHORIZATION_ENDPOINT, getAuthorizationEndpoint());
-    }
-
-    private void writeIssuer(JsonGenerator jg) throws IOException {
-        writeSingleJsonField(jg, ISSUER, getIssuer());
     }
 
     public String getAuthorizationEndpoint() {
@@ -263,10 +186,9 @@ public class WellknownFile {
     }
 
     public void setSupportedResponseTypes(Set<String> supportedResponseTypes) {
-        StringBuilder builder = new StringBuilder();
-        for(String resp : supportedResponseTypes)
-            builder.append(" ").append(OAuth2Util.urlencode(resp));
-        setSupportedResponseTypes(builder.toString().trim());
+        setSupportedResponseTypes(supportedResponseTypes.stream()
+                .map(OAuth2Util::urlencode)
+                .collect(joining(" ")));
     }
 
     public void setSupportedResponseTypes(String supportedResponseTypes) {
@@ -278,10 +200,9 @@ public class WellknownFile {
     }
 
     public void setSupportedResponseModes(Set<String> supportedResponseModes) {
-        StringBuilder builder = new StringBuilder();
-        for(String resp : supportedResponseModes)
-            builder.append(" ").append(OAuth2Util.urlencode(resp));
-        setSupportedResponseModes(builder.toString().trim());
+        setSupportedResponseModes(supportedResponseModes.stream()
+                .map(OAuth2Util::urlencode)
+                .collect(joining(" ")));
     }
 
     public void setSupportedResponseModes(String supportedResponseModes) {
@@ -331,15 +252,7 @@ public class WellknownFile {
     public void setSupportedClaims(Set<String> supportedClaims) {
         setSupportedClaims(supportedClaims.stream()
                 .map(OAuth2Util::urlencode)
-                .collect(Collectors.joining(" "))
+                .collect(joining(" "))
         );
-    }
-
-    public String getWellknown() {
-        return wellknown;
-    }
-
-    public void setWellknown(String wellknown) {
-        this.wellknown = wellknown;
     }
 }

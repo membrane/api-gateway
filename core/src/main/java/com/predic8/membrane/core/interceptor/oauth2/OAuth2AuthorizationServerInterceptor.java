@@ -86,7 +86,7 @@ public class OAuth2AuthorizationServerInterceptor extends AbstractInterceptor {
         addSupportedAuthorizationGrants();
 
         try {
-            getWellknownFile().init(router,this);
+            getWellknownFile().init(this);
         } catch (IOException e) {
             throw new ConfigurationException("Could not create Well-known file.",e);
         }

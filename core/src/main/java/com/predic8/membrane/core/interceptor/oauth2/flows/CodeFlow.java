@@ -61,12 +61,12 @@ public class CodeFlow extends OAuth2Flow{
             redirectUrl = s.getUserAttributes().get("redirect_uri");
         }
 
-        exc.setResponse(Response.
-                redirect(redirectUrl + "?code=" + code + stateQuery(state),false).
-                dontCache().
-                body("").
-                build());
-        
+        exc.setResponse(Response
+                .redirect(redirectUrl + "?code=" + code + stateQuery(state),302)
+                .dontCache()
+                .body("")
+                .build());
+
         return Outcome.RETURN;
     }
 }

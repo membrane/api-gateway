@@ -15,7 +15,6 @@ package com.predic8.membrane.core.interceptor.oauth2;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.predic8.membrane.core.HttpRouter;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -51,7 +50,7 @@ public class WellknownFileTest {
         wkf.setSupportedTokenEndpointAuthMethods("client_secret_post");
         wkf.setSupportedClaims("sub email username");
 
-        wkf.init(new HttpRouter());
+        wkf.init();
     }
 
     @Test
