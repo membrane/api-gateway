@@ -13,11 +13,13 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.flow;
 
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.*;
-import org.junit.jupiter.api.*;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.Request;
+import com.predic8.membrane.core.http.Response;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
-import java.net.*;
+import java.net.URISyntaxException;
 
 import static com.predic8.membrane.core.http.Header.*;
 import static com.predic8.membrane.core.interceptor.flow.CallInterceptor.copyHeadersFromResponseToRequest;
@@ -41,11 +43,12 @@ class CallInterceptorTest {
                 .header(SERVER, "dummy")
                 .header("X-FOO", "42").build());
 
-        copyHeadersFromResponseToRequest(exc);
+        copyHeadersFromResponseToRequest(exc, exc);
 
         assertEquals("42",exc.getRequest().getHeader().getFirstValue("X-FOO"));
         assertNull(exc.getRequest().getHeader().getFirstValue(TRANSFER_ENCODING));
         assertNull(exc.getRequest().getHeader().getFirstValue(CONTENT_ENCODING));
         assertNull(exc.getRequest().getHeader().getFirstValue(SERVER));
     }
+
 }
