@@ -19,6 +19,8 @@ import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.time.*;
 import java.util.*;
@@ -27,6 +29,8 @@ import java.util.stream.*;
 
 @MCElement(name = "inMemorySessionManager2")
 public class InMemorySessionManager extends SessionManager {
+
+    private static final Logger log = LoggerFactory.getLogger(InMemorySessionManager.class);
 
     final static String ID_NAME = "_in_memory_session_id";
     Cache<String, Session> sessions;

@@ -34,6 +34,9 @@ import static com.predic8.membrane.core.interceptor.oauth2client.temp.OAuth2Cons
 
 public class OAuth2CallbackRequestHandler {
     private static final Logger log = LoggerFactory.getLogger(OAuth2CallbackRequestHandler.class);
+    public static final String MEMBRANE_MISSING_SESSION = "Missing session.";
+    public static final String MEMBRANE_CSRF_TOKEN_MISSING_IN_SESSION = "CSRF token missing in session.";
+    public static final String MEMBRANE_CSRF_TOKEN_MISMATCH = "CSRF token mismatch.";
 
     private URIFactory uriFactory;
     private AuthorizationService auth;
@@ -75,7 +78,22 @@ public class OAuth2CallbackRequestHandler {
             String stateFromUri = getSecurityTokenFromState(params.getState());
 
             if (!csrfTokenMatches(session, stateFromUri)) {
-                throw new RuntimeException("CSRF token mismatch.");
+                if (session.isNew()) {
+                    throw new OAuth2Exception(
+                            "MEMBRANE_MISSING_SESSION",
+                            MEMBRANE_MISSING_SESSION,
+                            Response.badRequest().body(MEMBRANE_MISSING_SESSION).build());
+                } else if (!session.get().containsKey(ParamNames.STATE)) {
+                    throw new OAuth2Exception(
+                            "MEMBRANE_CSRF_TOKEN_MISSING_IN_SESSION",
+                            MEMBRANE_CSRF_TOKEN_MISSING_IN_SESSION,
+                            Response.badRequest().body(MEMBRANE_CSRF_TOKEN_MISSING_IN_SESSION).build());
+                }else {
+                    throw new OAuth2Exception(
+                            "MEMBRANE_CSRF_TOKEN_MISMATCH",
+                            MEMBRANE_CSRF_TOKEN_MISMATCH,
+                            Response.badRequest().body(MEMBRANE_CSRF_TOKEN_MISMATCH).build());
+                }
             }
 
             // state in session can be "merged" -> save the selected state in session overwriting the possibly merged value
