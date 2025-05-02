@@ -25,6 +25,17 @@ import static com.predic8.membrane.core.interceptor.oauth2client.temp.OAuth2Cons
 
 public class Session {
 
+    @JsonIgnore  // we don't want this utility method to show up in JSON representations
+    public boolean isNew() {
+        if (isDirty)
+            return false;
+        if (content.size() != 1)
+            return false;
+        if (!content.containsKey(INTERNAL_PREFIX + AUTHORIZATION_LEVEL))
+            return false;
+        return AuthorizationLevel.ANONYMOUS.name().equals(content.get(INTERNAL_PREFIX + AUTHORIZATION_LEVEL));
+    }
+
     public enum AuthorizationLevel{
         ANONYMOUS,
         VERIFIED

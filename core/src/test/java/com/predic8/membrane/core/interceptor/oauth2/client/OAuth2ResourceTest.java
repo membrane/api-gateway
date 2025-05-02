@@ -35,6 +35,8 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.*;
 
 import static com.predic8.membrane.core.http.MimeType.*;
+import static com.predic8.membrane.core.http.Request.get;
+import static com.predic8.membrane.core.interceptor.oauth2client.rf.OAuth2CallbackRequestHandler.MEMBRANE_MISSING_SESSION;
 import static org.junit.jupiter.api.Assertions.*;
 
 public abstract class OAuth2ResourceTest {
@@ -181,11 +183,9 @@ public abstract class OAuth2ResourceTest {
 
         browser.clearCookies(); // send the auth link to some helpless (other) user
 
-        excCallResource = browser.apply(new Request.Builder().get("http://localhost:" + serverPort + ref.get()).buildExchange());
-
-        assertEquals(400, excCallResource.getResponse().getStatusCode());
-
-        assertTrue(excCallResource.getResponse().getBodyAsStringDecoded().contains("CSRF"));
+        var response = browser.apply(get("http://localhost:" + serverPort + ref.get()).buildExchange()).getResponse();
+        assertEquals(400, response.getStatusCode());
+        assertTrue(response.getBodyAsStringDecoded().contains(MEMBRANE_MISSING_SESSION));
     }
 
     @Test
