@@ -139,7 +139,6 @@ public abstract class SessionManager {
             exc.setResponse(Response.ok().build());
     }
 
-
     private void handleSetCookieHeaderForResponse(Exchange exc, Session session) throws Exception {
         Optional<Object> originalCookieValueAtBeginning = Optional.ofNullable(exc.getProperty(SESSION_COOKIE_ORIGINAL));
 
@@ -211,7 +210,7 @@ public abstract class SessionManager {
                 .filter(e -> e.getValue().size() > 1)
                 .filter(e -> e.getValue().stream().filter(s -> s.contains(VALUE_TO_EXPIRE_SESSION_IN_BROWSER)).count() == 1)
                 .forEach(e -> {
-                    setCookieHeaders.get(e.getKey()).remove(e.getValue());
+                    setCookieHeaders.get(e.getKey()).remove(e.getValue());  // TODO does this actually do anything?
                     exc.getResponse().getHeader().remove(getAllRelevantSetCookieHeaders(exc)
                             .filter(hf -> hf.getValue().contains(VALUE_TO_EXPIRE_SESSION_IN_BROWSER))
                             .findFirst().get());
@@ -230,8 +229,7 @@ public abstract class SessionManager {
             log.warn("Cookie is larger than 4093 bytes, this will not work some browsers.");
         String setCookieValue = currentSessionCookieValue
                 + ";" + String.join(";", createCookieAttributes(exc));
-        exc.getResponse().getHeader()
-                .add(Header.SET_COOKIE, setCookieValue);
+        exc.getResponse().getHeader().add(Header.SET_COOKIE, setCookieValue);
     }
 
     private void setCookieForExpiredSessions(Exchange exc, String currentSessionCookieValue) {
@@ -263,8 +261,9 @@ public abstract class SessionManager {
 
     protected Session getSessionInternal(Exchange exc) {
         exc.setProperty(SESSION_COOKIE_ORIGINAL,null);
-        if (getCookieHeader(exc) == null)
+        if (getCookieHeader(exc) == null) {
             return new Session(usernameKeyName, new HashMap<>());
+        }
 
         Map<String, Map<String, Object>> validCookiesAsListOfMaps = convertValidCookiesToAttributes(exc);
         Session session = new Session(usernameKeyName, mergeCookies(new ArrayList<>(validCookiesAsListOfMaps.values())));
@@ -341,7 +340,11 @@ public abstract class SessionManager {
 
 
     protected Stream<String> getCookies(Exchange exc) {
-        return exc.getRequest().getHeader().getValues(new HeaderName(COOKIE)).stream().map(s -> s.getValue().split(";")).flatMap(Arrays::stream).map(String::trim);
+        return exc.getRequest().getHeader().getValues(new HeaderName(COOKIE))
+                .stream()
+                .map(s -> s.getValue().split(";"))
+                .flatMap(Arrays::stream)
+                .map(String::trim);
     }
 
     public void removeSession(Exchange exc) {

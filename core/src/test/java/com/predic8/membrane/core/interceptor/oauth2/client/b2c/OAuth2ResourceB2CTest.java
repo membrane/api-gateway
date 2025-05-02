@@ -31,6 +31,10 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.*;
 
 import static com.predic8.membrane.core.http.Header.*;
+import static com.predic8.membrane.core.http.Request.get;
+import static com.predic8.membrane.core.interceptor.oauth2client.rf.OAuth2CallbackRequestHandler.MEMBRANE_MISSING_SESSION;
+import static com.predic8.membrane.core.util.URLParamUtil.DuplicateKeyOrInvalidFormStrategy.ERROR;
+import static com.predic8.membrane.core.util.URLParamUtil.parseQueryString;
 import static org.junit.jupiter.api.Assertions.*;
 
 public abstract class OAuth2ResourceB2CTest {
@@ -162,7 +166,8 @@ public abstract class OAuth2ResourceB2CTest {
 
         assertEquals(400, excCallResource.getResponse().getStatusCode());
 
-        assertTrue(excCallResource.getResponse().getBodyAsStringDecoded().contains("CSRF"));
+        String response = excCallResource.getResponse().getBodyAsStringDecoded();
+        assertTrue(response.contains(MEMBRANE_MISSING_SESSION));
     }
 
     @Test
