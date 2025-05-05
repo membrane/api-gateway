@@ -21,28 +21,32 @@ public class IdempotencyInterceptor extends AbstractExchangeExpressionIntercepto
 
     @Override
     public Outcome handleRequest(Exchange exc) {
-        String key;
-        key = getKeyValue(exchangeExpression.evaluate(exc, REQUEST, String.class));
+        String key = normalizeKey(exchangeExpression.evaluate(exc, REQUEST, String.class));
+
         if (key.isEmpty()) {
-            exc.setResponse(Response.statusCode(400).body("Idempotency key is missing or empty").build());
-            return ABORT;
+            return CONTINUE;
         }
 
         if (processedKeys.containsKey(key)) {
-            exc.setResponse(Response.statusCode(400).body("Idempotency key already processed").build());
-            return ABORT;
+            return handleDuplicateKey(exc);
         }
+
         processedKeys.put(key, true);
         return CONTINUE;
     }
 
-    private String getKeyValue(String key) {
-        return key.equals("null") ? "" : key;
+    private String normalizeKey(String key) {
+        return "null".equals(key) ? "" : key;
+    }
+
+    private Outcome handleDuplicateKey(Exchange exc) {
+        exc.setResponse(Response.statusCode(400).body("Idempotency key already processed").build());
+        return ABORT;
     }
 
     @MCAttribute
-    public void setKey(String key) {
-        this.expression = key;
+    public void setKey(String keyExpression) {
+        this.expression = keyExpression;
     }
 
     public String getKey() {
