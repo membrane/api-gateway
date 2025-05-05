@@ -1,5 +1,7 @@
 package com.predic8.membrane.core.interceptor.idempotency;
 
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.interceptor.Outcome;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -30,8 +32,11 @@ class IdempotencyInterceptorTest {
 
     @Test
     void duplicateIdTest() throws URISyntaxException {
-        assertEquals(CONTINUE, interceptor.handleRequest(put("").body("{\"id\": \"abc456\"}").contentType(APPLICATION_JSON).buildExchange()));
-        assertEquals(ABORT, interceptor.handleRequest(put("").body("{\"id\": \"abc456\"}").contentType(APPLICATION_JSON).buildExchange()));
+        Exchange firstExchange = put("").body("{\"id\": \"abc456\"}").contentType(APPLICATION_JSON).buildExchange();
+        Exchange secondExchange = put("").body("{\"id\": \"abc456\"}").contentType(APPLICATION_JSON).buildExchange();
+        assertEquals(CONTINUE, interceptor.handleRequest(firstExchange));
+        assertEquals(ABORT, interceptor.handleRequest(secondExchange));
+        assertEquals(400, secondExchange.getResponse().getStatusCode());
     }
 
     @Test

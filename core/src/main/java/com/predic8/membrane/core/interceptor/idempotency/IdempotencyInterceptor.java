@@ -16,6 +16,7 @@ package com.predic8.membrane.core.interceptor.idempotency;
 
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.annot.Required;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
@@ -64,7 +65,9 @@ public class IdempotencyInterceptor extends AbstractInterceptor {
             return handleDuplicateKey(exc);
         }
 
-        processedKeys.put(key, true);
+        if (processedKeys.putIfAbsent(key, Boolean.TRUE) != null) {
+            return handleDuplicateKey(exc);
+        }
         return CONTINUE;
     }
 
@@ -91,6 +94,7 @@ public class IdempotencyInterceptor extends AbstractInterceptor {
      * @example ${req.header.idempotency-key}
      */
     @MCAttribute
+    @Required
     public void setKey(String key) {
         this.key = key;
     }
@@ -101,6 +105,7 @@ public class IdempotencyInterceptor extends AbstractInterceptor {
      * @example jsonpath
      */
     @MCAttribute
+    @Required
     public void setLanguage(Language language) {
         this.language = language;
     }
