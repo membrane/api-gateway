@@ -30,6 +30,7 @@ import static com.predic8.membrane.core.exceptions.ProblemDetails.user;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
 import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
+import static com.predic8.membrane.core.lang.ExchangeExpression.Language.SPEL;
 
 /**
  * @description <p>Prevents duplicate request processing based on a dynamic idempotency key.</p>
@@ -45,7 +46,7 @@ public class IdempotencyInterceptor extends AbstractInterceptor {
 
     private String key;
     private ExchangeExpression exchangeExpression;
-    private Language language;
+    private Language language = SPEL;
     private final Map<String, Boolean> processedKeys = new ConcurrentHashMap<>();
 
     @Override
@@ -62,11 +63,11 @@ public class IdempotencyInterceptor extends AbstractInterceptor {
         }
 
         if (processedKeys.containsKey(key)) {
-            return handleDuplicateKey(exc);
+            return handleDuplicateKey(exc, key);
         }
 
         if (processedKeys.putIfAbsent(key, Boolean.TRUE) != null) {
-            return handleDuplicateKey(exc);
+            return handleDuplicateKey(exc, key);
         }
         return CONTINUE;
     }
@@ -75,10 +76,10 @@ public class IdempotencyInterceptor extends AbstractInterceptor {
         return key == null ? "" : key;
     }
 
-    private Outcome handleDuplicateKey(Exchange exc) {
+    private Outcome handleDuplicateKey(Exchange exc, String key) {
         user(false, "idempotency")
-                .statusCode(400)
-                .detail("Idempotency key already processed")
+                .statusCode(409)
+                .detail("key %s has already been processed".formatted(key))
                 .buildAndSetResponse(exc);
         return ABORT;
     }
@@ -102,10 +103,10 @@ public class IdempotencyInterceptor extends AbstractInterceptor {
     /**
      * @description Language used to interpret the expression (e.g., spel, jsonpath, xpath).
      * Determines how the key string will be evaluated.
+     * @default SpEL
      * @example jsonpath
      */
     @MCAttribute
-    @Required
     public void setLanguage(Language language) {
         this.language = language;
     }
