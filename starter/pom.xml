@@ -2,7 +2,7 @@
     <parent>
         <artifactId>service-proxy-parent</artifactId>
         <groupId>org.membrane-soa</groupId>
-        <version>5.5.13-SNAPSHOT</version>
+        <version>5.5.13</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
