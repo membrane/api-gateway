@@ -286,7 +286,9 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
                 ).toList();
 
         Response redirectResponse = Response
-                .redirect(auth.getLoginURL(state, publicUrlManager.getPublicURLAndReregister(exc) + callbackPath, exc.getRequestURI()) + LoginParameter.copyLoginParameters(exc, combinedLoginParameters), 302)
+                .redirect(auth.getLoginURL(publicUrlManager.getPublicURLAndReregister(exc) + callbackPath)
+                        + "&state=security_token%3D" + state + "%26url%3D" + OAuth2Util.urlencode(exc.getRequestURI())
+                        + LoginParameter.copyLoginParameters(exc, combinedLoginParameters), 302)
                 .build();
         exc.setResponse(redirectResponse);
 

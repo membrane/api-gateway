@@ -136,15 +136,14 @@ public class MicrosoftEntraIDAuthorizationService extends AuthorizationService {
     }
 
     @Override
-    public String getLoginURL(String securityToken, String callbackURL, String pathQuery) {
+    public String getLoginURL(String callbackURL) {
         boolean formPostSupported = responseModesSupported.contains("form_post");
         return authorizationEndpoint +"?"+
                 "client_id=" + getClientId() + "&"+
                 "response_type=code&"+
                 "scope="+scope+"&"+
-                "redirect_uri=" + callbackURL + "&"+
-                (formPostSupported ? "response_mode=form_post&" : "") +
-                "state=security_token%3D" + securityToken + "%26url%3D" + OAuth2Util.urlencode(pathQuery) +
+                "redirect_uri=" + callbackURL +
+                (formPostSupported ? "&response_mode=form_post" : "") +
                 getClaimsParameter();
     }
 
