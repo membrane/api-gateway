@@ -35,6 +35,7 @@ import java.util.*;
 import static com.predic8.membrane.core.Constants.*;
 import static com.predic8.membrane.core.http.Header.*;
 import static com.predic8.membrane.core.http.MimeType.*;
+import static com.predic8.membrane.core.interceptor.oauth2.ParamNames.STATE;
 import static com.predic8.membrane.core.interceptor.oauth2client.rf.JsonUtils.isJson;
 import static com.predic8.membrane.core.interceptor.oauth2client.rf.StateManager.*;
 import static com.predic8.membrane.core.interceptor.oauth2client.temp.OAuth2Constants.*;
@@ -100,7 +101,8 @@ public class OAuth2CallbackRequestHandler {
                             "MEMBRANE_CSRF_TOKEN_MISSING_IN_SESSION",
                             MEMBRANE_CSRF_TOKEN_MISSING_IN_SESSION,
                             Response.badRequest().body(MEMBRANE_CSRF_TOKEN_MISSING_IN_SESSION).build());
-                }else {
+                } else {
+                    log.warn("Token from Session: '{}', Token from URI: '{}'", session.get(STATE).toString(), stateFromUri);
                     throw new OAuth2Exception(
                             "MEMBRANE_CSRF_TOKEN_MISMATCH",
                             MEMBRANE_CSRF_TOKEN_MISMATCH,
