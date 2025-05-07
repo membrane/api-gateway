@@ -111,6 +111,9 @@ public class OAuth2CallbackRequestHandler {
             }
 
             // state in session can be "merged" -> save the selected state in session overwriting the possibly merged value
+            if (!(session.get(ParamNames.STATE).equals(stateFromUri))) {
+                log.warn("Replacing saved state '{}' with '{}'", session.get(ParamNames.STATE), stateFromUri);
+            }
             session.put(ParamNames.STATE, stateFromUri);
 
             AbstractExchangeSnapshot originalRequest = originalExchangeStore.reconstruct(exc, session, stateFromUri);
