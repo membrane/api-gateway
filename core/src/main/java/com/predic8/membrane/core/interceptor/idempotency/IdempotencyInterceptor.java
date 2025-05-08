@@ -37,7 +37,7 @@ import static com.predic8.membrane.core.lang.ExchangeExpression.Language.SPEL;
  * @description <p>Prevents duplicate request processing based on a dynamic idempotency key.</p>
  *
  * <p>This interceptor evaluates an expression (e.g., from headers or body) to extract an idempotency key.
- * If the key has already been processed, it aborts the request with a 400 response.</p>
+ * If the key has already been processed, it aborts the request with a 409 response.</p>
  *
  * <p>Useful for handling retries from clients to avoid duplicate side effects like double payment submissions.</p>
  * @topic 3. Security and Validation
@@ -48,7 +48,7 @@ public class IdempotencyInterceptor extends AbstractInterceptor {
     private String key;
     private ExchangeExpression exchangeExpression;
     private Language language = SPEL;
-    private int seconds = 600;
+    private int expirationSeconds = 3600;
     private Cache<String, Boolean> processedKeys;
 
     @Override
@@ -57,7 +57,7 @@ public class IdempotencyInterceptor extends AbstractInterceptor {
         exchangeExpression = ExchangeExpression.newInstance(router, language, key);
         processedKeys = CacheBuilder.newBuilder()
                 .maximumSize(10000)
-                .expireAfterWrite(seconds, TimeUnit.SECONDS)
+                .expireAfterWrite(expirationSeconds, TimeUnit.SECONDS)
                 .build();
     }
 
@@ -125,11 +125,11 @@ public class IdempotencyInterceptor extends AbstractInterceptor {
      * <li>604800 seconds = 1 week</li>
      * <li>2592000 seconds = 1 month (30 days)</li>
      * </ul>
-     * @default 600
+     * @default 3600
      */
     @MCAttribute
-    public void setSeconds(int seconds) {
-        this.seconds = seconds;
+    public void setExpirationSeconds(int expirationSeconds) {
+        this.expirationSeconds = expirationSeconds;
     }
 
     public String getKey() {
@@ -140,7 +140,7 @@ public class IdempotencyInterceptor extends AbstractInterceptor {
         return language;
     }
 
-    public int getSeconds() {
-        return seconds;
+    public int getExpirationSeconds() {
+        return expirationSeconds;
     }
 }
