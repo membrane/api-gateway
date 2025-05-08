@@ -116,9 +116,16 @@ public class IdempotencyInterceptor extends AbstractInterceptor {
     }
 
     /**
-     * @description Time in seconds after which idempotence keys automatically expire.
+     * @description Time in seconds after which idempotency keys automatically expire.
+     * Useful to avoid memory leaks in long-running systems.
+     * Common values:
+     * <ul>
+     * <li>300 seconds = 5 minutes</li>
+     * <li>86400 seconds = 1 day</li>
+     * <li>604800 seconds = 1 week</li>
+     * <li>2592000 seconds = 1 month (30 days)</li>
+     * </ul>
      * @default 600
-     * @example 300
      */
     @MCAttribute
     public void setSeconds(int seconds) {
