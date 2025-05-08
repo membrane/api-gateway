@@ -82,8 +82,8 @@ public class MicrosoftEntraIDAuthorizationService extends AuthorizationService {
     }
 
     private void prepareClaimsForLoginUrl() throws IOException {
-        claimsParameter = ClaimsParameter.writeCompleteJson(claims,claimsIdt);
-        if(claimsParameter.isEmpty())
+        claimsParameter = ClaimsParameter.writeCompleteJson(claims, claimsIdt);
+        if (claimsParameter == null || claimsParameter.isEmpty())
             claimsParameter = null;
     }
 
