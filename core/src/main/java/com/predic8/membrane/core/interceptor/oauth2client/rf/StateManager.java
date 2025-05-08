@@ -60,12 +60,9 @@ public class StateManager {
 
     private static String getValueFromState(String state, String key) {
         if (state == null)
-            throw new RuntimeException("No "+key+".");
+            throw new RuntimeException("State is null, No "+key+".");
 
         Map<String, String> param = parseQueryString(decode(state, UTF_8), ERROR);
-
-        if (!param.containsKey(key))
-            throw new RuntimeException("No "+key+".");
 
         return param.get(key);
     }
@@ -124,8 +121,8 @@ public class StateManager {
         return securityToken;
     }
 
-    public String getVerifierId() {
-        return verifierId;
+    public Optional<String> getVerifierId() {
+        return Optional.ofNullable(verifierId);
     }
 
     @Override

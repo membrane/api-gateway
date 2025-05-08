@@ -39,9 +39,9 @@ public class PKCEVerifier {
             return null;
         }
         for (String verifier : verifiers.split(SESSION_VALUE_SEPARATOR))
-            if (verifier.startsWith(state.getVerifierId()))
+            if (state.getVerifierId().isPresent() && verifier.startsWith(state.getVerifierId().get()))
                 return verifier;
-        log.warn("No verifier found in session ({}) with id {}.", verifiers, state.getVerifierId());
+        log.warn("No verifier found in session ({}) with id {}.", verifiers, state.getVerifierId().orElse(null));
         return null;
     }
 
