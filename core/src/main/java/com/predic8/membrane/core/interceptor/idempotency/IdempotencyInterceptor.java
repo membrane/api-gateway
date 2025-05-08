@@ -48,7 +48,7 @@ public class IdempotencyInterceptor extends AbstractInterceptor {
     private String key;
     private ExchangeExpression exchangeExpression;
     private Language language = SPEL;
-    private int expirationSeconds = 3600;
+    private int expiration = 3600;
     private Cache<String, Boolean> processedKeys;
 
     @Override
@@ -57,7 +57,7 @@ public class IdempotencyInterceptor extends AbstractInterceptor {
         exchangeExpression = ExchangeExpression.newInstance(router, language, key);
         processedKeys = CacheBuilder.newBuilder()
                 .maximumSize(10000)
-                .expireAfterWrite(expirationSeconds, TimeUnit.SECONDS)
+                .expireAfterWrite(expiration, TimeUnit.SECONDS)
                 .build();
     }
 
@@ -128,8 +128,8 @@ public class IdempotencyInterceptor extends AbstractInterceptor {
      * @default 3600
      */
     @MCAttribute
-    public void setExpirationSeconds(int expirationSeconds) {
-        this.expirationSeconds = expirationSeconds;
+    public void setExpiration(int expiration) {
+        this.expiration = expiration;
     }
 
     public String getKey() {
@@ -140,7 +140,7 @@ public class IdempotencyInterceptor extends AbstractInterceptor {
         return language;
     }
 
-    public int getExpirationSeconds() {
-        return expirationSeconds;
+    public int getExpiration() {
+        return expiration;
     }
 }
