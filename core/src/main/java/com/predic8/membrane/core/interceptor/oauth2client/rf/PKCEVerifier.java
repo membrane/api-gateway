@@ -31,17 +31,16 @@ public class PKCEVerifier {
         return verifier.substring(0, 4);
     }
 
-    public static String getVerifier(String state, Session session) {
-        String verifierId = StateManager.getValueFromState(state, "verifierId");
+    public static String getVerifier(StateManager state, Session session) {
         String verifiers = session.get(SESSION_PARAMETER_VERIFIER);
         if (verifiers == null) {
             log.warn("No verifier found in session.");
             return null;
         }
         for (String verifier : verifiers.split(SESSION_VALUE_SEPARATOR))
-            if (verifier.startsWith(verifierId))
+            if (verifier.startsWith(state.getVerifierId()))
                 return verifier;
-        log.warn("No verifier found in session ({}) with id {}.", verifiers, verifierId);
+        log.warn("No verifier found in session ({}) with id {}.", verifiers, state.getVerifierId());
         return null;
     }
 

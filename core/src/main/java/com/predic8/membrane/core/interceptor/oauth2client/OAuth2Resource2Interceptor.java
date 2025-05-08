@@ -286,10 +286,10 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
                 ).toList();
 
         PKCEVerifier verifier = new PKCEVerifier();
-        StateManager stateManager = new StateManager();
+        StateManager stateManager = new StateManager(verifier);
         Response redirectResponse = Response
                 .redirect(auth.getLoginURL(publicUrlManager.getPublicURLAndReregister(exc) + callbackPath)
-                        + stateManager.buildStateParameter(exc, verifier)
+                        + stateManager.buildStateParameter(exc)
                         + verifier.getUrlParams()
                         + LoginParameter.copyLoginParameters(exc, combinedLoginParameters), 302)
                 .build();

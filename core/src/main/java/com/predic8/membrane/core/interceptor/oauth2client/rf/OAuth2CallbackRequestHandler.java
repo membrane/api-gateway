@@ -108,7 +108,7 @@ public class OAuth2CallbackRequestHandler {
 
             OAuth2TokenResponseBody tokenResponse = auth.codeTokenRequest(
                     publicUrlManager.getPublicURLAndReregister(exc) + callbackPath, params.getCode(),
-                    PKCEVerifier.getVerifier(params.getState(), session));
+                    PKCEVerifier.getVerifier(stateFromUri, session));
 
             if (tokenResponse.getAccessToken() == null) {
                 if (!onlyRefreshToken)

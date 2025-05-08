@@ -37,13 +37,16 @@ public class StateManager {
     private static final SecureRandom sr = new SecureRandom();
 
     private final String securityToken;
+    private final String verifierId;
 
-    public StateManager() {
+    public StateManager(PKCEVerifier pkceVerifier) {
         securityToken = generateNewState();
+        verifierId = pkceVerifier.getId();
     }
 
     public StateManager(String stateFromUri) {
         securityToken = getValueFromState(stateFromUri, "security_token");
+        verifierId = getValueFromState(stateFromUri, "verifierId");
     }
 
     @NotNull
@@ -51,7 +54,7 @@ public class StateManager {
         return new BigInteger(130, sr).toString(32);
     }
 
-    public static String getValueFromState(String state, String key) {
+    private static String getValueFromState(String state, String key) {
         if (state == null)
             throw new RuntimeException("No "+key+".");
 
@@ -64,16 +67,16 @@ public class StateManager {
     }
 
     public static boolean csrfTokenMatches(Session session, String state2) {
-        return Optional.ofNullable(session.get(ParamNames.STATE))
+        return Optional.ofNullable(session.get(STATE))
                 .filter(o -> Arrays.stream(o.toString().split(SESSION_VALUE_SEPARATOR))
                         .filter(s -> s.equals(state2))
                         .count() == 1
                 ).isPresent();
     }
 
-    public String buildStateParameter(Exchange exchange, PKCEVerifier pkceVerifier) {
+    public String buildStateParameter(Exchange exchange) {
         return "&state=security_token%3D" + securityToken + "%26url%3D" + OAuth2Util.urlencode(exchange.getRequestURI())
-                + "%26verifierId%3D" + pkceVerifier.getId();
+                + "%26verifierId%3D" + verifierId;
     }
 
     public void saveToSession(Session session) {
@@ -85,5 +88,9 @@ public class StateManager {
 
     public String getSecurityToken() {
         return securityToken;
+    }
+
+    public String getVerifierId() {
+        return verifierId;
     }
 }
