@@ -14,6 +14,8 @@
 
 package com.predic8.membrane.core.interceptor.idempotency;
 
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.annot.Required;
@@ -25,6 +27,7 @@ import com.predic8.membrane.core.lang.ExchangeExpression.Language;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 
 import static com.predic8.membrane.core.exceptions.ProblemDetails.user;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
@@ -47,7 +50,11 @@ public class IdempotencyInterceptor extends AbstractInterceptor {
     private String key;
     private ExchangeExpression exchangeExpression;
     private Language language = SPEL;
-    private final Map<String, Boolean> processedKeys = new ConcurrentHashMap<>();
+    private int seconds = 600;
+    private final Cache<String, Boolean> processedKeys = CacheBuilder.newBuilder()
+            .maximumSize(10000)
+            .expireAfterWrite(seconds, TimeUnit.SECONDS)
+            .build();
 
     @Override
     public void init() {
@@ -62,13 +69,13 @@ public class IdempotencyInterceptor extends AbstractInterceptor {
             return CONTINUE;
         }
 
-        if (processedKeys.containsKey(key)) {
-            return handleDuplicateKey(exc, key);
+        synchronized (processedKeys) {
+            if (processedKeys.getIfPresent(key) != null) {
+                return handleDuplicateKey(exc, key);
+            }
+            processedKeys.put(key, Boolean.TRUE);
         }
 
-        if (processedKeys.putIfAbsent(key, Boolean.TRUE) != null) {
-            return handleDuplicateKey(exc, key);
-        }
         return CONTINUE;
     }
 
@@ -92,7 +99,7 @@ public class IdempotencyInterceptor extends AbstractInterceptor {
     /**
      * @description Expression used to extract the idempotency key from the exchange.
      * Can be an XPath, JSONPath, header, or other supported syntax depending on the language.
-     * @example ${req.header.idempotency-key}
+     * @example $.id
      */
     @MCAttribute
     @Required
@@ -111,11 +118,25 @@ public class IdempotencyInterceptor extends AbstractInterceptor {
         this.language = language;
     }
 
+    /**
+     * @description Time in seconds after which idempotence keys automatically expire.
+     * @default 600
+     * @example 300
+     */
+    @MCAttribute
+    public void setSeconds(int seconds) {
+        this.seconds = seconds;
+    }
+
     public String getKey() {
         return key;
     }
 
     public Language getLanguage() {
         return language;
+    }
+
+    public int getSeconds() {
+        return seconds;
     }
 }
