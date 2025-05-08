@@ -25,8 +25,6 @@ import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.lang.ExchangeExpression;
 import com.predic8.membrane.core.lang.ExchangeExpression.Language;
 
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
 import static com.predic8.membrane.core.exceptions.ProblemDetails.user;
@@ -51,15 +49,16 @@ public class IdempotencyInterceptor extends AbstractInterceptor {
     private ExchangeExpression exchangeExpression;
     private Language language = SPEL;
     private int seconds = 600;
-    private final Cache<String, Boolean> processedKeys = CacheBuilder.newBuilder()
-            .maximumSize(10000)
-            .expireAfterWrite(seconds, TimeUnit.SECONDS)
-            .build();
+    private Cache<String, Boolean> processedKeys;
 
     @Override
     public void init() {
         super.init();
         exchangeExpression = ExchangeExpression.newInstance(router, language, key);
+        processedKeys = CacheBuilder.newBuilder()
+                .maximumSize(10000)
+                .expireAfterWrite(seconds, TimeUnit.SECONDS)
+                .build();
     }
 
     @Override
@@ -69,12 +68,10 @@ public class IdempotencyInterceptor extends AbstractInterceptor {
             return CONTINUE;
         }
 
-        synchronized (processedKeys) {
-            if (processedKeys.getIfPresent(key) != null) {
-                return handleDuplicateKey(exc, key);
-            }
-            processedKeys.put(key, Boolean.TRUE);
+        if (processedKeys.getIfPresent(key) != null) {
+            return handleDuplicateKey(exc, key);
         }
+        processedKeys.put(key, Boolean.TRUE);
 
         return CONTINUE;
     }
