@@ -14,10 +14,12 @@
 package com.predic8.membrane.core.interceptor.oauth2client.rf;
 
 import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.oauth2.OAuth2Util;
-import com.predic8.membrane.core.interceptor.oauth2.ParamNames;
 import com.predic8.membrane.core.interceptor.session.Session;
 import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.math.BigInteger;
 import java.security.SecureRandom;
@@ -25,7 +27,7 @@ import java.util.Arrays;
 import java.util.Map;
 import java.util.Optional;
 
-import static com.predic8.membrane.core.interceptor.oauth2.ParamNames.STATE;
+import static com.predic8.membrane.core.interceptor.oauth2client.rf.OAuth2CallbackRequestHandler.*;
 import static com.predic8.membrane.core.interceptor.session.SessionManager.SESSION_VALUE_SEPARATOR;
 import static com.predic8.membrane.core.util.URLParamUtil.DuplicateKeyOrInvalidFormStrategy.ERROR;
 import static com.predic8.membrane.core.util.URLParamUtil.parseQueryString;
@@ -33,7 +35,9 @@ import static java.net.URLDecoder.decode;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 public class StateManager {
+    private static final String SESSION_PARAMETER_STATE = "state";
 
+    private static final Logger log = LoggerFactory.getLogger(StateManager.class);
     private static final SecureRandom sr = new SecureRandom();
 
     private final String securityToken;
@@ -66,12 +70,42 @@ public class StateManager {
         return param.get(key);
     }
 
-    public static boolean csrfTokenMatches(Session session, String state2) {
-        return Optional.ofNullable(session.get(STATE))
+    public static void verifyCsrfToken(Session session, StateManager stateFromUri) throws OAuth2Exception {
+        boolean match = Optional.ofNullable(session.get(SESSION_PARAMETER_STATE))
                 .filter(o -> Arrays.stream(o.toString().split(SESSION_VALUE_SEPARATOR))
-                        .filter(s -> s.equals(state2))
+                        .filter(s -> s.equals(stateFromUri.getSecurityToken()))
                         .count() == 1
                 ).isPresent();
+
+        if (!match) {
+            if (session.isNew()) {
+                throw new OAuth2Exception(
+                        "MEMBRANE_MISSING_SESSION",
+                        MEMBRANE_MISSING_SESSION,
+                        Response.badRequest().body(MEMBRANE_MISSING_SESSION).build());
+            } else if (!StateManager.hasState(session)) {
+                throw new OAuth2Exception(
+                        "MEMBRANE_CSRF_TOKEN_MISSING_IN_SESSION",
+                        MEMBRANE_CSRF_TOKEN_MISSING_IN_SESSION,
+                        Response.badRequest().body(MEMBRANE_CSRF_TOKEN_MISSING_IN_SESSION).build());
+            }else {
+                log.warn("Token from Session: '{}', Token from URI: '{}'", session.get(SESSION_PARAMETER_STATE).toString(), stateFromUri);
+                throw new OAuth2Exception(
+                        "MEMBRANE_CSRF_TOKEN_MISMATCH",
+                        MEMBRANE_CSRF_TOKEN_MISMATCH,
+                        Response.badRequest().body(MEMBRANE_CSRF_TOKEN_MISMATCH).build());
+            }
+        }
+
+        // state in session can be "merged" -> save the selected state in session overwriting the possibly merged value
+        if (!(session.get(SESSION_PARAMETER_STATE).equals(stateFromUri))) {
+            log.warn("Replacing saved state '{}' with '{}'", session.get(SESSION_PARAMETER_STATE), stateFromUri);
+        }
+        session.put(SESSION_PARAMETER_STATE, stateFromUri.getSecurityToken());
+    }
+
+    public static boolean hasState(Session session) {
+        return session.get().containsKey(SESSION_PARAMETER_STATE);
     }
 
     public String buildStateParameter(Exchange exchange) {
@@ -81,9 +115,9 @@ public class StateManager {
 
     public void saveToSession(Session session) {
         String s = securityToken;
-        if (session.get().containsKey(STATE))
-            s = session.get(STATE) + SESSION_VALUE_SEPARATOR + s;
-        session.put(STATE, s);
+        if (session.get().containsKey(SESSION_PARAMETER_STATE))
+            s = session.get(SESSION_PARAMETER_STATE) + SESSION_VALUE_SEPARATOR + s;
+        session.put(SESSION_PARAMETER_STATE, s);
     }
 
     public String getSecurityToken() {

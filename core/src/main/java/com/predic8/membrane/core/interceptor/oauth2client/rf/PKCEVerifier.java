@@ -9,7 +9,6 @@ import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.util.Base64;
 
-import static com.predic8.membrane.core.interceptor.session.Session.SESSION_PARAMETER_VERIFIER;
 import static com.predic8.membrane.core.interceptor.session.SessionManager.SESSION_VALUE_SEPARATOR;
 import static java.nio.charset.StandardCharsets.US_ASCII;
 
@@ -17,6 +16,8 @@ import static java.nio.charset.StandardCharsets.US_ASCII;
  * See RFC 7636.
  */
 public class PKCEVerifier {
+    public static final String SESSION_PARAMETER_VERIFIER = "verifier";
+
     private static final Logger log = LoggerFactory.getLogger(PKCEVerifier.class);
     private static final String VERIFIER_CHARACTERS = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-._~";
     private static final SecureRandom secureRandom = new SecureRandom();
