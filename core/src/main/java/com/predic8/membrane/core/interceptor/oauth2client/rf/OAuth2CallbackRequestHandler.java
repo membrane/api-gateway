@@ -75,9 +75,9 @@ public class OAuth2CallbackRequestHandler {
             OAuth2Parameters params = OAuth2Parameters.parse(uriFactory, exc);
             params.checkCodeOrError();
 
-            String stateFromUri = getSecurityTokenFromState(params.getState());
+            StateManager stateFromUri = new StateManager(params.getState());
 
-            if (!csrfTokenMatches(session, stateFromUri)) {
+            if (!csrfTokenMatches(session, stateFromUri.getSecurityToken())) {
                 if (session.isNew()) {
                     throw new OAuth2Exception(
                             "MEMBRANE_MISSING_SESSION",
@@ -97,7 +97,7 @@ public class OAuth2CallbackRequestHandler {
             }
 
             // state in session can be "merged" -> save the selected state in session overwriting the possibly merged value
-            session.put(ParamNames.STATE, stateFromUri);
+            session.put(ParamNames.STATE, stateFromUri.getSecurityToken());
 
             AbstractExchangeSnapshot originalRequest = originalExchangeStore.reconstruct(exc, session, stateFromUri);
             originalExchangeStore.remove(exc, session, stateFromUri);
@@ -107,7 +107,8 @@ public class OAuth2CallbackRequestHandler {
             }
 
             OAuth2TokenResponseBody tokenResponse = auth.codeTokenRequest(
-                    publicUrlManager.getPublicURLAndReregister(exc) + callbackPath, params.getCode());
+                    publicUrlManager.getPublicURLAndReregister(exc) + callbackPath, params.getCode(),
+                    PKCEVerifier.getVerifier(params.getState(), session));
 
             if (tokenResponse.getAccessToken() == null) {
                 if (!onlyRefreshToken)

@@ -13,6 +13,8 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.oauth2client.rf;
 
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.interceptor.oauth2.OAuth2Util;
 import com.predic8.membrane.core.interceptor.oauth2.ParamNames;
 import com.predic8.membrane.core.interceptor.session.Session;
 import org.jetbrains.annotations.NotNull;
@@ -23,6 +25,7 @@ import java.util.Arrays;
 import java.util.Map;
 import java.util.Optional;
 
+import static com.predic8.membrane.core.interceptor.oauth2.ParamNames.STATE;
 import static com.predic8.membrane.core.interceptor.session.SessionManager.SESSION_VALUE_SEPARATOR;
 import static com.predic8.membrane.core.util.URLParamUtil.DuplicateKeyOrInvalidFormStrategy.ERROR;
 import static com.predic8.membrane.core.util.URLParamUtil.parseQueryString;
@@ -33,21 +36,31 @@ public class StateManager {
 
     private static final SecureRandom sr = new SecureRandom();
 
+    private final String securityToken;
+
+    public StateManager() {
+        securityToken = generateNewState();
+    }
+
+    public StateManager(String stateFromUri) {
+        securityToken = getValueFromState(stateFromUri, "security_token");
+    }
+
     @NotNull
     public static String generateNewState() {
         return new BigInteger(130, sr).toString(32);
     }
 
-    public static String getSecurityTokenFromState(String state2) {
-        if (state2 == null)
-            throw new RuntimeException("No CSRF token.");
+    public static String getValueFromState(String state, String key) {
+        if (state == null)
+            throw new RuntimeException("No "+key+".");
 
-        Map<String, String> param = parseQueryString(decode(state2, UTF_8), ERROR);
+        Map<String, String> param = parseQueryString(decode(state, UTF_8), ERROR);
 
-        if (!param.containsKey("security_token"))
-            throw new RuntimeException("No CSRF token.");
+        if (!param.containsKey(key))
+            throw new RuntimeException("No "+key+".");
 
-        return param.get("security_token");
+        return param.get(key);
     }
 
     public static boolean csrfTokenMatches(Session session, String state2) {
@@ -56,5 +69,21 @@ public class StateManager {
                         .filter(s -> s.equals(state2))
                         .count() == 1
                 ).isPresent();
+    }
+
+    public String buildStateParameter(Exchange exchange, PKCEVerifier pkceVerifier) {
+        return "&state=security_token%3D" + securityToken + "%26url%3D" + OAuth2Util.urlencode(exchange.getRequestURI())
+                + "%26verifierId%3D" + pkceVerifier.getId();
+    }
+
+    public void saveToSession(Session session) {
+        String s = securityToken;
+        if (session.get().containsKey(STATE))
+            s = session.get(STATE) + SESSION_VALUE_SEPARATOR + s;
+        session.put(STATE, s);
+    }
+
+    public String getSecurityToken() {
+        return securityToken;
     }
 }

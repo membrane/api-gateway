@@ -24,6 +24,7 @@ import static com.predic8.membrane.core.interceptor.oauth2.ParamNames.ACCESS_TOK
 import static com.predic8.membrane.core.interceptor.oauth2client.temp.OAuth2Constants.OAUTH2_ANSWER;
 
 public class Session {
+    public static final String SESSION_PARAMETER_VERIFIER = "verifier";
 
     @JsonIgnore  // we don't want this utility method to show up in JSON representations
     public boolean isNew() {

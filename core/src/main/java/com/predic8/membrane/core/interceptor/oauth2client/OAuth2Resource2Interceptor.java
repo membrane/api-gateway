@@ -27,6 +27,7 @@ import com.predic8.membrane.core.interceptor.session.*;
 import com.predic8.membrane.core.util.*;
 import org.slf4j.*;
 
+import java.security.SecureRandom;
 import java.util.*;
 
 import static com.predic8.membrane.core.exchange.Exchange.*;
@@ -36,6 +37,7 @@ import static com.predic8.membrane.core.interceptor.oauth2.ParamNames.*;
 import static com.predic8.membrane.core.interceptor.oauth2client.rf.OAuthUtils.*;
 import static com.predic8.membrane.core.interceptor.oauth2client.rf.StateManager.*;
 import static com.predic8.membrane.core.interceptor.oauth2client.temp.OAuth2Constants.*;
+import static com.predic8.membrane.core.interceptor.session.Session.SESSION_PARAMETER_VERIFIER;
 import static com.predic8.membrane.core.interceptor.session.SessionManager.*;
 import static java.net.URLEncoder.*;
 import static java.nio.charset.StandardCharsets.*;
@@ -267,8 +269,6 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
             return RETURN;
         }
 
-        String state = generateNewState();
-
         Map<String, String> lps = loginParameters.stream()
                 .collect(HashMap::new, (m, lp) -> m.put(lp.getName(), lp.getValue()), HashMap::putAll);
         Optional.ofNullable((List<LoginParameter>) exc.getProperty("loginParameters")).orElse(List.of())
@@ -285,9 +285,12 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
                         new LoginParameter(e.getKey(), e.getValue())
                 ).toList();
 
+        PKCEVerifier verifier = new PKCEVerifier();
+        StateManager stateManager = new StateManager();
         Response redirectResponse = Response
                 .redirect(auth.getLoginURL(publicUrlManager.getPublicURLAndReregister(exc) + callbackPath)
-                        + "&state=security_token%3D" + state + "%26url%3D" + OAuth2Util.urlencode(exc.getRequestURI())
+                        + stateManager.buildStateParameter(exc, verifier)
+                        + verifier.getUrlParams()
                         + LoginParameter.copyLoginParameters(exc, combinedLoginParameters), 302)
                 .build();
         exc.setResponse(redirectResponse);
@@ -296,14 +299,14 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
 
         Session session = getSessionManager().getSession(exc);
 
-        originalExchangeStore.store(exc, session, state, exc);
+        originalExchangeStore.store(exc, session, stateManager, exc);
 
-        if (session.get().containsKey(STATE))
-            state = session.get(STATE) + SESSION_VALUE_SEPARATOR + state;
-        session.put(STATE, state);
+        stateManager.saveToSession(session);
+        verifier.saveToSession(session);
 
         return RETURN;
     }
+
 
     private void readBodyFromStreamIntoMemory(Exchange exc) {
         exc.getRequest().getBodyAsStringDecoded();

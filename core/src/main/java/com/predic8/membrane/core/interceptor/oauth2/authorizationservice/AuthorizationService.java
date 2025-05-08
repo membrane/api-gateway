@@ -306,14 +306,14 @@ public abstract class AuthorizationService {
                 .buildExchange())));
     }
 
-    public OAuth2TokenResponseBody codeTokenRequest(String redirectUri, String code) throws Exception {
+    public OAuth2TokenResponseBody codeTokenRequest(String redirectUri, String code, String verifier) throws Exception {
         return parseTokenResponse(checkTokenResponse(doRequest(applyAuth(
                 new Request.Builder()
                         .post(getTokenEndpoint())
                         .contentType(APPLICATION_X_WWW_FORM_URLENCODED)
                         .header(ACCEPT, APPLICATION_JSON)
                         .header(USER_AGENT, USERAGENT),
-                authorizationCodeBodyBuilder(code).redirectUri(redirectUri).build()).buildExchange())));
+                authorizationCodeBodyBuilder(code, verifier).redirectUri(redirectUri).build()).buildExchange())));
     }
 
     private OAuth2TokenResponseBody parseTokenResponse(Response response) throws IOException {
@@ -322,7 +322,7 @@ public abstract class AuthorizationService {
 
     private Response checkTokenResponse(Response response) throws IOException, ParseException {
         if (response.getStatusCode() != 200) {
-            response.getBody().read();
+            log.info("Authorization server response: {}", response.getBodyAsStringDecoded());
             throw new RuntimeException("Authorization server returned " + response.getStatusCode() + ".");
         }
 
