@@ -231,7 +231,7 @@ public abstract class AuthorizationService {
         String clientSecret = getClientSecret();
         if (clientSecret != null)
             requestBuilder.header(AUTHORIZATION, "Basic " + new String(Base64.encodeBase64((getClientId() + ":" + clientSecret).getBytes()))).body(body);
-        else requestBuilder.body(body + "&client_id" + getClientId());
+        else requestBuilder.body(body + "&client_id=" + getClientId());
         return requestBuilder;
     }
 
