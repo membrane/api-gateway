@@ -68,13 +68,8 @@ public class StateManager {
     }
 
     public static void verifyCsrfToken(Session session, StateManager stateFromUri) throws OAuth2Exception {
-        boolean match = Optional.ofNullable(session.get(SESSION_PARAMETER_STATE))
-                .filter(o -> Arrays.stream(o.toString().split(SESSION_VALUE_SEPARATOR))
-                        .filter(s -> s.equals(stateFromUri.getSecurityToken()))
-                        .count() == 1
-                ).isPresent();
 
-        if (!match) {
+        if (!matchesCsrfToken(stateFromUri, session.get(SESSION_PARAMETER_STATE))) {
             if (session.isNew()) {
                 throw new OAuth2Exception(
                         "MEMBRANE_MISSING_SESSION",
@@ -99,6 +94,18 @@ public class StateManager {
             log.warn("Replacing saved state '{}' with '{}'", session.get(SESSION_PARAMETER_STATE), stateFromUri.getSecurityToken());
         }
         session.put(SESSION_PARAMETER_STATE, stateFromUri.getSecurityToken());
+    }
+
+    private static boolean matchesCsrfToken(StateManager stateFromUri, Object stateFromSession) {
+        return Optional.ofNullable(stateFromSession)
+                .filter(o -> hasExactlyOneMatchingToken(stateFromUri, o))
+                .isPresent();
+    }
+
+    private static boolean hasExactlyOneMatchingToken(StateManager stateFromUri, Object stateFromSession) {
+        return Arrays.stream(stateFromSession.toString().split(SESSION_VALUE_SEPARATOR))
+                .filter(s -> s.equals(stateFromUri.getSecurityToken()))
+                .count() == 1;
     }
 
     public static boolean hasState(Session session) {
