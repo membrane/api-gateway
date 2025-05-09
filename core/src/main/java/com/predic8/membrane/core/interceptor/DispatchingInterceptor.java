@@ -24,6 +24,7 @@ import java.net.*;
 import java.util.*;
 
 import static com.predic8.membrane.core.exchange.Exchange.*;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.REQUEST_FLOW;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 
@@ -48,8 +49,9 @@ public class DispatchingInterceptor extends AbstractInterceptor {
 
     @Override
     public Outcome handleRequest(Exchange exc) {
-
         if (exc.getProxy() instanceof AbstractServiceProxy asp) {
+            asp.getTarget().compileUrl(exc, REQUEST);
+
             exc.getDestinations().clear();
             try {
                 exc.getDestinations().add(getForwardingDestination( exc));

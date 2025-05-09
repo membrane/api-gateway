@@ -15,9 +15,17 @@
 package com.predic8.membrane.core.proxies;
 
 import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.config.*;
 import com.predic8.membrane.core.config.security.*;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.interceptor.Interceptor;
+import com.predic8.membrane.core.lang.ExchangeExpression;
+import com.predic8.membrane.core.lang.TemplateExchangeExpression;
 import com.predic8.membrane.core.transport.ssl.*;
+
+import static com.predic8.membrane.core.lang.ExchangeExpression.Language.GROOVY;
+import static com.predic8.membrane.core.lang.ExchangeExpression.Language.SPEL;
 
 public abstract class AbstractServiceProxy extends SSLableProxy {
 
@@ -28,6 +36,7 @@ public abstract class AbstractServiceProxy extends SSLableProxy {
             target.port = target.getSslParser() != null ? 443 : 80;
         if (target.getSslParser() != null)
             setSslOutboundContext(new StaticSSLContext(target.getSslParser(), router.getResolverMap(), router.getBaseLocation()));
+        target.init(router);
     }
 
     public String getHost() {
@@ -94,8 +103,18 @@ public abstract class AbstractServiceProxy extends SSLableProxy {
         private String method;
         protected String url;
         private boolean adjustHostHeader = true;
+        private ExchangeExpression.Language language = SPEL;
+        private ExchangeExpression exchangeExpression;
 
         private SSLParser sslParser;
+
+        public void init(Router router) {
+            exchangeExpression = TemplateExchangeExpression.newInstance(router, language, url);
+        }
+
+        public void compileUrl(Exchange exc, Interceptor.Flow flow) {
+            url = exchangeExpression.evaluate(exc, flow, String.class);
+        }
 
         public Target() {
         }
@@ -182,6 +201,24 @@ public abstract class AbstractServiceProxy extends SSLableProxy {
         @MCAttribute
         public void setMethod(String method) {
             this.method = method;
+        }
+
+        public ExchangeExpression getExchangeExpression() {
+            return exchangeExpression;
+        }
+
+        public ExchangeExpression.Language getLanguage() {
+            return language;
+        }
+
+        /**
+         * @description the language of the 'test' condition
+         * @default groovy
+         * @example SpEL, groovy, jsonpath, xpath
+         */
+        @MCAttribute
+        public void setLanguage(ExchangeExpression.Language language) {
+            this.language = language;
         }
     }
 
