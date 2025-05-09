@@ -44,7 +44,7 @@ public class AuthWithSessionRequest extends ParameterizedRequest {
     private Response redirectToEmptyEndpoint() {
         SessionManager.Session session = authServer.getSessionManager().getOrCreateSession(exc);
         synchronized (session) {
-            session.getUserAttributes().put(ParamNames.STATE, getState());
+            session.getUserAttributes().put(SessionManager.Session.STATE, getState());
         }
         return Response.redirect(authServer.getBasePath() + "/?" + getState(), 302).build();
     }

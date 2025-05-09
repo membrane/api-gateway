@@ -19,6 +19,7 @@ import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.exchange.snapshots.AbstractExchangeSnapshot;
+import com.predic8.membrane.core.interceptor.oauth2client.rf.StateManager;
 import com.predic8.membrane.core.interceptor.session.Session;
 
 import java.io.IOException;
@@ -29,12 +30,12 @@ public class SessionOriginalExchangeStore extends OriginalExchangeStore {
 
     private int maxBodySize = 100000;
 
-    private String originalRequestKeyNameInSession(String state) {
-        return ORIGINAL_REQUEST_PREFIX + state;
+    private String originalRequestKeyNameInSession(StateManager state) {
+        return ORIGINAL_REQUEST_PREFIX + state.getSecurityToken();
     }
 
     @Override
-    public void store(Exchange exchange, Session session, String state, Exchange exchangeToStore) throws IOException {
+    public void store(Exchange exchange, Session session, StateManager state, Exchange exchangeToStore) throws IOException {
         try {
             session.put(originalRequestKeyNameInSession(state),new ObjectMapper().writeValueAsString(getTrimmedAbstractExchangeSnapshot(exchangeToStore, maxBodySize)));
         } catch (JsonProcessingException e) {
@@ -43,7 +44,7 @@ public class SessionOriginalExchangeStore extends OriginalExchangeStore {
     }
 
     @Override
-    public AbstractExchangeSnapshot reconstruct(Exchange exchange, Session session, String state) {
+    public AbstractExchangeSnapshot reconstruct(Exchange exchange, Session session, StateManager state) {
         try {
             return new ObjectMapper().readValue(session.get(originalRequestKeyNameInSession(state)).toString(),AbstractExchangeSnapshot.class);
         } catch (JsonProcessingException e) {
@@ -52,7 +53,7 @@ public class SessionOriginalExchangeStore extends OriginalExchangeStore {
     }
 
     @Override
-    public void remove(Exchange exc, Session session, String state) {
+    public void remove(Exchange exc, Session session, StateManager state) {
         session.remove(originalRequestKeyNameInSession(state));
     }
 

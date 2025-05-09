@@ -57,7 +57,7 @@ public class CodeFlow extends OAuth2Flow{
 
         synchronized (s) {
             if(state == null) // TODO: always get state through query and not like this
-                state = s.getUserAttributes().get(ParamNames.STATE);
+                state = s.getUserAttributes().get(SessionManager.Session.STATE);
             redirectUrl = s.getUserAttributes().get("redirect_uri");
         }
 

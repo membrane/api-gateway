@@ -16,15 +16,11 @@ package com.predic8.membrane.core.interceptor.oauth2.authorizationservice;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.interceptor.oauth2.ClaimRenamer;
-import com.predic8.membrane.core.interceptor.oauth2.Client;
+import com.predic8.membrane.annot.Required;
 import com.predic8.membrane.core.interceptor.oauth2.OAuth2Util;
 import com.predic8.membrane.core.interceptor.oauth2.parameter.ClaimsParameter;
-import com.predic8.membrane.core.resolver.ResolverMap;
 import org.apache.commons.io.IOUtils;
-import com.predic8.membrane.annot.Required;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
@@ -35,19 +31,18 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-@MCElement(name="membrane")
-public class MembraneAuthorizationService extends AuthorizationService {
-    private String src; // url to OpenID-Provider data
-    private String internalSrc;
+/**
+ * Configure Membrane with Microsoft's Entra ID platform.
+ */
+@MCElement(name="microsoftEntraID")
+public class MicrosoftEntraIDAuthorizationService extends AuthorizationService {
+    private String tenantId;
 
     private String issuer;
     private String tokenEndpoint;
     private String userInfoEndpoint;
-    private String subject = ClaimRenamer.convert("sub");
     private String authorizationEndpoint;
-    private String publicAuthorizationEndpoint;
     private String revocationEndpoint;
-    private String registrationEndpoint;
     private String jwksEndpoint;
     private String endSessionEndpoint;
     private String claims;
@@ -55,49 +50,20 @@ public class MembraneAuthorizationService extends AuthorizationService {
     private String claimsParameter;
     private List<String> responseModesSupported = List.of("query", "fragment");
 
-    private DynamicRegistration dynamicRegistration;
-
     protected boolean encodedScope;
-
-    public static boolean isValidURI(String uri)
-    {
-        try
-        {
-            new URI(uri);
-            return true;
-        } catch (Exception exception)
-        {
-            return false;
-        }
-    }
 
     @Override
     public void init() throws Exception {
-        if(src == null)
-            throw new Exception("No wellknown file source configured. - Cannot work without one");
-        if(dynamicRegistration != null){
-            dynamicRegistration.init(router);
-            supportsDynamicRegistration = true;
-        }
         parseSrc(resolve(
                 router.getResolverMap(),
                 router.getBaseLocation(),
-                getWellKnownUrl(internalSrc == null ? src : internalSrc)));
-        if(internalSrc != null) {
-            publicAuthorizationEndpoint = src + new URI(authorizationEndpoint).getPath();
-        }
+                getWellKnownUrl("https://login.microsoftonline.com/" + tenantId + "/v2.0/")));
         adjustScope();
         prepareClaimsForLoginUrl();
     }
 
     private @NotNull String getWellKnownUrl(String baseUrl) {
         return baseUrl + (baseUrl.endsWith("/") ? "" : "/") + ".well-known/openid-configuration";
-    }
-
-    public InputStream resolve(ResolverMap rm, String baseLocation, String url) throws Exception {
-        return dynamicRegistration != null ?
-                dynamicRegistration.retrieveOpenIDConfiguration(url) :
-                super.resolve(rm, baseLocation, url);
     }
 
     @Override
@@ -115,22 +81,9 @@ public class MembraneAuthorizationService extends AuthorizationService {
         return endSessionEndpoint;
     }
 
-    @Override
-    protected void doDynamicRegistration(List<String> callbackURLs) throws Exception {
-        if(dynamicRegistration == null || registrationEndpoint == null || registrationEndpoint.isEmpty())
-            throw new RuntimeException("A registration bean is required and src needs to specify a registration endpoint");
-
-        dynamicRegistrationIfNeeded(callbackURLs);
-    }
-
-    private void dynamicRegistrationIfNeeded(List<String> callbackUris) throws Exception {
-        Client client = dynamicRegistration.registerWithCallbackAt(callbackUris, registrationEndpoint);
-        setClientIdAndSecret(client.getClientId(), client.getClientSecret());
-    }
-
     private void prepareClaimsForLoginUrl() throws IOException {
-        claimsParameter = ClaimsParameter.writeCompleteJson(claims,claimsIdt);
-        if(claimsParameter.isEmpty())
+        claimsParameter = ClaimsParameter.writeCompleteJson(claims, claimsIdt);
+        if (claimsParameter == null || claimsParameter.isEmpty())
             claimsParameter = null;
     }
 
@@ -142,7 +95,7 @@ public class MembraneAuthorizationService extends AuthorizationService {
 
     private void adjustScope() throws UnsupportedEncodingException {
         if(scope == null)
-            scope = "profile";
+            scope = "openid";
         if (!encodedScope) {
             scope = OAuth2Util.urlencode(scope);
             encodedScope = true;
@@ -161,7 +114,6 @@ public class MembraneAuthorizationService extends AuthorizationService {
         userInfoEndpoint = (String) json.get("userinfo_endpoint");
         authorizationEndpoint = (String) json.get("authorization_endpoint");
         revocationEndpoint = (String) json.get("revocation_endpoint");
-        registrationEndpoint = (String) json.get("registration_endpoint");
         jwksEndpoint = (String) json.get("jwks_uri");
         endSessionEndpoint = (String) json.get("end_session_endpoint");
         issuer = (String) json.get("issuer");
@@ -185,11 +137,8 @@ public class MembraneAuthorizationService extends AuthorizationService {
 
     @Override
     public String getLoginURL(String callbackURL) {
-        String endpoint = publicAuthorizationEndpoint;
-        if(endpoint == null)
-            endpoint = authorizationEndpoint;
         boolean formPostSupported = responseModesSupported.contains("form_post");
-        return endpoint +"?"+
+        return authorizationEndpoint +"?"+
                 "client_id=" + getClientId() + "&"+
                 "response_type=code&"+
                 "scope="+scope+"&"+
@@ -211,40 +160,9 @@ public class MembraneAuthorizationService extends AuthorizationService {
 
     @Override
     public String getSubject() {
-        return subject;
+        return "sub";
     }
 
-    @MCAttribute
-    public void setSubject(String subject) {
-        this.subject = subject;
-    }
-
-    public String getSrc() {
-        return src;
-    }
-
-    /**
-     * Base URL of the OIDC Discovery compliant Authorization Server.
-     */
-    @Required
-    @MCAttribute
-    public void setSrc(String src) {
-        this.src = src;
-    }
-
-    public String getInternalSrc() {
-        return internalSrc;
-    }
-
-    /**
-     * Internal Base URL of the OIDC Discovery compliant Authorization Server. Needs only to be set,
-     * if access to the Authorization Server is also routed via Membrane API Gateway. Usually points
-     * to an internal proxy, e.g. "internal://oauth2-gw/", which routes to the Authorization Server.
-     */
-    @MCAttribute
-    public void setInternalSrc(String internalSrc) {
-        this.internalSrc = internalSrc;
-    }
 
     public String getClaims() {
         return claims;
@@ -272,19 +190,17 @@ public class MembraneAuthorizationService extends AuthorizationService {
         this.claimsIdt = claimsIdt;
     }
 
-    public DynamicRegistration getDynamicRegistration() {
-        return dynamicRegistration;
-    }
-
-    /**
-     * @description defines a chain of interceptors that are run for the dynamic registration process of openid-connect
-     */
-    @MCChildElement(order=10)
-    public void setDynamicRegistration(DynamicRegistration dynamicRegistration) {
-        this.dynamicRegistration = dynamicRegistration;
-    }
-
     public List<String> getResponseModesSupported() {
         return responseModesSupported;
+    }
+
+    public String getTenantId() {
+        return tenantId;
+    }
+
+    @Required
+    @MCAttribute
+    public void setTenantId(String tenantId) {
+        this.tenantId = tenantId;
     }
 }

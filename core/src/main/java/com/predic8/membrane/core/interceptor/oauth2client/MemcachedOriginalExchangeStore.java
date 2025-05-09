@@ -19,6 +19,7 @@ import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.exchange.snapshots.AbstractExchangeSnapshot;
+import com.predic8.membrane.core.interceptor.oauth2client.rf.StateManager;
 import com.predic8.membrane.core.interceptor.session.Session;
 import com.predic8.membrane.core.util.MemcachedConnector;
 import net.rubyeye.xmemcached.exception.MemcachedException;
@@ -34,10 +35,10 @@ public class MemcachedOriginalExchangeStore extends OriginalExchangeStore {
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Override
-    public void store(Exchange exchange, Session session, String state, Exchange exchangeToStore) throws IOException {
+    public void store(Exchange exchange, Session session, StateManager state, Exchange exchangeToStore) throws IOException {
         try {
             connector.getClient().set(
-                    state,
+                    state.getSecurityToken(),
                     3600,
                     objectMapper.writeValueAsString(getTrimmedAbstractExchangeSnapshot(exchangeToStore, maxBodySize))
             );
@@ -47,9 +48,9 @@ public class MemcachedOriginalExchangeStore extends OriginalExchangeStore {
     }
 
     @Override
-    public AbstractExchangeSnapshot reconstruct(Exchange exchange, Session session, String state) {
+    public AbstractExchangeSnapshot reconstruct(Exchange exchange, Session session, StateManager state) {
         try {
-            String key = connector.getClient().get(state);
+            String key = connector.getClient().get(state.getSecurityToken());
             return objectMapper.readValue(key, AbstractExchangeSnapshot.class);
         } catch (TimeoutException | InterruptedException | MemcachedException | JsonProcessingException e) {
             throw new RuntimeException(e);
@@ -57,9 +58,9 @@ public class MemcachedOriginalExchangeStore extends OriginalExchangeStore {
     }
 
     @Override
-    public void remove(Exchange exc, Session session, String state) {
+    public void remove(Exchange exc, Session session, StateManager state) {
         try {
-            connector.getClient().delete(state);
+            connector.getClient().delete(state.getSecurityToken());
         } catch (TimeoutException | InterruptedException | MemcachedException e) {
             throw new RuntimeException(e);
         }

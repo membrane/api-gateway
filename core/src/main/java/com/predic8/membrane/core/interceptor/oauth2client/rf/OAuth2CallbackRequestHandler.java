@@ -17,7 +17,6 @@ import com.fasterxml.jackson.databind.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.exchange.snapshots.*;
 import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.interceptor.oauth2.*;
 import com.predic8.membrane.core.interceptor.oauth2.authorizationservice.*;
 import com.predic8.membrane.core.interceptor.oauth2client.*;
 import com.predic8.membrane.core.interceptor.oauth2client.rf.token.*;
@@ -75,29 +74,11 @@ public class OAuth2CallbackRequestHandler {
             OAuth2Parameters params = OAuth2Parameters.parse(uriFactory, exc);
             params.checkCodeOrError();
 
-            String stateFromUri = getSecurityTokenFromState(params.getState());
+            StateManager stateFromUri = new StateManager(params.getState());
 
-            if (!csrfTokenMatches(session, stateFromUri)) {
-                if (session.isNew()) {
-                    throw new OAuth2Exception(
-                            "MEMBRANE_MISSING_SESSION",
-                            MEMBRANE_MISSING_SESSION,
-                            Response.badRequest().body(MEMBRANE_MISSING_SESSION).build());
-                } else if (!session.get().containsKey(ParamNames.STATE)) {
-                    throw new OAuth2Exception(
-                            "MEMBRANE_CSRF_TOKEN_MISSING_IN_SESSION",
-                            MEMBRANE_CSRF_TOKEN_MISSING_IN_SESSION,
-                            Response.badRequest().body(MEMBRANE_CSRF_TOKEN_MISSING_IN_SESSION).build());
-                }else {
-                    throw new OAuth2Exception(
-                            "MEMBRANE_CSRF_TOKEN_MISMATCH",
-                            MEMBRANE_CSRF_TOKEN_MISMATCH,
-                            Response.badRequest().body(MEMBRANE_CSRF_TOKEN_MISMATCH).build());
-                }
-            }
+            verifyCsrfToken(session, stateFromUri);
 
-            // state in session can be "merged" -> save the selected state in session overwriting the possibly merged value
-            session.put(ParamNames.STATE, stateFromUri);
+
 
             AbstractExchangeSnapshot originalRequest = originalExchangeStore.reconstruct(exc, session, stateFromUri);
             originalExchangeStore.remove(exc, session, stateFromUri);
@@ -107,7 +88,8 @@ public class OAuth2CallbackRequestHandler {
             }
 
             OAuth2TokenResponseBody tokenResponse = auth.codeTokenRequest(
-                    publicUrlManager.getPublicURLAndReregister(exc) + callbackPath, params.getCode());
+                    publicUrlManager.getPublicURLAndReregister(exc) + callbackPath, params.getCode(),
+                    PKCEVerifier.getVerifier(stateFromUri, session));
 
             if (tokenResponse.getAccessToken() == null) {
                 if (!onlyRefreshToken)
