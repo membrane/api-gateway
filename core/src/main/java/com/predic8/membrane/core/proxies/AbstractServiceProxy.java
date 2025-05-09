@@ -113,7 +113,11 @@ public abstract class AbstractServiceProxy extends SSLableProxy {
         }
 
         public String compileUrl(Exchange exc, Interceptor.Flow flow) {
-            return exchangeExpression.evaluate(exc, flow, String.class);
+            if (exchangeExpression != null) {
+                return exchangeExpression.evaluate(exc, flow, String.class);
+            } else {
+                return url;
+            }
         }
 
         public Target() {
