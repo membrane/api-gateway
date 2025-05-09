@@ -109,11 +109,11 @@ public abstract class AbstractServiceProxy extends SSLableProxy {
         private SSLParser sslParser;
 
         public void init(Router router) {
-            exchangeExpression = TemplateExchangeExpression.newInstance(router, language, url);
+            if (url != null) exchangeExpression = TemplateExchangeExpression.newInstance(router, language, url);
         }
 
-        public void compileUrl(Exchange exc, Interceptor.Flow flow) {
-            url = exchangeExpression.evaluate(exc, flow, String.class);
+        public String compileUrl(Exchange exc, Interceptor.Flow flow) {
+            return exchangeExpression.evaluate(exc, flow, String.class);
         }
 
         public Target() {

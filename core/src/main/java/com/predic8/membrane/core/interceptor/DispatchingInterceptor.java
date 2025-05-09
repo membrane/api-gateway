@@ -50,8 +50,6 @@ public class DispatchingInterceptor extends AbstractInterceptor {
     @Override
     public Outcome handleRequest(Exchange exc) {
         if (exc.getProxy() instanceof AbstractServiceProxy asp) {
-            asp.getTarget().compileUrl(exc, REQUEST);
-
             exc.getDestinations().clear();
             try {
                 exc.getDestinations().add(getForwardingDestination( exc));
@@ -92,10 +90,12 @@ public class DispatchingInterceptor extends AbstractInterceptor {
         AbstractServiceProxy p = (AbstractServiceProxy) exc.getProxy();
 
         if (p.getTargetURL() != null) {
-            if (p.getTargetURL().startsWith("http") && !UriUtil.getPathFromURL(router.getUriFactory(), p.getTargetURL()).contains("/")) {
-                return p.getTargetURL() + exc.getRequestURI();
+            String targetURL = p.getTarget().compileUrl(exc, REQUEST);
+
+            if (targetURL.startsWith("http") && !UriUtil.getPathFromURL(router.getUriFactory(), targetURL).contains("/")) {
+                return targetURL + exc.getRequestURI();
             }
-            return p.getTargetURL();
+            return targetURL;
         }
         if (p.getTargetHost() != null) {
             return new URL(p.getTargetScheme(), p.getTargetHost(), p.getTargetPort(), exc.getRequest().getUri()).toString();
