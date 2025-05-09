@@ -13,9 +13,13 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.oauth2client.rf;
 
-import com.predic8.membrane.core.interceptor.oauth2.ParamNames;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.Response;
+import com.predic8.membrane.core.interceptor.oauth2.OAuth2Util;
 import com.predic8.membrane.core.interceptor.session.Session;
 import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.math.BigInteger;
 import java.security.SecureRandom;
@@ -23,6 +27,7 @@ import java.util.Arrays;
 import java.util.Map;
 import java.util.Optional;
 
+import static com.predic8.membrane.core.interceptor.oauth2client.rf.OAuth2CallbackRequestHandler.*;
 import static com.predic8.membrane.core.interceptor.session.SessionManager.SESSION_VALUE_SEPARATOR;
 import static com.predic8.membrane.core.util.URLParamUtil.DuplicateKeyOrInvalidFormStrategy.ERROR;
 import static com.predic8.membrane.core.util.URLParamUtil.parseQueryString;
@@ -30,31 +35,108 @@ import static java.net.URLDecoder.decode;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 public class StateManager {
+    private static final String SESSION_PARAMETER_STATE = "state";
 
+    private static final Logger log = LoggerFactory.getLogger(StateManager.class);
     private static final SecureRandom sr = new SecureRandom();
+
+    private final String securityToken;
+    private final String verifierId;
+
+    public StateManager(PKCEVerifier pkceVerifier) {
+        securityToken = generateNewState();
+        verifierId = pkceVerifier.getId();
+    }
+
+    public StateManager(String stateFromUri) {
+        securityToken = getValueFromState(stateFromUri, "security_token");
+        verifierId = getValueFromState(stateFromUri, "verifierId");
+    }
 
     @NotNull
     public static String generateNewState() {
         return new BigInteger(130, sr).toString(32);
     }
 
-    public static String getSecurityTokenFromState(String state2) {
-        if (state2 == null)
-            throw new RuntimeException("No CSRF token.");
+    private static String getValueFromState(String state, String key) {
+        if (state == null)
+            throw new RuntimeException("State is null, No "+key+".");
 
-        Map<String, String> param = parseQueryString(decode(state2, UTF_8), ERROR);
+        Map<String, String> param = parseQueryString(decode(state, UTF_8), ERROR);
 
-        if (!param.containsKey("security_token"))
-            throw new RuntimeException("No CSRF token.");
-
-        return param.get("security_token");
+        return param.get(key);
     }
 
-    public static boolean csrfTokenMatches(Session session, String state2) {
-        return Optional.ofNullable(session.get(ParamNames.STATE))
-                .filter(o -> Arrays.stream(o.toString().split(SESSION_VALUE_SEPARATOR))
-                        .filter(s -> s.equals(state2))
-                        .count() == 1
-                ).isPresent();
+    public static void verifyCsrfToken(Session session, StateManager stateFromUri) throws OAuth2Exception {
+
+        if (!matchesCsrfToken(stateFromUri, session.get(SESSION_PARAMETER_STATE))) {
+            if (session.isNew()) {
+                throw new OAuth2Exception(
+                        "MEMBRANE_MISSING_SESSION",
+                        MEMBRANE_MISSING_SESSION,
+                        Response.badRequest().body(MEMBRANE_MISSING_SESSION).build());
+            } else if (!StateManager.hasState(session)) {
+                throw new OAuth2Exception(
+                        "MEMBRANE_CSRF_TOKEN_MISSING_IN_SESSION",
+                        MEMBRANE_CSRF_TOKEN_MISSING_IN_SESSION,
+                        Response.badRequest().body(MEMBRANE_CSRF_TOKEN_MISSING_IN_SESSION).build());
+            } else {
+                log.warn("Token from Session: '{}', Token from URI: '{}'", session.get(SESSION_PARAMETER_STATE), stateFromUri.getSecurityToken());
+                throw new OAuth2Exception(
+                        "MEMBRANE_CSRF_TOKEN_MISMATCH",
+                        MEMBRANE_CSRF_TOKEN_MISMATCH,
+                        Response.badRequest().body(MEMBRANE_CSRF_TOKEN_MISMATCH).build());
+            }
+        }
+
+        // state in session can be "merged" -> save the selected state in session overwriting the possibly merged value
+        if (!(session.get(SESSION_PARAMETER_STATE).equals(stateFromUri.getSecurityToken()))) {
+            log.warn("Replacing saved state '{}' with '{}'", session.get(SESSION_PARAMETER_STATE), stateFromUri.getSecurityToken());
+        }
+        session.put(SESSION_PARAMETER_STATE, stateFromUri.getSecurityToken());
+    }
+
+    private static boolean matchesCsrfToken(StateManager stateFromUri, Object stateFromSession) {
+        return Optional.ofNullable(stateFromSession)
+                .filter(o -> hasExactlyOneMatchingToken(stateFromUri, o))
+                .isPresent();
+    }
+
+    private static boolean hasExactlyOneMatchingToken(StateManager stateFromUri, Object stateFromSession) {
+        return Arrays.stream(stateFromSession.toString().split(SESSION_VALUE_SEPARATOR))
+                .filter(s -> s.equals(stateFromUri.getSecurityToken()))
+                .count() == 1;
+    }
+
+    public static boolean hasState(Session session) {
+        return session.get().containsKey(SESSION_PARAMETER_STATE);
+    }
+
+    public String buildStateParameter(Exchange exchange) {
+        return "&state=security_token%3D" + securityToken + "%26url%3D" + OAuth2Util.urlencode(exchange.getRequestURI())
+                + "%26verifierId%3D" + verifierId;
+    }
+
+    public void saveToSession(Session session) {
+        String s = securityToken;
+        if (session.get().containsKey(SESSION_PARAMETER_STATE))
+            s = session.get(SESSION_PARAMETER_STATE) + SESSION_VALUE_SEPARATOR + s;
+        session.put(SESSION_PARAMETER_STATE, s);
+    }
+
+    public String getSecurityToken() {
+        return securityToken;
+    }
+
+    public Optional<String> getVerifierId() {
+        return Optional.ofNullable(verifierId);
+    }
+
+    @Override
+    public String toString() {
+        return "StateManager{" +
+                "securityToken='" + securityToken + '\'' +
+                ", verifierId='" + verifierId + '\'' +
+                '}';
     }
 }

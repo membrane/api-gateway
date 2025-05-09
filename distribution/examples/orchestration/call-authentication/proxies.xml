@@ -1,0 +1,41 @@
+<spring:beans xmlns:spring="http://www.springframework.org/schema/beans"
+              xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+              xmlns="http://membrane-soa.org/proxies/1/" xmlns:lang="http://www.springframework.org/schema/lang"
+              xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.2.xsd
+					    http://membrane-soa.org/proxies/1/ http://membrane-soa.org/schemas/proxies-1.xsd http://www.springframework.org/schema/lang http://www.springframework.org/schema/lang/spring-lang.xsd">
+
+    <router>
+
+        <api port="2000">
+            <!-- Call internal API to get API key -->
+            <call url="http://localhost:3000/login" />
+            <!-- Forward request to backend, now with API key attached -->
+            <target url="http://localhost:3001"/>
+        </api>
+
+        <!-- Simulates an auth service that returns the API key -->
+        <api port="3000">
+            <path>/login</path>
+            <response>
+                <setHeader name="X-Api-Key" value="ABCDE" />
+            </response>
+            <return />
+        </api>
+
+        <!-- Backend that requires a valid API key in the header -->
+        <api port="3001">
+            <apiKey>
+                <keys>
+                    <secret value="ABCDE"/>
+                </keys>
+                <headerExtractor />
+            </apiKey>
+            <static>
+                Secured backend!
+            </static>
+            <return />
+        </api>
+
+    </router>
+
+</spring:beans>

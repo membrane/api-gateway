@@ -18,6 +18,11 @@ import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.authentication.session.SessionManager;
 import com.predic8.membrane.core.interceptor.oauth2.OAuth2AuthorizationServerInterceptor;
 
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 public abstract class OAuth2Flow {
     protected final OAuth2AuthorizationServerInterceptor authServer;
     protected final Exchange exc;
@@ -33,6 +38,6 @@ public abstract class OAuth2Flow {
     public abstract Outcome getResponse() throws Exception;
 
     protected String stateQuery(String state) {
-        return state == null ? "" : "&state=" + state;
+        return state == null ? "" : "&state=" + URLEncoder.encode(state, UTF_8);
     }
 }

@@ -48,14 +48,6 @@
                 </if>
             </response>
             <abort>
-                <if test="statusCode == 502">
-                    <template contentType="application/xml"><![CDATA[
-                          <error>
-                            <case>g</case>
-                            <message>Failed to establish backend connection!</message>
-                          </error>]]>
-                    </template>
-                </if>
                 <if test="header['X-Protection'] != null">
                     <template contentType="application/xml"><![CDATA[
                           <error>
@@ -94,10 +86,6 @@
                     </failure>]]>
                     </template>
                     <return statusCode="500"/>
-                </if>
-                <if test="param.case == 'g'">
-                    <!-- Simulate gateway error -->
-                    <call url="http://unbekannt"/>
                 </if>
             </request>
 

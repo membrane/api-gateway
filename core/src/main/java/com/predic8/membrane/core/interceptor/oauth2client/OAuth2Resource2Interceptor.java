@@ -25,16 +25,18 @@ import com.predic8.membrane.core.interceptor.oauth2client.rf.*;
 import com.predic8.membrane.core.interceptor.oauth2client.rf.token.*;
 import com.predic8.membrane.core.interceptor.session.*;
 import com.predic8.membrane.core.util.*;
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.*;
 
+import java.security.SecureRandom;
 import java.util.*;
 
 import static com.predic8.membrane.core.exchange.Exchange.*;
 import static com.predic8.membrane.core.http.Header.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.interceptor.oauth2.ParamNames.*;
+import static com.predic8.membrane.core.interceptor.oauth2client.LoginParameter.copyLoginParameters;
 import static com.predic8.membrane.core.interceptor.oauth2client.rf.OAuthUtils.*;
-import static com.predic8.membrane.core.interceptor.oauth2client.rf.StateManager.*;
 import static com.predic8.membrane.core.interceptor.oauth2client.temp.OAuth2Constants.*;
 import static com.predic8.membrane.core.interceptor.session.SessionManager.*;
 import static java.net.URLEncoder.*;
@@ -267,8 +269,30 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
             return RETURN;
         }
 
-        String state = generateNewState();
+        PKCEVerifier verifier = new PKCEVerifier();
+        StateManager stateManager = new StateManager(verifier);
+        Response redirectResponse = Response
+                .redirect(auth.getLoginURL(publicUrlManager.getPublicURLAndReregister(exc) + callbackPath)
+                        + stateManager.buildStateParameter(exc)
+                        + verifier.getUrlParams()
+                        + copyLoginParameters(exc, getLoginParametersToPassAlong(exc)), 302)
+                .build();
 
+        exc.setResponse(redirectResponse); // The session MUST be created AFTER the response has been overwritten.
+
+        readBodyFromStreamIntoMemory(exc);
+
+        Session session = getSessionManager().getSession(exc);
+
+        originalExchangeStore.store(exc, session, stateManager, exc);
+
+        stateManager.saveToSession(session);
+        verifier.saveToSession(session);
+
+        return RETURN;
+    }
+
+    private @NotNull List<LoginParameter> getLoginParametersToPassAlong(Exchange exc) {
         Map<String, String> lps = loginParameters.stream()
                 .collect(HashMap::new, (m, lp) -> m.put(lp.getName(), lp.getValue()), HashMap::putAll);
         Optional.ofNullable((List<LoginParameter>) exc.getProperty("loginParameters")).orElse(List.of())
@@ -278,30 +302,15 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
                 .filter(e -> {
                     String key = e.getKey();
                     return !"client_id".equals(key) && !"response_type".equals(key) && !"scope".equals(key)
-                            && !"redirect_uri".equals(key) && !"response_mode".equals(key) && !"state".equals(key)
+                            && !"redirect_uri".equals(key) && !"response_mode".equals(key) && !STATE.equals(key)
                             && !"claims".equals(key);
                 })
                 .map(e ->
                         new LoginParameter(e.getKey(), e.getValue())
                 ).toList();
-
-        Response redirectResponse = Response
-                .redirect(auth.getLoginURL(state, publicUrlManager.getPublicURLAndReregister(exc) + callbackPath, exc.getRequestURI()) + LoginParameter.copyLoginParameters(exc, combinedLoginParameters), 302)
-                .build();
-        exc.setResponse(redirectResponse);
-
-        readBodyFromStreamIntoMemory(exc);
-
-        Session session = getSessionManager().getSession(exc);
-
-        originalExchangeStore.store(exc, session, state, exc);
-
-        if (session.get().containsKey(STATE))
-            state = session.get(STATE) + SESSION_VALUE_SEPARATOR + state;
-        session.put(STATE, state);
-
-        return RETURN;
+        return combinedLoginParameters;
     }
+
 
     private void readBodyFromStreamIntoMemory(Exchange exc) {
         exc.getRequest().getBodyAsStringDecoded();
