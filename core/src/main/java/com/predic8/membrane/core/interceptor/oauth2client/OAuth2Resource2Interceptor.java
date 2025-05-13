@@ -168,29 +168,23 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
 
 
         try {
-            boolean wasCallback = handleRequest(exc, session);
-
-            if (!wasCallback) {
-                if (session.isVerified()) {
-                    applyBackendAuthorization(exc, session);
-                    statistics.successfulRequest();
-                    appendAccessTokenToRequest(exc);
-                    return CONTINUE;
-                }
-            }
-
-            if (wasCallback) {
+            if (wasCallback(exc)) {
+                oAuth2CallbackRequestHandler.handleRequest(exc, session);
                 if (exc.getResponse() == null && exc.getRequest() != null && session.isVerified() && session.hasOAuth2Answer()) {
                     exc.setProperty(Exchange.OAUTH2, session.getOAuth2AnswerParameters(wantedScope));
                     appendAccessTokenToRequest(exc);
                     return CONTINUE;
                 }
-
                 if (exc.getResponse().getStatusCode() >= 400) {
                     session.clear();
                 }
-
                 return RETURN;
+            }
+            if (session.isVerified()) {
+                applyBackendAuthorization(exc, session);
+                statistics.successfulRequest();
+                appendAccessTokenToRequest(exc);
+                return CONTINUE;
             }
 
             log.debug("session present, but not verified, redirecting.");
@@ -316,19 +310,12 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
         exc.getRequest().getBodyAsStringDecoded();
     }
 
-    private boolean handleRequest(Exchange exc, Session session) throws Exception {
+    private boolean wasCallback(Exchange exc) throws Exception {
         String path = uriFactory.create(exc.getDestinations().getFirst()).getPath();
-
         if (path == null) {
             return false;
         }
-
-        if (path.endsWith("/" + callbackPath)) {
-            oAuth2CallbackRequestHandler.handleRequest(exc, session);
-            return true;
-        }
-
-        return false;
+        return path.endsWith("/" + callbackPath);
     }
 
     private void doOriginalRequest(Exchange exc, AbstractExchange originalRequest) {
