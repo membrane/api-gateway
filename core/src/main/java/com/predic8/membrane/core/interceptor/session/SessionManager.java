@@ -227,10 +227,15 @@ public abstract class SessionManager {
     }
 
     private void setCookieForCurrentSession(Exchange exc, String currentSessionCookieValue) {
-        if (currentSessionCookieValue.length() > 4093)
+        var requestURI = exc.getRequestURI();
+        var responseCode = exc.getResponse().getStatusCode();
+        var location = exc.getResponse().getHeader().getLocation();
+        int length = currentSessionCookieValue.length();
+        if (length > 4093)
             log.warn("Cookie is larger than 4093 bytes, this will not work some browsers.");
+        List<String> cookieAttributes = createCookieAttributes(exc);
         String setCookieValue = currentSessionCookieValue
-                + ";" + String.join(";", createCookieAttributes(exc));
+                + ";" + String.join(";", cookieAttributes);
         exc.getResponse().getHeader().add(Header.SET_COOKIE, setCookieValue);
     }
 

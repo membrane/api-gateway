@@ -61,6 +61,7 @@ public abstract class AbstractInterceptorWithSession extends AbstractInterceptor
 
     @Override
     public Outcome handleRequest(Exchange exc) {
+        log.info("Handling request {}", exc.getRequestURI());
         Outcome outcome;
         try {
             outcome = handleRequestInternal(exc);
@@ -74,6 +75,7 @@ public abstract class AbstractInterceptorWithSession extends AbstractInterceptor
             return ABORT;
         }
         sessionManager.postProcess(exc);
+        log.info("Status {}, Location: {}", exc.getResponse().getStatusCode(), exc.getResponse().getHeader().getLocation());
         return outcome;
     }
 
