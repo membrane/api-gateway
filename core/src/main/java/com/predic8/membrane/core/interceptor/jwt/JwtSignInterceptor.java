@@ -81,6 +81,7 @@ public class JwtSignInterceptor extends AbstractInterceptor {
     private Outcome handleInternal(Exchange exc, Flow flow) {
         try {
             JsonWebSignature jws = new JsonWebSignature();
+            jws.setHeader("typ", "JWT");
             jws.setPayload(prepareJwtPayload(exc.getMessage(flow)));
             jws.setKey(rsaJsonWebKey.getRsaPrivateKey());
             jws.setAlgorithmHeaderValue(RSA_USING_SHA256);
