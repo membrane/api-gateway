@@ -50,7 +50,7 @@ class IdempotencyInterceptorTest {
         Exchange secondExchange = put("").body("{\"id\": \"abc456\"}").contentType(APPLICATION_JSON).buildExchange();
         assertEquals(CONTINUE, i.handleRequest(firstExchange));
         assertEquals(ABORT, i.handleRequest(secondExchange));
-        assertEquals(400, secondExchange.getResponse().getStatusCode());
+        assertEquals(409, secondExchange.getResponse().getStatusCode());
     }
 
     @Test
