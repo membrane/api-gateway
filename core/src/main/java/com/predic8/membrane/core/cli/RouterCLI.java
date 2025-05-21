@@ -107,7 +107,12 @@ public class RouterCLI {
                 default -> initRouterByConfig(commandLine);
             };
         } catch (InvalidConfigurationException e) {
-            log.error("Fatal error: {}", concatMessageAndCauseMessages(e));
+            String errorMsg = concatMessageAndCauseMessages(e);
+            if (errorMsg.contains("Invalid content was found starting with element '{\"http://membrane-soa.org/proxies/1/\":openapi}'.")) {
+                log.error("Fatal error caused by <openapi /> element. Make sure it is the first element of the API.\n{}", errorMsg);
+            } else {
+                log.error("Fatal error: {}", errorMsg);
+            }
         } catch (Exception ex) {
             SpringConfigurationErrorHandler.handleRootCause(ex, log);
         }
