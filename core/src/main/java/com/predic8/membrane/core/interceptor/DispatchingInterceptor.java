@@ -52,7 +52,7 @@ public class DispatchingInterceptor extends AbstractInterceptor {
         if (exc.getProxy() instanceof AbstractServiceProxy asp) {
             exc.getDestinations().clear();
             try {
-                exc.getDestinations().add(getForwardingDestination( exc));
+                exc.getDestinations().add(getForwardingDestination(exc));
             } catch (Exception e) {
                 ProblemDetails.internal(router.isProduction(),getDisplayName())
                         .detail("Could not get forwarding destination to dispatch request")

@@ -15,31 +15,44 @@ package com.predic8.membrane.core.proxies;
 
 import com.predic8.membrane.AbstractTestWithRouter;
 import com.predic8.membrane.core.HttpRouter;
+import com.predic8.membrane.core.config.Path;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.interceptor.DispatchingInterceptor;
+import com.predic8.membrane.core.interceptor.flow.ReturnInterceptor;
+import com.predic8.membrane.core.interceptor.log.LogInterceptor;
 import com.predic8.membrane.core.openapi.serviceproxy.APIProxy;
+import com.predic8.membrane.core.openapi.serviceproxy.APIProxyKey;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 
+import java.io.IOException;
+import java.net.URISyntaxException;
+
+import static com.predic8.membrane.core.interceptor.flow.invocation.FlowTestInterceptors.A;
+import static io.restassured.RestAssured.given;
+import static org.hamcrest.Matchers.equalToIgnoringCase;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class AbstractServiceProxyExpressionTest extends AbstractTestWithRouter {
 
     @Test
-    void targetWithExpression() throws Exception {
+    void targetWithExpression() throws IOException, URISyntaxException {
         HttpRouter r = new HttpRouter();
         Exchange rq = new Request.Builder().get("http://localhost:2000/").buildExchange();
         APIProxy api = new APIProxy() {{
-            setPort(2000);
             setTarget(new Target() {{
                 setUrl("http://localhost:${2000 + 1000}");
             }});
         }};
-        r.add(api);
         rq.setProxy(api);
-        r.init();
+        api.init(r);
 
-        new DispatchingInterceptor().handleRequest(rq);
-        assertEquals("vc", rq.getDestinations().getFirst());
+        DispatchingInterceptor di = new DispatchingInterceptor() {{
+            router = r;
+        }};
+        di.handleRequest(rq);
+
+        assertEquals("http://localhost:3000/", rq.getDestinations().getFirst());
     }
 }
