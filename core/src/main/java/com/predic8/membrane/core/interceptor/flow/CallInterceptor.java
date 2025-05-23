@@ -13,28 +13,35 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.flow;
 
-import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.interceptor.lang.*;
-import com.predic8.membrane.core.lang.*;
-import org.jetbrains.annotations.*;
-import org.slf4j.*;
+import com.predic8.membrane.annot.MCAttribute;
+import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.annot.Required;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.Header;
+import com.predic8.membrane.core.http.HeaderField;
+import com.predic8.membrane.core.http.Request;
+import com.predic8.membrane.core.interceptor.Outcome;
+import com.predic8.membrane.core.interceptor.lang.AbstractExchangeExpressionInterceptor;
+import com.predic8.membrane.core.transport.http.HttpClient;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.util.*;
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.List;
 
-import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
+import static com.google.api.client.http.HttpMethods.*;
+import static com.predic8.membrane.core.exceptions.ProblemDetails.internal;
 import static com.predic8.membrane.core.http.Header.*;
-import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
 import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
-import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
+import static java.util.Collections.singletonList;
 
 @MCElement(name = "call")
 public class CallInterceptor extends AbstractExchangeExpressionInterceptor {
 
-    private static final Logger log = LoggerFactory.getLogger(CallInterceptor.class.getName());
-
-    private static HTTPClientInterceptor hcInterceptor;
+    private static final Logger log = LoggerFactory.getLogger(CallInterceptor.class);
 
     /**
      * These headers are filtered out from the response of a called resource
@@ -44,11 +51,11 @@ public class CallInterceptor extends AbstractExchangeExpressionInterceptor {
             SERVER, TRANSFER_ENCODING, CONTENT_ENCODING
     );
 
+    private String method = GET;
+
     @Override
     public void init() {
         super.init();
-        hcInterceptor = new HTTPClientInterceptor();
-        hcInterceptor.init(router);
     }
 
     @Override
@@ -62,37 +69,25 @@ public class CallInterceptor extends AbstractExchangeExpressionInterceptor {
     }
 
     private Outcome handleInternal(Exchange exc) {
-        List<String> oldDest = exc.getDestinations();
-        Outcome outcome = doCall(exc);
-        exc.setDestinations(oldDest);
-        return outcome;
-    }
+        final String dest = exchangeExpression.evaluate(exc, REQUEST, String.class);
+        log.debug("Calling {}", dest);
 
-    private @NotNull Outcome doCall(Exchange exc) {
-        try {
-            exc.setDestinations(List.of(exchangeExpression.evaluate(exc, REQUEST, String.class)));
-        } catch (ExchangeExpressionException e) {
-            e.provideDetails(
-                    internal(getRouter().isProduction(),getDisplayName()))
-                    .addSubSee("expression-evaluation")
-                    .buildAndSetResponse(exc);
+        final Exchange newExc = createNewExchange(dest, getNewRequest(exc));
+
+        try (HttpClient client = new HttpClient()) {
+            client.call(newExc);
+        } catch (Exception e) {
+            log.error("Error during HTTP call to {}: {}", dest, e.getMessage(), e);
             return ABORT;
         }
-        log.debug("Calling {}", exc.getDestinations());
+
         try {
-            Outcome outcome = hcInterceptor.handleRequest(exc);
-            if (outcome == ABORT) {
-                log.warn("Aborting. Error calling {}", exc.getDestinations());
-                return ABORT;
-            }
-            exc.getRequest().setBodyContent(exc.getResponse().getBody().getContent()); // TODO Optimize?
-            copyHeadersFromResponseToRequest(exc);
-            exc.getRequest().getHeader().setContentType(exc.getResponse().getHeader().getContentType());
-            log.debug("Outcome of call {}", outcome);
+            exc.getRequest().setBodyContent(newExc.getResponse().getBody().getContent());
+            copyHeadersFromResponseToRequest(newExc, exc);
             return CONTINUE;
         } catch (Exception e) {
-            log.error("",e);
-            internal(router.isProduction(),getDisplayName())
+            log.error("Error processing response from {}: {}", dest, e.getMessage(), e);
+            internal(router.isProduction(), getDisplayName())
                     .addSubSee("internal-calling")
                     .detail("Internal call")
                     .exception(e)
@@ -101,21 +96,69 @@ public class CallInterceptor extends AbstractExchangeExpressionInterceptor {
         }
     }
 
-    static void copyHeadersFromResponseToRequest(Exchange exc) {
-        Arrays.stream(exc.getResponse().getHeader().getAllHeaderFields()).forEach(headerField -> {
+    private Request getNewRequest(Exchange exchange) {
+        Request.Builder builder = new Request.Builder()
+                .method(method)
+                .header(getFilteredRequestHeader(exchange));
+        setRequestBody(builder, exchange);
+        return builder.build();
+    }
+
+    private static Exchange createNewExchange(String dest, Request request) {
+        Exchange exc = new Exchange(null);
+        exc.setDestinations(singletonList(dest));
+        exc.setRequest(request);
+        return exc;
+    }
+
+    private void setRequestBody(Request.Builder builder, Exchange exchange) {
+        if (!methodShouldHaveBody(method)) {
+            return;
+        }
+        try {
+            builder.body(exchange.getRequest().getBody().getContent());
+        } catch (IOException e) {
+            throw new RuntimeException("Error setting request body", e);
+        }
+    }
+
+    private static boolean methodShouldHaveBody(String method) {
+        return method.equals(POST) || method.equals(PUT) || method.equals(PATCH);
+    }
+
+    /**
+     * Filters and returns the request headers relevant for the outgoing request.
+     */
+    Header getFilteredRequestHeader(Exchange exc) {
+        Header requestHeader = new Header();
+        for (HeaderField field : exc.getRequest().getHeader().getAllHeaderFields()) {
+            // Not using a reference on purpose
+            requestHeader.add(field.getHeaderName().getName(), field.getValue());
+        }
+        // Removes body-related headers when no body is present
+        if(!methodShouldHaveBody(method)) {
+            requestHeader.removeFields(CONTENT_TYPE);
+            requestHeader.removeFields(CONTENT_LENGTH);
+            requestHeader.removeFields(TRANSFER_ENCODING);
+            requestHeader.removeFields(CONTENT_LENGTH);
+        }
+        return requestHeader;
+    }
+
+    static void copyHeadersFromResponseToRequest(Exchange responseExc, Exchange originalExc) {
+        Arrays.stream(responseExc.getResponse().getHeader().getAllHeaderFields()).forEach(headerField -> {
             // Filter out, what is definitely not needed like Server:
             for (String rmHeader : REMOVE_HEADERS) {
                 if (headerField.getHeaderName().getName().equalsIgnoreCase(rmHeader))
                     return;
             }
-            exc.getRequest().getHeader().add(headerField);
+            originalExc.getRequest().getHeader().add(headerField);
         });
     }
 
     /**
-     * @default com.predic8.membrane.core.interceptor.log.LogInterceptor
-     * @description Sets the category of the logged message.
-     * @example Membrane
+     * @description Sets the url of the call
+     * @example "https://api.predic8.de"
      */
     @SuppressWarnings("unused")
     @MCAttribute
@@ -126,6 +169,20 @@ public class CallInterceptor extends AbstractExchangeExpressionInterceptor {
 
     public String getUrl() {
         return expression;
+    }
+
+    /**
+     * @default GET
+     * @description Sets the method for the call
+     * @example GET, POST, PUT, ...
+     */
+    @MCAttribute
+    public void setMethod(String method) {
+        this.method = method;
+    }
+
+    public String getMethod() {
+        return method;
     }
 
     @Override

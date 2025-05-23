@@ -17,7 +17,6 @@ import com.fasterxml.jackson.databind.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.exchange.snapshots.*;
 import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.interceptor.oauth2.*;
 import com.predic8.membrane.core.interceptor.oauth2.authorizationservice.*;
 import com.predic8.membrane.core.interceptor.oauth2client.*;
 import com.predic8.membrane.core.interceptor.oauth2client.rf.token.*;
@@ -34,6 +33,9 @@ import static com.predic8.membrane.core.interceptor.oauth2client.temp.OAuth2Cons
 
 public class OAuth2CallbackRequestHandler {
     private static final Logger log = LoggerFactory.getLogger(OAuth2CallbackRequestHandler.class);
+    public static final String MEMBRANE_MISSING_SESSION = "Missing session.";
+    public static final String MEMBRANE_CSRF_TOKEN_MISSING_IN_SESSION = "CSRF token missing in session.";
+    public static final String MEMBRANE_CSRF_TOKEN_MISMATCH = "CSRF token mismatch.";
 
     private URIFactory uriFactory;
     private AuthorizationService auth;
@@ -72,14 +74,11 @@ public class OAuth2CallbackRequestHandler {
             OAuth2Parameters params = OAuth2Parameters.parse(uriFactory, exc);
             params.checkCodeOrError();
 
-            String stateFromUri = getSecurityTokenFromState(params.getState());
+            StateManager stateFromUri = new StateManager(params.getState());
 
-            if (!csrfTokenMatches(session, stateFromUri)) {
-                throw new RuntimeException("CSRF token mismatch.");
-            }
+            verifyCsrfToken(session, stateFromUri);
 
-            // state in session can be "merged" -> save the selected state in session overwriting the possibly merged value
-            session.put(ParamNames.STATE, stateFromUri);
+
 
             AbstractExchangeSnapshot originalRequest = originalExchangeStore.reconstruct(exc, session, stateFromUri);
             originalExchangeStore.remove(exc, session, stateFromUri);
@@ -89,7 +88,8 @@ public class OAuth2CallbackRequestHandler {
             }
 
             OAuth2TokenResponseBody tokenResponse = auth.codeTokenRequest(
-                    publicUrlManager.getPublicURLAndReregister(exc) + callbackPath, params.getCode());
+                    publicUrlManager.getPublicURLAndReregister(exc) + callbackPath, params.getCode(),
+                    PKCEVerifier.getVerifier(stateFromUri, session));
 
             if (tokenResponse.getAccessToken() == null) {
                 if (!onlyRefreshToken)
@@ -123,14 +123,14 @@ public class OAuth2CallbackRequestHandler {
 
     private static void continueOriginalExchange(Exchange exc, AbstractExchangeSnapshot originalRequest, Session session) throws Exception {
         if (originalRequest.getRequest().getMethod().equals("GET")) {
-            exc.setResponse(Response.redirect(originalRequest.getOriginalRequestUri(), false).build());
+            exc.setResponse(Response.redirect(originalRequest.getOriginalRequestUri(), 302).build());
         } else {
             String oa2redirect = new BigInteger(130, new SecureRandom()).toString(32);
 
             session.put(OAuthUtils.oa2redictKeyNameInSession(oa2redirect), new ObjectMapper().writeValueAsString(originalRequest));
 
             String delimiter = originalRequest.getOriginalRequestUri().contains("?") ? "&" : "?";
-            exc.setResponse(Response.redirect(originalRequest.getOriginalRequestUri() + delimiter + OA2REDIRECT + "=" + oa2redirect, false).build());
+            exc.setResponse(Response.redirect(originalRequest.getOriginalRequestUri() + delimiter + OA2REDIRECT + "=" + oa2redirect, 302).build());
         }
     }
 }

@@ -126,7 +126,7 @@ class CorsInterceptorTest {
 
             assertEquals("*", getAllowOrigin(exc));
             assertEquals(METHOD_POST, getAllowMethods(exc));
-            assertTrue(getAllowHeaders(exc).contains("X-Foo"));
+            assertTrue(getAllowHeaders(exc).contains("x-foo"));
         }
 
     }
@@ -146,7 +146,7 @@ class CorsInterceptorTest {
             assertEquals(204, exc.getResponse().getStatusCode());
 
             assertEquals(METHOD_POST, getAllowMethods(exc));
-            assertTrue(getAllowHeaders(exc).contains("X-Foo"));
+            assertTrue(getAllowHeaders(exc).contains("x-foo"));
             assertEquals("*", getAllowOrigin(exc));
         }
 
@@ -299,7 +299,7 @@ class CorsInterceptorTest {
             i.handleRequest(exc);
             assertTrue(i.isAllowAll());
             assertEquals(204, exc.getResponse().getStatusCode());
-            assertEquals("X-Bar", getAllowHeaders(exc));
+            assertEquals("x-bar", getAllowHeaders(exc));
         }
     }
 

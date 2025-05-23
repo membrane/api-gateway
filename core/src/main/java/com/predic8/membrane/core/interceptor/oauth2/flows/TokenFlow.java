@@ -20,6 +20,7 @@ import com.predic8.membrane.core.interceptor.authentication.session.SessionManag
 import com.predic8.membrane.core.interceptor.oauth2.Client;
 import com.predic8.membrane.core.interceptor.oauth2.OAuth2AuthorizationServerInterceptor;
 import com.predic8.membrane.core.interceptor.oauth2.OAuth2Util;
+import com.predic8.membrane.core.interceptor.oauth2.ParamNames;
 
 import java.io.IOException;
 
@@ -49,16 +50,16 @@ public class TokenFlow extends OAuth2Flow {
         String redirectUrl;
         String scope;
         synchronized (s) {
-            state = s.getUserAttributes().get("state");
+            state = s.getUserAttributes().get(SessionManager.Session.STATE);
             redirectUrl = s.getUserAttributes().get("redirect_uri");
             scope = s.getUserAttributes().get("scope");
         }
 
         exc.setResponse(Response.
-                redirect(redirectUrl + "?access_token=" + token + stateQuery(state) + "&token_type=" + tokenType + "&scope=" + scope,false).
-                dontCache().
-                body("").
-                build());
+                redirect(redirectUrl + "?access_token=" + token + stateQuery(state) + "&token_type=" + tokenType + "&scope=" + scope,302)
+                .dontCache()
+                .body("")
+                .build());
 
         return Outcome.RETURN;
     }

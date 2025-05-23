@@ -56,7 +56,7 @@ public abstract class OAuth2AuthorizationServerInterceptorBase {
 
     public static Callable<Exchange> getMockAuthRequestExchange() {
         return () -> {
-            Exchange exc = new Request.Builder().get(mas.getLoginURL("123security","http://localhost:2001/oauth2callback", "/")).buildExchange();
+            Exchange exc = new Request.Builder().get(mas.getLoginURL("http://localhost:2001/oauth2callback")).buildExchange();
             exc.getRequest().getHeader().add("Cookie",oasi.getSessionManager().getCookieName() + "=" + OAuth2TestUtil.sessionId);
             return exc;
         };

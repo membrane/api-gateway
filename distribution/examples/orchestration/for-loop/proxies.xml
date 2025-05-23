@@ -1,0 +1,55 @@
+<spring:beans xmlns:spring="http://www.springframework.org/schema/beans"
+              xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+              xmlns="http://membrane-soa.org/proxies/1/" xmlns:lang="http://www.springframework.org/schema/lang"
+              xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.2.xsd
+					    http://membrane-soa.org/proxies/1/ http://membrane-soa.org/schemas/proxies-1.xsd http://www.springframework.org/schema/lang http://www.springframework.org/schema/lang/spring-lang.xsd">
+
+    <spring:bean class="com.predic8.membrane.core.interceptor.apikey.stores.ApiKeyFileStore">
+        <spring:property name="location" value="./keys.txt" />
+    </spring:bean>
+
+    <router>
+
+        <api port="2000">
+            <request>
+                <call url="https://api.predic8.de/shop/v2/products?limit=1000"/>
+                <!-- Store the list of products in a property -->
+                <setProperty name="products" value="${$.products}" language="jsonpath"/>
+
+                <!-- Loop over each product in the list -->
+                <for in="properties.products">
+                    <!-- Fetch detailed info for the current product by ID -->
+                    <call url="https://api.predic8.de/shop/v2/products/${properties.it['id']}"/>
+                    <!-- Extract the price field from the response -->
+                    <setProperty name="price" value="${$.price}" language="jsonpath"/>
+                    <!-- Inject the price into the current product object -->
+                    <groovy>
+                        properties.it.price = properties.price
+                    </groovy>
+                </for>
+            </request>
+            <response>
+                <!-- Create a JSON payload containing only name and price for each product -->
+                <template contentType="application/json">
+                    <![CDATA[
+                        {
+                          "products":[
+                          <% property.products.eachWithIndex { prod, idx -> %>
+                            {
+                              "name":"<%= prod.name %>",
+                              "price":<%= prod.price %>
+                            }<%= idx < property.products.size()-1 ? "," : "" %>
+                          <% } %>
+                          ]
+                        }
+                        ]]>
+                </template>
+
+            </response>
+            <return/>
+        </api>
+
+
+    </router>
+
+</spring:beans>

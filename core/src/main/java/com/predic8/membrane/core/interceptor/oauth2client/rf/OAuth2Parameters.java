@@ -16,6 +16,7 @@ package com.predic8.membrane.core.interceptor.oauth2client.rf;
 
 import com.predic8.membrane.core.exceptions.ProblemDetails;
 import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.interceptor.oauth2.ParamNames;
 import com.predic8.membrane.core.util.URIFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -42,11 +43,11 @@ public class OAuth2Parameters {
     }
 
     public String getState() {
-        return params.get("state");
+        return params.get(ParamNames.STATE);
     }
 
     public String getCode() {
-        return params.get("code");
+        return params.get(ParamNames.CODE);
     }
 
 

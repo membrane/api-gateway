@@ -19,6 +19,7 @@ import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.exchange.snapshots.AbstractExchangeSnapshot;
+import com.predic8.membrane.core.interceptor.oauth2client.rf.StateManager;
 import com.predic8.membrane.core.interceptor.session.Session;
 import com.predic8.membrane.core.util.RedisConnector;
 import redis.clients.jedis.Jedis;
@@ -43,19 +44,19 @@ public class RedisOriginalExchangeStore extends OriginalExchangeStore {
 
 
 
-    private String originalRequestKeyNameInSession(String state) {
-        return prefix != null ? prefix + state : state;
+    private String originalRequestKeyNameInSession(StateManager state) {
+        return prefix != null ? prefix + state.getSecurityToken() : state.getSecurityToken();
     }
 
     @Override
-    public void store(Exchange exchange, Session session, String state, Exchange exchangeToStore) throws IOException {
+    public void store(Exchange exchange, Session session, StateManager state, Exchange exchangeToStore) throws IOException {
         try (Jedis jedis = connector.getJedisWithDb()) {
             jedis.setex(originalRequestKeyNameInSession(state), 3600, objMapper.writeValueAsString(getTrimmedAbstractExchangeSnapshot(exchangeToStore, maxBodySize)));
         }
     }
 
     @Override
-    public AbstractExchangeSnapshot reconstruct(Exchange exchange, Session session, String state) {
+    public AbstractExchangeSnapshot reconstruct(Exchange exchange, Session session, StateManager state) {
         try {
             try(Jedis jedis = connector.getJedisWithDb()) {
                 return objMapper.readValue(jedis.get(originalRequestKeyNameInSession(state)), AbstractExchangeSnapshot.class);
@@ -65,7 +66,7 @@ public class RedisOriginalExchangeStore extends OriginalExchangeStore {
         }
     }
     @Override
-    public void remove(Exchange exchange, Session session, String state) {
+    public void remove(Exchange exchange, Session session, StateManager state) {
         try (Jedis jedis = connector.getJedisWithDb()) {
             jedis.del(originalRequestKeyNameInSession(state));
         }

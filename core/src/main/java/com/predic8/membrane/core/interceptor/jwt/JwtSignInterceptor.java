@@ -44,7 +44,8 @@ public class JwtSignInterceptor extends AbstractInterceptor {
 
     private JwtSessionManager.Jwk jwk;
     private RsaJsonWebKey rsaJsonWebKey;
-    private int expiryTime = 300;
+    private int expirySeconds = 300;
+    private int clockSkewSeconds = 120;
 
     private final ObjectMapper om = new ObjectMapper();
 
@@ -80,6 +81,7 @@ public class JwtSignInterceptor extends AbstractInterceptor {
     private Outcome handleInternal(Exchange exc, Flow flow) {
         try {
             JsonWebSignature jws = new JsonWebSignature();
+            jws.setHeader("typ", "JWT");
             jws.setPayload(prepareJwtPayload(exc.getMessage(flow)));
             jws.setKey(rsaJsonWebKey.getRsaPrivateKey());
             jws.setAlgorithmHeaderValue(RSA_USING_SHA256);
@@ -101,7 +103,8 @@ public class JwtSignInterceptor extends AbstractInterceptor {
         ObjectNode jsonBody = (ObjectNode) om.readTree(msg.getBodyAsStream());
         long epoch = System.currentTimeMillis() / 1000;
         jsonBody.put("iat", epoch);
-        jsonBody.put("exp", epoch + expiryTime);
+        jsonBody.put("exp", epoch + expirySeconds);
+        jsonBody.put("nbf", epoch - clockSkewSeconds);
         return jsonBody.toString();
     }
 
@@ -114,12 +117,30 @@ public class JwtSignInterceptor extends AbstractInterceptor {
         this.jwk = jwk;
     }
 
-    public int getExpiryTime() {
-        return expiryTime;
+    public int getExpirySeconds() {
+        return expirySeconds;
     }
 
+    /**
+     * Time in seconds the token will expire after.
+     * @default 300
+     */
     @MCAttribute
-    public void setExpiryTime(int expiryTime) {
-        this.expiryTime = expiryTime;
+    public void setExpirySeconds(int expirySeconds) {
+        this.expirySeconds = expirySeconds;
+    }
+
+    public int getClockSkewSeconds() {
+        return clockSkewSeconds;
+    }
+
+    /**
+     * To account for clock skew between different systems, the beginning of the validity time period (nbf - "not before")
+     * will be set to a point in time in the past. This point in time will be "issued at" - "clock skew".
+     * @param clockSkewSeconds
+     */
+    @MCAttribute
+    public void setClockSkewSeconds(int clockSkewSeconds) {
+        this.clockSkewSeconds = clockSkewSeconds;
     }
 }

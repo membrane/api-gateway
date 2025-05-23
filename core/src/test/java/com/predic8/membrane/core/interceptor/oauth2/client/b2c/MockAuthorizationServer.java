@@ -133,16 +133,16 @@ public class MockAuthorizationServer {
                         return Response.internalServerError().body("signin aborted").build();
                     }
                     if (returnOAuth2ErrorFromSignIn.get()) {
-                        return Response.redirect(tc.getClientAddress() + "/oauth2callback?error=DEMO-123&error_description=This+is+a+demo+error.&state=" + params.get("state"), false).build();
+                        return Response.redirect(tc.getClientAddress() + "/oauth2callback?error=DEMO-123&error_description=This+is+a+demo+error.&state=" + params.get("state"), 302).build();
                     } else {
                         onLogin.run();
-                        return Response.redirect(tc.getClientAddress() + "/oauth2callback?code=1234&state=" + params.get("state"), false).build();
+                        return Response.redirect(tc.getClientAddress() + "/oauth2callback?code=1234&state=" + params.get("state"), 302).build();
                     }
                 } else if (requestURI.contains("/token")) {
                     return handleTokenRequest(flowId, exc);
                 } else if (requestURI.contains("/logout")) {
                     onLogout.run();
-                    return Response.redirect( params.get("post_logout_redirect_uri"), false).build();
+                    return Response.redirect( params.get("post_logout_redirect_uri"), 302).build();
                 } else {
                     return Response.notFound().build();
                 }
@@ -244,7 +244,7 @@ public class MockAuthorizationServer {
         wkf.setSupportedTokenEndpointAuthMethods("client_secret_post");
         wkf.setSupportedClaims(ImmutableSet.of("name", "sub", "idp", "tfp", "iss", "iat", "exp", "aud", "acr", "nonce", "auth_time"));
 
-        wkf.init(mockAuthServer);
+        wkf.init();
 
         return wkf;
     }

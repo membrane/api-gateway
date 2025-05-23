@@ -11,38 +11,41 @@
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
    See the License for the specific language governing permissions and
    limitations under the License. */
-package com.predic8.membrane.core.oauth2;
+package com.predic8.membrane.core.interceptor.oauth2;
 
 import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.exchangestore.*;
 import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.interceptor.authentication.session.*;
 import com.predic8.membrane.core.interceptor.flow.*;
-import com.predic8.membrane.core.interceptor.log.*;
-import com.predic8.membrane.core.interceptor.oauth2.*;
 import com.predic8.membrane.core.interceptor.oauth2.authorizationservice.*;
-import com.predic8.membrane.core.interceptor.oauth2.tokengenerators.*;
 import com.predic8.membrane.core.interceptor.oauth2client.*;
 import com.predic8.membrane.core.interceptor.session.*;
 import com.predic8.membrane.core.interceptor.templating.*;
 import com.predic8.membrane.core.proxies.*;
 import com.predic8.membrane.core.transport.http.*;
 import com.predic8.membrane.test.*;
+import io.restassured.filter.log.LogDetail;
 import io.restassured.response.*;
+import org.hamcrest.Matchers;
 import org.jetbrains.annotations.*;
 import org.junit.jupiter.api.*;
 
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.*;
 import java.util.concurrent.atomic.*;
 
-import static com.predic8.membrane.core.interceptor.log.LogInterceptor.Level.*;
 import static com.predic8.membrane.core.lang.ExchangeExpression.Language.*;
 import static com.predic8.membrane.test.TestUtil.getPathFromResource;
+import static io.restassured.RestAssured.given;
 import static org.junit.jupiter.api.Assertions.*;
 
-public class OAuth2RedirectTest {
+public abstract class OAuth2RedirectTest {
 
+    static final URI AUTH_SERVER_BASE_URL = URI.create("http://localhost:2002");
+    static final URI BACKEND_BASE_URL = URI.create("http://localhost:2001");
+    static final URI CLIENT_BASE_URL = URI.create("http://localhost:2000");
     static Router authorizationServerRouter;
     static Router oauth2ResourceRouter;
     static Router backendRouter;
@@ -65,8 +68,21 @@ public class OAuth2RedirectTest {
     }
 
     @Test
-    void testGet() {
-        OAuth2AuthFlowClient OAuth2 = new OAuth2AuthFlowClient("http://localhost:2002");
+    void invalidState() {
+        given()
+            .redirects().follow(false)
+            //.cookies(memCookies) TODO: create clone of this test with existing session
+        .when()
+            .get("http://localhost:2000/oauth2callback?code=b2296nh0navopaj5iq5slu7dje&state=security_token=miv38g9f80v7fiau029ctfel2o&url=/a?b=c&d=%C3%A4")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL)
+            .statusCode(400)
+            .body(Matchers.is("Missing session."));
+    }
+
+    @Test
+    void testGet() throws Exception {
+        OAuth2AuthFlowClient OAuth2 = getOAuth2AuthFlowClient();
         // Step 1: Initial request to the client
         Response clientResponse = OAuth2.step1originalRequestGET("/a?b=c&d=ä");
         // Step 2: Send to authentication at OAuth2 server
@@ -83,10 +99,12 @@ public class OAuth2RedirectTest {
         // Step 7: Submit consent
         OAuth2.step7submitConsent(consentLocation);
         // Step 8: Redirect back to client
-        String callbackUrl = OAuth2.step8redirectToClient();
+        var callback = OAuth2.step8redirectToClient();
         // Step 9: Exchange Code for Token & continue original request.·
-        OAuth2.step9exchangeCodeForToken(
-                callbackUrl,
+        var redirectUrl = OAuth2.step9executeCallback(callback);
+
+        OAuth2.step10callOriginalUrl(
+                redirectUrl,
                 "GET | null | "
                 // method is 'GET', Content-Type is not set, body is empty
         );
@@ -95,9 +113,11 @@ public class OAuth2RedirectTest {
         assertEquals(firstUrlHit.get(), interceptorChainHit.get(), "Is interceptor chain correctly continued?");
     }
 
+    abstract OAuth2AuthFlowClient getOAuth2AuthFlowClient();
+
     @Test
-    void testPost() {
-        OAuth2AuthFlowClient OAuth2 = new OAuth2AuthFlowClient("http://localhost:2002");
+    void testPost() throws Exception {
+        OAuth2AuthFlowClient OAuth2 = getOAuth2AuthFlowClient();
         // Step 1: Initial request to the client
         Response clientResponse = OAuth2.step1originalRequestPOST("/a?b=c&d=ä");
         // Step 2: Send to authentication at OAuth2 server
@@ -113,10 +133,12 @@ public class OAuth2RedirectTest {
         // Step 7: Submit consent
         OAuth2.step7submitConsent(consentLocation);
         // Step 8: Redirect back to client
-        String callbackUrl = OAuth2.step8redirectToClient();
+        var callback = OAuth2.step8redirectToClient();
         // Step 9: Exchange Code for Token & continue original request.·
-        OAuth2.step9exchangeCodeForToken(
-                callbackUrl,
+        var redirectUrl = OAuth2.step9executeCallback(callback);
+
+        OAuth2.step10callOriginalUrl(
+                redirectUrl,
                 "POST | text/x-json; charset=ISO-8859-1 | [true]"
                 // method is POST, Content-Type is 'text/x-json; charset=ISO-8859-1', body is '[true]'
         );
@@ -151,7 +173,7 @@ public class OAuth2RedirectTest {
     }
 
     private static @NotNull SSLableProxy getBackendRule() {
-        SSLableProxy nginxRule = new ServiceProxy(new ServiceProxyKey("localhost", "*", ".*", 2001), "localhost", 80);
+        SSLableProxy nginxRule = new ServiceProxy(new ServiceProxyKey(BACKEND_BASE_URL.getHost(), "*", ".*", BACKEND_BASE_URL.getPort()), "localhost", 80);
         nginxRule.getInterceptors().add(new AbstractInterceptor() {
             @Override
             public Outcome handleRequest(Exchange exc) {
@@ -166,7 +188,7 @@ public class OAuth2RedirectTest {
     }
 
     private static @NotNull SSLableProxy getOAuth2ResourceRule() {
-        SSLableProxy membraneRule = new ServiceProxy(new ServiceProxyKey("localhost", "*", ".*", 2000), "localhost", 2001);
+        SSLableProxy membraneRule = new ServiceProxy(new ServiceProxyKey(CLIENT_BASE_URL.getHost(), "*", ".*", CLIENT_BASE_URL.getPort()), BACKEND_BASE_URL.getHost(), BACKEND_BASE_URL.getPort());
         membraneRule.getInterceptors().add(new AbstractInterceptor() {
             @Override
             public Outcome handleRequest(Exchange exc) {
@@ -178,7 +200,7 @@ public class OAuth2RedirectTest {
         membraneRule.getInterceptors().add(new OAuth2Resource2Interceptor() {{
             setSessionManager(new InMemorySessionManager());
             setAuthService(new MembraneAuthorizationService() {{
-                setSrc("http://localhost:2002");
+                setSrc(AUTH_SERVER_BASE_URL.toString());
                 setClientId("abc");
                 setClientSecret("def");
                 setScope("openid profile");
@@ -195,44 +217,5 @@ public class OAuth2RedirectTest {
         });
         return membraneRule;
     }
-
-    private static @NotNull SSLableProxy getAuthorizationServerRule() {
-        SSLableProxy azureRule = new ServiceProxy(new ServiceProxyKey("localhost", "*", ".*", 2002), "localhost", 80);
-        azureRule.getInterceptors().add(new LogInterceptor() {{
-            setLevel(DEBUG);
-        }});
-        azureRule.getInterceptors().add(new OAuth2AuthorizationServerInterceptor() {{
-            setLocation(getPathFromResource("openId/dialog"));
-            setConsentFile(getPathFromResource("openId/consentFile.json"));
-            setTokenGenerator(new BearerTokenGenerator());
-            setIssuer("http://localhost:2002");
-            setUserDataProvider(new StaticUserDataProvider() {{
-                setUsers(List.of(new User() {{
-                    setUsername("user");
-                    setPassword("password");
-                }}));
-            }});
-            setClientList(new StaticClientList() {{
-                setClients(List.of(new Client() {{
-                    setClientId("abc");
-                    setClientSecret("def");
-                    setCallbackUrl("http://localhost:2000/oauth2callback");
-                }}));
-            }});
-            setClaimList(new ClaimList() {{
-                setValue("aud email iss sub username");
-                setScopes(new ArrayList<>() {{
-                    add(new Scope() {{
-                        setId("username");
-                        setClaims("username");
-                    }});
-                    add(new Scope() {{
-                        setId("profile");
-                        setClaims("username email");
-                    }});
-                }});
-            }});
-        }});
-        return azureRule;
-    }
+    abstract @NotNull SSLableProxy getAuthorizationServerRule();
 }

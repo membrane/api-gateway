@@ -42,6 +42,7 @@ import java.util.stream.IntStream;
 import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.http.Request.get;
 import static com.predic8.membrane.core.http.Request.post;
+import static com.predic8.membrane.core.interceptor.oauth2client.rf.OAuth2CallbackRequestHandler.MEMBRANE_MISSING_SESSION;
 import static org.junit.jupiter.api.Assertions.*;
 
 public abstract class OAuth2ResourceTest {
@@ -183,7 +184,7 @@ public abstract class OAuth2ResourceTest {
 
         var response = browser.apply(get("http://localhost:" + serverPort + ref.get())).getResponse();
         assertEquals(400, response.getStatusCode());
-        assertTrue(response.getBodyAsStringDecoded().contains("CSRF"));
+        assertTrue(response.getBodyAsStringDecoded().contains(MEMBRANE_MISSING_SESSION));
     }
 
     @Test
@@ -254,7 +255,7 @@ public abstract class OAuth2ResourceTest {
         ServiceProxy sp = new ServiceProxy(new ServiceProxyKey(serverPort), null, 99999);
 
         WellknownFile wkf = getWellknownFile();
-        wkf.init(new HttpRouter());
+        wkf.init();
 
         sp.getInterceptors().add(new AbstractInterceptor() {
 

@@ -104,6 +104,8 @@ public class SessionManager extends AbstractXmlElement implements Cleaner {
 	}
 
     public static class Session {
+		public static final String STATE = "state";
+
 		private Map<String, String> userAttributes = new HashMap<>();
 		private int level = 0;
 		private long lastUse;

@@ -138,7 +138,7 @@ public class LoginDialog2 {
             case "/logout" -> {
                 if (s != null)
                     s.clear();
-                exc.setResponse(Response.redirect(path, false).body("").build());
+                exc.setResponse(Response.redirect(path, 302).body("").build());
             }
             case "/consent" -> {
                 if (exc.getRequest().getMethod().equals("POST"))
@@ -346,13 +346,12 @@ public class LoginDialog2 {
     }
 
     public Outcome redirectToLogin(Exchange exc) throws UnsupportedEncodingException {
-        exc.setResponse(Response.
-                redirect(path + "?target=" + URLEncoder.encode(exc.getOriginalRequestUri(), UTF_8), false).
-                dontCache().
-                body("").
-                build());
+        exc.setResponse(Response
+                .redirect(path + "?target=" + URLEncoder.encode(exc.getOriginalRequestUri(), UTF_8), 302)
+                .dontCache()
+                .body("")
+                .build());
         return RETURN;
     }
 
 }
-

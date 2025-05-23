@@ -25,6 +25,7 @@ public class OAuth2TokenBody {
     private String refreshToken;
     private String scope;
     private String redirectUri;
+    private String codeVerifier;
 
     public static OAuth2TokenBody refreshTokenBodyBuilder(String refreshToken) {
         OAuth2TokenBody r = new OAuth2TokenBody();
@@ -33,10 +34,11 @@ public class OAuth2TokenBody {
         return r;
     }
 
-    public static OAuth2TokenBody authorizationCodeBodyBuilder(String code) {
+    public static OAuth2TokenBody authorizationCodeBodyBuilder(String code, String verifier) {
         OAuth2TokenBody r = new OAuth2TokenBody();
         r.code = code;
         r.grantType = "authorization_code";
+        r.codeVerifier = verifier;
         return r;
     }
 
@@ -51,6 +53,7 @@ public class OAuth2TokenBody {
         appendParam(r, "code", code);
         appendParam(r, "redirect_uri", redirectUri);
         appendParam(r, "scope", scope, e -> encode(e, UTF_8));
+        appendParam(r, "code_verifier", codeVerifier);
         return r.toString();
     }
 

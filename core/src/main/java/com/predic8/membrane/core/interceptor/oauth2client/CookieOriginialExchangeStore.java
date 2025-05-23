@@ -20,6 +20,7 @@ import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.exchange.snapshots.*;
 import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.interceptor.oauth2client.rf.StateManager;
 import com.predic8.membrane.core.interceptor.session.*;
 import com.predic8.membrane.core.proxies.*;
 import org.jetbrains.annotations.*;
@@ -46,8 +47,8 @@ public class CookieOriginialExchangeStore extends OriginalExchangeStore {
     final boolean httpOnly = true;
     final String sameSite = null;
 
-    private String originalRequestKeyNameInSession(String state) {
-        return ORIGINAL_REQUEST_PREFIX + state;
+    private String originalRequestKeyNameInSession(StateManager state) {
+        return ORIGINAL_REQUEST_PREFIX + state.getSecurityToken();
     }
 
     public List<String> createCookieAttributes(Exchange exc) {
@@ -88,7 +89,7 @@ public class CookieOriginialExchangeStore extends OriginalExchangeStore {
     }
 
     @Override
-    public void store(Exchange exchange, Session session, String state, Exchange exchangeToStore) throws IOException {
+    public void store(Exchange exchange, Session session, StateManager state, Exchange exchangeToStore) throws IOException {
         try {
             AbstractExchangeSnapshot trimmedAbstractExchangeSnapshot = getTrimmedAbstractExchangeSnapshot(exchangeToStore, 3000);
 
@@ -121,7 +122,7 @@ public class CookieOriginialExchangeStore extends OriginalExchangeStore {
     }
 
     @Override
-    public AbstractExchangeSnapshot reconstruct(Exchange exchange, Session session, String state) {
+    public AbstractExchangeSnapshot reconstruct(Exchange exchange, Session session, StateManager state) {
         try {
             String value = getCookies(exchange)
                     .filter(cookie -> cookie.indexOf("=") > 0)
@@ -140,8 +141,8 @@ public class CookieOriginialExchangeStore extends OriginalExchangeStore {
         }
     }
 
-    private List<String> getStatesToRemove(Exchange exchange) {
-        ArrayList<String> l = (ArrayList<String>) exchange.getProperty("statesToRemove");
+    private List<StateManager> getStatesToRemove(Exchange exchange) {
+        ArrayList<StateManager> l = (ArrayList<StateManager>) exchange.getProperty("statesToRemove");
         if (l != null)
             return l;
         l = new ArrayList<>();
@@ -150,7 +151,7 @@ public class CookieOriginialExchangeStore extends OriginalExchangeStore {
     }
 
     @Override
-    public void remove(Exchange exchange, Session session, String state) {
+    public void remove(Exchange exchange, Session session, StateManager state) {
         getStatesToRemove(exchange).add(state);
     }
 
