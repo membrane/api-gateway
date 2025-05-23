@@ -37,10 +37,6 @@ public class TemplateExchangeExpression extends AbstractExchangeExpression {
     private final List<Token> tokens;
 
     public static ExchangeExpression newInstance(Router router, Language language, String expression) {
-        // We don't template when using No-Op
-        if (language == NOOP) {
-            return new NoopExchangeExpression(expression);
-        }
         // SpEL comes with its own templating
         if (language == SPEL) {
             return new SpELExchangeExpression(expression, new SpELExchangeExpression.DollarBracketTemplateParserContext());

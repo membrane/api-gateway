@@ -91,8 +91,8 @@ public abstract class AbstractServiceProxy extends SSLableProxy {
     /**
      * @description <p>
      * The destination where the service proxy will send messages to.
-     * Use the target element if you want to send the messages to a static target.
-     * Supports dynamic destinations through expressions (enabled through language attribute).
+     * Use the target element if you want to send the messages to a target.
+     * Supports dynamic destinations through expressions.
      * </p>
      */
     @MCElement(name = "target", topLevel = false)
@@ -102,7 +102,7 @@ public abstract class AbstractServiceProxy extends SSLableProxy {
         private String method;
         protected String url;
         private boolean adjustHostHeader = true;
-        private ExchangeExpression.Language language = NOOP;
+        private ExchangeExpression.Language language = SPEL;
         private ExchangeExpression exchangeExpression;
 
         private SSLParser sslParser;
@@ -112,6 +112,10 @@ public abstract class AbstractServiceProxy extends SSLableProxy {
         }
 
         public String compileUrl(Exchange exc, Interceptor.Flow flow) {
+            /**
+             * Will always evaluate on every call. This is fine as SpEL is fast enough and performs its own optimizations.
+             * 1.000.000 calls ~10ms
+             */
             if (exchangeExpression != null) {
                 return exchangeExpression.evaluate(exc, flow, String.class);
             } else {
@@ -164,8 +168,7 @@ public abstract class AbstractServiceProxy extends SSLableProxy {
 
         /**
          * @description Absolute URL of the target. If this is set, <i>host</i> and <i>port</i> will be ignored.
-         * Supports inline expressions through <code>${&lt;expression&gt;}</code> elements, requires setting
-         * of the language attribute.
+         * Supports inline expressions through <code>${&lt;expression&gt;}</code> elements.
          * @example <a href="http://membrane-soa.org">http://membrane-soa.org</a>
          */
         @MCAttribute

@@ -54,7 +54,6 @@ public interface ExchangeExpression {
             case SPEL -> new SpELExchangeExpression(expression,null);
             case XPATH -> new XPathExchangeExpression(expression);
             case JSONPATH -> new JsonpathExchangeExpression(expression);
-            case NOOP -> new NoopExchangeExpression(expression);
         };
     }
 }
