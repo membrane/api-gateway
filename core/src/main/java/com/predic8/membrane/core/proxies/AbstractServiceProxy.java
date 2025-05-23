@@ -91,9 +91,8 @@ public abstract class AbstractServiceProxy extends SSLableProxy {
 
     /**
      * @description <p>
-     * The destination where the service proxy will send messages to. Use the target element, if you want
-     * to send the messages to a static target. If you want to use dynamic destinations have a look at the
-     * <a href="https://membrane-soa.org/service-proxy-doc/configuration/reference/router.htm">content based router</a>.
+     * The destination where the service proxy will send messages to. Use the target element if you want
+     * to send the messages to a static target. Supports dynamic destinations through expressions.
      * </p>
      */
     @MCElement(name = "target", topLevel = false)
@@ -165,6 +164,7 @@ public abstract class AbstractServiceProxy extends SSLableProxy {
 
         /**
          * @description Absolute URL of the target. If this is set, <i>host</i> and <i>port</i> will be ignored.
+         * Supports inline expressions through <code>${&lt;expression&gt;}</code> elements.
          * @example <a href="http://membrane-soa.org">http://membrane-soa.org</a>
          */
         @MCAttribute
@@ -198,8 +198,8 @@ public abstract class AbstractServiceProxy extends SSLableProxy {
         }
 
         /**
-         * The method that should be used to make the call to the backend. With that
-         * parameter the method from the original call can be overwritten.
+         * @description The method that should be used to make the call to the backend.
+         * Overwrites the original method.
          * @param method
          */
         @MCAttribute
@@ -216,8 +216,8 @@ public abstract class AbstractServiceProxy extends SSLableProxy {
         }
 
         /**
-         * @description the language of the 'test' condition
-         * @default groovy
+         * @description the language of the inline expressions
+         * @default SpEL
          * @example SpEL, groovy, jsonpath, xpath
          */
         @MCAttribute
