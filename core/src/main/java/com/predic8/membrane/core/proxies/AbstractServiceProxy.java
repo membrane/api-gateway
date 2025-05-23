@@ -24,8 +24,7 @@ import com.predic8.membrane.core.lang.ExchangeExpression;
 import com.predic8.membrane.core.lang.TemplateExchangeExpression;
 import com.predic8.membrane.core.transport.ssl.*;
 
-import static com.predic8.membrane.core.lang.ExchangeExpression.Language.GROOVY;
-import static com.predic8.membrane.core.lang.ExchangeExpression.Language.SPEL;
+import static com.predic8.membrane.core.lang.ExchangeExpression.Language.*;
 
 public abstract class AbstractServiceProxy extends SSLableProxy {
 
@@ -91,8 +90,9 @@ public abstract class AbstractServiceProxy extends SSLableProxy {
 
     /**
      * @description <p>
-     * The destination where the service proxy will send messages to. Use the target element if you want
-     * to send the messages to a static target. Supports dynamic destinations through expressions.
+     * The destination where the service proxy will send messages to.
+     * Use the target element if you want to send the messages to a static target.
+     * Supports dynamic destinations through expressions (enabled through language attribute).
      * </p>
      */
     @MCElement(name = "target", topLevel = false)
@@ -102,7 +102,7 @@ public abstract class AbstractServiceProxy extends SSLableProxy {
         private String method;
         protected String url;
         private boolean adjustHostHeader = true;
-        private ExchangeExpression.Language language = SPEL;
+        private ExchangeExpression.Language language = NOOP;
         private ExchangeExpression exchangeExpression;
 
         private SSLParser sslParser;
@@ -164,7 +164,8 @@ public abstract class AbstractServiceProxy extends SSLableProxy {
 
         /**
          * @description Absolute URL of the target. If this is set, <i>host</i> and <i>port</i> will be ignored.
-         * Supports inline expressions through <code>${&lt;expression&gt;}</code> elements.
+         * Supports inline expressions through <code>${&lt;expression&gt;}</code> elements, requires setting
+         * of the language attribute.
          * @example <a href="http://membrane-soa.org">http://membrane-soa.org</a>
          */
         @MCAttribute

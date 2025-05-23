@@ -27,7 +27,7 @@ import com.predic8.membrane.core.lang.xpath.*;
  */
 public interface ExchangeExpression {
 
-    enum Language {GROOVY, SPEL, XPATH, JSONPATH}
+    enum Language {GROOVY, SPEL, XPATH, JSONPATH, NOOP}
 
     /**
      *
@@ -54,6 +54,7 @@ public interface ExchangeExpression {
             case SPEL -> new SpELExchangeExpression(expression,null);
             case XPATH -> new XPathExchangeExpression(expression);
             case JSONPATH -> new JsonpathExchangeExpression(expression);
+            case NOOP -> new NoopExchangeExpression(expression);
         };
     }
 }
