@@ -28,7 +28,6 @@ import com.predic8.membrane.core.util.*;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.*;
 
-import java.security.SecureRandom;
 import java.util.*;
 
 import static com.predic8.membrane.core.exchange.Exchange.*;
@@ -117,28 +116,13 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
 
         if (isLogoutBackRequest(exc)) {
             exc.setResponse(Response.redirect(afterLogoutUrl, 303).build());
-
             logOutSession(exc);
-
             return RETURN;
         }
+
         if (isLogoutRequest(exc)) {
-            String endSessionEndpoint = auth.getEndSessionEndpoint();
-            if (endSessionEndpoint != null && session.getOAuth2Answer(null) != null) {
-                String redirectUri = logoutUrl;
-                redirectUri = replaceUrlPath(publicUrlManager.getPublicURLAndReregister(exc), redirectUri + "/back");
-                String uri = endSessionEndpoint + "?post_logout_redirect_uri=" + encode(redirectUri, UTF_8);
-
-                OAuth2AnswerParameters ap = session.getOAuth2AnswerParameters();
-                if (ap != null && ap.getIdToken() != null)
-                    uri += "&id_token_hint=" + ap.getIdToken();
-                exc.setResponse(Response.redirect(uri, 303).build());
-            } else {
-                exc.setResponse(Response.redirect(afterLogoutUrl, 303).build());
-            }
-
+            exc.setResponse(Response.redirect(getLogoutRedirectUri(exc, session), 303).build());
             logOutSession(exc);
-
             return RETURN;
         }
 
@@ -166,11 +150,11 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
 
         accessTokenRefresher.refreshIfNeeded(session, exc);
 
-
         try {
             if (wasCallback(exc)) {
                 oAuth2CallbackRequestHandler.handleRequest(exc, session);
                 if (exc.getResponse() == null && exc.getRequest() != null && session.isVerified() && session.hasOAuth2Answer()) {
+                    // FIXME: response is always != null
                     exc.setProperty(Exchange.OAUTH2, session.getOAuth2AnswerParameters(wantedScope));
                     appendAccessTokenToRequest(exc);
                     return CONTINUE;
@@ -203,6 +187,20 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
         }
     }
 
+    private @NotNull String getLogoutRedirectUri(Exchange exc, Session session) throws Exception {
+        String endSessionEndpoint = auth.getEndSessionEndpoint();
+        if (endSessionEndpoint == null || session.getOAuth2Answer(null) == null) {
+            return afterLogoutUrl;
+        }
+        String redirectUri = replaceUrlPath(publicUrlManager.getPublicURLAndReregister(exc), logoutUrl + "/back");
+        String uri = endSessionEndpoint + "?post_logout_redirect_uri=" + encode(redirectUri, UTF_8);
+
+        OAuth2AnswerParameters ap = session.getOAuth2AnswerParameters();
+        if (ap != null && ap.getIdToken() != null)
+            uri += "&id_token_hint=" + ap.getIdToken();
+        return uri;
+    }
+
     private String replaceUrlPath(String url, String newPath) {
         URI uri = router.getUriFactory().createWithoutException(url);
         return uri.getScheme() + "://" + uri.getHost() + (uri.getPort() != -1 ? ":" + uri.getPort() : "") + newPath;
@@ -226,6 +224,7 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
     private boolean isLogoutRequest(Exchange exc) {
         return logoutUrl != null && exc.getRequestURI().startsWith(logoutUrl);
     }
+
     private boolean isLogoutBackRequest(Exchange exc) {
         return logoutUrl != null && exc.getRequestURI().startsWith(logoutUrl + "/back");
     }
