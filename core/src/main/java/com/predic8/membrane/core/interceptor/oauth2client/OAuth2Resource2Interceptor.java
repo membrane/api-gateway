@@ -153,12 +153,6 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
         try {
             if (wasCallback(exc)) {
                 oAuth2CallbackRequestHandler.handleRequest(exc, session);
-                if (exc.getResponse() == null && exc.getRequest() != null && session.isVerified() && session.hasOAuth2Answer()) {
-                    // FIXME: response is always != null
-                    exc.setProperty(Exchange.OAUTH2, session.getOAuth2AnswerParameters(wantedScope));
-                    appendAccessTokenToRequest(exc);
-                    return CONTINUE;
-                }
                 if (exc.getResponse().getStatusCode() >= 400) {
                     session.clear();
                 }
