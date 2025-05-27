@@ -27,6 +27,7 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
 import static com.predic8.membrane.core.http.MimeType.*;
+import static com.predic8.membrane.core.util.OSUtil.isWindows;
 import static com.predic8.membrane.test.StringAssertions.replaceInFile;
 import static java.io.File.separator;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -230,5 +231,9 @@ public abstract class DistributionExtractingTestcase {
 
     public InputStream getResourceAsStream(String filename) {
         return getClass().getClassLoader().getResourceAsStream(filename);
+    }
+
+    protected String mavenCommand(String command) {
+        return isWindows() ? "cmd /c mvn " + command : "mvn " + command;
     }
 }
