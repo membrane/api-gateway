@@ -227,10 +227,16 @@ public abstract class SessionManager {
     }
 
     private void setCookieForCurrentSession(Exchange exc, String currentSessionCookieValue) {
-        if (currentSessionCookieValue.length() > 4093)
-            log.warn("Cookie is larger than 4093 bytes, this will not work some browsers.");
+        if (currentSessionCookieValue.length() > 4093) {
+            log.warn("Cookie is larger than 4093 bytes, this will not work some browsers. Consider using a SessionManager that does not rely on cookies, e.g. inMemorySessionManager2");
+            Map.Entry<String, Object> largest = cookieValueToAttributes(currentSessionCookieValue).entrySet().stream()
+                    .max(Comparator.comparingInt(entry -> entry.getValue().toString().length()))
+                    .orElseThrow();
+            log.info("Largest value in session is \"{}\" at {} bytes", largest.getKey(), largest.getValue().toString().length());
+        }
+        List<String> cookieAttributes = createCookieAttributes(exc);
         String setCookieValue = currentSessionCookieValue
-                + ";" + String.join(";", createCookieAttributes(exc));
+                + ";" + String.join(";", cookieAttributes);
         exc.getResponse().getHeader().add(Header.SET_COOKIE, setCookieValue);
     }
 
