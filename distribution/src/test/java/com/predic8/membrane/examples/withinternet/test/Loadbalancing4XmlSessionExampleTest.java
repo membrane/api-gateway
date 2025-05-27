@@ -19,11 +19,11 @@ import com.predic8.membrane.examples.util.DistributionExtractingTestcase;
 import com.predic8.membrane.examples.util.Process2;
 import org.junit.jupiter.api.Test;
 
-import static com.predic8.membrane.core.util.OSUtil.isWindows;
 import static com.predic8.membrane.examples.util.LoadBalancerUtil.addLBNodeViaHTML;
 import static com.predic8.membrane.test.StringAssertions.assertContains;
 import static com.predic8.membrane.test.StringAssertions.assertContainsNot;
 import static java.lang.Thread.sleep;
+import static org.junit.jupiter.api.Assertions.fail;
 
 public class Loadbalancing4XmlSessionExampleTest extends DistributionExtractingTestcase {
 
@@ -49,7 +49,7 @@ public class Loadbalancing4XmlSessionExampleTest extends DistributionExtractingT
 			try(Process2  mvnPackage = new Process2.Builder().in(baseDir).withWatcher(loggerCompile).executable(mavenCommand("package")).start()) {
 				int result = mvnPackage.waitForExit(40000);
 				if (result != 0)
-					throw new AssertionError("'mvn package' returned non-zero " + result + ":\r\n" + loggerCompile);
+					fail("'mvn package' returned non-zero " + result + ":\r\n" + loggerCompile);
 			}
 
 			BufferLogger loggerNode1 = new BufferLogger();
@@ -60,8 +60,10 @@ public class Loadbalancing4XmlSessionExampleTest extends DistributionExtractingT
 					addLBNodeViaHTML("http://localhost:9000/admin/", "localhost", 4000);
 					addLBNodeViaHTML("http://localhost:9000/admin/", "localhost", 4001);
 
-					sleep(200); // wait for nodes to come up
-
+					while (!(loggerNode1.toString().contains("Node1 published") && loggerNode2.toString().contains("Node2 published"))) {
+						//noinspection BusyWait
+						sleep(10);
+					}
 					try(Process2 mvnExec = new Process2.Builder().in(baseDir).executable(mavenCommand("exec:java@client")).start()) {
 						mvnExec.waitForExit(30000);
 					}
