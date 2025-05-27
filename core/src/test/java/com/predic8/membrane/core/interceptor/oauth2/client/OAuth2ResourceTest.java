@@ -95,6 +95,7 @@ public abstract class OAuth2ResourceTest {
     @Test
     public void getOriginalRequest() throws Exception {
         var response = browser.apply(get(getClientAddress() + "/init")).getResponse();
+        assertEquals(200, response.getStatusCode());
         var body = om.readValue(response.getBodyAsStream(), new TypeReference<Map<String, String>>() {});
         assertEquals("/init", body.get("path"));
         assertEquals("", body.get("body"));
@@ -104,6 +105,7 @@ public abstract class OAuth2ResourceTest {
     @Test
     public void postOriginalRequest() throws Exception {
         var response = browser.apply(post(getClientAddress() + "/init").body("demobody")).getResponse();
+        assertEquals(200, response.getStatusCode());
         var body = om.readValue(response.getBodyAsStream(), new TypeReference<Map<String, String>>() {});
         assertEquals("/init", body.get("path"));
         assertEquals("demobody", body.get("body"));
