@@ -98,6 +98,7 @@ public class FlowController {
                         .detail(msg)
                         .exception(e)
                         .buildAndSetResponse(exchange);
+                exchange.setProperty(ABORTION_REASON, e);
                 invokeAbortHandlers(exchange, interceptors, i);
                 return ABORT;
             }
