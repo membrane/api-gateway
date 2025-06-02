@@ -78,8 +78,6 @@ public class OAuth2CallbackRequestHandler {
 
             verifyCsrfToken(session, stateFromUri);
 
-
-
             AbstractExchangeSnapshot originalRequest = originalExchangeStore.reconstruct(exc, session, stateFromUri);
             originalExchangeStore.remove(exc, session, stateFromUri);
 
