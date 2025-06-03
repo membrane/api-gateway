@@ -196,7 +196,7 @@ public class REST2SOAPInterceptor extends SOAPRESTHelper {
     public Outcome handleResponseInternal(Exchange exc) throws Exception {
         Mapping mapping = getRESTURL(exc);
         log.debug("restURL: {}",mapping);
-        if (getRESTURL(exc) == null)
+       if (mapping == null || mapping.getResponseXSLT().isEmpty())
             return CONTINUE;
 
         if (log.isDebugEnabled())
