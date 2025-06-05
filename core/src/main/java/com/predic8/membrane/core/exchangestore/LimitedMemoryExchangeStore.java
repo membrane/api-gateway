@@ -14,18 +14,35 @@
 
 package com.predic8.membrane.core.exchangestore;
 
-import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.interceptor.Interceptor.*;
-import com.predic8.membrane.core.model.*;
-import com.predic8.membrane.core.proxies.*;
-import org.slf4j.*;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.RESPONSE;
 
-import java.text.*;
-import java.util.*;
+import java.text.DecimalFormat;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.atomic.AtomicInteger;
 
-import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.predic8.membrane.annot.MCAttribute;
+import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.core.exchange.AbstractExchange;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.BodyCollectingMessageObserver;
+import com.predic8.membrane.core.http.Request;
+import com.predic8.membrane.core.http.Response;
+import com.predic8.membrane.core.interceptor.Interceptor.Flow;
+import com.predic8.membrane.core.model.AbstractExchangeViewerListener;
+import com.predic8.membrane.core.proxies.Proxy;
+import com.predic8.membrane.core.proxies.RuleKey;
+import com.predic8.membrane.core.proxies.StatisticCollector;
 
 /**
  * @description Stores exchange objects in-memory until a memory threshold is reached. When the threshold is reached and
@@ -39,14 +56,17 @@ public class LimitedMemoryExchangeStore extends AbstractExchangeStore {
 
 	private int maxSize = 1_000_000;
 	private int maxBodySize = 100_000;
-	private int currentSize;
+
+	private final AtomicInteger currentSize = new AtomicInteger(0);
+
 	private BodyCollectingMessageObserver.Strategy bodyExceedingMaxSizeStrategy = BodyCollectingMessageObserver.Strategy.TRUNCATE;
 
 	/**
 	 * EVERY time that exchanges or inflight is changed, modify() MUST be called afterwards
 	 */
-	private final Queue<AbstractExchange> exchanges = new LinkedList<>();
-	private final Queue<AbstractExchange> inflight = new LinkedList<>();
+
+	private final Queue<AbstractExchange> exchanges = new ConcurrentLinkedQueue<>();
+	private final Queue<AbstractExchange> inflight = new ConcurrentLinkedQueue<>();
 
 	private long lastModification = System.currentTimeMillis();
 
@@ -57,13 +77,14 @@ public class LimitedMemoryExchangeStore extends AbstractExchangeStore {
 
 	private void newSnap(AbstractExchange exc, Flow flow) {
 		try {
-            if (flow == REQUEST) {
+			if (flow == REQUEST) {
 				AbstractExchange excCopy = snapInternal(exc, flow);
 
 				if (exc.getRequest() != null)
 					excCopy.setRequest(exc.getRequest().createSnapshot(() -> {
-						synchronized (LimitedMemoryExchangeStore.this) {
-							currentSize += - excCopy.resetHeapSizeEstimation() + excCopy.getHeapSizeEstimation();
+						{
+							currentSize.getAndAdd(- excCopy.resetHeapSizeEstimation() + excCopy.getHeapSizeEstimation());
+							log.debug("newSnap currentSize: " + currentSize);
 							modify();
 						}
 					}, bodyExceedingMaxSizeStrategy, maxBodySize));
@@ -83,21 +104,19 @@ public class LimitedMemoryExchangeStore extends AbstractExchangeStore {
 
 				if (exc.getResponse() != null)
 					excCopy.setResponse(exc.getResponse().createSnapshot(() -> {
-						currentSize += - excCopy.resetHeapSizeEstimation() + excCopy.getHeapSizeEstimation();
+						currentSize.getAndAdd(- excCopy.resetHeapSizeEstimation() + excCopy.getHeapSizeEstimation());
+						log.debug("newSnap currentSize: " + currentSize);
 						modify();
 					}, bodyExceedingMaxSizeStrategy, maxBodySize));
-
 				modify();
 			}
-
-        } catch (Exception e) {
+		} catch (Exception e) {
 			log.warn("exception during snapshotting: ", e);
-            throw new RuntimeException(e);
-        }
-
+			throw new RuntimeException(e);
+		}
 	}
 
-	private synchronized AbstractExchange snapInternal(AbstractExchange orig, Flow flow) {
+	private  AbstractExchange snapInternal(AbstractExchange orig, Flow flow) {
 		AbstractExchange exc = getExchangeById(orig.getId());
 
 		if (exc == null) {
@@ -106,12 +125,14 @@ public class LimitedMemoryExchangeStore extends AbstractExchangeStore {
 			exc.addExchangeViewerListener(new AbstractExchangeViewerListener() {
 				@Override
 				public void addRequest(Request request) {
-					currentSize += - exc2.resetHeapSizeEstimation() + exc2.getHeapSizeEstimation();
+					currentSize.getAndAdd(- exc2.resetHeapSizeEstimation() + exc2.getHeapSizeEstimation());
+					log.debug("addRequest currentSize: " + currentSize);
 				}
 
 				@Override
 				public void addResponse(Response response) {
-					currentSize += - exc2.resetHeapSizeEstimation() + exc2.getHeapSizeEstimation();
+					currentSize.getAndAdd(- exc2.resetHeapSizeEstimation() + exc2.getHeapSizeEstimation());
+					log.debug("addResponse currentSize: " + currentSize);
 				}
 			});
 		}
@@ -120,13 +141,13 @@ public class LimitedMemoryExchangeStore extends AbstractExchangeStore {
 
 		if (flow == REQUEST) {
 			if (inflight.add(exc))
-				currentSize += exc.getHeapSizeEstimation();
+				currentSize.getAndAdd(exc.getHeapSizeEstimation());
 		} else {
 			if (inflight.remove(exc))
-				currentSize -= exc.getHeapSizeEstimation();
+				currentSize.getAndAdd(- exc.getHeapSizeEstimation());
 			if (!exchanges.contains(exc)) {
 				exchanges.add(exc);
-				currentSize += exc.getHeapSizeEstimation();
+				currentSize.getAndAdd(exc.getHeapSizeEstimation());
 			}
 			Exchange.updateCopy(orig, exc, null, null, 0);
 		}
@@ -135,17 +156,17 @@ public class LimitedMemoryExchangeStore extends AbstractExchangeStore {
 		return exc;
 	}
 
-	public synchronized void remove(AbstractExchange exc) {
+	public  void remove(AbstractExchange exc) {
 		exchanges.remove(exc);
 		modify();
 	}
 
-	public synchronized void removeAllExchanges(Proxy proxy) {
+	public  void removeAllExchanges(Proxy proxy) {
 		exchanges.removeAll(getExchangeList(proxy.getKey()));
 		modify();
 	}
 
-	private synchronized List<AbstractExchange> getExchangeList(RuleKey key) {
+	private  List<AbstractExchange> getExchangeList(RuleKey key) {
 		List<AbstractExchange> c = new ArrayList<>();
 		for (AbstractExchange exc : inflight) {
 			if (exc.getProxy().getKey().equals(key)) {
@@ -160,15 +181,15 @@ public class LimitedMemoryExchangeStore extends AbstractExchangeStore {
 		return c;
 	}
 
-	public synchronized AbstractExchange[] getExchanges(RuleKey ruleKey) {
+	public  AbstractExchange[] getExchanges(RuleKey ruleKey) {
 		return getExchangeList(ruleKey).toArray(new AbstractExchange[0]);
 	}
 
-	public synchronized int getNumberOfExchanges(RuleKey ruleKey) {
+	public  int getNumberOfExchanges(RuleKey ruleKey) {
 		return getExchangeList(ruleKey).size();
 	}
 
-	public synchronized StatisticCollector getStatistics(RuleKey key) {
+	public  StatisticCollector getStatistics(RuleKey key) {
 		StatisticCollector statistics = new StatisticCollector(false);
 		List<AbstractExchange> exchangesList = getExchangeList(key);
 		if (exchangesList.isEmpty())
@@ -180,11 +201,11 @@ public class LimitedMemoryExchangeStore extends AbstractExchangeStore {
 		return statistics;
 	}
 
-	public synchronized Object[] getAllExchanges() {
+	public  Object[] getAllExchanges() {
 		return exchanges.toArray(new AbstractExchange[0]);
 	}
 
-	public synchronized List<AbstractExchange> getAllExchangesAsList() {
+	public  List<AbstractExchange> getAllExchangesAsList() {
 		List<AbstractExchange> ret = new LinkedList<>();
 
 		for (AbstractExchange ex : inflight) {
@@ -203,14 +224,14 @@ public class LimitedMemoryExchangeStore extends AbstractExchangeStore {
 		return ret;
 	}
 
-	public synchronized void removeAllExchanges(AbstractExchange[] candidates) {
+	public  void removeAllExchanges(AbstractExchange[] candidates) {
 		exchanges.removeAll(Arrays.asList(candidates));
 		modify();
 	}
 
 
 	@Override
-	public synchronized AbstractExchange getExchangeById(long id) {
+	public  AbstractExchange getExchangeById(long id) {
 		return exchanges.stream().filter(exc -> exc.getId() == id).findAny()
 				.orElseGet(() ->
 						inflight.stream().filter(exc -> exc.getId() == id).findAny()
@@ -222,7 +243,7 @@ public class LimitedMemoryExchangeStore extends AbstractExchangeStore {
 	}
 
 	@Override
-	public synchronized List<? extends ClientStatistics> getClientStatistics() {
+	public  List<? extends ClientStatistics> getClientStatistics() {
 		Map<String, ClientStatisticsCollector> clients = new HashMap<>();
 
 		for (AbstractExchange exc : getAllExchangesAsList()) {
@@ -234,21 +255,21 @@ public class LimitedMemoryExchangeStore extends AbstractExchangeStore {
 		return new ArrayList<ClientStatistics>(clients.values());
 	}
 
-	public synchronized int getCurrentSize() {
+	public  int getCurrentSize() {
 		return exchanges.stream().map(AbstractExchange::getHeapSizeEstimation).reduce(0, Integer::sum);
 	}
 
-	public synchronized Long getOldestTimeResSent() {
+	public  Long getOldestTimeResSent() {
 		AbstractExchange exc = exchanges.peek();
 		return exc == null ? null : exc.getTimeResSent();
 	}
 
-	private synchronized void makeSpaceIfNeeded(AbstractExchange exc) {
+	private  void makeSpaceIfNeeded(AbstractExchange exc) {
 		while (!hasEnoughSpace(exc)) {
 			AbstractExchange removedExc = exchanges.poll();
 			if (removedExc == null)
 				break;
-			currentSize -= removedExc.getHeapSizeEstimation();
+			currentSize.getAndAdd( - removedExc.getHeapSizeEstimation());
 		}
 	}
 
@@ -307,18 +328,20 @@ public class LimitedMemoryExchangeStore extends AbstractExchangeStore {
 	}
 
 	@Override
-	public synchronized long getLastModified() {
+	public  long getLastModified() {
 		return lastModification;
 	}
 
+
 	@Override
-	public synchronized void waitForModification(long lastKnownModification) throws InterruptedException {
-		for (;;) {
-			if (lastKnownModification < this.lastModification) {
-				return;
+	public void waitForModification(long lastKnownModification) throws InterruptedException {
+		synchronized (this) {
+			while (lastKnownModification >= lastModification) {
+				wait(10_000);
+				if (lastKnownModification >= lastModification) {
+					log.warn("Still waiting after {}ms without modification.", 10_000);
+				}
 			}
-			// lastKnownModification >= this.lastModification:
-			wait();
 		}
 	}
 

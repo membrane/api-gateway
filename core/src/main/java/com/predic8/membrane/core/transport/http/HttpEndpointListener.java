@@ -25,6 +25,7 @@ import java.io.*;
 import java.net.*;
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.concurrent.ConcurrentHashMap.KeySetView;
 import java.util.concurrent.atomic.*;
 
 import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
@@ -41,16 +42,16 @@ public class HttpEndpointListener extends Thread {
     private final ServerSocket serverSocket;
     private final HttpTransport transport;
     private final SSLProvider sslProvider;
-    private final ConcurrentHashMap<Socket, Boolean> idleSockets = new ConcurrentHashMap<>();
-    private final ConcurrentHashMap<Socket, Boolean> openSockets = new ConcurrentHashMap<>();
+    private final KeySetView<Socket, Boolean> idleSockets = ConcurrentHashMap.newKeySet();
+    private final KeySetView<Socket, Boolean> openSockets = ConcurrentHashMap.newKeySet();
     private final ConcurrentHashMap<InetAddress, ClientInfo> ipConnectionCount = new ConcurrentHashMap<>();
     private TimerManager timerManager; // a TimerManager we have created ourselves
 
     private volatile boolean closed;
 
     private static class ClientInfo {
-        public final AtomicInteger count;
-        public volatile long lastUse;
+        private final AtomicInteger count;
+        private volatile long lastUse;
 
         public ClientInfo() {
             count = new AtomicInteger();
@@ -61,16 +62,14 @@ public class HttpEndpointListener extends Thread {
             return count.get();
         }
 
-        public void decrementAndGet() {
-            count.decrementAndGet();
+        public int incrementAndGet() {
             lastUse = currentTimeMillis();
+            return count.incrementAndGet();
         }
 
-        public boolean compareAndSet(int expected, int update) {
-            boolean b = count.compareAndSet(expected, update);
-            // TODO: fix this for timezone switch (and wherever System.currentTimeMillis() is used)
+        public int decrementAndGet() {
             lastUse = currentTimeMillis();
-            return b;
+            return   count.decrementAndGet();
         }
     }
 
@@ -85,16 +84,10 @@ public class HttpEndpointListener extends Thread {
             timerManager.schedulePeriodicTask(new TimerTask() {
                 @Override
                 public void run() {
-                    Collection<ClientInfo> values = ipConnectionCount.values();
-                    for (ClientInfo v : values) {
-
-                        if (v.count.get() > 0)
-                            continue;
-                        // TODO: set count to -1 to signalize that removal is in progress
-                        if (currentTimeMillis() - v.lastUse < 10 * 60 * 1000)
-                            continue;
-                        values.remove(v);
-                    }
+                    ipConnectionCount.entrySet().removeIf(entry -> {
+                        ClientInfo v = entry.getValue();
+                        return v.get() == 0 && (currentTimeMillis() - v.lastUse >= 10 * 60 * 1000);
+                    });
                 }
             }, 60000, "HttpEndpointListener removing old IPs");
 
@@ -122,7 +115,7 @@ public class HttpEndpointListener extends Thread {
                 InetAddress remoteIp = getRemoteIp(socket);
                 ClientInfo connectionCount = getClientInfo(remoteIp);
                 if (isConnectionWithinLimit(socket, remoteIp, connectionCount)) {
-                    openSockets.put(socket, TRUE);
+                    openSockets.add(socket);
                     try {
                         if (log.isDebugEnabled())
                             log.debug("Accepted connection from {}", socket.getRemoteSocketAddress());
@@ -131,7 +124,7 @@ public class HttpEndpointListener extends Thread {
                         connectionCount.decrementAndGet();
                         openSockets.remove(socket);
                         log.error("HttpServerHandler execution rejected. Might be due to a proxies.xml hot deployment in progress or a low"
-                                  + " value for <transport maxThreadPoolSize=\"...\">.");
+                                + " value for <transport maxThreadPoolSize=\"...\">.");
                         socket.close();
                     }
                 }
@@ -164,43 +157,30 @@ public class HttpEndpointListener extends Thread {
     }
 
     private ClientInfo getClientInfo(InetAddress remoteIp) {
-        ClientInfo connectionCount = ipConnectionCount.get(remoteIp);
-
-        if (connectionCount != null)
-            return connectionCount;
-
-        connectionCount = new ClientInfo();
-        ClientInfo oldconnectionCount = connectionCount;
-        connectionCount = ipConnectionCount.putIfAbsent(remoteIp, connectionCount);
-
-        if (connectionCount == null)
-            return oldconnectionCount;
-
-        return connectionCount;
+        return ipConnectionCount.computeIfAbsent(remoteIp, k -> new ClientInfo());
     }
 
     private boolean isConnectionWithinLimit(Socket socket, InetAddress remoteIp, ClientInfo connectionCount) throws IOException {
         int concurrentConnectionLimitPerIp = transport.getConcurrentConnectionLimitPerIp();
 
-        // -1 == NoLimit => Ok
         if (concurrentConnectionLimitPerIp == -1)
             return true;
 
-        boolean connectionWithinLimit = true;
-        while (true) {
-            int currentConnections = connectionCount.get();
-            // TODO: if count == -1 -> try to get the counter in a while loop
-            if (currentConnections >= concurrentConnectionLimitPerIp) {
-                log.warn(constructLogMessage(new StringBuilder(), remoteIp, NetworkUtil.readUpTo1KbOfDataFrom(socket, new byte[1023])));
-                writeRateLimitReachedToSource(socket);
-                socket.close();
-                connectionWithinLimit = false;
-                break;
-            }
-            if (connectionCount.compareAndSet(currentConnections, currentConnections + 1))
-                break;
+        int currentConnections = connectionCount.incrementAndGet();
+        connectionCount.lastUse = currentTimeMillis();
+
+        if (currentConnections > concurrentConnectionLimitPerIp) {
+
+            connectionCount.decrementAndGet();
+
+            log.warn(constructLogMessage(new StringBuilder(), remoteIp, NetworkUtil.readUpTo1KbOfDataFrom(socket, new byte[1023])));
+            writeRateLimitReachedToSource(socket);
+            socket.close();
+            return false;
+
         }
-        return connectionWithinLimit;
+
+        return true;
     }
 
     public void closePort() throws IOException {
@@ -220,7 +200,7 @@ public class HttpEndpointListener extends Thread {
     public boolean closeConnections(boolean onlyIdle) {
         if (!closed)
             throw new IllegalStateException("please call closePort() fist.");
-        for (Socket s : (onlyIdle ? idleSockets : openSockets).keySet()) {
+        for (Socket s : (onlyIdle ? idleSockets : openSockets)) {
             if (s.isClosed())
                 continue;
             try {
@@ -241,7 +221,7 @@ public class HttpEndpointListener extends Thread {
                 socket.close();
                 throw new SocketException();
             }
-            idleSockets.put(socket, TRUE);
+            idleSockets.add(socket);
         } else {
             idleSockets.remove(socket);
         }
@@ -252,7 +232,7 @@ public class HttpEndpointListener extends Thread {
 
         ClientInfo clientInfo = ipConnectionCount.get(getRemoteIp(socket));
         if (clientInfo != null) {
-            clientInfo.count.decrementAndGet();
+            clientInfo.decrementAndGet();
         }
     }
 
