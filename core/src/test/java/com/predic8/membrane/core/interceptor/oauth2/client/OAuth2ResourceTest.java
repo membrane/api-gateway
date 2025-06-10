@@ -95,6 +95,7 @@ public abstract class OAuth2ResourceTest {
     @Test
     public void getOriginalRequest() throws Exception {
         var response = browser.apply(get(getClientAddress() + "/init")).getResponse();
+        assertEquals(200, response.getStatusCode());
         var body = om.readValue(response.getBodyAsStream(), new TypeReference<Map<String, String>>() {});
         assertEquals("/init", body.get("path"));
         assertEquals("", body.get("body"));
@@ -104,6 +105,7 @@ public abstract class OAuth2ResourceTest {
     @Test
     public void postOriginalRequest() throws Exception {
         var response = browser.apply(post(getClientAddress() + "/init").body("demobody")).getResponse();
+        assertEquals(200, response.getStatusCode());
         var body = om.readValue(response.getBodyAsStream(), new TypeReference<Map<String, String>>() {});
         assertEquals("/init", body.get("path"));
         assertEquals("demobody", body.get("body"));
@@ -114,6 +116,7 @@ public abstract class OAuth2ResourceTest {
     @Test
     public void testUseRefreshTokenOnTokenExpiration() throws Exception {
         var response = browser.apply(get(getClientAddress() + "/init")).getResponse();
+        assertEquals(200, response.getStatusCode());
         var body = om.readValue(response.getBodyAsStream(), new TypeReference<Map<String, String>>() {});
         assertEquals("/init", body.get("path"));
 
@@ -222,18 +225,21 @@ public abstract class OAuth2ResourceTest {
         browser.apply(get(getClientAddress() + "/init"));
 
         var isLoggedInResponse = browser.apply(get(getClientAddress() + "/is-logged-in")).getResponse();
+        assertEquals(200, isLoggedInResponse.getStatusCode());
         assertTrue(isLoggedInResponse.getBodyAsStringDecoded().contains("true"));
 
         // call to /logout uses cookieHandlingHttpClient: *NOT* following the redirect (which would auto-login again)
         browser.applyWithoutRedirect(get(getClientAddress() + "/logout"));
 
         var secondIsLoggedInResponse = browser.apply(get(getClientAddress() + "/is-logged-in")).getResponse();
+        assertEquals(200, secondIsLoggedInResponse.getStatusCode());
         assertTrue(secondIsLoggedInResponse.getBodyAsStringDecoded().contains("false"));
     }
 
     @Test
     public void loginParams() throws Exception {
         var response = browser.applyWithoutRedirect(get(getClientAddress() + "/init?login_hint=def&illegal=true")).getResponse();
+        assertEquals(302, response.getStatusCode());
 
         var params = extractQueryParameters(response.getHeader().getFirstValue("Location"));
 

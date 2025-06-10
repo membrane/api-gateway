@@ -19,6 +19,8 @@ import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.oauth2client.OAuth2Resource2Interceptor;
+import com.predic8.membrane.core.interceptor.session.InMemorySessionManager;
+import com.predic8.membrane.core.interceptor.session.JwtSessionManager;
 import org.jose4j.jwt.consumer.InvalidJwtException;
 import org.jose4j.jwt.consumer.JwtConsumer;
 import org.jose4j.jwt.consumer.JwtConsumerBuilder;
@@ -39,7 +41,7 @@ public class JwtSMOAuth2R2Test extends OAuth2ResourceTest {
 
     @Override
     protected void configureSessionManager(OAuth2Resource2Interceptor oauth2) {
-        // do nothing: JWT is default
+        oauth2.setSessionManager(new JwtSessionManager());
     }
 
     @Test
@@ -112,11 +114,13 @@ public class JwtSMOAuth2R2Test extends OAuth2ResourceTest {
     }
 
     private int countCookies() {
-        return browser.cookie.values().stream()
-                .map(Map::keySet)
-                .flatMap(Collection::stream)
-                .map(jwt -> (hasValidClaims(jwt)) ? 1 : 0)
-                .reduce(0, Integer::sum);
+        synchronized (browser.cookie) {
+            return browser.cookie.values().stream()
+                    .map(Map::keySet)
+                    .flatMap(Collection::stream)
+                    .map(jwt -> (hasValidClaims(jwt)) ? 1 : 0)
+                    .reduce(0, Integer::sum);
+        }
     }
 
     private boolean hasValidClaims(String jwt) {

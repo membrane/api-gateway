@@ -19,11 +19,11 @@ import com.predic8.membrane.examples.util.DistributionExtractingTestcase;
 import com.predic8.membrane.examples.util.Process2;
 import org.junit.jupiter.api.Test;
 
-import static com.predic8.membrane.core.util.OSUtil.isWindows;
 import static com.predic8.membrane.examples.util.LoadBalancerUtil.addLBNodeViaHTML;
 import static com.predic8.membrane.test.StringAssertions.assertContains;
 import static com.predic8.membrane.test.StringAssertions.assertContainsNot;
 import static java.lang.Thread.sleep;
+import static org.junit.jupiter.api.Assertions.fail;
 
 public class Loadbalancing4XmlSessionExampleTest extends DistributionExtractingTestcase {
 
@@ -34,7 +34,7 @@ public class Loadbalancing4XmlSessionExampleTest extends DistributionExtractingT
 
 	/**
 	 * The test as described in README.txt, but "wsimport" (previously called by ant)
-	 * was removed and is run directly from this test before everything else. Thereby
+	 * was removed and is run directly from this test before everything else. Thereby,
 	 * we can use a Maven dependency on wsimport and do not have to download it ourselves.
 	 */
 	@Test
@@ -46,23 +46,25 @@ public class Loadbalancing4XmlSessionExampleTest extends DistributionExtractingT
 		try(Process2 ignored = startServiceProxyScript()) {
 			// call "mvn package" now so that both antNodeX processes do call it at the same time
 			BufferLogger loggerCompile = new BufferLogger();
-			try(Process2  mvnPackage = new Process2.Builder().in(baseDir).withWatcher(loggerCompile).executable(isWindows() ? "cmd /c mvn package" : "mvn package").start()) {
+			try(Process2  mvnPackage = new Process2.Builder().in(baseDir).withWatcher(loggerCompile).executable(mavenCommand("package")).start()) {
 				int result = mvnPackage.waitForExit(40000);
 				if (result != 0)
-					throw new AssertionError("'mvn package' returned non-zero " + result + ":\r\n" + loggerCompile);
+					fail("'mvn package' returned non-zero " + result + ":\r\n" + loggerCompile);
 			}
 
 			BufferLogger loggerNode1 = new BufferLogger();
 			BufferLogger loggerNode2 = new BufferLogger();
-			try(Process2 ignored1 = new Process2.Builder().in(baseDir).withWatcher(loggerNode1).executable(isWindows() ? "cmd /c mvn exec:java@node1" : "mvn exec:java@node1").start()) {
-				try(Process2 ignored2 = new Process2.Builder().in(baseDir).withWatcher(loggerNode2).executable(isWindows() ? "cmd /c mvn exec:java@node2" :"mvn exec:java@node2").start()) {
+			try(Process2 ignored1 = new Process2.Builder().in(baseDir).withWatcher(loggerNode1).executable(mavenCommand("exec:java@node1")).start()) {
+				try(Process2 ignored2 = new Process2.Builder().in(baseDir).withWatcher(loggerNode2).executable(mavenCommand("exec:java@node2")).start()) {
 
 					addLBNodeViaHTML("http://localhost:9000/admin/", "localhost", 4000);
 					addLBNodeViaHTML("http://localhost:9000/admin/", "localhost", 4001);
 
-					sleep(200); // wait for nodes to come up
-
-					try(Process2 mvnExec = new Process2.Builder().in(baseDir).executable(isWindows() ? "cmd /c mvn exec:java@client" : "mvn exec:java@client").start()) {
+					while (!(loggerNode1.toString().contains("Node1 published") && loggerNode2.toString().contains("Node2 published"))) {
+						//noinspection BusyWait
+						sleep(10);
+					}
+					try(Process2 mvnExec = new Process2.Builder().in(baseDir).executable(mavenCommand("exec:java@client")).start()) {
 						mvnExec.waitForExit(30000);
 					}
 				}
