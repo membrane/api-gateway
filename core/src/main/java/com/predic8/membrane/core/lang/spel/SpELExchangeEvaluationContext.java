@@ -91,6 +91,7 @@ public class SpELExchangeEvaluationContext extends StandardEvaluationContext {
         cs.addConverter(new SpELHeaderToStringTypeConverter());
         cs.addConverter(new SpELMapToStringTypeConverter());
         cs.addConverter(new SpELBodyToStringTypeConverter());
+        cs.addConverter(new ObjectToStringTypeConverter());
         setTypeConverter(new StandardTypeConverter(cs));
     }
 

@@ -152,7 +152,7 @@ public class CallInterceptor extends AbstractExchangeExpressionInterceptor {
                 if (headerField.getHeaderName().getName().equalsIgnoreCase(rmHeader))
                     return;
             }
-            originalExc.getRequest().getHeader().add(headerField);
+            originalExc.getRequest().getHeader().setValue(headerField.getHeaderName().getName(),headerField.getValue());
         });
     }
 
