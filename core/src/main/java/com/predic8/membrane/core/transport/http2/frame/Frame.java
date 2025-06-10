@@ -48,7 +48,7 @@ public class Frame {
     }
 
     public Frame() {
-        maximumFrameSize = -1;
+        maximumFrameSize = 16384; // RFC 7540 Section 6.5.2: Initial value is 2^14
     }
 
     public void fill(int type, int flags, int streamId, byte[] buf, int offset, int length) {

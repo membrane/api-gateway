@@ -31,6 +31,50 @@ public class SettingsFrame {
 
     public SettingsFrame(Frame frame) {
         this.frame = frame;
+
+        // RFC 7540, Section 6.5
+        if (frame.getStreamId() != 0) {
+            throw new FatalConnectionException(Error.ERROR_PROTOCOL_ERROR, "SETTINGS frame stream ID must be 0.");
+        }
+
+        if (isAck() && frame.getLength() != 0) {
+            throw new FatalConnectionException(Error.ERROR_FRAME_SIZE_ERROR, "SETTINGS ACK frame must have a length of 0.");
+        }
+
+        if (frame.getLength() % 6 != 0) {
+            throw new FatalConnectionException(Error.ERROR_FRAME_SIZE_ERROR, "SETTINGS frame length must be a multiple of 6.");
+        }
+    }
+
+    public void validateParameterValues() {
+        // RFC 7540, Section 6.5.2
+        for (int i = 0; i < getSettingsCount(); i++) {
+            int id = getSettingsId(i);
+            long value = getSettingsValue(i);
+
+            switch (id) {
+                case ID_SETTINGS_ENABLE_PUSH:
+                    if (value != 0 && value != 1) {
+                        throw new FatalConnectionException(Error.ERROR_PROTOCOL_ERROR,
+                                "SETTINGS_ENABLE_PUSH must be 0 or 1.");
+                    }
+                    break;
+                case ID_SETTINGS_INITIAL_WINDOW_SIZE:
+                    if (value > 2147483647L) { // 2^31 - 1
+                        throw new FatalConnectionException(Error.ERROR_FLOW_CONTROL_ERROR,
+                                "SETTINGS_INITIAL_WINDOW_SIZE must not exceed 2^31-1.");
+                    }
+                    break;
+                case ID_SETTINGS_MAX_FRAME_SIZE:
+                    if (value < 16384 || value > 16777215) { // 2^14 to 2^24-1
+                        throw new FatalConnectionException(Error.ERROR_PROTOCOL_ERROR,
+                                "SETTINGS_MAX_FRAME_SIZE must be between 2^14 and 2^24-1.");
+                    }
+                    break;
+                // No specific validation needed for other standard settings in this context,
+                // beyond what the general HTTP/2 protocol defines for their values (e.g. unsigned int).
+            }
+        }
     }
 
     public int getSettingsCount() {
@@ -135,4 +179,8 @@ public class SettingsFrame {
     public boolean isAck() {
         return (frame.flags & FLAG_ACK) != 0;
     }
+
+    // It's good practice to also make Error available if it's used by exceptions thrown from this class
+    // However, Error.java is likely in the same package or accessible.
+    // If not, it would need to be imported or defined.
 }

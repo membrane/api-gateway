@@ -23,6 +23,14 @@ public class PingFrame {
 
     public PingFrame(Frame frame) {
         this.frame = frame;
+
+        // RFC 7540, Section 6.7
+        if (frame.getStreamId() != 0) {
+            throw new FatalConnectionException(Error.ERROR_PROTOCOL_ERROR, "PING frame stream ID must be 0.");
+        }
+        if (frame.getLength() != 8) {
+            throw new FatalConnectionException(Error.ERROR_FRAME_SIZE_ERROR, "PING frame length must be 8.");
+        }
     }
 
     public Frame getFrame() {

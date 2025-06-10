@@ -24,6 +24,15 @@ public class RstStreamFrame {
 
     public RstStreamFrame(Frame frame) {
         this.frame = frame;
+
+        // RFC 7540, Section 6.4
+        if (frame.getStreamId() == 0) {
+            throw new FatalConnectionException(Error.ERROR_PROTOCOL_ERROR, "RST_STREAM frame stream ID must not be 0.");
+        }
+        if (frame.getLength() != 4) {
+            throw new FatalConnectionException(Error.ERROR_FRAME_SIZE_ERROR, "RST_STREAM frame length must be 4 bytes.");
+        }
+
         errorCode = ((frame.content[0] & 0xFF) << 24) |
                 ((frame.content[1] & 0xFF) << 16) |
                 ((frame.content[2] & 0xFF) << 8 ) |
@@ -33,7 +42,7 @@ public class RstStreamFrame {
     public static Frame construct(int streamId, int errorCode) {
         byte[] buf = new byte[4];
 
-        buf[0] = (byte) ((errorCode >> 24) & 0x7F);
+        buf[0] = (byte) (errorCode >> 24); // Error code is a 32-bit field
         buf[1] = (byte) (errorCode >> 16);
         buf[2] = (byte) (errorCode >> 8);
         buf[3] = (byte) (errorCode);
@@ -60,8 +69,5 @@ public class RstStreamFrame {
         return frame;
     }
 
-    public void validateSize() throws IOException {
-        if (frame.length != 4)
-            throw new FatalConnectionException(Error.ERROR_FRAME_SIZE_ERROR);
-    }
+    // validateSize() is removed as checks are now in constructor.
 }

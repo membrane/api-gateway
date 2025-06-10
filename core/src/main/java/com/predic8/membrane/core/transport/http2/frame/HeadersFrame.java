@@ -31,27 +31,61 @@ public class HeadersFrame implements HeaderBlockFragment, StreamEnd {
     public HeadersFrame(Frame frame) {
         this.frame = frame;
 
-        int p = 0;
+        // RFC 7540, Section 6.2
+        if (frame.getStreamId() == 0) {
+            throw new FatalConnectionException(Error.ERROR_PROTOCOL_ERROR, "HEADERS frame stream ID must not be 0.");
+        }
+
+        int currentOffset = 0;
+        int declaredPadLength = 0;
 
         if (isPadded()) {
-            padLength = frame.content[p++];
-        } else {
-            padLength = 0;
-        }
-        if (isPriority()) {
-            exclusive = (frame.content[p] & 0x80) != 0;
-            streamDependency = (frame.content[p++] & 0x7F) << 24 |
-                    (frame.content[p++] & 0xFF) << 16 |
-                    (frame.content[p++] & 0xFF) << 8 |
-                    frame.content[p++] & 0xFF;
-            weight = (frame.content[p++] & 0xFF) + 1;
-        } else {
-            exclusive = false;
-            streamDependency = 0;
-            weight = 0;
+            if (frame.length < 1) {
+                throw new FatalConnectionException(Error.ERROR_FRAME_SIZE_ERROR, "HEADERS frame with PADDED flag must have payload of at least 1 byte for Pad Length field.");
+            }
+            declaredPadLength = frame.content[currentOffset++] & 0xFF;
         }
 
-        headerBlockStartIndex = p;
+        boolean prioExclusive = false;
+        int prioStreamDependency = 0;
+        int prioWeight = 16; // Default weight if not present, but PRIORITY flag means it should be.
+
+        if (isPriority()) {
+            if (frame.length - currentOffset < 5) {
+                throw new FatalConnectionException(Error.ERROR_FRAME_SIZE_ERROR, "HEADERS frame with PRIORITY flag needs at least 5 bytes for priority fields after Pad Length.");
+            }
+            prioExclusive = (frame.content[currentOffset] & 0x80) != 0;
+            prioStreamDependency = (frame.content[currentOffset] & 0x7F) << 24 |
+                                   (frame.content[currentOffset + 1] & 0xFF) << 16 |
+                                   (frame.content[currentOffset + 2] & 0xFF) << 8 |
+                                   (frame.content[currentOffset + 3] & 0xFF);
+            currentOffset += 4; // For Exclusive flag byte and 3 more for stream dependency
+            prioWeight = (frame.content[currentOffset++] & 0xFF) + 1;
+
+            if (prioStreamDependency == frame.getStreamId()) {
+                throw new FatalStreamException(Error.ERROR_PROTOCOL_ERROR, "HEADERS frame PRIORITY stream dependency cannot be self (stream " + frame.getStreamId() + ").");
+            }
+        }
+
+        // Validate Pad Length value against remaining frame length
+        if (isPadded()) {
+            // frame.length - currentOffset is the length of (Header Block Fragment + Padding Octets)
+            if (declaredPadLength > frame.length - currentOffset) {
+                throw new FatalConnectionException(Error.ERROR_PROTOCOL_ERROR,
+                        "Padding in HEADERS frame (" + declaredPadLength + ") is larger than or equal to the remaining frame payload length for HBF and padding (" + (frame.length - currentOffset) + ").");
+            }
+        }
+
+        this.padLength = declaredPadLength; // This is the Pad Length Field Value
+        this.exclusive = prioExclusive;
+        this.streamDependency = prioStreamDependency;
+        this.weight = isPriority() ? prioWeight : 0; // Weight is only meaningful if PRIORITY flag is set
+        this.headerBlockStartIndex = currentOffset;
+
+        // Final check for header block length integrity
+        if (getHeaderBlockLength() < 0) {
+            throw new FatalConnectionException(Error.ERROR_FRAME_SIZE_ERROR, "Calculated header block length for HEADERS frame is negative, indicating inconsistent padding or length.");
+        }
     }
 
     public boolean isEndStream() {

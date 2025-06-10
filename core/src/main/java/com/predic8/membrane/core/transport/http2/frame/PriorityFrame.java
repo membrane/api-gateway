@@ -26,6 +26,14 @@ public class PriorityFrame {
     public PriorityFrame(Frame frame) {
         this.frame = frame;
 
+        // RFC 7540, Section 6.3
+        if (frame.getStreamId() == 0) {
+            throw new FatalConnectionException(Error.ERROR_PROTOCOL_ERROR, "PRIORITY frame stream ID must not be 0.");
+        }
+        if (frame.getLength() != 5) {
+            throw new FatalConnectionException(Error.ERROR_FRAME_SIZE_ERROR, "PRIORITY frame length must be 5 bytes.");
+        }
+
         exclusive = (frame.content[0] & 0x80) != 0;
         streamDependency = (frame.content[0] & 0x7F) << 24 |
                 (frame.content[1] & 0xFF) << 16 |
@@ -64,9 +72,6 @@ public class PriorityFrame {
         return exclusive;
     }
 
-    public void validateSize() throws IOException {
-        if (frame.length != 5)
-            throw new FatalConnectionException(Error.ERROR_FRAME_SIZE_ERROR); // TODO: switch this into a stream error
-    }
+    // validateSize() is removed as checks are now in constructor.
 
 }

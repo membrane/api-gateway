@@ -60,7 +60,25 @@ public class StreamInfo {
 
     }
 
-    public void receivedDataFrame(DataFrame df) {
+    public synchronized void receivedDataFrame(DataFrame df) throws Http2Exception {
+        // RFC 7540 Section 5.1 and 6.1
+        // DATA frames MUST NOT be sent on IDLE streams. (Stream error PROTOCOL_ERROR or STREAM_CLOSED)
+        // DATA frames MUST NOT be sent on RESERVED_LOCAL streams. (Connection error PROTOCOL_ERROR)
+        // DATA frames MUST NOT be sent on HALF_CLOSED_LOCAL streams (we sent END_STREAM). (Stream error STREAM_CLOSED)
+        // DATA frames MUST NOT be sent on CLOSED streams. (Stream error STREAM_CLOSED)
+
+        if (state == StreamState.IDLE) {
+            throw new StreamErrorException(Error.ERROR_PROTOCOL_ERROR, streamId, "Received DATA frame on IDLE stream " + streamId);
+        }
+        if (state == StreamState.RESERVED_LOCAL) {
+            // This is a connection error because it violates the state of a stream promised by the server.
+            throw new FatalConnectionException(Error.ERROR_PROTOCOL_ERROR, "Received DATA frame on RESERVED_LOCAL stream " + streamId);
+        }
+        if (state == StreamState.HALF_CLOSED_LOCAL || state == StreamState.CLOSED) {
+            throw new StreamErrorException(Error.ERROR_STREAM_CLOSED, streamId, "Received DATA frame on " + state + " stream " + streamId);
+        }
+
+        // Valid states for receiving DATA: OPEN, HALF_CLOSED_REMOTE
         dataFramesReceived.add(df);
         flowControl.received(df.getFrame().getLength());
 
@@ -129,8 +147,10 @@ public class StreamInfo {
 
         if (state == StreamState.RESERVED_REMOTE)
             setState(StreamState.HALF_CLOSED_LOCAL);
-
-        isTrailer = true;
+        else if (state == StreamState.OPEN || state == StreamState.HALF_CLOSED_LOCAL)
+            isTrailer = true; // These are likely trailers if headers are received again in these states
+        else
+            isTrailer = false; // Initial headers
     }
 
     private void setState(StreamState state) {
@@ -155,6 +175,11 @@ public class StreamInfo {
     }
 
     public synchronized void sendHeaders() {
+        if (state == StreamState.CLOSED) {
+            log.warn("Attempted to send HEADERS on a closed stream {}. Ignoring.", streamId);
+            // Or throw new IllegalStateException("Cannot send HEADERS on a closed stream.");
+            return;
+        }
         if (state == StreamState.IDLE)
             setState(StreamState.OPEN);
         if (state == StreamState.RESERVED_LOCAL)
@@ -162,6 +187,11 @@ public class StreamInfo {
     }
 
     public synchronized void sendEndStream() {
+        if (state == StreamState.CLOSED) {
+            log.warn("Attempted to send END_STREAM on a closed stream {}. Ignoring.", streamId);
+            // Or throw new IllegalStateException("Cannot send END_STREAM on a closed stream.");
+            return;
+        }
         if (state == StreamState.OPEN)
             setState(StreamState.HALF_CLOSED_LOCAL);
         if (state == StreamState.HALF_CLOSED_REMOTE)

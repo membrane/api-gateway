@@ -19,19 +19,40 @@ public class DataFrame implements StreamEnd {
     public static final int FLAG_PADDED = 0x8;
 
     private final Frame frame;
-    private final int padLength;
+    private final int padLengthValue; // Stores the value of the Pad Length field
+    private final int payloadDataOffset; // 1 if padded, 0 otherwise
 
     public DataFrame(Frame frame) {
         this.frame = frame;
 
-        int p = 0;
-
-        if (isPadded()) {
-            padLength = frame.content[p++];
-        } else {
-            padLength = 0;
+        // RFC 7540, Section 6.1
+        if (frame.getStreamId() == 0) {
+            throw new FatalConnectionException(Error.ERROR_PROTOCOL_ERROR, "DATA frame stream ID must not be 0.");
         }
 
+        int tempPadLength = 0;
+        int tempPayloadOffset = 0;
+
+        if (isPadded()) {
+            if (frame.length == 0) { // Frame payload must be at least 1 byte for Pad Length field
+                throw new FatalConnectionException(Error.ERROR_PROTOCOL_ERROR,
+                        "DATA frame with PADDED flag must have a payload of at least 1 byte for the Pad Length field.");
+            }
+            // Pad Length field is the first byte of the payload
+            tempPadLength = frame.content[0] & 0xFF; // Treat as unsigned byte
+            tempPayloadOffset = 1;
+
+            // Total length of data + padding must be at least padLength
+            // frame.length is: Pad Length Field (1) + Data Length + Padding Octets (tempPadLength)
+            // So, frame.length - tempPayloadOffset is Data Length + Padding Octets
+            if (tempPadLength > frame.length - tempPayloadOffset) {
+                // This means padding is larger than the remaining payload (Data + Padding Octets)
+                throw new FatalConnectionException(Error.ERROR_PROTOCOL_ERROR,
+                        "Padding in DATA frame (" + tempPadLength + ") is larger than or equal to the remaining frame payload length (" + (frame.length - tempPayloadOffset) + ").");
+            }
+        }
+        this.padLengthValue = tempPadLength;
+        this.payloadDataOffset = tempPayloadOffset;
     }
 
     @Override
@@ -44,11 +65,14 @@ public class DataFrame implements StreamEnd {
     }
 
     public int getDataStartIndex() {
-        return 0;
+        return this.payloadDataOffset;
     }
 
     public int getDataLength() {
-        return frame.length - padLength;
+        // frame.length is total payload length (PadLenField + Data + Padding)
+        // payloadDataOffset is 1 if PadLenField is present, 0 otherwise
+        // padLengthValue is the value of the PadLenField (length of Padding)
+        return frame.length - this.payloadDataOffset - this.padLengthValue;
     }
 
     public byte[] getContent() {

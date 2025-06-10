@@ -19,6 +19,26 @@ public class WindowUpdateFrame {
 
     public WindowUpdateFrame(Frame frame) {
         this.frame = frame;
+
+        // RFC 7540, Section 6.9
+        if (frame.getLength() != 4) {
+            throw new FatalConnectionException(Error.ERROR_FRAME_SIZE_ERROR, "WINDOW_UPDATE frame length must be 4.");
+        }
+
+        // getWindowSizeIncrement() is called here to trigger validation
+        int increment = getWindowSizeIncrement();
+        if (increment == 0) {
+            // Distinguish between connection and stream error based on stream ID
+            if (frame.getStreamId() == 0) {
+                throw new FatalConnectionException(Error.ERROR_PROTOCOL_ERROR,
+                        "WINDOW_UPDATE connection-level increment must not be 0.");
+            } else {
+                // Assuming FatalStreamException is available and appropriate.
+                // If not, a more generic exception or specific handling might be needed.
+                throw new FatalStreamException(Error.ERROR_PROTOCOL_ERROR,
+                        "WINDOW_UPDATE stream-level increment must not be 0 for stream " + frame.getStreamId() + ".");
+            }
+        }
     }
 
     public int getWindowSizeIncrement() {

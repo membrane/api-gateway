@@ -46,8 +46,19 @@ public class FlowControl {
     /**
      * called on the receiver thread.
      */
-    public synchronized void received(int length) {
+    public synchronized void received(int length) throws Http2Exception {
         ourWindowPositionReceived += length;
+
+        if (ourWindowPositionReceived > ourWindowSize) {
+            String msg = "Flow control window exceeded. streamId=" + streamId +
+                         ", windowSize=" + ourWindowSize +
+                         ", positionAfterReceive=" + ourWindowPositionReceived;
+            if (streamId == 0) {
+                throw new FatalConnectionException(Error.ERROR_FLOW_CONTROL_ERROR, msg + " (Connection Level)");
+            } else {
+                throw new StreamErrorException(Error.ERROR_FLOW_CONTROL_ERROR, streamId, msg + " (Stream Level)");
+            }
+        }
 
         if (log.isDebugEnabled())
             log.debug("stream=" + streamId + " size=" + ourWindowSize + " pos=" + ourWindowPositionReceived + " diff=" + (ourWindowSize - ourWindowPositionReceived));

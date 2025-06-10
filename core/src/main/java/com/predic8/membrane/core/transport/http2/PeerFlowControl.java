@@ -34,8 +34,26 @@ public class PeerFlowControl {
         peerWindowSize = peerSettings.getInitialWindowSize();
     }
 
-    public synchronized void increment(int delta) {
-        peerWindowSize += delta;
+    public synchronized void increment(int delta) throws Http2Exception {
+        // RFC 7540, Section 6.9: "A sender MUST NOT allow a flow-control window to exceed 2^31-1 octets."
+        // This check is for when we receive a WINDOW_UPDATE from the peer, which increments their window for us.
+        // The delta itself is validated for being non-zero in WindowUpdateFrame constructor.
+        long newPeerWindowSize = peerWindowSize + delta;
+
+        if (newPeerWindowSize > 0x7FFFFFFF_L) { // 2^31 - 1
+            String msg = "Peer flow-control window would exceed 2^31-1. streamId=" + streamId +
+                         ", currentSize=" + peerWindowSize +
+                         ", increment=" + delta;
+            // This error is a property of the stream or connection whose window is being updated.
+            // The endpoint that detects this (us) MUST terminate the stream or connection.
+            if (streamId == 0) {
+                throw new FatalConnectionException(Error.ERROR_FLOW_CONTROL_ERROR, msg + " (Connection Level)");
+            } else {
+                throw new StreamErrorException(Error.ERROR_FLOW_CONTROL_ERROR, streamId, msg + " (Stream Level)");
+            }
+        }
+
+        peerWindowSize = newPeerWindowSize;
         if (log.isDebugEnabled())
             log.debug("stream=" + streamId + " size=" + peerWindowSize + " pos=" + peerWindowPosition + " diff=" + (peerWindowSize - peerWindowPosition));
         notifyAll();

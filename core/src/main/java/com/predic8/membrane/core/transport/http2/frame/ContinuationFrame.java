@@ -21,6 +21,17 @@ public class ContinuationFrame implements HeaderBlockFragment {
 
     public ContinuationFrame(Frame frame) {
         this.frame = frame;
+
+        // RFC 7540, Section 6.10
+        if (frame.getStreamId() == 0) {
+            throw new FatalConnectionException(Error.ERROR_PROTOCOL_ERROR, "CONTINUATION frame stream ID must not be 0.");
+        }
+
+        // Check for undefined flags
+        if ((frame.getFlags() & ~FLAG_END_HEADERS) != 0) {
+            throw new FatalConnectionException(Error.ERROR_PROTOCOL_ERROR,
+                    "CONTINUATION frame received with invalid flags (other than END_HEADERS). Flags: " + frame.getFlags());
+        }
     }
 
     public Frame getFrame() {

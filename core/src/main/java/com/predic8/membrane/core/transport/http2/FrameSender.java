@@ -55,6 +55,17 @@ public class FrameSender implements Runnable {
         this.remoteAddr = remoteAddr;
     }
 
+    /**
+     * Updates the maximum size of the header table that the peer (decoder) is willing to use.
+     * This informs our encoder to not use entries that would exceed this limit on the peer side.
+     * @param size The maximum header table size set by the peer.
+     */
+    public synchronized void setEncoderHeaderTableSizeLimit(int size) {
+        // This method on the twitter HPACK Encoder informs it about the peer's decoder's capacity.
+        this.encoder.setMaxHeaderTableSize(size);
+        log.debug("Encoder's max header table size (for peer) set to: {}", size);
+    }
+
     public void send(Frame frame) {
         if (frame.getType() == Frame.TYPE_DATA) {
             StreamInfo streamInfo = streams.get(frame.getStreamId());

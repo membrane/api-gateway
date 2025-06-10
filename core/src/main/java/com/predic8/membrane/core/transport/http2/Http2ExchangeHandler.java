@@ -259,7 +259,9 @@ public class Http2ExchangeHandler implements Runnable {
     public static List<Frame> createHeadersFrames(Message res, Header header, int streamId, Encoder encoder, Settings peerSettings, boolean isAtEof) throws IOException {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
 
-        encoder.setMaxHeaderTableSize(baos, peerSettings.getHeaderTableSize());
+        // The Encoder instance (managed by FrameSender and Http2Logic)
+        // is already expected to be configured to respect peerSettings.getHeaderTableSize().
+        // No explicit call to setMaxHeaderTableSize on the encoder is needed here per frame.
 
         StringBuilder sb = null;
         if (log.isDebugEnabled()) {

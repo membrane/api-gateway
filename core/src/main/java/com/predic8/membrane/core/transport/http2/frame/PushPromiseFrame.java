@@ -27,20 +27,51 @@ public class PushPromiseFrame implements HeaderBlockFragment {
     public PushPromiseFrame(Frame frame) {
         this.frame = frame;
 
-        int p = 0;
-
-        if (isPadded()) {
-            padLength = frame.content[p++];
-        } else {
-            padLength = 0;
+        // RFC 7540, Section 6.6
+        if (frame.getStreamId() == 0) {
+            throw new FatalConnectionException(Error.ERROR_PROTOCOL_ERROR, "PUSH_PROMISE frame stream ID must not be 0.");
         }
 
-        promisedStreamId = (frame.content[p++] & 0x7F) << 24 |
-                (frame.content[p++] & 0xFF) << 16 |
-                (frame.content[p++] & 0xFF) << 8 |
-                (frame.content[p++] & 0xFF);
+        int currentOffset = 0;
+        int declaredPadLength = 0;
 
-        headerBlockStartIndex = p;
+        if (isPadded()) {
+            if (frame.length < 1) { // Must have at least 1 byte for Pad Length field
+                throw new FatalConnectionException(Error.ERROR_FRAME_SIZE_ERROR,
+                        "PUSH_PROMISE frame with PADDED flag must have a payload of at least 1 byte for the Pad Length field.");
+            }
+            declaredPadLength = frame.content[currentOffset++] & 0xFF;
+        }
+
+        // Promised Stream ID is 4 bytes
+        if (frame.length - currentOffset < 4) {
+            throw new FatalConnectionException(Error.ERROR_FRAME_SIZE_ERROR,
+                    "PUSH_PROMISE frame payload is too short for the 4-byte Promised Stream ID (currentOffset=" + currentOffset + ", frame.length=" + frame.length + ").");
+        }
+        // Correctly parse Promised Stream ID, ensuring MSB is cleared
+        int parsedPromisedStreamId = (frame.content[currentOffset] & 0x7F) << 24 |
+                                     (frame.content[currentOffset + 1] & 0xFF) << 16 |
+                                     (frame.content[currentOffset + 2] & 0xFF) << 8 |
+                                     (frame.content[currentOffset + 3] & 0xFF);
+        currentOffset += 4;
+
+        // Validate Pad Length value against remaining frame length
+        if (isPadded()) {
+            // frame.length - currentOffset is the length of (Header Block Fragment + Padding Octets)
+            if (declaredPadLength > frame.length - currentOffset) {
+                throw new FatalConnectionException(Error.ERROR_PROTOCOL_ERROR,
+                        "Padding in PUSH_PROMISE frame (" + declaredPadLength + ") is larger than or equal to the remaining frame payload length for HBF and padding (" + (frame.length - currentOffset) + ").");
+            }
+        }
+
+        this.padLength = declaredPadLength; // This is the Pad Length Field Value
+        this.promisedStreamId = parsedPromisedStreamId;
+        this.headerBlockStartIndex = currentOffset;
+
+        // Final check for header block length integrity
+        if (getHeaderBlockLength() < 0) {
+            throw new FatalConnectionException(Error.ERROR_FRAME_SIZE_ERROR, "Calculated header block length for PUSH_PROMISE frame is negative, indicating inconsistent padding or length.");
+        }
     }
 
     public boolean isEndHeaders() {

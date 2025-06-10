@@ -25,6 +25,14 @@ public class GoawayFrame {
     public GoawayFrame(Frame frame) {
         this.frame = frame;
 
+        // RFC 7540, Section 6.8
+        if (frame.getStreamId() != 0) {
+            throw new FatalConnectionException(Error.ERROR_PROTOCOL_ERROR, "GOAWAY frame stream ID must be 0.");
+        }
+        if (frame.getLength() < 8) {
+            throw new FatalConnectionException(Error.ERROR_FRAME_SIZE_ERROR, "GOAWAY frame length must be at least 8 bytes.");
+        }
+
         lastStreamId = (frame.content[0] & 0x7F) << 24 |
                 (frame.content[1] & 0xFF) << 16 |
                 (frame.content[2] & 0xFF) << 8 |
@@ -44,7 +52,7 @@ public class GoawayFrame {
         buf[2] = (byte) (lastStreamId >> 8);
         buf[3] = (byte) (lastStreamId);
 
-        buf[4] = (byte) ((errorCode >> 24) & 0x7F);
+        buf[4] = (byte) (errorCode >> 24); // Error code is a 32-bit field, no reserved bit
         buf[5] = (byte) (errorCode >> 16);
         buf[6] = (byte) (errorCode >> 8);
         buf[7] = (byte) (errorCode);

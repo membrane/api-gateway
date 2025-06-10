@@ -67,10 +67,22 @@ public class Http2Logic {
 
         log.debug("started HTTP2 connection " + remoteAddr);
 
-        int maxHeaderTableSize = 4096; // TODO: update with SETTINGS_HEADER_TABLE_SIZE https://datatracker.ietf.org/doc/html/rfc9113#section-4.3.1
-        decoder = new Decoder(MAX_LINE_LENGTH, maxHeaderTableSize);
-        // TODO: update this value
-        this.sender = new FrameSender(srcOut, new Encoder(maxHeaderTableSize), peerSettings, streams, remoteAddr);
+        // Initial values from our settings (defaults, e.g. 4096 for header table size)
+        // ourSettings are the settings we propose or have acknowledged.
+        // peerSettings are the settings the peer proposed or has acknowledged.
+
+        // Decoder uses the header table size *we* allow the peer to use for encoding *to us*.
+        // This is our SETTINGS_HEADER_TABLE_SIZE.
+        decoder = new Decoder(MAX_LINE_LENGTH, ourSettings.getHeaderTableSize());
+
+        // Encoder's own table capacity can be our preferred size.
+        // However, it must respect what the peer's decoder can handle (peerSettings.getHeaderTableSize()).
+        Encoder actualEncoder = new Encoder(ourSettings.getHeaderTableSize()); // Encoder's own capacity
+        this.sender = new FrameSender(srcOut, actualEncoder, peerSettings, streams, remoteAddr);
+        // Inform the encoder about the peer's decoder capacity limit right away.
+        // Initially, peerSettings.getHeaderTableSize() is the default (4096) until we get their SETTINGS.
+        this.sender.setEncoderHeaderTableSizeLimit(peerSettings.getHeaderTableSize());
+
         flowControl = new FlowControl(0, sender, ourSettings);
         peerFlowControl = new PeerFlowControl(0, sender, peerSettings);
 
@@ -78,7 +90,9 @@ public class Http2Logic {
         newSettings.copyFrom(ourSettings);
         newSettings.setMaxConcurrentStreams(50);
         newSettings.setInitialWindowSize(65535 * 2);
-        updateSettings(newSettings);
+        // If we want to propose a different header table size for our decoder:
+        // newSettings.setHeaderTableSize(desiredDecoderCapacity);
+        updateSettings(newSettings); // This sends our initial SETTINGS frame
     }
 
     public void init() throws IOException {
@@ -390,9 +404,18 @@ public class Http2Logic {
             throw new FatalConnectionException(ERROR_PROTOCOL_ERROR);
 
         if (settings.isAck()) {
-            ourSettings.copyFrom(wantedSettings.removeFirst());
+            Settings acknowledgedSettings = wantedSettings.removeFirst();
+            int oldOurDecoderTableSize = ourSettings.getHeaderTableSize();
+            ourSettings.copyFrom(acknowledgedSettings);
+            if (ourSettings.getHeaderTableSize() != oldOurDecoderTableSize) {
+                log.debug("Peer ACKed our SETTINGS: Updating our Decoder max table size to {}", ourSettings.getHeaderTableSize());
+                decoder.setMaxHeaderTableSize(ourSettings.getHeaderTableSize());
+            }
             return;
         }
+
+        // Handling SETTINGS frame from peer (non-ACK)
+        int oldPeerDecoderTableSize = peerSettings.getHeaderTableSize();
 
         for (int i = 0; i < settings.getSettingsCount(); i++) {
             long settingsValue = settings.getSettingsValue(i);
@@ -409,10 +432,12 @@ public class Http2Logic {
                 }
                 case ID_SETTINGS_HEADER_TABLE_SIZE -> {
                     if (settingsValue > Integer.MAX_VALUE) {
-                        System.err.println("HEADER_TABLE_SIZE > Integer.MAX_VALUE received: " + settingsValue);
-                        throw new FatalConnectionException(ERROR_PROTOCOL_ERROR); // this is limited by our implementation
+                        // The twitter HPACK library uses int for table size.
+                        log.warn("Peer proposed SETTINGS_HEADER_TABLE_SIZE ({}) > Integer.MAX_VALUE. Capping at Integer.MAX_VALUE.", settingsValue);
+                        peerSettings.setHeaderTableSize(Integer.MAX_VALUE);
+                    } else {
+                        peerSettings.setHeaderTableSize((int) settingsValue);
                     }
-                    peerSettings.setHeaderTableSize((int) settingsValue);
                 }
                 case ID_SETTINGS_MAX_CONCURRENT_STREAMS -> {
                     if (settingsValue > Integer.MAX_VALUE)
@@ -435,9 +460,15 @@ public class Http2Logic {
                     else
                         peerSettings.setMaxHeaderListSize((int) settingsValue);
                 }
-                default -> System.err.println("not implemented: setting " + settings.getSettingsId(i));
+                default -> log.warn("Received unknown SETTINGS ID {} with value {}", settings.getSettingsId(i), settingsValue);
             }
         }
+
+        if (peerSettings.getHeaderTableSize() != oldPeerDecoderTableSize) {
+            log.debug("Peer proposed new SETTINGS: Updating our Encoder's peer max table size limit to {}", peerSettings.getHeaderTableSize());
+            sender.setEncoderHeaderTableSizeLimit(peerSettings.getHeaderTableSize());
+        }
+
         sender.send(SettingsFrame.ack());
     }
 
