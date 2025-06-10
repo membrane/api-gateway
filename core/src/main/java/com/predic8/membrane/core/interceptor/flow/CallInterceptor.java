@@ -38,6 +38,11 @@ import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 import static java.util.Collections.singletonList;
 
+/**
+ * @description Calls an external endpoint
+ *
+ * @topic 1. Proxies and Flow
+ */
 @MCElement(name = "call")
 public class CallInterceptor extends AbstractExchangeExpressionInterceptor {
 

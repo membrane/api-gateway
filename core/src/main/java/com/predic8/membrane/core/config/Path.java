@@ -21,7 +21,7 @@ import com.predic8.membrane.annot.MCTextContent;
 
 /**
  * @explanation <p>
- *              The element?s content is matched against the request path.
+ *              The element's content is matched against the request path.
  *              </p>
  *
  *              <p>
