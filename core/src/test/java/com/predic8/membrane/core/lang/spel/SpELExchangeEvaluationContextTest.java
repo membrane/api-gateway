@@ -41,6 +41,7 @@ public class SpELExchangeEvaluationContextTest {
                 .header("Authentication","foo")
                 .header("shadow-ing", "nothappening")
                 .header("shadowIng", "test")
+                .header("Cookie","foo=bar")
                 .body("""
                         {
                           "product": "Snake oil"
@@ -163,5 +164,15 @@ public class SpELExchangeEvaluationContextTest {
     @Test
     void body() {
         assertTrue(keyExpression("body").contains("Snake oil"));
+    }
+
+    @Test
+    void cookie() {
+        assertTrue(keyExpression("cookie.foo").contains("bar"));
+    }
+
+    @Test
+    void cookies() {
+        assertTrue(keyExpression("cookies.foo").contains("bar"));
     }
 }

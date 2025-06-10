@@ -172,4 +172,11 @@ public class HeaderTest {
         h.add(USER_AGENT, "");
         assertFalse(h.isUserAgentSupportsSNI());
     }
+
+    @Test
+    void cookieRead() {
+        Header h = new Header();
+        h.add(COOKIE, "SESSION=abc;");
+        assertEquals("abc", h.getFirstCookie("SESSION"));
+    }
 }

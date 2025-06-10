@@ -29,16 +29,33 @@ public class CallAuthenticationExampleTest extends AbstractSampleMembraneStartSt
 
     @Test
     void testCall() {
-        given().when().get("http://localhost:2000").then().body(containsString("Secured backend!")).statusCode(200);
+        // @formatter:off
+        given().when()
+            .get("http://localhost:2000")
+        .then()
+            .body(containsString("Success"))
+            .statusCode(200);
+        // @formatter:on
     }
 
     @Test
     void testAuthService() {
-        given().when().get("http://localhost:3000/login").then().header("X-Api-Key", "ABCDE").statusCode(200);
+        // @formatter:off
+        given().when()
+            .get("http://localhost:3000/login")
+        .then()
+            .header("Set-Cookie", "SESSION=akj34")
+            .statusCode(200);
+        // @formatter:on
     }
 
     @Test
     void testSecuredBackend() {
-        given().when().get("http://localhost:3001").then().statusCode(401);
+        // @formatter:off
+        given().when()
+            .get("http://localhost:3001")
+        .then()
+            .statusCode(401);
+        // @formatter:on
     }
 }
