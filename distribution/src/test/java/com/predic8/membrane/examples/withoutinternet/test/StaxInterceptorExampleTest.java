@@ -50,7 +50,7 @@ public class StaxInterceptorExampleTest extends DistributionExtractingTestcase {
 
     private void compileCustomInterceptor() throws Exception {
         BufferLogger logger = new BufferLogger();
-        try(Process2 mvn = new Process2.Builder().in(baseDir).executable(isWindows() ? "cmd /c mvn package" : "mvn package").withWatcher(logger).start())  {
+        try(Process2 mvn = new Process2.Builder().in(baseDir).executable(mavenCommand("package")).withWatcher(logger).start())  {
             if (mvn.waitForExit(60000) != 0)
                 throw new RuntimeException("Maven exited with code " + mvn.waitForExit(60000) + ": " + logger);
         }
