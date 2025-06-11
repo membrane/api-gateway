@@ -18,7 +18,7 @@
 
                 <!-- Iterate over each product to get additional details (price) -->
                 <for in="property.products">
-                    <call url="https://api.predic8.de/shop/v2/products/${properties.it['id']}"/>
+                    <call url="https://api.predic8.de/shop/v2/products/${property.it['id']}"/>
                     <setProperty name="price" value="${$.price}" language="jsonpath"/>
                     <groovy>
                         property.it.price = property.price
