@@ -179,4 +179,17 @@ public class HeaderTest {
         h.add(COOKIE, "SESSION=abc;");
         assertEquals("abc", h.getFirstCookie("SESSION"));
     }
+
+    @Test
+    void missingCookie() {
+        assertNull(new Header().getFirstCookie("MISSING"));
+    }
+
+    @Test
+    void multipleCookies() {
+        Header h = new Header();
+        h.add(COOKIE, "TOKEN=xyz; PATH=/");
+        assertEquals("xyz", h.getFirstCookie("TOKEN"));
+        assertEquals("/", h.getFirstCookie("PATH"));
+    }
 }
