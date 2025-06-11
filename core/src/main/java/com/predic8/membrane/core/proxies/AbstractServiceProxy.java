@@ -15,9 +15,16 @@
 package com.predic8.membrane.core.proxies;
 
 import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.config.*;
 import com.predic8.membrane.core.config.security.*;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.interceptor.Interceptor;
+import com.predic8.membrane.core.lang.ExchangeExpression;
+import com.predic8.membrane.core.lang.TemplateExchangeExpression;
 import com.predic8.membrane.core.transport.ssl.*;
+
+import static com.predic8.membrane.core.lang.ExchangeExpression.Language.*;
 
 public abstract class AbstractServiceProxy extends SSLableProxy {
 
@@ -28,6 +35,7 @@ public abstract class AbstractServiceProxy extends SSLableProxy {
             target.port = target.getSslParser() != null ? 443 : 80;
         if (target.getSslParser() != null)
             setSslOutboundContext(new StaticSSLContext(target.getSslParser(), router.getResolverMap(), router.getBaseLocation()));
+        target.init(router);
     }
 
     public String getHost() {
@@ -82,9 +90,9 @@ public abstract class AbstractServiceProxy extends SSLableProxy {
 
     /**
      * @description <p>
-     * The destination where the service proxy will send messages to. Use the target element, if you want
-     * to send the messages to a static target. If you want to use dynamic destinations have a look at the
-     * <a href="https://membrane-soa.org/service-proxy-doc/configuration/reference/router.htm">content based router</a>.
+     * The destination where the service proxy will send messages to.
+     * Use the target element if you want to send the messages to a target.
+     * Supports dynamic destinations through expressions.
      * </p>
      */
     @MCElement(name = "target", topLevel = false)
@@ -94,8 +102,26 @@ public abstract class AbstractServiceProxy extends SSLableProxy {
         private String method;
         protected String url;
         private boolean adjustHostHeader = true;
+        private ExchangeExpression.Language language = SPEL;
+        private ExchangeExpression exchangeExpression;
 
         private SSLParser sslParser;
+
+        public void init(Router router) {
+            if (url != null) exchangeExpression = TemplateExchangeExpression.newInstance(router, language, url);
+        }
+
+        public String compileUrl(Exchange exc, Interceptor.Flow flow) {
+            /**
+             * Will always evaluate on every call. This is fine as SpEL is fast enough and performs its own optimizations.
+             * 1.000.000 calls ~10ms
+             */
+            if (exchangeExpression != null) {
+                return exchangeExpression.evaluate(exc, flow, String.class);
+            } else {
+                return url;
+            }
+        }
 
         public Target() {
         }
@@ -142,6 +168,7 @@ public abstract class AbstractServiceProxy extends SSLableProxy {
 
         /**
          * @description Absolute URL of the target. If this is set, <i>host</i> and <i>port</i> will be ignored.
+         * Supports inline expressions through <code>${&lt;expression&gt;}</code> elements.
          * @example <a href="http://membrane-soa.org">http://membrane-soa.org</a>
          */
         @MCAttribute
@@ -175,13 +202,31 @@ public abstract class AbstractServiceProxy extends SSLableProxy {
         }
 
         /**
-         * The method that should be used to make the call to the backend. With that
-         * parameter the method from the original call can be overwritten.
+         * @description The method that should be used to make the call to the backend.
+         * Overwrites the original method.
          * @param method
          */
         @MCAttribute
         public void setMethod(String method) {
             this.method = method;
+        }
+
+        public ExchangeExpression getExchangeExpression() {
+            return exchangeExpression;
+        }
+
+        public ExchangeExpression.Language getLanguage() {
+            return language;
+        }
+
+        /**
+         * @description the language of the inline expressions
+         * @default SpEL
+         * @example SpEL, groovy, jsonpath, xpath
+         */
+        @MCAttribute
+        public void setLanguage(ExchangeExpression.Language language) {
+            this.language = language;
         }
     }
 

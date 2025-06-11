@@ -7,33 +7,28 @@
     <router>
 
         <api port="2000">
-            <!-- Call internal API to get API key -->
-            <call url="http://localhost:3000/login" />
-            <!-- Forward request to backend, now with API key attached -->
+            <request>
+                <call url="http://localhost:3000/login" />
+                <setHeader name="Cookie" value="${header['set-cookie']}"/>
+            </request>
             <target url="http://localhost:3001"/>
         </api>
 
-        <!-- Simulates an auth service that returns the API key -->
         <api port="3000">
             <path>/login</path>
             <response>
-                <setHeader name="X-Api-Key" value="ABCDE" />
+                <setHeader name="Set-Cookie" value="SESSION=akj34" />
             </response>
             <return />
         </api>
 
-        <!-- Backend that requires a valid API key in the header -->
         <api port="3001">
-            <apiKey>
-                <keys>
-                    <secret value="ABCDE"/>
-                </keys>
-                <headerExtractor />
-            </apiKey>
-            <static>
-                Secured backend!
-            </static>
-            <return />
+            <if test="cookie.SESSION == 'akj34'">
+                <static>Success!</static>
+                <return/>
+            </if>
+            <static>Please log in!</static>
+            <return statusCode="401"/>
         </api>
 
     </router>

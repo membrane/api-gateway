@@ -12,7 +12,7 @@
    See the License for the specific language governing permissions and
    limitations under the License. */
 
-package com.predic8.membrane.examples.withinternet.test.orchestration;
+package com.predic8.membrane.examples.withinternet.test;
 
 import com.predic8.membrane.examples.util.AbstractSampleMembraneStartStopTestcase;
 import org.junit.jupiter.api.Test;
@@ -20,25 +20,21 @@ import org.junit.jupiter.api.Test;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.CoreMatchers.containsString;
 
-public class ForLoopExampleTest extends AbstractSampleMembraneStartStopTestcase {
+public class TargetExpressionsExampleTest extends AbstractSampleMembraneStartStopTestcase {
 
     @Override
     protected String getExampleDirName() {
-        return "orchestration/for-loop";
+        return "routing-traffic/dynamic-routing";
     }
 
     // @formatter:off
     @Test
     void testCall() {
-        given()
-        .when()
-            .get("http://localhost:2000")
+        given().when()
+            .get("http://localhost:2000/market/products")
         .then()
-            .body(
-                containsString("\"products\""),
-                containsString("\"name\""),
-                containsString("\"price\"")
-            ).statusCode(200);
+            .body(containsString("\"products\" : ["))
+            .statusCode(200);
     }
     // @formatter:on
 }
