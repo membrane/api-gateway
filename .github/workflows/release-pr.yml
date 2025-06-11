@@ -36,10 +36,18 @@ jobs:
         name: Create Release Version
         run: |
           cd distribution 
+          if [ -e src/test/java/com/predic8/membrane/examples/env/ConsistentVersionNumbers.java ] ; then
+            CLASS=com.predic8.membrane.examples.env.ConsistentVersionNumbers
+          elif [ -e src/test/java/com/predic8/membrane/examples/withoutinternet/env/ConsistentVersionNumbers.java ] ; then
+            CLASS=com.predic8.membrane.examples.withoutinternet.env.ConsistentVersionNumbers
+          else
+            echo "ConsistentVersionNumbers.java not found."
+            exit 1
+          fi
           mvn test-compile exec:java \
             --no-transfer-progress \
             --batch-mode \
-            -DmainClass="com.predic8.membrane.examples.env.ConsistentVersionNumbers" \
+            -DmainClass=$CLASS \
             -Dexec.classpathScope="test" \
             -DmainArgs="-release ${{ github.event.inputs.version }}"
           cd ..
