@@ -108,7 +108,7 @@ public class RouterCLI {
             };
         } catch (InvalidConfigurationException e) {
             String errorMsg = concatMessageAndCauseMessages(e);
-            if (errorMsg.contains("Invalid content was found starting with element '{\"http://membrane-soa.org/proxies/1/\":openapi}'.")) {
+            if (isOpenAPIMisplacedError(errorMsg)) {
                 log.error("Fatal error caused by <openapi /> element. Make sure it is the first element of the API.\n{}", errorMsg);
             } else {
                 log.error("Fatal error: {}", errorMsg);
@@ -119,6 +119,11 @@ public class RouterCLI {
         System.exit(1);
         // Will never be reached
         return null;
+    }
+
+    private static boolean isOpenAPIMisplacedError(String errorMsg) {
+        return errorMsg.contains("Invalid content")
+                || errorMsg.contains("membrane-soa.org/proxies/1/\":openapi") ;
     }
 
     private static Router initRouterByOpenApiSpec(MembraneCommandLine commandLine) throws Exception {
