@@ -18,19 +18,26 @@ import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.annot.MCTextContent;
 
+
 /**
  * @explanation <p>
- *              The value of the content will be taken to match the path.
+ *              The element's content is matched against the request path.
  *              </p>
  *
  *              <p>
- *              If <tt>isRegExp="true"</tt>, the whole path has to match the given regular expression. If
- *              <tt>isRegExp="false"</tt>, the path has to start with the given string.
+ *              If <tt>isRegExp="true"</tt>, the entire path must match the regular expression.
+ *              If <tt>isRegExp="false"</tt>, the path must start with the specified string.
  *              </p>
  *
  *              <p>
- *              If <tt>&lt;path /&gt;</tt> is a child element of a <tt>&lt;soapProxy /&gt;</tt>, the <tt>isRegExp</tt>
- *              attribute must not be present.
+ *              When <tt>&lt;path/&gt;</tt> appears inside a <tt>&lt;soapProxy/&gt;</tt>,
+ *              the <tt>isRegExp</tt> attribute must not be used.
+ *              </p>
+ *
+ *              <p>
+ *              When placed within an <tt>&lt;api&gt;</tt> (rather than a <tt>&lt;serviceProxy&gt;</tt>),
+ *              you may use a URI template (e.g. <tt>/books/{id}</tt>). The path parameter will be
+ *              available in scripts via the <tt>pathParam</tt> variable.
  *              </p>
  */
 @MCElement(name="path", topLevel=false, mixed=true)

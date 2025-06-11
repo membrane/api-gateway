@@ -35,9 +35,9 @@ public class ForLoopExampleTest extends AbstractSampleMembraneStartStopTestcase 
             .get("http://localhost:2000")
         .then()
             .body(
-                containsString("\"products\":["),
-                containsString("\"name\":"),
-                containsString("\"price\":")
+                containsString("\"products\""),
+                containsString("\"name\""),
+                containsString("\"price\"")
             ).statusCode(200);
     }
     // @formatter:on

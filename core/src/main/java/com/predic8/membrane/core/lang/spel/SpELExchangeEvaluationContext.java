@@ -44,6 +44,8 @@ public class SpELExchangeEvaluationContext extends StandardEvaluationContext {
     // Avoid the common plural error
     private final SpELLablePropertyAware headers;
 
+    private final SpELLablePropertyAware cookies;
+
     // Avoid the common plural error
     private final SpELLablePropertyAware properties;
 
@@ -73,6 +75,7 @@ public class SpELExchangeEvaluationContext extends StandardEvaluationContext {
         pathParam = new SpELPathParameters(exchange);
         properties = new SpELProperties(exchange.getProperties());
         headers = new SpELHeader(message.getHeader());
+        cookies = new SpELCookie(message.getHeader());
 
         extractFromRequest(exchange);
         extractFromResponse(exchange);
@@ -91,6 +94,7 @@ public class SpELExchangeEvaluationContext extends StandardEvaluationContext {
         cs.addConverter(new SpELHeaderToStringTypeConverter());
         cs.addConverter(new SpELMapToStringTypeConverter());
         cs.addConverter(new SpELBodyToStringTypeConverter());
+        cs.addConverter(new ListToStringTypeConverter());
         setTypeConverter(new StandardTypeConverter(cs));
     }
 
@@ -140,6 +144,18 @@ public class SpELExchangeEvaluationContext extends StandardEvaluationContext {
     public SpELLablePropertyAware getHeader() {
         return headers;
     }
+
+    public SpELLablePropertyAware getCookies() {
+        return cookies;
+    }
+
+    /**
+     * Also get cookies with cookies.fieldname
+     */
+    public SpELLablePropertyAware getCookie() {
+        return cookies;
+    }
+
 
     public SpELLablePropertyAware getParam() {
         return params;
