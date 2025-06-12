@@ -17,7 +17,7 @@ public class ExceptionUtil {
     public static String concatMessageAndCauseMessages(Throwable throwable) {
         StringBuilder sb = new StringBuilder();
         do {
-            sb.append(throwable.getMessage());
+            sb.append(throwable.getLocalizedMessage());
             throwable = throwable.getCause();
             if (throwable != null) {
                 sb.append(" caused by: ");
