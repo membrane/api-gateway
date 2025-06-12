@@ -1,8 +1,10 @@
-# Using Calls for Cookie-Based Login
+# Orchestrating Authentication
 
-To simplify client access to secured backends, authentication can be handled internally by the API gateway.
+To simplify client access to secured backends, authentication can be handled transparently by the API gateway.
 
-This example shows how to delegate a login step via the `call` plugin to fetch a `SESSION` cookie and inject it automatically.
+The gateway can orchestrate various authentication methods—Basic Auth, API keys, OAuth2, or, as in this example, cookie-based authentication.
+
+This example demonstrates how to delegate the login step using the `call` plugin to retrieve a `SESSION` cookie and inject it automatically into subsequent requests.
 
 ### **Running the Example**
 
