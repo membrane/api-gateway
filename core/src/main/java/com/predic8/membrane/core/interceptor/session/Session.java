@@ -119,6 +119,7 @@ public class Session {
     public void authorize(String username){
         setUsername(username);
         setAuthorization(AuthorizationLevel.VERIFIED);
+        remove("_in_memory_session_id");
     }
 
     protected void setAuthorization(AuthorizationLevel level) {
