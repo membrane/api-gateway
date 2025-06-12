@@ -122,8 +122,7 @@ public class RouterCLI {
     }
 
     private static boolean isOpenAPIMisplacedError(String errorMsg) {
-        return errorMsg.contains("Invalid content")
-                || errorMsg.contains("membrane-soa.org/proxies/1/\":openapi") ;
+        return errorMsg.matches("(?i).*(invalid|ungültiger).+element.+http://membrane-soa.org/proxies/1/\":openapi.*'\\..*");
     }
 
     private static Router initRouterByOpenApiSpec(MembraneCommandLine commandLine) throws Exception {
