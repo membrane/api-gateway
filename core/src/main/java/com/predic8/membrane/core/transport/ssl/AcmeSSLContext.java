@@ -29,7 +29,9 @@ import java.security.Key;
 import java.security.KeyStore;
 import java.security.*;
 import java.security.cert.Certificate;
+import java.security.cert.X509Certificate;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.*;
 
 public class AcmeSSLContext extends SSLContext {
@@ -44,6 +46,7 @@ public class AcmeSSLContext extends SSLContext {
     private final AtomicBoolean shutdown = new AtomicBoolean(false);
 
     private volatile AcmeKeyCert keyCert;
+    private final Map<String, AcmeClient.AlpnCertAndKey> alpnChallengeCertificates = new ConcurrentHashMap<>();
 
 
     public AcmeSSLContext(SSLParser parser,
@@ -228,8 +231,19 @@ public class AcmeSSLContext extends SSLContext {
             KeyManagerFactory kmf = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
             kmf.init(ks, "".toCharArray());
 
+            KeyManager[] defaultKeyManagers = kmf.getKeyManagers();
+            KeyManager[] customKeyManagers = new KeyManager[defaultKeyManagers.length];
+            for (int i = 0; i < defaultKeyManagers.length; i++) {
+                if (defaultKeyManagers[i] instanceof X509ExtendedKeyManager) {
+                    customKeyManagers[i] = new AlpnKeyManager((X509ExtendedKeyManager) defaultKeyManagers[i]);
+                    log.debug("Wrapped default X509ExtendedKeyManager with AlpnKeyManager.");
+                } else {
+                    customKeyManagers[i] = defaultKeyManagers[i];
+                }
+            }
+
             sslc = javax.net.ssl.SSLContext.getInstance("TLS");
-            sslc.init(kmf.getKeyManagers(), null,null);
+            sslc.init(customKeyManagers, null,null); // Use custom key managers
 
         } catch (Exception e) {
             throw new RuntimeException(e);
@@ -268,7 +282,7 @@ public class AcmeSSLContext extends SSLContext {
             @Override
             public void run() {
                 if (!"never".equals(parser.getAcme().getRenewal()))
-                    new AcmeRenewal(client, hosts).doWork();
+                    new AcmeRenewal(client, hosts, AcmeSSLContext.this).doWork(); // Pass this AcmeSSLContext
                 initAndSchedule();
             }
         }, nextRun, "ACME timer " + constructHostsString());
@@ -307,5 +321,152 @@ public class AcmeSSLContext extends SSLContext {
     @Override
     public String getPrometheusContextTypeName() {
         return "acme";
+    }
+
+    public void setAlpnChallengeCertificate(String domainName, AcmeClient.AlpnCertAndKey alpnCertAndKey) {
+        if (domainName == null || alpnCertAndKey == null) {
+            throw new NullPointerException("domainName and alpnCertAndKey must not be null");
+        }
+        alpnChallengeCertificates.put(domainName, alpnCertAndKey);
+        // We might need to re-initialize the SSLContext if it's already been initialized,
+        // or ensure the KeyManager picks up the new certificate.
+        // For now, assuming this is called before the SSL handshake needing this cert.
+        // If immediate effect is needed, might need to trigger a reload or re-init of sorts.
+        log.info("ACME: Stored ALPN challenge certificate for domain: {}", domainName);
+    }
+
+    public void clearAlpnChallengeCertificate(String domainName) {
+        if (domainName == null) {
+            throw new NullPointerException("domainName must not be null");
+        }
+        if (alpnChallengeCertificates.remove(domainName) != null) {
+            log.info("ACME: Cleared ALPN challenge certificate for domain: {}", domainName);
+        }
+    }
+
+    private static final String ALPN_ACME_TLS_1 = "acme-tls/1";
+    private static final String ALPN_CERT_ALIAS_PREFIX = "MEMBRANE_ACME_ALPN_CERT_";
+
+    private class AlpnKeyManager extends X509ExtendedKeyManager {
+        private final X509ExtendedKeyManager delegate;
+
+        public AlpnKeyManager(X509ExtendedKeyManager delegate) {
+            if (delegate == null) {
+                // Fallback if no default key manager is found, though unlikely in practice with default setup.
+                // This basic manager would only serve our ALPN certs if any were available.
+                // A more robust solution might be to ensure a default non-null delegate or handle this case explicitly.
+                log.warn("AlpnKeyManager initialized with a null delegate. Will only be able to serve ALPN challenge certificates.");
+                this.delegate = new X509ExtendedKeyManager() {
+                    @Override public String[] getClientAliases(String keyType, Principal[] issuers) { return new String[0]; }
+                    @Override public String chooseClientAlias(String[] keyType, Principal[] issuers, Socket socket) { return null; }
+                    @Override public String[] getServerAliases(String keyType, Principal[] issuers) { return new String[0]; }
+                    @Override public String chooseServerAlias(String keyType, Principal[] issuers, Socket socket) { return null; }
+                    @Override public X509Certificate[] getCertificateChain(String alias) { return null; }
+                    @Override public PrivateKey getPrivateKey(String alias) { return null; }
+                    @Override public String chooseEngineClientAlias(String[] keyType, Principal[] issuers, SSLEngine engine) { return null; }
+                    @Override public String chooseEngineServerAlias(String keyType, Principal[] issuers, SSLEngine engine) { return null; }
+                };
+            } else {
+                this.delegate = delegate;
+            }
+        }
+
+        @Override
+        public String chooseClientAlias(String[] keyType, Principal[] issuers, Socket socket) {
+            return delegate.chooseClientAlias(keyType, issuers, socket);
+        }
+
+        @Override
+        public String chooseServerAlias(String keyType, Principal[] issuers, Socket socket) {
+            if (socket instanceof SSLSocket) {
+                SSLSocket sslSocket = (SSLSocket) socket;
+                String sniHostname = getSniHostname(sslSocket.getHandshakeSession());
+                String negotiatedAlpn = sslSocket.getHandshakeApplicationProtocol();
+
+                if (ALPN_ACME_TLS_1.equals(negotiatedAlpn) && sniHostname != null && alpnChallengeCertificates.containsKey(sniHostname)) {
+                    log.debug("chooseServerAlias (Socket): ALPN acme-tls/1 negotiated for SNI host {}. Using ALPN challenge cert.", sniHostname);
+                    return ALPN_CERT_ALIAS_PREFIX + sniHostname;
+                }
+            }
+            return delegate.chooseServerAlias(keyType, issuers, socket);
+        }
+
+        @Override
+        public X509Certificate[] getCertificateChain(String alias) {
+            if (alias != null && alias.startsWith(ALPN_CERT_ALIAS_PREFIX)) {
+                String hostname = alias.substring(ALPN_CERT_ALIAS_PREFIX.length());
+                AcmeClient.AlpnCertAndKey certAndKey = alpnChallengeCertificates.get(hostname);
+                if (certAndKey != null && certAndKey.certificate() != null) {
+                    log.debug("getCertificateChain: Providing ALPN challenge certificate for alias {}", alias);
+                    return new X509Certificate[]{certAndKey.certificate()};
+                }
+                log.warn("getCertificateChain: ALPN challenge certificate requested for alias {} but not found or cert is null.", alias);
+            }
+            return delegate.getCertificateChain(alias);
+        }
+
+        @Override
+        public String[] getClientAliases(String keyType, Principal[] issuers) {
+            return delegate.getClientAliases(keyType, issuers);
+        }
+
+        @Override
+        public PrivateKey getPrivateKey(String alias) {
+            if (alias != null && alias.startsWith(ALPN_CERT_ALIAS_PREFIX)) {
+                String hostname = alias.substring(ALPN_CERT_ALIAS_PREFIX.length());
+                AcmeClient.AlpnCertAndKey certAndKey = alpnChallengeCertificates.get(hostname);
+                if (certAndKey != null && certAndKey.privateKey() != null) {
+                    log.debug("getPrivateKey: Providing ALPN challenge private key for alias {}", alias);
+                    return certAndKey.privateKey();
+                }
+                log.warn("getPrivateKey: ALPN challenge private key requested for alias {} but not found or key is null.", alias);
+            }
+            return delegate.getPrivateKey(alias);
+        }
+
+        @Override
+        public String[] getServerAliases(String keyType, Principal[] issuers) {
+            // We could augment this with our ALPN aliases if needed, but chooseServerAlias should suffice.
+            return delegate.getServerAliases(keyType, issuers);
+        }
+
+        @Override
+        public String chooseEngineClientAlias(String[] keyType, Principal[] issuers, SSLEngine engine) {
+            return delegate.chooseEngineClientAlias(keyType, issuers, engine);
+        }
+
+        @Override
+        public String chooseEngineServerAlias(String keyType, Principal[] issuers, SSLEngine engine) {
+            String sniHostname = getSniHostname(engine.getHandshakeSession());
+            String negotiatedAlpn = engine.getHandshakeApplicationProtocol(); // Requires Java 9+
+
+            if (ALPN_ACME_TLS_1.equals(negotiatedAlpn) && sniHostname != null && alpnChallengeCertificates.containsKey(sniHostname)) {
+                log.debug("chooseEngineServerAlias: ALPN acme-tls/1 negotiated for SNI host {}. Using ALPN challenge cert.", sniHostname);
+                return ALPN_CERT_ALIAS_PREFIX + sniHostname;
+            }
+            return delegate.chooseEngineServerAlias(keyType, issuers, engine);
+        }
+
+        private String getSniHostname(SSLSession handshakeSession) {
+            if (handshakeSession instanceof ExtendedSSLSession) {
+                ExtendedSSLSession extendedSession = (ExtendedSSLSession) handshakeSession;
+                List<SNIServerName> serverNames = extendedSession.getRequestedServerNames();
+                if (serverNames != null) {
+                    for (SNIServerName serverName : serverNames) {
+                        if (serverName instanceof SNIHostName) {
+                            return ((SNIHostName) serverName).getAsciiName();
+                        }
+                    }
+                }
+            }
+            // Fallback for Java 8 (reflection) or if SNI is not available would be more complex.
+            // For now, rely on ExtendedSSLSession.
+            // If SNI is critical and this doesn't work, further investigation is needed.
+            if (handshakeSession != null) {
+                // Attempt to get peer host if SNI is not directly available, though less reliable for virtual hosting.
+                // return handshakeSession.getPeerHost();
+            }
+            return null;
+        }
     }
 }
