@@ -1,8 +1,8 @@
-# Using Calls for login
+# Using Calls for Cookie-Based Login
 
 To simplify client access to secured backends, authentication can be handled internally by the API gateway.
 
-This example demonstrates how to delegate that login step using the `call` plugin to fetch and inject an API key automatically.
+This example shows how to delegate a login step via the `call` plugin to fetch a `SESSION` cookie and inject it automatically.
 
 ### **Running the Example**
 
@@ -21,13 +21,7 @@ This example demonstrates how to delegate that login step using the `call` plugi
    ```
    HTTP/1.1 200 OK
  
-   Secured backend!
+   Success!
    ```
 
-### **How It Works**
-
-- **Port 2000:** Public entrypoint. Calls an internal service (port 3000) to fetch an API key, then forwards the request to a protected backend (port 3001).
-- **Port 3000:** Simulates an authentication service. Returns an `X-Api-Key` header with a static value.
-- **Port 3001:** Backend protected by API key. Access is only granted if the correct key (`ABCDE`) is present in the request header.
-
-**Check `proxies.xml`** to see how the call and API key logic is configured.
+Check `proxies.xml` to see the `<call>` + cookie logic. 
