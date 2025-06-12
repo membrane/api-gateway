@@ -3,6 +3,7 @@ package com.predic8.membrane.core.interceptor.lang;
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.annot.Required;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
@@ -64,6 +65,7 @@ public class SetCookiesInterceptor extends AbstractInterceptor {
         }
 
         @MCAttribute
+        @Required
         public void setName(String name) {
             this.name = name;
         }
@@ -73,6 +75,7 @@ public class SetCookiesInterceptor extends AbstractInterceptor {
         }
 
         @MCAttribute
+        @Required
         public void setValue(String value) {
             this.value = value;
         }
