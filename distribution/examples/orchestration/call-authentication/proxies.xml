@@ -6,34 +6,38 @@
 
     <router>
 
+        <!-- API on port 2000: fetch login cookie then proxy to backend -->
         <api port="2000">
-            <!-- Call internal API to get API key -->
-            <call url="http://localhost:3000/login" />
-            <!-- Forward request to backend, now with API key attached -->
+            <request>
+                <!-- Call auth service to obtain SESSION cookie -->
+                <call url="http://localhost:3000/login" />
+                <!-- Inject received Set-Cookie header as Cookie -->
+                <setHeader name="Cookie" value="${header['set-cookie']}"/>
+            </request>
+            <!-- Forward request (with cookie) to protected backend -->
             <target url="http://localhost:3001"/>
         </api>
 
-        <!-- Simulates an auth service that returns the API key -->
+        <!-- Simulated authentication service on port 3000 -->
         <api port="3000">
             <path>/login</path>
             <response>
-                <setHeader name="X-Api-Key" value="ABCDE" />
+                <!-- Return a static SESSION cookie -->
+                <setHeader name="Set-Cookie" value="SESSION=akj34" />
             </response>
             <return />
         </api>
 
-        <!-- Backend that requires a valid API key in the header -->
+        <!-- Protected backend on port 3001 -->
         <api port="3001">
-            <apiKey>
-                <keys>
-                    <secret value="ABCDE"/>
-                </keys>
-                <headerExtractor />
-            </apiKey>
-            <static>
-                Secured backend!
-            </static>
-            <return />
+            <!-- If correct SESSION cookie present, succeed -->
+            <if test="cookie.SESSION == 'akj34'">
+                <static>Success!</static>
+                <return/>
+            </if>
+            <!-- Otherwise, ask to log in with 401 status -->
+            <static>Please log in!</static>
+            <return statusCode="401"/>
         </api>
 
     </router>

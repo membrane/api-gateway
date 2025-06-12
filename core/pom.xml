@@ -23,7 +23,7 @@
         <groupId>org.membrane-soa</groupId>
         <artifactId>service-proxy-parent</artifactId>
         <relativePath>../pom.xml</relativePath>
-        <version>6.0.5-SNAPSHOT</version>
+        <version>6.1.1-SNAPSHOT</version>
     </parent>
 
     <!-- Open Telemetry -->
@@ -347,12 +347,12 @@
         <dependency>
             <groupId>io.opentelemetry</groupId>
             <artifactId>opentelemetry-sdk</artifactId>
-            <version>1.49.0</version>
+            <version>1.50.0</version>
         </dependency>
         <dependency>
             <groupId>io.opentelemetry</groupId>
             <artifactId>opentelemetry-exporter-otlp</artifactId>
-            <version>1.49.0</version>
+            <version>1.50.0</version>
         </dependency>
         <dependency>
             <groupId>io.opentelemetry.instrumentation</groupId>
@@ -389,7 +389,7 @@
         <dependency>
             <groupId>org.mongodb</groupId>
             <artifactId>mongodb-driver-sync</artifactId>
-            <version>5.4.0</version>
+            <version>5.5.0</version>
             <scope>provided</scope>
         </dependency>
     </dependencies>
