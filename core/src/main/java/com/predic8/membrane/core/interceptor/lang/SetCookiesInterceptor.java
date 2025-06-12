@@ -29,14 +29,14 @@ public class SetCookiesInterceptor extends AbstractInterceptor {
     /**
      * Holder for a single cookie's attributes.
      */
-    private final List<CookieDef> cookies = new ArrayList<>();
+    private List<CookieDef> cookies = new ArrayList<>();
 
     /**
      * Register one <cookie> child element.
      */
     @MCChildElement(order = 1)
-    public void addCookieDef(CookieDef def) {
-        cookies.add(def);
+    public void setCookies(List<CookieDef> cookies) {
+        this.cookies = cookies;
     }
 
     public List<CookieDef> getCookies() {
