@@ -28,7 +28,6 @@ import javax.lang.model.element.*;
 import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeMirror;
 import javax.tools.FileObject;
-import javax.tools.StandardLocation;
 import javax.tools.Diagnostic.Kind;
 
 import com.predic8.membrane.annot.generator.*;
@@ -319,7 +318,7 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
 				cei.setTypeDeclaration((TypeElement) ((DeclaredType) setterArgType).asElement());
 				cei.setPropertyName(AnnotUtils.dejavaify(e2.getSimpleName().toString().substring(3)));
 				cei.setRequired(isRequired(e2));
-				ii.getCeis().add(cei);
+				ii.getChildElementSpecs().add(cei);
 
 				// unwrap "java.util.List<?>" and "java.util.Collection<?>"
 				if (cei.getTypeDeclaration().getQualifiedName().toString().startsWith("java.util.List") ||
@@ -349,11 +348,11 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
 			}
 		}
 		HashSet<Integer> childOrders = new HashSet<>();
-		for (ChildElementInfo cei : ii.getCeis()) {
+		for (ChildElementInfo cei : ii.getChildElementSpecs()) {
 			if (!childOrders.add(cei.getAnnotation().order()))
 				throw new ProcessingException("@MCChildElement(order=...) must be unique.", cei.getE());
 		}
-		Collections.sort(ii.getCeis());
+		Collections.sort(ii.getChildElementSpecs());
 	}
 
 	private boolean isRequired(Element e2) {
@@ -366,6 +365,7 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
 	public void process(Model m) throws IOException {
 		new Schemas(processingEnv).writeXSD(m);
 		new KubernetesBootstrapper(processingEnv).boot(m);
+		new JsonSchemaGenerator(processingEnv).write(m);
 		new Parsers(processingEnv).writeParsers(m);
 		new Parsers(processingEnv).writeParserDefinitior(m);
 		new HelpReference(processingEnv).writeHelp(m);

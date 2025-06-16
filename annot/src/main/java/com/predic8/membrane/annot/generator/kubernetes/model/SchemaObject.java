@@ -23,7 +23,9 @@ public class SchemaObject implements ISchema {
 
     private String description;
 
+    // Properties to be copied 1:1 to the JSON schema, e.g. "type": "string"
     private final Map<String, Object> attributes = new HashMap<>();
+    // Java Properties (@MCAttributes, @MCChildElement)
     private final List<SchemaObject> properties = new ArrayList<>();
 
     public SchemaObject(String name) {
