@@ -13,6 +13,7 @@ import com.predic8.membrane.core.util.URIFactory;
 import jakarta.mail.internet.ParseException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayInputStream;
@@ -26,25 +27,33 @@ import java.util.Map;
 import static com.google.common.collect.ImmutableMap.of;
 import static com.predic8.membrane.core.openapi.util.TestUtils.om;
 import static com.predic8.membrane.core.openapi.util.TestUtils.parseOpenAPI;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * Runs the OpenAPI validator with the official tests from the JSON Schema Test Suite.
+ *
+ * The test suite needs to be downloaded manually.
  */
 public class JsonSchemaTestSuiteTests {
+    public final String TEST_SUITE_BASE_PATH = "git\\JSON-Schema-Test-Suite\\tests\\draft4";
+
     private final ObjectMapper objectMapper = new ObjectMapper();
     private final ObjectMapper yamlMapper = new ObjectMapper(new YAMLFactory().disable(YAMLGenerator.Feature.WRITE_DOC_START_MARKER));
 
     int correct, incorrect, ignored;
 
+    @Disabled("The test requires a manual download. It also fails.")
     @Test
     public void testJsonSchema() throws IOException, ParseException {
-        locateTests("git\\JSON-Schema-Test-Suite\\tests\\draft4");
+        runTestsFoundInDirectory(TEST_SUITE_BASE_PATH);
         System.out.println("correct = " + correct);
         System.out.println("incorrect = " + incorrect);
         System.out.println("ignored = " + ignored);
+
+        assertEquals(0, incorrect);
     }
 
-    private void locateTests(String baseDir) throws IOException, ParseException {
+    private void runTestsFoundInDirectory(String baseDir) throws IOException, ParseException {
         File base = new File(baseDir);
         if (!base.exists()) {
             throw new RuntimeException("Please download the tests from https://github.com/json-schema-org/JSON-Schema-Test-Suite/ and adjust the base path here.");
@@ -52,11 +61,11 @@ public class JsonSchemaTestSuiteTests {
         for (File file : base.listFiles()) {
             if (!file.getName().endsWith(".json"))
                 continue;
-            locateTest(file);
+            runTestsFromFile(file);
         }
     }
 
-    private void locateTest(File file) throws IOException, ParseException {
+    private void runTestsFromFile(File file) throws IOException, ParseException {
         System.out.println("Testing file: " + file.getName());
 
         List<?> tests = objectMapper.readValue(file, List.class);
@@ -79,7 +88,7 @@ public class JsonSchemaTestSuiteTests {
                         new ByteArrayInputStream(openapi.getBytes(StandardCharsets.UTF_8))),new OpenAPISpec()));
 
             for (Object tr : testRuns)
-                runTest((Map) tr, ignoredReason, validator);
+                runSingleTestRun((Map) tr, ignoredReason, validator);
         }
     }
 
@@ -100,18 +109,16 @@ public class JsonSchemaTestSuiteTests {
     }
 
     private static @Nullable String computeIgnoredReason(String openapi, String description) {
-        String ignoredReason = null;
-
         if (openapi.contains("http://"))
-            ignoredReason = "the official test code seems to start a webserver on localhost:1234, which we do not support (yet).";
+            return "the official test code seems to start a webserver on localhost:1234, which we do not support (yet).";
         if (description.equals("Location-independent identifier"))
-            ignoredReason = "'$ref':'#foo' is used, which we do not support.";
+            return "'$ref':'#foo' is used, which we do not support.";
         if (description.contains("empty tokens in $ref json-pointer"))
-            ignoredReason = "the name of a definition is the empty string.";
-        return ignoredReason;
+            return "the name of a definition is the empty string.";
+        return null;
     }
 
-    private void runTest(Map tr, String ignoredReason, OpenAPIValidator validator) throws JsonProcessingException, ParseException {
+    private void runSingleTestRun(Map tr, String ignoredReason, OpenAPIValidator validator) throws JsonProcessingException, ParseException {
         Map testRun = tr;
 
         System.out.println("  - testRun = " + om.writeValueAsString(testRun));
