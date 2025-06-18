@@ -107,7 +107,8 @@ public class SchemaValidator implements IJSONSchemaValidator {
     }
 
     private boolean isNullable() {
-        return (schema.getNullable() != null && schema.getNullable()) || schema.getTypes().contains("null");
+        return (schema.getNullable() != null && schema.getNullable()) || (schema.getTypes() != null && schema.getTypes().contains("null")) ||
+                (schema.getType() != null && schema.getType().equals("null"));
     }
 
     private ValidationErrors validateByType(ValidationContext ctx, Object value) {
