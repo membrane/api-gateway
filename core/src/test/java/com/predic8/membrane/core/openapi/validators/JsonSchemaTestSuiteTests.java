@@ -27,6 +27,9 @@ import static com.google.common.collect.ImmutableMap.of;
 import static com.predic8.membrane.core.openapi.util.TestUtils.om;
 import static com.predic8.membrane.core.openapi.util.TestUtils.parseOpenAPI;
 
+/**
+ * Runs the OpenAPI validator with the official tests from the JSON Schema Test Suite.
+ */
 public class JsonSchemaTestSuiteTests {
     private final ObjectMapper objectMapper = new ObjectMapper();
     private final ObjectMapper yamlMapper = new ObjectMapper(new YAMLFactory().disable(YAMLGenerator.Feature.WRITE_DOC_START_MARKER));
@@ -42,7 +45,11 @@ public class JsonSchemaTestSuiteTests {
     }
 
     private void locateTests(String baseDir) throws IOException, ParseException {
-        for (File file : new File(baseDir).listFiles()) {
+        File base = new File(baseDir);
+        if (!base.exists()) {
+            throw new RuntimeException("Please download the tests from https://github.com/json-schema-org/JSON-Schema-Test-Suite/ and adjust the base path here.");
+        }
+        for (File file : base.listFiles()) {
             if (!file.getName().endsWith(".json"))
                 continue;
             locateTest(file);
