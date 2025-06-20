@@ -36,6 +36,7 @@ public class OAuth2CallbackRequestHandler {
     public static final String MEMBRANE_MISSING_SESSION = "Missing session.";
     public static final String MEMBRANE_CSRF_TOKEN_MISSING_IN_SESSION = "CSRF token missing in session.";
     public static final String MEMBRANE_CSRF_TOKEN_MISMATCH = "CSRF token mismatch.";
+    public static final String MEMBRANE_EXCHANGE_NOT_FOUND = "Exchange to reconstruct not found. Might be a replay of the login.";
 
     private URIFactory uriFactory;
     private AuthorizationService auth;
@@ -78,7 +79,16 @@ public class OAuth2CallbackRequestHandler {
 
             verifyCsrfToken(session, stateFromUri);
 
-            AbstractExchangeSnapshot originalRequest = originalExchangeStore.reconstruct(exc, session, stateFromUri);
+            AbstractExchangeSnapshot originalRequest;
+            try {
+                originalRequest = originalExchangeStore.reconstruct(exc, session, stateFromUri);
+            } catch (Exception e) {
+                log.warn("Could not reconstruct exchange snapshot '{}'", stateFromUri);
+                throw new OAuth2Exception(
+                        "MEMBRANE_EXCHANGE_NOT_FOUND",
+                        MEMBRANE_EXCHANGE_NOT_FOUND,
+                        Response.badRequest().body(MEMBRANE_EXCHANGE_NOT_FOUND).build());
+            }
             originalExchangeStore.remove(exc, session, stateFromUri);
 
             if (log.isDebugEnabled()) {
