@@ -1,4 +1,4 @@
-package com.predic8.membrane.core;
+package com.predic8.membrane.core.interceptor.dlp;
 
 import com.predic8.membrane.core.http.Message;
 import org.junit.jupiter.api.BeforeEach;
@@ -8,14 +8,17 @@ import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 class DLPTest {
 
     private Message mockMessage;
-    private Map<String, String> riskDict;
+    private DLP dlp;
     String json = """
                    {
                    "user": {
@@ -37,18 +40,18 @@ class DLPTest {
         when(mockMessage.getCharset())
                 .thenReturn(String.valueOf(StandardCharsets.UTF_8));
 
-
-        riskDict = new HashMap<>();
+        Map<String, String> riskDict = new HashMap<>();
         riskDict.put("user.email", "High");
         riskDict.put("user.profile", "High");
         riskDict.put("active", "Low");
         riskDict.put("nothing", "Low");
+
+        dlp = new DLP(riskDict);
     }
 
     @Test
     @SuppressWarnings("unchecked")
     void analyze() {
-        DLP dlp = new DLP(riskDict);
         Map<String, Object> result = dlp.analyze(mockMessage);
 
         assertEquals(2, result.get("high_risk"));
@@ -60,5 +63,16 @@ class DLPTest {
         assertEquals("High", matchedFields.get("user.email"));
         assertEquals("High", matchedFields.get("user.profile"));
         assertEquals("Low", matchedFields.get("active"));
+    }
+
+    @Test
+    void extractFieldNames() {
+        Set<String> fieldNames = dlp.extractFieldNames(mockMessage);
+        assertTrue(fieldNames.contains("user.email"));
+        assertTrue(fieldNames.contains("user.profile"));
+        assertTrue(fieldNames.contains("user.profile.firstname"));
+        assertTrue(fieldNames.contains("user.profile.lastname"));
+        assertTrue(fieldNames.contains("active"));
+        assertEquals(6, fieldNames.size());
     }
 }
