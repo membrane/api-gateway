@@ -1,6 +1,7 @@
 package com.predic8.membrane.core.interceptor.dlp;
 
 import com.predic8.membrane.annot.MCAttribute;
+import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Message;
@@ -32,6 +33,7 @@ public class DLPInterceptor extends AbstractInterceptor {
     private DLP dlp;
     private String fieldsConfig;
     private String action = "report";
+    private Fields fields;
 
     @Override
     public void init() {
@@ -77,5 +79,14 @@ public class DLPInterceptor extends AbstractInterceptor {
     @MCAttribute
     public void setAction(String action) {
         this.action = action;
+    }
+
+    public Fields getFields() {
+        return fields;
+    }
+
+    @MCChildElement
+    public void setFields(Fields fields) {
+        this.fields = fields;
     }
 }
