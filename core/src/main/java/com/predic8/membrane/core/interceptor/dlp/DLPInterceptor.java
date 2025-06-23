@@ -1,18 +1,14 @@
 package com.predic8.membrane.core.interceptor.dlp;
 
+import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.http.Message;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.util.HashMap;
 import java.util.Map;
 
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
@@ -34,11 +30,13 @@ public class DLPInterceptor extends AbstractInterceptor {
 
     private static final Logger log = LoggerFactory.getLogger(DLPInterceptor.class);
     private DLP dlp;
+    private String fieldsConfig;
+    private String action = "report";
 
     @Override
     public void init() {
         super.init();
-        Map<String, String> riskDict = new CsvFieldConfiguration().getFields("dlp-fields.csv");
+        Map<String, String> riskDict = new CsvFieldConfiguration().getFields(fieldsConfig);
         dlp = new DLP(riskDict);
     }
 
@@ -61,5 +59,23 @@ public class DLPInterceptor extends AbstractInterceptor {
         Map<String, Object> riskAnalysis = dlp.analyze(msg);
         log.info("DLP Risk Analysis Result: {}", riskAnalysis);
         return CONTINUE;
+    }
+
+    public String getFieldsConfig() {
+        return fieldsConfig;
+    }
+
+    @MCAttribute
+    public void setFieldsConfig(String fieldsConfig) {
+        this.fieldsConfig = fieldsConfig;
+    }
+
+    public String getAction() {
+        return action;
+    }
+
+    @MCAttribute
+    public void setAction(String action) {
+        this.action = action;
     }
 }
