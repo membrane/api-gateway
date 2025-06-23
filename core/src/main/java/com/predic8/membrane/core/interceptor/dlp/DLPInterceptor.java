@@ -19,12 +19,12 @@ import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 
 /**
  * <dlp fieldsConfig="..." action="report|mask|filter">
- *    <fields>
- *         <field name="address_.*" action="report"/>
- *         <field name="credit.*" action="mask"/> <!-- Set value to **** ->
- *         <field name="health" action="filter"/> <!-- Take out field -->
- *         <field name="id" action="allow"/>
- *    </fields>
+ * <fields>
+ * <field name="address_.*" action="report"/>
+ * <field name="credit.*" action="mask"/> <!-- Set value to **** ->
+ * <field name="health" action="filter"/> <!-- Take out field -->
+ * <field name="id" action="allow"/>
+ * </fields>
  * </dlp>
  * TODO:
  * -
@@ -38,9 +38,13 @@ public class DLPInterceptor extends AbstractInterceptor {
     @Override
     public void init() {
         super.init();
-        Map<String, String> riskDict = new HashMap<>();
-        load("dlp-fields.csv", riskDict); // Should return Map
+        Map<String, String> riskDict = new CsvFieldConfiguration().getFields("dlp-fields.csv");
         dlp = new DLP(riskDict);
+    }
+
+    @Override
+    public Outcome handleRequest(Exchange exc) {
+        return handleInternal(exc.getRequest());
     }
 
     @Override
@@ -57,39 +61,5 @@ public class DLPInterceptor extends AbstractInterceptor {
         Map<String, Object> riskAnalysis = dlp.analyze(msg);
         log.info("DLP Risk Analysis Result: {}", riskAnalysis);
         return CONTINUE;
-    }
-
-    // Behind Interface FieldConfiguration( getFields) - CsvFieldConfiguration
-    public void load(String fileName, Map<String, String> riskDict) {
-        try (InputStream inputStream = DLPInterceptor.class.getClassLoader().getResourceAsStream(fileName)) {
-
-            if (inputStream == null) {
-                log.error("Could not find file: {}", fileName);
-                throw new NullPointerException("InputStream is null. File not found: " + fileName);
-            }
-
-            BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
-            String line;
-            boolean isHeader = true;
-
-            while ((line = reader.readLine()) != null) {
-                if (isHeader) {
-                    isHeader = false;
-                    continue;
-                }
-
-                String[] parts = line.split(",", -1);
-                if (parts.length >= 3) {
-                    String field = parts[0].trim().toLowerCase();
-                    String riskLevel = parts[2].trim();
-                    riskDict.put(field, riskLevel);
-                } else {
-                    log.warn("Invalid CSV line: {}", line);
-                }
-            }
-
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to load risk data from " + fileName, e);
-        }
     }
 }

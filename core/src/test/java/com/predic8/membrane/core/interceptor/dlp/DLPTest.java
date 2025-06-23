@@ -18,6 +18,7 @@ import static org.mockito.Mockito.when;
 class DLPTest {
 
     private Message mockMessage;
+    private Message mockArrayMessage;
     private DLP dlp;
     String json = """
                    {
@@ -32,7 +33,6 @@ class DLPTest {
                  }
                 """;
 
-    // Test
     String fieldsInArray = """
             {
                 "array": [
@@ -52,11 +52,18 @@ class DLPTest {
         when(mockMessage.getCharset())
                 .thenReturn(String.valueOf(StandardCharsets.UTF_8));
 
+        mockArrayMessage = mock(Message.class);
+        when(mockArrayMessage.getBodyAsStreamDecoded())
+                .thenReturn(new ByteArrayInputStream(fieldsInArray.getBytes(StandardCharsets.UTF_8)));
+        when(mockArrayMessage.getCharset())
+                .thenReturn(String.valueOf(StandardCharsets.UTF_8));
+
         Map<String, String> riskDict = new HashMap<>();
         riskDict.put("user.email", "High");
         riskDict.put("user.profile", "High");
         riskDict.put("active", "Low");
         riskDict.put("nothing", "Low");
+        riskDict.put("array", "High");
 
         dlp = new DLP(riskDict);
     }
@@ -64,14 +71,17 @@ class DLPTest {
     @Test
     @SuppressWarnings("unchecked")
     void analyze() {
-        Map<String, Object> result = dlp.analyze(mockMessage);
+        Map<String, Object> res = dlp.analyze(mockMessage);
+        Map<String, Object> resArray = dlp.analyze(mockArrayMessage);
 
-        assertEquals(2, result.get("high_risk"));
-        assertEquals(0, result.get("medium_risk"));
-        assertEquals(1, result.get("low_risk"));
-        assertEquals(3, result.get("unclassified_risk"));
+        assertEquals(2, res.get("high_risk"));
+        assertEquals(0, res.get("medium_risk"));
+        assertEquals(1, res.get("low_risk"));
+        assertEquals(3, res.get("unclassified_risk"));
 
-        Map<String, String> matchedFields = (Map<String, String>) result.get("matched_fields");
+        assertEquals(1, resArray.get("high_risk"));
+
+        Map<String, String> matchedFields = (Map<String, String>) res.get("matched_fields");
         assertEquals("high", matchedFields.get("user.email"));
         assertEquals("high", matchedFields.get("user.profile"));
         assertEquals("low", matchedFields.get("active"));
