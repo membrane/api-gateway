@@ -35,7 +35,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  * The test suite needs to be downloaded manually.
  */
 public class JsonSchemaTestSuiteTests {
-    public final String TEST_SUITE_BASE_PATH = "git\\JSON-Schema-Test-Suite\\tests\\draft4";
+    public final String TEST_SUITE_BASE_PATH = "git\\JSON-Schema-Test-Suite\\tests\\draft6";
 
     private final ObjectMapper objectMapper = new ObjectMapper();
     private final ObjectMapper yamlMapper = new ObjectMapper(new YAMLFactory().disable(YAMLGenerator.Feature.WRITE_DOC_START_MARKER));
@@ -93,18 +93,24 @@ public class JsonSchemaTestSuiteTests {
     }
 
     private @NotNull String generateOpenAPIForSchema(Object schema) throws JsonProcessingException {
-        Map oa = new HashMap(of("openapi", "3.0.2", "paths", of("/test", of("post", of(
+        Map oa = new HashMap(of("openapi", "3.1.0", "paths", of("/test", of("post", of(
                 "requestBody", of("content", of("application/json", of("schema", schema))),
                 "responses", of("200", of("description", "OK")))))));
 
-        if (((Map) schema).containsKey("definitions")) {
+        if (schema instanceof Map && ((Map) schema).containsKey("definitions")) {
             oa.put("components", of("schemas", ((Map) schema).get("definitions")));
             System.out.println("    warning: The schema contains definitions. They have been moved from #/definitions/ to #/components/schemas/ .");
+        }
+
+        if (schema instanceof Map && ((Map) schema).containsKey("$defs")) {
+            oa.put("components", of("schemas", ((Map) schema).get("$defs")));
+            System.out.println("    warning: The schema contains definitions. They have been moved from #/$defs/ to #/components/schemas/ .");
         }
 
         String openapi = yamlMapper.writeValueAsString(oa);
 
         openapi = openapi.replaceAll("#/definitions/", "#/components/schemas/");
+        openapi = openapi.replaceAll("#/\\$defs/", "#/components/schemas/");
         return openapi;
     }
 
@@ -115,6 +121,10 @@ public class JsonSchemaTestSuiteTests {
             return "'$ref':'#foo' is used, which we do not support.";
         if (description.contains("empty tokens in $ref json-pointer"))
             return "the name of a definition is the empty string.";
+        if (description.equals("relative pointer ref to array"))
+            return "prefix reference migration not implemented";
+        if (description.equals("relative pointer ref to object"))
+            return "reference migration not implemented";
         return null;
     }
 

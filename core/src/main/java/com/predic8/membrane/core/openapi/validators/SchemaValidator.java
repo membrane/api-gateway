@@ -116,7 +116,7 @@ public class SchemaValidator implements IJSONSchemaValidator {
         String type = schema.getType();
 
         if (schemaHasNoTypeAndTypes(type)) {
-            return null;
+            return validateMultipleTypes(List.of("string", "number", "integer", "boolean", "array", "object", "null"), ctx, value);
         }
 
         // type in schema has only one type
@@ -184,6 +184,7 @@ public class SchemaValidator implements IJSONSchemaValidator {
     private ValidationErrors validateSingleType(ValidationContext ctx, Object value, String type) {
         try {
             return switch (type) {
+                case NULL -> new NullValidator().validate(ctx, value);
                 case NUMBER -> new NumberValidator().validate(ctx, value);
                 case "integer" -> new IntegerValidator().validate(ctx, value);
                 case "string" -> new StringValidator(schema).validate(ctx, value);
@@ -203,6 +204,7 @@ public class SchemaValidator implements IJSONSchemaValidator {
 
     private static List<IJSONSchemaValidator> getValidatorClasses() {
         return List.of(
+                new NullValidator(),
                 new IntegerValidator(),
                 new NumberValidator(),
                 new StringValidator(null),
