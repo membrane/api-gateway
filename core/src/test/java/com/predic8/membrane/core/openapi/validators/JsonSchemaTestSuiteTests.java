@@ -15,6 +15,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -35,6 +37,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  * The test suite needs to be downloaded manually.
  */
 public class JsonSchemaTestSuiteTests {
+    private final static Logger LOG = LoggerFactory.getLogger(JsonSchemaTestSuiteTests.class);
     public final String TEST_SUITE_BASE_PATH = "git\\JSON-Schema-Test-Suite\\tests\\draft6";
 
     private final ObjectMapper objectMapper = new ObjectMapper();
@@ -46,9 +49,9 @@ public class JsonSchemaTestSuiteTests {
     @Test
     public void testJsonSchema() throws IOException, ParseException {
         runTestsFoundInDirectory(TEST_SUITE_BASE_PATH);
-        System.out.println("correct = " + correct);
-        System.out.println("incorrect = " + incorrect);
-        System.out.println("ignored = " + ignored);
+        LOG.info("correct = {}", correct);
+        LOG.info("incorrect = {}", incorrect);
+        LOG.info("ignored = {}", ignored);
 
         assertEquals(0, incorrect);
     }
@@ -66,7 +69,7 @@ public class JsonSchemaTestSuiteTests {
     }
 
     private void runTestsFromFile(File file) throws IOException, ParseException {
-        System.out.println("Testing file: " + file.getName());
+        LOG.info("Testing file: {}", file.getName());
 
         List<?> tests = objectMapper.readValue(file, List.class);
         for (Object t : tests) {
@@ -75,8 +78,8 @@ public class JsonSchemaTestSuiteTests {
             Object schema = test.get("schema");
             List<?> testRuns = (List<?>) test.get("tests");
 
-            System.out.println("- description = " + description);
-            System.out.println("  schema = " + om.writeValueAsString(schema));
+            LOG.info("- description = {}", description);
+            LOG.info("  schema = {}", om.writeValueAsString(schema));
 
             String openapi = generateOpenAPIForSchema(schema);
 
@@ -99,7 +102,7 @@ public class JsonSchemaTestSuiteTests {
 
         if (schema instanceof Map && ((Map) schema).containsKey("definitions")) {
             oa.put("components", of("schemas", ((Map) schema).get("definitions")));
-            System.out.println("    warning: The schema contains definitions. They have been moved from #/definitions/ to #/components/schemas/ .");
+            LOG.warn("    The schema contains definitions. They have been moved from #/definitions/ to #/components/schemas/ .");
         }
 
         if (schema instanceof Map && ((Map) schema).containsKey("$defs")) {
@@ -131,19 +134,19 @@ public class JsonSchemaTestSuiteTests {
     private void runSingleTestRun(Map tr, String ignoredReason, OpenAPIValidator validator) throws JsonProcessingException, ParseException {
         Map testRun = tr;
 
-        System.out.println("  - testRun = " + om.writeValueAsString(testRun));
+        LOG.info("  - testRun = {}", om.writeValueAsString(testRun));
 
         String description2 = testRun.get("description").toString();
         String body = objectMapper.writeValueAsString(testRun.get("data"));
         Boolean valid = (Boolean)testRun.get("valid");
 
-        System.out.println("    testRun.description = " + description2);
-        System.out.println("    testRun.body = " + body);
-        System.out.println("    testRun.shouldBeValid = " + valid);
+        LOG.info("    testRun.description = {}", description2);
+        LOG.info("    testRun.body = {}", body);
+        LOG.info("    testRun.shouldBeValid = {}", valid);
 
         if (ignoredReason != null) {
             ignored++;
-            System.out.println("    Test: Ignored. (" + ignoredReason + ")");
+            LOG.info("    Test: Ignored. ({})", ignoredReason);
             return;
         }
 
@@ -152,13 +155,13 @@ public class JsonSchemaTestSuiteTests {
         try {
             errors = validator.validate(post.body(body));
 
-            System.out.println("    validation result = " + errors);
+            LOG.info("    validation result = {}", errors);
         } catch (Exception e) {
             e.printStackTrace();
         }
 
         if (errors != null && errors.isEmpty() == valid) {
-            System.out.println("    Test: OK");
+            LOG.info("    Test: OK");
             correct++;
         } else {
             System.out.println("    Test: NOT OK!");
