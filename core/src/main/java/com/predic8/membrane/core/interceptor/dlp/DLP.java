@@ -84,40 +84,39 @@ public class DLP {
 
     private Map<String, Object> evaluateRisk(Set<String> fieldNames) {
         Map<String, String> matchedFields = new HashMap<>();
-        int high = 0;
-        int medium = 0;
-        int low = 0;
-        int unclassified = 0;
+        Map<String, Integer> riskCounts = new HashMap<>();
+        Map<String, Map<String, Integer>> riskDetails = new HashMap<>();
 
         for (String field : fieldNames) {
-            String risk = riskDict.getOrDefault(field.toLowerCase(), "unclassified");
+            String risk = riskDict.getOrDefault(field.toLowerCase(), "unclassified").toLowerCase();
             matchedFields.put(field, risk);
-            switch (risk.toLowerCase()) {
-                case "high":
-                    high++;
-                    break;
-                case "medium":
-                    medium++;
-                    break;
-                case "low":
-                    low++;
-                    break;
-                default:
-                    unclassified++;
-                    break;
+
+            riskCounts.merge(risk, 1, Integer::sum);
+            riskDetails.computeIfAbsent(risk, k -> new HashMap<>()).merge(field, 1, Integer::sum);
+        }
+
+        log.info("Risk Summary: {}", riskCounts);
+
+        for (Map.Entry<String, Map<String, Integer>> entry : riskDetails.entrySet()) {
+            if (!entry.getValue().isEmpty()) {
+                log.info("{} Risk Fields: {}", capitalize(entry.getKey()), entry.getValue().keySet());
             }
         }
 
-        log.info("High: {}, Medium: {}, Low: {}, Unclassified: {}", high, medium, low, unclassified);
-
-
         Map<String, Object> result = new LinkedHashMap<>();
-        result.put("high_risk", high);
-        result.put("medium_risk", medium);
-        result.put("low_risk", low);
-        result.put("unclassified", unclassified);
         result.put("matched_fields", matchedFields);
 
+        for (String riskLevel : List.of("high", "medium", "low", "unclassified")) {
+            result.put(riskLevel + "_risk", riskCounts.getOrDefault(riskLevel, 0));
+            Map<String, Integer> details = riskDetails.get(riskLevel);
+            if (details != null && !details.isEmpty()) {
+                result.put(riskLevel + "_details", details);
+            }
+        }
         return result;
+    }
+
+    private String capitalize(String str) {
+        return str.substring(0, 1).toUpperCase() + str.substring(1);
     }
 }

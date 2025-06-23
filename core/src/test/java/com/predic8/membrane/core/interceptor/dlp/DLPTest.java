@@ -57,12 +57,12 @@ class DLPTest {
         assertEquals(2, result.get("high_risk"));
         assertEquals(0, result.get("medium_risk"));
         assertEquals(1, result.get("low_risk"));
-        assertEquals(3, result.get("unclassified"));
+        assertEquals(3, result.get("unclassified_risk"));
 
         Map<String, String> matchedFields = (Map<String, String>) result.get("matched_fields");
-        assertEquals("High", matchedFields.get("user.email"));
-        assertEquals("High", matchedFields.get("user.profile"));
-        assertEquals("Low", matchedFields.get("active"));
+        assertEquals("high", matchedFields.get("user.email"));
+        assertEquals("high", matchedFields.get("user.profile"));
+        assertEquals("low", matchedFields.get("active"));
     }
 
     @Test
