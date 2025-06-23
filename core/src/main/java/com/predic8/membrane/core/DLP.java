@@ -2,11 +2,10 @@ package com.predic8.membrane.core;
 
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.JsonToken;
 import com.predic8.membrane.core.http.Message;
 
-import java.io.InputStreamReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.util.*;
 import java.util.logging.Logger;
 
@@ -33,9 +32,7 @@ public class DLP {
             String currentFieldName = null;
 
             while (parser.nextToken() != null) {
-                JsonToken token = parser.getCurrentToken();
-
-                switch (token) {
+                switch (parser.getCurrentToken()) {
                     case START_OBJECT:
                     case START_ARRAY:
                         if (currentFieldName != null) {
