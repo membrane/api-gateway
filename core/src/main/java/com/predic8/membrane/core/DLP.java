@@ -29,10 +29,14 @@ public class DLP {
         int unclassified = 0;
 
         try {
-            JsonFactory factory = new JsonFactory();
+            JsonFactory factory = new JsonFactory(); // leightweigt
+
+            // check if bodz is str is byte
             JsonParser parser = factory.createParser(new InputStreamReader(msg.getBodyAsStreamDecoded(), msg.getCharset()));
             String fieldName;
 
+            // Separate parsing from risk evaluation Set<String> getFieldNames(msg)
+            // analyse(fields)
             while (parser.nextToken() != null) {
                 if (parser.getCurrentToken() == JsonToken.FIELD_NAME) {
                     fieldName = parser.currentName().toLowerCase();

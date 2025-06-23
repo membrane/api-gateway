@@ -20,6 +20,8 @@ class DLPTest {
     @BeforeEach
     void setUp() {
         mockMessage = mock(Message.class);
+
+        // up / recursive
         String json = """
                     {
                         "email": "test@example.com",
@@ -28,6 +30,8 @@ class DLPTest {
                         "test": "test"
                     }
                 """;
+
+
 
         when(mockMessage.getBodyAsStreamDecoded())
                 .thenReturn(new ByteArrayInputStream(json.getBytes(StandardCharsets.UTF_8)));
@@ -44,7 +48,7 @@ class DLPTest {
     @Test
     @SuppressWarnings("unchecked")
     void analyze() {
-        DLP dlp = new DLP(mockMessage, riskDict);
+        DLP dlp = new DLP(mockMessage, riskDict); // init with riskDict dlp.check(msg)
         Map<String, Object> result = dlp.analyze();
 
         assertEquals(2, result.get("high_risk"));
