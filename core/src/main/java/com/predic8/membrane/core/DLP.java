@@ -5,7 +5,8 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
 import com.predic8.membrane.core.http.Message;
 
-import java.io.*;
+import java.io.InputStreamReader;
+import java.io.IOException;
 import java.util.*;
 import java.util.logging.Logger;
 
@@ -13,51 +14,82 @@ public class DLP {
 
     private static final Logger logger = Logger.getLogger(DLP.class.getName());
 
-    private final Message msg;
     private final Map<String, String> riskDict;
+    private static final JsonFactory JSON_FACTORY = new JsonFactory();
 
-    public DLP(Message msg, Map<String, String> riskDict) {
-        this.msg = msg;
+    public DLP(Map<String, String> riskDict) {
         this.riskDict = riskDict;
     }
 
-    public Map<String, Object> analyze() {
+    public Map<String, Object> analyze(Message msg) {
+        return evaluateRisk(extractFieldNames(msg));
+    }
+
+    private Set<String> extractFieldNames(Message msg) {
+        Set<String> fieldNames = new HashSet<>();
+        try {
+            JsonParser parser = JSON_FACTORY.createParser(new InputStreamReader(msg.getBodyAsStreamDecoded(), msg.getCharset()));
+            Deque<String> contextStack = new ArrayDeque<>();
+            String currentFieldName = null;
+
+            while (parser.nextToken() != null) {
+                JsonToken token = parser.getCurrentToken();
+
+                switch (token) {
+                    case START_OBJECT:
+                    case START_ARRAY:
+                        if (currentFieldName != null) {
+                            contextStack.push(currentFieldName);
+                            currentFieldName = null;
+                        }
+                        break;
+
+                    case END_OBJECT:
+                    case END_ARRAY:
+                        if (!contextStack.isEmpty()) {
+                            contextStack.pop();
+                        }
+                        break;
+
+                    case FIELD_NAME:
+                        currentFieldName = parser.currentName();
+                        fieldNames.add(buildFullPath(contextStack, currentFieldName).toLowerCase());
+                        break;
+
+                    default:
+                        break;
+                }
+            }
+        } catch (IOException e) {
+            throw new RuntimeException("Error extracting JSON field names", e);
+        }
+        return fieldNames;
+    }
+
+    private String buildFullPath(Deque<String> contextStack, String currentFieldName) {
+        List<String> path = new ArrayList<>(contextStack);
+        path.add(currentFieldName);
+        return String.join(".", path);
+    }
+
+
+    private Map<String, Object> evaluateRisk(Set<String> fieldNames) {
         Map<String, String> matchedFields = new HashMap<>();
         int high = 0;
         int medium = 0;
         int low = 0;
         int unclassified = 0;
 
-        try {
-            JsonFactory factory = new JsonFactory(); // leightweigt
+        for (String field : fieldNames) {
+            String risk = riskDict.getOrDefault(field, "unclassified");
+            matchedFields.put(field, risk);
 
-            // check if bodz is str is byte
-            JsonParser parser = factory.createParser(new InputStreamReader(msg.getBodyAsStreamDecoded(), msg.getCharset()));
-            String fieldName;
-
-            // Separate parsing from risk evaluation Set<String> getFieldNames(msg)
-            // analyse(fields)
-            while (parser.nextToken() != null) {
-                if (parser.getCurrentToken() == JsonToken.FIELD_NAME) {
-                    fieldName = parser.currentName().toLowerCase();
-
-                    String risk = riskDict.getOrDefault(fieldName, "unclassified");
-                    matchedFields.put(fieldName, risk);
-
-                    switch (risk) {
-                        case "High":
-                            high++; break;
-                        case "Medium":
-                            medium++; break;
-                        case "Low":
-                            low++; break;
-                        default:
-                            unclassified++; break;
-                    }
-                }
+            switch (risk.toLowerCase()) {
+                case "high": high++; break;
+                case "medium": medium++; break;
+                case "low": low++; break;
+                default: unclassified++; break;
             }
-        } catch (IOException e) {
-            throw new RuntimeException("Error analyzing JSON", e);
         }
 
         logger.info(String.format(
