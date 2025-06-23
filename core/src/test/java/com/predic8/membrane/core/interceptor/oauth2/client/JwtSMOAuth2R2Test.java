@@ -114,11 +114,13 @@ public class JwtSMOAuth2R2Test extends OAuth2ResourceTest {
     }
 
     private int countCookies() {
-        return browser.cookie.values().stream()
-                .map(Map::keySet)
-                .flatMap(Collection::stream)
-                .map(jwt -> (hasValidClaims(jwt)) ? 1 : 0)
-                .reduce(0, Integer::sum);
+        synchronized (browser.cookie) {
+            return browser.cookie.values().stream()
+                    .map(Map::keySet)
+                    .flatMap(Collection::stream)
+                    .map(jwt -> (hasValidClaims(jwt)) ? 1 : 0)
+                    .reduce(0, Integer::sum);
+        }
     }
 
     private boolean hasValidClaims(String jwt) {

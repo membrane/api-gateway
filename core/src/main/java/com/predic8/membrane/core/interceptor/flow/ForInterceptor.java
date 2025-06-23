@@ -30,6 +30,20 @@ import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 import static com.predic8.membrane.core.lang.ExchangeExpression.Language.SPEL;
 
+/**
+ * @description Iterates over a collection extracted from the {@code Exchange} and applies
+ * its nested interceptors for each element. The current element is exposed
+ * in the exchange under the property key {@code "it"}.
+ *
+ * Example configuration:
+ * <pre>{@code
+ * <for in="message.headers['items']" language="jsonpath">
+ *   <!-- nested interceptors here -->
+ * </for>
+ * }</pre>
+ *
+ * @topic 1. Proxies and Flow
+ */
 @MCElement(name = "for")
 public class ForInterceptor extends AbstractFlowInterceptor {
 

@@ -37,7 +37,6 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 import static java.net.URLEncoder.encode;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -46,11 +45,11 @@ import static org.apache.commons.text.StringEscapeUtils.unescapeXml;
 
 public class BrowserMock implements Function<Exchange, Exchange> {
 
-    public static final Pattern INPUT_PATTERN = Pattern.compile("<input type=\"hidden\" name=\"([-a-zA-Z0-9&;_]*)\" value=\"([-a-zA-Z ._=0-9&/;]*)\"/>");
+    public static final Pattern INPUT_PATTERN = Pattern.compile("<input type=\"hidden\" name=\"([-a-zA-Z0-9&;_]*)\" value=\"([-a-zA-Z ._~=0-9&/;]*)\"/>");
     public static final Pattern FORM_PATTERN = Pattern.compile("<form method=\"post\" action=\"([a-z:/0-9]*)\"");
     final Logger LOG = LoggerFactory.getLogger(BrowserMock.class);
     final Map<String, Map<String, String>> cookie = new HashMap<>();
-    final Function<Exchange, Exchange> cookieHandlingHttpClient = exc -> cookeManager(httpClient(), exc);
+    final Function<Exchange, Exchange> cookieHandlingHttpClient = exc -> cookieManager(httpClient(), exc);
     final Function<Exchange, Exchange> cookieHandlingRedirectingHttpClient = outerExc -> handleFormPost(innerExc -> handleRedirect(cookieHandlingHttpClient, innerExc, new ArrayList<>()), outerExc);
 
     /**
@@ -145,17 +144,22 @@ public class BrowserMock implements Function<Exchange, Exchange> {
      * @return the Exchange resulting from applying the consumer function
      */
 
-    private @NotNull Exchange cookeManager(Function<Exchange, Exchange> consumer, final Exchange exc) {
+    private @NotNull Exchange cookieManager(Function<Exchange, Exchange> consumer, final Exchange exc) {
         String domain = getDomain(exc);
-        Map<String, String> cookies = cookie.get(domain);
-        addCookiesToExchange(exc, cookies);
+        Map<String, String> cookies;
+        synchronized (cookie) {
+            cookies = cookie.get(domain);
+            addCookiesToExchange(exc, cookies);
+        }
         var result = consumer.apply(exc);
 
         List<HeaderField> setCookieInstructions = result.getResponse().getHeader().getValues(new HeaderName("Set-Cookie"));
         checkSameForCookieKeyUsedMultipleTimes(setCookieInstructions);
 
-        for (HeaderField setCookieField : setCookieInstructions) {
-            cookies = manipulateCookies(setCookieField, domain, cookies);
+        synchronized (cookie) {
+            for (HeaderField setCookieField : setCookieInstructions) {
+                cookies = manipulateCookies(setCookieField, domain, cookies);
+            }
         }
 
         return result;
@@ -380,10 +384,39 @@ public class BrowserMock implements Function<Exchange, Exchange> {
     }
 
     public void clearCookies() {
-        cookie.clear();
+        synchronized (cookie) {
+            cookie.clear();
+        }
     }
 
     public int getCookieCount() {
-        return cookie.values().stream().map(Map::size).reduce(0, Integer::sum);
+        synchronized (cookie) {
+            return cookie.values().stream().map(Map::size).reduce(0, Integer::sum);
+        }
+    }
+
+    public String getCookiesText() {
+        StringBuilder sb = new StringBuilder();
+        synchronized (cookie) {
+            cookie.forEach((host, cookies) -> {
+                sb.append(host);
+                sb.append("\n");
+                cookies.entrySet().forEach(e -> sb.append(getCookieLine(e)));
+            });
+        }
+        return sb.toString();
+    }
+
+    /**
+     * Note that this method should only be called within <code>synchronized(cookie) { ... }</code>.
+     */
+    private static String getCookieLine(Map.Entry<String, String> c) {
+        StringBuilder sb = new StringBuilder();
+        sb.append(" ");
+        sb.append(c.getKey());
+        sb.append("=");
+        sb.append(c.getValue());
+        sb.append("\n");
+        return sb.toString();
     }
 }
