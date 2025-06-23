@@ -32,6 +32,18 @@ class DLPTest {
                  }
                 """;
 
+    // Test
+    String fieldsInArray = """
+            {
+                "array": [
+                    {
+                        "foo": 1,
+                        "bar": 2
+                    }
+                ]
+            }
+            """;
+
     @BeforeEach
     void setUp() {
         mockMessage = mock(Message.class);
@@ -68,11 +80,11 @@ class DLPTest {
     @Test
     void extractFieldNames() {
         Set<String> fieldNames = dlp.extractFieldNames(mockMessage);
+        assertEquals(6, fieldNames.size());
         assertTrue(fieldNames.contains("user.email"));
         assertTrue(fieldNames.contains("user.profile"));
         assertTrue(fieldNames.contains("user.profile.firstname"));
         assertTrue(fieldNames.contains("user.profile.lastname"));
         assertTrue(fieldNames.contains("active"));
-        assertEquals(6, fieldNames.size());
     }
 }

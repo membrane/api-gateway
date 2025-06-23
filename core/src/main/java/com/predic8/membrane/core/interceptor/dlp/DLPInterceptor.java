@@ -2,6 +2,7 @@ package com.predic8.membrane.core.interceptor.dlp;
 
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 import org.slf4j.Logger;
@@ -14,6 +15,20 @@ import java.io.InputStreamReader;
 import java.util.HashMap;
 import java.util.Map;
 
+import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
+
+/**
+ * <dlp fieldsConfig="..." action="report|mask|filter">
+ *    <fields>
+ *         <field name="address_.*" action="report"/>
+ *         <field name="credit.*" action="mask"/> <!-- Set value to **** ->
+ *         <field name="health" action="filter"/> <!-- Take out field -->
+ *         <field name="id" action="allow"/>
+ *    </fields>
+ * </dlp>
+ * TODO:
+ * -
+ */
 @MCElement(name = "dlp")
 public class DLPInterceptor extends AbstractInterceptor {
 
@@ -24,23 +39,27 @@ public class DLPInterceptor extends AbstractInterceptor {
     public void init() {
         super.init();
         Map<String, String> riskDict = new HashMap<>();
-        load("dlp-fields.csv", riskDict);
+        load("dlp-fields.csv", riskDict); // Should return Map
         dlp = new DLP(riskDict);
     }
 
-
     @Override
-    public Outcome handleRequest(Exchange exc) {
-        if (dlp == null) {
-            log.warn("DLP not initialized.");
-            return Outcome.CONTINUE;
-        }
-
-        Map<String, Object> riskAnalysis = dlp.analyze(exc.getRequest());
-        log.info("DLP Risk Analysis Result: {}", riskAnalysis);
-        return Outcome.CONTINUE;
+    public Outcome handleResponse(Exchange exc) {
+        return handleInternal(exc.getResponse());
     }
 
+    public Outcome handleInternal(Message msg) {
+        if (dlp == null) {
+            log.warn("DLP not initialized.");
+            return CONTINUE;
+        }
+
+        Map<String, Object> riskAnalysis = dlp.analyze(msg);
+        log.info("DLP Risk Analysis Result: {}", riskAnalysis);
+        return CONTINUE;
+    }
+
+    // Behind Interface FieldConfiguration( getFields) - CsvFieldConfiguration
     public void load(String fileName, Map<String, String> riskDict) {
         try (InputStream inputStream = DLPInterceptor.class.getClassLoader().getResourceAsStream(fileName)) {
 

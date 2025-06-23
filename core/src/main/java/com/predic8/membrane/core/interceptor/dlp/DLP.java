@@ -19,21 +19,17 @@ public class DLP {
     // JsonFactory is thread-safe and should be reused
     private static final JsonFactory JSON_FACTORY = new JsonFactory();
 
-    public DLP(Map<String, String> riskDict) {
-        this.riskDict = new HashMap<>();
-        riskDict.forEach((key, value) -> this.riskDict.put(key.toLowerCase(), value));
+    public DLP(final Map<String, String> riskDict) {
+        this.riskDict = riskDict;
     }
 
     public Map<String, Object> analyze(Message msg) {
-        if (msg == null) {
-            throw new IllegalArgumentException("Message cannot be null");
-        }
         return evaluateRisk(extractFieldNames(msg));
     }
 
     Set<String> extractFieldNames(Message msg) {
         Set<String> fieldNames = new HashSet<>();
-        try (JsonParser parser = JSON_FACTORY.createParser(new InputStreamReader(msg.getBodyAsStreamDecoded(), msg.getCharset()))) {
+        try (JsonParser parser = createParser(msg)) {
             Deque<String> contextStack = new ArrayDeque<>();
             String currentFieldName = null;
 
@@ -75,6 +71,10 @@ public class DLP {
         return fieldNames;
     }
 
+    private static JsonParser createParser(Message msg) throws IOException {
+        return JSON_FACTORY.createParser(new InputStreamReader(msg.getBodyAsStreamDecoded(), msg.getCharset()));
+    }
+
     private String buildFullPath(Deque<String> contextStack, String currentFieldName) {
         List<String> path = new ArrayList<>(contextStack);
         path.add(currentFieldName);
@@ -97,11 +97,7 @@ public class DLP {
 
         log.info("Risk Summary: {}", riskCounts);
 
-        for (Map.Entry<String, Map<String, Integer>> entry : riskDetails.entrySet()) {
-            if (!entry.getValue().isEmpty()) {
-                log.info("{} Risk Fields: {}", capitalize(entry.getKey()), entry.getValue().keySet());
-            }
-        }
+        logStatistics(riskDetails);
 
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("matched_fields", matchedFields);
@@ -114,6 +110,14 @@ public class DLP {
             }
         }
         return result;
+    }
+
+    private void logStatistics(Map<String, Map<String, Integer>> riskDetails) {
+        for (Map.Entry<String, Map<String, Integer>> entry : riskDetails.entrySet()) {
+            if (!entry.getValue().isEmpty()) {
+                log.info("{} Risk Fields: {}", capitalize(entry.getKey()), entry.getValue().keySet());
+            }
+        }
     }
 
     private String capitalize(String str) {
