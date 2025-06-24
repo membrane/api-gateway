@@ -13,10 +13,10 @@
    limitations under the License. */
 package com.predic8.membrane.annot.generator.kubernetes.model;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 import java.util.stream.Collectors;
+
+import static com.predic8.membrane.annot.generator.kubernetes.model.SchemaUtils.printRequired;
 
 public class Schema implements ISchema {
 
@@ -24,6 +24,7 @@ public class Schema implements ISchema {
 
     private final List<SchemaObject> definitions = new ArrayList<>();
     private final List<SchemaObject> properties = new ArrayList<>();
+    private final Map<String, Object> attributes = new HashMap<>();
     private boolean additionalProperties;
 
     public Schema(String name) {
@@ -36,6 +37,10 @@ public class Schema implements ISchema {
 
     public void addDefinition(SchemaObject definition) {
         definitions.add(definition);
+    }
+
+    public void addAttribute(String key, Object value) {
+        attributes.put(key, value);
     }
 
     @Override
@@ -57,7 +62,7 @@ public class Schema implements ISchema {
         if (properties.isEmpty())
             return "";
 
-        return "\"properties\":{\"spec\":{\"type\":\"object\",\"additionalProperties\":"+additionalProperties+",\"properties\":{" +
+        return ",\"properties\":{\"spec\":{\"type\":\"object\",\"additionalProperties\":"+additionalProperties+",\"properties\":{" +
                 properties.stream()
                         .map(Objects::toString)
                         .collect(Collectors.joining(",")) +
@@ -70,17 +75,7 @@ public class Schema implements ISchema {
         return ((hasDefs && !hasProps) || (!hasDefs && hasProps)) ? "" : ",";
     }
 
-    private String printRequired() {
-        String required = properties.stream()
-                .filter(SchemaObject::isRequired)
-                .map(so -> "\"" + so.getName() + "\"")
-                .collect(Collectors.joining(","));
 
-        if (required.isEmpty())
-            return "";
-
-        return ",\"required\":[" + required + "]";
-    }
 
     @Override
     public String toString() {
@@ -92,7 +87,11 @@ public class Schema implements ISchema {
                 printDefinitions() +
                 checkTrailingCommaNeed() +
                 printProperties() +
-                printRequired() +
+                printRequired(properties)
+                + (!attributes.isEmpty() ? "," : "") +
+                attributes.entrySet().stream()
+                        .map(SchemaUtils::entryToJson)
+                        .collect(Collectors.joining(",")) +
                 "}"
                 ;
     }
