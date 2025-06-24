@@ -16,12 +16,7 @@
 
 package com.predic8.membrane.core.openapi.validators;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.NullNode;
-
-import java.math.BigDecimal;
-
-import static java.lang.Double.parseDouble;
 
 public class NullValidator implements IJSONSchemaValidator {
 
@@ -37,7 +32,7 @@ public class NullValidator implements IJSONSchemaValidator {
     }
 
     /**
-     * Only check if obj can be converted to a number
+     * Check, if value is null.
      */
     @Override
     public ValidationErrors validate(ValidationContext ctx, Object value) {

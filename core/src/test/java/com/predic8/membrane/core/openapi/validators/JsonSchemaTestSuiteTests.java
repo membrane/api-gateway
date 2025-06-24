@@ -37,7 +37,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  * The test suite needs to be downloaded manually.
  */
 public class JsonSchemaTestSuiteTests {
-    private final static Logger LOG = LoggerFactory.getLogger(JsonSchemaTestSuiteTests.class);
+    private final static Logger log = LoggerFactory.getLogger(JsonSchemaTestSuiteTests.class);
     public final String TEST_SUITE_BASE_PATH = "git\\JSON-Schema-Test-Suite\\tests\\draft6";
 
     private final ObjectMapper objectMapper = new ObjectMapper();
@@ -49,9 +49,9 @@ public class JsonSchemaTestSuiteTests {
     @Test
     public void testJsonSchema() throws IOException, ParseException {
         runTestsFoundInDirectory(TEST_SUITE_BASE_PATH);
-        LOG.info("correct = {}", correct);
-        LOG.info("incorrect = {}", incorrect);
-        LOG.info("ignored = {}", ignored);
+        log.info("correct = {}", correct);
+        log.info("incorrect = {}", incorrect);
+        log.info("ignored = {}", ignored);
 
         assertEquals(0, incorrect);
     }
@@ -69,7 +69,7 @@ public class JsonSchemaTestSuiteTests {
     }
 
     private void runTestsFromFile(File file) throws IOException, ParseException {
-        LOG.info("Testing file: {}", file.getName());
+        log.info("Testing file: {}", file.getName());
 
         List<?> tests = objectMapper.readValue(file, List.class);
         for (Object t : tests) {
@@ -78,8 +78,8 @@ public class JsonSchemaTestSuiteTests {
             Object schema = test.get("schema");
             List<?> testRuns = (List<?>) test.get("tests");
 
-            LOG.info("- description = {}", description);
-            LOG.info("  schema = {}", om.writeValueAsString(schema));
+            log.info("- description = {}", description);
+            log.info("  schema = {}", om.writeValueAsString(schema));
 
             String openapi = generateOpenAPIForSchema(schema);
 
@@ -102,12 +102,12 @@ public class JsonSchemaTestSuiteTests {
 
         if (schema instanceof Map && ((Map) schema).containsKey("definitions")) {
             oa.put("components", of("schemas", ((Map) schema).get("definitions")));
-            LOG.warn("    The schema contains definitions. They have been moved from #/definitions/ to #/components/schemas/ .");
+            log.warn("    The schema contains definitions. They have been moved from #/definitions/ to #/components/schemas/ .");
         }
 
         if (schema instanceof Map && ((Map) schema).containsKey("$defs")) {
             oa.put("components", of("schemas", ((Map) schema).get("$defs")));
-            System.out.println("    warning: The schema contains definitions. They have been moved from #/$defs/ to #/components/schemas/ .");
+            log.warn("    warning: The schema contains definitions. They have been moved from #/$defs/ to #/components/schemas/ .");
         }
 
         String openapi = yamlMapper.writeValueAsString(oa);
@@ -134,19 +134,19 @@ public class JsonSchemaTestSuiteTests {
     private void runSingleTestRun(Map tr, String ignoredReason, OpenAPIValidator validator) throws JsonProcessingException, ParseException {
         Map testRun = tr;
 
-        LOG.info("  - testRun = {}", om.writeValueAsString(testRun));
+        log.info("  - testRun = {}", om.writeValueAsString(testRun));
 
         String description2 = testRun.get("description").toString();
         String body = objectMapper.writeValueAsString(testRun.get("data"));
         Boolean valid = (Boolean)testRun.get("valid");
 
-        LOG.info("    testRun.description = {}", description2);
-        LOG.info("    testRun.body = {}", body);
-        LOG.info("    testRun.shouldBeValid = {}", valid);
+        log.info("    testRun.description = {}", description2);
+        log.info("    testRun.body = {}", body);
+        log.info("    testRun.shouldBeValid = {}", valid);
 
         if (ignoredReason != null) {
             ignored++;
-            LOG.info("    Test: Ignored. ({})", ignoredReason);
+            log.info("    Test: Ignored. ({})", ignoredReason);
             return;
         }
 
@@ -155,16 +155,16 @@ public class JsonSchemaTestSuiteTests {
         try {
             errors = validator.validate(post.body(body));
 
-            LOG.info("    validation result = {}", errors);
+            log.info("    validation result = {}", errors);
         } catch (Exception e) {
             e.printStackTrace();
         }
 
         if (errors != null && errors.isEmpty() == valid) {
-            LOG.info("    Test: OK");
+            log.info("    Test: OK");
             correct++;
         } else {
-            System.out.println("    Test: NOT OK!");
+            log.warn("    Test: NOT OK!");
             incorrect++;
         }
     }

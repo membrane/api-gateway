@@ -56,4 +56,5 @@ components:
           type: number
           exclusiveMaximum: true
           maximum: 5
-          
+        maximum-without-type:
+          maximum: 5
