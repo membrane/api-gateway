@@ -19,10 +19,7 @@ import com.predic8.membrane.annot.generator.kubernetes.model.ISchema;
 import com.predic8.membrane.annot.generator.kubernetes.model.RefObj;
 import com.predic8.membrane.annot.generator.kubernetes.model.Schema;
 import com.predic8.membrane.annot.generator.kubernetes.model.SchemaObject;
-import com.predic8.membrane.annot.model.ChildElementInfo;
-import com.predic8.membrane.annot.model.ElementInfo;
-import com.predic8.membrane.annot.model.MainInfo;
-import com.predic8.membrane.annot.model.Model;
+import com.predic8.membrane.annot.model.*;
 import com.predic8.membrane.annot.model.doc.Doc;
 
 import javax.annotation.processing.ProcessingEnvironment;
@@ -110,7 +107,7 @@ public class JsonSchemaGenerator extends AbstractK8sGenerator {
         }
     }
 
-    private String getDescriptionContent(ElementInfo elementInfo) {
+    private String getDescriptionContent(AbstractJavadocedInfo elementInfo) {
         Doc doc = elementInfo.getDoc(processingEnv);
         if (doc == null) {
             return "";
@@ -121,11 +118,11 @@ public class JsonSchemaGenerator extends AbstractK8sGenerator {
                 .findFirst().orElse("");
     }
 
-    private String getDescriptionAsText(ElementInfo elementInfo) {
+    private String getDescriptionAsText(AbstractJavadocedInfo elementInfo) {
         return escapeJsonContent(getDescriptionContent(elementInfo).replaceAll("<[^>]+>", "").replaceAll("\\s+", " ").trim());
     }
 
-    private String getDescriptionAsHtml(ElementInfo elementInfo) {
+    private String getDescriptionAsHtml(AbstractJavadocedInfo elementInfo) {
         return escapeJsonContent(getDescriptionContent(elementInfo).replaceAll("\\s+", " ").trim());
     }
 
@@ -168,6 +165,8 @@ public class JsonSchemaGenerator extends AbstractK8sGenerator {
                 .filter(ai -> !ai.getXMLName().equals("id"))
                 .forEach(ai -> {
                     SchemaObject sop = new SchemaObject(ai.getXMLName());
+                    sop.addAttribute("description", getDescriptionAsText(ai));
+                    sop.addAttribute("x-intellij-html-description", getDescriptionAsHtml(ai));
                     sop.addAttribute("type", ai.getSchemaType(processingEnv.getTypeUtils()));
                     sop.setRequired(ai.isRequired());
                     so.addProperty(sop);
@@ -185,6 +184,8 @@ public class JsonSchemaGenerator extends AbstractK8sGenerator {
             return;
 
         SchemaObject sop = new SchemaObject(i.getTci().getPropertyName());
+        sop.addAttribute("description", getDescriptionAsText(i));
+        sop.addAttribute("x-intellij-html-description", getDescriptionAsHtml(i));
         sop.addAttribute("type", "string");
         so.addProperty(sop);
     }
@@ -202,6 +203,8 @@ public class JsonSchemaGenerator extends AbstractK8sGenerator {
 
                 SchemaObject sop = new SchemaObject(cei.getPropertyName());
                 sop.setRequired(cei.isRequired());
+                sop.addAttribute("description", getDescriptionAsText(cei));
+                sop.addAttribute("x-intellij-html-description", getDescriptionAsHtml(cei));
                 sop.addAttribute("type", "array");
                 sop.addAttribute("additionalItems", false);
                 sop.addAttribute("items", items);
@@ -216,6 +219,8 @@ public class JsonSchemaGenerator extends AbstractK8sGenerator {
 
             for (ElementInfo ei : main.getChildElementDeclarations().get(cei.getTypeDeclaration()).getElementInfo()) {
                 SchemaObject sop = new SchemaObject(ei.getAnnotation().name());
+                sop.addAttribute("description", getDescriptionAsText(ei));
+                sop.addAttribute("x-intellij-html-description", getDescriptionAsHtml(ei));
                 sop.setRequired(cei.isRequired());
                 sop.addAttribute("$ref", "#/definitions/" + ei.getXSDTypeName(m));
                 parent2.addProperty(sop);
