@@ -29,7 +29,7 @@ import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
  * @topic 1. Proxies and Flow
  */
 @MCElement(name = "request", topLevel = false)
-public class RequestInterceptor extends AbstractFlowInterceptor {
+public class RequestInterceptor extends AbstractFlowWithChildrenInterceptor {
 
     private static final Logger log = LoggerFactory.getLogger(RequestInterceptor.class);
 

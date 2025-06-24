@@ -16,14 +16,14 @@ package com.predic8.membrane.core.interceptor;
 
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.interceptor.flow.AbstractFlowInterceptor;
+import com.predic8.membrane.core.interceptor.flow.AbstractFlowWithChildrenInterceptor;
 
 /**
  * @description The global chain applies plugins to all endpoints, enabling centralized features
  *              such as global user authentication, logging, and other cross-cutting concerns.
  */
 @MCElement(name = "global")
-public class GlobalInterceptor extends AbstractFlowInterceptor {
+public class GlobalInterceptor extends AbstractFlowWithChildrenInterceptor {
 
     @Override
     public Outcome handleRequest(Exchange exc) {
