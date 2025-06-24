@@ -52,7 +52,7 @@ public class Schema implements ISchema {
         if (definitions.isEmpty())
             return "";
 
-        return "\"definitions\":{" + definitions.stream()
+        return ",\"definitions\":{" + definitions.stream()
                 .map(Objects::toString)
                 .collect(Collectors.joining(",")) +
                 "}";
@@ -69,12 +69,6 @@ public class Schema implements ISchema {
                 "}}}";
     }
 
-    private String checkTrailingCommaNeed() {
-        boolean hasDefs = !definitions.isEmpty();
-        boolean hasProps = !properties.isEmpty();
-        return ((hasDefs && !hasProps) || (!hasDefs && hasProps)) ? "" : ",";
-    }
-
 
 
     @Override
@@ -83,9 +77,8 @@ public class Schema implements ISchema {
                 "\"id\": \"https://membrane-soa.org/" + name.toLowerCase() + ".schema.json\"," +
                 "\"$schema\": \"https://json-schema.org/draft-04/schema#\"," +
                 "\"title\": \"" + name + "\"," +
-                "\"type\": \"object\"," +
+                "\"type\": \"object\"" +
                 printDefinitions() +
-                checkTrailingCommaNeed() +
                 printProperties() +
                 printRequired(properties)
                 + (!attributes.isEmpty() ? "," : "") +

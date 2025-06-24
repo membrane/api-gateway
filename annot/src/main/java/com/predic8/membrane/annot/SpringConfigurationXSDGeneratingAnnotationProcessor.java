@@ -228,6 +228,9 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
 
 					scan(m, main, ii);
 
+					String uniquenessError = getUniquenessError(ii);
+					if (uniquenessError != null)
+						throw new ProcessingException(uniquenessError, ii.getElement());
 					if (ii.getTci() != null && !ii.getAnnotation().mixed())
 						throw new ProcessingException("@MCTextContent requires @MCElement(..., mixed=true) on the class.", ii.getElement());
 					if (ii.getTci() == null && ii.getAnnotation().mixed())
@@ -274,6 +277,11 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
 				processingEnv.getMessager().printMessage(Kind.ERROR, i == 0 ? e1.getMessage() : "also here", e1.getElements()[i]);
 			return true;
 		}
+	}
+
+	private String getUniquenessError(ElementInfo ii) {
+		// TODO ii.getChildElementSpecs().map(::getPropertyName) aber isList siehe JsonSchemaGenerator:140
+		return null;
 	}
 
 	private static final String REQUIRED = "com.predic8.membrane.annot.Required";

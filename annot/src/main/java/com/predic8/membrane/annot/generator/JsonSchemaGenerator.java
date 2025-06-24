@@ -79,7 +79,7 @@ public class JsonSchemaGenerator extends AbstractK8sGenerator {
                         }});
                 envelope.addProperty(new SchemaObject("kind") {{
                     addAttribute("type", "string");
-                    addAttribute("enum", List.of("\"" + parser.getName() + "\""));
+                    addAttribute("enum", List.of("\"" + elementInfo.getAnnotation().name() + "\""));
                 }});
                 envelope.addProperty(new SchemaObject("metadata") {{
                     addAttribute("type", "object");
@@ -90,7 +90,7 @@ public class JsonSchemaGenerator extends AbstractK8sGenerator {
 
                 schema.addDefinition(envelope);
 
-                oneOfArray.add(new RefObj("\"#/definitions/" + envelope.getName() + "\""));
+                oneOfArray.add(new RefObj("#/definitions/" + envelope.getName()));
             }
 
             schema.addDefinition(parser);
