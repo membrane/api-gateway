@@ -23,15 +23,18 @@ import com.predic8.membrane.annot.model.ChildElementInfo;
 import com.predic8.membrane.annot.model.ElementInfo;
 import com.predic8.membrane.annot.model.MainInfo;
 import com.predic8.membrane.annot.model.Model;
+import com.predic8.membrane.annot.model.doc.Doc;
 
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.Element;
+import javax.tools.Diagnostic;
 import javax.tools.FileObject;
 import javax.tools.StandardLocation;
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class JsonSchemaGenerator extends AbstractK8sGenerator {
 
@@ -65,6 +68,8 @@ public class JsonSchemaGenerator extends AbstractK8sGenerator {
             SchemaObject parser = new SchemaObject(elementInfo.getXSDTypeName(m));
             parser.addAttribute("type", "object");
             parser.addAttribute("additionalProperties", elementInfo.getOai() != null);
+            parser.addAttribute("description", getDescriptionAsText(elementInfo));
+            parser.addAttribute("x-intellij-html-description", getDescriptionAsHtml(elementInfo));
             collectProperties(m, main, elementInfo, parser);
 
             if (elementInfo.getAnnotation().topLevel()) {
@@ -103,6 +108,52 @@ public class JsonSchemaGenerator extends AbstractK8sGenerator {
         try (BufferedWriter w = new BufferedWriter(fo.openWriter())) {
             w.write(schema.toString());
         }
+    }
+
+    private String getDescriptionAsText(ElementInfo elementInfo) {
+        Doc doc = elementInfo.getDoc(processingEnv);
+        if (doc == null) {
+            return "";
+        }
+        String rawText = doc.getEntries().stream()
+                .filter(e -> "description".equals(e.getKey()))
+                .map(e -> e.getValueAsXMLSnippet(false))
+                .findFirst().orElse("");
+        rawText = rawText.replaceAll("\\s+", " ").trim();
+        return escapeJsonContent(rawText);
+
+    }
+    private String getDescriptionAsHtml(ElementInfo elementInfo) {
+        Doc doc = elementInfo.getDoc(processingEnv);
+        if (doc == null) {
+            return "";
+        }
+        String rawHtml = doc.getEntries().stream()
+                .filter(e -> "description".equals(e.getKey()))
+                .map(e -> e.getValueAsXMLSnippet(true))
+                .findFirst().orElse("");
+
+        rawHtml = rawHtml.replaceAll("\\s+", " ").trim();
+        return escapeJsonContent(rawHtml);
+    }
+
+    private static String escapeJsonContent(String s) {
+        StringBuilder sb = new StringBuilder();
+        for (char c : s.toCharArray()) {
+            switch (c) {
+                case '"':  sb.append("\\\""); break;
+                case '\\': sb.append("\\\\"); break;
+                case '\b': sb.append("\\b");  break;
+                case '\f': sb.append("\\f");  break;
+                case '\n': sb.append("\\n");  break;
+                case '\r': sb.append("\\r");  break;
+                case '\t': sb.append("\\t");  break;
+                default:
+                    if (c < 0x20) sb.append(String.format("\\u%04x",(int)c));
+                    else          sb.append(c);
+            }
+        }
+        return sb.toString();
     }
 
 
