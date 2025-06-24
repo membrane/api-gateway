@@ -110,31 +110,23 @@ public class JsonSchemaGenerator extends AbstractK8sGenerator {
         }
     }
 
-    private String getDescriptionAsText(ElementInfo elementInfo) {
+    private String getDescriptionContent(ElementInfo elementInfo) {
         Doc doc = elementInfo.getDoc(processingEnv);
         if (doc == null) {
             return "";
         }
-        String rawText = doc.getEntries().stream()
+        return doc.getEntries().stream()
                 .filter(e -> "description".equals(e.getKey()))
                 .map(e -> e.getValueAsXMLSnippet(false))
                 .findFirst().orElse("");
-        rawText = rawText.replaceAll("\\s+", " ").trim();
-        return escapeJsonContent(rawText);
-
     }
-    private String getDescriptionAsHtml(ElementInfo elementInfo) {
-        Doc doc = elementInfo.getDoc(processingEnv);
-        if (doc == null) {
-            return "";
-        }
-        String rawHtml = doc.getEntries().stream()
-                .filter(e -> "description".equals(e.getKey()))
-                .map(e -> e.getValueAsXMLSnippet(true))
-                .findFirst().orElse("");
 
-        rawHtml = rawHtml.replaceAll("\\s+", " ").trim();
-        return escapeJsonContent(rawHtml);
+    private String getDescriptionAsText(ElementInfo elementInfo) {
+        return escapeJsonContent(getDescriptionContent(elementInfo).replaceAll("<[^>]+>", "").replaceAll("\\s+", " ").trim());
+    }
+
+    private String getDescriptionAsHtml(ElementInfo elementInfo) {
+        return escapeJsonContent(getDescriptionContent(elementInfo).replaceAll("\\s+", " ").trim());
     }
 
     private static String escapeJsonContent(String s) {
