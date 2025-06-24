@@ -16,6 +16,7 @@ package com.predic8.membrane.annot.generator;
 import com.predic8.membrane.annot.ProcessingException;
 import com.predic8.membrane.annot.generator.kubernetes.AbstractK8sGenerator;
 import com.predic8.membrane.annot.generator.kubernetes.model.ISchema;
+import com.predic8.membrane.annot.generator.kubernetes.model.RefObj;
 import com.predic8.membrane.annot.generator.kubernetes.model.Schema;
 import com.predic8.membrane.annot.generator.kubernetes.model.SchemaObject;
 import com.predic8.membrane.annot.model.ChildElementInfo;
@@ -29,7 +30,8 @@ import javax.tools.FileObject;
 import javax.tools.StandardLocation;
 import java.io.BufferedWriter;
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
 
 public class JsonSchemaGenerator extends AbstractK8sGenerator {
 
@@ -49,20 +51,9 @@ public class JsonSchemaGenerator extends AbstractK8sGenerator {
 
     private void assemble(Model m, MainInfo main) throws IOException {
         Schema schema = new Schema("membrane");
-        schema.setAdditionalProperties(false);
-        schema.addProperty(new SchemaObject("apiVersion") {{
-            addAttribute("type", "string");
-        }});
-        schema.addProperty(new SchemaObject("metadata") {{
-            addAttribute("type", "object");
-        }});
-        schema.addProperty(new SchemaObject("kind") {{
-            addAttribute("type", "string");
-        }});
+        List<RefObj> oneOfArray = new ArrayList<>();
 
-        Collection<ElementInfo> elementInfos = main.getElements().values();
-
-        for (ElementInfo elementInfo : elementInfos) {
+        for (ElementInfo elementInfo : main.getElements().values()) {
 
             if (elementInfo.getAnnotation().mixed() && !elementInfo.getChildElementSpecs().isEmpty()) {
                 throw new ProcessingException(
@@ -71,21 +62,51 @@ public class JsonSchemaGenerator extends AbstractK8sGenerator {
                 );
             }
 
-            SchemaObject subSchema = new SchemaObject(elementInfo.getXSDTypeName(m));
-            subSchema.addAttribute("type", "object");
-            subSchema.addAttribute("additionalProperties", elementInfo.getOai() != null);
+            SchemaObject parser = new SchemaObject(elementInfo.getXSDTypeName(m));
+            parser.addAttribute("type", "object");
+            parser.addAttribute("additionalProperties", elementInfo.getOai() != null);
+            collectProperties(m, main, elementInfo, parser);
 
-            collectProperties(m, main, elementInfo, subSchema);
-            schema.addDefinition(subSchema);
+            if (elementInfo.getAnnotation().topLevel()) {
+
+                SchemaObject envelope = new SchemaObject(elementInfo.getXSDTypeName(m).replaceFirst("Parser$", "Envelope"));
+
+                envelope.addAttribute("additionalProperties", false);
+                envelope.addAttribute("required", List.of("\"kind\"", "\"metadata\"", "\"spec\""));
+                envelope.addProperty(
+                        new SchemaObject("apiVersion") {{
+                            addAttribute("type", "string");
+                        }});
+                envelope.addProperty(new SchemaObject("kind") {{
+                    addAttribute("type", "string");
+                    addAttribute("enum", List.of("\"" + parser.getName() + "\""));
+                }});
+                envelope.addProperty(new SchemaObject("metadata") {{
+                    addAttribute("type", "object");
+                }});
+                envelope.addProperty(new SchemaObject("spec") {{
+                    addAttribute("$ref", "#/definitions/" + parser.getName());
+                }});
+
+                schema.addDefinition(envelope);
+
+                oneOfArray.add(new RefObj("\"#/definitions/" + envelope.getName() + "\""));
+            }
+
+            schema.addDefinition(parser);
+
         }
-        FileObject fo = createFile(main, "membrane.schema.json");
+
+        schema.addAttribute("oneOf", oneOfArray);
+
+        FileObject fo = createFile(main);
         try (BufferedWriter w = new BufferedWriter(fo.openWriter())) {
             w.write(schema.toString());
         }
     }
 
 
-    private FileObject createFile(MainInfo main, String fileName) throws IOException {
+    private FileObject createFile(MainInfo main) throws IOException {
         List<Element> sources = new ArrayList<>(main.getInterceptorElements());
         sources.add(main.getElement());
 
@@ -93,7 +114,7 @@ public class JsonSchemaGenerator extends AbstractK8sGenerator {
                 .createResource(
                         StandardLocation.CLASS_OUTPUT,
                         "com.predic8.membrane.core.config.json",
-                        fileName,
+                        "membrane.schema.json",
                         sources.toArray(new Element[0])
                 );
     }
