@@ -23,9 +23,7 @@ import com.predic8.membrane.core.util.jdbc.AbstractJdbcSupport;
 import org.jetbrains.annotations.NotNull;
 
 import java.sql.*;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 @MCElement(name = "databaseApiKeyStore")
 public class JDBCApiKeyStore extends AbstractJdbcSupport implements ApiKeyStore {
@@ -103,12 +101,14 @@ public class JDBCApiKeyStore extends AbstractJdbcSupport implements ApiKeyStore 
     }
 
     private boolean tableNotExists(Connection connection, String tableName) throws SQLException {
-        try (ResultSet rs = connection.getMetaData()
-                .getTables(null, null, tableName.toLowerCase(), new String[]{"TABLE"})) {
-            return !rs.next();
+        Set<String> existingTables = new HashSet<>();
+        try (ResultSet rs = connection.getMetaData().getTables(null, connection.getSchema(), "%", new String[] {"TABLE"})) {
+            while (rs.next()) {
+                existingTables.add(rs.getString("TABLE_NAME").toLowerCase());
+            }
         }
+        return !existingTables.contains(tableName.toLowerCase());
     }
-
 
     @MCChildElement(order = 0)
     public void setKeyTable(KeyTable keyTable) {
