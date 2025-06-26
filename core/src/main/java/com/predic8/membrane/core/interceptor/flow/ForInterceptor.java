@@ -45,7 +45,7 @@ import static com.predic8.membrane.core.lang.ExchangeExpression.Language.SPEL;
  * @topic 1. Proxies and Flow
  */
 @MCElement(name = "for")
-public class ForInterceptor extends AbstractFlowInterceptor {
+public class ForInterceptor extends AbstractFlowWithChildrenInterceptor {
 
     private static final Logger log = LoggerFactory.getLogger(ForInterceptor.class);
 
