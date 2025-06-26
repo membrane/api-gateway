@@ -1,0 +1,90 @@
+package com.predic8.membrane.core.interceptor.dlp;
+
+import com.predic8.membrane.annot.MCAttribute;
+import com.predic8.membrane.annot.MCChildElement;
+import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.Message;
+import com.predic8.membrane.core.interceptor.AbstractInterceptor;
+import com.predic8.membrane.core.interceptor.Outcome;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
+
+@MCElement(name = "dlp")
+public class DLPInterceptor extends AbstractInterceptor {
+
+    private static final Logger log = LoggerFactory.getLogger(DLPInterceptor.class);
+    private DLPAnalyzer dlpAnalyzer;
+    private String fieldsConfig;
+    private String action = "report";
+    private Fields fields;
+
+    @Override
+    public void init() {
+        super.init();
+    }
+
+    @Override
+    public Outcome handleRequest(Exchange exc) {
+        return handleInternal(exc.getRequest());
+    }
+
+    @Override
+    public Outcome handleResponse(Exchange exc) {
+        return handleInternal(exc.getResponse());
+    }
+
+    public Outcome handleInternal(Message msg) {
+        if (fieldsConfig != null) {
+            dlpAnalyzer = new DLPAnalyzer(new CsvFieldConfiguration().getFields(fieldsConfig));
+        } else {
+            dlpAnalyzer = new DLPAnalyzer(java.util.Map.of());
+        }
+
+        RiskReport report = dlpAnalyzer.analyze(msg);
+        log.info("DLP Risk Analysis: {}", report.getLogReport());
+
+        if (fields != null && !fields.getFields().isEmpty()) {
+            for (Field f : fields.getFields()) {
+                f.handleAction(msg);
+            }
+        } else {
+            report.getMatchedFields().keySet().forEach(name -> {
+                Field f = new Field();
+                f.setName(name);
+                f.setAction(action);
+                f.handleAction(msg);
+            });
+        }
+        return CONTINUE;
+    }
+
+    public String getFieldsConfig() {
+        return fieldsConfig;
+    }
+
+    @MCAttribute
+    public void setFieldsConfig(String fieldsConfig) {
+        this.fieldsConfig = fieldsConfig;
+    }
+
+    public String getAction() {
+        return action;
+    }
+
+    @MCAttribute
+    public void setAction(String action) {
+        this.action = action;
+    }
+
+    public Fields getFields() {
+        return fields;
+    }
+
+    @MCChildElement
+    public void setFields(Fields fields) {
+        this.fields = fields;
+    }
+}
