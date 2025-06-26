@@ -13,9 +13,9 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-class DLPTest {
+class DLPAnalyzerTest {
 
-    private DLP dlp;
+    private DLPAnalyzer dlpAnalyzer;
     private Message mockMessage;
     private Message mockArrayMessage;
 
@@ -58,12 +58,12 @@ class DLPTest {
         riskDict.put("foo",         "High"); // Leaf-Match für Array-Element
         riskDict.put("bar",         "Low");
 
-        dlp = new DLP(riskDict);
+        dlpAnalyzer = new DLPAnalyzer(riskDict);
     }
 
     @Test
     void analyzeSimpleJson() {
-        RiskReport report = dlp.analyze(mockMessage);
+        RiskReport report = dlpAnalyzer.analyze(mockMessage);
 
         assertEquals(1, report.getRiskCounts().getOrDefault("high", 0));
         assertEquals(1, report.getRiskCounts().getOrDefault("low", 0));
@@ -78,7 +78,7 @@ class DLPTest {
 
     @Test
     void analyzeArrayJson() {
-        RiskReport report = dlp.analyze(mockArrayMessage);
+        RiskReport report = dlpAnalyzer.analyze(mockArrayMessage);
 
         assertEquals(1, report.getRiskCounts().getOrDefault("high", 0));
         assertEquals(1, report.getRiskCounts().getOrDefault("low", 0));
@@ -91,7 +91,7 @@ class DLPTest {
 
     @Test
     void allExpectedFieldsPresent() {
-        RiskReport report = dlp.analyze(mockMessage);
+        RiskReport report = dlpAnalyzer.analyze(mockMessage);
 
         assertTrue(report.getMatchedFields().containsKey("user.email"));
         assertTrue(report.getMatchedFields().containsKey("user.profile.firstname"));

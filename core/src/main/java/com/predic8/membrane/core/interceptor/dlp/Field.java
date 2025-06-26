@@ -1,27 +1,37 @@
 package com.predic8.membrane.core.interceptor.dlp;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.http.Message;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Locale;
+import java.util.Objects;
+import java.util.regex.Pattern;
+
 @MCElement(name = "field")
 public class Field {
 
+
     private static final Logger log = LoggerFactory.getLogger(Field.class);
+    private static final ObjectMapper MAPPER = new ObjectMapper();
 
     private String name;
-    private String action;
+    private Action action = Action.REPORT;
+    private Pattern compiled = Pattern.compile(".*");
 
     @MCAttribute
     public void setName(String name) {
-        this.name = name;
+        this.name = Objects.requireNonNull(name, "field name must not be null");
+        this.compiled = Pattern.compile(name, Pattern.CASE_INSENSITIVE);
     }
 
     @MCAttribute
     public void setAction(String action) {
-        this.action = action.toLowerCase();
+        this.action = Action.valueOf(action.toUpperCase(Locale.ROOT));
     }
 
     public String getName() {
@@ -29,28 +39,27 @@ public class Field {
     }
 
     public String getAction() {
-        return action;
+        return action.name().toLowerCase(Locale.ROOT);
     }
 
     public void handleAction(Message msg) {
-        String json = msg.getBodyAsStringDecoded();
-        String modified = json;
+        try {
+            JsonNode root = MAPPER.readTree(msg.getBodyAsStringDecoded());
 
-        switch (action) {
-            case "filter" -> modified = filter(json);
-            case "mask" -> modified = mask(json);
-            case "report" -> modified = "";
-            default -> log.warn("Unknown DLP action: {}", action);
+            switch (action) {
+                case FILTER -> JsonUtils.removeKeysMatching(root, compiled);
+                case MASK -> JsonUtils.maskKeysMatching(root, compiled);
+                case REPORT -> {/* no?op */}
+            }
+
+            byte[] out = MAPPER.writeValueAsBytes(root);
+            msg.setBodyContent(out);
+            msg.getHeader().setContentLength(out.length);
+            msg.getHeader().setContentType("application/json; charset=UTF-8");
+        } catch (Exception e) {
+            log.error("DLP field action '{}' failed: {}", name, e.toString(), e);
         }
-
-        msg.setBodyContent(modified.getBytes());
     }
 
-    private String filter(String json) {
-        return json.replaceAll("\"(" + name + ")\"\\s*:\\s*\".*?\"\\s*,?", "");
-    }
-
-    private String mask(String json) {
-        return json.replaceAll("\"(" + name + ")\"\\s*:\\s*(\".*?\"|-?\\d+(\\.\\d+)?|true|false|null)", "\"$1\":\"****\"");
-    }
+    private enum Action {MASK, FILTER, REPORT}
 }

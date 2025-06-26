@@ -16,7 +16,7 @@ import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 public class DLPInterceptor extends AbstractInterceptor {
 
     private static final Logger log = LoggerFactory.getLogger(DLPInterceptor.class);
-    private DLP dlp;
+    private DLPAnalyzer dlpAnalyzer;
     private String fieldsConfig;
     private String action = "report";
     private Fields fields;
@@ -24,7 +24,7 @@ public class DLPInterceptor extends AbstractInterceptor {
     @Override
     public void init() {
         super.init();
-        dlp = new DLP(new CsvFieldConfiguration().getFields(fieldsConfig));
+        dlpAnalyzer = new DLPAnalyzer(new CsvFieldConfiguration().getFields(fieldsConfig));
     }
 
     @Override
@@ -38,12 +38,12 @@ public class DLPInterceptor extends AbstractInterceptor {
     }
 
     public Outcome handleInternal(Message msg) {
-        if (dlp == null) {
+        if (dlpAnalyzer == null) {
             log.warn("DLP not initialized.");
             return CONTINUE;
         }
 
-        RiskReport report = dlp.analyze(msg);
+        RiskReport report = dlpAnalyzer.analyze(msg);
         log.info("DLP Risk Analysis: {}", report.getLogReport());
 
         if (fields != null && !fields.getFields().isEmpty()) {
