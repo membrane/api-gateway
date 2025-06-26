@@ -26,10 +26,7 @@ import java.sql.*;
 import java.util.*;
 
 /**
- * @description <p>Manages API keys and their associated scopes using a relational database via JDBC.
- * Handles key validation and retrieves scope lists for authorized keys.</p>
- *
- * <p>Automatically creates the required key and scope tables on startup if <pre><code>autoCreate</code></pre> is set <pre><code>true</code></pre>.</p>
+ * @description <p>JDBC database store for API keys and their associated scopes.</p>
  * @topic 3. Security and Validation
  */
 @MCElement(name = "databaseApiKeyStore")
@@ -118,17 +115,18 @@ public class JDBCApiKeyStore extends AbstractJdbcSupport implements ApiKeyStore 
     }
 
     private boolean tableExists(Connection connection, String tableName) throws SQLException {
-        Set<String> existingTables = new HashSet<>();
         try (ResultSet rs = connection.getMetaData().getTables(null, connection.getSchema(), "%", new String[]{"TABLE"})) {
             while (rs.next()) {
-                existingTables.add(rs.getString("TABLE_NAME").toLowerCase());
+                if (tableName.equalsIgnoreCase(rs.getString("TABLE_NAME"))) {
+                    return true;
+                }
             }
         }
-        return existingTables.contains(tableName.toLowerCase());
+        return false;
     }
 
     /**
-     * @description The table containing valid API keys.
+     * @descriptio Table with the scopes.
      */
     @MCChildElement(order = 0)
     public void setKeyTable(KeyTable keyTable) {
