@@ -25,6 +25,14 @@ import org.jetbrains.annotations.NotNull;
 import java.sql.*;
 import java.util.*;
 
+/**
+ * @description <p>Stores API keys and their scopes in a relational database using JDBC.
+ * Validates keys and provides scope lists for authorized keys.</p>
+ *
+ * <p>Automatically creates the required key and scope tables on startup if  <pre><code>autoCreate</code></pre> is set <pre><code>true</code></pre>.</p>
+ *
+ * @topic 3. Security and Validation
+ */
 @MCElement(name = "databaseApiKeyStore")
 public class JDBCApiKeyStore extends AbstractJdbcSupport implements ApiKeyStore {
 
@@ -120,16 +128,26 @@ public class JDBCApiKeyStore extends AbstractJdbcSupport implements ApiKeyStore 
         return existingTables.contains(tableName.toLowerCase());
     }
 
+    /**
+     * @description The table containing valid API keys.
+     */
     @MCChildElement(order = 0)
     public void setKeyTable(KeyTable keyTable) {
         this.keyTable = keyTable;
     }
 
+    /**
+     * @description The table mapping API keys to their scopes.
+     */
     @MCChildElement(order = 1)
     public void setScopeTable(ScopeTable scopeTable) {
         this.scopeTable = scopeTable;
     }
 
+    /**
+     * @description Whether the required tables should be created automatically on startup.
+     * @default true
+     */
     @MCAttribute
     public void setAutoCreate(boolean autoCreate) {
         this.autoCreate = autoCreate;
