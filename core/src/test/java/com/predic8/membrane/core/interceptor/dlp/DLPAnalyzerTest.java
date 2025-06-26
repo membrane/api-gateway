@@ -20,25 +20,25 @@ class DLPAnalyzerTest {
     private Message mockArrayMessage;
 
     private static final String JSON = """
-        {
-          "user": {
-            "email": "test@example.com",
-            "profile": {
-              "firstName": "John",
-              "lastName": "Doe"
+            {
+              "user": {
+                "email": "test@example.com",
+                "profile": {
+                  "firstName": "John",
+                  "lastName": "Doe"
+                }
+              },
+              "active": true
             }
-          },
-          "active": true
-        }
-        """;
+            """;
 
     private static final String ARRAY_JSON = """
-        {
-          "array": [
-            { "foo": 1, "bar": 2 }
-          ]
-        }
-        """;
+            {
+              "array": [
+                { "foo": 1, "bar": 2 }
+              ]
+            }
+            """;
 
     @BeforeEach
     void setUp() {
@@ -53,10 +53,10 @@ class DLPAnalyzerTest {
         when(mockArrayMessage.getCharset()).thenReturn(StandardCharsets.UTF_8.name());
 
         Map<String, String> riskDict = new HashMap<>();
-        riskDict.put("user.email", "High");  // Pfad-Match
-        riskDict.put("active",      "Low");  // Leaf-Match
-        riskDict.put("foo",         "High"); // Leaf-Match für Array-Element
-        riskDict.put("bar",         "Low");
+        riskDict.put("user.email", "High");
+        riskDict.put("active", "Low");
+        riskDict.put("foo", "High");
+        riskDict.put("bar", "Low");
 
         dlpAnalyzer = new DLPAnalyzer(riskDict);
     }
@@ -70,10 +70,10 @@ class DLPAnalyzerTest {
         assertEquals(0, report.getRiskCounts().getOrDefault("medium", 0));
         assertEquals(2, report.getRiskCounts().getOrDefault("unclassified", 0));
 
-        assertEquals("high",        report.getMatchedFields().get("user.email"));
-        assertEquals("low",         report.getMatchedFields().get("active"));
-        assertEquals("unclassified",report.getMatchedFields().get("user.profile.firstname"));
-        assertEquals("unclassified",report.getMatchedFields().get("user.profile.lastname"));
+        assertEquals("high", report.getMatchedFields().get("user.email"));
+        assertEquals("low", report.getMatchedFields().get("active"));
+        assertEquals("unclassified", report.getMatchedFields().get("user.profile.firstname"));
+        assertEquals("unclassified", report.getMatchedFields().get("user.profile.lastname"));
     }
 
     @Test
@@ -86,7 +86,7 @@ class DLPAnalyzerTest {
         assertEquals(0, report.getRiskCounts().getOrDefault("unclassified", 0));
 
         assertEquals("high", report.getMatchedFields().get("array.foo"));
-        assertEquals("low",  report.getMatchedFields().get("array.bar"));
+        assertEquals("low", report.getMatchedFields().get("array.bar"));
     }
 
     @Test
