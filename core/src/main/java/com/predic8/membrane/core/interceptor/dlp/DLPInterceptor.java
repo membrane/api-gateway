@@ -10,22 +10,8 @@ import com.predic8.membrane.core.interceptor.Outcome;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Map;
-
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 
-/**
- * <dlp fieldsConfig="..." action="report|mask|filter">
- * <fields>
- * <field name="address_.*" action="report"/>
- * <field name="credit.*" action="mask"/> <!-- Set value to **** ->
- * <field name="health" action="filter"/> <!-- Take out field -->
- * <field name="id" action="allow"/>
- * </fields>
- * </dlp>
- * TODO:
- * -
- */
 @MCElement(name = "dlp")
 public class DLPInterceptor extends AbstractInterceptor {
 
@@ -38,8 +24,7 @@ public class DLPInterceptor extends AbstractInterceptor {
     @Override
     public void init() {
         super.init();
-        Map<String, String> riskDict = new CsvFieldConfiguration().getFields(fieldsConfig);
-        dlp = new DLP(riskDict);
+        dlp = new DLP(new CsvFieldConfiguration().getFields(fieldsConfig));
     }
 
     @Override
@@ -58,8 +43,21 @@ public class DLPInterceptor extends AbstractInterceptor {
             return CONTINUE;
         }
 
-        Map<String, Object> riskAnalysis = dlp.analyze(msg);
-        log.info("DLP Risk Analysis Result: {}", riskAnalysis);
+        RiskReport report = dlp.analyze(msg);
+        log.info("DLP Risk Analysis: {}", report.getLogReport());
+
+        if (fields != null && !fields.getFields().isEmpty()) {
+            for (Field f : fields.getFields()) {
+                f.handleAction(msg);
+            }
+        } else {
+            report.getMatchedFields().keySet().forEach(name -> {
+                Field f = new Field();
+                f.setName(name);
+                f.setAction(action);
+                f.handleAction(msg);
+            });
+        }
         return CONTINUE;
     }
 
