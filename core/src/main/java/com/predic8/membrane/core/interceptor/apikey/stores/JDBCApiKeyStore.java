@@ -32,6 +32,18 @@ public class JDBCApiKeyStore extends AbstractJdbcSupport implements ApiKeyStore 
     private ScopeTable scopeTable;
     private boolean autoCreate = true;
 
+    private static final String CREATE_SCOPE_TABLE = """
+                CREATE TABLE %s (
+                    apikey VARCHAR(255) NOT NULL REFERENCES %s (apikey),
+                    scope  VARCHAR(255) NOT NULL
+                )
+            """;
+    private static final String CREATE_KEY_TABLE = """
+            CREATE TABLE %s (
+                apikey VARCHAR(255) NOT NULL PRIMARY KEY
+            )
+            """;
+
     @Override
     public void init(Router router) {
         super.init(router);
@@ -80,29 +92,27 @@ public class JDBCApiKeyStore extends AbstractJdbcSupport implements ApiKeyStore 
 
         try (Connection connection = getDatasource().getConnection()) {
             if (tableNotExists(connection, keyTable.getName())) {
-                connection.createStatement().executeUpdate("""
-                        CREATE TABLE %s (
-                            apikey VARCHAR(255) NOT NULL PRIMARY KEY
-                        )
-                        """.formatted(keyTable.getName()));
+                createKeyTable(connection);
             }
-
             if (tableNotExists(connection, scopeTable.getName())) {
-                connection.createStatement().executeUpdate("""
-                        CREATE TABLE %s (
-                            apikey VARCHAR(255) NOT NULL REFERENCES %s (apikey),
-                            scope  VARCHAR(255) NOT NULL
-                        )
-                        """.formatted(scopeTable.getName(), keyTable.getName()));
+                createScopeTable(connection);
             }
         } catch (Exception e) {
             throw new ConfigurationException("Failed to create tables for API Keys %s and %s: ".formatted(keyTable.getName(), scopeTable.getName()), e);
         }
     }
 
+    private void createKeyTable(Connection connection) throws SQLException {
+        connection.createStatement().executeUpdate(CREATE_KEY_TABLE.formatted(keyTable.getName()));
+    }
+
+    private void createScopeTable(Connection connection) throws SQLException {
+        connection.createStatement().executeUpdate(CREATE_SCOPE_TABLE.formatted(scopeTable.getName(), keyTable.getName()));
+    }
+
     private boolean tableNotExists(Connection connection, String tableName) throws SQLException {
         Set<String> existingTables = new HashSet<>();
-        try (ResultSet rs = connection.getMetaData().getTables(null, connection.getSchema(), "%", new String[] {"TABLE"})) {
+        try (ResultSet rs = connection.getMetaData().getTables(null, connection.getSchema(), "%", new String[]{"TABLE"})) {
             while (rs.next()) {
                 existingTables.add(rs.getString("TABLE_NAME").toLowerCase());
             }
