@@ -91,10 +91,10 @@ public class JDBCApiKeyStore extends AbstractJdbcSupport implements ApiKeyStore 
         }
 
         try (Connection connection = getDatasource().getConnection()) {
-            if (tableNotExists(connection, keyTable.getName())) {
+            if (!tableExists(connection, keyTable.getName())) {
                 createKeyTable(connection);
             }
-            if (tableNotExists(connection, scopeTable.getName())) {
+            if (!tableExists(connection, scopeTable.getName())) {
                 createScopeTable(connection);
             }
         } catch (Exception e) {
@@ -110,14 +110,14 @@ public class JDBCApiKeyStore extends AbstractJdbcSupport implements ApiKeyStore 
         connection.createStatement().executeUpdate(CREATE_SCOPE_TABLE.formatted(scopeTable.getName(), keyTable.getName()));
     }
 
-    private boolean tableNotExists(Connection connection, String tableName) throws SQLException {
+    private boolean tableExists(Connection connection, String tableName) throws SQLException {
         Set<String> existingTables = new HashSet<>();
         try (ResultSet rs = connection.getMetaData().getTables(null, connection.getSchema(), "%", new String[]{"TABLE"})) {
             while (rs.next()) {
                 existingTables.add(rs.getString("TABLE_NAME").toLowerCase());
             }
         }
-        return !existingTables.contains(tableName.toLowerCase());
+        return existingTables.contains(tableName.toLowerCase());
     }
 
     @MCChildElement(order = 0)
