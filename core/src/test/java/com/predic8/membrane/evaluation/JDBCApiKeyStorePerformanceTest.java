@@ -55,6 +55,7 @@ public class JDBCApiKeyStorePerformanceTest {
     void setUp() throws SQLException {
         jdbcApiKeyStore = createApiKeyStore();
         connection = getDataSource().getConnection();
+        jdbcApiKeyStore.setAutoCreate(false);
         jdbcApiKeyStore.init(new Router());
     }
 

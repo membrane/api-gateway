@@ -81,7 +81,7 @@ public class JDBCApiKeyStore extends AbstractJdbcSupport implements ApiKeyStore 
         }
 
         try (Connection connection = getDatasource().getConnection()) {
-            if (tableExists(connection, keyTable.getName())) {
+            if (tableNotExists(connection, keyTable.getName())) {
                 connection.createStatement().executeUpdate("""
                         CREATE TABLE %s (
                             apikey VARCHAR(255) NOT NULL PRIMARY KEY
@@ -89,7 +89,7 @@ public class JDBCApiKeyStore extends AbstractJdbcSupport implements ApiKeyStore 
                         """.formatted(keyTable.getName()));
             }
 
-            if (tableExists(connection, scopeTable.getName())) {
+            if (tableNotExists(connection, scopeTable.getName())) {
                 connection.createStatement().executeUpdate("""
                         CREATE TABLE %s (
                             apikey VARCHAR(255) NOT NULL REFERENCES %s (apikey),
@@ -102,7 +102,7 @@ public class JDBCApiKeyStore extends AbstractJdbcSupport implements ApiKeyStore 
         }
     }
 
-    private boolean tableExists(Connection connection, String tableName) throws SQLException {
+    private boolean tableNotExists(Connection connection, String tableName) throws SQLException {
         try (ResultSet rs = connection.getMetaData()
                 .getTables(null, null, tableName.toLowerCase(), new String[]{"TABLE"})) {
             return !rs.next();
