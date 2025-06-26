@@ -1,6 +1,7 @@
 package com.predic8.membrane.core.interceptor.dlp;
 
 import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.JsonFactoryBuilder;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.StreamReadConstraints;
 import com.fasterxml.jackson.core.json.JsonReadFeature;
@@ -17,7 +18,8 @@ public class DLPAnalyzer {
     private static final int MAX_DEPTH = 64;
     private static final int MAX_STRING_LENGTH = 16 * 1024; // 16 KiB
 
-    private static final JsonFactory JSON_FACTORY = JsonFactory.builder()
+    private static final JsonFactory JSON_FACTORY = new JsonFactoryBuilder()
+            .configure(JsonReadFeature.ALLOW_TRAILING_COMMA, true)
             .configure(JsonReadFeature.ALLOW_UNESCAPED_CONTROL_CHARS, false)
             .streamReadConstraints(StreamReadConstraints.builder()
                     .maxNestingDepth(MAX_DEPTH)

@@ -47,8 +47,8 @@ public class Field {
             JsonNode root = MAPPER.readTree(msg.getBodyAsStringDecoded());
 
             switch (action) {
-                case FILTER -> JsonUtils.removeKeysMatching(root, compiled);
-                case MASK -> JsonUtils.maskKeysMatching(root, compiled);
+                case FILTER -> JsonUtils.filter(root, compiled);
+                case MASK -> JsonUtils.mask(root, compiled);
                 case REPORT -> {/* no?op */}
             }
 
