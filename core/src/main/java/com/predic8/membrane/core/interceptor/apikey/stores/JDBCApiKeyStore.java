@@ -26,11 +26,10 @@ import java.sql.*;
 import java.util.*;
 
 /**
- * @description <p>Stores API keys and their scopes in a relational database using JDBC.
- * Validates keys and provides scope lists for authorized keys.</p>
+ * @description <p>Manages API keys and their associated scopes using a relational database via JDBC.
+ * Handles key validation and retrieves scope lists for authorized keys.</p>
  *
- * <p>Automatically creates the required key and scope tables on startup if  <pre><code>autoCreate</code></pre> is set <pre><code>true</code></pre>.</p>
- *
+ * <p>Automatically creates the required key and scope tables on startup if <pre><code>autoCreate</code></pre> is set <pre><code>true</code></pre>.</p>
  * @topic 3. Security and Validation
  */
 @MCElement(name = "databaseApiKeyStore")
