@@ -106,6 +106,20 @@ protected String getOpenAPIFileName() {
         assertTrue(e.getMessage().contains("maximum"));
     }
 
+    @Test
+    public void invalidMaximumWithoutTypeInBody() {
+        ValidationErrors errors = validator.validate(Request.post().path("/integer").body(new JsonBody(getNumbers("maximum-without-type",new BigDecimal(13)))));
+        assertEquals(1,errors.size());
+        ValidationError e = errors.get(0);
+        assertTrue(e.getMessage().contains("maximum"));
+    }
+
+    @Test
+    public void validMaximumWithoutTypeInBody() {
+        ValidationErrors errors = validator.validate(Request.post().path("/integer").body(new JsonBody(getNumbers("maximum-without-type",new BigDecimal(5)))));
+        assertEquals(0,errors.size());
+    }
+
     private JsonNode getNumbers(String name, BigDecimal n) {
         ObjectNode root = om.createObjectNode();
         root.put(name,n);

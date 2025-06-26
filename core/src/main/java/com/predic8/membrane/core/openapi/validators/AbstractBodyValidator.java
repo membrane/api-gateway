@@ -43,8 +43,8 @@ public abstract class AbstractBodyValidator<T extends Message<? extends Body,?>>
         // Use the value of the OpenAPI spec for comparison, so it can not
         // be influenced from the outside.
         if ( APPLICATION_JSON_CONTENT_TYPE.match(mediaType)) {
-            if (mediaTypeObj.getSchema().get$ref() != null) {
-                ctx.schemaType(mediaTypeObj.getSchema().get$ref());
+            if (mediaTypeObj.getSchema() != null && mediaTypeObj.getSchema().get$ref() != null) {
+                ctx = ctx.schemaType(mediaTypeObj.getSchema().get$ref());
             }
             errors.add(new SchemaValidator(api, mediaTypeObj.getSchema()).validate(ctx, message.getBody()));
         } else if(isXML(mediaType)) {

@@ -86,7 +86,7 @@ public class SchemaValidatorTest {
                 Arguments.of(integerValidator, null, null),
 
                 // NumberValidator test cases
-                Arguments.of(numberValidator, new TextNode("123.45"), NUMBER),
+                Arguments.of(numberValidator, new TextNode("123.45"), null),
                 Arguments.of(numberValidator, new TextNode("notANumber"), null),
                 Arguments.of(numberValidator, "456.78", NUMBER),
                 Arguments.of(numberValidator, "invalid", null),

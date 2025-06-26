@@ -204,6 +204,6 @@ public class StringValidator implements IJSONSchemaValidator {
     }
 
     private boolean matchRegexPattern(String v) {
-        return Pattern.compile(schema.getPattern()).matcher(v).matches();
+        return Pattern.compile(schema.getPattern()).matcher(v).find();
     }
 }
