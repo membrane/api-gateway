@@ -29,9 +29,9 @@ import java.util.*;
 /**
  * Generates Json Schema draft 4 to validate kubernetetes CustomResourceDefinitions.
  */
-public class JsonSchemaGenerator extends AbstractK8sGenerator {
+public class K8sJsonSchemaGenerator extends AbstractK8sGenerator {
 
-    public JsonSchemaGenerator(ProcessingEnvironment processingEnv) {
+    public K8sJsonSchemaGenerator(ProcessingEnvironment processingEnv) {
         super(processingEnv);
     }
 
@@ -46,7 +46,7 @@ public class JsonSchemaGenerator extends AbstractK8sGenerator {
     }
 
     private void assemble(Model m, MainInfo main) throws IOException {
-        for (ElementInfo elementInfo : getRules(main)) {
+        for (ElementInfo elementInfo : getTopLevelElementInfos(main)) {
             String name = elementInfo.getAnnotation().name().toLowerCase();
             FileObject fo = createFileObject(main, name + ".schema.json");
             try (BufferedWriter w = new BufferedWriter(fo.openWriter())) {
@@ -56,7 +56,7 @@ public class JsonSchemaGenerator extends AbstractK8sGenerator {
     }
 
     private void assembleBase(Model m, Writer w, MainInfo main, ElementInfo i) throws IOException {
-        if (i.getAnnotation().mixed() && i.getCeis().size() > 0) {
+        if (i.getAnnotation().mixed() && i.getChildElementSpecs().size() > 0) {
             throw new ProcessingException(
                     "@MCElement(..., mixed=true) and @MCTextContent is not compatible with @MCChildElement.",
                     i.getElement()
@@ -83,8 +83,9 @@ public class JsonSchemaGenerator extends AbstractK8sGenerator {
                 });
     }
 
-    private void collectProperties(Model m, MainInfo main, ElementInfo i, Schema schema) {
+    private void collectProperties(Model m, MainInfo main, ElementInfo i, ISchema schema) {
         collectAttributes(i, schema);
+        collectTextContent(i, schema);
         collectChildElements(m, main, i, schema);
     }
 
@@ -96,7 +97,7 @@ public class JsonSchemaGenerator extends AbstractK8sGenerator {
 
         while (!stack.isEmpty()) {
             ElementInfo current = stack.pop();
-            current.getCeis().stream()
+            current.getChildElementSpecs().stream()
                     .flatMap(cei -> main.getChildElementDeclarations().get(cei.getTypeDeclaration()).getElementInfo().stream())
                     .filter(ei -> !all.containsKey(ei.getXSDTypeName(m)))
                     .forEach(ei -> {
@@ -113,15 +114,13 @@ public class JsonSchemaGenerator extends AbstractK8sGenerator {
             so.addAttribute("type", "object");
             so.addAttribute("additionalProperties", entry.getValue().getOai() != null);
 
-            collectAttributes(entry.getValue(), so);
-            collectTextContent(entry.getValue(), so);
-            collectChildElements(m, main, entry.getValue(), so);
+            collectProperties(m, main, entry.getValue(), so);
 
             schema.addDefinition(so);
         }
     }
 
-    private void collectTextContent(ElementInfo i, SchemaObject so) {
+    private void collectTextContent(ElementInfo i, ISchema so) {
         if (i.getTci() == null)
             return;
 
@@ -131,7 +130,7 @@ public class JsonSchemaGenerator extends AbstractK8sGenerator {
     }
 
     private void collectChildElements(Model m, MainInfo main, ElementInfo i, ISchema so) {
-        for (ChildElementInfo cei : i.getCeis()) {
+        for (ChildElementInfo cei : i.getChildElementSpecs()) {
             boolean isList = cei.isList();
 
             ISchema parent2 = so;
