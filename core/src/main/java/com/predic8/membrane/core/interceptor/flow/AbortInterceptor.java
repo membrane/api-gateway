@@ -30,7 +30,7 @@ import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.*;
  * @topic 1. Proxies and Flow
  */
 @MCElement(name="abort", topLevel=false)
-public class AbortInterceptor extends AbstractFlowInterceptor {
+public class AbortInterceptor extends AbstractFlowWithChildrenInterceptor {
 
     private static final Logger log = LoggerFactory.getLogger(AbortInterceptor.class);
 
