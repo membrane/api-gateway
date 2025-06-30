@@ -96,7 +96,7 @@ public class RateLimitInterceptorTest {
 		Exchange excB = createJsonExchange("b");
 
 		RateLimitInterceptor interceptor = new RateLimitInterceptor(ofSeconds(10),3);
-		interceptor.setLanguage(JSONPATH.name());
+		interceptor.setLanguage(JSONPATH);
 		interceptor.setKeyExpression("$.application");
 		interceptor.init();
 

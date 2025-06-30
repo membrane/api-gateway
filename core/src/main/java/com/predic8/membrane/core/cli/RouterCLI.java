@@ -45,6 +45,7 @@ import java.util.*;
 import static com.predic8.membrane.core.Constants.*;
 import static com.predic8.membrane.core.config.spring.TrackingFileSystemXmlApplicationContext.*;
 import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPISpec.YesNoOpenAPIOption.*;
+import static com.predic8.membrane.core.openapi.util.OpenAPIUtil.isOpenAPIMisplacedError;
 import static com.predic8.membrane.core.util.ExceptionUtil.*;
 import static com.predic8.membrane.core.util.OSUtil.*;
 import static com.predic8.membrane.core.util.URIUtil.*;
@@ -107,7 +108,12 @@ public class RouterCLI {
                 default -> initRouterByConfig(commandLine);
             };
         } catch (InvalidConfigurationException e) {
-            log.error("Fatal error: {}", concatMessageAndCauseMessages(e));
+            String errorMsg = concatMessageAndCauseMessages(e);
+            if (isOpenAPIMisplacedError(errorMsg)) {
+                log.error("Fatal error caused by <openapi /> element. Make sure it is the first element of the API.\n{}", errorMsg);
+            } else {
+                log.error("Fatal error: {}", errorMsg);
+            }
         } catch (Exception ex) {
             SpringConfigurationErrorHandler.handleRootCause(ex, log);
         }

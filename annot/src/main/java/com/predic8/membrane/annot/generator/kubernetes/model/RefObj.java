@@ -11,11 +11,19 @@
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
    See the License for the specific language governing permissions and
    limitations under the License. */
-package com.predic8.membrane.core.interceptor.lang;
 
-import com.predic8.membrane.core.lang.ExchangeExpression.Language;
+package com.predic8.membrane.annot.generator.kubernetes.model;
 
-public interface Polyglot {
+public class RefObj {
 
-    void setLanguage(Language language);
+    private final String path;
+
+    public RefObj(String path) {
+        this.path = path;
+    }
+
+    @Override
+    public String toString() {
+        return "{\"$ref\":\"" + path + "\"}";
+    }
 }

@@ -18,6 +18,7 @@ package com.predic8.membrane.core.openapi.validators;
 
 interface IJSONSchemaValidator {
 
+    String NULL = "null";
     String NUMBER = "number";
     String ARRAY = "array";
     String OBJECT = "object";
