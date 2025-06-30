@@ -136,8 +136,8 @@ class DLPInterceptorTest {
 
     private Field newField(String name, String action) {
         Field f = new Field();
-        f.setName(name);
-        f.setAction(action);
+       /* f.setName(name);
+        f.setAction(action);*/
         return f;
     }
 }

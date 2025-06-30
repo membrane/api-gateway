@@ -1,8 +1,5 @@
 package com.predic8.membrane.core.interceptor.dlp;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.jayway.jsonpath.DocumentContext;
 import com.jayway.jsonpath.JsonPath;
 import com.predic8.membrane.annot.MCChildElement;
@@ -14,12 +11,12 @@ import java.util.List;
 @MCElement(name = "filter")
 public class Filter {
 
-    private List<Path> paths = new ArrayList<>();
+    private List<Field> fields = new ArrayList<>();
 
     public String apply(String json) {
         try {
             DocumentContext context = JsonPath.parse(json);
-            for (Path p : paths) {
+            for (Field p : fields) {
                 try {
                     context.delete(p.getJsonpath());
                 } catch (Exception e) {
@@ -32,14 +29,13 @@ public class Filter {
         }
     }
 
-
     @MCChildElement
-    public Filter setPaths(List<Path> paths) {
-        this.paths = paths;
+    public Filter setPaths(List<Field> fields) {
+        this.fields = fields;
         return this;
     }
 
-    public List<Path> getPaths() {
-        return paths;
+    public List<Field> getPaths() {
+        return fields;
     }
 }
