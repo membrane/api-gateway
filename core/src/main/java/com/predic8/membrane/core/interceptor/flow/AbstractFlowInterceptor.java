@@ -14,14 +14,16 @@
 
 package com.predic8.membrane.core.interceptor.flow;
 
-import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.interceptor.*;
-import org.slf4j.*;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.interceptor.AbstractInterceptor;
+import com.predic8.membrane.core.interceptor.Interceptor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
 
-import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
+import static com.predic8.membrane.core.exceptions.ProblemDetails.internal;
 
 public abstract class AbstractFlowInterceptor extends AbstractInterceptor {
 
@@ -33,7 +35,6 @@ public abstract class AbstractFlowInterceptor extends AbstractInterceptor {
         return interceptors;
     }
 
-    @MCChildElement(allowForeign = true)
     public void setInterceptors(List<Interceptor> interceptors) {
         this.interceptors = interceptors;
     }

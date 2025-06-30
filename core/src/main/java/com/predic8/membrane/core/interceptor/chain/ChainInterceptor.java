@@ -20,7 +20,7 @@ import com.predic8.membrane.annot.Required;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.Interceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
-import com.predic8.membrane.core.interceptor.flow.AbstractFlowInterceptor;
+import com.predic8.membrane.core.interceptor.flow.AbstractFlowWithChildrenInterceptor;
 import com.predic8.membrane.core.util.ConfigurationException;
 
 import java.util.List;
@@ -30,7 +30,7 @@ import java.util.Optional;
  *  @description A Chain groups multiple interceptors into reusable components, reducing redundancy in API configurations.
  */
 @MCElement(name = "chain")
-public class ChainInterceptor extends AbstractFlowInterceptor {
+public class ChainInterceptor extends AbstractFlowWithChildrenInterceptor {
 
     private String ref;
 

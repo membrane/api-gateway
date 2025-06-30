@@ -104,9 +104,4 @@ public class ChooseInterceptor extends AbstractFlowInterceptor {
         this.otherwise = otherwise;
     }
 
-    @MCChildElement(order = 3, allowForeign = true)
-    public void setInterceptors(List<Interceptor> interceptors) {
-        // We use <case> and <otherwise> child elements to set interceptors, not child interceptors.
-        // Therefore, we have to overwrite this so interceptors cannot be added through direct child elements.
-    }
 }

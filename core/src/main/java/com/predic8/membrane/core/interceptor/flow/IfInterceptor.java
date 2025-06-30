@@ -38,7 +38,7 @@ import static com.predic8.membrane.core.lang.ExchangeExpression.Language.*;
  * - com.predic8.membrane.core.interceptor.flow.IfInterceptorXPathTest
  */
 @MCElement(name = "if")
-public class IfInterceptor extends AbstractFlowInterceptor {
+public class IfInterceptor extends AbstractFlowWithChildrenInterceptor {
     private static final Logger log = LoggerFactory.getLogger(IfInterceptor.class);
 
     private String test;
