@@ -61,6 +61,7 @@ class SetCookiesInterceptorTest {
         cd.setValue("yes");
         cd.setSameSite(NONE);
         assertTrue(cd.buildHeader().contains("SameSite=NONE"));
+        assertTrue(cd.buildHeader().contains("Secure"));
     }
 
 }

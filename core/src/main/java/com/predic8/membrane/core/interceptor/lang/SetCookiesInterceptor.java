@@ -16,8 +16,13 @@ import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 /**
  * Interceptor that adds one or more Set-Cookie headers on the response.
  */
-@MCElement(name="setCookies")
+@MCElement(name = "setCookies")
 public class SetCookiesInterceptor extends AbstractInterceptor {
+
+    /**
+     * Holder for a single cookie's attributes.
+     */
+    private List<CookieDef> cookies = new ArrayList<>();
 
     @Override
     public Outcome handleResponse(Exchange exc) {
@@ -27,10 +32,9 @@ public class SetCookiesInterceptor extends AbstractInterceptor {
         return CONTINUE;
     }
 
-    /**
-     * Holder for a single cookie's attributes.
-     */
-    private List<CookieDef> cookies = new ArrayList<>();
+    public List<CookieDef> getCookies() {
+        return cookies;
+    }
 
     /**
      * Register one <cookie> child element.
@@ -40,12 +44,8 @@ public class SetCookiesInterceptor extends AbstractInterceptor {
         this.cookies = cookies;
     }
 
-    public List<CookieDef> getCookies() {
-        return cookies;
-    }
-
     @SuppressWarnings("unused")
-    @MCElement(name="cookie")
+    @MCElement(name = "cookie")
     public static class CookieDef {
         private String domain;
         private String path = "/";
@@ -57,8 +57,6 @@ public class SetCookiesInterceptor extends AbstractInterceptor {
 
         private String name;
         private String value;
-
-        public enum SameSite {LAX, STRICT, NONE}
 
         public String getName() {
             return name;
@@ -153,16 +151,27 @@ public class SetCookiesInterceptor extends AbstractInterceptor {
          */
         public String buildHeader() {
             StringBuilder sb = new StringBuilder();
+            if (name.contains("\r") || name.contains("\n") || value.contains("\r") || value.contains("\n"))
+                throw new IllegalArgumentException("Cookie attributes must not contain CR/LF characters.");
             sb.append(name).append("=").append(value);
             sb.append("; Path=").append(path);
             if (domain != null) sb.append("; Domain=").append(domain);
             if (maxAge >= 0) sb.append("; Max-Age=").append(maxAge);
             if (expires != null) sb.append("; Expires=").append(expires);
             if (httpOnly) sb.append("; HttpOnly");
+            if (sameSite != null) {
+                sb.append("; SameSite=").append(sameSite.name());
+                if (sameSite == SameSite.NONE && !secure) {
+                    sb.append("; Secure");
+                }
+            }
             if (secure) sb.append("; Secure");
-            if (sameSite != null) sb.append("; SameSite=").append(sameSite.name());
+
+
             return sb.toString();
         }
+
+        public enum SameSite {LAX, STRICT, NONE}
     }
 
 }
