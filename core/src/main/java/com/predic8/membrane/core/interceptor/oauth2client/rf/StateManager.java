@@ -27,6 +27,7 @@ import java.util.Arrays;
 import java.util.Map;
 import java.util.Optional;
 
+import static com.predic8.membrane.core.http.Response.badRequest;
 import static com.predic8.membrane.core.interceptor.oauth2client.rf.OAuth2CallbackRequestHandler.*;
 import static com.predic8.membrane.core.interceptor.session.SessionManager.SESSION_VALUE_SEPARATOR;
 import static com.predic8.membrane.core.util.URLParamUtil.DuplicateKeyOrInvalidFormStrategy.ERROR;
@@ -72,20 +73,20 @@ public class StateManager {
         if (!matchesCsrfToken(stateFromUri, session.get(SESSION_PARAMETER_STATE))) {
             if (session.isNew()) {
                 throw new OAuth2Exception(
-                        "MEMBRANE_MISSING_SESSION",
                         MEMBRANE_MISSING_SESSION,
-                        Response.badRequest().body(MEMBRANE_MISSING_SESSION).build());
+                        MEMBRANE_MISSING_SESSION_DESCRIPTION,
+                        badRequest().body(MEMBRANE_MISSING_SESSION_DESCRIPTION).build());
             } else if (!StateManager.hasState(session)) {
                 throw new OAuth2Exception(
-                        "MEMBRANE_CSRF_TOKEN_MISSING_IN_SESSION",
                         MEMBRANE_CSRF_TOKEN_MISSING_IN_SESSION,
-                        Response.badRequest().body(MEMBRANE_CSRF_TOKEN_MISSING_IN_SESSION).build());
+                        MEMBRANE_CSRF_TOKEN_MISSING_IN_SESSION_DESCRIPTION,
+                        badRequest().body(MEMBRANE_CSRF_TOKEN_MISSING_IN_SESSION_DESCRIPTION).build());
             } else {
                 log.warn("Token from Session: '{}', Token from URI: '{}'", session.get(SESSION_PARAMETER_STATE), stateFromUri.getSecurityToken());
                 throw new OAuth2Exception(
-                        "MEMBRANE_CSRF_TOKEN_MISMATCH",
                         MEMBRANE_CSRF_TOKEN_MISMATCH,
-                        Response.badRequest().body(MEMBRANE_CSRF_TOKEN_MISMATCH).build());
+                        MEMBRANE_CSRF_TOKEN_MISMATCH_DESCRIPTION,
+                        badRequest().body(MEMBRANE_CSRF_TOKEN_MISMATCH_DESCRIPTION).build());
             }
         }
 
