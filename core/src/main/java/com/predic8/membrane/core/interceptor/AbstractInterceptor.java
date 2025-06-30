@@ -120,8 +120,8 @@ public class AbstractInterceptor implements Interceptor {
 	}
 
 	private boolean hasSameReferenceAs(Interceptor i){
-		if(i instanceof AbstractFlowInterceptor){
-			return ((AbstractFlowInterceptor) i).getInterceptors().stream().anyMatch(this::hasSameReferenceAs);
+		if(i instanceof AbstractFlowWithChildrenInterceptor){
+			return ((AbstractFlowWithChildrenInterceptor) i).getInterceptors().stream().anyMatch(this::hasSameReferenceAs);
 		}
 		return i == this;
 	}

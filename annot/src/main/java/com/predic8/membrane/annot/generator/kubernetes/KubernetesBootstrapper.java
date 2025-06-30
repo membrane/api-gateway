@@ -30,7 +30,7 @@ public class KubernetesBootstrapper {
 
     public void boot(final Model model) {
         new K8sYamlGenerator(processingEnv).write(model);
-        new JsonSchemaGenerator(processingEnv).write(model);
+        new K8sJsonSchemaGenerator(processingEnv).write(model);
         new K8sHelperGenerator(processingEnv).write(model);
     }
 }

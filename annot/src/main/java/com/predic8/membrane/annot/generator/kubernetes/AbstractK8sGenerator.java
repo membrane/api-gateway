@@ -59,13 +59,13 @@ public abstract class AbstractK8sGenerator {
         return new WritableNames(ei);
     }
 
-    protected Stream<ElementInfo> getRulesStream(MainInfo main) {
+    protected Stream<ElementInfo> getTopLevelStream(MainInfo main) {
         return main.getElements().values().stream()
                 .filter(ei -> ei.getAnnotation().topLevel());
     }
 
-    protected List<ElementInfo> getRules(MainInfo main) {
-        return getRulesStream(main)
+    protected List<ElementInfo> getTopLevelElementInfos(MainInfo main) {
+        return getTopLevelStream(main)
                 .collect(Collectors.toList());
     }
 
