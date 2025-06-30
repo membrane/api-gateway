@@ -16,17 +16,22 @@
 
 package com.predic8.membrane.core.openapi.serviceproxy;
 
-import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.interceptor.lang.*;
-import com.predic8.membrane.core.lang.*;
-import com.predic8.membrane.core.lang.ExchangeExpression.*;
-import com.predic8.membrane.core.openapi.util.*;
-import com.predic8.membrane.core.proxies.*;
-import com.predic8.membrane.core.util.*;
-import io.swagger.v3.oas.models.servers.*;
-import org.slf4j.*;
+import com.predic8.membrane.annot.MCAttribute;
+import com.predic8.membrane.annot.MCChildElement;
+import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.annot.MCTextContent;
+import com.predic8.membrane.core.interceptor.lang.Polyglot;
+import com.predic8.membrane.core.lang.ExchangeExpression;
+import com.predic8.membrane.core.lang.ExchangeExpression.Language;
+import com.predic8.membrane.core.openapi.util.UriUtil;
+import com.predic8.membrane.core.proxies.ServiceProxy;
+import com.predic8.membrane.core.util.ConfigurationException;
+import com.predic8.membrane.core.util.URIFactory;
+import io.swagger.v3.oas.models.servers.Server;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.net.*;
+import java.net.URISyntaxException;
 import java.util.*;
 
 import static com.predic8.membrane.core.lang.ExchangeExpression.Language.SPEL;
@@ -213,16 +218,8 @@ public class APIProxy extends ServiceProxy implements Polyglot {
 
     @MCAttribute
     @Override
-    public void setLanguage(String language) {
-        try {
-            this.language = Language.valueOf(language);
-        } catch (Exception e) {
-            throw new ConfigurationException("""
-                    Wrong Language
-                    
-                    Language %s is not supported as an expression language for %s. Use one of {}.
-                    """.formatted(language,getName(),Language.values()));
-        }
+    public void setLanguage(Language language) {
+        this.language = language;
     }
 
     @MCElement(name = "description", topLevel = false, mixed = true)
