@@ -15,14 +15,14 @@ import java.util.regex.Pattern;
 public class MaskField implements FieldActionStrategy {
 
     private static final Logger log = LoggerFactory.getLogger(MaskField.class);
-    private static final ObjectMapper M = new ObjectMapper();
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     @Override
     public void apply(Message msg, Pattern pattern) {
         try {
-            JsonNode root = M.readTree(msg.getBodyAsStringDecoded());
+            JsonNode root = OBJECT_MAPPER.readTree(msg.getBodyAsStringDecoded());
             maskNode(root, pattern, new ArrayDeque<>());
-            byte[] out = M.writeValueAsBytes(root);
+            byte[] out = OBJECT_MAPPER.writeValueAsBytes(root);
             msg.setBodyContent(out);
             msg.getHeader().setContentLength(out.length);
             msg.getHeader().setContentType("application/json; charset=UTF-8");

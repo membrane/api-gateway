@@ -54,9 +54,6 @@ class DLPInterceptorTest {
         exc.setResponse(Response.ok().body(exc.getRequest().getBodyAsStringDecoded().getBytes(StandardCharsets.UTF_8)).build());
         i.handleResponse(exc);
         String body = exc.getResponse().getBodyAsStringDecoded();
-
-        System.out.println(body);
-
         assertFalse(body.contains("health_info"));
         assertTrue(body.contains("\"number\":\"****\""));
         assertTrue(body.contains("\"valid_until\":\"2027-12\""));

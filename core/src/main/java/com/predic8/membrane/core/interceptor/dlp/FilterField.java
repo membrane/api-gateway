@@ -13,14 +13,14 @@ import java.util.regex.Pattern;
 public class FilterField implements FieldActionStrategy {
 
     private static final Logger log = LoggerFactory.getLogger(FilterField.class);
-    private static final ObjectMapper M = new ObjectMapper();
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     @Override
     public void apply(Message msg, Pattern pattern) {
         try {
-            JsonNode root = M.readTree(msg.getBodyAsStringDecoded());
-            filterNode(null, root, pattern, new ArrayDeque<>());
-            byte[] out = M.writeValueAsBytes(root);
+            JsonNode root = OBJECT_MAPPER.readTree(msg.getBodyAsStringDecoded());
+            filterNode(root, pattern, new ArrayDeque<>());
+            byte[] out = OBJECT_MAPPER.writeValueAsBytes(root);
             msg.setBodyContent(out);
             msg.getHeader().setContentLength(out.length);
             msg.getHeader().setContentType("application/json; charset=UTF-8");
@@ -29,30 +29,28 @@ public class FilterField implements FieldActionStrategy {
         }
     }
 
-    private void filterNode(ObjectNode parent, JsonNode node, Pattern pattern, Deque<String> path) {
+    private void filterNode(JsonNode node, Pattern pattern, Deque<String> path) {
         if (node.isObject()) {
             ObjectNode obj = (ObjectNode) node;
             List<String> keys = new ArrayList<>();
             obj.fieldNames().forEachRemaining(keys::add);
 
-            for (String fn : keys) {
-                path.addLast(fn);
+            for (String fieldName : keys) {
+                path.addLast(fieldName);
                 String fullPath = String.join(".", path).toLowerCase(Locale.ROOT);
-                boolean match = pattern.matcher(fullPath).matches()
-                        || path.stream().anyMatch(p -> pattern.matcher(p.toLowerCase(Locale.ROOT)).matches());
 
-                if (match) {
-                    obj.remove(fn);
+                if (pattern.matcher(fullPath).matches() || path.stream().anyMatch(p -> pattern.matcher(p.toLowerCase(Locale.ROOT)).matches())) {
+                    obj.remove(fieldName);
                     path.removeLast();
                     continue;
                 }
 
-                filterNode(obj, obj.get(fn), pattern, path);
+                filterNode(obj.get(fieldName), pattern, path);
                 path.removeLast();
             }
         } else if (node.isArray()) {
             for (JsonNode child : node) {
-                filterNode(parent, child, pattern, path);
+                filterNode(child, pattern, path);
             }
         }
     }
