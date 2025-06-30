@@ -1,5 +1,7 @@
 package com.predic8.membrane.core.interceptor.dlp;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Response;
 import org.junit.jupiter.api.BeforeEach;
@@ -8,11 +10,14 @@ import org.junit.jupiter.api.Test;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 
+import static com.predic8.membrane.core.http.Header.CONTENT_TYPE;
+import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
 import static com.predic8.membrane.core.http.Request.post;
 import static org.junit.jupiter.api.Assertions.*;
 
 class DLPInterceptorTest {
 
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
     private DLPInterceptor i;
 
     @BeforeEach
@@ -28,7 +33,7 @@ class DLPInterceptorTest {
         )));
 
         Exchange exc = post("/test")
-                .header("Content-Type", "application/json")
+                .header(CONTENT_TYPE, APPLICATION_JSON)
                 .body("""
                         {
                           "credit": {
@@ -41,10 +46,10 @@ class DLPInterceptorTest {
 
         exc.setResponse(Response.ok().body(exc.getRequest().getBodyAsStringDecoded().getBytes(StandardCharsets.UTF_8)).build());
         i.handleResponse(exc);
-        String body = exc.getResponse().getBodyAsStringDecoded();
+        JsonNode root = OBJECT_MAPPER.readTree(exc.getResponse().getBodyAsStringDecoded());
 
-        assertTrue(body.contains("\"number\":\"****\""));
-        assertTrue(body.contains("\"limit\":3000"));
+        assertEquals("****", root.path("credit").path("number").asText());
+        assertEquals(3000, root.path("credit").path("limit").asInt());
     }
 
     @Test
@@ -54,7 +59,7 @@ class DLPInterceptorTest {
         )));
 
         Exchange exc = post("/test")
-                .header("Content-Type", "application/json")
+                .header(CONTENT_TYPE, APPLICATION_JSON)
                 .body("""
                         {
                           "person": {
@@ -69,10 +74,11 @@ class DLPInterceptorTest {
 
         exc.setResponse(Response.ok().body(exc.getRequest().getBodyAsStringDecoded().getBytes(StandardCharsets.UTF_8)).build());
         i.handleResponse(exc);
-        String body = exc.getResponse().getBodyAsStringDecoded();
 
-        assertFalse(body.contains("health_info"));
-        assertTrue(body.contains("full_name"));
+        JsonNode root = OBJECT_MAPPER.readTree(exc.getResponse().getBodyAsStringDecoded());
+
+        assertTrue(root.path("person").has("full_name"));
+        assertFalse(root.path("person").has("health_info"));
     }
 
     @Test
@@ -82,7 +88,7 @@ class DLPInterceptorTest {
         )));
 
         Exchange exc = post("/test")
-                .header("Content-Type", "application/json")
+                .header(CONTENT_TYPE, APPLICATION_JSON)
                 .body("""
                         {
                           "health": {
@@ -97,10 +103,10 @@ class DLPInterceptorTest {
 
         exc.setResponse(Response.ok().body(exc.getRequest().getBodyAsStringDecoded().getBytes(StandardCharsets.UTF_8)).build());
         i.handleResponse(exc);
-        String body = exc.getResponse().getBodyAsStringDecoded();
+        JsonNode root = OBJECT_MAPPER.readTree(exc.getResponse().getBodyAsStringDecoded());
 
-        assertFalse(body.contains("status"));
-        assertTrue(body.contains("delivery"));
+        assertFalse(root.path("health").has("status"));
+        assertFalse(root.path("delivery").has("status_code"));
     }
 
     @Test
@@ -110,7 +116,7 @@ class DLPInterceptorTest {
         )));
 
         Exchange exc = post("/test")
-                .header("Content-Type", "application/json")
+                .header(CONTENT_TYPE, APPLICATION_JSON)
                 .body("""
                         {
                           "something": {
@@ -122,10 +128,10 @@ class DLPInterceptorTest {
 
         exc.setResponse(Response.ok().body(exc.getRequest().getBodyAsStringDecoded().getBytes(StandardCharsets.UTF_8)).build());
         i.handleResponse(exc);
-        String body = exc.getResponse().getBodyAsStringDecoded();
+        JsonNode root = OBJECT_MAPPER.readTree(exc.getResponse().getBodyAsStringDecoded());
 
-        assertTrue(body.contains("something"));
-        assertTrue(body.contains("unrelated"));
+        assertTrue(root.has("something"));
+        assertTrue(root.path("something").has("unrelated"));
     }
 
     private Field newField(String name, String action) {
