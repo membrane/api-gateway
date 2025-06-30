@@ -26,7 +26,7 @@ import static com.predic8.membrane.core.interceptor.Outcome.*;
  * @topic 1. Proxies and Flow
  */
 @MCElement(name = "response", topLevel = false)
-public class ResponseInterceptor extends AbstractFlowInterceptor {
+public class ResponseInterceptor extends AbstractFlowWithChildrenInterceptor {
 
     @Override
     public Outcome handleResponse(Exchange exc) {

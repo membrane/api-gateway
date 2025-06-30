@@ -14,6 +14,7 @@
 
 package com.predic8.membrane.core.interceptor.apikey.stores;
 
+import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.Router;
@@ -22,15 +23,30 @@ import com.predic8.membrane.core.util.jdbc.AbstractJdbcSupport;
 import org.jetbrains.annotations.NotNull;
 
 import java.sql.*;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
+/**
+ * @description <p>JDBC database store for API keys and their associated scopes.</p>
+ * @topic 3. Security and Validation
+ */
 @MCElement(name = "databaseApiKeyStore")
 public class JDBCApiKeyStore extends AbstractJdbcSupport implements ApiKeyStore {
 
     private KeyTable keyTable;
     private ScopeTable scopeTable;
+    private boolean autoCreate = true;
+
+    private static final String CREATE_SCOPE_TABLE = """
+                CREATE TABLE %s (
+                    apikey VARCHAR(255) NOT NULL REFERENCES %s (apikey),
+                    scope  VARCHAR(255) NOT NULL
+                )
+            """;
+    private static final String CREATE_KEY_TABLE = """
+            CREATE TABLE %s (
+                apikey VARCHAR(255) NOT NULL PRIMARY KEY
+            )
+            """;
 
     @Override
     public void init(Router router) {
@@ -74,39 +90,64 @@ public class JDBCApiKeyStore extends AbstractJdbcSupport implements ApiKeyStore 
     }
 
     private void createTablesIfNotExist() {
+        if (!autoCreate) {
+            return;
+        }
+
         try (Connection connection = getDatasource().getConnection()) {
-            if (tableExists(connection, keyTable.getName())) {
-                connection.createStatement().executeUpdate(String.format("""
-                        CREATE TABLE %s (
-                            apikey VARCHAR(255) NOT NULL PRIMARY KEY
-                        )
-                        """, keyTable.getName()));
+            if (!tableExists(connection, keyTable.getName())) {
+                createKeyTable(connection);
             }
-            if (tableExists(connection, scopeTable.getName())) {
-                connection.createStatement().executeUpdate(String.format("""
-                        CREATE TABLE %s (
-                            apikey VARCHAR(255) NOT NULL REFERENCES %s (apikey),
-                            scope VARCHAR(255) NOT NULL
-                        )
-                        """, scopeTable.getName(), keyTable.getName()));
+            if (!tableExists(connection, scopeTable.getName())) {
+                createScopeTable(connection);
             }
         } catch (Exception e) {
-            throw new ConfigurationException("Failed to create tables for API Keys %s and %s: ".formatted(keyTable.getName(),scopeTable.getName()), e);
+            throw new ConfigurationException("Failed to create tables for API Keys %s and %s: ".formatted(keyTable.getName(), scopeTable.getName()), e);
         }
     }
 
-    private boolean tableExists(Connection connection, String tableName) throws SQLException {
-        return !connection.getMetaData().getTables(null, null, tableName.toUpperCase(), null).next();
+    private void createKeyTable(Connection connection) throws SQLException {
+        connection.createStatement().executeUpdate(CREATE_KEY_TABLE.formatted(keyTable.getName()));
     }
 
+    private void createScopeTable(Connection connection) throws SQLException {
+        connection.createStatement().executeUpdate(CREATE_SCOPE_TABLE.formatted(scopeTable.getName(), keyTable.getName()));
+    }
+
+    private boolean tableExists(Connection connection, String tableName) throws SQLException {
+        try (ResultSet rs = connection.getMetaData().getTables(null, connection.getSchema(), "%", new String[]{"TABLE"})) {
+            while (rs.next()) {
+                if (tableName.equalsIgnoreCase(rs.getString("TABLE_NAME"))) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    /**
+     * @descriptio Table with the scopes.
+     */
     @MCChildElement(order = 0)
     public void setKeyTable(KeyTable keyTable) {
         this.keyTable = keyTable;
     }
 
+    /**
+     * @description The table mapping API keys to their scopes.
+     */
     @MCChildElement(order = 1)
     public void setScopeTable(ScopeTable scopeTable) {
         this.scopeTable = scopeTable;
+    }
+
+    /**
+     * @description Whether the required tables should be created automatically on startup.
+     * @default true
+     */
+    @MCAttribute
+    public void setAutoCreate(boolean autoCreate) {
+        this.autoCreate = autoCreate;
     }
 
     public KeyTable getKeyTable() {
@@ -115,5 +156,9 @@ public class JDBCApiKeyStore extends AbstractJdbcSupport implements ApiKeyStore 
 
     public ScopeTable getScopeTable() {
         return scopeTable;
+    }
+
+    public boolean isAutoCreate() {
+        return autoCreate;
     }
 }

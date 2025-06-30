@@ -16,6 +16,8 @@ package com.predic8.membrane.annot.generator.kubernetes.model;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static com.predic8.membrane.annot.generator.kubernetes.model.SchemaUtils.printRequired;
+
 public class SchemaObject implements ISchema {
 
     private final String name;
@@ -23,7 +25,9 @@ public class SchemaObject implements ISchema {
 
     private String description;
 
+    // Properties to be copied 1:1 to the JSON schema, e.g. "type": "string"
     private final Map<String, Object> attributes = new HashMap<>();
+    // Java Properties (@MCAttributes, @MCChildElement)
     private final List<SchemaObject> properties = new ArrayList<>();
 
     public SchemaObject(String name) {
@@ -34,7 +38,7 @@ public class SchemaObject implements ISchema {
     public String toString() {
         return "\"" + name + "\": {" +
                 attributes.entrySet().stream()
-                        .map(this::entryToJson)
+                        .map(SchemaUtils::entryToJson)
                         .collect(Collectors.joining(",")) +
                 printProperties() +
                 "}"
@@ -53,18 +57,6 @@ public class SchemaObject implements ISchema {
         this.description = description;
     }
 
-    private String printRequired() {
-        String req = properties.stream()
-                .filter(SchemaObject::isRequired)
-                .map(so -> "\"" + so.name + "\"")
-                .collect(Collectors.joining(","));
-
-        if (req.isEmpty())
-            return "";
-
-        return ",\"required\":[" + req + "]";
-    }
-
     private String printProperties() {
         if (properties.isEmpty())
             return "";
@@ -72,17 +64,8 @@ public class SchemaObject implements ISchema {
         return ",\"properties\": {" +
                 properties.stream().map(SchemaObject::toString).collect(Collectors.joining(",")) +
                 "}" +
-                printRequired()
+                printRequired(properties)
                 ;
-    }
-
-    public String entryToJson(Map.Entry<String, Object> entry) {
-        if (entry.getValue() instanceof SchemaObject)
-            return entry.getValue().toString();
-        if (entry.getValue() instanceof String) {
-            return "\"" + entry.getKey() + "\": \"" + entry.getValue() + "\"";
-        }
-        return "\"" + entry.getKey() + "\": " + entry.getValue();
     }
 
     public boolean isRequired() {

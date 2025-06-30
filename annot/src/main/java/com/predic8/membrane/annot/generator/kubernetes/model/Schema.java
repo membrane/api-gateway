@@ -13,10 +13,10 @@
    limitations under the License. */
 package com.predic8.membrane.annot.generator.kubernetes.model;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 import java.util.stream.Collectors;
+
+import static com.predic8.membrane.annot.generator.kubernetes.model.SchemaUtils.printRequired;
 
 public class Schema implements ISchema {
 
@@ -24,6 +24,7 @@ public class Schema implements ISchema {
 
     private final List<SchemaObject> definitions = new ArrayList<>();
     private final List<SchemaObject> properties = new ArrayList<>();
+    private final Map<String, Object> attributes = new HashMap<>();
     private boolean additionalProperties;
 
     public Schema(String name) {
@@ -38,6 +39,10 @@ public class Schema implements ISchema {
         definitions.add(definition);
     }
 
+    public void addAttribute(String key, Object value) {
+        attributes.put(key, value);
+    }
+
     @Override
     public void addProperty(SchemaObject property) {
         properties.add(property);
@@ -47,7 +52,7 @@ public class Schema implements ISchema {
         if (definitions.isEmpty())
             return "";
 
-        return "\"definitions\":{" + definitions.stream()
+        return ",\"definitions\":{" + definitions.stream()
                 .map(Objects::toString)
                 .collect(Collectors.joining(",")) +
                 "}";
@@ -57,30 +62,14 @@ public class Schema implements ISchema {
         if (properties.isEmpty())
             return "";
 
-        return "\"properties\":{\"spec\":{\"type\":\"object\",\"additionalProperties\":"+additionalProperties+",\"properties\":{" +
+        return ",\"properties\":{\"spec\":{\"type\":\"object\",\"additionalProperties\":"+additionalProperties+",\"properties\":{" +
                 properties.stream()
                         .map(Objects::toString)
                         .collect(Collectors.joining(",")) +
                 "}}}";
     }
 
-    private String checkTrailingCommaNeed() {
-        boolean hasDefs = !definitions.isEmpty();
-        boolean hasProps = !properties.isEmpty();
-        return ((hasDefs && !hasProps) || (!hasDefs && hasProps)) ? "" : ",";
-    }
 
-    private String printRequired() {
-        String required = properties.stream()
-                .filter(SchemaObject::isRequired)
-                .map(so -> "\"" + so.getName() + "\"")
-                .collect(Collectors.joining(","));
-
-        if (required.isEmpty())
-            return "";
-
-        return ",\"required\":[" + required + "]";
-    }
 
     @Override
     public String toString() {
@@ -88,11 +77,14 @@ public class Schema implements ISchema {
                 "\"id\": \"https://membrane-soa.org/" + name.toLowerCase() + ".schema.json\"," +
                 "\"$schema\": \"https://json-schema.org/draft-04/schema#\"," +
                 "\"title\": \"" + name + "\"," +
-                "\"type\": \"object\"," +
+                "\"type\": \"object\"" +
                 printDefinitions() +
-                checkTrailingCommaNeed() +
                 printProperties() +
-                printRequired() +
+                printRequired(properties)
+                + (!attributes.isEmpty() ? "," : "") +
+                attributes.entrySet().stream()
+                        .map(SchemaUtils::entryToJson)
+                        .collect(Collectors.joining(",")) +
                 "}"
                 ;
     }

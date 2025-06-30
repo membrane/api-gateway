@@ -179,7 +179,7 @@ public class BlueprintParsers {
                             bw.write("		setProperty(context, mcm, \"" + ii.getTci().getPropertyName() + "\", element.getTextContent());\r\n");
                         else
                             bw.write("		parseChildren(element, context, mcm, globalParser);\r\n");
-                        for (ChildElementInfo cei : ii.getCeis())
+                        for (ChildElementInfo cei : ii.getChildElementSpecs())
                             if (cei.isList() && cei.isRequired()) {
                                 bw.write("		if (!isPropertySet(mcm, \"" + cei.getPropertyName() + "\"))\r\n");
                                 bw.write("			throw new RuntimeException(\"Property '" + cei.getPropertyName() + "' is required, but none was defined (empty list).\");\r\n");
@@ -196,7 +196,7 @@ public class BlueprintParsers {
                                         	@Override\r
                                         	protected void handleChildObject(Element ele, ParserContext context, MutableBeanMetadata mcm, Class<?> clazz, Object child) {\r
                                         """);
-                        for (ChildElementInfo cei : ii.getCeis()) {
+                        for (ChildElementInfo cei : ii.getChildElementSpecs()) {
                             bw.write(
                                     "		if (" + cei.getTypeDeclaration().getQualifiedName() + ".class.isAssignableFrom(clazz)) {\r\n");
                             if (cei.isList())
