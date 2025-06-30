@@ -1,0 +1,22 @@
+openapi: "3.1.0"
+paths:
+  /test:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                foo:
+                  type: "array"
+                  maxItems: 3
+                bar:
+                  type: "array"
+              patternProperties:
+                f.o:
+                  minItems: 2
+              additionalProperties:
+                type: "integer"
+      responses:
+        "200":
+          description: "OK"
