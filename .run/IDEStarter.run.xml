@@ -6,7 +6,7 @@
     <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/distribution/conf" />
     <extension name="coverage">
       <pattern>
-        <option name="PATTERN" value="com.predic8.membrane.core.*" />
+        <option name="PATTERN" value="com.predic8.membrane.core.http.xml.*" />
         <option name="ENABLED" value="true" />
       </pattern>
     </extension>
