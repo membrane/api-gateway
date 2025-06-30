@@ -23,6 +23,7 @@ public class DLPInterceptor extends AbstractInterceptor {
     private String action = "report";
     private Fields fields;
     private Filter filter;
+    private Mask mask;
 
     @Override
     public void init() {
@@ -48,7 +49,7 @@ public class DLPInterceptor extends AbstractInterceptor {
 
         RiskReport report = dlpAnalyzer.analyze(msg);
         log.info("DLP Risk Analysis: {}", report.getLogReport());
-        msg.setBodyContent(filter.apply(msg.getBodyAsStringDecoded()).getBytes(StandardCharsets.UTF_8));
+        msg.setBodyContent(mask.apply(msg.getBodyAsStringDecoded()).getBytes(StandardCharsets.UTF_8));
         return CONTINUE;
     }
 
@@ -88,4 +89,12 @@ public class DLPInterceptor extends AbstractInterceptor {
         this.filter = filter;
     }
 
+    public Mask getMask() {
+        return mask;
+    }
+
+    @MCChildElement(order = 2)
+    public void setMask(Mask mask) {
+        this.mask = mask;
+    }
 }

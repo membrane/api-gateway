@@ -16,13 +16,13 @@ public class Filter {
     public String apply(String json) {
         try {
             DocumentContext context = JsonPath.parse(json);
-            for (Field p : fields) {
+            for (Field f : fields) {
                 try {
-                    context.delete(p.getJsonpath());
+                    context.delete(f.getJsonpath());
                 } catch (Exception e) {
+                    throw new RuntimeException(e);
                 }
             }
-            System.out.println(context.jsonString());
             return context.jsonString();
         } catch (Exception e) {
             throw new RuntimeException("DLP Filter failed to apply JSONPath deletions", e);
@@ -30,12 +30,12 @@ public class Filter {
     }
 
     @MCChildElement
-    public Filter setPaths(List<Field> fields) {
+    public Filter setFields(List<Field> fields) {
         this.fields = fields;
         return this;
     }
 
-    public List<Field> getPaths() {
+    public List<Field> getFields() {
         return fields;
     }
 }
