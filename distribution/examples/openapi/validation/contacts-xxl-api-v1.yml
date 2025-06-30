@@ -65,7 +65,7 @@ components:
           format: email
         countryCode:
           type: string
-          pattern: \w{2}
+          pattern: ^\w{2}$
           minLength: 2
           maxLength: 2
         address:
@@ -86,7 +86,7 @@ components:
             - type: string
               maxLength: 7
               minLength: 7
-              pattern: \w-\d{5}
+              pattern: ^\w-\d{5}$
             - type: integer
               minimum: 00000
               maximum: 99999

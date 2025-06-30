@@ -144,7 +144,7 @@ public class K8sHelperGenerator extends AbstractK8sGenerator {
                         ei.getElement().getQualifiedName())),
                 // non-global
                 main.getIis().stream()
-                        .flatMap(ei -> ei.getCeis().stream().map(cei -> Pair.of(ei, cei)))
+                        .flatMap(ei -> ei.getChildElementSpecs().stream().map(cei -> Pair.of(ei, cei)))
                         .flatMap(p -> main.getChildElementDeclarations().get(p.y.getTypeDeclaration())
                                 .getElementInfo().stream().map(ei -> Pair.of(p.x, ei)))
                         .filter(p -> !p.y.getAnnotation().topLevel())
@@ -156,7 +156,7 @@ public class K8sHelperGenerator extends AbstractK8sGenerator {
     }
 
     private String assembleCrdSingularNames(MainInfo main) {
-        return getRulesStream(main)
+        return getTopLevelStream(main)
                 .map(ei -> ei.getAnnotation().name().toLowerCase())
                 .map(s -> "        crdSingularNames.add(\"" + s + "\");")
                 .collect(Collectors.joining(System.lineSeparator()));

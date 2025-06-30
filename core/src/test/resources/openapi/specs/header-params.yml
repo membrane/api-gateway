@@ -90,7 +90,7 @@ components:
           required: true
           schema:
             type: string
-            pattern: "\\w*"
+            pattern: "^\\w*$"
   parameters:
     X-Token:
       in: header
