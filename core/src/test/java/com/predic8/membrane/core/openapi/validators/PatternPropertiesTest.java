@@ -30,7 +30,7 @@ public class PatternPropertiesTest extends AbstractValidatorTest{
     }
 
     @Test
-    void testPatternProperties() throws ParseException {
+    void invalidRequest() throws ParseException {
         ValidationErrors errors = validator.validate(Request.post().mediaType(APPLICATION_JSON).path("/test").body("""
                 {"foo": []}
                 """));
@@ -39,7 +39,7 @@ public class PatternPropertiesTest extends AbstractValidatorTest{
     }
 
     @Test
-    void testValidRequest() throws ParseException {
+    void validRequest() throws ParseException {
         ValidationErrors errors = validator.validate(Request.post().mediaType(APPLICATION_JSON).path("/test").body("""
                 {"foo": [1, 2]}
                 """));
