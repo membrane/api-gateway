@@ -13,8 +13,10 @@ import java.util.List;
 
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 
+
 /**
- * Interceptor that adds one or more Set-Cookie headers on the response.
+ * @description Plugin that adds one or more Set-Cookie headers on the HTTP response.
+ * @topic 6. Misc
  */
 @MCElement(name = "setCookies")
 public class SetCookiesInterceptor extends AbstractInterceptor {
@@ -37,13 +39,17 @@ public class SetCookiesInterceptor extends AbstractInterceptor {
     }
 
     /**
-     * Register one <cookie> child element.
+     * @description Registers the list of <cookie> child elements.
+     * @param cookies list of CookieDef parsed from XML
      */
     @MCChildElement(order = 1)
     public void setCookies(List<CookieDef> cookies) {
         this.cookies = cookies;
     }
 
+    /**
+     * @description Holder for a single cookie's attributes.
+     */
     @SuppressWarnings("unused")
     @MCElement(name = "cookie")
     public static class CookieDef {
@@ -62,6 +68,10 @@ public class SetCookiesInterceptor extends AbstractInterceptor {
             return name;
         }
 
+        /**
+         * @description Sets the cookie name.
+         * @param name cookie name
+         */
         @MCAttribute
         @Required
         public void setName(String name) {
@@ -72,6 +82,10 @@ public class SetCookiesInterceptor extends AbstractInterceptor {
             return value;
         }
 
+        /**
+         * @description Sets the cookie value.
+         * @param value cookie value
+         */
         @MCAttribute
         @Required
         public void setValue(String value) {
@@ -82,6 +96,11 @@ public class SetCookiesInterceptor extends AbstractInterceptor {
             return path;
         }
 
+        /**
+         * @description Sets the cookie path.
+         * @param path path value
+         * @default "/"
+         */
         @MCAttribute
         public void setPath(String path) {
             this.path = path;
@@ -91,6 +110,10 @@ public class SetCookiesInterceptor extends AbstractInterceptor {
             return domain;
         }
 
+        /**
+         * @description Sets the cookie domain.
+         * @param domain domain value
+         */
         @MCAttribute
         public void setDomain(String domain) {
             this.domain = domain;
@@ -100,6 +123,11 @@ public class SetCookiesInterceptor extends AbstractInterceptor {
             return maxAge;
         }
 
+        /**
+         * @description Sets the Max-Age for the cookie.
+         * @param maxAge seconds until expiration
+         * @default -1
+         */
         @MCAttribute
         public void setMaxAge(int maxAge) {
             this.maxAge = maxAge;
@@ -109,6 +137,10 @@ public class SetCookiesInterceptor extends AbstractInterceptor {
             return expires;
         }
 
+        /**
+         * @description Sets the Expires attribute.
+         * @param expires RFC1123 date string
+         */
         @MCAttribute
         public void setExpires(String expires) {
             this.expires = expires;
@@ -118,6 +150,11 @@ public class SetCookiesInterceptor extends AbstractInterceptor {
             return secure;
         }
 
+        /**
+         * @description Sets the Secure flag.
+         * @param secure true to mark cookie Secure
+         * @default false
+         */
         @MCAttribute
         public void setSecure(boolean secure) {
             this.secure = secure;
@@ -127,6 +164,11 @@ public class SetCookiesInterceptor extends AbstractInterceptor {
             return httpOnly;
         }
 
+        /**
+         * @description Sets the HttpOnly flag.
+         * @param httpOnly true to mark cookie HttpOnly
+         * @default false
+         */
         @MCAttribute
         public void setHttpOnly(boolean httpOnly) {
             this.httpOnly = httpOnly;
@@ -136,6 +178,11 @@ public class SetCookiesInterceptor extends AbstractInterceptor {
             return sameSite;
         }
 
+        /**
+         * @description Sets the SameSite policy.
+         * @param sameSite one of LAX, STRICT, or NONE
+         * @default LAX
+         */
         @MCAttribute
         public void setSameSite(SameSite sameSite) {
             this.sameSite = sameSite;
