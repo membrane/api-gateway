@@ -53,7 +53,8 @@ public class DLPAnalyzer {
             }
         } else {
             String fullPath = String.join(".", path).toLowerCase(Locale.ROOT);
-            report.recordField(fullPath, classify(fullPath, path.getLast().toLowerCase(Locale.ROOT)));
+            String simpleName = path.isEmpty() ? "" : path.getLast().toLowerCase(Locale.ROOT);
+            report.recordField(fullPath, classify(fullPath, simpleName));
         }
     }
 

@@ -25,7 +25,10 @@ public class MaskField implements FieldActionStrategy {
             byte[] out = OBJECT_MAPPER.writeValueAsBytes(root);
             msg.setBodyContent(out);
             msg.getHeader().setContentLength(out.length);
-            msg.getHeader().setContentType("application/json; charset=UTF-8");
+            String originalContentType = msg.getHeader().getContentType();
+            if (originalContentType == null || !originalContentType.contains("charset=")) {
+                msg.getHeader().setContentType("application/json; charset=UTF-8");
+            }
         } catch (Exception e) {
             log.error("MaskAction failed", e);
         }
@@ -39,7 +42,9 @@ public class MaskField implements FieldActionStrategy {
                 JsonNode child = obj.get(fn);
                 if (child.isValueNode()) {
                     String fullPath = String.join(".", path).toLowerCase(Locale.ROOT);
-                    if (pattern.matcher(fullPath).matches()) {
+                    boolean match = pattern.matcher(fullPath).matches()
+                            || path.stream().anyMatch(p -> pattern.matcher(p.toLowerCase(Locale.ROOT)).matches());
+                    if (match) {
                         obj.put(fn, "****");
                     }
                 } else {
@@ -48,8 +53,10 @@ public class MaskField implements FieldActionStrategy {
                 path.removeLast();
             });
         } else if (node.isArray()) {
-            for (JsonNode child : node) {
-                maskNode(child, pattern, path);
+            for (int i = 0; i < node.size(); i++) {
+                path.addLast("[" + i + "]");
+                maskNode(node.get(i), pattern, path);
+                path.removeLast();
             }
         }
     }

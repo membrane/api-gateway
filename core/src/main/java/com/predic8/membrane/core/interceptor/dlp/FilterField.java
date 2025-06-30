@@ -23,7 +23,10 @@ public class FilterField implements FieldActionStrategy {
             byte[] out = OBJECT_MAPPER.writeValueAsBytes(root);
             msg.setBodyContent(out);
             msg.getHeader().setContentLength(out.length);
-            msg.getHeader().setContentType("application/json; charset=UTF-8");
+            String originalContentType = msg.getHeader().getContentType();
+            if (originalContentType == null || !originalContentType.contains("charset=")) {
+                msg.getHeader().setContentType("application/json; charset=UTF-8");
+            }
         } catch (Exception e) {
             log.error("FilterAction failed", e);
         }
