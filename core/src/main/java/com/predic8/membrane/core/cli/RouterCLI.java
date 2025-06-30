@@ -45,6 +45,7 @@ import java.util.*;
 import static com.predic8.membrane.core.Constants.*;
 import static com.predic8.membrane.core.config.spring.TrackingFileSystemXmlApplicationContext.*;
 import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPISpec.YesNoOpenAPIOption.*;
+import static com.predic8.membrane.core.openapi.util.OpenAPIUtil.isOpenAPIMisplacedError;
 import static com.predic8.membrane.core.util.ExceptionUtil.*;
 import static com.predic8.membrane.core.util.OSUtil.*;
 import static com.predic8.membrane.core.util.URIUtil.*;
@@ -119,10 +120,6 @@ public class RouterCLI {
         System.exit(1);
         // Will never be reached
         return null;
-    }
-
-    private static boolean isOpenAPIMisplacedError(String errorMsg) {
-        return errorMsg.matches("(?i).*invalid.+element.+http://membrane-soa.org/proxies/1/\":openapi.*'\\..*");
     }
 
     private static Router initRouterByOpenApiSpec(MembraneCommandLine commandLine) throws Exception {
