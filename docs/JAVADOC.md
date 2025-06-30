@@ -2,13 +2,14 @@
 
 This project uses a structured Javadoc format to document classes, methods, and fields:
 
-| Name           | Description                     |
-|----------------|---------------------------------|
-| `@name`        | The name of the element.        |
-| `@required`    | Whether the field is mandatory. |
-| `@default`     | Default value if not set.       |
-| `@description` | Description.                    |
-| `@example`     | Example usage or value.         |
+| Tag            | Applies To       | Purpose / Content                                              |
+|----------------|------------------|----------------------------------------------------------------|
+| `@description` | Classes, Methods | Description of the element.                                    |
+| `@default`     | Methods          | Default value if not explicitly configured.                    |
+| `@example`     | Methods          | Example value or usage snippet.                                |
+| `@topic`       | Classes          | Assigns a topic/category to group related classes in the docs. |
 
 > **Note:**
-> The table lists custom tags used in this project. In addition, all standard Javadoc tags (such as `@param`, `@return`, and `@throws`) are fully supported according to the official Javadoc specification.
+> The table lists custom tags used in this project. In addition, all standard Javadoc tags (such as `@param`, `@return`,
+> and `@throws`) are fully supported according to the official Javadoc specification.
+
