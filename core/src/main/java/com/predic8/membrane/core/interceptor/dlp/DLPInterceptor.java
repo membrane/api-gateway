@@ -10,6 +10,8 @@ import com.predic8.membrane.core.interceptor.Outcome;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.nio.charset.StandardCharsets;
+
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 
 @MCElement(name = "dlp")
@@ -20,6 +22,7 @@ public class DLPInterceptor extends AbstractInterceptor {
     private String fieldsConfig;
     private String action = "report";
     private Fields fields;
+    private Filter filter;
 
     @Override
     public void init() {
@@ -45,19 +48,7 @@ public class DLPInterceptor extends AbstractInterceptor {
 
         RiskReport report = dlpAnalyzer.analyze(msg);
         log.info("DLP Risk Analysis: {}", report.getLogReport());
-
-        if (fields != null && !fields.getFields().isEmpty()) {
-            for (Field f : fields.getFields()) {
-                f.handleAction(msg);
-            }
-        } else {
-            report.getMatchedFields().keySet().forEach(name -> {
-                Field f = new Field();
-                f.setName(name);
-                f.setAction(action);
-                f.handleAction(msg);
-            });
-        }
+        msg.setBodyContent(filter.apply(msg.getBodyAsStringDecoded()).getBytes(StandardCharsets.UTF_8));
         return CONTINUE;
     }
 
@@ -87,4 +78,14 @@ public class DLPInterceptor extends AbstractInterceptor {
     public void setFields(Fields fields) {
         this.fields = fields;
     }
+
+    public Filter getFilter() {
+        return filter;
+    }
+
+    @MCChildElement(order = 1)
+    public void setFilter(Filter filter) {
+        this.filter = filter;
+    }
+
 }
