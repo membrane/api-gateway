@@ -75,6 +75,14 @@ These are just a few examples; see the descriptions below for more.
 - Embeddable reverse proxy HTTP framework to build custom API gateways.
 - Traffic shadowing
 
+### **Speed & Size**
+
+- Streams HTTP traffic for low-latency, non-blocking processing.
+- Reuses TCP connections via HTTP Keep-Alive to reduce request overhead.
+- Lightweight distribution (~55MB) compared to other Java-based gateways.
+- Low memory footprint—ideal for containers and cloud-native environments.
+- Java-based, yet competitive with C/C++ gateways in performance.
+
 # Content
 
 1. [Getting Started](#Getting-Started)

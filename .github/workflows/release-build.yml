@@ -34,11 +34,19 @@ jobs:
             -DskipTests
       - name: Setup next Snapshot version
         run: |
-          cd distribution 
+          cd distribution
+          if [ -e src/test/java/com/predic8/membrane/examples/env/ConsistentVersionNumbers.java ] ; then
+            CLASS=com.predic8.membrane.examples.env.ConsistentVersionNumbers
+          elif [ -e src/test/java/com/predic8/membrane/examples/withoutinternet/env/ConsistentVersionNumbers.java ] ; then
+            CLASS=com.predic8.membrane.examples.withoutinternet.env.ConsistentVersionNumbers
+          else
+            echo "ConsistentVersionNumbers.java not found."
+            exit 1
+          fi
           mvn test-compile exec:java \
             --no-transfer-progress \
             --batch-mode \
-            -DmainClass="com.predic8.membrane.examples.env.ConsistentVersionNumbers" \
+            -DmainClass=$CLASS \
             -Dexec.classpathScope="test" \
             -DmainArgs="-snapshot"
           cd ..
@@ -83,5 +91,5 @@ jobs:
           prerelease: true
 #          makeLatest: true
           bodyFile: "distribution/release-notes/${{ steps.get_version.outputs.VERSION }}.md"
-          artifacts: "distribution/target/membrane-api-gateway-${{ steps.get_version.outputs.VERSION }}.zip,distribution/target/membrane-api-gateway-${{ steps.get_version.outputs.VERSION }}.zip.asc"
+          artifacts: "core/target/classes/com/predic8/membrane/core/config/json/membrane.schema.json,distribution/target/membrane-api-gateway-${{ steps.get_version.outputs.VERSION }}.zip,distribution/target/membrane-api-gateway-${{ steps.get_version.outputs.VERSION }}.zip.asc"
           token: ${{ secrets.PAT }}

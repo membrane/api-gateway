@@ -394,4 +394,29 @@ public class BrowserMock implements Function<Exchange, Exchange> {
             return cookie.values().stream().map(Map::size).reduce(0, Integer::sum);
         }
     }
+
+    public String getCookiesText() {
+        StringBuilder sb = new StringBuilder();
+        synchronized (cookie) {
+            cookie.forEach((host, cookies) -> {
+                sb.append(host);
+                sb.append("\n");
+                cookies.entrySet().forEach(e -> sb.append(getCookieLine(e)));
+            });
+        }
+        return sb.toString();
+    }
+
+    /**
+     * Note that this method should only be called within <code>synchronized(cookie) { ... }</code>.
+     */
+    private static String getCookieLine(Map.Entry<String, String> c) {
+        StringBuilder sb = new StringBuilder();
+        sb.append(" ");
+        sb.append(c.getKey());
+        sb.append("=");
+        sb.append(c.getValue());
+        sb.append("\n");
+        return sb.toString();
+    }
 }

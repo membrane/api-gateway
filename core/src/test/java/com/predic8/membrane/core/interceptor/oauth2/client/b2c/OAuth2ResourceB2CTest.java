@@ -27,13 +27,16 @@ import org.jose4j.jwt.consumer.*;
 import org.junit.jupiter.api.*;
 import org.slf4j.*;
 
+import java.net.URISyntaxException;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.*;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 import static com.predic8.membrane.core.http.Header.*;
 import static com.predic8.membrane.core.http.Request.get;
+import static com.predic8.membrane.core.interceptor.oauth2.client.b2c.MockAuthorizationServer.SERVER_PORT;
 import static com.predic8.membrane.core.interceptor.oauth2client.rf.OAuth2CallbackRequestHandler.MEMBRANE_MISSING_SESSION;
 import static com.predic8.membrane.core.util.URLParamUtil.DuplicateKeyOrInvalidFormStrategy.ERROR;
 import static com.predic8.membrane.core.util.URLParamUtil.parseQueryString;
@@ -172,6 +175,37 @@ public abstract class OAuth2ResourceB2CTest {
         assertTrue(response.contains(MEMBRANE_MISSING_SESSION));
     }
 
+    private List<String> getLinesContaining(String haystackLines, String needle) {
+        return Arrays.stream(haystackLines.split("\n")).filter(l -> l.contains(needle)).toList();
+    }
+
+    // this should avoid session fixation attacks
+    @Test
+    public void newSessionCookieAfterLogin() throws URISyntaxException {
+        // this initializes the session, but does not login the user (because redirects are not followed)
+        browser.applyWithoutRedirect(get(tc.getClientAddress() + "/init"));
+
+        var ili = browser.apply(get(tc.getClientAddress() + "/is-logged-in"));
+        assertTrue(ili.getResponse().getBodyAsStringDecoded().contains("false"));
+
+        String cookiesBefore = browser.getCookiesText();
+        assertEquals(1, getLinesContaining(cookiesBefore, "=true").size());
+
+        // now actually log in
+        browser.apply(get(tc.getClientAddress() + "/init"));
+
+        ili = browser.apply(get(tc.getClientAddress() + "/is-logged-in"));
+        assertTrue(ili.getResponse().getBodyAsStringDecoded().contains("true"));
+
+        String cookiesAfter = browser.getCookiesText();
+        assertEquals(1, getLinesContaining(cookiesAfter, "=true").size());
+
+        // we assert: session id has changed
+        assertNotEquals(
+                getLinesContaining(cookiesBefore, "=true").get(0),
+                getLinesContaining(cookiesAfter, "=true").get(0));
+    }
+
     @Test
     public void logout() throws Exception {
         browser.apply(get(tc.getClientAddress() + "/init"));
@@ -179,6 +213,8 @@ public abstract class OAuth2ResourceB2CTest {
         var ili = browser.apply(get(tc.getClientAddress() + "/is-logged-in"));
 
         assertTrue(ili.getResponse().getBodyAsStringDecoded().contains("true"));
+
+        assertEquals(200, browser.apply(get(tc.getClientAddress() + "/api/")).getResponse().getStatusCode());
 
         browser.apply(get(tc.getClientAddress() + "/logout"));
 
@@ -188,6 +224,11 @@ public abstract class OAuth2ResourceB2CTest {
 
         assertEquals(0, browser.getCookieCount());
         assertTrue(didLogOut.get());
+
+        // accessing the API triggers a login
+        Response response = browser.applyWithoutRedirect(get(tc.getClientAddress() + "/api/")).getResponse();
+        assertEquals(302, response.getStatusCode());
+        assertTrue(response.getHeader().getFirstValue("Location").startsWith("http://localhost:" + SERVER_PORT + "/" + tc.tenantId + "/" + tc.susiFlowId));
     }
 
     @Test

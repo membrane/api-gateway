@@ -25,7 +25,6 @@ import javax.xml.stream.*;
 import javax.xml.transform.*;
 import javax.xml.transform.stream.*;
 import java.io.*;
-import java.nio.file.*;
 import java.util.*;
 
 import static java.util.Comparator.*;
@@ -52,7 +51,7 @@ public class HelpReference {
 			String path = System.getenv("MEMBRANE_GENERATE_DOC_DIR");
 			if (path == null)
 				return;
-			path = path.replace("%VERSION%", "6.0");
+			path = path.replace("%VERSION%", "6.1");
 
 			System.out.println("Generating Reference in location: " + path);
 
@@ -151,7 +150,7 @@ public class HelpReference {
 			xew.writeEndElement();
 		}
 
-		List<ChildElementInfo> ceis = ei.getCeis();
+		List<ChildElementInfo> ceis = ei.getChildElementSpecs();
 		if (ceis.size() > 0) {
 			xew.writeStartElement("children");
 			for (ChildElementInfo cei : ceis)

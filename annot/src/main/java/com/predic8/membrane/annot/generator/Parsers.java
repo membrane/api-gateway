@@ -164,14 +164,14 @@ public class Parsers {
                         if (ii.getOai() != null) {
                             bw.write("		setProperties(\"" + ii.getOai().getSpringName() + "\", element, builder);\r\n");
                         }
-                        for (ChildElementInfo cei : ii.getCeis())
+                        for (ChildElementInfo cei : ii.getChildElementSpecs())
                             if (cei.isList())
                                 bw.write("		builder.addPropertyValue(\"" + cei.getPropertyName() + "\", new java.util.ArrayList<Object>());\r\n");
                         if (ii.getTci() != null)
                             bw.write("		builder.addPropertyValue(\"" + ii.getTci().getPropertyName() + "\", element.getTextContent());\r\n");
                         else
                             bw.write("		parseChildren(element, parserContext, builder);\r\n");
-                        for (ChildElementInfo cei : ii.getCeis())
+                        for (ChildElementInfo cei : ii.getChildElementSpecs())
                             if (cei.isList() && cei.isRequired()) {
                                 bw.write("		if (builder.getBeanDefinition().getPropertyValues().getPropertyValue(\"" + cei.getPropertyName() + "[0]\") == null)\r\n");
                                 bw.write("			throw new RuntimeException(\"Property '" + cei.getPropertyName() + "' is required, but none was defined (empty list).\");\r\n");
@@ -185,7 +185,7 @@ public class Parsers {
                                         @Override\r
                                         protected void handleChildObject(Element ele, ParserContext parserContext, BeanDefinitionBuilder builder, Class<?> clazz, Object child) {\r
                                         """);
-                        for (ChildElementInfo cei : ii.getCeis()) {
+                        for (ChildElementInfo cei : ii.getChildElementSpecs()) {
                             bw.write(
                                     "	if (" + cei.getTypeDeclaration().getQualifiedName() + ".class.isAssignableFrom(clazz)) {\r\n" +
                                             "		setProperty(builder, \"" + cei.getPropertyName() + "\"" + (cei.isList() ? "+\"[\"+ incrementCounter(builder, \"" + cei.getPropertyName() + "\") + \"]\" " : "") + ", child);\r\n" +
