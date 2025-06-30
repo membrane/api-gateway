@@ -18,34 +18,21 @@ class DLPInterceptorTest {
     @BeforeEach
     void setUp() {
         i = new DLPInterceptor();
-        Fields fields = new Fields();
-        fields.setFields(List.of(
-                newField("credit.number", "mask"),
-                newField("health_info", "filter")
-        ));
-        i.setFields(fields);
     }
 
     @Test
-    void shouldMaskAndFilterSensitiveFields() throws Exception {
+    void shouldOnlyMaskSpecificField() throws Exception {
+        i.setFields(new Fields().setFields(List.of(
+                newField("credit.number", "mask")
+        )));
+
         Exchange exc = post("/test")
                 .header("Content-Type", "application/json")
                 .body("""
                         {
-                          "person": {
-                            "full_name": "Max Mustermann",
-                            "health_info": {
-                              "status": "undefined",
-                              "insurance": {
-                                "provider": "AOK",
-                                "policy_number": "AOK-123456"
-                              }
-                            }
-                          },
                           "credit": {
-                            "number": 1234567890,
-                            "limit": 5000,
-                            "valid_until": "2027-12"
+                            "number": 9999999999,
+                            "limit": 3000
                           }
                         }
                         """)
@@ -54,9 +41,90 @@ class DLPInterceptorTest {
         exc.setResponse(Response.ok().body(exc.getRequest().getBodyAsStringDecoded().getBytes(StandardCharsets.UTF_8)).build());
         i.handleResponse(exc);
         String body = exc.getResponse().getBodyAsStringDecoded();
-        assertFalse(body.contains("health_info"));
+
         assertTrue(body.contains("\"number\":\"****\""));
-        assertTrue(body.contains("\"valid_until\":\"2027-12\""));
+        assertTrue(body.contains("\"limit\":3000")); // remains untouched
+    }
+
+    @Test
+    void shouldCompletelyFilterNestedBranch() throws Exception {
+        i.setFields(new Fields().setFields(List.of(
+                newField("person.health_info", "filter")
+        )));
+
+        Exchange exc = post("/test")
+                .header("Content-Type", "application/json")
+                .body("""
+                        {
+                          "person": {
+                            "full_name": "Max",
+                            "health_info": {
+                              "status": "ok"
+                            }
+                          }
+                        }
+                        """)
+                .buildExchange();
+
+        exc.setResponse(Response.ok().body(exc.getRequest().getBodyAsStringDecoded().getBytes(StandardCharsets.UTF_8)).build());
+        i.handleResponse(exc);
+        String body = exc.getResponse().getBodyAsStringDecoded();
+
+        assertFalse(body.contains("health_info"));
+        assertTrue(body.contains("full_name"));
+    }
+
+    @Test
+    void shouldFilterAllMatchingFieldNames() throws Exception {
+        i.setFields(new Fields().setFields(List.of(
+                newField(".*status.*", "filter")
+        )));
+
+        Exchange exc = post("/test")
+                .header("Content-Type", "application/json")
+                .body("""
+                        {
+                          "health": {
+                            "status": "red"
+                          },
+                          "delivery": {
+                            "status_code": 200
+                          }
+                        }
+                        """)
+                .buildExchange();
+
+        exc.setResponse(Response.ok().body(exc.getRequest().getBodyAsStringDecoded().getBytes(StandardCharsets.UTF_8)).build());
+        i.handleResponse(exc);
+        String body = exc.getResponse().getBodyAsStringDecoded();
+
+        assertFalse(body.contains("status"));
+        assertTrue(body.contains("delivery"));
+    }
+
+    @Test
+    void shouldLeaveUnconfiguredFieldsUntouched() throws Exception {
+        i.setFields(new Fields().setFields(List.of(
+                newField("credit.number", "mask")
+        )));
+
+        Exchange exc = post("/test")
+                .header("Content-Type", "application/json")
+                .body("""
+                        {
+                          "something": {
+                            "unrelated": true
+                          }
+                        }
+                        """)
+                .buildExchange();
+
+        exc.setResponse(Response.ok().body(exc.getRequest().getBodyAsStringDecoded().getBytes(StandardCharsets.UTF_8)).build());
+        i.handleResponse(exc);
+        String body = exc.getResponse().getBodyAsStringDecoded();
+
+        assertTrue(body.contains("something"));
+        assertTrue(body.contains("unrelated"));
     }
 
     private Field newField(String name, String action) {
