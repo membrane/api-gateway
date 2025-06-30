@@ -41,7 +41,7 @@ public class SetCookiesInterceptor extends AbstractInterceptor {
     }
 
     /**
-     * @description Registers the list of <cookie> child elements.
+     * @description Registers the list of &lt;cookie&gt; child elements.
      * @param cookies list of CookieDef parsed from XML
      */
     @MCChildElement(order = 1)
