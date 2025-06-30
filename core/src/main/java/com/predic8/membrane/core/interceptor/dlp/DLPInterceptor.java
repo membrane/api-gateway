@@ -23,6 +23,11 @@ public class DLPInterceptor extends AbstractInterceptor {
 
     @Override
     public void init() {
+        if (fieldsConfig != null) {
+            dlpAnalyzer = new DLPAnalyzer(new CsvFieldConfiguration().getFields(fieldsConfig));
+        } else {
+            dlpAnalyzer = new DLPAnalyzer(java.util.Map.of());
+        }
         super.init();
     }
 
@@ -37,11 +42,6 @@ public class DLPInterceptor extends AbstractInterceptor {
     }
 
     public Outcome handleInternal(Message msg) {
-        if (fieldsConfig != null) {
-            dlpAnalyzer = new DLPAnalyzer(new CsvFieldConfiguration().getFields(fieldsConfig));
-        } else {
-            dlpAnalyzer = new DLPAnalyzer(java.util.Map.of());
-        }
 
         RiskReport report = dlpAnalyzer.analyze(msg);
         log.info("DLP Risk Analysis: {}", report.getLogReport());

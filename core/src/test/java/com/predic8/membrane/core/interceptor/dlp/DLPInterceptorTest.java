@@ -18,6 +18,7 @@ class DLPInterceptorTest {
     @BeforeEach
     void setUp() {
         i = new DLPInterceptor();
+        i.init();
     }
 
     @Test
@@ -43,7 +44,7 @@ class DLPInterceptorTest {
         String body = exc.getResponse().getBodyAsStringDecoded();
 
         assertTrue(body.contains("\"number\":\"****\""));
-        assertTrue(body.contains("\"limit\":3000")); // remains untouched
+        assertTrue(body.contains("\"limit\":3000"));
     }
 
     @Test
