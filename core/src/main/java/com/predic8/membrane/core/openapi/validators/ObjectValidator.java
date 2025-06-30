@@ -24,6 +24,7 @@ import org.slf4j.*;
 
 import java.io.*;
 import java.util.*;
+import java.util.regex.Pattern;
 
 import static com.predic8.membrane.core.openapi.util.Utils.*;
 import static java.lang.String.*;
@@ -75,6 +76,7 @@ public class ObjectValidator implements IJSONSchemaValidator {
         ValidationErrors errors = validateRequiredProperties(ctx, node);
         errors.add(validateAddionalProperties(ctx, node));
         errors.add(validateProperties(ctx, node));
+        errors.add(validatePatternProperties(ctx, node));
         errors.add(validateSize(ctx, node));
         errors.add(validateDiscriminator(ctx,node));
         return errors;
@@ -234,9 +236,35 @@ public class ObjectValidator implements IJSONSchemaValidator {
         return errors;
     }
 
+    private ValidationErrors validatePatternProperties(ValidationContext ctx, JsonNode node) {
+        if(schema.getPatternProperties() == null) {
+            return null;
+        }
+        ValidationErrors errors = new ValidationErrors();
+
+        getPatternPropertiesFromSchema().forEach((regex, propSchema) -> {
+            Pattern pattern = Pattern.compile(regex);
+
+            for (Iterator<String> it = node.fieldNames(); it.hasNext(); ) {
+                String fieldName = it.next();
+                if (pattern.matcher(fieldName).matches()) {
+                    JsonNode childNode = node.get(fieldName);
+                    errors.add(new SchemaValidator(api, propSchema)
+                            .validate(ctx, childNode));
+                }
+            }
+        });
+        return errors;
+    }
+
     @SuppressWarnings({"rawtypes", "unchecked"})
     private Map<String, Schema> getPropertiesFromSchema() {
         return (Map<String, Schema>) schema.getProperties();
+    }
+
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    private Map<String, Schema> getPatternPropertiesFromSchema() {
+        return (Map<String, Schema>) schema.getPatternProperties();
     }
 
     @SuppressWarnings("rawtypes")
