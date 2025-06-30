@@ -25,10 +25,13 @@ import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static com.google.common.collect.ImmutableMap.of;
+import static com.predic8.membrane.core.openapi.model.Request.post;
 import static com.predic8.membrane.core.openapi.util.TestUtils.om;
 import static com.predic8.membrane.core.openapi.util.TestUtils.parseOpenAPI;
+import static java.util.regex.Pattern.quote;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
@@ -47,7 +50,7 @@ public class JsonSchemaTestSuiteTests {
 
     @Disabled("The test requires a manual download. It also fails.")
     @Test
-    public void testJsonSchema() throws IOException, ParseException {
+    void jsonSchema() throws IOException, ParseException {
         runTestsFoundInDirectory(TEST_SUITE_BASE_PATH);
         log.info("correct = {}", correct);
         log.info("incorrect = {}", incorrect);
@@ -96,26 +99,27 @@ public class JsonSchemaTestSuiteTests {
     }
 
     private @NotNull String generateOpenAPIForSchema(Object schema) throws JsonProcessingException {
-        Map oa = new HashMap(of("openapi", "3.1.0", "paths", of("/test", of("post", of(
+        Map openapi = new HashMap(of("openapi", "3.1.0", "paths", of("/test", of("post", of(
                 "requestBody", of("content", of("application/json", of("schema", schema))),
                 "responses", of("200", of("description", "OK")))))));
 
-        if (schema instanceof Map && ((Map) schema).containsKey("definitions")) {
-            oa.put("components", of("schemas", ((Map) schema).get("definitions")));
-            log.warn("    The schema contains definitions. They have been moved from #/definitions/ to #/components/schemas/ .");
-        }
+        moveTypeDefinitions(schema, openapi, "definitions");
+        moveTypeDefinitions(schema, openapi, "$defs");
 
-        if (schema instanceof Map && ((Map) schema).containsKey("$defs")) {
-            oa.put("components", of("schemas", ((Map) schema).get("$defs")));
-            log.warn("    warning: The schema contains definitions. They have been moved from #/$defs/ to #/components/schemas/ .");
-        }
-
-        String openapi = yamlMapper.writeValueAsString(oa);
-
-        openapi = openapi.replaceAll("#/definitions/", "#/components/schemas/");
-        openapi = openapi.replaceAll("#/\\$defs/", "#/components/schemas/");
-        return openapi;
+        return replaceReferences(replaceReferences(yamlMapper.writeValueAsString(openapi), "definitions"), "$defs");
     }
+
+    private String replaceReferences(String openApiString, String rootKey) {
+        return openApiString.replaceAll("#/" + quote(rootKey) + "/", "#/components/schemas/");
+    }
+
+    private static void moveTypeDefinitions(Object schema, Map openApi, String rootKey) {
+        if (schema instanceof Map && ((Map) schema).containsKey(rootKey)) {
+            openApi.put("components", of("schemas", ((Map) schema).get(rootKey)));
+            log.warn("    warning: The schema contains definitions. They have been moved from #/" + rootKey + "/ to #/components/schemas/ .");
+        }
+    }
+
 
     private static @Nullable String computeIgnoredReason(String openapi, String description) {
         if (openapi.contains("http://"))
@@ -136,11 +140,11 @@ public class JsonSchemaTestSuiteTests {
 
         log.info("  - testRun = {}", om.writeValueAsString(testRun));
 
-        String description2 = testRun.get("description").toString();
+        String description = testRun.get("description").toString();
         String body = objectMapper.writeValueAsString(testRun.get("data"));
         Boolean valid = (Boolean)testRun.get("valid");
 
-        log.info("    testRun.description = {}", description2);
+        log.info("    testRun.description = {}", description);
         log.info("    testRun.body = {}", body);
         log.info("    testRun.shouldBeValid = {}", valid);
 
@@ -150,7 +154,7 @@ public class JsonSchemaTestSuiteTests {
             return;
         }
 
-        Request<Body> post = Request.post().path("/test").mediaType("application/json");
+        Request<Body> post = post().path("/test").mediaType("application/json");
         ValidationErrors errors = null;
         try {
             errors = validator.validate(post.body(body));
