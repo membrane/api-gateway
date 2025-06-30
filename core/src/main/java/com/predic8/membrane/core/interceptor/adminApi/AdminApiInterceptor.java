@@ -24,7 +24,6 @@ import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Interceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.flow.AbortInterceptor;
-import com.predic8.membrane.core.interceptor.flow.AbstractFlowInterceptor;
 import com.predic8.membrane.core.interceptor.flow.RequestInterceptor;
 import com.predic8.membrane.core.interceptor.flow.ResponseInterceptor;
 import com.predic8.membrane.core.interceptor.rest.QueryParameter;

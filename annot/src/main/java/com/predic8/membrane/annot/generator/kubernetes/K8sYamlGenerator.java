@@ -59,7 +59,7 @@ public class K8sYamlGenerator extends AbstractK8sGenerator {
 
     private void assemble(Writer w, MainInfo main) throws IOException {
 
-        for (ElementInfo element : getRules(main)) {
+        for (ElementInfo element : getTopLevelElementInfos(main)) {
             writeCRD(w, element);
             appendLine(w, "---");
         }
@@ -132,7 +132,7 @@ public class K8sYamlGenerator extends AbstractK8sGenerator {
     }
 
     private void writeCRD(Writer w, ElementInfo ei) throws IOException {
-        if (ei.getAnnotation().mixed() && ei.getCeis().size() > 0)
+        if (ei.getAnnotation().mixed() && ei.getChildElementSpecs().size() > 0)
             throw new ProcessingException(
                     "@MCElement(..., mixed=true) and @MCTextContent is not compatible with @MCChildElement.",
                     ei.getElement()
