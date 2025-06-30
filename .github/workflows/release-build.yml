@@ -91,5 +91,5 @@ jobs:
           prerelease: true
 #          makeLatest: true
           bodyFile: "distribution/release-notes/${{ steps.get_version.outputs.VERSION }}.md"
-          artifacts: "distribution/target/membrane-api-gateway-${{ steps.get_version.outputs.VERSION }}.zip,distribution/target/membrane-api-gateway-${{ steps.get_version.outputs.VERSION }}.zip.asc"
+          artifacts: "core/target/classes/com/predic8/membrane/core/config/json/membrane.schema.json,distribution/target/membrane-api-gateway-${{ steps.get_version.outputs.VERSION }}.zip,distribution/target/membrane-api-gateway-${{ steps.get_version.outputs.VERSION }}.zip.asc"
           token: ${{ secrets.PAT }}
