@@ -47,7 +47,7 @@ public class ArrayValidator implements IJSONSchemaValidator {
 
     @Override
     public ValidationErrors validate(ValidationContext ctx, Object value) {
-        ctx.schemaType("array");
+        ctx = ctx.schemaType("array");
 
         ValidationErrors errors = new ValidationErrors();
         Schema itemsSchema = schema.getItems();
