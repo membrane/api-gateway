@@ -250,7 +250,7 @@ public class ObjectValidator implements IJSONSchemaValidator {
                 if (pattern.matcher(fieldName).matches()) {
                     JsonNode childNode = node.get(fieldName);
                     errors.add(new SchemaValidator(api, propSchema)
-                            .validate(ctx.addJSONpointerSegment(fieldName), childNode));
+                            .validate(ctx, childNode));
                 }
             }
         });

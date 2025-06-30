@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Test;
 
 import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class PatternPropertiesTest extends AbstractValidatorTest{
 
@@ -15,12 +16,20 @@ public class PatternPropertiesTest extends AbstractValidatorTest{
     }
 
     @Test
-    public void foo() throws ParseException {
+    void testPatternProperties() throws ParseException {
         ValidationErrors errors = validator.validate(Request.post().mediaType(APPLICATION_JSON).path("/test").body("""
                 {"foo": []}
                 """));
         assertEquals(1,errors.size());
-        assertEquals("", errors.toString());
+        assertTrue(errors.toString().contains("Array has 0 items. This is less then minItems of 2."));
+    }
+
+    @Test
+    void testValidRequest() throws ParseException {
+        ValidationErrors errors = validator.validate(Request.post().mediaType(APPLICATION_JSON).path("/test").body("""
+                {"foo": [1, 2]}
+                """));
+        assertEquals(0,errors.size());
     }
 
 }
