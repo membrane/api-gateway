@@ -22,9 +22,9 @@ import java.util.*;
 
 import static java.util.stream.Collectors.joining;
 
-public class ProxyDisplayInfo {
+public class ApiInfo {
 
-    private static final Logger log = LoggerFactory.getLogger(ProxyDisplayInfo.class.getName());
+    private static final Logger log = LoggerFactory.getLogger(ApiInfo.class.getName());
     private static final int INDENT = 55;
 
     public static void logInfosAboutStartedProxies(RuleManager manager) {
