@@ -183,6 +183,9 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
         return transport;
     }
 
+    /**
+     * @description Sets the transport used by the router.
+     */
     @MCChildElement(order = 1, allowForeign = true)
     public void setTransport(Transport transport) {
         this.transport = transport;
@@ -192,6 +195,9 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
         return resolverMap.getHTTPSchemaResolver().getHttpClientConfig();
     }
 
+    /**
+     * @description Configures the HTTP client used by the router.
+     */
     @MCChildElement()
     public void setHttpClientConfig(HttpClientConfiguration httpClientConfig) {
         resolverMap.getHTTPSchemaResolver().setHttpClientConfig(httpClientConfig);
@@ -542,6 +548,9 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
         return uriFactory;
     }
 
+    /**
+     * @description Sets the URI factory used by the router.
+     */
     @MCChildElement(order = -1, allowForeign = true)
     public void setUriFactory(URIFactory uriFactory) {
         this.uriFactory = uriFactory;
@@ -568,6 +577,9 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
         return statistics;
     }
 
+    /**
+     * @description Sets the JMX name for this router.
+     */
     @MCAttribute
     public void setJmx(String name) {
         jmxRouterName = name;
