@@ -21,7 +21,7 @@ class DLPInterceptorTest {
         Fields fields = new Fields();
         fields.setFields(List.of(
                 newField("credit.number", "mask"),
-                newField("health.*", "filter")
+                newField("health_info", "filter")
         ));
         i.setFields(fields);
     }
@@ -58,8 +58,8 @@ class DLPInterceptorTest {
         System.out.println(body);
 
         assertFalse(body.contains("health_info"));
-        assertTrue(body.contains("\"credit.number\":\"****\""));
-        assertTrue(body.contains("\"credit.limit\":\"****\""));
+        assertTrue(body.contains("\"number\":\"****\""));
+        assertTrue(body.contains("\"valid_until\":\"2027-12\""));
     }
 
     private Field newField(String name, String action) {
