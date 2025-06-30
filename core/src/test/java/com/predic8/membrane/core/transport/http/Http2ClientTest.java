@@ -30,7 +30,7 @@ public class Http2ClientTest {
         connection.setKeepAliveTimeout(100);
         configuration.setConnection(connection);
 
-        Exchange e = new Request.Builder().get("https://www.google.de").buildExchange();
+        Exchange e = new Request.Builder().get("https://www.google.com").buildExchange();
 
         try(HttpClient hc = new HttpClient(configuration)) {
             hc.call(e);
