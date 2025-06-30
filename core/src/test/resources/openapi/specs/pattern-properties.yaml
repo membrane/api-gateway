@@ -9,7 +9,6 @@ paths:
         content:
           application/json:
             schema:
-              type: object
               properties:
                 foo:
                   type: "array"
@@ -18,7 +17,6 @@ paths:
                   type: "array"
               patternProperties:
                 f.o:
-                  type: "array"
                   minItems: 2
               additionalProperties:
                 type: "integer"
