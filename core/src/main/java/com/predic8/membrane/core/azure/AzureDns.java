@@ -17,6 +17,10 @@ import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.config.security.acme.AcmeValidation;
 
+/**
+ * @description Configures Azure DNS for ACME DNS-01 validation.
+ * @topic 8. ACME
+ */
 @MCElement(topLevel = false, name = "azureDns")
 public class AzureDns extends AcmeValidation {
 
@@ -31,6 +35,9 @@ public class AzureDns extends AcmeValidation {
         return dnsZoneName;
     }
 
+    /**
+     * @description The name of the Azure DNS zone.
+     */
     @MCAttribute
     public void setDnsZoneName(String dnsZoneName) {
         this.dnsZoneName = dnsZoneName;
@@ -40,6 +47,9 @@ public class AzureDns extends AcmeValidation {
         return subscriptionId;
     }
 
+    /**
+     * @description The Azure subscription ID.
+     */
     @MCAttribute
     public void setSubscriptionId(String subscriptionId) {
         this.subscriptionId = subscriptionId;
@@ -52,6 +62,9 @@ public class AzureDns extends AcmeValidation {
         return tenantId;
     }
 
+    /**
+     * @description The Azure tenant ID.
+     */
     @MCAttribute
     public void setTenantId(String tenantId) {
         this.tenantId = tenantId;
@@ -61,6 +74,9 @@ public class AzureDns extends AcmeValidation {
         return resourceGroup;
     }
 
+    /**
+     * @description The Azure resource group.
+     */
     @MCAttribute
     public void setResourceGroup(String resourceGroup) {
         this.resourceGroup = resourceGroup;
@@ -70,6 +86,10 @@ public class AzureDns extends AcmeValidation {
         return resource;
     }
 
+    /**
+     * @description The Azure resource.
+     * @default https://management.azure.com
+     */
     @MCAttribute
     public void setResource(String resource) {
         this.resource = resource;
@@ -79,6 +99,10 @@ public class AzureDns extends AcmeValidation {
         return identity;
     }
 
+    /**
+     * @description The Azure identity to use for authentication. It is used while registering ACME challenge responses
+     * in Azure DNS.
+     */
     @MCAttribute
     public void setIdentity(AzureIdentity identity) {
         this.identity = identity;

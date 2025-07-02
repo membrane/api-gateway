@@ -15,7 +15,12 @@ package com.predic8.membrane.core.azure;
 
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.annot.Required;
 
+/**
+ * @description Specifies an Azure identity for authentication.
+ * @topic 8. ACME
+ */
 @MCElement(name = "azureIdentity")
 public class AzureIdentity {
 
@@ -29,6 +34,10 @@ public class AzureIdentity {
         return grantType;
     }
 
+    /**
+     * @description The grant type to use.
+     * @default client_credentials
+     */
     @MCAttribute
     public void setGrantType(String grantType) {
         this.grantType = grantType;
@@ -38,7 +47,11 @@ public class AzureIdentity {
         return clientId;
     }
 
+    /**
+     * @description The client ID.
+     */
     @MCAttribute
+    @Required
     public void setClientId(String clientId) {
         this.clientId = clientId;
     }
@@ -47,7 +60,11 @@ public class AzureIdentity {
         return clientSecret;
     }
 
+    /**
+     * @description The client secret.
+     */
     @MCAttribute
+    @Required
     public void setClientSecret(String clientSecret) {
         this.clientSecret = clientSecret;
     }
@@ -56,6 +73,10 @@ public class AzureIdentity {
         return resource;
     }
 
+    /**
+     * @description The resource URI.
+     * @default https://management.azure.com
+     */
     @MCAttribute
     public void setResource(String resource) {
         this.resource = resource;
@@ -65,6 +86,9 @@ public class AzureIdentity {
         return tenantId;
     }
 
+    /**
+     * @description The tenant ID.
+     */
     @MCAttribute
     public void setTenantId(String tenantId) {
         this.tenantId = tenantId;

@@ -34,6 +34,10 @@ import com.predic8.membrane.core.interceptor.UserFeatureInterceptor;
 import com.predic8.membrane.core.interceptor.rewrite.ReverseProxyingInterceptor;
 import com.predic8.membrane.core.transport.http.HttpTransport;
 
+/**
+ * @description Default configuration for the router.
+ * @topic 6. Other
+ */
 @MCElement(name="defaultConfig")
 public class DefaultConfig implements BeanFactoryPostProcessor, Ordered {
 
