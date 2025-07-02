@@ -42,6 +42,7 @@ public class JsonProtectionInterceptorTest {
         jpi.setMaxKeyLength(10);
         jpi.setMaxObjectSize(10);
         jpi.setMaxArraySize(2048);
+        jpi.setProtoBlocked(true);
 
         jpi.init(router);
         return jpi;
@@ -227,6 +228,15 @@ public class JsonProtectionInterceptorTest {
     public void justNotTooManyTokens() throws Exception {
         send("[" + repeat("1,", 2045) + "[" + repeat("1,", 2045) + "1]" + "]",
                 CONTINUE);
+    }
+
+    @Test
+    public void protoBlocked() throws Exception {
+        send("{\"__proto__\": {}}",
+                RETURN,
+                1,
+                16,
+                "__proto__ found as key.");
     }
 
     private void send(String body, Outcome expectOut, Object ...parameters) throws Exception {
