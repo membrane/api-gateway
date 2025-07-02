@@ -137,4 +137,32 @@ public class ReturnInterceptor extends AbstractInterceptor {
     public EnumSet<Flow> getFlow() {
         return REQUEST_RESPONSE_ABORT_FLOW;
     }
+
+    /**
+     * @description The HTTP status code to be returned.
+     * @default 200
+     * @example 400
+     */
+    @MCAttribute
+    public void setStatusCode(int statusCode) {
+        this.statusCode = statusCode;
+    }
+
+    public int getStatusCode() {
+        return statusCode;
+    }
+
+    /**
+     * @description The content type of the response. If not set, the content type of the request (if available) or no content type will be used.
+     * @default null
+     * @example application/json; charset=utf-8
+     */
+    @MCAttribute
+    public void setContentType(String contentType) {
+        this.contentType = contentType;
+    }
+
+    public String getContentType() {
+        return contentType;
+    }
 }
