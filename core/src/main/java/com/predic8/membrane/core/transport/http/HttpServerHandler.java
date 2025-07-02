@@ -42,7 +42,7 @@ public class HttpServerHandler extends AbstractHttpHandler implements Runnable, 
 	private InputStream srcIn;
 	private OutputStream srcOut;
 
-	private boolean showSSLExceptions = true;
+	private boolean showSSLExceptions = false;
 	private Http2ServerHandler http2ServerHandler;
 
 
