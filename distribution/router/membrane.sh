@@ -15,8 +15,9 @@ start() {
 }
 
 find_membrane_directory() {
-    if [ -n "$membrane_home" ]; then
-        echo "$membrane_home"
+    candidate=${MEMBRANE_HOME:-$membrane_home}
+    if [ -n "$candidate" ]; then
+        echo "$candidate"
         return 0
     fi
 

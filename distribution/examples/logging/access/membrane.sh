@@ -6,8 +6,9 @@ start() {
     membrane_home="$1"
     export CLASSPATH="$membrane_home/conf:$membrane_home/lib/*"
 
-    # Next line is different from other membrane.sh files!
+     # Next line is different from other membrane.sh files!
     java "-Dlog4j.configurationFile=$(pwd)/log4j2_access.xml" -cp "$CLASSPATH" com.predic8.membrane.core.cli.RouterCLI -c proxies.xml
+
     if [ $? -ne 0 ]; then
         echo "Membrane terminated!"
         echo "MEMBRANE_HOME: $membrane_home"
@@ -16,8 +17,9 @@ start() {
 }
 
 find_membrane_directory() {
-    if [ -n "$membrane_home" ]; then
-        echo "$membrane_home"
+    candidate=${MEMBRANE_HOME:-$membrane_home}
+    if [ -n "$candidate" ]; then
+        echo "$candidate"
         return 0
     fi
 

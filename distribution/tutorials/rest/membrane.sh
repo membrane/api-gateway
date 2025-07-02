@@ -5,15 +5,25 @@ required_version="21"
 start() {
     membrane_home="$1"
     export CLASSPATH="$membrane_home/conf:$membrane_home/lib/*"
-    echo "Starting: $membrane_home CL: $CLASSPATH"
     java -cp "$CLASSPATH" com.predic8.membrane.core.cli.RouterCLI -c proxies.xml
+    if [ $? -ne 0 ]; then
+        echo "Membrane terminated!"
+        echo "MEMBRANE_HOME: $membrane_home"
+        echo "CLASSPATH: $CLASSPATH"
+    fi
 }
 
 find_membrane_directory() {
+    candidate=${MEMBRANE_HOME:-$membrane_home}
+    if [ -n "$candidate" ]; then
+        echo "$candidate"
+        return 0
+    fi
+
     current="$1"
 
     while [ "$current" != "/" ]; do
-        if [ -d "$current/conf" ] && [ -d "$current/lib" ]; then
+        if [ -f "$current/starter.jar" ]; then
             echo "$current"
             return 0
         fi

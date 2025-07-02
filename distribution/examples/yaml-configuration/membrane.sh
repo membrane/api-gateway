@@ -8,6 +8,7 @@ start() {
 
     # Next line is different from other membrane.sh files!
     java -cp "$CLASSPATH" com.predic8.membrane.core.cli.RouterCLI yaml -l proxies.yaml
+
     if [ $? -ne 0 ]; then
         echo "Membrane terminated!"
         echo "MEMBRANE_HOME: $membrane_home"
@@ -16,8 +17,9 @@ start() {
 }
 
 find_membrane_directory() {
-    if [ -n "$membrane_home" ]; then
-        echo "$membrane_home"
+    candidate=${MEMBRANE_HOME:-$membrane_home}
+    if [ -n "$candidate" ]; then
+        echo "$candidate"
         return 0
     fi
 
