@@ -83,6 +83,13 @@ public class RouterCLI {
             System.exit(0);
         }
 
+        if (commandLine.getCommand().getName().equals("private-jwk-to-public")) {
+            privateJWKtoPublic(
+                    commandLine.getCommand().getOptionValue("i"),
+                    commandLine.getCommand().getOptionValue("o"));
+            System.exit(0);
+        }
+
         try {
             getRouter(commandLine).waitFor();
         } catch (InterruptedException e) {
@@ -185,6 +192,17 @@ public class RouterCLI {
         try {
             Files.writeString(path, rsaJsonWebKey.toJson(JsonWebKey.OutputControlLevel.INCLUDE_PRIVATE));
         } catch (IOException e) {
+            log.error(e.getMessage());
+            System.exit(1);
+        }
+    }
+
+    private static void privateJWKtoPublic(String input, String output) {
+        try {
+            Map map = new ObjectMapper().readValue(new File(input), Map.class);
+            RsaJsonWebKey rsa = new RsaJsonWebKey(map);
+            Files.writeString(Paths.get(output), rsa.toJson(JsonWebKey.OutputControlLevel.PUBLIC_ONLY));
+        } catch (IOException | JoseException e) {
             log.error(e.getMessage());
             System.exit(1);
         }
