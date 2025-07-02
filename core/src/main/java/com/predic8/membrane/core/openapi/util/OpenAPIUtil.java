@@ -67,4 +67,8 @@ public class OpenAPIUtil {
     public static JsonNode convert2Json(OpenAPI api) throws IOException {
         return omYaml.readTree(Json31.mapper().writeValueAsBytes(api));
     }
+
+    public static boolean isOpenAPIMisplacedError(String errorMsg) {
+        return errorMsg.matches("(?i).*invalid.+element.+http://membrane-soa.org/proxies/1/\":openapi.*'\\..*");
+    }
 }

@@ -155,7 +155,7 @@ public class OpenAPIValidationExampleTest extends AbstractSampleMembraneStartSto
                            "complexType" : "Person",
                            "schemaType" : "string"
                          }, {
-                           "message" : "The string 'Germany' does not match the regex pattern \\\\w{2}.",
+                           "message" : "The string 'Germany' does not match the regex pattern ^\\\\w{2}$.",
                            "complexType" : "Person",
                            "schemaType" : "string"
                          } ]

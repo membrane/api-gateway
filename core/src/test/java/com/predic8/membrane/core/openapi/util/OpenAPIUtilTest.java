@@ -59,4 +59,16 @@ public class OpenAPIUtilTest {
         assertEquals("3.0.2", getOpenAPIVersion(getYAMLResource(this,"/openapi/specs/array.yml")));
         assertEquals("2.0", getOpenAPIVersion(getYAMLResource(this,"/openapi/specs/fruitshop-swagger-2.0.json")));
     }
+
+    @Test
+    void validOpenAPIMisplacedError() {
+        assertTrue(isOpenAPIMisplacedError("Invalid content was found starting with element '{\"http://membrane-soa.org/proxies/1/\":openapi}'."));
+    }
+
+    @Test
+    void invalidOpenAPIMisplacedError() {
+        assertFalse(isOpenAPIMisplacedError("Invalid content was found starting with element '{\"http://membrane-soa.org/proxies/1/\":api}'"));
+    }
+
+
 }
