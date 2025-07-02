@@ -7,13 +7,23 @@ start() {
     shift
     export CLASSPATH="$membrane_home/conf:$membrane_home/lib/*"
     java -cp "$CLASSPATH" com.predic8.membrane.core.cli.RouterCLI "$@"
+    if [ $? -ne 0 ]; then
+      echo "Membrane terminated."
+      echo "MEMBRANE_HOME: $membrane_home"
+      echo "CLASSPATH: $CLASSPATH"
+    fi
 }
 
 find_membrane_directory() {
+    if [ -n "$membrane_home" ]; then
+        echo "$membrane_home"
+        return 0
+    fi
+
     current="$1"
 
     while [ "$current" != "/" ]; do
-        if [ -d "$current/conf" ] && [ -d "$current/lib" ]; then
+        if [ -f "$current/starter.jar" ]; then
             echo "$current"
             return 0
         fi
