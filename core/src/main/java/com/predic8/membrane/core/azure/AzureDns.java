@@ -87,7 +87,7 @@ public class AzureDns extends AcmeValidation {
     }
 
     /**
-     * @description The Azure resource. Default is https://management.azure.com.
+     * @description The Azure resource.
      * @default https://management.azure.com
      */
     @MCAttribute
@@ -100,7 +100,8 @@ public class AzureDns extends AcmeValidation {
     }
 
     /**
-     * @description The Azure identity to use for authentication.
+     * @description The Azure identity to use for authentication. It is used while registering ACME challenge responses
+     * in Azure DNS.
      */
     @MCAttribute
     public void setIdentity(AzureIdentity identity) {

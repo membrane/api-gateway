@@ -15,6 +15,7 @@ package com.predic8.membrane.core.azure;
 
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.annot.Required;
 
 /**
  * @description Specifies an Azure identity for authentication.
@@ -50,6 +51,7 @@ public class AzureIdentity {
      * @description The client ID.
      */
     @MCAttribute
+    @Required
     public void setClientId(String clientId) {
         this.clientId = clientId;
     }
@@ -62,6 +64,7 @@ public class AzureIdentity {
      * @description The client secret.
      */
     @MCAttribute
+    @Required
     public void setClientSecret(String clientSecret) {
         this.clientSecret = clientSecret;
     }
