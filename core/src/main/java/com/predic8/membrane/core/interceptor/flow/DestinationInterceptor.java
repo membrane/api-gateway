@@ -37,15 +37,6 @@ public class DestinationInterceptor extends AbstractInterceptor {
     @Override
     public void init() {
         super.init();
-        if (url == null) {
-            throw new ConfigurationException("""
-                <destination> needs a valid url!
-                
-                e.g.:
-                
-                <destination url="https://api.predic8.de">
-                """);
-        }
     }
 
     @Override
@@ -63,10 +54,11 @@ public class DestinationInterceptor extends AbstractInterceptor {
 
     /**
      * @default (not set)
-     * @description Use destination instead of target
+     * @description The backend URL which will be called when the Exchange hits the &lt;httpClient&gt;.
      * @example https://api.predic8.de
      */
     @SuppressWarnings("unused")
+    @Required
     @MCAttribute
     public void setUrl(String url) {
         this.url = url;

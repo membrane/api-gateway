@@ -115,24 +115,6 @@ public class ReturnInterceptor extends AbstractInterceptor {
         return (contentType != null) ? format("Sends a response with a status code of %d and a content type of %s.", statusCode, contentType) : format("Sends a response with a status code of %d.", statusCode);
     }
 
-    @MCAttribute
-    public void setStatusCode(int statusCode) {
-        this.statusCode = statusCode;
-    }
-
-    public int getStatusCode() {
-        return statusCode;
-    }
-
-    @MCAttribute
-    public void setContentType(String contentType) {
-        this.contentType = contentType;
-    }
-
-    public String getContentType() {
-        return contentType;
-    }
-
     @Override
     public EnumSet<Flow> getFlow() {
         return REQUEST_RESPONSE_ABORT_FLOW;

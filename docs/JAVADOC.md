@@ -144,6 +144,7 @@ This project uses a structured Javadoc format to document classes, methods, and 
 
 **Additional Guidelines for `@default` tag:**
 
+* If an `@MCAttribute` method also has `@Required`,the `@default` Javadoc tag does not make sense. It should therefore be omitted.
 *   If an `@MCAttribute` method does not have an explicit default value in its corresponding Java field initializer or `init()` method, and its absence implies a specific behavior (e.g., 'not set', 'uses system default', 'no value'), use `(@default (not set))` or a similarly descriptive phrase.
 *   If the attribute is mandatory and has no default, the `@default` tag can be omitted.
 
