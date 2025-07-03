@@ -8,7 +8,7 @@
 
 		<api port="2000">
 			<target host="api.predic8.de" port="443">
-				<ssl/>
+				<ssl showSSLExceptions="true" />
 			</target>
 		</api>
 		
