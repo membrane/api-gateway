@@ -18,6 +18,7 @@ package com.predic8.membrane.core.openapi.validators;
 
 import com.fasterxml.jackson.databind.*;
 import com.fasterxml.jackson.databind.node.*;
+import com.predic8.membrane.core.openapi.util.SchemaUtil;
 import io.swagger.v3.oas.models.*;
 import io.swagger.v3.oas.models.media.*;
 import org.slf4j.*;
@@ -82,26 +83,43 @@ public class ObjectValidator implements IJSONSchemaValidator {
         return errors;
     }
 
-    /**
-     * @TODO implement Discriminator/mapping
-     *
-     */
     private ValidationErrors validateDiscriminator(ValidationContext ctx, JsonNode node) {
         if (schema.getDiscriminator() == null)
             return null;
 
         String propertyName = schema.getDiscriminator().getPropertyName();
 
-        if (schema.getType().equals(propertyName))
-            return null;
+        String propertyValue = getBaseSchemaName(node, propertyName);
+        if (propertyValue == null) {
+            return ValidationErrors.create(ctx.statusCode(400), "Discriminator not set.");
+        }
+        if (isMapped(propertyValue)) {
+            propertyValue = schema.getDiscriminator().getMapping().get(propertyValue);
+            if (propertyValue != null && propertyValue.startsWith("#"))
+                return validateRef(ctx, propertyValue);
+        }
 
-        return new SchemaValidator(api, getBaseSchema(node, propertyName)).validate(ctx,node);
+        Schema<?> schema = getBaseSchema(node, propertyValue);
+        if (schema == null) {
+            return ValidationErrors.create(ctx.statusCode(400), format("Discriminator value %s is not an valid type.", propertyValue));
+        }
+        return new SchemaValidator(api, schema).validate(ctx,node);
     }
 
+    private ValidationErrors validateRef(ValidationContext ctx, String propertyValue) {
+        var schema2 = SchemaUtil.getSchemaFromRef(api, propertyValue);
+        if (schema2 == null)
+            throw new RuntimeException("Should not happen!");
+        return new SchemaValidator(api, schema2).validate(ctx, node);
+    }
+
+    private boolean isMapped(String discriminatorValue) {
+        return schema.getDiscriminator().getMapping() != null && schema.getDiscriminator().getMapping().containsKey(discriminatorValue);
+    }
 
     @SuppressWarnings("rawtypes")
-    private Schema getBaseSchema(JsonNode node, String propertyName) {
-        return api.getComponents().getSchemas().get(getBaseSchemaName(node, propertyName));
+    private Schema getBaseSchema(JsonNode node, String propertyValue) {
+        return api.getComponents().getSchemas().get(propertyValue);
     }
 
     private String getBaseSchemaName(JsonNode node, String propertyName) {

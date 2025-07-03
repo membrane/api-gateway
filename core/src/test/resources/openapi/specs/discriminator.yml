@@ -15,6 +15,26 @@ paths:
           application/json:
             schema:
               $ref: "#/components/schemas/PublicTransport"
+  /train:
+    post:
+      responses:
+        '200':
+          description: OK
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Train"
+  /private-transports:
+    post:
+      responses:
+        '200':
+          description: OK
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PrivateTransport"
 
 components:
   schemas:
@@ -48,6 +68,36 @@ components:
           type: string
         seats:
           type: integer
-
-          
-              
+    PrivateTransport:
+      oneOf:
+        - $ref: '#/components/schemas/Car'
+        - $ref: '#/components/schemas/Bike'
+      discriminator:
+        propertyName: kind
+        mapping:
+          CAR: '#/components/schemas/Car'
+          BIKE: Bike
+      required: [ name ]
+      properties:
+        name:
+          type: string
+    Car:
+      allOf:
+        - $ref: "#/components/schemas/PrivateTransport"
+        - type: object
+          required: [kind]
+          properties:
+            kind:
+              type: string
+            length:
+              type: number
+    Bike:
+      allOf:
+        - $ref: "#/components/schemas/PrivateTransport"
+        - type: object
+          required: [kind,wheels]
+          properties:
+            kind:
+              type: string
+            wheels:
+              type: integer
