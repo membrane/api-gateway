@@ -12,4 +12,4 @@ Depending on your use case for Membrane API Gateway, you may or may not want to 
 In case you are setting up your keys and certificates for the first time, or you are searching for TLS misconfigurations,
 we advise `<ssl showSSLExceptions="true">`. This is why all examples in this folder have this setting.
 
-But when Membrane API Gateway is directly exposed to the internet on port 443, you most probably want to turn it off, because too much "SPAM" is arriving.
+But when Membrane API Gateway is directly exposed to the internet on port 443, you most probably want to turn it off because too much "SPAM" is arriving.
