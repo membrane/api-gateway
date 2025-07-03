@@ -57,7 +57,7 @@ public class JsonProtectionInterceptor extends AbstractInterceptor {
     private int maxKeyLength = 256;
     private int maxObjectSize = 1000;
     private int maxArraySize = 1000;
-    private boolean protoBlocked = true;
+    private boolean blockProto = true;
 
     public JsonProtectionInterceptor() {
         name = "json protection";
@@ -93,7 +93,7 @@ public class JsonProtectionInterceptor extends AbstractInterceptor {
                 throw new JsonProtectionException("Exceeded maxObjectSize.",
                                                     parser.currentLocation().getLineNr(),
                                                     parser.currentLocation().getColumnNr());
-            if ("__proto__".equals(parser.currentName()))
+            if (blockProto && "__proto__".equals(parser.currentName()))
                 throw new JsonProtectionException("__proto__ found as key.",
                         parser.currentLocation().getLineNr(),
                         parser.currentLocation().getColumnNr());
@@ -370,18 +370,18 @@ public class JsonProtectionInterceptor extends AbstractInterceptor {
         this.maxArraySize = maxArraySize;
     }
 
-    public boolean isProtoBlocked() {
-        return protoBlocked;
+    public boolean isBlockProto() {
+        return blockProto;
     }
 
     /**
      * @description Blocks JSON properties with a key of "__proto__" to avoid prototype pollution in Javascript backends.
      * @default true
-     * @param protoBlocked
+     * @param blockProto
      */
     @MCAttribute
-    public void setProtoBlocked(boolean protoBlocked) {
-        this.protoBlocked = protoBlocked;
+    public void setBlockProto(boolean blockProto) {
+        this.blockProto = blockProto;
     }
 
     @Override

@@ -42,7 +42,7 @@ public class JsonProtectionInterceptorTest {
         jpi.setMaxKeyLength(10);
         jpi.setMaxObjectSize(10);
         jpi.setMaxArraySize(2048);
-        jpi.setProtoBlocked(true);
+        jpi.setBlockProto(true);
 
         jpi.init(router);
         return jpi;
