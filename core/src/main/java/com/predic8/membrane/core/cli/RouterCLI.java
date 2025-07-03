@@ -84,9 +84,15 @@ public class RouterCLI {
         }
 
         if (commandLine.getCommand().getName().equals("private-jwk-to-public")) {
+            String input = commandLine.getCommand().getOptionValue("i");
+            String output = commandLine.getCommand().getOptionValue("o");
+            if (input == null || output == null) {
+                log.error("Both input (-i) and output (-o) files must be specified.");
+                System.exit(1);
+            }
             privateJWKtoPublic(
-                    commandLine.getCommand().getOptionValue("i"),
-                    commandLine.getCommand().getOptionValue("o"));
+                    input,
+                    output);
             System.exit(0);
         }
 
