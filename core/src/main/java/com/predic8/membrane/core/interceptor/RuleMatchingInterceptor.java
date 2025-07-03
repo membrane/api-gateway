@@ -49,7 +49,7 @@ public class RuleMatchingInterceptor extends AbstractInterceptor {
 
 		if (proxy instanceof NullProxy) {
 			// Do not log. 404 is too common
-            user(router.isProduction(),"routing")
+            user(false,"routing")
                     .statusCode(404)
                     .title("Wrong path or method")
                     .detail("This request was not accepted by Membrane. Please check HTTP method and path.")

@@ -44,7 +44,6 @@ public class SecuritySchemesSecurityValidatorTest extends AbstractValidatorTest 
     @Test
     void orMultiple() {
         ValidationErrors errors = validator.validate(Request.get().path("/multiple").securitySchemes(List.of(BASIC())));
-        System.out.println("errors = " + errors);
         assertEquals(4, errors.size());
     }
 

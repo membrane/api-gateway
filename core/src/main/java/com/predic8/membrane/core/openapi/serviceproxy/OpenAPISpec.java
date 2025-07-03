@@ -135,6 +135,11 @@ public class OpenAPISpec implements Cloneable {
         return validateSecurity;
     }
 
+    /**
+     * @description Validate request against security schemes and scopes defined in the OpenAPI
+     * @example yes
+     * @default no
+     */
     @MCAttribute
     public void setValidateSecurity(YesNoOpenAPIOption validateSecurity) {
         this.validateSecurity = validateSecurity;
