@@ -52,7 +52,7 @@ components:
       allOf:
         - $ref: "#/components/schemas/PublicTransport"
         - type: object
-          required: [kind,wheels]
+          required: [ kind, wheels ]
           properties:
             kind:
               type: string
@@ -85,7 +85,7 @@ components:
       allOf:
         - $ref: "#/components/schemas/PrivateTransport"
         - type: object
-          required: [kind]
+          required: [ kind ]
           properties:
             kind:
               type: string
@@ -95,7 +95,7 @@ components:
       allOf:
         - $ref: "#/components/schemas/PrivateTransport"
         - type: object
-          required: [kind,wheels]
+          required: [ kind, wheels ]
           properties:
             kind:
               type: string

@@ -91,7 +91,7 @@ public class ObjectValidator implements IJSONSchemaValidator {
 
         String propertyValue = getBaseSchemaName(node, propertyName);
         if (propertyValue == null) {
-            return ValidationErrors.create(ctx.statusCode(400), "Discriminator not set.");
+            return ValidationErrors.create(ctx.statusCode(400), format("Discriminator property '%s' is not set.", propertyName));
         }
         if (isMapped(propertyValue)) {
             propertyValue = schema.getDiscriminator().getMapping().get(propertyValue);
