@@ -87,7 +87,7 @@ public class SchemaValidator implements IJSONSchemaValidator {
 
         if (schema.get$ref() != null && !getSchemaNameFromRef(schema).equals(ctx.getComplexType())) {
             ctx = ctx.complexType(getSchemaNameFromRef(schema));
-            schema = SchemaUtil.getSchemaFromRef(api, schema);
+            schema = SchemaUtil.getSchemaFromRef(api, schema.get$ref());
             if (schema == null)
                 throw new RuntimeException("Should not happen!");
         }

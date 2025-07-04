@@ -22,10 +22,12 @@ import io.swagger.v3.oas.models.media.*;
 
 import java.util.*;
 
+import static com.predic8.membrane.core.openapi.util.Utils.getComponentLocalNameFromRef;
+
 @SuppressWarnings("rawtypes")
 public class SchemaUtil {
 
-    public static Schema getSchemaFromRef(OpenAPI api, Schema schema) {
+    public static Schema getSchemaFromRef(OpenAPI api, String ref) {
 
         Components components = api.getComponents();
         if (components == null)
@@ -37,7 +39,7 @@ public class SchemaUtil {
 
         ObjectHolder<Schema> oh = new ObjectHolder<>();
         schemas.forEach((schemaName, refSchema) -> {
-            if (schemaName.equals(getSchemaNameFromRef(schema))) {
+            if (schemaName.equals(getComponentLocalNameFromRef(ref))) {
                 oh.setValue(refSchema);
             }
 
@@ -46,6 +48,6 @@ public class SchemaUtil {
     }
 
     public static String getSchemaNameFromRef(Schema schema) {
-        return Utils.getComponentLocalNameFromRef(schema.get$ref());
+        return getComponentLocalNameFromRef(schema.get$ref());
     }
 }
