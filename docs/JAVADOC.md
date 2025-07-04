@@ -142,6 +142,10 @@ This project uses a structured Javadoc format to document classes, methods, and 
 | `@example`     | Methods          | Example value or usage snippet.                                                                                                                                                                                                                                                            | String or XML Snippet                              |
 | `@topic`       | Classes          | Assigns a topic/category to group related classes in the docs. The topics (e.g. "1. Proxies and Flow") are numbered. The title ("Proxies and Flow") should be consistently assigned to the number ("1.") across all files.                                                                 | Number, followed by a dot and a string (the title) |
 
+**Comments:**
+* Do not use Markdown in Javadocs. Javadocs are HTML
+* When you refer to elements from the Configuration Language in Javadocs, do not refer to them verbatim (e.g. `<api>`), but XML escape the reference: `&lt;for&gt;`.
+
 **Additional Guidelines for `@default` tag:**
 
 * If an `@MCAttribute` method also has `@Required`,the `@default` Javadoc tag does not make sense. It should therefore be omitted.
