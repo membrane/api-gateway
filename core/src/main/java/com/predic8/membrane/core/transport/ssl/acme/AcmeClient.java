@@ -55,9 +55,12 @@ import java.io.*;
 import java.math.*;
 import java.net.*;
 import java.security.*;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
 import java.security.spec.*;
 import java.text.*;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.*;
 
 import static com.predic8.membrane.core.Constants.*;
@@ -70,6 +73,27 @@ import static java.nio.charset.StandardCharsets.*;
 import static org.jose4j.lang.HashUtil.*;
 
 public class AcmeClient {
+
+    // Inner class to hold provision result and cleanup task
+    public static class ProvisionResult {
+        private final String challengeUrl;
+        private final Runnable cleanupTask;
+
+        public ProvisionResult(String challengeUrl, @Nullable Runnable cleanupTask) {
+            this.challengeUrl = challengeUrl;
+            this.cleanupTask = cleanupTask;
+        }
+
+        public String getChallengeUrl() {
+            return challengeUrl;
+        }
+
+        public void performCleanup() {
+            if (cleanupTask != null) {
+                cleanupTask.run();
+            }
+        }
+    }
 
     public static final String BEGIN_CERTIFICATE_REQUEST = "-----BEGIN CERTIFICATE REQUEST-----";
     public static final String END_CERTIFICATE_REQUEST = "-----END CERTIFICATE REQUEST-----";
@@ -86,7 +110,7 @@ public class AcmeClient {
     private final HttpClient hc;
     private final ObjectMapper om = new ObjectMapper();
     private final List<String> nonces = new ArrayList<>();
-    private final String challengeType;
+    private final Acme acmeConfig; // Store the whole Acme config
     private final AcmeSynchronizedStorage ass;
     private String keyChangeUrl;
     private String newAccountUrl;
@@ -102,17 +126,18 @@ public class AcmeClient {
     private AcmeSynchronizedStorageEngine asse;
     private final AcmeValidation acmeValidation;
 
-    public AcmeClient(Acme acme, @Nullable HttpClientFactory httpClientFactory) {
-        directoryUrl = acme.getDirectoryUrl();
-        termsOfServiceAgreed = acme.isTermsOfServiceAgreed();
-        ass = acme.getAcmeSynchronizedStorage();
-        contacts = Arrays.asList(acme.getContacts().split(" +"));
+    public AcmeClient(Acme acmeConfig, @Nullable HttpClientFactory httpClientFactory) {
+        this.acmeConfig = acmeConfig;
+        directoryUrl = acmeConfig.getDirectoryUrl();
+        termsOfServiceAgreed = acmeConfig.isTermsOfServiceAgreed();
+        ass = acmeConfig.getAcmeSynchronizedStorage();
+        contacts = Arrays.asList(acmeConfig.getContacts().split(" +"));
         if (httpClientFactory == null)
             httpClientFactory = new HttpClientFactory(null);
-        hc = httpClientFactory.createClient(acme.getHttpClientConfiguration());
-        validity = acme.getValidityDuration();
-        this.acmeValidation = acme.getValidationMethod();
-        challengeType = acme.getValidationMethod() != null && acme.getValidationMethod().useDnsValidation() ? TYPE_DNS_01 : TYPE_HTTP_01;
+        hc = httpClientFactory.createClient(acmeConfig.getHttpClientConfiguration());
+        validity = acmeConfig.getValidityDuration();
+        this.acmeValidation = acmeConfig.getValidationMethod();
+        // challengeType field is removed, preferences are now in acmeConfig.getChallengeTypes()
 
         om.registerModule(new JodaModule());
 
@@ -298,22 +323,94 @@ public class AcmeClient {
         return asse.getToken(host);
     }
 
-    public String provision(Authorization auth) throws Exception {
-        Optional<Challenge> challenge = auth.getChallenges().stream().filter(c -> challengeType.equals(c.getType())).findAny();
-        if (challenge.isEmpty())
-            throw new RuntimeException("Could not find challenge of type "+challengeType+": " + om.writeValueAsString(auth));
+    public ProvisionResult provision(Authorization auth, @Nullable com.predic8.membrane.core.transport.ssl.AcmeSSLContext acmeSslContext) throws Exception {
+        String domain = auth.getIdentifier().getValue();
+        if (!TYPE_DNS.equals(auth.getIdentifier().getType())) { // All supported types (http-01, dns-01, tls-alpn-01) are for DNS identifiers
+            throw new AcmeException("AcmeClient.provision", "Identifier type is not DNS: " + om.writeValueAsString(auth), null, null);
+        }
 
-        if (!TYPE_DNS.equals(auth.getIdentifier().getType()))
-            throw new RuntimeException("Identifier type is not DNS: " + om.writeValueAsString(auth));
+        // Try tls-alpn-01 first if available and context is provided
+        Optional<Challenge> tlsAlpnChallengeOpt = auth.getChallenges().stream()
+                .filter(c -> TYPE_TLS_ALPN_01.equals(c.getType()))
+                .findFirst();
 
-        if (TYPE_HTTP_01.equals(challengeType))
-            provisionHttp(auth, challenge.get());
-        else if (TYPE_DNS_01.equals(challengeType))
-            provisionDns(auth, challenge.get());
-        else
-            throw new RuntimeException("Unimplemented challenge type handling " + challengeType);
+        if (tlsAlpnChallengeOpt.isPresent()) {
+            if (acmeSslContext != null) {
+                Challenge tlsAlpnChallenge = tlsAlpnChallengeOpt.get();
+                LOG.info("Attempting tls-alpn-01 challenge for domain: {}", domain);
+                try {
+                    String keyAuth = tlsAlpnChallenge.getToken() + "." + getThumbprint();
+                    AlpnCertAndKey alpnCertAndKey = generateAlpnCertificate(domain, keyAuth);
+                    acmeSslContext.setAlpnChallengeCertificate(domain, alpnCertAndKey);
+                    LOG.info("tls-alpn-01 challenge certificate set in AcmeSSLContext for domain: {}", domain);
+                    Runnable cleanup = () -> acmeSslContext.clearAlpnChallengeCertificate(domain);
+                    return new ProvisionResult(tlsAlpnChallenge.getUrl(), cleanup);
+                } catch (Exception e) {
+                    LOG.error("Failed to prepare for tls-alpn-01 challenge for domain {}: {}", domain, e.getMessage(), e);
+                    // Do not re-throw here, allow fallback to other challenge types if configured.
+                    // If tls-alpn-01 was the *only* option, then subsequent logic will fail to find a challenge.
+                }
+            } else {
+                LOG.warn("tls-alpn-01 challenge available for {}, but AcmeSSLContext not provided. Skipping.", domain);
+            }
+        }
 
-        return challenge.get().getUrl();
+        // Iterate through preferred challenge types from config
+        List<String> preferredTypes = acmeConfig.getChallengeTypes();
+        for (String preferredType : preferredTypes) {
+            Optional<Challenge> challengeOpt = auth.getChallenges().stream()
+                    .filter(c -> preferredType.equals(c.getType()))
+                    .findFirst();
+
+            if (challengeOpt.isEmpty()) {
+                LOG.debug("Preferred challenge type {} not available for domain {}", preferredType, domain);
+                continue; // Try next preferred type
+            }
+
+            Challenge currentChallenge = challengeOpt.get();
+            LOG.info("Attempting {} challenge for domain: {}", currentChallenge.getType(), domain);
+
+            if (TYPE_TLS_ALPN_01.equals(currentChallenge.getType())) {
+                if (acmeSslContext != null) {
+                    try {
+                        String keyAuth = currentChallenge.getToken() + "." + getThumbprint();
+                        AlpnCertAndKey alpnCertAndKey = generateAlpnCertificate(domain, keyAuth);
+                        acmeSslContext.setAlpnChallengeCertificate(domain, alpnCertAndKey);
+                        LOG.info("tls-alpn-01 challenge certificate set in AcmeSSLContext for domain: {}", domain);
+                        Runnable cleanup = () -> acmeSslContext.clearAlpnChallengeCertificate(domain);
+                        return new ProvisionResult(currentChallenge.getUrl(), cleanup);
+                    } catch (Exception e) {
+                        LOG.error("Failed to prepare for tls-alpn-01 challenge for domain {}: {}. Trying next preferred type.", domain, e.getMessage(), e);
+                        // Continue to next preferred type
+                    }
+                } else {
+                    LOG.warn("tls-alpn-01 challenge available for {}, but AcmeSSLContext not provided. Skipping this type.", domain);
+                    // Continue to next preferred type
+                }
+            } else if (TYPE_HTTP_01.equals(currentChallenge.getType())) {
+                provisionHttp(auth, currentChallenge);
+                return new ProvisionResult(currentChallenge.getUrl(), null); // http-01 succeeded
+            } else if (TYPE_DNS_01.equals(currentChallenge.getType())) {
+                // Ensure DNS validation is configured if dns-01 is chosen
+                if (acmeValidation == null || !acmeValidation.useDnsValidation() && !(asse instanceof DnsProvisionable)) {
+                     LOG.warn("DNS-01 challenge type selected for domain {} but no DNS validation method or compatible storage is configured. Skipping this type.", domain);
+                     continue; // Try next preferred type
+                }
+                if (!(asse instanceof DnsProvisionable)) {
+                    LOG.warn("DNS-01 challenge type selected for domain {} but storage engine {} is not DnsProvisionable. Skipping this type.", domain, asse.getClass().getSimpleName());
+                    continue; // Try next preferred type
+                }
+                provisionDns(auth, currentChallenge);
+                return new ProvisionResult(currentChallenge.getUrl(), null); // dns-01 succeeded
+            } else {
+                LOG.warn("Unsupported challenge type configured: {}. Skipping this type.", currentChallenge.getType());
+            }
+        }
+
+        // If loop completes, no suitable challenge was successfully provisioned.
+        throw new AcmeException("AcmeClient.provision", "Could not find or successfully provision any of the preferred challenge types for domain " + domain +
+                                      ". Preferred types: " + String.join(", ", preferredTypes) +
+                                      ". Available types from server: " + auth.getChallenges().stream().map(Challenge::getType).collect(Collectors.joining(", ")), null, null);
     }
 
     private void provisionDns(Authorization auth, Challenge challenge) throws JoseException, NoSuchAlgorithmException {
@@ -329,8 +426,12 @@ public class AcmeClient {
         asse.setToken(auth.getIdentifier().getValue(), challenge.token);
     }
 
-    public String getChallengeType() {
-        return challengeType;
+    // This method might be obsolete or used only for logging/very specific checks now.
+    // The primary logic uses acmeConfig.getChallengeTypes().
+    // For now, let it return the first preferred type for simple informational purposes if needed.
+    public String getPrimaryChallengeType() {
+        List<String> types = acmeConfig.getChallengeTypes();
+        return types.isEmpty() ? "N/A" : types.get(0);
     }
 
     public interface JWSParametrizer {
@@ -618,5 +719,63 @@ public class AcmeClient {
         if (error == null)
             return null;
         return om.readValue(error, AcmeErrorLog.class);
+    }
+
+    public record AlpnCertAndKey(X509Certificate certificate, PrivateKey privateKey) {}
+
+    public static AlpnCertAndKey generateAlpnCertificate(String domainName, String keyAuthorization) throws Exception {
+        // 1. Generate RSA Key Pair
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance("RSA", BouncyCastleProvider.PROVIDER_NAME);
+        kpg.initialize(2048, random); // Using 2048 bits for RSA key
+        KeyPair keyPair = kpg.generateKeyPair();
+        PublicKey publicKey = keyPair.getPublic();
+        PrivateKey privateKey = keyPair.getPrivate();
+
+        // 2. Prepare Certificate Details
+        X500Name issuer = new X500Name("CN=" + domainName); // Self-signed, so issuer == subject
+        X500Name subject = issuer;
+
+        BigInteger serial = new BigInteger(64, random); // Random serial number
+
+        Date notBefore = new Date();
+        Date notAfter = new Date(notBefore.getTime() + TimeUnit.DAYS.toMillis(1)); // 1 day validity
+
+        // 3. Create X509v3CertificateBuilder
+        X509v3CertificateBuilder certBuilder = new JcaX509v3CertificateBuilder(
+                issuer,
+                serial,
+                notBefore,
+                notAfter,
+                subject,
+                publicKey);
+
+        // 4. Add SubjectAlternativeName (SAN) extension
+        GeneralName altName = new GeneralName(GeneralName.dNSName, domainName);
+        GeneralNames subjectAltNames = new GeneralNames(altName);
+        certBuilder.addExtension(Extension.subjectAlternativeName, false, subjectAltNames);
+
+        // 5. Add acmeIdentifier (tls-alpn-01 challenge) extension
+        // OID: 1.3.6.1.5.5.7.1.31
+        // The value is the SHA-256 digest of the key authorization.
+        MessageDigest digest = MessageDigest.getInstance("SHA-256");
+        byte[] keyAuthDigest = digest.digest(keyAuthorization.getBytes(StandardCharsets.UTF_8));
+
+        ASN1ObjectIdentifier acmeIdentifierOid = new ASN1ObjectIdentifier("1.3.6.1.5.5.7.1.31");
+        DEROctetString acmeIdentifierValue = new DEROctetString(keyAuthDigest);
+        certBuilder.addExtension(acmeIdentifierOid, true, acmeIdentifierValue); // Critical as per RFC 8737
+
+        // 6. Sign the certificate
+        ContentSigner contentSigner = new JcaContentSignerBuilder("SHA256WithRSAEncryption")
+                .setProvider(BouncyCastleProvider.PROVIDER_NAME)
+                .build(privateKey);
+
+        X509Certificate certificate = new JcaX509CertificateConverter()
+                .setProvider(BouncyCastleProvider.PROVIDER_NAME)
+                .getCertificate(certBuilder.build(contentSigner));
+
+        // 7. Verify (optional, but good practice)
+        certificate.verify(publicKey);
+
+        return new AlpnCertAndKey(certificate, privateKey);
     }
 }
