@@ -49,7 +49,7 @@ public abstract class SSLContext implements SSLProvider {
     protected boolean wantClientAuth, needClientAuth;
     protected String endpointIdentificationAlgorithm;
 
-    private boolean showSSLExceptions = true;
+    private boolean showSSLExceptions = false;
     private boolean useAsDefault;
     private boolean useHttp2;
 

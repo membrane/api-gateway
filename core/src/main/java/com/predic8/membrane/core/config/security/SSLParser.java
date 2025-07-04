@@ -40,7 +40,7 @@ public class SSLParser {
 	private boolean ignoreTimestampCheckFailure;
 	private String endpointIdentificationAlgorithm = "HTTPS";
 	private String serverName;
-	private boolean showSSLExceptions = true;
+	private boolean showSSLExceptions = false;
 	private boolean useAsDefault = true;
 	private boolean useExperimentalHttp2;
 

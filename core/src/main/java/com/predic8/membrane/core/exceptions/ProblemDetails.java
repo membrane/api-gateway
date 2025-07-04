@@ -44,6 +44,11 @@ public class ProblemDetails {
 
     private boolean production;
 
+    /**
+     * Whether to provide a log key to the caller that points into the log
+     */
+    private boolean logKey = true;
+
     private int statusCode;
     private String type;
     private String subType = "";
@@ -185,6 +190,11 @@ public class ProblemDetails {
         return this;
     }
 
+    public ProblemDetails logKey(boolean logKey) {
+        this.logKey = logKey;
+        return this;
+    }
+
     public Response build() {
         return createContent(createMap(), null);
     }
@@ -209,16 +219,16 @@ public class ProblemDetails {
 
         root.put("type", type);
 
-        if (detail != null) {
-            root.put("detail", detail);
-        }
-        root.putAll(topLevel);
-
         if (production) {
             logProduction(internalMap);
         } else {
             internalMap = createInternal(type);
         }
+
+        if (detail != null) {
+            root.put("detail", detail);
+        }
+        root.putAll(topLevel);
 
         root.putAll(internalMap);
         return root;
@@ -257,16 +267,21 @@ public class ProblemDetails {
     }
 
     private void logProduction(Map<String, Object> internalMap) {
-        String logKey = UUID.randomUUID().toString();
-        log.warn("logKey={}\ntype={}\ntitle={}\n,detail={}\n,extension={},.", logKey, type, title, detail, internalMap);
+
+        if (logKey) {
+            String logKey = UUID.randomUUID().toString();
+            log.warn("logKey={}\ntype={}\ntitle={}\n,detail={}\n,extension={},.", logKey, type, title, detail, internalMap);
+            detail = "Details can be found in the Membrane log searching for key: %s.".formatted(logKey);
+        } else {
+            detail = null;
+        }
 
         // In case of an internal error in production we do not want a specifiy error title
         if (type.equals("internal")) {
             title = "Internal error";
         }
 
-        detail = "Details can be found in the Membrane log searching for key: %s.".formatted(logKey);
-        if (stacktrace) {
+        if (stacktrace && exception != null) {
             log.warn("", exception);
         }
     }

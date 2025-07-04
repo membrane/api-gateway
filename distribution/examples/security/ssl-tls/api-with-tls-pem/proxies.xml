@@ -7,7 +7,7 @@
 	<router>
 
 		<api port="443">
-			<ssl>
+			<ssl showSSLExceptions="true">
 				<!-- Please replace key and certificate for production! -->
 				<key>
 					<private location="membrane-key.pem" />
