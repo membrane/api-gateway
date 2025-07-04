@@ -17,6 +17,7 @@
 package com.predic8.membrane.core.openapi.validators;
 
 import com.predic8.membrane.core.openapi.model.*;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.*;
 
 import java.util.*;
@@ -35,28 +36,23 @@ public class DiscriminatorTest extends AbstractValidatorTest {
 
     @Test
     public void discriminatorWorkingTrain() throws RuntimeException{
-        Map<String,Object> publicTransport = new HashMap<>();
-        publicTransport.put("kind", "Train");
-        publicTransport.put("name", "MyTrain");
-        publicTransport.put("length", 5);
-        publicTransport.put("seats", 123);
-
-        ValidationErrors errors = validator.validate(Request.post().path("/public-transports").body(mapToJson(publicTransport)));
-        System.out.println(errors);
+        ValidationErrors errors = validator.validate(Request.post().path("/public-transports").body(mapToJson(createTrain())));
         assertEquals(0,errors.size());
     }
 
     @Test
     public void singleTypeFromDiscriminator() throws RuntimeException{
+        ValidationErrors errors = validator.validate(Request.post().path("/train").body(mapToJson(createTrain())));
+        assertEquals(0,errors.size());
+    }
+
+    private static @NotNull Map<String, Object> createTrain() {
         Map<String,Object> publicTransport = new HashMap<>();
         publicTransport.put("kind", "Train");
         publicTransport.put("name", "MyTrain");
         publicTransport.put("length", 5);
         publicTransport.put("seats", 123);
-
-        ValidationErrors errors = validator.validate(Request.post().path("/train").body(mapToJson(publicTransport)));
-        System.out.println(errors);
-        assertEquals(0,errors.size());
+        return publicTransport;
     }
 
     @Test
@@ -106,7 +102,6 @@ public class DiscriminatorTest extends AbstractValidatorTest {
         publicTransport.put("length", 5);
 
         ValidationErrors errors = validator.validate(Request.post().path("/private-transports").body(mapToJson(publicTransport)));
-        System.out.println(errors);
         assertEquals(0,errors.size());
     }
 
@@ -118,7 +113,6 @@ public class DiscriminatorTest extends AbstractValidatorTest {
         publicTransport.put("length", 5);
 
         ValidationErrors errors = validator.validate(Request.post().path("/private-transports").body(mapToJson(publicTransport)));
-        System.out.println(errors);
         assertEquals(0,errors.size());
     }
 
@@ -130,7 +124,6 @@ public class DiscriminatorTest extends AbstractValidatorTest {
         publicTransport.put("wheels", 2);
 
         ValidationErrors errors = validator.validate(Request.post().path("/private-transports").body(mapToJson(publicTransport)));
-        System.out.println(errors);
         assertEquals(0,errors.size());
     }
 
