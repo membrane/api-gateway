@@ -122,7 +122,8 @@ public class ForInterceptor extends AbstractFlowWithChildrenInterceptor {
     }
 
     /**
-     *
+     * @description An expression that evaluates to a collection (e.g., a List). The interceptors nested within the `<for>` element will be executed for each item in this collection. The current item is available in the exchange property named `it`.
+     * @example `message.json.customers` (if language is the default "SpEL") or `/orders/order/@id` (if language="xpath")
      */
     @Required
     @MCAttribute
