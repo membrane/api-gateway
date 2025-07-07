@@ -80,7 +80,7 @@
 		<jackson.version>2.19.1</jackson.version>
 		<spring.version>6.2.8</spring.version>
 		<slf4j.version>2.0.17</slf4j.version>
-		<log4j.version>2.24.3</log4j.version>
+		<log4j.version>2.25.0</log4j.version>
 		<junit.version>5.10.0</junit.version>
 		<groovy.version>4.0.27</groovy.version>
 	</properties>
