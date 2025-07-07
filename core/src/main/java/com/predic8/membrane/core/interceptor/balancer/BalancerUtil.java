@@ -52,7 +52,7 @@ public class BalancerUtil {
 			if (interceptors != null)
 				for (Interceptor i : interceptors)
 					if (i instanceof LoadBalancingInterceptor)
-						if (((LoadBalancingInterceptor)i).getName().equals(name))
+						if (((LoadBalancingInterceptor)i).getName().equalsIgnoreCase(name))
 							return ((LoadBalancingInterceptor) i).getClusterManager();
 		}
 		throw new RuntimeException("balancer with name \"" + name + "\" not found.");
@@ -64,7 +64,7 @@ public class BalancerUtil {
 			if (interceptors != null)
 				for (Interceptor i : interceptors)
 					if (i instanceof LoadBalancingInterceptor)
-						if (((LoadBalancingInterceptor)i).getName().equals(name))
+						if (((LoadBalancingInterceptor)i).getName().equalsIgnoreCase(name))
 							return (LoadBalancingInterceptor) i;
 		}
 		throw new RuntimeException("balancer with name \"" + name + "\" not found.");
