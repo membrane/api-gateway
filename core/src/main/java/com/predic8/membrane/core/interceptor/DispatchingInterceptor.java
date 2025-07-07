@@ -20,6 +20,7 @@ import com.predic8.membrane.core.openapi.util.*;
 import com.predic8.membrane.core.proxies.*;
 import org.slf4j.*;
 
+import java.io.IOException;
 import java.net.*;
 import java.util.*;
 
@@ -86,7 +87,7 @@ public class DispatchingInterceptor extends AbstractInterceptor {
         return urlResult != null ? urlResult : exc.getRequest().getUri();
     }
 
-    protected String getAddressFromTargetElement(Exchange exc) throws MalformedURLException, URISyntaxException {
+    protected String getAddressFromTargetElement(Exchange exc) throws IOException, URISyntaxException {
         AbstractServiceProxy p = (AbstractServiceProxy) exc.getProxy();
 
         if (p.getTargetURL() != null) {

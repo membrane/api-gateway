@@ -22,6 +22,7 @@ import com.predic8.membrane.core.openapi.util.*;
 import com.predic8.membrane.core.proxies.*;
 import org.slf4j.*;
 
+import java.io.IOException;
 import java.util.*;
 
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
@@ -93,7 +94,7 @@ public class APIProxyKey extends ServiceProxyKey {
         return false;
     }
 
-    private boolean testCondition(Exchange exc) {
+    private boolean testCondition(Exchange exc) throws IOException {
         if (exchangeExpression == null)
             return true;
         return exchangeExpression.evaluate(exc, REQUEST, Boolean.class);

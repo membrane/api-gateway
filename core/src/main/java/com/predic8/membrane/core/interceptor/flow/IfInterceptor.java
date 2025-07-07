@@ -21,6 +21,8 @@ import com.predic8.membrane.core.lang.*;
 import com.predic8.membrane.core.lang.ExchangeExpression.*;
 import org.slf4j.*;
 
+import java.io.IOException;
+
 import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
 import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
@@ -58,16 +60,16 @@ public class IfInterceptor extends AbstractFlowWithChildrenInterceptor {
     }
 
     @Override
-    public Outcome handleRequest(Exchange exc) {
+    public Outcome handleRequest(Exchange exc) throws IOException {
         return handleInternal(exc, REQUEST);
     }
 
     @Override
-    public Outcome handleResponse(Exchange exc) {
+    public Outcome handleResponse(Exchange exc) throws IOException {
         return handleInternal(exc, RESPONSE);
     }
 
-    private Outcome handleInternal(Exchange exc, Flow flow) {
+    private Outcome handleInternal(Exchange exc, Flow flow) throws IOException {
         boolean result;
         try {
             result = exchangeExpression.evaluate(exc, flow, Boolean.class);
@@ -81,6 +83,8 @@ public class IfInterceptor extends AbstractFlowWithChildrenInterceptor {
             // We assume that null is false
             log.debug("Expression {} returned null and is therefore interpreted as false", test);
             result = false;
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
         if (log.isDebugEnabled())
             log.debug("Expression {} evaluated to {}.", test, result);

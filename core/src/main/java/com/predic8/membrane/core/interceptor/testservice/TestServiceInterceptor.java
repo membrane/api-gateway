@@ -107,7 +107,7 @@ public class TestServiceInterceptor extends AbstractInterceptor {
     }
 
     @Override
-    public Outcome handleRequest(Exchange exc) {
+    public Outcome handleRequest(Exchange exc) throws IOException {
         if (WSDL.matcher(exc.getRequest().getUri()).find()) {
             exc.setResponse(Response.ok().
                     header(SERVER, PRODUCT_NAME).
@@ -138,7 +138,7 @@ public class TestServiceInterceptor extends AbstractInterceptor {
         return db.parse(exc.getRequest().getBodyAsStreamDecoded());
     }
 
-    private Response createResponse(Throwable e, boolean useSoap11) {
+    private Response createResponse(Throwable e, boolean useSoap11) throws IOException {
         String title = "Internal Server Error";
         String message = e.getMessage();
         String body = useSoap11 ? SOAPUtil.createSOAPFaultResponse(Server, title, Map.of("details",message)).getBodyAsStringDecoded() : SOAPUtil.getFaultSOAP12Body(title,

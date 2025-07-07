@@ -14,19 +14,18 @@
 package com.predic8.membrane.core.interceptor.oauth2server;
 
 import com.bornium.http.Exchange;
-import com.bornium.http.Method;
 import com.bornium.http.Request;
 import com.bornium.http.Response;
 import com.predic8.membrane.core.http.HeaderField;
 
-import java.net.URI;
+import java.io.IOException;
 import java.nio.charset.Charset;
 
 /**
  * Created by Xorpherion on 26.02.2017.
  */
 public class Convert {
-    public static Response convertFromMembraneResponse(com.predic8.membrane.core.http.Response membraneResponse) {
+    public static Response convertFromMembraneResponse(com.predic8.membrane.core.http.Response membraneResponse) throws IOException {
         if (membraneResponse != null) {
             Response result = new Response();
             result.setStatuscode(membraneResponse.getStatusCode());
@@ -36,25 +35,6 @@ public class Convert {
             return result;
         }
         return null;
-    }
-
-    public static Request convertFromMembraneRequest(com.predic8.membrane.core.http.Request membraneRequest) {
-        if (membraneRequest != null) {
-            Request result = new Request();
-            result.setUri(URI.create(membraneRequest.getUri()));
-            result.setMethod(Method.fromString(membraneRequest.getMethod()));
-            result.setBody(membraneRequest.getBodyAsStringDecoded());
-            for (HeaderField header : membraneRequest.getHeader().getAllHeaderFields())
-                result.getHeader().append(header.getHeaderName().toString(), header.getValue());
-            return result;
-        }
-        return null;
-    }
-
-    public static Exchange convertFromMembraneExchange(com.predic8.membrane.core.exchange.Exchange memExc){
-        Exchange exchange = new Exchange(Convert.convertFromMembraneRequest(memExc.getRequest()), Convert.convertFromMembraneResponse(memExc.getResponse()));
-        exchange.setProperties(memExc.getProperties());
-        return exchange;
     }
 
     public static com.predic8.membrane.core.http.Request convertToMembraneRequest(Request request) {

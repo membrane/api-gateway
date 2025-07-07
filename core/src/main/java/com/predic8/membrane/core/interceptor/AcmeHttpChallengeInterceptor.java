@@ -25,6 +25,8 @@ import org.jose4j.lang.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
+
 import static com.predic8.membrane.core.http.MimeType.APPLICATION_OCTET_STREAM;
 import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 import static java.util.Arrays.stream;
@@ -46,7 +48,7 @@ public class AcmeHttpChallengeInterceptor extends AbstractInterceptor {
     }
 
     @Override
-    public Outcome handleRequest(Exchange exc) {
+    public Outcome handleRequest(Exchange exc) throws IOException {
         if (exc.getRequest().getUri().startsWith(PREFIX)) {
             String token = exc.getRequest().getUri().substring(PREFIX.length());
             String host = ignorePort

@@ -28,6 +28,7 @@ import com.predic8.membrane.core.util.*;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.*;
 
+import java.io.IOException;
 import java.util.*;
 
 import static com.predic8.membrane.core.exchange.Exchange.*;
@@ -299,7 +300,7 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
     }
 
 
-    private void readBodyFromStreamIntoMemory(Exchange exc) {
+    private void readBodyFromStreamIntoMemory(Exchange exc) throws IOException {
         exc.getRequest().getBodyAsStringDecoded();
     }
 

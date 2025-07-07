@@ -23,6 +23,7 @@ import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.flow.AbstractFlowWithChildrenInterceptor;
 import com.predic8.membrane.core.util.ConfigurationException;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
 
@@ -53,7 +54,7 @@ public class ChainInterceptor extends AbstractFlowWithChildrenInterceptor {
     }
 
     @Override
-    public Outcome handleResponse(Exchange exc) {
+    public Outcome handleResponse(Exchange exc) throws IOException {
         return router.getFlowController().invokeResponseHandlers(exc, interceptors);
     }
 

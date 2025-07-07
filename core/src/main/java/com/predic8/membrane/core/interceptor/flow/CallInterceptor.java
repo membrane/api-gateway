@@ -64,16 +64,16 @@ public class CallInterceptor extends AbstractExchangeExpressionInterceptor {
     }
 
     @Override
-    public Outcome handleRequest(Exchange exc) {
+    public Outcome handleRequest(Exchange exc) throws IOException {
         return handleInternal(exc);
     }
 
     @Override
-    public Outcome handleResponse(Exchange exc) {
+    public Outcome handleResponse(Exchange exc) throws IOException {
         return handleInternal(exc);
     }
 
-    private Outcome handleInternal(Exchange exc) {
+    private Outcome handleInternal(Exchange exc) throws IOException {
         final String dest = exchangeExpression.evaluate(exc, REQUEST, String.class);
         log.debug("Calling {}", dest);
 

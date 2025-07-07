@@ -24,6 +24,8 @@ import com.predic8.membrane.core.lang.ExchangeExpression.Language;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
+
 import static com.predic8.membrane.core.lang.ExchangeExpression.Language.SPEL;
 
 @MCElement(name = "case", topLevel = false)
@@ -39,7 +41,7 @@ public class Case extends InterceptorContainer {
         exchangeExpression = ExchangeExpression.newInstance(router, language, test);
     }
 
-    boolean evaluate(Exchange exc, Flow flow) {
+    boolean evaluate(Exchange exc, Flow flow) throws IOException {
         boolean result = exchangeExpression.evaluate(exc, flow, Boolean.class);
         log.debug("Expression {} evaluated to {}.", test, result);
         return result;

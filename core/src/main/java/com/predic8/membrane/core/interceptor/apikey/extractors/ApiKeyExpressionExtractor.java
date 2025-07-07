@@ -21,6 +21,7 @@ import com.predic8.membrane.core.interceptor.lang.Polyglot;
 import com.predic8.membrane.core.lang.ExchangeExpression;
 import com.predic8.membrane.core.lang.ExchangeExpression.Language;
 
+import java.io.IOException;
 import java.util.Optional;
 
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
@@ -41,11 +42,15 @@ public class ApiKeyExpressionExtractor implements ApiKeyExtractor, Polyglot {
 
     @Override
     public Optional<LocationNameValue> extract(Exchange exc) {
-        return Optional.of(new LocationNameValue(
-                EXPRESSION,
-                expression,
-                exchangeExpression.evaluate(exc, REQUEST, String.class)
-        ));
+        try {
+            return Optional.of(new LocationNameValue(
+                    EXPRESSION,
+                    expression,
+                    exchangeExpression.evaluate(exc, REQUEST, String.class)
+            ));
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override

@@ -25,6 +25,7 @@ import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.lang.ExchangeExpression;
 import com.predic8.membrane.core.lang.ExchangeExpression.Language;
 
+import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
 import static com.predic8.membrane.core.exceptions.ProblemDetails.user;
@@ -62,7 +63,7 @@ public class IdempotencyInterceptor extends AbstractInterceptor {
     }
 
     @Override
-    public Outcome handleRequest(Exchange exc) {
+    public Outcome handleRequest(Exchange exc) throws IOException {
         String key = normalizeKey(exchangeExpression.evaluate(exc, REQUEST, String.class));
         if (key.isEmpty()) {
             return CONTINUE;

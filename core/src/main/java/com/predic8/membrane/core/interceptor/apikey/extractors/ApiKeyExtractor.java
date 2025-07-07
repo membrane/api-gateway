@@ -16,10 +16,11 @@ package com.predic8.membrane.core.interceptor.apikey.extractors;
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.exchange.Exchange;
 
+import java.io.IOException;
 import java.util.Optional;
 
 public interface ApiKeyExtractor {
     default void init(Router router) {}
-    Optional<LocationNameValue> extract(Exchange exc);
+    Optional<LocationNameValue> extract(Exchange exc) throws IOException;
     String getDescription();
 }

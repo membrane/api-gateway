@@ -19,6 +19,7 @@ import com.predic8.membrane.core.interceptor.Interceptor.*;
 import com.predic8.membrane.core.transport.http.*;
 import org.slf4j.*;
 
+import java.io.IOException;
 import java.util.*;
 
 import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
@@ -106,7 +107,7 @@ public class FlowController {
         return CONTINUE;
     }
 
-    public Outcome invokeResponseHandlers(Exchange exchange, List<Interceptor> interceptors) {
+    public Outcome invokeResponseHandlers(Exchange exchange, List<Interceptor> interceptors) throws IOException {
         return invokeResponseHandlers(exchange, interceptors, interceptors.size());
     }
 
@@ -117,7 +118,7 @@ public class FlowController {
      * @param interceptors List of all interceptors
      * @param pos Position of called interceptors in the interceptors list
      */
-    public Outcome invokeResponseHandlers(Exchange exchange, List<Interceptor> interceptors, int pos) {
+    public Outcome invokeResponseHandlers(Exchange exchange, List<Interceptor> interceptors, int pos) throws IOException {
         boolean aborted = false;
         for (int i = pos - 1; i >= 0; i--) {
             Interceptor interceptor = interceptors.get(i);

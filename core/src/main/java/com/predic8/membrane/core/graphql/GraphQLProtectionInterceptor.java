@@ -23,6 +23,7 @@ import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.util.*;
 import org.slf4j.*;
 
+import java.io.IOException;
 import java.security.*;
 import java.util.*;
 
@@ -78,6 +79,8 @@ public class GraphQLProtectionInterceptor extends AbstractInterceptor {
             validator.validate(exc);
         } catch (GraphQLOverHttpValidationException e) {
             return error(exc, e);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
         return CONTINUE;
     }

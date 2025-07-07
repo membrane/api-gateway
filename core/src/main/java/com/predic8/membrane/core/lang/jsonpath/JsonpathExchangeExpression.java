@@ -60,7 +60,7 @@ public class JsonpathExchangeExpression extends AbstractExchangeExpression {
     }
 
     @Override
-    public <T> T evaluate(Exchange exchange, Flow flow, Class<T> type) {
+    public <T> T evaluate(Exchange exchange, Flow flow, Class<T> type) throws IOException {
 
         // Guard against empty body and other Content-Types
         try {

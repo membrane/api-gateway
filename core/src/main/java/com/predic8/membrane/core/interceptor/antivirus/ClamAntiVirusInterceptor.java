@@ -66,7 +66,7 @@ public class ClamAntiVirusInterceptor extends AbstractInterceptor {
         return gatewayTimeout(exc);
     }
 
-    private String getBody(Exchange exc) {
+    private String getBody(Exchange exc) throws IOException {
         return exc.getRequest().getBodyAsStringDecoded();
     }
 

@@ -17,6 +17,7 @@ package com.predic8.membrane.core.exchangestore;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.RESPONSE;
 
+import java.io.IOException;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -239,7 +240,13 @@ public class LimitedMemoryExchangeStore extends AbstractExchangeStore {
 	}
 
 	public List<AbstractExchange> search(String e) {
-		return exchanges.stream().filter(exc -> exc.getRequest().getBodyAsStringDecoded().contains(e) ).toList();
+		return exchanges.stream().filter(exc -> {
+            try {
+                return exc.getRequest().getBodyAsStringDecoded().contains(e);
+            } catch (IOException ex) {
+                throw new RuntimeException(ex);
+            }
+        }).toList();
 	}
 
 	@Override

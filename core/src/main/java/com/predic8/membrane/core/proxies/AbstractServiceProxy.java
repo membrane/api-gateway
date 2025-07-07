@@ -24,6 +24,8 @@ import com.predic8.membrane.core.lang.ExchangeExpression;
 import com.predic8.membrane.core.lang.TemplateExchangeExpression;
 import com.predic8.membrane.core.transport.ssl.*;
 
+import java.io.IOException;
+
 import static com.predic8.membrane.core.lang.ExchangeExpression.Language.*;
 
 public abstract class AbstractServiceProxy extends SSLableProxy {
@@ -111,7 +113,7 @@ public abstract class AbstractServiceProxy extends SSLableProxy {
             if (url != null) exchangeExpression = TemplateExchangeExpression.newInstance(router, language, url);
         }
 
-        public String compileUrl(Exchange exc, Interceptor.Flow flow) {
+        public String compileUrl(Exchange exc, Interceptor.Flow flow) throws IOException {
             /**
              * Will always evaluate on every call. This is fine as SpEL is fast enough and performs its own optimizations.
              * 1.000.000 calls ~10ms

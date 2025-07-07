@@ -22,6 +22,8 @@ import com.predic8.membrane.core.lang.jsonpath.*;
 import com.predic8.membrane.core.lang.spel.*;
 import com.predic8.membrane.core.lang.xpath.*;
 
+import java.io.IOException;
+
 /**
  * Language expression that takes an exchange as input
  */
@@ -46,7 +48,7 @@ public interface ExchangeExpression {
      * @param <T>
      * @throws ExchangeExpressionException
      */
-    <T> T evaluate(Exchange exchange, Interceptor.Flow flow, Class<T> type) throws ExchangeExpressionException;
+    <T> T evaluate(Exchange exchange, Interceptor.Flow flow, Class<T> type) throws ExchangeExpressionException, IOException;
 
     static ExchangeExpression newInstance(Router router, Language language, String expression) {
         return switch (language) {

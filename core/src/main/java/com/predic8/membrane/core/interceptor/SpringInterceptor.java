@@ -19,6 +19,8 @@ import com.predic8.membrane.core.exchange.*;
 import org.springframework.beans.*;
 import org.springframework.context.*;
 
+import java.io.IOException;
+
 @MCElement(name="interceptor")
 public class SpringInterceptor extends AbstractInterceptor implements ApplicationContextAware {
 
@@ -46,12 +48,12 @@ public class SpringInterceptor extends AbstractInterceptor implements Applicatio
 	}
 
 	@Override
-	public Outcome handleRequest(Exchange exc) {
+	public Outcome handleRequest(Exchange exc) throws IOException {
 		return i.handleRequest(exc);
 	}
 
 	@Override
-	public Outcome handleResponse(Exchange exc) {
+	public Outcome handleResponse(Exchange exc) throws IOException {
 		return i.handleResponse(exc);
 	}
 

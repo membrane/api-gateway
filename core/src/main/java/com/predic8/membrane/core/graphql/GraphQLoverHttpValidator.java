@@ -71,7 +71,7 @@ public class GraphQLoverHttpValidator {
         this.router = router;
     }
 
-    public void validate(Exchange exc) throws GraphQLOverHttpValidationException {
+    public void validate(Exchange exc) throws GraphQLOverHttpValidationException, IOException {
         if (!allowedMethods.contains(exc.getRequest().getMethod()))
             throw new GraphQLOverHttpValidationException(405, "Invalid method.");
 
@@ -116,7 +116,7 @@ public class GraphQLoverHttpValidator {
             throw new GraphQLOverHttpValidationException("GraphQL 'extensions' are forbidden.");
     }
 
-    private @NotNull Map<String, Object> getData(Exchange exc) {
+    private @NotNull Map<String, Object> getData(Exchange exc) throws IOException {
         if (exc.getRequest().isGETRequest()) {
             return getData(getRawQuery(exc));
         }
@@ -198,7 +198,7 @@ public class GraphQLoverHttpValidator {
         return (String) query;
     }
 
-    private @NotNull Map<String, Object> getDataPost(Exchange exc, String rawQuery) {
+    private @NotNull Map<String, Object> getDataPost(Exchange exc, String rawQuery) throws IOException {
         if (rawQuery != null) {
             Map<String, String> params = parseQueryString(rawQuery, ERROR);
             for (String key : new String[]{QUERY, OPERATION_NAME, VARIABLES, EXTENSIONS})

@@ -24,6 +24,8 @@ import com.predic8.membrane.core.interceptor.Outcome;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
+
 import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 
@@ -38,23 +40,23 @@ public class ReplaceInterceptor extends AbstractInterceptor {
     private String with;
 
     @Override
-    public Outcome handleRequest(Exchange exc) {
+    public Outcome handleRequest(Exchange exc) throws IOException {
         return handleInternal(exc.getRequestContentType(), exc.getRequest());
     }
 
     @Override
-    public Outcome handleResponse(Exchange exc) {
+    public Outcome handleResponse(Exchange exc) throws IOException {
         return handleInternal(exc.getResponseContentType(), exc.getResponse());
     }
 
-    private Outcome handleInternal(String contentType, Message msg) {
+    private Outcome handleInternal(String contentType, Message msg) throws IOException {
         if(contentType.equals(APPLICATION_JSON)) {
             msg.setBodyContent(replaceWithJsonPath(msg, jsonPath, with).getBytes());
         }
         return CONTINUE;
     }
 
-     String replaceWithJsonPath(Message msg, String jsonPath, String replacement) {
+     String replaceWithJsonPath(Message msg, String jsonPath, String replacement) throws IOException {
          Object document = Configuration.defaultConfiguration().jsonProvider().parse(msg.getBodyAsStringDecoded());
          document = JsonPath.parse(document).set(jsonPath, replacement).json();
          return Configuration.defaultConfiguration().jsonProvider().toJson(document);

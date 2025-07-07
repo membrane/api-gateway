@@ -21,6 +21,7 @@ import com.predic8.membrane.core.interceptor.apikey.stores.*;
 import com.predic8.membrane.core.security.*;
 import org.slf4j.*;
 
+import java.io.IOException;
 import java.util.*;
 import java.util.stream.*;
 
@@ -125,9 +126,15 @@ public class ApiKeysInterceptor extends AbstractInterceptor {
 
     public Optional<LocationNameValue> getKey(Exchange exc) {
         return extractors.stream()
-                .flatMap(ext -> ofNullable(
-                        ext.extract(exc).orElse(null)
-                ))
+                .flatMap(ext -> {
+                    try {
+                        return ofNullable(
+                                ext.extract(exc).orElse(null)
+                        );
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                })
                 .findFirst();
     }
 

@@ -17,6 +17,8 @@ import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.exchange.*;
 import org.slf4j.*;
 
+import java.io.IOException;
+
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.*;
 
 /**
@@ -38,7 +40,7 @@ public class UserFeatureInterceptor extends AbstractInterceptor {
 	}
 
 	@Override
-	public Outcome handleResponse(Exchange exc) {
+	public Outcome handleResponse(Exchange exc) throws IOException {
         return getFlowController().invokeResponseHandlers(exc, exc.getProxy().getInterceptors());
 	}
 

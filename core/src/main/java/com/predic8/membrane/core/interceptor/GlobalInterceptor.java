@@ -18,6 +18,8 @@ import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.flow.AbstractFlowWithChildrenInterceptor;
 
+import java.io.IOException;
+
 /**
  * @description The global chain applies plugins to all endpoints, enabling centralized features
  *              such as global user authentication, logging, and other cross-cutting concerns.
@@ -31,7 +33,7 @@ public class GlobalInterceptor extends AbstractFlowWithChildrenInterceptor {
     }
 
     @Override
-    public Outcome handleResponse(Exchange exc) {
+    public Outcome handleResponse(Exchange exc) throws IOException {
         return router.getFlowController().invokeResponseHandlers(exc, interceptors);
     }
 

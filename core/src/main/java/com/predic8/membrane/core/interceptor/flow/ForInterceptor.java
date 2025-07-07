@@ -22,6 +22,7 @@ import com.predic8.membrane.core.lang.ExchangeExpression.*;
 import com.predic8.membrane.core.util.*;
 import org.slf4j.*;
 
+import java.io.IOException;
 import java.util.*;
 
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
@@ -87,6 +88,8 @@ public class ForInterceptor extends AbstractFlowWithChildrenInterceptor {
                     .component(getDisplayName())
                     .buildAndSetResponse(exc);
             return ABORT;
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
 
         if (o instanceof List<?> l) {

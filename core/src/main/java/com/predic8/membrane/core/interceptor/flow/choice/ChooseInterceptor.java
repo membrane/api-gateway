@@ -20,6 +20,7 @@ import com.predic8.membrane.core.interceptor.flow.*;
 import com.predic8.membrane.core.lang.*;
 import org.jetbrains.annotations.*;
 
+import java.io.IOException;
 import java.util.*;
 
 import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
@@ -75,6 +76,8 @@ public class ChooseInterceptor extends AbstractFlowInterceptor {
             }
         } catch (ExchangeExpressionException e) {
             handleExpressionProblemDetails(e, exc);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
         return null;
     }

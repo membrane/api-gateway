@@ -557,9 +557,13 @@ public class ElasticSearchExchangeStore extends AbstractPersistentExchangeStore 
         return mapper.readValue(exc.getResponse().getBodyAsStringDecoded(),Map.class);
     }
 
-    private int getTotalHitCountFromExchange(Exchange exc){
-        return new JSONObject(exc.getResponse().getBodyAsStringDecoded()).getJSONObject("hits")
-                .getJSONObject("total").getInt("value");
+    private int getTotalHitCountFromExchange(Exchange exc) {
+        try {
+            return new JSONObject(exc.getResponse().getBodyAsStringDecoded()).getJSONObject("hits")
+                    .getJSONObject("total").getInt("value");
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public HttpClient getClient() {

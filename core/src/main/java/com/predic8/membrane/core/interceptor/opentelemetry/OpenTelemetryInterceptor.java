@@ -25,6 +25,8 @@ import io.opentelemetry.api.trace.*;
 import io.opentelemetry.context.*;
 import org.slf4j.*;
 
+import java.io.IOException;
+
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.interceptor.opentelemetry.HTTPTraceContextUtil.*;
 import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPIInterceptor.*;
@@ -70,15 +72,20 @@ public class OpenTelemetryInterceptor extends AbstractInterceptor {
     }
 
     @Override
-    public Outcome handleRequest(Exchange exc) {
+    public Outcome handleRequest(Exchange exc) throws IOException {
         startMembraneScope(exc, getExtractContext(exc), getSpanName(exc)); // Params in Methode
         var span = getExchangeSpan(exc);
         setSpanHttpHeaderAttributes(exc.getRequest().getHeader(), span);
-
-        if (logBody) {
-            span.addEvent("Request", of(
-                    stringKey("Request Body"), exc.getRequest().getBodyAsStringDecoded()
-            ));
+        try {
+            if (logBody) {
+                span.addEvent("Request", of(
+                        stringKey("Request Body"), exc.getRequest().getBodyAsStringDecoded()
+                ));
+            }
+        } catch (IOException e) {
+            log.debug(e.getMessage());
+            exc.setResponse(new Response.ResponseBuilder().status(400).build());
+            return RETURN;
         }
 
         return CONTINUE;
@@ -94,10 +101,15 @@ public class OpenTelemetryInterceptor extends AbstractInterceptor {
             setSpanOpenAPIAttributes(exc, span);
         }
 
-        if (logBody) {
-            span.addEvent("Response", of(
-                    stringKey("Response Body"), exc.getResponse().getBodyAsStringDecoded()
-            ));
+        try {
+            if (logBody) {
+                span.addEvent("Response", of(
+                        stringKey("Response Body"), exc.getResponse().getBodyAsStringDecoded()
+                ));
+            }
+        } catch (IOException e) {
+            log.debug(e.getMessage());
+            return RETURN;
         }
 
         span.addEvent("Close Exchange").end();
@@ -134,8 +146,8 @@ public class OpenTelemetryInterceptor extends AbstractInterceptor {
     private String getProxyName(Exchange exc) {
         var r = exc.getProxy();
         return r.getName().isEmpty() ?
-               r.getKey().getHost() + r.getKey().getPort()
-               : r.getName();
+                r.getKey().getHost() + r.getKey().getPort()
+                : r.getName();
     }
 
     private StatusCode getOtelStatusCode(Exchange exc) {
@@ -143,10 +155,10 @@ public class OpenTelemetryInterceptor extends AbstractInterceptor {
     }
 
     private void startMembraneScope(Exchange exc, Context receivedContext, String spanName) {
-        try(Scope ignore = receivedContext.makeCurrent()) {
+        try (Scope ignore = receivedContext.makeCurrent()) {
             Span membraneSpan = getMembraneSpan(spanName, "Initialize Exchange");
 
-            try(Scope ignored = membraneSpan.makeCurrent()) {
+            try (Scope ignored = membraneSpan.makeCurrent()) {
                 setExchangeHeader(exc);
                 exc.setProperty("span", membraneSpan);
             }

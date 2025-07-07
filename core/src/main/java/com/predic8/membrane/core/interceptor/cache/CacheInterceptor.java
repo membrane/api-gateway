@@ -187,7 +187,7 @@ public class CacheInterceptor extends AbstractInterceptor {
 	}
 
 	@Override
-	public Outcome handleRequest(Exchange exc) {
+	public Outcome handleRequest(Exchange exc) throws IOException {
 		String dest = exc.getDestinations().getFirst();
 		Node node = store.get(dest);
 		if (node != null && node.canSatisfy(exc.getRequest())) {
@@ -206,7 +206,7 @@ public class CacheInterceptor extends AbstractInterceptor {
 
 
 	@Override
-	public Outcome handleResponse(Exchange exc) {
+	public Outcome handleResponse(Exchange exc) throws IOException {
 		try {
 			if (canCache(exc.getRequest(), false)) {
 				if (canCache(exc.getResponse(), true)) {

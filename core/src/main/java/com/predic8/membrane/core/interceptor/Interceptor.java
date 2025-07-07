@@ -17,6 +17,7 @@ package com.predic8.membrane.core.interceptor;
 import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.*;
 
+import java.io.IOException;
 import java.util.*;
 
 /**
@@ -52,8 +53,8 @@ public interface Interceptor {
 		}
 	}
 
-	Outcome handleRequest(Exchange exchange);
-	Outcome handleResponse(Exchange exchange);
+	Outcome handleRequest(Exchange exchange) throws IOException;
+	Outcome handleResponse(Exchange exchange) throws IOException;
 
 	/**
 	 * Called when any {@link #handleRequest(Exchange)} or

@@ -53,14 +53,14 @@ public class LogInterceptor extends AbstractExchangeExpressionInterceptor {
     }
 
     @Override
-    public Outcome handleRequest(Exchange exc) {
+    public Outcome handleRequest(Exchange exc) throws IOException {
         logMessage(exc, REQUEST);
         return CONTINUE;
 
     }
 
     @Override
-    public Outcome handleResponse(Exchange exc) {
+    public Outcome handleResponse(Exchange exc) throws IOException {
         logMessage(exc, RESPONSE);
         return CONTINUE;
     }
@@ -102,12 +102,14 @@ public class LogInterceptor extends AbstractExchangeExpressionInterceptor {
         this.level = level;
     }
 
-    private void logMessage(Exchange exc, Flow flow) {
+    private void logMessage(Exchange exc, Flow flow) throws IOException {
         if(getMessage() != null && !getMessage().isEmpty()) {
             try {
                 writeLog(exchangeExpression.evaluate(exc,flow,String.class));
             } catch (ExchangeExpressionException e) {
                 getLogger(category).warn("Problems evaluating the expression {} . Message: {} Extensions: {}",getMessage(),  e.getMessage(), e.getExtensions());
+            } catch (IOException e) {
+                throw new RuntimeException(e);
             }
             return;
         }
@@ -131,7 +133,7 @@ public class LogInterceptor extends AbstractExchangeExpressionInterceptor {
 
         writeLog(dumpBody(msg));
     }
-    private static String dumpBody(Message msg) {
+    private static String dumpBody(Message msg) throws IOException {
         return "Body:\n%s\n".formatted(msg.getBodyAsStringDecoded());
     }
 

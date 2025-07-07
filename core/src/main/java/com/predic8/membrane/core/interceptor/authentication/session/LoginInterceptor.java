@@ -22,6 +22,7 @@ import com.predic8.membrane.core.proxies.*;
 import com.predic8.membrane.core.util.*;
 import org.slf4j.*;
 
+import java.io.IOException;
 import java.util.*;
 
 import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
@@ -143,7 +144,7 @@ public class LoginInterceptor extends AbstractInterceptor {
 	}
 
 	@Override
-	public Outcome handleRequest(Exchange exc) {
+	public Outcome handleRequest(Exchange exc) throws IOException {
 		if (loginDialog.isLoginRequest(exc)) {
             try {
                 loginDialog.handleLoginRequest(exc);
@@ -183,7 +184,7 @@ public class LoginInterceptor extends AbstractInterceptor {
 	}
 
 	@Override
-	public Outcome handleResponse(Exchange exc) {
+	public Outcome handleResponse(Exchange exc) throws IOException {
 		Header header = exc.getResponse().getHeader();
 		header.setNoCacheResponseHeaders();
 		return super.handleResponse(exc);

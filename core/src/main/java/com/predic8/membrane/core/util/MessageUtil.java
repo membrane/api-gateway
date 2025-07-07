@@ -48,7 +48,7 @@ public class MessageUtil {
 		return res.getBodyAsStream();
 	}
 	
-	public static byte[] getContent(Message res) throws Exception {
+	public static byte[] getContent(Message res) throws IOException {
 		byte[] lReturn;
 
 		if (res.isGzip()) {

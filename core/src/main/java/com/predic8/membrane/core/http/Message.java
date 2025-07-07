@@ -133,10 +133,10 @@ public abstract class Message {
 	 *
 	 * @return the message's body as a Java String.
 	 */
-	public String getBodyAsStringDecoded() {
+	public String getBodyAsStringDecoded() throws IOException {
 		try {
 			return new String(MessageUtil.getContent(this), getCharset());
-		} catch (Exception e) {
+		} catch (IOException e) {
 			throw new RuntimeException(e);
 		}
 	}

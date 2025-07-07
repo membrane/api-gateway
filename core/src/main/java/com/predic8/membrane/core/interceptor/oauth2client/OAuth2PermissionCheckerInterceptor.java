@@ -31,6 +31,7 @@ import org.springframework.expression.spel.SpelParserConfiguration;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
 import org.springframework.expression.spel.support.StandardEvaluationContext;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.function.Function;
 
@@ -71,7 +72,7 @@ public class OAuth2PermissionCheckerInterceptor extends AbstractInterceptor {
     }
 
     @Override
-    public Outcome handleRequest(Exchange exc) {
+    public Outcome handleRequest(Exchange exc) throws IOException {
         Object value = valueSource.evaluate(exc);
         if (!valueChecker.apply(value)) {
             log.warn("OAuth2 permission check {} failed on value {}.",expression, value);

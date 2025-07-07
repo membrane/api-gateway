@@ -21,6 +21,7 @@ import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.flow.*;
 import com.predic8.membrane.core.proxies.*;
 
+import java.io.IOException;
 import java.util.*;
 
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.*;
@@ -38,11 +39,11 @@ public class AbstractInterceptor implements Interceptor {
 		super();
 	}
 
-	public Outcome handleRequest(Exchange exc) {
+	public Outcome handleRequest(Exchange exc) throws IOException {
 		return CONTINUE;
 	}
 
-	public Outcome handleResponse(Exchange exc) {
+	public Outcome handleResponse(Exchange exc) throws IOException {
 		return CONTINUE;
 	}
 

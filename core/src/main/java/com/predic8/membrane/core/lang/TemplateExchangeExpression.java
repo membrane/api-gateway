@@ -20,6 +20,7 @@ import com.predic8.membrane.core.lang.spel.*;
 
 import org.slf4j.*;
 
+import java.io.IOException;
 import java.util.*;
 import java.util.regex.*;
 
@@ -103,7 +104,7 @@ public class TemplateExchangeExpression extends AbstractExchangeExpression {
     }
 
     interface Token {
-        <T> T eval(Exchange exchange, Flow flow, Class<T>  type);
+        <T> T eval(Exchange exchange, Flow flow, Class<T>  type) throws IOException;
         String getExpression();
     }
 
@@ -148,7 +149,7 @@ public class TemplateExchangeExpression extends AbstractExchangeExpression {
         }
 
         @Override
-        public <T> T eval(Exchange exchange, Flow flow, Class<T>  type) {
+        public <T> T eval(Exchange exchange, Flow flow, Class<T>  type) throws IOException {
             return exchangeExpression.evaluate(exchange, flow, type);
         }
 

@@ -51,16 +51,16 @@ public class Json2XmlInterceptor extends AbstractInterceptor {
     private String root;
 
     @Override
-    public Outcome handleRequest(Exchange exc) {
+    public Outcome handleRequest(Exchange exc) throws IOException {
         return handleInternal(exc, REQUEST);
     }
 
     @Override
-    public Outcome handleResponse(Exchange exc) {
+    public Outcome handleResponse(Exchange exc) throws IOException {
         return handleInternal(exc, RESPONSE);
     }
 
-    private Outcome handleInternal(Exchange exchange, Flow flow) {
+    private Outcome handleInternal(Exchange exchange, Flow flow) throws IOException {
         Message msg = exchange.getMessage(flow);
         if (!msg.isJSON())
             return CONTINUE;

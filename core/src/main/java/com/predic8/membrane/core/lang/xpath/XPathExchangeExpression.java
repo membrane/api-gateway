@@ -25,6 +25,8 @@ import org.w3c.dom.*;
 import javax.xml.namespace.*;
 import javax.xml.xpath.*;
 
+import java.io.IOException;
+
 import static com.predic8.membrane.core.util.XMLUtil.*;
 import static javax.xml.xpath.XPathConstants.*;
 
@@ -39,7 +41,7 @@ public class XPathExchangeExpression extends AbstractExchangeExpression {
     }
 
     @Override
-    public <T> T evaluate(Exchange exchange, Interceptor.Flow flow, Class<T> type) {
+    public <T> T evaluate(Exchange exchange, Interceptor.Flow flow, Class<T> type) throws IOException {
         Message msg = exchange.getMessage(flow);
         try {
             if (Boolean.class.isAssignableFrom(type)) {
@@ -59,7 +61,7 @@ public class XPathExchangeExpression extends AbstractExchangeExpression {
         }
     }
 
-    private Object evaluateAndCastToObject(Message msg) throws XPathExpressionException {
+    private Object evaluateAndCastToObject(Message msg) throws XPathExpressionException, IOException {
         Object t = evalutateAndCast(msg, NODESET);
         if (t instanceof NodeList nl) {
             return new NodeListWrapper(nl);
@@ -67,7 +69,7 @@ public class XPathExchangeExpression extends AbstractExchangeExpression {
         return t;
     }
 
-    private Object evalutateAndCast(Message msg, QName xmlType) throws XPathExpressionException {
+    private Object evalutateAndCast(Message msg, QName xmlType) throws XPathExpressionException, IOException {
         if (log.isDebugEnabled()) {
             log.debug("Evaluating: {}", expression);
             log.debug("Body: {}", msg.getBodyAsStringDecoded()); // is expensive!
