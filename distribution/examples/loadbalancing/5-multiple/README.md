@@ -55,5 +55,5 @@ for the web administration interface and LB client (see load-balancer-client-2) 
 
 ---
 See:
-- [balancer](https://membrane-soa.org/api-gateway-doc/current/configuration/reference/balancer.htm) reference
-- [cluster](https://membrane-soa.org/api-gateway-doc/current/configuration/reference/cluster.htm) reference
+- [balancer](https://www.membrane-api.io/docs/current/balancer.html) reference
+- [clusters](https://www.membrane-api.io/docs/current/clusters.html) reference

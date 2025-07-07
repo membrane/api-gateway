@@ -50,4 +50,4 @@ To run the example execute the following steps:
 
 ---
 See:
-- [balancer](https://membrane-soa.org/api-gateway-doc/current/configuration/reference/balancer.htm) reference
+- [balancer](https://www.membrane-api.io/docs/current/balancer.html) reference

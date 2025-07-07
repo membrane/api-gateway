@@ -51,4 +51,4 @@ Note that the `adminConsole` and the `clusterNotification` are optional, you can
 
 ---
 See:
-- [balancer](https://membrane-soa.org/api-gateway-doc/current/configuration/reference/balancer.htm) reference
+- [balancer](https://www.membrane-api.io/docs/current/balancer.html) reference
