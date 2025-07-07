@@ -243,7 +243,7 @@ public class AcmeSSLContext extends SSLContext {
             }
 
             sslc = javax.net.ssl.SSLContext.getInstance("TLS");
-            sslc.init(customKeyManagers, null,null); // Use custom key managers
+            sslc.init(customKeyManagers, null,null);
 
         } catch (Exception e) {
             throw new RuntimeException(e);
@@ -282,7 +282,7 @@ public class AcmeSSLContext extends SSLContext {
             @Override
             public void run() {
                 if (!"never".equals(parser.getAcme().getRenewal()))
-                    new AcmeRenewal(client, hosts, AcmeSSLContext.this).doWork(); // Pass this AcmeSSLContext
+                    new AcmeRenewal(client, hosts, AcmeSSLContext.this).doWork();
                 initAndSchedule();
             }
         }, nextRun, "ACME timer " + constructHostsString());
@@ -332,7 +332,7 @@ public class AcmeSSLContext extends SSLContext {
         // or ensure the KeyManager picks up the new certificate.
         // For now, assuming this is called before the SSL handshake needing this cert.
         // If immediate effect is needed, might need to trigger a reload or re-init of sorts.
-        log.info("ACME: Stored ALPN challenge certificate for domain: {}", domainName);
+        log.info("Stored ALPN challenge certificate for domain: {}", domainName);
     }
 
     public void clearAlpnChallengeCertificate(String domainName) {
