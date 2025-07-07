@@ -17,13 +17,14 @@ import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.transport.http.client.HttpClientConfiguration;
-import com.predic8.membrane.core.transport.ssl.acme.Challenge;
 import org.joda.time.Duration;
 
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
+
+import static com.predic8.membrane.core.transport.ssl.acme.Challenge.TYPE_HTTP_01;
 
 /**
  * @description
@@ -56,7 +57,7 @@ public class Acme {
     AcmeValidation validationMethod;
     String renewal = "1/3";
     int retry = 10000;
-    List<String> challengeTypes; // Default will be http-01, handled in getter or AcmeClient
+    List<String> challengeTypes;
 
     @Override
     public boolean equals(Object o) {
@@ -214,10 +215,6 @@ public class Acme {
     }
 
     public List<String> getChallengeTypes() {
-        if (challengeTypes == null || challengeTypes.isEmpty()) {
-            // Default to http-01 if not specified, aligning with previous implicit behavior
-            return List.of(Challenge.TYPE_HTTP_01);
-        }
         return challengeTypes;
     }
 
@@ -230,7 +227,7 @@ public class Acme {
     @MCAttribute
     public void setChallengeTypes(String challengeTypes) {
         if (challengeTypes == null || challengeTypes.trim().isEmpty()) {
-            this.challengeTypes = null; // Or List.of(Challenge.TYPE_HTTP_01) for default
+            this.challengeTypes = List.of(TYPE_HTTP_01);
         } else {
             this.challengeTypes = Arrays.stream(challengeTypes.split(","))
                     .map(String::trim)
