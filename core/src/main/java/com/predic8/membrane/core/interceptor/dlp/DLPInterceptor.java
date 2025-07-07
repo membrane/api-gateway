@@ -11,6 +11,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.List;
 
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 
@@ -20,10 +22,9 @@ public class DLPInterceptor extends AbstractInterceptor {
     private static final Logger log = LoggerFactory.getLogger(DLPInterceptor.class);
     private DLPAnalyzer dlpAnalyzer;
     private String fieldsConfig;
-    private String action = "report";
-    private Fields fields;
-    private Filter filter;
-    private Mask mask;
+    private List<Mask> masks = new ArrayList<>();
+    private List<Filter> filters = new ArrayList<>();
+    private List<Report> reports = new ArrayList<>();
 
     @Override
     public void init() {
@@ -46,12 +47,36 @@ public class DLPInterceptor extends AbstractInterceptor {
     }
 
     public Outcome handleInternal(Message msg) {
+        try {
+            log.info("DLP Risk Analysis: {}", dlpAnalyzer.analyze(msg).getLogReport());
 
-        RiskReport report = dlpAnalyzer.analyze(msg);
-        log.info("DLP Risk Analysis: {}", report.getLogReport());
-        msg.setBodyContent(mask.apply(msg.getBodyAsStringDecoded()).getBytes(StandardCharsets.UTF_8));
-        return CONTINUE;
+            if (!masks.isEmpty()) {
+                for (Mask mask : masks) {
+                    msg.setBodyContent(mask.apply(msg.getBodyAsStringDecoded())
+                            .getBytes(StandardCharsets.UTF_8));
+                }
+            }
+
+            if (!filters.isEmpty()) {
+                for (Filter filter : filters) {
+                    msg.setBodyContent(filter.apply(msg.getBodyAsStringDecoded())
+                            .getBytes(StandardCharsets.UTF_8));
+                }
+            }
+
+            if (!reports.isEmpty()) {
+                for (Report report : reports) {
+                    msg.setBodyContent(report.apply(msg.getBodyAsStringDecoded(), dlpAnalyzer.analyze(msg)).getBytes(StandardCharsets.UTF_8));
+                }
+            }
+
+            return CONTINUE;
+        } catch (Exception e) {
+            log.error("Exception in DLPInterceptor handleInternal: ", e);
+            return Outcome.ABORT;
+        }
     }
+
 
     public String getFieldsConfig() {
         return fieldsConfig;
@@ -62,39 +87,33 @@ public class DLPInterceptor extends AbstractInterceptor {
         this.fieldsConfig = fieldsConfig;
     }
 
-    public String getAction() {
-        return action;
-    }
-
-    @MCAttribute
-    public void setAction(String action) {
-        this.action = action;
-    }
-
-    public Fields getFields() {
-        return fields;
+    public List<Mask> getMasks() {
+        return masks;
     }
 
     @MCChildElement
-    public void setFields(Fields fields) {
-        this.fields = fields;
+    public DLPInterceptor setMasks(List<Mask> masks) {
+        this.masks = masks;
+        return this;
     }
 
-    public Filter getFilter() {
-        return filter;
+    public List<Filter> getFilters() {
+        return filters;
     }
 
     @MCChildElement(order = 1)
-    public void setFilter(Filter filter) {
-        this.filter = filter;
+    public DLPInterceptor setFilters(List<Filter> filters) {
+        this.filters = filters;
+        return this;
     }
 
-    public Mask getMask() {
-        return mask;
+    public List<Report> getReports() {
+        return reports;
     }
 
     @MCChildElement(order = 2)
-    public void setMask(Mask mask) {
-        this.mask = mask;
+    public void setReports(List<Report> reports) {
+        this.reports = reports;
     }
+
 }

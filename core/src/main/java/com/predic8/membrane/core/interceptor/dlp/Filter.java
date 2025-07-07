@@ -2,40 +2,19 @@ package com.predic8.membrane.core.interceptor.dlp;
 
 import com.jayway.jsonpath.DocumentContext;
 import com.jayway.jsonpath.JsonPath;
-import com.predic8.membrane.annot.MCChildElement;
+import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
 
-import java.util.ArrayList;
-import java.util.List;
-
 @MCElement(name = "filter")
-public class Filter {
-
-    private List<Field> fields = new ArrayList<>();
-
+public class Filter extends Action {
+    @Override
     public String apply(String json) {
         try {
             DocumentContext context = JsonPath.parse(json);
-            for (Field f : fields) {
-                try {
-                    context.delete(f.getJsonpath());
-                } catch (Exception e) {
-                    throw new RuntimeException(e);
-                }
-            }
+            context.delete(getField());
             return context.jsonString();
         } catch (Exception e) {
-            throw new RuntimeException("DLP Filter failed to apply JSONPath deletions", e);
+            throw new RuntimeException();
         }
-    }
-
-    @MCChildElement
-    public Filter setFields(List<Field> fields) {
-        this.fields = fields;
-        return this;
-    }
-
-    public List<Field> getFields() {
-        return fields;
     }
 }
