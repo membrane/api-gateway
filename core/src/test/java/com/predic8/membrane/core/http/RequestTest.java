@@ -190,6 +190,43 @@ public class RequestTest {
 		assertTrue(originalBody.isRead()); // Assert that the original body is read
 	}
 
+	@Test
+	void optionsWithBodyContentLength() throws EndOfStreamException, IOException {
+		shouldBodyBeRead("""
+				OPTIONS /products HTTP/1.1
+				Content-Length: 5
+				Origin: https://predic8.de
+				
+				Dummy
+				""", true);
+	}
+
+	@Test
+	void optionsWithBody() throws EndOfStreamException, IOException {
+		shouldBodyBeRead("""
+				OPTIONS /products HTTP/1.1
+				Transfer-Encoding: chunked
+				Origin: https://predic8.de
+			
+				Dummy
+				""", true);
+	}
+
+	@Test
+	void optionsWithoutBody() throws EndOfStreamException, IOException {
+        shouldBodyBeRead("""
+                OPTIONS /products HTTP/1.1
+                Origin: https://predic8.de
+                
+                """, false);
+	}
+
+	private static void shouldBodyBeRead(String message, boolean expect) throws IOException, EndOfStreamException {
+		Request req = new Request();
+		req.read(new ByteArrayInputStream(message.getBytes(UTF_8)), true);
+		assertEquals(expect, !req.shouldNotContainBody());
+	}
+
 	/**
 	 * Same as setBodyShouldReadTheOriginalBody test but with Request.setBodyContent
 	 * @throws EndOfStreamException

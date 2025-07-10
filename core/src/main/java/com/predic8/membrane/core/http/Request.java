@@ -44,10 +44,11 @@ public class Request extends Message {
 	public static final String METHOD_CONNECT = "CONNECT";
 	public static final String METHOD_OPTIONS = "OPTIONS";
 
-	private static final HashSet<String> methodsWithoutBody = Sets.newHashSet("GET", "HEAD", "CONNECT");
+	private static final HashSet<String> methodsWithoutBody = Sets.newHashSet(METHOD_GET, METHOD_HEAD, METHOD_CONNECT);
 	private static final HashSet<String> methodsWithOptionalBody = Sets.newHashSet(
-			"DELETE",
+			METHOD_DELETE,
 			/* some WebDAV methods, see http://www.ietf.org/rfc/rfc2518.txt */
+			METHOD_OPTIONS,
 			"PROPFIND",
 			"MKCOL",
 			"COPY",
@@ -158,8 +159,9 @@ public class Request extends Message {
 		if (methodsWithOptionalBody.contains(method)) {
 			if (header.hasContentLength())
 				return header.getContentLength() == 0;
-
-			return !(getBody() instanceof ChunkedBody);
+			if (header.getFirstValue(TRANSFER_ENCODING) != null)
+				return false;
+			return true;
 		}
 
 		return false;
