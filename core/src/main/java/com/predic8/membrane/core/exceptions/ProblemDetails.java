@@ -281,7 +281,7 @@ public class ProblemDetails {
             title = "Internal error";
         }
 
-        if (stacktrace) {
+        if (stacktrace && exception != null) {
             log.warn("", exception);
         }
     }
