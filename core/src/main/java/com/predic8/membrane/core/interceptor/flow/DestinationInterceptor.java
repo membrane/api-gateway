@@ -23,6 +23,10 @@ import java.util.*;
 
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 
+/**
+ * @description Sets the destination URL for the exchange. This overrides any previous destination.
+ * @topic 1. Proxies and Flow
+ */
 @MCElement(name = "destination")
 public class DestinationInterceptor extends AbstractInterceptor {
 
@@ -33,15 +37,6 @@ public class DestinationInterceptor extends AbstractInterceptor {
     @Override
     public void init() {
         super.init();
-        if (url == null) {
-            throw new ConfigurationException("""
-                <destination> needs a valid url!
-                
-                e.g.:
-                
-                <destination url="https://api.predic8.de">
-                """);
-        }
     }
 
     @Override
@@ -58,11 +53,12 @@ public class DestinationInterceptor extends AbstractInterceptor {
     }
 
     /**
-     * @default ignored
-     * @description Use destination instead of target
+     * @default (not set)
+     * @description The backend URL which will be called when the Exchange hits the &lt;httpClient&gt;.
      * @example https://api.predic8.de
      */
     @SuppressWarnings("unused")
+    @Required
     @MCAttribute
     public void setUrl(String url) {
         this.url = url;
