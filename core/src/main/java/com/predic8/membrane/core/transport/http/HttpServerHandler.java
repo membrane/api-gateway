@@ -14,6 +14,7 @@
 
 package com.predic8.membrane.core.transport.http;
 
+import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.transport.http2.*;
@@ -126,8 +127,6 @@ public class HttpServerHandler extends AbstractHttpHandler implements Runnable, 
             }
         } catch (EndOfStreamException e) {
             log.debug("stream closed");
-        } catch (AbortException e) {
-            log.debug("exchange aborted.");
         } catch (NoMoreRequestsException e) {
             // happens at the end of a keep-alive connection
         } catch (NoResponseException e) {
@@ -170,7 +169,7 @@ public class HttpServerHandler extends AbstractHttpHandler implements Runnable, 
         }
     }
 
-    private RequestProcessingResult processSingleRequest(Connection con) throws Exception {
+    private RequestProcessingResult processSingleRequest(Connection con) throws IOException, EndOfStreamException, TerminateException {
 
         if (!waitForIncomingData()) {
             return terminate();
@@ -188,24 +187,21 @@ public class HttpServerHandler extends AbstractHttpHandler implements Runnable, 
 
     private boolean waitForIncomingData() throws IOException {
         endpointListener.setIdleStatus(sourceSocket, true);
-        boolean endOfStream = isEndOfStream();
-        endpointListener.setIdleStatus(sourceSocket, false);
-        return !endOfStream;
-    }
-
-    private boolean isEndOfStream() {
         try {
             srcIn.mark(2);
-            if (srcIn.read() == -1)
+            if (srcIn.read() != -1) {
+                srcIn.reset();
                 return true;
-            srcIn.reset();
+            }
             return false;
         } catch (IOException e) {
-            return true;
+            return false;
+        } finally {
+            endpointListener.setIdleStatus(sourceSocket, false);
         }
     }
 
-    private @NotNull RequestProcessingResult processHttp1Request(Connection con) throws Exception {
+    private @NotNull RequestProcessingResult processHttp1Request(Connection con) throws EndOfStreamException, IOException, TerminateException {
 
         // Prepare
         srcReq = new Request();
@@ -233,7 +229,7 @@ public class HttpServerHandler extends AbstractHttpHandler implements Runnable, 
     private @NotNull RequestProcessingResult determineConnectionContinuation(Connection con) {
         if (srcReq.isCONNECTRequest()) {
             log.debug("stopping HTTP Server Thread after establishing an HTTP connect");
-            return new RequestProcessingResult(true, con);
+            return RequestProcessingResult.terminateWithConnection(con);
         }
         con = exchange.getTargetConnection();
         exchange.setTargetConnection(null);
@@ -262,7 +258,7 @@ public class HttpServerHandler extends AbstractHttpHandler implements Runnable, 
         }
     }
 
-    private void process() throws Exception {
+    private void process() throws TerminateException, IOException {
         try {
 
             DNSCache dnsCache = getTransport().getRouter().getDnsCache();
@@ -338,7 +334,7 @@ public class HttpServerHandler extends AbstractHttpHandler implements Runnable, 
         currentThread().setName(DEFAULT_THREAD_NAME);
     }
 
-    protected void writeResponse(Response res) throws Exception {
+    protected void writeResponse(Response res) throws IOException {
         if (res.isRedirect())
             res.getHeader().setConnection(Header.CLOSE);
         res.write(srcOut, false);
