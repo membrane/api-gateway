@@ -1,8 +1,7 @@
 # Cross-Origin Resource Sharing
 
 The usage of APIs on websites is restricted by modern web browsers’ cross‑origin policies. To allow HTTP methods like
-POST,
-custom headers, or credentials, you need to add special CORS headers.
+POST, custom headers, or credentials, you need to add CORS HTTP headers.
 
 The CORS plugin makes it easy to add those headers and to answer preflight OPTIONS requests made by the browser.
 
