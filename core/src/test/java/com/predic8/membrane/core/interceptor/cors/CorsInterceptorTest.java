@@ -43,19 +43,19 @@ class CorsInterceptorTest {
         @Test
         void parseOriginSpaces() {
             i.setOrigins("foo bar baz");
-            assertEquals(List.of("foo", "bar", "baz"), i.getAllowedOrigins());
+            assertEquals(Set.of("foo", "bar", "baz"), i.getAllowedOrigins());
         }
 
         @Test
         void parseMethodSpaces() {
             i.setMethods("GET, POST");
-            assertEquals(List.of("GET", "POST"), i.getMethods());
+            assertEquals(Set.of("GET", "POST"), i.getMethods());
         }
 
         @Test
         void parseHeaderSpaces() {
             i.setHeaders("foo bar baz");
-            assertEquals(List.of("foo", "bar", "baz"), i.getAllowedHeaders());
+            assertEquals(Set.of("foo", "bar", "baz"), i.getAllowedHeaders());
         }
 
         @Test
@@ -63,6 +63,7 @@ class CorsInterceptorTest {
             i.setCredentials(true);
             assertThrows(ConfigurationException.class, () -> i.init());
         }
+
     }
 
     @Nested
@@ -295,6 +296,7 @@ class CorsInterceptorTest {
             Exchange exc = createPreflight("https://any.example.com", METHOD_POST)
                     .header(ACCESS_CONTROL_REQUEST_HEADERS, "X-Bar")
                     .buildExchange();
+            exc.setResponse(ok().build());
 
             i.handleRequest(exc);
             assertTrue(i.isAllowAll());
@@ -331,9 +333,5 @@ class CorsInterceptorTest {
 
     private static String getAllowHeaders(Exchange exc) {
         return exc.getResponse().getHeader().getFirstValue(ACCESS_CONTROL_ALLOW_HEADERS);
-    }
-
-    private static String getAllowCredentials(Exchange exc) {
-        return exc.getResponse().getHeader().getFirstValue(ACCESS_CONTROL_ALLOW_CREDENTIALS);
     }
 }
