@@ -43,19 +43,19 @@ class CorsInterceptorTest {
         @Test
         void parseOriginSpaces() {
             i.setOrigins("foo bar baz");
-            assertEquals(List.of("foo", "bar", "baz"), i.getAllowedOrigins());
+            assertEquals(Set.of("foo", "bar", "baz"), i.getAllowedOrigins());
         }
 
         @Test
         void parseMethodSpaces() {
             i.setMethods("GET, POST");
-            assertEquals(List.of("GET", "POST"), i.getMethods());
+            assertEquals(Set.of("GET", "POST"), i.getMethods());
         }
 
         @Test
         void parseHeaderSpaces() {
             i.setHeaders("foo bar baz");
-            assertEquals(List.of("foo", "bar", "baz"), i.getAllowedHeaders());
+            assertEquals(Set.of("foo", "bar", "baz"), i.getAllowedHeaders());
         }
 
         @Test
