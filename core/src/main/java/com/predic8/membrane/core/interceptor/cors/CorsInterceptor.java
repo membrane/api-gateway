@@ -191,7 +191,7 @@ public class CorsInterceptor extends AbstractInterceptor {
     private boolean headersAllowed(String headers) {
         if (headers == null)
             return true;
-        if (allowedHeaders.isEmpty()) return false; // Early exit for efficiency
+        if (allowedHeaders.isEmpty()) return true; // Early exit for efficiency
 
         return allowedHeaders.containsAll(toLowerCaseSet(parseCommaOrSpaceSeparated(headers)));
     }
