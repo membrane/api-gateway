@@ -76,9 +76,13 @@ public class OpenTelemetryInterceptor extends AbstractInterceptor {
         setSpanHttpHeaderAttributes(exc.getRequest().getHeader(), span);
 
         if (logBody) {
-            span.addEvent("Request", of(
-                    stringKey("Request Body"), exc.getRequest().getBodyAsStringDecoded()
-            ));
+            try {
+                span.addEvent("Request", of(
+                        stringKey("Request Body"), exc.getRequest().getBodyAsStringDecoded()
+                ));
+            } catch (Exception e) {
+
+            }
         }
 
         return CONTINUE;
@@ -95,9 +99,14 @@ public class OpenTelemetryInterceptor extends AbstractInterceptor {
         }
 
         if (logBody) {
-            span.addEvent("Response", of(
-                    stringKey("Response Body"), exc.getResponse().getBodyAsStringDecoded()
-            ));
+            try {
+                span.addEvent("Response", of(
+                        stringKey("Response Body"),
+                        exc.getResponse().getBodyAsStringDecoded()
+                ));
+            } catch (Exception e) {
+                log.info("Can't log response body having problems to read stream. {}", e.getCause().getMessage());
+            }
         }
 
         span.addEvent("Close Exchange").end();
