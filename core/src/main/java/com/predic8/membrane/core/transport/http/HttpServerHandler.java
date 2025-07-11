@@ -171,7 +171,7 @@ public class HttpServerHandler extends AbstractHttpHandler implements Runnable, 
 
     private RequestProcessingResult processSingleRequest(Connection con) throws IOException, EndOfStreamException, TerminateException {
 
-        if (!waitForIncomingData()) {
+        if (isSrcInEndOfFile()) {
             return terminate();
         }
 
@@ -185,19 +185,17 @@ public class HttpServerHandler extends AbstractHttpHandler implements Runnable, 
         return processHttp1Request(con);
     }
 
-    private boolean waitForIncomingData() throws IOException {
-        endpointListener.setIdleStatus(sourceSocket, true);
+    private boolean isSrcInEndOfFile() throws IOException {
+		endpointListener.setIdleStatus(sourceSocket, true);
         try {
-            srcIn.mark(2);
+			srcIn.mark(2);
             if (srcIn.read() != -1) {
-                srcIn.reset();
-                return true;
+				srcIn.reset();
+                return false;
             }
-            return false;
-        } catch (IOException e) {
-            return false;
+            return true;
         } finally {
-            endpointListener.setIdleStatus(sourceSocket, false);
+			endpointListener.setIdleStatus(sourceSocket, false);
         }
     }
 
