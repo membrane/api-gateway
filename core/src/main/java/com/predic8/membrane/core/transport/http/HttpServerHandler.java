@@ -171,7 +171,8 @@ public class HttpServerHandler extends AbstractHttpHandler implements Runnable, 
 
     private RequestProcessingResult processSingleRequest(Connection con) throws IOException, EndOfStreamException, TerminateException {
 
-        if (isSrcInEndOfFile()) {
+        // Needed to mark connection as IDLE for reloads
+        if (isSrcInEndOfFileAndSetIdleStatus()) {
             return terminate();
         }
 
@@ -185,7 +186,7 @@ public class HttpServerHandler extends AbstractHttpHandler implements Runnable, 
         return processHttp1Request(con);
     }
 
-    private boolean isSrcInEndOfFile() throws IOException {
+    private boolean isSrcInEndOfFileAndSetIdleStatus() throws IOException {
 		endpointListener.setIdleStatus(sourceSocket, true);
         try {
 			srcIn.mark(2);
