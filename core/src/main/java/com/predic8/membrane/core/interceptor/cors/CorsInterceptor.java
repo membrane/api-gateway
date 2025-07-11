@@ -22,7 +22,6 @@ import com.predic8.membrane.core.util.*;
 import org.jetbrains.annotations.*;
 import org.slf4j.*;
 
-import java.util.ArrayList;
 import java.util.*;
 import java.util.stream.*;
 
@@ -30,6 +29,7 @@ import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
 import static com.predic8.membrane.core.http.Header.*;
 import static com.predic8.membrane.core.http.Response.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static com.predic8.membrane.core.interceptor.cors.CorsUtil.*;
 import static java.util.Arrays.*;
 
 
@@ -55,6 +55,7 @@ public class CorsInterceptor extends AbstractInterceptor {
     public static final String ORIGIN = "Origin";
     public static final String ACCESS_CONTROL_REQUEST_METHOD = "Access-Control-Request-Method";
     public static final String ACCESS_CONTROL_REQUEST_HEADERS = "Access-Control-Request-Headers";
+    public static final String VARY_VALUE = ORIGIN + ", " + ACCESS_CONTROL_REQUEST_METHOD + ", " + ACCESS_CONTROL_REQUEST_HEADERS;
 
     // Response headers
     public static final String ACCESS_CONTROL_ALLOW_ORIGIN = "Access-Control-Allow-Origin";
@@ -62,6 +63,8 @@ public class CorsInterceptor extends AbstractInterceptor {
     public static final String ACCESS_CONTROL_ALLOW_HEADERS = "Access-Control-Allow-Headers";
     public static final String ACCESS_CONTROL_MAX_AGE = "Access-Control-Max-Age";
     public static final String ACCESS_CONTROL_ALLOW_CREDENTIALS = "Access-Control-Allow-Credentials";
+    public static final String NULL_STRING = "null";
+    public static final String WILDCARD = "*";
 
 
     /**
@@ -71,9 +74,11 @@ public class CorsInterceptor extends AbstractInterceptor {
      */
     private boolean allowAll = false;
 
-    private List<String> allowedOrigins = List.of("*");
-    private List<String> allowedMethods = List.of("*");
-    private List<String> allowedHeaders = new ArrayList<>();
+    private Set<String> allowedOrigins = Set.of(WILDCARD);
+    private Set<String> allowedMethods = Set.of(WILDCARD);
+    private String allowedMethodsString;
+
+    private Set<String> allowedHeaders = new HashSet<>();
     private boolean allowCredentials;
     private String maxAge;
 
@@ -82,9 +87,11 @@ public class CorsInterceptor extends AbstractInterceptor {
         super.init();
 
         // See: https://fetch.spec.whatwg.org/#cors-protocol-and-credentials
-        if (allowCredentials && originContainsWildcard()) {
+        if (allowCredentials && isWildcardOriginAllowed()) {
             throw new ConfigurationException("Access-Control-Allow-Credentials in combination with origin wildcard is forbidden");
         }
+
+       allowedMethodsString = join(allowedMethods.stream().toList());
     }
 
     @Override
@@ -92,16 +99,17 @@ public class CorsInterceptor extends AbstractInterceptor {
         if (!exc.getRequest().isOPTIONSRequest())
             return CONTINUE; // no preflight -> let pass
 
-        String origin = getOrigin(exc);
+        String origin = getNormalizedOrigin(exc);
 
         // Ordinary non CORS OPTIONS request -> let pass
         if (origin == null)
             return CONTINUE;
 
+        String requestMethod = getRequestMethod(exc);
+
         if (allowAll) {
-            exc.setResponse(noContent()
-                    .header(createCORSHeader(origin, getRequestMethod(exc), getRequestHeaders(exc)))
-                    .build());
+            exc.setResponse(noContent().build());
+            setCORSHeader(exc, origin, requestMethod);
             return RETURN;
         }
 
@@ -109,7 +117,6 @@ public class CorsInterceptor extends AbstractInterceptor {
             return createProblemDetails(exc, origin, "origin");
         }
 
-        String requestMethod = getRequestMethod(exc);
         if (!methodAllowed(requestMethod)) {
             return createProblemDetails(exc, origin, "method");
         }
@@ -119,13 +126,12 @@ public class CorsInterceptor extends AbstractInterceptor {
             return createProblemDetails(exc, origin, "headers");
         }
 
-        if (originContainsWildcard() && allowCredentials) {
+        if (isWildcardOriginAllowed() && allowCredentials) {
             return createProblemDetails(exc, origin, "credentials");
         }
 
-        exc.setResponse(noContent()
-                .header(createCORSHeader(origin, requestMethod, requestHeaders))
-                .build());
+        exc.setResponse(noContent().build());
+        setCORSHeader(exc, origin, requestMethod);
         return RETURN;
     }
 
@@ -137,8 +143,8 @@ public class CorsInterceptor extends AbstractInterceptor {
         return exc.getRequest().getHeader().getFirstValue(ACCESS_CONTROL_REQUEST_METHOD);
     }
 
-    private static String getOrigin(Exchange exc) {
-        return exc.getRequest().getHeader().getFirstValue(ORIGIN);
+    private static String getNormalizedOrigin(Exchange exc) {
+        return CorsUtil.normalizeOrigin(exc.getRequest().getHeader().getFirstValue(ORIGIN));
     }
 
     private static Outcome createProblemDetails(Exchange exc, String origin, String type) {
@@ -154,17 +160,17 @@ public class CorsInterceptor extends AbstractInterceptor {
 
     @Override
     public Outcome handleResponse(Exchange exc) {
-        String origin = getOrigin(exc);
+        String origin = getNormalizedOrigin(exc);
         if (origin == null)
             return CONTINUE;
 
         if (allowAll) {
-            createCORSHeader(exc.getResponse().getHeader(), origin, exc.getRequest().getMethod(), getRequestHeaders(exc));
+            setCORSHeader(exc, origin, exc.getRequest().getMethod());
             return CONTINUE;
         }
 
         if (originAllowed(origin)) {
-            createCORSHeader(exc.getResponse().getHeader(), origin, exc.getRequest().getMethod(), getRequestHeaders(exc));
+            setCORSHeader(exc, origin, exc.getRequest().getMethod());
         }
 
         // Not allowed => Do not set any allow headers
@@ -172,84 +178,64 @@ public class CorsInterceptor extends AbstractInterceptor {
     }
 
     private boolean originAllowed(String origin) {
-        if ("null".equals(origin)) {
-            return allowedOrigins.contains("null");
+        if (NULL_STRING.equals(origin)) {
+            return allowedOrigins.contains(NULL_STRING);
         }
-        return originContainsWildcard() || allowedOrigins.contains(origin);
+        return isWildcardOriginAllowed() || allowedOrigins.contains(origin);
     }
 
     private boolean methodAllowed(String method) {
-        return method != null && (allowedMethods.contains(method) || allowedMethods.contains("*"));
+        return method != null && (allowedMethods.contains(method) || allowedMethods.contains(WILDCARD));
     }
 
     private boolean headersAllowed(String headers) {
         if (headers == null)
             return true;
+        if (allowedHeaders.isEmpty()) return false; // Early exit for efficiency
 
-        return allowedHeaders.stream()
-                .map(String::toLowerCase)
-                .collect(Collectors.toSet())
-                .containsAll(
-                        parseCommaSeparated(headers).stream()
-                        .map(String::toLowerCase)
-                        .collect(Collectors.toSet())
-                );
+        return allowedHeaders.containsAll(toLowerCaseSet(parseCommaOrSpaceSeparated(headers)));
     }
 
+    private void setCORSHeader(Exchange exc, String requestOrigin, String requestedMethod) {
+        Header responseHeader = exc.getResponse().getHeader();
+        String requestedHeaders = getRequestHeaders(exc);
 
-    private static @NotNull List<String> parseCommaSeparated(String value) {
-        return stream(value.split("\\s*,\\s*|\\s+"))
-                .map(String::trim)
-                .filter(s -> !s.isEmpty())
-                .toList();
-    }
-
-    private Header createCORSHeader(String requestOrigin, String requestedMethod, String requestedHeaders) {
-        return createCORSHeader(new Header(), requestOrigin, requestedMethod, requestedHeaders);
-    }
-
-    private Header createCORSHeader(Header header, String requestOrigin, String requestedMethod, String requestedHeaders) {
-        if (allowedOrigins.contains("*") && allowCredentials) {
-            throw new ConfigurationException("UNSAFE CORS CONFIGURATION: 'credentials=true' and 'origins=*' is not allowed!");
-        }
-
-        header.setValue(ACCESS_CONTROL_ALLOW_ORIGIN, getAllowOriginValue(requestOrigin));
-        header.setValue(ACCESS_CONTROL_ALLOW_METHODS,
-                requestedMethod != null ? requestedMethod : join(allowedMethods));
+        responseHeader.setValue(ACCESS_CONTROL_ALLOW_ORIGIN, determineAllowOriginHeader(requestOrigin));
+        responseHeader.setValue(ACCESS_CONTROL_ALLOW_METHODS, getAllowedMethods(requestedMethod));
 
         if (allowAll) {
-            header.setValue(ACCESS_CONTROL_ALLOW_HEADERS,
+            responseHeader.setValue(ACCESS_CONTROL_ALLOW_HEADERS,
                     requestedHeaders != null ? requestedHeaders.toLowerCase() : "content-type, authorization");
-        } else if (allowedHeaders != null) {
-            header.setValue(ACCESS_CONTROL_ALLOW_HEADERS,
-                    join(allowedHeaders.stream()
-                            .map(String::toLowerCase)
-                            .collect(Collectors.toList())));
+        } else if (!allowedHeaders.isEmpty()) {
+            responseHeader.setValue(ACCESS_CONTROL_ALLOW_HEADERS,
+                    join( List.copyOf(allowedHeaders)));
         }
 
         if (maxAge != null) {
-            header.setValue(ACCESS_CONTROL_MAX_AGE, maxAge);
+            responseHeader.setValue(ACCESS_CONTROL_MAX_AGE, maxAge);
         }
 
         if (allowCredentials) {
-            header.setValue(ACCESS_CONTROL_ALLOW_CREDENTIALS, "true");
+            responseHeader.setValue(ACCESS_CONTROL_ALLOW_CREDENTIALS, "true");
         }
 
-        header.setValue(VARY, ORIGIN + ", " + ACCESS_CONTROL_REQUEST_METHOD + ", " + ACCESS_CONTROL_REQUEST_HEADERS);
-
-        return header;
+        responseHeader.setValue(VARY, VARY_VALUE);
     }
 
-    private String getAllowOriginValue(String requestOrigin) {
-        return (originContainsWildcard() && !allowCredentials) ? "*" : requestOrigin;
+    private @NotNull String getAllowedMethods(String requestedMethod) {
+        return requestedMethod != null ? requestedMethod : allowedMethodsString;
+    }
+
+    private String determineAllowOriginHeader(String requestOrigin) {
+        return (isWildcardOriginAllowed() && !allowCredentials) ? WILDCARD : requestOrigin;
     }
 
     private @NotNull String join(List<String> l) {
         return String.join(", ", l);
     }
 
-    private boolean originContainsWildcard() {
-        return allowedOrigins.contains("*");
+    private boolean isWildcardOriginAllowed() {
+        return allowedOrigins.contains(WILDCARD);
     }
 
     /**
@@ -273,7 +259,7 @@ public class CorsInterceptor extends AbstractInterceptor {
     public void setOrigins(String origins) {
         this.allowedOrigins = stream(origins.split(" "))
                 .map(String::trim)
-                .collect(Collectors.toList());
+                .collect(Collectors.toSet());
     }
 
     /**
@@ -283,7 +269,7 @@ public class CorsInterceptor extends AbstractInterceptor {
      */
     @MCAttribute
     public void setMethods(String methods) {
-        this.allowedMethods = parseCommaSeparated(methods);
+        this.allowedMethods = parseCommaOrSpaceSeparated(methods);
     }
 
     /**
@@ -292,7 +278,7 @@ public class CorsInterceptor extends AbstractInterceptor {
      */
     @MCAttribute
     public void setHeaders(String headers) {
-        this.allowedHeaders = parseCommaSeparated(headers);
+        this.allowedHeaders = toLowerCaseSet( parseCommaOrSpaceSeparated(headers));
     }
 
     /**
@@ -320,22 +306,22 @@ public class CorsInterceptor extends AbstractInterceptor {
     /**
      * For tests
      */
-    protected List<String> getAllowedOrigins() {
+    protected Set<String> getAllowedOrigins() {
         return allowedOrigins;
     }
 
     /**
      * For tests
      */
-    protected List<String> getAllowedHeaders() {
+    protected Set<String> getAllowedHeaders() {
         return allowedHeaders;
     }
 
     public String getHeaders() {
-        return join(allowedHeaders);
+        return join(List.copyOf(allowedHeaders));
     }
 
-    public List<String> getMethods() {
+    public Set<String> getMethods() {
         return allowedMethods;
     }
 
