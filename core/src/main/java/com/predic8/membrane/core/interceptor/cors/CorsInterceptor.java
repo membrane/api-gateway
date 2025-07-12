@@ -16,27 +16,25 @@ package com.predic8.membrane.core.interceptor.cors;
 
 import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.util.*;
-import org.jetbrains.annotations.*;
 import org.slf4j.*;
 
 import java.util.*;
 import java.util.stream.*;
 
-import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
-import static com.predic8.membrane.core.http.Header.*;
-import static com.predic8.membrane.core.http.Response.*;
-import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.interceptor.cors.CorsUtil.*;
 import static java.util.Arrays.*;
 
 
 /**
  * @description <p>Plugin that allows Cross-Origin Resource Sharing (CORS). It answers preflight
- * requests with the options method and sets the CORS headers. Additionally, requests
+ * requests with the options method and sets CORS headers. Additionally, requests
  * are validated against the CORS configuration.</p>
+ *
+ * The following headers are regarded save: Accept, Accept-Language, Content-Language, Content-Type
+ *
+ * The plugin follow the <a href="https://fetch.spec.whatwg.org/#cors-preflight-fetch">Fetch, Living Standard by WhatWG</a>
  *
  * <p>For a detailed explanation of CORS, see:</p>
  * <ul>
@@ -44,28 +42,22 @@ import static java.util.Arrays.*;
  *         CORS Guide for API Developers
  *     </a></li>
  * </ul>
+ *
  * @topic 3. Security and Validation
  */
 @MCElement(name = "cors")
 public class CorsInterceptor extends AbstractInterceptor {
 
+    /**
+     * Implementation Notes:
+     * - There is no Access-Control-Request-Credentials header in the spec!
+     *
+     */
+
     private static final Logger log = LoggerFactory.getLogger(CorsInterceptor.class);
 
-    // Request headers
-    public static final String ORIGIN = "Origin";
-    public static final String ACCESS_CONTROL_REQUEST_METHOD = "Access-Control-Request-Method";
-    public static final String ACCESS_CONTROL_REQUEST_HEADERS = "Access-Control-Request-Headers";
-    public static final String VARY_VALUE = ORIGIN + ", " + ACCESS_CONTROL_REQUEST_METHOD + ", " + ACCESS_CONTROL_REQUEST_HEADERS;
-
-    // Response headers
-    public static final String ACCESS_CONTROL_ALLOW_ORIGIN = "Access-Control-Allow-Origin";
-    public static final String ACCESS_CONTROL_ALLOW_METHODS = "Access-Control-Allow-Methods";
-    public static final String ACCESS_CONTROL_ALLOW_HEADERS = "Access-Control-Allow-Headers";
-    public static final String ACCESS_CONTROL_MAX_AGE = "Access-Control-Max-Age";
-    public static final String ACCESS_CONTROL_ALLOW_CREDENTIALS = "Access-Control-Allow-Credentials";
-    public static final String NULL_STRING = "null";
     public static final String WILDCARD = "*";
-
+    public static final String SPACE = " ";
 
     /**
      * If true, all origins, methods and headers are allowed **without validation**.
@@ -76,11 +68,15 @@ public class CorsInterceptor extends AbstractInterceptor {
 
     private Set<String> allowedOrigins = Set.of(WILDCARD);
     private Set<String> allowedMethods = Set.of(WILDCARD);
-    private String allowedMethodsString;
 
     private Set<String> allowedHeaders = new HashSet<>();
     private boolean allowCredentials;
-    private String maxAge;
+
+    // Default from https://fetch.spec.whatwg.org/#cors-preflight-fetch
+    private int maxAge = 5;
+
+    private PreflightHandler requestHandler;
+    private ResponseHandler responseHandler;
 
     @Override
     public void init() {
@@ -91,147 +87,18 @@ public class CorsInterceptor extends AbstractInterceptor {
             throw new ConfigurationException("Access-Control-Allow-Credentials in combination with origin wildcard is forbidden");
         }
 
-       allowedMethodsString = join(allowedMethods.stream().toList());
+        requestHandler = new PreflightHandler(this);
+        responseHandler = new ResponseHandler(this);
     }
 
     @Override
     public Outcome handleRequest(Exchange exc) {
-        if (!exc.getRequest().isOPTIONSRequest())
-            return CONTINUE; // no preflight -> let pass
-
-        String origin = getNormalizedOrigin(exc);
-
-        // Ordinary non CORS OPTIONS request -> let pass
-        if (origin == null)
-            return CONTINUE;
-
-        String requestMethod = getRequestMethod(exc);
-
-        if (allowAll) {
-            exc.setResponse(noContent().build());
-            setCORSHeader(exc, origin, requestMethod);
-            return RETURN;
-        }
-
-        if (!originAllowed(origin)) {
-            return createProblemDetails(exc, origin, "origin");
-        }
-
-        if (!methodAllowed(requestMethod)) {
-            return createProblemDetails(exc, origin, "method");
-        }
-
-        String requestHeaders = getRequestHeaders(exc);
-        if (!headersAllowed(requestHeaders)) {
-            return createProblemDetails(exc, origin, "headers");
-        }
-
-        if (isWildcardOriginAllowed() && allowCredentials) {
-            return createProblemDetails(exc, origin, "credentials");
-        }
-
-        exc.setResponse(noContent().build());
-        setCORSHeader(exc, origin, requestMethod);
-        return RETURN;
-    }
-
-    private static String getRequestHeaders(Exchange exc) {
-        return exc.getRequest().getHeader().getFirstValue(ACCESS_CONTROL_REQUEST_HEADERS);
-    }
-
-    private static String getRequestMethod(Exchange exc) {
-        return exc.getRequest().getHeader().getFirstValue(ACCESS_CONTROL_REQUEST_METHOD);
-    }
-
-    private static String getNormalizedOrigin(Exchange exc) {
-        return CorsUtil.normalizeOrigin(exc.getRequest().getHeader().getFirstValue(ORIGIN));
-    }
-
-    private static Outcome createProblemDetails(Exchange exc, String origin, String type) {
-        security(false, "cors")
-                .statusCode(403)
-                .addSubType("%s-not-allowed".formatted(type))
-                .detail("The %s '%s' is not allowed by the CORS policy.".formatted(type, origin))
-                .topLevel("origin", origin)
-                .buildAndSetResponse(exc);
-        log.info("CORS request denied: type={}, origin={}", type, origin);
-        return RETURN;
+        return requestHandler.handle(exc);
     }
 
     @Override
     public Outcome handleResponse(Exchange exc) {
-        String origin = getNormalizedOrigin(exc);
-        if (origin == null)
-            return CONTINUE;
-
-        if (allowAll) {
-            setCORSHeader(exc, origin, exc.getRequest().getMethod());
-            return CONTINUE;
-        }
-
-        if (originAllowed(origin)) {
-            setCORSHeader(exc, origin, exc.getRequest().getMethod());
-        }
-
-        // Not allowed => Do not set any allow headers
-        return CONTINUE;
-    }
-
-    private boolean originAllowed(String origin) {
-        if (NULL_STRING.equals(origin)) {
-            return allowedOrigins.contains(NULL_STRING);
-        }
-        return isWildcardOriginAllowed() || allowedOrigins.contains(origin);
-    }
-
-    private boolean methodAllowed(String method) {
-        return method != null && (allowedMethods.contains(method) || allowedMethods.contains(WILDCARD));
-    }
-
-    private boolean headersAllowed(String headers) {
-        if (headers == null)
-            return true;
-        if (allowedHeaders.isEmpty()) return true; // Early exit for efficiency
-
-        return allowedHeaders.containsAll(toLowerCaseSet(parseCommaOrSpaceSeparated(headers)));
-    }
-
-    private void setCORSHeader(Exchange exc, String requestOrigin, String requestedMethod) {
-        Header responseHeader = exc.getResponse().getHeader();
-        String requestedHeaders = getRequestHeaders(exc);
-
-        responseHeader.setValue(ACCESS_CONTROL_ALLOW_ORIGIN, determineAllowOriginHeader(requestOrigin));
-        responseHeader.setValue(ACCESS_CONTROL_ALLOW_METHODS, getAllowedMethods(requestedMethod));
-
-        if (allowAll) {
-            responseHeader.setValue(ACCESS_CONTROL_ALLOW_HEADERS,
-                    requestedHeaders != null ? requestedHeaders.toLowerCase() : "content-type, authorization");
-        } else if (!allowedHeaders.isEmpty()) {
-            responseHeader.setValue(ACCESS_CONTROL_ALLOW_HEADERS,
-                    join( List.copyOf(allowedHeaders)));
-        }
-
-        if (maxAge != null) {
-            responseHeader.setValue(ACCESS_CONTROL_MAX_AGE, maxAge);
-        }
-
-        if (allowCredentials) {
-            responseHeader.setValue(ACCESS_CONTROL_ALLOW_CREDENTIALS, "true");
-        }
-
-        responseHeader.setValue(VARY, VARY_VALUE);
-    }
-
-    private @NotNull String getAllowedMethods(String requestedMethod) {
-        return requestedMethod != null ? requestedMethod : allowedMethodsString;
-    }
-
-    private String determineAllowOriginHeader(String requestOrigin) {
-        return (isWildcardOriginAllowed() && !allowCredentials) ? WILDCARD : requestOrigin;
-    }
-
-    private @NotNull String join(List<String> l) {
-        return String.join(", ", l);
+        return responseHandler.handle(exc);
     }
 
     private boolean isWildcardOriginAllowed() {
@@ -252,19 +119,25 @@ public class CorsInterceptor extends AbstractInterceptor {
 
     /**
      * @description Space-separated list of allowed origins. Use '*' to allow all.
-     * @default *
+     * @default * Allow all origins
      * @example https://example.com https://my.app
      */
     @MCAttribute
     public void setOrigins(String origins) {
-        this.allowedOrigins = stream(origins.split(" "))
+        this.allowedOrigins = stream(origins.split(SPACE))
                 .map(String::trim)
                 .collect(Collectors.toSet());
     }
 
+    public String getOrigins() {
+        return String.join(SPACE, allowedOrigins);
+    }
+
+
+
     /**
      * @description Comma-separated list of allowed HTTP methods.
-     * @default *
+     * @default GET
      * @example GET, POST, PUT
      */
     @MCAttribute
@@ -272,13 +145,24 @@ public class CorsInterceptor extends AbstractInterceptor {
         this.allowedMethods = parseCommaOrSpaceSeparated(methods);
     }
 
+    public Set<String> getMethods() {
+        return allowedMethods;
+    }
+
     /**
      * @description Comma-separated list of allowed request headers.
+     * Content-Type and Content-Length
+     *
      * @example X-Custom-Header, Authorization, Content-Type
+     * @default No headers besides the save headers listed above
      */
     @MCAttribute
     public void setHeaders(String headers) {
         this.allowedHeaders = toLowerCaseSet( parseCommaOrSpaceSeparated(headers));
+    }
+
+    public String getHeaders() {
+        return join(List.copyOf(allowedHeaders));
     }
 
     /**
@@ -290,12 +174,21 @@ public class CorsInterceptor extends AbstractInterceptor {
         this.allowCredentials = credentials;
     }
 
+    public boolean getCredentials() {
+        return allowCredentials;
+    }
+
     /**
      * @description Max age (in seconds) for caching preflight responses.
+     * @default 0 Which means do not cache
      */
     @MCAttribute
-    public void setMaxAge(String maxAge) {
+    public void setMaxAge(int maxAge) {
         this.maxAge = maxAge;
+    }
+
+    public int getMaxAge() {
+        return maxAge;
     }
 
 
@@ -317,21 +210,6 @@ public class CorsInterceptor extends AbstractInterceptor {
         return allowedHeaders;
     }
 
-    public String getHeaders() {
-        return join(List.copyOf(allowedHeaders));
-    }
-
-    public Set<String> getMethods() {
-        return allowedMethods;
-    }
-
-    public boolean isCredentials() {
-        return allowCredentials;
-    }
-
-    public String getMaxAge() {
-        return maxAge;
-    }
 
     @Override
     public String getDisplayName() {

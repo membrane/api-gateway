@@ -32,7 +32,8 @@ public enum Outcome {
 	 */
 	RETURN,
 
-	/**
+    header,
+    /**
 	 * Abort the interceptor chain, start abortion handling.
 	 */
 	ABORT
