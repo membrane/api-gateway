@@ -14,27 +14,25 @@
 
 package com.predic8.membrane.core.interceptor.balancer;
 
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicInteger;
-
-import javax.xml.stream.XMLStreamException;
-import javax.xml.stream.XMLStreamReader;
-import javax.xml.stream.XMLStreamWriter;
-
-import com.predic8.membrane.annot.Required;
-
 import com.google.common.base.Objects;
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.config.AbstractXmlElement;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.proxies.StatisticCollector;
+import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.config.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.proxies.*;
 
+import javax.xml.stream.*;
+import java.util.*;
+import java.util.concurrent.*;
+import java.util.concurrent.atomic.*;
+
+// TODO
+// - healthUrl="http://..."
+// - priority=1
+//     1 = highest (1-10)
 @MCElement(name="node", topLevel=false)
 public class Node extends AbstractXmlElement {
 
-	public static enum Status {
+	public enum Status {
 		UP, DOWN, TAKEOUT;
 	}
 

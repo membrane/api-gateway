@@ -4,6 +4,7 @@ import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.annot.Required;
 import com.predic8.membrane.core.Router;
+import org.jetbrains.annotations.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeansException;
@@ -20,6 +21,8 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 import static com.predic8.membrane.core.interceptor.balancer.BalancerUtil.collectClusters;
+import static com.predic8.membrane.core.interceptor.balancer.Node.Status.DOWN;
+import static com.predic8.membrane.core.interceptor.balancer.Node.Status.UP;
 
 /**
  * @description Configuration element for scheduling periodic cluster health checks.
@@ -39,30 +42,39 @@ public class ClusterHealthMonitor implements ApplicationContextAware, Initializi
         List<Cluster> clusters = collectClusters(router);
         clusters.forEach(cluster -> {
             log.info("Checking cluster '{}'", cluster.getName());
-            cluster.getNodes().forEach(this::processNode);
+            cluster.getNodes().forEach(node -> {
+                node.setStatus(isHealthy(node));
+            });
         });
         log.info("Health Check complete");
     };
 
-    private void processNode(Node node) {
+    private Node.Status isHealthy(Node node) {
         String host = node.getHost();
         int port = node.getPort();
-        String url = "http://" + host + ":" + port + "/";
-        int status = -1;
         try {
-            HttpURLConnection conn = (HttpURLConnection) new URL(url).openConnection();
+
+            // TODO
+            HttpURLConnection conn = (HttpURLConnection) new URL(getUrl(host, port)).openConnection();
             conn.setRequestMethod("GET");
             conn.setConnectTimeout(2000);
             conn.setReadTimeout(2000);
-            status = conn.getResponseCode();
+
+            int status = conn.getResponseCode();
             if (status >= 500) {
                 log.error("Node {}:{} returned HTTP {}", host, port, status);
-            } else {
-                log.info("Node {}:{} returned HTTP {}", host, port, status);
+                return DOWN;
             }
+            log.info("Node {}:{} returned HTTP {}", host, port, status);
+            return UP;
         } catch (IOException e) {
             log.error("Failed to call node {}:{} - {}", host, port, e.toString());
+            return DOWN;
         }
+    }
+
+    private static @NotNull String getUrl(String host, int port) {
+        return "http://" + host + ":" + port + "/";
     }
 
     private void init() {
@@ -92,9 +104,10 @@ public class ClusterHealthMonitor implements ApplicationContextAware, Initializi
     }
 
     /**
-     * @description Sets the health check interval (in seconds).
      * @param interval the interval between health checks, in seconds
+     * @description Sets the health check interval (in seconds).
      * @example <lbClusterHeathMonitor interval="30"/>
+     * @default 10
      */
     @Required
     @MCAttribute
