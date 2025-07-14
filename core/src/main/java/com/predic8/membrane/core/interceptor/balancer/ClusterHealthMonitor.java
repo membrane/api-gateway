@@ -4,6 +4,7 @@ import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.interceptor.balancer.Node.*;
 import com.predic8.membrane.core.transport.http.*;
 import org.jetbrains.annotations.*;
 import org.slf4j.*;
@@ -51,7 +52,7 @@ public class ClusterHealthMonitor implements ApplicationContextAware, Initializi
         log.info("Health Check complete");
     };
 
-    private Node.Status isHealthy(Node node) {
+    private Status isHealthy(Node node) {
         String url = getNodeHealthEndpoint(node);
         try {
             return getStatus(node,doCall(url)) ;
@@ -61,7 +62,7 @@ public class ClusterHealthMonitor implements ApplicationContextAware, Initializi
         }
     }
 
-    private static Node.@Nullable Status getStatus(Node node, Exchange exc) {
+    private static Status getStatus(Node node, Exchange exc) {
         try {
             int status = exc.getResponse().getStatusCode();
             if (status >= 300) {
