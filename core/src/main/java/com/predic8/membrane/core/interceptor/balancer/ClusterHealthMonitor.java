@@ -58,7 +58,7 @@ public class ClusterHealthMonitor implements ApplicationContextAware, Initializi
             exc = doCall(url);
         } catch (Exception e) {
             log.error("Error Calling: {}, {}", url, e);
-            throw new RuntimeException(e);
+            return DOWN;
         }
 
         try {
