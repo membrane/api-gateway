@@ -6,7 +6,9 @@ import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.balancer.Node.*;
 import com.predic8.membrane.core.transport.http.*;
+import com.predic8.membrane.core.util.*;
 import org.jetbrains.annotations.*;
+import org.slf4j.Logger;
 import org.slf4j.*;
 import org.springframework.beans.*;
 import org.springframework.beans.factory.*;
@@ -16,8 +18,8 @@ import java.util.concurrent.*;
 
 import static com.predic8.membrane.core.interceptor.balancer.BalancerUtil.*;
 import static com.predic8.membrane.core.interceptor.balancer.Node.Status.*;
-import static java.lang.System.currentTimeMillis;
-import static java.util.concurrent.TimeUnit.SECONDS;
+import static java.lang.System.*;
+import static java.util.concurrent.TimeUnit.*;
 
 /**
  * @description
@@ -41,12 +43,12 @@ public class ClusterHealthMonitor implements ApplicationContextAware, Initializi
 
     private void init() {
         if (interval <= 0)
-            throw new IllegalStateException("'interval' must be > 0");
+            throw new ConfigurationException("lbClusterHealthMonitor: 'interval' must be > 0");
         log.debug("Starting HealthMonitor with interval of {} seconds", interval);
         scheduler = Executors.newSingleThreadScheduledExecutor();
         scheduler.scheduleAtFixedRate(
                 () -> new Thread(healthCheckTask, "HealthCheckThread").start(),
-                5, interval, SECONDS
+                interval, interval, SECONDS
         );
     }
 
@@ -80,7 +82,6 @@ public class ClusterHealthMonitor implements ApplicationContextAware, Initializi
             if (node.isDown())
                 node.setLastUpTime(currentTimeMillis());
             return UP;
-
         } catch (Exception e) {
             log.error("Unexpected error during health check for node {}:{} - marking DOWN, {}", node.getHost(), node.getPort(), e.getMessage());
             return DOWN;

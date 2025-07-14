@@ -1,19 +1,17 @@
 package com.predic8.membrane.core.interceptor.balancer;
 
-import com.predic8.membrane.core.Router;
-import com.predic8.membrane.core.config.AbstractXmlElement;
-import com.predic8.membrane.core.exchange.AbstractExchange;
-import org.jetbrains.annotations.NotNull;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.config.*;
+import com.predic8.membrane.core.exchange.*;
+import org.jetbrains.annotations.*;
+import org.slf4j.*;
 
-import java.util.List;
-import java.util.TreeMap;
-import java.util.concurrent.ThreadLocalRandom;
-import java.util.stream.Collectors;
+import java.util.*;
+import java.util.concurrent.*;
+import java.util.stream.*;
 
-import static com.predic8.membrane.core.interceptor.balancer.Node.Status.UP;
-import static java.util.Comparator.comparingInt;
+import static com.predic8.membrane.core.interceptor.balancer.Node.Status.*;
+import static java.util.Comparator.comparing;
 
 
 /**
@@ -32,28 +30,27 @@ public class PriorityStrategy extends AbstractXmlElement implements DispatchingS
 
     @Override
     public Node dispatch(LoadBalancingInterceptor interceptor, AbstractExchange exc) throws EmptyNodeListException {
-        List<Node> endpoints = interceptor.getEndpoints();
-        if (endpoints.isEmpty()) {
-            throw new EmptyNodeListException();
-        }
-        log.debug("Dispatching endpoints: {}", endpoints);
-        endpoints.sort(comparingInt(Node::getPriority));
-
-        for (List<Node> group : groupByPriority(endpoints).values()) {
+        for (List<Node> group : groupByPriority(getNodes(interceptor)).values()) {
             List<Node> up = getUpNodes(group);
             log.debug("Priority {}: {} nodes up out of {}", group.getFirst().getPriority(), up.size(), group.size());
             if (up.isEmpty())
                 continue;
-
             if (up.size() == 1) {
                 return up.getFirst();
             }
             return up.get(ThreadLocalRandom.current().nextInt(up.size()));
-
         }
-        Node fallback = endpoints.getFirst();
+        Node fallback = getNodes(interceptor).getFirst();
         log.error("No UP nodes found in any priority group, falling back to {}", fallback);
         return fallback;
+    }
+
+    private static @NotNull List<Node> getNodes(LoadBalancingInterceptor interceptor) throws EmptyNodeListException {
+        List<Node> endpoints = interceptor.getEndpoints();
+        if (endpoints.isEmpty()) {
+            throw new EmptyNodeListException();
+        }
+        return endpoints;
     }
 
     private static @NotNull List<Node> getUpNodes(List<Node> group) {
@@ -64,6 +61,7 @@ public class PriorityStrategy extends AbstractXmlElement implements DispatchingS
 
     static @NotNull TreeMap<Integer, List<Node>> groupByPriority(List<Node> endpoints) {
         return endpoints.stream()
+                .sorted(comparing(Node::getPriority))
                 .collect(Collectors.groupingBy(
                         Node::getPriority,
                         TreeMap::new,
