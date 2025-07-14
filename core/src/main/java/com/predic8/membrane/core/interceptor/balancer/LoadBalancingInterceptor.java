@@ -27,8 +27,10 @@ import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 
 /**
- * @description Performs load-balancing between several nodes. Nodes sharing session state may be bundled into a cluster.
- * @explanation May only be used as interceptor in a ServiceProxy.
+ * @description Performs load-balancing between several nodes according
+ * to a configurable dispatch strategy.
+ * Nodes sharing a session state may be bundled into a cluster.
+ * It May only be used in an api.
  * @topic 2. Enterprise Integration Patterns
  */
 @MCElement(name = "balancer")
