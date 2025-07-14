@@ -34,7 +34,7 @@ public class ClusterHealthMonitor implements ApplicationContextAware, Initializi
     private static final Logger log = LoggerFactory.getLogger(ClusterHealthMonitor.class);
 
     private Router router;
-    private int interval;
+    private int interval = 10;
     private ScheduledExecutorService scheduler;
     private static final HttpClient client = new HttpClient();
 
