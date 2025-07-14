@@ -26,7 +26,6 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.*;
 
 // TODO
-// - healthUrl="http://..."
 // - priority=1
 //     1 = highest (1-10)
 @MCElement(name="node", topLevel=false)
@@ -38,6 +37,8 @@ public class Node extends AbstractXmlElement {
 
 	private String host;
 	private int port;
+	private String healthUrl;
+	private int priority = 10;
 
 	private volatile long lastUpTime;
 	private volatile Status status;
@@ -121,6 +122,32 @@ public class Node extends AbstractXmlElement {
 	@MCAttribute
 	public void setPort(int port) {
 		this.port = port;
+	}
+
+	/**
+	 * @description Sets the node's health-check URL.  If not set, the default URL derived from host and port will be used.
+	 * @param healthUrl the full HTTP(s) endpoint for this node's health check
+	 * @example &lt;node host="localhost" port="8080" healthUrl="http://localhost:8080/health"/&gt;
+	 */
+	@MCAttribute
+	public void setHealthUrl(String healthUrl) {
+		this.healthUrl = healthUrl;
+	}
+
+	public String getHealthUrl() {
+		return healthUrl;
+	}
+
+	/**
+	 * @description Determines this node's priority within the cluster. Lower values mean higher priority.
+	 */
+	@MCAttribute
+	public void setPriority(int priority) {
+		this.priority = priority;
+	}
+
+	public int getPriority() {
+		return priority;
 	}
 
 	public boolean isUp() {

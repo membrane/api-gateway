@@ -43,9 +43,7 @@ public class ClusterHealthMonitor implements ApplicationContextAware, Initializi
         List<Cluster> clusters = collectClusters(router);
         clusters.forEach(cluster -> {
             log.info("Checking cluster '{}'", cluster.getName());
-            cluster.getNodes().forEach(node -> {
-                node.setStatus(isHealthy(node));
-            });
+            cluster.getNodes().forEach(node -> node.setStatus(isHealthy(node)));
         });
         log.info("Health Check complete");
     };
