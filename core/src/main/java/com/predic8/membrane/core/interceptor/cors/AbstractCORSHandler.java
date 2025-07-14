@@ -22,7 +22,10 @@ public abstract class AbstractCORSHandler {
 
     private static final Logger log = LoggerFactory.getLogger(AbstractCORSHandler.class);
 
-    public static final String VARY_VALUE = ORIGIN + ", " + ACCESS_CONTROL_REQUEST_METHOD + ", " + ACCESS_CONTROL_REQUEST_HEADERS;
+    /**
+     * Only include origin in vary header (See fetch spec)
+     */
+    public static final String VARY_VALUE = ORIGIN;
 
     public static final String NULL_STRING = "null";
 
@@ -89,6 +92,7 @@ public abstract class AbstractCORSHandler {
                 .allowOrigin(determineAllowOriginHeader(requestOrigin))
                 .allowMethods(getAllowedMethods(getRequestMethod(exc)))
                 .allowHeaders(getAllowHeaders(getAccessControlRequestHeaderValue(exc)))
+                .exposeHeaders(interceptor.getExposeHeaders())
                 .maxAge(interceptor.getMaxAge())
                 .allowCredentials(interceptor.getCredentials())
                 .build();
@@ -123,6 +127,14 @@ public abstract class AbstractCORSHandler {
             if (requestHeader.contains(ACCESS_CONTROL_REQUEST_HEADERS)) {
                 responseHeader.setValue(ACCESS_CONTROL_ALLOW_HEADERS, allowedHeaders);
             }
+            return this;
+        }
+
+        ResponseHeaderBuilder exposeHeaders(String exposeHeaders) {
+            if (exposeHeaders.isEmpty())
+                return this;
+
+            responseHeader.setValue(ACCESS_CONTROL_EXPOSE_HEADERS, exposeHeaders);
             return this;
         }
 

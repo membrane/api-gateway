@@ -27,6 +27,13 @@ import static com.predic8.membrane.core.interceptor.cors.CorsUtil.*;
 import static java.util.Arrays.*;
 
 
+//
+// 2. Safe-listed headers not explicitly handled
+// The spec defines certain headers as always allowed (Accept, Accept-Language, Content-Language, and Content-Type with specific values), but the implementation doesn't explicitly handle these. When no headers are configured, it appears to reject all non-configured headers rather than allowing the safe-listed ones.
+//
+// Returning only requested method? What is right?
+
+
 /**
  * @description <p>Plugin that allows Cross-Origin Resource Sharing (CORS). It answers preflight
  * requests with the options method and sets CORS headers. Additionally, requests
@@ -69,13 +76,14 @@ public class CorsInterceptor extends AbstractInterceptor {
     private Set<String> allowedOrigins = Set.of(WILDCARD);
     private Set<String> allowedMethods = Set.of(WILDCARD);
 
-    private Set<String> allowedHeaders = new HashSet<>();
+    private Set<String> allowedHeaders = Collections.emptySet();
+    private Set<String> exposeHeaders = new HashSet<>();
     private boolean allowCredentials;
 
     // Default from https://fetch.spec.whatwg.org/#cors-preflight-fetch
     private int maxAge = 5;
 
-    private PreflightHandler requestHandler;
+    private PreflightHandler preflightHandler;
     private ResponseHandler responseHandler;
 
     @Override
@@ -87,13 +95,13 @@ public class CorsInterceptor extends AbstractInterceptor {
             throw new ConfigurationException("Access-Control-Allow-Credentials in combination with origin wildcard is forbidden");
         }
 
-        requestHandler = new PreflightHandler(this);
+        preflightHandler = new PreflightHandler(this);
         responseHandler = new ResponseHandler(this);
     }
 
     @Override
     public Outcome handleRequest(Exchange exc) {
-        return requestHandler.handle(exc);
+        return preflightHandler.handle(exc);
     }
 
     @Override
@@ -163,6 +171,15 @@ public class CorsInterceptor extends AbstractInterceptor {
 
     public String getHeaders() {
         return join(List.copyOf(allowedHeaders));
+    }
+
+    @MCAttribute
+    public void setExposeHeaders(String headers) {
+        this.allowedHeaders = toLowerCaseSet( parseCommaOrSpaceSeparated(headers));
+    }
+
+    public String getExposeHeaders() {
+        return join(List.copyOf(exposeHeaders));
     }
 
     /**

@@ -16,7 +16,6 @@ public class ResponseHandler extends AbstractCORSHandler {
 
         if (interceptor.isAllowAll() || originAllowed(origin)) {
             setCORSHeader(exc, origin);
-            return CONTINUE;
         }
 
         // Not allowed => Do not set any allow headers

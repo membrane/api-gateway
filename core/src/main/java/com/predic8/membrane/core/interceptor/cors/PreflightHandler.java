@@ -2,6 +2,9 @@ package com.predic8.membrane.core.interceptor.cors;
 
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.interceptor.*;
+import org.slf4j.*;
+
+import java.util.*;
 
 import static com.predic8.membrane.core.http.Response.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
@@ -10,6 +13,18 @@ import static com.predic8.membrane.core.interceptor.cors.CorsUtil.*;
 import static org.springframework.http.HttpHeaders.*;
 
 public class PreflightHandler extends AbstractCORSHandler {
+
+    /**
+     * From https://fetch.spec.whatwg.org/#terminology-headers
+     */
+    public static final Set<String> SAFE_HEADERS = Set.of(
+                "accept",
+                "accept-language",
+                "content-language",
+                "content-type",
+                "range"
+                );
+    private static final Logger log = LoggerFactory.getLogger(PreflightHandler.class);
 
     public PreflightHandler(CorsInterceptor interceptor) {
         super(interceptor);
@@ -54,14 +69,22 @@ public class PreflightHandler extends AbstractCORSHandler {
      * @return true if all requested headers are allowed, false otherwise
      *
      */
-    private boolean headersAllowed(String headers) {
+    public boolean headersAllowed(String headers) {
         // There are no headers
         if (headers == null)
             return true;
 
-        if (interceptor.getAllowedHeaders().isEmpty()) return false; // Allow all headers when none configured
+        Set<String> allowedHeaders = interceptor.getAllowedHeaders();
 
-        return interceptor.getAllowedHeaders().containsAll(toLowerCaseSet(parseCommaOrSpaceSeparated(headers)));
+        for(String header : toLowerCaseSet(parseCommaOrSpaceSeparated(headers))) {
+            if (SAFE_HEADERS.contains(header))
+                continue;
+            if (allowedHeaders.contains(header))
+                continue;
+            log.debug("header '{}' not allowed!", header);
+            return false;
+        }
+        return true;
     }
 
     /*
