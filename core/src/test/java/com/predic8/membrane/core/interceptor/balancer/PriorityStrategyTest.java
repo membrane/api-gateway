@@ -5,23 +5,23 @@ import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.TreeMap;
 
 import static com.predic8.membrane.core.interceptor.balancer.Node.Status.DOWN;
 import static com.predic8.membrane.core.interceptor.balancer.Node.Status.UP;
-import static org.junit.jupiter.api.Assertions.assertSame;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 class PriorityStrategyTest {
 
     private PriorityStrategy strategy;
 
     @BeforeEach
-    void setUp() {
+    public void setUp() {
         strategy = new PriorityStrategy();
     }
 
     @Test
-    void priority1() throws Exception {
+    public void strategy() throws Exception {
         Node n1 = new Node("host1", 1);
         n1.setStatus(UP);
         n1.setPriority(1);
@@ -47,30 +47,30 @@ class PriorityStrategyTest {
         n2.setStatus(DOWN);
         n1.setStatus(UP);
         assertSame(n1, strategy.dispatch(interceptor, null));
+        n1.setStatus(DOWN);
+        assertSame(n3, strategy.dispatch(interceptor, null));
     }
 
     @Test
-    void priority2() throws Exception {
-        Node n1 = new Node("host1", 1);
-        n1.setStatus(DOWN);
-        n1.setPriority(1);
-
-        Node n2 = new Node("host2", 2);
-        n2.setStatus(DOWN);
+    void groupByPriority() {
+        Node n1 = new Node("n1", 1);
+        Node n2 = new Node("n2", 2);
+        Node n3 = new Node("n3", 3);
+        n1.setPriority(2);
         n2.setPriority(1);
-
-        Node n3 = new Node("host3", 3);
-        n3.setStatus(UP);
         n3.setPriority(2);
 
-        LoadBalancingInterceptor interceptor = new LoadBalancingInterceptor() {
-            @Override
-            public List<Node> getEndpoints() {
-                return Arrays.asList(n1, n2, n3);
-            }
-        };
+        TreeMap<Integer, List<Node>> map = PriorityStrategy.groupByPriority(List.of(n1, n2, n3));
 
-        Node result = strategy.dispatch(interceptor, null);
-        assertSame(n3, result);
+        assertEquals(2, map.size());
+        assertTrue(map.containsKey(1));
+        assertTrue(map.containsKey(2));
+
+        List<Node> p1 = map.get(1);
+        List<Node> p2 = map.get(2);
+
+        assertEquals(List.of(n2), p1);
+        assertTrue(p2.containsAll(List.of(n1, n3)));
     }
+
 }

@@ -49,7 +49,7 @@ public class LoadBalancingInterceptorTest {
 	protected HttpRouter balancer;
 
     @BeforeEach
-	void setUp() throws Exception {
+	public void setUp() throws Exception {
         int port2k = getFreePortEqualAbove(2000);
         int port3k = getFreePortEqualAbove(3000);
 		service1 = new HttpRouter();

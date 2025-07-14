@@ -35,7 +35,7 @@ public class ClusterHealthMonitor implements ApplicationContextAware, Initializi
     private void init() {
         if (interval <= 0)
             throw new IllegalStateException("'interval' must be > 0");
-        log.info("Starting HealthMonitor with interval of {} seconds", interval);
+        log.debug("Starting HealthMonitor with interval of {} seconds", interval);
         scheduler = Executors.newSingleThreadScheduledExecutor();
         scheduler.scheduleAtFixedRate(
                 () -> new Thread(healthCheckTask, "HealthCheckThread").start(),
@@ -44,12 +44,12 @@ public class ClusterHealthMonitor implements ApplicationContextAware, Initializi
     }
 
     private final Runnable healthCheckTask = () -> {
-        log.info("Starting Load Balancer Health Check");
+        log.debug("Starting Load Balancer Health Check");
         collectClusters(router).forEach(cluster -> {
-            log.info("Checking cluster '{}'", cluster.getName());
+            log.debug("Checking cluster '{}'", cluster.getName());
             cluster.getNodes().forEach(node -> node.setStatus(isHealthy(node)));
         });
-        log.info("Health Check complete");
+        log.debug("Health Check complete");
     };
 
     private Status isHealthy(Node node) {
@@ -69,13 +69,13 @@ public class ClusterHealthMonitor implements ApplicationContextAware, Initializi
                 log.error("Node {}:{} health check failed with HTTP {}", node.getHost(), node.getPort(), status);
                 return DOWN;
             }
-            log.info("Node {}:{} is healthy (HTTP {})", node.getHost(), node.getPort(), status);
+            log.debug("Node {}:{} is healthy (HTTP {})", node.getHost(), node.getPort(), status);
             if (node.isDown())
                 node.setLastUpTime(currentTimeMillis());
             return UP;
 
         } catch (Exception e) {
-            log.error("Unexpected error during health check for node {}:{} - marking DOWN", node.getHost(), node.getPort(), e);
+            log.error("Unexpected error during health check for node {}:{} - marking DOWN, {}", node.getHost(), node.getPort(), e.getMessage());
             return DOWN;
         }
     }
