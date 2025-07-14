@@ -55,9 +55,8 @@ class CorsInterceptorTest {
 
         @Test
         void parseOriginSpaces() {
-            i.setOrigins("foo bar baz");
-            i.init();
-            assertEquals(Set.of("foo", "bar", "baz"), i.getAllowedOrigins());
+            i.setOrigins("http://foo.example.com http://bar.example.com http://baz.example.com");
+            assertEquals(Set.of("http://foo.example.com", "http://bar.example.com", "http://baz.example.com"), i.getAllowedOrigins());
         }
 
         @Test
@@ -251,7 +250,7 @@ class CorsInterceptorTest {
         @Test
         void explicitlyAllowedNullOriginPreflight() throws Exception {
             i.init();
-            i.setOrigins("foo bar null");
+            i.setOrigins("http://foo.example.com https://bar.example.com null");
 
             Exchange exc = makePreflight(createPreflight("null", METHOD_POST));
 

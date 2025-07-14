@@ -22,8 +22,9 @@ import org.slf4j.*;
 
 import java.util.*;
 
+import static com.predic8.membrane.core.interceptor.cors.AbstractCORSHandler.*;
 import static com.predic8.membrane.core.interceptor.cors.CorsUtil.*;
-import static com.predic8.membrane.core.util.UrlNormalizer.normalizeBaseUrl;
+import static com.predic8.membrane.core.util.UrlNormalizer.*;
 
 
 //
@@ -130,8 +131,20 @@ public class CorsInterceptor extends AbstractInterceptor {
     public void setOrigins(String origins) {
         try {
             Set<String> set = new HashSet<>();
-            for (String s : splitBySpace(origins)) {
-                set.add(normalizeBaseUrl(s));
+            for (String origin : splitBySpace(origins)) {
+                switch (origin) {
+                    case WILDCARD: set.add(WILDCARD); break;
+                    case NULL_STRING: set.add(NULL_STRING); break;
+                    default: {
+                        try {
+                            set.add(normalizeBaseUrl(origin));
+                        } catch (Exception e) {
+                            String msg = "Illegal value for cors origin: %s. Use http://..., https://... or null".formatted(origin);
+                            log.error(msg);
+                            throw new ConfigurationException(msg);
+                        }
+                    }
+                }
             }
             this.allowedOrigins = set;
         } catch (Exception e) {
