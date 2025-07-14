@@ -1,10 +1,12 @@
-# Configuration using the Spring Expression Language
+# Configuration using Spring Framework
 
-This example shows how to use the **Spring Expression Language (SpEL)** and environment variables to configure the
+This example shows how to use the **Spring Framework** and environment variables to configure the
 Membrane API Gateway in a dynamic, flexible way.
 
 For more information on SpEL, see the official documentation:  
 [Spring Expression Language Reference](http://docs.spring.io/spring/docs/3.1.x/spring-framework-reference/html/expressions.html)
+
+TODO: Links to Spring 
 
 ---
 

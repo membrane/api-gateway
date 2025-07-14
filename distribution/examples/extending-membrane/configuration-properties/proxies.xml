@@ -7,7 +7,8 @@
         http://membrane-soa.org/proxies/1/ http://membrane-soa.org/schemas/proxies-1.xsd
         http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util-3.1.xsd http://www.springframework.org/schema/context https://www.springframework.org/schema/context/spring-context.xsd">
 
-    <context:property-placeholder location="file:/non-existent" system-properties-mode="ENVIRONMENT" ignore-resource-not-found="true" ignore-unresolvable="true" />
+
+    <context:property-placeholder location="file:/non-existent" ignore-resource-not-found="true" ignore-unresolvable="true" />
 
     <util:properties id="myProp">
         <spring:prop key="LISTEN_PORT">2000</spring:prop>               <!-- int -->
@@ -17,7 +18,7 @@
     </util:properties>
 
     <router>
-        <api port="#{myProp.LISTEN_PORT}">
+        <api port="#{myProp.LISTEN_PORT}" name="#{myProp.name}">
             <path isRegExp="#{myProp.PATH_RE}">.*</path>
             <target host="#{myProp.DEST_HOST}" port="#{myProp.DEST_PORT}"/>
         </api>
