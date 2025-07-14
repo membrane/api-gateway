@@ -21,10 +21,9 @@ import com.predic8.membrane.core.util.*;
 import org.slf4j.*;
 
 import java.util.*;
-import java.util.stream.*;
 
 import static com.predic8.membrane.core.interceptor.cors.CorsUtil.*;
-import static java.util.Arrays.*;
+import static com.predic8.membrane.core.util.UrlNormalizer.normalizeBaseUrl;
 
 
 //
@@ -38,9 +37,9 @@ import static java.util.Arrays.*;
  * @description <p>Plugin that allows Cross-Origin Resource Sharing (CORS). It answers preflight
  * requests with the options method and sets CORS headers. Additionally, requests
  * are validated against the CORS configuration.</p>
- *
+ * <p>
  * The following headers are regarded save: Accept, Accept-Language, Content-Language, Content-Type
- *
+ * </p>
  * The plugin follow the <a href="https://fetch.spec.whatwg.org/#cors-preflight-fetch">Fetch, Living Standard by WhatWG</a>
  *
  * <p>For a detailed explanation of CORS, see:</p>
@@ -49,7 +48,6 @@ import static java.util.Arrays.*;
  *         CORS Guide for API Developers
  *     </a></li>
  * </ul>
- *
  * @topic 3. Security and Validation
  */
 @MCElement(name = "cors")
@@ -58,13 +56,11 @@ public class CorsInterceptor extends AbstractInterceptor {
     /**
      * Implementation Notes:
      * - There is no Access-Control-Request-Credentials header in the spec!
-     *
      */
 
     private static final Logger log = LoggerFactory.getLogger(CorsInterceptor.class);
 
     public static final String WILDCARD = "*";
-    public static final String SPACE = " ";
 
     /**
      * If true, all origins, methods and headers are allowed **without validation**.
@@ -132,15 +128,21 @@ public class CorsInterceptor extends AbstractInterceptor {
      */
     @MCAttribute
     public void setOrigins(String origins) {
-        this.allowedOrigins = stream(origins.split(SPACE))
-                .map(String::trim)
-                .collect(Collectors.toSet());
+        try {
+            Set<String> set = new HashSet<>();
+            for (String s : splitBySpace(origins)) {
+                set.add(normalizeBaseUrl(s));
+            }
+            this.allowedOrigins = set;
+        } catch (Exception e) {
+            log.error("Failed to parse origins list:", origins);
+            log.error(e.getMessage(), e);
+        }
     }
 
     public String getOrigins() {
         return String.join(SPACE, allowedOrigins);
     }
-
 
 
     /**
@@ -160,22 +162,27 @@ public class CorsInterceptor extends AbstractInterceptor {
     /**
      * @description Comma-separated list of allowed request headers.
      * Content-Type and Content-Length
-     *
      * @example X-Custom-Header, Authorization, Content-Type
      * @default No headers besides the save headers listed above
      */
     @MCAttribute
     public void setHeaders(String headers) {
-        this.allowedHeaders = toLowerCaseSet( parseCommaOrSpaceSeparated(headers));
+        this.allowedHeaders = toLowerCaseSet(parseCommaOrSpaceSeparated(headers));
     }
 
     public String getHeaders() {
         return join(List.copyOf(allowedHeaders));
     }
 
+    /**
+     * Tells the browser which response headers it?s allowed to expose to JavaScript.
+     *
+     * @param headers
+     * @default null None
+     */
     @MCAttribute
     public void setExposeHeaders(String headers) {
-        this.allowedHeaders = toLowerCaseSet( parseCommaOrSpaceSeparated(headers));
+        this.exposeHeaders = toLowerCaseSet(parseCommaOrSpaceSeparated(headers));
     }
 
     public String getExposeHeaders() {

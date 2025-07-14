@@ -6,11 +6,13 @@ import org.jetbrains.annotations.*;
 import java.util.*;
 import java.util.stream.*;
 
-import static com.predic8.membrane.core.http.Header.ORIGIN;
+import static com.predic8.membrane.core.http.Header.*;
 import static java.util.Arrays.*;
 import static java.util.stream.Collectors.*;
 
 public class CorsUtil {
+
+    public static final String SPACE = " ";
 
     /**
      * Parses a header value string into a list of trimmed, non-empty, lowercase string tokens.
@@ -62,5 +64,12 @@ public class CorsUtil {
 
     public static @NotNull String join(List<String> l) {
         return String.join(", ", l);
+    }
+
+    public static @NotNull Set<String> splitBySpace(String origins) {
+        return stream(origins.split(SPACE))
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .collect(Collectors.toSet());
     }
 }

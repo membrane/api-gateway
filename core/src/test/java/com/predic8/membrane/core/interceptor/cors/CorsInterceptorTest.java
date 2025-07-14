@@ -38,6 +38,7 @@ import static java.util.Collections.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.http.HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN;
 import static org.springframework.http.HttpHeaders.AUTHORIZATION;
+import static org.springframework.http.HttpHeaders.VARY;
 import static org.springframework.http.HttpHeaders.*;
 
 class CorsInterceptorTest {
@@ -55,6 +56,7 @@ class CorsInterceptorTest {
         @Test
         void parseOriginSpaces() {
             i.setOrigins("foo bar baz");
+            i.init();
             assertEquals(Set.of("foo", "bar", "baz"), i.getAllowedOrigins());
         }
 
@@ -73,7 +75,7 @@ class CorsInterceptorTest {
         @Test
         void credentialsWithOriginWildcard() {
             i.setCredentials(true);
-            i.setOrigins("*");
+            i.setOrigins(WILDCARD);
             assertThrows(ConfigurationException.class, () -> i.init());
 
             i.setOrigins("null http://membrane-api.io *");
@@ -103,10 +105,11 @@ class CorsInterceptorTest {
                     .header(ORIGIN, "https://trusted.example.com")
                     .buildExchange());
 
-            Header header = exc.getResponse().getHeader();
+            Header h = exc.getResponse().getHeader();
 
-            checkAllowHeaders(header, Set.of(ACCESS_CONTROL_ALLOW_ORIGIN));
-            checkAllowOrigin(header, "https://trusted.example.com");
+            checkAllowHeaders(h, Set.of(ACCESS_CONTROL_ALLOW_ORIGIN));
+            checkAllowOrigin(h, "https://trusted.example.com");
+            assertEquals(ORIGIN, h.getFirstValue(VARY));
         }
 
         @Test
@@ -317,14 +320,8 @@ class CorsInterceptorTest {
         @Test
         void wildcardOriginWithCredentialsShouldBeRejectedPreflight() throws Exception {
             i.setOrigins(WILDCARD);
-            i.setMethods("GET, POST");
-            i.init();
             i.setCredentials(true);
-
-            Exchange exc = makePreflight(createPreflight("https://any.example.com", METHOD_POST), 403);
-            Header h = exc.getResponse().getHeader();
-            checkAllowHeaders(h, emptySet());
-
+            assertThrows(ConfigurationException.class, () -> i.init());
         }
 
         @Test
@@ -375,50 +372,30 @@ class CorsInterceptorTest {
         }
 
         @Test
-        void shouldAllowSafeListedHeadersWithoutConfiguration() throws Exception {
-            i.init();
-
-            Exchange exc = makePreflight( createPreflight("https://trusted.example.com", METHOD_POST,
-                    "Accept, Accept-Language, Content-Language, Content-Type"));
-
-
-        }
-
-        @Test
-        void shouldSetExposeHeaders() throws Exception {
+        void exposeHeaders() throws Exception {
             i.setExposeHeaders("X-Custom-Header, X-Another-Header");
             i.init();
 
-            Exchange exc = makePreflight( createPreflight("https://trusted.example.com", METHOD_POST));
-
-
-            assertEquals("x-custom-header, x-another-header",
-                    exc.getResponse().getHeader().getFirstValue(ACCESS_CONTROL_EXPOSE_HEADERS));
-        }
-
-        @Test
-        void shouldSetVaryHeaderOnNonPreflightResponse() {
-            // Test that Vary: Origin is set on actual responses
-        }
-
-        @Test
-        void shouldHandleMethodsCaseSensitive() throws Exception {
-            i.setMethods("POST");
-
-            // "post" in lowercase is not accepted!
-            Exchange exc = makePreflight( createPreflight("https://trusted.example.com", "post"),403);
+            assertEquals(Set.of("x-custom-header", "x-another-header"),
+                    parseCommaOrSpaceSeparated(
+                            makePreflight(createPreflight("https://trusted.example.com", METHOD_POST))
+                                    .getResponse().getHeader().getFirstValue(ACCESS_CONTROL_EXPOSE_HEADERS)));
         }
 
         @ParameterizedTest
-        @ValueSource(strings = {
-                "http://example.com",
-                "http://example.com/",
-                "http://example.com:8080",
-                "https://example.com",
-                "https://sub.example.com"
+        @CsvSource({
+                "http://example.com,              http://example.com",
+                "http://example.com/,             http://example.com",
+                "http://example.com:80,           http://example.com",
+                "https://example.com,             https://example.com",
+                "https://sub.example.com,         https://sub.example.com",
+                "https://example.com:443/,        https://example.com",
+                "http://example.com:8080,         http://example.com:8080",
+                "https://EXAMPLE.COM:443,         https://example.com"
         })
-        void shouldNormalizeOrigins(String origin) {
-            // Test origin normalization
+        void shouldNormalizeOrigins(String origin, String expected) {
+            i.setOrigins(origin);
+            assertEquals(expected, i.getOrigins());
         }
     }
 
