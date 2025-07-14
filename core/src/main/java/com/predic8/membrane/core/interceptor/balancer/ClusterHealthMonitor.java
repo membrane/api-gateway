@@ -19,7 +19,13 @@ import static com.predic8.membrane.core.interceptor.balancer.Node.Status.*;
 import static java.lang.System.currentTimeMillis;
 
 /**
- * @description Configuration element for scheduling periodic cluster health checks.
+ * @description
+ * Periodically checks the health of all clusters registered
+ * on the router and updates each node status accordingly.
+ * When initialized, it schedules a task to call each node's health
+ * endpoint and marks nodes as UP or DOWN based on the HTTP response.
+ * This ensures the load balancer always has up-to-date status for routing decisions.
+ *
  * @topic 4. Monitoring, Logging and Statistics
  */
 @MCElement(name = "lbClusterHeathMonitor")
@@ -114,7 +120,7 @@ public class ClusterHealthMonitor implements ApplicationContextAware, Initializi
     /**
      * @param interval the interval between health checks, in seconds
      * @description Sets the health check interval (in seconds).
-     * @example <lbClusterHeathMonitor interval="30"/>
+     * @example 30
      * @default 10
      */
     @Required
