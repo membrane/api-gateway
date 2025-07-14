@@ -1,10 +1,13 @@
 <spring:beans xmlns="http://membrane-soa.org/proxies/1/"
-    xmlns:spring="http://www.springframework.org/schema/beans"
-    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    xmlns:util="http://www.springframework.org/schema/util"
-    xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.2.xsd
+              xmlns:spring="http://www.springframework.org/schema/beans"
+              xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+              xmlns:util="http://www.springframework.org/schema/util"
+              xmlns:context="http://www.springframework.org/schema/context"
+              xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.2.xsd
         http://membrane-soa.org/proxies/1/ http://membrane-soa.org/schemas/proxies-1.xsd
-        http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util-3.1.xsd">
+        http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util-3.1.xsd http://www.springframework.org/schema/context https://www.springframework.org/schema/context/spring-context.xsd">
+
+    <context:property-placeholder location="file:/non-existent" system-properties-mode="ENVIRONMENT" ignore-resource-not-found="true" ignore-unresolvable="true" />
 
     <util:properties id="myProp">
         <spring:prop key="LISTEN_PORT">2000</spring:prop>               <!-- int -->
@@ -16,7 +19,18 @@
     <router>
         <api port="#{myProp.LISTEN_PORT}">
             <path isRegExp="#{myProp.PATH_RE}">.*</path>
-            <target host="#{myProp.DEST_HOST}" port="#{myProp.DEST_PORT}" />
+            <target host="#{myProp.DEST_HOST}" port="#{myProp.DEST_PORT}"/>
+        </api>
+
+        <api port="2001">
+            <basicAuthentication>
+                <user username="john"
+                      password="${JOHNS_PASSWORD_HASH}"/>
+            </basicAuthentication>
+            <template>
+                This is the protected secret.
+            </template>
+            <return/>
         </api>
     </router>
 
