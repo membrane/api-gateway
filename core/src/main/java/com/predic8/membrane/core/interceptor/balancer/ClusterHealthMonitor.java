@@ -1,28 +1,21 @@
 package com.predic8.membrane.core.interceptor.balancer;
 
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.annot.Required;
-import com.predic8.membrane.core.Router;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Request;
-import com.predic8.membrane.core.transport.http.HttpClient;
-import org.jetbrains.annotations.NotNull;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.BeansException;
-import org.springframework.beans.factory.InitializingBean;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.ApplicationContextAware;
+import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.transport.http.*;
+import org.jetbrains.annotations.*;
+import org.slf4j.*;
+import org.springframework.beans.*;
+import org.springframework.beans.factory.*;
+import org.springframework.context.*;
 
-import java.util.List;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 
-import static com.predic8.membrane.core.interceptor.balancer.BalancerUtil.collectClusters;
-import static com.predic8.membrane.core.interceptor.balancer.Node.Status.DOWN;
-import static com.predic8.membrane.core.interceptor.balancer.Node.Status.UP;
+import static com.predic8.membrane.core.interceptor.balancer.BalancerUtil.*;
+import static com.predic8.membrane.core.interceptor.balancer.Node.Status.*;
+import static java.lang.System.currentTimeMillis;
 
 /**
  * @description Configuration element for scheduling periodic cluster health checks.
@@ -38,10 +31,20 @@ public class ClusterHealthMonitor implements ApplicationContextAware, Initializi
     private ScheduledExecutorService scheduler;
     private static final HttpClient client = new HttpClient();
 
+    private void init() {
+        if (interval <= 0)
+            throw new IllegalStateException("'interval' must be > 0");
+        log.info("Starting HealthMonitor with interval of {} seconds", interval);
+        scheduler = Executors.newSingleThreadScheduledExecutor();
+        scheduler.scheduleAtFixedRate(
+                () -> new Thread(healthCheckTask, "HealthCheckThread").start(),
+                5, interval, TimeUnit.SECONDS
+        );
+    }
+
     private final Runnable healthCheckTask = () -> {
-        log.info("Starting Health Check");
-        List<Cluster> clusters = collectClusters(router);
-        clusters.forEach(cluster -> {
+        log.info("Starting Load Balancer Health Check");
+        collectClusters(router).forEach(cluster -> {
             log.info("Checking cluster '{}'", cluster.getName());
             cluster.getNodes().forEach(node -> node.setStatus(isHealthy(node)));
         });
@@ -49,34 +52,37 @@ public class ClusterHealthMonitor implements ApplicationContextAware, Initializi
     };
 
     private Node.Status isHealthy(Node node) {
-        String url = node.getHealthUrl() != null
-                ? node.getHealthUrl()
-                : getUrl(node.getHost(), node.getPort());
-
-        Exchange exc;
+        String url = getNodeHealthEndpoint(node);
         try {
-            exc = doCall(url);
+            return getStatus(node,doCall(url)) ;
         } catch (Exception e) {
-            log.error("Error Calling: {}, {}", url, e);
+            log.error("Error Calling: {}, {}", url, e.getMessage());
             return DOWN;
         }
+    }
 
+    private static Node.@Nullable Status getStatus(Node node, Exchange exc) {
         try {
             int status = exc.getResponse().getStatusCode();
             if (status >= 300) {
                 log.error("Node {}:{} health check failed with HTTP {}", node.getHost(), node.getPort(), status);
                 return DOWN;
-            } else {
-                log.info("Node {}:{} is healthy (HTTP {})", node.getHost(), node.getPort(), status);
-                if(node.isDown())
-                    node.setLastUpTime(System.currentTimeMillis());
-                return UP;
             }
+            log.info("Node {}:{} is healthy (HTTP {})", node.getHost(), node.getPort(), status);
+            if (node.isDown())
+                node.setLastUpTime(currentTimeMillis());
+            return UP;
+
         } catch (Exception e) {
             log.error("Unexpected error during health check for node {}:{} - marking DOWN", node.getHost(), node.getPort(), e);
+            return DOWN;
         }
+    }
 
-        return DOWN;
+    private static String getNodeHealthEndpoint(Node node) {
+        return node.getHealthUrl() != null
+                ? node.getHealthUrl()
+                : getUrl(node.getHost(), node.getPort());
     }
 
     private Exchange doCall(String url) throws Exception {
@@ -87,17 +93,6 @@ public class ClusterHealthMonitor implements ApplicationContextAware, Initializi
 
     private static @NotNull String getUrl(String host, int port) {
         return "http://" + host + ":" + port + "/";
-    }
-
-    private void init() {
-        if (interval <= 0)
-            throw new IllegalStateException("'interval' must be > 0");
-        log.info("Starting HealthMonitor with interval of {} seconds", interval);
-        scheduler = Executors.newSingleThreadScheduledExecutor();
-        scheduler.scheduleAtFixedRate(
-                () -> new Thread(healthCheckTask, "HealthCheckThread").start(),
-                5, interval, TimeUnit.SECONDS
-        );
     }
 
     @Override
