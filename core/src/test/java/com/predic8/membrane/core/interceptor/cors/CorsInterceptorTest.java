@@ -14,6 +14,7 @@
 
 package com.predic8.membrane.core.interceptor.cors;
 
+import com.fasterxml.jackson.databind.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.util.*;
@@ -42,6 +43,8 @@ import static org.springframework.http.HttpHeaders.VARY;
 import static org.springframework.http.HttpHeaders.*;
 
 class CorsInterceptorTest {
+
+    ObjectMapper om = new ObjectMapper();
 
     CorsInterceptor i;
 
@@ -267,6 +270,11 @@ class CorsInterceptorTest {
             i.init();
             Exchange exc = makePreflight(createPreflight("null", METHOD_POST), 403);
 
+            assertEquals(APPLICATION_PROBLEM_JSON, exc.getResponse().getHeader().getContentType());
+
+            JsonNode jn = om.readTree(exc.getResponse().getBodyAsStringDecoded());
+            assertEquals("https://membrane-api.io/problems/security/origin-not-allowed", jn.get("type").asText());
+
             Header h = exc.getResponse().getHeader();
             checkAllowHeaders(h, emptySet());
         }
@@ -329,6 +337,10 @@ class CorsInterceptorTest {
             i.init();
 
             Exchange exc = makePreflight(createPreflight("https://any.example.com", METHOD_POST).header("X-Foo", "Bar"), 403);
+
+            JsonNode jn = om.readTree(exc.getResponse().getBodyAsStringDecoded());
+            assertEquals("https://membrane-api.io/problems/security/origin-not-allowed", jn.get("type").asText());
+
             Header h = exc.getResponse().getHeader();
             checkAllowHeaders(h, emptySet());
         }
@@ -346,6 +358,19 @@ class CorsInterceptorTest {
             checkAllowHeaders(h, Set.of(ACCESS_CONTROL_ALLOW_ORIGIN, ACCESS_CONTROL_ALLOW_METHODS, ACCESS_CONTROL_ALLOW_HEADERS));
         }
 
+        @Test
+        void multipleMethodPreflight() throws Exception {
+            i.setOrigins("https://trusted.example.com");
+            i.setMethods("PUT, POST, DELETE, PATCH");
+            i.init();
+
+            Exchange exc = makePreflight(createPreflight("https://trusted.example.com", METHOD_POST));
+
+            Header h = exc.getResponse().getHeader();
+            assertEquals(METHOD_POST, getAllowMethods(exc));
+            checkAllowHeaders(h, Set.of(ACCESS_CONTROL_ALLOW_ORIGIN, ACCESS_CONTROL_ALLOW_METHODS));
+        }
+
 
         @Test
         void disallowedMethodPreflight() throws Exception {
@@ -354,6 +379,9 @@ class CorsInterceptorTest {
             i.init();
 
             Exchange exc = makePreflight(createPreflight("https://trusted.example.com", METHOD_POST), 403);
+
+            JsonNode jn = om.readTree(exc.getResponse().getBodyAsStringDecoded());
+            assertEquals("https://membrane-api.io/problems/security/method-not-allowed", jn.get("type").asText());
 
             Header h = exc.getResponse().getHeader();
             checkAllowHeaders(h, emptySet());

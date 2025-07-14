@@ -26,14 +26,6 @@ import static com.predic8.membrane.core.interceptor.cors.AbstractCORSHandler.*;
 import static com.predic8.membrane.core.interceptor.cors.CorsUtil.*;
 import static com.predic8.membrane.core.util.UrlNormalizer.*;
 
-
-//
-// 2. Safe-listed headers not explicitly handled
-// The spec defines certain headers as always allowed (Accept, Accept-Language, Content-Language, and Content-Type with specific values), but the implementation doesn't explicitly handle these. When no headers are configured, it appears to reject all non-configured headers rather than allowing the safe-listed ones.
-//
-// Returning only requested method? What is right?
-
-
 /**
  * @description <p>Plugin that allows Cross-Origin Resource Sharing (CORS). It answers preflight
  * requests with the options method and sets CORS headers. Additionally, requests

@@ -45,7 +45,7 @@ public class PreflightHandler extends AbstractCORSHandler {
         }
 
         if (!methodAllowed(exc)) {
-            return createProblemDetails(exc, origin, "method");
+            return createProblemDetails(exc, getRequestMethod(exc), "method");
         }
 
         if (!headersAllowed(getAccessControlRequestHeaderValue(exc))) {

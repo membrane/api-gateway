@@ -63,14 +63,13 @@ public abstract class AbstractCORSHandler {
         return interceptor.getAllowedOrigins().contains(WILDCARD);
     }
 
-    protected Outcome createProblemDetails(Exchange exc, String origin, String type) {
+    protected Outcome createProblemDetails(Exchange exc, String value, String type) {
         security(false, "cors")
                 .statusCode(403)
                 .addSubType("%s-not-allowed".formatted(type))
-                .detail("The %s '%s' is not allowed by the CORS policy.".formatted(type, origin))
-                .topLevel("origin", origin)
+                .detail("The %s '%s' is not allowed by the CORS policy.".formatted(type, value))
                 .buildAndSetResponse(exc);
-        log.info("CORS request denied: type={}, origin={}", type, origin);
+        log.info("CORS request denied: type={}, origin={}", type, value);
         return RETURN;
     }
 
