@@ -19,6 +19,7 @@ import com.predic8.membrane.core.interceptor.Interceptor.*;
 import com.predic8.membrane.core.transport.http.*;
 import org.slf4j.*;
 
+import java.net.*;
 import java.util.*;
 
 import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
@@ -93,7 +94,14 @@ public class FlowController {
                 }
             } catch (Exception e) {
                 String msg = "Aborting! Exception caused in %s during %s %s flow.".formatted(interceptor.getDisplayName(), exchange.getRequest().getUri(), flow);
-                log.warn(msg, e);
+
+                if (e.getCause() instanceof SocketException se) {
+                    msg += "Reason: " + se.getMessage();
+                    log.info(msg);
+                } else {
+                    log.warn(msg, e);
+                }
+
                 internal(router.isProduction(),interceptor.getDisplayName())
                         .detail(msg)
                         .exception(e)
