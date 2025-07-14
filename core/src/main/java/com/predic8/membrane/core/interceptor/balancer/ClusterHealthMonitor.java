@@ -63,11 +63,13 @@ public class ClusterHealthMonitor implements ApplicationContextAware, Initializi
 
         try {
             int status = exc.getResponse().getStatusCode();
-            if (status >= 500) {
+            if (status >= 300) {
                 log.error("Node {}:{} health check failed with HTTP {}", node.getHost(), node.getPort(), status);
                 return DOWN;
             } else {
                 log.info("Node {}:{} is healthy (HTTP {})", node.getHost(), node.getPort(), status);
+                if(node.isDown())
+                    node.setLastUpTime(System.currentTimeMillis());
                 return UP;
             }
         } catch (Exception e) {
