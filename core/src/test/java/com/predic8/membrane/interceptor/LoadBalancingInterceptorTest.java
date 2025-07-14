@@ -43,6 +43,7 @@ public class LoadBalancingInterceptorTest {
 	protected LoadBalancingInterceptor balancingInterceptor;
 	private DispatchingStrategy roundRobinStrategy;
 	private DispatchingStrategy byThreadStrategy;
+	private DispatchingStrategy priorityStrategy;
 	private HttpRouter service1;
 	private HttpRouter service2;
 	protected HttpRouter balancer;
@@ -96,6 +97,7 @@ public class LoadBalancingInterceptorTest {
 
 		roundRobinStrategy = new RoundRobinStrategy();
 		byThreadStrategy = new ByThreadStrategy();
+		priorityStrategy = new PriorityStrategy();
 	}
 
 	private void enableFailOverOn5XX(HttpRouter balancer2) {
@@ -104,21 +106,21 @@ public class LoadBalancingInterceptorTest {
 	}
 
 	@AfterEach
-	public void tearDown() {
+	void tearDown() {
 		service1.shutdown();
 		service2.shutdown();
 		balancer.shutdown();
 	}
 
 	@Test
-	public void testGetDestinationURLWithHostname() throws URISyntaxException {
+	void testGetDestinationURLWithHostname() throws URISyntaxException {
 		doTestGetDestinationURL(
 				"http://localhost/axis2/services/BLZService?wsdl",
 				"http://thomas-bayer.com:80/axis2/services/BLZService?wsdl");
 	}
 
 	@Test
-	public void testGetDestinationURLWithoutHostname()
+	void testGetDestinationURLWithoutHostname()
 			throws URISyntaxException {
 		doTestGetDestinationURL("/axis2/services/BLZService?wsdl",
 				"http://thomas-bayer.com:80/axis2/services/BLZService?wsdl");
@@ -133,7 +135,7 @@ public class LoadBalancingInterceptorTest {
 	}
 
 	@Test
-	public void testRoundRobinDispachingStrategy() throws Exception {
+	void testRoundRobinDispatchingStrategy() throws Exception {
 		balancingInterceptor.setDispatchingStrategy(roundRobinStrategy);
 
 		HttpClient client = new HttpClient();
@@ -161,7 +163,12 @@ public class LoadBalancingInterceptorTest {
 	}
 
 	@Test
-	public void testExpect100Continue() throws Exception {
+	void testPriorityStrategyDispatching() {
+		balancingInterceptor.setDispatchingStrategy(priorityStrategy);
+	}
+
+	@Test
+	void testExpect100Continue() throws Exception {
 		balancingInterceptor.setDispatchingStrategy(roundRobinStrategy);
 
 		HttpClient client = new HttpClient();
@@ -199,7 +206,7 @@ public class LoadBalancingInterceptorTest {
 	}
 
 	@Test
-	public void testFailOverOnConnectionRefused() throws Exception {
+	void testFailOverOnConnectionRefused() throws Exception {
 		balancingInterceptor.setDispatchingStrategy(roundRobinStrategy);
 
 		HttpClient client = new HttpClient();
@@ -227,7 +234,7 @@ public class LoadBalancingInterceptorTest {
 	}
 
 	@Test
-	public void testFailOverOnStatus500() throws Exception {
+	void testFailOverOnStatus500() throws Exception {
 		balancingInterceptor.setDispatchingStrategy(roundRobinStrategy);
 
 		HttpClient client = new HttpClient();
@@ -260,7 +267,7 @@ public class LoadBalancingInterceptorTest {
 	}
 
 	@Test
-	public void testByThreadStrategy() {
+	void testByThreadStrategy() {
 		balancingInterceptor.setDispatchingStrategy(byThreadStrategy);
 	}
 }
