@@ -17,6 +17,7 @@ import java.util.concurrent.*;
 import static com.predic8.membrane.core.interceptor.balancer.BalancerUtil.*;
 import static com.predic8.membrane.core.interceptor.balancer.Node.Status.*;
 import static java.lang.System.currentTimeMillis;
+import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
  * @description
@@ -28,7 +29,7 @@ import static java.lang.System.currentTimeMillis;
  *
  * @topic 4. Monitoring, Logging and Statistics
  */
-@MCElement(name = "lbClusterHeathMonitor")
+@MCElement(name = "lbClusterHealthMonitor")
 public class ClusterHealthMonitor implements ApplicationContextAware, InitializingBean {
 
     private static final Logger log = LoggerFactory.getLogger(ClusterHealthMonitor.class);
@@ -45,7 +46,7 @@ public class ClusterHealthMonitor implements ApplicationContextAware, Initializi
         scheduler = Executors.newSingleThreadScheduledExecutor();
         scheduler.scheduleAtFixedRate(
                 () -> new Thread(healthCheckTask, "HealthCheckThread").start(),
-                5, interval, TimeUnit.SECONDS
+                5, interval, SECONDS
         );
     }
 
@@ -113,8 +114,19 @@ public class ClusterHealthMonitor implements ApplicationContextAware, Initializi
     }
 
     public void shutdown() {
-        if (scheduler != null)
+        if (scheduler != null) {
             scheduler.shutdown();
+            try {
+                if (!scheduler.awaitTermination(10, SECONDS)) {
+                    log.warn("Health check scheduler did not terminate gracefully, forcing shutdown");
+                    scheduler.shutdownNow();
+                }
+            } catch (InterruptedException e) {
+                log.warn("Interrupted while waiting for scheduler shutdown");
+                scheduler.shutdownNow();
+                Thread.currentThread().interrupt();
+            }
+        }
     }
 
     /**
