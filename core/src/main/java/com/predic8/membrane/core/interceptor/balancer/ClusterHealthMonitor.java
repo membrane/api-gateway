@@ -4,7 +4,10 @@ import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.annot.Required;
 import com.predic8.membrane.core.Router;
-import org.jetbrains.annotations.*;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.Request;
+import com.predic8.membrane.core.transport.http.HttpClient;
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeansException;
@@ -12,9 +15,6 @@ import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 
-import java.io.IOException;
-import java.net.HttpURLConnection;
-import java.net.URL;
 import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -36,6 +36,7 @@ public class ClusterHealthMonitor implements ApplicationContextAware, Initializi
     private Router router;
     private int interval;
     private ScheduledExecutorService scheduler;
+    private static final HttpClient client = new HttpClient();
 
     private final Runnable healthCheckTask = () -> {
         log.info("Starting Health Check");
@@ -50,27 +51,38 @@ public class ClusterHealthMonitor implements ApplicationContextAware, Initializi
     };
 
     private Node.Status isHealthy(Node node) {
-        String host = node.getHost();
-        int port = node.getPort();
+        String url = node.getHealthUrl() != null
+                ? node.getHealthUrl()
+                : getUrl(node.getHost(), node.getPort());
+
+        Exchange exc;
         try {
-
-            // TODO
-            HttpURLConnection conn = (HttpURLConnection) new URL(getUrl(host, port)).openConnection();
-            conn.setRequestMethod("GET");
-            conn.setConnectTimeout(2000);
-            conn.setReadTimeout(2000);
-
-            int status = conn.getResponseCode();
-            if (status >= 500) {
-                log.error("Node {}:{} returned HTTP {}", host, port, status);
-                return DOWN;
-            }
-            log.info("Node {}:{} returned HTTP {}", host, port, status);
-            return UP;
-        } catch (IOException e) {
-            log.error("Failed to call node {}:{} - {}", host, port, e.toString());
-            return DOWN;
+            exc = doCall(url);
+        } catch (Exception e) {
+            log.error("Error Calling: {}, {}", url, e);
+            throw new RuntimeException(e);
         }
+
+        try {
+            int status = exc.getResponse().getStatusCode();
+            if (status >= 500) {
+                log.error("Node {}:{} health check failed with HTTP {}", node.getHost(), node.getPort(), status);
+                return DOWN;
+            } else {
+                log.info("Node {}:{} is healthy (HTTP {})", node.getHost(), node.getPort(), status);
+                return UP;
+            }
+        } catch (Exception e) {
+            log.error("Unexpected error during health check for node {}:{} - marking DOWN", node.getHost(), node.getPort(), e);
+        }
+
+        return DOWN;
+    }
+
+    private Exchange doCall(String url) throws Exception {
+        Exchange exc = new Request.Builder().get(url).buildExchange();
+        client.call(exc);
+        return exc;
     }
 
     private static @NotNull String getUrl(String host, int port) {
