@@ -8,9 +8,10 @@
         http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util-4.2.xsd
         http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-4.2.xsd">
 
-    <!-- Needed to access environment variables -->
+    <!-- Enables access to environment variables via #{systemEnvironment['...']} -->
     <context:property-placeholder />
 
+    <!-- Static property values -->
     <util:properties id="my">
         <spring:prop key="HOST">membrane-api.io</spring:prop>
         <spring:prop key="PORT">80</spring:prop>
@@ -25,7 +26,7 @@
         <api port="2001">
             <log message="Target: #{systemEnvironment['TARGET']}"/>
 
-            <!-- Use TARGET env variable as target or https://api.predic8.de as default -->
+            <!-- Use TARGET env variable or fallback to default URL -->
             <target url="#{systemEnvironment['TARGET'] ?: 'https://api.predic8.de'}" />
         </api>
 

@@ -1,11 +1,8 @@
-# Configuration with Spring Expressions and Environment Variables
+# Configuration with Properties and Environment Variables
 
-This example demonstrates how to configure the Membrane API Gateway using Spring Expression Language (SpEL) and environment variables.
+Membrane is built on Spring, so you can use standard Spring mechanisms like properties and environment variables for configuration.
 
-For reference, see the Spring Expression Language documentation:  
-http://docs.spring.io/spring/docs/3.1.x/spring-framework-reference/html/expressions.html
-
-## Running the Example
+## How to Run This Example
 
 1. Navigate to the example directory:
 
@@ -13,10 +10,16 @@ http://docs.spring.io/spring/docs/3.1.x/spring-framework-reference/html/expressi
    cd examples/extending-membrane/configuration-properties/
    ```
 
-2. (Optional) Set the `TARGET` environment variable:
+2. (Optional) Set the TARGET environment variable:
 
+   **Linux:**
    ```bash
    export TARGET=https://www.membrane-api.io/
+   ```
+   
+   **Windows:**
+   ```cmd
+   set TARGET=https://www.membrane-api.io/
    ```
 
 3. Start Membrane:
@@ -25,28 +28,33 @@ http://docs.spring.io/spring/docs/3.1.x/spring-framework-reference/html/expressi
    ./membrane.sh
    ```
 
-4. Send a request to either port:
+4. Send test requests:
 
-    - Port 2000 forwards to `membrane-api.io:80`
-    - Port 2001 forwards to the value of `$TARGET`, or defaults to `https://api.predic8.de`
+    ```
+    curl http://localhost:2000
+    curl http://localhost:2001
+    ```
 
-## Important
+## How It Works
 
-The following line is required to access environment variables via `#{systemEnvironment[...]}` inside the configuration:
+In `proxies.xml`, two APIs are configured:
+
+- Port 2000: Uses static properties HOST and PORT (from <util:properties>).
+- Port 2001: Uses an environment variable TARGET. If it's not set, defaults to https://api.predic8.de.
+
+To enable use of environment variables like #{systemEnvironment['TARGET']}, the following must be included:
 
 ```xml
 <context:property-placeholder />
 ```
 
-Without this, environment variables will not be accessible and Spring expressions using `systemEnvironment` will fail or remain unresolved.
-
 ## Troubleshooting
 
-If `${systemEnvironment['TARGET']}` is not resolved correctly:
+If `${systemEnvironment['TARGET']}` is not resolved:
 
 - Ensure the environment variable is set **before** starting Membrane.
 - Use `echo $TARGET` to verify the variable is available in your shell.
-- Check the Membrane logs for output like:
+- Look for log output like:
 
   ```
   Target: https://www.membrane-api.io/
