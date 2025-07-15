@@ -13,7 +13,7 @@
                 <!-- Extracts the ID of the newest product -->
                 <setProperty name="id" value="${$.products[0].id}" language="jsonpath"/>
                 <!-- Fetches the full product details using the extracted ID -->
-                <call url="https://api.predic8.de/shop/v2/products/${properties.id}"/>
+                <call url="https://api.predic8.de/shop/v2/products/${property.id}"/>
             </request>
             <return />
         </api>
