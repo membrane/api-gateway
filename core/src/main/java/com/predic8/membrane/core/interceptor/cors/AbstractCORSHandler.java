@@ -77,11 +77,6 @@ public abstract class AbstractCORSHandler {
         return exc.getRequest().getHeader().getFirstValue(ACCESS_CONTROL_REQUEST_HEADERS);
     }
 
-
-    protected @NotNull String join(List<String> l) {
-        return String.join(", ", l);
-    }
-
     @NotNull String getAllowedMethods(String requestedMethod) {
         return requestedMethod != null ? requestedMethod : allowedMethodsString;
     }
