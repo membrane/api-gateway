@@ -25,9 +25,6 @@ import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.*;
 
-// TODO
-// - priority=1
-//     1 = highest (1-10)
 @MCElement(name="node", topLevel=false)
 public class Node extends AbstractXmlElement {
 
