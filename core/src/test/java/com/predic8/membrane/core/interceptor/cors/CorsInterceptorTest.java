@@ -278,6 +278,10 @@ class CorsInterceptorTest {
             Header h = exc.getResponse().getHeader();
             checkAllowHeaders(h, emptySet());
         }
+    }
+
+    @Nested
+    class Preflight {
 
         @Test
         void returnOnlyRequestedMethodPreflight() throws Exception {
@@ -331,6 +335,7 @@ class CorsInterceptorTest {
             assertThrows(ConfigurationException.class, () -> i.init());
         }
 
+
         @Test
         void disallowedHeaderPreflight() throws Exception {
             i.setOrigins("https://trusted.example.com");
@@ -369,6 +374,7 @@ class CorsInterceptorTest {
             Header h = exc.getResponse().getHeader();
             assertEquals(METHOD_POST, getAllowMethods(exc));
             checkAllowHeaders(h, Set.of(ACCESS_CONTROL_ALLOW_ORIGIN, ACCESS_CONTROL_ALLOW_METHODS));
+
         }
 
 

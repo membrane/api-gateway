@@ -87,13 +87,6 @@ public class PreflightHandler extends AbstractCORSHandler {
         return true;
     }
 
-    /*
-
-        private boolean methodAllowed(String method) {
-        return method != null && (allowedMethods.contains(method) || allowedMethods.contains(WILDCARD));
-    }
-     */
-
     private boolean methodAllowed(Exchange exc) {
         String method = getRequestMethod(exc);
         return method != null && (interceptor.getMethods().contains(method) || (interceptor.getMethods().contains(WILDCARD)));

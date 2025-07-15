@@ -218,6 +218,7 @@ public class CorsInterceptor extends AbstractInterceptor {
         return String.join(SPACE, allowedOrigins);
     }
 
+
     /**
      * Configures the HTTP methods allowed for CORS requests.
      *
