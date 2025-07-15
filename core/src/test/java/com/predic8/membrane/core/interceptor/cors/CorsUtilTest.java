@@ -11,13 +11,16 @@ import static org.junit.jupiter.api.Assertions.*;
 class CorsUtilTest {
 
     @Test
-    void testRemoveTrailingSlashes() {
+    void testNormalizeOrigin() {
         assertEquals("/foo/bar", normalizeOrigin("/foo/bar//"));
         assertEquals("bar", normalizeOrigin("bar"));
         assertEquals("", normalizeOrigin(""));
         assertEquals("", normalizeOrigin("/"));
         assertEquals("", normalizeOrigin("//"));
         assertEquals("/foo", normalizeOrigin("/foo/"));
+
+        assertEquals("http://example.com", normalizeOrigin("HTTP://EXAMPLE.COM"));
+        assertEquals("https://api.test.com/path", normalizeOrigin("HTTPS://API.TEST.COM/PATH/"));
     }
 
 

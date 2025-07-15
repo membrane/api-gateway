@@ -9,7 +9,7 @@ class PreflightHandlerTest {
     private PreflightHandler ph;
 
     @BeforeEach
-    void beforeAll() {
+    void setup2() {
         CorsInterceptor ci = new CorsInterceptor();
         ph = new PreflightHandler(ci);
     }

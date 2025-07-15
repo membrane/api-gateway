@@ -154,8 +154,6 @@ class CorsInterceptorTest {
                     .header(ACCESS_CONTROL_REQUEST_HEADERS, "X-Foo")
                     .buildExchange());
 
-            Header h = exc.getResponse().getHeader();
-
             // Returning WILDCARD is on purpose!
             assertEquals(WILDCARD, getAllowOrigin(exc));
 
@@ -278,10 +276,6 @@ class CorsInterceptorTest {
             Header h = exc.getResponse().getHeader();
             checkAllowHeaders(h, emptySet());
         }
-    }
-
-    @Nested
-    class Preflight {
 
         @Test
         void returnOnlyRequestedMethodPreflight() throws Exception {
@@ -329,7 +323,7 @@ class CorsInterceptorTest {
         }
 
         @Test
-        void wildcardOriginWithCredentialsShouldBeRejectedPreflight() throws Exception {
+        void wildcardOriginWithCredentialsShouldBeRejectedPreflight() {
             i.setOrigins(WILDCARD);
             i.setCredentials(true);
             assertThrows(ConfigurationException.class, () -> i.init());
@@ -472,10 +466,6 @@ class CorsInterceptorTest {
 
     private static String getAllowHeaders(Exchange exc) {
         return exc.getResponse().getHeader().getFirstValue(ACCESS_CONTROL_ALLOW_HEADERS);
-    }
-
-    private static String getAllowCredentials(Exchange exc) {
-        return exc.getResponse().getHeader().getFirstValue(ACCESS_CONTROL_ALLOW_CREDENTIALS);
     }
 
     private Exchange callInterceptors(Exchange exc) {
