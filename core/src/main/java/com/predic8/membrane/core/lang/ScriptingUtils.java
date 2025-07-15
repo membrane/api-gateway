@@ -84,7 +84,17 @@ public class ScriptingUtils {
         }
 
         params.put("property", exc.getProperties());
-        params.put("properties", exc.getProperties()); // properties does not work in Groovy scripts!
+
+        // properties does not work in Groovy scripts!
+        //
+        // Reason: properties is a special built-in property in Groovy. Every Groovy object has a properties property
+        // that returns a Map of all the object's properties.
+        //
+        // Decision: Keep props and property for GroovyTemplate
+        //
+        // Keep the following line for documentation, even if it is commented out!
+        // params.put("properties", exc.getProperties());
+
         params.put("props", exc.getProperties());
 
         params.put("pathParam", new PathParametersMap(exc));
