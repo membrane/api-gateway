@@ -1,33 +1,79 @@
-# Configuration using the Spring Expression Language
+# Configuring with Properties and Environment Variables
 
-Shows how to use the Spring Expression language to configure the API gateway.
-Documentation of Spring Expression language could be found at 
-http://docs.spring.io/spring/docs/3.1.x/spring-framework-reference/html/expressions.html
+Membrane is built on Spring, so you can use standard Spring mechanisms like properties and environment variables for configuration. This example shows how to configure routes dynamically using SpEL (Spring Expression Language).
 
+## How to Run This Example
 
-## Running the example
+1. **Navigate to the example directory**
 
-In this example we will visit a website and take a look at the logs in the console. 
+   ```bash
+   cd examples/extending-membrane/configuration-properties/
+   ```
 
-1. Go to the `examples/extending-membrane/configuration-properties` directory.
+2. **(Optional) Set the `TARGET` environment variable**
 
-2. Look at file `proxies.xml` ( maybe change some properties )
+    * **Linux/macOS**
 
-3. Execute `membrane.cmd`
+      ```bash
+      export TARGET=https://www.membrane-api.io/
+      ```
+    * **Windows**
 
-4. Open the URL [http://localhost:${LISTEN_PORT}/](http://localhost:${LISTEN_PORT}/) in your browser. Where LISTEN_PORT is value defined in `proxies.xml`
+      ```cmd
+      set TARGET=https://www.membrane-api.io/
+      ```
 
+3. **Start Membrane**
 
-### Troubleshooting:
+   ```bash
+   ./membrane.sh
+   ```
 
-If Membrane does not generate any output after loading a URL, it is possible that your browser has already cached the resource. 
+4. **Send test requests**
 
-Shortcuts for the different browsers:
+   ```bash
+   curl http://localhost:2000
+   curl http://localhost:2001
+   ```
 
-| Browser       | Shortcut       | 
-| ------------- |:-------------:| 
-| Safari     | ALT + click reload or CMD + SHIFT + R while using a mac|
-| Firefox      | SHIFT + click reload      | 
-| Chrome | SHIFT + F5 or CONTROL + F5      |
-| IE | CONTROL + F5      |
-| Edge | CONTROL + click reload |
+## How It Works
+
+In `proxies.xml`, two APIs are configured:
+
+* Port **2000** uses static values from a `<util:properties>` block:
+
+  ```xml
+  <target host="#{my.HOST}" port="#{my.PORT}" />
+  ```
+
+* Port **2001** uses an environment variable or a fallback default:
+
+  ```xml
+  <target url="#{systemEnvironment['TARGET'] ?: 'https://api.predic8.de'}" />
+  ```
+
+### What Is `#{...}`?
+
+The `#{...}` syntax is **Spring Expression Language (SpEL)**. It allows you to inject values into the configuration at runtime:
+
+* `#{my.HOST}` gets a property from the `util:properties` block.
+* `#{systemEnvironment['TARGET']}` accesses the `TARGET` environment variable.
+* `?:` provides a fallback if the environment variable is not set.
+
+To enable access to environment variables, the following element must be present in `proxies.xml`:
+
+```xml
+<context:property-placeholder />
+```
+
+## Troubleshooting
+
+If `${systemEnvironment['TARGET']}` is not resolved:
+
+* Ensure the environment variable is set **before** running Membrane.
+* Confirm with `echo $TARGET` (Linux/macOS) or `echo %TARGET%` (Windows).
+* Check Membrane’s logs for output like:
+
+  ```
+  Target: https://www.membrane-api.io/
+  ```
