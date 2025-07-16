@@ -112,6 +112,7 @@ class CorsInterceptorTest {
             checkAllowHeaders(h, Set.of(ACCESS_CONTROL_ALLOW_ORIGIN));
             checkAllowOrigin(h, "https://trusted.example.com");
             assertEquals(ORIGIN, h.getFirstValue(VARY));
+            assertNull(h.getFirstValue(ACCESS_CONTROL_MAX_AGE));
         }
 
         @Test
@@ -151,13 +152,10 @@ class CorsInterceptorTest {
 
             Exchange exc = callInterceptors(post("/test")
                     .header(ORIGIN, "https://evil.example.com")
-                    .header(ACCESS_CONTROL_REQUEST_HEADERS, "X-Foo")
                     .buildExchange());
 
             // Returning WILDCARD is on purpose!
             assertEquals(WILDCARD, getAllowOrigin(exc));
-
-            assertTrue(getAllowHeaders(exc).contains("x-foo"));
         }
 
         @Test
@@ -242,10 +240,12 @@ class CorsInterceptorTest {
             Header h = exc.getResponse().getHeader();
 
             assertEquals(METHOD_POST, getAllowMethods(exc));
-            assertTrue(getAllowHeaders(exc).contains("x-foo"));
+            assertTrue(getAllowHeaders(exc).contains("X-Foo"));
             assertEquals(WILDCARD, getAllowOrigin(exc));
 
             checkAllowHeaders(h, Set.of(ACCESS_CONTROL_ALLOW_ORIGIN, ACCESS_CONTROL_ALLOW_METHODS, ACCESS_CONTROL_ALLOW_HEADERS));
+
+            assertNotNull(h.getFirstValue(ACCESS_CONTROL_MAX_AGE));
         }
 
         @Test
@@ -399,14 +399,11 @@ class CorsInterceptorTest {
         }
 
         @Test
-        void exposeHeaders() throws Exception {
-            i.setExposeHeaders("X-Custom-Header, X-Another-Header");
-            i.init();
-
-            assertEquals(Set.of("x-custom-header", "x-another-header"),
-                    parseCommaOrSpaceSeparated(
-                            makePreflight(createPreflight("https://trusted.example.com", METHOD_POST))
-                                    .getResponse().getHeader().getFirstValue(ACCESS_CONTROL_EXPOSE_HEADERS)));
+        void doNotExposeHeadersInPreflight() throws Exception {
+            i.setExposeHeaders("X-Custom");
+            Exchange exc = makePreflight(createPreflight("https://trusted.example.com", METHOD_POST));
+            Header h = exc.getResponse().getHeader();
+            assertNull(h.getFirstValue(ACCESS_CONTROL_EXPOSE_HEADERS));
         }
 
         @ParameterizedTest

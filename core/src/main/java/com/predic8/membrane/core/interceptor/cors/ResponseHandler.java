@@ -4,6 +4,7 @@ import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.interceptor.*;
 
 import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static com.predic8.membrane.core.interceptor.cors.AbstractCORSHandler.ResponseHeaderBuilder.responseBuilder;
 
 /**
  * Handles CORS response processing by setting appropriate CORS headers
@@ -33,6 +34,14 @@ public class ResponseHandler extends AbstractCORSHandler {
     @Override
     protected String getRequestMethod(Exchange exc) {
         return exc.getRequest().getMethod();
+    }
+
+    protected void setCORSHeader(Exchange exc, String requestOrigin) {
+        responseBuilder(exc)
+                .allowOrigin(determineAllowOriginHeader(requestOrigin))
+                .exposeHeaders(interceptor.getExposeHeaders())
+                .allowCredentials(interceptor.getCredentials())
+                .build();
     }
 
 }

@@ -22,6 +22,7 @@ import org.slf4j.*;
 
 import java.util.*;
 
+import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 import static com.predic8.membrane.core.interceptor.cors.AbstractCORSHandler.*;
 import static com.predic8.membrane.core.interceptor.cors.CorsUtil.*;
 import static com.predic8.membrane.core.util.UrlNormalizer.*;
@@ -138,6 +139,8 @@ public class CorsInterceptor extends AbstractInterceptor {
 
     @Override
     public Outcome handleRequest(Exchange exc) {
+        if (!exc.getRequest().isOPTIONSRequest())
+            return CONTINUE; // no preflight -> let pass
         return preflightHandler.handle(exc);
     }
 

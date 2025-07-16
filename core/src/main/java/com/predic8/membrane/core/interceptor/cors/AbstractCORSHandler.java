@@ -6,16 +6,14 @@ import com.predic8.membrane.core.interceptor.*;
 import org.jetbrains.annotations.*;
 import org.slf4j.*;
 
-import java.util.*;
-
 import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
 import static com.predic8.membrane.core.http.Header.COOKIE;
 import static com.predic8.membrane.core.http.Header.ORIGIN;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
-import static com.predic8.membrane.core.interceptor.cors.AbstractCORSHandler.ResponseHeaderBuilder.responseBuilder;
 import static com.predic8.membrane.core.interceptor.cors.CorsInterceptor.*;
 import static com.predic8.membrane.core.interceptor.cors.CorsUtil.*;
 import static org.springframework.http.HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN;
+import static org.springframework.http.HttpHeaders.VARY;
 import static org.springframework.http.HttpHeaders.*;
 
 public abstract class AbstractCORSHandler {
@@ -81,16 +79,7 @@ public abstract class AbstractCORSHandler {
         return requestedMethod != null ? requestedMethod : allowedMethodsString;
     }
 
-    protected void setCORSHeader(Exchange exc, String requestOrigin) {
-        responseBuilder(exc)
-                .allowOrigin(determineAllowOriginHeader(requestOrigin))
-                .allowMethods(getAllowedMethods(getRequestMethod(exc)))
-                .allowHeaders(getAllowHeaders(getAccessControlRequestHeaderValue(exc)))
-                .exposeHeaders(interceptor.getExposeHeaders())
-                .maxAge(interceptor.getMaxAge())
-                .allowCredentials(interceptor.getCredentials())
-                .build();
-    }
+    protected abstract void setCORSHeader(Exchange exc, String requestOrigin);
 
     static class ResponseHeaderBuilder {
         Header responseHeader;
@@ -161,21 +150,11 @@ public abstract class AbstractCORSHandler {
         return false;
     }
 
-    private String determineAllowOriginHeader(String requestOrigin) {
+    protected String determineAllowOriginHeader(String requestOrigin) {
         // We do not Just Echo Every Origin Blindly
         // If we automatically echo back any origin without validation:
         // we would  bypassing origin restrictions, which can be a security risk.
         // Returning the wildcard when allowCredentials is false is on purpose!
         return (isWildcardOriginAllowed() && !interceptor.getCredentials()) ? WILDCARD : requestOrigin;
-    }
-
-    private String getAllowHeaders(String requestedHeaders) {
-        if (interceptor.isAllowAll()) {
-            return requestedHeaders != null ? requestedHeaders.toLowerCase() : "content-type, authorization";
-        }
-        if (!interceptor.getAllowedHeaders().isEmpty()) {
-            return join(List.copyOf(interceptor.getAllowedHeaders()));
-        }
-        return ""; // Todo Check
     }
 }
