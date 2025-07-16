@@ -335,7 +335,7 @@ class CorsInterceptorTest {
             i.setOrigins("https://trusted.example.com");
             i.init();
 
-            Exchange exc = makePreflight(createPreflight("https://any.example.com", METHOD_POST).header("X-Foo", "Bar"), 403);
+            Exchange exc = makePreflight(createPreflight("https://any.example.com", METHOD_POST).header("X-Not-Allowed", "Bar"), 403);
 
             JsonNode jn = om.readTree(exc.getResponse().getBodyAsStringDecoded());
             assertEquals("https://membrane-api.io/problems/security/origin-not-allowed", jn.get("type").asText());

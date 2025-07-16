@@ -107,6 +107,9 @@ public abstract class AbstractCORSHandler {
         }
 
         ResponseHeaderBuilder allowHeaders(String allowedHeaders) {
+            // There are no headers to
+            if (allowedHeaders == null)
+                return this;
             if (requestHeader.contains(ACCESS_CONTROL_REQUEST_HEADERS)) {
                 responseHeader.setValue(ACCESS_CONTROL_ALLOW_HEADERS, allowedHeaders);
             }

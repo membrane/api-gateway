@@ -18,7 +18,7 @@ public class PreflightHandler extends AbstractCORSHandler {
     private static final Logger log = LoggerFactory.getLogger(PreflightHandler.class);
 
     /**
-     * From https://fetch.spec.whatwg.org/#terminology-headers
+     * From <a href="https://fetch.spec.whatwg.org/#terminology-headers">fetch specification</a>
      */
     public static final Set<String> SAFE_HEADERS = Set.of(
                 "accept",
@@ -105,11 +105,15 @@ public class PreflightHandler extends AbstractCORSHandler {
 
     private String getAllowHeaders(String requestedHeaders) {
         if (interceptor.isAllowAll()) {
-            return requestedHeaders != null && !requestedHeaders.isBlank() ? requestedHeaders : "content-type, authorization";
+            if (requestedHeaders == null || requestedHeaders.isBlank())
+                return null;
+            return requestedHeaders; // Best practice to reflect the requested headers
         }
         if (!interceptor.getAllowedHeaders().isEmpty()) {
+            // The returned header need not to reflect the requested ones, it can
+            // lead to unexpected behaviour!
             return join(List.copyOf(interceptor.getAllowedHeaders()));
         }
-        return ""; // Todo Check
+        return null;
     }
 }

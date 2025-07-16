@@ -212,7 +212,7 @@ public class CorsInterceptor extends AbstractInterceptor {
             }
             this.allowedOrigins = set;
         } catch (Exception e) {
-            log.error("Failed to parse origins list:", origins);
+            log.error("Failed to parse origins list: {}", origins);
             log.error(e.getMessage(), e);
         }
     }
