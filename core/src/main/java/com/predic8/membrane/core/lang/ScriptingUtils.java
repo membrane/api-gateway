@@ -29,11 +29,11 @@ import org.slf4j.*;
 import java.util.*;
 
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
-import static com.predic8.membrane.core.openapi.util.UriTemplateMatcher.matchTemplate;
+import static com.predic8.membrane.core.openapi.util.UriTemplateMatcher.*;
 import static com.predic8.membrane.core.util.FileUtil.*;
 import static com.predic8.membrane.core.util.URLParamUtil.DuplicateKeyOrInvalidFormStrategy.*;
 import static com.predic8.membrane.core.util.URLParamUtil.*;
-import static java.util.Collections.emptyMap;
+import static java.util.Collections.*;
 
 public class ScriptingUtils {
 
@@ -83,19 +83,23 @@ public class ScriptingUtils {
             }
         }
 
-        params.put("property", exc.getProperties());
 
-        // properties does not work in Groovy scripts!
-        //
-        // Reason: properties is a special built-in property in Groovy. Every Groovy object has a properties property
-        // that returns a Map of all the object's properties.
-        //
-        // Decision: Keep props and property for GroovyTemplate
-        //
-        // Keep the following line for documentation, even if it is commented out!
-        // params.put("properties", exc.getProperties());
 
+        /**
+         properties does not work in Groovy based Template Interceptor!
+
+         Reason: properties is a special built-in property in Groovy. Every Groovy object has a properties property
+         that returns a Map of all the object's properties.
+
+         But it can be accessed in Groovy Interceptor
+
+         Decision: Keep it but change examples to use property, even for spel, ..
+        */
+        params.put("properties", exc.getProperties());
+
+        // Also expose properties unter props and property
         params.put("props", exc.getProperties());
+        params.put("property", exc.getProperties());
 
         params.put("pathParam", new PathParametersMap(exc));
 
