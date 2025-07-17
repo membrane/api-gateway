@@ -1,5 +1,6 @@
 package com.predic8.membrane.core.interceptor.balancer;
 
+import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.config.*;
 import com.predic8.membrane.core.exchange.*;
