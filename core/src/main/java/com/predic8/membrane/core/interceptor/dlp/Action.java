@@ -6,8 +6,6 @@ public abstract class Action {
 
     private String field;
 
-    public abstract String apply(String json);
-
     public String getField() {
         return field;
     }
@@ -16,4 +14,6 @@ public abstract class Action {
     public void setField(String field) {
         this.field = field;
     }
+
+    public abstract String apply(String json, DLPContext context);
 }

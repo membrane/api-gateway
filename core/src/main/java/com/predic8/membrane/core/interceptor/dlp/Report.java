@@ -14,24 +14,32 @@ public class Report extends Action {
     private static final Logger log = LoggerFactory.getLogger(Report.class);
 
     @Override
-    public String apply(String json) {
+    public String apply(String json, DLPContext context) {
         try {
-            DocumentContext context = JsonPath.parse(json);
-            return context.jsonString();
-        } catch (Exception e) {
-            log.error("Failed to inject DLP report", e);
-            throw new RuntimeException("DLP Report injection failed", e);
-        }
-    }
+            DocumentContext ctx = JsonPath.parse(json);
 
-    public String apply(String json, RiskReport risk) {
-        try {
-            DocumentContext context = JsonPath.parse(json);
-            context.put("$", "risk", Map.of("category", risk.getCategory().name(), "counts", risk.getLogReport()));
-            return context.jsonString();
+            if (context == null || !context.hasRiskReport()) {
+                log.warn("No RiskReport provided. Returning unmodified JSON.");
+                return ctx.jsonString();
+            }
+
+            String targetPath = getField() != null ? getField() : "$";
+
+            Object target = ctx.read(targetPath);
+            if (!(target instanceof Map)) {
+                log.warn("Target path '{}' is not a JSON object. Cannot inject risk report.", targetPath);
+                return ctx.jsonString();
+            }
+
+            ctx.put(targetPath, "risk", Map.of(
+                    "category", context.getRiskReport().getCategory().name(),
+                    "counts", context.getRiskReport().getStructuredReport()
+            ));
+
+            return ctx.jsonString();
         } catch (Exception e) {
-            log.error("Failed to inject DLP report", e);
-            throw new RuntimeException("DLP Report injection failed", e);
+            log.error("Failed to inject risk report at path '{}'", getField(), e);
+            throw new RuntimeException("DLP Report injection failed at path: " + getField(), e);
         }
     }
 }

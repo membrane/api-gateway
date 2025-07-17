@@ -11,27 +11,21 @@ public class Mask extends Action {
     private String keepRight = "0";
 
     @Override
-    public String apply(String json) {
+    public String apply(String json, DLPContext context) {
         try {
-            DocumentContext context = JsonPath.parse(json);
-            context.set(getField(), maskKeepRight(context.read(getField(), String.class), Integer.parseInt(keepRight)));
-            return context.jsonString();
+            DocumentContext doc = JsonPath.parse(json);
+            String original = doc.read(getField(), String.class);
+            String masked = maskKeepRight(original, Integer.parseInt(keepRight));
+            doc.set(getField(), masked);
+            return doc.jsonString();
         } catch (Exception e) {
-            throw new RuntimeException();
+            throw new RuntimeException("Failed to apply mask on field: " + getField(), e);
         }
     }
 
     private String maskKeepRight(String input, int keepRight) {
-        if (input == null || input.length() <= keepRight) {
-            return input;
-        }
-        int maskLength = input.length() - keepRight;
-        StringBuilder masked = new StringBuilder();
-        for (int i = 0; i < maskLength; i++) {
-            masked.append("*");
-        }
-        masked.append(input.substring(maskLength));
-        return masked.toString();
+        if (input == null || input.length() <= keepRight) return input;
+        return "*".repeat(input.length() - keepRight) + input.substring(input.length() - keepRight);
     }
 
     public String getKeepRight() {

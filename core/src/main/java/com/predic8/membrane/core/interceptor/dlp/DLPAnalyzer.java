@@ -24,19 +24,29 @@ public class DLPAnalyzer {
 
     private static final ObjectMapper MAPPER = new ObjectMapper(JSON_FACTORY);
 
-    private final Map<String, String> riskDict;
+    private final Map<String, RiskReport.Category> riskDict;
 
-    public DLPAnalyzer(Map<String, String> riskDict) {
-        this.riskDict = Map.copyOf(riskDict);
+    public DLPAnalyzer(Map<String, String> rawRiskMap) {
+        this.riskDict = mapToEnumRiskLevels(rawRiskMap);
+    }
+
+    private Map<String, RiskReport.Category> mapToEnumRiskLevels(Map<String, String> raw) {
+        Map<String, RiskReport.Category> result = new HashMap<>();
+        raw.forEach((key, value) -> {
+            RiskReport.Category level = RiskReport.Category.fromString(value);
+            result.put(key.toLowerCase(Locale.ROOT), level);
+        });
+        return result;
     }
 
     public RiskReport analyze(Message msg) {
         try (InputStream is = msg.getBodyAsStreamDecoded()) {
+            JsonNode root = MAPPER.readTree(is);
             RiskReport report = new RiskReport();
-            traverse(MAPPER.readTree(is), new ArrayDeque<>(), report);
+            traverse(root, new ArrayDeque<>(), report);
             return report;
         } catch (Exception e) {
-            throw new RuntimeException("Failed to analyse message", e);
+            throw new RuntimeException("Failed to analyze message", e);
         }
     }
 
@@ -53,15 +63,16 @@ public class DLPAnalyzer {
             }
         } else {
             String fullPath = String.join(".", path).toLowerCase(Locale.ROOT);
-            String simpleName = path.isEmpty() ? "" : path.getLast().toLowerCase(Locale.ROOT);
-            report.recordField(fullPath, classify(fullPath, simpleName));
+            String lastSegment = path.peekLast() != null ? path.peekLast().toLowerCase(Locale.ROOT) : "";
+
+            RiskReport.Category level = classify(fullPath, lastSegment);
+            report.recordField(fullPath, level.name());
         }
     }
 
-    private String classify(String fullPath, String simpleName) {
+    private RiskReport.Category classify(String fullPath, String simpleName) {
         return Optional.ofNullable(riskDict.get(fullPath))
                 .or(() -> Optional.ofNullable(riskDict.get(simpleName)))
-                .orElse("unclassified")
-                .toLowerCase(Locale.ROOT);
+                .orElse(RiskReport.Category.UNCLASSIFIED);
     }
 }

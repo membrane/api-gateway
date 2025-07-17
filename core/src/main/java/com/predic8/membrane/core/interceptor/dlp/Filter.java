@@ -1,20 +1,35 @@
 package com.predic8.membrane.core.interceptor.dlp;
 
+import com.jayway.jsonpath.Configuration;
 import com.jayway.jsonpath.DocumentContext;
 import com.jayway.jsonpath.JsonPath;
-import com.predic8.membrane.annot.MCAttribute;
+import com.jayway.jsonpath.Option;
 import com.predic8.membrane.annot.MCElement;
+
+import java.util.Set;
 
 @MCElement(name = "filter")
 public class Filter extends Action {
+
+    private static final Configuration SAFE_CONFIG = Configuration.builder()
+            .options(Set.of(Option.DEFAULT_PATH_LEAF_TO_NULL))
+            .build();
+
     @Override
-    public String apply(String json) {
+    public String apply(String json, DLPContext context) {
         try {
-            DocumentContext context = JsonPath.parse(json);
-            context.delete(getField());
-            return context.jsonString();
+            DocumentContext doc = JsonPath.using(SAFE_CONFIG).parse(json);
+            Object value = doc.read(getField());
+
+            if (value == null) {
+                return doc.jsonString();
+            }
+
+            doc.delete(getField());
+            return doc.jsonString();
+
         } catch (Exception e) {
-            throw new RuntimeException();
+            throw new RuntimeException("Failed to apply filter on field: " + getField(), e);
         }
     }
 }

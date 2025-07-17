@@ -13,6 +13,7 @@ import org.slf4j.LoggerFactory;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 
@@ -20,19 +21,22 @@ import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 public class DLPInterceptor extends AbstractInterceptor {
 
     private static final Logger log = LoggerFactory.getLogger(DLPInterceptor.class);
+
     private DLPAnalyzer dlpAnalyzer;
     private String fieldsConfig;
+
     private List<Mask> masks = new ArrayList<>();
     private List<Filter> filters = new ArrayList<>();
     private List<Report> reports = new ArrayList<>();
 
     @Override
     public void init() {
-        if (fieldsConfig != null) {
-            dlpAnalyzer = new DLPAnalyzer(new CsvFieldConfiguration().getFields(fieldsConfig));
-        } else {
-            dlpAnalyzer = new DLPAnalyzer(java.util.Map.of());
-        }
+        Map<String, String> config = fieldsConfig != null ?
+                new CsvFieldConfiguration().getFields(fieldsConfig) :
+                Map.of();
+
+        this.dlpAnalyzer = new DLPAnalyzer(config);
+
         super.init();
     }
 
@@ -46,37 +50,32 @@ public class DLPInterceptor extends AbstractInterceptor {
         return handleInternal(exc.getResponse());
     }
 
-    public Outcome handleInternal(Message msg) {
+    private Outcome handleInternal(Message msg) {
         try {
-            log.info("DLP Risk Analysis: {}", dlpAnalyzer.analyze(msg).getLogReport());
-
-            if (!masks.isEmpty()) {
-                for (Mask mask : masks) {
-                    msg.setBodyContent(mask.apply(msg.getBodyAsStringDecoded())
-                            .getBytes(StandardCharsets.UTF_8));
-                }
+            String body = msg.getBodyAsStringDecoded();
+            RiskReport report = dlpAnalyzer.analyze(msg);
+            DLPContext context = new DLPContext(report);
+            log.info("DLP Risk Analysis: {}", report.getStructuredReport());
+            for (Mask mask : masks) {
+                body = mask.apply(body, context);
             }
 
-            if (!filters.isEmpty()) {
-                for (Filter filter : filters) {
-                    msg.setBodyContent(filter.apply(msg.getBodyAsStringDecoded())
-                            .getBytes(StandardCharsets.UTF_8));
-                }
+            for (Filter filter : filters) {
+                body = filter.apply(body, context);
             }
 
-            if (!reports.isEmpty()) {
-                for (Report report : reports) {
-                    msg.setBodyContent(report.apply(msg.getBodyAsStringDecoded(), dlpAnalyzer.analyze(msg)).getBytes(StandardCharsets.UTF_8));
-                }
+            for (Report reportAction : reports) {
+                body = reportAction.apply(body, context);
             }
 
+            msg.setBodyContent(body.getBytes(StandardCharsets.UTF_8));
             return CONTINUE;
+
         } catch (Exception e) {
-            log.error("Exception in DLPInterceptor handleInternal: ", e);
+            log.error("Exception in DLPInterceptor.handleInternal: ", e);
             return Outcome.ABORT;
         }
     }
-
 
     public String getFieldsConfig() {
         return fieldsConfig;
@@ -115,5 +114,4 @@ public class DLPInterceptor extends AbstractInterceptor {
     public void setReports(List<Report> reports) {
         this.reports = reports;
     }
-
 }
