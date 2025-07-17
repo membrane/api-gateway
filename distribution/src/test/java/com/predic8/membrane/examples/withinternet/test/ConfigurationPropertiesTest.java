@@ -15,13 +15,19 @@ public class ConfigurationPropertiesTest extends DistributionExtractingTestcase 
 
     @Test
     public void test() throws Exception {
-        try (Process2 process2 = startServiceProxyScript()) {
+        try (Process2 process2 = startServiceProxyScriptWithEnv("TARGET", "https://www.predic8.de/")) {
             // @formatter:off
             given()
                     .redirects().follow(false)
                     .get("http://localhost:2000/")
                     .then()
-                    .statusCode(301);
+                    .statusCode(307);
+
+            given()
+                    .redirects().follow(false)
+                    .get("http://localhost:2001/")
+                    .then()
+                    .statusCode(200);
             // @formatter:on
         }
     }
