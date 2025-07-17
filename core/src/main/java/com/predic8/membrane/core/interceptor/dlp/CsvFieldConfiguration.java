@@ -3,25 +3,18 @@ package com.predic8.membrane.core.interceptor.dlp;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.util.*;
 
-/**
- * Loads field risk mappings from a CSV file with format:
- * field_name,description,risk_level
- * where risk_level must be one of: high, medium, low, unclassified
- */
 public class CsvFieldConfiguration implements FieldConfiguration {
 
     private static final Logger log = LoggerFactory.getLogger(CsvFieldConfiguration.class);
 
+    private final Map<String, String> riskLevels = new HashMap<>();
+    private final Map<String, String> categories = new HashMap<>();
+
     @Override
     public Map<String, String> getFields(String fileName) {
-        Map<String, String> riskDict = new HashMap<>();
-
         try (InputStream inputStream = getResourceAsStream(fileName)) {
             BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
             String line;
@@ -43,6 +36,7 @@ public class CsvFieldConfiguration implements FieldConfiguration {
                 }
 
                 String field = parts[0].trim().toLowerCase(Locale.ROOT);
+                String category = parts[1].trim();
                 String riskLevel = parts[2].trim().toLowerCase(Locale.ROOT);
 
                 if (!isValidRiskLevel(riskLevel)) {
@@ -50,13 +44,19 @@ public class CsvFieldConfiguration implements FieldConfiguration {
                     riskLevel = "unclassified";
                 }
 
-                riskDict.put(field, riskLevel);
+                riskLevels.put(field, riskLevel);
+                categories.put(field, category);
             }
 
         } catch (IOException e) {
             throw new RuntimeException("Error reading CSV field configuration: " + fileName, e);
         }
-        return riskDict;
+
+        return riskLevels;
+    }
+
+    public Map<String, String> getFieldCategories() {
+        return categories;
     }
 
     private InputStream getResourceAsStream(String fileName) {

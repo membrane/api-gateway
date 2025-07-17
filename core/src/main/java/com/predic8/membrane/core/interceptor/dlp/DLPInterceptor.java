@@ -33,13 +33,17 @@ public class DLPInterceptor extends AbstractInterceptor {
 
     @Override
     public void init() {
-        Map<String, String> config = fieldsConfig != null ?
-                new CsvFieldConfiguration().getFields(fieldsConfig) :
-                Map.of();
+        if (fieldsConfig != null) {
+            CsvFieldConfiguration csv = new CsvFieldConfiguration();
+            Map<String, String> levels = csv.getFields(fieldsConfig);
+            Map<String, String> cats = csv.getFieldCategories();
+            this.dlpAnalyzer = new DLPAnalyzer(levels, cats);
+        } else {
+            this.dlpAnalyzer = new DLPAnalyzer(Map.of(), Map.of());
+        }
         actions.addAll(masks);
         actions.addAll(filters);
         actions.addAll(reports);
-        this.dlpAnalyzer = new DLPAnalyzer(config);
         super.init();
     }
 

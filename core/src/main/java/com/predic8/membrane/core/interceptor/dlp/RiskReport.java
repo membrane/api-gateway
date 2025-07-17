@@ -7,20 +7,27 @@ public class RiskReport {
     private static final List<String> LEVELS = List.of("high", "medium", "low", "unclassified");
 
     private final Map<String, String> matchedFields = new LinkedHashMap<>();
+    private final Map<String, String> fieldCategories = new LinkedHashMap<>();
     private final EnumMap<Category, Integer> riskCounts = new EnumMap<>(Category.class);
     private final EnumMap<Category, Map<String, Integer>> riskDetails = new EnumMap<>(Category.class);
 
-    public void recordField(String field, String riskLevel) {
+    public void recordField(String field, String riskLevel, String category) {
         matchedFields.put(field, riskLevel);
-        Category category = Category.fromString(riskLevel);
-        riskCounts.merge(category, 1, Integer::sum);
-        riskDetails.computeIfAbsent(category, r -> new LinkedHashMap<>()).merge(field, 1, Integer::sum);
+        fieldCategories.put(field, category);
+
+        Category cat = Category.fromString(riskLevel);
+        riskCounts.merge(cat, 1, Integer::sum);
+        riskDetails.computeIfAbsent(cat, r -> new LinkedHashMap<>()).merge(field, 1, Integer::sum);
+    }
+
+    public String getCategoryOf(String field) {
+        return fieldCategories.getOrDefault(field, "Unknown");
     }
 
     public Category getCategory() {
-        if (riskCounts.getOrDefault("high", 0) > 0) return Category.HIGH;
-        if (riskCounts.getOrDefault("medium", 0) > 0) return Category.MEDIUM;
-        if (riskCounts.getOrDefault("low", 0) > 0) return Category.LOW;
+        if (riskCounts.getOrDefault(Category.HIGH, 0) > 0) return Category.HIGH;
+        if (riskCounts.getOrDefault(Category.MEDIUM, 0) > 0) return Category.MEDIUM;
+        if (riskCounts.getOrDefault(Category.LOW, 0) > 0) return Category.LOW;
         return Category.UNCLASSIFIED;
     }
 

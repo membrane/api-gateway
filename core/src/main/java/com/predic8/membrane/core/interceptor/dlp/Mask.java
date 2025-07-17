@@ -34,6 +34,15 @@ public class Mask extends Action {
 
     @MCAttribute
     public void setKeepRight(String keepRight) {
+        if (keepRight != null) {
+            try {
+                if (Integer.parseInt(keepRight) < 0) {
+                    throw new IllegalArgumentException("keepRight must be non-negative: " + keepRight);
+                }
+            } catch (NumberFormatException e) {
+                throw new IllegalArgumentException("keepRight must be a valid integer: " + keepRight, e);
+            }
+        }
         this.keepRight = keepRight;
     }
 }

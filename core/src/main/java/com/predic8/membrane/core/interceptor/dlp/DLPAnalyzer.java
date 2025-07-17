@@ -25,9 +25,11 @@ public class DLPAnalyzer {
     private static final ObjectMapper MAPPER = new ObjectMapper(JSON_FACTORY);
 
     private final Map<String, RiskReport.Category> riskDict;
+    private final Map<String, String> categoryMap;
 
-    public DLPAnalyzer(Map<String, String> rawRiskMap) {
+    public DLPAnalyzer(Map<String, String> rawRiskMap, Map<String, String> categoryMap) {
         this.riskDict = mapToEnumRiskLevels(rawRiskMap);
+        this.categoryMap = categoryMap;
     }
 
     private Map<String, RiskReport.Category> mapToEnumRiskLevels(Map<String, String> raw) {
@@ -66,7 +68,10 @@ public class DLPAnalyzer {
             String lastSegment = path.peekLast() != null ? path.peekLast().toLowerCase(Locale.ROOT) : "";
 
             RiskReport.Category level = classify(fullPath, lastSegment);
-            report.recordField(fullPath, level.name());
+            String riskLevel = level.name();
+            String category = categoryMap.getOrDefault(fullPath, categoryMap.getOrDefault(lastSegment, "Unknown"));
+
+            report.recordField(fullPath, riskLevel, category);
         }
     }
 
