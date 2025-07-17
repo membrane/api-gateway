@@ -11,9 +11,9 @@ public class Mask extends Action {
     private String keepRight = "0";
 
     @Override
-    public String apply(String json, DLPContext context) {
+    public String apply(DLPContext context) {
         try {
-            DocumentContext doc = JsonPath.parse(json);
+            DocumentContext doc = JsonPath.parse(context.getBody());
             String original = doc.read(getField(), String.class);
             String masked = maskKeepRight(original, Integer.parseInt(keepRight));
             doc.set(getField(), masked);

@@ -16,5 +16,5 @@ public abstract class Action implements DLPAction {
     }
 
     @Override
-    public abstract String apply(String json, DLPContext context);
+    public abstract String apply(DLPContext context);
 }

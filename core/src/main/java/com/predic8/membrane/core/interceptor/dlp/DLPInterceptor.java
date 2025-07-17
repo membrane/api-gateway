@@ -48,20 +48,14 @@ public class DLPInterceptor extends AbstractInterceptor {
         return handleInternal(exc.getRequest());
     }
 
-    @Override
-    public Outcome handleResponse(Exchange exc) {
-        return handleInternal(exc.getResponse());
-    }
-
     private Outcome handleInternal(Message msg) {
         try {
             String body = msg.getBodyAsStringDecoded();
             RiskReport report = dlpAnalyzer.analyze(msg);
-            DLPContext context = new DLPContext(report);
             log.info("DLP Risk Analysis: {}", report.getStructuredReport());
 
             for (DLPAction action : actions) {
-                body = action.apply(body, context);
+                body = action.apply(new DLPContext(body, report));
             }
 
             msg.setBodyContent(body.getBytes(StandardCharsets.UTF_8));

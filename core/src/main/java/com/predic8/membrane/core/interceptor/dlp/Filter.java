@@ -16,9 +16,9 @@ public class Filter extends Action {
             .build();
 
     @Override
-    public String apply(String json, DLPContext context) {
+    public String apply(DLPContext context) {
         try {
-            DocumentContext doc = JsonPath.using(SAFE_CONFIG).parse(json);
+            DocumentContext doc = JsonPath.using(SAFE_CONFIG).parse(context.getBody());
             Object value = doc.read(getField());
 
             if (value == null) {
