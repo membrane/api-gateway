@@ -1,5 +1,6 @@
 package com.predic8.membrane.core.interceptor.balancer;
 
+import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.config.*;
 import com.predic8.membrane.core.exchange.*;
@@ -21,6 +22,7 @@ import static java.util.Comparator.comparing;
  * If multiple nodes are healthy at that priority, one is selected at random.
  * If no nodes are UP, falls back to the first node in sorted order.
  */
+@MCElement(name="priorityStrategy")
 public class PriorityStrategy extends AbstractXmlElement implements DispatchingStrategy {
 
     private static final Logger log = LoggerFactory.getLogger(PriorityStrategy.class);

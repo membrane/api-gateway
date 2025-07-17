@@ -136,7 +136,6 @@ public class ClusterHealthMonitor implements ApplicationContextAware, Initializi
      * @example 30
      * @default 10
      */
-    @Required
     @MCAttribute
     public void setInterval(int interval) {
         this.interval = interval;
