@@ -2,7 +2,7 @@ package com.predic8.membrane.core.interceptor.dlp;
 
 import com.predic8.membrane.annot.MCAttribute;
 
-public abstract class Action {
+public abstract class Action implements DLPAction {
 
     private String field;
 
@@ -15,5 +15,6 @@ public abstract class Action {
         this.field = field;
     }
 
+    @Override
     public abstract String apply(String json, DLPContext context);
 }

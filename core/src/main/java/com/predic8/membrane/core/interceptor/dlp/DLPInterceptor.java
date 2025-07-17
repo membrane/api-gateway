@@ -29,6 +29,8 @@ public class DLPInterceptor extends AbstractInterceptor {
     private List<Filter> filters = new ArrayList<>();
     private List<Report> reports = new ArrayList<>();
 
+    private final List<DLPAction> actions = new ArrayList<>();
+
     @Override
     public void init() {
         Map<String, String> config = fieldsConfig != null ?
@@ -56,16 +58,9 @@ public class DLPInterceptor extends AbstractInterceptor {
             RiskReport report = dlpAnalyzer.analyze(msg);
             DLPContext context = new DLPContext(report);
             log.info("DLP Risk Analysis: {}", report.getStructuredReport());
-            for (Mask mask : masks) {
-                body = mask.apply(body, context);
-            }
 
-            for (Filter filter : filters) {
-                body = filter.apply(body, context);
-            }
-
-            for (Report reportAction : reports) {
-                body = reportAction.apply(body, context);
+            for (DLPAction action : actions) {
+                body = action.apply(body, context);
             }
 
             msg.setBodyContent(body.getBytes(StandardCharsets.UTF_8));

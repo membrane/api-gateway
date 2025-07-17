@@ -6,6 +6,7 @@ import com.predic8.membrane.annot.MCElement;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Locale;
 import java.util.Map;
 
 @MCElement(name = "report")
@@ -23,22 +24,31 @@ public class Report extends Action {
                 return ctx.jsonString();
             }
 
-            String targetPath = getField() != null ? getField() : "$";
-
-            Object target = ctx.read(targetPath);
-            if (!(target instanceof Map)) {
-                log.warn("Target path '{}' is not a JSON object. Cannot inject risk report.", targetPath);
+            String targetPath = getField();
+            if (targetPath == null) {
+                log.warn("No field set on <report>. Skipping.");
                 return ctx.jsonString();
             }
 
-            ctx.put(targetPath, "risk", Map.of(
-                    "category", context.getRiskReport().getCategory().name(),
-                    "counts", context.getRiskReport().getStructuredReport()
-            ));
+            Object value = ctx.read(targetPath);
+            String normalizedFieldName = targetPath.replaceFirst("^\\$\\.", "").toLowerCase(Locale.ROOT);
+            String riskLevel = context.getRiskReport()
+                    .getMatchedFields()
+                    .getOrDefault(normalizedFieldName, "UNCLASSIFIED");
 
+            Map<String, Object> riskBlock = Map.of(
+                    "value", value,
+                    "risk", Map.of(
+                            "field", normalizedFieldName,
+                            "category", riskLevel
+                    )
+            );
+
+            ctx.set(targetPath, riskBlock);
             return ctx.jsonString();
+
         } catch (Exception e) {
-            log.error("Failed to inject risk report at path '{}'", getField(), e);
+            log.error("Failed to inject risk metadata into field '{}'", getField(), e);
             throw new RuntimeException("DLP Report injection failed at path: " + getField(), e);
         }
     }
