@@ -399,7 +399,7 @@ public class Response extends Message {
 	 * @throws IOException if an I/O error occurs while reading the response.
 	 * @throws EndOfStreamException if the end of the stream is reached unexpectedly before the response is fully read.
 	 */
-	public static Response readNew(InputStream in, boolean createBody) throws IOException, EndOfStreamException {
+	public static Response fromStream(InputStream in, boolean createBody) throws IOException, EndOfStreamException {
 		Response res = new Response();
 		res.read(in, createBody);
 		return res;

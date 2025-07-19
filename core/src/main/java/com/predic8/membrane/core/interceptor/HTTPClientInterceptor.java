@@ -68,8 +68,8 @@ public class HTTPClientInterceptor extends AbstractInterceptor {
 
         changeMethod(exc);
 
-        try {
-            hc.call(exc, adjustHostHeader, failOverOn5XX);
+        try(HttpClient client = hc) {
+            client.call(exc, adjustHostHeader, failOverOn5XX);
             return RETURN;
         } catch (ConnectException e) {
             String msg = "Target %s is not reachable.".formatted(getDestination(exc));

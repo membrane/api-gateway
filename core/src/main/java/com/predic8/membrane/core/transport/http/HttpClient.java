@@ -14,27 +14,26 @@ limitations under the License. */
 
 package com.predic8.membrane.core.transport.http;
 
-import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.model.*;
 import com.predic8.membrane.core.transport.http.client.*;
 import com.predic8.membrane.core.transport.http2.*;
-import com.predic8.membrane.core.transport.ssl.*;
 import com.predic8.membrane.core.util.*;
+import org.slf4j.Logger;
 import org.slf4j.*;
 
 import javax.annotation.*;
 import java.io.*;
 import java.net.*;
-import java.nio.*;
 import java.util.*;
 
+import static com.predic8.membrane.core.Constants.*;
 import static com.predic8.membrane.core.exchange.Exchange.*;
 import static com.predic8.membrane.core.http.Header.*;
+import static com.predic8.membrane.core.http.Response.*;
 import static java.lang.Boolean.*;
-import static java.lang.Thread.*;
-import static java.nio.charset.StandardCharsets.*;
+import static java.lang.System.*;
 
 /**
  * HttpClient with possibly multiple selectable destinations, with internal logic to auto-retry and to
@@ -46,16 +45,7 @@ public class HttpClient implements AutoCloseable {
     private static final Logger log = LoggerFactory.getLogger(HttpClient.class.getName());
 
     public static final String HTTP2 = "h2";
-
-    /**
-     * How long to wait between calls to the same destination, in milliseconds.
-     * To prevent hammering one target.
-     * Between calls to different targets (think servers) this waiting time is not applied.
-     * Note: for reasons of code simplicity, this sleeping time is only applied between direct successive calls
-     * to the same target. If there are multiple targets like one, two, one and it all goes very fast, then
-     * it's possible that the same server gets hit with less time in between.
-     */
-    private final int timeBetweenTriesMs = 250;
+    public static final String CONNECT = "CONNECT";
 
     private HttpClientConfiguration configuration;
 
@@ -65,6 +55,8 @@ public class HttpClient implements AutoCloseable {
 
     private final ConnectionFactory connectionFactory;
 
+    private final RetryHandler retryHandler;
+
     public HttpClient() {
         this(null, null);
     }
@@ -73,11 +65,10 @@ public class HttpClient implements AutoCloseable {
         this(configuration, null);
     }
 
-    public HttpClient(@Nullable HttpClientConfiguration configuration, @Nullable TimerManager timerManager) {
-        if (configuration == null)
-            configuration = new HttpClientConfiguration();
-        this.configuration = configuration;
-        this.connectionFactory = new ConnectionFactory(configuration, timerManager);
+    public HttpClient(@Nullable HttpClientConfiguration clientConfiguration, @Nullable TimerManager timerManager) {
+        configuration = clientConfiguration != null ? clientConfiguration : new HttpClientConfiguration();
+        connectionFactory = new ConnectionFactory(this.configuration, timerManager);
+        retryHandler = new RetryHandler(configuration, configuration.getMaxRetries());
     }
 
     public void setStreamPumpStats(StreamPump.StreamPumpStats streamPumpStats) {
@@ -90,7 +81,7 @@ public class HttpClient implements AutoCloseable {
         close();
     }
 
-    private void setRequestURI(Request req, String dest) throws MalformedURLException {
+    void setRequestURI(Request req, String dest) throws MalformedURLException {
         if (configuration.getProxy() != null || req.isCONNECTRequest()) {
             req.setUri(dest);
             return;
@@ -101,13 +92,7 @@ public class HttpClient implements AutoCloseable {
                     The exchange's destination URI %s does not start with 'http'. Specify a <target> within the API configuration or make sure the exchanges destinations list contains a valid URI.
                     """.formatted(dest));
         }
-        String originalUri = req.getUri();
         req.setUri(HttpUtil.getPathAndQueryString(dest));
-
-        // Make sure if the request had no path and the destination has also no path
-        // to continue with no path. Maybe for STOMP?
-        if ("/".equals(originalUri) && req.getUri().isEmpty()) // QUESTION: Will that be ever true?
-            req.setUri("/");
     }
 
     private HostColonPort getTargetHostAndPort(boolean connect, String dest) throws MalformedURLException {
@@ -116,7 +101,7 @@ public class HttpClient implements AutoCloseable {
         return new HostColonPort(new URL(dest));
     }
 
-    private HostColonPort init(Exchange exc, String dest, boolean adjustHostHeader) throws IOException {
+    HostColonPort initializeRequest(Exchange exc, String dest, boolean adjustHostHeader) throws IOException {
         setRequestURI(exc.getRequest(), dest);
         HostColonPort target = getTargetHostAndPort(exc.getRequest().isCONNECTRequest(), dest);
 
@@ -134,96 +119,12 @@ public class HttpClient implements AutoCloseable {
     }
 
     public Exchange call(Exchange exc, boolean adjustHostHeader, boolean failOverOn5XX) throws Exception {
-        /*
-         TODO: Questions
-
-         - Should we retry POST? Maybe only retry POST when:
-           - Network error before the request reaches the server:
-             - Connection timeouts during establishment
-             - DNS resolution failures
-             - Network unreachable errors
-             - Connection refused (server not running)
-           - Server explicitly indicates retry is safe:
-             - 5xx server errors (500, 502, 503, 504) - but be cautious
-             - 408 Request Timeout
-             - 429 Too Many Requests (with Retry-After header) => ?
-         */
-
-        if (exc.getDestinations().isEmpty())
-            throw new IllegalStateException("List of destinations is empty. Please specify at least one destination.");
-
         denyUnsupportedUpgrades(exc);
+        return retryHandler.executeWithRetries(exc, failOverOn5XX, (e, target, attempt) -> {
+            HostColonPort hcp = initializeRequest(exc, target, adjustHostHeader);
+            return call(e, failOverOn5XX, attempt, hcp);
+        });
 
-        int counter = 0;
-        Exception exception = null;
-        while (counter < configuration.getMaxRetries()) {
-            HostColonPort target = init(exc, getDestination(exc, counter), adjustHostHeader);
-            log.debug("try # {} to {}", counter, target);
-            try {
-                if (call(exc, failOverOn5XX, counter, target)) return exc;
-
-                // java.net.SocketException: Software caused connection abort: socket write error
-            } catch (MalformedURLException e) {
-                throw e; // Rethrow so the caller can handle it
-            } catch (ConnectException e) {
-                exception = e;
-                log.info("Connection to {} refused.", target);
-            } catch (SocketException e) {
-                exception = e;
-                if (e.getMessage().contains("Software caused connection abort")) {
-                    log.info("Connection to {} was aborted externally. Maybe by the server or the OS Membrane is running on.", getDestination(exc, counter));
-                } else if (e.getMessage().contains("Connection reset")) {
-                    log.info("Connection to {} was reset externally. Maybe by the server or the OS Membrane is running on.", getDestination(exc, counter));
-                } else {
-                    logException(exc, counter, e);
-                }
-                throwWhenPost(exc, e);
-            } catch (SocketTimeoutException e) {
-                log.info("Connection to {} timed out.", target);
-                throw e;
-            } catch (UnknownHostException e) {
-                exception = e;
-                log.warn("Unknown host: {}", target);
-            } catch (EOFWhileReadingFirstLineException e) {
-                exception = e;
-                log.debug("Server connection to {} terminated before line was read. Line so far: {}", getDestination(exc, counter), e.getLineSoFar());
-            } catch (NoResponseException e) {
-                exception = e;
-                throwWhenPost(exc, e);
-            } catch (Exception e) {
-                exception = e;
-                logException(exc, counter, e);
-            } finally {
-                if (trackNodeStatus(exc)) {
-                    if (exception != null) {
-                        exc.setNodeException(counter, exception);
-                    }
-                }
-            }
-
-            HttpClientStatusEventBus.reportException(exc, exception, getDestination(exc, counter));
-
-            if (exception instanceof UnknownHostException) {
-                if (exc.getDestinations().size() < 2) {
-                    //don't retry this host, it's useless. (it's very unlikely that it will work after timeBetweenTriesMs)
-                    break;
-                }
-            } else if (exception instanceof NoResponseException) {
-                //TODO explain why we give up here, don't even retry another host.
-                //maybe it means we ourselves lost network connection?
-                throw exception;
-            }
-
-            counter++;
-            waitBetweenCalls(exc);
-        }
-        throw exception;
-    }
-
-    private static void throwWhenPost(Exchange exc, Exception e) throws Exception {
-        if (exc.getRequest().isPOSTRequest()) {
-            throw e;
-        }
     }
 
     /**
@@ -244,15 +145,14 @@ public class HttpClient implements AutoCloseable {
             exc.getRequest().getHeader().setProxyAuthorization(configuration.getProxy().getCredentials());
 
         if (outConType.usingHttp2()) {
-            doHttp2Call(exc, outConType.con(), target, outConType.h2c(), outConType.sslProvider(), outConType.sniServerName());
+            executeHttp2Call(exc, outConType, target);
         } else {
-            if (doHttp1Call(exc, outConType, counter, getDestination(exc, counter))) {
+            if (executeHttp1Call(exc, outConType, counter, getDestination(exc, counter))) {
                 return true;
             }
         }
 
-        HttpClientStatusEventBus.reportSuccess(exc, getDestination(exc, counter));
-
+        // TODO Closer look!
         if (!failOverOn5XX || !is5xx(exc.getResponse().getStatusCode()) || counter == configuration.getMaxRetries() - 1) {
             applyKeepAliveHeader(exc.getResponse(), outConType.con());
             exc.setDestinations(List.of(getDestination(exc, counter)));
@@ -266,30 +166,20 @@ public class HttpClient implements AutoCloseable {
         return false;
     }
 
-    private void waitBetweenCalls(Exchange exc) throws InterruptedException {
-        //as documented above, the sleep timeout is only applied between successive calls to the SAME destination.
-        if (exc.getDestinations().size() != 1)
-            return;
-
-        sleep(timeBetweenTriesMs);
-    }
-
-    boolean doHttp1Call(Exchange exc, ConnectionFactory.OutgoingConnectionType oct, int counter, String dest) throws EndOfStreamException, IOException {
+    boolean executeHttp1Call(Exchange exc, ConnectionFactory.OutgoingConnectionType oct, int counter, String dest) throws EndOfStreamException, IOException {
 
         Response response;
-
         String newProtocol;
 
         if (exc.getRequest().isCONNECTRequest()) {
             handleConnectRequest(exc, oct.con());
-            response = Response.ok().build();
-            newProtocol = "CONNECT";
+            response = ok().build();
+            newProtocol = CONNECT;
             //TODO should we report to the httpClientStatusEventBus here somehow?
         } else {
             response = doCall(exc, oct.con());
             if (trackNodeStatus(exc))
                 exc.setNodeStatusCode(counter, response.getStatusCode());
-
             newProtocol = upgradeProtocol(exc, response);
         }
 
@@ -308,39 +198,57 @@ public class HttpClient implements AutoCloseable {
 
     private void denyUnsupportedUpgrades(Exchange exc) throws ProtocolUpgradeDeniedException {
         String upgradeProtocol = exc.getRequest().getHeader().getUpgradeProtocol();
-        if (upgradeProtocol == null)
-            return;
-        if (upgradeProtocol.equalsIgnoreCase("websocket") && exc.getProperty(ALLOW_WEBSOCKET) == TRUE)
-            return;
-        if (upgradeProtocol.equalsIgnoreCase("tcp") && exc.getProperty(ALLOW_TCP) == TRUE)
+        if (upgradeProtocol == null ||
+            isWebsocketProtocolUpgradeAllowed(exc, upgradeProtocol) ||
+            isTcpProtocolUpgradeAllowed(exc, upgradeProtocol)
+        )
             return;
         if (upgradeProtocol.equalsIgnoreCase("h2c")) {
-            if (exc.getProperty(ALLOW_H2) == TRUE) {
-                // note that this has been deprecated by RFC9113 superseeding RFC7540, and therefore should not happen.
-                return;
-            }
-            // RFC750 section 3.2 specifies that servers not supporting this can respond "as though the Upgrade header
-            // field were absent". Therefore, we remove it.
-            if (infoOnHttp2Downgrade) {
-                infoOnHttp2Downgrade = false;
-                log.info("Your client sent a 'Connection: Upgrade' with 'Upgrade: h2c'. Please note that RFC7540 has " +
-                         "been superseeded by RFC9113, which removes this option. The header was and will be removed.");
-            }
-            exc.getRequest().getHeader().removeFields(UPGRADE);
-            exc.getRequest().getHeader().removeFields(HTTP2_SETTINGS);
-            exc.getRequest().getHeader().keepOnly(CONNECTION, value -> !value.equalsIgnoreCase(UPGRADE) && !value.equalsIgnoreCase(HTTP2_SETTINGS));
+            handleH2CUpgradeRequest(exc);
             return;
         }
 
         throw new ProtocolUpgradeDeniedException(upgradeProtocol);
     }
 
-    private void doHttp2Call(Exchange exc, Connection con, HostColonPort target, Http2Client h2c, SSLProvider sslProvider, String sniServerName) throws IOException, InterruptedException {
-        if (h2c == null) {
-            h2c = new Http2Client(con, sslProvider.showSSLExceptions());
-            connectionFactory.getHttp2ClientPool().share(target.host(), target.port(), sslProvider, sniServerName, configuration.getProxy(), connectionFactory.getProxySSLContext(), h2c);
+    private static boolean isWebsocketProtocolUpgradeAllowed(Exchange exc, String upgradeProtocol) {
+        return upgradeProtocol.equalsIgnoreCase("websocket") && exc.getProperty(ALLOW_WEBSOCKET) == TRUE;
+    }
+
+    private static boolean isTcpProtocolUpgradeAllowed(Exchange exc, String upgradeProtocol) {
+        return upgradeProtocol.equalsIgnoreCase("tcp") && exc.getProperty(ALLOW_TCP) == TRUE;
+    }
+
+    private static void handleH2CUpgradeRequest(Exchange exc) {
+        if (exc.getProperty(ALLOW_H2) == TRUE) {
+            // note that this has been deprecated by RFC9113 superseeding RFC7540, and therefore should not happen.
+            return;
         }
-        exc.setResponse(h2c.doCall(exc, con));
+        // RFC750 section 3.2 specifies that servers not supporting this can respond "as though the Upgrade header
+        // field were absent". Therefore, we remove it.
+        if (infoOnHttp2Downgrade) {
+            infoOnHttp2Downgrade = false;
+            log.info("Your client sent a 'Connection: Upgrade' with 'Upgrade: h2c'. Please note that RFC7540 has " +
+                     "been superseeded by RFC9113, which removes this option. The header was and will be removed.");
+        }
+        exc.getRequest().getHeader().removeFields(UPGRADE);
+        exc.getRequest().getHeader().removeFields(HTTP2_SETTINGS);
+        exc.getRequest().getHeader().keepOnly(CONNECTION, value -> !value.equalsIgnoreCase(UPGRADE) && !value.equalsIgnoreCase(HTTP2_SETTINGS));
+    }
+
+    private void executeHttp2Call(Exchange exc, ConnectionFactory.OutgoingConnectionType outConType, HostColonPort target) throws IOException, InterruptedException {
+        Http2Client h2c = outConType.h2c();
+        if (h2c == null) {
+            h2c = new Http2Client(outConType.con(), outConType.sslProvider().showSSLExceptions());
+            connectionFactory.getHttp2ClientPool().share(target.host(),
+                    target.port(),
+                    outConType.sslProvider(),
+                    outConType.sniServerName(),
+                    configuration.getProxy(),
+                    connectionFactory.getProxySSLContext(),
+                    h2c);
+        }
+        exc.setResponse(h2c.doCall(exc, outConType.con()));
         exc.setProperty(HTTP2, true);
         // TODO: handle CONNECT / AllowWebSocket / etc
         // TODO: connection should only be closed by the Http2Client
@@ -391,48 +299,35 @@ public class HttpClient implements AutoCloseable {
      * @param counter starting at 0 meaning the first.
      */
     public static String getDestination(Exchange exc, int counter) {
+
+        /*
+        Maybe place here:
+
+          if (exc.getDestinations().isEmpty())
+            throw new IllegalStateException("List of destinations is empty. Please specify at least one destination.");
+
+         */
         return exc.getDestinations().get(counter % exc.getDestinations().size());
-    }
-
-    private void logException(Exchange exc, int counter, Exception e) throws IOException {
-        if (!log.isDebugEnabled())
-            return;
-
-        StringBuilder msg = new StringBuilder();
-        msg.append("try # ");
-        msg.append(counter);
-        msg.append(" failed\n");
-
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        exc.getRequest().writeStartLine(baos);
-        exc.getRequest().getHeader().write(baos);
-        msg.append(ISO_8859_1.decode(ByteBuffer.wrap(baos.toByteArray())));
-
-        if (e != null)
-            log.debug("{}", msg, e);
-        else
-            log.debug("{}", msg);
     }
 
     private Response doCall(Exchange exc, Connection con) throws IOException, EndOfStreamException {
         con.socket.setSoTimeout(configuration.getConnection().getSoTimeout());
         exc.getRequest().write(con.out, configuration.getMaxRetries() > 1);
-        exc.setTimeReqSent(System.currentTimeMillis());
+        exc.setTimeReqSent(currentTimeMillis());
 
         if (exc.getRequest().isHTTP10()) {
             shutDownRequestInputOutput(exc, con);
         }
 
-        Response res = new Response();
-        res.read(con.in, !exc.getRequest().isHEADRequest());
+        var response = fromStream(con.in, !exc.getRequest().isHEADRequest());
 
-        if (res.getStatusCode() == 100) {
-            do100ExpectedHandling(exc, res, con);
+        if (response.getStatusCode() == 100) {
+            do100ExpectedHandling(exc, response, con);
         }
 
         exc.setReceived();
-        exc.setTimeResReceived(System.currentTimeMillis());
-        return res;
+        exc.setTimeResReceived(currentTimeMillis());
+        return response;
     }
 
     public static void setupConnectionForwarding(Exchange exc, final Connection con, final String protocol, StreamPump.StreamPumpStats streamPumpStats) throws SocketException {
@@ -488,10 +383,10 @@ public class HttpClient implements AutoCloseable {
     private void handleConnectRequest(Exchange exc, Connection con) throws IOException, EndOfStreamException {
         if (configuration.getProxy() != null) {
             exc.getRequest().write(con.out, configuration.getMaxRetries() > 1);
-            Response response = Response.readNew(con.in, false);
+            Response response = fromStream(con.in, false);
             log.debug("Status code response on CONNECT request: {}", response.getStatusCode());
         }
-        exc.getRequest().setUri(Constants.N_A);
+        exc.getRequest().setUri(NOT_APPLICABLE);
     }
 
     private void do100ExpectedHandling(Exchange exc, Response response, Connection con) throws IOException, EndOfStreamException {

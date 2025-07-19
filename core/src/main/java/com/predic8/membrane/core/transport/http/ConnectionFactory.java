@@ -22,9 +22,7 @@ public class ConnectionFactory {
     private final ConnectionManager connectionManager;
     private final Http2ClientPool http2ClientPool;
     private final ProxyConfiguration proxy;
-
     private final HttpClientConfiguration config;
-
     private final SSLContext proxySSLContext;
     private final SSLContext sslContext;
 
@@ -34,23 +32,19 @@ public class ConnectionFactory {
     public ConnectionFactory(HttpClientConfiguration config, TimerManager timerManager) {
         this.config = config;
         this.http2ClientPool = getHttp2ClientPool(config);
-
         this.proxy = config.getProxy();
-      //  this.proxySSLContext = createProxySSLContext(config.getProxy());
         this.proxySSLContext = getProxySSLContext(config.getProxy());
-   //     this.defaultSSLProvider = new StaticSSLContext(new SSLParser(), null, null);
-
         this.sslContext = getSSLContext(config);
-
         connectionManager = new ConnectionManager(config.getConnection().getKeepAliveTimeout(), timerManager);
     }
 
-    public OutgoingConnectionType getConnection(Exchange exc, HostColonPort target, int counter) throws IOException {
+    public OutgoingConnectionType getConnection(Exchange exc, HostColonPort target, int attempts) throws IOException {
 
+        // TODO Check if there was something
         SSLProvider sslProviderOverride = getOutboundSSLProvider(exc, target);
 
         // What if a connection is returned that is already a http2 con => usingHttp2 is not set => Falling down to http?
-        Connection con = getExchangeAttachedConnection(exc, counter, target);
+        Connection con = getExchangeAttachedConnection(exc, attempts, target);
 
         boolean usingHttp2 = false;
 
@@ -104,10 +98,7 @@ public class ConnectionFactory {
         if (sslPropObj != null)
             return sslPropObj;
         if (hcp.useSSL())
-            if (sslContext != null)
-                return sslContext;
-            else
-                return getDefaultSSLProvider();
+            return sslContext != null ? sslContext : getDefaultSSLProvider();
         return null;
     }
 
