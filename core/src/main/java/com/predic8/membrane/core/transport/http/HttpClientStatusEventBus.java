@@ -14,6 +14,7 @@
 
 package com.predic8.membrane.core.transport.http;
 
+import com.predic8.membrane.core.exchange.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -85,6 +86,9 @@ public class HttpClientStatusEventBus {
 //    }
 
     public void reportResponse(String destination, int responseCode) {
+        if (responseCode == 0) // Should not be necessary but might be safer. If the client hasn't got an answer
+            return;
+
         long timestamp = System.currentTimeMillis();
         for (HttpClientStatusEventListener listener : listeners) {
             try {
@@ -99,7 +103,7 @@ public class HttpClientStatusEventBus {
      *
      * @param destination
      */
-    public void reportException(String destination, Exception exception) {
+    private void reportException(String destination, Exception exception) {
         long timestamp = System.currentTimeMillis();
         for (HttpClientStatusEventListener listener : listeners) {
             try {
@@ -110,4 +114,27 @@ public class HttpClientStatusEventBus {
         }
     }
 
+    public static HttpClientStatusEventBus getHttpClientStatusEventBus(Exchange exchange) {
+        // With case here about 20-50 nanoseconds faster than generic call
+        return (HttpClientStatusEventBus)exchange.getProperties().get(EXCHANGE_PROPERTY_NAME);
+    }
+
+    public static void reportException(Exchange exc, Exception exception, String destination) {
+        HttpClientStatusEventBus bus = HttpClientStatusEventBus.getHttpClientStatusEventBus(exc);
+        if (bus == null)
+            return;
+        //we have an error. either in the form of an exception, or as a 5xx response code.
+        if (exception != null) {
+            bus.reportException(destination, exception);
+            return;
+        }
+        bus.reportResponse(destination, exc.getResponse().getStatusCode());
+    }
+
+    public static void reportSuccess(Exchange exc, String destination) {
+        HttpClientStatusEventBus bus = HttpClientStatusEventBus.getHttpClientStatusEventBus(exc);
+        if (bus == null)
+            return;
+        bus.reportResponse(destination, exc.getResponse().getStatusCode());
+    }
 }
