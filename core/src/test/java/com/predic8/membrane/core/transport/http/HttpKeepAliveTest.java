@@ -142,16 +142,16 @@ public class HttpKeepAliveTest {
 
 		Thread.sleep(200);
 
-		assertEquals(1, client.getConnectionManager().getNumberInPool());
+		assertEquals(1, client.getConnectionFactory().getConnectionManager().getNumberInPool());
 		Thread.sleep(600); // connection closer did not yet run (runs at 2*keep_alive_timeout)
 		// connection 1 is now dead, but still in pool
-		assertEquals(1, client.getConnectionManager().getNumberInPool());
+		assertEquals(1, client.getConnectionFactory().getConnectionManager().getNumberInPool());
 
 		assertEquals(200, issueRequest(client)); // opens connection 2
 		assertEquals(2, set.size());
 
 		Thread.sleep(600); // connection closer runs and closes both
-		assertEquals(0, client.getConnectionManager().getNumberInPool());
+		assertEquals(0, client.getConnectionFactory().getConnectionManager().getNumberInPool());
 	}
 
 	@Test

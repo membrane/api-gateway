@@ -15,20 +15,16 @@ limitations under the License. */
 package com.predic8.membrane.core.transport.http;
 
 import com.predic8.membrane.core.Constants;
-import com.predic8.membrane.core.config.security.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.model.*;
-import com.predic8.membrane.core.resolver.*;
 import com.predic8.membrane.core.transport.http.client.*;
 import com.predic8.membrane.core.transport.http2.*;
 import com.predic8.membrane.core.transport.ssl.*;
 import com.predic8.membrane.core.util.*;
-import org.jetbrains.annotations.*;
 import org.slf4j.*;
 
-import javax.annotation.Nullable;
-import javax.annotation.concurrent.*;
+import javax.annotation.*;
 import java.io.*;
 import java.net.*;
 import java.nio.*;
@@ -46,16 +42,10 @@ import static java.nio.charset.StandardCharsets.*;
  * Instances are thread-safe.
  */
 public class HttpClient implements AutoCloseable {
-    public static final String HTTP2 = "h2";
 
     private static final Logger log = LoggerFactory.getLogger(HttpClient.class.getName());
 
-    @GuardedBy("HttpClient.class")
-    private static SSLProvider defaultSSLProvider;
-
-    private final ProxyConfiguration proxy;
-    private final SSLContext proxySSLContext;
-    private final AuthenticationConfiguration authentication;
+    public static final String HTTP2 = "h2";
 
     /**
      * How long to wait between calls to the same destination, in milliseconds.
@@ -66,23 +56,14 @@ public class HttpClient implements AutoCloseable {
      * it's possible that the same server gets hit with less time in between.
      */
     private final int timeBetweenTriesMs = 250;
-    /**
-     * See {@link HttpClientConfiguration#setMaxRetries(int)}
-     */
-    private final int maxRetries;
-    private final int connectTimeout;
-    private final int soTimeout;
-    private final String localAddr;
-    private final SSLContext sslContext;
-    private final boolean useHttp2;
 
-    private final ConnectionManager conMgr;
-    private final Http2ClientPool http2ClientPool;
+    private HttpClientConfiguration configuration;
+
     private StreamPump.StreamPumpStats streamPumpStats;
 
-    private static final String[] HTTP2_PROTOCOLS = new String[]{"h2"};
-    private static final String[] HTTP1_PROTOCOLS = new String[]{};
     private static volatile boolean infoOnHttp2Downgrade = true;
+
+    private final ConnectionFactory connectionFactory;
 
     public HttpClient() {
         this(null, null);
@@ -95,41 +76,8 @@ public class HttpClient implements AutoCloseable {
     public HttpClient(@Nullable HttpClientConfiguration configuration, @Nullable TimerManager timerManager) {
         if (configuration == null)
             configuration = new HttpClientConfiguration();
-        proxy = configuration.getProxy();
-        proxySSLContext = getProxySSLContext(proxy);
-        sslContext = getSSLContext(configuration);
-        authentication = configuration.getAuthentication();
-        maxRetries = configuration.getMaxRetries();
-
-        connectTimeout = configuration.getConnection().getTimeout();
-        soTimeout = configuration.getConnection().getSoTimeout();
-        localAddr = configuration.getConnection().getLocalAddr();
-
-        conMgr = new ConnectionManager(configuration.getConnection().getKeepAliveTimeout(), timerManager);
-
-        useHttp2 = configuration.isUseExperimentalHttp2();
-        http2ClientPool = getHttp2ClientPool(useHttp2, configuration);
-    }
-
-    private static @org.jetbrains.annotations.Nullable SSLContext getSSLContext(@NotNull HttpClientConfiguration configuration) {
-        if (configuration.getSslParser() == null)
-            return null;
-        if (configuration.getBaseLocation() == null)
-            throw new RuntimeException("Cannot find keystores as base location is unknown");
-        return new StaticSSLContext(configuration.getSslParser(), new ResolverMap(), configuration.getBaseLocation());
-
-    }
-
-    private static @org.jetbrains.annotations.Nullable SSLContext getProxySSLContext(ProxyConfiguration proxy) {
-        if (proxy != null && proxy.getSslParser() != null)
-            return new StaticSSLContext(proxy.getSslParser(), new ResolverMap(), null);
-        return null;
-    }
-
-    private @org.jetbrains.annotations.Nullable Http2ClientPool getHttp2ClientPool(boolean useHttp2, @NotNull HttpClientConfiguration configuration) {
-        if (useHttp2)
-            return new Http2ClientPool(configuration.getConnection().getKeepAliveTimeout());
-        return null;
+        this.configuration = configuration;
+        this.connectionFactory = new ConnectionFactory(configuration, timerManager);
     }
 
     public void setStreamPumpStats(StreamPump.StreamPumpStats streamPumpStats) {
@@ -143,7 +91,7 @@ public class HttpClient implements AutoCloseable {
     }
 
     private void setRequestURI(Request req, String dest) throws MalformedURLException {
-        if (proxy != null || req.isCONNECTRequest()) {
+        if (configuration.getProxy() != null || req.isCONNECTRequest()) {
             req.setUri(dest);
             return;
         }
@@ -160,13 +108,11 @@ public class HttpClient implements AutoCloseable {
         // to continue with no path. Maybe for STOMP?
         if ("/".equals(originalUri) && req.getUri().isEmpty()) // QUESTION: Will that be ever true?
             req.setUri("/");
-
     }
 
     private HostColonPort getTargetHostAndPort(boolean connect, String dest) throws MalformedURLException {
         if (connect)
             return new HostColonPort(false, dest);
-
         return new HostColonPort(new URL(dest));
     }
 
@@ -174,8 +120,8 @@ public class HttpClient implements AutoCloseable {
         setRequestURI(exc.getRequest(), dest);
         HostColonPort target = getTargetHostAndPort(exc.getRequest().isCONNECTRequest(), dest);
 
-        if (authentication != null)
-            exc.getRequest().getHeader().setAuthorization(authentication.getUsername(), authentication.getPassword());
+        if (configuration.getAuthentication() != null)
+            exc.getRequest().getHeader().setAuthorization(configuration.getAuthentication().getUsername(), configuration.getAuthentication().getPassword());
 
         if (adjustHostHeader && (exc.getProxy() == null || exc.getProxy().isTargetAdjustHostHeader())) {
             exc.getRequest().getHeader().setHost(new HostColonPort(new URL(dest)).toString());
@@ -183,33 +129,12 @@ public class HttpClient implements AutoCloseable {
         return target;
     }
 
-    private SSLProvider getOutboundSSLProvider(Exchange exc, HostColonPort hcp) {
-        SSLProvider sslPropObj = exc.getPropertyOrNull(SSL_CONTEXT, SSLProvider.class);
-        if (sslPropObj != null)
-            return sslPropObj;
-        if (hcp.useSSL())
-            if (sslContext != null)
-                return sslContext;
-            else
-                return getDefaultSSLProvider();
-        return null;
-    }
-
-    private static synchronized SSLProvider getDefaultSSLProvider() {
-        if (defaultSSLProvider == null)
-            defaultSSLProvider = new StaticSSLContext(new SSLParser(), null, null);
-        return defaultSSLProvider;
-    }
-
     public Exchange call(Exchange exc) throws Exception {
         return call(exc, true, true);
     }
 
-
     public Exchange call(Exchange exc, boolean adjustHostHeader, boolean failOverOn5XX) throws Exception {
-
         /*
-
          TODO: Questions
 
          - Should we retry POST? Maybe only retry POST when:
@@ -231,7 +156,7 @@ public class HttpClient implements AutoCloseable {
 
         int counter = 0;
         Exception exception = null;
-        while (counter < maxRetries) {
+        while (counter < configuration.getMaxRetries()) {
             HostColonPort target = init(exc, getDestination(exc, counter), adjustHostHeader);
             log.debug("try # {} to {}", counter, target);
             try {
@@ -312,11 +237,11 @@ public class HttpClient implements AutoCloseable {
      * @throws EndOfStreamException
      */
     private boolean call(Exchange exc, boolean failOverOn5XX, int counter, HostColonPort target) throws IOException, InterruptedException, EndOfStreamException {
-        OutgoingConnectionType outConType = getOutgoingConnectionType(exc, counter, target);
+        ConnectionFactory.OutgoingConnectionType outConType = connectionFactory.getConnection(exc, target, counter);
 
-        if (proxy != null && outConType.sslProvider() == null)
+        if (configuration.getProxy() != null && outConType.sslProvider() == null)
             // if we use a proxy for a plain HTTP (=non-HTTPS) request, attach the proxy credentials.
-            exc.getRequest().getHeader().setProxyAuthorization(proxy.getCredentials());
+            exc.getRequest().getHeader().setProxyAuthorization(configuration.getProxy().getCredentials());
 
         if (outConType.usingHttp2()) {
             doHttp2Call(exc, outConType.con(), target, outConType.h2c(), outConType.sslProvider(), outConType.sniServerName());
@@ -328,7 +253,7 @@ public class HttpClient implements AutoCloseable {
 
         HttpClientStatusEventBus.reportSuccess(exc, getDestination(exc, counter));
 
-        if (!failOverOn5XX || !is5xx(exc.getResponse().getStatusCode()) || counter == maxRetries - 1) {
+        if (!failOverOn5XX || !is5xx(exc.getResponse().getStatusCode()) || counter == configuration.getMaxRetries() - 1) {
             applyKeepAliveHeader(exc.getResponse(), outConType.con());
             exc.setDestinations(List.of(getDestination(exc, counter)));
             outConType.con().setExchange(exc);
@@ -349,11 +274,11 @@ public class HttpClient implements AutoCloseable {
         sleep(timeBetweenTriesMs);
     }
 
-    boolean doHttp1Call(Exchange exc, OutgoingConnectionType oct, int counter, String dest) throws EndOfStreamException, IOException {
+    boolean doHttp1Call(Exchange exc, ConnectionFactory.OutgoingConnectionType oct, int counter, String dest) throws EndOfStreamException, IOException {
 
         Response response;
 
-        String newProtocol = null;
+        String newProtocol;
 
         if (exc.getRequest().isCONNECTRequest()) {
             handleConnectRequest(exc, oct.con());
@@ -379,40 +304,6 @@ public class HttpClient implements AutoCloseable {
 
         exc.setResponse(response);
         return false;
-    }
-
-    private @NotNull OutgoingConnectionType getOutgoingConnectionType(Exchange exc, int counter, HostColonPort target) throws IOException {
-        // What if a connection is returned that is already a http2 con => usingHttp2 is not set => Falling down to http?
-        Connection con = getConnectionFromExchange(exc, counter, target);
-
-        boolean usingHttp2 = false;
-
-        SSLProvider sslProvider = getOutboundSSLProvider(exc, target);
-        Http2Client h2c = null;
-        String sniServerName = exc.getPropertyOrNull(SNI_SERVER_NAME, String.class);
-
-        if (con == null && useHttp2) {
-            h2c = http2ClientPool.reserveStream(target.host(), target.port(), sslProvider, sniServerName, proxy, proxySSLContext);
-            if (h2c != null) {
-                con = h2c.getConnection();
-                usingHttp2 = true;
-            }
-        }
-
-        if (con == null) {
-            con = conMgr.getConnection(target.host(), target.port(), localAddr, sslProvider, connectTimeout,
-                    sniServerName, proxy, proxySSLContext, getApplicationProtocols());
-            if (useHttp2 && Http2TlsSupport.isHttp2(con.socket))
-                usingHttp2 = true;
-            else
-                exc.setTargetConnection(con); // HTTP2 Connection is newer set to exchange
-            con.setKeepAttachedToExchange(usingHttp2 || exc.getRequest().isBindTargetConnectionToIncoming());
-        }
-        return new OutgoingConnectionType(con, usingHttp2, sslProvider, h2c, sniServerName);
-    }
-
-    private record OutgoingConnectionType(Connection con, boolean usingHttp2, SSLProvider sslProvider, Http2Client h2c,
-                                          String sniServerName) {
     }
 
     private void denyUnsupportedUpgrades(Exchange exc) throws ProtocolUpgradeDeniedException {
@@ -444,31 +335,10 @@ public class HttpClient implements AutoCloseable {
         throw new ProtocolUpgradeDeniedException(upgradeProtocol);
     }
 
-    /**
-     * E.g. for protocols like NTLM, an outbound TCP connection gets bound to an inbound TCP connection. This
-     * is realized by binding the TCP connection to the Exchange here, and binding it to the next Exchange in
-     * {@link HttpServerHandler}.
-     */
-    private static @org.jetbrains.annotations.Nullable Connection getConnectionFromExchange(Exchange exc, int counter, HostColonPort target) throws IOException {
-        Connection con = null;
-        if (counter == 0) {
-            con = exc.getTargetConnection();
-            if (con != null) {
-                if (!con.isSame(target.host(), target.port())) {
-                    con.close();
-                    con = null;
-                } else {
-                    con.setKeepAttachedToExchange(true);
-                }
-            }
-        }
-        return con;
-    }
-
     private void doHttp2Call(Exchange exc, Connection con, HostColonPort target, Http2Client h2c, SSLProvider sslProvider, String sniServerName) throws IOException, InterruptedException {
         if (h2c == null) {
             h2c = new Http2Client(con, sslProvider.showSSLExceptions());
-            http2ClientPool.share(target.host(), target.port(), sslProvider, sniServerName, proxy, proxySSLContext, h2c);
+            connectionFactory.getHttp2ClientPool().share(target.host(), target.port(), sslProvider, sniServerName, configuration.getProxy(), connectionFactory.getProxySSLContext(), h2c);
         }
         exc.setResponse(h2c.doCall(exc, con));
         exc.setProperty(HTTP2, true);
@@ -479,15 +349,7 @@ public class HttpClient implements AutoCloseable {
     private static boolean trackNodeStatus(Exchange exc) {
         if (exc.getProperty(TRACK_NODE_STATUS) instanceof Boolean status)
             return status;
-
         return false;
-    }
-
-    private String[] getApplicationProtocols() {
-        if (useHttp2) {
-            return HTTP2_PROTOCOLS;
-        }
-        return HTTP1_PROTOCOLS;
     }
 
     private String upgradeProtocol(Exchange exc, Response response) {
@@ -553,8 +415,8 @@ public class HttpClient implements AutoCloseable {
     }
 
     private Response doCall(Exchange exc, Connection con) throws IOException, EndOfStreamException {
-        con.socket.setSoTimeout(soTimeout);
-        exc.getRequest().write(con.out, maxRetries > 1);
+        con.socket.setSoTimeout(configuration.getConnection().getSoTimeout());
+        exc.getRequest().write(con.out, configuration.getMaxRetries() > 1);
         exc.setTimeReqSent(System.currentTimeMillis());
 
         if (exc.getRequest().isHTTP10()) {
@@ -624,17 +486,16 @@ public class HttpClient implements AutoCloseable {
     }
 
     private void handleConnectRequest(Exchange exc, Connection con) throws IOException, EndOfStreamException {
-        if (proxy != null) {
-            exc.getRequest().write(con.out, maxRetries > 1);
-            Response response = new Response();
-            response.read(con.in, false);
+        if (configuration.getProxy() != null) {
+            exc.getRequest().write(con.out, configuration.getMaxRetries() > 1);
+            Response response = Response.readNew(con.in, false);
             log.debug("Status code response on CONNECT request: {}", response.getStatusCode());
         }
         exc.getRequest().setUri(Constants.N_A);
     }
 
     private void do100ExpectedHandling(Exchange exc, Response response, Connection con) throws IOException, EndOfStreamException {
-        exc.getRequest().getBody().write(exc.getRequest().getHeader().isChunked() ? new ChunkedBodyTransferrer(con.out) : new PlainBodyTransferrer(con.out), maxRetries > 1);
+        exc.getRequest().getBody().write(exc.getRequest().getHeader().isChunked() ? new ChunkedBodyTransferrer(con.out) : new PlainBodyTransferrer(con.out), configuration.getMaxRetries() > 1);
         con.out.flush();
         response.read(con.in, !exc.getRequest().isHEADRequest());
     }
@@ -644,14 +505,14 @@ public class HttpClient implements AutoCloseable {
         Util.shutdownOutput(con.socket);
     }
 
-    ConnectionManager getConnectionManager() {
-        return conMgr;
-    }
-
     @Override
     public void close() {
-        conMgr.shutdownWhenDone();
-        if (http2ClientPool != null)
-            http2ClientPool.shutdownWhenDone();
+        connectionFactory.getConnectionManager().shutdownWhenDone();
+        if (connectionFactory.getHttp2ClientPool() != null)
+            connectionFactory.getHttp2ClientPool().shutdownWhenDone();
+    }
+
+    public ConnectionFactory getConnectionFactory() {
+        return connectionFactory;
     }
 }
