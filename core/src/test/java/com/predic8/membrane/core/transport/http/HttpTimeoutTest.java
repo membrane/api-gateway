@@ -31,8 +31,7 @@ import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class HttpTimeoutTest {
-    public final int TIMEOUT_MILLIS = 100;
-    public final int ASSERT_COMPLETED_AFTER_MILLIS = 250;
+
     public final int BACKEND_DELAY_MILLIS = 300;
 
     HttpRouter slowBackend, proxyRouter;

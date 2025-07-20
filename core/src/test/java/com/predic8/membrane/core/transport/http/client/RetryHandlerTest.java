@@ -32,13 +32,15 @@ class RetryHandlerTest {
     @BeforeEach
     void setUp() {
         configuration = new HttpClientConfiguration();
+        configuration.setMaxRetries(2);
     }
 
 
     @Test
     void noRetries() throws Exception {
 
-        RetryHandler rh = new RetryHandler(configuration, 0);
+        configuration.setMaxRetries(0);
+        RetryHandler rh = new RetryHandler(configuration);
 
         RetryableExchangeCallMock mock = new RetryableExchangeCallMock(false);
         rh.executeWithRetries(get("/foo").buildExchange(), false, mock);
@@ -49,7 +51,7 @@ class RetryHandlerTest {
     @Test
     void twoRetries() throws Exception {
 
-        RetryHandler rh = new RetryHandler(configuration, 2);
+        RetryHandler rh = new RetryHandler(configuration);
 
         RetryableExchangeCallMock mock = new RetryableExchangeCallMock(false);
         rh.executeWithRetries(get("/foo").buildExchange(), false, mock);
@@ -60,7 +62,7 @@ class RetryHandlerTest {
     @Test
     void success() throws Exception {
 
-        RetryHandler rh = new RetryHandler(configuration, 2);
+        RetryHandler rh = new RetryHandler(configuration);
 
         RetryableExchangeCallMock mock = new RetryableExchangeCallMock(true);
         rh.executeWithRetries(get("/foo").buildExchange(), false, mock);
@@ -74,7 +76,7 @@ class RetryHandlerTest {
         @Test
         void socketExceptionGet() throws Exception {
 
-            RetryHandler rh = new RetryHandler(configuration, 2);
+            RetryHandler rh = new RetryHandler(configuration);
 
             RetryableExchangeCallMock mock = new RetryableExchangeCallMock(new SocketException("Not today!"));
 
@@ -85,7 +87,7 @@ class RetryHandlerTest {
         @Test
         void socketExceptionPost() {
 
-            RetryHandler rh = new RetryHandler(configuration, 2);
+            RetryHandler rh = new RetryHandler(configuration);
 
             RetryableExchangeCallMock mock = new RetryableExchangeCallMock(new SocketException("Problem!"));
 
@@ -97,7 +99,7 @@ class RetryHandlerTest {
         @Test
         void connectionRefusedOneNode() {
 
-            RetryHandler rh = new RetryHandler(configuration, 2);
+            RetryHandler rh = new RetryHandler(configuration);
 
             RetryableExchangeCallMock mock = new RetryableExchangeCallMock(new ConnectException("Firewall blocks!"));
 
@@ -111,7 +113,7 @@ class RetryHandlerTest {
     @Test
     void internalError() throws Exception {
 
-        RetryHandler rh = new RetryHandler(configuration, 2);
+        RetryHandler rh = new RetryHandler(configuration);
 
         RetryableExchangeCallMock mock = new RetryableExchangeCallMock(501);
         rh.executeWithRetries(get("/foo").buildExchange(), true, mock);
@@ -125,7 +127,7 @@ class RetryHandlerTest {
         @Test
         void internalError() throws Exception {
 
-            RetryHandler rh = new RetryHandler(configuration, 2);
+            RetryHandler rh = new RetryHandler(configuration);
 
             RetryableExchangeCallMock mock = new RetryableExchangeCallMock(501);
             Exchange exc = get("/foo").buildExchange();

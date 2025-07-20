@@ -14,11 +14,15 @@
 package com.predic8.membrane.core.transport.http;
 
 import com.predic8.membrane.core.util.*;
+import org.jetbrains.annotations.*;
 
 import java.net.URI;
 import java.net.*;
+import java.util.regex.*;
 
 public record HostColonPort(boolean useSSL, String host, int port) {
+
+    private static final Pattern pattern = Pattern.compile("^(https?)://([^:/#]+)(?::(\\d+))?.*");
 
     public HostColonPort(boolean useSSL, String host, int port) {
         this.useSSL = useSSL;
@@ -35,7 +39,7 @@ public record HostColonPort(boolean useSSL, String host, int port) {
     }
 
     public HostColonPort(String host, int port) {
-        this(false, host, port);
+        this( port == 443 || port == 8443 , host, port);
     }
 
     public HostColonPort(URL url) {
@@ -44,7 +48,7 @@ public record HostColonPort(boolean useSSL, String host, int port) {
 
     public String getProtocol() {
         // TODO shouldn't this check useSSL instead?
-        return (isHttpsPort() ? "https" : "http");
+        return (useSSL ? "https" : "http");
     }
 
     public String getUrl() {
@@ -55,19 +59,9 @@ public record HostColonPort(boolean useSSL, String host, int port) {
         return new URI(this.getProtocol(),null, this.host, this.port, null, null,null);
     }
 
-    public static HostColonPort fromURI(String s) throws URISyntaxException {
-        var uri = new URI(s); // URI allows more characters like {} than URL
-        var isHttps = "https".equals(uri.getScheme());
-        return new HostColonPort(isHttps, uri.getHost(), uri.getPort());
-    }
-
     @Override
     public String toString() {
         return host + ":" + port;
-    }
-
-    private boolean isHttpsPort() {
-        return port == 443 || port == 8443;
     }
 
     private static String hostPart(String addr) {
@@ -78,5 +72,35 @@ public record HostColonPort(boolean useSSL, String host, int port) {
     private static int portPart(String addr, int defaultValue) {
         var colon = addr.indexOf(":");
         return (colon > -1 ? Integer.parseInt(addr.substring(colon + 1)) : defaultValue);
+    }
+
+    public static HostColonPort parse(String url) throws MalformedURLException {
+        // The URI and URL classes are doing to much. They cause errors if the path has
+        // special characters but we do not care about the path here.
+
+        Matcher matcher = pattern.matcher(url);
+
+        if(!matcher.matches())
+            throw new MalformedURLException(url + " is not a valid URL");
+
+        return new HostColonPort("https".equals(matcher.group(1)),
+                matcher.group(2),
+                getPortInteger(matcher.group(3)));
+    }
+
+    /**
+     * Use -1 to trigger default port logic in HostColonPort
+     * @param portStr
+     * @return
+     */
+    private static @Nullable int getPortInteger(String portStr) {
+        if (portStr == null)
+            return -1;
+
+        try {
+            return Integer.parseInt(portStr);
+        } catch (NumberFormatException e) {
+            return -1;
+        }
     }
 }

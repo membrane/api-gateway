@@ -26,16 +26,16 @@ import org.apache.commons.httpclient.methods.*;
 import org.junit.jupiter.api.*;
 
 import java.net.*;
-import java.util.*;
 
 import static com.predic8.membrane.core.http.Header.*;
 import static com.predic8.membrane.core.http.MimeType.*;
+import static com.predic8.membrane.core.interceptor.InterceptorUtil.getInterceptors;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
-import static com.predic8.membrane.core.interceptor.balancer.BalancerUtil.lookupBalancer;
+import static com.predic8.membrane.core.interceptor.balancer.BalancerUtil.*;
 import static com.predic8.membrane.core.util.NetworkUtil.*;
-import static java.lang.Thread.sleep;
+import static java.lang.Thread.*;
 import static java.util.Objects.*;
-import static org.apache.commons.httpclient.HttpVersion.HTTP_1_1;
+import static org.apache.commons.httpclient.HttpVersion.*;
 import static org.apache.http.params.HttpProtocolParams.*;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -92,7 +92,7 @@ public class LoadBalancingInterceptorTest {
 		balancingInterceptor.setName("Default");
 		sp3.getInterceptors().add(balancingInterceptor);
 		balancer.getRuleManager().addProxyAndOpenPortIfNew(sp3);
-		enableFailOverOn5XX(balancer);
+		enableFailOverOn5XX();
 		balancer.init();
 
 		lookupBalancer(balancer, "Default").up("Default", "localhost", port2k);
@@ -103,9 +103,8 @@ public class LoadBalancingInterceptorTest {
 		priorityStrategy = new PriorityStrategy();
 	}
 
-	private void enableFailOverOn5XX(HttpRouter balancer2) {
-		List<Interceptor> l = balancer.getTransport().getInterceptors();
-		((HTTPClientInterceptor)l.getLast()).setFailOverOn5XX(true);
+	private void enableFailOverOn5XX() {
+		getInterceptors(balancer.getTransport().getInterceptors(),  HTTPClientInterceptor.class).getLast().setFailOverOn5XX(true);
 	}
 
 	@AfterEach

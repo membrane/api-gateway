@@ -32,6 +32,7 @@ import static com.predic8.membrane.core.Constants.*;
 import static com.predic8.membrane.core.exchange.Exchange.*;
 import static com.predic8.membrane.core.http.Header.*;
 import static com.predic8.membrane.core.http.Response.*;
+import static com.predic8.membrane.core.transport.http.HostColonPort.parse;
 import static java.lang.Boolean.*;
 import static java.lang.System.*;
 
@@ -47,7 +48,7 @@ public class HttpClient implements AutoCloseable {
     public static final String HTTP2 = "h2";
     public static final String CONNECT = "CONNECT";
 
-    private HttpClientConfiguration configuration;
+    private final HttpClientConfiguration configuration;
 
     private StreamPump.StreamPumpStats streamPumpStats;
 
@@ -68,7 +69,7 @@ public class HttpClient implements AutoCloseable {
     public HttpClient(@Nullable HttpClientConfiguration clientConfiguration, @Nullable TimerManager timerManager) {
         configuration = clientConfiguration != null ? clientConfiguration : new HttpClientConfiguration();
         connectionFactory = new ConnectionFactory(this.configuration, timerManager);
-        retryHandler = new RetryHandler(configuration, configuration.getMaxRetries());
+        retryHandler = new RetryHandler(configuration);
     }
 
     public Exchange call(Exchange exc) throws Exception {
@@ -165,7 +166,7 @@ public class HttpClient implements AutoCloseable {
             exc.getRequest().getHeader().setAuthorization(configuration.getAuthentication().getUsername(), configuration.getAuthentication().getPassword());
 
         if (adjustHostHeader && (exc.getProxy() == null || exc.getProxy().isTargetAdjustHostHeader())) {
-            exc.getRequest().getHeader().setHost(new HostColonPort(new URL(dest)).toString());
+            exc.getRequest().getHeader().setHost(parse(dest).toString());
         }
         return target;
     }

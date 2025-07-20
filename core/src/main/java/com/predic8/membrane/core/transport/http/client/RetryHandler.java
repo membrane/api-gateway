@@ -43,11 +43,9 @@ public class RetryHandler {
      */
     private final int delayBetweenTriesMs = 250;
 
-    private final int maxRetries;
     private final HttpClientConfiguration config;
 
-    public RetryHandler(HttpClientConfiguration config, int maxRetries) {
-        this.maxRetries = maxRetries;
+    public RetryHandler(HttpClientConfiguration config) {
         this.config = config;
     }
 
@@ -55,9 +53,9 @@ public class RetryHandler {
 
         Exception exceptionInLastCall = null;
 
-        for (int attempt = 0; attempt <= maxRetries; attempt++) {
+        for (int attempt = 0; attempt <= config.getMaxRetries(); attempt++) {
             String dest = HttpClient.getDestination(exc, attempt);
-            log.debug("Attempt #{} from #{} to {}", attempt, maxRetries + 1, dest);
+            log.debug("Attempt #{} from #{} to {}", attempt, config.getMaxRetries() + 1, dest);
 
             // exceptionInLastCall = null;
 
@@ -118,10 +116,11 @@ public class RetryHandler {
         if (statusCode == 408) {
             return true;
         }
+
         return false;
     }
 
-    private boolean shouldAbortRetries(Exchange exc, Exception e, String dest, int attempt) throws Exception {
+    private boolean shouldAbortRetries(Exchange exc, Exception e, String dest, int attempt) {
         log.debug("Checking if call should abort immediately. Exception {}", e.getMessage());
 
         // switch with throwable is only possible in Java 21 with preview features
