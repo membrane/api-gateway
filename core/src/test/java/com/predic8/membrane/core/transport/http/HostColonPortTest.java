@@ -39,24 +39,24 @@ public class HostColonPortTest {
     }
 
     @Test
-    public void testDefaultPort() {
+    void testDefaultPort() {
         HostColonPort hcp = new HostColonPort(false, "predic8.com");
         assertEquals("predic8.com", hcp.host());
         assertEquals(80, hcp.port());
     }
 
     @Test
-    public void testGetHost() {
+    void testGetHost() {
         assertEquals("predic8.com", new HostColonPort(false, "predic8.com:80").host());
     }
 
     @Test
-    public void testGetPort() {
+    void testGetPort() {
         assertEquals(80, new HostColonPort(false, "predic8.com:80").port());
     }
 
     @Test
-    public void noNumber() {
+    void noNumber() {
         Assertions.assertThrowsExactly(NumberFormatException.class, () -> new HostColonPort(false, "foo:no-number"));
     }
 
@@ -73,7 +73,7 @@ public class HostColonPortTest {
     }
 
     @Test
-    void fromURITests() throws MalformedURLException, URISyntaxException {
+    void fromURITests() throws Exception {
         assertEquals(HCP_LOCALHOST, fromURI("http://localhost"));
         assertEquals(HCP_LOCALHOST_8080, fromURI("http://localhost:8080"));
         assertEquals(HCP_LOCALHOST, fromURI("http://localhost/foo"));

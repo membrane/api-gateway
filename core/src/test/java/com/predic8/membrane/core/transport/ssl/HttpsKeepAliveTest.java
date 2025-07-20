@@ -14,28 +14,22 @@
 
 package com.predic8.membrane.core.transport.ssl;
 
-import com.predic8.membrane.core.HttpRouter;
-import com.predic8.membrane.core.config.security.KeyStore;
-import com.predic8.membrane.core.config.security.SSLParser;
-import com.predic8.membrane.core.config.security.TrustStore;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Request;
-import com.predic8.membrane.core.http.Response;
-import com.predic8.membrane.core.interceptor.AbstractInterceptor;
-import com.predic8.membrane.core.interceptor.Outcome;
-import com.predic8.membrane.core.proxies.ServiceProxy;
-import com.predic8.membrane.core.resolver.ResolverMap;
-import com.predic8.membrane.core.transport.http.HttpClient;
-import com.predic8.membrane.core.transport.http.HttpServerHandler;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
+import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.config.security.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.proxies.*;
+import com.predic8.membrane.core.resolver.*;
+import com.predic8.membrane.core.transport.http.*;
+import org.junit.jupiter.api.*;
 
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.*;
 
-import static com.predic8.membrane.core.exchange.Exchange.SSL_CONTEXT;
-import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static com.predic8.membrane.core.exchange.Exchange.*;
+import static com.predic8.membrane.core.http.Request.*;
+import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class HttpsKeepAliveTest {
 
@@ -84,11 +78,11 @@ public class HttpsKeepAliveTest {
     }
 
     @Test
-    public void httpsKeepAlive() throws Exception {
+    void httpsKeepAlive() throws Exception {
         SSLContext sslCtxOb = createSSLOutboundContext();
         try (HttpClient hc = new HttpClient()) {
             for (int i = 0; i < 2; i++) {
-                Exchange exc1 = new Request.Builder().get("https://localhost:3063/").buildExchange();
+                Exchange exc1 = get("https://localhost:3063/").buildExchange();
                 exc1.setProperty(SSL_CONTEXT, sslCtxOb);
                 hc.call(exc1);
 

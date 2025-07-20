@@ -71,49 +71,6 @@ public class HttpClient implements AutoCloseable {
         retryHandler = new RetryHandler(configuration, configuration.getMaxRetries());
     }
 
-    public void setStreamPumpStats(StreamPump.StreamPumpStats streamPumpStats) {
-        this.streamPumpStats = streamPumpStats;
-    }
-
-    // TODO remove it and close it otherwise
-    @Override
-    protected void finalize() {
-        close();
-    }
-
-    void setRequestURI(Request req, String dest) throws MalformedURLException {
-        if (configuration.getProxy() != null || req.isCONNECTRequest()) {
-            req.setUri(dest);
-            return;
-        }
-
-        if (!dest.startsWith("http")) {
-            throw new MalformedURLException("""
-                    The exchange's destination URI %s does not start with 'http'. Specify a <target> within the API configuration or make sure the exchanges destinations list contains a valid URI.
-                    """.formatted(dest));
-        }
-        req.setUri(HttpUtil.getPathAndQueryString(dest));
-    }
-
-    private HostColonPort getTargetHostAndPort(boolean connect, String dest) throws MalformedURLException {
-        if (connect)
-            return new HostColonPort(false, dest);
-        return new HostColonPort(new URL(dest));
-    }
-
-    HostColonPort initializeRequest(Exchange exc, String dest, boolean adjustHostHeader) throws IOException {
-        setRequestURI(exc.getRequest(), dest);
-        HostColonPort target = getTargetHostAndPort(exc.getRequest().isCONNECTRequest(), dest);
-
-        if (configuration.getAuthentication() != null)
-            exc.getRequest().getHeader().setAuthorization(configuration.getAuthentication().getUsername(), configuration.getAuthentication().getPassword());
-
-        if (adjustHostHeader && (exc.getProxy() == null || exc.getProxy().isTargetAdjustHostHeader())) {
-            exc.getRequest().getHeader().setHost(new HostColonPort(new URL(dest)).toString());
-        }
-        return target;
-    }
-
     public Exchange call(Exchange exc) throws Exception {
         return call(exc, true, true);
     }
@@ -164,6 +121,10 @@ public class HttpClient implements AutoCloseable {
             return true;
         }
         return false;
+
+//        return true;
+
+
     }
 
     boolean executeHttp1Call(Exchange exc, ConnectionFactory.OutgoingConnectionType oct, int counter, String dest) throws EndOfStreamException, IOException {
@@ -196,6 +157,19 @@ public class HttpClient implements AutoCloseable {
         return false;
     }
 
+    HostColonPort initializeRequest(Exchange exc, String dest, boolean adjustHostHeader) throws IOException, URISyntaxException {
+        setRequestURI(exc.getRequest(), dest);
+        HostColonPort target = getTargetHostAndPort(exc.getRequest().isCONNECTRequest(), dest);
+
+        if (configuration.getAuthentication() != null)
+            exc.getRequest().getHeader().setAuthorization(configuration.getAuthentication().getUsername(), configuration.getAuthentication().getPassword());
+
+        if (adjustHostHeader && (exc.getProxy() == null || exc.getProxy().isTargetAdjustHostHeader())) {
+            exc.getRequest().getHeader().setHost(new HostColonPort(new URL(dest)).toString());
+        }
+        return target;
+    }
+
     private void denyUnsupportedUpgrades(Exchange exc) throws ProtocolUpgradeDeniedException {
         String upgradeProtocol = exc.getRequest().getHeader().getUpgradeProtocol();
         if (upgradeProtocol == null ||
@@ -213,6 +187,10 @@ public class HttpClient implements AutoCloseable {
 
     private static boolean isWebsocketProtocolUpgradeAllowed(Exchange exc, String upgradeProtocol) {
         return upgradeProtocol.equalsIgnoreCase("websocket") && exc.getProperty(ALLOW_WEBSOCKET) == TRUE;
+    }
+
+    public void setStreamPumpStats(StreamPump.StreamPumpStats streamPumpStats) {
+        this.streamPumpStats = streamPumpStats;
     }
 
     private static boolean isTcpProtocolUpgradeAllowed(Exchange exc, String upgradeProtocol) {
@@ -409,5 +387,38 @@ public class HttpClient implements AutoCloseable {
 
     public ConnectionFactory getConnectionFactory() {
         return connectionFactory;
+    }
+
+    void setRequestURI(Request req, String dest) throws MalformedURLException {
+        if (configuration.getProxy() != null || req.isCONNECTRequest()) {
+            req.setUri(dest);
+            return;
+        }
+
+        if (!dest.startsWith("http")) {
+            throw new MalformedURLException("""
+                    The exchange's destination URI %s does not start with 'http'. Specify a <target> within the API configuration or make sure the exchanges destinations list contains a valid URI.
+                    """.formatted(dest));
+        }
+        req.setUri(HttpUtil.getPathAndQueryString(dest));
+    }
+
+    /**
+     *
+     * @param connect If true, do not use TLS even when the URL starts with https
+     * @param dest URL
+     * @return HostColonPort
+     * @throws MalformedURLException
+     */
+    private HostColonPort getTargetHostAndPort(boolean connect, String dest) throws URISyntaxException, MalformedURLException {
+        if (connect)
+            return new HostColonPort(false, dest);
+        return new HostColonPort(new URL(dest));
+    }
+
+    // TODO Rewrite all clients to use try with resources and then remove it
+    @Override
+    protected void finalize() {
+        close();
     }
 }

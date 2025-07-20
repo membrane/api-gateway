@@ -25,7 +25,7 @@ import static com.predic8.membrane.test.StringAssertions.assertContains;
 
 public class AdminConsoleTest {
 
-	public static List<Object[]> getPorts() {
+	static List<Object[]> getPorts() {
 		return Arrays.asList(new Object[][] {
 				{ 3021 }, // jetty port embedding membrane
 				{ 3027 }, // membrane admin console port
@@ -37,7 +37,7 @@ public class AdminConsoleTest {
 
 	@ParameterizedTest
 	@MethodSource("getPorts")
-	public void testAdminConsoleReachable(int port) throws Exception {
+	void testAdminConsoleReachable(int port) throws Exception {
 		try (HttpAssertions ha = new HttpAssertions()) {
 			ha.setupHTTPAuthentication("localhost", port, BASIC_AUTH_USER, BASIC_AUTH_PASSWORD);
 			assertContains("ServiceProxies", ha.getAndAssert200(getBaseURL(port) + "admin/"));
@@ -46,7 +46,7 @@ public class AdminConsoleTest {
 
 	@ParameterizedTest
 	@MethodSource("getPorts")
-	public void testAdminConsoleJavascriptDownloadable(int port) throws Exception {
+	void testAdminConsoleJavascriptDownloadable(int port) throws Exception {
 		try (HttpAssertions ha = new HttpAssertions()) {
 			ha.setupHTTPAuthentication("localhost", port, BASIC_AUTH_USER, BASIC_AUTH_PASSWORD);
 			assertContains("jQuery", ha.getAndAssert200(getBaseURL(port) + "admin/jquery-ui/js/jquery-ui-1.8.13.custom.min.js"));

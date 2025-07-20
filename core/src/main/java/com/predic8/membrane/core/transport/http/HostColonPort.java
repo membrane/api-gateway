@@ -15,10 +15,20 @@ package com.predic8.membrane.core.transport.http;
 
 import com.predic8.membrane.core.util.*;
 
-import java.net.*;
 import java.net.URI;
+import java.net.*;
 
 public record HostColonPort(boolean useSSL, String host, int port) {
+
+    public HostColonPort(boolean useSSL, String host, int port) {
+        this.useSSL = useSSL;
+        this.host = host;
+        if (port != -1) {
+            this.port = port;
+        } else {
+            this.port = useSSL ? 443 : 80;
+        }
+    }
 
     public HostColonPort(boolean useSSL, String hostAndPort) {
         this(useSSL, hostPart(hostAndPort), portPart(hostAndPort, useSSL ? 443 : 80));
@@ -28,18 +38,13 @@ public record HostColonPort(boolean useSSL, String host, int port) {
         this(false, host, port);
     }
 
-    public HostColonPort(URL url) throws MalformedURLException {
+    public HostColonPort(URL url) {
         this(url.getProtocol().endsWith("s"), url.getHost(), HttpUtil.getPort(url));
     }
 
     public String getProtocol() {
         // TODO shouldn't this check useSSL instead?
         return (isHttpsPort() ? "https" : "http");
-    }
-
-    public URL toURL() throws URISyntaxException, MalformedURLException {
-        return new URI(getProtocol(), this.toString(), null).toURL();
-//		return new URI("%s://%s".formatted(getProtocol(), this)).toURL();
     }
 
     public String getUrl() {
@@ -50,10 +55,10 @@ public record HostColonPort(boolean useSSL, String host, int port) {
         return new URI(this.getProtocol(),null, this.host, this.port, null, null,null);
     }
 
-    public static HostColonPort fromURI(String uri) throws URISyntaxException, MalformedURLException {
-        var url = new URI(uri).toURL();
-        var isSSL = "https".equals(url.getProtocol());
-        return new HostColonPort(isSSL, url.getHost(), HttpUtil.getPort(url));
+    public static HostColonPort fromURI(String s) throws URISyntaxException {
+        var uri = new URI(s); // URI allows more characters like {} than URL
+        var isHttps = "https".equals(uri.getScheme());
+        return new HostColonPort(isHttps, uri.getHost(), uri.getPort());
     }
 
     @Override
