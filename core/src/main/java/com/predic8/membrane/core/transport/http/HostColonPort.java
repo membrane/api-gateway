@@ -14,7 +14,6 @@
 package com.predic8.membrane.core.transport.http;
 
 import com.predic8.membrane.core.util.*;
-import org.jetbrains.annotations.*;
 
 import java.net.URI;
 import java.net.*;
@@ -93,7 +92,7 @@ public record HostColonPort(boolean useSSL, String host, int port) {
      * @param portStr
      * @return
      */
-    private static @Nullable int getPortInteger(String portStr) {
+    private static int getPortInteger(String portStr) {
         if (portStr == null)
             return -1;
 

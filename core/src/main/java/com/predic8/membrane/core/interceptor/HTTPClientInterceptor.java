@@ -49,7 +49,7 @@ public class HTTPClientInterceptor extends AbstractInterceptor {
 
     private boolean failOverOn5XX;
     private boolean adjustHostHeader = true;
-    private HttpClientConfiguration httpClientConfig;
+    private HttpClientConfiguration httpClientConfig = new HttpClientConfiguration();
 
     private HttpClient hc;
 

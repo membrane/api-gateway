@@ -48,7 +48,6 @@ public class Http2Client implements Runnable, AutoCloseable {
         private Response response;
     }
 
-
     public Http2Client(Connection con, boolean showSSLExceptions) {
         this.con = con;
         this.logic = new Http2Logic(executor, con.socket, con.in, con.out, showSSLExceptions, new Http2MessageHandler() {

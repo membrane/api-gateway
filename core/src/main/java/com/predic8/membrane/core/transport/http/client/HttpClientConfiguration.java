@@ -13,17 +13,14 @@
    limitations under the License. */
 package com.predic8.membrane.core.transport.http.client;
 
-import java.security.InvalidParameterException;
-import java.util.Objects;
+import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.config.security.*;
+import com.predic8.membrane.core.config.spring.*;
+import org.springframework.beans.*;
+import org.springframework.context.*;
 
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCChildElement;
-import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.config.security.SSLParser;
-import com.predic8.membrane.core.config.spring.BaseLocationApplicationContext;
-import org.springframework.beans.BeansException;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.ApplicationContextAware;
+import java.security.*;
+import java.util.*;
 
 @MCElement(name="httpClientConfig")
 public class HttpClientConfiguration implements ApplicationContextAware {
@@ -35,6 +32,11 @@ public class HttpClientConfiguration implements ApplicationContextAware {
 	private SSLParser sslParser;
 	private String baseLocation;
 	private boolean useExperimentalHttp2;
+
+	private RetryHandler retryHandler = new RetryHandler();
+
+	public HttpClientConfiguration() {
+	}
 
 	@Override
 	public boolean equals(Object o) {
@@ -138,5 +140,14 @@ public class HttpClientConfiguration implements ApplicationContextAware {
 	@MCAttribute
 	public void setUseExperimentalHttp2(boolean useExperimentalHttp2) {
 		this.useExperimentalHttp2 = useExperimentalHttp2;
+	}
+
+	public RetryHandler getRetryHandler() {
+		return retryHandler;
+	}
+
+	@MCChildElement
+	public void setRetryHandler(RetryHandler retryHandler) {
+		this.retryHandler = retryHandler;
 	}
 }

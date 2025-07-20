@@ -19,7 +19,7 @@ public class InterceptorUtil {
 
     public static  <T extends Interceptor> List<T> getInterceptors(List<Interceptor> interceptors, Class<T> clazz) {
         return interceptors.stream().filter(i -> i.getClass().equals(clazz))
-                .map(i -> clazz.cast(i))
+                .map(clazz::cast)
                 .toList();
     }
 

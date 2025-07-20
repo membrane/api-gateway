@@ -56,8 +56,6 @@ public class HttpClient implements AutoCloseable {
 
     private final ConnectionFactory connectionFactory;
 
-    private final RetryHandler retryHandler;
-
     public HttpClient() {
         this(null, null);
     }
@@ -68,8 +66,8 @@ public class HttpClient implements AutoCloseable {
 
     public HttpClient(@Nullable HttpClientConfiguration clientConfiguration, @Nullable TimerManager timerManager) {
         configuration = clientConfiguration != null ? clientConfiguration : new HttpClientConfiguration();
+//        configuration.getRetryHandler().setConfig(clientConfiguration);
         connectionFactory = new ConnectionFactory(this.configuration, timerManager);
-        retryHandler = new RetryHandler(configuration);
     }
 
     public Exchange call(Exchange exc) throws Exception {
@@ -78,7 +76,7 @@ public class HttpClient implements AutoCloseable {
 
     public Exchange call(Exchange exc, boolean adjustHostHeader, boolean failOverOn5XX) throws Exception {
         denyUnsupportedUpgrades(exc);
-        return retryHandler.executeWithRetries(exc, failOverOn5XX, (e, target, attempt) -> {
+        return configuration.getRetryHandler().executeWithRetries(exc, failOverOn5XX, (e, target, attempt) -> {
             HostColonPort hcp = initializeRequest(exc, target, adjustHostHeader);
             return call(e, failOverOn5XX, attempt, hcp);
         });
@@ -411,10 +409,10 @@ public class HttpClient implements AutoCloseable {
      * @return HostColonPort
      * @throws MalformedURLException
      */
-    private HostColonPort getTargetHostAndPort(boolean connect, String dest) throws URISyntaxException, MalformedURLException {
+    private HostColonPort getTargetHostAndPort(boolean connect, String dest) throws MalformedURLException {
         if (connect)
             return new HostColonPort(false, dest);
-        return new HostColonPort(new URL(dest));
+        return HostColonPort.parse(dest);
     }
 
     // TODO Rewrite all clients to use try with resources and then remove it

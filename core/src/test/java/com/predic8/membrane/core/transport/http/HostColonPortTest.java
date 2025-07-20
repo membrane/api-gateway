@@ -140,16 +140,10 @@ public class HostColonPortTest {
         }
 
         @Test
-        void errors() throws Exception {
-            assertThrows(MalformedURLException.class, () -> {
-                parse("invalid-url-format");
-            });
-            assertThrows(MalformedURLException.class, () -> {
-                parse("https://");
-            });
-            assertThrows(MalformedURLException.class, () -> {
-                parse("invalid://");
-            });
+        void errors() {
+            assertThrows(MalformedURLException.class, () -> parse("invalid-url-format"));
+            assertThrows(MalformedURLException.class, () -> parse("https://"));
+            assertThrows(MalformedURLException.class, () -> parse("invalid://"));
         }
 
         @Test

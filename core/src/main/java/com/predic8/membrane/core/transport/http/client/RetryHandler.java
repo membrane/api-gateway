@@ -14,6 +14,7 @@
 
 package com.predic8.membrane.core.transport.http.client;
 
+import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.transport.http.*;
 import org.slf4j.*;
@@ -27,9 +28,12 @@ import static com.predic8.membrane.core.http.Request.*;
 import static java.lang.Thread.*;
 import static java.nio.charset.StandardCharsets.*;
 
+@MCElement(name="retries")
 public class RetryHandler {
 
     private static final Logger log = LoggerFactory.getLogger(RetryHandler.class);
+
+    private int retries = 5;
 
     /**
      * How long to wait between calls to the same destination, in milliseconds.
@@ -43,19 +47,20 @@ public class RetryHandler {
      */
     private final int delayBetweenTriesMs = 250;
 
-    private final HttpClientConfiguration config;
 
-    public RetryHandler(HttpClientConfiguration config) {
-        this.config = config;
+    /**
+     * Needed for MC configuration
+     */
+    public RetryHandler() {
     }
 
     public Exchange executeWithRetries(Exchange exc, boolean failOverOn5XX, RetryableCall call) throws Exception {
 
         Exception exceptionInLastCall = null;
 
-        for (int attempt = 0; attempt <= config.getMaxRetries(); attempt++) {
+        for (int attempt = 0; attempt <= retries; attempt++) {
             String dest = HttpClient.getDestination(exc, attempt);
-            log.debug("Attempt #{} from #{} to {}", attempt, config.getMaxRetries() + 1, dest);
+            log.debug("Attempt #{} from #{} to {}", attempt, retries + 1, dest);
 
             // exceptionInLastCall = null;
 
@@ -208,6 +213,15 @@ public class RetryHandler {
 
     private static boolean trackNodeStatus(Exchange exc) {
         return Boolean.TRUE.equals(exc.getProperty(TRACK_NODE_STATUS));
+    }
+
+    public int getRetries() {
+        return retries;
+    }
+
+    @MCAttribute
+    public void setRetries(int retries) {
+        this.retries = retries;
     }
 }
 

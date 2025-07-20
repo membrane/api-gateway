@@ -27,46 +27,34 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class RetryHandlerTest {
 
-    HttpClientConfiguration configuration;
+    RetryHandler rh;
 
     @BeforeEach
     void setUp() {
-        configuration = new HttpClientConfiguration();
-        configuration.setMaxRetries(2);
+        rh = new RetryHandler();
+        rh.setRetries(2);
     }
 
 
     @Test
     void noRetries() throws Exception {
-
-        configuration.setMaxRetries(0);
-        RetryHandler rh = new RetryHandler(configuration);
-
+        rh.setRetries(0);
         RetryableExchangeCallMock mock = new RetryableExchangeCallMock(false);
         rh.executeWithRetries(get("/foo").buildExchange(), false, mock);
-
         assertEquals(1, mock.attempts);
     }
 
     @Test
     void twoRetries() throws Exception {
-
-        RetryHandler rh = new RetryHandler(configuration);
-
         RetryableExchangeCallMock mock = new RetryableExchangeCallMock(false);
         rh.executeWithRetries(get("/foo").buildExchange(), false, mock);
-
         assertEquals(3, mock.attempts);
     }
 
     @Test
     void success() throws Exception {
-
-        RetryHandler rh = new RetryHandler(configuration);
-
         RetryableExchangeCallMock mock = new RetryableExchangeCallMock(true);
         rh.executeWithRetries(get("/foo").buildExchange(), false, mock);
-
         assertEquals(1, mock.attempts);
     }
 
@@ -74,37 +62,24 @@ class RetryHandlerTest {
     class ExceptionIsThrown {
 
         @Test
-        void socketExceptionGet() throws Exception {
-
-            RetryHandler rh = new RetryHandler(configuration);
-
+        void socketExceptionGet() {
             RetryableExchangeCallMock mock = new RetryableExchangeCallMock(new SocketException("Not today!"));
-
             assertThrows(SocketException.class, () -> rh.executeWithRetries(get("/foo").buildExchange(), false, mock));
             assertEquals(3, mock.attempts);
         }
 
         @Test
         void socketExceptionPost() {
-
-            RetryHandler rh = new RetryHandler(configuration);
-
             RetryableExchangeCallMock mock = new RetryableExchangeCallMock(new SocketException("Problem!"));
-
             assertThrows(SocketException.class, () -> rh.executeWithRetries(post("/foo").buildExchange(), false, mock));
-
             assertEquals(1, mock.attempts);
         }
 
         @Test
         void connectionRefusedOneNode() {
-
-            RetryHandler rh = new RetryHandler(configuration);
-
+            RetryHandler rh = new RetryHandler();
             RetryableExchangeCallMock mock = new RetryableExchangeCallMock(new ConnectException("Firewall blocks!"));
-
             assertThrows(ConnectException.class, () -> rh.executeWithRetries(post("/foo").buildExchange(), false, mock));
-
             assertEquals(1, mock.attempts);
         }
 
@@ -112,12 +87,8 @@ class RetryHandlerTest {
 
     @Test
     void internalError() throws Exception {
-
-        RetryHandler rh = new RetryHandler(configuration);
-
         RetryableExchangeCallMock mock = new RetryableExchangeCallMock(501);
         rh.executeWithRetries(get("/foo").buildExchange(), true, mock);
-
         assertEquals(3, mock.attempts);
     }
 
@@ -126,15 +97,11 @@ class RetryHandlerTest {
 
         @Test
         void internalError() throws Exception {
-
-            RetryHandler rh = new RetryHandler(configuration);
-
             RetryableExchangeCallMock mock = new RetryableExchangeCallMock(501);
             Exchange exc = get("/foo").buildExchange();
             List<String> destinations = List.of("http://node1.example.com/", "http://node2.example.com/", "http://node3.example.com/");
             exc.setDestinations(destinations);
             rh.executeWithRetries(exc, true, mock);
-
             assertEquals(3, mock.attempts);
             assertEquals(destinations, mock.destinations);
         }
@@ -142,7 +109,7 @@ class RetryHandlerTest {
     }
 
 
-    class RetryableExchangeCallMock implements RetryableCall {
+    static class RetryableExchangeCallMock implements RetryableCall {
 
         int attempts;
         boolean success;
