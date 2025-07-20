@@ -13,9 +13,6 @@
    limitations under the License. */
 package com.predic8.membrane.core.transport.http;
 
-import com.predic8.membrane.core.util.*;
-
-import java.net.URI;
 import java.net.*;
 import java.util.regex.*;
 
@@ -39,10 +36,6 @@ public record HostColonPort(boolean useSSL, String host, int port) {
 
     public HostColonPort(String host, int port) {
         this( port == 443 || port == 8443 , host, port);
-    }
-
-    public HostColonPort(URL url) {
-        this(url.getProtocol().endsWith("s"), url.getHost(), HttpUtil.getPort(url));
     }
 
     public String getProtocol() {
@@ -89,8 +82,8 @@ public record HostColonPort(boolean useSSL, String host, int port) {
 
     /**
      * Use -1 to trigger default port logic in HostColonPort
-     * @param portStr
-     * @return
+     * @param portStr String with an integer like 80, 443
+     * @return Integer value
      */
     private static int getPortInteger(String portStr) {
         if (portStr == null)

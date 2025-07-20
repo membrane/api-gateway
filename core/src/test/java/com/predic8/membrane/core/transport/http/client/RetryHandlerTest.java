@@ -45,7 +45,10 @@ class RetryHandlerTest {
     }
 
     @Test
-    void twoRetries() throws Exception {
+    void tenRetries() throws Exception {
+        rh.setRetries(10);
+        rh.setDelay(2);
+        rh.setBackoffMultiplier(1.5);
         RetryableExchangeCallMock mock = new RetryableExchangeCallMock(false);
         rh.executeWithRetries(get("/foo").buildExchange(), false, mock);
         assertEquals(3, mock.attempts);

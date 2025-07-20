@@ -45,8 +45,12 @@ public class RetryHandler {
      * <p>
      * TODO Make configurable - where?
      */
-    private final int delayBetweenTriesMs = 250;
+    private int delay = 10;
 
+    /**
+     *
+     */
+    private double backoffMultiplier = 5;
 
     /**
      * Needed for MC configuration
@@ -57,10 +61,10 @@ public class RetryHandler {
     public Exchange executeWithRetries(Exchange exc, boolean failOverOn5XX, RetryableCall call) throws Exception {
 
         Exception exceptionInLastCall = null;
-
+        int delay = this.delay;
         for (int attempt = 0; attempt <= retries; attempt++) {
             String dest = HttpClient.getDestination(exc, attempt);
-            log.debug("Attempt #{} from #{} to {}", attempt, retries + 1, dest);
+            log.debug("Attempt #{} from #{} to {} delay {}", attempt, retries + 1, dest, delay);
 
             // exceptionInLastCall = null;
 
@@ -93,7 +97,8 @@ public class RetryHandler {
                 }
 
             }
-            delayBetweenCalls(exc);
+            delay *= backoffMultiplier;
+            delayBetweenCalls(exc, delay);
         }
 
         if (exceptionInLastCall != null)
@@ -108,15 +113,12 @@ public class RetryHandler {
         }
 
         int statusCode = exc.getResponse().getStatusCode();
-
         if (statusCode > 200 && statusCode < 400) {
             return false;
         }
-
         if (statusCode >= 500) {
             return true;
         }
-
         // See <a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Status/408">408 Request Timeout</a>
         if (statusCode == 408) {
             return true;
@@ -205,10 +207,10 @@ public class RetryHandler {
             log.debug("{}", msg);
     }
 
-    private void delayBetweenCalls(Exchange exc) throws InterruptedException {
+    private void delayBetweenCalls(Exchange exc, int delay) throws InterruptedException {
         //as documented above, the sleep timeout is only applied between successive calls to the SAME destination.
         if (exc.getDestinations().size() == 1)
-            sleep(delayBetweenTriesMs);
+            sleep(delay);
     }
 
     private static boolean trackNodeStatus(Exchange exc) {
@@ -222,6 +224,40 @@ public class RetryHandler {
     @MCAttribute
     public void setRetries(int retries) {
         this.retries = retries;
+    }
+
+    /**
+     * Initial delay. Gets with each attempt longer by backoffMultiplier
+     *
+     * @default 10 millisecound
+     * @description Initial delay in millisecounds
+     * @example 1000
+     * @param delay
+     */
+    @MCAttribute
+    public void setDelay(int delay) {
+        this.delay = delay;
+    }
+
+    public int getDelay() {
+        return delay;
+    }
+
+    public double getBackoffMultiplier() {
+        return backoffMultiplier;
+    }
+
+    /**
+     * Factor by with the delay between attempts to call a backend is made longer
+     *
+     * @default 5 times
+     * @description Factor by with the delay is multiplied
+     * @example 2
+     * @param backoffMultiplier factor
+     */
+    @MCAttribute
+    public void setBackoffMultiplier(double backoffMultiplier) {
+        this.backoffMultiplier = backoffMultiplier;
     }
 }
 
