@@ -54,7 +54,7 @@ public class IfInterceptorGroovyTest extends ConditionalEvaluationTestContext {
 
     @Test
     void property() throws Exception {
-        assertEquals(CONTINUE,eval("properties['bar'] == '123'", new Builder(),true));
+        assertEquals(CONTINUE,eval("property['bar'] == '123'", new Builder(),true));
     }
 
     @Test

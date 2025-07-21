@@ -194,8 +194,8 @@ public class JavascriptInterceptorTest {
         exc.getProperties().put("answer","42");
 
         executeScript("""
-				properties.put('thing','towel');
-				header.add('answer',properties.get('answer'));
+				property.put('thing','towel');
+				header.add('answer',property.get('answer'));
 				CONTINUE;
 				""", engine);
 
