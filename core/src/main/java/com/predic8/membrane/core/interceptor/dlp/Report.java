@@ -16,8 +16,6 @@ import java.util.Objects;
  *     <li>{@code field} ? The JSONPath to the field to report.</li>
  * </ul>
  *
- * @note Requires {@code fieldsConfig} to be set on the {@code <dlp>} element for proper classification.
- *
  * @example <report field="$.email" />
  */
 @MCElement(name = "report")

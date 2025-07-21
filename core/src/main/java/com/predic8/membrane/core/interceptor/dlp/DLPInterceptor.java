@@ -27,14 +27,8 @@ import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
  *     <li>{@code <report>} ? Logs the risk level and category of specified fields (if configured).</li>
  * </ul>
  *
- * <p>Optionally, fields can be classified based on a CSV configuration. This file maps JSON paths or field names to risk levels and categories.</p>
- *
- * <h2>Usage</h2>
- * To enable classification, set the {@code fieldsConfig} attribute to the path of the CSV file.
- *
  * @topic 3. Security and Validation
  */
-
 @MCElement(name = "dlp")
 public class DLPInterceptor extends AbstractInterceptor {
 
@@ -88,7 +82,7 @@ public class DLPInterceptor extends AbstractInterceptor {
             return CONTINUE;
 
         } catch (Exception e) {
-            log.error("Exception in DLPInterceptor.handleInternal: ", e);
+            log.error("{}", e);
             return Outcome.ABORT;
         }
     }
@@ -97,6 +91,10 @@ public class DLPInterceptor extends AbstractInterceptor {
         return fieldsConfig;
     }
 
+    /**
+     * @description Optionally, fields can be classified based on a CSV configuration. This file maps JSON paths or field names to risk levels and categories.
+     * @example fieldsConfig="dlp-fields.csv"
+     */
     @MCAttribute
     public void setFieldsConfig(String fieldsConfig) {
         this.fieldsConfig = fieldsConfig;
