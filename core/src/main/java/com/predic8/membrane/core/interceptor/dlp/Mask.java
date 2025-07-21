@@ -4,9 +4,14 @@ import com.jayway.jsonpath.DocumentContext;
 import com.jayway.jsonpath.JsonPath;
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @MCElement(name = "mask")
 public class Mask extends Action {
+
+    private static final Logger log = LoggerFactory.getLogger(Mask.class);
+
 
     private String keepRight = "0";
 
@@ -17,6 +22,7 @@ public class Mask extends Action {
             String original = doc.read(getField(), String.class);
             String masked = maskKeepRight(original, Integer.parseInt(keepRight));
             doc.set(getField(), masked);
+            log.info("[Mask]: Field='{}' | Value='{}' | Masked='{}'", getField(), original, masked);
             return doc.jsonString();
         } catch (Exception e) {
             throw new RuntimeException("Failed to apply mask on field: " + getField(), e);
