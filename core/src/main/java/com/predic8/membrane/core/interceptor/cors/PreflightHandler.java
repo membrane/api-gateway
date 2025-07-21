@@ -22,14 +22,17 @@ import java.util.*;
 
 import static com.predic8.membrane.core.http.Response.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static com.predic8.membrane.core.interceptor.cors.AbstractCORSHandler.ResponseHeaderBuilder.responseBuilder;
 import static com.predic8.membrane.core.interceptor.cors.CorsInterceptor.*;
 import static com.predic8.membrane.core.interceptor.cors.CorsUtil.*;
 import static org.springframework.http.HttpHeaders.*;
 
 public class PreflightHandler extends AbstractCORSHandler {
 
+    private static final Logger log = LoggerFactory.getLogger(PreflightHandler.class);
+
     /**
-     * From https://fetch.spec.whatwg.org/#terminology-headers
+     * From <a href="https://fetch.spec.whatwg.org/#terminology-headers">fetch specification</a>
      */
     public static final Set<String> SAFE_HEADERS = Set.of(
                 "accept",
@@ -38,16 +41,12 @@ public class PreflightHandler extends AbstractCORSHandler {
                 "content-type",
                 "range"
                 );
-    private static final Logger log = LoggerFactory.getLogger(PreflightHandler.class);
 
     public PreflightHandler(CorsInterceptor interceptor) {
         super(interceptor);
     }
 
     public Outcome handleInternal(Exchange exc, String origin) {
-        if (!exc.getRequest().isOPTIONSRequest())
-            return CONTINUE; // no preflight -> let pass
-
         if (interceptor.isAllowAll()) {
             exc.setResponse(noContent().build());
             setCORSHeader(exc, origin);
@@ -59,7 +58,7 @@ public class PreflightHandler extends AbstractCORSHandler {
         }
 
         if (!methodAllowed(exc)) {
-            return createProblemDetails(exc, origin, "method");
+            return createProblemDetails(exc, getRequestMethod(exc), "method");
         }
 
         if (!headersAllowed(getAccessControlRequestHeaderValue(exc))) {
@@ -88,25 +87,16 @@ public class PreflightHandler extends AbstractCORSHandler {
         if (headers == null)
             return true;
 
-        Set<String> allowedHeaders = interceptor.getAllowedHeaders();
-
         for(String header : toLowerCaseSet(parseCommaOrSpaceSeparated(headers))) {
             if (SAFE_HEADERS.contains(header))
                 continue;
-            if (allowedHeaders.contains(header))
+            if (interceptor.getAllowedHeaders().contains(header))
                 continue;
             log.debug("header '{}' not allowed!", header);
             return false;
         }
         return true;
     }
-
-    /*
-
-        private boolean methodAllowed(String method) {
-        return method != null && (allowedMethods.contains(method) || allowedMethods.contains(WILDCARD));
-    }
-     */
 
     private boolean methodAllowed(Exchange exc) {
         String method = getRequestMethod(exc);
@@ -115,5 +105,29 @@ public class PreflightHandler extends AbstractCORSHandler {
 
     protected String getRequestMethod(Exchange exc) {
         return exc.getRequest().getHeader().getFirstValue(ACCESS_CONTROL_REQUEST_METHOD);
+    }
+
+    protected void setCORSHeader(Exchange exc, String requestOrigin) {
+        responseBuilder(exc)
+                .allowOrigin(determineAllowOriginHeader(requestOrigin))
+                .allowMethods(getAllowedMethods(getRequestMethod(exc)))
+                .allowHeaders(getAllowHeaders(getAccessControlRequestHeaderValue(exc)))
+                .maxAge(interceptor.getMaxAge())
+                .allowCredentials(interceptor.getCredentials())
+                .build();
+    }
+
+    private String getAllowHeaders(String requestedHeaders) {
+        if (interceptor.isAllowAll()) {
+            if (requestedHeaders == null || requestedHeaders.isBlank())
+                return null;
+            return requestedHeaders; // Best practice to reflect the requested headers
+        }
+        if (!interceptor.getAllowedHeaders().isEmpty()) {
+            // The returned header need not to reflect the requested ones, it can
+            // lead to unexpected behaviour!
+            return join(List.copyOf(interceptor.getAllowedHeaders()));
+        }
+        return null;
     }
 }

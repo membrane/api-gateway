@@ -18,7 +18,6 @@ import com.predic8.membrane.core.exchange.*;
 import org.jetbrains.annotations.*;
 
 import java.util.*;
-import java.util.stream.*;
 
 import static com.predic8.membrane.core.http.Header.*;
 import static java.util.Arrays.*;
@@ -49,7 +48,7 @@ public class CorsUtil {
      */
     public static @NotNull Set<String> parseCommaOrSpaceSeparated(String value) {
         return stream(value.split("\\s*,\\s*|\\s+"))
-                .map(java.lang.String::trim)
+                .map(String::trim)
                 .filter(s -> !s.isEmpty())
                 .collect(toSet());
     }
@@ -62,17 +61,17 @@ public class CorsUtil {
      */
     public static Set<String> toLowerCaseSet(Set<String> strings) {
         return strings.stream()
-                .map(java.lang.String::toLowerCase)
-                .collect(Collectors.toSet());
+                .map(String::toLowerCase)
+                .collect(toSet());
     }
 
     public static String getNormalizedOrigin(Exchange exc) {
         String origin = exc.getRequest().getHeader().getFirstValue(ORIGIN);
         if (origin == null) return null;
-        return removeTrailingSlashes(origin); //
+        return normalizeOrigin(origin);
     }
 
-    public static @NotNull String removeTrailingSlashes(String origin) {
+    public static @NotNull String normalizeOrigin(String origin) {
         return origin.toLowerCase().replaceAll("/+$", "");
     }
 
@@ -84,6 +83,6 @@ public class CorsUtil {
         return stream(origins.split(SPACE))
                 .map(String::trim)
                 .filter(s -> !s.isEmpty())
-                .collect(Collectors.toSet());
+                .collect(toSet());
     }
 }
