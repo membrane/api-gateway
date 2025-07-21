@@ -10,6 +10,17 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Set;
 
+/**
+ * @description <p>Removes a field from the JSON payload entirely.</p>
+ *
+ * <p>This is typically used to eliminate sensitive or irrelevant data before logging or forwarding.</p>
+ *
+ * <h2>Attributes</h2>
+ * <ul>
+ *     <li>{@code field} ? The JSONPath to the field to remove.</li>
+ * </ul>
+ * @example <filter field="$.password" />
+ */
 @MCElement(name = "filter")
 public class Filter extends Action {
 

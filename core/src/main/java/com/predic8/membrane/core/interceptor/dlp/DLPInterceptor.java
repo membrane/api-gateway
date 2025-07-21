@@ -17,6 +17,24 @@ import java.util.Map;
 
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 
+/**
+ * @description <p>Interceptor for Data Loss Prevention (DLP) in JSON-based request and response bodies.</p>
+ *
+ * <p>This plugin supports three main actions on sensitive fields:</p>
+ * <ul>
+ *     <li>{@code <mask>} ? Masks sensitive fields, leaving a configurable number of trailing characters visible.</li>
+ *     <li>{@code <filter>} ? Removes specified fields entirely from the payload.</li>
+ *     <li>{@code <report>} ? Logs the risk level and category of specified fields (if configured).</li>
+ * </ul>
+ *
+ * <p>Optionally, fields can be classified based on a CSV configuration. This file maps JSON paths or field names to risk levels and categories.</p>
+ *
+ * <h2>Usage</h2>
+ * To enable classification, set the {@code fieldsConfig} attribute to the path of the CSV file.
+ *
+ * @topic 3. Security and Validation
+ */
+
 @MCElement(name = "dlp")
 public class DLPInterceptor extends AbstractInterceptor {
 
@@ -54,6 +72,10 @@ public class DLPInterceptor extends AbstractInterceptor {
 
     private Outcome handleInternal(Message msg) {
         try {
+            if (actions.isEmpty()) {
+                log.info("No actions configured. Skipping.");
+                return CONTINUE;
+            }
             String body = msg.getBodyAsStringDecoded();
             RiskReport report = dlpAnalyzer.analyze(msg);
             log.info("{}", report.getFormattedSummaryLog());
