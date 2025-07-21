@@ -24,21 +24,29 @@ public class DLPAnalyzer {
 
     private static final ObjectMapper MAPPER = new ObjectMapper(JSON_FACTORY);
 
-    private final Map<String, RiskReport.Category> riskDict;
+    private final Map<String, String> riskDict;
     private final Map<String, String> categoryMap;
 
     public DLPAnalyzer(Map<String, String> rawRiskMap, Map<String, String> categoryMap) {
-        this.riskDict = mapToEnumRiskLevels(rawRiskMap);
+        this.riskDict = normalizeRiskLevels(rawRiskMap);
         this.categoryMap = categoryMap;
     }
 
-    private Map<String, RiskReport.Category> mapToEnumRiskLevels(Map<String, String> raw) {
-        Map<String, RiskReport.Category> result = new HashMap<>();
-        raw.forEach((key, value) -> {
-            RiskReport.Category level = RiskReport.Category.fromString(value);
-            result.put(key.toLowerCase(Locale.ROOT), level);
-        });
+    private Map<String, String> normalizeRiskLevels(Map<String, String> raw) {
+        Map<String, String> result = new HashMap<>();
+        raw.forEach((key, value) -> result.put(key, normalizeLevel(value)));
         return result;
+    }
+
+    private String normalizeLevel(String level) {
+        switch (level.toLowerCase()) {
+            case "high":
+            case "medium":
+            case "low":
+                return level.toLowerCase();
+            default:
+                return "unclassified";
+        }
     }
 
     public RiskReport analyze(Message msg) {
@@ -64,20 +72,19 @@ public class DLPAnalyzer {
                 traverse(child, path, report);
             }
         } else {
-            String fullPath = String.join(".", path).toLowerCase(Locale.ROOT);
-            String lastSegment = path.peekLast() != null ? path.peekLast().toLowerCase(Locale.ROOT) : "";
+            String fullPath = String.join(".", path);
+            String lastSegment = path.peekLast() != null ? path.peekLast() : "";
 
-            RiskReport.Category level = classify(fullPath, lastSegment);
-            String riskLevel = level.name();
+            String riskLevel = classify(fullPath, lastSegment);
             String category = categoryMap.getOrDefault(fullPath, categoryMap.getOrDefault(lastSegment, "Unknown"));
 
             report.recordField(fullPath, riskLevel, category);
         }
     }
 
-    private RiskReport.Category classify(String fullPath, String simpleName) {
+    private String classify(String fullPath, String simpleName) {
         return Optional.ofNullable(riskDict.get(fullPath))
                 .or(() -> Optional.ofNullable(riskDict.get(simpleName)))
-                .orElse(RiskReport.Category.UNCLASSIFIED);
+                .orElse("unclassified");
     }
 }

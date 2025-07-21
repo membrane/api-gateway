@@ -9,7 +9,8 @@ import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -53,13 +54,18 @@ class DLPAnalyzerTest {
         when(mockArrayMessage.getCharset()).thenReturn(StandardCharsets.UTF_8.name());
 
         Map<String, String> riskDict = new HashMap<>();
-        riskDict.put("user.email", "High");
-        riskDict.put("active", "Low");
-        riskDict.put("foo", "High");
-        riskDict.put("bar", "Low");
+        riskDict.put("user.email", "high");
+        riskDict.put("active", "low");
+        riskDict.put("array.foo", "high");
+        riskDict.put("array.bar", "low");
 
-        dlpAnalyzer = new DLPAnalyzer(riskDict);
+        Map<String, String> catDict = new HashMap<>();
+        catDict.put("user.email", "personal");
+        catDict.put("active", "technical");
+
+        dlpAnalyzer = new DLPAnalyzer(riskDict, catDict);
     }
+
 
     @Test
     void analyzeSimpleJson() {
@@ -72,8 +78,8 @@ class DLPAnalyzerTest {
 
         assertEquals("high", report.getMatchedFields().get("user.email"));
         assertEquals("low", report.getMatchedFields().get("active"));
-        assertEquals("unclassified", report.getMatchedFields().get("user.profile.firstname"));
-        assertEquals("unclassified", report.getMatchedFields().get("user.profile.lastname"));
+        assertEquals("unclassified", report.getMatchedFields().get("user.profile.firstName"));
+        assertEquals("unclassified", report.getMatchedFields().get("user.profile.lastName"));
     }
 
     @Test
@@ -94,8 +100,8 @@ class DLPAnalyzerTest {
         RiskReport report = dlpAnalyzer.analyze(mockMessage);
 
         assertTrue(report.getMatchedFields().containsKey("user.email"));
-        assertTrue(report.getMatchedFields().containsKey("user.profile.firstname"));
-        assertTrue(report.getMatchedFields().containsKey("user.profile.lastname"));
+        assertTrue(report.getMatchedFields().containsKey("user.profile.firstName"));
+        assertTrue(report.getMatchedFields().containsKey("user.profile.lastName"));
         assertTrue(report.getMatchedFields().containsKey("active"));
     }
 }

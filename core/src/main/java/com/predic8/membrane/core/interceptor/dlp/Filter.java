@@ -22,7 +22,7 @@ public class Filter extends Action {
     @Override
     public String apply(DLPContext context) {
         try {
-            DocumentContext doc = JsonPath.using(SAFE_CONFIG).parse(context.getBody());
+            DocumentContext doc = JsonPath.using(SAFE_CONFIG).parse(context.body());
             Object value = doc.read(getField());
 
             if (value == null) {
@@ -31,7 +31,7 @@ public class Filter extends Action {
 
             doc.delete(getField());
 
-            log.info("[Filter] Removed field {} with value: {}", getField(), value);
+            log.info("[Filter]: Field='{}' | Value='{}'", getField(), value);
             return doc.jsonString();
 
         } catch (Exception e) {

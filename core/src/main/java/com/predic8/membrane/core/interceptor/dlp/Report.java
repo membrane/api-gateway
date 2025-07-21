@@ -4,7 +4,7 @@ import com.predic8.membrane.annot.MCElement;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Locale;
+import java.util.Objects;
 
 @MCElement(name = "report")
 public class Report extends Action {
@@ -15,32 +15,32 @@ public class Report extends Action {
     public String apply(DLPContext context) {
         if (context == null || !context.hasRiskReport()) {
             log.warn("No RiskReport provided. Skipping field report.");
-            return context.getBody();
+            return Objects.requireNonNull(context).body();
         }
 
         String path = getField(); // e.g. $.first_name
         if (path == null || path.isBlank()) {
             log.warn("No field specified in <report />. Skipping.");
-            return context.getBody();
+            return context.body();
         }
 
         try {
-            String normalized = path.replaceFirst("^\\$\\.", "").toLowerCase(Locale.ROOT);
+            String normalized = path.replaceFirst("^\\$\\.", "");
 
-            String riskLevel = context.getRiskReport()
+            String riskLevel = context.riskReport()
                     .getMatchedFields()
                     .getOrDefault(normalized, "UNCLASSIFIED");
 
-            String category = context.getRiskReport()
+            String category = context.riskReport()
                     .getCategoryOf(normalized);
 
-            log.info("DLP Field Report: Field='{}', Category='{}', Risk Level='{}'",
+            log.info("[Report]: Field='{}' | Category='{}' | Risk Level='{}'",
                     normalized, category, riskLevel);
 
         } catch (Exception e) {
             log.warn("Could not log field '{}': {}", getField(), e.getMessage());
         }
 
-        return context.getBody();
+        return context.body();
     }
 }

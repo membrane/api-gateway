@@ -13,7 +13,7 @@ public class Mask extends Action {
     @Override
     public String apply(DLPContext context) {
         try {
-            DocumentContext doc = JsonPath.parse(context.getBody());
+            DocumentContext doc = JsonPath.parse(context.body());
             String original = doc.read(getField(), String.class);
             String masked = maskKeepRight(original, Integer.parseInt(keepRight));
             doc.set(getField(), masked);

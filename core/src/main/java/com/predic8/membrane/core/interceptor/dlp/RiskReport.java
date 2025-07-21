@@ -4,75 +4,72 @@ import java.util.*;
 
 public class RiskReport {
 
-    private static final List<String> LEVELS = List.of("high", "medium", "low", "unclassified");
-
     private final Map<String, String> matchedFields = new LinkedHashMap<>();
     private final Map<String, String> fieldCategories = new LinkedHashMap<>();
-    private final EnumMap<Category, Integer> riskCounts = new EnumMap<>(Category.class);
-    private final EnumMap<Category, Map<String, Integer>> riskDetails = new EnumMap<>(Category.class);
+    private final Map<String, Integer> riskCounts = new LinkedHashMap<>();
+    private final Map<String, Map<String, Integer>> riskDetails = new LinkedHashMap<>();
+
+    private static final List<String> RISK_LEVELS = List.of("high", "medium", "low", "unclassified");
 
     public void recordField(String field, String riskLevel, String category) {
-        matchedFields.put(field, riskLevel);
+        String level = normalizeRiskLevel(riskLevel);
+        matchedFields.put(field, level);
         fieldCategories.put(field, category);
 
-        Category cat = Category.fromString(riskLevel);
-        riskCounts.merge(cat, 1, Integer::sum);
-        riskDetails.computeIfAbsent(cat, r -> new LinkedHashMap<>()).merge(field, 1, Integer::sum);
+        riskCounts.merge(level, 1, Integer::sum);
+        riskDetails
+                .computeIfAbsent(level, r -> new LinkedHashMap<>())
+                .merge(field, 1, Integer::sum);
     }
 
     public String getCategoryOf(String field) {
         return fieldCategories.getOrDefault(field, "Unknown");
     }
 
-    public Category getCategory() {
-        if (riskCounts.getOrDefault(Category.HIGH, 0) > 0) return Category.HIGH;
-        if (riskCounts.getOrDefault(Category.MEDIUM, 0) > 0) return Category.MEDIUM;
-        if (riskCounts.getOrDefault(Category.LOW, 0) > 0) return Category.LOW;
-        return Category.UNCLASSIFIED;
+    public String getCategory() {
+        if (riskCounts.getOrDefault("high", 0) > 0) return "high";
+        if (riskCounts.getOrDefault("medium", 0) > 0) return "medium";
+        if (riskCounts.getOrDefault("low", 0) > 0) return "low";
+        return "unclassified";
     }
 
-    public enum Category {
-        HIGH(3), MEDIUM(2), LOW(1), UNCLASSIFIED(0);
+    public String getFormattedSummaryLog() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("[Summary]: Risk=").append(getCategory());
 
-        private final int severity;
-
-        Category(int severity) {
-            this.severity = severity;
+        for (String level : RISK_LEVELS) {
+            sb.append(" | ").append(level).append("=")
+                    .append(riskCounts.getOrDefault(level, 0));
         }
 
-        public int getSeverity() {
-            return severity;
-        }
-
-        public static Category fromString(String level) {
-            return switch (level.toLowerCase()) {
-                case "high" -> HIGH;
-                case "medium" -> MEDIUM;
-                case "low" -> LOW;
-                default -> UNCLASSIFIED;
-            };
-        }
-    }
-
-    public Map<String, Object> getStructuredReport() {
-        Map<String, Object> out = new LinkedHashMap<>();
-        for (Category level : Category.values()) {
-            int count = riskCounts.getOrDefault(level, 0);
-            out.put(level.name().toLowerCase() + "_risk", count);
-
-            if (riskDetails.containsKey(level)) {
-                out.put(level.name().toLowerCase() + "_details", Map.copyOf(riskDetails.get(level)));
+        List<String> fieldsOutput = new ArrayList<>();
+        for (String level : RISK_LEVELS) {
+            Map<String, Integer> details = riskDetails.getOrDefault(level, Collections.emptyMap());
+            if (!details.isEmpty()) {
+                String fieldList = String.join(", ", details.keySet());
+                fieldsOutput.add(level + "=[" + fieldList + "]");
             }
         }
-        out.put("category", getCategory().name());
-        return out;
+
+        if (!fieldsOutput.isEmpty()) {
+            sb.append(" | Fields: ").append(String.join(", ", fieldsOutput));
+        }
+
+        return sb.toString();
     }
 
     public Map<String, String> getMatchedFields() {
         return Collections.unmodifiableMap(matchedFields);
     }
 
-    public Map<Category, Integer> getRiskCounts() {
+    public Map<String, Integer> getRiskCounts() {
         return Collections.unmodifiableMap(riskCounts);
+    }
+
+    private String normalizeRiskLevel(String level) {
+        return switch (level.toLowerCase()) {
+            case "high", "medium", "low" -> level.toLowerCase();
+            default -> "unclassified";
+        };
     }
 }

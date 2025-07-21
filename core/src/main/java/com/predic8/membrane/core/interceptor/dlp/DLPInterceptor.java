@@ -56,7 +56,7 @@ public class DLPInterceptor extends AbstractInterceptor {
         try {
             String body = msg.getBodyAsStringDecoded();
             RiskReport report = dlpAnalyzer.analyze(msg);
-            log.info("DLP Risk Analysis: {}", report.getStructuredReport());
+            log.info("{}", report.getFormattedSummaryLog());
 
             for (DLPAction action : actions) {
                 body = action.apply(new DLPContext(body, report));
