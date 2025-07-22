@@ -139,6 +139,7 @@ exit 0
 
 # TODO use %{confdir} macro here, does not get replaced currently
 sed -i 's#CLASSPATH="$MEMBRANE_HOME/conf"#CLASSPATH="/etc/membrane"#' %{buildroot}%{homedir}/membrane.sh
+sed -i 's#CLASSPATH="$membrane_home/conf:#CLASSPATH="/etc/membrane:#' %{buildroot}%{homedir}/membrane.sh
 
 %post
 %systemd_post %{name}.service
