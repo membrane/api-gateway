@@ -35,7 +35,6 @@ public class ConnectionFactory {
 
     private final ConnectionManager connectionManager;
     private final Http2ClientPool http2ClientPool;
-    private final ProxyConfiguration proxy;
     private final HttpClientConfiguration config;
     private final SSLContext proxySSLContext;
     private final SSLContext sslContext;
@@ -46,7 +45,6 @@ public class ConnectionFactory {
     public ConnectionFactory(HttpClientConfiguration config, TimerManager timerManager) {
         this.config = config;
         this.http2ClientPool = getHttp2ClientPool(config);
-        this.proxy = config.getProxy();
         this.proxySSLContext = getProxySSLContext(config.getProxy());
         this.sslContext = getSSLContext(config);
         connectionManager = new ConnectionManager(config.getConnection().getKeepAliveTimeout(), timerManager);

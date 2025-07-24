@@ -50,8 +50,9 @@ import static com.predic8.membrane.core.util.TextUtil.*;
 public class Connection implements Closeable, MessageObserver, NonRelevantBodyObserver {
 
 	private static final Logger log = LoggerFactory.getLogger(Connection.class.getName());
+	public static final String MEMBRANE_HTTPCLIENT_BUFFER_SIZE = "membrane.httpclient.buffer.size";
 	private static volatile ThreadLocal<Random> random = ByteStreamLogging.isLoggingEnabled() ? new ThreadLocal<>() : null;
-	private static int BUFFER_SIZE = getDefaultBufferSize();
+	private static final int BUFFER_SIZE = getDefaultBufferSize();
 
 	public final ConnectionManager mgr;
 	public final String host;
@@ -130,8 +131,8 @@ public class Connection implements Closeable, MessageObserver, NonRelevantBodyOb
 	}
 
 	private static int getDefaultBufferSize() {
-		if (System.getProperty("membrane.httpclient.buffer.size") != null)
-			return Integer.parseInt(System.getProperty("membrane.httpclient.buffer.size"));
+		if (System.getProperty(MEMBRANE_HTTPCLIENT_BUFFER_SIZE) != null)
+			return Integer.parseInt(System.getProperty(MEMBRANE_HTTPCLIENT_BUFFER_SIZE));
 		return 2048;
 	}
 
@@ -175,7 +176,7 @@ public class Connection implements Closeable, MessageObserver, NonRelevantBodyOb
 				try {
 					out.flush();
 					out.close();
-				} catch (IOException e) {}
+				} catch (IOException ignored) {}
 			}
 
 			// Test for isClosed() is needed!
@@ -414,7 +415,7 @@ public class Connection implements Closeable, MessageObserver, NonRelevantBodyOb
 					 + "User-Agent: " + USERAGENT + "\r\n"
 					 + (proxy.isAuthentication() ? ("Proxy-Authorization: " + proxy.getCredentials() + "\r\n") : "")
 					 + "\r\n";
-		byte b[];
+		byte[] b;
 		try {
           /*
            * We really do want ASCII7 -- the http protocol doesn't change
@@ -433,9 +434,5 @@ public class Connection implements Closeable, MessageObserver, NonRelevantBodyOb
 
 	public SSLProvider getSslProvider() {
 		return sslProvider;
-	}
-
-	public String[] getApplicationProtocols() {
-		return sslProvider == null ? null : sslProvider.getApplicationProtocols(socket);
 	}
 }

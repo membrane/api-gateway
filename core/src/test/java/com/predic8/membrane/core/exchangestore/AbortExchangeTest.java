@@ -79,6 +79,8 @@ public class AbortExchangeTest {
     @Test
     public void doit() throws Exception {
         Response response = performRequest();
+
+        //noinspection ResultOfMethodCallIgnored
         response.getBodyAsStream().read(new byte[4096]);
 
         assertExchangeStoreHas(router.getExchangeStore(), 1, 0);
@@ -92,6 +94,7 @@ public class AbortExchangeTest {
     @Test
     void abort() throws Exception {
         Response response = performRequest();
+        //noinspection ResultOfMethodCallIgnored
         response.getBodyAsStream().read(new byte[4096]);
 
         assertExchangeStoreHas(router.getExchangeStore(), 1, 0);

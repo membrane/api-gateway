@@ -76,7 +76,7 @@ public class HttpClient implements AutoCloseable {
         denyUnsupportedUpgrades(exc);
         Exchange exchange = configuration.getRetryHandler().executeWithRetries(exc,
                 failOverOn5XX, (e, target, attempt)
-                -> dispatchHttp1or2(e, failOverOn5XX, attempt, initializeRequest(exc, target, adjustHostHeader)));
+                -> dispatchHttp1or2(e, attempt, initializeRequest(exc, target, adjustHostHeader)));
 
         if (exc.getRequest().isCONNECTRequest())
             return exchange;
@@ -97,7 +97,7 @@ public class HttpClient implements AutoCloseable {
         return exc.getProperty(HTTP2) == null || (exc.getProperty(HTTP2) instanceof Boolean h2 && !h2);
     }
 
-    private boolean dispatchHttp1or2(Exchange exc, boolean failOverOn5XX, int counter, HostColonPort target) throws IOException, InterruptedException, EndOfStreamException {
+    private boolean dispatchHttp1or2(Exchange exc, int counter, HostColonPort target) throws IOException, InterruptedException, EndOfStreamException {
         ConnectionFactory.OutgoingConnectionType outConType = connectionFactory.getConnection(exc, target, counter);
 
         if (configuration.getProxy() != null && outConType.sslProvider() == null)

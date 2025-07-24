@@ -216,6 +216,7 @@ public class RetryHandler {
         return Boolean.TRUE.equals(exc.getProperty(TRACK_NODE_STATUS));
     }
 
+    @SuppressWarnings("unused")
     public int getRetries() {
         return retries;
     }
