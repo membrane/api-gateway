@@ -14,6 +14,7 @@
 
 package com.predic8.membrane.core.interceptor.cors;
 
+import com.fasterxml.jackson.databind.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.util.*;
@@ -42,6 +43,8 @@ import static org.springframework.http.HttpHeaders.VARY;
 import static org.springframework.http.HttpHeaders.*;
 
 class CorsInterceptorTest {
+
+    ObjectMapper om = new ObjectMapper();
 
     CorsInterceptor i;
 
@@ -109,6 +112,7 @@ class CorsInterceptorTest {
             checkAllowHeaders(h, Set.of(ACCESS_CONTROL_ALLOW_ORIGIN));
             checkAllowOrigin(h, "https://trusted.example.com");
             assertEquals(ORIGIN, h.getFirstValue(VARY));
+            assertNull(h.getFirstValue(ACCESS_CONTROL_MAX_AGE));
         }
 
         @Test
@@ -148,15 +152,10 @@ class CorsInterceptorTest {
 
             Exchange exc = callInterceptors(post("/test")
                     .header(ORIGIN, "https://evil.example.com")
-                    .header(ACCESS_CONTROL_REQUEST_HEADERS, "X-Foo")
                     .buildExchange());
-
-            Header h = exc.getResponse().getHeader();
 
             // Returning WILDCARD is on purpose!
             assertEquals(WILDCARD, getAllowOrigin(exc));
-
-            assertTrue(getAllowHeaders(exc).contains("x-foo"));
         }
 
         @Test
@@ -241,10 +240,12 @@ class CorsInterceptorTest {
             Header h = exc.getResponse().getHeader();
 
             assertEquals(METHOD_POST, getAllowMethods(exc));
-            assertTrue(getAllowHeaders(exc).contains("x-foo"));
+            assertTrue(getAllowHeaders(exc).contains("X-Foo"));
             assertEquals(WILDCARD, getAllowOrigin(exc));
 
             checkAllowHeaders(h, Set.of(ACCESS_CONTROL_ALLOW_ORIGIN, ACCESS_CONTROL_ALLOW_METHODS, ACCESS_CONTROL_ALLOW_HEADERS));
+
+            assertNotNull(h.getFirstValue(ACCESS_CONTROL_MAX_AGE));
         }
 
         @Test
@@ -266,6 +267,11 @@ class CorsInterceptorTest {
         void originNullNotAllowedPreflight() throws Exception {
             i.init();
             Exchange exc = makePreflight(createPreflight("null", METHOD_POST), 403);
+
+            assertEquals(APPLICATION_PROBLEM_JSON, exc.getResponse().getHeader().getContentType());
+
+            JsonNode jn = om.readTree(exc.getResponse().getBodyAsStringDecoded());
+            assertEquals("https://membrane-api.io/problems/security/origin-not-allowed", jn.get("type").asText());
 
             Header h = exc.getResponse().getHeader();
             checkAllowHeaders(h, emptySet());
@@ -317,18 +323,23 @@ class CorsInterceptorTest {
         }
 
         @Test
-        void wildcardOriginWithCredentialsShouldBeRejectedPreflight() throws Exception {
+        void wildcardOriginWithCredentialsShouldBeRejectedPreflight() {
             i.setOrigins(WILDCARD);
             i.setCredentials(true);
             assertThrows(ConfigurationException.class, () -> i.init());
         }
+
 
         @Test
         void disallowedHeaderPreflight() throws Exception {
             i.setOrigins("https://trusted.example.com");
             i.init();
 
-            Exchange exc = makePreflight(createPreflight("https://any.example.com", METHOD_POST).header("X-Foo", "Bar"), 403);
+            Exchange exc = makePreflight(createPreflight("https://any.example.com", METHOD_POST).header("X-Not-Allowed", "Bar"), 403);
+
+            JsonNode jn = om.readTree(exc.getResponse().getBodyAsStringDecoded());
+            assertEquals("https://membrane-api.io/problems/security/origin-not-allowed", jn.get("type").asText());
+
             Header h = exc.getResponse().getHeader();
             checkAllowHeaders(h, emptySet());
         }
@@ -346,6 +357,20 @@ class CorsInterceptorTest {
             checkAllowHeaders(h, Set.of(ACCESS_CONTROL_ALLOW_ORIGIN, ACCESS_CONTROL_ALLOW_METHODS, ACCESS_CONTROL_ALLOW_HEADERS));
         }
 
+        @Test
+        void multipleMethodPreflight() throws Exception {
+            i.setOrigins("https://trusted.example.com");
+            i.setMethods("PUT, POST, DELETE, PATCH");
+            i.init();
+
+            Exchange exc = makePreflight(createPreflight("https://trusted.example.com", METHOD_POST));
+
+            Header h = exc.getResponse().getHeader();
+            assertEquals(METHOD_POST, getAllowMethods(exc));
+            checkAllowHeaders(h, Set.of(ACCESS_CONTROL_ALLOW_ORIGIN, ACCESS_CONTROL_ALLOW_METHODS));
+
+        }
+
 
         @Test
         void disallowedMethodPreflight() throws Exception {
@@ -354,6 +379,9 @@ class CorsInterceptorTest {
             i.init();
 
             Exchange exc = makePreflight(createPreflight("https://trusted.example.com", METHOD_POST), 403);
+
+            JsonNode jn = om.readTree(exc.getResponse().getBodyAsStringDecoded());
+            assertEquals("https://membrane-api.io/problems/security/method-not-allowed", jn.get("type").asText());
 
             Header h = exc.getResponse().getHeader();
             checkAllowHeaders(h, emptySet());
@@ -371,14 +399,11 @@ class CorsInterceptorTest {
         }
 
         @Test
-        void exposeHeaders() throws Exception {
-            i.setExposeHeaders("X-Custom-Header, X-Another-Header");
-            i.init();
-
-            assertEquals(Set.of("x-custom-header", "x-another-header"),
-                    parseCommaOrSpaceSeparated(
-                            makePreflight(createPreflight("https://trusted.example.com", METHOD_POST))
-                                    .getResponse().getHeader().getFirstValue(ACCESS_CONTROL_EXPOSE_HEADERS)));
+        void doNotExposeHeadersInPreflight() throws Exception {
+            i.setExposeHeaders("X-Custom");
+            Exchange exc = makePreflight(createPreflight("https://trusted.example.com", METHOD_POST));
+            Header h = exc.getResponse().getHeader();
+            assertNull(h.getFirstValue(ACCESS_CONTROL_EXPOSE_HEADERS));
         }
 
         @ParameterizedTest
@@ -438,10 +463,6 @@ class CorsInterceptorTest {
 
     private static String getAllowHeaders(Exchange exc) {
         return exc.getResponse().getHeader().getFirstValue(ACCESS_CONTROL_ALLOW_HEADERS);
-    }
-
-    private static String getAllowCredentials(Exchange exc) {
-        return exc.getResponse().getHeader().getFirstValue(ACCESS_CONTROL_ALLOW_CREDENTIALS);
     }
 
     private Exchange callInterceptors(Exchange exc) {

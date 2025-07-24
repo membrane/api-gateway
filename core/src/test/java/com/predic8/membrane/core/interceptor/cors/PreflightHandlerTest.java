@@ -20,10 +20,10 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class PreflightHandlerTest {
 
-    static PreflightHandler ph;
+    private PreflightHandler ph;
 
-    @BeforeAll
-    static void beforeAll() {
+    @BeforeEach
+    void setup2() {
         CorsInterceptor ci = new CorsInterceptor();
         ph = new PreflightHandler(ci);
     }
@@ -37,5 +37,12 @@ class PreflightHandlerTest {
         assertTrue(ph.headersAllowed(   "accept, accept-language, content-language, content-type, range"));
 
         assertFalse(ph.headersAllowed(   "Foo"));
+
+        assertTrue(ph.headersAllowed("Accept")); // case insensitive
+        assertTrue(ph.headersAllowed("  accept  ")); // whitespace handling
+        assertFalse(ph.headersAllowed("x-custom-header")); // custom headers
+        assertFalse(ph.headersAllowed("authorization")); // sensitive header
+        assertTrue(ph.headersAllowed("Accept,content-Type")); // multiple safe headers
+        assertFalse(ph.headersAllowed("accept,custom-header")); // mixed safe/unsafe
     }
 }

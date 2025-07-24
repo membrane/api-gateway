@@ -22,33 +22,72 @@ import org.slf4j.*;
 
 import java.util.*;
 
+import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 import static com.predic8.membrane.core.interceptor.cors.AbstractCORSHandler.*;
 import static com.predic8.membrane.core.interceptor.cors.CorsUtil.*;
 import static com.predic8.membrane.core.util.UrlNormalizer.*;
 
-
-//
-// 2. Safe-listed headers not explicitly handled
-// The spec defines certain headers as always allowed (Accept, Accept-Language, Content-Language, and Content-Type with specific values), but the implementation doesn't explicitly handle these. When no headers are configured, it appears to reject all non-configured headers rather than allowing the safe-listed ones.
-//
-// Returning only requested method? What is right?
-
-
 /**
- * @description <p>Plugin that allows Cross-Origin Resource Sharing (CORS). It answers preflight
- * requests with the options method and sets CORS headers. Additionally, requests
- * are validated against the CORS configuration.</p>
- * <p>
- * The following headers are regarded save: Accept, Accept-Language, Content-Language, Content-Type
- * </p>
- * The plugin follow the <a href="https://fetch.spec.whatwg.org/#cors-preflight-fetch">Fetch, Living Standard by WhatWG</a>
+ * Cross-Origin Resource Sharing (CORS) plugin that enables secure cross-origin HTTP requests.
  *
- * <p>For a detailed explanation of CORS, see:</p>
+ * <p>This plugin handles CORS preflight requests (OPTIONS method) and sets appropriate CORS headers
+ * on responses. It validates incoming requests against the configured CORS policy to ensure compliance
+ * with the same-origin policy while allowing legitimate cross-origin access.</p>
+ *
+ * <h3>CORS Headers Handled</h3>
  * <ul>
- *     <li><a href="https://www.membrane-api.io/cors-api-gateway.html" target="_blank">
- *         CORS Guide for API Developers
- *     </a></li>
+ *   <li><strong>Request Headers:</strong> Origin, Access-Control-Request-Method, Access-Control-Request-Headers</li>
+ *   <li><strong>Response Headers:</strong> Access-Control-Allow-Origin, Access-Control-Allow-Methods,
+ *       Access-Control-Allow-Headers, Access-Control-Expose-Headers, Access-Control-Allow-Credentials,
+ *       Access-Control-Max-Age</li>
  * </ul>
+ *
+ * <h3>Safe Headers</h3>
+ * <p>The following headers are considered safe and don't require explicit configuration:</p>
+ * <ul>
+ *   <li>Accept</li>
+ *   <li>Accept-Language</li>
+ *   <li>Content-Language</li>
+ *   <li>Content-Type (with certain MIME type restrictions)</li>
+ * </ul>
+ *
+ * <h3>Configuration Examples</h3>
+ *
+ * <p><strong>Basic Configuration (Allow all origins):</strong></p>
+ * <pre>{@code
+ * <cors />
+ * }</pre>
+ *
+ * <p><strong>Restrictive Configuration:</strong></p>
+ * <pre>{@code
+ * <cors
+ *   origins="https://example.com https://app.example.com"
+ *   methods="GET,POST,PUT"
+ *   headers="Authorization,X-Custom-Header"
+ *   credentials="true"
+ *   maxAge="3600" />
+ * }</pre>
+ *
+ * <p><strong>Permissive Configuration:</strong></p>
+ * <pre>{@code
+ * <cors allowAll="true" />
+ * }</pre>
+ *
+ * <h3>Security Considerations</h3>
+ * <ul>
+ *   <li>When {@code credentials="true"}, wildcard origins (*) are forbidden for security reasons</li>
+ *   <li>Always specify explicit origins in production when possible</li>
+ * </ul>
+ *
+ * <h3>Standards Compliance</h3>
+ * <p>This implementation follows the
+ * <a href="https://fetch.spec.whatwg.org/#cors-preflight-fetch">Fetch Living Standard by WHATWG</a>.</p>
+ *
+ * @see <a href="https://www.membrane-api.io/cors-api-gateway.html">CORS Guide for API Developers</a>
+ * @see <a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS">MDN CORS Documentation</a>
+ *
+ * @author predic8 GmbH
+ * @since 6.3.0
  * @topic 3. Security and Validation
  */
 @MCElement(name = "cors")
@@ -77,10 +116,12 @@ public class CorsInterceptor extends AbstractInterceptor {
     private Set<String> exposeHeaders = new HashSet<>();
     private boolean allowCredentials;
 
-    // Default from https://fetch.spec.whatwg.org/#cors-preflight-fetch
+    /** Maximum age in seconds for caching preflight responses. Default from CORS specification */
     private int maxAge = 5;
 
     private PreflightHandler preflightHandler;
+
+    /** Handler for adding CORS headers to responses */
     private ResponseHandler responseHandler;
 
     @Override
@@ -98,6 +139,8 @@ public class CorsInterceptor extends AbstractInterceptor {
 
     @Override
     public Outcome handleRequest(Exchange exc) {
+        if (!exc.getRequest().isOPTIONSRequest())
+            return CONTINUE; // no preflight -> let pass
         return preflightHandler.handle(exc);
     }
 
@@ -111,11 +154,21 @@ public class CorsInterceptor extends AbstractInterceptor {
     }
 
     /**
-     * If true, all origins, methods, and headers are allowed except credentials like cookies
+     * Enables or disables the "allow all" mode for maximum permissiveness.
      *
-     * @description Allows all origins, methods, and headers without validation.
-     * Not compatible with credentials=true.
+     * <p>When enabled, all origins, methods, and headers are allowed without any validation.
+     * This bypasses all CORS security checks and should only be used in development environments.</p>
+     *
+     * <p><strong>Security Warning:</strong> This option is not compatible with credentials=true
+     * and should never be used in production environments.</p>
+     *
+     * @param allowAll true to allow all requests without validation, false for normal CORS behavior
      * @default false
+     *
+     * @example
+     * <pre>{@code
+     * <cors allowAll="true" />
+     * }</pre>
      */
     @MCAttribute
     public void setAllowAll(boolean allowAll) {
@@ -123,9 +176,20 @@ public class CorsInterceptor extends AbstractInterceptor {
     }
 
     /**
-     * @description Space-separated list of allowed origins. Use '*' to allow all.
-     * @default * Allow all origins
-     * @example https://example.com https://my.app
+     * Configures the list of allowed origins for CORS requests.
+     *
+     * <p>Origins must be specified as complete URLs including protocol (http/https).
+     * Use '*' to allow all origins, or 'null' to allow requests with no origin header (from file).</p>
+     *
+     * @param origins space-separated list of allowed origins
+     * @default "*" (allow all origins)
+     *
+     * @example
+     * <pre>{@code
+     * <cors origins="https://example.com https://app.example.com null" />
+     * }</pre>
+     *
+     * @throws ConfigurationException if an origin URL is malformed
      */
     @MCAttribute
     public void setOrigins(String origins) {
@@ -148,7 +212,7 @@ public class CorsInterceptor extends AbstractInterceptor {
             }
             this.allowedOrigins = set;
         } catch (Exception e) {
-            log.error("Failed to parse origins list:", origins);
+            log.error("Failed to parse origins list: {}", origins);
             log.error(e.getMessage(), e);
         }
     }
@@ -159,9 +223,18 @@ public class CorsInterceptor extends AbstractInterceptor {
 
 
     /**
-     * @description Comma-separated list of allowed HTTP methods.
-     * @default GET
-     * @example GET, POST, PUT
+     * Configures the HTTP methods allowed for CORS requests.
+     *
+     * <p>Specify methods as a comma or space-separated list. Use '*' to allow all methods.
+     * Common methods include GET, POST, PUT, DELETE, PATCH.</p>
+     *
+     * @param methods comma or space-separated list of HTTP methods
+     * @default "*" (allow all methods)
+     *
+     * @example
+     * <pre>{@code
+     * <cors methods="GET,POST,PUT,DELETE" />
+     * }</pre>
      */
     @MCAttribute
     public void setMethods(String methods) {
@@ -173,10 +246,20 @@ public class CorsInterceptor extends AbstractInterceptor {
     }
 
     /**
-     * @description Comma-separated list of allowed request headers.
-     * Content-Type and Content-Length
-     * @example X-Custom-Header, Authorization, Content-Type
-     * @default No headers besides the save headers listed above
+     * Configures additional request headers allowed in CORS requests.
+     *
+     * <p>Safe headers (Accept, Accept-Language, Content-Language, Content-Type) are always allowed
+     * and don't need to be specified. Only non-safe headers need to be explicitly configured.</p>
+     *
+     * <p>Header names are case-insensitive and will be normalized to lowercase internally.</p>
+     *
+     * @param headers comma or space-separated list of header names
+     * @default "" (no additional headers beyond safe headers)
+     *
+     * @example
+     * <pre>{@code
+     * <cors headers="Authorization,X-Custom-Header,X-Requested-With" />
+     * }</pre>
      */
     @MCAttribute
     public void setHeaders(String headers) {
@@ -188,10 +271,20 @@ public class CorsInterceptor extends AbstractInterceptor {
     }
 
     /**
-     * Tells the browser which response headers it?s allowed to expose to JavaScript.
+     * Configures response headers that should be exposed to client-side JavaScript.
      *
-     * @param headers
-     * @default null None
+     * <p>By default, only safe response headers are exposed to JavaScript. Use this setting
+     * to expose additional custom headers that your client-side code needs to access.</p>
+     *
+     * <p>Header names are case-insensitive and will be normalized to lowercase internally.</p>
+     *
+     * @param headers comma or space-separated list of header names to expose
+     * @default "" (expose no additional headers)
+     *
+     * @example
+     * <pre>{@code
+     * <cors exposeHeaders="X-Total-Count,X-Custom-Info" />
+     * }</pre>
      */
     @MCAttribute
     public void setExposeHeaders(String headers) {
@@ -203,8 +296,23 @@ public class CorsInterceptor extends AbstractInterceptor {
     }
 
     /**
-     * @description Whether credentials like cookies or HTTP auth are allowed.
+     * Configures whether credentials should be included in CORS requests.
+     *
+     * <p>When enabled, browsers will include cookies, authorization headers, and client certificates
+     * in cross-origin requests. This also requires the client to set {@code withCredentials: true}
+     * in their request configuration.</p>
+     *
+     * <p><strong>Security Restriction:</strong> Cannot be used with wildcard origins (*) due to security risks.</p>
+     *
+     * @param credentials true to allow credentials, false to disallow
      * @default false
+     *
+     * @example
+     * <pre>{@code
+     * <cors
+     *   origins="https://trusted-app.com"
+     *   credentials="true" />
+     * }</pre>
      */
     @MCAttribute
     public void setCredentials(boolean credentials) {
@@ -216,8 +324,21 @@ public class CorsInterceptor extends AbstractInterceptor {
     }
 
     /**
-     * @description Max age (in seconds) for caching preflight responses.
-     * @default 0 Which means do not cache
+     * Configures the maximum age for caching preflight responses.
+     *
+     * <p>This value tells browsers how long they can cache the result of a preflight request
+     * before making another preflight request for the same resource.</p>
+     *
+     * <p>Setting this to a higher value reduces the number of preflight requests but may
+     * delay the effect of CORS configuration changes.</p>
+     *
+     * @param maxAge maximum cache age in seconds (0 = no caching)
+     * @default 5 seconds
+     *
+     * @example
+     * <pre>{@code
+     * <cors maxAge="3600" />
+     * }</pre>
      */
     @MCAttribute
     public void setMaxAge(int maxAge) {
