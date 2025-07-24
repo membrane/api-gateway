@@ -79,7 +79,7 @@ public class Connection implements Closeable, MessageObserver, NonRelevantBodyOb
 	public static Connection open(String host, int port, String localHost, SSLProvider sslProvider, ConnectionManager mgr,
 								  int connectTimeout, @Nullable String sniServername, @Nullable ProxyConfiguration proxy,
 								  @Nullable SSLProvider proxySSLProvider, @Nullable String[] applicationProtocols) throws IOException {
-		Connection con = new Connection(mgr, host, sslProvider, sniServername, proxy, proxySSLProvider, applicationProtocols);
+		Connection con = new Connection(mgr, host, sslProvider, sniServername, proxy, proxySSLProvider);
 
 		String origHost = host;
 		int origPort = port;
@@ -149,7 +149,7 @@ public class Connection implements Closeable, MessageObserver, NonRelevantBodyOb
 		return open(host, port, localHost, sslProvider, mgr, connectTimeout, null, null, null, null);
 	}
 
-	private Connection(ConnectionManager mgr, String host, @Nullable SSLProvider sslProvider, @Nullable String sniServerName, @Nullable ProxyConfiguration proxy, SSLProvider proxySSLProvider, String[] applicationProtocols) {
+	private Connection(ConnectionManager mgr, String host, @Nullable SSLProvider sslProvider, @Nullable String sniServerName, @Nullable ProxyConfiguration proxy, SSLProvider proxySSLProvider) {
 		this.mgr = mgr;
 		this.host = host;
 		this.sslProvider = sslProvider;

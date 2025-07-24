@@ -112,8 +112,7 @@ public class ProxySSLTest {
             proxyConfiguration.setSslParser(ssl);
         }
         httpClientConfiguration.setProxy(proxyConfiguration);
-        HttpClient hc = new HttpClient(httpClientConfiguration);
-        return hc;
+        return new HttpClient(httpClientConfiguration);
     }
 
     private static @NotNull Router createBackend(boolean backendUsesSSL, int backendPort) {
