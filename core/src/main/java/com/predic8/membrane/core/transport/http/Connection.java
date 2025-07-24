@@ -249,9 +249,6 @@ public class Connection implements Closeable, MessageObserver, NonRelevantBodyOb
 
 	}
 
-
-
-
 	public final void setTimeout(long timeout) {
 		this.timeout = timeout;
 	}
@@ -290,7 +287,10 @@ public class Connection implements Closeable, MessageObserver, NonRelevantBodyOb
 
 	@Override
 	public String toString() {
-		return socket.getRemoteSocketAddress().toString();
+		if (socket.getRemoteSocketAddress() != null) {
+			return socket.getRemoteSocketAddress().toString();
+		}
+		return "Not connected to remote!";
 	}
 
     public String getSniServerName() {

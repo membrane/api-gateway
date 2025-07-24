@@ -35,6 +35,7 @@ import java.io.InputStream;
 import java.util.List;
 
 import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
+import static java.lang.Thread.sleep;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class AbortExchangeTest {
@@ -83,20 +84,20 @@ public class AbortExchangeTest {
         assertExchangeStoreHas(router.getExchangeStore(), 1, 0);
 
         IOUtils.copy(response.getBodyAsStream(), new ByteArrayOutputStream());
-        Thread.sleep(100);
+        sleep(100);
 
         assertExchangeStoreHas(router.getExchangeStore(), 1, 1);
     }
 
     @Test
-    public void abort() throws Exception {
+    void abort() throws Exception {
         Response response = performRequest();
         response.getBodyAsStream().read(new byte[4096]);
 
         assertExchangeStoreHas(router.getExchangeStore(), 1, 0);
 
         BodyUtil.closeConnection(response.getBody());
-        Thread.sleep(100);
+        sleep(100);
 
         assertExchangeStoreHas(router.getExchangeStore(), 1, 0);
     }

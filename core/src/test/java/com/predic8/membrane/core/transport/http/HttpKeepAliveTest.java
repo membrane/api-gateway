@@ -28,22 +28,28 @@ import java.net.*;
 import java.util.*;
 
 import static com.predic8.membrane.core.http.Header.KEEP_ALIVE;
+import static com.predic8.membrane.core.http.Header.SOAP_ACTION;
+import static com.predic8.membrane.core.http.MimeType.TEXT_XML_UTF8;
+import static com.predic8.membrane.core.http.Request.METHOD_POST;
+import static com.predic8.membrane.core.http.Response.ok;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
+import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
+import static java.lang.Thread.sleep;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class HttpKeepAliveTest {
 
-	private HashSet<Integer> set; // tracks the hashcodes of all connections used
+	private HashSet<Integer> hashs; // tracks the hashcodes of all connections used
 	private HttpRouter service1;
 	private ServiceProxy sp1;
 
 	@BeforeEach
 	public void setUp() throws Exception {
-		set = new HashSet<>();
+		hashs = new HashSet<>();
 
 		service1 = new HttpRouter();
 		sp1 = new ServiceProxy(new ServiceProxyKey("localhost",
-				"POST", ".*", 2003), "thomas-bayer.com", 80);
+				METHOD_POST, ".*", 2003), "thomas-bayer.com", 80);
 		sp1.getInterceptors().add(new AbstractInterceptor(){
 			@Override
 			public Outcome handleRequest(Exchange exc) {
@@ -52,9 +58,9 @@ public class HttpKeepAliveTest {
                 } catch (IOException e) {
                     throw new RuntimeException(e);
                 }
-                exc.setResponse(Response.ok("OK.").build());
-				set.add(((HttpServerHandler)exc.getHandler()).getSrcOut().hashCode());
-				return Outcome.RETURN;
+                exc.setResponse(ok("OK.").build());
+				hashs.add(((HttpServerHandler)exc.getHandler()).getSrcOut().hashCode());
+				return RETURN;
 			}
 		});
 		service1.getRuleManager().addProxyAndOpenPortIfNew(sp1);
@@ -81,8 +87,8 @@ public class HttpKeepAliveTest {
 	private Exchange createExchange() throws IOException, URISyntaxException {
 		return new Request.Builder().
 				post("http://localhost:2003/axis2/services/BLZService").
-				header(Header.CONTENT_TYPE, MimeType.TEXT_XML_UTF8).
-				header(Header.SOAP_ACTION, "").
+				contentType(TEXT_XML_UTF8).
+				header(SOAP_ACTION, "").
 				body(IOUtils.toByteArray(this.getClass().getResourceAsStream("/getBank.xml"))).
 				buildExchange();
 	}
@@ -95,13 +101,13 @@ public class HttpKeepAliveTest {
 	}
 
 	@Test
-	public void testKeepAlive() throws Exception {
+	void keepAlive() throws Exception {
 		HttpClient client = new HttpClient(createConfig());
 
 		assertEquals(200, issueRequest(client));
 		assertEquals(200, issueRequest(client));
 
-		assertEquals(1, set.size());
+		assertEquals(1, hashs.size());
 	}
 
 	@Test
@@ -117,16 +123,16 @@ public class HttpKeepAliveTest {
 		});
 
 		assertEquals(200, issueRequest(client));
-		assertEquals(1, set.size());
+		assertEquals(1, hashs.size());
 
-		Thread.sleep(1500);
+		sleep(1500);
 
 		assertEquals(200, issueRequest(client));
-		assertEquals(2, set.size());
+		assertEquals(2, hashs.size());
 	}
 
 	@Test
-	public void testConnectionClose() throws Exception {
+	void connectionClose() throws Exception {
 		HttpClient client = createHttpClient(500);
 
 		sp1.getInterceptors().add(0, new AbstractInterceptor() {
@@ -138,24 +144,24 @@ public class HttpKeepAliveTest {
 		});
 
 		assertEquals(200, issueRequest(client)); // opens connection 1
-		assertEquals(1, set.size());
+		assertEquals(1, hashs.size());
 
-		Thread.sleep(200);
+		sleep(200);
 
 		assertEquals(1, client.getConnectionFactory().getConnectionManager().getNumberInPool());
-		Thread.sleep(600); // connection closer did not yet run (runs at 2*keep_alive_timeout)
+		sleep(600); // connection closer did not yet run (runs at 2*keep_alive_timeout)
 		// connection 1 is now dead, but still in pool
 		assertEquals(1, client.getConnectionFactory().getConnectionManager().getNumberInPool());
 
 		assertEquals(200, issueRequest(client)); // opens connection 2
-		assertEquals(2, set.size());
+		assertEquals(2, hashs.size());
 
-		Thread.sleep(600); // connection closer runs and closes both
+		sleep(600); // connection closer runs and closes both
 		assertEquals(0, client.getConnectionFactory().getConnectionManager().getNumberInPool());
 	}
 
 	@Test
-	public void testTimeoutCustom() throws Exception {
+	void timeoutCustom() throws Exception {
 		HttpClient client = createHttpClient(1000);
 
 		sp1.getInterceptors().add(0, new AbstractInterceptor() {
@@ -167,18 +173,18 @@ public class HttpKeepAliveTest {
 		});
 
 		assertEquals(200, issueRequest(client));
-		assertEquals(1, set.size());
+		assertEquals(1, hashs.size());
 
-		Thread.sleep(1500);
-
-		assertEquals(200, issueRequest(client));
-		assertEquals(2, set.size());
+		sleep(1500);
 
 		assertEquals(200, issueRequest(client));
-		assertEquals(2, set.size());
+		assertEquals(2, hashs.size());
 
 		assertEquals(200, issueRequest(client));
-		assertEquals(3, set.size());
+		assertEquals(2, hashs.size());
+
+		assertEquals(200, issueRequest(client));
+		assertEquals(3, hashs.size());
 	}
 
 	@Test
@@ -195,16 +201,16 @@ public class HttpKeepAliveTest {
 
 		assertEquals(200, issueRequest(client));
 		assertEquals(200, issueRequest(client));
-		assertEquals(1, set.size());
+		assertEquals(1, hashs.size());
 
 		assertEquals(200, issueRequest(client));
-		assertEquals(2, set.size());
+		assertEquals(2, hashs.size());
 
 		assertEquals(200, issueRequest(client));
-		assertEquals(2, set.size());
+		assertEquals(2, hashs.size());
 
 		assertEquals(200, issueRequest(client));
-		assertEquals(3, set.size());
+		assertEquals(3, hashs.size());
 	}
 
 }

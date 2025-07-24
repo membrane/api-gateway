@@ -80,8 +80,8 @@ public class ConnectionFactory {
             if (config.isUseExperimentalHttp2() && Http2TlsSupport.isHttp2(con.socket))
                 usingHttp2 = true;
             else
-                exc.setTargetConnection(con); // HTTP2 Connection is newer set to exchange
-            con.setKeepAttachedToExchange(usingHttp2 || exc.getRequest().isBindTargetConnectionToIncoming());
+                exc.setTargetConnection(con); // TODO Question: HTTP2 Connection is never set to exchange
+            con.setKeepAttachedToExchange(usingHttp2 || exc.getRequest().isBindTargetConnectionToIncoming()); // e.g. for NTML
         }
         return new OutgoingConnectionType(con, usingHttp2, sslProvider, h2c, sniServerName);
     }

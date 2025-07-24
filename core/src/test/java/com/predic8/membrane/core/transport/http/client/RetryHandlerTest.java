@@ -49,9 +49,9 @@ class RetryHandlerTest {
         rh.setRetries(10);
         rh.setDelay(2);
         rh.setBackoffMultiplier(1.5);
-        RetryableExchangeCallMock mock = new RetryableExchangeCallMock(false);
-        rh.executeWithRetries(get("/foo").buildExchange(), false, mock);
-        assertEquals(3, mock.attempts);
+        RetryableExchangeCallMock mock = new RetryableExchangeCallMock(503);
+        rh.executeWithRetries(get("/foo").buildExchange(), true, mock);
+        assertEquals(11, mock.attempts);
     }
 
     @Test
@@ -144,7 +144,7 @@ class RetryHandlerTest {
 
             if (statusCode != 0) {
                 exc.setResponse(Response.statusCode(statusCode).build());
-                return true;
+                return false;
             }
 
             if (!success) {
@@ -152,7 +152,7 @@ class RetryHandlerTest {
             }
 
             exc.setResponse(ok().build());
-            return success;
+            return false;
         }
     }
 }

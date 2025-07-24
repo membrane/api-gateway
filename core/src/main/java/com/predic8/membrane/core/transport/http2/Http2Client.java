@@ -72,7 +72,7 @@ public class Http2Client implements Runnable, AutoCloseable {
         thread.start();
     }
 
-    public Response doCall(Exchange exc, Connection con) throws IOException, InterruptedException {
+    public Response doCall(Exchange exc) throws IOException, InterruptedException {
         int streamId;
         synchronized(this) {
             if (reserved > 0)

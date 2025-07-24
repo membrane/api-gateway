@@ -114,7 +114,7 @@ public abstract class OAuth2ResourceTest {
 
     // this test also implicitly tests concurrency on oauth2resource
     @Test
-    public void testUseRefreshTokenOnTokenExpiration() throws Exception {
+    void testUseRefreshTokenOnTokenExpiration() throws Exception {
         var response = browser.apply(get(getClientAddress() + "/init")).getResponse();
         assertEquals(200, response.getStatusCode());
         var body = om.readValue(response.getBodyAsStream(), new TypeReference<Map<String, String>>() {});

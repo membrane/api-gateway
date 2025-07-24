@@ -35,6 +35,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static com.predic8.membrane.core.exchange.Exchange.SSL_CONTEXT;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class ProxySSLTest {
@@ -46,7 +47,7 @@ public class ProxySSLTest {
 
     @ParameterizedTest
     @MethodSource("data")
-    public void test(boolean backendUsesSSL, boolean proxyUsesSSL, int backendPort, int proxyPort) throws Exception {
+    void test(boolean backendUsesSSL, boolean proxyUsesSSL, int backendPort, int proxyPort) throws Exception {
         // Step 1: create the backend
         Router backend = new Router();
         backend.setHotDeploy(false);
@@ -113,7 +114,7 @@ public class ProxySSLTest {
             ssl.getTrustStore().setLocation("classpath:/ssl-rsa-pub.keystore");
             ssl.getTrustStore().setPassword("secret");
             ssl.setEndpointIdentificationAlgorithm(""); // workarond the fact that the certificate was not issued for 'localhost'
-            exc.setProperty(Exchange.SSL_CONTEXT, new StaticSSLContext(ssl, new ResolverMap(), null));
+            exc.setProperty(SSL_CONTEXT, new StaticSSLContext(ssl, new ResolverMap(), null));
         }
         hc.call(exc);
 

@@ -28,12 +28,12 @@ import static com.predic8.membrane.core.http.Request.*;
 import static java.lang.Thread.*;
 import static java.nio.charset.StandardCharsets.*;
 
-@MCElement(name="retries")
+@MCElement(name = "retries")
 public class RetryHandler {
 
     private static final Logger log = LoggerFactory.getLogger(RetryHandler.class);
 
-    private int retries = 5;
+    private int retries = 5; // Is old maxRetries TODO Duplicated with HttpClientConfiguration, Overwrite?
 
     /**
      * How long to wait between calls to the same destination, in milliseconds.
@@ -45,12 +45,12 @@ public class RetryHandler {
      * <p>
      * TODO Make configurable - where?
      */
-    private int delay = 10;
+    private int delay = 100;
 
     /**
      *
      */
-    private double backoffMultiplier = 5;
+    private double backoffMultiplier = 1.5;
 
     /**
      * Needed for MC configuration
@@ -69,12 +69,14 @@ public class RetryHandler {
             // exceptionInLastCall = null;
 
             try {
-                if (call.execute(exc, dest, attempt)) {
-                    log.debug("StatusCode {}", exc.getResponse().getStatusCode());
-                    if (!shouldRetryHttpError(exc, failOverOn5XX)) {
-                        HttpClientStatusEventBus.reportSuccess(exc, dest);
-                        return exc; // success
-                    }
+                boolean terminate = call.execute(exc, dest, attempt);
+                if (terminate) {
+                    return exc;
+                }
+                int statusCode = exc.getResponse() == null ? 0 : exc.getResponse().getStatusCode();
+                if (!shouldRetry(statusCode, failOverOn5XX)) {
+                    HttpClientStatusEventBus.reportSuccess(exc, dest);
+                    return exc; // success
                 }
             } catch (Exception e) {
                 HttpClientStatusEventBus.reportException(exc, e, dest);
@@ -97,7 +99,7 @@ public class RetryHandler {
                 }
 
             }
-            delay *= backoffMultiplier;
+            delay *= (int) backoffMultiplier;
             delayBetweenCalls(exc, delay);
         }
 
@@ -107,23 +109,20 @@ public class RetryHandler {
         return exc;
     }
 
-    private boolean shouldRetryHttpError(Exchange exc, boolean failOverOn5XX) {
-        if (!failOverOn5XX) {
-            return false;
-        }
+    private boolean shouldRetry(int statusCode, boolean failOverOn5XX) {
 
-        int statusCode = exc.getResponse().getStatusCode();
+        // TODO Handle 100?
+
         if (statusCode > 200 && statusCode < 400) {
             return false;
         }
-        if (statusCode >= 500) {
+        if (statusCode >= 500 && failOverOn5XX) {
             return true;
         }
         // See <a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Status/408">408 Request Timeout</a>
         if (statusCode == 408) {
             return true;
         }
-
         return false;
     }
 
@@ -229,10 +228,10 @@ public class RetryHandler {
     /**
      * Initial delay. Gets with each attempt longer by backoffMultiplier
      *
+     * @param delay
      * @default 10 millisecound
      * @description Initial delay in millisecounds
      * @example 1000
-     * @param delay
      */
     @MCAttribute
     public void setDelay(int delay) {
@@ -250,10 +249,10 @@ public class RetryHandler {
     /**
      * Factor by with the delay between attempts to call a backend is made longer
      *
+     * @param backoffMultiplier factor
      * @default 5 times
      * @description Factor by with the delay is multiplied
      * @example 2
-     * @param backoffMultiplier factor
      */
     @MCAttribute
     public void setBackoffMultiplier(double backoffMultiplier) {
