@@ -61,16 +61,13 @@ public class RetryHandler {
     public Exchange executeWithRetries(Exchange exc, boolean failOverOn5XX, RetryableCall call) throws Exception {
 
         Exception exceptionInLastCall = null;
-        int delay = this.delay;
+        double delay = this.delay;
         for (int attempt = 0; attempt <= retries; attempt++) {
             String dest = HttpClient.getDestination(exc, attempt);
             log.debug("Attempt #{} from #{} to {} delay {}", attempt, retries + 1, dest, delay);
 
-            // exceptionInLastCall = null;
-
             try {
-                boolean terminate = call.execute(exc, dest, attempt);
-                if (terminate) {
+                if (call.execute(exc, dest, attempt)) {
                     return exc;
                 }
                 int statusCode = exc.getResponse() == null ? 0 : exc.getResponse().getStatusCode();
@@ -99,8 +96,8 @@ public class RetryHandler {
                 }
 
             }
-            delay *= (int) backoffMultiplier;
-            delayBetweenCalls(exc, delay);
+            delay *= backoffMultiplier;
+            delayBetweenCalls(exc, (int)delay);
         }
 
         if (exceptionInLastCall != null)

@@ -58,4 +58,5 @@ public class ExchangesUtil {
 	public static String getTimeDifference(AbstractExchange exc) {
 		return "" + (exc.getTimeResReceived() - exc.getTimeReqSent());
 	}
+
 }

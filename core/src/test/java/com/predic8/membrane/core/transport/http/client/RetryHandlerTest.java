@@ -16,13 +16,15 @@ package com.predic8.membrane.core.transport.http.client;
 
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.transport.http.*;
 import org.junit.jupiter.api.*;
 
 import java.net.*;
 import java.util.*;
 
 import static com.predic8.membrane.core.http.Request.*;
-import static com.predic8.membrane.core.http.Response.ok;
+import static com.predic8.membrane.core.http.Response.*;
+import static com.predic8.membrane.core.transport.http.HttpClientStatusEventBus.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 class RetryHandlerTest {
@@ -111,6 +113,20 @@ class RetryHandlerTest {
 
     }
 
+    // TODO
+    @Test
+    void bus() throws Exception {
+        RetryableExchangeCallMock mock = new RetryableExchangeCallMock(200);
+        Exchange exc = get("/foo").buildExchange();
+        HttpClientStatusEventBus bus = new HttpClientStatusEventBus();
+        exc.getProperties().put(EXCHANGE_PROPERTY_NAME, bus);
+        List<String> destinations = List.of("http://node1.example.com/");
+        exc.setDestinations(destinations);
+        rh.executeWithRetries(exc, false, mock);
+
+        // TODO Mock bus and see if called
+
+    }
 
     static class RetryableExchangeCallMock implements RetryableCall {
 

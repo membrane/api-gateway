@@ -49,7 +49,6 @@ public class HttpClientStatusEventBus {
     public HttpClientStatusEventBus() {
     }
 
-
     /**
      * Adds a listener to be informed about events.
      * The listener is added at the end of the list, thus being called after already registered ones.
@@ -61,29 +60,6 @@ public class HttpClientStatusEventBus {
         if (listeners.contains(listener)) throw new IllegalStateException("Already registered: "+listener);
         listeners.add(listener);
     }
-
-
-//    public void reportSuccess(String destination) {
-//        long timestamp = System.currentTimeMillis();
-//        for (HttpClientStatusEventListener listener : listeners) {
-//            try {
-//                listener.onSuccess(timestamp, destination);
-//            } catch (Exception e) {
-//                log.warn("Listener "+listener+" threw exception (it is logged and ignored)", e);
-//            }
-//        }
-//    }
-//
-//    public void report5xx(String destination, int responseCode) {
-//        long timestamp = System.currentTimeMillis();
-//        for (HttpClientStatusEventListener listener : listeners) {
-//            try {
-//                listener.on5xx(timestamp, destination, responseCode);
-//            } catch (Exception e) {
-//                log.warn("Listener "+listener+" threw exception (it is logged and ignored)", e);
-//            }
-//        }
-//    }
 
     public void reportResponse(String destination, int responseCode) {
         if (responseCode == 0) // Should not be necessary but might be safer. If the client hasn't got an answer
