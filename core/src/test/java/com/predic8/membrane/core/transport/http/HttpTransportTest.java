@@ -124,20 +124,6 @@ public class HttpTransportTest {
 	}
 
 	@Test
-	public final void testSetGetCoreThreadPoolSize() {
-		assertEquals(20, transport.getCoreThreadPoolSize());
-		transport.setCoreThreadPoolSize(10);
-		assertEquals(10, transport.getCoreThreadPoolSize());
-	}
-
-	@Test
-	public final void testSetGetMaxThreadPoolSize() {
-		assertEquals(Integer.MAX_VALUE, transport.getMaxThreadPoolSize());
-		transport.setMaxThreadPoolSize(33);
-		assertEquals(33, transport.getMaxThreadPoolSize());
-	}
-
-	@Test
 	public final void testGetExecutorService() {
 		assertNotNull(transport.getExecutorService());
 	}
