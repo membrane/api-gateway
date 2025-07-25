@@ -39,7 +39,7 @@ public class Http2ServerHandler extends AbstractHttpHandler {
     public static final byte[] PREFACE = new byte[]{0x50, 0x52, 0x49, 0x20, 0x2a, 0x20, 0x48, 0x54, 0x54, 0x50, 0x2f, 0x32, 0x2e,
             0x30, 0x0d, 0x0a, 0x0d, 0x0a, 0x53, 0x4d, 0x0d, 0x0a, 0x0d, 0x0a};
     private static final ExecutorService executor = Util.createNewThreadPool();
-    public static final String HTTP2 = "h2_server";
+    public static final String HTTP2_SERVER = "h2_server";
 
     private final HttpServerHandler httpServerHandler;
     final Http2Logic logic;
@@ -57,7 +57,7 @@ public class Http2ServerHandler extends AbstractHttpHandler {
             @Override
             public void handleExchange(StreamInfo streamInfo, Message message, boolean showSSLExceptions, String remoteAddr) {
                 Exchange exchange = new Exchange(httpServerHandler);
-                exchange.setProperty(HTTP2, true);
+                exchange.setProperty(HTTP2_SERVER, true);
                 exchange.setRequest((Request) message);
 
                 exchange.received();

@@ -15,15 +15,14 @@
 package com.predic8.membrane.core.transport.http.client.protocol;
 
 import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.transport.http.*;
 
-import static com.predic8.membrane.core.exchange.Exchange.ALLOW_TCP;
-import static java.lang.Boolean.TRUE;
+import static com.predic8.membrane.core.exchange.Exchange.*;
+import static java.lang.Boolean.*;
 
 public class TcpProtocolHandler implements ProtocolHandler {
 
-    private static final String TCP = "tcp";
+    public static final String TCP = "tcp";
 
     @Override
     public boolean canHandle(Exchange exchange, String protocol) {
@@ -33,16 +32,6 @@ public class TcpProtocolHandler implements ProtocolHandler {
     @Override
     public Exchange handle(Exchange exchange, ConnectionFactory.OutgoingConnectionType connectionType, HostColonPort target) throws Exception {
         return null;
-    }
-
-    @Override
-    public void checkUpgradeRequest(Exchange exchange) {
-
-    }
-
-    @Override
-    public String checkUpgradeResponse(Exchange exchange, Response response) {
-        return "";
     }
 
     public static boolean isTcpProtocolUpgradeAllowed(Exchange exc, String upgradeProtocol) {

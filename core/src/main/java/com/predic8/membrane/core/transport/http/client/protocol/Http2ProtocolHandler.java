@@ -15,7 +15,6 @@
 package com.predic8.membrane.core.transport.http.client.protocol;
 
 import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.transport.http.*;
 import com.predic8.membrane.core.transport.http.client.*;
 import com.predic8.membrane.core.transport.http2.*;
@@ -71,11 +70,6 @@ public class Http2ProtocolHandler implements ProtocolHandler {
     @Override
     public void checkUpgradeRequest(Exchange exchange) {
         removeH2CUpgradeHeader(exchange);
-    }
-
-    @Override
-    public String checkUpgradeResponse(Exchange exchange, Response response) {
-        return "";
     }
 
     public static boolean isHTTP2(Exchange exc) {

@@ -16,9 +16,12 @@ package com.predic8.membrane.core.transport.http.client.protocol;
 
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.transport.http.*;
+import com.predic8.membrane.core.transport.http.ConnectionFactory.*;
 import com.predic8.membrane.core.transport.http.client.*;
 
 import java.util.*;
+
+import static java.util.Arrays.asList;
 
 public class ProtocolHandlerFactory {
     private final List<ProtocolHandler> handlers;
@@ -26,11 +29,10 @@ public class ProtocolHandlerFactory {
 
     public ProtocolHandlerFactory(HttpClientConfiguration configuration, ConnectionFactory connectionFactory) {
         this.defaultHandler = new Http1ProtocolHandler(configuration);
-        this.handlers = Arrays.asList(
+        this.handlers = asList(
                 new Http2ProtocolHandler(configuration,connectionFactory),
                 new WebSocketProtocolHandler(),
                 new TcpProtocolHandler()
-            //    new Http1ProtocolHandler(configuration) // Default fallback
         );
     }
 
@@ -43,15 +45,14 @@ public class ProtocolHandlerFactory {
         // Use no stream API because of Exception handling
         for (ProtocolHandler h : handlers) {
             if (h.canHandle(exchange, protocol)) {
-                return h; // HTTP/1.1 as default
+                return h;
             }
         }
 
         throw new ProtocolUpgradeDeniedException(protocol);
     }
 
-    public ProtocolHandler getHandlerForConnection(Exchange exchange,
-                                                   ConnectionFactory.OutgoingConnectionType connectionType)
+    public ProtocolHandler getHandlerForConnection(Exchange exchange, OutgoingConnectionType connectionType)
             throws ProtocolUpgradeDeniedException {
         if (connectionType.usingHttp2()) {
             return getHandler(exchange, "h2");

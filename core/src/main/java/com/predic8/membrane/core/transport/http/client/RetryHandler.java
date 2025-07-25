@@ -63,9 +63,8 @@ public class RetryHandler {
         Exception exceptionInLastCall = null;
         double delay = this.delay;
         for (int attempt = 0; attempt <= retries; attempt++) {
-            String dest = HttpClient.getDestination(exc, attempt);
+            String dest = getDestination(exc, attempt);
             log.debug("Attempt #{} from #{} to {} delay {}", attempt, retries + 1, dest, delay);
-
             try {
                 if (call.execute(exc, dest, attempt)) {
                     return exc;
@@ -110,7 +109,7 @@ public class RetryHandler {
 
         // TODO Handle 100?
 
-        if (statusCode > 200 && statusCode < 400) {
+        if (statusCode > 100 && statusCode < 400) {
             return false;
         }
         if (statusCode >= 500 && failOverOn5XX) {
@@ -211,6 +210,15 @@ public class RetryHandler {
 
     private static boolean trackNodeStatus(Exchange exc) {
         return Boolean.TRUE.equals(exc.getProperty(TRACK_NODE_STATUS));
+    }
+
+    /**
+     * Returns the target destination to use for this attempt.
+     *
+     * @param counter starting at 0 meaning the first.
+     */
+    private static String getDestination(Exchange exc, int counter) {
+        return exc.getDestinations().get(counter % exc.getDestinations().size());
     }
 
     @SuppressWarnings("unused")

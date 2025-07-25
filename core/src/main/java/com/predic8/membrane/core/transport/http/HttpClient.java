@@ -27,13 +27,18 @@ import java.io.*;
 import java.net.*;
 
 import static com.predic8.membrane.core.exchange.Exchange.*;
-import static com.predic8.membrane.core.http.Header.*;
 import static com.predic8.membrane.core.transport.http.client.protocol.Http2ProtocolHandler.*;
 
 /**
- * HttpClient with possibly multiple selectable destinations, with internal logic to auto-retry and to
- * switch destinations on failures.
- * Instances are thread-safe.
+ * HTTP client supporting:
+ * - HTTP1
+ * - HTTP/2
+ * - proxy connections
+ * - auto-retries with failover to other destinations
+ * - connection pooling.
+ *
+ * <p>The HttpClient is designed to be thread-safe and can be used concurrently
+ * from multiple threads.</p>
  */
 public class HttpClient implements AutoCloseable {
 
@@ -72,17 +77,7 @@ public class HttpClient implements AutoCloseable {
                 failOverOn5XX, (e, target, attempt) -> dispatchCall(e, attempt,
                         initializeRequest(exc, target, adjustHostHeader)));
 
-        if (exc.getRequest().isCONNECTRequest())
-            return exchange;
-
-        if (!isHTTP2(exc)) {
-            Connection tc = exchange.getTargetConnection();
-            if (tc != null) {
-                applyKeepAliveHeader(exc.getResponse(), tc);
-                exc.getResponse().addObserver(tc);
-                tc.setExchange(exc);
-            }
-        }
+        ph.cleanup(exchange);
         return exchange;
     }
 
@@ -139,29 +134,6 @@ public class HttpClient implements AutoCloseable {
         return false;
     }
 
-    private void applyKeepAliveHeader(Response response, Connection con) {
-        String value = response.getHeader().getFirstValue(KEEP_ALIVE);
-        if (value == null)
-            return;
-
-        long timeoutSeconds = Header.parseKeepAliveHeader(value, TIMEOUT);
-        if (timeoutSeconds != -1)
-            con.setTimeout(timeoutSeconds * 1000);
-
-        long max = Header.parseKeepAliveHeader(value, MAX);
-        if (max != -1 && max < con.getMaxExchanges())
-            con.setMaxExchanges((int) max);
-    }
-
-    /**
-     * Returns the target destination to use for this attempt.
-     *
-     * @param counter starting at 0 meaning the first.
-     */
-    public static String getDestination(Exchange exc, int counter) {
-        return exc.getDestinations().get(counter % exc.getDestinations().size());
-    }
-
     @Override
     public void close() {
         connectionFactory.getConnectionManager().shutdownWhenDone();
@@ -188,9 +160,8 @@ public class HttpClient implements AutoCloseable {
     }
 
     /**
-     *
      * @param connect If true, do not use TLS even when the URL starts with https
-     * @param dest URL
+     * @param dest    URL
      * @return HostColonPort
      * @throws MalformedURLException
      */

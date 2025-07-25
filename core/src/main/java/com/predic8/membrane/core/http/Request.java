@@ -223,6 +223,10 @@ public class Request extends Message {
 		return new Builder().options(url);
 	}
 
+	public static Builder connect(String url) throws URISyntaxException {
+		return new Builder().connect(url);
+	}
+
 	public static class Builder {
 		private final Request req;
 		private String fullURL;
@@ -347,6 +351,10 @@ public class Request extends Message {
 
 		public Builder options(String url) throws URISyntaxException {
 			return options(new URIFactory(), url);
+		}
+
+		public Builder connect(String url) throws URISyntaxException {
+			return method( Request.METHOD_CONNECT).url( new URIFactory(), url);
 		}
 
 		public Builder options(URIFactory uriFactory, String url) throws URISyntaxException {

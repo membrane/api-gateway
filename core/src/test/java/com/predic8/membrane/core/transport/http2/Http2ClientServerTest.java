@@ -21,13 +21,13 @@ import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.proxies.*;
 import com.predic8.membrane.core.transport.http.*;
 import com.predic8.membrane.core.transport.http.client.*;
+import com.predic8.membrane.core.transport.http.client.protocol.*;
 import com.predic8.membrane.core.util.*;
 import org.junit.jupiter.api.*;
 
 import java.util.concurrent.*;
 import java.util.function.*;
 
-import static com.predic8.membrane.core.transport.http2.Http2ServerHandler.*;
 import static com.predic8.membrane.core.transport.http2.StreamState.*;
 import static java.util.concurrent.TimeUnit.*;
 import static org.junit.jupiter.api.Assertions.*;
@@ -166,7 +166,7 @@ public class Http2ClientServerTest {
         }
 
         for (int i = 0; i < 2; i++) {
-            assertNotNull(e[i].getProperty(HTTP2));
+            assertNotNull(e[i].getProperty(Http2ProtocolHandler.HTTP2));
 
             Response r = e[i].getResponse();
             assertEquals(200, r.getStatusCode());
@@ -190,7 +190,7 @@ public class Http2ClientServerTest {
         Exchange e = new Request.Builder().get("https://localhost:3049").buildExchange();
         hc.call(e);
 
-        assertNotNull(e.getProperty(HTTP2));
+        assertNotNull(e.getProperty(Http2ProtocolHandler.HTTP2));
 
         return e.getResponse();
     }
@@ -217,7 +217,7 @@ public class Http2ClientServerTest {
         Exchange e = b.buildExchange();
         hc.call(e);
 
-        assertNotNull(e.getProperty(HTTP2));
+        assertNotNull(e.getProperty(Http2ProtocolHandler.HTTP2));
 
         return e.getResponse();
     }

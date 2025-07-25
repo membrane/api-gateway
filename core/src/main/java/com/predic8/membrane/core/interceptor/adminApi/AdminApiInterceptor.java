@@ -49,7 +49,7 @@ import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
 import static com.predic8.membrane.core.openapi.util.UriTemplateMatcher.matchTemplate;
-import static com.predic8.membrane.core.transport.http2.Http2ServerHandler.HTTP2;
+import static com.predic8.membrane.core.transport.http2.Http2ServerHandler.HTTP2_SERVER;
 import static java.net.URLDecoder.decode;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
@@ -326,7 +326,7 @@ public class AdminApiInterceptor extends AbstractInterceptor {
         gen.writeObjectFieldStart("request");
         if (exc.getRequest() != null) {
             Message request = exc.getRequest();
-            gen.writeStringField("protocol", exc.getProperty(HTTP2) != null ? "HTTP/2" : request.getVersion());
+            gen.writeStringField("protocol", exc.getProperty(HTTP2_SERVER) != null ? "HTTP/2" : request.getVersion());
             gen.writeObjectFieldStart("headers");
             for (HeaderField hf : request.getHeader().getAllHeaderFields()) {
                 gen.writeStringField(hf.getHeaderName().toString(), hf.getValue());

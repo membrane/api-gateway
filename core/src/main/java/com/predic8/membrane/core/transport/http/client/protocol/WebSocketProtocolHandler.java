@@ -15,15 +15,14 @@
 package com.predic8.membrane.core.transport.http.client.protocol;
 
 import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.transport.http.*;
 
-import static com.predic8.membrane.core.exchange.Exchange.ALLOW_WEBSOCKET;
-import static java.lang.Boolean.TRUE;
+import static com.predic8.membrane.core.exchange.Exchange.*;
+import static java.lang.Boolean.*;
 
 public class WebSocketProtocolHandler  implements ProtocolHandler {
 
-    private static final String WEBSOCKET = "websocket";
+    public static final String WEBSOCKET = "websocket";
 
     @Override
     public boolean canHandle(Exchange exchange, String protocol) {
@@ -40,15 +39,10 @@ public class WebSocketProtocolHandler  implements ProtocolHandler {
     @Override
     public void checkUpgradeRequest(Exchange exchange) throws ProtocolUpgradeDeniedException {
         String protocol = exchange.getRequest().getHeader().getUpgradeProtocol();
-        if ("websocket".equalsIgnoreCase(protocol) &&
+        if (WEBSOCKET.equalsIgnoreCase(protocol) &&
             !isWebsocketProtocolUpgradeAllowed(exchange, protocol)) {
             throw new ProtocolUpgradeDeniedException(protocol);
         }
-    }
-
-    @Override
-    public String checkUpgradeResponse(Exchange exchange, Response response) {
-        return "";
     }
 
     public static boolean isWebsocketProtocolUpgradeAllowed(Exchange exc, String upgradeProtocol) {

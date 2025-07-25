@@ -212,9 +212,9 @@ public class ChunkedBodyTest {
                         throw new RuntimeException("Keep-Alive is not working.");
                     }
 
-                    if (http2 && exc.getProperty(HTTP2) == null)
+                    if (http2 && exc.getProperty(HTTP2_SERVER) == null)
                         throw new RuntimeException("HTTP/2 is not being used.");
-                    if (!http2 && exc.getProperty(HTTP2) != null)
+                    if (!http2 && exc.getProperty(HTTP2_SERVER) != null)
                         throw new RuntimeException("HTTP/2 is being used.");
 
                     Response r = Response.ok().build();
