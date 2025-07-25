@@ -45,12 +45,12 @@ public class RetryHandler {
      * <p>
      * TODO Make configurable - where?
      */
-    private int delay = 100;
+    private int delay = 10;
 
     /**
      *
      */
-    private double backoffMultiplier = 1.5;
+    private double backoffMultiplier = 2;
 
     /**
      * Needed for MC configuration

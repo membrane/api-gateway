@@ -282,7 +282,7 @@ public class Connection implements Closeable, MessageObserver, NonRelevantBodyOb
 		this.keepAttachedToExchange = keepAttachedToExchange;
 	}
 
-	void setExchange(Exchange exchange) {
+	public void setExchange(Exchange exchange) {
 		this.exchange = exchange;
 	}
 

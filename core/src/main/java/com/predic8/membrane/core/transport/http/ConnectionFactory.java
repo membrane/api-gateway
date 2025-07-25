@@ -160,7 +160,7 @@ public class ConnectionFactory {
         return connectionManager;
     }
 
-    record OutgoingConnectionType(Connection con, boolean usingHttp2, SSLProvider sslProvider, Http2Client h2c,
-                                  String sniServerName) {
+    public record OutgoingConnectionType(Connection con, boolean usingHttp2, SSLProvider sslProvider, Http2Client h2c,
+                                         String sniServerName) {
     }
 }

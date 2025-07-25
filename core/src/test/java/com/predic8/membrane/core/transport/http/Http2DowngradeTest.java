@@ -61,7 +61,7 @@ public class Http2DowngradeTest {
      * Membrane therefore removes it. (This test asserts this behaviour.)
      */
     @Test
-    public void testRFC7540UpgradeIsRemovedFromRequests() throws Exception {
+    void rfc7540UpgradeIsRemovedFromRequests() throws Exception {
         try (HttpClient hc = new HttpClient()) {
             var exc = hc.call(get("http://localhost:3064/")
                     .header("Connection", "Upgrade, HTTP2-Settings")
