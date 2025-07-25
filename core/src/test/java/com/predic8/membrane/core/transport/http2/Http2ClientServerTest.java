@@ -27,9 +27,9 @@ import org.junit.jupiter.api.*;
 import java.util.concurrent.*;
 import java.util.function.*;
 
-import static com.predic8.membrane.core.transport.http.HttpClient.*;
+import static com.predic8.membrane.core.transport.http2.Http2ServerHandler.*;
 import static com.predic8.membrane.core.transport.http2.StreamState.*;
-import static java.util.concurrent.TimeUnit.SECONDS;
+import static java.util.concurrent.TimeUnit.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class Http2ClientServerTest {

@@ -1,8 +1,23 @@
+/* Copyright 2025 predic8 GmbH, www.predic8.com
+
+   Licensed under the Apache License, Version 2.0 (the "License");
+   you may not use this file except in compliance with the License.
+   You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License. */
+
 package com.predic8.membrane.core.transport.http.client.protocol;
 
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.transport.http.*;
+import com.predic8.membrane.core.transport.http.ConnectionFactory.*;
 import com.predic8.membrane.core.transport.http.client.*;
 import com.predic8.membrane.core.util.*;
 
@@ -15,14 +30,14 @@ import static java.lang.System.*;
 
 public class Http1ProtocolHandler implements ProtocolHandler {
 
-    HttpClientConfiguration configuration;
+    private final HttpClientConfiguration configuration;
 
     public Http1ProtocolHandler(HttpClientConfiguration configuration) {
         this.configuration = configuration;
     }
 
     @Override
-    public Exchange handle(Exchange exchange, ConnectionFactory.OutgoingConnectionType connectionType, HostColonPort target) throws Exception {
+    public Exchange handle(Exchange exchange, OutgoingConnectionType connectionType, HostColonPort target) throws Exception {
         Connection con = connectionType.con();
 
         if (exchange.getRequest().isCONNECTRequest()) {
@@ -60,7 +75,7 @@ public class Http1ProtocolHandler implements ProtocolHandler {
     }
 
     @Override
-    public void checkUpgradeRequest(Exchange exchange) throws ProtocolUpgradeDeniedException {
+    public void checkUpgradeRequest(Exchange exchange) {
 
     }
 
@@ -68,7 +83,7 @@ public class Http1ProtocolHandler implements ProtocolHandler {
         if (configuration.getProxy() != null) {
             exc.getRequest().write(con.out, configuration.getMaxRetries() > 1);
             Response response = fromStream(con.in, false);
-        //    log.debug("Status code response on CONNECT request: {}", response.getStatusCode());
+//            log.debug("Status code response? on CONNECT request: {}", response.getStatusCode());
         }
         exc.getRequest().setUri(NOT_APPLICABLE);
     }

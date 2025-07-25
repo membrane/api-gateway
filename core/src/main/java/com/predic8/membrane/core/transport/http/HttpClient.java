@@ -26,12 +26,9 @@ import javax.annotation.*;
 import java.io.*;
 import java.net.*;
 
-import static com.predic8.membrane.core.Constants.*;
 import static com.predic8.membrane.core.exchange.Exchange.*;
 import static com.predic8.membrane.core.http.Header.*;
-import static com.predic8.membrane.core.http.Request.*;
-import static com.predic8.membrane.core.http.Response.*;
-import static java.lang.Boolean.*;
+import static com.predic8.membrane.core.transport.http.client.protocol.Http2ProtocolHandler.*;
 
 /**
  * HttpClient with possibly multiple selectable destinations, with internal logic to auto-retry and to
@@ -42,15 +39,10 @@ public class HttpClient implements AutoCloseable {
 
     private static final Logger log = LoggerFactory.getLogger(HttpClient.class.getName());
 
-    public static final String HTTP2 = "h2";
-
     private final HttpClientConfiguration configuration;
+    private final ConnectionFactory connectionFactory;
 
     private StreamPump.StreamPumpStats streamPumpStats;
-
-    private static volatile boolean infoOnHttp2Downgrade = true;
-
-    private final ConnectionFactory connectionFactory;
 
     private final ProtocolHandlerFactory protocolHandlerFactory;
 
@@ -73,13 +65,12 @@ public class HttpClient implements AutoCloseable {
     }
 
     public Exchange call(Exchange exc, boolean adjustHostHeader, boolean failOverOn5XX) throws Exception {
-
         ProtocolHandler ph = protocolHandlerFactory.getHandler(exc, exc.getRequest().getHeader().getUpgradeProtocol());
         ph.checkUpgradeRequest(exc);
 
         Exchange exchange = configuration.getRetryHandler().executeWithRetries(exc,
-                failOverOn5XX, (e, target, attempt)
-                -> dispatchHttp1or2(e, attempt, initializeRequest(exc, target, adjustHostHeader), ph));
+                failOverOn5XX, (e, target, attempt) -> dispatchCall(e, attempt,
+                        initializeRequest(exc, target, adjustHostHeader)));
 
         if (exc.getRequest().isCONNECTRequest())
             return exchange;
@@ -95,19 +86,17 @@ public class HttpClient implements AutoCloseable {
         return exchange;
     }
 
-    private boolean dispatchHttp1or2(Exchange exc, int counter, HostColonPort target, ProtocolHandler ph) throws Exception {
+    private boolean dispatchCall(Exchange exc, int counter, HostColonPort target)
+            throws Exception {
         OutgoingConnectionType outConType = connectionFactory.getConnection(exc, target, counter);
 
-        if (configuration.getProxy() != null && outConType.sslProvider() == null)
+        if (configuration.getProxy() != null && outConType.sslProvider() == null) {
             // if we use a proxy for a plain HTTP (=non-HTTPS) request, attach the proxy credentials.
-            exc.getRequest().getHeader().setProxyAuthorization(configuration.getProxy().getCredentials());
-
-        ProtocolHandler handler;
-        if (outConType.usingHttp2()) {
-            handler = protocolHandlerFactory.getHandler(exc, "h2");
-        } else {
-            handler = protocolHandlerFactory.getHandler(exc, null); // HTTP/1.1
+            exc.getRequest().getHeader().setProxyAuthorization(
+                    configuration.getProxy().getCredentials());
         }
+
+        ProtocolHandler handler = protocolHandlerFactory.getHandlerForConnection(exc, outConType);
 
         handler.handle(exc, outConType, target);
 
@@ -115,51 +104,14 @@ public class HttpClient implements AutoCloseable {
             exc.setNodeStatusCode(counter, exc.getResponse().getStatusCode());
         }
 
-        String upgradedProtocol = exc.getPropertyOrNull("UPGRADED_PROTOCOL", String.class);
+        // Check for protocol upgrades
+        String upgradedProtocol = exc.getPropertyOrNull(UPGRADED_PROTOCOL, String.class);
         if (upgradedProtocol != null) {
             StreamPump.setupConnectionForwarding(exc, outConType.con(), upgradedProtocol, streamPumpStats);
             outConType.con().setExchange(exc);
             return true;
         }
 
-        return false;
-    }
-
-    /**
-     * @param exc
-     * @param oct
-     * @param counter
-     * @param ph
-     * @return
-     * @throws EndOfStreamException
-     * @throws IOException
-     */
-    boolean checkUpgradeProtocolAndExecuteHttp1Call(Exchange exc, OutgoingConnectionType oct, int counter, ProtocolHandler ph) throws Exception {
-        Response response;
-        String newProtocol;
-
-        if (exc.getRequest().isCONNECTRequest()) {
-            handleConnectRequest(exc, oct.con());
-            response = ok().build();
-            newProtocol = METHOD_CONNECT;
-            //TODO should we report to the httpClientStatusEventBus here somehow?
-        } else {
-
-            response = ph.handle(exc, oct,null).getResponse();
-
-            if (trackNodeStatus(exc))
-                exc.setNodeStatusCode(counter, response.getStatusCode());
-            newProtocol = checkUpgradeProtocol(exc, response);
-        }
-
-        if (newProtocol != null) {
-            StreamPump.setupConnectionForwarding(exc, oct.con(), newProtocol, streamPumpStats);
-            oct.con().setExchange(exc);
-            exc.setResponse(response);
-            return true;
-        }
-
-        exc.setResponse(response);
         return false;
     }
 
@@ -181,24 +133,10 @@ public class HttpClient implements AutoCloseable {
         this.streamPumpStats = streamPumpStats;
     }
 
-
     private static boolean trackNodeStatus(Exchange exc) {
         if (exc.getProperty(TRACK_NODE_STATUS) instanceof Boolean status)
             return status;
         return false;
-    }
-
-    private String checkUpgradeProtocol(Exchange exc, Response response) {
-        if (exc.getProperty(ALLOW_WEBSOCKET) == TRUE && isUpgradeToResponse(response, "websocket")) {
-            log.debug("Upgrading to WebSocket protocol.");
-            return "WebSocket";
-            //TODO should we report to the httpClientStatusEventBus here somehow?
-        }
-        if (exc.getProperty(ALLOW_TCP) == TRUE && isUpgradeToResponse(response, "tcp")) {
-            log.debug("Upgrading to TCP protocol.");
-            return "TCP";
-        }
-        return null;
     }
 
     private void applyKeepAliveHeader(Response response, Connection con) {
@@ -222,21 +160,6 @@ public class HttpClient implements AutoCloseable {
      */
     public static String getDestination(Exchange exc, int counter) {
         return exc.getDestinations().get(counter % exc.getDestinations().size());
-    }
-
-    private boolean isUpgradeToResponse(Response res, String protocol) {
-        return res.getStatusCode() == 101 &&
-               "upgrade".equalsIgnoreCase(res.getHeader().getFirstValue(CONNECTION)) &&
-               protocol.equalsIgnoreCase(res.getHeader().getFirstValue(UPGRADE));
-    }
-
-    private void handleConnectRequest(Exchange exc, Connection con) throws IOException, EndOfStreamException {
-        if (configuration.getProxy() != null) {
-            exc.getRequest().write(con.out, configuration.getMaxRetries() > 1);
-            Response response = fromStream(con.in, false);
-            log.debug("Status code response on CONNECT request: {}", response.getStatusCode());
-        }
-        exc.getRequest().setUri(NOT_APPLICABLE);
     }
 
     @Override
@@ -275,10 +198,6 @@ public class HttpClient implements AutoCloseable {
         if (connect)
             return new HostColonPort(false, dest);
         return HostColonPort.parse(dest);
-    }
-
-    private static boolean isHTTP2(Exchange exc) {
-        return !(exc.getProperty(HTTP2) == null || (exc.getProperty(HTTP2) instanceof Boolean h2 && !h2));
     }
 
     // TODO Rewrite all clients to use try with resources and then remove it

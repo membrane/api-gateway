@@ -288,6 +288,9 @@ public class Connection implements Closeable, MessageObserver, NonRelevantBodyOb
 
 	@Override
 	public String toString() {
+		if (socket == null) {
+			return "null";
+		}
 		if (socket.getRemoteSocketAddress() != null) {
 			return socket.getRemoteSocketAddress().toString();
 		}
