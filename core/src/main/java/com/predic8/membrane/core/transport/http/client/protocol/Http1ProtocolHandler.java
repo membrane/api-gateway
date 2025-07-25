@@ -20,15 +20,20 @@ import com.predic8.membrane.core.transport.http.*;
 import com.predic8.membrane.core.transport.http.ConnectionFactory.*;
 import com.predic8.membrane.core.transport.http.client.*;
 import com.predic8.membrane.core.util.*;
+import org.slf4j.*;
+import org.slf4j.Logger;
 
 import java.io.*;
 
 import static com.predic8.membrane.core.Constants.*;
 import static com.predic8.membrane.core.http.Header.*;
+import static com.predic8.membrane.core.http.Request.METHOD_CONNECT;
 import static com.predic8.membrane.core.http.Response.*;
 import static java.lang.System.*;
 
 public class Http1ProtocolHandler implements ProtocolHandler {
+
+    private static final Logger log = LoggerFactory.getLogger(Http1ProtocolHandler.class.getName());
 
     private final HttpClientConfiguration configuration;
 
@@ -43,7 +48,7 @@ public class Http1ProtocolHandler implements ProtocolHandler {
         if (exchange.getRequest().isCONNECTRequest()) {
             handleConnectRequest(exchange, con);
             exchange.setResponse(ok().build());
-            exchange.setProperty("UPGRADED_PROTOCOL", Request.METHOD_CONNECT);
+            exchange.setProperty("UPGRADED_PROTOCOL", METHOD_CONNECT);
             return exchange;
         }
 
@@ -83,7 +88,7 @@ public class Http1ProtocolHandler implements ProtocolHandler {
         if (configuration.getProxy() != null) {
             exc.getRequest().write(con.out, configuration.getMaxRetries() > 1);
             Response response = fromStream(con.in, false);
-//            log.debug("Status code response? on CONNECT request: {}", response.getStatusCode());
+            log.debug("Status code response? on CONNECT request: {}", response.getStatusCode());
         }
         exc.getRequest().setUri(NOT_APPLICABLE);
     }

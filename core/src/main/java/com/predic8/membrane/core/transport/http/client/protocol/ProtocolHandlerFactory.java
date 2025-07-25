@@ -58,10 +58,4 @@ public class ProtocolHandlerFactory {
         }
         return getHandler(exchange, null);
     }
-
-    public void checkUpgradeRequests(Exchange exchange) throws ProtocolUpgradeDeniedException {
-        for (ProtocolHandler handler : handlers) {
-            handler.checkUpgradeRequest(exchange);
-        }
-    }
 }

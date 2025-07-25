@@ -49,6 +49,6 @@ public class TcpProtocolHandler implements ProtocolHandler {
         if (upgradeProtocol == null) {
             return false;
         }
-        return upgradeProtocol.equalsIgnoreCase("tcp") && exc.getProperty(ALLOW_TCP) == TRUE;
+        return upgradeProtocol.equalsIgnoreCase(TCP) && exc.getProperty(ALLOW_TCP) == TRUE;
     }
 }

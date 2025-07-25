@@ -55,6 +55,6 @@ public class WebSocketProtocolHandler  implements ProtocolHandler {
         if (upgradeProtocol == null) {
             return false;
         }
-        return upgradeProtocol.equalsIgnoreCase("websocket") && exc.getProperty(ALLOW_WEBSOCKET) == TRUE;
+        return upgradeProtocol.equalsIgnoreCase(WEBSOCKET) && exc.getProperty(ALLOW_WEBSOCKET) == TRUE;
     }
 }
