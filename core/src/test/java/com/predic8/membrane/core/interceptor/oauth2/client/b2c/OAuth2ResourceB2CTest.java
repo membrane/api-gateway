@@ -52,7 +52,7 @@ public abstract class OAuth2ResourceB2CTest {
     private final B2CMembrane b2cMembrane = new B2CMembrane(tc, createSessionManager());
 
     @BeforeEach
-    public void init() throws Exception {
+    void init() throws Exception {
         didLogIn.set(false);
         didLogOut.set(false);
         mockAuthorizationServer.resetBehavior();
@@ -61,13 +61,13 @@ public abstract class OAuth2ResourceB2CTest {
     }
 
     @AfterEach
-    public void done() {
+    void done() {
         mockAuthorizationServer.stop();
         b2cMembrane.stop();
     }
 
     @Test
-    public void getOriginalRequest() throws Exception {
+    void getOriginalRequest() throws Exception {
         var excCallResource = browser.apply(get(tc.getClientAddress() + "/init"));
         var body2 = om.readValue(excCallResource.getResponse().getBodyAsStream(), Map.class);
         assertEquals("/init", body2.get("path"));
@@ -77,7 +77,7 @@ public abstract class OAuth2ResourceB2CTest {
     }
 
     @Test
-    public void postOriginalRequest() throws Exception {
+    void postOriginalRequest() throws Exception {
         var excCallResource = browser.apply(new Request.Builder().post(tc.getClientAddress() + "/init").body("demobody"));
         var body2 = om.readValue(excCallResource.getResponse().getBodyAsStream(), Map.class); // No
         assertEquals("/init", body2.get("path"));
@@ -87,7 +87,7 @@ public abstract class OAuth2ResourceB2CTest {
 
     // this test also implicitly tests concurrency on oauth2resource
     @Test
-    public void testUseRefreshTokenOnTokenExpiration() throws Exception {
+    void useRefreshTokenOnTokenExpiration() throws Exception {
         mockAuthorizationServer.expiresIn = 1;
 
         var excCallResource = browser.apply(get(tc.getClientAddress() + "/init"));
@@ -138,7 +138,7 @@ public abstract class OAuth2ResourceB2CTest {
 
 
     @Test
-    public void testStateAttack() throws Exception {
+    void stateAttack() throws Exception {
         AtomicReference<String> ref = new AtomicReference<>();
         AtomicInteger state = new AtomicInteger();
         // state 0: the attacker aborts the OAuth2 flow at the AS

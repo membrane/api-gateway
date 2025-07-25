@@ -33,7 +33,7 @@ public class RetryHandler {
 
     private static final Logger log = LoggerFactory.getLogger(RetryHandler.class);
 
-    private int retries = 5; // Is old maxRetries TODO Duplicated with HttpClientConfiguration, Overwrite?
+    private int retries = 5;
 
     /**
      * How long to wait between calls to the same destination, in milliseconds.
@@ -127,28 +127,30 @@ public class RetryHandler {
         }
         if (e instanceof ConnectException) {
             // Connection was not established, so no state was changed on server
-            log.info("Connection to {} refused.", dest);
+            log.debug("Connection to {} refused.", dest);
             return !hasMultipleNodes(exc);
         }
         // The socket read or connection took too long and exceeded the configured timeout.
         // No data was received from the server in time.
         // Causes: Server is overloaded, network latency or drop, TLS handshake took too long
         if (e instanceof SocketTimeoutException) {
+            log.debug("Connection to {} refused.", dest);
             return mayChangeServerStatus(exc) || !hasMultipleNodes(exc);
         }
         // Low-level TCP error, e.g., during write or read.
         if (e instanceof SocketException) {
             if (e.getMessage().contains("abort")) {
-                log.info("Connection to {} was aborted externally.", dest);
+                log.debug("Connection to {} was aborted externally.", dest);
             } else if (e.getMessage().contains("reset")) {
-                log.info("Connection to {} was reset externally.", dest);
+                log.debug("Connection to {} was reset externally.", dest);
             } else {
                 logException(exc, attempt, e);
+                log.info("",e); // Unknown condition => log stacktrace
             }
             return mayChangeServerStatus(exc);
         }
         if (e instanceof UnknownHostException) {
-            log.warn("Unknown host: {}", dest);
+            log.warn("Unknown host: {}", dest); // Could be a configuration error => WARN
             return !hasMultipleNodes(exc);
         }
         if (e instanceof EOFWhileReadingFirstLineException eofE) {
@@ -159,7 +161,10 @@ public class RetryHandler {
             log.debug("Server didn't respond to the request.");
             return mayChangeServerStatus(exc);
         }
-        return mayChangeServerStatus(exc); // If not sure, do not retry
+        log.info("Error while attempting to forward request to {}. Reason: {}", dest, e.getMessage());
+        logException(exc, attempt, e);
+        log.info("",e); // Unknown condition => log stacktrace
+        return mayChangeServerStatus(exc); // If not sure, do not retry for non idempotent methods
     }
 
     private static boolean hasMultipleNodes(Exchange exc) {
@@ -229,11 +234,11 @@ public class RetryHandler {
     }
 
     /**
-     * Initial delay. Gets with each attempt longer by backoffMultiplier
+     * Initial delay. Increases with each attempt by backoffMultiplier
      *
      * @param delay
-     * @default 10 millisecound
-     * @description Initial delay in millisecounds
+     * @default 10
+     * @description Initial delay in milliseconds
      * @example 1000
      */
     @MCAttribute
@@ -250,11 +255,11 @@ public class RetryHandler {
     }
 
     /**
-     * Factor by with the delay between attempts to call a backend is made longer
+     * Factor by which the delay is increased after each attempt
      *
      * @param backoffMultiplier factor
-     * @default 5 times
-     * @description Factor by with the delay is multiplied
+     * @default 2
+     * @description Factor by which the delay is multiplied
      * @example 2
      */
     @MCAttribute

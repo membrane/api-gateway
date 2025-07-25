@@ -25,7 +25,6 @@ import java.util.*;
 @MCElement(name="httpClientConfig")
 public class HttpClientConfiguration implements ApplicationContextAware {
 
-	private int maxRetries = 5;
 	private ConnectionConfiguration connection = new ConnectionConfiguration();
 	private ProxyConfiguration proxy;
 	private AuthenticationConfiguration authentication;
@@ -43,7 +42,7 @@ public class HttpClientConfiguration implements ApplicationContextAware {
 		if (this == o) return true;
 		if (o == null || getClass() != o.getClass()) return false;
 		HttpClientConfiguration that = (HttpClientConfiguration) o;
-		return maxRetries == that.maxRetries
+		return retryHandler.getRetries() == that.getRetryHandler().getRetries()
 				&& useExperimentalHttp2 == that.useExperimentalHttp2
 				&& Objects.equals(connection, that.connection)
 				&& Objects.equals(proxy, that.proxy)
@@ -54,7 +53,7 @@ public class HttpClientConfiguration implements ApplicationContextAware {
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(maxRetries,
+		return Objects.hash(retryHandler.getRetries(),
 				connection,
 				proxy,
 				authentication,
@@ -93,7 +92,7 @@ public class HttpClientConfiguration implements ApplicationContextAware {
 	}
 
 	public int getMaxRetries() {
-		return maxRetries;
+		return retryHandler.getRetries();
 	}
 
 	/**
@@ -107,7 +106,7 @@ public class HttpClientConfiguration implements ApplicationContextAware {
 	 */
 	@MCAttribute
 	public void setMaxRetries(int maxRetries) {
-		this.maxRetries = maxRetries;
+		this.retryHandler.setRetries(maxRetries);
 	}
 
 	public SSLParser getSslParser() {
