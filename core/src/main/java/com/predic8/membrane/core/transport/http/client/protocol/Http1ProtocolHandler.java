@@ -90,19 +90,17 @@ public class Http1ProtocolHandler implements ProtocolHandler {
     }
 
     @Override
-    public String checkUpgradeResponse(Exchange exchange) {
+    public void checkUpgradeResponse(Exchange exchange) {
 
         if (isUpgradeToResponse(exchange.getResponse(), WEBSOCKET) &&
             exchange.getProperty(ALLOW_WEBSOCKET) == TRUE) {
             exchange.setProperty(UPGRADED_PROTOCOL, "WebSocket"); // TODO casing, constant
-            return "WebSocket";
+            return;
         }
         if (isUpgradeToResponse(exchange.getResponse(), TCP) &&
             exchange.getProperty(ALLOW_TCP) == TRUE) {
             exchange.setProperty(UPGRADED_PROTOCOL, "TCP"); // TODO casing, constant
-            return "TCP";
         }
-        return null;
     }
 
     @Override

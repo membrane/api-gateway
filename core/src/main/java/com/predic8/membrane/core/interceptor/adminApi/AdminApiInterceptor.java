@@ -240,7 +240,7 @@ public class AdminApiInterceptor extends AbstractInterceptor {
     }
 
     private Outcome handleCalls(Exchange exc) {
-        ExchangeQueryResult res = null;
+        ExchangeQueryResult res;
         try {
             QueryParameter qp = new QueryParameter(queryToParameters(new URI(exc.getRequestURI()).getQuery()), null);
             res = getRouter().getExchangeStore().getFilteredSortedPaged(qp, false);

@@ -20,7 +20,6 @@ import com.predic8.membrane.core.transport.http.ConnectionFactory.*;
 import com.predic8.membrane.core.transport.http.client.*;
 import com.predic8.membrane.core.transport.http.client.protocol.*;
 import com.predic8.membrane.core.util.*;
-import org.slf4j.*;
 
 import javax.annotation.*;
 import java.io.*;
@@ -41,8 +40,6 @@ import static com.predic8.membrane.core.transport.http.client.protocol.Http2Prot
  * from multiple threads.</p>
  */
 public class HttpClient implements AutoCloseable {
-
-    private static final Logger log = LoggerFactory.getLogger(HttpClient.class.getName());
 
     private final HttpClientConfiguration configuration;
     private final ConnectionFactory connectionFactory;

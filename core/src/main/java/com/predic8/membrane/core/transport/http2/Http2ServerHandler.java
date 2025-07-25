@@ -94,7 +94,7 @@ public class Http2ServerHandler extends AbstractHttpHandler {
     }
 
     @Override
-    public void shutdownInput() throws IOException {
+    public void shutdownInput() {
         throw new NotImplementedException("");
     }
 

@@ -72,10 +72,6 @@ public class Http2ProtocolHandler implements ProtocolHandler {
         removeH2CUpgradeHeader(exchange);
     }
 
-    public static boolean isHTTP2(Exchange exc) {
-        return !(exc.getProperty(HTTP2) == null || (exc.getProperty(HTTP2) instanceof Boolean h2 && !h2));
-    }
-
     private static void removeH2CUpgradeHeader(Exchange exc) {
         if (exc.getProperty(ALLOW_H2) == TRUE) {
             // note that this has been deprecated by RFC9113 superseeding RFC7540, and therefore should not happen.

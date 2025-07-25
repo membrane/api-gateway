@@ -30,8 +30,7 @@ public interface ProtocolHandler {
     default void checkUpgradeRequest(Exchange exchange) throws ProtocolUpgradeDeniedException {
     }
 
-    default String checkUpgradeResponse(Exchange exchange) {
-        return "";
+    default void checkUpgradeResponse(Exchange exchange) {
     }
 
     default void cleanup(Exchange exchange) {

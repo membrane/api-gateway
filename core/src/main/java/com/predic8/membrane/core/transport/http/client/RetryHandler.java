@@ -42,8 +42,6 @@ public class RetryHandler {
      * Note: for reasons of code simplicity, this sleeping time is only applied between direct successive calls
      * to the same target. If there are multiple targets like one, two, one and it all goes very fast, then
      * it's possible that the same server gets hit with less time in between.
-     * <p>
-     * TODO Make configurable - where?
      */
     private int delay = 10;
 
@@ -61,10 +59,10 @@ public class RetryHandler {
     public Exchange executeWithRetries(Exchange exc, boolean failOverOn5XX, RetryableCall call) throws Exception {
 
         Exception exceptionInLastCall = null;
-        double delay = this.delay;
+        double currentDelay = this.delay;
         for (int attempt = 0; attempt <= retries; attempt++) {
             String dest = getDestination(exc, attempt);
-            log.debug("Attempt #{} from #{} to {} delay {}", attempt, retries + 1, dest, delay);
+            log.debug("Attempt #{} from #{} to {}", attempt, retries + 1, dest);
             try {
                 if (call.execute(exc, dest, attempt)) {
                     return exc;
@@ -95,8 +93,7 @@ public class RetryHandler {
                 }
 
             }
-            delay *= backoffMultiplier;
-            delayBetweenCalls(exc, (int)delay);
+            delayBetweenCalls(exc, currentDelay *= backoffMultiplier);
         }
 
         if (exceptionInLastCall != null)
@@ -106,8 +103,6 @@ public class RetryHandler {
     }
 
     private boolean shouldRetry(int statusCode, boolean failOverOn5XX) {
-
-        // TODO Handle 100?
 
         if (statusCode > 100 && statusCode < 400) {
             return false;
@@ -202,10 +197,12 @@ public class RetryHandler {
             log.debug("{}", msg);
     }
 
-    private void delayBetweenCalls(Exchange exc, int delay) throws InterruptedException {
+    private void delayBetweenCalls(Exchange exc, double delay) throws InterruptedException {
         //as documented above, the sleep timeout is only applied between successive calls to the SAME destination.
-        if (exc.getDestinations().size() == 1)
-            sleep(delay);
+        if (exc.getDestinations().size() == 1) {
+            log.debug("Waiting {} ms before next try", delay);
+            sleep((long) delay);
+        }
     }
 
     private static boolean trackNodeStatus(Exchange exc) {
