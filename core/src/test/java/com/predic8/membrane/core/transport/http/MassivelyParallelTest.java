@@ -12,6 +12,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.function.Consumer;
 
@@ -59,7 +60,7 @@ public class MassivelyParallelTest {
                 try {
                     Thread.sleep(700);
                 } catch (InterruptedException e) {
-                    throw new RuntimeException(e);
+                    Thread.currentThread().interrupt();
                 }
                 exc.setResponse(Response.ok().body(exc.getRequest().getUri()).build());
                 return RETURN;
@@ -77,16 +78,12 @@ public class MassivelyParallelTest {
 
     @Test
     public void run() throws Exception {
-        System.out.println("test: begin.");
-        Set<String> paths = new HashSet<>();
+        Set<String> paths = ConcurrentHashMap.newKeySet();
         // ramp up
         runInParallel((cdl) -> parallelTestWorker(cdl, paths), 20);
         // go
         runInParallel((cdl) -> parallelTestWorker(cdl, paths), 500);
-        synchronized (paths) {
-            assertEquals(520, paths.size());
-        }
-        System.out.println("test: end.");
+        assertEquals(520, paths.size());
     }
 
     private void runInParallel(Consumer<CountDownLatch> job, int threadCount) {
@@ -100,7 +97,7 @@ public class MassivelyParallelTest {
             try {
                 thread.join();
             } catch (InterruptedException e) {
-                e.printStackTrace();
+                Thread.currentThread().interrupt();
             }
         });
     }
@@ -115,11 +112,9 @@ public class MassivelyParallelTest {
 
             var body = exchange.getResponse().getBodyAsStringDecoded();
             assertTrue(body.startsWith("/api/"));
-            synchronized (paths) {
-                paths.add(body);
-            }
+            paths.add(body);
         } catch (Exception e) {
-            e.printStackTrace();
+            throw new RuntimeException(e);
         }
     }
 

@@ -22,7 +22,6 @@ import com.predic8.membrane.core.transport.*;
 import com.predic8.membrane.core.transport.ssl.*;
 import com.predic8.membrane.core.util.*;
 import org.slf4j.*;
-import org.springframework.core.task.VirtualThreadTaskExecutor;
 
 import javax.annotation.*;
 import java.io.*;
