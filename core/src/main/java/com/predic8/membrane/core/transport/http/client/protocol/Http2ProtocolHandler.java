@@ -75,7 +75,7 @@ public class Http2ProtocolHandler extends AbstractProtocolHandler {
         if (!isUpgradeRequest(exc, HTTP2_CLEAR_PROTOCOL)) {
             return;
         }
-        // RFC750 section 3.2 specifies that servers not supporting this can respond "as though the Upgrade header
+        // RFC7540 section 3.2 specifies that servers not supporting this can respond "as though the Upgrade header
         // field were absent". Therefore, we remove it.
         if (infoOnHttp2Downgrade) {
             infoOnHttp2Downgrade = false;

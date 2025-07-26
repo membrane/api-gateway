@@ -19,6 +19,8 @@ import com.predic8.membrane.core.transport.http.*;
 
 public interface ProtocolHandler {
 
+    String UPGRADED_PROTOCOL = "UPGRADED_PROTOCOL";
+
     boolean canHandle(Exchange exchange, String protocol) throws ProtocolUpgradeDeniedException;
 
     // Why return Exchange?

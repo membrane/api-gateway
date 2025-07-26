@@ -29,7 +29,7 @@ class Http1ProtocolHandlerTest {
     }
 
     @Nested
-    class continue100 {
+    class continueRequests {
 
         @Test
         void connectRequest() throws Exception {

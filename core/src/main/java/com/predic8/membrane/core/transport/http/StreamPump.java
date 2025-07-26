@@ -25,6 +25,8 @@ import java.net.*;
 import java.util.*;
 import java.util.concurrent.atomic.*;
 
+import static com.predic8.membrane.core.transport.http.client.protocol.WebSocketProtocolHandler.*;
+
 public class StreamPump implements Runnable {
 
 	protected static final Logger log = LoggerFactory.getLogger(StreamPump.class.getName());
@@ -127,25 +129,25 @@ public class StreamPump implements Runnable {
 	 * @param exc
 	 * @param con
 	 * @param protocol
-	 * @param streamPumpStats
+	 * @param stats
 	 * @throws SocketException
 	 */
-	public static void setupConnectionForwarding(Exchange exc, final Connection con, final String protocol, StreamPump.StreamPumpStats streamPumpStats) throws SocketException {
+	public static void setupConnectionForwarding(Exchange exc, final Connection con, final String protocol, StreamPump.StreamPumpStats stats) throws SocketException {
 		final TwoWayStreaming tws = (TwoWayStreaming) exc.getHandler();
 		String source = tws.getRemoteDescription();
 		String dest = con.toString();
 		final StreamPump a;
 		final StreamPump b;
-		if ("WebSocket".equals(protocol)) {
-			WebSocketStreamPump aTemp = new WebSocketStreamPump(tws.getSrcIn(), con.out, streamPumpStats, protocol + " " + source + " -> " + dest, exc.getProxy(), true, exc);
-			WebSocketStreamPump bTemp = new WebSocketStreamPump(con.in, tws.getSrcOut(), streamPumpStats, protocol + " " + source + " <- " + dest, exc.getProxy(), false, null);
+		if (WEBSOCKET.equalsIgnoreCase(protocol)) {
+			WebSocketStreamPump aTemp = new WebSocketStreamPump(tws.getSrcIn(), con.out, stats, protocol + " " + source + " -> " + dest, exc.getProxy(), true, exc);
+			WebSocketStreamPump bTemp = new WebSocketStreamPump(con.in, tws.getSrcOut(), stats, protocol + " " + source + " <- " + dest, exc.getProxy(), false, null);
 			aTemp.init(bTemp);
 			bTemp.init(aTemp);
 			a = aTemp;
 			b = bTemp;
 		} else {
-			a = new StreamPump(tws.getSrcIn(), con.out, streamPumpStats, protocol + " " + source + " -> " + dest, exc.getProxy());
-			b = new StreamPump(con.in, tws.getSrcOut(), streamPumpStats, protocol + " " + source + " <- " + dest, exc.getProxy());
+			a = new StreamPump(tws.getSrcIn(), con.out, stats, protocol + " " + source + " -> " + dest, exc.getProxy());
+			b = new StreamPump(con.in, tws.getSrcOut(), stats, protocol + " " + source + " <- " + dest, exc.getProxy());
 		}
 
 		tws.removeSocketSoTimeout();

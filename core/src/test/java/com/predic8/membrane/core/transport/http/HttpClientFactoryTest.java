@@ -17,13 +17,13 @@ class HttpClientFactoryTest {
 
     @Test
     void different() {
-        assertSame(f.createClient(getConfig(1)), f.createClient(getConfig(2)));
+        assertNotSame(f.createClient(getConfig(1)), f.createClient(getConfig(2)));
     }
 
     private static @NotNull HttpClientConfiguration getConfig(int retries) {
         return new HttpClientConfiguration() {{
            setRetryHandler(new RetryHandler() {{
-               setMaxRetries(retries);
+               setRetries(retries);
            }});
         }};
     }

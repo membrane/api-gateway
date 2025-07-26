@@ -27,6 +27,7 @@ import org.slf4j.*;
 import java.io.*;
 
 import static com.predic8.membrane.core.Constants.*;
+import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
 import static com.predic8.membrane.core.exchange.Exchange.*;
 import static com.predic8.membrane.core.http.Header.*;
 import static com.predic8.membrane.core.http.Request.*;
@@ -154,7 +155,12 @@ public class Http1ProtocolHandler extends AbstractProtocolHandler {
         if (configuration.getProxy() != null) {
             exchange.getRequest().write(ct.con().out, configuration.getMaxRetries() > 1);
             Response response = fromStream(ct.con().in, false);
-            log.debug("Status code response? on CONNECT request: {}", response.getStatusCode());
+            if (response.getStatusCode() > 299) {
+                log.debug("Status code response? on CONNECT request: {}", response.getStatusCode());
+                exchange.setResponse(internal(true, "proxy")
+                        .detail("Could not connect to proxy server")
+                        .build());
+            }
         }
         exchange.getRequest().setUri(NOT_APPLICABLE); // TODO Why?
         exchange.setResponse(ok().build());

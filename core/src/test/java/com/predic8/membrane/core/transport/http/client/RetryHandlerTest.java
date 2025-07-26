@@ -163,19 +163,15 @@ class RetryHandlerTest {
         }
     }
 
-    // TODO
     @Test
     void bus() throws Exception {
         RetryableExchangeCallMock mock = new RetryableExchangeCallMock(200);
         Exchange exc = get("/foo").buildExchange();
-        HttpClientStatusEventBus bus = new HttpClientStatusEventBus();
-        bus.engageInstance(exc);
+        HttpClientStatusEventListenerMock listener = registerHttpClientStatusEventBus(exc);
         List<String> destinations = List.of("http://node1.example.com/");
         exc.setDestinations(destinations);
         rh.executeWithRetries(exc, false, mock);
-
-        // TODO Mock bus and see if called
-
+        assertEquals(200, listener.statusCodes.get("http://node1.example.com/"));
     }
 
     private @NotNull HttpClientStatusEventListenerMock registerHttpClientStatusEventBus(Exchange exc) {

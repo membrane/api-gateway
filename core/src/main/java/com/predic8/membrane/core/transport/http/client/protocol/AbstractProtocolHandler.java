@@ -9,9 +9,6 @@ public abstract class AbstractProtocolHandler implements ProtocolHandler {
     protected final HttpClientConfiguration configuration;
     protected final ConnectionFactory connectionFactory;
 
-    // TODO protected
-    public static final String UPGRADED_PROTOCOL = "UPGRADED_PROTOCOL";
-
     public AbstractProtocolHandler(HttpClientConfiguration hcc, ConnectionFactory cf) {
         this.configuration = hcc;
         this.connectionFactory = cf;
