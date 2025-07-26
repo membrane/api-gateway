@@ -27,11 +27,17 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class HTTPClientInterceptorTest {
 
+    HTTPClientInterceptor hci;
+
+    @BeforeEach
+    void setUp() {
+        hci = new HTTPClientInterceptor();
+    }
+
     @Test
     void protocolUpgradeRejected() throws URISyntaxException {
         Router r = new Router();
 
-        HTTPClientInterceptor hci = new HTTPClientInterceptor();
         hci.init(r);
 
         Exchange e = get("http://localhost:2000/")
@@ -43,6 +49,19 @@ class HTTPClientInterceptorTest {
         hci.handleRequest(e);
 
         assertEquals(401, e.getResponse().getStatusCode());
+    }
+
+    @Test
+    void passFailOverOn500Default() {
+        hci.init(new Router());
+        assertFalse(hci.getHttpClientConfig().getRetryHandler().isFailOverOn5XX());
+    }
+
+    @Test
+    void passFailOverOn500() {
+        hci.setFailOverOn5XX(true);
+        hci.init(new Router());
+        assertTrue(hci.getHttpClientConfig().getRetryHandler().isFailOverOn5XX());
     }
 
 }

@@ -48,11 +48,12 @@ public class Http1ProtocolHandler extends AbstractProtocolHandler {
     }
 
     @Override
-    public Exchange handle(Exchange exchange, OutgoingConnectionType ct, HostColonPort target) throws Exception {
+    public void handle(Exchange exchange, OutgoingConnectionType ct, HostColonPort target) throws Exception {
 
         // 100 - Continue
         var connectExchange = answerConnectRequest(exchange, ct);
-        if (connectExchange != null) return connectExchange;
+        if (connectExchange != null)
+            return;
 
         // TODO only for HTTP1 ?
         ct.con().socket.setSoTimeout(configuration.getConnection().getSoTimeout());
@@ -75,8 +76,6 @@ public class Http1ProtocolHandler extends AbstractProtocolHandler {
 
         // Only HTTP 1?
         checkUpgradeResponse(exchange);
-
-        return exchange;
     }
 
     @Override

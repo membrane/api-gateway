@@ -39,8 +39,7 @@ public class TcpProtocolHandler extends AbstractProtocolHandler {
     }
 
     @Override
-    public Exchange handle(Exchange exchange, OutgoingConnectionType connectionType, HostColonPort target) throws Exception {
-        return null;
+    public void handle(Exchange exchange, OutgoingConnectionType connectionType, HostColonPort target) throws Exception {
     }
 
 }

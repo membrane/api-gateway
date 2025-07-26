@@ -43,7 +43,7 @@ public class Http2ProtocolHandler extends AbstractProtocolHandler {
     }
 
     @Override
-    public Exchange handle(Exchange exchange, ConnectionFactory.OutgoingConnectionType connectionType, HostColonPort target) throws Exception {
+    public void handle(Exchange exchange, ConnectionFactory.OutgoingConnectionType connectionType, HostColonPort target) throws Exception {
         Http2Client h2c = connectionType.h2c();
         if (h2c == null) {
             h2c = new Http2Client(connectionType.con(), connectionType.sslProvider().showSSLExceptions());
@@ -59,7 +59,6 @@ public class Http2ProtocolHandler extends AbstractProtocolHandler {
         }
         exchange.setResponse(h2c.doCall(exchange));
         exchange.setProperty(HTTP2_PROTOCOL, true);
-        return exchange;
     }
 
     @Override

@@ -45,7 +45,7 @@ class RetryHandlerTest {
     void noRetries() throws Exception {
         rh.setRetries(0);
         RetryableExchangeCallMock mock = new RetryableExchangeCallMock(false);
-        rh.executeWithRetries(get("/foo").buildExchange(), false, mock);
+        rh.executeWithRetries(get("/foo").buildExchange(), mock);
         assertEquals(1, mock.attempts);
     }
 
@@ -55,9 +55,11 @@ class RetryHandlerTest {
         rh.setDelay(2);
         rh.setBackoffMultiplier(1.5);
         RetryableExchangeCallMock mock = new RetryableExchangeCallMock(503);
-        rh.executeWithRetries(get("/foo").buildExchange(), true, mock);
+        rh.executeWithRetries(get("/foo").buildExchange(), mock);
         assertEquals(11, mock.attempts);
     }
+
+    // TODO Retry on 5XX Test
 
     @Test
     void success() throws Exception {
@@ -67,7 +69,7 @@ class RetryHandlerTest {
 
         HttpClientStatusEventListenerMock listener = registerHttpClientStatusEventBus(exc);
 
-        rh.executeWithRetries(exc, false, mock);
+        rh.executeWithRetries(exc, mock);
         assertEquals(1, mock.attempts);
 
         assertEquals(200, listener.statusCodes.get("/foo"));
@@ -83,7 +85,7 @@ class RetryHandlerTest {
             Exchange exc = get("/foo").buildExchange();
             HttpClientStatusEventListenerMock listener = registerHttpClientStatusEventBus(exc);
 
-            assertThrows(SocketException.class, () -> rh.executeWithRetries(exc, false, mock));
+            assertThrows(SocketException.class, () -> rh.executeWithRetries(exc, mock));
             assertEquals(3, mock.attempts);
 
             assertEquals(exception, listener.exceptions.get("/foo"));
@@ -92,7 +94,7 @@ class RetryHandlerTest {
         @Test
         void socketExceptionPost() {
             RetryableExchangeCallMock mock = new RetryableExchangeCallMock(new SocketException("Problem!"));
-            assertThrows(SocketException.class, () -> rh.executeWithRetries(post("/foo").buildExchange(), false, mock));
+            assertThrows(SocketException.class, () -> rh.executeWithRetries(post("/foo").buildExchange(), mock));
             assertEquals(1, mock.attempts);
         }
 
@@ -100,7 +102,7 @@ class RetryHandlerTest {
         void connectionRefusedOneNode() {
             RetryHandler rh = new RetryHandler();
             RetryableExchangeCallMock mock = new RetryableExchangeCallMock(new ConnectException("Firewall blocks!"));
-            assertThrows(ConnectException.class, () -> rh.executeWithRetries(post("/foo").buildExchange(), false, mock));
+            assertThrows(ConnectException.class, () -> rh.executeWithRetries(post("/foo").buildExchange(), mock));
             assertEquals(1, mock.attempts);
         }
 
@@ -109,7 +111,7 @@ class RetryHandlerTest {
     @Test
     void internalError() throws Exception {
         RetryableExchangeCallMock mock = new RetryableExchangeCallMock(501);
-        rh.executeWithRetries(get("/foo").buildExchange(), true, mock);
+        rh.executeWithRetries(get("/foo").buildExchange(), mock);
         assertEquals(3, mock.attempts);
     }
 
@@ -122,7 +124,7 @@ class RetryHandlerTest {
             Exchange exc = get("/foo").buildExchange();
             List<String> destinations = List.of("http://node1.example.com/", "http://node2.example.com/", "http://node3.example.com/");
             exc.setDestinations(destinations);
-            rh.executeWithRetries(exc, true, mock);
+            rh.executeWithRetries(exc, mock);
             assertEquals(3, mock.attempts);
             assertEquals(destinations, mock.destinations);
         }
@@ -170,7 +172,7 @@ class RetryHandlerTest {
         HttpClientStatusEventListenerMock listener = registerHttpClientStatusEventBus(exc);
         List<String> destinations = List.of("http://node1.example.com/");
         exc.setDestinations(destinations);
-        rh.executeWithRetries(exc, false, mock);
+        rh.executeWithRetries(exc, mock);
         assertEquals(200, listener.statusCodes.get("http://node1.example.com/"));
     }
 

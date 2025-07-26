@@ -141,7 +141,7 @@ public class TelekomSMSTokenProvider extends SMSTokenProvider {
 							body(baos.toByteArray()).
 							buildExchange();
 
-			hc.call(exc, false, true);
+			hc.call(exc, true);
 
 			if (exc.getResponse().getStatusCode() != 201)
 				throw new RuntimeException("Could not send SMS: " + exc.getResponse());
@@ -165,7 +165,7 @@ public class TelekomSMSTokenProvider extends SMSTokenProvider {
 					body(new URLParamUtil.ParamBuilder().add("grant_type", "client_credentials").add("scope", scope).build()).
 					buildExchange();
 
-			hc.call(exc, false, true);
+			hc.call(exc, true);
 			if (exc.getResponse().getStatusCode() != 200)
 				throw new RuntimeException("Telekom Authentication Server returned: " + exc.getResponse());
 

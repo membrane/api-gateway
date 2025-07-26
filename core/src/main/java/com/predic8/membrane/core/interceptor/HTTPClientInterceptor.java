@@ -47,7 +47,7 @@ public class HTTPClientInterceptor extends AbstractInterceptor {
 
     private static final String PROXIES_HINT = " Maybe the target is only reachable over an HTTP proxy server. Please check proxy settings in conf/proxies.xml.";
 
-    private boolean failOverOn5XX;
+    private Boolean failOverOn5XX;
     private boolean adjustHostHeader = true;
     private HttpClientConfiguration httpClientConfig = new HttpClientConfiguration();
 
@@ -56,6 +56,16 @@ public class HTTPClientInterceptor extends AbstractInterceptor {
     public HTTPClientInterceptor() {
         name = "http client";
         setFlow(REQUEST_FLOW);
+    }
+
+    @Override
+    public void init() {
+        super.init();
+        if (failOverOn5XX != null) {
+            httpClientConfig.getRetryHandler().setFailOverOn5XX(failOverOn5XX);
+        }
+        hc = router.getHttpClientFactory().createClient(httpClientConfig);
+        hc.setStreamPumpStats(getRouter().getStatistics().getStreamPumpStats());
     }
 
     @Override
@@ -68,8 +78,8 @@ public class HTTPClientInterceptor extends AbstractInterceptor {
 
         changeMethod(exc);
 
-        try(HttpClient client = hc) {
-            client.call(exc, adjustHostHeader, failOverOn5XX);
+        try {
+            hc.call(exc, adjustHostHeader);
             return RETURN;
         } catch (ConnectException e) {
             String msg = "Target %s is not reachable.".formatted(getDestination(exc));
@@ -164,14 +174,6 @@ public class HTTPClientInterceptor extends AbstractInterceptor {
     private String getDestination(Exchange exc) {
         return exc.getDestinations().getFirst();
     }
-
-    @Override
-    public void init() {
-        super.init();
-        hc = router.getHttpClientFactory().createClient(httpClientConfig);
-        hc.setStreamPumpStats(getRouter().getStatistics().getStreamPumpStats());
-    }
-
 
     public boolean isFailOverOn5XX() {
         return failOverOn5XX;

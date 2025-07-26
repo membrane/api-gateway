@@ -49,7 +49,11 @@ public class RetryHandler {
      */
     private double backoffMultiplier = 2;
 
-    public Exchange executeWithRetries(Exchange exc, boolean failOverOn5XX, RetryableCall call) throws Exception {
+    private boolean failOverOn5XX = false;
+
+    // TODO Make failOverOn5XX an instance Variable
+
+    public void executeWithRetries(Exchange exc, RetryableCall call) throws Exception {
 
         Exception exceptionInLastCall = null;
         double currentDelay = this.delay;
@@ -58,12 +62,12 @@ public class RetryHandler {
             log.debug("Attempt #{} from #{} to {}", attempt, retries + 1, dest);
             try {
                 if (call.execute(exc, dest, attempt)) {
-                    return exc;
+                    return ;
                 }
                 int statusCode = exc.getResponse() == null ? 0 : exc.getResponse().getStatusCode();
-                if (!shouldRetry(statusCode, failOverOn5XX)) {
+                if (!shouldRetry(statusCode)) {
                     HttpClientStatusEventBus.reportSuccess(exc, dest);
-                    return exc; // success
+                    return; // success
                 }
             } catch (Exception e) {
                 HttpClientStatusEventBus.reportException(exc, e, dest);
@@ -87,11 +91,9 @@ public class RetryHandler {
 
         if (exceptionInLastCall != null)
             throw exceptionInLastCall;
-
-        return exc;
     }
 
-    private boolean shouldRetry(int statusCode, boolean failOverOn5XX) {
+    private boolean shouldRetry(int statusCode) {
 
         if (statusCode > 100 && statusCode < 400) {
             return false;
@@ -250,6 +252,22 @@ public class RetryHandler {
     @MCAttribute
     public void setBackoffMultiplier(double backoffMultiplier) {
         this.backoffMultiplier = backoffMultiplier;
+    }
+
+    public boolean isFailOverOn5XX() {
+        return failOverOn5XX;
+    }
+
+    /**
+     * Controls if 5XX from the server are retried or immediately passed to the client.
+     *
+     * @default false
+     * @description If true retry 5XX status codes
+     * @param failOverOn5XX
+     */
+    @MCAttribute
+    public void setFailOverOn5XX(boolean failOverOn5XX) {
+        this.failOverOn5XX = failOverOn5XX;
     }
 
     @Override

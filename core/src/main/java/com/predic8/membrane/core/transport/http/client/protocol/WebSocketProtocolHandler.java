@@ -38,7 +38,7 @@ public class WebSocketProtocolHandler extends AbstractProtocolHandler {
     }
 
     @Override
-    public Exchange handle(Exchange exchange, ConnectionFactory.OutgoingConnectionType connectionType, HostColonPort target) throws Exception {
+    public void handle(Exchange exchange, ConnectionFactory.OutgoingConnectionType connectionType, HostColonPort target) throws Exception {
         throw new IllegalStateException(
                 "WebSocket handler should not be called directly. " +
                 "Use HTTP/1.1 with Upgrade header.");

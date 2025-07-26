@@ -62,19 +62,18 @@ public class HttpClient implements AutoCloseable {
     }
 
     public Exchange call(Exchange exc) throws Exception {
-        return call(exc, true, true);
+        call(exc, true);
+        return exc;
     }
 
-    public Exchange call(Exchange exc, boolean adjustHostHeader, boolean failOverOn5XX) throws Exception {
+    public void call(Exchange exc, boolean adjustHostHeader) throws Exception {
         ProtocolHandler ph = protocolHandlerFactory.getHandler(exc, exc.getRequest().getHeader().getUpgradeProtocol());
         ph.checkUpgradeRequest(exc);
 
-        Exchange exchange = configuration.getRetryHandler().executeWithRetries(exc,
-                failOverOn5XX, (e, target, attempt) -> dispatchCall(e, attempt,
+        configuration.getRetryHandler().executeWithRetries(exc, (e, target, attempt) -> dispatchCall(e, attempt,
                         initializeRequest(exc, target, adjustHostHeader)));
 
-        ph.cleanup(exchange);
-        return exchange;
+        ph.cleanup(exc);
     }
 
     private boolean dispatchCall(Exchange exc, int counter, HostColonPort target)

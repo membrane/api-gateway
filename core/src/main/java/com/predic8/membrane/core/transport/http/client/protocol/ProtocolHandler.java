@@ -23,8 +23,7 @@ public interface ProtocolHandler {
 
     boolean canHandle(Exchange exchange, String protocol) throws ProtocolUpgradeDeniedException;
 
-    // Why return Exchange?
-    Exchange handle(Exchange exchange, ConnectionFactory.OutgoingConnectionType connectionType, HostColonPort target) throws Exception;
+    void handle(Exchange exchange, ConnectionFactory.OutgoingConnectionType connectionType, HostColonPort target) throws Exception;
 
     void checkUpgradeRequest(Exchange exchange) throws ProtocolUpgradeDeniedException;
 
