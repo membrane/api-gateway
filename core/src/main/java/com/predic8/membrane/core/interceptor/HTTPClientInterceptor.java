@@ -61,9 +61,12 @@ public class HTTPClientInterceptor extends AbstractInterceptor {
     @Override
     public void init() {
         super.init();
+
+        // Overwrite httpClientConfiguration with local value
         if (failOverOn5XX != null) {
             httpClientConfig.getRetryHandler().setFailOverOn5XX(failOverOn5XX);
         }
+
         hc = router.getHttpClientFactory().createClient(httpClientConfig);
         hc.setStreamPumpStats(getRouter().getStatistics().getStreamPumpStats());
     }

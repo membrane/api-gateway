@@ -20,6 +20,7 @@ import com.predic8.membrane.core.exchange.Exchange;
 
 import static com.predic8.membrane.core.interceptor.balancer.Node.Status.DOWN;
 import static com.predic8.membrane.core.interceptor.balancer.Node.Status.UP;
+import static java.lang.Thread.sleep;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class NodeOnlineCheckerTest {
@@ -109,7 +110,7 @@ public class NodeOnlineCheckerTest {
 		assertEquals(DOWN, cl.getNode(node).getStatus());
 		noc.putNodesBackUp();
 		assertEquals(DOWN, cl.getNode(node).getStatus());
-		Thread.sleep(noc.getRetryTimeInSeconds()*1000);
+		sleep(noc.getRetryTimeInSeconds() * 1000L);
 		noc.putNodesBackUp();
 		assertEquals(UP, cl.getNode(node).getStatus());
 	}
