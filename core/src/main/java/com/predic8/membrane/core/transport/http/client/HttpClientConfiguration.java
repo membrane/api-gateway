@@ -37,31 +37,6 @@ public class HttpClientConfiguration implements ApplicationContextAware {
 	public HttpClientConfiguration() {
 	}
 
-	@Override
-	public boolean equals(Object o) {
-		if (this == o) return true;
-		if (o == null || getClass() != o.getClass()) return false;
-		HttpClientConfiguration that = (HttpClientConfiguration) o;
-		return retryHandler.getRetries() == that.getRetryHandler().getRetries()
-				&& useExperimentalHttp2 == that.useExperimentalHttp2
-				&& Objects.equals(connection, that.connection)
-				&& Objects.equals(proxy, that.proxy)
-				&& Objects.equals(authentication, that.authentication)
-				&& Objects.equals(sslParser, that.sslParser)
-				&& Objects.equals(baseLocation, that.baseLocation);
-	}
-
-	@Override
-	public int hashCode() {
-		return Objects.hash(retryHandler.getRetries(),
-				connection,
-				proxy,
-				authentication,
-				sslParser,
-				baseLocation,
-				useExperimentalHttp2);
-	}
-
 	public ConnectionConfiguration getConnection() {
 		return connection;
 	}
@@ -148,5 +123,30 @@ public class HttpClientConfiguration implements ApplicationContextAware {
 	@MCChildElement
 	public void setRetryHandler(RetryHandler retryHandler) {
 		this.retryHandler = retryHandler;
+	}
+
+	@Override
+	public boolean equals(Object o) {
+		if (this == o) return true;
+		if (o == null || getClass() != o.getClass()) return false;
+		HttpClientConfiguration that = (HttpClientConfiguration) o;
+		return  Objects.equals(retryHandler, that.getRetryHandler())
+			   && useExperimentalHttp2 == that.useExperimentalHttp2
+			   && Objects.equals(connection, that.connection)
+			   && Objects.equals(proxy, that.proxy)
+			   && Objects.equals(authentication, that.authentication)
+			   && Objects.equals(sslParser, that.sslParser)
+			   && Objects.equals(baseLocation, that.baseLocation);
+	}
+
+	@Override
+	public int hashCode() {
+		return Objects.hash(retryHandler.hashCode(),
+				connection,
+				proxy,
+				authentication,
+				sslParser,
+				baseLocation,
+				useExperimentalHttp2);
 	}
 }

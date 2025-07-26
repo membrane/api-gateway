@@ -50,14 +50,13 @@ public class BodyTest {
 
 	@Test
 	public void testWrite() throws IOException {
-
 		ByteArrayOutputStream out = new ByteArrayOutputStream(100);
 		unchunkedBody.write(new PlainBodyTransferer(out), true);
-		assertEquals(out.toString(), new String(msg1));
+		assertEquals(new String(msg1), out.toString());
 
 		ByteArrayOutputStream out2 = new ByteArrayOutputStream(10000);
 		unchunkedBody2.write(new PlainBodyTransferer(out2), true);
-		assertEquals(out2.toString(), new String(msg2));
+		assertEquals(new String(msg2), out2.toString());
 	}
 
 	@Test
@@ -104,7 +103,7 @@ public class BodyTest {
 		chunked.write(new ChunkedBodyTransferer(baos), true);
 
 		ChunkedBody ciob = new ChunkedBody(new ByteArrayInputStream(baos.toByteArray()));
-		assertArrayEquals(ciob.getContent(), msg1);
+		assertArrayEquals(msg1, ciob.getContent());
 	}
 
 	@Test

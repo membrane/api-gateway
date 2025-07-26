@@ -129,13 +129,47 @@ class RetryHandlerTest {
 
     }
 
+    @Nested
+    class EqualsHashcode {
+
+        @Test
+        void equals_returnsFalseForDifferentRetries() {
+            assertNotEquals(new RetryHandler(), new RetryHandler() {{
+                setRetries(3);
+            }});
+        }
+
+        @Test
+        void equals_returnsFalseForDifferentDelay() {
+            assertNotEquals(new RetryHandler(), new RetryHandler() {{
+                setDelay(500);
+            }});
+        }
+
+        @Test
+        void equals_returnsFalseForDifferentBackoffMultiplier() {
+            assertNotEquals(new RetryHandler(), new RetryHandler() {{
+                setBackoffMultiplier(99.9);
+            }});
+        }
+
+        @Test
+        @DisplayName("Transitivity: if a==b and b==c then a==c")
+        void equals_isTransitive() {
+            RetryHandler a = new RetryHandler();
+            RetryHandler b = new RetryHandler();
+            RetryHandler c = new RetryHandler();
+            assertTrue(a.equals(b) && b.equals(c) && a.equals(c));
+        }
+    }
+
     // TODO
     @Test
     void bus() throws Exception {
         RetryableExchangeCallMock mock = new RetryableExchangeCallMock(200);
         Exchange exc = get("/foo").buildExchange();
         HttpClientStatusEventBus bus = new HttpClientStatusEventBus();
-        bus.engage(exc);
+        bus.engageInstance(exc);
         List<String> destinations = List.of("http://node1.example.com/");
         exc.setDestinations(destinations);
         rh.executeWithRetries(exc, false, mock);
@@ -196,10 +230,10 @@ class RetryHandlerTest {
         }
     }
 
-    class HttpClientStatusEventListenerMock implements HttpClientStatusEventListener {
+    static class HttpClientStatusEventListenerMock implements HttpClientStatusEventListener {
 
-        Map<String,Integer> statusCodes = new HashMap<>();
-        Map<String,Exception> exceptions = new HashMap<>();
+        Map<String, Integer> statusCodes = new HashMap<>();
+        Map<String, Exception> exceptions = new HashMap<>();
 
         @Override
         public void onResponse(long timestamp, String destination, int responseCode) {

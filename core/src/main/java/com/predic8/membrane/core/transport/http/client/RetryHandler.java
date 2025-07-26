@@ -251,5 +251,21 @@ public class RetryHandler {
     public void setBackoffMultiplier(double backoffMultiplier) {
         this.backoffMultiplier = backoffMultiplier;
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (o == null || getClass() != o.getClass()) return false;
+
+        RetryHandler that = (RetryHandler) o;
+        return retries == that.retries && delay == that.delay && Double.compare(backoffMultiplier, that.backoffMultiplier) == 0;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = retries;
+        result = 31 * result + delay;
+        result = 31 * result + Double.hashCode(backoffMultiplier);
+        return result;
+    }
 }
 

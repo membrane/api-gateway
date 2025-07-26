@@ -18,43 +18,45 @@ import org.junit.jupiter.api.Test;
 
 import com.predic8.membrane.core.exchange.Exchange;
 
+import static com.predic8.membrane.core.interceptor.balancer.Node.Status.DOWN;
+import static com.predic8.membrane.core.interceptor.balancer.Node.Status.UP;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class NodeOnlineCheckerTest {
 
 	@Test
-	public void testExchangeWithException()
+	void exchangeWithException()
 	{
 		Node node = new Node("http://www.predic8.de",80);
 
 		Exchange exc = new Exchange(null);
-		exc.getDestinations().add(0,"http://www.predic8.de:80");
+		exc.getDestinations().addFirst("http://www.predic8.de:80");
 		exc.trackNodeException(0, new Exception());
 
 		LoadBalancingInterceptor lbi = new LoadBalancingInterceptor();
-		Cluster cl = lbi.getClusterManager().getClusters().get(0);
+		Cluster cl = lbi.getClusterManager().getClusters().getFirst();
 		cl.nodeUp(node);
-		assertEquals(Node.Status.UP, cl.getNode(node).getStatus());
+		assertEquals(UP, cl.getNode(node).getStatus());
 
 		NodeOnlineChecker noc = new NodeOnlineChecker();
 		lbi.setNodeOnlineChecker(noc);
 
 		noc.handle(exc);
-		assertEquals(Node.Status.DOWN,cl.getNode(node).getStatus());
+		assertEquals(DOWN,cl.getNode(node).getStatus());
 	}
 
 	@Test
-	public void testExchangeWithBadStatuscode(){
+	void exchangeWithBadStatuscode(){
 		Node node = new Node("http://www.predic8.de",80);
 
 		Exchange exc = new Exchange(null);
-		exc.getDestinations().add(0,"http://www.predic8.de:80");
+		exc.getDestinations().addFirst("http://www.predic8.de:80");
 		exc.setNodeStatusCode(0,500);
 
 		LoadBalancingInterceptor lbi = new LoadBalancingInterceptor();
-		Cluster cl = lbi.getClusterManager().getClusters().get(0);
+		Cluster cl = lbi.getClusterManager().getClusters().getFirst();
 		cl.nodeUp(node);
-		assertEquals(Node.Status.UP, cl.getNode(node).getStatus());
+		assertEquals(UP, cl.getNode(node).getStatus());
 
 		NodeOnlineChecker noc = new NodeOnlineChecker();
 		lbi.setNodeOnlineChecker(noc);
@@ -67,15 +69,15 @@ public class NodeOnlineCheckerTest {
 		for(int i = 0; i < limit; i++){
 			noc.handle(exc);
 		}
-		assertEquals(Node.Status.UP, cl.getNode(node).getStatus());
+		assertEquals(UP, cl.getNode(node).getStatus());
 		exc.setNodeStatusCode(0,400);
 		noc.handle(exc);
-		assertEquals(Node.Status.UP, cl.getNode(node).getStatus());
+		assertEquals(UP, cl.getNode(node).getStatus());
 		exc.setNodeStatusCode(0,500);
 		for(int i = 0; i < limit+1;i++){
 			noc.handle(exc);
 		}
-		assertEquals(Node.Status.DOWN, cl.getNode(node).getStatus());
+		assertEquals(DOWN, cl.getNode(node).getStatus());
 
 	}
 
@@ -84,13 +86,13 @@ public class NodeOnlineCheckerTest {
 		Node node = new Node("http://www.predic8.de",80);
 
 		Exchange exc = new Exchange(null);
-		exc.getDestinations().add(0,"http://www.predic8.de:80");
+		exc.getDestinations().addFirst("http://www.predic8.de:80");
 		exc.setNodeStatusCode(0,500);
 
 		LoadBalancingInterceptor lbi = new LoadBalancingInterceptor();
-		Cluster cl = lbi.getClusterManager().getClusters().get(0);
+		Cluster cl = lbi.getClusterManager().getClusters().getFirst();
 		cl.nodeUp(node);
-		assertEquals(Node.Status.UP, cl.getNode(node).getStatus());
+		assertEquals(UP, cl.getNode(node).getStatus());
 
 		NodeOnlineChecker noc = new NodeOnlineChecker();
 		lbi.setNodeOnlineChecker(noc);
@@ -100,15 +102,15 @@ public class NodeOnlineCheckerTest {
 
 		noc.setRetryTimeInSeconds(1);
 
-		assertEquals(Node.Status.UP, cl.getNode(node).getStatus());
+		assertEquals(UP, cl.getNode(node).getStatus());
 		for(int i = 0; i < limit + 1; i++){
 			noc.handle(exc);
 		}
-		assertEquals(Node.Status.DOWN, cl.getNode(node).getStatus());
+		assertEquals(DOWN, cl.getNode(node).getStatus());
 		noc.putNodesBackUp();
-		assertEquals(Node.Status.DOWN, cl.getNode(node).getStatus());
+		assertEquals(DOWN, cl.getNode(node).getStatus());
 		Thread.sleep(noc.getRetryTimeInSeconds()*1000);
 		noc.putNodesBackUp();
-		assertEquals(Node.Status.UP, cl.getNode(node).getStatus());
+		assertEquals(UP, cl.getNode(node).getStatus());
 	}
 }

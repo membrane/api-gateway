@@ -156,15 +156,11 @@ public class Request extends Message {
 	public boolean shouldNotContainBody() {
 		if (methodsWithoutBody.contains(method))
 			return true;
-
 		if (methodsWithOptionalBody.contains(method)) {
 			if (header.hasContentLength())
 				return header.getContentLength() == 0;
-			if (header.getFirstValue(TRANSFER_ENCODING) != null)
-				return false;
-			return true;
-		}
-
+            return header.getFirstValue(TRANSFER_ENCODING) == null;
+        }
 		return false;
 	}
 

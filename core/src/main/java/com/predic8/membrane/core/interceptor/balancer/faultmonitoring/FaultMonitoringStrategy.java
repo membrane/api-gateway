@@ -155,7 +155,7 @@ public class FaultMonitoringStrategy extends AbstractXmlElement implements Dispa
 
 
 	public synchronized Node dispatch(LoadBalancingInterceptor interceptor, AbstractExchange exc) throws EmptyNodeListException {
-		httpClientStatusEventBus.engage(exc);
+		httpClientStatusEventBus.engageInstance(exc);
 
 		//getting a decoupled copy to avoid index out of bounds in case of concurrent modification (dynamic config files reload...)
 		List<Node> endpoints = interceptor.getEndpoints(); //this calls synchronizes access internally.
@@ -164,12 +164,12 @@ public class FaultMonitoringStrategy extends AbstractXmlElement implements Dispa
 			throw new EmptyNodeListException();
 		} else if (endpoints.size()==1) {
 			//there's nothing else we can do.
-			return endpoints.get(0);
+			return endpoints.getFirst();
 		}
 
 		List<Node> endpointsFiltered = filterBySuccessProfile(endpoints);
 
-		if (endpointsFiltered.size() >= 1) {
+		if (!endpointsFiltered.isEmpty()) {
 			double ratio = endpointsFiltered.size() / (double)endpoints.size();
 			if (ratio >= minFlawlessServerRatioForRoundRobin) {
 				//got enough valid nodes. go into simple round-robin strategy
@@ -190,7 +190,7 @@ public class FaultMonitoringStrategy extends AbstractXmlElement implements Dispa
 	private Node returnByChance(List<Node> endpoints) {
 		assert endpoints.size() >= 2;
 
-		double scores[] = new double[endpoints.size()];
+		double[] scores = new double[endpoints.size()];
 		double totalScore = 0;
 		for (int i = 0; i < endpoints.size(); i++) {
 			Node endpoint = endpoints.get(i);

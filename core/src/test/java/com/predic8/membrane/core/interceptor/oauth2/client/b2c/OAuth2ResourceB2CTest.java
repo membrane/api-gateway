@@ -201,8 +201,8 @@ public abstract class OAuth2ResourceB2CTest {
 
         // we assert: session id has changed
         assertNotEquals(
-                getLinesContaining(cookiesBefore, "=true").get(0),
-                getLinesContaining(cookiesAfter, "=true").get(0));
+                getLinesContaining(cookiesBefore, "=true").getFirst(),
+                getLinesContaining(cookiesAfter, "=true").getFirst());
     }
 
     @Test

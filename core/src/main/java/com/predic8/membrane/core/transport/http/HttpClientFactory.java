@@ -32,7 +32,7 @@ import static java.util.Objects.hash;
 public class HttpClientFactory {
     @Nullable
     private final TimerManager timerManager;
-    private WeakHashMap<Config, HttpClient> clients = new WeakHashMap<>();
+    private final WeakHashMap<Config, HttpClient> clients = new WeakHashMap<>();
 
     public HttpClientFactory(@Nullable TimerManager timerManager) {
         this.timerManager = timerManager;
@@ -44,7 +44,9 @@ public class HttpClientFactory {
         if (hc != null)
             return hc;
 
-        return clients.put(config, new HttpClient(hcc, timerManager));
+        hc = new HttpClient(hcc, timerManager);
+        clients.put(config, hc);
+        return hc;
     }
 
     private static class Config {

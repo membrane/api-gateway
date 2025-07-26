@@ -14,28 +14,18 @@
 
 package com.predic8.membrane.core.transport.http2;
 
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Message;
-import com.predic8.membrane.core.http.Request;
-import com.predic8.membrane.core.transport.http.AbstractHttpHandler;
-import com.predic8.membrane.core.transport.http.HttpServerHandler;
-import com.predic8.membrane.core.util.ByteUtil;
-import com.predic8.membrane.core.util.DNSCache;
-import com.predic8.membrane.core.util.EndOfStreamException;
-import com.predic8.membrane.core.util.Util;
-import org.apache.commons.lang3.NotImplementedException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.transport.http.*;
+import com.predic8.membrane.core.util.*;
+import org.apache.commons.lang3.*;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.net.InetAddress;
-import java.net.Socket;
-import java.util.concurrent.ExecutorService;
+import java.io.*;
+import java.net.*;
+import java.util.concurrent.*;
 
 public class Http2ServerHandler extends AbstractHttpHandler {
-    private static final Logger log = LoggerFactory.getLogger(Http2ServerHandler.class.getName());
+
     public static final byte[] PREFACE = new byte[]{0x50, 0x52, 0x49, 0x20, 0x2a, 0x20, 0x48, 0x54, 0x54, 0x50, 0x2f, 0x32, 0x2e,
             0x30, 0x0d, 0x0a, 0x0d, 0x0a, 0x53, 0x4d, 0x0d, 0x0a, 0x0d, 0x0a};
     private static final ExecutorService executor = Util.createNewThreadPool();
