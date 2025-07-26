@@ -236,7 +236,7 @@ public abstract class Message {
 			return;
 		}
 
-		body.write(getHeader().isChunked() ? new ChunkedBodyTransferrer(out) : new PlainBodyTransferrer(out), retainBody);
+		body.write(getHeader().isChunked() ? new ChunkedBodyTransferer(out) : new PlainBodyTransferer(out), retainBody);
 
 		out.flush();
 	}

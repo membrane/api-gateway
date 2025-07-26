@@ -242,6 +242,8 @@ public abstract class AbstractExchange {
 		if (clazz.isInstance(value)) {
 			return clazz.cast(value);
 		}
+		if (value == null)
+			return null;
 		throw new ClassCastException(format("Property with key '%s' is not of type %s", key, clazz.getName()));
 	}
 

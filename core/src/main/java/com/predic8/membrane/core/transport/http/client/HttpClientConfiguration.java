@@ -13,22 +13,18 @@
    limitations under the License. */
 package com.predic8.membrane.core.transport.http.client;
 
-import java.security.InvalidParameterException;
-import java.util.Objects;
+import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.config.security.*;
+import com.predic8.membrane.core.config.spring.*;
+import org.springframework.beans.*;
+import org.springframework.context.*;
 
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCChildElement;
-import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.config.security.SSLParser;
-import com.predic8.membrane.core.config.spring.BaseLocationApplicationContext;
-import org.springframework.beans.BeansException;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.ApplicationContextAware;
+import java.security.*;
+import java.util.*;
 
 @MCElement(name="httpClientConfig")
 public class HttpClientConfiguration implements ApplicationContextAware {
 
-	private int maxRetries = 5;
 	private ConnectionConfiguration connection = new ConnectionConfiguration();
 	private ProxyConfiguration proxy;
 	private AuthenticationConfiguration authentication;
@@ -36,29 +32,9 @@ public class HttpClientConfiguration implements ApplicationContextAware {
 	private String baseLocation;
 	private boolean useExperimentalHttp2;
 
-	@Override
-	public boolean equals(Object o) {
-		if (this == o) return true;
-		if (o == null || getClass() != o.getClass()) return false;
-		HttpClientConfiguration that = (HttpClientConfiguration) o;
-		return maxRetries == that.maxRetries
-				&& useExperimentalHttp2 == that.useExperimentalHttp2
-				&& Objects.equals(connection, that.connection)
-				&& Objects.equals(proxy, that.proxy)
-				&& Objects.equals(authentication, that.authentication)
-				&& Objects.equals(sslParser, that.sslParser)
-				&& Objects.equals(baseLocation, that.baseLocation);
-	}
+	private RetryHandler retryHandler = new RetryHandler();
 
-	@Override
-	public int hashCode() {
-		return Objects.hash(maxRetries,
-				connection,
-				proxy,
-				authentication,
-				sslParser,
-				baseLocation,
-				useExperimentalHttp2);
+	public HttpClientConfiguration() {
 	}
 
 	public ConnectionConfiguration getConnection() {
@@ -91,7 +67,7 @@ public class HttpClientConfiguration implements ApplicationContextAware {
 	}
 
 	public int getMaxRetries() {
-		return maxRetries;
+		return retryHandler.getRetries();
 	}
 
 	/**
@@ -105,7 +81,7 @@ public class HttpClientConfiguration implements ApplicationContextAware {
 	 */
 	@MCAttribute
 	public void setMaxRetries(int maxRetries) {
-		this.maxRetries = maxRetries;
+		this.retryHandler.setRetries(maxRetries);
 	}
 
 	public SSLParser getSslParser() {
@@ -138,5 +114,39 @@ public class HttpClientConfiguration implements ApplicationContextAware {
 	@MCAttribute
 	public void setUseExperimentalHttp2(boolean useExperimentalHttp2) {
 		this.useExperimentalHttp2 = useExperimentalHttp2;
+	}
+
+	public RetryHandler getRetryHandler() {
+		return retryHandler;
+	}
+
+	@MCChildElement
+	public void setRetryHandler(RetryHandler retryHandler) {
+		this.retryHandler = retryHandler;
+	}
+
+	@Override
+	public boolean equals(Object o) {
+		if (this == o) return true;
+		if (o == null || getClass() != o.getClass()) return false;
+		HttpClientConfiguration that = (HttpClientConfiguration) o;
+		return  Objects.equals(retryHandler, that.getRetryHandler())
+			   && useExperimentalHttp2 == that.useExperimentalHttp2
+			   && Objects.equals(connection, that.connection)
+			   && Objects.equals(proxy, that.proxy)
+			   && Objects.equals(authentication, that.authentication)
+			   && Objects.equals(sslParser, that.sslParser)
+			   && Objects.equals(baseLocation, that.baseLocation);
+	}
+
+	@Override
+	public int hashCode() {
+		return Objects.hash(retryHandler.hashCode(),
+				connection,
+				proxy,
+				authentication,
+				sslParser,
+				baseLocation,
+				useExperimentalHttp2);
 	}
 }

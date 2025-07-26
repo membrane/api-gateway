@@ -1,4 +1,4 @@
-/* Copyright 2015 predic8 GmbH, www.predic8.com
+/* Copyright 2025 predic8 GmbH, www.predic8.com
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -12,11 +12,20 @@
    See the License for the specific language governing permissions and
    limitations under the License. */
 
-package com.predic8.membrane.core.transport.http;
+package com.predic8.membrane.core.transport.http.client;
 
-public class HttpClientUtil {
+import com.predic8.membrane.core.exchange.*;
 
-    public static ConnectionManager getConnectionManager(HttpClient hc) {
-        return hc.getConnectionManager();
-    }
+@FunctionalInterface
+public interface RetryableCall {
+
+    /**
+     * Executes the operation for a given retry attempt.
+     *
+     * @param attempt the current attempt count, starting at 0
+     * @return true if successful and no retry is needed
+     * @throws Exception if the call fails (retryable or not)
+     */
+    boolean execute(Exchange exc, String dest, int attempt) throws Exception;
 }
+

@@ -26,13 +26,16 @@ import org.apache.commons.httpclient.methods.*;
 import org.junit.jupiter.api.*;
 
 import java.net.*;
-import java.util.*;
 
 import static com.predic8.membrane.core.http.Header.*;
 import static com.predic8.membrane.core.http.MimeType.*;
+import static com.predic8.membrane.core.interceptor.InterceptorUtil.getInterceptors;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static com.predic8.membrane.core.interceptor.balancer.BalancerUtil.*;
 import static com.predic8.membrane.core.util.NetworkUtil.*;
+import static java.lang.Thread.*;
 import static java.util.Objects.*;
+import static org.apache.commons.httpclient.HttpVersion.*;
 import static org.apache.http.params.HttpProtocolParams.*;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -41,7 +44,7 @@ public class LoadBalancingInterceptorTest {
 	private DummyWebServiceInterceptor mockInterceptor1;
 	private DummyWebServiceInterceptor mockInterceptor2;
 	protected LoadBalancingInterceptor balancingInterceptor;
-	private DispatchingStrategy roundRobinStrategy;
+	private DispatchingStrategy roundRobin;
 	private DispatchingStrategy byThreadStrategy;
 	private DispatchingStrategy priorityStrategy;
 	private HttpRouter service1;
@@ -89,20 +92,19 @@ public class LoadBalancingInterceptorTest {
 		balancingInterceptor.setName("Default");
 		sp3.getInterceptors().add(balancingInterceptor);
 		balancer.getRuleManager().addProxyAndOpenPortIfNew(sp3);
-		enableFailOverOn5XX(balancer);
+		enableFailOverOn5XX();
 		balancer.init();
 
-		BalancerUtil.lookupBalancer(balancer, "Default").up("Default", "localhost", port2k);
-		BalancerUtil.lookupBalancer(balancer, "Default").up("Default", "localhost", port3k);
+		lookupBalancer(balancer, "Default").up("Default", "localhost", port2k);
+		lookupBalancer(balancer, "Default").up("Default", "localhost", port3k);
 
-		roundRobinStrategy = new RoundRobinStrategy();
+		roundRobin = new RoundRobinStrategy();
 		byThreadStrategy = new ByThreadStrategy();
 		priorityStrategy = new PriorityStrategy();
 	}
 
-	private void enableFailOverOn5XX(HttpRouter balancer2) {
-		List<Interceptor> l = balancer.getTransport().getInterceptors();
-		((HTTPClientInterceptor)l.getLast()).setFailOverOn5XX(true);
+	private void enableFailOverOn5XX() {
+		getInterceptors(balancer.getTransport().getInterceptors(),  HTTPClientInterceptor.class).getLast().setFailOverOn5XX(true);
 	}
 
 	@AfterEach
@@ -135,11 +137,11 @@ public class LoadBalancingInterceptorTest {
 	}
 
 	@Test
-	void testRoundRobinDispatchingStrategy() throws Exception {
-		balancingInterceptor.setDispatchingStrategy(roundRobinStrategy);
+	void roundRobinDispatchingStrategy() throws Exception {
+		balancingInterceptor.setDispatchingStrategy(roundRobin);
 
 		HttpClient client = new HttpClient();
-		client.getParams().setParameter(PROTOCOL_VERSION, HttpVersion.HTTP_1_1);
+		client.getParams().setParameter(PROTOCOL_VERSION, HTTP_1_1);
 
 		PostMethod vari = getPostMethod();
 		int status = client.executeMethod(vari);
@@ -169,7 +171,7 @@ public class LoadBalancingInterceptorTest {
 
 	@Test
 	void testExpect100Continue() throws Exception {
-		balancingInterceptor.setDispatchingStrategy(roundRobinStrategy);
+		balancingInterceptor.setDispatchingStrategy(roundRobin);
 
 		HttpClient client = new HttpClient();
 		Http11Test.initExpect100ContinueWithFastFail(client);
@@ -206,12 +208,11 @@ public class LoadBalancingInterceptorTest {
 	}
 
 	@Test
-	void testFailOverOnConnectionRefused() throws Exception {
-		balancingInterceptor.setDispatchingStrategy(roundRobinStrategy);
+	void failOverOnConnectionRefused() throws Exception {
+		balancingInterceptor.setDispatchingStrategy(roundRobin);
 
 		HttpClient client = new HttpClient();
-		client.getParams().setParameter(PROTOCOL_VERSION,
-				HttpVersion.HTTP_1_1);
+		client.getParams().setParameter(PROTOCOL_VERSION, HTTP_1_1);
 
 		assertEquals(200, client.executeMethod(getPostMethod()));
 		assertEquals(1, mockInterceptor1.getCount());
@@ -222,7 +223,7 @@ public class LoadBalancingInterceptorTest {
 		assertEquals(1, mockInterceptor2.getCount());
 
 		service1.shutdown();
-		Thread.sleep(1000);
+		sleep(1000);
 
 		assertEquals(200, client.executeMethod(getPostMethod()));
 		assertEquals(1, mockInterceptor1.getCount());
@@ -235,11 +236,11 @@ public class LoadBalancingInterceptorTest {
 
 	@Test
 	void testFailOverOnStatus500() throws Exception {
-		balancingInterceptor.setDispatchingStrategy(roundRobinStrategy);
+		balancingInterceptor.setDispatchingStrategy(roundRobin);
 
 		HttpClient client = new HttpClient();
 		client.getParams().setParameter(PROTOCOL_VERSION,
-				HttpVersion.HTTP_1_1);
+				HTTP_1_1);
 
 		assertEquals(200, client.executeMethod(getPostMethod()));
 		assertEquals(1, mockInterceptor1.getCount());
