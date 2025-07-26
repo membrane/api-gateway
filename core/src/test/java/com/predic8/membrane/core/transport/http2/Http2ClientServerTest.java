@@ -166,7 +166,7 @@ public class Http2ClientServerTest {
         }
 
         for (int i = 0; i < 2; i++) {
-            assertNotNull(e[i].getProperty(Http2ProtocolHandler.HTTP2));
+            assertNotNull(e[i].getProperty(Http2ProtocolHandler.HTTP2_PROTOCOL));
 
             Response r = e[i].getResponse();
             assertEquals(200, r.getStatusCode());
@@ -190,7 +190,7 @@ public class Http2ClientServerTest {
         Exchange e = new Request.Builder().get("https://localhost:3049").buildExchange();
         hc.call(e);
 
-        assertNotNull(e.getProperty(Http2ProtocolHandler.HTTP2));
+        assertNotNull(e.getProperty(Http2ProtocolHandler.HTTP2_PROTOCOL));
 
         return e.getResponse();
     }
@@ -217,7 +217,7 @@ public class Http2ClientServerTest {
         Exchange e = b.buildExchange();
         hc.call(e);
 
-        assertNotNull(e.getProperty(Http2ProtocolHandler.HTTP2));
+        assertNotNull(e.getProperty(Http2ProtocolHandler.HTTP2_PROTOCOL));
 
         return e.getResponse();
     }

@@ -21,19 +21,20 @@ import com.predic8.membrane.core.transport.http.client.*;
 
 import java.util.*;
 
-import static java.util.Arrays.asList;
+import static com.predic8.membrane.core.transport.http.client.protocol.Http2ProtocolHandler.HTTP2_PROTOCOL;
 
 public class ProtocolHandlerFactory {
+
+    // List is faster than Map with a small number of entries
     private final List<ProtocolHandler> handlers;
+
     private final Http1ProtocolHandler defaultHandler;
 
-    public ProtocolHandlerFactory(HttpClientConfiguration configuration, ConnectionFactory connectionFactory) {
-        this.defaultHandler = new Http1ProtocolHandler(configuration);
-        this.handlers = asList(
-                new Http2ProtocolHandler(configuration,connectionFactory),
-                new WebSocketProtocolHandler(),
-                new TcpProtocolHandler()
-        );
+    public ProtocolHandlerFactory(HttpClientConfiguration hcc, ConnectionFactory cf) {
+        this.defaultHandler = new Http1ProtocolHandler(hcc,cf);
+        this.handlers = List.of(new Http2ProtocolHandler(hcc, cf),
+                new WebSocketProtocolHandler(hcc,cf),
+                new TcpProtocolHandler(hcc,cf));
     }
 
     public ProtocolHandler getHandler(Exchange exchange, String protocol) throws ProtocolUpgradeDeniedException {
@@ -55,7 +56,7 @@ public class ProtocolHandlerFactory {
     public ProtocolHandler getHandlerForConnection(Exchange exchange, OutgoingConnectionType connectionType)
             throws ProtocolUpgradeDeniedException {
         if (connectionType.usingHttp2()) {
-            return getHandler(exchange, "h2");
+            return getHandler(exchange, HTTP2_PROTOCOL);
         }
         return getHandler(exchange, null);
     }

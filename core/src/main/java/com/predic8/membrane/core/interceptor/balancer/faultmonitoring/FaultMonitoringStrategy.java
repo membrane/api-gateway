@@ -155,7 +155,7 @@ public class FaultMonitoringStrategy extends AbstractXmlElement implements Dispa
 
 
 	public synchronized Node dispatch(LoadBalancingInterceptor interceptor, AbstractExchange exc) throws EmptyNodeListException {
-		exc.setProperty(HttpClientStatusEventBus.EXCHANGE_PROPERTY_NAME, httpClientStatusEventBus);
+		httpClientStatusEventBus.engage(exc);
 
 		//getting a decoupled copy to avoid index out of bounds in case of concurrent modification (dynamic config files reload...)
 		List<Node> endpoints = interceptor.getEndpoints(); //this calls synchronizes access internally.

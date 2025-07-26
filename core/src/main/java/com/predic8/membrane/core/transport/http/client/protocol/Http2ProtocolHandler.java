@@ -24,27 +24,22 @@ import static com.predic8.membrane.core.exchange.Exchange.*;
 import static com.predic8.membrane.core.http.Header.*;
 import static java.lang.Boolean.*;
 
-public class Http2ProtocolHandler implements ProtocolHandler {
+public class Http2ProtocolHandler extends AbstractProtocolHandler {
 
     private static final Logger log = LoggerFactory.getLogger(Http2ProtocolHandler.class);
 
-    public static final String HTTP2 = "h2";
-
-    public static final String HTTP2_CLEAR = "h2c";
+    public static final String HTTP2_PROTOCOL = "h2";
+    public static final String HTTP2_CLEAR_PROTOCOL = "h2c";
 
     private static volatile boolean infoOnHttp2Downgrade = true;
 
-    private final HttpClientConfiguration configuration;
-    private final ConnectionFactory connectionFactory;
-
     public Http2ProtocolHandler(HttpClientConfiguration configuration, ConnectionFactory connectionFactory) {
-        this.configuration = configuration;
-        this.connectionFactory = connectionFactory;
+        super(configuration,connectionFactory);
     }
 
     @Override
     public boolean canHandle(Exchange exchange, String protocol) {
-        return HTTP2_CLEAR.equals(protocol) || HTTP2.equals(protocol);
+        return HTTP2_CLEAR_PROTOCOL.equals(protocol) || HTTP2_PROTOCOL.equals(protocol);
     }
 
     @Override
@@ -63,7 +58,7 @@ public class Http2ProtocolHandler implements ProtocolHandler {
                     h2c);
         }
         exchange.setResponse(h2c.doCall(exchange));
-        exchange.setProperty(HTTP2, true);
+        exchange.setProperty(HTTP2_PROTOCOL, true);
         return exchange;
     }
 
@@ -77,7 +72,7 @@ public class Http2ProtocolHandler implements ProtocolHandler {
             // note that this has been deprecated by RFC9113 superseeding RFC7540, and therefore should not happen.
             return;
         }
-        if (!isH2CUpgradeRequest(exc)) {
+        if (!isUpgradeRequest(exc, HTTP2_CLEAR_PROTOCOL)) {
             return;
         }
         // RFC750 section 3.2 specifies that servers not supporting this can respond "as though the Upgrade header
@@ -90,10 +85,5 @@ public class Http2ProtocolHandler implements ProtocolHandler {
         exc.getRequest().getHeader().removeFields(UPGRADE);
         exc.getRequest().getHeader().removeFields(HTTP2_SETTINGS);
         exc.getRequest().getHeader().keepOnly(CONNECTION, value -> !value.equalsIgnoreCase(UPGRADE) && !value.equalsIgnoreCase(HTTP2_SETTINGS));
-    }
-
-    private static boolean isH2CUpgradeRequest(Exchange exchange) {
-        String upgrade = exchange.getRequest().getHeader().getFirstValue(UPGRADE);
-        return upgrade != null && upgrade.equalsIgnoreCase(HTTP2_CLEAR);
     }
 }

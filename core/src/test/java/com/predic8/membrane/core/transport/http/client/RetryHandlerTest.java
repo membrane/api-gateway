@@ -17,17 +17,20 @@ package com.predic8.membrane.core.transport.http.client;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.transport.http.*;
+import org.jetbrains.annotations.*;
 import org.junit.jupiter.api.*;
+import org.slf4j.*;
 
 import java.net.*;
 import java.util.*;
 
 import static com.predic8.membrane.core.http.Request.*;
 import static com.predic8.membrane.core.http.Response.*;
-import static com.predic8.membrane.core.transport.http.HttpClientStatusEventBus.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 class RetryHandlerTest {
+
+    private static final Logger log = LoggerFactory.getLogger(RetryHandlerTest.class);
 
     RetryHandler rh;
 
@@ -58,19 +61,32 @@ class RetryHandlerTest {
 
     @Test
     void success() throws Exception {
+
         RetryableExchangeCallMock mock = new RetryableExchangeCallMock(true);
-        rh.executeWithRetries(get("/foo").buildExchange(), false, mock);
+        Exchange exc = get("/foo").buildExchange();
+
+        HttpClientStatusEventListenerMock listener = registerHttpClientStatusEventBus(exc);
+
+        rh.executeWithRetries(exc, false, mock);
         assertEquals(1, mock.attempts);
+
+        assertEquals(200, listener.statusCodes.get("/foo"));
     }
 
     @Nested
     class ExceptionIsThrown {
 
         @Test
-        void socketExceptionGet() {
-            RetryableExchangeCallMock mock = new RetryableExchangeCallMock(new SocketException("Not today!"));
-            assertThrows(SocketException.class, () -> rh.executeWithRetries(get("/foo").buildExchange(), false, mock));
+        void socketExceptionGet() throws Exception {
+            SocketException exception = new SocketException("Not today!");
+            RetryableExchangeCallMock mock = new RetryableExchangeCallMock(exception);
+            Exchange exc = get("/foo").buildExchange();
+            HttpClientStatusEventListenerMock listener = registerHttpClientStatusEventBus(exc);
+
+            assertThrows(SocketException.class, () -> rh.executeWithRetries(exc, false, mock));
             assertEquals(3, mock.attempts);
+
+            assertEquals(exception, listener.exceptions.get("/foo"));
         }
 
         @Test
@@ -119,13 +135,21 @@ class RetryHandlerTest {
         RetryableExchangeCallMock mock = new RetryableExchangeCallMock(200);
         Exchange exc = get("/foo").buildExchange();
         HttpClientStatusEventBus bus = new HttpClientStatusEventBus();
-        exc.getProperties().put(EXCHANGE_PROPERTY_NAME, bus);
+        bus.engage(exc);
         List<String> destinations = List.of("http://node1.example.com/");
         exc.setDestinations(destinations);
         rh.executeWithRetries(exc, false, mock);
 
         // TODO Mock bus and see if called
 
+    }
+
+    private @NotNull HttpClientStatusEventListenerMock registerHttpClientStatusEventBus(Exchange exc) {
+        HttpClientStatusEventListenerMock listenerMock = new HttpClientStatusEventListenerMock();
+        HttpClientStatusEventBus.engage(exc);
+        HttpClientStatusEventBus bus = HttpClientStatusEventBus.getHttpClientStatusEventBus(exc);
+        bus.registerListener(listenerMock);
+        return listenerMock;
     }
 
     static class RetryableExchangeCallMock implements RetryableCall {
@@ -169,6 +193,24 @@ class RetryHandlerTest {
 
             exc.setResponse(ok().build());
             return false;
+        }
+    }
+
+    class HttpClientStatusEventListenerMock implements HttpClientStatusEventListener {
+
+        Map<String,Integer> statusCodes = new HashMap<>();
+        Map<String,Exception> exceptions = new HashMap<>();
+
+        @Override
+        public void onResponse(long timestamp, String destination, int responseCode) {
+            log.info("onResponse");
+            statusCodes.put(destination, responseCode);
+        }
+
+        @Override
+        public void onException(long timestamp, String destination, Exception exception) {
+            log.info("onException");
+            exceptions.put(destination, exception);
         }
     }
 }

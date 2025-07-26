@@ -23,7 +23,6 @@ import java.io.*;
 import java.net.*;
 import java.nio.*;
 
-import static com.predic8.membrane.core.exchange.Exchange.*;
 import static com.predic8.membrane.core.http.Request.*;
 import static java.lang.Thread.*;
 import static java.nio.charset.StandardCharsets.*;
@@ -49,12 +48,6 @@ public class RetryHandler {
      *
      */
     private double backoffMultiplier = 2;
-
-    /**
-     * Needed for MC configuration
-     */
-    public RetryHandler() {
-    }
 
     public Exchange executeWithRetries(Exchange exc, boolean failOverOn5XX, RetryableCall call) throws Exception {
 
@@ -82,16 +75,12 @@ public class RetryHandler {
                 }
 
                 log.debug("Retryable failure on attempt #{} to {}: {}", attempt, dest, e.getMessage());
-                exc.setNodeException(attempt, e);
+                exc.trackNodeException(attempt, e);
 
             } finally {
-
-                if (trackNodeStatus(exc)) {
-                    if (exceptionInLastCall != null) {
-                        exc.setNodeException(attempt, exceptionInLastCall);
-                    }
+                if (exceptionInLastCall != null) {
+                    exc.trackNodeException(attempt, exceptionInLastCall);
                 }
-
             }
             delayBetweenCalls(exc, currentDelay *= backoffMultiplier);
         }
@@ -145,7 +134,7 @@ public class RetryHandler {
                 log.debug("Connection to {} was reset externally.", dest);
             } else {
                 logException(exc, attempt, e);
-                log.info("",e); // Unknown condition => log stacktrace
+                log.info("", e); // Unknown condition => log stacktrace
             }
             return mayChangeServerStatus(exc);
         }
@@ -163,7 +152,7 @@ public class RetryHandler {
         }
         log.info("Error while attempting to forward request to {}. Reason: {}", dest, e.getMessage());
         logException(exc, attempt, e);
-        log.info("",e); // Unknown condition => log stacktrace
+        log.info("", e); // Unknown condition => log stacktrace
         return mayChangeServerStatus(exc); // If not sure, do not retry for non idempotent methods
     }
 
@@ -208,10 +197,6 @@ public class RetryHandler {
             log.debug("Waiting {} ms before next try", delay);
             sleep((long) delay);
         }
-    }
-
-    private static boolean trackNodeStatus(Exchange exc) {
-        return Boolean.TRUE.equals(exc.getProperty(TRACK_NODE_STATUS));
     }
 
     /**

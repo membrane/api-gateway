@@ -20,6 +20,8 @@ import javax.annotation.Nullable;
 import java.util.Objects;
 import java.util.WeakHashMap;
 
+import static java.util.Objects.hash;
+
 /**
  * Sharing the HttpClient instances has two benefits:
  * <ul>
@@ -30,22 +32,19 @@ import java.util.WeakHashMap;
 public class HttpClientFactory {
     @Nullable
     private final TimerManager timerManager;
-    private WeakHashMap<Config, HttpClient> clients;
+    private WeakHashMap<Config, HttpClient> clients = new WeakHashMap<>();
 
     public HttpClientFactory(@Nullable TimerManager timerManager) {
         this.timerManager = timerManager;
     }
 
-    public synchronized HttpClient createClient(@Nullable HttpClientConfiguration httpClientConfiguration) {
-        if (clients == null)
-            clients = new WeakHashMap<>();
-        Config config = new Config(httpClientConfiguration, timerManager);
+    public synchronized HttpClient createClient(@Nullable HttpClientConfiguration hcc) {
+        Config config = new Config(hcc, timerManager);
         HttpClient hc = clients.get(config);
-        if (hc == null) {
-            hc = new HttpClient(httpClientConfiguration, timerManager);
-            clients.put(config, hc);
-        }
-        return hc;
+        if (hc != null)
+            return hc;
+
+        return clients.put(config, new HttpClient(hcc, timerManager));
     }
 
     private static class Config {
@@ -63,13 +62,12 @@ public class HttpClientFactory {
             if (o == null || getClass() != o.getClass()) return false;
             Config config = (Config) o;
             return Objects.equals(httpClientConfiguration, config.httpClientConfiguration)
-                    && Objects.equals(timerManager, config.timerManager);
+                   && Objects.equals(timerManager, config.timerManager);
         }
 
         @Override
         public int hashCode() {
-            return Objects.hash(httpClientConfiguration,
-                    timerManager);
+            return hash(httpClientConfiguration, timerManager);
         }
     }
 }

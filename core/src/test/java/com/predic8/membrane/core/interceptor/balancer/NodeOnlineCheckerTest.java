@@ -29,7 +29,7 @@ public class NodeOnlineCheckerTest {
 
 		Exchange exc = new Exchange(null);
 		exc.getDestinations().add(0,"http://www.predic8.de:80");
-		exc.setNodeException(0, new Exception());
+		exc.trackNodeException(0, new Exception());
 
 		LoadBalancingInterceptor lbi = new LoadBalancingInterceptor();
 		Cluster cl = lbi.getClusterManager().getClusters().get(0);

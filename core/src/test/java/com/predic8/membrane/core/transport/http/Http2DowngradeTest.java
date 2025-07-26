@@ -60,7 +60,7 @@ public class Http2DowngradeTest {
         try (HttpClient hc = new HttpClient()) {
             var exc = hc.call(get("http://localhost:3064/")
                     .header(CONNECTION, "Upgrade, HTTP2-Settings")
-                    .header(UPGRADE, HTTP2_CLEAR)
+                    .header(UPGRADE, HTTP2_CLEAR_PROTOCOL)
                     .header("HTTP2-Settings", "AAEAAEAAAAIAAAABAAMAAABkAAQBAAAAAAUAAEAA")
                     .header("X-A", "B")
                     .buildExchange());

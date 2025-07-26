@@ -38,7 +38,7 @@ public class HttpClientStatusEventBus {
 
     static final Logger log = LoggerFactory.getLogger(HttpClientStatusEventBus.class.getName());
 
-    public static final String EXCHANGE_PROPERTY_NAME = "HttpClientStatusEventBus";
+    private static final String EXCHANGE_PROPERTY_NAME = "HttpClientStatusEventBus";
 
     /**
      * Using the CopyOnWriteArrayList list is appropriate. Modifications are only expected initially, from then on
@@ -46,7 +46,15 @@ public class HttpClientStatusEventBus {
      */
     private final List<HttpClientStatusEventListener> listeners = new CopyOnWriteArrayList<>();
 
-    public HttpClientStatusEventBus() {
+    public void engageInstance(AbstractExchange exchange) {
+        exchange.setProperty(EXCHANGE_PROPERTY_NAME, this);
+    }
+
+    public static void engage(AbstractExchange exchange) {
+        HttpClientStatusEventBus eventBus = exchange.getProperty(EXCHANGE_PROPERTY_NAME, HttpClientStatusEventBus.class);
+        if (eventBus == null) {
+            exchange.setProperty(EXCHANGE_PROPERTY_NAME, new HttpClientStatusEventBus());
+        }
     }
 
     /**

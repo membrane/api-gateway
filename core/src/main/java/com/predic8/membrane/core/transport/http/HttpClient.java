@@ -43,10 +43,9 @@ public class HttpClient implements AutoCloseable {
 
     private final HttpClientConfiguration configuration;
     private final ConnectionFactory connectionFactory;
+    private final ProtocolHandlerFactory protocolHandlerFactory;
 
     private StreamPump.StreamPumpStats streamPumpStats;
-
-    private final ProtocolHandlerFactory protocolHandlerFactory;
 
     public HttpClient() {
         this(null, null);
@@ -88,9 +87,7 @@ public class HttpClient implements AutoCloseable {
                     configuration.getProxy().getCredentials());
         }
 
-        ProtocolHandler handler = protocolHandlerFactory.getHandlerForConnection(exc, outConType);
-
-        handler.handle(exc, outConType, target);
+        protocolHandlerFactory.getHandlerForConnection(exc, outConType).handle(exc, outConType, target);
 
         if (trackNodeStatus(exc)) {
             exc.setNodeStatusCode(counter, exc.getResponse().getStatusCode());
@@ -147,7 +144,6 @@ public class HttpClient implements AutoCloseable {
             req.setUri(dest);
             return;
         }
-
         if (!dest.startsWith("http")) {
             throw new MalformedURLException("""
                     The exchange's destination URI %s does not start with 'http'. Specify a <target> within the API configuration or make sure the exchanges destinations list contains a valid URI.

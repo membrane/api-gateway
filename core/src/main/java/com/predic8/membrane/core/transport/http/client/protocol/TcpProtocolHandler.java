@@ -16,28 +16,31 @@ package com.predic8.membrane.core.transport.http.client.protocol;
 
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.transport.http.*;
+import com.predic8.membrane.core.transport.http.ConnectionFactory.*;
+import com.predic8.membrane.core.transport.http.client.*;
 
 import static com.predic8.membrane.core.exchange.Exchange.*;
 import static java.lang.Boolean.*;
 
-public class TcpProtocolHandler implements ProtocolHandler {
+public class TcpProtocolHandler extends AbstractProtocolHandler {
 
     public static final String TCP = "tcp";
 
-    @Override
-    public boolean canHandle(Exchange exchange, String protocol) {
-        return isTcpProtocolUpgradeAllowed(exchange, protocol);
+    public TcpProtocolHandler(HttpClientConfiguration configuration, ConnectionFactory connectionFactory) {
+        super(configuration, connectionFactory);
     }
 
     @Override
-    public Exchange handle(Exchange exchange, ConnectionFactory.OutgoingConnectionType connectionType, HostColonPort target) throws Exception {
+    public boolean canHandle(Exchange exchange, String protocol) {
+        if (protocol == null) {
+            return false;
+        }
+        return protocol.equalsIgnoreCase(TCP) && exchange.getProperty(ALLOW_TCP) == TRUE;
+    }
+
+    @Override
+    public Exchange handle(Exchange exchange, OutgoingConnectionType connectionType, HostColonPort target) throws Exception {
         return null;
     }
 
-    public static boolean isTcpProtocolUpgradeAllowed(Exchange exc, String upgradeProtocol) {
-        if (upgradeProtocol == null) {
-            return false;
-        }
-        return upgradeProtocol.equalsIgnoreCase(TCP) && exc.getProperty(ALLOW_TCP) == TRUE;
-    }
 }

@@ -200,7 +200,7 @@ public class Request extends Message {
 		for (HeaderField hf : header.getAllHeaderFields())
 			out.write((hf.getHeaderName().toString() + ":" + hf.getValue() + "\n").getBytes(StandardCharsets.UTF_8));
 		out.write(10);
-		body.write(new PlainBodyTransferrer(out), retainBody);
+		body.write(new PlainBodyTransferer(out), retainBody);
 	}
 
 	public static Builder get(String url) throws URISyntaxException {

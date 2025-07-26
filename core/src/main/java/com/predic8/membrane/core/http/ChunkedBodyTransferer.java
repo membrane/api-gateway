@@ -13,27 +13,48 @@
    limitations under the License. */
 package com.predic8.membrane.core.http;
 
-import java.io.IOException;
-import java.io.OutputStream;
+import com.predic8.membrane.core.*;
 
-public class PlainBodyTransferrer extends AbstractBodyTransferrer {
+import java.io.*;
+
+import static java.nio.charset.StandardCharsets.*;
+
+public class ChunkedBodyTransferer extends AbstractBodyTransferrer {
 	final OutputStream out;
 
-	public PlainBodyTransferrer(OutputStream out) {
+	public ChunkedBodyTransferer(OutputStream out) {
 		this.out = out;
 	}
 
 	@Override
 	public void write(byte[] content, int i, int length) throws IOException {
+		writeChunkSize(out, length);
 		out.write(content, i, length);
+		out.write(Constants.CRLF_BYTES);
+		out.flush();
 	}
 
 	@Override
 	public void write(Chunk chunk) throws IOException {
-		out.write(chunk.content());
+		chunk.write(out);
 	}
 
 	@Override
 	public void finish(Header header) throws IOException {
+		out.write(ZERO);
+		out.write(Constants.CRLF_BYTES);
+		if (header != null) {
+			header.write(out);
+		}
+		out.write(Constants.CRLF_BYTES);
 	}
+
+
+	protected static final byte[] ZERO = "0".getBytes(UTF_8);
+
+	protected static void writeChunkSize(OutputStream out, int chunkSize) throws IOException {
+		out.write(Integer.toHexString(chunkSize).getBytes(UTF_8));
+		out.write(Constants.CRLF_BYTES);
+	}
+
 }

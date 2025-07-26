@@ -19,21 +19,14 @@ import com.predic8.membrane.core.transport.http.*;
 
 public interface ProtocolHandler {
 
-    String UPGRADED_PROTOCOL = "UPGRADED_PROTOCOL";
+    boolean canHandle(Exchange exchange, String protocol) throws ProtocolUpgradeDeniedException;
 
-    default boolean canHandle(Exchange exchange, String protocol) throws ProtocolUpgradeDeniedException {
-        throw new ProtocolUpgradeDeniedException(protocol);
-    }
-
+    // Why return Exchange?
     Exchange handle(Exchange exchange, ConnectionFactory.OutgoingConnectionType connectionType, HostColonPort target) throws Exception;
 
-    default void checkUpgradeRequest(Exchange exchange) throws ProtocolUpgradeDeniedException {
-    }
+    void checkUpgradeRequest(Exchange exchange) throws ProtocolUpgradeDeniedException;
 
-    default void checkUpgradeResponse(Exchange exchange) {
-    }
+    void checkUpgradeResponse(Exchange exchange);
 
-    default void cleanup(Exchange exchange) {
-
-    }
+    void cleanup(Exchange exchange);
 }

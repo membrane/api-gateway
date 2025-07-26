@@ -16,17 +16,25 @@ package com.predic8.membrane.core.transport.http.client.protocol;
 
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.transport.http.*;
+import com.predic8.membrane.core.transport.http.client.*;
 
 import static com.predic8.membrane.core.exchange.Exchange.*;
 import static java.lang.Boolean.*;
 
-public class WebSocketProtocolHandler  implements ProtocolHandler {
+public class WebSocketProtocolHandler extends AbstractProtocolHandler {
 
     public static final String WEBSOCKET = "websocket";
 
+    public WebSocketProtocolHandler(HttpClientConfiguration hcc, ConnectionFactory cf) {
+        super(hcc, cf);
+    }
+
     @Override
     public boolean canHandle(Exchange exchange, String protocol) {
-        return isWebsocketProtocolUpgradeAllowed(exchange, protocol);
+        if (protocol == null) {
+            return false;
+        }
+        return protocol.equalsIgnoreCase(WEBSOCKET) && exchange.getProperty(ALLOW_WEBSOCKET) == TRUE;
     }
 
     @Override
@@ -40,15 +48,8 @@ public class WebSocketProtocolHandler  implements ProtocolHandler {
     public void checkUpgradeRequest(Exchange exchange) throws ProtocolUpgradeDeniedException {
         String protocol = exchange.getRequest().getHeader().getUpgradeProtocol();
         if (WEBSOCKET.equalsIgnoreCase(protocol) &&
-            !isWebsocketProtocolUpgradeAllowed(exchange, protocol)) {
+            !canHandle(exchange, protocol)) {
             throw new ProtocolUpgradeDeniedException(protocol);
         }
-    }
-
-    public static boolean isWebsocketProtocolUpgradeAllowed(Exchange exc, String upgradeProtocol) {
-        if (upgradeProtocol == null) {
-            return false;
-        }
-        return upgradeProtocol.equalsIgnoreCase(WEBSOCKET) && exc.getProperty(ALLOW_WEBSOCKET) == TRUE;
     }
 }

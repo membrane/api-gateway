@@ -20,6 +20,7 @@ import com.predic8.membrane.core.transport.http.*;
 import com.predic8.membrane.core.transport.http.ConnectionFactory.*;
 import com.predic8.membrane.core.transport.http.client.*;
 import com.predic8.membrane.core.util.*;
+import org.jetbrains.annotations.*;
 import org.slf4j.Logger;
 import org.slf4j.*;
 
@@ -35,55 +36,43 @@ import static com.predic8.membrane.core.transport.http.client.protocol.WebSocket
 import static java.lang.Boolean.*;
 import static java.lang.System.*;
 
-public class Http1ProtocolHandler implements ProtocolHandler {
+public class Http1ProtocolHandler extends AbstractProtocolHandler {
 
     private static final Logger log = LoggerFactory.getLogger(Http1ProtocolHandler.class.getName());
 
-    private final HttpClientConfiguration configuration;
+    ResponseReader responseReader = (ext, ct) -> fromStream(ct.con().in, !ext.getRequest().isHEADRequest());
 
-    public Http1ProtocolHandler(HttpClientConfiguration configuration) {
-        this.configuration = configuration;
+    public Http1ProtocolHandler(HttpClientConfiguration hcc, ConnectionFactory cf) {
+        super(hcc, cf);
     }
 
     @Override
-    public Exchange handle(Exchange exchange, OutgoingConnectionType connectionType, HostColonPort target) throws Exception {
-        Connection con = connectionType.con();
+    public Exchange handle(Exchange exchange, OutgoingConnectionType ct, HostColonPort target) throws Exception {
 
-        if (exchange.getRequest().isCONNECTRequest()) {
-            if (configuration.getProxy() != null) {
-                exchange.getRequest().write(con.out, configuration.getMaxRetries() > 1);
-                Response response = fromStream(con.in, false);
-                log.debug("Status code response? on CONNECT request: {}", response.getStatusCode());
-            }
-            exchange.getRequest().setUri(NOT_APPLICABLE);
-            exchange.setResponse(ok().build());
-            exchange.setProperty(UPGRADED_PROTOCOL, METHOD_CONNECT);
-            return exchange;
-        }
+        // 100 - Continue
+        var connectExchange = answerConnectRequest(exchange, ct);
+        if (connectExchange != null) return connectExchange;
 
         // TODO only for HTTP1 ?
-        con.socket.setSoTimeout(configuration.getConnection().getSoTimeout());
+        ct.con().socket.setSoTimeout(configuration.getConnection().getSoTimeout());
 
-        exchange.getRequest().write(con.out, configuration.getMaxRetries() > 1);
+        exchange.getRequest().write(ct.con().out, configuration.getMaxRetries() > 1);
 
         // TODO only for HTTP1 ?
         exchange.setTimeReqSent(currentTimeMillis());
 
-        if (exchange.getRequest().isHTTP10()) {
-            shutDownRequestInputOutput(exchange, con);
-        }
+        http10ShutDown(exchange, ct.con());
 
-        var response = fromStream(con.in, !exchange.getRequest().isHEADRequest());
+        exchange.setResponse(responseReader.read(exchange, ct));
 
-        if (response.getStatusCode() == 100) {
-            do100ExpectedHandling(exchange, response, con);
-        }
+        // 100 - Continue
+        handle100Expected(exchange, ct.con());
 
+        // Only HTTP 1?
         exchange.setReceived();
         exchange.setTimeResReceived(currentTimeMillis());
 
-        exchange.setResponse(response);
-
+        // Only HTTP 1?
         checkUpgradeResponse(exchange);
 
         return exchange;
@@ -91,16 +80,21 @@ public class Http1ProtocolHandler implements ProtocolHandler {
 
     @Override
     public void checkUpgradeResponse(Exchange exchange) {
-
         if (isUpgradeToResponse(exchange.getResponse(), WEBSOCKET) &&
             exchange.getProperty(ALLOW_WEBSOCKET) == TRUE) {
-            exchange.setProperty(UPGRADED_PROTOCOL, "WebSocket"); // TODO casing, constant
+            exchange.setProperty(UPGRADED_PROTOCOL, WEBSOCKET);
             return;
         }
         if (isUpgradeToResponse(exchange.getResponse(), TCP) &&
             exchange.getProperty(ALLOW_TCP) == TRUE) {
-            exchange.setProperty(UPGRADED_PROTOCOL, "TCP"); // TODO casing, constant
+            exchange.setProperty(UPGRADED_PROTOCOL, TCP);
         }
+    }
+
+    private boolean isUpgradeToResponse(Response res, String protocol) {
+        return res.getStatusCode() == 101 &&
+               UPGRADE.equalsIgnoreCase(res.getHeader().getFirstValue(CONNECTION)) &&
+               protocol.equalsIgnoreCase(res.getHeader().getFirstValue(UPGRADE));
     }
 
     @Override
@@ -115,7 +109,6 @@ public class Http1ProtocolHandler implements ProtocolHandler {
         applyKeepAliveHeader(exchange.getResponse(), tc);
         exchange.getResponse().addObserver(tc);
         tc.setExchange(exchange);
-
     }
 
     private void applyKeepAliveHeader(Response response, Connection con) {
@@ -132,20 +125,40 @@ public class Http1ProtocolHandler implements ProtocolHandler {
             con.setMaxExchanges((int) max);
     }
 
-    private boolean isUpgradeToResponse(Response res, String protocol) {
-        return res.getStatusCode() == 101 &&
-               "upgrade".equalsIgnoreCase(res.getHeader().getFirstValue(CONNECTION)) &&
-               protocol.equalsIgnoreCase(res.getHeader().getFirstValue(UPGRADE));
+    private void http10ShutDown(Exchange exchange, Connection connection) throws IOException {
+        if (!exchange.getRequest().isHTTP10())
+            return;
+        exchange.getHandler().shutdownInput();
+        Util.shutdownOutput(connection.socket);
     }
 
-    private void shutDownRequestInputOutput(Exchange exc, Connection con) throws IOException {
-        exc.getHandler().shutdownInput();
-        Util.shutdownOutput(con.socket);
+    // 100 - Connect
+
+    private void handle100Expected(Exchange exchange, Connection c) throws IOException, EndOfStreamException {
+        Response response = exchange.getResponse();
+        if (response.getStatusCode() != 100)
+            return;
+        exchange.getRequest().getBody().write(getBodyTransferer(exchange, c), configuration.getMaxRetries() > 1);
+        c.out.flush();
+        response.read(c.in, !exchange.getRequest().isHEADRequest());
     }
 
-    private void do100ExpectedHandling(Exchange exc, Response response, Connection con) throws IOException, EndOfStreamException {
-        exc.getRequest().getBody().write(exc.getRequest().getHeader().isChunked() ? new ChunkedBodyTransferrer(con.out) : new PlainBodyTransferrer(con.out), configuration.getMaxRetries() > 1);
-        con.out.flush();
-        response.read(con.in, !exc.getRequest().isHEADRequest());
+    private static @NotNull AbstractBodyTransferrer getBodyTransferer(Exchange exchange, Connection c) {
+        return exchange.getRequest().getHeader().isChunked() ? new ChunkedBodyTransferer(c.out) : new PlainBodyTransferer(c.out);
+    }
+
+    private @Nullable Exchange answerConnectRequest(Exchange exchange, OutgoingConnectionType ct) throws IOException, EndOfStreamException {
+        if (!exchange.getRequest().isCONNECTRequest())
+            return null;
+
+        if (configuration.getProxy() != null) {
+            exchange.getRequest().write(ct.con().out, configuration.getMaxRetries() > 1);
+            Response response = fromStream(ct.con().in, false);
+            log.debug("Status code response? on CONNECT request: {}", response.getStatusCode());
+        }
+        exchange.getRequest().setUri(NOT_APPLICABLE); // TODO Why?
+        exchange.setResponse(ok().build());
+        exchange.setProperty(UPGRADED_PROTOCOL, METHOD_CONNECT);
+        return exchange;
     }
 }
