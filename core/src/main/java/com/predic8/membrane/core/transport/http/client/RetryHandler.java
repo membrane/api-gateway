@@ -24,6 +24,8 @@ import java.net.*;
 import java.nio.*;
 
 import static com.predic8.membrane.core.http.Request.*;
+import static com.predic8.membrane.core.transport.http.HttpClientStatusEventBus.reportException;
+import static com.predic8.membrane.core.transport.http.HttpClientStatusEventBus.reportStatusCode;
 import static java.lang.Thread.*;
 import static java.nio.charset.StandardCharsets.*;
 
@@ -65,7 +67,6 @@ public class RetryHandler {
     /** Retry on HTTP 5xx (500, 502, 504) when <code>true</code>. */
     private boolean failOverOn5XX = false;
 
-
     /**
      * Execute the given {@link RetryableCall} applying the retry logic configured in this handler.
      *
@@ -81,19 +82,22 @@ public class RetryHandler {
             log.debug("Attempt #{} from #{} to {}", attempt, retries + 1, dest);
             try {
                 if (call.execute(exc, dest, attempt)) {
+                    reportStatusCode(exc, dest, exc.getResponse().getStatusCode());
                     return ;
                 }
                 int statusCode = exc.getResponse() == null ? 0 : exc.getResponse().getStatusCode();
                 if (!shouldRetry(statusCode)) {
-                    HttpClientStatusEventBus.reportSuccess(exc, dest);
-                    return; // success
+                    log.debug("Got status code {}. No retry.", statusCode);
+                    reportStatusCode(exc, dest,statusCode);
+                    return;
                 }
             } catch (Exception e) {
-                HttpClientStatusEventBus.reportException(exc, e, dest);
+                reportException(exc, e, dest);
                 log.debug("Exception in retry #{}", attempt, e);
                 exceptionInLastCall = e;
 
                 if (shouldAbortRetries(exc, e, dest, attempt)) {
+                    log.debug("Aborting retry #{} due to {}", attempt, e.getMessage());
                     throw e;
                 }
 

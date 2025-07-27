@@ -115,10 +115,10 @@ public class HttpClientStatusEventBus {
         bus.reportResponse(destination, exc.getResponse().getStatusCode());
     }
 
-    public static void reportSuccess(Exchange exc, String destination) {
+    public static void reportStatusCode(Exchange exc, String destination, int statusCode) {
         HttpClientStatusEventBus bus = HttpClientStatusEventBus.getHttpClientStatusEventBus(exc);
         if (bus == null)
             return;
-        bus.reportResponse(destination, exc.getResponse().getStatusCode());
+        bus.reportResponse(destination, statusCode);
     }
 }
