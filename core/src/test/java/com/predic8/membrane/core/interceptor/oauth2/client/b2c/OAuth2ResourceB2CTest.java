@@ -250,7 +250,7 @@ public abstract class OAuth2ResourceB2CTest {
 
         assertTrue(ili.getResponse().getBodyAsStringDecoded().contains("false"));
 
-        assertEquals(0, browser.getCookieCount());
+        assertEquals(1, browser.getCookieCount());
         assertTrue(didLogOut.get());
 
         // accessing the API triggers a login

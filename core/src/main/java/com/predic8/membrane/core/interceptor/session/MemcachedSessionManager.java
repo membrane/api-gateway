@@ -122,6 +122,7 @@ public class MemcachedSessionManager extends SessionManager {
                 .map(HeaderField::getValue)
                 .flatMap(s -> Arrays.stream(s.split(";")))
                 .map(String::trim)
+                .map(s -> s.split("=true")[0])
                 .filter(value -> isInvalidCookie(value, validCookie))
                 .toList();
     }
