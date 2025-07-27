@@ -26,11 +26,11 @@ import com.predic8.membrane.core.transport.http.*;
  *
  * <h2>Lifecycle</h2>
  * <ol>
- *     <li>{@link #canHandle(Exchange, String)} ? Cheap capability check; <strong>no</strong> I/O.</li>
- *     <li>{@link #checkUpgradeRequest(Exchange)} ? Validate request headers <em>before</em> sending.</li>
- *     <li>{@link #handle(Exchange, ConnectionFactory.OutgoingConnectionType, HostColonPort)} ? Full I/O conversation.</li>
- *     <li>{@link #checkUpgradeResponse(Exchange)} ? Inspect upstream response (e.g. {@code 101 Switching Protocols}).</li>
- *     <li>{@link #cleanup(Exchange)} ? Release protocol-specific resources; always invoked exactly once.</li>
+ *     <li>{@link #canHandle(Exchange, String)} - Cheap capability check; <strong>no</strong> I/O.</li>
+ *     <li>{@link #checkUpgradeRequest(Exchange)} - Validate request headers <em>before</em> sending.</li>
+ *     <li>{@link #handle(Exchange, ConnectionFactory.OutgoingConnectionType, HostColonPort)} - Full I/O conversation.</li>
+ *     <li>{@link #checkUpgradeResponse(Exchange)} - Inspect upstream response (e.g. {@code 101 Switching Protocols}).</li>
+ *     <li>{@link #cleanup(Exchange)} - Release protocol-specific resources; always invoked exactly once.</li>
  * </ol>
  *
  * <h2>Thread-Safety & State</h2>
