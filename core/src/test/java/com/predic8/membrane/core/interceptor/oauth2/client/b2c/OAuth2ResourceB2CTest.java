@@ -166,7 +166,7 @@ public abstract class OAuth2ResourceB2CTest {
         browser.clearCookies();
 
         // send the auth link to some helpless (other) user
-        excCallResource = browser.apply(get("http://localhost:1337" + ref.get()));
+        excCallResource = browser.apply(get("http://localhost:" + SERVER_PORT + ref.get()));
 
         assertEquals(400, excCallResource.getResponse().getStatusCode());
 
@@ -216,6 +216,35 @@ public abstract class OAuth2ResourceB2CTest {
         assertEquals(200, browser.apply(get(tc.getClientAddress() + "/api/")).getResponse().getStatusCode());
 
         browser.apply(get(tc.getClientAddress() + "/logout"));
+
+        ili = browser.apply(get(tc.getClientAddress() + "/is-logged-in"));
+
+        assertTrue(ili.getResponse().getBodyAsStringDecoded().contains("false"));
+
+        assertEquals(0, browser.getCookieCount());
+        assertTrue(didLogOut.get());
+
+        // accessing the API triggers a login
+        Response response = browser.applyWithoutRedirect(get(tc.getClientAddress() + "/api/")).getResponse();
+        assertEquals(302, response.getStatusCode());
+        assertTrue(response.getHeader().getFirstValue("Location").startsWith("http://localhost:" + SERVER_PORT + "/" + tc.tenantId + "/" + tc.susiFlowId));
+    }
+
+    @Test
+    public void logoutClearsOldCookie() throws Exception {
+        browser.apply(get(tc.getClientAddress() + "/init"));
+
+        var ili = browser.apply(get(tc.getClientAddress() + "/is-logged-in"));
+
+        assertTrue(ili.getResponse().getBodyAsStringDecoded().contains("true"));
+
+        assertEquals(200, browser.apply(get(tc.getClientAddress() + "/api/")).getResponse().getStatusCode());
+
+        Map<String, Map<String, String>> cookiesSnapshot = browser.createCookiesSnapshot();
+
+        browser.apply(get(tc.getClientAddress() + "/logout"));
+
+        browser.applyCookiesSnapshot(cookiesSnapshot);
 
         ili = browser.apply(get(tc.getClientAddress() + "/is-logged-in"));
 
