@@ -23,7 +23,7 @@ import java.security.*;
 import java.util.*;
 
 /**
- * @description Configuration container for Membrane?s HTTP client.
+ * @description Configuration container for Membrane's HTTP client.
  *              Allows defining proxy, connection, authentication, TLS, and retry behavior.
  *              Can be used as a reusable bean and referenced via &lt;spring:bean&gt;.
  *              Most of its sub-elements are optional.
