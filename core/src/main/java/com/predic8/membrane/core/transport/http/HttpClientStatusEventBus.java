@@ -51,10 +51,7 @@ public class HttpClientStatusEventBus {
     }
 
     public static void engage(AbstractExchange exchange) {
-        HttpClientStatusEventBus eventBus = exchange.getProperty(EXCHANGE_PROPERTY_NAME, HttpClientStatusEventBus.class);
-        if (eventBus == null) {
-            exchange.setProperty(EXCHANGE_PROPERTY_NAME, new HttpClientStatusEventBus());
-        }
+        exchange.getProperties().computeIfAbsent(EXCHANGE_PROPERTY_NAME,k -> new HttpClientStatusEventBus());
     }
 
     /**

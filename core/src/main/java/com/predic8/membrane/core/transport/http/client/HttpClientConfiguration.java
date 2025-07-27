@@ -240,7 +240,7 @@ public class HttpClientConfiguration implements ApplicationContextAware {
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(retryHandler.hashCode(),
+		return Objects.hash(retryHandler,
 				connection,
 				proxy,
 				authentication,

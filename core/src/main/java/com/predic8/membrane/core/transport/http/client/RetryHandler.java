@@ -44,7 +44,7 @@ import static java.nio.charset.StandardCharsets.*;
  *   <li>HTTP 408 Request Timeout</li>
  *   <li>HTTP 500 Internal Server Error, 502 Bad Gateway, 504 Gateway Timeout when {@code failOverOn5XX=true}</li>
  * </ul>
- * 
+ * <p>
  * Non-idempotent methods (POST, PATCH) are <em>not</em> repeated if the request might already have
  * reached the server.</p>
  */
@@ -61,10 +61,14 @@ public class RetryHandler {
      */
     private int delay = 100;
 
-    /** Factor applied to {@link #delay} after every retry attempt. */
+    /**
+     * Factor applied to {@link #delay} after every retry attempt.
+     */
     private double backoffMultiplier = 2;
 
-    /** Retry on HTTP 5xx (500, 502, 504) when <code>true</code>. */
+    /**
+     * Retry on HTTP 5xx (500, 502, 504) when <code>true</code>.
+     */
     private boolean failOverOn5XX = false;
 
     /**
@@ -76,19 +80,19 @@ public class RetryHandler {
      */
     public void executeWithRetries(Exchange exc, RetryableCall call) throws Exception {
         Exception exceptionInLastCall = null;
-        double currentDelay = this.delay;
+        double currentDelay = delay;
         for (int attempt = 0; attempt <= retries; attempt++) {
             String dest = getDestination(exc, attempt);
             log.debug("Attempt #{} from #{} to {}", attempt, retries + 1, dest);
             try {
                 if (call.execute(exc, dest, attempt)) {
                     reportStatusCode(exc, dest, exc.getResponse().getStatusCode());
-                    return ;
+                    return;
                 }
                 int statusCode = exc.getResponse() == null ? 0 : exc.getResponse().getStatusCode();
                 if (!shouldRetry(statusCode)) {
                     log.debug("Got status code {}. No retry.", statusCode);
-                    reportStatusCode(exc, dest,statusCode);
+                    reportStatusCode(exc, dest, statusCode);
                     return;
                 }
             } catch (Exception e) {
@@ -104,7 +108,10 @@ public class RetryHandler {
                 log.debug("Retryable failure on attempt #{} to {}: {}", attempt, dest, e.getMessage());
                 exc.trackNodeException(attempt, e);
             }
-            delayBetweenCalls(exc, currentDelay *= backoffMultiplier);
+            if (attempt < retries) {
+                delayBetweenCalls(exc, currentDelay);
+                currentDelay *= backoffMultiplier;
+            }
         }
 
         if (exceptionInLastCall != null)
