@@ -99,11 +99,6 @@ public class RetryHandler {
 
                 log.debug("Retryable failure on attempt #{} to {}: {}", attempt, dest, e.getMessage());
                 exc.trackNodeException(attempt, e);
-
-            } finally {
-                if (exceptionInLastCall != null) {
-                    exc.trackNodeException(attempt, exceptionInLastCall);
-                }
             }
             delayBetweenCalls(exc, currentDelay *= backoffMultiplier);
         }
@@ -146,7 +141,7 @@ public class RetryHandler {
         // No data was received from the server in time.
         // Causes: Server is overloaded, network latency or drop, TLS handshake took too long
         if (e instanceof SocketTimeoutException) {
-            log.debug("Connection to {} refused.", dest);
+            log.debug("Connection to {} timed out.", dest);
             return mayChangeServerStatus(exc) || !hasMultipleNodes(exc);
         }
         // Low-level TCP error, e.g., during write or read.
@@ -296,6 +291,7 @@ public class RetryHandler {
         int result = retries;
         result = 31 * result + delay;
         result = 31 * result + Double.hashCode(backoffMultiplier);
+        result = 31 * result + Boolean.hashCode(failOverOn5XX);
         return result;
     }
 }

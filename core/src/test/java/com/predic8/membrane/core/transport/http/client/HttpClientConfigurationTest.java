@@ -40,5 +40,6 @@ class HttpClientConfigurationTest {
         rh.setRetries(10);
         assertEquals(10, configuration.getRetryHandler().getRetries());
         assertEquals(10, configuration.getMaxRetries());
+
     }
 }

@@ -60,8 +60,6 @@ class RetryHandlerTest {
         assertEquals(11, mock.attempts);
     }
 
-    // TODO Retry on 5XX Test
-
     @Test
     void success() throws Exception {
 
@@ -155,6 +153,13 @@ class RetryHandlerTest {
         void equals_returnsFalseForDifferentBackoffMultiplier() {
             assertNotEquals(new RetryHandler(), new RetryHandler() {{
                 setBackoffMultiplier(99.9);
+            }});
+        }
+
+        @Test
+        void equals_returnsFalseForDifferent500FailOverOn5XX() {
+            assertNotEquals(new RetryHandler(), new RetryHandler() {{
+                setFailOverOn5XX(false);
             }});
         }
 

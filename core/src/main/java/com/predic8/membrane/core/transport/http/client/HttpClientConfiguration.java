@@ -230,6 +230,7 @@ public class HttpClientConfiguration implements ApplicationContextAware {
 		HttpClientConfiguration that = (HttpClientConfiguration) o;
 		return  Objects.equals(retryHandler, that.getRetryHandler())
 			   && useExperimentalHttp2 == that.useExperimentalHttp2
+			   && adjustHostHeader == that.adjustHostHeader
 			   && Objects.equals(connection, that.connection)
 			   && Objects.equals(proxy, that.proxy)
 			   && Objects.equals(authentication, that.authentication)
@@ -244,6 +245,7 @@ public class HttpClientConfiguration implements ApplicationContextAware {
 				proxy,
 				authentication,
 				sslParser,
+				adjustHostHeader,
 				baseLocation,
 				useExperimentalHttp2);
 	}
