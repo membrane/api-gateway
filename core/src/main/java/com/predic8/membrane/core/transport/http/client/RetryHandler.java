@@ -27,34 +27,53 @@ import static com.predic8.membrane.core.http.Request.*;
 import static java.lang.Thread.*;
 import static java.nio.charset.StandardCharsets.*;
 
+/**
+ * <p>Retries a backend request when network?level failures or selected HTTP status codes occur.</p>
+ *
+ * <p>The handler performs the initial call and, on failure, up to {@link #retries} additional attempts.
+ * Waiting time before hitting the <em>same</em> node grows exponentially by
+ * {@code delay × backoffMultiplier?}. If several backend nodes are configured, the next retry is
+ * immediately directed to the next node (fail?over) ? the sleep is only applied between consecutive
+ * attempts to the <strong>same</strong> destination.</p>
+ *
+ * <p>A retry is triggered for:</p>
+ * <ul>
+ *   <li>Connection/IO exceptions (timeout, refused, reset?)</li>
+ *   <li>HTTP 408 Request Timeout</li>
+ *   <li>HTTP 500 Internal Server Error, 502 Bad Gateway, 504 Gateway Timeout when {@code failOverOn5XX=true}</li>
+ * </ul>
+ * 
+ * Non?idempotent methods (POST, PATCH) are <em>not</em> repeated if the request might already have
+ * reached the server.</p>
+ */
 @MCElement(name = "retries")
 public class RetryHandler {
 
     private static final Logger log = LoggerFactory.getLogger(RetryHandler.class);
 
-    private int retries = 5;
+    private int retries = 2;
 
     /**
-     * How long to wait between calls to the same destination, in milliseconds.
-     * To prevent hammering one target.
-     * Between calls to different targets (think servers) this waiting time is not applied.
-     * Note: for reasons of code simplicity, this sleeping time is only applied between direct successive calls
-     * to the same target. If there are multiple targets like one, two, one and it all goes very fast, then
-     * it's possible that the same server gets hit with less time in between.
+     * Initial delay before the 1st retry (ms).  Multiplied by {@link #backoffMultiplier} for each
+     * further attempt to the same backend.
      */
-    private int delay = 10;
+    private int delay = 100;
 
-    /**
-     *
-     */
+    /** Factor applied to {@link #delay} after every retry attempt. */
     private double backoffMultiplier = 2;
 
+    /** Retry on HTTP 5xx (500, 502, 504) when <code>true</code>. */
     private boolean failOverOn5XX = false;
 
-    // TODO Make failOverOn5XX an instance Variable
 
+    /**
+     * Execute the given {@link RetryableCall} applying the retry logic configured in this handler.
+     *
+     * @param exc  current exchange
+     * @param call operation to run (lambda/functional interface)
+     * @throws Exception last encountered exception if all attempts fail
+     */
     public void executeWithRetries(Exchange exc, RetryableCall call) throws Exception {
-
         Exception exceptionInLastCall = null;
         double currentDelay = this.delay;
         for (int attempt = 0; attempt <= retries; attempt++) {
@@ -94,12 +113,14 @@ public class RetryHandler {
     }
 
     private boolean shouldRetry(int statusCode) {
-
         if (statusCode > 100 && statusCode < 400) {
             return false;
         }
         if (statusCode >= 500 && failOverOn5XX) {
-            return true;
+            return switch (statusCode) {
+                case 500, 502, 504 -> true; // All other 5XX like Not Implemented to not make sense
+                default -> false;
+            };
         }
         // See <a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Status/408">408 Request Timeout</a>
         if (statusCode == 408) {
@@ -201,11 +222,6 @@ public class RetryHandler {
         }
     }
 
-    /**
-     * Returns the target destination to use for this attempt.
-     *
-     * @param counter starting at 0 meaning the first.
-     */
     private static String getDestination(Exchange exc, int counter) {
         return exc.getDestinations().get(counter % exc.getDestinations().size());
     }
@@ -215,17 +231,19 @@ public class RetryHandler {
         return retries;
     }
 
+    /**
+     * @description Number of <em>additional</em> retry attempts after the initial call.
+     * @default 2
+     * @example 5
+     */
     @MCAttribute
     public void setRetries(int retries) {
         this.retries = retries;
     }
 
     /**
-     * Initial delay. Increases with each attempt by backoffMultiplier
-     *
-     * @param delay
-     * @default 10
-     * @description Initial delay in milliseconds
+     * @description Initial delay in milliseconds before retrying the same node.
+     * @default 100
      * @example 1000
      */
     @MCAttribute
@@ -242,12 +260,9 @@ public class RetryHandler {
     }
 
     /**
-     * Factor by which the delay is increased after each attempt
-     *
-     * @param backoffMultiplier factor
+     * @description Multiplier applied to the delay after each retry (exponential back?off).
      * @default 2
-     * @description Factor by which the delay is multiplied
-     * @example 2
+     * @example 1.5
      */
     @MCAttribute
     public void setBackoffMultiplier(double backoffMultiplier) {
@@ -258,12 +273,10 @@ public class RetryHandler {
         return failOverOn5XX;
     }
 
+
     /**
-     * Controls if 5XX from the server are retried or immediately passed to the client.
-     *
+     * @description If <code>true</code> retry on HTTP 500, 502 and 504 responses (fail?over).
      * @default false
-     * @description If true retry 5XX status codes
-     * @param failOverOn5XX
      */
     @MCAttribute
     public void setFailOverOn5XX(boolean failOverOn5XX) {

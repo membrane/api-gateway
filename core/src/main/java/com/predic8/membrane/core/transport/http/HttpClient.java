@@ -61,19 +61,16 @@ public class HttpClient implements AutoCloseable {
         protocolHandlerFactory = new ProtocolHandlerFactory(configuration, connectionFactory);
     }
 
+    // TODO Keep returning Exchange or make void?
     public Exchange call(Exchange exc) throws Exception {
-        call(exc, true);
-        return exc;
-    }
-
-    public void call(Exchange exc, boolean adjustHostHeader) throws Exception {
         ProtocolHandler ph = protocolHandlerFactory.getHandler(exc, exc.getRequest().getHeader().getUpgradeProtocol());
         ph.checkUpgradeRequest(exc);
 
-        configuration.getRetryHandler().executeWithRetries(exc, (e, target, attempt) -> dispatchCall(e, attempt,
-                        initializeRequest(exc, target, adjustHostHeader)));
+        configuration.getRetryHandler().executeWithRetries(exc,
+                (e, target, attempt) -> dispatchCall(e, attempt, initializeRequest(exc, target)));
 
         ph.cleanup(exc);
+        return exc;
     }
 
     private boolean dispatchCall(Exchange exc, int counter, HostColonPort target)
@@ -103,14 +100,14 @@ public class HttpClient implements AutoCloseable {
         return false;
     }
 
-    HostColonPort initializeRequest(Exchange exc, String dest, boolean adjustHostHeader) throws IOException {
+    HostColonPort initializeRequest(Exchange exc, String dest) throws IOException {
         setRequestURI(exc.getRequest(), dest);
 
         if (configuration.getAuthentication() != null)
             exc.getRequest().getHeader().setAuthorization(configuration.getAuthentication().getUsername(), configuration.getAuthentication().getPassword());
 
         HostColonPort target = getTargetHostAndPort(exc.getRequest().isCONNECTRequest(), dest);
-        if (adjustHostHeader && (exc.getProxy() == null || exc.getProxy().isTargetAdjustHostHeader())) {
+        if (configuration.isAdjustHostHeader() && (exc.getProxy() == null || exc.getProxy().isTargetAdjustHostHeader())) {
             exc.getRequest().getHeader().setHost(target.toString());
         }
         return target;

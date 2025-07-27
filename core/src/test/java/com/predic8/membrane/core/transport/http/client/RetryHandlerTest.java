@@ -55,7 +55,7 @@ class RetryHandlerTest {
         rh.setDelay(2);
         rh.setBackoffMultiplier(1.5);
         rh.setFailOverOn5XX(true);
-        RetryableExchangeCallMock mock = new RetryableExchangeCallMock(503);
+        RetryableExchangeCallMock mock = new RetryableExchangeCallMock(504);
         rh.executeWithRetries(get("/foo").buildExchange(), mock);
         assertEquals(11, mock.attempts);
     }
@@ -111,7 +111,7 @@ class RetryHandlerTest {
 
     @Test
     void internalError() throws Exception {
-        RetryableExchangeCallMock mock = new RetryableExchangeCallMock(501);
+        RetryableExchangeCallMock mock = new RetryableExchangeCallMock(500);
         rh.setFailOverOn5XX(true);
         rh.executeWithRetries(get("/foo").buildExchange(), mock);
         assertEquals(3, mock.attempts);
@@ -122,7 +122,7 @@ class RetryHandlerTest {
 
         @Test
         void internalError() throws Exception {
-            RetryableExchangeCallMock mock = new RetryableExchangeCallMock(501);
+            RetryableExchangeCallMock mock = new RetryableExchangeCallMock(502);
             Exchange exc = get("/foo").buildExchange();
             List<String> destinations = List.of("http://node1.example.com/", "http://node2.example.com/", "http://node3.example.com/");
             exc.setDestinations(destinations);

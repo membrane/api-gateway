@@ -55,7 +55,7 @@ public class ConnectionFactory {
         // TODO Check if there was something
         // SSLProvider sslProviderOverride = getOutboundSSLProvider(exc, target);
 
-        // What if a connection is returned that is already a http2 con => usingHttp2 is not set => Falling down to http?
+        // TODO What if a connection is returned that is already a http2 con => usingHttp2 is not set => Falling down to http?
         Connection con = getExchangeAttachedConnection(exc, attempts, target);
 
         boolean usingHttp2 = false;

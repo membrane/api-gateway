@@ -29,13 +29,13 @@ class HttpClientConfigurationTest {
 
     @Test
     void maxRetries() {
-        assertEquals(5,  configuration.getRetryHandler().getRetries());
-        assertEquals(5, configuration.getMaxRetries());
+        assertEquals(2,  configuration.getRetryHandler().getRetries());
+        assertEquals(2, configuration.getMaxRetries());
 
         RetryHandler rh = new RetryHandler();
         configuration.setRetryHandler(rh);
-        assertEquals(5, configuration.getMaxRetries());
-        assertEquals(5, configuration.getRetryHandler().getRetries());
+        assertEquals(2, configuration.getMaxRetries());
+        assertEquals(2, configuration.getRetryHandler().getRetries());
 
         rh.setRetries(10);
         assertEquals(10, configuration.getRetryHandler().getRetries());
