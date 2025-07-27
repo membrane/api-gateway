@@ -30,6 +30,7 @@ public class HttpClientConfiguration implements ApplicationContextAware {
 	private AuthenticationConfiguration authentication;
 	private SSLParser sslParser;
 	private String baseLocation;
+	private boolean adjustHostHeader = true;
 	private boolean useExperimentalHttp2;
 
 	private RetryHandler retryHandler = new RetryHandler();
@@ -123,6 +124,15 @@ public class HttpClientConfiguration implements ApplicationContextAware {
 	@MCChildElement
 	public void setRetryHandler(RetryHandler retryHandler) {
 		this.retryHandler = retryHandler;
+	}
+
+	public boolean isAdjustHostHeader() {
+		return adjustHostHeader;
+	}
+
+	@MCAttribute
+	public void setAdjustHostHeader(boolean adjustHostHeader) {
+		this.adjustHostHeader = adjustHostHeader;
 	}
 
 	@Override

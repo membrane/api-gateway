@@ -28,12 +28,12 @@ import static java.lang.Thread.*;
 import static java.nio.charset.StandardCharsets.*;
 
 /**
- * <p>Retries a backend request when network?level failures or selected HTTP status codes occur.</p>
+ * <p>Retries a backend request when network-level failures or selected HTTP status codes occur.</p>
  *
  * <p>The handler performs the initial call and, on failure, up to {@link #retries} additional attempts.
  * Waiting time before hitting the <em>same</em> node grows exponentially by
  * {@code delay × backoffMultiplier?}. If several backend nodes are configured, the next retry is
- * immediately directed to the next node (fail?over) ? the sleep is only applied between consecutive
+ * immediately directed to the next node (fail-over)  - the sleep is only applied between consecutive
  * attempts to the <strong>same</strong> destination.</p>
  *
  * <p>A retry is triggered for:</p>
@@ -43,7 +43,7 @@ import static java.nio.charset.StandardCharsets.*;
  *   <li>HTTP 500 Internal Server Error, 502 Bad Gateway, 504 Gateway Timeout when {@code failOverOn5XX=true}</li>
  * </ul>
  * 
- * Non?idempotent methods (POST, PATCH) are <em>not</em> repeated if the request might already have
+ * Non-idempotent methods (POST, PATCH) are <em>not</em> repeated if the request might already have
  * reached the server.</p>
  */
 @MCElement(name = "retries")
@@ -260,7 +260,7 @@ public class RetryHandler {
     }
 
     /**
-     * @description Multiplier applied to the delay after each retry (exponential back?off).
+     * @description Multiplier applied to the delay after each retry (exponential back-off).
      * @default 2
      * @example 1.5
      */
@@ -275,7 +275,7 @@ public class RetryHandler {
 
 
     /**
-     * @description If <code>true</code> retry on HTTP 500, 502 and 504 responses (fail?over).
+     * @description If <code>true</code> retry on HTTP 500, 502 and 504 responses (fail-over).
      * @default false
      */
     @MCAttribute

@@ -48,7 +48,7 @@ public class HTTPClientInterceptor extends AbstractInterceptor {
     private static final String PROXIES_HINT = " Maybe the target is only reachable over an HTTP proxy server. Please check proxy settings in conf/proxies.xml.";
 
     private Boolean failOverOn5XX;
-    private boolean adjustHostHeader = true;
+    private Boolean adjustHostHeader = true;
     private HttpClientConfiguration httpClientConfig = new HttpClientConfiguration();
 
     private HttpClient hc;
@@ -67,6 +67,10 @@ public class HTTPClientInterceptor extends AbstractInterceptor {
             httpClientConfig.getRetryHandler().setFailOverOn5XX(failOverOn5XX);
         }
 
+        if (adjustHostHeader != null) {
+            httpClientConfig.setAdjustHostHeader(adjustHostHeader);
+        }
+
         hc = router.getHttpClientFactory().createClient(httpClientConfig);
         hc.setStreamPumpStats(getRouter().getStatistics().getStreamPumpStats());
     }
@@ -82,7 +86,7 @@ public class HTTPClientInterceptor extends AbstractInterceptor {
         changeMethod(exc);
 
         try {
-            hc.call(exc, adjustHostHeader);
+            hc.call(exc);
             return RETURN;
         } catch (ConnectException e) {
             String msg = "Target %s is not reachable.".formatted(getDestination(exc));

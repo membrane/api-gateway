@@ -32,7 +32,7 @@ class HttpClientTest {
     @Test
     void init() throws Exception {
         Exchange exc = Request.get("/foo").buildExchange();
-        client.initializeRequest(exc,"https://example.com",true);
+        client.initializeRequest(exc,"https://example.com");
         assertEquals("example.com:443",exc.getRequest().getHeader().getHost());
     }
 

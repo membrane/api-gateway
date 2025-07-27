@@ -65,17 +65,16 @@ public class HttpClient implements AutoCloseable {
     public Exchange call(Exchange exc) throws Exception {
         ProtocolHandler ph = protocolHandlerFactory.getHandler(exc, exc.getRequest().getHeader().getUpgradeProtocol());
         ph.checkUpgradeRequest(exc);
-
-        configuration.getRetryHandler().executeWithRetries(exc,
-                (e, target, attempt) -> dispatchCall(e, attempt, initializeRequest(exc, target)));
-
+        configuration.getRetryHandler().executeWithRetries(exc, this::dispatchCall);
         ph.cleanup(exc);
         return exc;
     }
 
-    private boolean dispatchCall(Exchange exc, int counter, HostColonPort target)
+    private boolean dispatchCall(Exchange exc, String target, int attempt)
             throws Exception {
-        OutgoingConnectionType outConType = connectionFactory.getConnection(exc, target, counter);
+        HostColonPort hcp = initializeRequest(exc, target);
+
+        OutgoingConnectionType outConType = connectionFactory.getConnection(exc, hcp, attempt);
 
         if (configuration.getProxy() != null && outConType.sslProvider() == null) {
             // if we use a proxy for a plain HTTP (=non-HTTPS) request, attach the proxy credentials.
@@ -83,10 +82,10 @@ public class HttpClient implements AutoCloseable {
                     configuration.getProxy().getCredentials());
         }
 
-        protocolHandlerFactory.getHandlerForConnection(exc, outConType).handle(exc, outConType, target);
+        protocolHandlerFactory.getHandlerForConnection(exc, outConType).handle(exc, outConType, hcp);
 
         if (trackNodeStatus(exc)) {
-            exc.setNodeStatusCode(counter, exc.getResponse().getStatusCode());
+            exc.setNodeStatusCode(attempt, exc.getResponse().getStatusCode());
         }
 
         // Check for protocol upgrades

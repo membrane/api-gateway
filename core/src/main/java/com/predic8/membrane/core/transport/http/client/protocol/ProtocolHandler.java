@@ -19,7 +19,7 @@ import com.predic8.membrane.core.transport.http.*;
 
 /**
  * <p>
- * Contract for pluggable, application?layer protocols that can be negotiated by
+ * Contract for pluggable, application-layer protocols that can be negotiated by
  * {@code HttpClient}. Implementations include HTTP/1.1, HTTP/2(h2c), WebSocket,
  * and raw TCP tunnels.
  * </p>
@@ -30,14 +30,14 @@ import com.predic8.membrane.core.transport.http.*;
  *     <li>{@link #checkUpgradeRequest(Exchange)} ? Validate request headers <em>before</em> sending.</li>
  *     <li>{@link #handle(Exchange, ConnectionFactory.OutgoingConnectionType, HostColonPort)} ? Full I/O conversation.</li>
  *     <li>{@link #checkUpgradeResponse(Exchange)} ? Inspect upstream response (e.g. {@code 101 Switching Protocols}).</li>
- *     <li>{@link #cleanup(Exchange)} ? Release protocol?specific resources; always invoked exactly once.</li>
+ *     <li>{@link #cleanup(Exchange)} ? Release protocol-specific resources; always invoked exactly once.</li>
  * </ol>
  *
- * <h2>Thread?Safety & State</h2>
+ * <h2>Thread-Safety & State</h2>
  * <p>
- * Implementations should be stateless and therefore thread?safe. Per?connection or per?exchange state
+ * Implementations should be stateless and therefore thread-safe. Per-connection or per-exchange state
  * (e.g. HTTP/2 multiplexers) must be stored on the {@link Exchange} via
- * {@link Exchange#setProperty(String, Object)} using well?defined keys.
+ * {@link Exchange#setProperty(String, Object)} using well-defined keys.
  * </p>
  *
  * @since   6.3
@@ -50,7 +50,7 @@ public interface ProtocolHandler {
     /**
      * Determines whether this handler can serve the requested {@code protocol} for the given {@link Exchange}.
      * <p>
-     * Must be side?effect free; implementations typically inspect headers such as {@code Upgrade},
+     * Must be side-effect free; implementations typically inspect headers such as {@code Upgrade},
      * {@code :method}, or ALPN tokens.
      * </p>
      *
@@ -77,7 +77,7 @@ public interface ProtocolHandler {
 
     /**
      * Validates that the outbound request meets protocol requirements (header set, method allowed, etc.).
-     * Invoked <em>before</em> bytes hit the wire, allowing an early, in?JVM failure.
+     * Invoked <em>before</em> bytes hit the wire, allowing an early, in-JVM failure.
      *
      * @param exchange current exchange
      * @throws ProtocolUpgradeDeniedException if validation fails
@@ -93,7 +93,7 @@ public interface ProtocolHandler {
     void checkUpgradeResponse(Exchange exchange);
 
     /**
-     * Clean up protocol?specific artefacts (e.g. cancel ping schedulers) that are not covered by
+     * Clean up protocol-specific artefacts (e.g. cancel ping schedulers) that are not covered by
      * {@code try-with-resources}. Always invoked exactly once regardless of success or failure.
      *
      * @param exchange current exchange
