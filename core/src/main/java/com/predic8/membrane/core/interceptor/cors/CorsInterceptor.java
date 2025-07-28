@@ -267,7 +267,7 @@ public class CorsInterceptor extends AbstractInterceptor {
     }
 
     public String getHeaders() {
-        return join(List.copyOf(allowedHeaders));
+        return CollectionsUtil.join(List.copyOf(allowedHeaders));
     }
 
     /**
@@ -292,7 +292,7 @@ public class CorsInterceptor extends AbstractInterceptor {
     }
 
     public String getExposeHeaders() {
-        return join(List.copyOf(exposeHeaders));
+        return CollectionsUtil.join(List.copyOf(exposeHeaders));
     }
 
     /**

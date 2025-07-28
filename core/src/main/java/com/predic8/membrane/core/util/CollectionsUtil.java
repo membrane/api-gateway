@@ -13,6 +13,8 @@
    limitations under the License. */
 package com.predic8.membrane.core.util;
 
+import org.jetbrains.annotations.*;
+
 import java.util.*;
 import java.util.stream.*;
 
@@ -32,32 +34,6 @@ public class CollectionsUtil {
         return list;
     }
 
-//    /**
-//     * Parses a string into a list of trimmed, non-empty string tokens.
-//     *
-//     * <p>This method supports two parsing modes:</p>
-//     * <ul>
-//     *   <li><strong>Comma-separated:</strong> Standard HTTP header format (e.g., "GET, POST, PUT")</li>
-//     *   <li><strong>Space-separated:</strong> Alternative format (e.g., "GET POST PUT")</li>
-//     * </ul>
-//     *
-//     * <p>The method automatically trims whitespace from each token and excludes empty values,
-//     * making it robust against various formatting inconsistencies.</p>
-//     *
-//     * @param value the string to parse. Can be null or empty.
-//     * @return a non-null list of parsed tokens. Returns an empty list if input is null/empty.
-//
-//     * @apiNote This dual parsing behavior is intended for flexibility in configuration formats.
-//     * For strict HTTP header compliance, consider using comma-only separation.
-//     * @since 6.2.0
-//     */
-//    public static @NotNull Set<String> parseCommaOrSpaceSeparated(String value) {
-//        return stream(value.split("\\s*,\\s*|\\s+"))
-//                .map(String::trim)
-//                .filter(s -> !s.isEmpty())
-//                .collect(toSet());
-//    }
-
     /**
      * Converts all strings in the given set to lowercase.
      *
@@ -68,5 +44,9 @@ public class CollectionsUtil {
         return strings.stream()
                 .map(String::toLowerCase)
                 .collect(toSet());
+    }
+
+    public static @NotNull String join(List<String> l) {
+        return String.join(", ", l);
     }
 }

@@ -37,10 +37,6 @@ public class CorsUtil {
         return origin.toLowerCase().replaceAll("/+$", "");
     }
 
-    public static @NotNull String join(List<String> l) {
-        return String.join(", ", l);
-    }
-
     public static @NotNull Set<String> splitBySpace(String origins) {
         return stream(origins.split(SPACE))
                 .map(String::trim)

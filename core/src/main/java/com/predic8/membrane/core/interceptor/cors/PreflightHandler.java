@@ -24,7 +24,6 @@ import static com.predic8.membrane.core.http.Response.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.interceptor.cors.AbstractCORSHandler.ResponseHeaderBuilder.*;
 import static com.predic8.membrane.core.interceptor.cors.CorsInterceptor.*;
-import static com.predic8.membrane.core.interceptor.cors.CorsUtil.*;
 import static com.predic8.membrane.core.util.CollectionsUtil.*;
 import static com.predic8.membrane.core.util.StringList.*;
 import static org.springframework.http.HttpHeaders.*;

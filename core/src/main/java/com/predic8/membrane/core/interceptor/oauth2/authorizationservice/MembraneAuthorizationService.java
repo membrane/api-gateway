@@ -296,8 +296,8 @@ public class MembraneAuthorizationService extends AuthorizationService {
         this.dynamicRegistration = dynamicRegistration;
     }
 
-    public List<String> getResponseModesSupported() {
-        return responseModesSupported;
+    public String getResponseModesSupported() {
+        return CollectionsUtil.join(responseModesSupported);
     }
 
     /**
@@ -307,8 +307,8 @@ public class MembraneAuthorizationService extends AuthorizationService {
      * @default form_post query fragment
      */
     @MCAttribute
-    public void setResponseModesSupported(List<String> responseModesSupported) {
-        this.responseModesSupported = responseModesSupported;
+    public void setResponseModesSupported(String responseModesSupported) {
+        this.responseModesSupported = StringList.parseToList(responseModesSupported);
     }
 
     public String getResponseMode() {

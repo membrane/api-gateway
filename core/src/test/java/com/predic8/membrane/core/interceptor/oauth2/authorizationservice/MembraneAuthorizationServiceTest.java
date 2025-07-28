@@ -76,13 +76,13 @@ class MembraneAuthorizationServiceTest {
 
         @Test
         void noMatch() {
-            as.setResponseModesSupported(List.of(QUERY_RESPONSE_MODE, FORM_POST_RESPONSE_MODE));
+            as.setResponseModesSupported("query form_post");
             assertThrows(ConfigurationException.class, () -> as.negotiateResponseMode(List.of(FRAGMENT_RESPONSE_MODE)));
         }
 
         @Test
         void match() {
-            as.setResponseModesSupported(List.of(QUERY_RESPONSE_MODE, FORM_POST_RESPONSE_MODE));
+            as.setResponseModesSupported("query,form_post");
             assertEquals(QUERY_RESPONSE_MODE, as.negotiateResponseMode(List.of(QUERY_RESPONSE_MODE)));
         }
     }
@@ -101,7 +101,7 @@ class MembraneAuthorizationServiceTest {
     @Test
     void configQuery() throws Exception {
         MembraneAuthorizationService mas = getMock();
-        mas.setResponseModesSupported(List.of(QUERY_RESPONSE_MODE, FRAGMENT_RESPONSE_MODE));
+        mas.setResponseModesSupported("query, fragment");
         mas.init();
         assertEquals(QUERY_RESPONSE_MODE, mas.getResponseMode());
 
