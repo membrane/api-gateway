@@ -14,30 +14,30 @@
 
 package com.predic8.membrane.core.transport.http;
 
-import com.predic8.membrane.core.*;
-import com.predic8.membrane.core.config.security.*;
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.model.*;
-import com.predic8.membrane.core.resolver.*;
-import com.predic8.membrane.core.transport.http.client.*;
-import com.predic8.membrane.core.transport.http2.*;
-import com.predic8.membrane.core.transport.ssl.*;
-import com.predic8.membrane.core.util.*;
-import org.jetbrains.annotations.*;
-import org.slf4j.*;
+   import com.predic8.membrane.core.*;
+   import com.predic8.membrane.core.config.security.*;
+   import com.predic8.membrane.core.exchange.*;
+   import com.predic8.membrane.core.http.*;
+   import com.predic8.membrane.core.model.*;
+   import com.predic8.membrane.core.resolver.*;
+   import com.predic8.membrane.core.transport.http.client.*;
+   import com.predic8.membrane.core.transport.http2.*;
+   import com.predic8.membrane.core.transport.ssl.*;
+   import com.predic8.membrane.core.util.*;
+   import org.jetbrains.annotations.*;
+   import org.slf4j.*;
 
-import javax.annotation.Nullable;
-import javax.annotation.concurrent.*;
-import java.io.*;
-import java.net.*;
-import java.nio.*;
-import java.util.*;
+   import javax.annotation.Nullable;
+   import javax.annotation.concurrent.*;
+   import java.io.*;
+   import java.net.*;
+   import java.nio.*;
+   import java.util.*;
 
-import static com.predic8.membrane.core.exchange.Exchange.*;
-import static com.predic8.membrane.core.http.Header.*;
-import static java.lang.Boolean.*;
-import static java.nio.charset.StandardCharsets.*;
+   import static com.predic8.membrane.core.exchange.Exchange.*;
+   import static com.predic8.membrane.core.http.Header.*;
+   import static java.lang.Boolean.*;
+   import static java.nio.charset.StandardCharsets.*;
 
 /**
  * HttpClient with possibly multiple selectable destinations, with internal logic to auto-retry and to
@@ -263,7 +263,19 @@ public class HttpClient implements AutoCloseable {
                         newProtocol = "CONNECT";
                         //TODO should we report to the httpClientStatusEventBus here somehow?
                     } else {
+
+                        // Temp fix to debug, can be removed later
+                        if (log.isTraceEnabled()) {
+                            traceRequest(exc.getRequest());
+                        }
+
                         response = doCall(exc, con);
+
+                        // Temp fix to debug, can be removed later
+                        if (log.isTraceEnabled()) {
+                            traceResponse(response);
+                        }
+
                         if (trackNodeStatus)
                             exc.setNodeStatusCode(counter, response.getStatusCode());
 
@@ -289,9 +301,9 @@ public class HttpClient implements AutoCloseable {
                     applyKeepAliveHeader(response, con);
                     exc.setDestinations(List.of(dest));
                     con.setExchange(exc);
+                    exc.setResponse(response); // Must be before addObserver
                     if (!usingHttp2)
                         response.addObserver(con);
-                    exc.setResponse(response);
                     //TODO should we report to the httpClientStatusEventBus here somehow?
                     return exc;
                 }
@@ -363,6 +375,7 @@ public class HttpClient implements AutoCloseable {
         }
         throw exception;
     }
+
 
     private void denyUnsupportedUpgrades(Exchange exc) throws ProtocolUpgradeDeniedException {
         String upgradeProtocol = exc.getRequest().getHeader().getUpgradeProtocol();
@@ -604,4 +617,57 @@ public class HttpClient implements AutoCloseable {
         if (http2ClientPool != null)
             http2ClientPool.shutdownWhenDone();
     }
+
+    private void traceRequest(Request req) {
+        try {
+            StringBuilder sb = new StringBuilder("\n---[ HTTP Request ]----------------------------\n");
+            sb.append(req.getStartLine())                         // e.g. ?GET /foo HTTP/1.1?
+                    .append('\n')
+                    .append(req.getHeader().toString());                // all header fields
+
+            // append body if we actually have one and it is already buffered
+            if (!req.isBodyEmpty()) {
+                sb.append('\n');
+                appendBody(sb, req.getBodyAsStringDecoded());
+            }
+            log.trace(sb.toString());
+        } catch (Exception e) {
+            log.trace("Could not trace request.", e);
+        }
+    }
+
+    /**
+     * Dumps the incoming HTTP response in TRACE log level.
+     */
+    private void traceResponse(Response res) {
+        try {
+            StringBuilder sb = new StringBuilder("\n---[ HTTP Response ]---------------------------\n");
+            sb.append(res.getStartLine())                         // e.g. ?HTTP/1.1 200 OK?
+                    .append('\n')
+                    .append(res.getHeader().toString());
+
+            if (!res.isBodyEmpty()) {
+                sb.append('\n');
+                appendBody(sb, res.getBodyAsStringDecoded());
+            }
+            log.trace(sb.toString());
+        } catch (Exception e) {
+            log.trace("Could not trace response.", e);
+        }
+    }
+
+    private void appendBody(StringBuilder sb, String body) {
+        final int MAX_LEN = 1024;          // 10?KB
+        if (body == null || body.isEmpty()) {
+            sb.append("[no body]\n");
+            return;
+        }
+        if (body.length() > MAX_LEN) {
+            sb.append(body, 0, MAX_LEN)
+                    .append("\n...[body truncated]...\n");
+        } else {
+            sb.append(body).append('\n');
+        }
+    }
+
 }
