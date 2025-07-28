@@ -20,6 +20,7 @@ import com.predic8.membrane.core.transport.http.ConnectionFactory.*;
 import com.predic8.membrane.core.transport.http.client.*;
 import com.predic8.membrane.core.transport.http.client.protocol.*;
 import com.predic8.membrane.core.util.*;
+import org.slf4j.*;
 
 import javax.annotation.*;
 import java.io.*;
@@ -27,6 +28,7 @@ import java.net.*;
 
 import static com.predic8.membrane.core.exchange.Exchange.*;
 import static com.predic8.membrane.core.transport.http.client.protocol.Http2ProtocolHandler.*;
+import static com.predic8.membrane.core.util.HttpUtil.getPathAndQueryString;
 
 /**
  * HTTP client supporting:
@@ -40,6 +42,8 @@ import static com.predic8.membrane.core.transport.http.client.protocol.Http2Prot
  * from multiple threads.</p>
  */
 public class HttpClient implements AutoCloseable {
+
+    private static final Logger log = LoggerFactory.getLogger(HttpClient.class);
 
     private final HttpClientConfiguration configuration;
     private final ConnectionFactory connectionFactory;
@@ -61,7 +65,6 @@ public class HttpClient implements AutoCloseable {
         protocolHandlerFactory = new ProtocolHandlerFactory(configuration, connectionFactory);
     }
 
-    // TODO Keep returning Exchange or make void?
     public Exchange call(Exchange exc) throws Exception {
         ProtocolHandler ph = protocolHandlerFactory.getHandler(exc, exc.getRequest().getHeader().getUpgradeProtocol());
         ph.checkUpgradeRequest(exc);
@@ -70,16 +73,14 @@ public class HttpClient implements AutoCloseable {
         return exc;
     }
 
-    private boolean dispatchCall(Exchange exc, String target, int attempt)
-            throws Exception {
+    private boolean dispatchCall(Exchange exc, String target, int attempt) throws Exception {
         HostColonPort hcp = initializeRequest(exc, target);
 
         OutgoingConnectionType outConType = connectionFactory.getConnection(exc, hcp, attempt);
 
         if (configuration.getProxy() != null && outConType.sslProvider() == null) {
             // if we use a proxy for a plain HTTP (=non-HTTPS) request, attach the proxy credentials.
-            exc.getRequest().getHeader().setProxyAuthorization(
-                    configuration.getProxy().getCredentials());
+            exc.getRequest().getHeader().setProxyAuthorization(configuration.getProxy().getCredentials());
         }
 
         protocolHandlerFactory.getHandlerForConnection(exc, outConType).handle(exc, outConType, hcp);
@@ -90,18 +91,18 @@ public class HttpClient implements AutoCloseable {
 
         // Check for protocol upgrades
         String upgradedProtocol = exc.getPropertyOrNull(UPGRADED_PROTOCOL, String.class);
-        if (upgradedProtocol != null) {
-            StreamPump.setupConnectionForwarding(exc, outConType.con(), upgradedProtocol, streamPumpStats);
-            outConType.con().setExchange(exc);
-            return true;
-        }
+        if (upgradedProtocol == null)
+            return false;
 
-        return false;
+        log.debug("Upgrading to {}",upgradedProtocol);
+
+        StreamPump.setupConnectionForwarding(exc, outConType.con(), upgradedProtocol, streamPumpStats);
+        outConType.con().setExchange(exc);
+        return true;
     }
 
     HostColonPort initializeRequest(Exchange exc, String dest) throws IOException {
         setRequestURI(exc.getRequest(), dest);
-
         if (configuration.getAuthentication() != null)
             exc.getRequest().getHeader().setAuthorization(configuration.getAuthentication().getUsername(), configuration.getAuthentication().getPassword());
 
@@ -135,6 +136,7 @@ public class HttpClient implements AutoCloseable {
     }
 
     void setRequestURI(Request req, String dest) throws MalformedURLException {
+        // Use complete URL with protocol and host. The proxy needs to know where to forward
         if (configuration.getProxy() != null || req.isCONNECTRequest()) {
             req.setUri(dest);
             return;
@@ -144,7 +146,7 @@ public class HttpClient implements AutoCloseable {
                     The exchange's destination URI %s does not start with 'http'. Specify a <target> within the API configuration or make sure the exchanges destinations list contains a valid URI.
                     """.formatted(dest));
         }
-        req.setUri(HttpUtil.getPathAndQueryString(dest));
+        req.setUri(getPathAndQueryString(dest));
     }
 
     /**

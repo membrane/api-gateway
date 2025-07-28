@@ -33,7 +33,6 @@ import java.util.concurrent.atomic.*;
 @MCElement(name = "nodeOnlineChecker")
 public class NodeOnlineChecker {
 
-
     public int getPingTimeoutInSeconds() {
         return pingTimeoutInSeconds;
     }
@@ -93,8 +92,6 @@ public class NodeOnlineChecker {
         public HashSet<Cluster> getNodeClusters() {
             return nodeClusters;
         }
-
-
 
         public void setNodeClusters(HashSet<Cluster> nodeClusters) {
             this.nodeClusters = nodeClusters;
