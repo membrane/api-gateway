@@ -8,14 +8,14 @@ import java.util.function.*;
 import static java.util.stream.Collectors.*;
 
 /**
- * Utility methods for parsing attribute values that may be comma? or space?separated.
+ * Utility methods for parsing attribute values that may be comma- or space-separated.
  */
 public final class StringList {
 
     private StringList() { }   // static utility
 
     /**
-     * Parse a string into a collection of trimmed, non?empty tokens.
+     * Parse a string into a collection of trimmed, non-empty tokens.
      *
      * <p>Separators:
      * <ul>

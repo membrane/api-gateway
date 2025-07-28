@@ -35,7 +35,7 @@ public class MembraneAuthorizationService extends AuthorizationService {
 
     public static final String WELL_KNOWN_OPENID_CONFIGURATION_PATH = ".well-known/openid-configuration";
 
-    /** Supported OIDC response?modes. */
+    /** Supported OIDC response-modes. */
     public static final String FORM_POST_RESPONSE_MODE = "form_post";
     public static final String QUERY_RESPONSE_MODE = "query";
     public static final String FRAGMENT_RESPONSE_MODE = "fragment";
@@ -106,12 +106,12 @@ public class MembraneAuthorizationService extends AuthorizationService {
     }
 
     @Override
-    public String getJwksEndpoint() throws Exception {
+    public String getJwksEndpoint() {
         return jwksEndpoint;
     }
 
     @Override
-    public String getEndSessionEndpoint() throws Exception {
+    public String getEndSessionEndpoint() {
         return endSessionEndpoint;
     }
 
@@ -301,7 +301,7 @@ public class MembraneAuthorizationService extends AuthorizationService {
     }
 
     /**
-     * @description Comma? or blank?separated preference list of response modes (highest priority first).
+     * @description Comma- or blank-separated preference list of response modes (highest priority first).
      * Example: <membrane responseModesSupported="form_post query"/>
      *
      * @default form_post query fragment
