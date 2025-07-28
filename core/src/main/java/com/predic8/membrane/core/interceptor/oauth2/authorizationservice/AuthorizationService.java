@@ -55,10 +55,11 @@ import static com.predic8.membrane.core.interceptor.oauth2.OAuth2TokenBody.refre
 import static com.predic8.membrane.core.interceptor.oauth2client.rf.JsonUtils.isJson;
 
 public abstract class AuthorizationService {
+
     protected Logger log;
 
     private HttpClient httpClient;
-    protected Router router;
+    Router router;
 
     protected HttpClientConfiguration httpClientConfiguration;
     private final Object lock = new Object();
