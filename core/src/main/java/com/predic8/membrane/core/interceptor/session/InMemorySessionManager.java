@@ -92,7 +92,7 @@ public class InMemorySessionManager extends SessionManager {
                 .map(HeaderField::getValue)
                 .flatMap(s -> Arrays.stream(s.split(";")))
                 .map(String::trim)
-                .map(s -> s.split("=true")[0])
+                .map(this::getKeyOfCookie)
                 .filter(value -> value.startsWith(cookieNamePrefix)).filter(value -> !value.contains(validCookie))
                 .toList();
     }
