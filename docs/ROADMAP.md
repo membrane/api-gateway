@@ -17,7 +17,10 @@
 
 # 6.4.0
 
+- Refactor MessageUtil
+  - MessageUtil: Remove getXRequest and use Request Builder instead
 - Refactor: Cookie maybe centralize Cookie Handling in a Cookie class
+
 
 # 6.3.0
 
