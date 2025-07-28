@@ -263,7 +263,7 @@ public abstract class SessionManager {
     private List<String> expireCookies(Exchange exc, List<String> invalidCookies) {
         return invalidCookies
                 .stream()
-                .map(cookie -> cookie + ";" + String.join(";", createInvalidationAttributes(exc)))
+                .map(cookie -> cookie + "=true;" + String.join(";", createInvalidationAttributes(exc)))
                 .collect(Collectors.toList());
     }
 
