@@ -657,7 +657,7 @@ public class HttpClient implements AutoCloseable {
     }
 
     private void appendBody(StringBuilder sb, String body) {
-        final int MAX_LEN = 1024;          // 10?KB
+        final int MAX_LEN = 1024;          // 1KB
         if (body == null || body.isEmpty()) {
             sb.append("[no body]\n");
             return;
