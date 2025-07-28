@@ -17,6 +17,10 @@
 
 # 6.4.0
 
+- Refactor: Cookie maybe centralize Cookie Handling in a Cookie class
+
+# 6.3.0
+
 - JSONBody
   - Store body as parsed JsonNode or Document
     - If JSON is needed by an interceptor use already parsed JSON

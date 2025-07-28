@@ -122,6 +122,7 @@ public class RetryHandler {
         if (statusCode > 100 && statusCode < 400) {
             return false;
         }
+        // TODO Retry 50X Service Unavailable when more than  one instance
         if (statusCode >= 500 && failOverOn5XX) {
             return switch (statusCode) {
                 case 500, 502, 504 -> true; // All other 5XX like Not Implemented to not make sense
