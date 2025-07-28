@@ -43,6 +43,6 @@ public class CollectionsUtilTest {
 
     @Test
     void toList() {
-        Assertions.assertIterableEquals(List.of(1,2,3), CollectionsUtil.toList(List.of(1,2,3).iterator()));
+        assertIterableEquals(List.of(1,2,3), CollectionsUtil.toList(List.of(1,2,3).iterator()));
     }
 }

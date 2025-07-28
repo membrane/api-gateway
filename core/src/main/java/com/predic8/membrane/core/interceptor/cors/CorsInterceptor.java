@@ -238,7 +238,7 @@ public class CorsInterceptor extends AbstractInterceptor {
      */
     @MCAttribute
     public void setMethods(String methods) {
-        this.allowedMethods = parseCommaOrSpaceSeparated(methods);
+        this.allowedMethods = StringList.parseToSet(methods);
     }
 
     public Set<String> getMethods() {
@@ -263,7 +263,7 @@ public class CorsInterceptor extends AbstractInterceptor {
      */
     @MCAttribute
     public void setHeaders(String headers) {
-        this.allowedHeaders = toLowerCaseSet(parseCommaOrSpaceSeparated(headers));
+        this.allowedHeaders = CollectionsUtil.toLowerCaseSet( StringList.parseToSet(headers));
     }
 
     public String getHeaders() {
@@ -288,7 +288,7 @@ public class CorsInterceptor extends AbstractInterceptor {
      */
     @MCAttribute
     public void setExposeHeaders(String headers) {
-        this.exposeHeaders = toLowerCaseSet(parseCommaOrSpaceSeparated(headers));
+        this.exposeHeaders = CollectionsUtil.toLowerCaseSet( StringList.parseToSet(headers));
     }
 
     public String getExposeHeaders() {

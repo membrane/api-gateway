@@ -22,9 +22,11 @@ import java.util.*;
 
 import static com.predic8.membrane.core.http.Response.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
-import static com.predic8.membrane.core.interceptor.cors.AbstractCORSHandler.ResponseHeaderBuilder.responseBuilder;
+import static com.predic8.membrane.core.interceptor.cors.AbstractCORSHandler.ResponseHeaderBuilder.*;
 import static com.predic8.membrane.core.interceptor.cors.CorsInterceptor.*;
 import static com.predic8.membrane.core.interceptor.cors.CorsUtil.*;
+import static com.predic8.membrane.core.util.CollectionsUtil.*;
+import static com.predic8.membrane.core.util.StringList.*;
 import static org.springframework.http.HttpHeaders.*;
 
 public class PreflightHandler extends AbstractCORSHandler {
@@ -87,7 +89,7 @@ public class PreflightHandler extends AbstractCORSHandler {
         if (headers == null)
             return true;
 
-        for(String header : toLowerCaseSet(parseCommaOrSpaceSeparated(headers))) {
+        for(String header : toLowerCaseSet( parseToSet(headers))) {
             if (SAFE_HEADERS.contains(header))
                 continue;
             if (interceptor.getAllowedHeaders().contains(header))
