@@ -85,6 +85,7 @@ public class NodeOnlineChecker {
         public AtomicInteger getFailsOn5XX() {
             return failsOn5XX;
         }
+
         public void setFailsOn5XX(AtomicInteger failsOn5XX) {
             this.failsOn5XX = failsOn5XX;
         }
@@ -127,7 +128,7 @@ public class NodeOnlineChecker {
 
     private HttpClient client;
 
-    public void handle(Exchange exc){
+    public void handle(Exchange exc) {
         if (exc.getNodeExceptions() != null) {
             for (int i = 0; i < exc.getDestinations().size(); i++) {
                 if (exc.getNodeExceptions()[i] != null) {
@@ -152,28 +153,32 @@ public class NodeOnlineChecker {
     public void handleNodeBadStatusCode(Exchange exc, int destination) {
         int statuscode = exc.getNodeStatusCodes()[destination];
         String destinationString = getDestinationAsString(exc, destination);
-        if (statuscode < 500)
+        if (statuscode < 500) {
             badNodesForDestinations.remove(destinationString);
-        else if (statuscode >= 500) {
-            if (!badNodesForDestinations.containsKey(destinationString))
-                badNodesForDestinations.put(destinationString, new BadNode(getNodeFromExchange(exc, destination)));
-            int currentFails = badNodesForDestinations.get(destinationString).getFailsOn5XX().incrementAndGet();
-            if(currentFails > nodeCounterLimit5XX){
-                setNodeDown(exc,destination);
-            }
+            return;
+        }
+        if (!badNodesForDestinations.containsKey(destinationString))
+            badNodesForDestinations.put(destinationString, new BadNode(getNodeFromExchange(exc, destination)));
+        if (incrementAndGetCurrentFails(destinationString) > nodeCounterLimit5XX) {
+            setNodeDown(exc, destination);
         }
     }
+
+    private int incrementAndGetCurrentFails(String destinationString) {
+        return badNodesForDestinations.get(destinationString).getFailsOn5XX().incrementAndGet();
+    }
+
     //TODO fix wrong node getting down because of indexing of node exception
-    public void handleNodeException(Exchange exc, int destination){
+    public void handleNodeException(Exchange exc, int destination) {
         badNodesForDestinations.put(getDestinationAsString(exc, destination), createBadNodeWithSSLandProtocol(exc, destination));
         setNodeDown(exc, destination);
     }
 
-    public BadNode createBadNodeWithSSLandProtocol(Exchange exc, int destination){
+    public BadNode createBadNodeWithSSLandProtocol(Exchange exc, int destination) {
         BadNode badNode = new BadNode(getNodeFromExchange(exc, destination));
         try {
             badNode.protocol = new URL(getDestinationAsString(exc, destination)).getProtocol();
-            if(exc.getProxy() instanceof SSLableProxy sp) {
+            if (exc.getProxy() instanceof SSLableProxy sp) {
                 if (sp.isOutboundSSL()) {
                     badNode.setSslProvider(sp.getSslOutboundContext());
                 }
@@ -218,11 +223,12 @@ public class NodeOnlineChecker {
         }
         return null;
     }
+
     public void putNodesBackUp() {
-        if(retryTimeInSeconds < 0) {
+        if (retryTimeInSeconds < 0) {
             return;
         }
-        if(retryTimeInSeconds > 0) {
+        if (retryTimeInSeconds > 0) {
             if (DateTime.now().isBefore(lastCheck.plusSeconds(retryTimeInSeconds))) {
 
                 return;
@@ -232,13 +238,13 @@ public class NodeOnlineChecker {
 //        lastCheck = DateTime.now();
         log.debug("Last check is changed to: {}", lastCheck);
         List<BadNode> onlineNodes = pingOfflineNodes();
-        for(BadNode node : onlineNodes){
+        for (BadNode node : onlineNodes) {
             putNodeUp(node);
         }
     }
 
     private void putNodeUp(BadNode node) {
-        for(Cluster cl : node.getNodeClusters()){
+        for (Cluster cl : node.getNodeClusters()) {
             cl.nodeUp(node.getNode());
         }
         offlineNodes.remove(node);
@@ -248,10 +254,10 @@ public class NodeOnlineChecker {
     private List<BadNode> pingOfflineNodes() {
         ArrayList<BadNode> onlineNodes = new ArrayList<>();
 
-        for(BadNode node : offlineNodes){
+        for (BadNode node : offlineNodes) {
             URL url;
             try {
-                url = new URL(node.getProtocol(),node.getNode().getHost(), node.getNode().getPort(), "");
+                url = new URL(node.getProtocol(), node.getNode().getHost(), node.getNode().getPort(), "");
             } catch (MalformedURLException ignored) {
                 continue;
             }
@@ -259,7 +265,7 @@ public class NodeOnlineChecker {
                 Exchange exc = new Request.Builder().get(url.toString()).buildExchange();
                 Optional.ofNullable(node.getSslContext()).ifPresent(c -> exc.setProperty(Exchange.SSL_CONTEXT, c));
                 Exchange e = client.call(exc);
-                if(e.getResponse().getStatusCode() < 400){
+                if (e.getResponse().getStatusCode() < 400) {
                     onlineNodes.add(node);
                 }
             } catch (Exception ignored) {

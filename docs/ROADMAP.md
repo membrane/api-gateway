@@ -36,7 +36,7 @@
       - getEndSessionEndpoint() throws Exception
       - doDynamicRegistration(List<String> callbackURLs) throws Exception
 - SampleSOAPService: Add some more cities
-
+- Refactor: interceptor.session
 
 ### Internal
 - proxies-6.xsd
