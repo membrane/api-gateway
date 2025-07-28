@@ -15,6 +15,7 @@ package com.predic8.membrane.core.interceptor.oauth2.client;
 
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.interceptor.log.LogInterceptor;
 import com.predic8.membrane.core.resolver.ResolverMap;
 import com.predic8.membrane.core.transport.http.HttpClient;
 import com.predic8.membrane.core.transport.http.client.ConnectionConfiguration;
@@ -269,6 +270,23 @@ public class BrowserMock implements Function<Exchange, Exchange> {
         return headerValue.substring(0, headerValue.indexOf("=")).trim();
     }
 
+    public Map<String, Map<String, String>> createCookiesSnapshot() {
+        synchronized (cookie) {
+            return cookie.entrySet().stream().collect(toMap(Map.Entry::getKey,
+                    stringMapEntry -> stringMapEntry.getValue().entrySet().stream()
+                            .collect(toMap(Map.Entry::getKey, Map.Entry::getValue))
+            ));
+        }
+    }
+
+    public void applyCookiesSnapshot(Map<String, Map<String, String>> data) {
+        synchronized (cookie) {
+            cookie.clear();
+            data.entrySet().forEach(e -> cookie.put(e.getKey(),
+                    e.getValue().entrySet().stream().collect(toMap(Map.Entry::getKey, Map.Entry::getValue))));
+        }
+    }
+
     private record KeyValue(String key, String value) {
     }
 
@@ -352,7 +370,7 @@ public class BrowserMock implements Function<Exchange, Exchange> {
                 try {
                     return httpClient.call(exchange);
                 } catch (Exception e) {
-                    throw new RuntimeException(e);
+                    throw new RuntimeException("while calling " + exchange.getRequestURI(), e);
                 }
             }
         };
