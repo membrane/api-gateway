@@ -55,7 +55,9 @@ public class HttpTransport extends Transport {
 	private final Map<Integer, Map<IpPort, HttpEndpointListener>> portListenerMapping = new HashMap<>();
 	private final List<WeakReference<HttpEndpointListener>> stillRunning = new ArrayList<>();
 
-	private final ExecutorService executorService = Executors.newVirtualThreadPerTaskExecutor();
+	private final ThreadPoolExecutor executorService = new ThreadPoolExecutor(20,
+			MAX_VALUE, 60L, SECONDS,
+			new SynchronousQueue<>(), new HttpServerThreadFactory());
 
 	@Override
 	public void init(Router router) throws Exception {
