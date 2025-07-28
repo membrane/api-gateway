@@ -49,28 +49,22 @@ public class MessageUtil {
 	}
 	
 	public static byte[] getContent(Message res) throws Exception {
-		byte[] lReturn;
-
 		if (res.isGzip()) {
 			try (InputStream lInputStream = res.getBodyAsStream();
 				 GZIPInputStream lGZIPInputStream = new GZIPInputStream(lInputStream)) {
-				lReturn = ByteUtil.getByteArrayData(lGZIPInputStream);
+				return ByteUtil.getByteArrayData(lGZIPInputStream);
 			}
 		}
-		else if (res.isDeflate()) {
-			lReturn = ByteUtil.getDecompressedData(res.getBody().getContent());
+		if (res.isDeflate()) {
+			return ByteUtil.getDecompressedData(res.getBody().getContent());
 		}
-		else if (res.isBrotli()) {
+		if (res.isBrotli()) {
 			try (InputStream lInputStream = res.getBodyAsStream();
 				 BrotliInputStream lBrotliInputStream = new BrotliInputStream(lInputStream)) {
-				lReturn = lBrotliInputStream.readAllBytes();
+				return lBrotliInputStream.readAllBytes();
 			}
 		}
-		else {
-			lReturn = res.getBody().getContent();
-		}
-
-		return lReturn;
+		return res.getBody().getContent();
 	}
 	
 	public static Source getSOAPBody(InputStream stream) {
