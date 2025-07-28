@@ -22,12 +22,31 @@ import java.util.*;
 import static java.nio.charset.StandardCharsets.*;
 import static org.apache.commons.codec.binary.Base64.*;
 
+/**
+ * @description Configuration for an outbound HTTP proxy.
+ *              Defines the address, optional authentication credentials, and TLS configuration for connecting to a proxy.
+ *              Can be used as a child element in &lt;httpClientConfig&gt; to route client connections through a proxy server.
+ *
+ *              XML Example:
+ *              &lt;proxy host="proxy.example.com" port="3128" authentication="true" username="user" password="secret"&gt;
+ *                  &lt;ssl keystoreLocation="classpath:proxy-client.jks" keystorePassword="changeit"/&gt;
+ *              &lt;/proxy&gt;
+ *
+ *              YAML (experimental):
+ *              proxy:
+ *                host: proxy.example.com
+ *                port: 3128
+ *                authentication: true
+ *                username: user
+ *                password: secret
+ *                ssl:
+ *                  keystoreLocation: classpath:proxy-client.jks
+ *                  keystorePassword: changeit
+ *
+ * @topic 4. Transports and Clients
+ */
 @MCElement(name="proxy", topLevel=false, id="proxy-configuration")
 public class ProxyConfiguration {
-
-	public static final String ATTRIBUTE_ACTIVE = "active";
-
-	public static final String ATTRIBUTE_AUTHENTICATION = "authentication";
 
 	private String host;
 
@@ -63,6 +82,11 @@ public class ProxyConfiguration {
 		return host;
 	}
 
+	/**
+	 * @description The hostname or IP address of the proxy server.
+	 *              Required for proxy usage.
+	 * @example proxy.example.com
+	 */
 	@MCAttribute
 	public void setHost(String host) {
 		this.host = host;
@@ -72,6 +96,11 @@ public class ProxyConfiguration {
 		return port;
 	}
 
+	/**
+	 * @description TCP port on which the proxy server is listening.
+	 * @default 0
+	 * @example 3128
+	 */
 	@MCAttribute
 	public void setPort(int proxyPort) {
 		this.port = proxyPort;
@@ -81,6 +110,12 @@ public class ProxyConfiguration {
 		return password;
 	}
 
+	/**
+	 * @description Password for authenticating with the proxy server.
+	 *              Only used when authentication="true".
+	 * @default (not set)
+	 * @example secret
+	 */
 	@MCAttribute
 	public void setPassword(String password) {
 		this.password = password;
@@ -90,6 +125,12 @@ public class ProxyConfiguration {
 		return username;
 	}
 
+	/**
+	 * @description Username for authenticating with the proxy server.
+	 *              Only used when authentication="true".
+	 * @default (not set)
+	 * @example user
+	 */
 	@MCAttribute
 	public void setUsername(String username) {
 		this.username = username;
@@ -99,6 +140,11 @@ public class ProxyConfiguration {
 		return authentication;
 	}
 
+	/**
+	 * @description Whether to send a Basic Authentication header with proxy requests.
+	 *              If set to true, &lt;username&gt; and &lt;password&gt; must be provided.
+	 * @default false
+	 */
 	@MCAttribute
 	public void setAuthentication(boolean authentication) {
 		this.authentication = authentication;
@@ -108,6 +154,10 @@ public class ProxyConfiguration {
 		return sslParser;
 	}
 
+	/**
+	 * @description SSL configuration for connecting securely to HTTPS proxy servers.
+	 *              This is used for TLS-encrypted proxy tunnels.
+	 */
 	@MCChildElement
 	public void setSslParser(SSLParser sslParser) {
 		this.sslParser = sslParser;

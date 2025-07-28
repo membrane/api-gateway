@@ -72,8 +72,7 @@ public class TableEntityCommandExecutor {
 
     public JsonNode get() throws Exception {
         try (HttpClient hc = api.http()) {
-            var res =hc.call(api.requestBuilder(path).get(path).buildExchange()
-            ).getResponse();
+            var res =hc.call(api.requestBuilder(path).get(path).buildExchange()).getResponse();
 
             var response = new ObjectMapper().readTree(res.getBodyAsStringDecoded());
 

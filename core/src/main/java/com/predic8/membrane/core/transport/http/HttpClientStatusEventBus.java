@@ -14,6 +14,7 @@
 
 package com.predic8.membrane.core.transport.http;
 
+import com.predic8.membrane.core.exchange.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -37,7 +38,7 @@ public class HttpClientStatusEventBus {
 
     static final Logger log = LoggerFactory.getLogger(HttpClientStatusEventBus.class.getName());
 
-    public static final String EXCHANGE_PROPERTY_NAME = "HttpClientStatusEventBus";
+    private static final String EXCHANGE_PROPERTY_NAME = "HttpClientStatusEventBus";
 
     /**
      * Using the CopyOnWriteArrayList list is appropriate. Modifications are only expected initially, from then on
@@ -45,9 +46,13 @@ public class HttpClientStatusEventBus {
      */
     private final List<HttpClientStatusEventListener> listeners = new CopyOnWriteArrayList<>();
 
-    public HttpClientStatusEventBus() {
+    public void engageInstance(AbstractExchange exchange) {
+        exchange.setProperty(EXCHANGE_PROPERTY_NAME, this);
     }
 
+    public static void engage(AbstractExchange exchange) {
+        exchange.getProperties().computeIfAbsent(EXCHANGE_PROPERTY_NAME,k -> new HttpClientStatusEventBus());
+    }
 
     /**
      * Adds a listener to be informed about events.
@@ -61,30 +66,10 @@ public class HttpClientStatusEventBus {
         listeners.add(listener);
     }
 
-
-//    public void reportSuccess(String destination) {
-//        long timestamp = System.currentTimeMillis();
-//        for (HttpClientStatusEventListener listener : listeners) {
-//            try {
-//                listener.onSuccess(timestamp, destination);
-//            } catch (Exception e) {
-//                log.warn("Listener "+listener+" threw exception (it is logged and ignored)", e);
-//            }
-//        }
-//    }
-//
-//    public void report5xx(String destination, int responseCode) {
-//        long timestamp = System.currentTimeMillis();
-//        for (HttpClientStatusEventListener listener : listeners) {
-//            try {
-//                listener.on5xx(timestamp, destination, responseCode);
-//            } catch (Exception e) {
-//                log.warn("Listener "+listener+" threw exception (it is logged and ignored)", e);
-//            }
-//        }
-//    }
-
     public void reportResponse(String destination, int responseCode) {
+        if (responseCode == 0) // Should not be necessary but might be safer. If the client hasn't got an answer
+            return;
+
         long timestamp = System.currentTimeMillis();
         for (HttpClientStatusEventListener listener : listeners) {
             try {
@@ -99,7 +84,7 @@ public class HttpClientStatusEventBus {
      *
      * @param destination
      */
-    public void reportException(String destination, Exception exception) {
+    private void reportException(String destination, Exception exception) {
         long timestamp = System.currentTimeMillis();
         for (HttpClientStatusEventListener listener : listeners) {
             try {
@@ -110,4 +95,27 @@ public class HttpClientStatusEventBus {
         }
     }
 
+    public static HttpClientStatusEventBus getHttpClientStatusEventBus(Exchange exchange) {
+        // With case here about 20-50 nanoseconds faster than generic call
+        return (HttpClientStatusEventBus)exchange.getProperties().get(EXCHANGE_PROPERTY_NAME);
+    }
+
+    public static void reportException(Exchange exc, Exception exception, String destination) {
+        HttpClientStatusEventBus bus = HttpClientStatusEventBus.getHttpClientStatusEventBus(exc);
+        if (bus == null)
+            return;
+        //we have an error. either in the form of an exception, or as a 5xx response code.
+        if (exception != null) {
+            bus.reportException(destination, exception);
+            return;
+        }
+        bus.reportResponse(destination, exc.getResponse().getStatusCode());
+    }
+
+    public static void reportStatusCode(Exchange exc, String destination, int statusCode) {
+        HttpClientStatusEventBus bus = HttpClientStatusEventBus.getHttpClientStatusEventBus(exc);
+        if (bus == null)
+            return;
+        bus.reportResponse(destination, statusCode);
+    }
 }

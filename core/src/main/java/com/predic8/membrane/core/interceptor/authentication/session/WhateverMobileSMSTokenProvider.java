@@ -121,7 +121,7 @@ public class WhateverMobileSMSTokenProvider extends SMSTokenProvider {
 		// TODO: maybe reduce Exchange timeout
 
 		try {
-			hc.call(exc, false, true);
+			hc.call(exc);
 			// Everything went well
 			if (exc.getResponse().getStatusCode() == 200) {
 				logSmsOK(primary, recipientNumber);

@@ -415,7 +415,7 @@ public class SSLProxy implements Proxy {
 
             socket.setSoTimeout(0);
 
-            HttpClient.runClient(log, a, protocol, b, con);
+            StreamPump.runClient(log, a, protocol, b, con);
             throw new SocketException("SSL Forwarding Connection closed.");
         }
 

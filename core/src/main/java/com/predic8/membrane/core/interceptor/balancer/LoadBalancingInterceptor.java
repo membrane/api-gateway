@@ -24,6 +24,7 @@ import java.io.*;
 import java.util.*;
 
 import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
+import static com.predic8.membrane.core.exchange.Exchange.TRACK_NODE_STATUS;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 
 /**
@@ -34,8 +35,7 @@ import static com.predic8.membrane.core.interceptor.Outcome.*;
 @MCElement(name = "balancer")
 public class LoadBalancingInterceptor extends AbstractInterceptor {
 
-    private static final Logger log = LoggerFactory.getLogger(LoadBalancingInterceptor.class
-            .getName());
+    private static final Logger log = LoggerFactory.getLogger(LoadBalancingInterceptor.class.getName());
 
     /**
      * Round-robin is the default, but it's configurable.
@@ -66,7 +66,7 @@ public class LoadBalancingInterceptor extends AbstractInterceptor {
     public Outcome handleRequest(Exchange exc) {
 
         if (nodeOnlineChecker != null) {
-            exc.setProperty(Exchange.TRACK_NODE_STATUS, true);
+            exc.setProperty(TRACK_NODE_STATUS, true);
             nodeOnlineChecker.putNodesBackUp();
         }
 

@@ -39,7 +39,6 @@ public class Http2TlsSupport {
     public static boolean isHttp2(Socket s) {
         if (!(s instanceof SSLSocket ssls))
             return false;
-        String protocol = ssls.getApplicationProtocol();
-        return "h2".equals(protocol);
+        return "h2".equals(ssls.getApplicationProtocol());
     }
 }

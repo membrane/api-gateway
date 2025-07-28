@@ -13,18 +13,16 @@
    limitations under the License. */
 package com.predic8.membrane.annot;
 
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+import java.lang.annotation.*;
+
+import static java.lang.annotation.ElementType.*;
+import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
 /**
  * Injects an XML attribute using a setter method.
  */
-@Target(ElementType.METHOD)
-@Retention(RetentionPolicy.RUNTIME)
+@Target(METHOD)
+@Retention(RUNTIME)
 public @interface MCAttribute {
-
-	public String attributeName() default "";
-
+	String attributeName() default "";
 }

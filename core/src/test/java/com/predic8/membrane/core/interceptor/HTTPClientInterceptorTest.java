@@ -14,34 +14,54 @@
 
 package com.predic8.membrane.core.interceptor;
 
-import com.predic8.membrane.core.Router;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Request;
-import com.predic8.membrane.core.proxies.NullProxy;
-import org.junit.jupiter.api.Test;
+import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.proxies.*;
+import org.junit.jupiter.api.*;
 
-import java.net.URISyntaxException;
+import java.net.*;
 
+import static com.predic8.membrane.core.http.Header.*;
+import static com.predic8.membrane.core.http.Request.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 class HTTPClientInterceptorTest {
 
+    HTTPClientInterceptor hci;
+
+    @BeforeEach
+    void setUp() {
+        hci = new HTTPClientInterceptor();
+    }
+
     @Test
-    public void testProtocolUpgradeRejected() throws URISyntaxException {
+    void protocolUpgradeRejected() throws URISyntaxException {
         Router r = new Router();
 
-        HTTPClientInterceptor hci = new HTTPClientInterceptor();
         hci.init(r);
 
-        Exchange e = Request.get("http://localhost:2000/")
-                .header("Connection", "upgrade")
-                .header("Upgrade", "rejected")
+        Exchange e = get("http://localhost:2000/")
+                .header(CONNECTION, "upgrade")
+                .header(UPGRADE, "rejected")
                 .buildExchange();
         e.setProxy(new NullProxy());
 
         hci.handleRequest(e);
 
         assertEquals(401, e.getResponse().getStatusCode());
+    }
+
+    @Test
+    void passFailOverOn500Default() {
+        hci.init(new Router());
+        assertFalse(hci.getHttpClientConfig().getRetryHandler().isFailOverOn5XX());
+    }
+
+    @Test
+    void passFailOverOn500() {
+        hci.setFailOverOn5XX(true);
+        hci.init(new Router());
+        assertTrue(hci.getHttpClientConfig().getRetryHandler().isFailOverOn5XX());
     }
 
 }

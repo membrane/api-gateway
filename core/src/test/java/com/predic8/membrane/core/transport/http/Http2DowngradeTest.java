@@ -13,30 +13,25 @@
    limitations under the License. */
 package com.predic8.membrane.core.transport.http;
 
-import com.predic8.membrane.core.HttpRouter;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Response;
-import com.predic8.membrane.core.interceptor.AbstractInterceptor;
-import com.predic8.membrane.core.interceptor.Outcome;
-import com.predic8.membrane.core.proxies.ServiceProxy;
-import com.predic8.membrane.core.proxies.ServiceProxyKey;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
+import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.proxies.*;
+import org.junit.jupiter.api.*;
 
-import java.io.IOException;
-
-import static com.predic8.membrane.core.http.Request.get;
-import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static com.predic8.membrane.core.http.Header.*;
+import static com.predic8.membrane.core.http.Request.*;
+import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static com.predic8.membrane.core.transport.http.client.protocol.Http2ProtocolHandler.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class Http2DowngradeTest {
 
     private static HttpRouter router;
 
     @BeforeAll
-    public static void beforeAll() throws IOException {
+    public static void beforeAll() {
         router = new HttpRouter();
         ServiceProxy proxy = new ServiceProxy(new ServiceProxyKey(3064), null, 0);
         proxy.getInterceptors().add(new AbstractInterceptor() {
@@ -51,7 +46,7 @@ public class Http2DowngradeTest {
     }
 
     @AfterAll
-    public static void afterAll() throws IOException {
+    public static void afterAll() {
         router.stop();
     }
 
@@ -61,16 +56,18 @@ public class Http2DowngradeTest {
      * Membrane therefore removes it. (This test asserts this behaviour.)
      */
     @Test
-    public void testRFC7540UpgradeIsRemovedFromRequests() throws Exception {
+    void rfc7540UpgradeIsRemovedFromRequests() throws Exception {
         try (HttpClient hc = new HttpClient()) {
             var exc = hc.call(get("http://localhost:3064/")
-                    .header("Connection", "Upgrade, HTTP2-Settings")
-                    .header("Upgrade", "h2c")
+                    .header(CONNECTION, "Upgrade, HTTP2-Settings")
+                    .header(UPGRADE, HTTP2_CLEAR_PROTOCOL)
                     .header("HTTP2-Settings", "AAEAAEAAAAIAAAABAAMAAABkAAQBAAAAAAUAAEAA")
                     .header("X-A", "B")
                     .buildExchange());
 
             String body = exc.getResponse().getBodyAsStringDecoded();
+
+            System.out.println(body);
 
             assertTrue(body.contains("X-A: B\r\n"));
             assertFalse(body.contains("Connection"));

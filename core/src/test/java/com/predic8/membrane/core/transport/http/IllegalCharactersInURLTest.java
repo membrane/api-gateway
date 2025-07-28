@@ -25,6 +25,7 @@ import org.apache.http.client.methods.*;
 import org.apache.http.impl.client.*;
 import org.junit.jupiter.api.*;
 
+import static com.predic8.membrane.core.http.Request.METHOD_GET;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class IllegalCharactersInURLTest {
@@ -50,12 +51,12 @@ public class IllegalCharactersInURLTest {
     }
 
     @AfterEach
-    public void uninit() {
+    public void unInit() {
         r.shutdown();
     }
 
     @Test
-    public void apacheHttpClient() {
+    void apacheHttpClient() {
         assertThrows(IllegalArgumentException.class, () -> {
             try (CloseableHttpClient hc = HttpClientBuilder.create().build()) {
                 HttpResponse res = hc.execute(new HttpGet("http://localhost:3027/foo{}"));
@@ -65,10 +66,11 @@ public class IllegalCharactersInURLTest {
     }
 
     @Test
-    public void doit() throws Exception {
-        URIFactory uriFactory = new URIFactory(true);
+    void doIt() throws Exception {
         try (HttpClient httpClient = new HttpClient()) {
-            Response res = httpClient.call(new Request.Builder().method("GET").url(uriFactory, "http://localhost:3027/foo{}").body("").buildExchange()).getResponse();
+            Response res = httpClient.call(
+                    new Request.Builder().method(METHOD_GET).url(new URIFactory(true), "http://localhost:3027/foo{}").buildExchange())
+                    .getResponse();
             assertEquals(200, res.getStatusCode());
         }
     }

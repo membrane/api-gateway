@@ -274,12 +274,12 @@ public class AdminRESTInterceptor extends RESTInterceptor {
 			gen.writeStringField("method", exc.getRequest().getMethod());
 			gen.writeStringField("path", exc.getRequest().getUri());
 			gen.writeStringField("reqContentType", exc.getRequestContentType());
-			gen.writeStringField("protocol", exc.getProperty(HTTP2) != null ? "2" : exc.getRequest().getVersion());
+			gen.writeStringField("protocol", exc.getProperty(HTTP2_SERVER) != null ? "2" : exc.getRequest().getVersion());
 		} else {
 			gen.writeNullField("method");
 			gen.writeNullField("path");
 			gen.writeNullField("reqContentType");
-			gen.writeStringField("protocol", exc.getProperty(HTTP2) != null ? "2" : null);
+			gen.writeStringField("protocol", exc.getProperty(HTTP2_SERVER) != null ? "2" : null);
 		}
 
 		gen.writeStringField("client", getClientAddr(useXForwardedForAsClientAddr, exc));

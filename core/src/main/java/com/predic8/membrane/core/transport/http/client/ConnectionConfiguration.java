@@ -18,6 +18,23 @@ import com.predic8.membrane.annot.MCElement;
 
 import java.util.Objects;
 
+/**
+ * @description Configuration for low-level socket behavior of Membrane's HTTP client.
+ *              This includes timeouts and local address binding for outbound connections.
+ *              Typically used as a child of &lt;httpClientConfig&gt;.
+ *
+ *              XML Example:
+ *              &lt;connection keepAliveTimeout="30000" timeout="10000" soTimeout="5000" localAddr="192.168.1.100"/&gt;
+ *
+ *              YAML (experimental):
+ *              connection:
+ *                keepAliveTimeout: 30000
+ *                timeout: 10000
+ *                soTimeout: 5000
+ *                localAddr: "192.168.1.100"
+ *
+ * @topic 4. Transports and Clients
+ */
 @MCElement(name="connection", topLevel=false)
 public class ConnectionConfiguration {
 
@@ -47,8 +64,9 @@ public class ConnectionConfiguration {
 	}
 
 	/**
-	 * @description Time in milliseconds after which an open connection to the server is not reused. Be sure to set it to a smaller value than the KeepAlive
-	 * directive on your server. Note that the a "Keep-Alive" header in the response always takes precedence.
+	 * @description Time in milliseconds before an idle connection is closed and removed from the connection pool.
+	 *              Should be less than the server-side keep-alive timeout.
+	 *              If a response includes a "Keep-Alive" header, that value overrides this setting.
 	 * @default 4000
 	 * @example 30000
 	 */
@@ -62,8 +80,10 @@ public class ConnectionConfiguration {
 	}
 
 	/**
-	 * @description Socket timeout (connect) in milliseconds.
+	 * @description Maximum time in milliseconds to wait when establishing a TCP connection.
+	 *              A value of 0 may block indefinitely depending on the system.
 	 * @default 10000
+	 * @example 5000
 	 */
 	@MCAttribute
 	public void setTimeout(int timeout) {
@@ -75,8 +95,11 @@ public class ConnectionConfiguration {
 	}
 
 	/**
-	 * @description Socket timeout (read, etc.) in milliseconds. A value of 0 means 'unlimited'.
+	 * @description Read timeout in milliseconds.
+	 *              Applies to reading from the socket after the connection is established.
+	 *              A value of 0 means infinite timeout.
 	 * @default 0
+	 * @example 10000
 	 */
 	@MCAttribute
 	public void setSoTimeout(int soTimeout) {
@@ -88,8 +111,10 @@ public class ConnectionConfiguration {
 	}
 
 	/**
-	 * @description The local IP address to use for outbound connections.
-	 * @default not set
+	 * @description IP address of the local network interface to use for outbound connections.
+	 *              Useful in multi-homed environments.
+	 * @default (not set)
+	 * @example 192.168.1.42
 	 */
 	@MCAttribute
 	public void setLocalAddr(String localAddr) {
