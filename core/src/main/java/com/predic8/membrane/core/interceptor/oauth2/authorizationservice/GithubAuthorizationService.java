@@ -34,7 +34,7 @@ public class GithubAuthorizationService extends AuthorizationService {
     }
 
     @Override
-    public String getLoginURL(String callbackURL) {
+    public String getLoginURL(String callbackURL, boolean disableFormPost) {
         return "https://github.com/login/oauth/authorize?"+
                 "client_id=" + getClientId() + "&"+
                 "response_type=code&"+

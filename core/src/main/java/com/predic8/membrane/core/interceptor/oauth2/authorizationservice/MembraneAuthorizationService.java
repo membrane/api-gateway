@@ -184,11 +184,11 @@ public class MembraneAuthorizationService extends AuthorizationService {
     }
 
     @Override
-    public String getLoginURL(String callbackURL) {
+    public String getLoginURL(String callbackURL, boolean disableFormPost) {
         String endpoint = publicAuthorizationEndpoint;
         if(endpoint == null)
             endpoint = authorizationEndpoint;
-        boolean formPostSupported = responseModesSupported.contains("form_post");
+        boolean formPostSupported = responseModesSupported.contains("form_post") && !disableFormPost;
         return endpoint +"?"+
                 "client_id=" + getClientId() + "&"+
                 "response_type=code&"+

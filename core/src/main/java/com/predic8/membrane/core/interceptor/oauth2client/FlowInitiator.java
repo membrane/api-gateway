@@ -138,6 +138,10 @@ public class FlowInitiator extends AbstractInterceptor {
         return logoutBeforeFlow;
     }
 
+    /**
+     * @description Whether the user should be logged out before sending him to the B2C flow.
+     * @default true
+     */
     @MCAttribute
     public void setLogoutBeforeFlow(boolean logoutBeforeFlow) {
         this.logoutBeforeFlow = logoutBeforeFlow;

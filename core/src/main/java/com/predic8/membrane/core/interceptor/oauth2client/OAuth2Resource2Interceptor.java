@@ -73,6 +73,7 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
     private List<LoginParameter> loginParameters = new ArrayList<>();
     private boolean appendAccessTokenToRequest;
     private boolean onlyRefreshToken = false;
+    private boolean disableFormPost = false;
 
     @Override
     public void init() {
@@ -259,7 +260,9 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
         PKCEVerifier verifier = new PKCEVerifier();
         StateManager stateManager = new StateManager(verifier);
         Response redirectResponse = Response
-                .redirect(auth.getLoginURL(publicUrlManager.getPublicURLAndReregister(exc) + callbackPath)
+                .redirect(auth.getLoginURL(
+                            publicUrlManager.getPublicURLAndReregister(exc) + callbackPath,
+                            disableFormPost)
                         + stateManager.buildStateParameter(exc)
                         + verifier.getUrlParams()
                         + copyLoginParameters(exc, getLoginParametersToPassAlong(exc)), 302)
@@ -476,5 +479,20 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
     @MCAttribute
     public void setOnlyRefreshToken(boolean onlyRefreshToken) {
         this.onlyRefreshToken = onlyRefreshToken;
+    }
+
+    public boolean isDisableFormPost() {
+        return disableFormPost;
+    }
+
+    /**
+     * @description If false, <a href="https://openid.net/specs/oauth-v2-form-post-response-mode-1_0.html">Form Post
+     * Response Mode</a> will be used, if the Authorization Server announces support in its well known document. If true,
+     * Form Post will never be used.
+     * @default false
+     */
+    @MCAttribute
+    public void setDisableFormPost(boolean disableFormPost) {
+        this.disableFormPost = disableFormPost;
     }
 }

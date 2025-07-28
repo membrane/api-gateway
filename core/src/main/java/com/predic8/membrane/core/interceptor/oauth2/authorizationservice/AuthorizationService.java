@@ -104,7 +104,7 @@ public abstract class AuthorizationService {
 
     public abstract String getEndSessionEndpoint() throws Exception;
 
-    public abstract String getLoginURL(String callbackURL);
+    public abstract String getLoginURL(String callbackURL, boolean disableFormPost);
 
     public abstract String getUserInfoEndpoint();
 

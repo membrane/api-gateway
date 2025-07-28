@@ -38,7 +38,7 @@ public class GoogleAuthorizationService extends AuthorizationService {
     }
 
     @Override
-    public String getLoginURL(String callbackURL) {
+    public String getLoginURL(String callbackURL, boolean disableFormPost) {
         // This is the URL that is called by the user's web browser
         return "https://accounts.google.com/o/oauth2/auth?"+
                 "client_id=" + getClientId() + "&"+
