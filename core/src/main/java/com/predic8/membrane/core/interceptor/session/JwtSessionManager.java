@@ -165,6 +165,7 @@ public class JwtSessionManager extends SessionManager {
                     return false;
                 })
                 .filter(cookie -> !cookie.equals(getKeyOfCookie(validCookie)))
+                .map(this::addValueToCookie)
                 .collect(Collectors.toList());
     }
 
@@ -216,6 +217,10 @@ public class JwtSessionManager extends SessionManager {
                 .setSkipSignatureVerification()
                 .build()
                 .processToClaims(cookie);
+    }
+
+    private String addValueToCookie(String cookie) {
+        return cookie + "=true";
     }
 
     private String getKeyOfCookie(String validCookie) {

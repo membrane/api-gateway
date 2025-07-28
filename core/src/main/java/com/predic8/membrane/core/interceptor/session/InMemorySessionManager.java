@@ -48,7 +48,7 @@ public class InMemorySessionManager extends SessionManager {
     protected Map<String, Object> cookieValueToAttributes(String cookie) {
         try {
             synchronized (sessions) {
-                return sessions.get(cookie.split("=true")[0], () -> new Session(usernameKeyName, new HashMap<>())).get();
+                return sessions.get(getKeyOfCookie(cookie), () -> new Session(usernameKeyName, new HashMap<>())).get();
             }
         } catch (ExecutionException e) {
             throw new RuntimeException(e);
@@ -100,7 +100,7 @@ public class InMemorySessionManager extends SessionManager {
     @Override
     protected boolean isValidCookieForThisSessionManager(String cookie) {
         synchronized (sessions) {
-            return cookie.startsWith(cookieNamePrefix) && sessions.getIfPresent(cookie.split("=true")[0]) != null;
+            return cookie.startsWith(cookieNamePrefix) && sessions.getIfPresent(getKeyOfCookie(cookie)) != null;
         }
     }
 

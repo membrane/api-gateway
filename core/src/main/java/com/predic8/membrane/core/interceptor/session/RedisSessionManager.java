@@ -55,8 +55,8 @@ public class RedisSessionManager extends SessionManager{
     protected Map<String, Object> cookieValueToAttributes(String cookie) {
         try {
             try (Jedis jedis = connector.getJedisWithDb()) {
-                return (!jedis.get(cookie.split("=true")[0]).equals("nil")) ?
-                        jsonStringtoSession(jedis.getEx(cookie.split("=true")[0], connector.getParams())).get() : new Session(usernameKeyName, new HashMap<>()).get();
+                return (!jedis.get(getKeyOfCookie(cookie)).equals("nil")) ?
+                        jsonStringtoSession(jedis.getEx(getKeyOfCookie(cookie), connector.getParams())).get() : new Session(usernameKeyName, new HashMap<>()).get();
             }
         } catch (JsonProcessingException e) {
             log.debug("Cannot parse JSON in Cookie.",e);
@@ -121,7 +121,7 @@ public class RedisSessionManager extends SessionManager{
     @Override
     protected boolean isValidCookieForThisSessionManager(String cookie) {
         try (Jedis jedis = connector.getJedisWithDb()) {
-            return cookie.startsWith(cookieNamePrefix) && !jedis.get(cookie.split("=true")[0]).equals("nil");
+            return cookie.startsWith(cookieNamePrefix) && !jedis.get(getKeyOfCookie(cookie)).equals("nil");
         }
     }
 

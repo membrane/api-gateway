@@ -164,7 +164,7 @@ public class MemcachedSessionManager extends SessionManager {
 
     protected Optional<String> getCachedSession(String cookie) {
         try {
-            return Optional.ofNullable(client.get(cookie.split("=true")[0]));
+            return Optional.ofNullable(client.get(getKeyOfCookie(cookie)));
         } catch (TimeoutException | InterruptedException | MemcachedException e) {
             throw new RuntimeException(e);
         }
