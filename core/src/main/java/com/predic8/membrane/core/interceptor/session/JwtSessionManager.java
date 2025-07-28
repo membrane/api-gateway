@@ -222,7 +222,7 @@ public class JwtSessionManager extends SessionManager {
     private String addValueToCookie(String cookie) {
         return cookie + "=true";
     }
-    
+
     public Jwk getJwk() {
         return jwk;
     }
