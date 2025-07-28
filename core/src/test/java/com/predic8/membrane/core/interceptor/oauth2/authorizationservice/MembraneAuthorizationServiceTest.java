@@ -92,7 +92,7 @@ class MembraneAuthorizationServiceTest {
         assertEquals(QUERY_RESPONSE_MODE, mas.getResponseMode());
 
         String url = mas.getLoginURL("/callback");
-        assertTrue(url.contains("esponse_mode=query"));
+        assertTrue(url.contains("response_mode=query"));
         assertTrue(url.contains("redirect_uri=/callback"));
     }
 
