@@ -204,6 +204,11 @@ public abstract class DistributionExtractingTestcase {
         return startServiceProxyScript(null, "membrane");
     }
 
+    protected Process2 startServiceProxyScriptWithEnv(String env, String val) throws IOException, InterruptedException {
+        Process2.Builder builder = new Process2.Builder().env(env, val).in(baseDir);
+        return builder.script("membrane").waitForMembrane().start();
+    }
+
     protected Process2 startServiceProxyScript(ConsoleWatcher watch) throws IOException, InterruptedException {
         return startServiceProxyScript(watch,"membrane");
     }

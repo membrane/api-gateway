@@ -4,7 +4,7 @@
 %global logdir %{_var}/log/%{name}
 
 Name:             membrane
-Version:          6.2.4-SNAPSHOT
+Version:          6.2.5-SNAPSHOT
 Release:          1%{?dist}
 URL:              https://github.com/membrane/api-gateway
 Summary:          Membrane - Open Source API Gateway written in Java for REST APIs, WebSockets, STOMP and legacy Web Services
@@ -139,6 +139,7 @@ exit 0
 
 # TODO use %{confdir} macro here, does not get replaced currently
 sed -i 's#CLASSPATH="$MEMBRANE_HOME/conf"#CLASSPATH="/etc/membrane"#' %{buildroot}%{homedir}/membrane.sh
+sed -i 's#CLASSPATH="$membrane_home/conf:#CLASSPATH="/etc/membrane:#' %{buildroot}%{homedir}/membrane.sh
 
 %post
 %systemd_post %{name}.service

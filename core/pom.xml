@@ -23,7 +23,7 @@
         <groupId>org.membrane-soa</groupId>
         <artifactId>service-proxy-parent</artifactId>
         <relativePath>../pom.xml</relativePath>
-        <version>6.2.4-SNAPSHOT</version>
+        <version>6.2.5-SNAPSHOT</version>
     </parent>
 
     <!-- Open Telemetry -->
@@ -352,7 +352,7 @@
         <dependency>
             <groupId>io.opentelemetry</groupId>
             <artifactId>opentelemetry-exporter-otlp</artifactId>
-            <version>1.50.0</version>
+            <version>1.51.0</version>
         </dependency>
         <dependency>
             <groupId>io.opentelemetry.instrumentation</groupId>

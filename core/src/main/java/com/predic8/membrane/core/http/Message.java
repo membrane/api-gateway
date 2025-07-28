@@ -53,8 +53,10 @@ public abstract class Message {
 	/**
 	 * If the message is HTTP 1.1 but the header has no information about the
 	 * content length, then an assumption is made that after the body the server
-	 * will send an EOF. So the body is read till end of the stream.
+	 * will send an EOF. So the body is read till end of the stream
 	 * See <a href="http://www.ietf.org/rfc/rfc2145.txt">http://www.ietf.org/rfc/rfc2145.txt</a>
+	 *
+	 * @param createBody Disable the creation of a body. Used for HTTP 100 Connection requests and CONNECT.
 	 */
 	public void read(InputStream in, boolean createBody) throws IOException, EndOfStreamException {
 		parseStartLine(in);
@@ -279,10 +281,8 @@ public abstract class Message {
 			return true;
 		if (header.isConnectionClose())
 			return false;
-
 		if (header.isProxyConnectionClose())
 			return false;
-
 		return true;
 	}
 

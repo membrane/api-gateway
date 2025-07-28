@@ -112,6 +112,24 @@ public class GroovyInterceptorTest {
 	}
 
 	@Test
+	void property() throws Exception {
+
+		exc.getProperties().put("answer","42");
+
+		GroovyInterceptor i = new GroovyInterceptor() {{
+			src = """
+				property['thing']='towel'
+				header.add('answer',property['answer']);
+				CONTINUE""";
+		}};
+		i.init(router);
+
+		assertEquals(CONTINUE, i.handleRequest(exc));
+		assertEquals("42", exc.getRequest().getHeader().getFirstValue("answer"));
+		assertEquals("towel", exc.getProperty("thing"));
+	}
+
+	@Test
 	void request() throws Exception {
 		GroovyInterceptor i = new GroovyInterceptor() {{
 			src = "new Request.Builder().body('EFG').build()";
