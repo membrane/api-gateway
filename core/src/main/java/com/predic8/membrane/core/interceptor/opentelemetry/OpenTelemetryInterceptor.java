@@ -28,6 +28,7 @@ import org.slf4j.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.interceptor.opentelemetry.HTTPTraceContextUtil.*;
 import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPIInterceptor.*;
+import static com.predic8.membrane.core.util.ExceptionUtil.*;
 import static io.opentelemetry.api.common.AttributeKey.*;
 import static io.opentelemetry.api.common.Attributes.*;
 import static io.opentelemetry.api.trace.SpanKind.*;
@@ -75,15 +76,12 @@ public class OpenTelemetryInterceptor extends AbstractInterceptor {
         var span = getExchangeSpan(exc);
         setSpanHttpHeaderAttributes(exc.getRequest().getHeader(), span);
 
-        if (logBody) {
-            try {
-                span.addEvent("Request", of(
-                        stringKey("Request Body"), exc.getRequest().getBodyAsStringDecoded()
-                ));
-            } catch (Exception e) {
+        if (!logBody)
+            return CONTINUE;
 
-            }
-        }
+        span.addEvent("Request", of(
+                stringKey("Request Body"), exc.getRequest().getBodyAsStringDecoded()
+        ));
 
         return CONTINUE;
     }
@@ -105,7 +103,7 @@ public class OpenTelemetryInterceptor extends AbstractInterceptor {
                         exc.getResponse().getBodyAsStringDecoded()
                 ));
             } catch (Exception e) {
-                log.info("Can't log response body having problems to read stream. {}", e.getCause().getMessage());
+                log.debug("Can't log response body having problems to read stream. {}", concatMessageAndCauseMessages(e));
             }
         }
 
