@@ -211,6 +211,34 @@ public class HttpTransport extends Transport {
 		return sb.replace(sb.length() - 2, sb.length(), "]").toString();
 	}
 
+	public int getCoreThreadPoolSize() {
+		return executorService.getCorePoolSize();
+	}
+
+	/**
+	 * @description <p>Membrane uses a thread pool to allocate threads to incomming clients connections. The core thread pool size is the minimum number of threads that are created in advance to serve client requests.</p>
+	 * @default 20
+	 * @example 5
+	 */
+	@MCAttribute
+	public void setCoreThreadPoolSize(int corePoolSize) {
+		executorService.setCorePoolSize(corePoolSize);
+	}
+
+	public int getMaxThreadPoolSize() {
+		return executorService.getMaximumPoolSize();
+	}
+
+	/**
+	 * @description Maximum number of threads to handle incoming connections. (Membrane uses 1 thread per incoming connection.)
+	 * @default <i>no limit</i>
+	 * @example 300
+	 */
+	@MCAttribute
+	public void setMaxThreadPoolSize(int value) {
+		executorService.setMaximumPoolSize(value);
+	}
+
 	public ExecutorService getExecutorService() {
 		return executorService;
 	}
