@@ -13,8 +13,12 @@
    limitations under the License. */
 package com.predic8.membrane.core.util;
 
+import org.jetbrains.annotations.*;
+
 import java.util.*;
 import java.util.stream.*;
+
+import static java.util.stream.Collectors.*;
 
 public class CollectionsUtil {
 
@@ -28,5 +32,21 @@ public class CollectionsUtil {
             list.add(iterator.next());
         }
         return list;
+    }
+
+    /**
+     * Converts all strings in the given set to lowercase.
+     *
+     * @param strings the set of strings to convert
+     * @return a new set containing all strings in lowercase
+     */
+    public static Set<String> toLowerCaseSet(Set<String> strings) {
+        return strings.stream()
+                .map(String::toLowerCase)
+                .collect(toSet());
+    }
+
+    public static @NotNull String join(List<String> l) {
+        return String.join(", ", l);
     }
 }

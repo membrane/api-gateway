@@ -17,6 +17,7 @@ package com.predic8.membrane.core.interceptor.cors;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.util.*;
 import org.jetbrains.annotations.*;
 import org.slf4j.*;
 
@@ -47,7 +48,7 @@ public abstract class AbstractCORSHandler {
 
     public AbstractCORSHandler(CorsInterceptor interceptor) {
         this.interceptor = interceptor;
-        allowedMethodsString = join(interceptor.getMethods().stream().toList());
+        allowedMethodsString = CollectionsUtil.join(interceptor.getMethods().stream().toList());
     }
 
     protected abstract Outcome handleInternal(Exchange exc, String origin);

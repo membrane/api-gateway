@@ -13,30 +13,36 @@
 
 package com.predic8.membrane.core.interceptor.oauth2.authorizationservice;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCChildElement;
-import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.interceptor.oauth2.ClaimRenamer;
-import com.predic8.membrane.core.interceptor.oauth2.Client;
-import com.predic8.membrane.core.interceptor.oauth2.OAuth2Util;
-import com.predic8.membrane.core.interceptor.oauth2.parameter.ClaimsParameter;
-import com.predic8.membrane.core.resolver.ResolverMap;
-import org.apache.commons.io.IOUtils;
-import com.predic8.membrane.annot.Required;
-import org.jetbrains.annotations.NotNull;
+import com.fasterxml.jackson.core.type.*;
+import com.fasterxml.jackson.databind.*;
+import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.interceptor.oauth2.*;
+import com.predic8.membrane.core.interceptor.oauth2.parameter.*;
+import com.predic8.membrane.core.resolver.*;
+import com.predic8.membrane.core.util.*;
+import org.apache.commons.io.*;
+import org.jetbrains.annotations.*;
+import org.slf4j.*;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.UnsupportedEncodingException;
+import java.io.*;
 import java.net.URI;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
+import java.util.*;
 
 @MCElement(name="membrane")
 public class MembraneAuthorizationService extends AuthorizationService {
+
+    private static final Logger log = LoggerFactory.getLogger(MembraneAuthorizationService.class.getName());
+
+    public static final String WELL_KNOWN_OPENID_CONFIGURATION_PATH = ".well-known/openid-configuration";
+
+    /** Supported OIDC response-modes. */
+    public static final String FORM_POST_RESPONSE_MODE = "form_post";
+    public static final String QUERY_RESPONSE_MODE = "query";
+    public static final String FRAGMENT_RESPONSE_MODE = "fragment";
+
+    /** Fallback when the server lists no modes. */
+    public static final List<@NotNull String> DEFAULT_RESPONSE_MODES = List.of(QUERY_RESPONSE_MODE, FRAGMENT_RESPONSE_MODE);
+
     private String src; // url to OpenID-Provider data
     private String internalSrc;
 
@@ -53,23 +59,17 @@ public class MembraneAuthorizationService extends AuthorizationService {
     private String claims;
     private String claimsIdt;
     private String claimsParameter;
-    private List<String> responseModesSupported = List.of("query", "fragment");
+
+    /**
+     * Preferred modes in priority order.
+     */
+    private List<String> responseModesSupported = List.of(FORM_POST_RESPONSE_MODE, QUERY_RESPONSE_MODE, FRAGMENT_RESPONSE_MODE);
+
+    private String responseMode;
 
     private DynamicRegistration dynamicRegistration;
 
     protected boolean encodedScope;
-
-    public static boolean isValidURI(String uri)
-    {
-        try
-        {
-            new URI(uri);
-            return true;
-        } catch (Exception exception)
-        {
-            return false;
-        }
-    }
 
     @Override
     public void init() throws Exception {
@@ -91,7 +91,7 @@ public class MembraneAuthorizationService extends AuthorizationService {
     }
 
     private @NotNull String getWellKnownUrl(String baseUrl) {
-        return baseUrl + (baseUrl.endsWith("/") ? "" : "/") + ".well-known/openid-configuration";
+        return baseUrl + (baseUrl.endsWith("/") ? "" : "/") + WELL_KNOWN_OPENID_CONFIGURATION_PATH;
     }
 
     public InputStream resolve(ResolverMap rm, String baseLocation, String url) throws Exception {
@@ -106,12 +106,12 @@ public class MembraneAuthorizationService extends AuthorizationService {
     }
 
     @Override
-    public String getJwksEndpoint() throws Exception {
+    public String getJwksEndpoint() {
         return jwksEndpoint;
     }
 
     @Override
-    public String getEndSessionEndpoint() throws Exception {
+    public String getEndSessionEndpoint() {
         return endSessionEndpoint;
     }
 
@@ -140,7 +140,7 @@ public class MembraneAuthorizationService extends AuthorizationService {
         encodedScope = false;
     }
 
-    private void adjustScope() throws UnsupportedEncodingException {
+    private void adjustScope() {
         if(scope == null)
             scope = "profile";
         if (!encodedScope) {
@@ -150,28 +150,41 @@ public class MembraneAuthorizationService extends AuthorizationService {
     }
 
     private void parseSrc(InputStream resolve) throws IOException {
-        String file = IOUtils.toString(resolve);
         ObjectMapper mapper = new ObjectMapper();
-        Map<String,Object> json = mapper.readValue(file, new TypeReference<>() {});
+        JsonNode json = mapper.readTree(IOUtils.toString(resolve));
 
         // without checks
-        tokenEndpoint = (String) json.get("token_endpoint");
+        tokenEndpoint = json.path("token_endpoint").asText(null);
         if (tokenEndpoint == null)
             throw new RuntimeException("No token_endpoint could be detected.");
-        userInfoEndpoint = (String) json.get("userinfo_endpoint");
-        authorizationEndpoint = (String) json.get("authorization_endpoint");
-        revocationEndpoint = (String) json.get("revocation_endpoint");
-        registrationEndpoint = (String) json.get("registration_endpoint");
-        jwksEndpoint = (String) json.get("jwks_uri");
-        endSessionEndpoint = (String) json.get("end_session_endpoint");
-        issuer = (String) json.get("issuer");
-        if (json.containsKey("response_modes_supported")) {
-            List<?> v = (List<?>) json.get("response_modes_supported");
-            responseModesSupported = v.stream()
-                    .filter(i -> i instanceof String)
-                    .map(i -> (String)i)
-                    .collect(Collectors.<String>toList());
-        }
+        userInfoEndpoint = json.path("userinfo_endpoint").asText(null);
+        authorizationEndpoint = json.path("authorization_endpoint").asText();
+        revocationEndpoint = json.path("revocation_endpoint").asText();
+        registrationEndpoint = json.path("registration_endpoint").asText(null);
+        jwksEndpoint = json.path("jwks_uri").asText(null);
+        endSessionEndpoint = json.path("end_session_endpoint").asText(null);
+        issuer = json.path("issuer").asText(null);
+
+        log.debug("Configured response modes: {}", responseModesSupported);
+        List<String> responseModesOfferedFromServer = convertToListOfStrings(mapper, json.get("response_modes_supported"));
+        log.debug("Server offered response modes: {}", responseModesOfferedFromServer);
+        responseMode = negotiateResponseMode(responseModesOfferedFromServer);
+        log.debug("Aggreed on response mode: {}", responseMode);
+    }
+
+    private static List<String> convertToListOfStrings(ObjectMapper mapper, JsonNode json) {
+        return mapper.convertValue(json, new TypeReference<>() {});
+    }
+
+    String negotiateResponseMode(List<String> offered) {
+        List<String> effective = (offered == null || offered.isEmpty()) ? DEFAULT_RESPONSE_MODES : offered;
+        return responseModesSupported.stream()
+                .filter(effective::contains)
+                .findFirst()
+                .orElseThrow(() ->
+                        new ConfigurationException(
+                                "No matching response mode. Supported=" + responseModesSupported +
+                                ", offered=" + effective));
     }
 
     public String getTokenEndpoint() {
@@ -188,13 +201,12 @@ public class MembraneAuthorizationService extends AuthorizationService {
         String endpoint = publicAuthorizationEndpoint;
         if(endpoint == null)
             endpoint = authorizationEndpoint;
-        boolean formPostSupported = responseModesSupported.contains("form_post");
         return endpoint +"?"+
                 "client_id=" + getClientId() + "&"+
                 "response_type=code&"+
                 "scope="+scope+"&"+
                 "redirect_uri=" + callbackURL +
-                (formPostSupported ? "&response_mode=form_post" : "") +
+                "&response_mode=" + responseMode +
                 getClaimsParameter();
     }
 
@@ -284,7 +296,22 @@ public class MembraneAuthorizationService extends AuthorizationService {
         this.dynamicRegistration = dynamicRegistration;
     }
 
-    public List<String> getResponseModesSupported() {
-        return responseModesSupported;
+    public String getResponseModesSupported() {
+        return CollectionsUtil.join(responseModesSupported);
+    }
+
+    /**
+     * @description Comma- or blank-separated preference list of response modes (highest priority first).
+     * Example: <membrane responseModesSupported="form_post query"/>
+     *
+     * @default form_post query fragment
+     */
+    @MCAttribute
+    public void setResponseModesSupported(String responseModesSupported) {
+        this.responseModesSupported = StringList.parseToList(responseModesSupported);
+    }
+
+    public String getResponseMode() {
+        return responseMode;
     }
 }
