@@ -1,0 +1,8 @@
+POST http://localhost:2000
+Content-Type: application/json
+Foo: 42
+X-Api-Key-Gateway: 5830
+X-Api-Key: 10430
+
+
+{ "foo": 10430 }
