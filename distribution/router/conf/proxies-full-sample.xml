@@ -42,6 +42,7 @@
 					<exchangeStore />
 					<dispatching />
 					<reverseProxying />
+					<global />
 					<userFeature />
 					<internalRouting />
 					<httpClient />
