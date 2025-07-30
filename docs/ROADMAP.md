@@ -24,6 +24,14 @@
 
 # 6.3.0
 
+- examples/routing-traffic/outgoing-api-gateway
+- Cook Book: outgoing-api-gateway
+- eBook: outgoing-api-gateway
+- Template/Static Interceptor: Refactor 
+  - one protected method to overwrite for byte[] content
+  - Prettify logic only once
+- Template/Static Interceptor: Pretty for text/* (Refactor first)
+  - Pretty on text should trim whitespace incl. linebreaks at start and end
 - JSONBody
   - Store body as parsed JsonNode or Document
     - If JSON is needed by an interceptor use already parsed JSON
