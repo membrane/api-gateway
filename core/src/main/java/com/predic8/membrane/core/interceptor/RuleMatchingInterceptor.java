@@ -18,6 +18,7 @@ import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.proxies.*;
+import org.jetbrains.annotations.*;
 import org.slf4j.*;
 
 import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
@@ -82,26 +83,23 @@ public class RuleMatchingInterceptor extends AbstractInterceptor {
 	private void insertXForwardedFor(AbstractExchange exc) {
 		Header h = exc.getRequest().getHeader();
 		if (h.getNumberOf(X_FORWARDED_FOR) > maxXForwardedForHeaders) {
-			Request r = exc.getRequest();
-			throw new RuntimeException("Request caused X-Forwarded-For flood: " + r.getStartLine() + r.getHeader());
+			throw new RuntimeException(getFloodedErrorMessage(X_FORWARDED_FOR, exc.getRequest()));
 		}
-		h.setXForwardedFor(getXForwardedForHeaderValue(exc));
-
-		if (h.getNumberOf(Header.X_FORWARDED_PROTO) > maxXForwardedForHeaders) {
-			Request r = exc.getRequest();
-			throw new RuntimeException("Request caused " + Header.X_FORWARDED_PROTO + " flood: " + r.getStartLine() +
-					r.getHeader().toString());
+		if (h.getNumberOf(X_FORWARDED_PROTO) > maxXForwardedForHeaders) {
+            throw new RuntimeException(getFloodedErrorMessage(X_FORWARDED_PROTO, exc.getRequest()));
 		}
-		h.setXForwardedProto(getXForwardedProtoHeaderValue(exc));
-
-
 		if (h.getNumberOf(Header.X_FORWARDED_HOST) > maxXForwardedForHeaders) {
-			Request r = exc.getRequest();
-			throw new RuntimeException("Request caused " + Header.X_FORWARDED_HOST + " flood: " + r.getStartLine() +
-					r.getHeader().toString());
+			throw new RuntimeException(getFloodedErrorMessage(X_FORWARDED_HOST, exc.getRequest()));
 		}
-		h.setXForwardedHost(getXForwardedHostHeaderValue(exc));
 
+		h.setXForwardedFor(getXForwardedForHeaderValue(exc));
+		h.setXForwardedProto(getXForwardedProtoHeaderValue(exc));
+		h.setXForwardedHost(getXForwardedHostHeaderValue(exc));
+	}
+
+	private static @NotNull String getFloodedErrorMessage(String header, Request request) {
+		return "Request caused %s flood: %s".formatted(header, request.getStartLine() +
+															   request.getHeader().toString());
 	}
 
 	private String getXForwardedHostHeaderValue(AbstractExchange exc) {
