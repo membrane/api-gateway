@@ -218,6 +218,8 @@ public class HttpServerHandler extends AbstractHttpHandler implements Runnable, 
         srcReq.read(srcIn, true);
         exchange.received();
 
+        log.debug("Requested URI: {}", srcReq.getUri());
+
         if (srcReq.getHeader().getProxyConnection() != null) {
             srcReq.getHeader().add(CONNECTION,
                     srcReq.getHeader().getProxyConnection());
