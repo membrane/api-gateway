@@ -20,7 +20,7 @@
 - Refactor MessageUtil
   - MessageUtil: Remove getXRequest and use Request Builder instead
 - Refactor: Cookie maybe centralize Cookie Handling in a Cookie class
-
+- Loadbalancing description with pacemaker
 
 # 6.3.0
 
