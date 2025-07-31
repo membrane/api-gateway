@@ -30,6 +30,7 @@ import java.util.*;
 
 import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.util.ExceptionUtil.concatMessageAndCauseMessages;
+import static java.util.UUID.randomUUID;
 
 
 /**
@@ -209,29 +210,42 @@ public class ProblemDetails {
 
     private @NotNull Map<String, Object> createMap() {
         Map<String, Object> root = new LinkedHashMap<>();
-        Map<String, Object> internalMap = new LinkedHashMap<>();
 
         root.put("title", title);
-        String type = "https://membrane-api.io/problems/" + this.type;
-        if (!subType.isEmpty()) {
-            type += subType;
-        }
-
-        root.put("type", type);
+        root.put("type", getTypeSubtypeString());
+        root.putAll(topLevel);
 
         if (production) {
-            logProduction(internalMap);
-        } else {
-            internalMap = createInternal(type);
+            logProduction(root);
+            return root;
         }
 
         if (detail != null) {
             root.put("detail", detail);
         }
-        root.putAll(topLevel);
 
-        root.putAll(internalMap);
+        root.putAll(createInternal(getTypeSubtypeString()));
         return root;
+    }
+
+    private void logProduction(Map<String, Object> root) {
+        String logKey = randomUUID().toString();
+        log.warn("logKey={}\ntype={}\ntitle={}\n,detail={}\n,internal={},.", logKey, getTypeSubtypeString(), title, detail, internalFields);
+        root.put("detail", "Details can be found in the Membrane log searching for key: %s.".formatted(logKey));
+        if (type.equals("internal")) {
+            title = "Internal error";
+        }
+        if (stacktrace && exception != null) {
+            log.warn("", exception);
+        }
+    }
+
+    private @NotNull String getTypeSubtypeString() {
+        String type = "https://membrane-api.io/problems/" + this.type;
+        if (!subType.isEmpty()) {
+            type += subType;
+        }
+        return type;
     }
 
     private String normalizeForType(String s) {
@@ -264,26 +278,6 @@ public class ProblemDetails {
         internalMap.put("attention", """
                 Membrane is in development mode. For production set <router production="true"> to reduce details in error messages!""");
         return internalMap;
-    }
-
-    private void logProduction(Map<String, Object> internalMap) {
-
-        if (logKey) {
-            String logKey = UUID.randomUUID().toString();
-            log.warn("logKey={}\ntype={}\ntitle={}\n,detail={}\n,extension={},.", logKey, type, title, detail, internalMap);
-            detail = "Details can be found in the Membrane log searching for key: %s.".formatted(logKey);
-        } else {
-            detail = null;
-        }
-
-        // In case of an internal error in production we do not want a specifiy error title
-        if (type.equals("internal")) {
-            title = "Internal error";
-        }
-
-        if (stacktrace && exception != null) {
-            log.warn("", exception);
-        }
     }
 
     private static @NotNull Map getStackTrace(Throwable exception, StackTraceElement[] enclosingTrace) {

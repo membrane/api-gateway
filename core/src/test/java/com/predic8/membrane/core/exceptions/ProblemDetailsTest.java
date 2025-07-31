@@ -101,7 +101,7 @@ public class ProblemDetailsTest {
     @Test
     void noProduction() throws JsonProcessingException {
         String pdJson = getResponseWithDetailsAndExtensions(false).getBodyAsStringDecoded();
-//        System.out.println("pdJson = " + pdJson);
+        System.out.println("pdJson = " + pdJson);
         JsonNode json = om.readTree(pdJson);
         assertEquals(7,json.size());
         assertEquals("https://membrane-api.io/problems/user/catastrophy",json.get("type").asText());
