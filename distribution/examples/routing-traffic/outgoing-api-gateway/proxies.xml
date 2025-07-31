@@ -36,8 +36,7 @@
 		  <request>
 			 	<headerFilter>
 					<!-- Include only these headers (necessary for functionality and considered safe) -->
-					<include>Accept-Encoding</include>
-					<include>Accept-Language</include>
+					<include>Accept.*</include>
 					<include>Cache-Control</include>
 					<include>Content-Type</include>
 					<include>Content-Length</include>
