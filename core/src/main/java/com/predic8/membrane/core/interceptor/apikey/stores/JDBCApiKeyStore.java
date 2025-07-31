@@ -66,11 +66,12 @@ public class JDBCApiKeyStore extends AbstractJdbcSupport implements ApiKeyStore 
 
     private void checkApiKey(String apiKey) throws Exception {
         try (Connection con = getDatasource().getConnection()) {
-            PreparedStatement stmt = con.prepareStatement("SELECT * FROM %s WHERE apikey = ?".formatted(keyTable.getName()));
-            stmt.setString(1, apiKey);
-            try (ResultSet rs = stmt.executeQuery()) {
-                if (!rs.next()) {
-                    throw new UnauthorizedApiKeyException();
+            try (PreparedStatement stmt = con.prepareStatement("SELECT * FROM %s WHERE apikey = ?".formatted(keyTable.getName()))) {
+                stmt.setString(1, apiKey);
+                try (ResultSet rs = stmt.executeQuery()) {
+                    if (!rs.next()) {
+                        throw new UnauthorizedApiKeyException();
+                    }
                 }
             }
         }
