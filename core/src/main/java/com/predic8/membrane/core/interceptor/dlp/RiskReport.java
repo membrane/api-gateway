@@ -11,19 +11,35 @@ public class RiskReport {
 
     private static final List<String> RISK_LEVELS = List.of("high", "medium", "low", "unknown");
 
+    public String normalizeFieldKey(String field) {
+        return field.replaceFirst("^\\$\\.", "");
+    }
+
+    private String normalizeRiskLevel(String level) {
+        return switch (level.toLowerCase()) {
+            case "high", "medium", "low" -> level.toLowerCase();
+            default -> "unknown";
+        };
+    }
+
     public void recordField(String field, String riskLevel, String category) {
+        String key = normalizeFieldKey(field);
         String level = normalizeRiskLevel(riskLevel);
-        matchedFields.put(field, level);
-        fieldCategories.put(field, category);
+        matchedFields.put(key, level);
+        fieldCategories.put(key, category);
 
         riskCounts.merge(level, 1, Integer::sum);
         riskDetails
                 .computeIfAbsent(level, r -> new LinkedHashMap<>())
-                .merge(field, 1, Integer::sum);
+                .merge(key, 1, Integer::sum);
     }
 
     public String getCategoryOf(String field) {
-        return fieldCategories.getOrDefault(field, "Unknown");
+        return fieldCategories.getOrDefault(normalizeFieldKey(field), "Unknown");
+    }
+
+    public String getRiskLevelOf(String field) {
+        return matchedFields.getOrDefault(normalizeFieldKey(field), "Unknown");
     }
 
     public String getCategory() {
@@ -46,8 +62,7 @@ public class RiskReport {
         for (String level : RISK_LEVELS) {
             Map<String, Integer> details = riskDetails.getOrDefault(level, Collections.emptyMap());
             if (!details.isEmpty()) {
-                String fieldList = String.join(", ", details.keySet());
-                fieldsOutput.add(level + "=[" + fieldList + "]");
+                fieldsOutput.add(level + "=[" + String.join(", ", details.keySet()) + "]");
             }
         }
 
@@ -64,12 +79,5 @@ public class RiskReport {
 
     public Map<String, Integer> getRiskCounts() {
         return Collections.unmodifiableMap(riskCounts);
-    }
-
-    private String normalizeRiskLevel(String level) {
-        return switch (level.toLowerCase()) {
-            case "high", "medium", "low" -> level.toLowerCase();
-            default -> "unknown";
-        };
     }
 }

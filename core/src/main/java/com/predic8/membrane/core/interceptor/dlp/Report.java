@@ -42,7 +42,7 @@ public class Report extends Action {
         }
 
         String category = context.riskReport().getCategoryOf(getField());
-        String riskLevel = context.riskReport().getMatchedFields().getOrDefault(getField(), "Unknown");
+        String riskLevel = context.riskReport().getRiskLevelOf(getField());
 
         log.info("[Report]: Field='{}' | Value='{}' | Category='{}' | Risk Level='{}'",
                 getField(), original, category, riskLevel);

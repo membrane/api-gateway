@@ -32,22 +32,16 @@ public class Filter extends Action {
 
     @Override
     public String apply(DLPContext context) {
-        try {
-            DocumentContext doc = JsonPath.using(SAFE_CONFIG).parse(context.body());
-            Object value = doc.read(getField());
+        DocumentContext doc = JsonPath.using(SAFE_CONFIG).parse(context.body());
+        String original = doc.read(getField(), String.class);
 
-            if (value == null) {
-                return doc.jsonString();
-            }
-
-            doc.delete(getField());
-
-            log.info("[Filter]: Field='{}' | Value='{}'", getField(), value);
+        if (original == null) {
+            log.info("[Filter]: Field '{}' not found!", getField());
             return doc.jsonString();
-
-        } catch (Exception e) {
-            log.error("[Filter] Failed to apply filter on field: {}", getField(), e);
-            throw new RuntimeException("Failed to apply filter on field: " + getField(), e);
         }
+
+        doc.delete(getField());
+        log.info("[Filter]: Field='{}' | Value='{}'", getField(), original);
+        return doc.jsonString();
     }
 }
