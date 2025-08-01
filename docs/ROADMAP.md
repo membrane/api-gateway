@@ -17,30 +17,11 @@
 
 # 6.4.0
 
-- Refactor MessageUtil
-  - MessageUtil: Remove getXRequest and use Request Builder instead
 - Refactor: Cookie maybe centralize Cookie Handling in a Cookie class
-
-
-# 6.3.0
-
-- examples/routing-traffic/outgoing-api-gateway
-- Cook Book: outgoing-api-gateway
-- eBook: outgoing-api-gateway
-- Template/Static Interceptor: Refactor 
-  - one protected method to overwrite for byte[] content
-  - Prettify logic only once
-- Template/Static Interceptor: Pretty for text/* (Refactor first)
-  - Pretty on text should trim whitespace incl. linebreaks at start and end
+- Loadbalancing description with pacemaker
 - JSONBody
   - Store body as parsed JsonNode or Document
     - If JSON is needed by an interceptor use already parsed JSON
-- READMEs in example folders listing the examples
-- Grafana Dashboard to import in examples/prometheus
-  - Also provide the datasource config
-  - Maybe the config can be included into the docker-compose setup
-- Refactor HttpClient
-  - Replace finalize with try(...)
 - JdbcUserDataProvider
   - Migrate to PreparedStatement
 - OAuth2 refactoring
@@ -50,7 +31,19 @@
       - public abstract void init() throws Exception;
       - getEndSessionEndpoint() throws Exception
       - doDynamicRegistration(List<String> callbackURLs) throws Exception
-- SampleSOAPService: Add some more cities
+
+# 6.3.0
+
+- Describe RPM Setup
+- examples/routing-traffic/outgoing-api-gateway (TB)
+- Cook Book: outgoing-api-gateway (TB)
+- Template/Static Interceptor: Refactor (TB) 
+  - one protected method to overwrite for byte[] content
+  - Prettify logic only once
+- Template/Static Interceptor: Pretty for text/* (Refactor first) (TB)
+  - Pretty on text should trim whitespace incl. linebreaks at start and end
+- READMEs in example folders listing the examples (TB)
+- Refactor HttpClient (TB)
 - Refactor: interceptor.session
 
 ### Internal

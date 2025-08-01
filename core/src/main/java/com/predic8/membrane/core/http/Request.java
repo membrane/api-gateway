@@ -61,7 +61,7 @@ public class Request extends Message {
 	String uri;
 
 	@Override
-	public void parseStartLine(InputStream in) throws IOException {
+	protected void parseStartLine(InputStream in) throws IOException {
 		try {
 			String firstLine = HttpUtil.readLine(in);
 			Matcher matcher = pattern.matcher(firstLine);
@@ -159,10 +159,8 @@ public class Request extends Message {
 		if (methodsWithOptionalBody.contains(method)) {
 			if (header.hasContentLength())
 				return header.getContentLength() == 0;
-			if (header.getFirstValue(TRANSFER_ENCODING) != null)
-				return false;
-			return true;
-		}
+            return header.getFirstValue(TRANSFER_ENCODING) == null;
+        }
 
 		return false;
 	}
@@ -318,7 +316,7 @@ public class Request extends Message {
 		}
 
 		public Builder get(URIFactory uriFactory, String url) throws URISyntaxException {
-			return method(Request.METHOD_GET).url(uriFactory, url);
+			return method(METHOD_GET).url(uriFactory, url);
 		}
 
 		/**

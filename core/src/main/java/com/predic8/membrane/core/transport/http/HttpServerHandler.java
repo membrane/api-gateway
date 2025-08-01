@@ -35,6 +35,7 @@ import static com.predic8.membrane.core.transport.http.ByteStreamLogging.wrapCon
 import static com.predic8.membrane.core.transport.http.ByteStreamLogging.wrapConnectionOutputStream;
 import static com.predic8.membrane.core.transport.http.HttpServerHandler.RequestProcessingResult.*;
 import static com.predic8.membrane.core.transport.http.HttpServerThreadFactory.DEFAULT_THREAD_NAME;
+import static com.predic8.membrane.core.util.StringUtil.maskNonPrintableCharacters;
 import static com.predic8.membrane.core.util.StringUtil.truncateAfter;
 import static java.lang.Thread.currentThread;
 
@@ -132,9 +133,9 @@ public class HttpServerHandler extends AbstractHttpHandler implements Runnable, 
         } catch (NoResponseException e) {
             log.debug("No response received. Maybe increase the keep-alive timeout on the server.");
         } catch (EOFWhileReadingFirstLineException e) {
-            log.debug("Client connection terminated before first line was read. Line so far: {}", truncateAfter(e.getLineSoFar(), 80));
+            log.debug("Client connection terminated before first line was read. Line so far: {}", getLineMaskedAndTruncated(e));
         } catch (EOFWhileReadingLineException e) {
-            log.debug("Client connection terminated while reading header line: {}", truncateAfter(e.getLineSoFar(), 80));
+            log.debug("Client connection terminated while reading header line: {}", getLineMaskedAndTruncated(e));
         } catch (Exception e) {
             log.error("", e);
         } finally {
@@ -153,6 +154,10 @@ public class HttpServerHandler extends AbstractHttpHandler implements Runnable, 
 
             updateThreadName(false);
         }
+    }
+
+    private static @NotNull String getLineMaskedAndTruncated(EOFWhileReadingLineException e) {
+        return maskNonPrintableCharacters(truncateAfter(e.getLineSoFar(), 80));
     }
 
     record RequestProcessingResult(boolean shouldTerminate, Connection boundConnection) {
@@ -217,6 +222,8 @@ public class HttpServerHandler extends AbstractHttpHandler implements Runnable, 
     private void readAndParseRequest() throws IOException, EndOfStreamException {
         srcReq.read(srcIn, true);
         exchange.received();
+
+        log.debug("Requested URI: {}", srcReq.getUri());
 
         if (srcReq.getHeader().getProxyConnection() != null) {
             srcReq.getHeader().add(CONNECTION,
