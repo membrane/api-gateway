@@ -67,7 +67,7 @@ Learn how API Gateways work with real-world examples and insights into Membrane.
 - Validate requests and responses against [OpenAPI](distribution/examples/openapi/validation-simple) and **JSON Schema**.
 
 ### **API Security**
-- [JSON Web Tokens](#json-web-tokens), [OAuth2](https://www.membrane-soa.org/service-proxy/oauth2-provider-client.html), [API Keys](#API-Keys), [NTLM](distribution/examples/security/ntlm), and [Basic Authentication](https://www.membrane-soa.org/api-gateway-doc/current/configuration/reference/basicAuthentication.htm).
+- [JSON Web Tokens](#json-web-tokens), [OAuth2](https://www.membrane-soa.org/service-proxy/oauth2-provider-client.html), [API Keys](#api-keys), [NTLM](distribution/examples/security/ntlm), and [Basic Authentication](https://www.membrane-soa.org/api-gateway-doc/current/configuration/reference/basicAuthentication.htm).
 - Built-in [OAuth2 Authorization Server](https://www.membrane-soa.org/service-proxy-doc/4.8/security/oauth2/flows/code/index.html).
 - [Rate limiting](#rate-limiting) and traffic control
 - Protection for **GraphQL**, **JSON**, and **XML** APIs against malicious inputs.
@@ -77,7 +77,7 @@ Learn how API Gateways work with real-world examples and insights into Membrane.
 - Configure, validate, and rewrite WSDL-based services, including [message validation](#message-validation-against-wsdl-and-xsd).
 
 ### **Additional Features**
-**Admin Web Console** for monitoring and management.
+- **Admin Web Console** for monitoring and management.
 - Advanced [load balancing](#load-balancing) to ensure high availability.
 - Flexible [message transformation](#message-transformation) for seamless data processing.
 - Embeddable reverse proxy HTTP framework to build custom API gateways.
@@ -1097,9 +1097,7 @@ or [JSON](distribution/examples/logging/json) file.
 
 ### Monitoring with Prometheus and Grafana
 
-Membrane supports seamless monitoring with Prometheus and Grafana, enabling visibility into API performance and system metrics.
-
-Add an API with the `prometheus` plugin to your `proxies.xml` file. This will expose metrics at the specified endpoint:
+This API will expose metrics for Prometheus at [http://localhost:2000/metrics](http://localhost:2000/metrics):
 
 ```xml
 <api port="2000">
@@ -1107,27 +1105,8 @@ Add an API with the `prometheus` plugin to your `proxies.xml` file. This will ex
   <prometheus />
 </api>
 ```
-
-Then you can query the metrics by navigating to:  
-[http://localhost:2000/metrics](http://localhost:2000/metrics).
-
-This endpoint provides Prometheus-compatible metrics, which you can scrape using a Prometheus server.
-
-For a complete configuration example with Prometheus and Grafana, refer to:  
-[Prometheus Example](distribution/examples/monitoring-tracing/prometheus).
-
-### Monitoring with Prometheus and Grafana
-
-Add an API with the `prometheus` plugin at the top of the `proxies.xml` file.
-
-```xml
-<api port="2000">
-  <path>/metrics</path>
-  <prometheus />
-</api>
-```
-
-Then query the metrics endpoint by opening [http://localhost:2000/metrics](http://localhost:2000/metrics). Now you can setup a prometheus to scrape that endpoint. For a complete example with prometheus and Grafana have a look at [examples/prometheus](distribution/examples/monitoring-tracing/prometheus).
+ 
+See [Prometheus and Grafana example](distribution/examples/monitoring-tracing/prometheus).
 
 ### OpenTelemetry Integration
 Membrane supports integration with **OpenTelemetry** traces using the `openTelemetry` plugin and the `W3C` propagation standard. This enables detailed tracing of requests across Membrane and backend services.
