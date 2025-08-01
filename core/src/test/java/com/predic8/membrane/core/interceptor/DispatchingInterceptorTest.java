@@ -44,7 +44,7 @@ public class DispatchingInterceptorTest {
 
 	@Test
 	public void testServiceProxy() throws Exception {
-		exc.setRequest(MessageUtil.getGetRequest("/axis2/services/BLZService?wsdl"));
+		exc.setRequest(new Request.Builder().get("/axis2/services/BLZService?wsdl").build());
 		exc.setProxy(serviceProxy);
 
 		assertEquals(CONTINUE, dispatcher.handleRequest(exc));
@@ -57,11 +57,12 @@ public class DispatchingInterceptorTest {
 
 	@Test
 	public void testProxyRuleHttp() throws Exception {
-		exc.setRequest(MessageUtil.getGetRequest("http://www.thomas-bayer.com:80/axis2/services/BLZService?wsdl"));
+		exc.setRequest(new Request.Builder().get("http://www.thomas-bayer.com:80/axis2/services/BLZService?wsdl").build());
 		exc.setProxy(getProxyRule());
 
 		assertEquals(CONTINUE, dispatcher.handleRequest(exc));
 
+		//dont work!!!!
 		URL url = new URL(exc.getDestinations().getFirst());
 
 		assertEquals(80, url.getPort());

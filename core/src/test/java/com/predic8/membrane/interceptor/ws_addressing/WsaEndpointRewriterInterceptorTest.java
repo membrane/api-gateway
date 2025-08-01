@@ -13,15 +13,17 @@
    limitations under the License. */
 package com.predic8.membrane.interceptor.ws_addressing;
 
-import com.predic8.membrane.core.*;
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.interceptor.ws_addressing.*;
-import com.predic8.membrane.core.util.*;
-import org.junit.jupiter.api.*;
+import com.predic8.membrane.core.HttpRouter;
+import com.predic8.membrane.core.Router;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.Body;
+import com.predic8.membrane.core.http.Request;
+import com.predic8.membrane.core.interceptor.Outcome;
+import com.predic8.membrane.core.interceptor.ws_addressing.WsaEndpointRewriterInterceptor;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 
 public class WsaEndpointRewriterInterceptorTest {
@@ -39,7 +41,7 @@ public class WsaEndpointRewriterInterceptorTest {
 
 	@Test
 	public void testRewriterInterceptor() throws Exception {
-		exc.setRequest(MessageUtil.getPostRequest("http://localhost:9000/SoapContext/SoapPort?wsdl"));
+		exc.setRequest(new Request.Builder().post("http://localhost:9000/SoapContext/SoapPort?wsdl").build());
 			exc.getRequest().setBody(new Body("""
 					<S:Envelope xmlns:S="http://www.w3.org/2003/05/soap-envelope"     \s
 					                xmlns:wsa="http://schemas.xmlsoap.org/ws/2004/08/addressing">

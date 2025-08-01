@@ -13,19 +13,23 @@
    limitations under the License. */
 package com.predic8.membrane.core.util;
 
-import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.interceptor.schemavalidation.*;
+import com.predic8.membrane.core.http.Message;
+import com.predic8.membrane.core.http.Request;
+import com.predic8.membrane.core.interceptor.schemavalidation.SOAPXMLFilter;
 import org.brotli.dec.BrotliInputStream;
-import org.xml.sax.*;
+import org.xml.sax.InputSource;
+import org.xml.sax.SAXException;
 
-import javax.xml.parsers.*;
-import javax.xml.transform.*;
-import javax.xml.transform.sax.*;
-import java.io.*;
-import java.util.zip.*;
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.parsers.SAXParserFactory;
+import javax.xml.transform.Source;
+import javax.xml.transform.sax.SAXSource;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.zip.GZIPInputStream;
 
-import static com.predic8.membrane.core.Constants.*;
-import static com.predic8.membrane.core.http.Request.*;
+import static com.predic8.membrane.core.Constants.HTTP_VERSION_11;
 
 public class MessageUtil {
 
@@ -73,24 +77,6 @@ public class MessageUtil {
 		} catch (ParserConfigurationException | SAXException e) {
 			throw new RuntimeException("Error initializing SAXSource", e);
 		}
-	}
-
-	public static Request getGetRequest(String uri) {
-		Request req = getStandartRequest(METHOD_GET);
-		req.setUri(uri);
-		return req;
-	}
-
-	public static Request getPostRequest(String uri) {
-		Request req = getStandartRequest(METHOD_POST);
-		req.setUri(uri);
-		return req;
-	}
-
-	public static Request getDeleteRequest(String uri) {
-		Request req = getStandartRequest(METHOD_DELETE);
-		req.setUri(uri);
-		return req;
 	}
 
 	private static Request getStandartRequest(String method) {

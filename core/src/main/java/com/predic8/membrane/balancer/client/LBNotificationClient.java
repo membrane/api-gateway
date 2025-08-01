@@ -14,6 +14,19 @@
 
 package com.predic8.membrane.balancer.client;
 
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.Request;
+import com.predic8.membrane.core.http.Response;
+import com.predic8.membrane.core.interceptor.balancer.Balancer;
+import com.predic8.membrane.core.interceptor.balancer.Cluster;
+import com.predic8.membrane.core.transport.http.HttpClient;
+import org.apache.commons.cli.*;
+import org.apache.commons.codec.binary.Hex;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.crypto.Cipher;
+import javax.crypto.spec.SecretKeySpec;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
@@ -21,23 +34,7 @@ import java.net.URLEncoder;
 import java.security.SecureRandom;
 import java.util.Properties;
 
-import javax.crypto.Cipher;
-import javax.crypto.spec.SecretKeySpec;
-
-import org.apache.commons.cli.*;
-import org.apache.commons.codec.binary.Hex;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Request;
-import com.predic8.membrane.core.http.Response;
-import com.predic8.membrane.core.interceptor.balancer.Balancer;
-import com.predic8.membrane.core.interceptor.balancer.Cluster;
-import com.predic8.membrane.core.transport.http.HttpClient;
-import com.predic8.membrane.core.util.MessageUtil;
-
-import static java.nio.charset.StandardCharsets.*;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static javax.crypto.Cipher.ENCRYPT_MODE;
 import static org.apache.commons.codec.binary.Base64.encodeBase64;
 
@@ -81,7 +78,7 @@ public class LBNotificationClient {
 	private Response notifiyClusterManager() throws Exception {
 		try (HttpClient client = new HttpClient()) {
 			Exchange exc = new Exchange(null);
-			Request r = MessageUtil.getPostRequest(getRequestURL());
+			Request r = new Request.Builder().post(getRequestURL()).build();
 			r.setBodyContent(new byte[0]);
 			exc.setRequest(r);
 			exc.getDestinations().add(getRequestURL());

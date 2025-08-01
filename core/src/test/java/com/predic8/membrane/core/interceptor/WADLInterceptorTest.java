@@ -17,12 +17,14 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URISyntaxException;
 import java.util.Iterator;
 
 import javax.xml.namespace.NamespaceContext;
 import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathFactory;
 
+import com.predic8.membrane.core.http.Request;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.xml.sax.InputSource;
@@ -111,9 +113,9 @@ public class WADLInterceptorTest {
 				.getResponse().getBodyAsStream())));
 	}
 
-	private Exchange getExchange() throws IOException {
+	private Exchange getExchange() throws URISyntaxException {
 		Exchange exc = new Exchange(new FakeHttpHandler(3011));
-		exc.setRequest(MessageUtil.getGetRequest("/search?wadl"));
+		exc.setRequest(new Request.Builder().get("/search?wadl").build());
 		InputStream resourceAsStream = this.getClass().getResourceAsStream("/wadls/search.wadl");
 		Response okResponse = Response.ok()
 				.contentType("text/xml; charset=utf-8")

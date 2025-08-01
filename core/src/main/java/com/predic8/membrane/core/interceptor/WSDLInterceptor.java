@@ -113,9 +113,9 @@ public class WSDLInterceptor extends RelocatingInterceptor {
         }
     }
 
-    private Exchange createExchange(String uri) throws MalformedURLException {
+    private Exchange createExchange(String uri) throws MalformedURLException, URISyntaxException {
         URL url = new URL(uri);
-        Request req = MessageUtil.getGetRequest(getCompletePath(url));
+        Request req = new Request.Builder().get(getCompletePath(url)).build();
         req.getHeader().setHost(url.getHost());
         Exchange exc = new Exchange(null);
         exc.setRequest(req);

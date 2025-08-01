@@ -15,10 +15,12 @@ package com.predic8.membrane.core.interceptor.formvalidation;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import java.net.URISyntaxException;
 import java.util.*;
 
 import com.predic8.membrane.core.HttpRouter;
 import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.formvalidation.FormValidationInterceptor.Field;
 import com.predic8.membrane.core.util.MessageUtil;
@@ -60,9 +62,9 @@ public class FormValidationInterceptorTest {
 		assertEquals(Outcome.CONTINUE, interceptor.handleRequest(exc));
 	}
 
-	private Exchange getExchange(String uri) {
+	private Exchange getExchange(String uri) throws URISyntaxException {
 		Exchange exc = new Exchange(null);
-		exc.setRequest(MessageUtil.getGetRequest(uri));
+		exc.setRequest(new Request.Builder().get(uri).build());
 		return exc;
 	}
 

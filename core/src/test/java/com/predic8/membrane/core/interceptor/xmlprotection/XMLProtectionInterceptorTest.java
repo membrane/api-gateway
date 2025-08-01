@@ -14,15 +14,17 @@
 
 package com.predic8.membrane.core.interceptor.xmlprotection;
 
-import com.predic8.membrane.core.*;
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.util.*;
-import org.junit.jupiter.api.*;
+import com.predic8.membrane.core.Router;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.Request;
+import com.predic8.membrane.core.interceptor.Outcome;
+import com.predic8.membrane.core.util.ByteUtil;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
-import static com.predic8.membrane.core.http.MimeType.*;
-import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static com.predic8.membrane.core.http.MimeType.APPLICATION_XML;
+import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
+import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class XMLProtectionInterceptorTest {
@@ -32,7 +34,7 @@ public class XMLProtectionInterceptorTest {
     @BeforeAll
     public static void setUp() throws Exception {
         exc = new Exchange(null);
-        exc.setRequest(MessageUtil.getGetRequest("/axis2/services/BLZService"));
+        exc.setRequest(new Request.Builder().get("/axis2/services/BLZService").build());
         exc.setOriginalHostHeader("thomas-bayer.com:80");
 
         interceptor = new XMLProtectionInterceptor();

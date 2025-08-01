@@ -15,7 +15,6 @@ package com.predic8.membrane.core.interceptor.rest;
 
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.xml.*;
-import com.predic8.membrane.core.util.MessageUtil;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.xml.sax.InputSource;
@@ -41,7 +40,7 @@ public class HTTP2XMLInterceptorTest {
 	@BeforeEach
 	protected void setUp() throws Exception {
 		exc = new Exchange(null);
-		exc.setRequest(MessageUtil.getGetRequest("http://localhost/axis2/services/BLZService?wsdl"));
+		exc.setRequest(new com.predic8.membrane.core.http.Request.Builder().get("http://localhost/axis2/services/BLZService?wsdl").build());
 		exc.getRequest().setUri("http://localhost:3011/manager/person?vorname=jim&nachname=panse");
 		exc.getRequest().setMethod("POST");
 		exc.getRequest().setVersion("1.1");
