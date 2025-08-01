@@ -34,8 +34,6 @@
 
 # 6.3.0
 
-- Refactor MessageUtil (TB)
-  - MessageUtil: Remove getXRequest and use Request Builder instead
 - Describe RPM Setup
 - examples/routing-traffic/outgoing-api-gateway (TB)
 - Cook Book: outgoing-api-gateway (TB)
