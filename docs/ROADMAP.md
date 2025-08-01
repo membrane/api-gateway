@@ -34,8 +34,6 @@
 
 # 6.3.0
 
-- Refactor MessageUtil (TB)
-  - MessageUtil: Remove getXRequest and use Request Builder instead
 - Describe RPM Setup
 - examples/routing-traffic/outgoing-api-gateway (TB)
 - Cook Book: outgoing-api-gateway (TB)
@@ -46,7 +44,6 @@
   - Pretty on text should trim whitespace incl. linebreaks at start and end
 - READMEs in example folders listing the examples (TB)
 - Refactor HttpClient (TB)
-- SampleSOAPService: Add some more cities 
 - Refactor: interceptor.session
 
 ### Internal
