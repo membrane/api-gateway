@@ -15,7 +15,7 @@ package com.predic8.membrane.core.util;
 
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.schemavalidation.*;
-import org.brotli.dec.BrotliInputStream;
+import org.brotli.dec.*;
 import org.xml.sax.*;
 
 import javax.xml.parsers.*;
@@ -24,8 +24,7 @@ import javax.xml.transform.sax.*;
 import java.io.*;
 import java.util.zip.*;
 
-import static com.predic8.membrane.core.Constants.*;
-import static com.predic8.membrane.core.http.Request.*;
+import static com.predic8.membrane.core.util.ByteUtil.getDecompressedData;
 
 public class MessageUtil {
 
@@ -40,9 +39,11 @@ public class MessageUtil {
 	public static InputStream getContentAsStream(Message res) throws IOException {
 		if (res.isGzip()) {
 			return new GZIPInputStream(res.getBodyAsStream());
-		} else if (res.isDeflate()) {
-			return new ByteArrayInputStream(ByteUtil.getDecompressedData(res.getBody().getContent()));
-		} else if (res.isBrotli()) {
+		}
+		if (res.isDeflate()) {
+			return new ByteArrayInputStream(getDecompressedData(res.getBody().getContent()));
+		}
+		if (res.isBrotli()) {
 			return new BrotliInputStream(res.getBodyAsStream());
 		}
 		return res.getBodyAsStream();
@@ -56,7 +57,7 @@ public class MessageUtil {
 			}
 		}
 		if (res.isDeflate()) {
-			return ByteUtil.getDecompressedData(res.getBody().getContent());
+			return getDecompressedData(res.getBody().getContent());
 		}
 		if (res.isBrotli()) {
 			try (InputStream lInputStream = res.getBodyAsStream();
@@ -74,31 +75,4 @@ public class MessageUtil {
 			throw new RuntimeException("Error initializing SAXSource", e);
 		}
 	}
-
-	public static Request getGetRequest(String uri) {
-		Request req = getStandartRequest(METHOD_GET);
-		req.setUri(uri);
-		return req;
-	}
-
-	public static Request getPostRequest(String uri) {
-		Request req = getStandartRequest(METHOD_POST);
-		req.setUri(uri);
-		return req;
-	}
-
-	public static Request getDeleteRequest(String uri) {
-		Request req = getStandartRequest(METHOD_DELETE);
-		req.setUri(uri);
-		return req;
-	}
-
-	private static Request getStandartRequest(String method) {
-		Request request = new Request();
-		request.setMethod(method);
-		request.setVersion(HTTP_VERSION_11);
-
-		return request;
-	}
-
 }
