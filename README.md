@@ -51,15 +51,23 @@ Simple implementation of a token server. A request is authenticated by API key a
 
 These are just a few examples; see the descriptions below for more.
 
+## API Gateway eBook
+
+Learn how API Gateways work with real-world examples and insights into Membrane.
+
+![API Gateway eBook Cover](/docs/images/api-gateway-ebook-cover.jpg)
+
+[Download instantly](https://www.membrane-api.io/ebook/API-Gateway-Handbook-Pre-Release-2025-07-02.pdf) — **no registration** required.
+
 ## Features
 
 ### **OpenAPI**
 
-- Deploy APIs directly from [OpenAPI specifications](https://www.membrane-api.io/openapi/configuration-and-validation).
+- Deploy APIs from [OpenAPI specifications](https://www.membrane-api.io/openapi/configuration-and-validation).
 - Validate requests and responses against [OpenAPI](distribution/examples/openapi/validation-simple) and **JSON Schema**.
 
 ### **API Security**
-- Support for [JSON Web Tokens](#json-web-tokens), [OAuth2](https://www.membrane-soa.org/service-proxy/oauth2-provider-client.html), [API Keys](#API-Keys), [NTLM](distribution/examples/ntlm), and [Basic Authentication](https://www.membrane-soa.org/api-gateway-doc/current/configuration/reference/basicAuthentication.htm).
+- [JSON Web Tokens](#json-web-tokens), [OAuth2](https://www.membrane-soa.org/service-proxy/oauth2-provider-client.html), [API Keys](#API-Keys), [NTLM](distribution/examples/ntlm), and [Basic Authentication](https://www.membrane-soa.org/api-gateway-doc/current/configuration/reference/basicAuthentication.htm).
 - Built-in [OAuth2 Authorization Server](https://www.membrane-soa.org/service-proxy-doc/4.8/security/oauth2/flows/code/index.html).
 - [Rate limiting](#rate-limiting) and traffic control
 - Protection for **GraphQL**, **JSON**, and **XML** APIs against malicious inputs.
@@ -69,7 +77,7 @@ These are just a few examples; see the descriptions below for more.
 - Configure, validate, and rewrite WSDL-based services, including [message validation](#message-validation-against-wsdl-and-xsd).
 
 ### **Additional Features**
-- Intuitive **Admin Web Console** for monitoring and management.
+**Admin Web Console** for monitoring and management.
 - Advanced [load balancing](#load-balancing) to ensure high availability.
 - Flexible [message transformation](#message-transformation) for seamless data processing.
 - Embeddable reverse proxy HTTP framework to build custom API gateways.
@@ -196,7 +204,7 @@ For detailed Docker setup instructions, see the [Membrane Deployment Guide](http
 
 ### Explore and Experiment
 - Try the code snippets below.
-- Run the samples in the `examples` folder of the unzipped distribution.
+- Run the samples in the [examples](/distribution/examples) folder of the unzipped distribution.
 
 ### Dive into Tutorials
 - Follow the [REST API Tutorial](https://membrane-api.io/tutorials/rest/) to learn about deploying and securing RESTful services.
