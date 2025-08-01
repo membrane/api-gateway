@@ -1,5 +1,7 @@
 # Configuration and Extension Examples for Membrane API Gateway
 
+These examples show how to adapt, customize, and embed Membrane for real-world scenarios beyond basic reverse-proxy usage.
+
 ## Configuration and Deployment
 
 * [Configuration properties and environment variables](configuration-properties)
