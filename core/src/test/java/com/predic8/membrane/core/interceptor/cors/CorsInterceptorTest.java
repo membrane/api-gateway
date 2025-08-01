@@ -233,12 +233,12 @@ class CorsInterceptorTest {
             i.setAllowAll(true);
             i.init();
 
-            Exchange exc = makePreflight(createPreflight("https://evil.example.com", METHOD_POST)
+            Exchange exc = makePreflight(createPreflight("https://evil.example.com", POST)
                     .header(ACCESS_CONTROL_REQUEST_HEADERS, "X-Foo"));
 
             Header h = exc.getResponse().getHeader();
 
-            assertEquals(METHOD_POST, getAllowMethods(exc));
+            assertEquals(POST, getAllowMethods(exc));
             assertTrue(getAllowHeaders(exc).contains("X-Foo"));
             assertEquals(WILDCARD, getAllowOrigin(exc));
 
@@ -252,12 +252,12 @@ class CorsInterceptorTest {
             i.init();
             i.setOrigins("http://foo.example.com https://bar.example.com null");
 
-            Exchange exc = makePreflight(createPreflight("null", METHOD_POST));
+            Exchange exc = makePreflight(createPreflight("null", POST));
 
             Header h = exc.getResponse().getHeader();
             System.out.println("h = " + h);
 
-            assertEquals(METHOD_POST, getAllowMethods(exc));
+            assertEquals(POST, getAllowMethods(exc));
             assertEquals(NULL_STRING, getAllowOrigin(exc));
             checkAllowHeaders(h, Set.of(ACCESS_CONTROL_ALLOW_ORIGIN, ACCESS_CONTROL_ALLOW_METHODS));
         }
@@ -265,7 +265,7 @@ class CorsInterceptorTest {
         @Test
         void originNullNotAllowedPreflight() throws Exception {
             i.init();
-            Exchange exc = makePreflight(createPreflight("null", METHOD_POST), 403);
+            Exchange exc = makePreflight(createPreflight("null", POST), 403);
 
             assertEquals(APPLICATION_PROBLEM_JSON, exc.getResponse().getHeader().getContentType());
 
@@ -280,7 +280,7 @@ class CorsInterceptorTest {
         void returnOnlyRequestedMethodPreflight() throws Exception {
             i.init();
 
-            Exchange exc = makePreflight(createPreflight("https://trusted.example.com", METHOD_POST));
+            Exchange exc = makePreflight(createPreflight("https://trusted.example.com", POST));
 
             Header h = exc.getResponse().getHeader();
 
@@ -295,7 +295,7 @@ class CorsInterceptorTest {
             i.setOrigins("https://trusted.example.com");
             i.init();
 
-            Exchange exc = makePreflight(createPreflight("https://trusted.example.com", METHOD_POST));
+            Exchange exc = makePreflight(createPreflight("https://trusted.example.com", POST));
 
             Header h = exc.getResponse().getHeader();
 
@@ -313,7 +313,7 @@ class CorsInterceptorTest {
             i.init();
 
             // Request without origin on purpose!
-            Exchange exc = options("/test").header(ACCESS_CONTROL_REQUEST_METHOD, METHOD_POST).buildExchange();
+            Exchange exc = options("/test").header(ACCESS_CONTROL_REQUEST_METHOD, POST).buildExchange();
 
             // Call handleRequest in test on purpose!
             assertEquals(CONTINUE, i.handleRequest(exc));
@@ -334,7 +334,7 @@ class CorsInterceptorTest {
             i.setOrigins("https://trusted.example.com");
             i.init();
 
-            Exchange exc = makePreflight(createPreflight("https://any.example.com", METHOD_POST).header("X-Not-Allowed", "Bar"), 403);
+            Exchange exc = makePreflight(createPreflight("https://any.example.com", POST).header("X-Not-Allowed", "Bar"), 403);
 
             JsonNode jn = om.readTree(exc.getResponse().getBodyAsStringDecoded());
             assertEquals("https://membrane-api.io/problems/security/origin-not-allowed", jn.get("type").asText());
@@ -349,7 +349,7 @@ class CorsInterceptorTest {
             i.setHeaders("X-Bar X-Foo X-Zoo");
             i.init();
 
-            Exchange exc = makePreflight(createPreflight("https://trusted.example.com", METHOD_POST, "X-Foo"));
+            Exchange exc = makePreflight(createPreflight("https://trusted.example.com", POST, "X-Foo"));
 
             Header h = exc.getResponse().getHeader();
 
@@ -362,10 +362,10 @@ class CorsInterceptorTest {
             i.setMethods("PUT, POST, DELETE, PATCH");
             i.init();
 
-            Exchange exc = makePreflight(createPreflight("https://trusted.example.com", METHOD_POST));
+            Exchange exc = makePreflight(createPreflight("https://trusted.example.com", POST));
 
             Header h = exc.getResponse().getHeader();
-            assertEquals(METHOD_POST, getAllowMethods(exc));
+            assertEquals(POST, getAllowMethods(exc));
             checkAllowHeaders(h, Set.of(ACCESS_CONTROL_ALLOW_ORIGIN, ACCESS_CONTROL_ALLOW_METHODS));
 
         }
@@ -374,10 +374,10 @@ class CorsInterceptorTest {
         @Test
         void disallowedMethodPreflight() throws Exception {
             i.setOrigins("https://trusted.example.com");
-            i.setMethods(METHOD_PUT);
+            i.setMethods(PUT);
             i.init();
 
-            Exchange exc = makePreflight(createPreflight("https://trusted.example.com", METHOD_POST), 403);
+            Exchange exc = makePreflight(createPreflight("https://trusted.example.com", POST), 403);
 
             JsonNode jn = om.readTree(exc.getResponse().getBodyAsStringDecoded());
             assertEquals("https://membrane-api.io/problems/security/method-not-allowed", jn.get("type").asText());
@@ -393,14 +393,14 @@ class CorsInterceptorTest {
             i.setMaxAge(600);
             i.init();
 
-            Exchange exc = makePreflight(createPreflight("https://trusted.example.com", METHOD_POST));
+            Exchange exc = makePreflight(createPreflight("https://trusted.example.com", POST));
             assertEquals("600", getMaxAge(exc));
         }
 
         @Test
         void doNotExposeHeadersInPreflight() throws Exception {
             i.setExposeHeaders("X-Custom");
-            Exchange exc = makePreflight(createPreflight("https://trusted.example.com", METHOD_POST));
+            Exchange exc = makePreflight(createPreflight("https://trusted.example.com", POST));
             Header h = exc.getResponse().getHeader();
             assertNull(h.getFirstValue(ACCESS_CONTROL_EXPOSE_HEADERS));
         }

@@ -70,7 +70,7 @@ public class ServiceProxyKeyTest {
 
 	@Test
 	void testNoRegExpMatchesPath() {
-		ServiceProxyKey key = new ServiceProxyKey("localhost", METHOD_POST, "/axis2/services", 3000);
+		ServiceProxyKey key = new ServiceProxyKey("localhost", POST, "/axis2/services", 3000);
 		key.setPathRegExp(false);
 
 		assertTrue(key.matchesPath("/axis2/services/bla/other"));
@@ -79,14 +79,14 @@ public class ServiceProxyKeyTest {
 
 	@Test
 	void testRegularExpressionMatchesPath() {
-		ServiceProxyKey key = new ServiceProxyKey("localhost", METHOD_POST, ".*FooService", 3000);
+		ServiceProxyKey key = new ServiceProxyKey("localhost", POST, ".*FooService", 3000);
 		assertTrue(key.matchesPath("/axis2/services/FooService"));
 		assertFalse(key.matchesPath("/axis2/services/FooService/Bla"));
 	}
 
 	@Test
 	void regularExpressionMatchesPathAnyURI() {
-		ServiceProxyKey key = new ServiceProxyKey("localhost", METHOD_POST, ".*", 3000);
+		ServiceProxyKey key = new ServiceProxyKey("localhost", POST, ".*", 3000);
 		assertTrue(key.matchesPath("/axis2/services/FooService"));
 		assertTrue(key.matchesPath("/axis2/services/FooService/Bla"));
 	}
@@ -119,6 +119,6 @@ public class ServiceProxyKeyTest {
 
 	@Test
 	void toStringTest() {
-        assertEquals("localhost:3000 POST /axis2/services", new ServiceProxyKey("localhost", METHOD_POST, "/axis2/services", 3000).toString());
+        assertEquals("localhost:3000 POST /axis2/services", new ServiceProxyKey("localhost", POST, "/axis2/services", 3000).toString());
 	}
 }

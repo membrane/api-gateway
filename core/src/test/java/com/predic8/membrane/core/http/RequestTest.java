@@ -20,6 +20,7 @@ import org.junit.jupiter.api.*;
 import java.io.*;
 import java.net.*;
 
+import static com.predic8.membrane.core.Constants.*;
 import static com.predic8.membrane.core.http.Request.*;
 import static com.predic8.membrane.core.util.StringTestUtil.*;
 import static com.predic8.membrane.test.TestUtil.*;
@@ -28,9 +29,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class RequestTest {
 
-	private static final Request reqPost = new Request();
-
-	private static final Request reqChunked = new Request();
+	private static final Request request = new Request();
 
 	private InputStream inPost;
 
@@ -40,14 +39,18 @@ public class RequestTest {
 
 	private InputStream tempIn;
 
+	private InputStream isPOSTStartLine = new ByteArrayInputStream(("POST /foo HTTP/1.1" + CRLF).getBytes(UTF_8));
+	private InputStream isPosTStartLine = new ByteArrayInputStream(("PosT /foo HTTP/1.1" + CRLF).getBytes(UTF_8));
+	private InputStream isProxyStartLine = new ByteArrayInputStream(("GET http://example.com/foo HTTP/1.0" + CRLF).getBytes(UTF_8));
+
 	@BeforeEach
-	public void setUp() {
+	void setUp() {
 		inPost = getResourceAsStream(this,"request-post.msg");
 		inChunked = getResourceAsStream(this,"request-chunked-soap.msg");
 	}
 
 	@AfterEach
-	public void tearDown() throws Exception {
+	void tearDown() throws Exception {
 
 		if (inPost != null) {
 			inPost.close();
@@ -66,68 +69,97 @@ public class RequestTest {
 		}
 
 	}
-	
-	@Test
-	void parseStartLineChunked() throws IOException {
-		reqChunked.parseStartLine(inChunked);
-		assertTrue(reqChunked.isPOSTRequest());
-		assertEquals("/axis2/services/BLZService", reqChunked.getUri());
-		assertEquals("1.1", reqChunked.getVersion());
+
+	@Nested
+	class StartLine {
+
+		@Test
+		void chunked() throws IOException {
+			request.parseStartLine(inChunked);
+			assertTrue(request.isPOSTRequest());
+			assertEquals("/axis2/services/BLZService", request.getUri());
+			assertEquals("1.1", request.getVersion());
+		}
+
+		@Test
+		void post() throws IOException {
+			request.parseStartLine(isPOSTStartLine);
+			assertTrue(request.isPOSTRequest());
+			assertEquals("1.1", request.getVersion());
+			assertEquals("/foo", request.getUri());
+		}
+
+		@Test
+		void postWrongCasing() throws IOException {
+			request.parseStartLine(isPosTStartLine);
+			assertEquals("PosT",request.getMethod());
+			assertEquals("1.1", request.getVersion());
+			assertEquals("/foo", request.getUri());
+		}
+
+		@Test
+		void absuloteFormForProxying() throws IOException {
+			request.parseStartLine(isProxyStartLine);
+			assertEquals("GET",request.getMethod());
+			assertEquals("1.0", request.getVersion());
+			assertEquals("http://example.com/foo", request.getUri());
+		}
+
 	}
 
 	@Test
 	void readChunked() throws Exception {
-		reqChunked.read(inChunked, true);
-		assertNotNull(reqChunked.getBodyAsStream());
+		request.read(inChunked, true);
+		assertNotNull(request.getBodyAsStream());
 	}
 
 	@Test
 	void readPost() throws Exception {
-		reqPost.read(inPost, true);
-		assertEquals(METHOD_POST, reqPost.getMethod());
-		assertEquals("/operation/call", reqPost.getUri());
-		assertNotNull(reqPost.getBody());
+		request.read(inPost, true);
+		assertEquals(POST, request.getMethod());
+		assertEquals("/operation/call", request.getUri());
+		assertNotNull(request.getBody());
 
-		assertEquals(168, reqPost.getBody().getLength());
+		assertEquals(168, request.getBody().getLength());
 	}
 
 	@Test
 	void writePost() throws Exception {
-		reqPost.read(inPost, true);
+		request.read(inPost, true);
 
 		tempOut = new ByteArrayOutputStream();
-		reqPost.write(tempOut, true);
+		request.write(tempOut, true);
 
 		tempIn = new ByteArrayInputStream(tempOut.toByteArray());
 
 		Request reqTemp = new Request();
 		reqTemp.read(tempIn, true);
 
-		assertEquals(reqPost.getUri(), reqTemp.getUri());
-		assertEquals(reqPost.getMethod(), reqTemp.getMethod());
+		assertEquals(request.getUri(), reqTemp.getUri());
+		assertEquals(request.getMethod(), reqTemp.getMethod());
 
-		assertArrayEquals(reqPost.getBody().getContent(), reqTemp.getBody().getContent());
-		assertArrayEquals(reqPost.getBody().getRaw(), reqTemp.getBody().getRaw());
+		assertArrayEquals(request.getBody().getContent(), reqTemp.getBody().getContent());
+		assertArrayEquals(request.getBody().getRaw(), reqTemp.getBody().getRaw());
 	}
 
 	@Test
 	void isHTTP11() {
-		assertTrue(reqPost.isHTTP11());
+		assertTrue(request.isHTTP11());
 	}
 
 	@Test
 	void isHTTP11Chunked() {
-		assertTrue(reqChunked.isHTTP11());
+		assertTrue(request.isHTTP11());
 	}
 
 	@Test
 	void isKeepAlive() {
-		assertTrue(reqPost.isKeepAlive());
+		assertTrue(request.isKeepAlive());
 	}
 
 	@Test
 	void isKeepAliveChunked() {
-		assertTrue(reqChunked.isKeepAlive());
+		assertTrue(request.isKeepAlive());
 	}
 
 	@Test
@@ -152,14 +184,14 @@ public class RequestTest {
 	@Test
 	void createFromStreamMethodGETDoNotSupportBody() throws IOException {
 		Request req = new Request();
-		req.create(METHOD_GET , "http://test", "HTTP/", new Header(), getResourceAsStream(this,"/getBank.xml"));
+		req.create(GET, "http://test", "HTTP/", new Header(), getResourceAsStream(this,"/getBank.xml"));
 		assertTrue(req.isBodyEmpty());
 	}
 
 	@Test
 	void createFromStreamMethodHEADDoNotSupportBody() throws IOException {
 		Request req = new Request();
-		req.create(METHOD_HEAD, "http://test", "HTTP/", new Header(), getResourceAsStream(this,"/getBank.xml"));
+		req.create(HEAD, "http://test", "HTTP/", new Header(), getResourceAsStream(this,"/getBank.xml"));
 		assertTrue(req.isBodyEmpty());
 	}
 	
@@ -186,7 +218,7 @@ public class RequestTest {
 	@Test
 	void setBodyShouldReadTheOriginalBody() throws EndOfStreamException, IOException {
 		AbstractBody originalBody = readMessageAndGetBody();
-		reqPost.setBody(new Body("ABC".getBytes(UTF_8))); // Replace body with a different one
+		request.setBody(new Body("ABC".getBytes(UTF_8))); // Replace body with a different one
 		assertTrue(originalBody.isRead()); // Assert that the original body is read
 	}
 
@@ -235,15 +267,15 @@ public class RequestTest {
 	@Test
 	void setBodyContentShouldReadTheOriginalBody() throws EndOfStreamException, IOException {
 		AbstractBody originalBody = readMessageAndGetBody();
-		reqPost.setBodyContent("ABC".getBytes(UTF_8));
+		request.setBodyContent("ABC".getBytes(UTF_8));
 		assertTrue(originalBody.isRead()); // Assert that the original body is read
-		assertEquals(0,inPost.available()); // Check that all bytes are read from the stream
+		assertEquals(0, inPost.available()); // Check that all bytes are read from the stream
 	}
 
 	private AbstractBody readMessageAndGetBody() throws IOException, EndOfStreamException {
-		reqPost.read(inPost, true);
-		assertFalse(reqPost.getBody().isRead());
-        return reqPost.getBody();
+		request.read(inPost, true);
+		assertFalse(request.getBody().isRead());
+        return request.getBody();
 	}
 
 }

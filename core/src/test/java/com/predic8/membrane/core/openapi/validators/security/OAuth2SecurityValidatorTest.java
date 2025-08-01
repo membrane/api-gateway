@@ -55,12 +55,12 @@ public class OAuth2SecurityValidatorTest extends AbstractSecurityValidatorTest {
 
     @Test
     void globalAndOperationScopes() throws Exception {
-        assertEquals(CONTINUE, interceptor.handleRequest(getExchange(METHOD_POST, "/write-pet", CLIENT_CREDENTIALS().scopes("write:pets","read:pets"))));
+        assertEquals(CONTINUE, interceptor.handleRequest(getExchange(POST, "/write-pet", CLIENT_CREDENTIALS().scopes("write:pets","read:pets"))));
     }
 
     @Test
     void globalScopes() throws Exception {
-        assertEquals(CONTINUE, interceptor.handleRequest(getExchange(METHOD_GET, "/get-pet", CLIENT_CREDENTIALS().scopes("read:pets"))));
+        assertEquals(CONTINUE, interceptor.handleRequest(getExchange(GET, "/get-pet", CLIENT_CREDENTIALS().scopes("read:pets"))));
     }
 
 }
