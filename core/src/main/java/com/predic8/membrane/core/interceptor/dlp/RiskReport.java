@@ -9,7 +9,7 @@ public class RiskReport {
     private final Map<String, Integer> riskCounts = new LinkedHashMap<>();
     private final Map<String, Map<String, Integer>> riskDetails = new LinkedHashMap<>();
 
-    private static final List<String> RISK_LEVELS = List.of("high", "medium", "low", "unclassified");
+    private static final List<String> RISK_LEVELS = List.of("high", "medium", "low", "unknown");
 
     public void recordField(String field, String riskLevel, String category) {
         String level = normalizeRiskLevel(riskLevel);
@@ -30,7 +30,7 @@ public class RiskReport {
         if (riskCounts.getOrDefault("high", 0) > 0) return "high";
         if (riskCounts.getOrDefault("medium", 0) > 0) return "medium";
         if (riskCounts.getOrDefault("low", 0) > 0) return "low";
-        return "unclassified";
+        return "unknown";
     }
 
     public String getFormattedSummaryLog() {
@@ -69,7 +69,7 @@ public class RiskReport {
     private String normalizeRiskLevel(String level) {
         return switch (level.toLowerCase()) {
             case "high", "medium", "low" -> level.toLowerCase();
-            default -> "unclassified";
+            default -> "unknown";
         };
     }
 }

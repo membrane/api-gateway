@@ -22,9 +22,9 @@ import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
  *
  * <p>This plugin supports three main actions on sensitive fields:</p>
  * <ul>
- *     <li>{@code <mask>} ? Masks sensitive fields, leaving a configurable number of trailing characters visible.</li>
- *     <li>{@code <filter>} ? Removes specified fields entirely from the payload.</li>
- *     <li>{@code <report>} ? Logs the risk level and category of specified fields (if configured).</li>
+ *     <li> Mask ? Masks sensitive fields, leaving a configurable number of trailing characters visible.</li>
+ *     <li> Filter? Removes specified fields entirely from the payload.</li>
+ *     <li> Report ? Logs the risk level and category of specified fields (if configured).</li>
  * </ul>
  *
  * @topic 3. Security and Validation
@@ -125,7 +125,8 @@ public class DLPInterceptor extends AbstractInterceptor {
     }
 
     @MCChildElement(order = 2)
-    public void setReports(List<Report> reports) {
+    public DLPInterceptor setReports(List<Report> reports) {
         this.reports = reports;
+        return this;
     }
 }

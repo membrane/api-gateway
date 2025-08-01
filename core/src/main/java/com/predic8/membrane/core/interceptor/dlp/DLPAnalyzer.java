@@ -45,7 +45,7 @@ public class DLPAnalyzer {
             case "low":
                 return level.toLowerCase();
             default:
-                return "unclassified";
+                return "unknown";
         }
     }
 
@@ -85,6 +85,6 @@ public class DLPAnalyzer {
     private String classify(String fullPath, String simpleName) {
         return Optional.ofNullable(riskDict.get(fullPath))
                 .or(() -> Optional.ofNullable(riskDict.get(simpleName)))
-                .orElse("unclassified");
+                .orElse("unknown");
     }
 }
