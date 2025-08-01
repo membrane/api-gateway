@@ -1,36 +1,36 @@
-# Extending the API Gateway
+# Configuration and Extension Examples for Membrane API Gateway
 
 ## Configuration and Deployment
 
 * [Configuration properties and environment variables](configuration-properties)
-  Setup Membrane for production environments.
+  Prepare Membrane for production by externalizing configuration.
 
-## Modifying the Behaviour of APIs and the Gateway
+## Modifying API and Gateway Behavior
 
-* [Conditional with `if`](if)
-  Make your APIs behave differently based on certain conditions
+* [Conditional logic with `if`](if)
+  Change API behavior based on conditions.
 * [Global plugin chain](global-interceptor)
-  Engage plugins globally for all deployed APIs
+  Apply plugins globally across all APIs.
 * [Plugin Chains](reusable-plugin-chains)
-  Reuse plugin configurations across multiple APIs
+  Define plugin sequences once and reuse them in multiple APIs.
 * [Error handling](error-handling)
-  How to transform proprietary error messages from backends into your own format
+  Transform backend error messages into a unified format.
 
 ## Saving API messages
 
 * [File ExchangeStore](file-exchangestore)
-  Save messages into a folder.
+  Persist messages to local disk.
 * [MongoDB ExchangeStore](mongo-exchange-store)
-  Save messages into a MongoDB database
+  Store API messages in MongoDB for later inspection or analysis.
 
-## Extending with Java
+## Extending Membrane with Java
 
-* [Writing custom plugins](custom-interceptor)
-  How to extend the gateway with your own interceptor written in Java
+* [Custom plugins](custom-interceptor)
+  Extend Membrane with your own interceptors in Java.
 * [Embedding Membrane](embedding-java)
-  How to embed an API Gateway into Java applications
+  Integrate Membrane directly into your Java application.
 
 ## Other
 
-* [Service Discovery](service-discovery-with-etcd)
-  Discover backend services with the `etcd` registry
+* [Service Discovery with `etcd`](service-discovery-with-etcd)
+  Dynamically discover services and update routing.
