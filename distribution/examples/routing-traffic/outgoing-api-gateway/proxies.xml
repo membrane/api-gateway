@@ -1,0 +1,74 @@
+<spring:beans xmlns="http://membrane-soa.org/proxies/1/"
+			  xmlns:spring="http://www.springframework.org/schema/beans"
+			  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+			  xsi:schemaLocation="http://www.springframework.org/schema/beans
+	                    http://www.springframework.org/schema/beans/spring-beans-4.2.xsd
+	                    http://membrane-soa.org/proxies/1/ http://membrane-soa.org/schemas/proxies-1.xsd">
+
+	<router>
+
+		<!-- Transport settings: configure how requests are handled globally -->
+		<transport>
+			<!-- Do not set X-Forwarded-For headers -->
+			<ruleMatching xForwardedForEnabled="false"/>
+			<logContext />
+			<exchangeStore />
+			<dispatching />
+			<reverseProxying/>
+			<global />
+			<userFeature />
+			<internalRouting />
+			<httpClient />
+		</transport>
+
+		<global>
+			<!-- Move the header filter here to apply it globally on all APIs -->
+			<!--
+		  <request>
+			 	<headerFilter>
+					<exclude>.*</exclude>
+				</headerFilter>
+			</request>
+			-->
+		</global>
+
+		<api port="2000" name="Outgoing Gateway">
+		  <request>
+			 	<headerFilter>
+					<!-- Include only these headers (necessary for functionality and considered safe) -->
+					<include>Accept.*</include>
+					<include>Cache-Control</include>
+					<include>Content-Type</include>
+					<include>Content-Length</include>
+					<include>Cookie</include>
+					<include>X-Requested-With</include>
+
+					<!-- If you want to pass authentication headers
+					     from the internal clients to the external API  
+					     allow them here, otherwise take that line out.
+					-->
+					<include>X-Api-Key</include>
+					<!-- Exclude (remove) all other headers not explicitly included above -->
+					<exclude>.*</exclude>
+				</headerFilter>
+			</request>
+			<!-- Replace this with the address of the external API -->
+			<target url="http://localhost:3000"/>
+		</api>
+
+		<!-- This is only for testing. Take it out in production -->
+		<api port="3000" name="External Mock API">
+			<request>
+				<log message="Header: ${header}"/>
+			 	<template contentType="text/plain">
+					<![CDATA[			
+Headers exposed to external API: <%= headers.allHeaderFields.headerName %>
+					]]>
+				</template>
+			</request>
+			<return/>
+		</api>		
+
+	</router>
+
+</spring:beans>
