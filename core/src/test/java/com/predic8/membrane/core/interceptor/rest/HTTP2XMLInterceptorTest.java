@@ -40,7 +40,7 @@ public class HTTP2XMLInterceptorTest {
 	@BeforeEach
 	protected void setUp() throws Exception {
 		exc = new Exchange(null);
-		exc.setRequest(new com.predic8.membrane.core.http.Request.Builder().get("http://localhost/axis2/services/BLZService?wsdl").build());
+		exc.setRequest(com.predic8.membrane.core.http.Request.get("http://localhost/axis2/services/BLZService?wsdl").build());
 		exc.getRequest().setUri("http://localhost:3011/manager/person?vorname=jim&nachname=panse");
 		exc.getRequest().setMethod("POST");
 		exc.getRequest().setVersion("1.1");

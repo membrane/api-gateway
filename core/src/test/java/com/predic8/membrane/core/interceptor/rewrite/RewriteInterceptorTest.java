@@ -66,7 +66,7 @@ public class RewriteInterceptorTest {
 
 	@Test
 	void testRewriteWithoutTarget() throws URISyntaxException {
-		exc.setRequest(new Request.Builder().get("/buy/banana/3").build());
+		exc.setRequest(Request.get("/buy/banana/3").build());
 		assertEquals(CONTINUE, di.handleRequest(exc));
 		assertEquals(CONTINUE, rewriter.handleRequest(exc));
 		assertEquals("/buy?item=banana&amount=3", exc.getDestinations().getFirst());
@@ -74,7 +74,7 @@ public class RewriteInterceptorTest {
 
 	@Test
 	void testRewrite() throws URISyntaxException {
-		exc.setRequest(new Request.Builder().get("/buy/banana/3").build());
+		exc.setRequest(Request.get("/buy/banana/3").build());
 		exc.setProxy(sp);
 
 		assertEquals(CONTINUE, di.handleRequest(exc));
@@ -84,7 +84,7 @@ public class RewriteInterceptorTest {
 
 	@Test
 	void storeSample() throws URISyntaxException {
-		exc.setRequest(new Request.Builder().get("https://api.predic8.de/store/products/").build());
+		exc.setRequest(Request.get("https://api.predic8.de/store/products/").build());
 		assertEquals(CONTINUE, di.handleRequest(exc));
 		assertEquals(CONTINUE, rewriter.handleRequest(exc));
 		//dont work!!!!
@@ -94,7 +94,7 @@ public class RewriteInterceptorTest {
 	@Test
 	void invalidURI() throws Exception {
 		//dont work!!!!
-		exc.setRequest(new Request.Builder().get("/buy/banana/%").build());
+		exc.setRequest(Request.get("/buy/banana/%").build());
 		exc.setProxy(sp);
 
 		assertEquals(CONTINUE, di.handleRequest(exc));

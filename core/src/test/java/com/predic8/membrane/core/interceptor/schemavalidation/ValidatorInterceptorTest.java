@@ -56,8 +56,8 @@ public class ValidatorInterceptorTest {
 
     @BeforeAll
     public static void setUp() throws URISyntaxException {
-        requestTB = new Request.Builder().post("http://thomas-bayer.com").build();
-        requestXService = new Request.Builder().post("http://ws.xwebservices.com").build();
+        requestTB = Request.post("http://thomas-bayer.com").build();
+        requestXService = Request.post("http://ws.xwebservices.com").build();
         exc = new Exchange(null);
         router = new Router();
     }

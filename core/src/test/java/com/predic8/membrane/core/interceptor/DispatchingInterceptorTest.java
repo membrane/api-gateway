@@ -57,7 +57,7 @@ public class DispatchingInterceptorTest {
 
 	@Test
 	public void testProxyRuleHttp() throws Exception {
-		exc.setRequest(new Request.Builder().get("http://www.thomas-bayer.com:80/axis2/services/BLZService?wsdl").build());
+		exc.setRequest(Request.get("http://www.thomas-bayer.com:80/axis2/services/BLZService?wsdl").build());
 		exc.setProxy(getProxyRule());
 
 		assertEquals(CONTINUE, dispatcher.handleRequest(exc));
@@ -77,7 +77,7 @@ public class DispatchingInterceptorTest {
     @Test
     void getAddressFromTargetElementTargetWithHostAndPort() throws Exception {
 		exc.setProxy(serviceProxy);
-		exc.setRequest(new Request.Builder().get("/foo").build());
+		exc.setRequest(Request.get("/foo").build());
 		assertEquals("http://thomas-bayer.com:80/foo", getGetAddressFromTargetElement());
     }
 

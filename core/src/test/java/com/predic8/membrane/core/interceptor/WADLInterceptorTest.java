@@ -115,7 +115,7 @@ public class WADLInterceptorTest {
 
 	private Exchange getExchange() throws URISyntaxException {
 		Exchange exc = new Exchange(new FakeHttpHandler(3011));
-		exc.setRequest(new Request.Builder().get("/search?wadl").build());
+		exc.setRequest(Request.get("/search?wadl").build());
 		InputStream resourceAsStream = this.getClass().getResourceAsStream("/wadls/search.wadl");
 		Response okResponse = Response.ok()
 				.contentType("text/xml; charset=utf-8")

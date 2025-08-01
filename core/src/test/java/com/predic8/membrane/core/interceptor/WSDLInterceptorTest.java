@@ -40,7 +40,7 @@ public class WSDLInterceptorTest {
 	@BeforeEach
 	public void setUp() throws Exception {
 		exc = new Exchange(new FakeHttpHandler(3011));
-		exc.setRequest(new Request.Builder().get("/axis2/services/BLZService?wsdl").build());
+		exc.setRequest(Request.get("/axis2/services/BLZService?wsdl").build());
         exc.setResponse(ok()
 				.contentType("text/xml; charset=utf-8")
 				.body(WSDLInterceptorTest.class.getResourceAsStream("/blz-service.wsdl"), true)

@@ -78,7 +78,7 @@ public class LBNotificationClient {
 	private Response notifiyClusterManager() throws Exception {
 		try (HttpClient client = new HttpClient()) {
 			Exchange exc = new Exchange(null);
-			Request r = new Request.Builder().post(getRequestURL()).build();
+			Request r = Request.post(getRequestURL()).build();
 			r.setBodyContent(new byte[0]);
 			exc.setRequest(r);
 			exc.getDestinations().add(getRequestURL());

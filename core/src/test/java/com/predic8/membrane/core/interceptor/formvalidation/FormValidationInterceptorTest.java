@@ -64,7 +64,7 @@ public class FormValidationInterceptorTest {
 
 	private Exchange getExchange(String uri) throws URISyntaxException {
 		Exchange exc = new Exchange(null);
-		exc.setRequest(new Request.Builder().get(uri).build());
+		exc.setRequest(Request.get(uri).build());
 		return exc;
 	}
 

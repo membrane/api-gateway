@@ -41,7 +41,7 @@ public class WsaEndpointRewriterInterceptorTest {
 
 	@Test
 	public void testRewriterInterceptor() throws Exception {
-		exc.setRequest(new Request.Builder().post("http://localhost:9000/SoapContext/SoapPort?wsdl").build());
+		exc.setRequest(Request.post("http://localhost:9000/SoapContext/SoapPort?wsdl").build());
 			exc.getRequest().setBody(new Body("""
 					<S:Envelope xmlns:S="http://www.w3.org/2003/05/soap-envelope"     \s
 					                xmlns:wsa="http://schemas.xmlsoap.org/ws/2004/08/addressing">
