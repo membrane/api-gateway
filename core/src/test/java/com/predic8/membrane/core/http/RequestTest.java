@@ -39,9 +39,9 @@ public class RequestTest {
 
 	private InputStream tempIn;
 
-	private InputStream isPOSTStartLine = new ByteArrayInputStream(("POST /foo HTTP/1.1" + CRLF).getBytes(UTF_8));
-	private InputStream isPosTStartLine = new ByteArrayInputStream(("PosT /foo HTTP/1.1" + CRLF).getBytes(UTF_8));
-	private InputStream isProxyStartLine = new ByteArrayInputStream(("GET http://example.com/foo HTTP/1.0" + CRLF).getBytes(UTF_8));
+	private static final InputStream isPOSTStartLine = new ByteArrayInputStream(("POST /foo HTTP/1.1" + CRLF).getBytes(UTF_8));
+	private static final InputStream isPosTStartLine = new ByteArrayInputStream(("PosT /foo HTTP/1.1" + CRLF).getBytes(UTF_8));
+	private static final InputStream isProxyStartLine = new ByteArrayInputStream(("GET http://example.com/foo HTTP/1.0" + CRLF).getBytes(UTF_8));
 
 	@BeforeEach
 	void setUp() {

@@ -67,8 +67,8 @@ public class Request extends Message {
      * request-line formats from clients.
      */
     private static final Pattern requestLinePattern = Pattern.compile(
-            "([A-Za-z0-9!#$%&'*+\\-\\.\\^_`|~]+)\\s+" +                    // Method (token)
-            "((?:\\*|/\\S*|https?://\\S+|[\\w.-]+(?::\\d+)?))\\s+" +       // Request target
+            "([A-Za-z0-9!#$%&'*+\\-.^_`|~]+)\\s+" +                    // Method (token)
+            "(\\*|/\\S*|https?://\\S+|[\\w.-]+(?::\\d+)?)\\s+" +       // Request target
             "HTTP/(\\d\\.\\d)"                                            // HTTP version
     );
 
