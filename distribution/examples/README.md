@@ -1,87 +1,122 @@
-# Working Examples
+# Working API Gateway Examples
 
-## Deployment
+Have **10 minutes** and want to solve a task with Membrane? These hands-on examples are ready to run and explore.
 
-| Example                                                                | Description                                                                                                                                                            |
-|------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| [docker](deployment/docker)                                                       | How to create a Membrane docker image.                                                                                                                                 |
-| [embedding-java](extending-membrane/embedding-java)                                       | How to embed Membrane into Java applications.                                                                                                                          |
+## [Deployment and Installation](deployment)
 
-## Basic
+* Docker 
+* As Windows service
 
-| Example                                                                | Description                                                                                                                                                            |
-|------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| [logging](logging)                                                     | How to log requests and responses into a file and database in text, CSV and JSON format.                                                                               |
-| [template](templating)                                                   | With the Template Plugin you can intercept request and responses and change them using templates.                                                                      |
-| [groovy](scripting/groovy)                                                       | Run groovy scripts to manipulate or monitor messages.                                                                                                                  |
-| [internalproxy](routing-traffic/internalproxy)                                         | Internally handled endpoint / chainable proxy service.                                                                                                                 |
-| [javascript](scripting/javascript)                                               | Manipulate and monitor messages with Javascript.                                                                                                                       |
-| [message-transformation](message-transformation)                       | Transformation of messages between JSON, XML and other formats                                                                                                         |
-| [rewriter](routing-traffic/rewriter)                                                   | With the `RewriteInterceptor` you can rewrite URLs using regular expressions.                                                                                          |
+## [OpenAPI](openapi)
 
-## Security
+* Deploy APIs from OpenAPI definitions
+* Validate requests, responses, and security
 
-| Example                                                                | Description                                         |
-|------------------------------------------------------------------------|-----------------------------------------------------|
-| [acl](security/access-control-list)                                                             | Restrict access to APIs by ip address or hostnames. |                                                                                                                    |
-| [basic-auth](security/basic-auth)                                      | _HTTP Basic Authentication_ to secure APIs or Web pages with username and password.                                                                                    |
-| [json-protection](security/json-protection)                            | Validate JSON documents and limit document attributes.                                                                                                                 |
-| [login page](security/login)                                                    | Protect Web pages using a login page and passwords.                                                                                                                    |
-| [ntlm](security/ntlm)                                                           | Authentication against NTLM protected backends e.g. running on Microsoft IIS                                                                                           |
-| [oauth2](security/oauth2)                                                       | Please follow https://www.membrane-soa.org/service-proxy-doc/current/oauth2-password-flow-sample.htm                                                                   |
-| [openapi](openapi)                                                     | Load APIs from OpenAPI documents and validate requests and responses against OpenAPI.                                                                                  |                                                                 |
-| [rateLimiter](rate-limiting)                                             | The `RateLimiter` limits the number of requests in a given interval.                                                                                                   |
-| [SSL/TLS](security/ssl-tls)                                                         | SSL for APIs and for the communication to backends                                                                                                                     |
-| [throttle](routing-traffic/throttle)                                                   | With the `ThrottleInterceptor` you can delay and limit parallel requests.                                                                                              |
-| [validation](validation)                                               | Contains examples about form, xml schema, schematron, json-schema and soap proxy validation                                                                            |
+## [API Traffic Routing](routing-traffic)
 
-## XML
+* Rewriting API URLs
+* Shadow traffic to other environments (e.g., TEST)
+* Content-based routing (JSON, XML)
+* Dynamic routing with URI templates
+* Internal routing
+* Throttle API traffic
 
+## [Scripting](scripting)
 
-| Example                                                                | Description                                                                                                                                                            |
-|------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| [xslt](xml/xslt)                                                           | XSLTInterceptor applying XSLT stylesheets to request and response.                                                                                                     |
-| [cbr](routing-traffic/content-based-router)                                                             | Content based routing using XPath.                                                                                                                                     |
-| [basic-xml-interceptor](xml/basic-xml-interceptor)                         | BasicXmlInterceptor adds date element with current time information inside bar element.                                                                                |
-| [stax-interceptor](xml/stax-interceptor)                                   | In this example we will install an interceptor called StaxConverterInterceptor that changes tag name from `<foo>` to `<bar>` using Java STAX API.                      |
-| [versioning](versioning)                                               | Examples showcasing routing and xslt versioning                                                                                                                        |
+* Use Groovy and JavaScript for scripting
 
+Samples of scripting with JSONPath, XPath and the expression language you can find in the [templating](templating) or [orchestration](orchestration) folders.
 
-## Web Sockets
+## [Security](security)
 
-| Example                                                                | Description                                                                                                                                                            |
-|------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| [stomp-over-websocket-intercepting](websockets/stomp-over-websocket-intercepting) | In this example we are going to see how STOMP-over-WebSocket messages are routed through Membrane Service Proxy.                                                       |
-| [websocket-intercepting](websockets/websocket-intercepting)                       | This example demonstrates how Websocket frames are routed through Membrane Service Proxy.                                                                              |
-| [websocket-stomp](websockets/websocket-stomp)                                     | STOMP over WebSocket, all handled by Membrane Service Proxy.                                                                                                           |
+* Authentication and authorization with JWT, OAuth2 and OIDC
+* **API keys** and Basic Authentication
+* Cross-Origin Resource Sharing (CORS)
+* JSON protection
+* SSL/TLS
+* IP and host-based **Access Control Lists**
+* Form login
+* NTLM
+* [Rate limiting](rate-limiting) 
 
+### [Message Validation](validation)
 
+* HTML-form validation
+* JSON-Schema validation
 
-## Web Services, SOAP and WSDL
+## [Orchestration](orchestration)
 
-| Example                                                                | Description                                                                                                                                                            |
-|------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| [add-soap-header](web-services-soap/add-soap-header)                                | This interceptor adds a SOAP header to the incoming request using the Java DOM API.                                                                                    |
-| [rest2soap](web-services-soap/rest2soap)                                                 | With the REST2SOAP Converter you can make a SOAP Web Service as a REST resource accessible.                                                                            |
-| [rest2soap-json](web-services-soap/rest2soap-json)                                       | `REST2SOAP` converter exposes a SOAP Web Service as a REST resource. In contrast to the rest2soap example the response will be a JSON object.                          |
+* Authentication with external APIs
+* Samples for GET and POST callouts
+* Use for-loops for multiple callouts
+
+## [Extending Membrane](extending-membrane)
+
+* Use `if` conditions to modify behavior
+* Externalize configuration with **properties** and **environment variables**
+* Build reusable **plugin chains** and create custom plugins
+* How to embed Membrane into your Java applications 
+* Error handling
+* Store messages into files and databases
+* Service discovery with `etcd`
 
 
-## Internals
 
-| Example                                                                | Description                                                                                                                                                            |
-|------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| [custom-interceptor](extending-membrane/custom-interceptor)                               | How to write custom interceptors in Java.                                                                                                                              |
-| [custom-websocket-interceptor](websockets/custom-websocket-interceptor)           | Please visit https://www.membrane-soa.org/service-proxy-doc/current/websockets/create-websocket-interceptor.htm to learn how to create custom WebSocket interceptors.  |
-| [file-exchangestore](extending-membrane/file-exchangestore)                               | Membrane uses exchange stores to save requests and responses on disc or memory.                                                                                        |
+## [Message Transformation](message-transformation)
 
+* Create dynamic API responses using [templates](templating) (JSON, XML, Text)
+* Generic JSON to XML and XML to JSON
+* Replacing with Regex
+* Transformation with Javascript
 
-## Misc
+## [Legacy Integration for XML and Web Services](web-services-soap)
 
+### XML(xml)
 
-| Example                                                                | Description                                                                                                                                                            |
-|------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| [api-management](api-management)                                       | A simple file based api management approach.                                                                                                                           |
-| [loadbalancing](loadbalancing)                                         | From simple static laodbalancers to dynamic node management                                                                                                            |
-| [service-discovery-with-etcd](extending-membrane/service-discovery-with-etcd)             | The publisher publishes endpoint details for services to "the cloud". The configurator reads those details from "the cloud" and dynamically forwards to those services |
-| [spel](extending-membrane/configuration-properties)                                                           | Using the Spring Expression language as part of router configuration.                                                                                                  |
+* XML validation and XSLT transformation
+* Create XML plugins with DOM or StAX
 
+### Web Services with SOAP
+
+* Validation of SOAP messages against WSDL
+* REST to SOAP conversion and migration
+* Sample SOAP service for testing
+* How to mock **SOAP services** 
+* Add SOAP headers
+* SOAP versioning
+
+## Other Protocols
+
+### [GraphQL](graphql)
+
+* Validate GraphQL requests
+
+### [Web Sockets](websockets)
+
+* STOMP over Websockets
+* Writing own Web Sockets plugins
+
+## Operation
+
+### [YAML Configuration](yaml-configuration)
+
+### [Monitoring and Tracing](monitoring-tracing)
+
+* OpenTelemetry & Prometheus
+
+### [Logging](logging)
+
+* Access log
+* Log into console, CSV or databases
+* Structured JSON logs
+
+### [Load Balancing](loadbalancing)
+
+* Simple static setup
+* Add nodes dynamically
+* Control node status with a client
+* Use XML sessions for load balancing
+
+## [API Testing](api-testing)
+  
+* API Greasing
