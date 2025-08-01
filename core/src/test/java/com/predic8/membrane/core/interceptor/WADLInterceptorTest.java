@@ -26,6 +26,7 @@ import java.net.*;
 import java.util.*;
 
 import static com.predic8.membrane.core.http.Request.*;
+import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class WADLInterceptorTest {
@@ -61,10 +62,10 @@ public class WADLInterceptorTest {
 	}
 
 	@Test
-	public void testDefaultSettings() throws Exception {
+	void testDefaultSettings() throws Exception {
 		Exchange exc = getExchange();
 
-		assertEquals(interceptor.handleResponse(exc), Outcome.CONTINUE);
+		assertEquals( CONTINUE, interceptor.handleResponse(exc));
 
 		assertAttribute(exc, "//wadl:resources/@base",
 				"http://thomas-bayer.com:3011/search/V1/");
@@ -87,7 +88,7 @@ public class WADLInterceptorTest {
 		interceptor.setProtocol("https");
 		interceptor.setHost("abc.de");
 
-		assertEquals(interceptor.handleResponse(exc), Outcome.CONTINUE);
+		assertEquals( CONTINUE, interceptor.handleResponse(exc));
 
 		assertAttribute(exc, "//wadl:resources/@base",
 				"https://abc.de/search/V1/");
