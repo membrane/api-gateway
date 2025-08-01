@@ -101,7 +101,7 @@ Learn how API Gateways work with real-world examples and insights into Membrane.
    - [Simple REST and HTTP Forwarding APIs](#simple-rest-and-http-forwarding-apis)
 3. [OpenAPI Support](#openapi-support)
    - [Deploy APIs with OpenAPI](#deploy-apis-with-openapi)
-4. [Routing](#Routing)
+4. [Routing](#routing)
     - [Short Circuit](#short-circuit)
     - [URL Rewriting](#url-rewriting)
 5. [Scripting](#scripting)
@@ -270,7 +270,7 @@ Click on an API title in the list to open the Swagger UI for interactive explora
 ### Learn More
 For additional details and a working example, check out the [OpenAPI Example](distribution/examples/openapi).
 
-## Routing  
+## Routing
 Membrane provides versatile routing with a fallthrough mechanism that applies only the first matching API rule, ensuring precise and efficient routing based on path, HTTP method, or hostname or many other criterias.
 
 ### Example: Advanced Routing
@@ -821,7 +821,7 @@ Create a response with Javascript:
 </api>
 ```
 
-Also try the [Groovy](distribution/examples/scripting/groovy) and [Javascript example](distribution/examples/javascript).
+Also try the [Groovy](distribution/examples/scripting/groovy) and [Javascript example](distribution/examples/scripting/javascript).
 
 # Security
 
