@@ -25,16 +25,10 @@ class StringUtilTest {
 
     @Test
     void truncateAfterTest() {
-        assertEquals("", truncateAfter(POEM,0));
-        assertEquals("To the greene", truncateAfter(POEM,13));
-        assertEquals(POEM, truncateAfter(POEM,POEM.length()));
-        assertEquals(POEM, truncateAfter(POEM,1000));
-    }
-
-    @Test
-    public void testTruncateAfter_withNonPrintableChars() {
-        String input = "\u00e6?\u0055\u00d6\u00ff\u005a\u00a9\u00ae\u00a7huv\u00a8D";
-        assertEquals("_?U__Z___huv_D", StringUtil.truncateAfter(input, 60));
+        assertEquals("", truncateAfter(POEM, 0));
+        assertEquals("To the greene", truncateAfter(POEM, 13));
+        assertEquals(POEM, truncateAfter(POEM, POEM.length()));
+        assertEquals(POEM, truncateAfter(POEM, 1000));
     }
 
     @Test
@@ -54,4 +48,41 @@ class StringUtilTest {
         String input = "Short line";
         assertEquals("Short line", StringUtil.truncateAfter(input, 100));
     }
+
+    @Test
+    public void testTruncateAfter_emptyString() {
+        assertEquals("", StringUtil.truncateAfter("", 10));
+    }
+
+    @Test
+    public void testTruncateAfter_zeroLength() {
+        assertEquals("", StringUtil.truncateAfter("test", 0));
+    }
+
+    @Test
+    void testMaskNonPrintableCharacters_withOnlyPrintable() {
+        String input = "Hello, World! 123";
+        assertEquals(input, StringUtil.maskNonPrintableCharacters(input));
+    }
+
+    @Test
+    void testMaskNonPrintableCharacters_withNonPrintable() {
+        assertEquals("_?U__Z___huv_D", StringUtil.maskNonPrintableCharacters("\u00e6?\u0055\u00d6\u00ff\u005a\u00a9\u00ae\u00a7huv\u00a8D"));
+    }
+
+    @Test
+    void testMaskNonPrintableCharacters_onlyNonPrintable() {
+        assertEquals("____", StringUtil.maskNonPrintableCharacters("\n\r\t\b"));
+    }
+
+    @Test
+    void testMaskNonPrintableCharacters_mixedCharacters() {
+        assertEquals("A_B_C", StringUtil.maskNonPrintableCharacters("A\tB\nC"));
+    }
+
+    @Test
+    void testMaskNonPrintableCharacters_emptyString() {
+        assertEquals("", StringUtil.maskNonPrintableCharacters(""));
+    }
+
 }
