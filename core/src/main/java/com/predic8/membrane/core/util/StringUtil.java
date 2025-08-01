@@ -25,6 +25,20 @@ public class StringUtil {
      * @return
      */
     public static String truncateAfter(String s, int maxLength) {
-        return s.substring(0, min(s.length(), maxLength));
+        return maskNonPrintableCharacters(s.substring(0, min(s.length(), maxLength)));
     }
+
+    private static String maskNonPrintableCharacters(String s) {
+        StringBuilder sb = new StringBuilder();
+        for (char c : s.toCharArray()) {
+            if (c >= 32 && c <= 126) {
+                sb.append(c);
+            } else {
+                sb.append('_');
+            }
+        }
+        return sb.toString();
+    }
+
+
 }

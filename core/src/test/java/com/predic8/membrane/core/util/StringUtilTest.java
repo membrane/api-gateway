@@ -30,4 +30,28 @@ class StringUtilTest {
         assertEquals(POEM, truncateAfter(POEM,POEM.length()));
         assertEquals(POEM, truncateAfter(POEM,1000));
     }
+
+    @Test
+    public void testTruncateAfter_withNonPrintableChars() {
+        String input = "\u00e6?\u0055\u00d6\u00ff\u005a\u00a9\u00ae\u00a7huv\u00a8D";
+        assertEquals("_?U__Z___huv_D", StringUtil.truncateAfter(input, 60));
+    }
+
+    @Test
+    public void testTruncateAfter_onlyPrintable() {
+        String input = "GET /index.html HTTP/1.1";
+        assertEquals(input, StringUtil.truncateAfter(input, 50));
+    }
+
+    @Test
+    public void testTruncateAfter_truncateOnly() {
+        String input = "This is a long line that should be cut off early.";
+        assertEquals("This is a long line that should be cut off ea", StringUtil.truncateAfter(input, 45));
+    }
+
+    @Test
+    public void testTruncateAfter_shorterThanMax() {
+        String input = "Short line";
+        assertEquals("Short line", StringUtil.truncateAfter(input, 100));
+    }
 }
