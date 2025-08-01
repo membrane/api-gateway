@@ -1,6 +1,7 @@
 package com.predic8.membrane.core.interceptor.dlp;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class RiskReport {
 
@@ -51,12 +52,12 @@ public class RiskReport {
 
     public String getFormattedSummaryLog() {
         StringBuilder sb = new StringBuilder();
-        sb.append("[Summary]: Risk=").append(getCategory());
 
-        for (String level : RISK_LEVELS) {
-            sb.append(" | ").append(level).append("=")
-                    .append(riskCounts.getOrDefault(level, 0));
-        }
+        String riskCountsPart = RISK_LEVELS.stream()
+                .map(level -> level + "=" + riskCounts.getOrDefault(level, 0))
+                .collect(Collectors.joining(" | "));
+
+        sb.append("[Summary]: ").append(riskCountsPart);
 
         List<String> fieldsOutput = new ArrayList<>();
         for (String level : RISK_LEVELS) {

@@ -74,12 +74,12 @@ class DLPAnalyzerTest {
         assertEquals(1, report.getRiskCounts().getOrDefault("high", 0));
         assertEquals(1, report.getRiskCounts().getOrDefault("low", 0));
         assertEquals(0, report.getRiskCounts().getOrDefault("medium", 0));
-        assertEquals(2, report.getRiskCounts().getOrDefault("unclassified", 0));
+        assertEquals(2, report.getRiskCounts().getOrDefault("unknown", 0));
 
         assertEquals("high", report.getMatchedFields().get("user.email"));
         assertEquals("low", report.getMatchedFields().get("active"));
-        assertEquals("unclassified", report.getMatchedFields().get("user.profile.firstName"));
-        assertEquals("unclassified", report.getMatchedFields().get("user.profile.lastName"));
+        assertEquals("unknown", report.getMatchedFields().get("user.profile.firstName"));
+        assertEquals("unknown", report.getMatchedFields().get("user.profile.lastName"));
     }
 
     @Test
@@ -89,7 +89,7 @@ class DLPAnalyzerTest {
         assertEquals(1, report.getRiskCounts().getOrDefault("high", 0));
         assertEquals(1, report.getRiskCounts().getOrDefault("low", 0));
         assertEquals(0, report.getRiskCounts().getOrDefault("medium", 0));
-        assertEquals(0, report.getRiskCounts().getOrDefault("unclassified", 0));
+        assertEquals(0, report.getRiskCounts().getOrDefault("unknown", 0));
 
         assertEquals("high", report.getMatchedFields().get("array.foo"));
         assertEquals("low", report.getMatchedFields().get("array.bar"));
