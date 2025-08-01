@@ -13,23 +13,18 @@
    limitations under the License. */
 package com.predic8.membrane.core.util;
 
-import com.predic8.membrane.core.http.Message;
-import com.predic8.membrane.core.http.Request;
-import com.predic8.membrane.core.interceptor.schemavalidation.SOAPXMLFilter;
-import org.brotli.dec.BrotliInputStream;
-import org.xml.sax.InputSource;
-import org.xml.sax.SAXException;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.interceptor.schemavalidation.*;
+import org.brotli.dec.*;
+import org.xml.sax.*;
 
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.parsers.SAXParserFactory;
-import javax.xml.transform.Source;
-import javax.xml.transform.sax.SAXSource;
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.zip.GZIPInputStream;
+import javax.xml.parsers.*;
+import javax.xml.transform.*;
+import javax.xml.transform.sax.*;
+import java.io.*;
+import java.util.zip.*;
 
-import static com.predic8.membrane.core.Constants.HTTP_VERSION_11;
+import static com.predic8.membrane.core.util.ByteUtil.getDecompressedData;
 
 public class MessageUtil {
 
@@ -44,9 +39,11 @@ public class MessageUtil {
 	public static InputStream getContentAsStream(Message res) throws IOException {
 		if (res.isGzip()) {
 			return new GZIPInputStream(res.getBodyAsStream());
-		} else if (res.isDeflate()) {
-			return new ByteArrayInputStream(ByteUtil.getDecompressedData(res.getBody().getContent()));
-		} else if (res.isBrotli()) {
+		}
+		if (res.isDeflate()) {
+			return new ByteArrayInputStream(getDecompressedData(res.getBody().getContent()));
+		}
+		if (res.isBrotli()) {
 			return new BrotliInputStream(res.getBodyAsStream());
 		}
 		return res.getBodyAsStream();
@@ -60,7 +57,7 @@ public class MessageUtil {
 			}
 		}
 		if (res.isDeflate()) {
-			return ByteUtil.getDecompressedData(res.getBody().getContent());
+			return getDecompressedData(res.getBody().getContent());
 		}
 		if (res.isBrotli()) {
 			try (InputStream lInputStream = res.getBodyAsStream();
@@ -78,13 +75,4 @@ public class MessageUtil {
 			throw new RuntimeException("Error initializing SAXSource", e);
 		}
 	}
-
-	private static Request getStandartRequest(String method) {
-		Request request = new Request();
-		request.setMethod(method);
-		request.setVersion(HTTP_VERSION_11);
-
-		return request;
-	}
-
 }
