@@ -16,7 +16,7 @@ public class OutgoingAPIGatewayExampleTest extends DistributionExtractingTestcas
     }
 
     @Test
-    public void test() throws Exception {
+    void test() throws Exception {
         try (Process2 ignored = startServiceProxyScript()) {
             // @formatter:off
             given()
