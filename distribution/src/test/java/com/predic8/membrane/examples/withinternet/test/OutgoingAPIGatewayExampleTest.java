@@ -16,17 +16,17 @@ public class OutgoingAPIGatewayExampleTest extends DistributionExtractingTestcas
     }
 
     @Test
+    @SuppressWarnings("unused")
     public void test() throws Exception {
         try (Process2 process2 = startServiceProxyScript()) {
             // @formatter:off
             given()
-                    .baseUri("http://localhost:2000")
                     .header("X-Api-Key", "10430")
                     .header("User-Agent", "secret")
                     .header("Authorization", "secret")
-                    .when()
-                    .get("/")
-                    .then()
+            .when()
+                    .get("http://localhost:2000")
+            .then()
                     .statusCode(200)
                     .body(containsString("X-Api-Key"))
                     .body(not(containsString("User-Agent")))
