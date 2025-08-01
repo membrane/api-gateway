@@ -16,9 +16,8 @@ public class OutgoingAPIGatewayExampleTest extends DistributionExtractingTestcas
     }
 
     @Test
-    @SuppressWarnings("unused")
     public void test() throws Exception {
-        try (Process2 process2 = startServiceProxyScript()) {
+        try (Process2 ignored = startServiceProxyScript()) {
             // @formatter:off
             given()
                     .header("X-Api-Key", "10430")
