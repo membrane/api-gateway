@@ -105,12 +105,10 @@ Learn how API Gateways work with real-world examples and insights into Membrane.
     - [Short Circuit](#short-circuit)
     - [URL Rewriting](#url-rewriting)
 5. [Scripting](#scripting)
-    - [Groovy](#groovy-scripts)
+    - With [Groovy](#groovy-scripts) and [Javascript](#javascript-scripts)
     - [Creating Responses with Groovy](#creating-responses-with-groovy)
-    - [Javascript](#javascript-scripts)
 6. [Message Transformation](#message-transformation)
-    - [Manipulating HTTP Headers](#manipulating-http-headers)
-    - [Removing HTTP Headers](#removing-http-headers)
+    - [Manipulating](#manipulating-http-headers) and [removing](#removing-http-headers) HTTP Headers
     - [Create JSON from Query Parameters](#create-json-from-query-parameters)
     - [Transform JSON into TEXT, JSON or XML with Templates](#transform-json-into-text-json-or-xml-with-templates)
     - [Transform XML into Text or JSON](#transform-xml-into-text-or-json)
@@ -119,8 +117,7 @@ Learn how API Gateways work with real-world examples and insights into Membrane.
     - [JSON and XML Beautifier](#json-and-xml-beautifier)
 7. [Conditionals with if](#conditionals-with-if)
 8. [Security](#security)
-    - [API Keys](#api-keys)
-    - [Basic Authentication](#basic-authentication)
+    - [API Keys](#api-keys) and [Basic Authentication](#basic-authentication)
     - [SSL/TLS](#ssltls)
     - [JSON Web Tokens](#json-web-tokens) JWT
     - [OAuth2](#oauth2)
@@ -204,7 +201,7 @@ For detailed Docker setup instructions, see the [Membrane Deployment Guide](http
 
 ### Explore and Experiment
 - Try the code snippets below.
-- Run the samples in the [examples](/distribution/examples) folder of the unzipped distribution.
+- Run the samples in the [examples](/distribution/examples#working-api-gateway-examples) folder of the unzipped distribution.
 
 ### Dive into Tutorials
 - Follow the [REST API Tutorial](https://membrane-api.io/tutorials/rest/) to learn about deploying and securing RESTful services.
