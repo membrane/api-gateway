@@ -76,7 +76,7 @@ class StringUtilTest {
     }
 
     @Nested
-    class MaskNonPrintableCharactersTests {
+    class MaskNonPrintableCharacters {
 
         @Test
         void shouldReturnSameStringWhenOnlyPrintableCharactersExist() {
