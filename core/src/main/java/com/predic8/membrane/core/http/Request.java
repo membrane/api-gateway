@@ -61,7 +61,7 @@ public class Request extends Message {
 	String uri;
 
 	@Override
-	public void parseStartLine(InputStream in) throws IOException {
+	protected void parseStartLine(InputStream in) throws IOException {
 		try {
 			String firstLine = HttpUtil.readLine(in);
 			Matcher matcher = pattern.matcher(firstLine);
