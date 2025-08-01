@@ -71,12 +71,12 @@ Samples of scripting with JSONPath, XPath and the expression language you can fi
 
 ## [Legacy Integration for XML and Web Services](web-services-soap)
 
-### XML(xml)
+### [XML](xml)
 
 * XML validation and XSLT transformation
 * Create XML plugins with DOM or StAX
 
-### Web Services with SOAP
+### [Web Services with SOAP](web-services-soap)
 
 * Validation of SOAP messages against WSDL
 * REST to SOAP conversion and migration

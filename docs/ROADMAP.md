@@ -34,8 +34,6 @@
 
 # 6.3.0
 
-- Refactor MessageUtil (TB)
-  - MessageUtil: Remove getXRequest and use Request Builder instead
 - Describe RPM Setup
 - examples/routing-traffic/outgoing-api-gateway (TB)
 - Cook Book: outgoing-api-gateway (TB)
@@ -45,12 +43,7 @@
 - Template/Static Interceptor: Pretty for text/* (Refactor first) (TB)
   - Pretty on text should trim whitespace incl. linebreaks at start and end
 - READMEs in example folders listing the examples (TB)
-- Grafana Dashboard to import in examples/prometheus
-  - Also provide the datasource config
-  - Maybe the config can be included into the docker-compose setup
-  - Place it in examples/monitoring-tracing/graphql
 - Refactor HttpClient (TB)
-- SampleSOAPService: Add some more cities
 - Refactor: interceptor.session
 
 ### Internal

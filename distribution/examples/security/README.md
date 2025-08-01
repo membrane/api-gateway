@@ -5,8 +5,8 @@ Explore how to secure your APIs with these ready-to-run examples:
 * [SSL and TLS](ssl-tls)
   Encrypt traffic and ensure secure communication.
 * [OAuth2, OIDC and JWT](oauth2)
-  - Use different OAuth2 flows with APIs
-  - Authentication and authorization with JWT, OAuth2 and OpenID Connect
+  * Use different OAuth2 flows with APIs
+  * Authentication and authorization with JWT, OAuth2 and OpenID Connect
 * [JSON Web Tokens](jwt)
   How to generate JWT at the API Gateway.
 * [API Keys](api-key)

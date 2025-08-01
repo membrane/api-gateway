@@ -13,16 +13,17 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.formvalidation;
 
-import static org.junit.jupiter.api.Assertions.*;
+import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.interceptor.formvalidation.FormValidationInterceptor.*;
+import org.junit.jupiter.api.*;
 
+import java.net.*;
 import java.util.*;
 
-import com.predic8.membrane.core.HttpRouter;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.interceptor.Outcome;
-import com.predic8.membrane.core.interceptor.formvalidation.FormValidationInterceptor.Field;
-import com.predic8.membrane.core.util.MessageUtil;
-import org.junit.jupiter.api.Test;
+import static com.predic8.membrane.core.http.Request.*;
+import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class FormValidationInterceptorTest {
 
@@ -45,25 +46,22 @@ public class FormValidationInterceptorTest {
 		interceptor.setFields(fields);
 
 		Exchange exc = getExchange("/buy?article=pizza&amount=five");
-		assertEquals(Outcome.ABORT, interceptor.handleRequest(exc));
+		assertEquals(ABORT, interceptor.handleRequest(exc));
 		assertEquals(400, exc.getResponse().getStatusCode());
 
 		exc = getExchange("/buy?article=pizza&amount=2");
-		assertEquals(Outcome.ABORT, interceptor.handleRequest(exc));
+		assertEquals(ABORT, interceptor.handleRequest(exc));
 		assertEquals(400, exc.getResponse().getStatusCode());
 
 		exc = getExchange("/buy?article=banana&amount=five");
-		assertEquals(Outcome.ABORT, interceptor.handleRequest(exc));
+		assertEquals(ABORT, interceptor.handleRequest(exc));
 		assertEquals(400, exc.getResponse().getStatusCode());
 
 		exc = getExchange("/buy?article=banana&amount=5");
-		assertEquals(Outcome.CONTINUE, interceptor.handleRequest(exc));
+		assertEquals(CONTINUE, interceptor.handleRequest(exc));
 	}
 
-	private Exchange getExchange(String uri) {
-		Exchange exc = new Exchange(null);
-		exc.setRequest(MessageUtil.getGetRequest(uri));
-		return exc;
+	private Exchange getExchange(String uri) throws URISyntaxException {
+		return get(uri).buildExchange();
 	}
-
 }

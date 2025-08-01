@@ -19,11 +19,12 @@ import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.interceptor.rewrite.RewriteInterceptor.*;
 import com.predic8.membrane.core.proxies.*;
-import com.predic8.membrane.core.util.*;
 import org.junit.jupiter.api.*;
 
+import java.net.*;
 import java.util.*;
 
+import static com.predic8.membrane.core.http.Request.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static org.junit.jupiter.api.Assertions.*;
 public class RewriteInterceptorTest {
@@ -37,7 +38,7 @@ public class RewriteInterceptorTest {
 	private ServiceProxy sp;
 
 	@BeforeEach
-	public void setUp() {
+	void setUp() {
 		HttpRouter router = new HttpRouter();
 
 		di = new DispatchingInterceptor();
@@ -58,16 +59,16 @@ public class RewriteInterceptorTest {
 	}
 
 	@Test
-	void testRewriteWithoutTarget() {
-		exc.setRequest(MessageUtil.getGetRequest("/buy/banana/3"));
+	void testRewriteWithoutTarget() throws URISyntaxException {
+		exc.setRequest(get("/buy/banana/3").build());
 		assertEquals(CONTINUE, di.handleRequest(exc));
 		assertEquals(CONTINUE, rewriter.handleRequest(exc));
 		assertEquals("/buy?item=banana&amount=3", exc.getDestinations().getFirst());
 	}
 
 	@Test
-	void testRewrite() {
-		exc.setRequest(MessageUtil.getGetRequest("/buy/banana/3"));
+	void testRewrite() throws URISyntaxException {
+		exc.setRequest(get("/buy/banana/3").build());
 		exc.setProxy(sp);
 
 		assertEquals(CONTINUE, di.handleRequest(exc));
@@ -76,16 +77,17 @@ public class RewriteInterceptorTest {
 	}
 
 	@Test
-	void storeSample() {
-		exc.setRequest(MessageUtil.getGetRequest("https://api.predic8.de/store/products/"));
+	void storeSample() throws URISyntaxException {
+		exc.setRequest(get("/store/products/").build());
 		assertEquals(CONTINUE, di.handleRequest(exc));
 		assertEquals(CONTINUE, rewriter.handleRequest(exc));
-		assertEquals("https://api.predic8.de/shop/v2/products/", exc.getDestinations().getFirst());
+		assertEquals("/shop/v2/products/", exc.getDestinations().getFirst());
 	}
 
 	@Test
 	void invalidURI() throws Exception {
-		exc.setRequest(MessageUtil.getGetRequest("/buy/banana/%"));
+		exc.setRequest(get("/dummy").build());
+		exc.getRequest().setUri("/buy/banana/%"); // Overwrite dummy
 		exc.setProxy(sp);
 
 		assertEquals(CONTINUE, di.handleRequest(exc));
