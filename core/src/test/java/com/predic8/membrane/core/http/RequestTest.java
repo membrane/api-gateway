@@ -41,6 +41,7 @@ public class RequestTest {
 
 	private static final InputStream isPOSTStartLine = new ByteArrayInputStream(("POST /foo HTTP/1.1" + CRLF).getBytes(UTF_8));
 	private static final InputStream isPosTStartLine = new ByteArrayInputStream(("PosT /foo HTTP/1.1" + CRLF).getBytes(UTF_8));
+	private static final InputStream isLowercaseMethodStartLine = new ByteArrayInputStream(("get /foo HTTP/1.1" + CRLF).getBytes(UTF_8));
 	private static final InputStream isProxyStartLine = new ByteArrayInputStream(("GET http://example.com/foo HTTP/1.0" + CRLF).getBytes(UTF_8));
 
 	@BeforeEach
@@ -98,7 +99,13 @@ public class RequestTest {
 		}
 
 		@Test
-		void absuloteFormForProxying() throws IOException {
+		void lowerCaseMethod() throws IOException {
+			request.parseStartLine(isLowercaseMethodStartLine);
+			assertEquals("get",request.getMethod());
+		}
+
+		@Test
+		void absoluteFormForProxying() throws IOException {
 			request.parseStartLine(isProxyStartLine);
 			assertEquals("GET",request.getMethod());
 			assertEquals("1.0", request.getVersion());
