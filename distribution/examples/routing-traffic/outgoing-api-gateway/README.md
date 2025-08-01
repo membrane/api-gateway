@@ -34,10 +34,11 @@ This example demonstrates a secure default configuration for such scenarios.
 2. **Start** Membrane by executing `membrane.sh` (Linux/Mac) or `membrane.cmd` (Windows).
 3. **Execute the following requests** (alternatively, use the `requests.http` file):
 
+```shell
 curl -v http://localhost:2000 -H "X-Api-Key: abc123" -H "User-Agent: secret" -H "Authorization: secret"
+```
 
-
-## Combing with other Membrane features
+## Combining with other Membrane features
 
 You can extend this setup with additional Membrane capabilities:
 
