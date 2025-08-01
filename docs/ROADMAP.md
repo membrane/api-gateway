@@ -46,7 +46,6 @@
   - Pretty on text should trim whitespace incl. linebreaks at start and end
 - READMEs in example folders listing the examples (TB)
 - Refactor HttpClient (TB)
-- SampleSOAPService: Add some more cities 
 - Refactor: interceptor.session
 
 ### Internal
