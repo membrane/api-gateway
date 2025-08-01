@@ -14,32 +14,25 @@
 
 package com.predic8.membrane.balancer.client;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.InputStream;
-import java.net.URLEncoder;
-import java.security.SecureRandom;
-import java.util.Properties;
-
-import javax.crypto.Cipher;
-import javax.crypto.spec.SecretKeySpec;
-
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.interceptor.balancer.*;
+import com.predic8.membrane.core.transport.http.*;
 import org.apache.commons.cli.*;
-import org.apache.commons.codec.binary.Hex;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apache.commons.codec.binary.*;
+import org.slf4j.*;
 
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Request;
-import com.predic8.membrane.core.http.Response;
-import com.predic8.membrane.core.interceptor.balancer.Balancer;
-import com.predic8.membrane.core.interceptor.balancer.Cluster;
-import com.predic8.membrane.core.transport.http.HttpClient;
-import com.predic8.membrane.core.util.MessageUtil;
+import javax.crypto.*;
+import javax.crypto.spec.*;
+import java.io.*;
+import java.net.*;
+import java.security.*;
+import java.util.*;
 
+import static com.predic8.membrane.core.http.Request.*;
 import static java.nio.charset.StandardCharsets.*;
-import static javax.crypto.Cipher.ENCRYPT_MODE;
-import static org.apache.commons.codec.binary.Base64.encodeBase64;
+import static javax.crypto.Cipher.*;
+import static org.apache.commons.codec.binary.Base64.*;
 
 public class LBNotificationClient {
 
@@ -81,16 +74,15 @@ public class LBNotificationClient {
 	private Response notifiyClusterManager() throws Exception {
 		try (HttpClient client = new HttpClient()) {
 			Exchange exc = new Exchange(null);
-			Request r = MessageUtil.getPostRequest(getRequestURL());
-			r.setBodyContent(new byte[0]);
-			exc.setRequest(r);
+            exc.setRequest(post(getRequestURL()).build());
 			exc.getDestinations().add(getRequestURL());
 			return client.call(exc).getResponse();
 		}
 	}
 
 	private void parseArguments(CommandLine cl) throws Exception {
-		if (!new File(propertiesFile).exists()) log.warn("no properties file found at: "+ new File(propertiesFile).getAbsolutePath());
+		if (!new File(propertiesFile).exists())
+			log.warn("no properties file found at: {}",new File(propertiesFile).getAbsolutePath());
 
 		cmd = getArgument(cl, 0, '-', null, null,
 				"No command up, down or takeout specified!");
