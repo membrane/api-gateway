@@ -364,7 +364,7 @@ public class Response extends Message {
 	}
 
 	@Override
-	public void parseStartLine(InputStream in) throws IOException {
+	protected void parseStartLine(InputStream in) throws IOException {
 		String line;
 		try {
 			line = readLine(in);

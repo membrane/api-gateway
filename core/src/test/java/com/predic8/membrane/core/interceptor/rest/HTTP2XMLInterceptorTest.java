@@ -15,7 +15,6 @@ package com.predic8.membrane.core.interceptor.rest;
 
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.xml.*;
-import com.predic8.membrane.core.util.MessageUtil;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.xml.sax.InputSource;
@@ -27,6 +26,7 @@ import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
 import java.io.StringReader;
 
+import static com.predic8.membrane.core.http.Request.get;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 
@@ -41,7 +41,7 @@ public class HTTP2XMLInterceptorTest {
 	@BeforeEach
 	protected void setUp() throws Exception {
 		exc = new Exchange(null);
-		exc.setRequest(MessageUtil.getGetRequest("http://localhost/axis2/services/BLZService?wsdl"));
+		exc.setRequest(get("http://localhost/axis2/services/BLZService?wsdl").build());
 		exc.getRequest().setUri("http://localhost:3011/manager/person?vorname=jim&nachname=panse");
 		exc.getRequest().setMethod("POST");
 		exc.getRequest().setVersion("1.1");
@@ -49,7 +49,7 @@ public class HTTP2XMLInterceptorTest {
 	}
 
 	@Test
-	public void testRequest() throws Exception {
+	void testRequest() throws Exception {
 
 		interceptor.handleRequest(exc);
 
@@ -65,7 +65,7 @@ public class HTTP2XMLInterceptorTest {
 	}
 
 	@Test
-	public void parseXML() throws Exception {
+	void parseXML() throws Exception {
 		String xml = "<request method='POST' http-version='1.1'><uri value='http://localhost:3011/manager/person?vorname=jim&amp;nachname=panse'><host>localhost</host><port>3011</port><path><component>manager</component><component>person</component></path><query><param name='vorname'>jim</param><param name='nachname'>panse</param></query></uri></request>";
 
 		XMLStreamReader r = XMLInputFactory.newInstance().createXMLStreamReader(new StringReader(xml));

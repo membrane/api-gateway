@@ -51,15 +51,23 @@ Simple implementation of a token server. A request is authenticated by API key a
 
 These are just a few examples; see the descriptions below for more.
 
+## API Gateway eBook
+
+Learn how API Gateways work with real-world examples and insights into Membrane.
+
+![API Gateway eBook Cover](docs/images/api-gateway-ebook-cover.jpg)
+
+[Download instantly](https://www.membrane-api.io/ebook/API-Gateway-Handbook-Pre-Release-2025-07-02.pdf) — **no registration** required.
+
 ## Features
 
 ### **OpenAPI**
 
-- Deploy APIs directly from [OpenAPI specifications](https://www.membrane-api.io/openapi/configuration-and-validation).
+- Deploy APIs from [OpenAPI specifications](https://www.membrane-api.io/openapi/configuration-and-validation).
 - Validate requests and responses against [OpenAPI](distribution/examples/openapi/validation-simple) and **JSON Schema**.
 
 ### **API Security**
-- Support for [JSON Web Tokens](#json-web-tokens), [OAuth2](https://www.membrane-soa.org/service-proxy/oauth2-provider-client.html), [API Keys](#API-Keys), [NTLM](distribution/examples/ntlm), and [Basic Authentication](https://www.membrane-soa.org/api-gateway-doc/current/configuration/reference/basicAuthentication.htm).
+- [JSON Web Tokens](#json-web-tokens), [OAuth2](https://www.membrane-soa.org/service-proxy/oauth2-provider-client.html), [API Keys](#api-keys), [NTLM](distribution/examples/security/ntlm), and [Basic Authentication](https://www.membrane-soa.org/api-gateway-doc/current/configuration/reference/basicAuthentication.htm).
 - Built-in [OAuth2 Authorization Server](https://www.membrane-soa.org/service-proxy-doc/4.8/security/oauth2/flows/code/index.html).
 - [Rate limiting](#rate-limiting) and traffic control
 - Protection for **GraphQL**, **JSON**, and **XML** APIs against malicious inputs.
@@ -69,7 +77,7 @@ These are just a few examples; see the descriptions below for more.
 - Configure, validate, and rewrite WSDL-based services, including [message validation](#message-validation-against-wsdl-and-xsd).
 
 ### **Additional Features**
-- Intuitive **Admin Web Console** for monitoring and management.
+- **Admin Web Console** for monitoring and management.
 - Advanced [load balancing](#load-balancing) to ensure high availability.
 - Flexible [message transformation](#message-transformation) for seamless data processing.
 - Embeddable reverse proxy HTTP framework to build custom API gateways.
@@ -80,7 +88,7 @@ These are just a few examples; see the descriptions below for more.
 - Streams HTTP traffic for low-latency, non-blocking processing.
 - Reuses TCP connections via HTTP Keep-Alive to reduce request overhead.
 - Lightweight distribution (~55MB) compared to other Java-based gateways.
-- Low memory footprint—ideal for containers and cloud-native environments.
+- Low memory footprint, ideal for containers and cloud-native environments.
 - Java-based, yet competitive with C/C++ gateways in performance.
 
 # Content
@@ -97,12 +105,10 @@ These are just a few examples; see the descriptions below for more.
     - [Short Circuit](#short-circuit)
     - [URL Rewriting](#url-rewriting)
 5. [Scripting](#scripting)
-    - [Groovy](#groovy-scripts)
+    - With [Groovy](#groovy-scripts) and [Javascript](#javascript-scripts)
     - [Creating Responses with Groovy](#creating-responses-with-groovy)
-    - [Javascript](#javascript-scripts)
 6. [Message Transformation](#message-transformation)
-    - [Manipulating HTTP Headers](#manipulating-http-headers)
-    - [Removing HTTP Headers](#removing-http-headers)
+    - [Manipulating](#manipulating-http-headers) and [removing](#removing-http-headers) HTTP Headers
     - [Create JSON from Query Parameters](#create-json-from-query-parameters)
     - [Transform JSON into TEXT, JSON or XML with Templates](#transform-json-into-text-json-or-xml-with-templates)
     - [Transform XML into Text or JSON](#transform-xml-into-text-or-json)
@@ -111,8 +117,7 @@ These are just a few examples; see the descriptions below for more.
     - [JSON and XML Beautifier](#json-and-xml-beautifier)
 7. [Conditionals with if](#conditionals-with-if)
 8. [Security](#security)
-    - [API Keys](#api-keys)
-    - [Basic Authentication](#basic-authentication)
+    - [API Keys](#api-keys) and [Basic Authentication](#basic-authentication)
     - [SSL/TLS](#ssltls)
     - [JSON Web Tokens](#json-web-tokens) JWT
     - [OAuth2](#oauth2)
@@ -130,53 +135,42 @@ These are just a few examples; see the descriptions below for more.
    - [Monitoring with Prometheus and Grafana](#monitoring-with-prometheus-and-grafana)
    - [OpenTelemetry](#opentelemetry-integration)
 
-# Getting Started
+# Installation
+
+You can run Membrane as Docker container, standalone Java application or install it on Linux as RPM.
 
 ## Java
 
-### Prerequisites
-- Ensure **Java 21** or newer is installed.
-
-### Setup and Run
-1. **Download and Extract**
-  - Get the latest [binary release](https://github.com/membrane/api-gateway/releases) and unzip it.
-
+1. **Download and extract**
+  - [Download a release](https://github.com/membrane/api-gateway/releases) and unzip it.
 2. **Start the Gateway**
-  - Open a terminal in the extracted directory.
-  - Run the appropriate command:
+  - Open a terminal in the extracted folder.
+  - Make sure Java 21 or newer is installed:
+    ```bash
+    java -version
+    ```
+  - Start:
     - **Linux/Mac:** `./membrane.sh`
     - **Windows:** `membrane.cmd`
+4. **Access the Gateway**
+  - Open [http://localhost:2000](http://localhost:2000)
+5. **Change the Configuration**
 
-3. **Access the Gateway**
-  - Open [http://localhost:2000](http://localhost:2000) in your browser.
-  - The gateway will forward traffic to [https://api.predic8.de](https://api.predic8.de) by default.
-
-4. **Modify Configuration**
-  - Customize the behavior, by editing the file `conf/proxies.xml`.
-
+   Modify the preconfigured APIs or add APIs by editing the `proxies.xml` file in the `conf` folder.
 
 ## Docker
 
-### Quick Start
-
-1. **Start the Gateway**
-
-   Run Membrane in a container:
+1. **Start a Membrane container**
    ```bash
    docker run -p 2000:2000 predic8/membrane
-   ```  
-
+   ```
 2. **Access the Gateway**
 
-   Open [http://localhost:2000](http://localhost:2000) in your browser, or use `curl`:
-     ```bash
-     curl http://localhost:2000
-     ```  
-   The response will match the output of directly calling [https://api.predic8.de](https://api.predic8.de).
+   Test a preconfigured API by opening [http://localhost:2000](http://localhost:2000).
 
-3. **Changing the Configuration**
-   
-   To use a custom [proxies.xml](distribution/router/conf/proxies.xml) configuration file, bind it to the Membrane container.
+3. **Change the Configuration**
+   - Download [proxies.xml](distribution/router/conf/proxies.xml) and modify it
+   - Bind the configuration file to the container.
 
    #### For Windows/Linux:
    ```bash
@@ -188,23 +182,24 @@ These are just a few examples; see the descriptions below for more.
    docker run -v "$(pwd)/proxies.xml:/opt/membrane/conf/proxies.xml" -p 2000:2000 predic8/membrane
    ```  
 
-### Learn More
 For detailed Docker setup instructions, see the [Membrane Deployment Guide](https://membrane-api.io/deployment/#docker).
 
-
-## Next Steps
+## Getting Started
 
 ### Explore and Experiment
-- Try the code snippets below.
-- Run the samples in the `examples` folder of the unzipped distribution.
+- Try the code snippets on this page.
+- Run the samples in the [examples](distribution/examples#working-api-gateway-examples) folder of the distribution.
 
 ### Dive into Tutorials
-- Follow the [REST API Tutorial](https://membrane-api.io/tutorials/rest/) to learn about deploying and securing RESTful services.
+- Follow the [REST API Tutorial](https://membrane-api.io/tutorials/rest/) to learn about deploying and securing APIs.
 - Check out the [SOAP API Tutorial](https://membrane-api.io/tutorials/soap/) for legacy web service integration.
 
-### Read the Documentation
+### Documentation
 
-- For detailed guidance, visit the [official documentation](https://www.membrane-api.io).
+- Read the [API Gateway eBook](https://www.membrane-api.io/api-gateway-ebook.html)
+- Look at the [documentation](https://www.membrane-api.io).
+- Browse the [reference](https://www.membrane-api.io/docs/)
+- Try the recipes from the [cookbook](https://www.membrane-api.io/api-gateway-cookbook.html)
 
 # Basics
 
@@ -262,7 +257,7 @@ Click on an API title in the list to open the Swagger UI for interactive explora
 ### Learn More
 For additional details and a working example, check out the [OpenAPI Example](distribution/examples/openapi).
 
-## Routing  
+## Routing
 Membrane provides versatile routing with a fallthrough mechanism that applies only the first matching API rule, ensuring precise and efficient routing based on path, HTTP method, or hostname or many other criterias.
 
 ### Example: Advanced Routing
@@ -489,7 +484,7 @@ X-Foo: bar
 For more information about using Groovy with Membrane, refer to:
 
 - [Groovy Plugin Reference](https://www.membrane-api.io/docs/current/groovy.html).
-- [Sample Project](distribution/examples/groovy)
+- [Sample Project](distribution/examples/scripting/groovy)
 
 ### JavaScript Scripts
 
@@ -731,7 +726,7 @@ This script transforms the input and adds some calculations.
 </api>
 ```
 
-See [examples/javascript](distribution/examples/javascript) for a detailed explanation. The same transformation can also be realized with [Groovy](distribution/examples/groovy)
+See [examples/javascript](distribution/examples/scripting/javascript) for a detailed explanation. The same transformation can also be realized with [Groovy](distribution/examples/scripting/groovy)
 
 ## JSON and XML Beautifier
 
@@ -813,7 +808,7 @@ Create a response with Javascript:
 </api>
 ```
 
-Also try the [Groovy](distribution/examples/groovy) and [Javascript example](distribution/examples/javascript).
+Also try the [Groovy](distribution/examples/scripting/groovy) and [Javascript example](distribution/examples/scripting/javascript).
 
 # Security
 
@@ -1092,9 +1087,7 @@ or [JSON](distribution/examples/logging/json) file.
 
 ### Monitoring with Prometheus and Grafana
 
-Membrane supports seamless monitoring with Prometheus and Grafana, enabling visibility into API performance and system metrics.
-
-Add an API with the `prometheus` plugin to your `proxies.xml` file. This will expose metrics at the specified endpoint:
+This API will expose metrics for Prometheus at [http://localhost:2000/metrics](http://localhost:2000/metrics):
 
 ```xml
 <api port="2000">
@@ -1102,32 +1095,13 @@ Add an API with the `prometheus` plugin to your `proxies.xml` file. This will ex
   <prometheus />
 </api>
 ```
-
-Then you can query the metrics by navigating to:  
-[http://localhost:2000/metrics](http://localhost:2000/metrics).
-
-This endpoint provides Prometheus-compatible metrics, which you can scrape using a Prometheus server.
-
-For a complete configuration example with Prometheus and Grafana, refer to:  
-[Prometheus Example](distribution/examples/prometheus).
-
-### Monitoring with Prometheus and Grafana
-
-Add an API with the `prometheus` plugin at the top of the `proxies.xml` file.
-
-```xml
-<api port="2000">
-  <path>/metrics</path>
-  <prometheus />
-</api>
-```
-
-Then query the metrics endpoint by opening [http://localhost:2000/metrics](http://localhost:2000/metrics). Now you can setup a prometheus to scrape that endpoint. For a complete example with prometheus and Grafana have a look at [examples/prometheus](distribution/examples/prometheus).
+ 
+See [Prometheus and Grafana example](distribution/examples/monitoring-tracing/prometheus).
 
 ### OpenTelemetry Integration
 Membrane supports integration with **OpenTelemetry** traces using the `openTelemetry` plugin and the `W3C` propagation standard. This enables detailed tracing of requests across Membrane and backend services.
 
-![OpenTelemetry Example](distribution/examples/opentelemetry/resources/otel_example.png)  
+![OpenTelemetry Example](distribution/examples/monitoring-tracing/opentelemetry/resources/otel_example.png)  
 This diagram illustrates Membrane in a tracing setup with a backend service and a database connection.
 
 #### Example Setup
@@ -1142,4 +1116,4 @@ The configuration below shows Membrane forwarding requests to a backend, while e
 </api>
 ```  
 
-For a working example and detailed setup, see the [OpenTelemetry Example](./distribution/examples/opentelemetry).
+For a working example and detailed setup, see the [OpenTelemetry Example](./distribution/examples/monitoring-tracing/opentelemetry).

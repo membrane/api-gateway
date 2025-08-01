@@ -105,6 +105,7 @@ public class HTTPClientInterceptor extends AbstractInterceptor {
                     .exception(e)
                     .internal("proxy", exc.getProxy().getName())
                     .internal("url",exc.getRequest().getUri())
+                    .internal("hostHeader", exc.getRequest().getHeader().getHost())
                     .buildAndSetResponse(exc);
             return ABORT;
         } catch (ProtocolUpgradeDeniedException e) {
