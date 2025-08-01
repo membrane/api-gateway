@@ -14,9 +14,7 @@
 package com.predic8.membrane.core.interceptor;
 
 import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.transport.http.*;
-import com.predic8.membrane.core.util.*;
 import org.junit.jupiter.api.*;
 
 import javax.xml.*;
@@ -27,8 +25,9 @@ import java.io.*;
 import java.util.regex.*;
 
 import static com.predic8.membrane.core.Constants.*;
+import static com.predic8.membrane.core.http.Request.*;
 import static com.predic8.membrane.core.http.Response.*;
-import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
+import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class WSDLInterceptorTest {
@@ -40,7 +39,7 @@ public class WSDLInterceptorTest {
 	@BeforeEach
 	public void setUp() throws Exception {
 		exc = new Exchange(new FakeHttpHandler(3011));
-		exc.setRequest(Request.get("/axis2/services/BLZService?wsdl").build());
+		exc.setRequest(get("/axis2/services/BLZService?wsdl").build());
         exc.setResponse(ok()
 				.contentType("text/xml; charset=utf-8")
 				.body(WSDLInterceptorTest.class.getResourceAsStream("/blz-service.wsdl"), true)

@@ -18,7 +18,6 @@ import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.transport.http.*;
-import com.predic8.membrane.core.util.*;
 import com.predic8.membrane.core.ws.relocator.*;
 import org.jetbrains.annotations.*;
 import org.slf4j.*;
@@ -28,6 +27,8 @@ import java.io.*;
 import java.net.*;
 
 import static com.predic8.membrane.core.Constants.*;
+import static com.predic8.membrane.core.http.Header.HOST;
+import static com.predic8.membrane.core.http.Request.*;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.*;
 import static java.nio.charset.StandardCharsets.*;
 
@@ -114,13 +115,12 @@ public class WSDLInterceptor extends RelocatingInterceptor {
     }
 
     private Exchange createExchange(String uri) throws MalformedURLException, URISyntaxException {
-        URL url = new URL(uri);
-        Request req = Request.get(getCompletePath(url)).build();
-        req.getHeader().setHost(url.getHost());
-        Exchange exc = new Exchange(null);
-        exc.setRequest(req);
-        exc.getDestinations().add(uri);
-        return exc;
+        return get(getCompletePath(new URL(uri))).header(HOST, getHost(uri)).buildExchange();
+
+    }
+
+    private static String getHost(String uri) throws MalformedURLException {
+        return new URL(uri).getHost();
     }
 
     private String getCompletePath(URL url) {

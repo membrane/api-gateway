@@ -13,26 +13,20 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor;
 
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.transport.http.*;
+import org.junit.jupiter.api.*;
+import org.xml.sax.*;
+
+import javax.xml.namespace.*;
+import javax.xml.xpath.*;
+import java.io.*;
+import java.net.*;
+import java.util.*;
+
+import static com.predic8.membrane.core.http.Request.*;
 import static org.junit.jupiter.api.Assertions.*;
-
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.URISyntaxException;
-import java.util.Iterator;
-
-import javax.xml.namespace.NamespaceContext;
-import javax.xml.xpath.XPath;
-import javax.xml.xpath.XPathFactory;
-
-import com.predic8.membrane.core.http.Request;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
-import org.xml.sax.InputSource;
-
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Response;
-import com.predic8.membrane.core.transport.http.FakeHttpHandler;
-import com.predic8.membrane.core.util.MessageUtil;
 
 public class WADLInterceptorTest {
 
@@ -115,16 +109,13 @@ public class WADLInterceptorTest {
 
 	private Exchange getExchange() throws URISyntaxException {
 		Exchange exc = new Exchange(new FakeHttpHandler(3011));
-		exc.setRequest(Request.get("/search?wadl").build());
+		exc.setRequest(get("/search?wadl").build());
 		InputStream resourceAsStream = this.getClass().getResourceAsStream("/wadls/search.wadl");
-		Response okResponse = Response.ok()
-				.contentType("text/xml; charset=utf-8")
-				.body(resourceAsStream, true)
-				.build();
-		exc.setResponse(okResponse);
-
+		exc.setResponse(Response.ok()
+                .contentType("text/xml; charset=utf-8")
+                .body(resourceAsStream, true)
+                .build());
 		exc.setOriginalHostHeader("thomas-bayer.com:80");
-
 		return exc;
 	}
 

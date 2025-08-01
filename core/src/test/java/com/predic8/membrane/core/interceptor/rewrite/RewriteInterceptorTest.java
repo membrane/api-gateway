@@ -13,26 +13,20 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.rewrite;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.predic8.membrane.core.HttpRouter;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Request;
-import com.predic8.membrane.core.interceptor.DispatchingInterceptor;
-import com.predic8.membrane.core.interceptor.rewrite.RewriteInterceptor.Mapping;
-import com.predic8.membrane.core.proxies.ServiceProxy;
-import com.predic8.membrane.core.proxies.ServiceProxyKey;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import com.fasterxml.jackson.databind.*;
+import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.interceptor.rewrite.RewriteInterceptor.*;
+import com.predic8.membrane.core.proxies.*;
+import org.junit.jupiter.api.*;
 
-import java.net.URISyntaxException;
-import java.util.ArrayList;
-import java.util.List;
+import java.net.*;
+import java.util.*;
 
-import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
-import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static com.predic8.membrane.core.http.Request.*;
+import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static org.junit.jupiter.api.Assertions.*;
 public class RewriteInterceptorTest {
 
 	private final static ObjectMapper om = new ObjectMapper();
@@ -44,7 +38,7 @@ public class RewriteInterceptorTest {
 	private ServiceProxy sp;
 
 	@BeforeEach
-	public void setUp() {
+	void setUp() {
 		HttpRouter router = new HttpRouter();
 
 		di = new DispatchingInterceptor();
@@ -66,7 +60,7 @@ public class RewriteInterceptorTest {
 
 	@Test
 	void testRewriteWithoutTarget() throws URISyntaxException {
-		exc.setRequest(Request.get("/buy/banana/3").build());
+		exc.setRequest(get("/buy/banana/3").build());
 		assertEquals(CONTINUE, di.handleRequest(exc));
 		assertEquals(CONTINUE, rewriter.handleRequest(exc));
 		assertEquals("/buy?item=banana&amount=3", exc.getDestinations().getFirst());
@@ -74,7 +68,7 @@ public class RewriteInterceptorTest {
 
 	@Test
 	void testRewrite() throws URISyntaxException {
-		exc.setRequest(Request.get("/buy/banana/3").build());
+		exc.setRequest(get("/buy/banana/3").build());
 		exc.setProxy(sp);
 
 		assertEquals(CONTINUE, di.handleRequest(exc));
@@ -84,17 +78,16 @@ public class RewriteInterceptorTest {
 
 	@Test
 	void storeSample() throws URISyntaxException {
-		exc.setRequest(Request.get("https://api.predic8.de/store/products/").build());
+		exc.setRequest(get("/store/products/").build());
 		assertEquals(CONTINUE, di.handleRequest(exc));
 		assertEquals(CONTINUE, rewriter.handleRequest(exc));
-		//dont work!!!!
-		assertEquals("https://api.predic8.de/shop/v2/products/", exc.getDestinations().getFirst());
+		assertEquals("/shop/v2/products/", exc.getDestinations().getFirst());
 	}
 
 	@Test
 	void invalidURI() throws Exception {
-		//dont work!!!!
-		exc.setRequest(Request.get("/buy/banana/%").build());
+		exc.setRequest(get("/dummy").build());
+		exc.getRequest().setUri("/buy/banana/%"); // Overwrite dummy
 		exc.setProxy(sp);
 
 		assertEquals(CONTINUE, di.handleRequest(exc));

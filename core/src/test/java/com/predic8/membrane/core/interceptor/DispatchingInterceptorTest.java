@@ -15,14 +15,13 @@ package com.predic8.membrane.core.interceptor;
 
 import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.proxies.*;
-import com.predic8.membrane.core.util.*;
 import org.jetbrains.annotations.*;
 import org.junit.jupiter.api.*;
 
 import java.net.*;
 
+import static com.predic8.membrane.core.http.Request.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -44,7 +43,7 @@ public class DispatchingInterceptorTest {
 
 	@Test
 	public void testServiceProxy() throws Exception {
-		exc.setRequest(new Request.Builder().get("/axis2/services/BLZService?wsdl").build());
+		exc.setRequest(get("/axis2/services/BLZService?wsdl").build());
 		exc.setProxy(serviceProxy);
 
 		assertEquals(CONTINUE, dispatcher.handleRequest(exc));
@@ -57,12 +56,12 @@ public class DispatchingInterceptorTest {
 
 	@Test
 	public void testProxyRuleHttp() throws Exception {
-		exc.setRequest(Request.get("http://www.thomas-bayer.com:80/axis2/services/BLZService?wsdl").build());
+		exc.setRequest(get("/dummy").build());
+		exc.getRequest().setUri("http://www.thomas-bayer.com:80/axis2/services/BLZService?wsdl");
 		exc.setProxy(getProxyRule());
 
 		assertEquals(CONTINUE, dispatcher.handleRequest(exc));
 
-		//dont work!!!!
 		URL url = new URL(exc.getDestinations().getFirst());
 
 		assertEquals(80, url.getPort());
@@ -77,7 +76,7 @@ public class DispatchingInterceptorTest {
     @Test
     void getAddressFromTargetElementTargetWithHostAndPort() throws Exception {
 		exc.setProxy(serviceProxy);
-		exc.setRequest(Request.get("/foo").build());
+		exc.setRequest(get("/foo").build());
 		assertEquals("http://thomas-bayer.com:80/foo", getGetAddressFromTargetElement());
     }
 

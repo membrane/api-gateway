@@ -318,7 +318,7 @@ public class Request extends Message {
 		}
 
 		public Builder get(URIFactory uriFactory, String url) throws URISyntaxException {
-			return method(Request.METHOD_GET).url(uriFactory, url);
+			return method(METHOD_GET).url(uriFactory, url);
 		}
 
 		/**
