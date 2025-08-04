@@ -23,6 +23,7 @@ import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
+import com.predic8.membrane.core.interceptor.balancer.Cluster;
 import com.predic8.membrane.core.openapi.serviceproxy.*;
 import com.predic8.membrane.core.proxies.*;
 import com.predic8.membrane.core.transport.ssl.SSLContext;
@@ -33,6 +34,7 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Pattern;
 
+import static com.predic8.membrane.core.interceptor.balancer.BalancerUtil.collectClusters;
 import static com.predic8.membrane.core.openapi.util.Utils.joinByComma;
 import static java.util.stream.Collectors.toList;
 
@@ -147,9 +149,23 @@ public class PrometheusInterceptor extends AbstractInterceptor {
             }
 
         }
+        buildLoadBalancerLines(ctx);
         buildDuplicateRuleNameWarning(ctx, issuedDuplicateRuleNameWarning);
         ctx.collect();
 
+    }
+
+    private void buildLoadBalancerLines(Context ctx) {
+        ctx.s11.append("# TYPE membrane_lb_up_nodes gauge\n");
+        List<Cluster> cluster = collectClusters(router);
+        for (Cluster cl : cluster) {
+            ctx.s11.append("membrane_lb_up_nodes");
+            ctx.s11.append("{cluster=\"");
+            ctx.s11.append(prometheusCompatibleName(cl.getName()));
+            ctx.s11.append("\"} ");
+            ctx.s11.append(cl.getAvailableNodes(0).size());
+            ctx.s11.append("\n");
+        }
     }
 
     private void buildOpenAPIValidatorLines(Context ctx, APIProxy proxy) {
