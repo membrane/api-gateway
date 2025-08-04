@@ -59,16 +59,17 @@ public class PrometheusInterceptor extends AbstractInterceptor {
 
         final List<StringBuilder> dynamic = new ArrayList<>();
 
-        final StringBuilder s1 = new StringBuilder();
-        final StringBuilder s2 = new StringBuilder();
-        final StringBuilder s3 = new StringBuilder();
-        final StringBuilder s4 = new StringBuilder();
-        final StringBuilder s5 = new StringBuilder();
-        final StringBuilder s6 = new StringBuilder();
-        final StringBuilder s7 = new StringBuilder();
-        final StringBuilder s8 = new StringBuilder();
-        final StringBuilder s9 = new StringBuilder();
-        final StringBuilder s10 = new StringBuilder();
+        final StringBuilder s1 = new StringBuilder();   // count
+        final StringBuilder s2 = new StringBuilder();   // good_count
+        final StringBuilder s3 = new StringBuilder();   // good_time
+        final StringBuilder s4 = new StringBuilder();   // good_bytes_req_body
+        final StringBuilder s5 = new StringBuilder();   // good_bytes_res_body
+        final StringBuilder s6 = new StringBuilder();   // duplicate_rule_name
+        final StringBuilder s7 = new StringBuilder();   // ssl_haskeyandcert
+        final StringBuilder s8 = new StringBuilder();   // ssl_validfrom_ms
+        final StringBuilder s9 = new StringBuilder();   // ssl_validuntil_ms
+        final StringBuilder s10 = new StringBuilder();  // openapi_validation
+        final StringBuilder s11 = new StringBuilder();  // lb_active_nodes
 
         final HashSet<String> seenRules = new HashSet<>();
 
@@ -89,6 +90,7 @@ public class PrometheusInterceptor extends AbstractInterceptor {
             s8.setLength(0);
             s9.setLength(0);
             s10.setLength(0);
+            s11.setLength(0);
 
             dynamic.forEach(s -> s.setLength(0));
         }
@@ -109,8 +111,9 @@ public class PrometheusInterceptor extends AbstractInterceptor {
             sb.append(s8);
             sb.append(s9);
             sb.append(s10);
+            sb.append(s11);
 
-            dynamic.forEach(s -> sb.append(s));
+            dynamic.forEach(sb::append);
         }
     }
 
