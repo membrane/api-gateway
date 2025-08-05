@@ -7,12 +7,11 @@ start() {
     shift
     export CLASSPATH="$membrane_home/conf:$membrane_home/lib/*"
 
-    # This block is different from other membrane.sh files!
     if [ "$#" -eq 0 ] && [ -f proxies.yaml ]; then
       set -- yaml -l proxies.yaml
     fi
 
-    java -cp "$CLASSPATH" com.predic8.membrane.core.cli.RouterCLI "$@"
+    java $JAVA_OPTS -cp "$CLASSPATH" com.predic8.membrane.core.cli.RouterCLI "$@"
     status=$?
     if [ $status -ne 0 ]; then
       echo "Membrane terminated with exit code $status"

@@ -1,5 +1,8 @@
 #!/bin/sh
 
+# JAVA_OPTS  (optional) JVM options applied to every Membrane invocation.
+#             Use this for memory tuning and required system properties.
+
 required_version="21"
 
 start() {
@@ -9,7 +12,7 @@ start() {
     if [ "$#" -eq 0 ] && [ -f proxies.xml ]; then
       set -- -c proxies.xml
     fi
-    java -cp "$CLASSPATH" com.predic8.membrane.core.cli.RouterCLI "$@"
+    java $JAVA_OPTS -cp "$CLASSPATH" com.predic8.membrane.core.cli.RouterCLI "$@"
     status=$?
     if [ $status -ne 0 ]; then
       echo "Membrane terminated with exit code $status"
