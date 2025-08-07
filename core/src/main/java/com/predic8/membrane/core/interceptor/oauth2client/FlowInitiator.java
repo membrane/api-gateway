@@ -18,13 +18,16 @@ import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.interceptor.session.*;
+import com.predic8.membrane.core.interceptor.oauth2.authorizationservice.FlowContext;
 import com.predic8.membrane.core.util.*;
 import org.slf4j.*;
 
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 
+import static com.predic8.membrane.core.http.Header.LOCATION;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 @MCElement(name = "flowInitiator")
 public class FlowInitiator extends AbstractInterceptor {
@@ -106,23 +109,20 @@ public class FlowInitiator extends AbstractInterceptor {
         exc.getRequest().setUri(afterLoginUrl);
         exc.setOriginalRequestUri(afterLoginUrl);
 
-        oauth2.respondWithRedirect(exc);
-
-        Session session = oauth2.getSessionManager().getSession(exc);
-        session.put("defaultFlow", defaultFlow);
-        session.put("triggerFlow", triggerFlow);
-
+        oauth2.respondWithRedirect(exc, FlowContext.fromConfig(defaultFlow, triggerFlow));
         oauth2.getSessionManager().postProcess(exc); // required to create a session cookie
         if (logoutBeforeFlow) {
             values.forEach(header -> exc.getResponse().getHeader().add(header));
         }
 
-        // replace header
-        String location = exc.getResponse().getHeader().getFirstValue("Location");
-        location = location.replaceAll(defaultFlow, triggerFlow);
-        exc.getResponse().getHeader().setValue("Location", location);
+        exc.getResponse().getHeader().setValue(LOCATION, replaceFlow(exc.getResponse().getHeader().getFirstValue(LOCATION)));
+        exc.getResponse().setBodyContent(replaceFlow(exc.getResponse().getBodyAsStringDecoded()).getBytes(UTF_8));
 
         return Outcome.RETURN;
+    }
+
+    private String replaceFlow(String text) {
+        return text.replaceAll("/" + defaultFlow + "/", "/" + triggerFlow + "/");
     }
 
     public List<LoginParameter> getLoginParameters() {
