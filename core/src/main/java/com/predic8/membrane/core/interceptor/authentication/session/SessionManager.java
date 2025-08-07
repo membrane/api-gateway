@@ -43,6 +43,8 @@ public class SessionManager extends AbstractXmlElement implements Cleaner {
 	private String cookieName;
 	private long timeout;
 	private String domain;
+	protected boolean httpOnly = false;
+	protected String sameSite = null;
 
 	// TODO: bind session also to remote IP (for public Membrane release)
 	protected final HashMap<String, Session> sessions = new HashMap<>();
@@ -217,11 +219,12 @@ public class SessionManager extends AbstractXmlElement implements Cleaner {
 		return s;
 	}
 
-	// TODO is that all for the value or is there something missing?
 	protected @NotNull String getCookieValue(Exchange exc, String value) {
 		return value + "; " +
 			   (domain != null ? "Domain=" + domain + "; " : "") +
-			   "Path=/" + getSecureString(exc);
+			   "Path=/" + getSecureString(exc) +
+				(httpOnly ? "; HttpOnly" : "") +
+                (sameSite != null ? "; SameSite=" + sameSite : "");
 	}
 
 	protected static @NotNull String getSecureString(Exchange exc) {
@@ -268,5 +271,23 @@ public class SessionManager extends AbstractXmlElement implements Cleaner {
 	@MCAttribute
 	public void setDomain(String domain) {
 		this.domain = domain;
+	}
+
+	@MCAttribute
+	public void setHttpOnly(boolean httpOnly) {
+		this.httpOnly = httpOnly;
+	}
+
+	public boolean isHttpOnly() {
+		return httpOnly;
+	}
+
+	@MCAttribute
+	public void setSameSite(String sameSite) {
+		this.sameSite = sameSite;
+	}
+
+	public String getSameSite() {
+		return sameSite;
 	}
 }
