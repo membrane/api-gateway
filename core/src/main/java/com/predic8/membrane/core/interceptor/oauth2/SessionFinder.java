@@ -19,6 +19,7 @@ import com.predic8.membrane.core.interceptor.authentication.session.SessionManag
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class SessionFinder {
@@ -89,7 +90,7 @@ public class SessionFinder {
         }
     }
 
-    public void cleanupSessions(List<SessionManager.Session> sessionsToRemove) {
+    public void cleanupSessions(Set<SessionManager.Session> sessionsToRemove) {
 
         cleanupMap(sessionsToRemove, authCodesToSession);
         cleanupMap(sessionsToRemove, tokensToSession);
@@ -97,7 +98,7 @@ public class SessionFinder {
 
     }
 
-    private void cleanupMap(List<SessionManager.Session> sessionsToRemove, ConcurrentHashMap<String, Session> sessionMap) {
+    private void cleanupMap(Set<SessionManager.Session> sessionsToRemove, ConcurrentHashMap<String, Session> sessionMap) {
 
         synchronized (sessionMap) {
 

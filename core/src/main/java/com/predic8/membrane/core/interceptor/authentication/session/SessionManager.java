@@ -242,7 +242,7 @@ public class SessionManager extends AbstractXmlElement implements Cleaner {
 	public void cleanup() {
 		long death = System.currentTimeMillis() - timeout;
 		List<String> removeUs = new ArrayList<>();
-		List<Session> removedSessions = new ArrayList<>();
+		Set<Session> removedSessions = new HashSet<>();
 
 		synchronized (sessions) {
 			for (Map.Entry<String, Session> e : sessions.entrySet())
@@ -250,7 +250,9 @@ public class SessionManager extends AbstractXmlElement implements Cleaner {
 					removeUs.add(e.getKey());
 			for (String sessionId : removeUs) {
 				Session removedSession = sessions.remove(sessionId);
-				removedSessions.add(removedSession);
+				if (removedSession!= null) {
+				    removedSessions.add(removedSession);
+				}
 			}
 		}
 
