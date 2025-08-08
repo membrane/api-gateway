@@ -125,6 +125,7 @@ public class OAuth2AuthorizationServerInterceptor extends AbstractInterceptor {
             log.error("",e);
             throw new ConfigurationException("Could not generate JwtGenerator");
         }
+        sessionManager.setSessionFinder(sessionFinder);
         sessionManager.init(router);
         statistics = new OAuth2Statistics();
         addDefaultProcessors();
