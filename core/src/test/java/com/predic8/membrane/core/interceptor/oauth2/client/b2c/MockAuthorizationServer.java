@@ -32,17 +32,21 @@ import org.jose4j.lang.*;
 
 import java.io.*;
 import java.math.*;
+import java.net.URLEncoder;
 import java.nio.charset.*;
 import java.security.*;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.*;
 
 import static com.predic8.membrane.core.RuleManager.RuleDefinitionSource.*;
 import static com.predic8.membrane.core.http.MimeType.*;
+import static java.net.URLEncoder.encode;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class MockAuthorizationServer {
-    public static final int SERVER_PORT = 1337;
+    public static final int SERVER_PORT = 21337;
 
     private final Runnable onLogin, onLogout;
     private final B2CTestConfig tc;
@@ -59,6 +63,9 @@ public class MockAuthorizationServer {
     public final AtomicBoolean returnOAuth2ErrorFromSignIn = new AtomicBoolean();
     public final AtomicBoolean abortSignIn = new AtomicBoolean();
     public volatile int expiresIn;
+
+    // refresh token -> corresponding flow
+    public ConcurrentHashMap<String, String> refreshTokens = new ConcurrentHashMap<>();
 
     public MockAuthorizationServer(B2CTestConfig tc, Runnable onLogin, Runnable onLogout) {
         this.tc = tc;
@@ -133,10 +140,10 @@ public class MockAuthorizationServer {
                         return Response.internalServerError().body("signin aborted").build();
                     }
                     if (returnOAuth2ErrorFromSignIn.get()) {
-                        return Response.redirect(tc.getClientAddress() + "/oauth2callback?error=DEMO-123&error_description=This+is+a+demo+error.&state=" + params.get("state"), 302).build();
+                        return Response.redirect(tc.getClientAddress() + "/oauth2callback?error=DEMO-123&error_description=This+is+a+demo+error.&state=" + encode(params.get("state"), UTF_8), 302).build();
                     } else {
                         onLogin.run();
-                        return Response.redirect(tc.getClientAddress() + "/oauth2callback?code=1234&state=" + params.get("state"), 302).build();
+                        return Response.redirect(tc.getClientAddress() + "/oauth2callback?code=1234" + flowId + "&state=" + encode(params.get("state"), UTF_8), 302).build();
                     }
                 } else if (requestURI.contains("/token")) {
                     return handleTokenRequest(flowId, exc);
@@ -156,18 +163,21 @@ public class MockAuthorizationServer {
         Map<String, String> params = URLParamUtil.getParams(new URIFactory(), exc, URLParamUtil.DuplicateKeyOrInvalidFormStrategy.ERROR);
         String grantType = params.get("grant_type");
         if (grantType.equals("authorization_code")) {
-            assertEquals("1234", params.get("code"));
+            assertEquals("1234" + flowId, params.get("code"));
             assertEquals("http://localhost:31337/oauth2callback", params.get("redirect_uri"));
         } else if (grantType.equals("refresh_token")) {
             String refreshToken = params.get("refresh_token");
-            assertTrue(refreshToken.length() > 10);
-            assertTrue(refreshToken.length() < 50);
+            String flowId2 = refreshTokens.get(refreshToken);
+            if (flowId2 == null)
+                throw new RuntimeException("Refresh Token not known.");
+            if (!flowId.equals(flowId2))
+                throw new RuntimeException("Refresh Token valid for flow " + flowId2 + ", but used in flow " + flowId);
         } else {
             throw new RuntimeException("Illegal grant_type: " + grantType);
         }
         String secret = tc.clientId + ":" + tc.clientSecret;
 
-        assertEquals("Basic " + Base64.getEncoder().encodeToString(secret.getBytes(StandardCharsets.UTF_8)) , exc.getRequest().getHeader().getFirstValue("Authorization"));
+        assertEquals("Basic " + Base64.getEncoder().encodeToString(secret.getBytes(UTF_8)) , exc.getRequest().getHeader().getFirstValue("Authorization"));
 
         return Response
                 .ok(om.writeValueAsString(createTokenResponse(flowId, params)))
@@ -187,8 +197,11 @@ public class MockAuthorizationServer {
             res.put("resource", tc.api1Id);
             res.put("scope", "https://localhost/" + tc.api1Id + "/Read");
         } else {
+            String refreshToken = new BigInteger(130, rand).toString(32);
+            refreshTokens.put(refreshToken, flowId);
+
             res.put("scope", "offline_access openid");
-            res.put("refresh_token", new BigInteger(130, rand).toString(32));
+            res.put("refresh_token", refreshToken);
             res.put("refresh_token_expires_in", 1209600);
             res.put("id_token", createToken(idToken(flowId)));
             res.put("id_token_expires_in", expiresIn);
@@ -200,7 +213,7 @@ public class MockAuthorizationServer {
     }
 
     private String urlEncode(Map<String, Object> map) throws JsonProcessingException {
-        return Base64.getUrlEncoder().encodeToString(om.writeValueAsString(map).getBytes(StandardCharsets.UTF_8));
+        return Base64.getUrlEncoder().encodeToString(om.writeValueAsString(map).getBytes(UTF_8));
     }
 
     private static @NotNull NumericDate notBefore() {

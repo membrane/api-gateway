@@ -27,8 +27,8 @@ import static io.opentelemetry.api.trace.propagation.W3CTraceContextPropagator.g
 import static io.opentelemetry.context.propagation.ContextPropagators.create;
 import static io.opentelemetry.sdk.trace.export.BatchSpanProcessor.builder;
 import static io.opentelemetry.sdk.trace.samplers.Sampler.traceIdRatioBased;
-import static io.opentelemetry.semconv.ResourceAttributes.SERVICE_NAME;
-import static io.opentelemetry.semconv.ResourceAttributes.SERVICE_VERSION;
+import static io.opentelemetry.semconv.ServiceAttributes.SERVICE_NAME;
+import static io.opentelemetry.semconv.ServiceAttributes.SERVICE_VERSION;
 
 public class OpenTelemetryConfigurator {
     public static OpenTelemetry openTelemetry(String serviceName, OtelExporter exporter, double sampleRate) {
