@@ -28,7 +28,7 @@ public class InvalidMethodProcessor extends EndpointProcessor {
 
     @Override
     public boolean isResponsible(Exchange exc) {
-        return !(exc.getRequest().getMethod().equals(METHOD_GET) || exc.getRequest().getMethod().equals(METHOD_POST));
+        return !(exc.getRequest().getMethod().equals(GET) || exc.getRequest().getMethod().equals(POST));
     }
 
     @Override
