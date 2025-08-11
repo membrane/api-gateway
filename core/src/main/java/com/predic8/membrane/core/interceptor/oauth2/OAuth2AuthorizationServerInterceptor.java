@@ -112,6 +112,7 @@ public class OAuth2AuthorizationServerInterceptor extends AbstractInterceptor {
         getClientList().init(router);
         getClaimList().init(router);
         jwtGenerator = new JwtGenerator();
+        sessionManager.setSessionFinder(sessionFinder);
         sessionManager.init(router);
         statistics = new OAuth2Statistics();
         addDefaultProcessors();

@@ -15,14 +15,14 @@ package com.predic8.membrane.core.interceptor.authentication.session;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 import javax.xml.stream.XMLStreamReader;
 
-import com.github.fge.jsonschema.core.keyword.syntax.checkers.common.ExclusiveMaximumSyntaxChecker;
 import org.apache.commons.lang3.StringUtils;
 
 import com.predic8.membrane.annot.MCAttribute;
@@ -30,8 +30,8 @@ import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.config.AbstractXmlElement;
 import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.interceptor.authentication.session.CleanupThread.Cleaner;
+import com.predic8.membrane.core.interceptor.oauth2.SessionFinder;
 
 /**
  * @explanation <p>
@@ -56,6 +56,8 @@ public class SessionManager extends AbstractXmlElement implements Cleaner {
 	HashMap<String, Session> sessions = new HashMap<>();
 	protected final static String SESSION_ID = "SESSION_ID";
 	protected final static String SESSION = "SESSION";
+
+	private SessionFinder sessionFinder = null;
 
 	@Override
 	protected void parseAttributes(XMLStreamReader token) throws Exception {
@@ -120,6 +122,7 @@ public class SessionManager extends AbstractXmlElement implements Cleaner {
 		public synchronized boolean isAuthorized() {
 			return level == 2;
 		}
+
 		public synchronized boolean isPreAuthorized() {
 			return level == 1;
 		}
@@ -225,16 +228,35 @@ public class SessionManager extends AbstractXmlElement implements Cleaner {
 		return s;
 	}
 
+	@Override
 	public void cleanup() {
 		long death = System.currentTimeMillis() - timeout;
 		List<String> removeUs = new ArrayList<>();
+		Set<Session> removedSessions = new HashSet<>();
+
 		synchronized (sessions) {
 			for (Map.Entry<String, Session> e : sessions.entrySet())
 				if (e.getValue().getLastUse() < death)
 					removeUs.add(e.getKey());
-			for (String sessionId : removeUs)
-				sessions.remove(sessionId);
+			for (String sessionId : removeUs) {
+				Session removedSession = sessions.remove(sessionId);
+				if (removedSession!= null) {
+				    removedSessions.add(removedSession);
+				}
+			}
 		}
+
+		if (sessionFinder != null) {
+			sessionFinder.cleanupSessions(removedSessions);
+		}
+	}
+
+	public SessionFinder getSessionFinder() {
+		return sessionFinder;
+	}
+
+	public void setSessionFinder(SessionFinder sessionFinder) {
+		this.sessionFinder = sessionFinder;
 	}
 
 	public String getCookieName() {
