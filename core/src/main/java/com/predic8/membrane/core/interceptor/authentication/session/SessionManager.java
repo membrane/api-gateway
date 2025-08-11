@@ -18,6 +18,7 @@ import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.config.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.interceptor.authentication.session.CleanupThread.*;
+import com.predic8.membrane.core.interceptor.oauth2.SessionFinder;
 import com.predic8.membrane.core.proxies.*;
 import org.apache.commons.lang3.*;
 import org.jetbrains.annotations.*;
@@ -50,6 +51,8 @@ public class SessionManager extends AbstractXmlElement implements Cleaner {
 	protected final HashMap<String, Session> sessions = new HashMap<>();
 	protected final static String SESSION_ID = "SESSION_ID";
 	protected final static String SESSION = "SESSION";
+
+	private SessionFinder sessionFinder = null;
 
 	@Override
 	protected void parseAttributes(XMLStreamReader token) {
@@ -116,6 +119,7 @@ public class SessionManager extends AbstractXmlElement implements Cleaner {
 		public synchronized boolean isAuthorized() {
 			return level == 2;
 		}
+
 		public synchronized boolean isPreAuthorized() {
 			return level == 1;
 		}
@@ -234,16 +238,35 @@ public class SessionManager extends AbstractXmlElement implements Cleaner {
 		return sp.isInboundSSL() ? "; Secure" : "";
 	}
 
+	@Override
 	public void cleanup() {
 		long death = System.currentTimeMillis() - timeout;
 		List<String> removeUs = new ArrayList<>();
+		Set<Session> removedSessions = new HashSet<>();
+
 		synchronized (sessions) {
 			for (Map.Entry<String, Session> e : sessions.entrySet())
 				if (e.getValue().getLastUse() < death)
 					removeUs.add(e.getKey());
-			for (String sessionId : removeUs)
-				sessions.remove(sessionId);
+			for (String sessionId : removeUs) {
+				Session removedSession = sessions.remove(sessionId);
+				if (removedSession!= null) {
+				    removedSessions.add(removedSession);
+				}
+			}
 		}
+
+		if (sessionFinder != null) {
+			sessionFinder.cleanupSessions(removedSessions);
+		}
+	}
+
+	public SessionFinder getSessionFinder() {
+		return sessionFinder;
+	}
+
+	public void setSessionFinder(SessionFinder sessionFinder) {
+		this.sessionFinder = sessionFinder;
 	}
 
 	public String getCookieName() {
