@@ -14,72 +14,107 @@
 package com.predic8.membrane.core.interceptor.oauth2;
 
 import com.predic8.membrane.core.interceptor.authentication.session.SessionManager;
+import com.predic8.membrane.core.interceptor.authentication.session.SessionManager.Session;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class SessionFinder {
 
-    private ConcurrentHashMap<String, SessionManager.Session> authCodesToSession = new ConcurrentHashMap<>();
-    private ConcurrentHashMap<String, SessionManager.Session> tokensToSession = new ConcurrentHashMap<>();
-    private ConcurrentHashMap<String, SessionManager.Session> refreshTokensToSession = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, SessionManager.Session> authCodesToSession = new ConcurrentHashMap<>();
 
-    public void addSessionForCode(String code, SessionManager.Session session){
+    private final ConcurrentHashMap<String, SessionManager.Session> tokensToSession = new ConcurrentHashMap<>();
+
+    private final ConcurrentHashMap<String, SessionManager.Session> refreshTokensToSession = new ConcurrentHashMap<>();
+
+    public void addSessionForCode(String code, SessionManager.Session session) {
         synchronized (authCodesToSession) {
             authCodesToSession.put(code, session);
         }
     }
 
-    public void addSessionForToken(String token, SessionManager.Session session){
-        synchronized (tokensToSession){
-            tokensToSession.put(token,session);
+    public void addSessionForToken(String token, SessionManager.Session session) {
+        synchronized (tokensToSession) {
+            tokensToSession.put(token, session);
         }
     }
 
-    public void addSessionForRefreshToken(String refreshToken, SessionManager.Session session){
+    public void addSessionForRefreshToken(String refreshToken, SessionManager.Session session) {
         synchronized (refreshTokensToSession) {
             refreshTokensToSession.put(refreshToken, session);
         }
     }
 
-    public boolean hasSessionForCode(String code){
-        synchronized (authCodesToSession){
+    public boolean hasSessionForCode(String code) {
+        synchronized (authCodesToSession) {
             return authCodesToSession.containsKey(code);
         }
     }
 
-    public boolean hasSessionForToken(String token){
-        synchronized (tokensToSession){
+    public boolean hasSessionForToken(String token) {
+        synchronized (tokensToSession) {
             return tokensToSession.containsKey(token);
         }
     }
 
-    public SessionManager.Session getSessionForCode(String code){
-        synchronized(authCodesToSession){
+    public SessionManager.Session getSessionForCode(String code) {
+        synchronized (authCodesToSession) {
             return authCodesToSession.get(code);
         }
     }
 
-    public SessionManager.Session getSessionForToken(String token){
-        synchronized(tokensToSession){
+    public SessionManager.Session getSessionForToken(String token) {
+        synchronized (tokensToSession) {
             return tokensToSession.get(token);
         }
     }
 
-    public SessionManager.Session getSessionForRefreshToken(String refreshToken){
-        synchronized(refreshTokensToSession){
+    public SessionManager.Session getSessionForRefreshToken(String refreshToken) {
+        synchronized (refreshTokensToSession) {
             return refreshTokensToSession.get(refreshToken);
         }
     }
 
-    public void removeSessionForCode(String code){
-        synchronized(authCodesToSession){
+    public void removeSessionForCode(String code) {
+        synchronized (authCodesToSession) {
             authCodesToSession.remove(code);
         }
     }
 
-    public void removeSessionForToken(String token){
-        synchronized(tokensToSession){
+    public void removeSessionForToken(String token) {
+        synchronized (tokensToSession) {
             tokensToSession.remove(token);
+        }
+    }
+
+    public void cleanupSessions(Set<SessionManager.Session> sessionsToRemove) {
+
+        cleanupMap(sessionsToRemove, authCodesToSession);
+        cleanupMap(sessionsToRemove, tokensToSession);
+        cleanupMap(sessionsToRemove, refreshTokensToSession);
+
+    }
+
+    private void cleanupMap(Set<SessionManager.Session> sessionsToRemove, ConcurrentHashMap<String, Session> sessionMap) {
+
+        synchronized (sessionMap) {
+
+            List<String> keysToRemove = new ArrayList<String>();
+            for (Map.Entry<String, SessionManager.Session> entry : sessionMap.entrySet()) {
+                String key = entry.getKey();
+                SessionManager.Session value = entry.getValue();
+
+                if (sessionsToRemove.contains(value)) {
+                    keysToRemove.add(key);
+                }
+            }
+
+            for (String key : keysToRemove) {
+                sessionMap.remove(key);
+            }
         }
     }
 }
