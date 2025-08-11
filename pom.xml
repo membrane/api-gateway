@@ -77,7 +77,7 @@
 		<gpg.keyname>5B8A65F6</gpg.keyname>
 		<javac.source>21</javac.source>
 		<javac.target>21</javac.target>
-		<jackson.version>2.19.1</jackson.version>
+		<jackson.version>2.19.2</jackson.version>
 		<spring.version>6.2.8</spring.version>
 		<slf4j.version>2.0.17</slf4j.version>
 		<log4j.version>2.25.1</log4j.version>
