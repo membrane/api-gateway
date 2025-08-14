@@ -1,14 +1,30 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Configuration>
     <Appenders>
-        <File name="FILE_PATTERN" fileName="membrane.log" append="true">
-            <PatternLayout pattern="%d{ABSOLUTE} %5p %tid %tn %c{1}:%L %X - %m%n"/>
-        </File>
-        <File name="FILE_JSON" fileName="membrane-json.log" append="true">
+        <RollingFile name="FILE_PATTERN"
+                     fileName="membrane.log"
+                     filePattern="membrane-%d{yyyy-MM-dd}-%i.log.gz"
+                     append="true">
+            <PatternLayout pattern="%d{ABSOLUTE} %5p %threadId %t %c{1}:%L %X - %m%n"/>
+            <Policies>
+                <TimeBasedTriggeringPolicy/>
+                <SizeBasedTriggeringPolicy size="10 MB"/>
+            </Policies>
+            <DefaultRolloverStrategy max="14"/>
+        </RollingFile>
+        <RollingFile name="FILE_JSON"
+                     fileName="membrane-json.log"
+                     filePattern="membrane-json-%d{yyyy-MM-dd}-%i.log.gz"
+                     append="true">
             <JsonTemplateLayout eventTemplateUri="classpath:EcsLayout.json"/>
-        </File>
+            <Policies>
+                <TimeBasedTriggeringPolicy/>
+                <SizeBasedTriggeringPolicy size="10 MB"/>
+            </Policies>
+            <DefaultRolloverStrategy max="14"/>
+        </RollingFile>
         <Console name="STDOUT" target="SYSTEM_OUT">
-            <PatternLayout pattern="%d{ABSOLUTE} %5p %tid %tn %c{1}:%L %X - %m%n"/>
+            <PatternLayout pattern="%d{ABSOLUTE} %5p %threadId %t %c{1}:%L %X - %m%n"/>
         </Console>
     </Appenders>
     <Loggers>
