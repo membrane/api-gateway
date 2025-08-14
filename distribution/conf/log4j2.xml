@@ -1,16 +1,26 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Configuration>
     <Appenders>
+        <File name="FILE_PATTERN" fileName="membrane.log" append="true">
+            <PatternLayout pattern="%d{ABSOLUTE} %5p %tid %tn %c{1}:%L %X - %m%n"/>
+        </File>
+        <File name="FILE_JSON" fileName="membrane-json.log" append="true">
+            <JsonTemplateLayout eventTemplateUri="classpath:EcsLayout.json"/>
+        </File>
         <Console name="STDOUT" target="SYSTEM_OUT">
-            <PatternLayout pattern="%d{ABSOLUTE} %5p %tid %tn %c{1}:%L %X - %m%n" />
+            <PatternLayout pattern="%d{ABSOLUTE} %5p %tid %tn %c{1}:%L %X - %m%n"/>
         </Console>
     </Appenders>
     <Loggers>
         <Logger name="com.predic8.membrane.core" level="info" additivity="false">
-            <AppenderRef ref="STDOUT" />
+            <AppenderRef ref="FILE_PATTERN"/>
+            <AppenderRef ref="FILE_JSON"/>
+            <AppenderRef ref="STDOUT"/>
         </Logger>
         <Root level="info">
-            <AppenderRef ref="STDOUT" />
+            <AppenderRef ref="FILE_PATTERN"/>
+            <AppenderRef ref="FILE_JSON"/>
+            <AppenderRef ref="STDOUT"/>
         </Root>
     </Loggers>
 </Configuration>
