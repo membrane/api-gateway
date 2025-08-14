@@ -96,8 +96,15 @@ paths:
 
 ## 3. Start Membrane
 
+**macOS/Linux**
+
 ```bash
 ./membrane.sh
+```
+
+**Windows**
+```bat
+membrane.cmd
 ```
 
 **Endpoints:**
@@ -109,7 +116,7 @@ paths:
 
 ## 4. Request a Token
 
-```bash
+```cmd
 curl http://localhost:2000
 ```
 
