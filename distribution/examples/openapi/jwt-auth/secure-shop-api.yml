@@ -1,0 +1,33 @@
+openapi: 3.0.3
+info:
+  title: Secure Shop API
+  version: "1.0.0"
+servers:
+  - url: https://api.predic8.de/shop/v2
+
+security:
+  - jwt: []  # JWT required globally
+
+paths:
+  /products:
+    get:
+      security:
+        - jwt: [inventory]   # needs inventory scope
+      responses:
+        "200": { description: OK }
+    post:
+      security:
+        - jwt: [management]  # needs management scope
+      responses:
+        "201": { description: Created }
+
+components:
+  securitySchemes:
+    jwt:
+      type: oauth2
+      flows:
+        clientCredentials:
+          tokenUrl: https://example.invalid/token
+          scopes:
+            inventory: Access to products
+            management: Access to vendors

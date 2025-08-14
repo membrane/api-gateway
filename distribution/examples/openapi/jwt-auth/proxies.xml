@@ -1,0 +1,29 @@
+<spring:beans xmlns="http://membrane-soa.org/proxies/1/"
+			  xmlns:spring="http://www.springframework.org/schema/beans"
+			  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+			  xsi:schemaLocation="http://www.springframework.org/schema/beans
+                http://www.springframework.org/schema/beans/spring-beans-4.2.xsd
+                http://membrane-soa.org/proxies/1/ http://membrane-soa.org/schemas/proxies-1.xsd">
+
+	<router>
+		<api port="2000" name="Token Server">
+			<request>
+				<template>{
+					"sub": "user@example.com",
+					"aud": "shop",
+					"scp": "inventory"
+					}</template>
+				<jwtSign><jwk location="jwk.json"/></jwtSign>
+			</request>
+			<return/>
+		</api>
+
+		<api port="2001" name="Protected API">
+			<openapi location="secure-shop-api.yml" validateSecurity="yes"/>
+			<jwtAuth expectedAud="shop">
+				<jwks><jwk location="jwk.json"/></jwks>
+			</jwtAuth>
+			<openapiValidator/>
+		</api>
+	</router>
+</spring:beans>
