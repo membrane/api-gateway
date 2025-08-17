@@ -14,26 +14,16 @@ limitations under the License. */
 
 package com.predic8.membrane.core.beautifier;
 
-import com.fasterxml.jackson.core.*;
 import com.fasterxml.jackson.databind.*;
 
 import java.io.*;
 
-import static com.fasterxml.jackson.databind.DeserializationFeature.*;
-import static com.fasterxml.jackson.databind.SerializationFeature.*;
-
-public class JSONBeautifier {
+public class JSONPrettifier implements Prettifier {
 
 	private final ObjectMapper om = new ObjectMapper();
 
-	public String beautify(String content) throws IOException {
-		return om.writerWithDefaultPrettyPrinter().writeValueAsString(om.readTree(content));
-	}
-
-	public void configure() {
-		om.configure(INDENT_OUTPUT, true);
-		om.configure(JsonParser.Feature.ALLOW_UNQUOTED_FIELD_NAMES, true);
-		om.configure(JsonGenerator.Feature.QUOTE_FIELD_NAMES, false);
-		om.configure(FAIL_ON_UNKNOWN_PROPERTIES, true);
+	@Override
+	public byte[] prettify(byte[] content) throws IOException {
+		return om.writerWithDefaultPrettyPrinter().writeValueAsBytes(om.readTree(content));
 	}
 }

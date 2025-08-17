@@ -109,8 +109,9 @@ public class SampleSoapServiceInterceptor extends AbstractInterceptor {
     }
 
     private static final HashMap<String, City> cityMap = new HashMap<>() {{
-        put("Bonn", new City("Bonn", 327_000, "Germany"));
+        put("Bonn", new City("Bonn", 333_000, "Germany"));
         put("Bielefeld", new City("Bielefeld", 333_000, "Germany"));
+        put("Berlin", new City("Berlin", 3_897_000, "Germany"));
         put("Manila", new City("Manila", 1_780_000, "Philippines"));
         put("Da Nang", new City("Da Nang", 1_220_000, "Vietnam"));
         put("London", new City("London", 8_980_000, "England"));

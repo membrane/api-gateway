@@ -14,12 +14,12 @@
 package com.predic8.membrane.examples.withinternet.test;
 
 import com.predic8.membrane.examples.util.*;
-import org.hamcrest.*;
 import org.junit.jupiter.api.*;
 
 import java.io.*;
 
 import static io.restassured.RestAssured.*;
+import static org.hamcrest.Matchers.*;
 
 public class VersioningSoapXsltExampleTest extends DistributionExtractingTestcase {
 
@@ -47,14 +47,14 @@ public class VersioningSoapXsltExampleTest extends DistributionExtractingTestcas
                 .post("http://localhost:2000/city-service")
             .then()
                 .statusCode(200)
-                .body("Envelope.Body.getCityResponse.population", Matchers.equalTo("327000"));
+                .body("Envelope.Body.getCityResponse.population", equalTo(327000));
 
             given()
                 .body(request_old)
                 .post("http://localhost:2000/city-service")
             .then()
                 .statusCode(200)
-                .body("Envelope.Body.getCityResponse.country", Matchers.equalTo("Germany"));
+                .body("Envelope.Body.getCityResponse.country", equalTo("Germany"));
             // @formatter:on
         }
     }

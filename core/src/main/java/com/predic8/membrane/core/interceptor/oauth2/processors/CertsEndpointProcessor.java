@@ -30,7 +30,7 @@ public class CertsEndpointProcessor extends EndpointProcessor {
 
     private static final Logger log = LoggerFactory.getLogger(CertsEndpointProcessor.class);
 
-    private final JSONBeautifier jsonBeautifier = new JSONBeautifier();
+    private final JSONPrettifier jsonBeautifier = new JSONPrettifier();
 
     public CertsEndpointProcessor(OAuth2AuthorizationServerInterceptor authServer) {
         super(authServer);
@@ -51,7 +51,7 @@ public class CertsEndpointProcessor extends EndpointProcessor {
                 "]}";
 
         try {
-            exc.setResponse(ok().contentType(APPLICATION_JSON_UTF8).body(jsonBeautifier.beautify(jwks)).build());
+            exc.setResponse(ok().contentType(APPLICATION_JSON_UTF8).body(jsonBeautifier.prettify( jwks.getBytes())).build());
         } catch (IOException e) {
             log.error("", e);
             internal(true,"certs-endpoint-processor")

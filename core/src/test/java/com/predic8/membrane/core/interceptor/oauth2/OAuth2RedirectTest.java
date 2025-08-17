@@ -25,20 +25,18 @@ import com.predic8.membrane.core.interceptor.templating.*;
 import com.predic8.membrane.core.proxies.*;
 import com.predic8.membrane.core.transport.http.*;
 import com.predic8.membrane.test.*;
-import io.restassured.filter.log.LogDetail;
+import io.restassured.filter.log.*;
 import io.restassured.response.*;
-import org.hamcrest.Matchers;
+import org.hamcrest.*;
 import org.jetbrains.annotations.*;
 import org.junit.jupiter.api.*;
 
-import java.net.URI;
-import java.net.URISyntaxException;
+import java.net.*;
 import java.util.*;
 import java.util.concurrent.atomic.*;
 
 import static com.predic8.membrane.core.lang.ExchangeExpression.Language.*;
-import static com.predic8.membrane.test.TestUtil.getPathFromResource;
-import static io.restassured.RestAssured.given;
+import static io.restassured.RestAssured.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 public abstract class OAuth2RedirectTest {

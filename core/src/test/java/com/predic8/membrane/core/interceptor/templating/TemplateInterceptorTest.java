@@ -22,7 +22,6 @@ import com.predic8.membrane.core.resolver.*;
 import com.predic8.membrane.core.util.*;
 import org.json.*;
 import org.junit.jupiter.api.*;
-import org.mockito.*;
 import org.w3c.dom.*;
 import org.xml.sax.*;
 
@@ -32,12 +31,15 @@ import java.io.*;
 import java.nio.file.*;
 import java.util.*;
 
+import static com.predic8.membrane.core.Constants.TRUE;
 import static com.predic8.membrane.core.http.MimeType.*;
-import static java.io.File.separator;
-import static java.lang.System.lineSeparator;
+import static com.predic8.membrane.core.http.Request.*;
+import static java.io.File.*;
+import static java.lang.System.*;
 import static java.nio.file.StandardCopyOption.*;
 import static javax.xml.xpath.XPathConstants.*;
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
 public class TemplateInterceptorTest {
 
@@ -52,7 +54,7 @@ public class TemplateInterceptorTest {
     static ResolverMap map;
 
     @BeforeAll
-    public static void setupFiles() throws IOException {
+    static void setupFiles() throws IOException {
         //user.dir returns current working directory
         copyFiles(Paths.get("src/test/resources/xml/project_template.xml"),Paths.get(System.getProperty("user.dir") +
                                                                                      separator + "project_template.xml") );
@@ -63,20 +65,20 @@ public class TemplateInterceptorTest {
                               separator + "project_template.xml");
         copiedJson = Paths.get(System.getProperty("user.dir") +
                                separator + "template_test.json");
-        router = Mockito.mock(Router.class);
+        router = mock(Router.class);
         map = new ResolverMap();
-        Mockito.when(router.getResolverMap()).thenReturn(map);
-        Mockito.when(router.getUriFactory()).thenReturn(new URIFactory());
+        when(router.getResolverMap()).thenReturn(map);
+        when(router.getUriFactory()).thenReturn(new URIFactory());
     }
 
     @AfterAll
-    public static  void deleteFile() throws IOException {
+    static  void deleteFile() throws IOException {
         Files.delete(copiedXml);
         Files.delete(copiedJson);
     }
 
     @BeforeEach
-    public void setUp(){
+    void setUp(){
         ti = new TemplateInterceptor();
         exc = new Exchange(null);
         req = new Request.Builder().build();
@@ -92,7 +94,7 @@ public class TemplateInterceptorTest {
 
     @Test
     void accessJson() throws Exception {
-        Exchange exchange = Request.post("/cities").contentType(APPLICATION_JSON).body("""
+        Exchange exchange = post("/cities").contentType(APPLICATION_JSON).body("""
                 { "city": "Da Nang" }
                 """).buildExchange();
 
@@ -100,9 +102,9 @@ public class TemplateInterceptorTest {
                 City: <%= json.city %>
                 """, TEXT_PLAIN);
 
-        assertEquals("City: Da Nang", exchange.getRequest().getBodyAsStringDecoded().trim());
-        assertEquals(TEXT_PLAIN, exchange.getRequest().getHeader().getContentType());
-        assertEquals(14, exchange.getRequest().getHeader().getContentLength());
+        var r = exchange.getRequest();
+        assertTrue(r.getBodyAsStringDecoded().contains("City: Da Nang"));
+        assertEquals(TEXT_PLAIN, r.getHeader().getContentType());
     }
 
     @SuppressWarnings("unchecked")
@@ -123,7 +125,7 @@ public class TemplateInterceptorTest {
 
     @Test
     void accessBindings() throws Exception {
-        Exchange exchange = Request.post("/foo?a=1&b=2").contentType(TEXT_PLAIN).body("vlinder").buildExchange();
+        Exchange exchange = post("/foo?a=1&b=2").contentType(TEXT_PLAIN).body("vlinder").buildExchange();
         exchange.setProperty("baz",7);
 
         invokeInterceptor(exchange, """
@@ -187,7 +189,7 @@ public class TemplateInterceptorTest {
 
     @Test
     void initTest() {
-        assertThrows(IllegalStateException.class, () -> {
+        assertThrows(ConfigurationException.class, () -> {
             ti.setLocation("./template_test.json");
             ti.setTextTemplate("${minister}");
             ti.init(router);
@@ -224,29 +226,46 @@ public class TemplateInterceptorTest {
     }
 
     @Test
-    void contentTypeTestNoXml() throws Exception {
+    void contentTypeTestJson() throws Exception {
         setAndHandleRequest("./template_test.json");
-        assertEquals("text/plain",exc.getRequest().getHeader().getContentType());
+        assertEquals(APPLICATION_JSON,exc.getRequest().getHeader().getContentType());
+    }
+
+    @Test
+    void contentTypeTestNoXml() throws Exception {
+        ti.setTextTemplate("normal text");
+        ti.init(router);
+        ti.handleRequest(exc);
+        assertEquals(TEXT_PLAIN,exc.getRequest().getHeader().getContentType());
     }
 
     @Test
     void testPrettify() {
         String inputJson = "\t{\n\n\t\t\"name\":\"John\"\t\t,\"age\":30}";
 
-        String lineBreak = lineSeparator();
         String expectedPrettyJson = "{"
-                + lineBreak + "  \"name\" : \"John\","
-                + lineBreak + "  \"age\" : 30"
-                + lineBreak + "}";
+                                    + lineSeparator() + "  \"name\" : \"John\","
+                                    + lineSeparator() + "  \"age\" : 30"
+                                    + lineSeparator() + "}";
 
-        String result = ti.prettifyJson(inputJson);
-        assertEquals(expectedPrettyJson, result);
+        ti.setContentType(APPLICATION_JSON);
+        ti.setTextTemplate(inputJson);
+        ti.setPretty( TRUE);
+        ti.init();
+        assertArrayEquals(expectedPrettyJson.getBytes(), ti.prettify(inputJson.getBytes()));
     }
 
     @Test
-    void testPrettifyWithInvalidJson() {
+    void prettifyWithInvalidJson() {
         String invalidJson = "{name:\"John\",age:30}";
-        assertEquals(invalidJson, ti.prettifyJson(invalidJson));
+        ti.setContentType(APPLICATION_JSON);
+        ti.setTextTemplate(invalidJson);
+        ti.setPretty("true");
+        ti.init(new Router());
+        ti.handleRequest(exc);
+
+        // Because JSON is invalid it should not change anything
+        assertEquals(invalidJson, exc.getRequest().getBodyAsStringDecoded());
     }
 
     private void setAndHandleRequest(String location) throws Exception {

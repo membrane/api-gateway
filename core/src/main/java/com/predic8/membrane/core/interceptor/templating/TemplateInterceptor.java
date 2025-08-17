@@ -16,13 +16,10 @@ package com.predic8.membrane.core.interceptor.templating;
 
 import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.resolver.*;
 import com.predic8.membrane.core.util.*;
 import groovy.lang.*;
 import groovy.text.*;
-import org.apache.commons.io.*;
 import org.jetbrains.annotations.*;
 
 import java.io.*;
@@ -32,7 +29,7 @@ import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
 import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.lang.ScriptingUtils.*;
-import static java.nio.charset.StandardCharsets.*;
+import static com.predic8.membrane.core.util.FileUtil.*;
 
 /**
  * @description Renders the body content of a message from a template. The template can
@@ -43,24 +40,33 @@ import static java.nio.charset.StandardCharsets.*;
  * Have a look at the samples in <a href="https://github.com/membrane/api-gateway/tree/master/distribution/examples">examples/template</a>.
  * @topic 2. Enterprise Integration Patterns
  */
-@MCElement(name="template", mixed = true)
-public class TemplateInterceptor extends StaticInterceptor {
+@MCElement(name = "template", mixed = true)
+public class TemplateInterceptor extends AbstractTemplateInterceptor {
 
-    private boolean scriptAccessesJson;
+    private boolean scriptAccessesJson = false;
 
-    protected Template template;
+    private Template template;
 
     public TemplateInterceptor() {
         name = "template";
     }
 
-    protected Outcome handleInternal(Message msg, Exchange exc, Flow flow) {
+    @Override
+    public void init() {
+        super.init();
+        template = createTemplate();
+
+        // If the template accesses somewhere the json varíable make sure it is there
+        // You can even access json in an XML or Text Template. See tests.
+        scriptAccessesJson = textTemplate.contains("json.");
+    }
+
+    protected Outcome handleInternal(Exchange exc, Flow flow) {
         try {
-            msg.setBodyContent(fillAndGetBytes(exc,msg,flow));
-        }
-        catch (TemplateExecutionException e) {
+            process(exc, flow);
+        } catch (TemplateExecutionException e) {
             log.warn("Groovy template error: {}", e.getMessage());
-            gateway( router.isProduction(),getDisplayName())
+            gateway(router.isProduction(), getDisplayName())
                     .addSubSee("template")
                     .detail("Error during template rendering.")
                     .internal("line", e.getLineNumber())
@@ -68,90 +74,58 @@ public class TemplateInterceptor extends StaticInterceptor {
                     .stacktrace(false)
                     .buildAndSetResponse(exc);
             return ABORT;
-        }
-        catch (GroovyRuntimeException e) {
+        } catch (GroovyRuntimeException e) {
             log.warn("Groovy error executing template: {}", e.getMessage());
-            internal( router.isProduction(),getDisplayName())
+            internal(router.isProduction(), getDisplayName())
                     .addSubSee("groovy")
                     .detail("Groovy error during template rendering.")
                     .exception(e)
                     .stacktrace(false)
                     .buildAndSetResponse(exc);
             return ABORT;
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             log.warn("", e);
-            internal(router.isProduction(),getDisplayName())
+            internal(router.isProduction(), getDisplayName())
                     .addSubSee("template")
                     .exception(e)
                     .buildAndSetResponse(exc);
             return ABORT;
         }
-
-        // Setting Content-Type must come at the end, cause before we want to know what the original type was.
-        msg.getHeader().setContentType(getContentType());
         return CONTINUE;
     }
 
-    @SuppressWarnings("RedundantThrows") // Declaration of exception is needed. However, Groovy does not declare it.
-    protected String fillTemplate(Exchange exc, Message msg, Flow flow) throws TemplateExecutionException {
-        String payload = template.make(getVariableBinding(exc, msg, flow)).toString();
-        if (isOfMediaType(APPLICATION_JSON,contentType) && pretty) {
-            return prettifyJson(payload);
-        }
-        return payload;
-    }
-
-    private @NotNull HashMap<String, Object> getVariableBinding(Exchange exc, Message msg, Flow flow) {
-        return createParameterBindings(router, exc, flow, scriptAccessesJson && msg.isJSON());
-    }
-
-    private byte[] fillAndGetBytes(Exchange exc, Message msg, Flow flow) throws TemplateExecutionException {
-        return fillTemplate(exc, msg, flow).getBytes(UTF_8);
-    }
-
     @Override
-    public void init() {
-        super.init();
-        if (this.getLocation() != null && (getTextTemplate() != null && !getTextTemplate().isBlank())) {
-            throw new IllegalStateException("On <" + getName() + ">, ./text() and ./@location cannot be set at the same time.");
-        }
+    protected byte[] getContent(Exchange exchange, Flow flow) {
+        // Needed deviation over toString() or Writer class
+        return template.make(getVariableBinding(exchange, flow)).toString().getBytes();
+    }
 
+    private @NotNull HashMap<String, Object> getVariableBinding(Exchange exc, Flow flow) {
+        return createParameterBindings(router, exc, flow, scriptAccessesJson && isJsonMessage(exc, flow));
+    }
+
+    private static boolean isJsonMessage(Exchange exc, Flow flow) {
+        return exc.getMessage(flow).isJSON();
+    }
+
+    private Template createTemplate() {
+        try {
+            return createTemplateEngine().createTemplate(new StringReader(textTemplate));
+        } catch (Exception e) {
+            throw new ConfigurationException("Could not create template from " + location, e);
+        }
+    }
+
+    private TemplateEngine createTemplateEngine() throws Exception {
         if (location != null) {
-            scriptAccessesJson = true; // Workaround. Because the reader is passed we can not look into the template => we put json in if there is one.
-            try (InputStreamReader reader = new InputStreamReader(getRouter().getResolverMap()
-                    .resolve(ResolverMap.combine(router.getBaseLocation(), location)))) {
-
-                // If a file is XML or not is detected based on the Extension.
-                if (FilenameUtils.getExtension(getLocation()).equals("xml")) {
-                    template = new XmlTemplateEngine().createTemplate(reader);
-                    setContentType(APPLICATION_XML);
-                }
-                else{
-                    template = new StreamingTemplateEngine().createTemplate(reader);
-                }
-                return;
-            } catch (Exception e) {
-                throw new ConfigurationException("Could not create template from " + location,e);
+            if (isXml(location)) {
+                setContentType(APPLICATION_XML);
+                return new XmlTemplateEngine();
+            }
+            if (FileUtil.isJson(location)) {
+                setContentType(APPLICATION_JSON);
             }
         }
-        if(!textTemplate.isBlank()){
-            scriptAccessesJson = textTemplate.contains("json");
-            try {
-                template = new StreamingTemplateEngine().createTemplate(this.getTextTemplate());
-            } catch (Exception e) {
-                throw new ConfigurationException("Could not create template from " + textTemplate,e);
-            }
-            return;
-        }
-        throw new IllegalStateException("You have to set either ./@location or ./text()");
-    }
-
-    public Template getTemplate() {
-        return template;
-    }
-
-    public void setTemplate(Template template) {
-        this.template = template;
+        return new StreamingTemplateEngine();
     }
 }

@@ -14,12 +14,17 @@
 
 package com.predic8.membrane.core.util;
 
+import org.apache.commons.io.*;
+
 import java.io.*;
 
 import static java.util.Objects.*;
 import static java.util.stream.Collectors.*;
 
 public class FileUtil {
+
+	public static final String XML = "xml";
+	public static final String JSON = "json";
 
 	public static String readInputStream(InputStream is) {
 		return new BufferedReader(new InputStreamReader(is)).lines().collect(joining("\n"));
@@ -35,5 +40,13 @@ public class FileUtil {
 				os.flush();
 			}
 		}
+	}
+
+	public static boolean isXml(String location) {
+		return FilenameUtils.getExtension(location).equals(XML);
+	}
+
+	public static boolean isJson(String location) {
+		return FilenameUtils.getExtension(location).equals(JSON);
 	}
 }

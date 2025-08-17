@@ -13,26 +13,21 @@
    limitations under the License. */
 package com.predic8.membrane.test;
 
-import io.restassured.filter.log.LogDetail;
-import io.restassured.filter.log.UrlDecoder;
-import io.restassured.http.Cookie;
-import io.restassured.http.Cookies;
-import io.restassured.response.Response;
-import org.hamcrest.Matchers;
-import org.hamcrest.text.MatchesPattern;
-import org.jetbrains.annotations.NotNull;
+import io.restassured.filter.log.*;
+import io.restassured.http.*;
+import io.restassured.response.*;
+import org.hamcrest.text.*;
+import org.jetbrains.annotations.*;
 
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.stream.Collectors;
+import java.net.*;
+import java.util.*;
+import java.util.stream.*;
 
-import static io.restassured.RestAssured.given;
-import static java.nio.charset.StandardCharsets.UTF_8;
+import static io.restassured.RestAssured.*;
+import static io.restassured.filter.log.LogDetail.ALL;
+import static java.nio.charset.StandardCharsets.*;
 import static org.apache.http.HttpHeaders.*;
+import static org.hamcrest.Matchers.*;
 
 public abstract class OAuth2AuthFlowClient {
 
@@ -179,9 +174,9 @@ public abstract class OAuth2AuthFlowClient {
         .when()
             .get(location)
         .then()
-            .log().ifValidationFails(LogDetail.ALL)
+            .log().ifValidationFails(ALL)
             .statusCode(200)
-            .assertThat().body(Matchers.is(expectedBody));
+            .assertThat().body(is(expectedBody));
 
     }
     // @formatter:on

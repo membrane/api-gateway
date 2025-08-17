@@ -16,7 +16,6 @@ package com.predic8.membrane.core;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.openapi.serviceproxy.*;
-import io.restassured.*;
 import io.restassured.response.*;
 import org.hamcrest.*;
 import org.jetbrains.annotations.*;
@@ -28,6 +27,7 @@ import javax.xml.parsers.*;
 import java.io.*;
 
 import static com.predic8.membrane.core.http.MimeType.*;
+import static io.restassured.RestAssured.*;
 import static io.restassured.filter.log.LogDetail.*;
 import static org.hamcrest.Matchers.*;
 
@@ -52,7 +52,7 @@ class RouterTest {
     void prodJson() {
 
         // @formatter:off
-        RestAssured.given()
+        given()
             .contentType(APPLICATION_JSON)
             .post("http://localhost:2000/")
         .then()
@@ -70,7 +70,7 @@ class RouterTest {
     @Test
     void prodXML() throws Exception {
         // @formatter:off
-        ExtractableResponse<Response> r  = RestAssured.given()
+        ExtractableResponse<Response> r  = given()
             .contentType(APPLICATION_XML)
             .post("http://localhost:2000/")
         .then()
@@ -89,7 +89,7 @@ class RouterTest {
     @Test
     void  devJson() {
         // @formatter:off
-        ExtractableResponse<Response> r = RestAssured.given()
+        ExtractableResponse<Response> r = given()
             .get("http://localhost:2001/")
         .then()
             .statusCode(500)
@@ -109,7 +109,7 @@ class RouterTest {
     @Test
     void devXML() throws Exception {
         // @formatter:off
-        ExtractableResponse<Response> r = RestAssured.given()
+        ExtractableResponse<Response> r = given()
                 .contentType(APPLICATION_XML)
                 .post("http://localhost:2001/")
             .then()

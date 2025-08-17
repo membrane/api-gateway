@@ -15,13 +15,9 @@ package com.predic8.membrane.core.interceptor.templating;
 
 import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.util.*;
-import groovy.text.*;
+import com.predic8.membrane.core.util.soap.*;
 
-import static com.predic8.membrane.core.http.MimeType.APPLICATION_SOAP;
-import static com.predic8.membrane.core.http.MimeType.TEXT_XML;
-import static com.predic8.membrane.core.interceptor.templating.SoapBodyTemplateInterceptor.SoapVersion.SOAP_11;
+import static com.predic8.membrane.core.util.soap.SoapVersion.*;
 
 /**
  * @description Renders a SOAP body for legacy intergration
@@ -29,23 +25,6 @@ import static com.predic8.membrane.core.interceptor.templating.SoapBodyTemplateI
  */
 @MCElement(name="soapBody", mixed = true)
 public class SoapBodyTemplateInterceptor extends TemplateInterceptor {
-
-    // Move sometime to a better place and reuse
-    public enum SoapVersion {
-        SOAP_11("1.1"), SOAP_12("1.2");
-
-        private final String value;
-
-        SoapVersion(String value) {
-            this.value = value;
-        }
-
-
-        @Override
-        public String toString() {
-            return value;
-        }
-    }
 
     private SoapVersion version = SOAP_11;
 
@@ -68,21 +47,17 @@ public class SoapBodyTemplateInterceptor extends TemplateInterceptor {
                     </s12:Body>
                 </s12:Envelope>
                 """;
-
     @Override
-    protected String fillTemplate(Exchange exc, Message msg, Flow flow) throws TemplateExecutionException {
-        return switch (version) {
-            case SOAP_11 -> SOAP11_PREFIX + super.fillTemplate(exc, msg, flow) + SOAP11_POSTFIX;
-            case SOAP_12 -> SOAP12_PREFIX + super.fillTemplate(exc, msg, flow) + SOAP12_POSTFIX;
-        };
+    protected byte[] getContent(Exchange exc, Flow flow) {
+        return (switch (version) {
+            case SOAP_11 -> SOAP11_PREFIX + asString( super.getContent(exc, flow)) + SOAP11_POSTFIX;
+            case SOAP_12 -> SOAP12_PREFIX +asString(  super.getContent(exc, flow)) + SOAP12_POSTFIX;
+        }).getBytes();
     }
 
     @Override
     public String getContentType() {
-        return switch (version) {
-            case SOAP_11 -> TEXT_XML;
-            case SOAP_12 -> APPLICATION_SOAP;
-        };
+        return version.getContentType();
     }
 
     public String getVersion() {
@@ -91,10 +66,6 @@ public class SoapBodyTemplateInterceptor extends TemplateInterceptor {
 
     @MCAttribute
     public void setVersion(String version) {
-        this.version = switch (version) {
-            case "1.1","11" -> SoapVersion.SOAP_11;
-            case "1.2","12" -> SoapVersion.SOAP_12;
-            default -> throw new ConfigurationException("SOAP version %s is not supported by soapBody.".formatted(version));
-        };
+        this.version = SoapVersion.parse(version);
     }
 }

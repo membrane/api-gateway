@@ -15,7 +15,6 @@ package com.predic8.membrane.core.interceptor.oauth2.processors;
 
 import com.predic8.membrane.core.beautifier.*;
 import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.interceptor.oauth2.*;
 import org.slf4j.*;
@@ -23,13 +22,16 @@ import org.slf4j.*;
 import java.io.*;
 
 import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
+import static com.predic8.membrane.core.http.MimeType.*;
+import static com.predic8.membrane.core.http.Response.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static java.nio.charset.StandardCharsets.*;
 
 public class WellknownEndpointProcessor extends EndpointProcessor {
 
     private static final Logger log = LoggerFactory.getLogger(WellknownEndpointProcessor.class);
 
-    private final JSONBeautifier jsonBeautifier = new JSONBeautifier();
+    private final JSONPrettifier prettifier = new JSONPrettifier();
 
     public WellknownEndpointProcessor(OAuth2AuthorizationServerInterceptor authServer) {
         super(authServer);
@@ -43,7 +45,7 @@ public class WellknownEndpointProcessor extends EndpointProcessor {
     @Override
     public Outcome process(Exchange exc) {
         try {
-            exc.setResponse(Response.ok().contentType(MimeType.APPLICATION_JSON_UTF8).body(jsonBeautifier.beautify(authServer.getWellknownFile().getWellknown())).build());
+            exc.setResponse(ok().contentType(APPLICATION_JSON_UTF8).body(prettifier.prettify(authServer.getWellknownFile().getWellknown().getBytes(UTF_8))).build());
         } catch (IOException e) {
             log.error("While constructing the wellknown response.", e);
             internal(true,"wellknown-endpoint-processor")
