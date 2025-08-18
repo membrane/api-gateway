@@ -34,6 +34,7 @@ public class AbstractSampleMembraneStartStopTestcase extends DistributionExtract
 
     @AfterEach
     void stopMembrane() throws IOException, InterruptedException {
-        process.killScript();
+        if (process != null)
+            process.killScript();
     }
 }

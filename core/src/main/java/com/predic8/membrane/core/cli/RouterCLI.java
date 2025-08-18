@@ -180,6 +180,12 @@ public class RouterCLI {
         boolean overwrite = commandLine.getCommand().isOptionSet("overwrite");
         String outputFile = commandLine.getCommand().getOptionValue("o");
 
+        if (outputFile == null) {
+            log.error("Missing required option: -o <output file>");
+            commandLine.getCommand().printHelp();
+            System.exit(1);
+        }
+
         RsaJsonWebKey rsaJsonWebKey = null;
         try {
             rsaJsonWebKey = RsaJwkGenerator.generateJwk(bits);
