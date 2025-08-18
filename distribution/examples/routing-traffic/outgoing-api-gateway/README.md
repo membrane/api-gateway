@@ -1,6 +1,6 @@
 # API Gateway for outgoing Traffic
 
-This sample shows how to setup Membrane to act as an **outgoing API gateway** that sits between internal services and external APIs as a controlled exit point for API requests.
+This sample shows how to set up Membrane to act as an **outgoing API gateway** that sits between internal services and external APIs as a controlled exit point for API requests.
 
 By routing all outgoing API traffic through an API Gateway, organizations gain visibility and control over what data leaves the internal network.
 

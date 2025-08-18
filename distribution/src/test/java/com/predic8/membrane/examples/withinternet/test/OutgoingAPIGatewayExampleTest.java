@@ -1,12 +1,10 @@
 package com.predic8.membrane.examples.withinternet.test;
 
-import com.predic8.membrane.examples.util.DistributionExtractingTestcase;
-import com.predic8.membrane.examples.util.Process2;
-import org.junit.jupiter.api.Test;
+import com.predic8.membrane.examples.util.*;
+import org.junit.jupiter.api.*;
 
-import static io.restassured.RestAssured.given;
+import static io.restassured.RestAssured.*;
 import static org.hamcrest.Matchers.*;
-import static org.hamcrest.Matchers.containsString;
 
 public class OutgoingAPIGatewayExampleTest extends DistributionExtractingTestcase {
 
@@ -27,7 +25,6 @@ public class OutgoingAPIGatewayExampleTest extends DistributionExtractingTestcas
             .when()
                     .get("/")
             .then()
-                    .log().body()
                     .statusCode(200)
                     .body(containsString("X-Api-Key"))
                     .body(not(containsString("User-Agent")))
