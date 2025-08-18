@@ -206,7 +206,7 @@ public class StaticSSLContext extends SSLContext {
 
         List<Certificate> certs = getCertificates(sslParser, resourceResolver, baseLocation);
 
-        dnsNames = extractDnsNames(certs.get(0));
+        dnsNames = extractDnsNames(certs.getFirst());
 
         checkChainValidity(certs);
         validity = new Validity(getValidFrom(certs),getMinimumValidity(certs));
@@ -286,7 +286,7 @@ public class StaticSSLContext extends SSLContext {
             Collection<List<?>> subjectAlternativeNames = cert.getSubjectAlternativeNames();
             if (subjectAlternativeNames != null)
                 for (List<?> l : subjectAlternativeNames) {
-                    if (l.get(0) instanceof Integer && ((Integer) l.get(0) == 2))
+                    if (l.get(0) instanceof Integer idx && idx == 2)
                         names.add(l.get(1).toString());
                 }
         }

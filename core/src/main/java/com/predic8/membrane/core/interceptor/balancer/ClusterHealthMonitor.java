@@ -17,9 +17,9 @@ package com.predic8.membrane.core.interceptor.balancer;
 import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.balancer.Node.*;
 import com.predic8.membrane.core.transport.http.*;
+import com.predic8.membrane.core.transport.http.client.*;
 import com.predic8.membrane.core.util.*;
 import org.jetbrains.annotations.*;
 import org.slf4j.Logger;
@@ -30,76 +30,93 @@ import org.springframework.context.*;
 
 import java.util.concurrent.*;
 
+import static com.predic8.membrane.core.http.Request.*;
 import static com.predic8.membrane.core.interceptor.balancer.BalancerUtil.*;
 import static com.predic8.membrane.core.interceptor.balancer.Node.Status.*;
 import static java.lang.System.*;
 import static java.util.concurrent.TimeUnit.*;
 
 /**
- * @description
+ * @description Health monitor for a load balancing cluster.
  * Periodically checks the health of all clusters registered
  * on the router and updates each node status accordingly.
  * When initialized, it schedules a task to call each node's health
  * endpoint and marks nodes as UP or DOWN based on the HTTP response.
  * This ensures the load balancer always has up-to-date status for routing decisions.
- *
+ * @example examples/loadbalancing/7-tls
  * @topic 4. Monitoring, Logging and Statistics
  */
-@MCElement(name = "lbClusterHealthMonitor")
-public class ClusterHealthMonitor implements ApplicationContextAware, InitializingBean {
+@MCElement(name = "balancerHealthMonitor")
+public class ClusterHealthMonitor implements ApplicationContextAware, InitializingBean, DisposableBean {
 
     private static final Logger log = LoggerFactory.getLogger(ClusterHealthMonitor.class);
 
     private Router router;
     private int interval = 10;
     private ScheduledExecutorService scheduler;
-    private static final HttpClient client = new HttpClient();
+    private HttpClient client;
+
+    private HttpClientConfiguration httpClientConfig;
+
+    private volatile boolean stopped;
 
     private void init() {
         if (interval <= 0)
             throw new ConfigurationException("lbClusterHealthMonitor: 'interval' must be > 0");
-        log.debug("Starting HealthMonitor with interval of {} seconds", interval);
-        scheduler = Executors.newSingleThreadScheduledExecutor();
-        scheduler.scheduleAtFixedRate(
-                () -> new Thread(healthCheckTask, "HealthCheckThread").start(),
-                interval, interval, SECONDS
-        );
+
+        log.info("Starting HealthMonitor for load balancing with interval of {} seconds", interval);
+
+        scheduler = createSheduler();
+        client = router.getHttpClientFactory().createClient(httpClientConfig);
     }
 
     private final Runnable healthCheckTask = () -> {
-        log.debug("Starting Load Balancer Health Check");
+        log.debug("Starting health check.");
         collectClusters(router).forEach(cluster -> {
+
+            // Positioned here cause the loop my run for several seconds if the list is big
+            if (stopped)
+                return;
+
             log.debug("Checking cluster '{}'", cluster.getName());
-            cluster.getNodes().forEach(node -> node.setStatus(isHealthy(node)));
+            cluster.getNodes().forEach(this::updateStatus);
         });
-        log.debug("Health Check complete");
+        log.debug("Health check complete.");
     };
+
+    private void updateStatus(Node node) {
+        node.setStatus(isHealthy(node));
+    }
+
+    private ScheduledExecutorService createSheduler() {
+        ScheduledExecutorService s = Executors.newSingleThreadScheduledExecutor();
+        s.scheduleAtFixedRate(
+                () -> new Thread(healthCheckTask, "HealthCheckThread").start(),
+                interval, interval, SECONDS
+        );
+        return s;
+    }
 
     private Status isHealthy(Node node) {
         String url = getNodeHealthEndpoint(node);
         try {
-            return getStatus(node,doCall(url)) ;
+            return getStatus(node, doCall(url));
         } catch (Exception e) {
-            log.error("Error Calling: {}, {}", url, e.getMessage());
+            log.warn("Calling health endpoint failed: {}, {}", url, e.getMessage());
             return DOWN;
         }
     }
 
     private static Status getStatus(Node node, Exchange exc) {
-        try {
-            int status = exc.getResponse().getStatusCode();
-            if (status >= 300) {
-                log.error("Node {}:{} health check failed with HTTP {}", node.getHost(), node.getPort(), status);
-                return DOWN;
-            }
-            log.debug("Node {}:{} is healthy (HTTP {})", node.getHost(), node.getPort(), status);
-            if (node.isDown())
-                node.setLastUpTime(currentTimeMillis());
-            return UP;
-        } catch (Exception e) {
-            log.error("Unexpected error during health check for node {}:{} - marking DOWN, {}", node.getHost(), node.getPort(), e.getMessage());
+        int status = exc.getResponse().getStatusCode();
+        if (status >= 300) {
+            log.warn("Node {}:{} health check failed with HTTP {}", node.getHost(), node.getPort(), status);
             return DOWN;
         }
+        log.debug("Node {}:{} is healthy (HTTP {})", node.getHost(), node.getPort(), status);
+        if (node.isDown())
+            node.setLastUpTime(currentTimeMillis());
+        return UP;
     }
 
     private static String getNodeHealthEndpoint(Node node) {
@@ -109,7 +126,7 @@ public class ClusterHealthMonitor implements ApplicationContextAware, Initializi
     }
 
     private Exchange doCall(String url) throws Exception {
-        Exchange exc = new Request.Builder().get(url).buildExchange();
+        Exchange exc = get(url).buildExchange();
         client.call(exc);
         return exc;
     }
@@ -129,19 +146,30 @@ public class ClusterHealthMonitor implements ApplicationContextAware, Initializi
     }
 
     public void shutdown() {
-        if (scheduler != null) {
-            scheduler.shutdown();
-            try {
-                if (!scheduler.awaitTermination(10, SECONDS)) {
-                    log.warn("Health check scheduler did not terminate gracefully, forcing shutdown");
-                    scheduler.shutdownNow();
-                }
-            } catch (InterruptedException e) {
-                log.warn("Interrupted while waiting for scheduler shutdown");
+
+        stopped = true;
+
+        out.println("???????????????????????");
+        if (scheduler == null)
+            return;
+
+        scheduler.shutdown();
+        try {
+            if (!scheduler.awaitTermination(10, SECONDS)) {
+                log.warn("Health check scheduler did not terminate gracefully, forcing shutdown");
                 scheduler.shutdownNow();
-                Thread.currentThread().interrupt();
             }
+        } catch (InterruptedException e) {
+            log.warn("Interrupted while waiting for scheduler shutdown");
+            scheduler.shutdownNow();
+            Thread.currentThread().interrupt();
         }
+
+    }
+
+    public void stop() {
+        out.println("********************************************");
+        scheduler.shutdownNow();               // interrupts running task, returns immediately
     }
 
     /**
@@ -157,5 +185,24 @@ public class ClusterHealthMonitor implements ApplicationContextAware, Initializi
 
     public Integer getInterval() {
         return interval;
+    }
+
+    public HttpClientConfiguration getHttpClientConfig() {
+        return httpClientConfig;
+    }
+
+    /**
+     * TODO
+     *
+     * @param httpClientConfig
+     */
+    @MCChildElement
+    public void setHttpClientConfig(HttpClientConfiguration httpClientConfig) {
+        this.httpClientConfig = httpClientConfig;
+    }
+
+    @Override
+    public void destroy() {
+        shutdown();
     }
 }

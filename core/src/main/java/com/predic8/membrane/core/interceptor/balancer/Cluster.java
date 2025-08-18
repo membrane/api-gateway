@@ -14,16 +14,12 @@
 
 package com.predic8.membrane.core.interceptor.balancer;
 
+import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.interceptor.balancer.Node.*;
+import org.slf4j.*;
+
 import java.io.*;
 import java.util.*;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCChildElement;
-import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.interceptor.balancer.Node.Status;
 
 @MCElement(name="cluster", topLevel=false)
 public class Cluster {
@@ -115,6 +111,7 @@ public class Cluster {
 	}
 
 	/**
+	 * TODO
 	 * @description Specifies a node.
 	 */
 	@MCChildElement
