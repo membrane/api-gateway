@@ -175,7 +175,7 @@ public class TemplateInterceptorTest {
     }
 
     @Test
-    void nonXmlTemplateListTest() throws Exception {
+    void nonXmlTemplateListTest() {
         setAndHandleRequest("./template_test.json");
 
         assertEquals("food1",
@@ -212,20 +212,20 @@ public class TemplateInterceptorTest {
     }
 
     @Test
-    void contentTypeTestXml() throws Exception {
+    void contentTypeTestXml() {
         setAndHandleRequest("./project_template.xml");
         assertTrue(exc.getRequest().isXML());
     }
 
     @Test
-    void contentTypeTestOther() throws Exception {
+    void contentTypeTestOther() {
         ti.setContentType(APPLICATION_JSON);
         setAndHandleRequest("./template_test.json");
         assertTrue(exc.getRequest().isJSON());
     }
 
     @Test
-    void contentTypeTestJson() throws Exception {
+    void contentTypeTestJson() {
         setAndHandleRequest("./template_test.json");
         assertEquals(APPLICATION_JSON,exc.getRequest().getHeader().getContentType());
     }
