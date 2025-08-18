@@ -14,36 +14,43 @@
 
 package com.predic8.membrane.core.interceptor.balancer;
 
-import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.*;
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.interceptor.balancer.Node.*;
-import com.predic8.membrane.core.transport.http.*;
-import com.predic8.membrane.core.transport.http.client.*;
-import com.predic8.membrane.core.util.*;
-import org.jetbrains.annotations.*;
+import com.predic8.membrane.annot.MCAttribute;
+import com.predic8.membrane.annot.MCChildElement;
+import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.core.Router;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.interceptor.balancer.Node.Status;
+import com.predic8.membrane.core.transport.http.HttpClient;
+import com.predic8.membrane.core.transport.http.client.HttpClientConfiguration;
+import com.predic8.membrane.core.util.ConfigurationException;
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
-import org.slf4j.*;
-import org.springframework.beans.*;
-import org.springframework.beans.factory.*;
-import org.springframework.context.*;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.BeansException;
+import org.springframework.beans.factory.DisposableBean;
+import org.springframework.beans.factory.InitializingBean;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
 
-import java.util.concurrent.*;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 
-import static com.predic8.membrane.core.http.Request.*;
-import static com.predic8.membrane.core.interceptor.balancer.BalancerUtil.*;
-import static com.predic8.membrane.core.interceptor.balancer.Node.Status.*;
-import static java.lang.System.*;
-import static java.util.concurrent.TimeUnit.*;
+import static com.predic8.membrane.core.http.Request.get;
+import static com.predic8.membrane.core.interceptor.balancer.BalancerUtil.collectClusters;
+import static com.predic8.membrane.core.interceptor.balancer.Node.Status.DOWN;
+import static com.predic8.membrane.core.interceptor.balancer.Node.Status.UP;
+import static java.lang.System.currentTimeMillis;
+import static java.lang.System.out;
+import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
- * @description Health monitor for a load balancing cluster.
+ * @description Health monitor for a {@link LoadBalancingInterceptor} {@link Cluster}.
  * Periodically checks the health of all clusters registered
- * on the router and updates each node status accordingly.
- * When initialized, it schedules a task to call each node's health
- * endpoint and marks nodes as UP or DOWN based on the HTTP response.
+ * on the router and updates each {@link Node}'s status accordingly.
+ * When initialized, it schedules a task to call each {@link Node}'s health
+ * endpoint and marks nodes as {@link Status#UP} or {@link Status#DOWN} based on the HTTP response.
  * This ensures the load balancer always has up-to-date status for routing decisions.
- * @example examples/loadbalancing/7-tls
+ * @example <a href="https://github.com/membrane/api-gateway/tree/master/distribution/examples/loadbalancing/7-tls">tls example</a>
  * @topic 4. Monitoring, Logging and Statistics
  */
 @MCElement(name = "balancerHealthMonitor")
@@ -66,15 +73,18 @@ public class ClusterHealthMonitor implements ApplicationContextAware, Initializi
 
         log.info("Starting HealthMonitor for load balancing with interval of {} seconds", interval);
 
-        scheduler = createSheduler();
+        scheduler = createScheduler();
         client = router.getHttpClientFactory().createClient(httpClientConfig);
     }
 
+    /**
+     * Periodic task that probes all clusters and updates node status.
+     */
     private final Runnable healthCheckTask = () -> {
         log.debug("Starting health check.");
         collectClusters(router).forEach(cluster -> {
 
-            // Positioned here cause the loop my run for several seconds if the list is big
+            // Positioned here because the loop may run for several seconds if the list is big
             if (stopped)
                 return;
 
@@ -88,7 +98,14 @@ public class ClusterHealthMonitor implements ApplicationContextAware, Initializi
         node.setStatus(isHealthy(node));
     }
 
-    private ScheduledExecutorService createSheduler() {
+    /**
+     * Creates and schedules the periodic health-check runner.
+     *
+     * <p>Schedules a fixed-rate job that spawns a new {@link Thread} to execute {@link #healthCheckTask}.</p>
+     *
+     * @return the initialized {@link ScheduledExecutorService}
+     */
+    private ScheduledExecutorService createScheduler() {
         ScheduledExecutorService s = Executors.newSingleThreadScheduledExecutor();
         s.scheduleAtFixedRate(
                 () -> new Thread(healthCheckTask, "HealthCheckThread").start(),
@@ -97,6 +114,13 @@ public class ClusterHealthMonitor implements ApplicationContextAware, Initializi
         return s;
     }
 
+    /**
+     * Returns {@link Status#UP} if the node's health endpoint responds with HTTP &lt;
+     * 300; otherwise {@link Status#DOWN}.
+     *
+     * @param node the node to check
+     * @return derived status
+     */
     private Status isHealthy(Node node) {
         String url = getNodeHealthEndpoint(node);
         try {
@@ -107,6 +131,12 @@ public class ClusterHealthMonitor implements ApplicationContextAware, Initializi
         }
     }
 
+    /**
+     * Maps the HTTP response of a health probe to {@link Status}.
+     *
+     * <p>HTTP status &ge; 300 -> {@link Status#DOWN}, otherwise {@link Status#UP}.
+     * Also records {@link Node#setLastUpTime(long)} when transitioning to UP.</p>
+     */
     private static Status getStatus(Node node, Exchange exc) {
         int status = exc.getResponse().getStatusCode();
         if (status >= 300) {
@@ -145,14 +175,12 @@ public class ClusterHealthMonitor implements ApplicationContextAware, Initializi
         init();
     }
 
-    public void shutdown() {
-
+    @Override
+    public void destroy() {
         stopped = true;
 
-        out.println("???????????????????????");
         if (scheduler == null)
             return;
-
         scheduler.shutdown();
         try {
             if (!scheduler.awaitTermination(10, SECONDS)) {
@@ -164,17 +192,11 @@ public class ClusterHealthMonitor implements ApplicationContextAware, Initializi
             scheduler.shutdownNow();
             Thread.currentThread().interrupt();
         }
-
-    }
-
-    public void stop() {
-        out.println("********************************************");
-        scheduler.shutdownNow();               // interrupts running task, returns immediately
     }
 
     /**
      * @param interval the interval between health checks, in seconds
-     * @description Sets the health check interval (in seconds).
+     * @description Sets the health check interval (in seconds). Must be &gt; 0.
      * @example 30
      * @default 10
      */
@@ -183,26 +205,30 @@ public class ClusterHealthMonitor implements ApplicationContextAware, Initializi
         this.interval = interval;
     }
 
+    /**
+     * @return current health check interval in seconds
+     */
     public Integer getInterval() {
         return interval;
     }
 
+    /**
+     * @return the HTTP client configuration used to construct the {@link HttpClient}
+     */
     public HttpClientConfiguration getHttpClientConfig() {
         return httpClientConfig;
     }
 
     /**
-     * TODO
+     * @description Optional HTTP client configuration for health probes (e.g., timeouts, TLS).
+     * If provided, it is used when creating the {@link HttpClient} via the router's client factory.
      *
-     * @param httpClientConfig
+     * @see Router#getHttpClientFactory()
+     * @see HttpClientConfiguration
      */
     @MCChildElement
     public void setHttpClientConfig(HttpClientConfiguration httpClientConfig) {
         this.httpClientConfig = httpClientConfig;
     }
 
-    @Override
-    public void destroy() {
-        shutdown();
-    }
 }

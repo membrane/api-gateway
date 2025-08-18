@@ -16,9 +16,6 @@ package com.predic8.membrane.core.config.security;
 
 import com.predic8.membrane.annot.MCAttribute;
 
-import com.google.common.base.*;
-import com.predic8.membrane.annot.*;
-
 import static com.google.common.base.Objects.equal;
 import static java.util.Objects.hash;
 
@@ -108,13 +105,4 @@ public abstract class Store {
 		this.provider = provider;
 	}
 
-	@Override
-	public boolean equals(Object obj) {
-		if (!(obj instanceof Store other))
-			return false;
-		return Objects.equal(location, other.location)
-			   && Objects.equal(password, other.password)
-			   && Objects.equal(type, other.type)
-			   && Objects.equal(provider, other.provider);
-	}
 }
