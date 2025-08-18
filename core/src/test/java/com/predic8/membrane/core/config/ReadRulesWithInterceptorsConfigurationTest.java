@@ -29,38 +29,36 @@ public class ReadRulesWithInterceptorsConfigurationTest {
 	private static List<Proxy> proxies;
 
 	@BeforeAll
-	public static void setUp() {
+	static void setUp() {
 		router = Router.init("src/test/resources/ref.proxies.xml");
 		proxies = router.getRuleManager().getRules();
 	}
 
 	@Test
-	void testRulesSize() {
+	void rulesSize() {
 		assertEquals(2, proxies.size());
 	}
 
 	@Test
 	void testRuleInterceptorSize() {
-		Proxy proxy = proxies.get(0);
-		assertEquals(1, proxy.getInterceptors().size());
+        assertEquals(1, proxies.getFirst().getInterceptors().size());
 	}
 
 	@Test
-	void testRuleInterceptorsHaveRouterReference() {
-		List<Interceptor> interceptors = proxies.get(0).getInterceptors();
-		for (Interceptor itsp : interceptors) {
-			assertNotNull(itsp.getRouter());
+	void ruleInterceptorsHaveRouterReference() {
+        for (Interceptor i : proxies.getFirst().getInterceptors()) {
+			assertNotNull(i.getRouter());
 		}
 	}
 
 	@Test
-	void testRuleInterceptorIDs() {
+	void ruleInterceptorIDs() {
 		List<Interceptor> interceptors = proxies.getFirst().getInterceptors();
 		assertEquals("accessControlInterceptor", ((SpringInterceptor) interceptors.getFirst()).getRefId());
 	}
 
 	@Test
-	void testRuleInterceptorDisplayNames() {
+	void ruleInterceptorDisplayNames() {
 		List<Interceptor> interceptors = proxies.getFirst().getInterceptors();
 		assertEquals("Access Control List Interceptor", interceptors.getFirst().getDisplayName());
 	}

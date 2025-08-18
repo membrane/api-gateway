@@ -85,14 +85,11 @@ public abstract class Transport {
 			return clazz.getConstructor().newInstance();
 		}
 		try {
-			T i = bf.getBean(clazz);
-			if (i != null) {
-				return i;
-			}
+			return bf.getBean(clazz);
 		} catch (Exception ignored) {
 			/* Do not log */
+			return clazz.getDeclaredConstructor().newInstance();
 		}
-		return clazz.getDeclaredConstructor().newInstance();
 	}
 
 	/**
@@ -106,14 +103,11 @@ public abstract class Transport {
 			return new ExchangeStoreInterceptor(router.getExchangeStore());
 		}
 		try {
-			ExchangeStoreInterceptor i = bf.getBean(ExchangeStoreInterceptor.class);
-			if (i != null) {
-				return i;
-			}
-		} catch (Exception ignored) {
+            return bf.getBean(ExchangeStoreInterceptor.class);
+        } catch (Exception ignored) {
 			/* Do not log */
+			return new ExchangeStoreInterceptor(router.getExchangeStore());
 		}
-		return new ExchangeStoreInterceptor(router.getExchangeStore());
 	}
 
 	public Router getRouter() {
