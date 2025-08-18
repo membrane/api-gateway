@@ -82,12 +82,6 @@ public abstract class Transport {
             T bean = lbf.getBeanProvider(clazz).getIfAvailable();
             if (bean != null)
                 return bean;
-        } else if (bf != null) {
-            try {
-                return bf.getBean(clazz);
-            } catch (Exception ignored) {
-                // intentionally fall through to reflective construction
-            }
         }
         return clazz.getConstructor().newInstance();
     }
@@ -101,12 +95,6 @@ public abstract class Transport {
             ExchangeStoreInterceptor bean = lbf.getBeanProvider(ExchangeStoreInterceptor.class).getIfAvailable();
             if (bean != null)
                 return bean;
-        } else if (bf != null) {
-            try {
-                return bf.getBean(ExchangeStoreInterceptor.class);
-            } catch (Exception ignored) {
-                // fall through
-            }
         }
         return new ExchangeStoreInterceptor(router.getExchangeStore());
     }
