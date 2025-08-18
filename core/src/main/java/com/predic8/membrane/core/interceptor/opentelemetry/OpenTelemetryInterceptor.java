@@ -52,8 +52,10 @@ public class OpenTelemetryInterceptor extends AbstractInterceptor {
     public void init() {
         super.init();
         try {
-            SLF4JBridgeHandler.removeHandlersForRootLogger();
-            SLF4JBridgeHandler.install();
+            if (!SLF4JBridgeHandler.isInstalled()) {
+                SLF4JBridgeHandler.removeHandlersForRootLogger();
+                SLF4JBridgeHandler.install();
+            }
         } catch (Throwable t) {
             log.warn("jul-to-slf4j not available; OpenTelemetry logs may go to stderr.", t);
         }
