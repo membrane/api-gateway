@@ -40,7 +40,7 @@ import static com.predic8.membrane.core.interceptor.balancer.BalancerUtil.collec
 import static com.predic8.membrane.core.interceptor.balancer.Node.Status.DOWN;
 import static com.predic8.membrane.core.interceptor.balancer.Node.Status.UP;
 import static java.lang.System.currentTimeMillis;
-import static java.lang.System.out;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
@@ -59,7 +59,7 @@ public class ClusterHealthMonitor implements ApplicationContextAware, Initializi
     private static final Logger log = LoggerFactory.getLogger(ClusterHealthMonitor.class);
 
     private Router router;
-    private int interval = 10;
+    private int interval = 10000;
     private ScheduledExecutorService scheduler;
     private HttpClient client;
 
@@ -69,9 +69,9 @@ public class ClusterHealthMonitor implements ApplicationContextAware, Initializi
 
     private void init() {
         if (interval <= 0)
-            throw new ConfigurationException("lbClusterHealthMonitor: 'interval' must be > 0");
+            throw new ConfigurationException("lbClusterHealthMonitor: 'interval' (ms) must be > 0");
 
-        log.info("Starting HealthMonitor for load balancing with interval of {} seconds", interval);
+        log.info("Starting HealthMonitor for load balancing with interval of {} ms", interval);
 
         scheduler = createScheduler();
         client = router.getHttpClientFactory().createClient(httpClientConfig);
@@ -109,7 +109,7 @@ public class ClusterHealthMonitor implements ApplicationContextAware, Initializi
         ScheduledExecutorService s = Executors.newSingleThreadScheduledExecutor();
         s.scheduleAtFixedRate(
                 () -> new Thread(healthCheckTask, "HealthCheckThread").start(),
-                interval, interval, SECONDS
+                interval, interval, MILLISECONDS
         );
         return s;
     }
@@ -195,10 +195,10 @@ public class ClusterHealthMonitor implements ApplicationContextAware, Initializi
     }
 
     /**
-     * @param interval the interval between health checks, in seconds
-     * @description Sets the health check interval (in seconds). Must be &gt; 0.
-     * @example 30
-     * @default 10
+     * @param interval the interval between health checks, in milliseconds
+     * @description Sets the health check interval (in milliseconds).
+     * @example 30000
+     * @default 10000
      */
     @MCAttribute
     public void setInterval(int interval) {
@@ -206,8 +206,8 @@ public class ClusterHealthMonitor implements ApplicationContextAware, Initializi
     }
 
     /**
-     * @return current health check interval in seconds
-     */
+     * @return current health check interval in milliseconds
+     * */
     public Integer getInterval() {
         return interval;
     }
