@@ -5,37 +5,16 @@
 	                    http://www.springframework.org/schema/beans/spring-beans-4.2.xsd
 	                    http://membrane-soa.org/proxies/1/ http://membrane-soa.org/schemas/proxies-1.xsd">
 
+	<!-- Disable the addition of X-Forwarded* headers -->
+	<ruleMatching xForwardedForEnabled="false"/>
+
 	<router>
 
-		<!-- Transport settings: configure how requests are handled globally -->
-		<transport>
-			<!-- Do not set X-Forwarded-For headers -->
-			<ruleMatching xForwardedForEnabled="false"/>
-			<logContext />
-			<exchangeStore />
-			<dispatching />
-			<reverseProxying/>
-			<global />
-			<userFeature />
-			<internalRouting />
-			<httpClient />
-		</transport>
-
+		<!-- Global plugins that are executed before and after the ones local to an API -->
 		<global>
-			<!-- Move the header filter here to apply it globally on all APIs -->
-			<!--
-		  <request>
-			 	<headerFilter>
-					<exclude>.*</exclude>
-				</headerFilter>
-			</request>
-			-->
-		</global>
-
-		<api port="2000" name="Outgoing Gateway">
-		  <request>
-			 	<headerFilter>
-					<!-- Include only these headers (necessary for functionality and considered safe) -->
+			<request>
+				<headerFilter>
+					<!-- Include only headers necessary for functionality and considered safe -->
 					<include>Accept.*</include>
 					<include>Cache-Control</include>
 					<include>Content-Type</include>
@@ -44,26 +23,30 @@
 					<include>X-Requested-With</include>
 
 					<!-- If you want to pass authentication headers
-					     from the internal clients to the external API  
+					     from the internal clients to the external API
 					     allow them here, otherwise take that line out.
 					-->
 					<include>X-Api-Key</include>
+
 					<!-- Exclude (remove) all other headers not explicitly included above -->
 					<exclude>.*</exclude>
 				</headerFilter>
 			</request>
+		</global>
+
+		<api port="2000" name="Outgoing API">
 			<!-- Replace this with the address of the external API -->
 			<target url="http://localhost:3000"/>
 		</api>
 
-		<!-- This is only for testing. Take it out in production -->
+		<!-- Mock for testing and demonstration. Take it out in production -->
 		<api port="3000" name="External Mock API">
 			<request>
 				<log message="Header: ${header}"/>
-			 	<template contentType="text/plain">
-					<![CDATA[			
-Headers exposed to external API: <%= headers.allHeaderFields.headerName %>
-					]]>
+			 	<template contentType="text/plain" pretty="true">
+				<![CDATA[
+					Headers exposed to external API: <%= headers.allHeaderFields.headerName %>
+				]]>
 				</template>
 			</request>
 			<return/>

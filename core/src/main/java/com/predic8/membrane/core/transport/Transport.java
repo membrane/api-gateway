@@ -21,8 +21,11 @@ import com.predic8.membrane.core.model.*;
 import com.predic8.membrane.core.proxies.*;
 import com.predic8.membrane.core.transport.ssl.*;
 import com.predic8.membrane.core.util.*;
+import org.jetbrains.annotations.*;
+import org.springframework.beans.factory.*;
 
 import java.io.*;
+import java.lang.reflect.*;
 import java.util.*;
 
 public abstract class Transport {
@@ -55,20 +58,62 @@ public abstract class Transport {
 		this.router = router;
 
 		if (interceptors.isEmpty()) {
-			interceptors.add(new RuleMatchingInterceptor());
-			interceptors.add(new LoggingContextInterceptor());
-			interceptors.add(new ExchangeStoreInterceptor(router.getExchangeStore()));
-			interceptors.add(new DispatchingInterceptor());
-			interceptors.add(new ReverseProxyingInterceptor());
+            interceptors.add(getInterceptor(RuleMatchingInterceptor.class));
+			interceptors.add(getInterceptor(LoggingContextInterceptor.class));
+			interceptors.add(getExchangeStoreInterceptor());
+			interceptors.add(getInterceptor(DispatchingInterceptor.class));
+			interceptors.add(getInterceptor(ReverseProxyingInterceptor.class));
 			interceptors.add(router.getGlobalInterceptor());
-			interceptors.add(new UserFeatureInterceptor());
-			interceptors.add(new InternalRoutingInterceptor());
-			interceptors.add(new HTTPClientInterceptor());
+			interceptors.add(getInterceptor( UserFeatureInterceptor.class));
+			interceptors.add(getInterceptor(InternalRoutingInterceptor.class));
+			interceptors.add(getInterceptor(HTTPClientInterceptor.class));
 		}
 
 		for (Interceptor interceptor : interceptors) {
 			interceptor.init(router);
 		}
+	}
+
+	/**
+	 * Look up an interceptor at the spring context before creating a new instance.
+	 */
+	private @NotNull <T extends Interceptor> T getInterceptor(Class<T> clazz) throws NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException {
+		BeanFactory bf = router.getBeanFactory();
+
+		// In JunitTests router has no BeanFactory associated
+		if (bf == null) {
+			return clazz.getConstructor().newInstance();
+		}
+		try {
+			T i = bf.getBean(clazz);
+			if (i != null) {
+				return i;
+			}
+		} catch (Exception ignored) {
+			/* Do not log */
+		}
+		return clazz.getDeclaredConstructor().newInstance();
+	}
+
+	/**
+	 * Look up an ExchangeStoreInterceptor at the spring context before creating a new instance.
+	 */
+	private @NotNull ExchangeStoreInterceptor getExchangeStoreInterceptor() {
+		BeanFactory bf = router.getBeanFactory();
+
+		// In JunitTests router has no BeanFactory associated
+		if (bf == null) {
+			return new ExchangeStoreInterceptor(router.getExchangeStore());
+		}
+		try {
+			ExchangeStoreInterceptor i = bf.getBean(ExchangeStoreInterceptor.class);
+			if (i != null) {
+				return i;
+			}
+		} catch (Exception ignored) {
+			/* Do not log */
+		}
+		return new ExchangeStoreInterceptor(router.getExchangeStore());
 	}
 
 	public Router getRouter() {

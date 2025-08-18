@@ -1,8 +1,8 @@
-# Membrane as API Gateway for outgoing Traffic
+# API Gateway for outgoing Traffic
 
 This sample shows how to setup Membrane to act as an **outgoing API gateway** that sits between internal services and external APIs as a controlled exit point for API requests.
 
-By routing all outgoing API traffic through Membrane, organizations gain visibility and control over what data leaves the internal network.
+By routing all outgoing API traffic through an API Gateway, organizations gain visibility and control over what data leaves the internal network.
 
 ## Why Use an Outgoing Gateway?
 
@@ -34,9 +34,10 @@ This example demonstrates a secure default configuration for such scenarios.
 2. **Start** Membrane by executing `membrane.sh` (Linux/Mac) or `membrane.cmd` (Windows).
 3. **Execute the following requests** (alternatively, use the `requests.http` file):
 
-```shell
-curl -v http://localhost:2000 -H "X-Api-Key: abc123" -H "User-Agent: secret" -H "Authorization: secret"
-```
+   ```shell
+   curl -v http://localhost:2000 -H "X-Api-Key: abc123" -H "User-Agent: secret" -H "Authorization: secret"
+   ```
+4. **Take a look** at the `proxies.xml` configuration.
 
 ## Combining with other Membrane features
 

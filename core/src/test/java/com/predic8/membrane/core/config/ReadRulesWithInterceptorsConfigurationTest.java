@@ -35,18 +35,18 @@ public class ReadRulesWithInterceptorsConfigurationTest {
 	}
 
 	@Test
-	public void testRulesSize() {
+	void testRulesSize() {
 		assertEquals(2, proxies.size());
 	}
 
 	@Test
-	public void testRuleInterceptorSize() {
+	void testRuleInterceptorSize() {
 		Proxy proxy = proxies.get(0);
 		assertEquals(1, proxy.getInterceptors().size());
 	}
 
 	@Test
-	public void testRuleInterceptorsHaveRouterReference() {
+	void testRuleInterceptorsHaveRouterReference() {
 		List<Interceptor> interceptors = proxies.get(0).getInterceptors();
 		for (Interceptor itsp : interceptors) {
 			assertNotNull(itsp.getRouter());
@@ -54,19 +54,19 @@ public class ReadRulesWithInterceptorsConfigurationTest {
 	}
 
 	@Test
-	public void testRuleInterceptorIDs() {
+	void testRuleInterceptorIDs() {
 		List<Interceptor> interceptors = proxies.getFirst().getInterceptors();
 		assertEquals("accessControlInterceptor", ((SpringInterceptor) interceptors.getFirst()).getRefId());
 	}
 
 	@Test
-	public void testRuleInterceptorDisplayNames() {
+	void testRuleInterceptorDisplayNames() {
 		List<Interceptor> interceptors = proxies.getFirst().getInterceptors();
 		assertEquals("Access Control List Interceptor", interceptors.getFirst().getDisplayName());
 	}
 
 	@AfterAll
-	public static void tearDown() {
+	static void tearDown() {
 		router.shutdown();
 	}
 
