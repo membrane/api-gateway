@@ -205,7 +205,7 @@ public class TemplateInterceptorTest {
     }
 
     @Test
-    void innerTagTest() throws Exception {
+    void innerTagTest() {
         ti.setTextTemplate("${property.title}");
         ti.init(router);
         ti.handleRequest(exc);
@@ -232,7 +232,7 @@ public class TemplateInterceptorTest {
     }
 
     @Test
-    void contentTypeTestNoXml() throws Exception {
+    void contentTypeTestNoXml() {
         ti.setTextTemplate("normal text");
         ti.init(router);
         ti.handleRequest(exc);

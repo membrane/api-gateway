@@ -23,6 +23,7 @@ import org.apache.commons.io.*;
 import org.slf4j.*;
 
 import java.io.*;
+import java.nio.charset.*;
 
 import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
@@ -44,6 +45,8 @@ public abstract class AbstractTemplateInterceptor extends AbstractInterceptor {
 
     protected Boolean pretty = false;
     protected Prettifier prettifier = new NullPrettifier();
+
+    protected Charset charset = UTF_8;
 
     @Override
     public void init() {
@@ -118,7 +121,7 @@ public abstract class AbstractTemplateInterceptor extends AbstractInterceptor {
 
     private String readFromLocation() {
         try (InputStream is = getRouter().getResolverMap().resolve(combine(router.getBaseLocation(), location))) {
-            return IOUtils.toString(is, UTF_8); // TODO Encoding
+            return IOUtils.toString(is, charset); // TODO Encoding
         } catch (Exception e) {
             throw new ConfigurationException("Could not create template from " + location, e);
         }
@@ -128,6 +131,11 @@ public abstract class AbstractTemplateInterceptor extends AbstractInterceptor {
         return location;
     }
 
+    /**
+     * @description A file or URL location where the content that should be set as body could be found
+     * @default N/A
+     * @example conf/body.txt
+     */
     @MCAttribute
     public void setLocation(String location){
         this.location = location;
@@ -137,6 +145,11 @@ public abstract class AbstractTemplateInterceptor extends AbstractInterceptor {
         return textTemplate; // TODO Encoding
     }
 
+    /**
+     * @description The content that should be set as body.
+     * @default N/A
+     * @example { "foo": 1 }
+     */
     @MCTextContent
     public void setTextTemplate(String textTemplate) {
         this.textTemplate = textTemplate;
@@ -150,6 +163,11 @@ public abstract class AbstractTemplateInterceptor extends AbstractInterceptor {
         return contentType;
     }
 
+    /**
+     * @description Content-Type of the generated body content.
+     * @default text/plain
+     * @example application/json
+     */
     @MCAttribute
     public void setContentType(String contentType) {
         this.contentType = contentType;
@@ -159,9 +177,28 @@ public abstract class AbstractTemplateInterceptor extends AbstractInterceptor {
         return pretty;
     }
 
+    /**
+     * @description Format the content of the template. Depending on the contentType the a formatter for JSON, XML or plain text is used.
+     * @default false
+     * @example true
+     */
     @MCAttribute
     public void setPretty(String pretty) {
         this.pretty = Boolean.valueOf(pretty);
+    }
+
+    public String getCharset() {
+        return charset.name();
+    }
+
+    /**
+     * @description Encoding of the template text.
+     * @default UTF-8
+     * @example UTF-16, iso-8859-1
+     */
+    @MCAttribute
+    public void setCharset(String charset) {
+        this.charset = Charset.forName(charset);
     }
 
     @Override
@@ -174,6 +211,6 @@ public abstract class AbstractTemplateInterceptor extends AbstractInterceptor {
     }
 
     protected String formatAsHtml(String plaintext) {
-        return String.join("<br />", escapeHtml4(plaintext).split("\n"));
+        return String.join("<br/>", escapeHtml4(plaintext).split("\n"));
     }
 }

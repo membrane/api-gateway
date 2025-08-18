@@ -47,7 +47,7 @@ public class VersioningSoapXsltExampleTest extends DistributionExtractingTestcas
                 .post("http://localhost:2000/city-service")
             .then()
                 .statusCode(200)
-                .body("Envelope.Body.getCityResponse.population", equalTo(327000));
+                .body("Envelope.Body.getCityResponse.population", equalTo("327000"));
 
             given()
                 .body(request_old)

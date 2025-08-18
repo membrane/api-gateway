@@ -59,7 +59,7 @@ public class SampleSoapServiceExampleTest extends AbstractSampleMembraneStartSto
     private final HashMap<String, String> cityMap = new HashMap<>() {{
         put("Bonn", "<population>327000</population>");
         put("London", "<population>8980000</population>");
-        put("Berlin", "<errorcode>404</errorcode>");
+        put("Stebbach", "<errorcode>404</errorcode>");
     }};
 
     final List<String> cityMap() {

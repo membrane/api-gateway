@@ -18,12 +18,8 @@ import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.openapi.serviceproxy.*;
 import io.restassured.response.*;
 import org.hamcrest.*;
-import org.jetbrains.annotations.*;
 import org.junit.jupiter.api.*;
-import org.w3c.dom.*;
-import org.xml.sax.*;
 
-import javax.xml.parsers.*;
 import java.io.*;
 
 import static com.predic8.membrane.core.http.MimeType.*;
@@ -68,9 +64,9 @@ class RouterTest {
     }
 
     @Test
-    void prodXML() throws Exception {
+    void prodXML() {
         // @formatter:off
-        ExtractableResponse<Response> r  = given()
+        given()
             .contentType(APPLICATION_XML)
             .post("http://localhost:2000/")
         .then()
@@ -82,14 +78,12 @@ class RouterTest {
             .body("error.message", Matchers.not(containsString(INTERNAL_SECRET)))
             .extract();
         // @formatter:on
-
-//        System.out.println("r.asPrettyString() = " + r.asPrettyString());
     }
 
     @Test
     void  devJson() {
         // @formatter:off
-        ExtractableResponse<Response> r = given()
+        given()
             .get("http://localhost:2001/")
         .then()
             .statusCode(500)
@@ -101,13 +95,10 @@ class RouterTest {
             .body("$",not(hasKey("stacktrace")))
             .extract();
         // @formatter:on
-
-//        System.out.println("r = " + r.asPrettyString());
-                
     }
 
     @Test
-    void devXML() throws Exception {
+    void devXML() {
         // @formatter:off
         ExtractableResponse<Response> r = given()
                 .contentType(APPLICATION_XML)
@@ -146,12 +137,4 @@ class RouterTest {
         r.start();
         return r;
     }
-
-    private static @NotNull NodeList getNodeList(InputStream is) throws ParserConfigurationException, SAXException, IOException {
-        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-        DocumentBuilder builder = factory.newDocumentBuilder();
-        Document document = builder.parse(is);
-        return document.getDocumentElement().getChildNodes();
-    }
-
 }

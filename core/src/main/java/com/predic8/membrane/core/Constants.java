@@ -74,8 +74,6 @@ public class Constants {
 
 	public static final String PRODUCT_NAME = "Membrane API Gateway";
 
-	public static final String PRODUCT_CONTACT_EMAIL = "info@predic8.de";
-
 	public static final String HTML_FOOTER =
 			"Copyright &copy;2009-2025 " +
 					"<a href=\"http://predic8.com/\">predic8 GmbH</a>" +

@@ -72,8 +72,8 @@
 	</modules>
 
 	<properties>
-		<project.build.sourceEncoding>ISO-8859-1</project.build.sourceEncoding>
-		<project.reporting.outputEncoding>ISO-8859-1</project.reporting.outputEncoding>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 		<gpg.keyname>5B8A65F6</gpg.keyname>
 		<javac.source>21</javac.source>
 		<javac.target>21</javac.target>

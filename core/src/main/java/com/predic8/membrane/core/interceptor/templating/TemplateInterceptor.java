@@ -56,7 +56,7 @@ public class TemplateInterceptor extends AbstractTemplateInterceptor {
         super.init();
         template = createTemplate();
 
-        // If the template accesses somewhere the json varíable make sure it is there
+        // If the template accesses somewhere the json variable make sure it is there
         // You can even access json in an XML or Text Template. See tests.
         scriptAccessesJson = textTemplate.contains("json.");
     }

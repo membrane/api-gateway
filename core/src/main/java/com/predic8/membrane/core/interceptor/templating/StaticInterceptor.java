@@ -17,12 +17,14 @@ import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.exchange.*;
 import org.slf4j.*;
 
+import static java.nio.charset.StandardCharsets.*;
+
 @MCElement(name = "static", mixed = true)
 public class StaticInterceptor extends AbstractTemplateInterceptor {
 
     protected static final Logger log = LoggerFactory.getLogger(StaticInterceptor.class);
 
-    byte[] cache;
+    volatile byte[] cache;
 
     public StaticInterceptor() {
         name = "static";
@@ -35,7 +37,7 @@ public class StaticInterceptor extends AbstractTemplateInterceptor {
 
     @Override
     protected byte[] getContent(Exchange exchange, Flow flow) {
-        return textTemplate.getBytes();
+        return textTemplate.getBytes(UTF_8);
     }
 
     @Override

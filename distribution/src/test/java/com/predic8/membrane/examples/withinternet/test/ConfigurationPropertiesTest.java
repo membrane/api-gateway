@@ -29,7 +29,7 @@ public class ConfigurationPropertiesTest extends DistributionExtractingTestcase 
 
     @Test
     public void test() throws Exception {
-        try (Process2 process2 = startServiceProxyScriptWithEnv("TARGET", "https://www.predic8.de/")) {
+        try (Process2 ignored = startServiceProxyScriptWithEnv("TARGET", "https://www.predic8.de/")) {
             // @formatter:off
             given()
                     .redirects().follow(false)

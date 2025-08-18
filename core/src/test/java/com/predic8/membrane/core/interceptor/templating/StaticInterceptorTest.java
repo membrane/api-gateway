@@ -36,14 +36,14 @@ class StaticInterceptorTest {
     }
 
     @Test
-    void readContentFromLocationPath() throws URISyntaxException {
+    void readContentFromLocationPath() {
         i.init(new Router());
         i.handleRequest(exc);
         assertEquals(27, exc.getRequest().getBodyAsStringDecoded().length());
     }
 
     @Test
-    void pretty() throws URISyntaxException {
+    void pretty() {
         i.setPretty("true");
         i.setContentType(APPLICATION_JSON);
         i.init(new Router());
@@ -57,11 +57,29 @@ class StaticInterceptorTest {
     @Nested
     class Charset {
 
+        static String REF_CHARS = "äöüÄÖÜßéèê";
+
         @Test
-        void germanUmlauts() {
+        void latin() {
+            checkWithCharset("iso-8859-1");
+        }
+
+        @Test
+        void utf_8() {
+            checkWithCharset("utf-8");
+        }
+
+        @Test
+        void utf_16() {
+            checkWithCharset("utf-16");
+        }
+
+        private void checkWithCharset(String charset) {
+            i.setLocation("src/test/resources/charsets/%s.txt".formatted(charset));
+            i.setCharset(charset);
             i.init(new Router());
             i.handleRequest(exc);
-            assertEquals("äöüß", exc.getRequest().getBodyAsStringDecoded());
+            assertEquals(REF_CHARS, exc.getRequest().getBodyAsStringDecoded());
         }
     }
 }

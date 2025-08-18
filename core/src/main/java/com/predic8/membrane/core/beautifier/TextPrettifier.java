@@ -16,6 +16,7 @@ package com.predic8.membrane.core.beautifier;
 
 // TODO Tests
 public class TextPrettifier implements Prettifier {
+
     @Override
     public byte[] prettify(byte[] c) throws Exception {
         return normalizeMultiline(new String(c)).getBytes();
