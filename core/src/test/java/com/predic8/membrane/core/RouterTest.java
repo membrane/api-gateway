@@ -16,7 +16,6 @@ package com.predic8.membrane.core;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.openapi.serviceproxy.*;
-import io.restassured.response.*;
 import org.hamcrest.*;
 import org.junit.jupiter.api.*;
 
@@ -100,7 +99,7 @@ class RouterTest {
     @Test
     void devXML() {
         // @formatter:off
-        ExtractableResponse<Response> r = given()
+        given()
                 .contentType(APPLICATION_XML)
                 .post("http://localhost:2001/")
             .then()

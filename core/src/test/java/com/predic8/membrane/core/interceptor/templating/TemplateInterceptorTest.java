@@ -268,14 +268,14 @@ public class TemplateInterceptorTest {
         assertEquals(invalidJson, exc.getRequest().getBodyAsStringDecoded());
     }
 
-    private void setAndHandleRequest(String location) throws Exception {
+    private void setAndHandleRequest(String location) {
         ti.setLocation(location);
         ti.init(router);
         ti.handleRequest(exc);
     }
 
 
-    private static void invokeInterceptor(Exchange exchange, String template, String mimeType) throws Exception {
+    private static void invokeInterceptor(Exchange exchange, String template, String mimeType) {
         TemplateInterceptor interceptor = new TemplateInterceptor();
         interceptor.setTextTemplate(template);
         interceptor.setContentType(mimeType);
