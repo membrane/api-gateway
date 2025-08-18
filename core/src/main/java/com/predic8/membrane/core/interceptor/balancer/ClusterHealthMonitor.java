@@ -77,9 +77,6 @@ public class ClusterHealthMonitor implements ApplicationContextAware, Initializi
         client = router.getHttpClientFactory().createClient(httpClientConfig);
     }
 
-    /**
-     * Periodic task that probes all clusters and updates node status.
-     */
     private final Runnable healthCheckTask = () -> {
         log.debug("Starting health check.");
         collectClusters(router).forEach(cluster -> {
@@ -98,29 +95,12 @@ public class ClusterHealthMonitor implements ApplicationContextAware, Initializi
         node.setStatus(isHealthy(node));
     }
 
-    /**
-     * Creates and schedules the periodic health-check runner.
-     *
-     * <p>Schedules a fixed-rate job that spawns a new {@link Thread} to execute {@link #healthCheckTask}.</p>
-     *
-     * @return the initialized {@link ScheduledExecutorService}
-     */
     private ScheduledExecutorService createScheduler() {
         ScheduledExecutorService s = Executors.newSingleThreadScheduledExecutor();
-        s.scheduleAtFixedRate(
-                () -> new Thread(healthCheckTask, "HealthCheckThread").start(),
-                interval, interval, MILLISECONDS
-        );
+        s.scheduleAtFixedRate(healthCheckTask, interval, interval, MILLISECONDS);
         return s;
     }
 
-    /**
-     * Returns {@link Status#UP} if the node's health endpoint responds with HTTP &lt;
-     * 300; otherwise {@link Status#DOWN}.
-     *
-     * @param node the node to check
-     * @return derived status
-     */
     private Status isHealthy(Node node) {
         String url = getNodeHealthEndpoint(node);
         try {
@@ -131,12 +111,6 @@ public class ClusterHealthMonitor implements ApplicationContextAware, Initializi
         }
     }
 
-    /**
-     * Maps the HTTP response of a health probe to {@link Status}.
-     *
-     * <p>HTTP status &ge; 300 -> {@link Status#DOWN}, otherwise {@link Status#UP}.
-     * Also records {@link Node#setLastUpTime(long)} when transitioning to UP.</p>
-     */
     private static Status getStatus(Node node, Exchange exc) {
         int status = exc.getResponse().getStatusCode();
         if (status >= 300) {
