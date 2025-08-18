@@ -14,7 +14,7 @@
 package com.predic8.membrane.core.interceptor.templating;
 
 import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.beautifier.*;
+import com.predic8.membrane.core.prettifier.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
@@ -74,10 +74,10 @@ public abstract class AbstractTemplateInterceptor extends AbstractInterceptor {
     }
 
     /**
-     * To handle errors flexible this method can be overwritten
-     * @param exchange
-     * @param flow
-     * @return
+     * Subclasses may override this method to customize error handling.
+     * @param exchange the current Exchange
+     * @param flow the message flow (REQUEST or RESPONSE)
+     * @return the outcome (CONTINUE or ABORT)
      */
     protected Outcome handleInternal( Exchange exchange, Flow flow) {
         try {
@@ -108,7 +108,7 @@ public abstract class AbstractTemplateInterceptor extends AbstractInterceptor {
             return prettifier.prettify(bytes);
         } catch (Exception e) {
             log.debug("Error beautifying {}. Error: {}",contentType, e.getMessage());
-            log.trace("Content: {}", truncateAfter(new String(bytes,UTF_8), 100), e);
+            log.trace("Content: {}", truncateAfter(new String(bytes,charset), 100), e);
             return bytes;
         }
     }
@@ -116,11 +116,11 @@ public abstract class AbstractTemplateInterceptor extends AbstractInterceptor {
     protected abstract byte[] getContent(Exchange exchange, Flow flow);
 
     protected String asString(byte[] bytes) {
-        return new String(bytes); // Encoding
+        return new String(bytes, charset); // Encoding
     }
 
     private String readFromLocation() {
-        try (InputStream is = getRouter().getResolverMap().resolve(combine(router.getBaseLocation(), location))) {
+        try (InputStream is = getRouter().getResolverMap().resolve(combine(getRouter().getBaseLocation(), location))) {
             return IOUtils.toString(is, charset); // TODO Encoding
         } catch (Exception e) {
             throw new ConfigurationException("Could not create template from " + location, e);

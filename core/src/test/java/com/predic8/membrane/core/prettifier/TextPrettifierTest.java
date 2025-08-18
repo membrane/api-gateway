@@ -12,11 +12,12 @@
    See the License for the specific language governing permissions and
    limitations under the License. */
 
-package com.predic8.membrane.core.beautifier;
+package com.predic8.membrane.core.prettifier;
 
 import org.junit.jupiter.api.*;
 
-import static com.predic8.membrane.core.beautifier.TextPrettifier.normalizeMultiline;
+import static com.predic8.membrane.core.prettifier.TextPrettifier.*;
+import static java.nio.charset.StandardCharsets.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 class TextPrettifierTest {
@@ -78,6 +79,8 @@ class TextPrettifierTest {
         assertPretty("a", "\na\n");
         assertPretty("a\nb\nc", "\na\nb\nc\n\n");
         assertPretty("a\nb\n\tc", "\t\na\nb\n\tc\n\n");
+        assertPretty("","\t\n\t" );
+        assertPretty("a\n\nb", "a\r\n\r\nb\r\n");
     }
 
     @Test
@@ -94,6 +97,6 @@ class TextPrettifierTest {
     }
 
     private void assertPretty(String exp, String actual) throws Exception {
-        assertEquals(exp,  new String(tp.prettify(actual.getBytes())));
+        assertEquals(exp,  new String(tp.prettify(actual.getBytes(UTF_8)), UTF_8));
     }
 }

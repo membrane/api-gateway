@@ -21,13 +21,13 @@ import com.predic8.membrane.core.util.*;
 
 import java.io.*;
 import java.net.*;
-import java.nio.charset.*;
 import java.util.*;
 import java.util.regex.*;
 
 import static com.predic8.membrane.core.Constants.*;
 import static com.predic8.membrane.core.http.Header.*;
 import static com.predic8.membrane.core.http.MimeType.*;
+import static java.nio.charset.StandardCharsets.*;
 
 public class Request extends Message {
 
@@ -192,10 +192,10 @@ public class Request extends Message {
 	}
 
 	public final void writeSTOMP(OutputStream out, boolean retainBody) throws IOException {
-		out.write(getMethod().getBytes(StandardCharsets.UTF_8));
+		out.write(getMethod().getBytes(UTF_8));
 		out.write(10);
 		for (HeaderField hf : header.getAllHeaderFields())
-			out.write((hf.getHeaderName().toString() + ":" + hf.getValue() + "\n").getBytes(StandardCharsets.UTF_8));
+			out.write((hf.getHeaderName().toString() + ":" + hf.getValue() + "\n").getBytes(UTF_8));
 		out.write(10);
 		body.write(new PlainBodyTransferrer(out), retainBody);
 	}
@@ -278,7 +278,7 @@ public class Request extends Message {
 		}
 
 		public Builder body(String body) {
-			req.setBodyContent(body.getBytes());
+			req.setBodyContent(body.getBytes(UTF_8));
 			return this;
 		}
 

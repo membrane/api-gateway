@@ -12,12 +12,17 @@
    See the License for the specific language governing permissions and
    limitations under the License. */
 
-package com.predic8.membrane.core.beautifier;
+package com.predic8.membrane.core.prettifier;
 
-public class NullPrettifier implements Prettifier {
+import java.io.*;
+
+import static com.predic8.membrane.core.util.TextUtil.*;
+import static java.nio.charset.StandardCharsets.*;
+
+public class XMLPrettifier implements Prettifier {
 
     @Override
     public byte[] prettify(byte[] c) throws Exception {
-        return c;
+        return formatXML( new InputStreamReader( new ByteArrayInputStream(c),UTF_8)).getBytes(UTF_8);
     }
 }

@@ -57,8 +57,7 @@ class RouterTest {
             .body("title", equalTo("Internal server error."))
             .body("type",equalTo("https://membrane-api.io/problems/internal"))
             .body("message", Matchers.not(containsString(INTERNAL_SECRET)))
-            .body("$",aMapWithSize(3))
-        .extract();
+            .body("$",aMapWithSize(3));
         // @formatter:on
     }
 
@@ -74,8 +73,7 @@ class RouterTest {
             .contentType(APPLICATION_XML)
             .body("error.title", equalTo("Internal server error."))
             .body("error.type",equalTo("https://membrane-api.io/problems/internal"))
-            .body("error.message", Matchers.not(containsString(INTERNAL_SECRET)))
-            .extract();
+            .body("error.message", Matchers.not(containsString(INTERNAL_SECRET)));
         // @formatter:on
     }
 
@@ -91,8 +89,7 @@ class RouterTest {
             .body("type",equalTo("https://membrane-api.io/problems/internal"))
             .body("$",hasKey("attention"))
             .body("attention", Matchers.containsString("development mode"))
-            .body("$",not(hasKey("stacktrace")))
-            .extract();
+            .body("$",not(hasKey("stacktrace")));
         // @formatter:on
     }
 
@@ -110,8 +107,7 @@ class RouterTest {
                 .body("problem-details.type",equalTo("https://membrane-api.io/problems/internal"))
                 .body("problem-details.attention", Matchers.containsString("development mode"))
                 .body("problem-details.message", Matchers.containsString("supersecret"))
-                .body("problem-details.stacktrace", Matchers.not(containsString("HttpServerHandler")))
-                .extract();
+                .body("problem-details.stacktrace", Matchers.not(containsString("HttpServerHandler")));
         // @formatter:on
     }
 

@@ -18,9 +18,10 @@ import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.util.soap.*;
 
 import static com.predic8.membrane.core.util.soap.SoapVersion.*;
+import static java.nio.charset.StandardCharsets.*;
 
 /**
- * @description Renders a SOAP body for legacy intergration
+ * @description Renders a SOAP body for legacy integration
  * @topic 2. Enterprise Integration Patterns
  */
 @MCElement(name="soapBody", mixed = true)
@@ -50,9 +51,9 @@ public class SoapBodyTemplateInterceptor extends TemplateInterceptor {
     @Override
     protected byte[] getContent(Exchange exc, Flow flow) {
         return (switch (version) {
-            case SOAP_11 -> SOAP11_PREFIX + asString( super.getContent(exc, flow)) + SOAP11_POSTFIX;
-            case SOAP_12 -> SOAP12_PREFIX +asString(  super.getContent(exc, flow)) + SOAP12_POSTFIX;
-        }).getBytes();
+            case SOAP_11 -> SOAP11_PREFIX + asString(super.getContent(exc, flow)) + SOAP11_POSTFIX;
+            case SOAP_12 -> SOAP12_PREFIX +asString(super.getContent(exc, flow)) + SOAP12_POSTFIX;
+        }).getBytes(UTF_8);
     }
 
     @Override

@@ -91,6 +91,4 @@ public class Constants {
 	 * The user agent string that will be sent when identifying as Membrane
 	 */
 	public static final String USERAGENT = "Membrane " + VERSION;
-
-	public static final String TRUE = "true";
 }

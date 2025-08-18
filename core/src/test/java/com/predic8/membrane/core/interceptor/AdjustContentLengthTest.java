@@ -71,9 +71,7 @@ public class AdjustContentLengthTest {
         assertEquals(monitoredRequest.getResponseContentLength(), monitoredRequest
                 .getResponseBody().length);
 
-        assertTrue(directRequest.getResponseContentLength() != monitoredRequest
-                .getResponseContentLength());
-
+		assertNotEquals(directRequest.getResponseContentLength(), monitoredRequest.getResponseContentLength());
 	}
 
 	private GetMethod getDirectRequest() {

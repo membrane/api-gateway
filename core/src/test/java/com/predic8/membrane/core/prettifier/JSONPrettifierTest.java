@@ -12,19 +12,20 @@
    See the License for the specific language governing permissions and
    limitations under the License. */
 
-package com.predic8.membrane.core.beautifier;
+package com.predic8.membrane.core.prettifier;
 
 import org.junit.jupiter.api.*;
 
 import java.io.*;
 
+import static java.nio.charset.StandardCharsets.*;
 import static org.junit.jupiter.api.Assertions.*;
 
-class JSONBeautifierTest {
+class JSONPrettifierTest {
 
     private static final byte[] s = """
                 { "foo": { "bar":  { "baz": 7 }}}
-                """.getBytes();
+                """.getBytes(UTF_8);
 
     JSONPrettifier beautifier;
 
@@ -35,7 +36,7 @@ class JSONBeautifierTest {
 
     @Test
     void beautifySimple() throws IOException {
-        String beautified = new String(beautifier.prettify(s));
+        String beautified = new String(beautifier.prettify(s), UTF_8);
 
         assertTrue(beautified.contains("\"foo\""));
         assertTrue(beautified.contains("\"bar\""));
@@ -46,7 +47,7 @@ class JSONBeautifierTest {
     }
 
     @Test
-    void alreadyPrettyPrintedJson_isIdempotent() throws IOException {
+    void alreadyPrettyPrintedJson_isIdempotent() throws Exception {
         byte[] pretty1 = beautifier.prettify(s);
         byte[] pretty2 = beautifier.prettify(pretty1);
 

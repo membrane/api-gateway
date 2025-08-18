@@ -41,7 +41,10 @@ public enum SoapVersion {
     }
 
     public static SoapVersion parse(String s) {
-        return switch (s) {
+        if (s == null || s.trim().isEmpty()) {
+            throw new ConfigurationException("Invalid soap version: " + s);
+        }
+        return switch (s.trim()) {
             case "1.1","11" -> SOAP_11;
             case "1.2","12" -> SOAP_12;
             default ->  throw new ConfigurationException("SOAP version %s is not supported.".formatted(s));

@@ -30,6 +30,7 @@ import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.lang.ScriptingUtils.*;
 import static com.predic8.membrane.core.util.FileUtil.*;
+import static java.nio.charset.StandardCharsets.*;
 
 /**
  * @description Renders the body content of a message from a template. The template can
@@ -97,7 +98,7 @@ public class TemplateInterceptor extends AbstractTemplateInterceptor {
     @Override
     protected byte[] getContent(Exchange exchange, Flow flow) {
         // Needed deviation over toString() or Writer class
-        return template.make(getVariableBinding(exchange, flow)).toString().getBytes();
+        return template.make(getVariableBinding(exchange, flow)).toString().getBytes(UTF_8);
     }
 
     private @NotNull HashMap<String, Object> getVariableBinding(Exchange exc, Flow flow) {
@@ -112,8 +113,12 @@ public class TemplateInterceptor extends AbstractTemplateInterceptor {
         try {
             return createTemplateEngine().createTemplate(new StringReader(textTemplate));
         } catch (Exception e) {
-            throw new ConfigurationException("Could not create template from " + location, e);
+            throw new ConfigurationException("Could not create template from " + getTemplateLocation(), e);
         }
+    }
+
+    private String getTemplateLocation() {
+        return location != null ? location : "inline template";
     }
 
     private TemplateEngine createTemplateEngine() throws Exception {

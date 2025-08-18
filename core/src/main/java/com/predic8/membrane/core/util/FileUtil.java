@@ -43,10 +43,14 @@ public class FileUtil {
 	}
 
 	public static boolean isXml(String location) {
-		return FilenameUtils.getExtension(location).equals(XML);
+		if (location == null)
+			return false;
+		return XML.equalsIgnoreCase(FilenameUtils.getExtension(location));
 	}
 
 	public static boolean isJson(String location) {
-		return FilenameUtils.getExtension(location).equals(JSON);
+		if (location == null)
+			return false;
+		return JSON.equalsIgnoreCase(FilenameUtils.getExtension(location));
 	}
 }

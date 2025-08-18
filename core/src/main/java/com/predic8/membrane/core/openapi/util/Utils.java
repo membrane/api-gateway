@@ -308,6 +308,6 @@ public class Utils {
     }
 
     public static byte[] createErrorMessage(String msg) {
-        return String.format("{ \"error\": \"%s\" }",msg).getBytes();
+        return String.format("{ \"error\": \"%s\" }",msg).getBytes(UTF_8);
     }
 }

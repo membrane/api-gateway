@@ -39,12 +39,6 @@ class SoapBodyTemplateInterceptorTest {
     }
 
     @Test
-    void setSOAPVersion() {
-        setSoapVersion("1.1");
-        setSoapVersion("1.2");
-    }
-
-    @Test
     void setWrongSOAPVersion() {
         assertThrows(ConfigurationException.class, () -> setSoapVersion("1.3"));
     }

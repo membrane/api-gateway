@@ -108,7 +108,7 @@ public class SampleSoapServiceInterceptor extends AbstractInterceptor {
         return getElementAsString(exc.getRequest().getBodyAsStream(), "name");
     }
 
-    private static final HashMap<String, City> cityMap = new HashMap<>() {{
+    private static final HashMap<String, City> cities = new HashMap<>() {{
         put("Bonn", new City("Bonn", 327_000, "Germany"));
         put("Bielefeld", new City("Bielefeld", 333_000, "Germany"));
         put("Berlin", new City("Berlin", 3_897_000, "Germany"));
@@ -239,13 +239,13 @@ public class SampleSoapServiceInterceptor extends AbstractInterceptor {
 
     private static Element createPopulation(String city, Document res) {
         Element pop = res.createElement("population");
-        pop.appendChild(res.createTextNode(String.valueOf(cityMap.get(city).population)));
+        pop.appendChild(res.createTextNode(String.valueOf(cities.get(city).population)));
         return pop;
     }
 
     private static Element createCountry(String city, Document res) {
         Element country = res.createElement("country");
-        country.appendChild(res.createTextNode(cityMap.get(city).country));
+        country.appendChild(res.createTextNode(cities.get(city).country));
         return country;
     }
 

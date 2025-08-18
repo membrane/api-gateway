@@ -15,8 +15,10 @@ package com.predic8.membrane.core.interceptor.templating;
 
 import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.*;
+import org.jetbrains.annotations.*;
 import org.junit.jupiter.api.*;
 
+import java.io.*;
 import java.net.*;
 
 import static com.predic8.membrane.core.http.MimeType.*;
@@ -31,7 +33,8 @@ class StaticInterceptorTest {
     @BeforeEach
     void beforeAll() throws URISyntaxException {
         i = new StaticInterceptor();
-        i.setLocation("src/test/resources/json/unformatted.json");
+        i.setLocation(getAbsolutePath("/json/unformatted.json"));
+
         exc = get("/foo").buildExchange();
     }
 
@@ -60,26 +63,30 @@ class StaticInterceptorTest {
         static String REF_CHARS = "äöüÄÖÜßéèê";
 
         @Test
-        void latin() {
+        void latin() throws Exception {
             checkWithCharset("iso-8859-1");
         }
 
         @Test
-        void utf_8() {
+        void utf_8() throws Exception {
             checkWithCharset("utf-8");
         }
 
         @Test
-        void utf_16() {
+        void utf_16() throws Exception {
             checkWithCharset("utf-16");
         }
 
-        private void checkWithCharset(String charset) {
-            i.setLocation("src/test/resources/charsets/%s.txt".formatted(charset));
+        private void checkWithCharset(String charset) throws Exception {
+            i.setLocation(getAbsolutePath("/charsets/%s.txt".formatted(charset)));
             i.setCharset(charset);
             i.init(new Router());
             i.handleRequest(exc);
             assertEquals(REF_CHARS, exc.getRequest().getBodyAsStringDecoded());
         }
+    }
+
+    private @NotNull String getAbsolutePath(String path) throws URISyntaxException {
+        return new File(getClass().getResource(path).toURI()).getAbsolutePath();
     }
 }

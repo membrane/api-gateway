@@ -13,7 +13,7 @@
 
 package com.predic8.membrane.core.interceptor.oauth2.processors;
 
-import com.predic8.membrane.core.beautifier.*;
+import com.predic8.membrane.core.prettifier.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.interceptor.oauth2.*;
@@ -47,8 +47,8 @@ public class WellknownEndpointProcessor extends EndpointProcessor {
         try {
             exc.setResponse(ok().contentType(APPLICATION_JSON_UTF8).body(prettifier.prettify(authServer.getWellknownFile().getWellknown().getBytes(UTF_8))).build());
         } catch (IOException e) {
-            log.error("While constructing the wellknown response.", e);
-            internal(true,"wellknown-endpoint-processor")
+            log.error("While constructing the well-known response.", e);
+            internal(true,"well-known-endpoint-processor")
                     .exception(e)
                     .buildAndSetResponse(exc);
             return ABORT;

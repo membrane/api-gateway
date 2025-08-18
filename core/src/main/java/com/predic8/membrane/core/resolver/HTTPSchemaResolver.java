@@ -14,7 +14,7 @@
 
 package com.predic8.membrane.core.resolver;
 
-import com.google.common.collect.Lists;
+import com.google.common.collect.*;
 import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
@@ -35,6 +35,7 @@ import static com.predic8.membrane.core.http.Header.*;
 import static com.predic8.membrane.core.http.Request.Builder;
 import static com.predic8.membrane.core.http.Request.*;
 import static java.lang.Thread.*;
+import static java.nio.charset.StandardCharsets.*;
 
 @MCElement(name = "httpSchemaResolver")
 public class HTTPSchemaResolver implements SchemaResolver {
@@ -45,7 +46,7 @@ public class HTTPSchemaResolver implements SchemaResolver {
     private final int httpWatchIntervalInSeconds = 1;
     Thread httpWatcher = null;
 
-    final byte[] NO_HASH = "NO_HASH".getBytes();
+    final byte[] NO_HASH = "NO_HASH".getBytes(UTF_8);
 
     private HttpClientConfiguration httpClientConfig = new HttpClientConfiguration();
 

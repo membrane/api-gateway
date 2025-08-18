@@ -29,8 +29,9 @@ import java.io.*;
 import java.util.*;
 
 import static com.predic8.membrane.core.http.MimeType.*;
-import static com.predic8.membrane.core.util.ExceptionUtil.concatMessageAndCauseMessages;
-import static java.util.UUID.randomUUID;
+import static com.predic8.membrane.core.util.ExceptionUtil.*;
+import static java.nio.charset.StandardCharsets.*;
+import static java.util.UUID.*;
 
 
 /**
@@ -313,7 +314,7 @@ public class ProblemDetails {
             else
                 createJson(root, builder);
         } catch (Exception e) {
-            builder.body("Title: %s\nType: %s\n%s".formatted(type, title, root).getBytes());
+            builder.body("Title: %s\nType: %s\n%s".formatted(type, title, root).getBytes(UTF_8));
             builder.contentType(TEXT_PLAIN);
         }
         return builder.build();

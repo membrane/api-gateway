@@ -56,25 +56,25 @@ public class SampleSoapServiceExampleTest extends AbstractSampleMembraneStartSto
     }
 
 
-    private final HashMap<String, String> cityMap = new HashMap<>() {{
+    private final HashMap<String, String> cities = new HashMap<>() {{
         put("Bonn", "<population>327000</population>");
         put("London", "<population>8980000</population>");
         put("Stebbach", "<errorcode>404</errorcode>");
     }};
 
-    final List<String> cityMap() {
-        return cityMap.keySet().stream().toList();
+    final List<String> cities() {
+        return cities.keySet().stream().toList();
     }
 
     @ParameterizedTest
-    @MethodSource("cityMap")
+    @MethodSource("cities")
     public void testCity(String city) throws Exception {
         given()
             .body(readFileFromBaseDir("request.xml").replace("Bonn", city))
         .when()
             .post("http://localhost:2000/")
         .then()
-            .body(containsString(cityMap.get(city)));
+            .body(containsString(cities.get(city)));
 
     }
 }

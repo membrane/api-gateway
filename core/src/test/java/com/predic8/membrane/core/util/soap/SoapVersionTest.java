@@ -34,6 +34,9 @@ class SoapVersionTest {
     @Test
     void parseInvalid() {
         assertThrows(ConfigurationException.class, () -> parse("invalid"));
+        assertThrows(ConfigurationException.class, () -> parse(""));
+        assertThrows(ConfigurationException.class, () -> parse(" "));
+        assertThrows(ConfigurationException.class, () -> parse(null));
     }
 
     @Test

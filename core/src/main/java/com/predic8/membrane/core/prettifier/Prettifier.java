@@ -12,20 +12,32 @@
    See the License for the specific language governing permissions and
    limitations under the License. */
 
-package com.predic8.membrane.core.beautifier;
+package com.predic8.membrane.core.prettifier;
 
 import static com.predic8.membrane.core.http.MimeType.*;
 
 public interface Prettifier {
 
+    Prettifier JSON = new JSONPrettifier();
+    Prettifier XML = new XMLPrettifier();
+    Prettifier TEXT = new TextPrettifier();
+
     byte[] prettify(byte[] c) throws Exception;
 
     static Prettifier getInstance(String contentType) {
-        return switch (contentType) {
-            case APPLICATION_JSON -> new JSONPrettifier();
-            case APPLICATION_XML, APPLICATION_SOAP, TEXT_HTML, TEXT_XML, TEXT_HTML_UTF8, TEXT_XML_UTF8 ->
-                    new XMLPrettifier();
-            default -> new TextPrettifier();
-        };
+        if (contentType == null)
+            return TEXT;
+
+        String ct = contentType.toLowerCase(java.util.Locale.ROOT).trim();
+
+        // JSON family: application/json, application/*+json, with or without charset/params
+        if (isJson(ct))
+            return JSON;
+
+        // XML/HTML family: text/xml, application/xml, text/html (and charset variants)
+        if (isXML(ct) || isHtml(ct))
+            return XML;
+
+        return TEXT;
     }
 }

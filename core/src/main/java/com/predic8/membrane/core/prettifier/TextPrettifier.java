@@ -12,15 +12,15 @@
    See the License for the specific language governing permissions and
    limitations under the License. */
 
-package com.predic8.membrane.core.beautifier;
+package com.predic8.membrane.core.prettifier;
 
-// TODO Tests
+import static java.nio.charset.StandardCharsets.*;
+
 public class TextPrettifier implements Prettifier {
 
     @Override
     public byte[] prettify(byte[] c) throws Exception {
-        return normalizeMultiline(new String(c)).getBytes();
-        //return unifyIndent( new String(c)).getBytes(); // TODO ?
+        return normalizeMultiline(new String(c, UTF_8)).getBytes(UTF_8);
     }
 
     public static String normalizeMultiline(String input) {

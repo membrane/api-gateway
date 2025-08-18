@@ -20,11 +20,11 @@ It demonstrates how Membrane can be used for **legacy integration** scenarios wh
    ```json
    {
      "country": "France",
-     "population": "11346800"
+     "population": 11346800
    }
    ```
 
-5. Have a look at `proxies.xml` to see how it works.
+5. Take a look at `proxies.xml` to see how it works.
 
 ## Use Cases
 

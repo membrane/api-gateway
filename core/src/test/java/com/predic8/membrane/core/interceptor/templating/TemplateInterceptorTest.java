@@ -31,10 +31,10 @@ import java.io.*;
 import java.nio.file.*;
 import java.util.*;
 
-import static com.predic8.membrane.core.Constants.TRUE;
 import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.http.Request.*;
 import static java.io.File.*;
+import static java.lang.Boolean.*;
 import static java.lang.System.*;
 import static java.nio.file.StandardCopyOption.*;
 import static javax.xml.xpath.XPathConstants.*;
@@ -73,8 +73,8 @@ public class TemplateInterceptorTest {
 
     @AfterAll
     static  void deleteFile() throws IOException {
-        Files.delete(copiedXml);
-        Files.delete(copiedJson);
+        Files.deleteIfExists(copiedXml);
+        Files.deleteIfExists(copiedJson);
     }
 
     @BeforeEach
@@ -151,7 +151,6 @@ public class TemplateInterceptorTest {
                 """, APPLICATION_JSON);
         
         String body = exchange.getRequest().getBodyAsStringDecoded();
-        System.out.println("body = " + body);
         assertTrue(body.contains("/foo"));
         assertTrue(body.contains("Flow: REQUEST"));
         assertTrue(body.contains("Body: vlinder"));
@@ -250,7 +249,7 @@ public class TemplateInterceptorTest {
 
         ti.setContentType(APPLICATION_JSON);
         ti.setTextTemplate(inputJson);
-        ti.setPretty( TRUE);
+        ti.setPretty( TRUE.toString());
         ti.init();
         assertArrayEquals(expectedPrettyJson.getBytes(), ti.prettify(inputJson.getBytes()));
     }

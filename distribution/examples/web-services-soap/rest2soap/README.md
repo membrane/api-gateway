@@ -23,7 +23,7 @@ To run the example execute the following steps:
 
 
 
-#### HOW IT IS DONE
+## HOW IT IS DONE
 
 The following part describes the example in detail.  
 

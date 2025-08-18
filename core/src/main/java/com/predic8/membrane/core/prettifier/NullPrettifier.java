@@ -12,20 +12,15 @@
    See the License for the specific language governing permissions and
    limitations under the License. */
 
-package com.predic8.membrane.core.beautifier;
+package com.predic8.membrane.core.prettifier;
 
-import org.slf4j.*;
-
-import java.io.*;
-
-import static com.predic8.membrane.core.util.TextUtil.*;
-
-public class XMLPrettifier implements Prettifier {
-
-    protected static final Logger log = LoggerFactory.getLogger(XMLPrettifier.class);
+/**
+ * Returns the reference to the provided byte array without coping!
+ */
+public class NullPrettifier implements Prettifier {
 
     @Override
     public byte[] prettify(byte[] c) throws Exception {
-        return formatXML( new InputStreamReader( new ByteArrayInputStream(c))).getBytes();
+        return c;
     }
 }

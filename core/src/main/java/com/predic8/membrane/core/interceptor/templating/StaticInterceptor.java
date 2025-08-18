@@ -33,6 +33,7 @@ public class StaticInterceptor extends AbstractTemplateInterceptor {
     @Override
     public void init() {
         super.init();
+        cache = null; // Make (re)init() possible
     }
 
     @Override
