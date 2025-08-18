@@ -77,9 +77,8 @@ public abstract class Store {
 
 	@Override
 	public boolean equals(Object obj) {
-		if (!(obj instanceof Store))
+		if (!(obj instanceof Store other))
 			return false;
-		Store other = (Store) obj;
 		return Objects.equal(location, other.location)
 			   && Objects.equal(password, other.password)
 			   && Objects.equal(type, other.type)

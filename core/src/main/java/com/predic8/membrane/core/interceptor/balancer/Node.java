@@ -31,7 +31,7 @@ import static com.google.common.base.Objects.equal;
 public class Node extends AbstractXmlElement {
 
 	public enum Status {
-		UP, DOWN, TAKEOUT;
+		UP, DOWN, TAKEOUT
 	}
 
 	private String host;

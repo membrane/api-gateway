@@ -206,7 +206,7 @@ public class StaticSSLContext extends SSLContext {
 
         List<Certificate> certs = getCertificates(sslParser, resourceResolver, baseLocation);
 
-        dnsNames = extractDnsNames(certs.get(0));
+        dnsNames = extractDnsNames(certs.getFirst());
 
         checkChainValidity(certs);
         validity = new Validity(getValidFrom(certs),getMinimumValidity(certs));

@@ -202,7 +202,7 @@ public class ClusterHealthMonitor implements ApplicationContextAware, Initializi
     }
 
     @Override
-    public void destroy() throws Exception {
+    public void destroy() {
         shutdown();
     }
 }
