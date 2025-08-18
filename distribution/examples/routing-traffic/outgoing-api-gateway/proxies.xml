@@ -14,6 +14,7 @@
 		<!-- Global plugins that are executed before and after the ones local to an API -->
 		<global>
 			<request>
+				<!-- Filter headers before passing them to the outside -->
 				<headerFilter>
 					<!-- Include only headers necessary for functionality and considered safe -->
 					<include>Accept.*</include>
