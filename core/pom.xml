@@ -12,7 +12,9 @@
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
    See the License for the specific language governing permissions and
    limitations under the License.
---><project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 
     <modelVersion>4.0.0</modelVersion>
     <artifactId>service-proxy-core</artifactId>
@@ -23,7 +25,7 @@
         <groupId>org.membrane-soa</groupId>
         <artifactId>service-proxy-parent</artifactId>
         <relativePath>../pom.xml</relativePath>
-        <version>6.2.6-SNAPSHOT</version>
+        <version>6.2.7-SNAPSHOT</version>
     </parent>
 
     <!-- Open Telemetry -->
@@ -32,7 +34,7 @@
             <dependency>
                 <groupId>io.opentelemetry</groupId>
                 <artifactId>opentelemetry-bom</artifactId>
-                <version>1.43.0</version>
+                <version>1.52.0</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
@@ -47,6 +49,11 @@
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>jul-to-slf4j</artifactId>
+            <version>${slf4j.version}</version>
         </dependency>
         <dependency>
             <groupId>org.apache.logging.log4j</groupId>
@@ -85,7 +92,7 @@
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-text</artifactId>
-            <version>1.13.1</version>
+            <version>1.14.0</version>
         </dependency>
 
         <dependency>
@@ -190,9 +197,8 @@
         </dependency>
         <dependency>
             <groupId>com.squareup.okhttp3</groupId>
-            <artifactId>okhttp</artifactId>
-            <version>4.12.0</version>
-            <scope>test</scope>
+            <artifactId>okhttp-jvm</artifactId>
+            <version>5.1.0</version>
         </dependency>
         <dependency>
             <groupId>org.springframework</groupId>
@@ -347,17 +353,15 @@
         <dependency>
             <groupId>io.opentelemetry</groupId>
             <artifactId>opentelemetry-sdk</artifactId>
-            <version>1.51.0</version>
         </dependency>
         <dependency>
             <groupId>io.opentelemetry</groupId>
             <artifactId>opentelemetry-exporter-otlp</artifactId>
-            <version>1.51.0</version>
         </dependency>
         <dependency>
             <groupId>io.opentelemetry.instrumentation</groupId>
             <artifactId>opentelemetry-resources</artifactId>
-            <version>2.6.0-alpha</version>
+            <version>2.18.1-alpha</version>
         </dependency>
         <dependency>
             <groupId>org.jetbrains</groupId>
@@ -476,7 +480,8 @@
                         <configuration>
                             <target>
                                 <copy todir="../docs">
-                                    <fileset dir="${project.build.directory}/classes/com/predic8/membrane/core/config/spring">
+                                    <fileset
+                                            dir="${project.build.directory}/classes/com/predic8/membrane/core/config/spring">
                                         <include name="router-conf.xsd"/>
                                     </fileset>
                                 </copy>

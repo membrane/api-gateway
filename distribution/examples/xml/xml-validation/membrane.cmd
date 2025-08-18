@@ -1,6 +1,16 @@
 @echo off
 setlocal EnableDelayedExpansion
 
+set "config=proxies.xml"
+
+set "cli_args="
+:parseArgs
+if "%~1"=="" goto argsDone
+  set "cli_args=%cli_args% %~1"
+  shift
+  goto parseArgs
+:argsDone
+
 set "exitcode=0"
 set "required_version=21"
 
@@ -15,7 +25,6 @@ for /f "usebackq tokens=3 delims= " %%A in (`java -version 2^>^&1 ^| findstr /i 
     set "full_version=%%A"
     goto :versionFound
 )
-
 :versionFound
 if not defined full_version (
     echo WARNING: Could not determine Java version. Make sure Java version is at least %required_version%. Proceeding anyway...
@@ -34,7 +43,6 @@ if defined nonNumeric (
     echo WARNING: Could not parse Java version. Make sure your Java version is at least %required_version%. Proceeding anyway...
     goto startMembrane
 )
-
 if %current_version% GEQ %required_version% (
     goto startMembrane
 ) else (
@@ -49,25 +57,16 @@ if exist "%test_dir%\conf" if exist "%test_dir%\lib" (
     set "membrane_home=%test_dir%"
     goto :eof
 )
-
-if "%test_dir:~1%"==":\" (
-    goto :eof
-)
-
+if "%test_dir:~1%"==":\" goto :eof
 for %%A in ("%test_dir%") do set "parent=%%~dpA"
-if not "%parent:~0,3%"=="%parent%" (
-    set "parent=%parent:~0,-1%"
-)
-if /i "%parent%"=="%test_dir%" (
-    goto :eof
-)
+if not "%parent:~0,3%"=="%parent%" set "parent=%parent:~0,-1%"
+if /I "%parent%"=="%test_dir%" goto :eof
 call :findMembraneDirectory "%parent%"
 goto :eof
 
 :startMembrane
 set "current=%CD%"
 set "membrane_home="
-
 call :findMembraneDirectory "%current%"
 
 if defined membrane_home (
@@ -84,8 +83,14 @@ if defined membrane_home (
 set "membrane_home=%~1"
 set "MEMBRANE_HOME=%membrane_home%"
 set "CLASSPATH=%membrane_home%\conf;%membrane_home%\lib\*"
-echo Starting: %membrane_home% CL: %CLASSPATH%
-java -cp "%CLASSPATH%" com.predic8.membrane.core.cli.RouterCLI -c proxies.xml
+echo Starting: %membrane_home%  CL: %CLASSPATH%
+
+echo %cli_args% | findstr /R /C:"\<\-c\>" /C:"\<\-\-config\>" /C:"\<\-t\>" /C:"\<\-\-test\>" >nul
+if %errorlevel%==0 (
+  java %JAVA_OPTS% -cp "%CLASSPATH%" com.predic8.membrane.core.cli.RouterCLI%cli_args%
+) else (
+  java %JAVA_OPTS% -cp "%CLASSPATH%" com.predic8.membrane.core.cli.RouterCLI -c "%config%"%cli_args%
+)
 goto :eof
 
 :finish

@@ -172,15 +172,15 @@ You can run Membrane as Docker container, standalone Java application or install
    - Download [proxies.xml](distribution/router/conf/proxies.xml) and modify it
    - Bind the configuration file to the container.
 
-   #### For Windows/Linux:
-   ```bash
-   docker run -v proxies.xml:/opt/membrane/conf/proxies.xml -p 2000:2000 predic8/membrane
-   ```  
+     #### For Windows/Linux:
+     ```bash
+     docker run -v proxies.xml:/opt/membrane/conf/proxies.xml -p 2000:2000 predic8/membrane
+     ```  
    
-   #### For Mac:
-   ```bash
-   docker run -v "$(pwd)/proxies.xml:/opt/membrane/conf/proxies.xml" -p 2000:2000 predic8/membrane
-   ```  
+     #### For Mac:
+     ```bash
+     docker run -v "$(pwd)/proxies.xml:/opt/membrane/conf/proxies.xml" -p 2000:2000 predic8/membrane
+     ```  
 
 For detailed Docker setup instructions, see the [Membrane Deployment Guide](https://membrane-api.io/deployment/#docker).
 

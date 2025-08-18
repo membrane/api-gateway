@@ -49,6 +49,8 @@ public class HttpClient implements AutoCloseable {
 
     private static final Logger log = LoggerFactory.getLogger(HttpClient.class.getName());
 
+    private static final int TRACE_BODY_MAX_LEN = getTraceBodyMaximumLength();
+
     @GuardedBy("HttpClient.class")
     private static SSLProvider defaultSSLProvider;
 
@@ -657,17 +659,20 @@ public class HttpClient implements AutoCloseable {
     }
 
     private void appendBody(StringBuilder sb, String body) {
-        final int MAX_LEN = 1024;          // 1KB
         if (body == null || body.isEmpty()) {
             sb.append("[no body]\n");
             return;
         }
-        if (body.length() > MAX_LEN) {
-            sb.append(body, 0, MAX_LEN)
+        if (body.length() > TRACE_BODY_MAX_LEN) {
+            sb.append(body, 0, TRACE_BODY_MAX_LEN)
                     .append("\n...[body truncated]...\n");
         } else {
             sb.append(body).append('\n');
         }
+    }
+
+    private static int getTraceBodyMaximumLength() {
+        return Integer.parseInt(System.getProperty("membrane.core.http.traceBodyMaximumLength", "10240"));
     }
 
 }
