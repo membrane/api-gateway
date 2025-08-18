@@ -13,33 +13,52 @@
    limitations under the License. */
 package com.predic8.membrane.core.config.security;
 
-import com.google.common.base.Objects;
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
 
+import static com.google.common.base.Objects.equal;
+
+/**
+ * Configuration element for a truststore containing trusted CA certificates.
+ *
+ * <p>Used by Membrane's TLS components to validate remote certificates
+ * presented during SSL/TLS handshakes.</p>
+ *
+ * <p>Extends {@link Store} with trust-specific attributes such as the
+ * trust manager algorithm and revocation checking behavior.</p>
+ */
 @MCElement(name="truststore")
 public class TrustStore extends Store {
 
 	protected String algorithm;
 	protected String checkRevocation;
 
+	/**
+	 * <p>Equality is based on the base {@link Store} fields plus
+	 * the {@code algorithm} field.</p>
+	 */
 	@Override
 	public boolean equals(Object obj) {
 		if (!(obj instanceof TrustStore other))
 			return false;
 		return super.equals(obj)
-				&& Objects.equal(algorithm, other.algorithm);
+				&& equal(algorithm, other.algorithm);
 	}
 
+	/** Computes a hash code including {@link Store} fields and trust-specific attributes. */
 	@Override
 	public int hashCode() {
 		return java.util.Objects.hash(super.hashCode(), algorithm, checkRevocation);
 	}
 
+	/** @return the algorithm. */
 	public String getAlgorithm() {
 		return algorithm;
 	}
 
+	/**
+	 * @description Trust manager algorithm used to validate certificate chains.
+	 */
 	@MCAttribute
 	public void setAlgorithm(String algorithm) {
 		this.algorithm = algorithm;
