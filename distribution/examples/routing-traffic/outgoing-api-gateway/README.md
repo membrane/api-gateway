@@ -23,7 +23,7 @@ An outgoing gateway enables:
 However, outgoing gateways must behave differently from gateways handling inbound traffic. For example:
 
 - `X-Forwarded-For` must **not** be set, to avoid leaking internal IPs.
-- Sensitive headers like `Authorization`, `Cookie`, and API keys must be carefully filtered.
+- Sensitive headers like `Authorization`, `User-Agent`, and API keys must be carefully filtered.
 
 This example demonstrates a secure default configuration for such scenarios.
 
