@@ -28,32 +28,7 @@ import java.net.*;
 
 import static com.predic8.membrane.core.exchange.Exchange.*;
 import static com.predic8.membrane.core.transport.http.client.protocol.Http2ProtocolHandler.*;
-import static com.predic8.membrane.core.util.HttpUtil.getPathAndQueryString;
-
-   import com.predic8.membrane.core.*;
-   import com.predic8.membrane.core.config.security.*;
-   import com.predic8.membrane.core.exchange.*;
-   import com.predic8.membrane.core.http.*;
-   import com.predic8.membrane.core.model.*;
-   import com.predic8.membrane.core.resolver.*;
-   import com.predic8.membrane.core.transport.http.client.*;
-   import com.predic8.membrane.core.transport.http2.*;
-   import com.predic8.membrane.core.transport.ssl.*;
-   import com.predic8.membrane.core.util.*;
-   import org.jetbrains.annotations.*;
-   import org.slf4j.*;
-
-   import javax.annotation.Nullable;
-   import javax.annotation.concurrent.*;
-   import java.io.*;
-   import java.net.*;
-   import java.nio.*;
-   import java.util.*;
-
-   import static com.predic8.membrane.core.exchange.Exchange.*;
-   import static com.predic8.membrane.core.http.Header.*;
-   import static java.lang.Boolean.*;
-   import static java.nio.charset.StandardCharsets.*;
+import static com.predic8.membrane.core.util.HttpUtil.*;
 
 /**
  * HTTP client supporting:
