@@ -34,7 +34,6 @@ import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.interceptor.cors.AbstractCORSHandler.*;
 import static com.predic8.membrane.core.interceptor.cors.CorsInterceptor.*;
 import static com.predic8.membrane.core.interceptor.cors.CorsTestUtil.*;
-import static com.predic8.membrane.core.interceptor.cors.CorsUtil.*;
 import static java.util.Collections.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.http.HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN;
@@ -478,6 +477,6 @@ class CorsInterceptorTest {
     }
 
     private static void checkAllowHeaders(Header h, Set<String> allowedHeaders) {
-        assertEquals(toLowerCaseSet(allowedHeaders), getAccessControlAllowHeaderNames(h));
+        assertEquals(CollectionsUtil.toLowerCaseSet(allowedHeaders), getAccessControlAllowHeaderNames(h));
     }
 }

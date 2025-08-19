@@ -40,6 +40,7 @@ import org.jose4j.lang.JoseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nullable;
 import javax.annotation.concurrent.GuardedBy;
 import java.io.IOException;
 import java.io.InputStream;
@@ -55,10 +56,11 @@ import static com.predic8.membrane.core.interceptor.oauth2.OAuth2TokenBody.refre
 import static com.predic8.membrane.core.interceptor.oauth2client.rf.JsonUtils.isJson;
 
 public abstract class AuthorizationService {
+
     protected Logger log;
 
     private HttpClient httpClient;
-    protected Router router;
+    Router router;
 
     protected HttpClientConfiguration httpClientConfiguration;
     private final Object lock = new Object();
@@ -110,7 +112,11 @@ public abstract class AuthorizationService {
 
     public abstract String getSubject();
 
-    public abstract String getTokenEndpoint();
+    /**
+     * Note that this method does not honor the B2C flows. Use {@link #getTokenEndpoint(FlowContext)} instead.
+     * @return The Token Endpoint URL.
+     */
+    protected abstract String getTokenEndpoint();
 
     public abstract String getRevocationEndpoint();
 
@@ -222,10 +228,10 @@ public abstract class AuthorizationService {
         return JWSSigner;
     }
 
-    public Request.Builder applyAuth(Request.Builder requestBuilder, String body) {
+    public Request.Builder applyAuth(Request.Builder requestBuilder, String body, FlowContext flowContext) {
 
         if (isUseJWTForClientAuth()) {
-            body += "&client_assertion_type=urn:ietf:params:oauth:client-assertion-type:jwt-bearer" + "&client_assertion=" + createClientToken();
+            body += "&client_assertion_type=urn:ietf:params:oauth:client-assertion-type:jwt-bearer" + "&client_assertion=" + createClientToken(flowContext);
         }
 
         String clientSecret = getClientSecret();
@@ -236,11 +242,10 @@ public abstract class AuthorizationService {
     }
 
 
-
-    public String getTokenEndpoint(Session session) {
+    public String getTokenEndpoint(@Nullable FlowContext flowContext) {
         String tokenEndpoint = getTokenEndpoint();
-        if (session.get("defaultFlow") != null) {
-            tokenEndpoint = tokenEndpoint.replaceAll(session.get("defaultFlow"), session.get("triggerFlow"));
+        if (flowContext != null) {
+            tokenEndpoint = tokenEndpoint.replaceAll(flowContext.defaultFlow, flowContext.triggerFlow);
         }
         return tokenEndpoint;
     }
@@ -264,10 +269,10 @@ public abstract class AuthorizationService {
         }
     }
 
-    private String createClientToken() {
+    private String createClientToken(FlowContext flowContext) {
         try {
             String jwtSub = this.getClientId();
-            String jwtAud = this.getTokenEndpoint();
+            String jwtAud = this.getTokenEndpoint(flowContext);
 
             // see https://docs.microsoft.com/en-us/azure/active-directory/develop/active-directory-certificate-credentials
             JwtClaims jwtClaims = new JwtClaims();
@@ -297,23 +302,24 @@ public abstract class AuthorizationService {
     }
 
     public OAuth2TokenResponseBody refreshTokenRequest(Session session, String wantedScope, String refreshToken) throws Exception {
+        FlowContext fc = FlowContext.fromSession(session);
         return parseTokenResponse(checkTokenResponse(doRequest(applyAuth(
-                new Request.Builder().post(getTokenEndpoint(session))
+                new Request.Builder().post(getTokenEndpoint(fc))
                         .contentType(APPLICATION_X_WWW_FORM_URLENCODED)
                         .header(ACCEPT, APPLICATION_JSON)
                         .header(USER_AGENT, USERAGENT),
-                refreshTokenBodyBuilder(refreshToken).scope(wantedScope).build())
+                refreshTokenBodyBuilder(refreshToken).scope(wantedScope).build(), fc)
                 .buildExchange())));
     }
 
-    public OAuth2TokenResponseBody codeTokenRequest(String redirectUri, String code, String verifier) throws Exception {
+    public OAuth2TokenResponseBody codeTokenRequest(String redirectUri, String code, String verifier, FlowContext flowContext) throws Exception {
         return parseTokenResponse(checkTokenResponse(doRequest(applyAuth(
                 new Request.Builder()
-                        .post(getTokenEndpoint())
+                        .post(getTokenEndpoint(flowContext))
                         .contentType(APPLICATION_X_WWW_FORM_URLENCODED)
                         .header(ACCEPT, APPLICATION_JSON)
                         .header(USER_AGENT, USERAGENT),
-                authorizationCodeBodyBuilder(code, verifier).redirectUri(redirectUri).build()).buildExchange())));
+                authorizationCodeBodyBuilder(code, verifier).redirectUri(redirectUri).build(), flowContext).buildExchange())));
     }
 
     private OAuth2TokenResponseBody parseTokenResponse(Response response) throws IOException {

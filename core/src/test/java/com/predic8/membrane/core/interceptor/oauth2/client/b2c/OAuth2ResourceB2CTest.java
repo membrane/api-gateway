@@ -295,7 +295,7 @@ public abstract class OAuth2ResourceB2CTest {
 
         exc = browser.apply(get(tc.getClientAddress() + "/api/"));
 
-        JwtClaims c2 = createJwtConsumer().processToClaims(getAccessToken(exc));
+        JwtClaims c2 = createJwtConsumer(tc.api1Id).processToClaims(getAccessToken(exc));
         assertEquals(12, c2.getClaimsMap().size());
         assertEquals("b2c_1_susi", c2.getClaimValue("tfp"));
     }
@@ -310,7 +310,7 @@ public abstract class OAuth2ResourceB2CTest {
 
         exc = browser.apply(get(tc.getClientAddress() + "/api/"));
 
-        JwtClaims c2 = createJwtConsumer().processToClaims(getAccessToken(exc));
+        JwtClaims c2 = createJwtConsumer(tc.api1Id).processToClaims(getAccessToken(exc));
         assertEquals(11, c2.getClaimsMap().size());
         assertEquals("b2c_1_profile_editing", c2.getClaimValue("tfp"));
     }
@@ -328,9 +328,37 @@ public abstract class OAuth2ResourceB2CTest {
         exc = browser.apply(get(tc.getClientAddress() + "/api/"));
 
         String a2 = getAccessToken(exc);
-        JwtClaims c2 = createJwtConsumer().processToClaims(a2);
+        JwtClaims c2 = createJwtConsumer(tc.api1Id).processToClaims(a2);
         assertEquals(11, c2.getClaimsMap().size());
         assertEquals("b2c_1_profile_editing2", c2.getClaimValue("tfp"));
+    }
+
+    @Test
+    public void startingUserFlowButContinueToUseOldRefreshToken() throws Exception {
+        var exc = browser.apply(get(tc.getClientAddress() + "/init"));
+
+        mockAuthorizationServer.abortSignIn.set(true);
+        browser.apply(get(tc.getClientAddress() + "/pe2/init"));
+
+        exc = browser.apply(get(tc.getClientAddress() + "/api/"));
+
+        String a2 = getAccessToken(exc);
+        JwtClaims c2 = createJwtConsumer(tc.api1Id).processToClaims(a2);
+        assertEquals(12, c2.getClaimsMap().size());
+        // the token for /api/ was issued from 1_susi because 1_profile_editing was aborted
+        assertEquals("b2c_1_susi", c2.getClaimValue("tfp"));
+
+        // this should get a new refresh token from the pe2 flow
+        mockAuthorizationServer.abortSignIn.set(false);
+        browser.apply(get(tc.getClientAddress() + "/pe2/init"));
+
+        exc = browser.apply(get(tc.getClientAddress() + "/api2/"));
+
+        String a3 = getAccessToken(exc);
+        JwtClaims c3 = createJwtConsumer(tc.api2Id).processToClaims(a3);
+        assertEquals(11, c3.getClaimsMap().size());
+        // the token for /api2/ was issued from 1_profile_editing2 because that one was actually completed
+        assertEquals("b2c_1_profile_editing2", c3.getClaimValue("tfp"));
     }
 
     @Test
@@ -363,9 +391,9 @@ public abstract class OAuth2ResourceB2CTest {
         exc = browser.apply(get(tc.getClientAddress() + "/api-no-auth-needed/"));
 
         // valid access token, since still logged in
-        JwtClaims c2 = createJwtConsumer().processToClaims(getAccessToken(exc));
-        assertEquals(11, c2.getClaimsMap().size());
-        assertEquals("b2c_1_profile_editing2", c2.getClaimValue("tfp"));
+        JwtClaims c2 = createJwtConsumer(tc.api1Id).processToClaims(getAccessToken(exc));
+        assertEquals(12, c2.getClaimsMap().size());
+        assertEquals("b2c_1_susi", c2.getClaimValue("tfp"));
     }
 
     @Test
@@ -497,12 +525,12 @@ public abstract class OAuth2ResourceB2CTest {
 
     protected abstract SessionManager createSessionManager();
 
-    private JwtConsumer createJwtConsumer() {
+    private JwtConsumer createJwtConsumer(String expectedAudience) {
         return new JwtConsumerBuilder()
                 .setRequireExpirationTime()
                 .setAllowedClockSkewInSeconds(30)
                 .setRequireSubject()
                 .setVerificationKey(mockAuthorizationServer.getPublicKey())
-                .setExpectedAudience(true, tc.api1Id).build();
+                .setExpectedAudience(true, expectedAudience).build();
     }
 }

@@ -27,4 +27,26 @@ public class StringUtil {
     public static String truncateAfter(String s, int maxLength) {
         return s.substring(0, min(s.length(), maxLength));
     }
+
+    /**
+     * Replaces all non-printable ASCII characters in the input string with an underscore ('_').
+     * Printable characters are considered to be those in the range from 32 (space) to 126 (tilde).
+     * This method is useful for sanitizing input to make it safe for logging or displaying.
+     *
+     * @param s the input string to be sanitized
+     * @return a new string with non-printable characters replaced by underscores
+     */
+    public static String maskNonPrintableCharacters(String s) {
+        StringBuilder sb = new StringBuilder();
+        for (char c : s.toCharArray()) {
+            if (c >= 32 && c <= 126) {
+                sb.append(c);
+            } else {
+                sb.append('_');
+            }
+        }
+        return sb.toString();
+    }
+
+
 }

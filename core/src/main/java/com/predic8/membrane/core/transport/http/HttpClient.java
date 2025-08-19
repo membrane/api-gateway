@@ -30,6 +30,31 @@ import static com.predic8.membrane.core.exchange.Exchange.*;
 import static com.predic8.membrane.core.transport.http.client.protocol.Http2ProtocolHandler.*;
 import static com.predic8.membrane.core.util.HttpUtil.getPathAndQueryString;
 
+   import com.predic8.membrane.core.*;
+   import com.predic8.membrane.core.config.security.*;
+   import com.predic8.membrane.core.exchange.*;
+   import com.predic8.membrane.core.http.*;
+   import com.predic8.membrane.core.model.*;
+   import com.predic8.membrane.core.resolver.*;
+   import com.predic8.membrane.core.transport.http.client.*;
+   import com.predic8.membrane.core.transport.http2.*;
+   import com.predic8.membrane.core.transport.ssl.*;
+   import com.predic8.membrane.core.util.*;
+   import org.jetbrains.annotations.*;
+   import org.slf4j.*;
+
+   import javax.annotation.Nullable;
+   import javax.annotation.concurrent.*;
+   import java.io.*;
+   import java.net.*;
+   import java.nio.*;
+   import java.util.*;
+
+   import static com.predic8.membrane.core.exchange.Exchange.*;
+   import static com.predic8.membrane.core.http.Header.*;
+   import static java.lang.Boolean.*;
+   import static java.nio.charset.StandardCharsets.*;
+
 /**
  * HTTP client supporting:
  * - HTTP1
@@ -48,6 +73,8 @@ public class HttpClient implements AutoCloseable {
     private final HttpClientConfiguration configuration;
     private final ConnectionFactory connectionFactory;
     private final ProtocolHandlerFactory protocolHandlerFactory;
+
+    private static final int TRACE_BODY_MAX_LEN = getTraceBodyMaximumLength();
 
     private StreamPump.StreamPumpStats streamPumpStats;
 
@@ -166,4 +193,60 @@ public class HttpClient implements AutoCloseable {
     protected void finalize() {
         close();
     }
+
+    private void traceRequest(Request req) {
+        try {
+            StringBuilder sb = new StringBuilder("\n---[ HTTP Request ]----------------------------\n");
+            sb.append(req.getStartLine())                         // e.g. ?GET /foo HTTP/1.1?
+                    .append('\n')
+                    .append(req.getHeader().toString());                // all header fields
+
+            // append body if we actually have one and it is already buffered
+            if (!req.isBodyEmpty()) {
+                sb.append('\n');
+                appendBody(sb, req.getBodyAsStringDecoded());
+            }
+            log.trace(sb.toString());
+        } catch (Exception e) {
+            log.trace("Could not trace request.", e);
+        }
+    }
+
+    /**
+     * Dumps the incoming HTTP response in TRACE log level.
+     */
+    private void traceResponse(Response res) {
+        try {
+            StringBuilder sb = new StringBuilder("\n---[ HTTP Response ]---------------------------\n");
+            sb.append(res.getStartLine())                         // e.g. ?HTTP/1.1 200 OK?
+                    .append('\n')
+                    .append(res.getHeader().toString());
+
+            if (!res.isBodyEmpty()) {
+                sb.append('\n');
+                appendBody(sb, res.getBodyAsStringDecoded());
+            }
+            log.trace(sb.toString());
+        } catch (Exception e) {
+            log.trace("Could not trace response.", e);
+        }
+    }
+
+    private void appendBody(StringBuilder sb, String body) {
+        if (body == null || body.isEmpty()) {
+            sb.append("[no body]\n");
+            return;
+        }
+        if (body.length() > TRACE_BODY_MAX_LEN) {
+            sb.append(body, 0, TRACE_BODY_MAX_LEN)
+                    .append("\n...[body truncated]...\n");
+        } else {
+            sb.append(body).append('\n');
+        }
+    }
+
+    private static int getTraceBodyMaximumLength() {
+        return Integer.parseInt(System.getProperty("membrane.core.http.traceBodyMaximumLength", "10240"));
+    }
+
 }

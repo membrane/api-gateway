@@ -56,7 +56,7 @@ public class SampleSoapServiceInterceptor extends AbstractInterceptor {
         try {
             return handleRequestInternal(exc);
         } catch (Exception e) {
-            ProblemDetails.internal(router.isProduction(),getDisplayName())
+            ProblemDetails.internal(router.isProduction(), getDisplayName())
                     .detail("Could not process SOAP request!")
                     .exception(e)
                     .buildAndSetResponse(exc);
@@ -115,7 +115,22 @@ public class SampleSoapServiceInterceptor extends AbstractInterceptor {
         put("Da Nang", new City("Da Nang", 1_220_000, "Vietnam"));
         put("London", new City("London", 8_980_000, "England"));
         put("New York", new City("New York", 8_460_000, "USA"));
+        put("Delhi", new City("Delhi", 34_665_600, "India"));
+        put("Beijing", new City("Beijing", 22_596_500, "China"));
+        put("Tokyo", new City("Tokyo", 37_036_200, "Japan"));
+        put("Shanghai", new City("Shanghai", 30_482_100, "China"));
+        put("São Paulo", new City("São Paulo", 22_990_000, "Brazil"));
+        put("Jakarta", new City("Jakarta", 11_350_000, "Indonesia"));
+        put("San Francisco", new City("San Francisco", 842_000, "USA"));
+        put("Mumbai", new City("Mumbai", 22_088_953, "India"));
+        put("Nairobi", new City("Nairobi", 5_767_000, "Kenya"));
+        put("Paris", new City("Paris", 11_346_800, "France"));
+        put("Toronto", new City("Toronto", 7_106_400, "Canada"));
+        put("Seoul", new City("Seoul", 10_025_800, "South Korea"));
+        put("Sydney", new City("Sydney", 5_248_790, "Australia"));
+        put("Barcelona", new City("Barcelona", 5_733_250, "Spain"));
     }};
+
 
     public static String getSoapFault(String faultString, String code, String errorMessage) {
         return """
