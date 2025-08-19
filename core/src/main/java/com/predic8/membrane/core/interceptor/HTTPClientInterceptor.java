@@ -47,8 +47,10 @@ public class HTTPClientInterceptor extends AbstractInterceptor {
 
     private static final String PROXIES_HINT = " Maybe the target is only reachable over an HTTP proxy server. Please check proxy settings in conf/proxies.xml.";
 
+    // null => inherit from HttpClientConfiguration unless explicitly set here
     private Boolean failOverOn5XX;
     private Boolean adjustHostHeader;
+
     private HttpClientConfiguration httpClientConfig = new HttpClientConfiguration();
 
     private HttpClient hc;

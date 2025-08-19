@@ -32,6 +32,7 @@ import static com.predic8.membrane.core.exchange.Exchange.*;
 import static com.predic8.membrane.core.http.Header.*;
 import static com.predic8.membrane.core.http.Request.*;
 import static com.predic8.membrane.core.http.Response.*;
+import static com.predic8.membrane.core.transport.http.MessageTracer.trace;
 import static com.predic8.membrane.core.transport.http.client.protocol.TcpProtocolHandler.*;
 import static com.predic8.membrane.core.transport.http.client.protocol.WebSocketProtocolHandler.*;
 import static java.lang.Boolean.*;
@@ -58,9 +59,8 @@ public class Http1ProtocolHandler extends AbstractProtocolHandler {
         // TODO only for HTTP1 ?
         ct.con().socket.setSoTimeout(configuration.getConnection().getSoTimeout());
 
-        if (log.isTraceEnabled()) {
-            MessageTracer.trace(exchange.getRequest());
-        }
+        trace(exchange.getRequest());
+
         exchange.getRequest().write(ct.con().out, configuration.getMaxRetries() > 1);
 
         // TODO only for HTTP1 ?
@@ -69,9 +69,8 @@ public class Http1ProtocolHandler extends AbstractProtocolHandler {
         http10ShutDown(exchange, ct.con());
 
         exchange.setResponse(responseReader.read(exchange, ct));
-        if (log.isTraceEnabled()) {
-            MessageTracer.trace(exchange.getResponse());
-        }
+
+        trace(exchange.getResponse());
 
         // 100 - Continue
         handle100Expected(exchange, ct.con());

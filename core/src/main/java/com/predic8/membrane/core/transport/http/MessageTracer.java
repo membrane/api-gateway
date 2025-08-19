@@ -1,10 +1,15 @@
-package com.predic8.membrane.core.http;
+package com.predic8.membrane.core.transport.http;
 
+import com.predic8.membrane.core.http.*;
 import org.slf4j.*;
 
 /**
- * Writes Request and Response messages to the trace log
+ * Writes Request and Response messages to the trace log.
  *
+ * Attention: Possible data leakage!
+ * Tracer may write sensitive values to the log like Authorization headers and body content.
+ *
+ * Keep this class at that location to keep the same package for logger configuration!
  */
 public class MessageTracer {
 
@@ -15,9 +20,11 @@ public class MessageTracer {
 
     /**
      * Writes Request and Response messages to the trace log
-     *
      */
     public static void trace(Message message) {
+        if (!log.isTraceEnabled())
+            return;
+
         if (message instanceof Request request)
             traceRequest(request);
         if (message instanceof Response response)
@@ -27,7 +34,7 @@ public class MessageTracer {
     private static void traceRequest(Request req) {
         try {
             StringBuilder sb = new StringBuilder("\n---[ HTTP Request ]----------------------------\n");
-            sb.append(req.getStartLine())                         // e.g. ?GET /foo HTTP/1.1?
+            sb.append(req.getStartLine())                         // e.g. "GET /foo HTTP/1.1"
                     .append('\n')
                     .append(req.getHeader().toString());                // all header fields
 
@@ -48,7 +55,7 @@ public class MessageTracer {
     private static void traceResponse(Response res) {
         try {
             StringBuilder sb = new StringBuilder("\n---[ HTTP Response ]---------------------------\n");
-            sb.append(res.getStartLine())                         // e.g. ?HTTP/1.1 200 OK?
+            sb.append(res.getStartLine())                         // e.g. "HTTP/1.1 200 OK"
                     .append('\n')
                     .append(res.getHeader().toString());
 
@@ -67,15 +74,25 @@ public class MessageTracer {
             sb.append("[no body]\n");
             return;
         }
-        if (body.length() > TRACE_BODY_MAX_LEN) {
-            sb.append(body, 0, TRACE_BODY_MAX_LEN)
+        int codePoints = body.codePointCount(0, body.length());
+        if (codePoints > TRACE_BODY_MAX_LEN) {
+            sb.append(body, 0, getEndIdx(body))
                     .append("\n...[body truncated]...\n");
         } else {
             sb.append(body).append('\n');
         }
     }
 
+    private static int getEndIdx(String body) {
+        return body.offsetByCodePoints(0, TRACE_BODY_MAX_LEN);
+    }
+
     private static int getTraceBodyMaximumLength() {
-        return Integer.parseInt(System.getProperty(MEMBRANE_MESSAGE_TRACER_MAX_BODY_LENGTH, "10240"));
+        try {
+            return Integer.parseInt(System.getProperty(MEMBRANE_MESSAGE_TRACER_MAX_BODY_LENGTH, "10240"));
+        } catch (Exception e) {
+            log.warn("Could not get trace body maximum length from System property: {}", MEMBRANE_MESSAGE_TRACER_MAX_BODY_LENGTH , e);
+            return 10240;
+        }
     }
 }
