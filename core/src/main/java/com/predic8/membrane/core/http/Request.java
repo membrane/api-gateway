@@ -351,12 +351,13 @@ public class Request extends Message {
 		}
 
 		public Builder connect(String url) throws URISyntaxException {
-			return method( Request.METHOD_CONNECT).url( new URIFactory(), url);
+			req.setMethod(METHOD_CONNECT);
+            req.setUri(new URIFactory().create(url).getAuthority());
+			return this;
 		}
 
 		public Builder options(URIFactory uriFactory, String url) throws URISyntaxException {
 			return method(Request.METHOD_OPTIONS).url(uriFactory,url);
 		}
 	}
-
 }

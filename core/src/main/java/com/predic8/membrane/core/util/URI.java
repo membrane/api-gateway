@@ -136,6 +136,17 @@ public class URI {
         return queryDecoded;
     }
 
+    public String getAuthority() {
+        if (uri != null)
+            return uri.getAuthority();
+        if (host == null)
+            return null;
+        StringBuilder sb = new StringBuilder(host);
+        if (port != -1)
+            sb.append(':').append(port);
+        return sb.toString();
+    }
+
     private String decode(String string) {
         if (string == null)
             return string;
