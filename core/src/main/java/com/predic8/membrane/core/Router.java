@@ -265,6 +265,27 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
     public void init() throws Exception {
         initRemainingRules();
         transport.init(this);
+        if (log.isTraceEnabled()) {
+            log.warn("""
+                ================================================================================================
+                
+                WARNING: Trace logging is enabled for 'com.predic8.membrane.core'
+                
+                Trace level logging may expose sensitive data including:
+                - Request and response headers (including Authorization headers)
+                - Request and response bodies 
+                - Internal processing details
+                - Configuration values
+                
+                This should only be used in development environments or for debugging purposes.
+                Ensure sensitive data is not logged in production environments.
+                
+                To disable trace logging, set the log level to INFO or higher in your log4j2.xml:
+                <Logger name="com.predic8.membrane.core" level="info" additivity="false">
+                
+                ================================================================================================
+                """);
+        }
     }
 
     private void initRemainingRules() throws Exception {
