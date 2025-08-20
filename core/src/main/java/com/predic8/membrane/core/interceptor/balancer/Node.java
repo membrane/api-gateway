@@ -27,6 +27,11 @@ import java.util.concurrent.atomic.*;
 
 import static com.google.common.base.Objects.equal;
 
+
+/**
+ * @description Represents a backend node in a load-balancing {@code Cluster}.
+ * <p>Identity is {@code host}+{@code port}.
+ */
 @MCElement(name="node", topLevel=false)
 public class Node extends AbstractXmlElement {
 
@@ -137,9 +142,11 @@ public class Node extends AbstractXmlElement {
 		return healthUrl;
 	}
 
-	/**
-	 * @description Determines this node's priority within the cluster. Lower values mean higher priority.
-	 */
+    /**
+     * @description Node priority; lower values are preferred.
+     * @default 10
+     * @example 2
+     */
 	@MCAttribute
 	public void setPriority(int priority) {
 		this.priority = priority;
