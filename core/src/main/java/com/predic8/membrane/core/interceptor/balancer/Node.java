@@ -27,10 +27,9 @@ import java.util.concurrent.atomic.*;
 
 import static com.google.common.base.Objects.equal;
 
-
 /**
  * @description Represents a backend node in a load-balancing {@code Cluster}.
- * <p>Identity is {@code host}+{@code port}.
+ * <p>Identity is {@code host}+{@code port}. </p>
  */
 @MCElement(name="node", topLevel=false)
 public class Node extends AbstractXmlElement {

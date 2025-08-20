@@ -50,7 +50,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  * When initialized, it schedules a task to call each {@link Node}'s health
  * endpoint and marks nodes as {@link Status#UP} or {@link Status#DOWN} based on the HTTP response.
  * This ensures the load balancer always has up-to-date status for routing decisions.
- * @example <a href="https://github.com/membrane/api-gateway/tree/master/distribution/examples/loadbalancing/7-tls">tls example</a>
+ * @example <a href="https://github.com/membrane/api-gateway/tree/master/distribution/examples/loadbalancing/7-healthMoniotor">health monitor example</a>
  * @topic 4. Monitoring, Logging and Statistics
  */
 @MCElement(name = "balancerHealthMonitor")
