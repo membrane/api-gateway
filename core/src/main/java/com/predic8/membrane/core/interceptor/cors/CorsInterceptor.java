@@ -28,7 +28,7 @@ import static com.predic8.membrane.core.interceptor.cors.CorsUtil.*;
 import static com.predic8.membrane.core.util.UrlNormalizer.*;
 
 /**
- * Cross-Origin Resource Sharing (CORS) plugin that enables secure cross-origin HTTP requests.
+ * @description Cross-Origin Resource Sharing (CORS) plugin that enables secure cross-origin HTTP requests.
  *
  * <p>This plugin handles CORS preflight requests (OPTIONS method) and sets appropriate CORS headers
  * on responses. It validates incoming requests against the configured CORS policy to ensure compliance
@@ -154,7 +154,7 @@ public class CorsInterceptor extends AbstractInterceptor {
     }
 
     /**
-     * Enables or disables the "allow all" mode for maximum permissiveness.
+     * @description Enables or disables the "allow all" mode for maximum permissiveness.
      *
      * <p>When enabled, all origins, methods, and headers are allowed without any validation.
      * This bypasses all CORS security checks and should only be used in development environments.</p>
@@ -176,7 +176,7 @@ public class CorsInterceptor extends AbstractInterceptor {
     }
 
     /**
-     * Configures the list of allowed origins for CORS requests.
+     * @description Configures the list of allowed origins for CORS requests.
      *
      * <p>Origins must be specified as complete URLs including protocol (http/https).
      * Use '*' to allow all origins, or 'null' to allow requests with no origin header (from file).</p>
@@ -223,7 +223,7 @@ public class CorsInterceptor extends AbstractInterceptor {
 
 
     /**
-     * Configures the HTTP methods allowed for CORS requests.
+     * @description Configures the HTTP methods allowed for CORS requests.
      *
      * <p>Specify methods as a comma or space-separated list. Use '*' to allow all methods.
      * Common methods include GET, POST, PUT, DELETE, PATCH.</p>
@@ -246,7 +246,7 @@ public class CorsInterceptor extends AbstractInterceptor {
     }
 
     /**
-     * Configures additional request headers allowed in CORS requests.
+     * @description Configures additional request headers allowed in CORS requests.
      *
      * <p>Safe headers (Accept, Accept-Language, Content-Language, Content-Type) are always allowed
      * and don't need to be specified. Only non-safe headers need to be explicitly configured.</p>
@@ -271,7 +271,7 @@ public class CorsInterceptor extends AbstractInterceptor {
     }
 
     /**
-     * Configures response headers that should be exposed to client-side JavaScript.
+     * @description Configures response headers that should be exposed to client-side JavaScript.
      *
      * <p>By default, only safe response headers are exposed to JavaScript. Use this setting
      * to expose additional custom headers that your client-side code needs to access.</p>
@@ -296,7 +296,7 @@ public class CorsInterceptor extends AbstractInterceptor {
     }
 
     /**
-     * Configures whether credentials should be included in CORS requests.
+     * @description Configures whether credentials should be included in CORS requests.
      *
      * <p>When enabled, browsers will include cookies, authorization headers, and client certificates
      * in cross-origin requests. This also requires the client to set {@code withCredentials: true}
@@ -324,7 +324,7 @@ public class CorsInterceptor extends AbstractInterceptor {
     }
 
     /**
-     * Configures the maximum age for caching preflight responses.
+     * @description Configures the maximum age for caching preflight responses.
      *
      * <p>This value tells browsers how long they can cache the result of a preflight request
      * before making another preflight request for the same resource.</p>

@@ -14,44 +14,62 @@
 
 package com.predic8.membrane.core.config.security;
 
-import com.google.common.base.Objects;
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
 
+import static com.google.common.base.Objects.equal;
+
+/**
+ * @description Configuration element for a keystore holding private keys and certificates.
+ */
 @MCElement(name="keystore")
 public class KeyStore extends Store {
 
 	private String keyPassword;
 	private String keyAlias;
 
+	/**
+	 * <p>Equality is based on the base {@link Store} fields plus
+	 * {@code keyPassword} and {@code keyAlias}.</p>
+	 */
 	@Override
 	public boolean equals(Object obj) {
-		if (!(obj instanceof KeyStore))
+		if (!(obj instanceof KeyStore other))
 			return false;
-		KeyStore other = (KeyStore) obj;
-		return super.equals(obj)
-				&& Objects.equal(keyPassword, other.keyPassword)
-				&& Objects.equal(keyAlias, other.keyAlias);
+        return super.equals(obj)
+				&& equal(keyPassword, other.keyPassword)
+				&& equal(keyAlias, other.keyAlias);
 	}
 
+	/** Computes a hash code including {@link Store} fields and key attributes. */
 	@Override
 	public int hashCode() {
 		return java.util.Objects.hash(super.hashCode(), keyPassword, keyAlias);
 	}
 
+	/** @return the password protecting the private key inside the keystore. */
 	public String getKeyPassword() {
 		return keyPassword;
 	}
 
+	/**
+	 * @description Password used to unlock the private key entry in the keystore.
+     * @default changeit
+     * @example abc123
+	 */
 	@MCAttribute
 	public void setKeyPassword(String keyPassword) {
 		this.keyPassword = keyPassword;
 	}
 
+	/** @return the alias of the private key entry inside the keystore. */
 	public String getKeyAlias() {
 		return keyAlias;
 	}
 
+	/**
+	 * @description The alias identifying which key entry to use from the keystore.
+	 */
 	@MCAttribute
 	public void setKeyAlias(String keyAlias) {
 		this.keyAlias = keyAlias;

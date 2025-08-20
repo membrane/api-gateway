@@ -19,7 +19,6 @@ import org.slf4j.*;
 
 import java.io.*;
 import java.net.*;
-import java.nio.charset.*;
 import java.util.*;
 import java.util.regex.*;
 
@@ -79,9 +78,9 @@ public class URLParamUtil {
 		StringBuilder buf = new StringBuilder();
 		for (int i = 0; i < params.length; i+=2) {
 			if (i != 0) buf.append('&');
-			buf.append(URLEncoder.encode(params[i], StandardCharsets.UTF_8));
+			buf.append(URLEncoder.encode(params[i], UTF_8));
 			buf.append('=');
-			buf.append(URLEncoder.encode(params[i+1], StandardCharsets.UTF_8));
+			buf.append(URLEncoder.encode(params[i+1], UTF_8));
 		}
 		return buf.toString();
 	}
