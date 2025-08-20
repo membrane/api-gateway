@@ -5,7 +5,12 @@
               http://membrane-soa.org/proxies/1/ http://membrane-soa.org/schemas/proxies-1.xsd">
 
     <!-- Health checks every 1s. -->
-    <balancerHealthMonitor interval="1000" />
+    <balancerHealthMonitor interval="1000">
+        <httpClientConfig>
+            <!-- Timeouts for the health probe HTTP call. -->
+            <connection timeout="2000" soTimeout="2000"/>
+        </httpClientConfig>
+    </balancerHealthMonitor>
 
     <router production="false">
 
@@ -14,8 +19,8 @@
             <balancer name="Demo Balancer">
                 <clusters>
                     <cluster name="Production">
-                        <node host="localhost" port="8001" healthUrl="https://localhost:8001/health"/>
-                        <node host="localhost" port="8002" healthUrl="https://localhost:8002/health"/>
+                        <node host="localhost" port="8001" healthUrl="http://localhost:8001/health"/>
+                        <node host="localhost" port="8002" healthUrl="http://localhost:8002/health"/>
                     </cluster>
                 </clusters>
             </balancer>
