@@ -21,6 +21,10 @@ import org.slf4j.*;
 import java.io.*;
 import java.util.*;
 
+/**
+ * @description Represents a load-balancing cluster (a named group of {@link Node}s).
+ * Provides status management (UP/DOWN/TAKEOUT), node lookup, and simple session tracking.
+ */
 @MCElement(name="cluster", topLevel=false)
 public class Cluster {
 
@@ -110,10 +114,9 @@ public class Cluster {
 		};
 	}
 
-	/**
-	 * TODO
-	 * @description Specifies a node.
-	 */
+    /**
+     * @description Specifies the child nodes of this cluster.
+     */
 	@MCChildElement
 	public void setNodes(List<Node> nodes) {
 		this.nodes.clear();

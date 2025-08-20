@@ -32,14 +32,15 @@ public class TrustStore extends Store {
 
 	/**
 	 * <p>Equality is based on the base {@link Store} fields plus
-	 * the {@code algorithm} field.</p>
+	 * the {@code algorithm} and {@code checkRevocation} fields.</p>
 	 */
 	@Override
 	public boolean equals(Object obj) {
 		if (!(obj instanceof TrustStore other))
 			return false;
 		return super.equals(obj)
-				&& equal(algorithm, other.algorithm);
+				&& equal(algorithm, other.algorithm)
+                && equal(checkRevocation, other.checkRevocation);
 	}
 
 	/** Computes a hash code including {@link Store} fields and trust-specific attributes. */

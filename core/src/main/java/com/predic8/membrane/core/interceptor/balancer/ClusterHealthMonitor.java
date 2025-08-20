@@ -69,7 +69,7 @@ public class ClusterHealthMonitor implements ApplicationContextAware, Initializi
 
     private void init() {
         if (interval <= 0)
-            throw new ConfigurationException("lbClusterHealthMonitor: 'interval' (ms) must be > 0");
+            throw new ConfigurationException("balancerHealthMonitor: 'interval' (ms) must be > 0");
 
         log.info("Starting HealthMonitor for load balancing with interval of {} ms", interval);
 
@@ -165,6 +165,13 @@ public class ClusterHealthMonitor implements ApplicationContextAware, Initializi
             log.warn("Interrupted while waiting for scheduler shutdown");
             scheduler.shutdownNow();
             Thread.currentThread().interrupt();
+        }
+        if (client != null) {
+            try {
+                client.close();
+            } catch (Exception e) {
+                log.debug("Closing HttpClient failed: {}", e.getMessage());
+            }
         }
     }
 
