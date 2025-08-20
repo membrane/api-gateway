@@ -25,11 +25,17 @@ import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.*;
 
+import static com.google.common.base.Objects.equal;
+
+/**
+ * @description Represents a backend node in a load-balancing {@code Cluster}.
+ * <p>Identity is {@code host}+{@code port}. </p>
+ */
 @MCElement(name="node", topLevel=false)
 public class Node extends AbstractXmlElement {
 
 	public enum Status {
-		UP, DOWN, TAKEOUT;
+		UP, DOWN, TAKEOUT
 	}
 
 	private String host;
@@ -54,9 +60,9 @@ public class Node extends AbstractXmlElement {
 
 	@Override
 	public boolean equals(Object obj) {
-		return obj instanceof Node &&
-                host.equals(((Node) obj).getHost()) &&
-                port == ((Node) obj).getPort();
+		return obj instanceof Node n &&
+			   equal(host, n.host) &&
+			   port == n.port;
 	}
 
 	@Override
@@ -101,8 +107,8 @@ public class Node extends AbstractXmlElement {
 	 * @description The node's host.
 	 * @example server3
 	 */
-	@Required
 	@MCAttribute
+	@Required
 	public void setHost(String host) {
 		this.host = host;
 	}
@@ -135,9 +141,11 @@ public class Node extends AbstractXmlElement {
 		return healthUrl;
 	}
 
-	/**
-	 * @description Determines this node's priority within the cluster. Lower values mean higher priority.
-	 */
+    /**
+     * @description Node priority; lower values are preferred.
+     * @default 10
+     * @example 2
+     */
 	@MCAttribute
 	public void setPriority(int priority) {
 		this.priority = priority;

@@ -13,46 +13,68 @@
    limitations under the License. */
 package com.predic8.membrane.core.config.security;
 
-import com.google.common.base.Objects;
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
 
+import static com.google.common.base.Objects.equal;
+
+/**
+ * @description Configuration element for a truststore containing trusted CA certificates.
+ *
+ * <p>Used by Membrane's TLS components to validate remote certificates
+ * presented during SSL/TLS handshakes.</p>
+ */
 @MCElement(name="truststore")
 public class TrustStore extends Store {
 
 	protected String algorithm;
 	protected String checkRevocation;
 
+	/**
+	 * <p>Equality is based on the base {@link Store} fields plus
+	 * the {@code algorithm} and {@code checkRevocation} fields.</p>
+	 */
 	@Override
 	public boolean equals(Object obj) {
 		if (!(obj instanceof TrustStore other))
 			return false;
 		return super.equals(obj)
-				&& Objects.equal(algorithm, other.algorithm);
+				&& equal(algorithm, other.algorithm)
+                && equal(checkRevocation, other.checkRevocation);
 	}
 
+	/** Computes a hash code including {@link Store} fields and trust-specific attributes. */
 	@Override
 	public int hashCode() {
 		return java.util.Objects.hash(super.hashCode(), algorithm, checkRevocation);
 	}
 
+	/** @return the algorithm. */
 	public String getAlgorithm() {
 		return algorithm;
 	}
 
+	/**
+	 * @description Trust manager algorithm used to validate certificate chains.
+	 */
 	@MCAttribute
 	public void setAlgorithm(String algorithm) {
 		this.algorithm = algorithm;
 	}
 
+    /**
+     * @return the comma-separated revocation options.
+     * Maps to {@link java.security.cert.PKIXRevocationChecker.Option}.
+     */
 	public String getCheckRevocation() {
 		return checkRevocation;
 	}
 
-	/**
-	 * TODO
-	 * @param checkRevocation
-	 */
+    /**
+     * @description Comma-separated PKIX revocation options: ONLY_END_ENTITY, PREFER_CRLS, NO_FALLBACK, SOFT_FAIL.
+     * @example ONLY_END_ENTITY,SOFT_FAIL
+     * @see java.security.cert.PKIXRevocationChecker.Option
+     */
 	@MCAttribute
 	public void setCheckRevocation(String checkRevocation) {
 		this.checkRevocation = checkRevocation;
