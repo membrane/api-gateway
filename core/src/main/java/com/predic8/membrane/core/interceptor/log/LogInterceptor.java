@@ -23,6 +23,8 @@ import com.predic8.membrane.core.lang.*;
 import org.slf4j.*;
 
 import java.io.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.ABORT;
@@ -42,11 +44,19 @@ public class LogInterceptor extends AbstractExchangeExpressionInterceptor {
         TRACE, DEBUG, INFO, WARN, ERROR, FATAL
     }
 
+    private static final Pattern SENSITIVE_PATTERN = Pattern.compile(
+            "(?i)(?:(Cookie:\\s*[^;]+=[^;]*)|" +     // Cookies
+                    "(Authentication:\\s*(?:Basic|Bearer)?\\s*[^\\s]+)|" + // Auth headers
+                    "(api.key.?\\s*[:=]\\s*[^\\s]+))"
+    );
+
     private Level level = INFO;
     private String category = LogInterceptor.class.getName();
 
     private String label = "";
     private boolean body = true;
+
+    private boolean maskSensitive = true;
 
     public LogInterceptor() {
         name = "log";
@@ -135,7 +145,24 @@ public class LogInterceptor extends AbstractExchangeExpressionInterceptor {
         return "Body:\n%s\n".formatted(msg.getBodyAsStringDecoded());
     }
 
+    private String mask(String msg) {
+        if (msg == null) return null;
+
+        Matcher matcher = SENSITIVE_PATTERN.matcher(msg);
+        StringBuilder sb = new StringBuilder();
+        while (matcher.find()) {
+            matcher.appendReplacement(sb, matcher.group().replaceAll("(?<=[:=])\\s*.*", " ********"));
+        }
+        matcher.appendTail(sb);
+        return sb.toString();
+    }
+
     private void writeLog(String msg) {
+
+        if (maskSensitive) {
+            msg = mask(msg);
+        }
+
         switch (level) {
             case TRACE -> getLogger(category).trace(msg);
             case DEBUG -> getLogger(category).debug(msg);
@@ -213,5 +240,14 @@ public class LogInterceptor extends AbstractExchangeExpressionInterceptor {
     @MCAttribute
     public void setHeaderOnly(boolean headerOnly) {
         LoggerFactory.getLogger(this.getClass()).warn("Configuration option `headerOnly` is not supported anymore. Use `body` instead.");
+    }
+
+    @MCAttribute
+    public void setMaskSensitive(boolean maskSensitive) {
+        this.maskSensitive = maskSensitive;
+    }
+
+    public boolean isMaskSensitive() {
+        return maskSensitive;
     }
 }
