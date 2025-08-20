@@ -24,7 +24,6 @@
                     </cluster>
                 </clusters>
             </balancer>
-            <!-- Outbound TLS to nodes -->
             <target host="abc" port="123" />
         </api>
 
