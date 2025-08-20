@@ -25,7 +25,7 @@
                 <keystore location="balancer.p12" password="changeit"/>
                 <truststore location="balancer.p12" password="changeit" />
             </ssl>
-            <balancer name="My Balancer">
+            <balancer name="Demo Balancer">
                 <clusters>
                     <cluster name="Production">
                         <node host="localhost" port="8001" healthUrl="https://localhost:8001/health"/>
@@ -36,33 +36,35 @@
             <!-- Outbound TLS to nodes -->
             <target host="abc" port="123">
                 <ssl>
-                    <!-- verify backend certs -->
+                    <!-- For connection to the nodes -->
                     <truststore location="balancer.p12" password="changeit"/>
                 </ssl>
             </target>
         </api>
 
-        <!-- Node 1 -->
+        <!-- Backend Node 1 -->
         <api port="8001" name="Node 1">
             <ssl>
-                <!-- node server cert -->
+                <!-- Node 1 Server cert -->
                 <keystore location="backend-1.p12" password="changeit" />
                 <truststore location="backend-1.p12" password="changeit" />
             </ssl>
             <static>
                 Hello from backend 1!
             </static>
-            <groovy>
-                <!-- Set to 5000 to simulate a socket read timeout -->
-                Thread.sleep(500)
-            </groovy>
+            <request>
+                <groovy>
+                    <!-- Set to 3000 to simulate a socket read timeout -->
+                    Thread.sleep(1000)
+                </groovy>
+            </request>
             <return/>
         </api>
 
-        <!-- Node 2 -->
+        <!-- Backend Node 2 -->
         <api port="8002" name="Node 2">
             <ssl>
-                <!-- node server cert -->
+                <!-- Node 2 Server cert -->
                 <keystore location="backend-2.p12" password="changeit" />
                 <truststore location="backend-2.p12" password="changeit" />
             </ssl>
