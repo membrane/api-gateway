@@ -75,7 +75,7 @@ public class HtmlBeautifierFormatter extends AbstractXMLBeautyfierFormatter {
 
 
 	private static String HTMLEntityEncode(String s) {
-		StringBuffer buf = new StringBuffer();
+		StringBuilder buf = new StringBuilder(1000);
 		for (int i = 0; i < s.length(); i++) {
 			char c = s.charAt(i);
 			if (c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z' || c >= '0'

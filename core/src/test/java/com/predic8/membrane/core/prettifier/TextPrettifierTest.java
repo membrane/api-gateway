@@ -70,7 +70,7 @@ class TextPrettifierTest extends AbstractPrettifierTest {
     }
 
     @Test
-    void simple() throws Exception {
+    void simple() {
         assertPretty("a", "a");
         assertPretty("a", " a ");
         assertPretty("a", "\ta\t");
@@ -78,7 +78,7 @@ class TextPrettifierTest extends AbstractPrettifierTest {
     }
 
     @Test
-    void lines() throws Exception {
+    void lines() {
         assertPretty("a", "\na\n");
         assertPretty("a\nb\nc", "\na\nb\nc\n\n");
         assertPretty("a\nb\n\tc", "\t\na\nb\n\tc\n\n");
@@ -87,7 +87,7 @@ class TextPrettifierTest extends AbstractPrettifierTest {
     }
 
     @Test
-    void indent() throws Exception {
+    void indent() {
         assertPretty("a\nb", "  a\n  b");
         assertPretty(" a\nb", "  a\n b");
         assertPretty(" a\nb\n c", "  a\n b\n  c");
@@ -95,7 +95,7 @@ class TextPrettifierTest extends AbstractPrettifierTest {
     }
 
     @Test
-    void trimTrailingWhitespace() throws Exception {
+    void trimTrailingWhitespace() {
         assertPretty("a\nb", "a \nb\t \t");
     }
 

@@ -34,7 +34,6 @@ public class StaxInterceptorExampleTest extends DistributionExtractingTestcase {
         compileCustomInterceptor();
 
         try(Process2 ignored = startServiceProxyScript()) {
-
             // @formatter:off
             given()
                 .contentType(TEXT_XML)

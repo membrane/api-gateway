@@ -22,46 +22,46 @@ import static javax.xml.stream.XMLStreamConstants.*;
 
 public class XMLBeautifier {
 
-	private boolean empty;
+    private boolean empty;
 
-	private boolean startTagClosed = true;
+    private boolean startTagClosed = true;
 
-	private boolean charContent;
+    private boolean charContent;
 
-	private boolean endCalled;
+    private boolean endCalled;
 
-	private boolean firstElement = true;
+    private boolean firstElement = true;
 
-	private final XMLBeautifierFormatter formatter;
+    private final XMLBeautifierFormatter formatter;
 
     private String detectedEncoding;
 
-	public XMLBeautifier(XMLBeautifierFormatter formatter) {
-		this.formatter = formatter;
-	}
+    public XMLBeautifier(XMLBeautifierFormatter formatter) {
+        this.formatter = formatter;
+    }
 
-	public void parse(InputStream inputStream) throws Exception {
+    public void parse(InputStream inputStream) throws Exception {
         parse(XMLInputFactoryFactory.inputFactory().createXMLStreamReader(inputStream));
-	}
+    }
 
-	public void parse(Reader reader) throws Exception {
-		XMLInputFactory factory = XMLInputFactory.newInstance(); // TODO
-		factory.setProperty(SUPPORT_DTD, false);
-		parse(factory.createXMLStreamReader(reader));
-	}
+    public void parse(Reader reader) throws Exception {
+        XMLInputFactory factory = XMLInputFactory.newInstance(); // TODO
+        factory.setProperty(SUPPORT_DTD, false);
+        parse(factory.createXMLStreamReader(reader));
+    }
 
-	private void parse(XMLStreamReader reader) throws Exception {
-		while (reader.hasNext()) {
-			displayEvent(reader.getEventType(), reader);
+    private void parse(XMLStreamReader reader) throws Exception {
+        while (reader.hasNext()) {
+            displayEvent(reader.getEventType(), reader);
             reader.next();
-		}
-	}
+        }
+    }
 
-	private void indent() throws IOException {
-		formatter.indent();
-	}
+    private void indent() throws IOException {
+        formatter.indent();
+    }
 
-	private void displayEvent(int eventType, XMLStreamReader reader) throws Exception {
+    private void displayEvent(int eventType, XMLStreamReader reader) throws Exception {
 
         switch (eventType) {
             case START_ELEMENT -> {
@@ -119,9 +119,8 @@ public class XMLBeautifier {
                 }
 
                 charContent = containsNonWhitespaceCharacters(reader.getText());
-                if (true) { // !
-                    formatter.writeText(reader.getText());
-                }
+
+                formatter.writeText(reader.getText()); // TODO check format with <foo> \t\n<bar>
             }
             case COMMENT -> {
                 indent();
@@ -147,57 +146,57 @@ public class XMLBeautifier {
             default -> {
             }
         }
-	}
+    }
 
-	private void writeStartDocument(XMLStreamReader reader) throws IOException {
-		indent();
-		formatter.writeVersionAndEncoding(reader.getVersion(), reader.getEncoding());
-	}
+    private void writeStartDocument(XMLStreamReader reader) throws IOException {
+        indent();
+        formatter.writeVersionAndEncoding(reader.getVersion(), reader.getEncoding());
+    }
 
-	private boolean containsNonWhitespaceCharacters(String s) {
-		for (int i = 0; i < s.length(); i++) {
-			char c = s.charAt(i);
-			if (c != 10 && c != 13 && c != 32 && c != 9) {
-				return true;
-			}
-		}
-		return false;
-	}
+    private boolean containsNonWhitespaceCharacters(String s) {
+        for (int i = 0; i < s.length(); i++) {
+            char c = s.charAt(i);
+            if (c != 10 && c != 13 && c != 32 && c != 9) {
+                return true;
+            }
+        }
+        return false;
+    }
 
-	private void writeAtributes(XMLStreamReader parser, int indent) throws IOException {
-		formatter.incrementIndentBy(indent);
-		for (int i = 0; i < parser.getAttributeCount(); i++) {
-			if (parser.getNamespaceCount() > 0 || i != 0) {
-				formatter.printNewLine();
-				formatter.indent();
-			}
+    private void writeAtributes(XMLStreamReader parser, int indent) throws IOException {
+        formatter.incrementIndentBy(indent);
+        for (int i = 0; i < parser.getAttributeCount(); i++) {
+            if (parser.getNamespaceCount() > 0 || i != 0) {
+                formatter.printNewLine();
+                formatter.indent();
+            }
 
-			formatter.writeText(" ");
-			formatter.writeAttribute(parser.getAttributePrefix(i), parser.getAttributeLocalName(i), parser.getAttributeValue(i));
-		}
-		formatter.decrementIndentBy(indent);
-	}
+            formatter.writeText(" ");
+            formatter.writeAttribute(parser.getAttributePrefix(i), parser.getAttributeLocalName(i), parser.getAttributeValue(i));
+        }
+        formatter.decrementIndentBy(indent);
+    }
 
-	private void writeComment(XMLStreamReader reader) throws IOException {
-		formatter.writeComment(reader.getText());
-	}
+    private void writeComment(XMLStreamReader reader) throws IOException {
+        formatter.writeComment(reader.getText());
+    }
 
-	private void writeNamespaceAttributes(XMLStreamReader reader, int indent) throws IOException {
-		formatter.incrementIndentBy(indent);
-		for (int j = 0; j < reader.getNamespaceCount(); j++) {
-			if (j != 0) {
-				formatter.printNewLine();
-				formatter.indent();
-			}
-			formatter.writeNamespaceAttribute(reader.getNamespacePrefix(j), reader.getNamespaceURI(j));
-		}
-		formatter.decrementIndentBy(indent);
-	}
+    private void writeNamespaceAttributes(XMLStreamReader reader, int indent) throws IOException {
+        formatter.incrementIndentBy(indent);
+        for (int j = 0; j < reader.getNamespaceCount(); j++) {
+            if (j != 0) {
+                formatter.printNewLine();
+                formatter.indent();
+            }
+            formatter.writeNamespaceAttribute(reader.getNamespacePrefix(j), reader.getNamespaceURI(j));
+        }
+        formatter.decrementIndentBy(indent);
+    }
 
-	private void printNewLine(boolean endElement) throws IOException {
-		endCalled = endElement;
-		formatter.printNewLine();
-	}
+    private void printNewLine(boolean endElement) throws IOException {
+        endCalled = endElement;
+        formatter.printNewLine();
+    }
 
     public String getDetectedEncoding() {
         return detectedEncoding;

@@ -54,7 +54,7 @@ public class XML2HTTP {
 
 				XMLEventReader parser;
 				synchronized(xmlInputFactory) {
-					parser = xmlInputFactory.createXMLEventReader(message.getBodyAsStreamDecoded(), message.getCharset());
+					parser = getXmlEventReader(message);
 				}
 
 				/* States:
@@ -137,6 +137,16 @@ public class XML2HTTP {
 				log.error("", e);
 			}
         }
+	}
+
+	private static XMLEventReader getXmlEventReader(Message message) throws XMLStreamException {
+		XMLEventReader parser;
+		if (message.getCharset() != null) {
+			parser = xmlInputFactory.createXMLEventReader(message.getBodyAsStreamDecoded(), message.getCharset());
+		} else {
+			parser = xmlInputFactory.createXMLEventReader(message.getBodyAsStream());
+		}
+		return parser;
 	}
 
 	private static String slurpCharacterData(XMLEventReader parser, StartElement sevent) throws XMLStreamException, XML2HTTPException {

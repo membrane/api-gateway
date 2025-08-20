@@ -51,7 +51,7 @@ public class RelocatorTest {
 	}
 
 	@NotNull
-	private InputStream getFile(String filename) throws IOException {
+	private InputStream getFile(String filename) {
 		return this.getClass().getResourceAsStream(filename);
 	}
 }

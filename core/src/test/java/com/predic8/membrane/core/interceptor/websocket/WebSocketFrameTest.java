@@ -37,7 +37,7 @@ class WebSocketFrameTest {
             int counter = 0;
 
             @Override
-            public int read() throws IOException {
+            public int read() {
                 int my = counter++ % frame.length;
                 if(counter == frame.length)
                     counter = 0;

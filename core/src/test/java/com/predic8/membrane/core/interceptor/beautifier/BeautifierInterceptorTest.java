@@ -138,9 +138,6 @@ class BeautifierInterceptorTest {
         }
 
         private void checkForFile(String file, Charset expectedCharset, String contentTypeCharset) throws Exception {
-
-            getContentType(contentTypeCharset);
-
             Exchange exc = post("/foo")
                     .contentType(getContentType(contentTypeCharset))
                     .body(getClass().getResourceAsStream(file))
@@ -151,8 +148,6 @@ class BeautifierInterceptorTest {
             String text = new String(exc.getRequest().getBodyAsStream().readAllBytes(), expectedCharset);
 
             assertChars(text );
-
-            System.out.println(text);
         }
 
         private static String getContentType(String contentTypeCharset) {

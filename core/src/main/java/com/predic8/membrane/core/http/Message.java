@@ -221,10 +221,6 @@ public abstract class Message {
 		released = true;
 	}
 
-	public boolean hasMsgReleased() {
-		return released;
-	}
-
 	public void setHeader(Header srcHeader) {
 		header = srcHeader;
 	}

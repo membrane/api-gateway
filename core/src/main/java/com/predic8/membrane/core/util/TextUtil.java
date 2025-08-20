@@ -62,17 +62,6 @@ public class TextUtil {
 		return formatXML(reader, false);
 	}
 
-	public static String formalXML(InputStream inputStream) throws Exception {
-		try(InputStream is = inputStream) {
-			StringWriter out = new StringWriter(STRING_BUFFER_INITIAL_CAPACITY_FOR_XML);
-            new XMLBeautifier(new StandardXMLBeautifierFormatter(out, 4)).parse(is);
-			return out.toString();
-		} catch (XMLStreamException e) {
-			log.info("Error parsing XML: {}", e.getMessage());
-			throw e;
-		}
-	}
-
 	/**
 	 * As HTML is needed for the AdminConsole
 	 * @param reader XML
@@ -87,6 +76,17 @@ public class TextUtil {
 			return out.toString();
 		}
 		catch (Exception e){
+			log.info("Error parsing XML: {}", e.getMessage());
+			throw e;
+		}
+	}
+
+	public static String formatXML(InputStream inputStream, boolean asHTML) throws Exception {
+		try(InputStream is = inputStream) {
+			StringWriter out = new StringWriter(STRING_BUFFER_INITIAL_CAPACITY_FOR_XML);
+			new XMLBeautifier(getXmlBeautifierFormatter(asHTML, out)).parse(is);
+			return out.toString();
+		} catch (XMLStreamException e) {
 			log.info("Error parsing XML: {}", e.getMessage());
 			throw e;
 		}

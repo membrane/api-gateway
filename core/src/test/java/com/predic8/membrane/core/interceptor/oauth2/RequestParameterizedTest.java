@@ -77,7 +77,7 @@ public abstract class RequestParameterizedTest {
     public static Callable<Object> replaceValueFromRequestUri(final String value, final String replacement){
         return new Callable<>() {
             @Override
-            public Object call() throws Exception {
+            public Object call() {
                 exc.getRequest().setUri(exc.getRequest().getUri().replaceFirst(Pattern.quote(value), replacement));
                 return this;
             }
@@ -87,7 +87,7 @@ public abstract class RequestParameterizedTest {
     public static Callable<Object> replaceValueFromRequestBody(final String value, final String replacement){
         return new Callable<>() {
             @Override
-            public Object call() throws Exception {
+            public Object call() {
                 exc.getRequest().setBodyContent(exc.getRequest().getBodyAsStringDecoded().replaceFirst(Pattern.quote(value), replacement).getBytes());
                 return this;
             }

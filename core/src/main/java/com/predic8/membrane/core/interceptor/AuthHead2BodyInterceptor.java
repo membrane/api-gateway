@@ -14,22 +14,20 @@
 
 package com.predic8.membrane.core.interceptor;
 
-import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.exchange.AbstractExchange;
-import com.predic8.membrane.core.http.Body;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
-import org.xml.sax.InputSource;
+import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.*;
+import org.w3c.dom.*;
+import org.xml.sax.*;
 
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.transform.Transformer;
-import javax.xml.transform.TransformerFactory;
-import javax.xml.transform.dom.DOMSource;
-import javax.xml.transform.stream.StreamResult;
-import java.io.InputStream;
-import java.io.StringWriter;
+import javax.xml.parsers.*;
+import javax.xml.transform.*;
+import javax.xml.transform.dom.*;
+import javax.xml.transform.stream.*;
+import java.io.*;
+import java.util.*;
+
+import static java.nio.charset.StandardCharsets.*;
 
 @MCElement(name="authHead2Body")
 public class AuthHead2BodyInterceptor extends AbstractInterceptor {
@@ -47,7 +45,7 @@ public class AuthHead2BodyInterceptor extends AbstractInterceptor {
 		nor.appendChild(getPassword(doc, header));
 
 		header.getParentNode().removeChild(header);
-		exchange.getRequest().setBody(new Body(DOM2String(doc).getBytes(exchange.getRequest().getCharset())));
+		exchange.getRequest().setBody(new Body(DOM2String(doc).getBytes(Objects.requireNonNullElseGet(exchange.getRequest().getCharset(), UTF_8::name))));
 		return Outcome.CONTINUE;
 	}
 
@@ -79,7 +77,8 @@ public class AuthHead2BodyInterceptor extends AbstractInterceptor {
 		DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
 		dbf.setNamespaceAware(true);
 		InputSource is = new InputSource(xmlDocument);
-		is.setEncoding(encoding);
+		if (encoding != null)
+			is.setEncoding(encoding);
 		return dbf.newDocumentBuilder().parse(is);
 	}
 

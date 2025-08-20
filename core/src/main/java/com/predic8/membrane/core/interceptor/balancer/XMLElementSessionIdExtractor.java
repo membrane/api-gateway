@@ -13,110 +13,114 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.balancer;
 
+import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.http.*;
+import org.jetbrains.annotations.*;
+import org.slf4j.*;
+
 import javax.xml.stream.*;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import com.predic8.membrane.annot.Required;
-
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.FixedStreamReader;
-import com.predic8.membrane.core.http.Message;
 
 /**
  * @description Extracts a session ID from an XML HTTP request body based on the qualified name of an XML element.
  */
-@MCElement(name="xmlSessionIdExtractor")
+@MCElement(name = "xmlSessionIdExtractor")
 public class XMLElementSessionIdExtractor extends AbstractSessionIdExtractor {
 
-	private static final Logger log = LoggerFactory.getLogger(XMLElementSessionIdExtractor.class.getName());
+    private static final Logger log = LoggerFactory.getLogger(XMLElementSessionIdExtractor.class.getName());
 
-	private String localName;
-	private String namespace;
-	private final XMLInputFactory fac = XMLInputFactory.newInstance();
+    private String localName;
+    private String namespace;
+    private final XMLInputFactory fac = XMLInputFactory.newInstance();
 
-	@Override
-	public String getSessionId(Message msg) throws Exception {
-		if ( !msg.isXML() ) {
-			log.debug("Didn't search a XML element in none XML message.");
-			return null;
-		}
+    @Override
+    public String getSessionId(Message msg) throws Exception {
+        if (!msg.isXML()) {
+            log.debug("Didn't search a XML element in none XML message.");
+            return null;
+        }
 
-		log.debug("searching for sessionid");
+        log.debug("searching for sessionid");
 
-		fac.setProperty("javax.xml.stream.isNamespaceAware", namespace != null);
-		XMLStreamReader reader = new FixedStreamReader(fac.createXMLStreamReader(msg.getBodyAsStreamDecoded(), msg.getCharset()));
-		while ( reader.hasNext() ) {
-			reader.next();
-			if (isSessionIdElement(reader)) {
-				log.debug("sessionid element found");
-				return reader.getElementText();
-			}
+        fac.setProperty("javax.xml.stream.isNamespaceAware", namespace != null);
+        XMLStreamReader reader = getXmlStreamReader(msg);
+        while (reader.hasNext()) {
+            reader.next();
+            if (isSessionIdElement(reader)) {
+                log.debug("sessionid element found");
+                return reader.getElementText();
+            }
 
-		}
+        }
 
-		log.debug("no sessionid element found");
-		return null;
-	}
+        log.debug("no sessionid element found");
+        return null;
+    }
 
-	private boolean isSessionIdElement(XMLStreamReader reader) {
-		return reader.isStartElement() &&
-				localName.equals(reader.getLocalName()) &&
-				(namespace == null || namespace.equals(reader.getNamespaceURI()));
-	}
+    private @NotNull XMLStreamReader getXmlStreamReader(Message msg) throws XMLStreamException {
+        if (msg.getCharset() != null) {
+            return new FixedStreamReader(fac.createXMLStreamReader(msg.getBodyAsStreamDecoded(), msg.getCharset()));
+        }
+        return new FixedStreamReader(fac.createXMLStreamReader(msg.getBodyAsStream()));
+    }
 
-	public String getLocalName() {
-		return localName;
-	}
+    private boolean isSessionIdElement(XMLStreamReader reader) {
+        return reader.isStartElement() &&
+               localName.equals(reader.getLocalName()) &&
+               (namespace == null || namespace.equals(reader.getNamespaceURI()));
+    }
 
-	/**
-	 * @description Specifies local name of session element.
-	 * @example session
-	 */
-	@Required
-	@MCAttribute
-	public void setLocalName(String localName) {
-		this.localName = localName;
-	}
+    public String getLocalName() {
+        return localName;
+    }
 
-	public String getNamespace() {
-		return namespace;
-	}
+    /**
+     * @description Specifies local name of session element.
+     * @example session
+     */
+    @Required
+    @MCAttribute
+    public void setLocalName(String localName) {
+        this.localName = localName;
+    }
 
-	/**
+    public String getNamespace() {
+        return namespace;
+    }
+
+    /**
      * @description Specifies namespace of session element.
      * @example <a href="http://chat.predic8.com/">http://chat.predic8.com/</a>
      */
-	@Required
-	@MCAttribute
-	public void setNamespace(String namespace) {
-		this.namespace = namespace;
-	}
+    @Required
+    @MCAttribute
+    public void setNamespace(String namespace) {
+        this.namespace = namespace;
+    }
 
-	@Override
-	public void write(XMLStreamWriter out)
-			throws XMLStreamException {
+    @Override
+    public void write(XMLStreamWriter out)
+            throws XMLStreamException {
 
-		out.writeStartElement("xmlSessionIdExtractor");
+        out.writeStartElement("xmlSessionIdExtractor");
 
-		out.writeAttribute("localName", localName);
-		out.writeAttribute("namespace", namespace);
+        out.writeAttribute("localName", localName);
+        out.writeAttribute("namespace", namespace);
 
-		out.writeEndElement();
-	}
+        out.writeEndElement();
+    }
 
-	@Override
-	protected void parseAttributes(XMLStreamReader token)
-			throws XMLStreamException {
-		localName = token.getAttributeValue("", "localName");
-		namespace = token.getAttributeValue("", "namespace");
-	}
+    @Override
+    protected void parseAttributes(XMLStreamReader token)
+            throws XMLStreamException {
+        localName = token.getAttributeValue("", "localName");
+        namespace = token.getAttributeValue("", "namespace");
+    }
 
-	@Override
-	protected String getElementName() {
-		return "sessionIdExtractor";
-	}
+    @Override
+    protected String getElementName() {
+        return "sessionIdExtractor";
+    }
 
 
 }

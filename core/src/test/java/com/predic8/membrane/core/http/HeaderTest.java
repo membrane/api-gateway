@@ -79,7 +79,7 @@ class HeaderTest {
     void getCharsetNull() {
         Header header = new Header();
         header.setContentType(TEXT_XML);
-        assertEquals(null, header.getCharset());
+        assertNull(header.getCharset());
     }
 
     @Test
@@ -91,7 +91,7 @@ class HeaderTest {
 
     @Test
     void getCharsetCTNull() {
-        assertEquals(null, new Header().getCharset());
+        assertNull(new Header().getCharset());
     }
 
     @Test

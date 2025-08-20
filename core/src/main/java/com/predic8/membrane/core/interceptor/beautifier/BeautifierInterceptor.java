@@ -24,7 +24,6 @@ import org.slf4j.*;
 
 import java.io.*;
 import java.nio.charset.*;
-import java.util.*;
 
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static java.nio.charset.StandardCharsets.*;
@@ -62,11 +61,7 @@ public class BeautifierInterceptor extends AbstractInterceptor {
         }
 
         try {
-
-            Prettifier prettifier = getPrettifier(msg);
-
-            Charset charset = getCharset(msg, prettifier);
-            msg.setBodyContent(prettifier.prettify(msg.getBody().getRaw(), charset));
+            msg.setBodyContent(getPrettifier(msg).prettify(msg.getBody().getRaw(), getCharset(msg, getPrettifier(msg))));
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -82,10 +77,6 @@ public class BeautifierInterceptor extends AbstractInterceptor {
             return null;
         }
         return UTF_8;
-    }
-
-    private static @NotNull Charset getEncoding(Message msg) {
-        return Charset.forName(Objects.requireNonNullElseGet(msg.getCharset(), () -> UTF_8.name()));
     }
 
     private static Prettifier getPrettifier(Message msg) {

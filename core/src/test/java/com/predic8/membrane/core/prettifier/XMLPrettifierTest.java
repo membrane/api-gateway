@@ -22,8 +22,6 @@ import static java.nio.charset.StandardCharsets.*;
 
 class XMLPrettifierTest extends AbstractPrettifierTest {
 
-    private static final String REF_CONTENT = "äöüÄÖÜßéèê";
-
     @BeforeEach
     void setUp() {
         prettifier = new XMLPrettifier();

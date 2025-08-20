@@ -25,13 +25,13 @@ import org.slf4j.*;
 import javax.xml.namespace.*;
 import java.io.*;
 import java.net.*;
-import java.util.*;
 
 import static com.predic8.membrane.core.Constants.*;
-import static com.predic8.membrane.core.http.Header.HOST;
+import static com.predic8.membrane.core.http.Header.*;
 import static com.predic8.membrane.core.http.Request.*;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.*;
 import static java.nio.charset.StandardCharsets.*;
+import static java.util.Objects.*;
 
 /**
  * @description <p>The <i>wsdlRewriter</i> rewrites endpoint addresses of services and XML Schema locations in WSDL documents.</p>
@@ -76,9 +76,7 @@ public class WSDLInterceptor extends RelocatingInterceptor {
     }
 
     private @NotNull Relocator getRelocator(Exchange exc, OutputStream stream) throws Exception {
-        Relocator relocator = new Relocator(new OutputStreamWriter(stream,
-                Objects.requireNonNullElseGet(exc.getResponse().getCharset(),() -> UTF_8.name())), getLocationProtocol(), getLocationHost(exc),
-                getLocationPort(exc), exc.getHandler().getContextPath(exc), pathRewriter);
+        Relocator relocator = createRelocator(exc, stream);
 
         if (rewriteEndpoint) {
             relocator.getRelocatingAttributes().put(WSDL11_ADDRESS_SOAP11, LOCATION);
@@ -91,11 +89,17 @@ public class WSDLInterceptor extends RelocatingInterceptor {
         return relocator;
     }
 
+    private @NotNull Relocator createRelocator(Exchange exc, OutputStream stream) throws Exception {
+        return new Relocator(new OutputStreamWriter(stream,
+                requireNonNullElseGet(exc.getResponse().getCharset(), UTF_8::name)), getLocationProtocol(), getLocationHost(exc),
+                getLocationPort(exc), exc.getHandler().getContextPath(exc), pathRewriter);
+    }
+
     private void registerWSDL(Exchange exc) {
         if (registryWSDLRegisterURL == null)
             return;
 
-        StringBuilder buf = new StringBuilder();
+        StringBuilder buf = new StringBuilder(2000);
         buf.append(registryWSDLRegisterURL);
         buf.append("?wsdl=");
 

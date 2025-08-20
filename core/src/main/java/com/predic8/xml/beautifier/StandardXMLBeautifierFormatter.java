@@ -26,7 +26,7 @@ public class StandardXMLBeautifierFormatter extends AbstractXMLBeautyfierFormatt
 		if (localName == null) {
 			return;
 		}
-		if (prefix != null && !"".equals(prefix)) {
+		if (prefix != null && !prefix.isEmpty()) {
 			writer.write(prefix + ":" + localName);
 		} else {
 			writer.write(localName);

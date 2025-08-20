@@ -32,7 +32,7 @@ public class XMLEncodingTestUtil {
                     boolean m = actual.contains(expected);
                     if (m)
                         return true;
-                    System.err.println("%s\n does not match expectd %s".formatted(actual, expected));
+                    System.err.printf("%s\n does not match expectd %s\n",actual, expected);
                     return false;
                 }));
     }

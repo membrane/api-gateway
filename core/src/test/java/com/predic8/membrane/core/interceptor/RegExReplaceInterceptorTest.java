@@ -38,7 +38,7 @@ class RegExReplaceInterceptorTest {
 	}
 
 	@Test
-	void handleRequest() throws Exception {
+	void handleRequest() {
 		Exchange exc = new Request.Builder().contentType(TEXT_PLAIN).body("foo bar baz").buildExchange();
 		interceptor.handleRequest(exc);
 		assertEquals("foo boo boo",exc.getRequest().getBodyAsStringDecoded());
@@ -67,7 +67,7 @@ class RegExReplaceInterceptorTest {
 
 		exc = new Request.Builder().body(example).header("Content-Type","application/octet-stream").buildExchange();
 		regexp.handleRequest(exc);
-		assertEquals(exc.getRequest().getBodyAsStringDecoded(), example);
+		assertEquals( example,exc.getRequest().getBodyAsStringDecoded());
 	}
 
 }

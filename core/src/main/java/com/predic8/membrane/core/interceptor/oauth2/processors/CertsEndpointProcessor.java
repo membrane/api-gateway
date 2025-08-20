@@ -18,7 +18,6 @@ import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.interceptor.oauth2.*;
 import com.predic8.membrane.core.prettifier.*;
 import org.jetbrains.annotations.*;
-import org.slf4j.*;
 
 import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.http.Response.*;
@@ -26,8 +25,6 @@ import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static java.nio.charset.StandardCharsets.*;
 
 public class CertsEndpointProcessor extends EndpointProcessor {
-
-    private static final Logger log = LoggerFactory.getLogger(CertsEndpointProcessor.class);
 
     private final JSONPrettifier prettifier = new JSONPrettifier();
 

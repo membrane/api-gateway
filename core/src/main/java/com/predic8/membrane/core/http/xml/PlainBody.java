@@ -13,12 +13,14 @@
    limitations under the License. */
 package com.predic8.membrane.core.http.xml;
 
-import javax.xml.stream.XMLStreamException;
-import javax.xml.stream.XMLStreamWriter;
-
-import com.predic8.membrane.core.config.AbstractXmlElement;
-import com.predic8.membrane.core.http.AbstractBody;
+import com.predic8.membrane.core.config.*;
 import com.predic8.membrane.core.http.Message;
+import com.predic8.membrane.core.http.*;
+
+import javax.xml.stream.*;
+
+import static java.nio.charset.StandardCharsets.*;
+import static java.util.Objects.*;
 
 public class PlainBody extends AbstractXmlElement {
 
@@ -26,7 +28,7 @@ public class PlainBody extends AbstractXmlElement {
 	private final AbstractBody body;
 
 	public PlainBody(Message msg) {
-		charset = msg.getCharset();
+		charset = requireNonNullElseGet( msg.getCharset(), UTF_8::name );
 		body = msg.getBody();
 	}
 
