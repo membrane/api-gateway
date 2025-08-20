@@ -53,7 +53,7 @@ class RouterTest {
         .then()
             .log().ifValidationFails()
             .statusCode(500)
-            .contentType(APPLICATION_PROBLEM_JSON)
+            .contentType( containsString(APPLICATION_PROBLEM_JSON))
             .body("title", equalTo("Internal server error."))
             .body("type",equalTo("https://membrane-api.io/problems/internal"))
             .body("message", Matchers.not(containsString(INTERNAL_SECRET)))
@@ -70,7 +70,7 @@ class RouterTest {
         .then()
             .log().ifValidationFails(ALL)
             .statusCode(500)
-            .contentType(APPLICATION_XML)
+            .contentType(containsString(APPLICATION_XML))
             .body("error.title", equalTo("Internal server error."))
             .body("error.type",equalTo("https://membrane-api.io/problems/internal"))
             .body("error.message", Matchers.not(containsString(INTERNAL_SECRET)));
@@ -84,11 +84,12 @@ class RouterTest {
             .get("http://localhost:2001/")
         .then()
             .statusCode(500)
-            .contentType(APPLICATION_PROBLEM_JSON)
+            .contentType(containsString(APPLICATION_PROBLEM_JSON))
             .body("title", equalTo("Internal server error."))
             .body("type",equalTo("https://membrane-api.io/problems/internal"))
             .body("$",hasKey("attention"))
-            .body("attention", Matchers.containsString("development mode"))
+            .body("attention", containsString("development mode"))
+            .body("$",hasKey("message"))
             .body("$",not(hasKey("stacktrace")));
         // @formatter:on
     }
@@ -102,11 +103,11 @@ class RouterTest {
             .then()
                 .log().ifValidationFails(ALL)
                 .statusCode(500)
-                .contentType(APPLICATION_XML)
+                .contentType(containsString(APPLICATION_XML))
                 .body("problem-details.title", equalTo("Internal server error."))
                 .body("problem-details.type",equalTo("https://membrane-api.io/problems/internal"))
-                .body("problem-details.attention", Matchers.containsString("development mode"))
-                .body("problem-details.message", Matchers.containsString("supersecret"))
+                .body("problem-details.attention", containsString("development mode"))
+                .body("problem-details.message", containsString("supersecret"))
                 .body("problem-details.stacktrace", Matchers.not(containsString("HttpServerHandler")));
         // @formatter:on
     }

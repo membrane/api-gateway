@@ -20,9 +20,12 @@ import static com.predic8.membrane.core.prettifier.TextPrettifier.*;
 import static java.nio.charset.StandardCharsets.*;
 import static org.junit.jupiter.api.Assertions.*;
 
-class TextPrettifierTest {
+class TextPrettifierTest extends AbstractPrettifierTest {
 
-    TextPrettifier tp = new TextPrettifier();
+    @BeforeEach
+    void setUp() {
+        prettifier = new TextPrettifier();
+    }
 
     @Test
     void singleLineNoNewline() {
@@ -96,7 +99,26 @@ class TextPrettifierTest {
         assertPretty("a\nb", "a \nb\t \t");
     }
 
-    private void assertPretty(String exp, String actual) throws Exception {
-        assertEquals(exp,  new String(tp.prettify(actual.getBytes(UTF_8)), UTF_8));
+    private void assertPretty(String exp, String actual) {
+        assertEquals(exp,  new String(prettifier.prettify(actual.getBytes(UTF_8)), UTF_8));
+    }
+
+    @Nested
+    class Encoding {
+
+        @Test
+        void iso88591() throws Exception {
+            assertEquals(REF_CONTENT, makePretty("/charsets/iso-8859-1.txt", ISO_8859_1));
+        }
+
+        @Test
+        void utf8() throws Exception {
+            assertEquals(REF_CONTENT, makePretty("/charsets/utf-8.txt", UTF_8));
+        }
+
+        @Test
+        void utf16() throws Exception {
+            assertEquals(REF_CONTENT, makePretty("/charsets/utf-16.txt", UTF_16));
+        }
     }
 }

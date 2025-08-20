@@ -13,7 +13,6 @@
    limitations under the License. */
 package com.predic8.membrane.core.ws.relocator;
 
-import com.predic8.membrane.core.util.*;
 import org.apache.commons.io.output.ByteArrayOutputStream;
 import org.jetbrains.annotations.*;
 import org.junit.jupiter.api.*;
@@ -21,7 +20,6 @@ import org.junit.jupiter.api.*;
 import java.io.*;
 
 import static java.nio.charset.StandardCharsets.*;
-import static java.util.Objects.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class RelocatorTest {
@@ -40,27 +38,20 @@ public class RelocatorTest {
 	}
 
 	@Test
-	public void testWSDLRelocate() throws Exception {
+	void wsdl() throws Exception {
 		relocator.relocate(getFile("/blz-service.wsdl"));
 		assertTrue(relocator.isWsdlFound());
 		System.out.println("os.toString(UTF_8) = " + os.toString(UTF_8));
 	}
 
 	@Test
-	public void testXMLRelocate() throws Exception {
+	void xml() throws Exception {
 		relocator.relocate(getFile("/acl/acl.xml"));
 		assertFalse(relocator.isWsdlFound());
 	}
 
 	@NotNull
-	private byte[] getFileAsBytes(String name) throws IOException {
-		return ByteUtil.getByteArrayData(requireNonNull(this.getClass()
-				.getResourceAsStream(name)));
-	}
-
-	@NotNull
-	private InputStreamReader getFile(String filename) throws IOException {
-		return new InputStreamReader(new ByteArrayInputStream(
-				getFileAsBytes(filename)), UTF_8);
+	private InputStream getFile(String filename) throws IOException {
+		return this.getClass().getResourceAsStream(filename);
 	}
 }

@@ -16,8 +16,6 @@ package com.predic8.membrane.core.prettifier;
 
 import org.junit.jupiter.api.*;
 
-import java.io.*;
-
 import static java.nio.charset.StandardCharsets.*;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -35,8 +33,8 @@ class JSONPrettifierTest {
     }
 
     @Test
-    void beautifySimple() throws IOException {
-        String beautified = new String(beautifier.prettify(s), UTF_8);
+    void beautifySimple() {
+        String beautified = new String(beautifier.prettify(s, UTF_8), UTF_8);
 
         assertTrue(beautified.contains("\"foo\""));
         assertTrue(beautified.contains("\"bar\""));
@@ -47,10 +45,130 @@ class JSONPrettifierTest {
     }
 
     @Test
-    void alreadyPrettyPrintedJson_isIdempotent() throws Exception {
+    void alreadyPrettyPrintedJson_isIdempotent() {
         byte[] pretty1 = beautifier.prettify(s);
         byte[] pretty2 = beautifier.prettify(pretty1);
 
         assertArrayEquals(pretty1, pretty2);
+    }
+
+    @Nested
+    class JSON5Features {
+
+        @Nested
+        class Comments {
+            @Test
+            void lineAndBlockCommentsAreIgnored() {
+                byte[] withComments = """
+                    {
+                      // line comment
+                      foo: 1, /* block
+                                comment */
+                      bar: /* inline */ 2
+                    }
+                    """.getBytes(UTF_8);
+
+                String beautified = new String(beautifier.prettify(withComments), UTF_8);
+
+                assertTrue(beautified.contains("\"foo\""));
+                assertTrue(beautified.contains("\"bar\""));
+                // Pretty output should not contain comment markers
+                assertFalse(beautified.contains("//"));
+                assertFalse(beautified.contains("/*"));
+            }
+        }
+
+        @Nested
+        class TrailingCommas {
+            @Test
+            void objectWithTrailingComma() {
+                byte[] objWithTrailingComma = """
+                    { "a": 1, "b": 2, }
+                    """.getBytes(UTF_8);
+
+                String beautified = new String(beautifier.prettify(objWithTrailingComma), UTF_8);
+
+                assertTrue(beautified.contains("\"a\""));
+                assertTrue(beautified.contains("\"b\""));
+            }
+
+            @Test
+            void arrayWithTrailingComma() {
+                byte[] arrWithTrailingComma = """
+                    { "nums": [1,2,3,] }
+                    """.getBytes(UTF_8);
+
+                String beautified = new String(beautifier.prettify(arrWithTrailingComma), UTF_8);
+
+                assertTrue(beautified.contains("\"nums\""));
+                assertTrue(beautified.contains("[ 1, 2, 3 ]") || beautified.contains("[1, 2, 3]"));
+            }
+        }
+
+        @Nested
+        class SingleQuotes {
+            @Test
+            void singleQuotedStrings() {
+                byte[] singleQuoted = """
+                    { 'name': 'Alice', 'city': 'Berlin' }
+                    """.getBytes(UTF_8);
+
+                String beautified = new String(beautifier.prettify(singleQuoted), UTF_8);
+
+                // Jackson normalizes to double quotes
+                assertTrue(beautified.contains("\"name\""));
+                assertTrue(beautified.contains("\"Alice\""));
+                assertTrue(beautified.contains("\"city\""));
+                assertTrue(beautified.contains("\"Berlin\""));
+            }
+        }
+
+        @Nested
+        class UnquotedFieldNames {
+            @Test
+            void simpleIdentifiersWithoutQuotes() {
+                byte[] unquoted = """
+                    { foo: 1, bar_baz: 2 }
+                    """.getBytes(UTF_8);
+
+                String beautified = new String(beautifier.prettify(unquoted), UTF_8);
+
+                // Keys should be quoted in the output
+                assertTrue(beautified.contains("\"foo\""));
+                assertTrue(beautified.contains("\"bar_baz\""));
+            }
+        }
+
+        @Nested
+        class Combination {
+            @Test
+            void allFeaturesTogether() {
+                byte[] combo = """
+                    {
+                      // comment
+                      foo: 'x',
+                      'bar':  [1, 2, 3,], /* block comment */
+                      baz: { a: 1, b: 2, },
+                    }
+                    """.getBytes(UTF_8);
+
+                byte[] pretty = beautifier.prettify(combo);
+                String beautified = new String(pretty, UTF_8);
+
+                // Structure preserved, normalized JSON produced
+                assertTrue(beautified.contains("\"foo\""));
+                assertTrue(beautified.contains("\"bar\""));
+                assertTrue(beautified.contains("\"baz\""));
+                assertTrue(beautified.contains("\"a\""));
+                assertTrue(beautified.contains("\"b\""));
+
+                // No comments in output
+                assertFalse(beautified.contains("//"));
+                assertFalse(beautified.contains("/*"));
+
+                // Idempotent even with JSON5 inputs
+                assertArrayEquals(pretty, beautifier.prettify(pretty));
+            }
+        }
     }
 }

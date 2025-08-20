@@ -27,7 +27,7 @@ import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.util.URLParamUtil.DuplicateKeyOrInvalidFormStrategy.*;
 import static java.net.URLDecoder.*;
 import static java.nio.charset.StandardCharsets.*;
-import static java.util.Collections.emptyMap;
+import static java.util.Collections.*;
 
 public class URLParamUtil {
 
@@ -54,7 +54,7 @@ public class URLParamUtil {
 		if (q == null) {
 			if (hasNoFormParams(exc))
 				return emptyMap();
-			q = new String(exc.getRequest().getBody().getContent(), exc.getRequest().getCharset());
+			q = exc.getRequest().getBodyAsStringDecoded();
 		}
 
 		return parseQueryString(q, duplicateKeyOrInvalidFormStrategy);

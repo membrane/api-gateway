@@ -65,16 +65,6 @@ public class TemplateInterceptor extends AbstractTemplateInterceptor {
     protected Outcome handleInternal(Exchange exc, Flow flow) {
         try {
             process(exc, flow);
-        } catch (TemplateExecutionException e) {
-            log.warn("Groovy template error: {}", e.getMessage());
-            gateway(router.isProduction(), getDisplayName())
-                    .addSubSee("template")
-                    .detail("Error during template rendering.")
-                    .internal("line", e.getLineNumber())
-                    .exception(e)
-                    .stacktrace(false)
-                    .buildAndSetResponse(exc);
-            return ABORT;
         } catch (GroovyRuntimeException e) {
             log.warn("Groovy error executing template: {}", e.getMessage());
             internal(router.isProduction(), getDisplayName())

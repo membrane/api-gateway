@@ -20,8 +20,6 @@ import com.fasterxml.jackson.databind.*;
 
 import java.io.*;
 
-import static java.nio.charset.StandardCharsets.*;
-
 public class StringBody implements Body {
 
     private final String payload;
@@ -41,6 +39,6 @@ public class StringBody implements Body {
 
     @Override
     public JsonNode getJson() throws IOException {
-        return om.readValue(payload.getBytes(UTF_8), JsonNode.class);
+        return om.readValue(payload, JsonNode.class);
     }
 }

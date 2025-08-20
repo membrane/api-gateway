@@ -97,7 +97,7 @@ public abstract class AbstractTemplateInterceptor extends AbstractInterceptor {
      * @param exchange
      * @param flow
      */
-    protected final void process(Exchange exchange, Flow flow) throws Exception {
+    protected final void process(Exchange exchange, Flow flow) {
         Message msg = exchange.getMessage(flow);
         msg.setBodyContent(prettify(getContent(exchange,flow)));
         msg.getHeader().setContentType(contentType);
@@ -105,7 +105,7 @@ public abstract class AbstractTemplateInterceptor extends AbstractInterceptor {
 
     protected byte[] prettify(byte[] bytes) {
         try {
-            return prettifier.prettify(bytes);
+            return prettifier.prettify(bytes, charset);
         } catch (Exception e) {
             log.debug("Error beautifying {}. Error: {}",contentType, e.getMessage());
             log.trace("Content: {}", truncateAfter(new String(bytes,charset), 100), e);

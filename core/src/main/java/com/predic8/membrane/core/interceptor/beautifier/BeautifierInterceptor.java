@@ -14,31 +14,29 @@
 
 package com.predic8.membrane.core.interceptor.beautifier;
 
-import com.fasterxml.jackson.databind.*;
 import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.prettifier.*;
+import org.jetbrains.annotations.*;
 import org.slf4j.*;
 
 import java.io.*;
+import java.nio.charset.*;
+import java.util.*;
 
 import static com.predic8.membrane.core.interceptor.Outcome.*;
-import static com.predic8.membrane.core.util.TextUtil.*;
 import static java.nio.charset.StandardCharsets.*;
 
 /**
- * @description Beautifies request and response bodies. Supported are the Formats: JSON, XML
+ * @description Beautifies request and response bodies. Supported are the Formats: JSON, JSON5, XML, TEXT
  * @topic 2. Enterprise Integration Patterns
  */
 @MCElement(name = "beautifier")
 public class BeautifierInterceptor extends AbstractInterceptor {
 
     private static final Logger log = LoggerFactory.getLogger(BeautifierInterceptor.class);
-
-    private final ObjectWriter ow = new ObjectMapper().writerWithDefaultPrettyPrinter();
-    private final ObjectMapper om = new ObjectMapper();
-
 
     public BeautifierInterceptor() {
         name = "beautifier";
@@ -55,44 +53,47 @@ public class BeautifierInterceptor extends AbstractInterceptor {
     }
 
     private Outcome handleInternal(Message msg) {
-        if (msg.isJSON()) {
-            beautifyJSON(msg);
+        try {
+            if (msg.isBodyEmpty())
+                return CONTINUE;
+        } catch (IOException e) {
+            log.error("", e);
             return CONTINUE;
         }
-        if (msg.isXML()) {
-            beautifyXML(msg);
+
+        try {
+
+            Prettifier prettifier = getPrettifier(msg);
+
+            Charset charset = getCharset(msg, prettifier);
+            msg.setBodyContent(prettifier.prettify(msg.getBody().getRaw(), charset));
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
+
         return CONTINUE;
     }
 
-    /**
-     * If it is not possible to beautify, leave body as it is.
-     */
-    private static void beautifyXML(Message msg) {
-        try {
-            InputStreamReader reader = new InputStreamReader(msg.getBodyAsStream(), msg.getHeader().getCharset());
-            msg.setBodyContent(formatXML(reader).getBytes(UTF_8));
-        } catch (Exception e) {
-            // If it is not possible to beautify, to nothing
-            log.warn("Error parsing XML: {}", e.getMessage());
+    private static @Nullable Charset getCharset(Message msg, Prettifier prettifier) {
+        if (msg.getCharset() != null)
+            return Charset.forName(msg.getCharset());
+
+        if (prettifier instanceof XMLPrettifier) {
+            return null;
         }
+        return UTF_8;
     }
 
-    /**
-     * If it is not possible to beautify, leave body as it is.
-     */
-    private void beautifyJSON(Message msg) {
-        try {
-            JsonNode node = om.readTree(msg.getBodyAsStreamDecoded());
-            msg.setBodyContent(ow.writeValueAsBytes(node));
-        } catch (IOException e) {
-            // If it is not possible to beautify, to nothing
-            log.warn("Error parsing JSON: {}", e.getMessage());
-        }
+    private static @NotNull Charset getEncoding(Message msg) {
+        return Charset.forName(Objects.requireNonNullElseGet(msg.getCharset(), () -> UTF_8.name()));
+    }
+
+    private static Prettifier getPrettifier(Message msg) {
+        return Prettifier.getInstance(msg.getHeader().getContentType());
     }
 
     @Override
     public String getShortDescription() {
-        return "Pretty printing. Applies, if the body is JSON.";
+        return "Pretty printing of message body. Applies, if the body is JSON, XML or text.";
     }
 }

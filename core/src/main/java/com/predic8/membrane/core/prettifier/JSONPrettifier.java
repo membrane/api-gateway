@@ -15,15 +15,35 @@ limitations under the License. */
 package com.predic8.membrane.core.prettifier;
 
 import com.fasterxml.jackson.databind.*;
+import com.fasterxml.jackson.databind.json.*;
+import org.slf4j.*;
 
 import java.io.*;
+import java.nio.charset.*;
+
+import static com.fasterxml.jackson.core.json.JsonReadFeature.*;
 
 public class JSONPrettifier implements Prettifier {
 
-	private static final ObjectMapper om = new ObjectMapper();
+    private static final Logger log = LoggerFactory.getLogger(JSONPrettifier.class);
 
-	@Override
-	public byte[] prettify(byte[] content) throws IOException {
-		return om.writerWithDefaultPrettyPrinter().writeValueAsBytes(om.readTree(content));
-	}
+    private static final ObjectMapper om = JsonMapper.builder()
+            .enable(ALLOW_JAVA_COMMENTS)
+            .enable(ALLOW_TRAILING_COMMA)
+            .enable(ALLOW_SINGLE_QUOTES)
+            .enable(ALLOW_UNQUOTED_FIELD_NAMES)
+            .build();
+
+    /**
+     * Assumes UTF-8 encoding cause it is JSON
+     */
+    @Override
+    public byte[] prettify(byte[] c, Charset charset) {
+        try {
+            return om.writerWithDefaultPrettyPrinter().writeValueAsBytes(om.readTree(c));
+        } catch (IOException e) {
+            log.debug("", e);
+            return c;
+        }
+    }
 }

@@ -45,7 +45,7 @@ public class ReplaceInterceptor extends AbstractInterceptor {
     }
 
     private Outcome handleInternal(String contentType, Message msg) {
-        if(contentType.equals(APPLICATION_JSON)) {
+        if(contentType != null && contentType.equals(APPLICATION_JSON)) {
             msg.setBodyContent(replaceWithJsonPath(msg, jsonPath, with).getBytes(UTF_8));
         }
         return CONTINUE;

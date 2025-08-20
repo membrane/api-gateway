@@ -46,7 +46,7 @@ public class HTTPSchemaResolver implements SchemaResolver {
     private final int httpWatchIntervalInSeconds = 1;
     Thread httpWatcher = null;
 
-    final byte[] NO_HASH = "NO_HASH".getBytes(UTF_8);
+    private static final byte[] NO_HASH = "NO_HASH".getBytes(UTF_8);
 
     private HttpClientConfiguration httpClientConfig = new HttpClientConfiguration();
 

@@ -25,6 +25,7 @@ import org.slf4j.*;
 import javax.xml.namespace.*;
 import java.io.*;
 import java.net.*;
+import java.util.*;
 
 import static com.predic8.membrane.core.Constants.*;
 import static com.predic8.membrane.core.http.Header.HOST;
@@ -66,16 +67,17 @@ public class WSDLInterceptor extends RelocatingInterceptor {
 
         ByteArrayOutputStream stream = new ByteArrayOutputStream();
         Relocator relocator = getRelocator(exc, stream);
-        relocator.relocate(new InputStreamReader(exc.getResponse().getBodyAsStreamDecoded(), exc.getResponse().getCharset()));
+        relocator.relocate(exc.getResponse().getBodyAsStream());
         if (relocator.isWsdlFound()) {
             registerWSDL(exc);
         }
         exc.getResponse().setBodyContent(stream.toByteArray());
+        // TODO setContentType
     }
 
     private @NotNull Relocator getRelocator(Exchange exc, OutputStream stream) throws Exception {
         Relocator relocator = new Relocator(new OutputStreamWriter(stream,
-                exc.getResponse().getCharset()), getLocationProtocol(), getLocationHost(exc),
+                Objects.requireNonNullElseGet(exc.getResponse().getCharset(),() -> UTF_8.name())), getLocationProtocol(), getLocationHost(exc),
                 getLocationPort(exc), exc.getHandler().getContextPath(exc), pathRewriter);
 
         if (rewriteEndpoint) {

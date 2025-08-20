@@ -13,25 +13,22 @@
    limitations under the License. */
 package com.predic8.membrane.core.lang.spel.functions;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.jayway.jsonpath.JsonPath;
-import com.predic8.membrane.core.interceptor.AbstractInterceptorWithSession;
-import com.predic8.membrane.core.lang.spel.SpELExchangeEvaluationContext;
-import com.predic8.membrane.core.security.SecurityScheme;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.fasterxml.jackson.databind.*;
+import com.jayway.jsonpath.*;
+import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.lang.spel.*;
+import com.predic8.membrane.core.security.*;
+import org.slf4j.*;
 
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.concurrent.ThreadLocalRandom;
+import java.util.*;
+import java.util.concurrent.*;
 import java.util.function.Predicate;
 
-import static com.predic8.membrane.core.exchange.Exchange.SECURITY_SCHEMES;
-import static com.predic8.membrane.core.http.Header.AUTHORIZATION;
-import static java.util.Collections.emptyList;
-import static java.util.Objects.requireNonNull;
+import static com.predic8.membrane.core.exchange.Exchange.*;
+import static com.predic8.membrane.core.http.Header.*;
+import static java.nio.charset.StandardCharsets.*;
+import static java.util.Collections.*;
+import static java.util.Objects.*;
 
 /**
  * This class's public methods are automatically registered in the SpEL context by the BuiltInFunctionResolver.
@@ -131,6 +128,6 @@ public class BuiltInFunctions {
     }
 
     public static String base64Encode(String s,SpELExchangeEvaluationContext ctx) {
-        return java.util.Base64.getEncoder().encodeToString(s.getBytes());
+        return java.util.Base64.getEncoder().encodeToString(s.getBytes(UTF_8));
     }
 }

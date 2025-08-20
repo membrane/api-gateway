@@ -137,7 +137,10 @@ public abstract class Message {
 	 */
 	public String getBodyAsStringDecoded() {
 		try {
-			return new String(MessageUtil.getContent(this), getCharset());
+			String charset = getCharset();
+			if (charset == null)
+				charset = "UTF-8";
+			return new String(MessageUtil.getContent(this), charset);
 		} catch (Exception e) {
 			throw new RuntimeException(e);
 		}

@@ -58,9 +58,10 @@ public class WADLInterceptor extends RelocatingInterceptor {
 		relocator.getRelocatingAttributes().put(new QName(WADL_NS, "include"),
 				"href");
 
-		relocator.relocate(new InputStreamReader(exc.getResponse().getBodyAsStreamDecoded(), exc.getResponse().getCharset()));
+		relocator.relocate(exc.getResponse().getBodyAsStream());
 
 		exc.getResponse().setBodyContent(stream.toByteArray());
+		// TODO setContentType
 	}
 
 	@MCAttribute

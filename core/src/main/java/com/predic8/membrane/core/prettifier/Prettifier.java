@@ -14,15 +14,33 @@
 
 package com.predic8.membrane.core.prettifier;
 
+import org.slf4j.*;
+
+import java.nio.charset.*;
+
 import static com.predic8.membrane.core.http.MimeType.*;
+import static java.nio.charset.StandardCharsets.*;
 
 public interface Prettifier {
+
+    Logger log = LoggerFactory.getLogger(Prettifier.class);
 
     Prettifier JSON = new JSONPrettifier();
     Prettifier XML = new XMLPrettifier();
     Prettifier TEXT = new TextPrettifier();
 
-    byte[] prettify(byte[] c) throws Exception;
+    /**
+     * Returns the reference to the provided byte array without copying.
+     * Note: zero-copy aliasing — callers must not mutate the returned array unless they own it.
+     */
+    byte[] prettify(byte[] c, Charset charset);
+
+    /**
+     * Convenient method that assumes UTF-8 as encoding
+     */
+    default byte[] prettify(byte[] c) {
+        return prettify(c, UTF_8);
+    }
 
     static Prettifier getInstance(String contentType) {
         if (contentType == null)

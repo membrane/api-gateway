@@ -13,6 +13,7 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor;
 
+import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import org.junit.jupiter.api.*;
@@ -20,9 +21,11 @@ import org.junit.jupiter.api.*;
 import java.util.regex.*;
 
 import static com.predic8.membrane.core.http.MimeType.*;
+import static com.predic8.membrane.core.http.Request.post;
+import static com.predic8.membrane.core.http.Response.ok;
 import static org.junit.jupiter.api.Assertions.*;
 
-public class RegExReplaceInterceptorTest {
+class RegExReplaceInterceptorTest {
 
 	private RegExReplaceInterceptor interceptor;
 
@@ -31,32 +34,33 @@ public class RegExReplaceInterceptorTest {
 		interceptor = new RegExReplaceInterceptor();
 		interceptor.setRegex("\\bb.*?\\b");
 		interceptor.setReplace("boo");
+		interceptor.init(new Router());
 	}
 
 	@Test
-	public void testHandleRequest() throws Exception {
+	void handleRequest() throws Exception {
 		Exchange exc = new Request.Builder().contentType(TEXT_PLAIN).body("foo bar baz").buildExchange();
 		interceptor.handleRequest(exc);
 		assertEquals("foo boo boo",exc.getRequest().getBodyAsStringDecoded());
 	}
 
 	@Test
-	public void testHandleResponse() throws Exception {
+	void handleResponse() {
 		Exchange exc = new Request.Builder().buildExchange();
-		exc.setResponse(Response.ok().contentType(TEXT_PLAIN).body("foo bar baz").build());
+		exc.setResponse(ok().contentType(TEXT_PLAIN).body("foo bar baz").build());
 		interceptor.handleResponse(exc);
 		assertEquals("foo boo boo",exc.getResponse().getBodyAsStringDecoded());
 	}
 
 	@Test
-	public void testReplaceBinary() throws Exception {
+	void replaceBinary() throws Exception {
 		String example = "Hello";
 
 		RegExReplaceInterceptor regexp = new RegExReplaceInterceptor();
 		regexp.setRegex(Pattern.quote(example));
 		regexp.setReplace("Membrane");
 
-		Exchange exc = new Request.Builder().body(example).header("Content-Type","text/plain").buildExchange();
+		Exchange exc = post("/foo").body(example).contentType(TEXT_PLAIN).buildExchange();
 
 		regexp.handleRequest(exc);
 		assertEquals("Membrane", exc.getRequest().getBodyAsStringDecoded());

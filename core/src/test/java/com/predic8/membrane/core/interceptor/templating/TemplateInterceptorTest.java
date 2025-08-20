@@ -256,15 +256,15 @@ public class TemplateInterceptorTest {
 
     @Test
     void prettifyWithInvalidJson() {
-        String invalidJson = "{name:\"John\",age:30}";
+        String invalid = "{name:\"John,age:30}";
         ti.setContentType(APPLICATION_JSON);
-        ti.setTextTemplate(invalidJson);
+        ti.setTextTemplate(invalid);
         ti.setPretty("true");
         ti.init(new Router());
         ti.handleRequest(exc);
 
         // Because JSON is invalid it should not change anything
-        assertEquals(invalidJson, exc.getRequest().getBodyAsStringDecoded());
+        assertEquals(invalid, exc.getRequest().getBodyAsStringDecoded());
     }
 
     private void setAndHandleRequest(String location) {

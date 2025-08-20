@@ -14,43 +14,48 @@
 
 package com.predic8.membrane.core.prettifier;
 
-import static java.nio.charset.StandardCharsets.*;
+import org.jetbrains.annotations.*;
+
+import java.nio.charset.*;
+
+import static java.lang.Integer.MAX_VALUE;
 
 public class TextPrettifier implements Prettifier {
-
+    
     @Override
-    public byte[] prettify(byte[] c) throws Exception {
-        return normalizeMultiline(new String(c, UTF_8)).getBytes(UTF_8);
+    public byte[] prettify(byte[] c, Charset charset) {
+        return normalizeMultiline(new String(c, charset)).getBytes(charset);
     }
 
     public static String normalizeMultiline(String input) {
         if (input == null || input.isBlank()) {
             return "";
         }
+        
+        String[] lines = splitIntoLines(input);
 
-        // Split into lines
-        String[] lines = input.split("\\R", -1); // keep trailing empty line info
+        Range result = getStartAndEnd(lines);
 
+        if (result.start() > result.end()) {
+            return "";
+        }
+
+        return buildNormalLines(result.start(), result.end(), lines, getMinIndent(result.start(), result.end(), lines));
+    }
+
+    private static @NotNull Range getStartAndEnd(String[] lines) {
         // Remove leading and trailing empty lines
         int start = 0;
         int end = lines.length - 1;
         while (start <= end && lines[start].isBlank()) start++;
         while (end >= start && lines[end].isBlank()) end--;
+        return new Range(start, end);
+    }
 
-        if (start > end) {
-            return "";
-        }
+    private record Range(int start, int end) {
+    }
 
-        // Find smallest indentation
-        int minIndent = Integer.MAX_VALUE;
-        for (int i = start; i <= end; i++) {
-            String line = lines[i];
-            if (!line.isBlank()) {
-                int leading = line.indexOf(line.trim()); // count leading whitespace
-                minIndent = Math.min(minIndent, leading);
-            }
-        }
-
+    private static @NotNull String buildNormalLines(int start, int end, String[] lines, int minIndent) {
         // Build normalized lines
         StringBuilder sb = new StringBuilder();
         for (int i = start; i <= end; i++) {
@@ -70,8 +75,27 @@ public class TextPrettifier implements Prettifier {
                 sb.append("\n");
             }
         }
-
         return sb.toString();
+    }
+
+    private static int getMinIndent(int start, int end, String[] lines) {
+        // Find smallest indentation
+        int minIndent = MAX_VALUE;
+        for (int i = start; i <= end; i++) {
+            String line = lines[i];
+            if (!line.isBlank()) {
+                int leading = line.indexOf(line.trim()); // count leading whitespace
+                minIndent = Math.min(minIndent, leading);
+            }
+        }
+        return minIndent;
+    }
+
+    /**
+     * Keep trailing empty line info
+     */
+    private static String @NotNull [] splitIntoLines(String input) {
+        return input.split("\\R", -1);
     }
 
 

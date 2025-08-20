@@ -12,18 +12,23 @@
    See the License for the specific language governing permissions and
    limitations under the License. */
 
-package com.predic8.membrane.core.prettifier;
+package com.predic8.xml.beautifier;
 
-import java.nio.charset.*;
+import javax.xml.stream.*;
 
-/**
- * Returns the reference to the provided byte array without copying.
- * Note: zero-copy aliasing — callers must not mutate the returned array unless they own it.
- */
-public class NullPrettifier implements Prettifier {
+import static java.lang.Boolean.*;
+import static javax.xml.stream.XMLInputFactory.*;
 
-    @Override
-    public byte[] prettify(byte[] c, Charset charset) {
-        return c; // Ignore charset
-    }
+public final class XMLInputFactoryFactory {
+
+    private static final ThreadLocal<XMLInputFactory> TL = ThreadLocal.withInitial(() -> {
+        XMLInputFactory f = XMLInputFactory.newInstance();
+        f.setProperty(IS_COALESCING, TRUE);
+        f.setProperty(SUPPORT_DTD, FALSE);
+        f.setProperty(IS_NAMESPACE_AWARE, TRUE);
+        return f;
+    });
+
+    public static XMLInputFactory inputFactory() { return TL.get(); }
 }
+

@@ -302,7 +302,7 @@ public class Request extends Message {
 		}
 
 		public Builder json(String body) {
-			req.setBodyContent(body.getBytes());
+			req.setBodyContent(body.getBytes(UTF_8));
 			req.header.setContentType(APPLICATION_JSON);
 			return this;
 		}

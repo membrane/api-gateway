@@ -57,7 +57,7 @@ public abstract class RequestParameterizedTest {
 
     @ParameterizedTest
     @MethodSource("data")
-    public void test(RequestTestData data) throws Exception {
+    void test(RequestTestData data) throws Exception {
         data.modification().call();
         OAuth2TestUtil.makeExchangeValid(exc);
         OAuth2AuthorizationServerInterceptorBase.oasi.handleRequest(exc);

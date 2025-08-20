@@ -17,8 +17,8 @@ import com.predic8.membrane.examples.util.*;
 import org.junit.jupiter.api.*;
 
 import static com.predic8.membrane.core.http.MimeType.*;
-import static com.predic8.membrane.core.util.OSUtil.*;
 import static io.restassured.RestAssured.*;
+import static io.restassured.filter.log.LogDetail.*;
 import static org.hamcrest.Matchers.*;
 
 public class StaxInterceptorExampleTest extends DistributionExtractingTestcase {
@@ -41,6 +41,7 @@ public class StaxInterceptorExampleTest extends DistributionExtractingTestcase {
                 .body(readFileFromBaseDir("request.xml"))
                 .post(LOCALHOST_2000)
             .then()
+                .log().ifValidationFails(ALL)
                 .body("bar.bar", equalTo("42"));
             // @formatter:on
         }

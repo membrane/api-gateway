@@ -30,6 +30,7 @@ import static com.predic8.membrane.core.Constants.*;
 public class Relocator {
 	private static final Logger log = LoggerFactory.getLogger(Relocator.class.getName());
 
+	// TODO
 	private final XMLEventFactory fac = XMLEventFactory.newInstance();
 
 	private final String host;
@@ -104,15 +105,24 @@ public class Relocator {
 		this.pathRewriter = pathRewriter;
 	}
 
+	@Deprecated
 	public void relocate(InputStreamReader isr) throws Exception {
 		XMLEventReader parser = XMLInputFactory.newInstance().createXMLEventReader(isr);
 		while (parser.hasNext()) {
-			writer.add(getEvent(parser));
+			writer.add(process(parser));
 		}
 		writer.flush();
 	}
 
-	private XMLEvent getEvent(XMLEventReader parser) throws XMLStreamException {
+	public void relocate(InputStream is) throws Exception {
+		XMLEventReader parser = XMLInputFactory.newInstance().createXMLEventReader(is);
+		while (parser.hasNext()) {
+			writer.add(process(parser));
+		}
+		writer.flush();
+	}
+
+	private XMLEvent process(XMLEventReader parser) throws XMLStreamException {
 		XMLEvent event = parser.nextEvent();
 		if (!event.isStartElement())
 			return event;

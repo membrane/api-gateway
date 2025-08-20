@@ -17,11 +17,9 @@ import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.interceptor.oauth2.*;
 import com.predic8.membrane.core.prettifier.*;
+import org.jetbrains.annotations.*;
 import org.slf4j.*;
 
-import java.io.*;
-
-import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
 import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.http.Response.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
@@ -44,22 +42,16 @@ public class CertsEndpointProcessor extends EndpointProcessor {
 
     @Override
     public Outcome process(Exchange exc) {
+        exc.setResponse(ok().contentType(APPLICATION_JSON_UTF8).body(prettifier.prettify(getJwks().getBytes(UTF_8), UTF_8)).build());
+        return RETURN;
+    }
+
+    private @NotNull String getJwks() {
         String accessTokenJWKIfAvailable = authServer.getTokenGenerator().getJwkIfAvailable();
         String idTokenJWK = authServer.getJwtGenerator().getJwk();
 
-        String jwks = "{\"keys\": [ " + idTokenJWK +
-                (accessTokenJWKIfAvailable != null ? "," + accessTokenJWKIfAvailable : "") +
-                "]}";
-
-        try {
-            exc.setResponse(ok().contentType(APPLICATION_JSON_UTF8).body(prettifier.prettify( jwks.getBytes(UTF_8))).build());
-        } catch (IOException e) {
-            log.error("", e);
-            internal(true,"certs-endpoint-processor")
-                    .exception(e)
-                    .buildAndSetResponse(exc);
-            return ABORT;
-        }
-        return RETURN;
+        return  "{\"keys\": [ " + idTokenJWK +
+                      (accessTokenJWKIfAvailable != null ? "," + accessTokenJWKIfAvailable : "") +
+                      "]}";
     }
 }

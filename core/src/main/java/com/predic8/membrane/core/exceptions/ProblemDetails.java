@@ -46,11 +46,6 @@ public class ProblemDetails {
 
     private boolean production;
 
-    /**
-     * Whether to provide a log key to the caller that points into the log
-     */
-    private boolean logKey = true;
-
     private int statusCode;
     private String type;
     private String subType = "";
@@ -192,11 +187,6 @@ public class ProblemDetails {
         return this;
     }
 
-    public ProblemDetails logKey(boolean logKey) {
-        this.logKey = logKey;
-        return this;
-    }
-
     public Response build() {
         return createContent(createMap(), null);
     }
@@ -315,7 +305,7 @@ public class ProblemDetails {
                 createJson(root, builder);
         } catch (Exception e) {
             builder.body("Title: %s\nType: %s\n%s".formatted(type, title, root).getBytes(UTF_8));
-            builder.contentType(TEXT_PLAIN);
+            builder.contentType(TEXT_PLAIN_UTF8);
         }
         return builder.build();
     }

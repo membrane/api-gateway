@@ -14,9 +14,9 @@
 
 package com.predic8.membrane.core.util;
 
-
-import com.predic8.beautifier.*;
+import com.predic8.xml.beautifier.*;
 import org.apache.commons.text.*;
+import org.jetbrains.annotations.*;
 import org.slf4j.*;
 
 import javax.xml.stream.*;
@@ -30,6 +30,10 @@ import static javax.xml.stream.XMLInputFactory.*;
 public class TextUtil {
 	private static final Logger log = LoggerFactory.getLogger(TextUtil.class.getName());
 
+	// Guess for a very short XML
+	private static final int STRING_BUFFER_INITIAL_CAPACITY_FOR_XML = 250;
+
+	// TODO make it thread safe! See
 	private static final XMLInputFactory xmlInputFactory = newInstance();
 
 	private static final char[] source;
@@ -58,6 +62,17 @@ public class TextUtil {
 		return formatXML(reader, false);
 	}
 
+	public static String formalXML(InputStream inputStream) throws Exception {
+		try(InputStream is = inputStream) {
+			StringWriter out = new StringWriter(STRING_BUFFER_INITIAL_CAPACITY_FOR_XML);
+            new XMLBeautifier(new StandardXMLBeautifierFormatter(out, 4)).parse(is);
+			return out.toString();
+		} catch (XMLStreamException e) {
+			log.info("Error parsing XML: {}", e.getMessage());
+			throw e;
+		}
+	}
+
 	/**
 	 * As HTML is needed for the AdminConsole
 	 * @param reader XML
@@ -66,25 +81,19 @@ public class TextUtil {
 	 * @throws Exception
 	 */
 	public static String formatXML(Reader reader, boolean asHTML) throws Exception {
-		StringWriter out = new StringWriter();
-
-		try {
-			XMLBeautifierFormatter formatter = asHTML ? new HtmlBeautifierFormatter(out, 0) : new PlainBeautifierFormatter(out, 0);
-			XMLBeautifier beautifier = new XMLBeautifier(formatter);
-			beautifier.parse(reader);
+		try(Reader r = reader) {
+			StringWriter out = new StringWriter(STRING_BUFFER_INITIAL_CAPACITY_FOR_XML);
+            new XMLBeautifier(getXmlBeautifierFormatter(asHTML, out)).parse(r);
+			return out.toString();
 		}
 		catch (Exception e){
-			log.warn("Error parsing XML: {}", e.getMessage());
+			log.info("Error parsing XML: {}", e.getMessage());
 			throw e;
-		} finally {
-			try {
-				out.close();
-				reader.close();
-			} catch (IOException e) {
-				log.error("", e);
-			}
 		}
-		return out.toString();
+	}
+
+	private static @NotNull XMLBeautifierFormatter getXmlBeautifierFormatter(boolean asHTML, StringWriter out) {
+		return asHTML ? new HtmlBeautifierFormatter(out, 0) : new StandardXMLBeautifierFormatter(out, 4);
 	}
 
 	public static boolean isNullOrEmpty(String str) {
