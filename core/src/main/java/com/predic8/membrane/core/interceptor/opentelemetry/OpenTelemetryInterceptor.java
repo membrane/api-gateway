@@ -127,7 +127,7 @@ public class OpenTelemetryInterceptor extends AbstractInterceptor {
     }
 
     private static Span getExchangeSpan(Exchange exc) {
-        return exc.getProperty("span", Span.class);
+        return exc.getPropertyOrNull("span", Span.class);
     }
 
     private static void setSpanHttpHeaderAttributes(Header header, Span span) {
@@ -139,7 +139,7 @@ public class OpenTelemetryInterceptor extends AbstractInterceptor {
     private void setSpanOpenAPIAttributes(Exchange exc, Span span) {
         OpenAPIRecord record;
         try {
-            record = exc.getProperty(OPENAPI_RECORD, OpenAPIRecord.class);
+            record = exc.getPropertyOrNull(OPENAPI_RECORD, OpenAPIRecord.class);
         } catch (ClassCastException e) {
             log.debug("No OpenAPI to report to OpenTelemetry.");
             return;

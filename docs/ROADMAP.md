@@ -5,6 +5,7 @@
 - HttpClient
   - Change Signature: public Exchange call(Exchange exc) throws Exception
     =>  public void call(Exchange exc) throws Exception {
+- Remove HttpClientInterceptor.setAdjustHeader(boolean) it is already in HttpClientConfiguration
 
 # 6.5.0
 

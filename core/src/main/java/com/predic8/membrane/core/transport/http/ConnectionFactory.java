@@ -39,7 +39,7 @@ public class ConnectionFactory {
     private final SSLContext proxySSLContext;
     private final SSLContext sslContext;
 
-    @GuardedBy("HttpClient.class")
+    @GuardedBy("ConnectionFactory.class")
     private static SSLProvider defaultSSLProvider;
 
     public ConnectionFactory(HttpClientConfiguration config, TimerManager timerManager) {
@@ -52,10 +52,6 @@ public class ConnectionFactory {
 
     public OutgoingConnectionType getConnection(Exchange exc, HostColonPort target, int attempts) throws IOException {
 
-        // TODO Check if there was something
-        // SSLProvider sslProviderOverride = getOutboundSSLProvider(exc, target);
-
-        // TODO What if a connection is returned that is already a http2 con => usingHttp2 is not set => Falling down to http?
         Connection con = getExchangeAttachedConnection(exc, attempts, target);
 
         boolean usingHttp2 = false;

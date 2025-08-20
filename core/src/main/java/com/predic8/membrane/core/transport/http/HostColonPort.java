@@ -89,10 +89,6 @@ public record HostColonPort(boolean useSSL, String host, int port) {
         if (portStr == null)
             return -1;
 
-        try {
-            return Integer.parseInt(portStr);
-        } catch (NumberFormatException e) {
-            return -1;
-        }
+        return Integer.parseInt(portStr);
     }
 }

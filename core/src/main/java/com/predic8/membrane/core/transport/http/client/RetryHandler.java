@@ -22,10 +22,10 @@ import org.slf4j.*;
 import java.io.*;
 import java.net.*;
 import java.nio.*;
+import java.util.*;
 
 import static com.predic8.membrane.core.http.Request.*;
-import static com.predic8.membrane.core.transport.http.HttpClientStatusEventBus.reportException;
-import static com.predic8.membrane.core.transport.http.HttpClientStatusEventBus.reportStatusCode;
+import static com.predic8.membrane.core.transport.http.HttpClientStatusEventBus.*;
 import static java.lang.Thread.*;
 import static java.nio.charset.StandardCharsets.*;
 
@@ -295,7 +295,10 @@ public class RetryHandler {
         if (o == null || getClass() != o.getClass()) return false;
 
         RetryHandler that = (RetryHandler) o;
-        return retries == that.retries && delay == that.delay && Double.compare(backoffMultiplier, that.backoffMultiplier) == 0;
+        return retries == that.retries &&
+               delay == that.delay &&
+               Double.compare(backoffMultiplier, that.backoffMultiplier) == 0 &&
+               Objects.equals(failOverOn5XX, that.failOverOn5XX);
     }
 
     @Override
@@ -307,4 +310,3 @@ public class RetryHandler {
         return result;
     }
 }
-

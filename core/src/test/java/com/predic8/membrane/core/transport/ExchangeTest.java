@@ -14,11 +14,10 @@
 
 package com.predic8.membrane.core.transport;
 
-import java.util.Map;
+import com.predic8.membrane.core.exchange.*;
+import org.junit.jupiter.api.*;
 
-import org.junit.jupiter.api.Test;
-
-import com.predic8.membrane.core.exchange.Exchange;
+import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -56,10 +55,10 @@ public class ExchangeTest {
 	}
 
 	@Test
-	void getProperty() {
+	void getPropertyOrNull() {
 		Exchange exc = new Exchange(null);
 		exc.setProperty("foo", "10");
-		assertEquals("10",exc.getProperty("foo", String.class));
-		assertThrows(ClassCastException.class, () -> exc.getProperty("foo", Integer.class));
+		assertEquals("10",exc.getPropertyOrNull("foo", String.class));
+		assertEquals(null,exc.getPropertyOrNull("foo", Integer.class));
 	}
 }

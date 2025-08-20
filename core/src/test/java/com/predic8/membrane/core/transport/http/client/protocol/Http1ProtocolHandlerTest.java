@@ -52,7 +52,7 @@ class Http1ProtocolHandlerTest {
 
             Response res = exc.getResponse();
             assertEquals(200, res.getStatusCode());
-            assertEquals(METHOD_CONNECT, exc.getProperty(UPGRADED_PROTOCOL, String.class));
+            assertEquals(METHOD_CONNECT, exc.getPropertyOrNull(UPGRADED_PROTOCOL, String.class));
         }
     }
 
