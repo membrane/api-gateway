@@ -20,7 +20,7 @@ import com.predic8.membrane.annot.MCElement;
 import static com.google.common.base.Objects.equal;
 
 /**
- * Configuration element for a keystore holding private keys and certificates.
+ * @description Configuration element for a keystore holding private keys and certificates.
  */
 @MCElement(name="keystore")
 public class KeyStore extends Store {
@@ -54,6 +54,8 @@ public class KeyStore extends Store {
 
 	/**
 	 * @description Password used to unlock the private key entry in the keystore.
+     * @default changeit
+     * @example abc123
 	 */
 	@MCAttribute
 	public void setKeyPassword(String keyPassword) {

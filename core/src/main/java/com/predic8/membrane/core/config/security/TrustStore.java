@@ -19,13 +19,10 @@ import com.predic8.membrane.annot.MCElement;
 import static com.google.common.base.Objects.equal;
 
 /**
- * Configuration element for a truststore containing trusted CA certificates.
+ * @description Configuration element for a truststore containing trusted CA certificates.
  *
  * <p>Used by Membrane's TLS components to validate remote certificates
  * presented during SSL/TLS handshakes.</p>
- *
- * <p>Extends {@link Store} with trust-specific attributes such as the
- * trust manager algorithm and revocation checking behavior.</p>
  */
 @MCElement(name="truststore")
 public class TrustStore extends Store {
@@ -64,14 +61,19 @@ public class TrustStore extends Store {
 		this.algorithm = algorithm;
 	}
 
+    /**
+     * @return the comma-separated revocation options.
+     * Maps to {@link java.security.cert.PKIXRevocationChecker.Option}.
+     */
 	public String getCheckRevocation() {
 		return checkRevocation;
 	}
 
-	/**
-	 * TODO
-	 * @param checkRevocation
-	 */
+    /**
+     * @description Comma-separated PKIX revocation options: ONLY_END_ENTITY, PREFER_CRLS, NO_FALLBACK, SOFT_FAIL.
+     * @example ONLY_END_ENTITY,SOFT_FAIL
+     * @see java.security.cert.PKIXRevocationChecker.Option
+     */
 	@MCAttribute
 	public void setCheckRevocation(String checkRevocation) {
 		this.checkRevocation = checkRevocation;
