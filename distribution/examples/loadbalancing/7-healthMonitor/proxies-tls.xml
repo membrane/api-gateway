@@ -1,0 +1,83 @@
+<spring:beans xmlns="http://membrane-soa.org/proxies/1/"
+              xmlns:spring="http://www.springframework.org/schema/beans"
+              xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+              xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.2.xsd
+              http://membrane-soa.org/proxies/1/ http://membrane-soa.org/schemas/proxies-1.xsd">
+
+    <!-- Health checks every 1s. -->
+    <balancerHealthMonitor interval="1000">
+        <httpClientConfig>
+            <!-- Timeouts for the health probe HTTP call. -->
+            <connection timeout="2000" soTimeout="2000"/>
+            <ssl>
+                <!-- Trust CA used by backend nodes -->
+                <truststore location="balancer.p12" password="changeit" type="pkcs12"/>
+            </ssl>
+        </httpClientConfig>
+    </balancerHealthMonitor>
+
+    <router production="false">
+
+        <!-- Public LB endpoint (HTTPS) -->
+        <api port="8000">
+            <ssl>
+                <!-- LB server cert -->
+                <keystore location="balancer.p12" password="changeit"/>
+                <truststore location="balancer.p12" password="changeit" />
+            </ssl>
+            <balancer name="Demo Balancer">
+                <clusters>
+                    <cluster name="Production">
+                        <node host="localhost" port="8001" healthUrl="https://localhost:8001/health"/>
+                        <node host="localhost" port="8002" healthUrl="https://localhost:8002/health"/>
+                    </cluster>
+                </clusters>
+            </balancer>
+            <!-- Outbound TLS to nodes -->
+            <target host="abc" port="123">
+                <ssl>
+                    <!-- For connection to the nodes -->
+                    <truststore location="balancer.p12" password="changeit"/>
+                </ssl>
+            </target>
+        </api>
+
+        <!-- Backend Node 1 -->
+        <api port="8001" name="Node 1">
+            <ssl>
+                <!-- Node 1 Server cert -->
+                <keystore location="backend-1.p12" password="changeit" />
+                <truststore location="backend-1.p12" password="changeit" />
+            </ssl>
+            <static>
+                Hello from backend 1!
+            </static>
+            <request>
+                <groovy>
+                    <!-- Set to 3000 to simulate a socket read timeout -->
+                    Thread.sleep(1000)
+                </groovy>
+            </request>
+            <return/>
+        </api>
+
+        <!-- Backend Node 2 -->
+        <api port="8002" name="Node 2">
+            <ssl>
+                <!-- Node 2 Server cert -->
+                <keystore location="backend-2.p12" password="changeit" />
+                <truststore location="backend-2.p12" password="changeit" />
+            </ssl>
+            <static>
+                Hello from backend 2!
+            </static>
+            <return/>
+        </api>
+
+        <api name="Console" port="9000">
+            <adminConsole/>
+        </api>
+
+    </router>
+
+</spring:beans>
