@@ -1,8 +1,8 @@
-# Health-Monitored Load Balancer
+# Load Balancer: Health Monitoring of Backend Nodes
 
 When a backend becomes slow or unresponsive, users run into timeouts and errors. The health checker prevents this by probing each node at regular intervals and automatically marking unhealthy nodes as DOWN so the load balancer sends traffic only to healthy backends and returns a node to service the moment it recovers. This example demonstrates the behavior end to end and works both without TLS and with TLS.
 
-## RUNNING THE EXAMPLE
+## Running the example
 
 1. **Navigate to the example directory**
 
@@ -12,11 +12,11 @@ When a backend becomes slow or unresponsive, users run into timeouts and errors.
 
 2. **Create certificates and keystores (only when using TLS)**
     * Linux/macOS:
-      ```
+      ```shell
       ./create-certificates.sh
       ```
    * Windows:
-     ```
+     ```shell
      create-certificates.cmd
      ```
 
@@ -25,18 +25,18 @@ When a backend becomes slow or unresponsive, users run into timeouts and errors.
 3. **Start Membrane**
 
    * Linux/macOS:
-       ```
+       ```shell
        ./membrane.sh                         # Without TLS
        ``` 
-     ```
+     ```shell
      ./membrane.sh -c proxies-tls.xml      # With TLS
      ```
    * Windows:
 
-     ```
+     ```shell
      membrane.cmd                          # Without TLS
      ```
-       ```
+       ```shell
      membrane.cmd -c proxies-tls.xml       # With TLS
      ```
 
@@ -44,10 +44,10 @@ When a backend becomes slow or unresponsive, users run into timeouts and errors.
 
    In a new terminal:
 
-    ```
+    ```shell
    curl localhost:8000                   # Without TLS
     ```
-   ```
+   ```shell
    curl -k https://localhost:8000        # with TLS 
    ```
 
