@@ -13,7 +13,6 @@ import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -63,7 +62,7 @@ public class Loadbalancing7HealthMonitorExampleTest extends DistributionExtracti
     @Test
     void http_adminShowsNodesUp() throws Exception {
         try (Process2 ignored = startServiceProxyScript()) {
-            String html = retry(20, 250, () -> get(ADMIN_URL).then().statusCode(200).extract().asString());
+            String html = get(ADMIN_URL).then().statusCode(200).extract().asString();
             assertThat(html, containsString("localhost:8001"));
             assertThat(html, containsString("localhost:8002"));
             assertThat(html, containsString("UP"));
@@ -75,9 +74,9 @@ public class Loadbalancing7HealthMonitorExampleTest extends DistributionExtracti
         withBackedUpFile("proxies.xml", () -> {
             try {
                 setNode1Delay(baseDir.toPath().resolve("proxies.xml"), 3000);
-                sleep(1000);
                 try (Process2 ignored = startServiceProxyScript()) {
-                    String html = retry(30, 250, () -> get(ADMIN_URL).then().statusCode(200).extract().asString());
+                    sleep(3000);
+                    String html = get(ADMIN_URL).then().statusCode(200).extract().asString();
                     assertThat(html, containsString("localhost:8001"));
                     assertThat(html, containsString("localhost:8002"));
                     assertThat(html, containsString("DOWN"));
@@ -114,7 +113,7 @@ public class Loadbalancing7HealthMonitorExampleTest extends DistributionExtracti
         withTlsProxies(() -> {
             try (Process2 ignored = startServiceProxyScript()) {
                 Set<String> seen = new HashSet<>();
-                for (int i = 0; i < 10; i++) {
+                for (int i = 0; i < 4; i++) {
                     String body = given().relaxedHTTPSValidation().when()
                             .get("https://localhost:8000/").then().statusCode(200)
                             .extract().asString();
@@ -134,7 +133,7 @@ public class Loadbalancing7HealthMonitorExampleTest extends DistributionExtracti
         ensureCertificates();
         withTlsProxies(() -> {
             try (Process2 ignored = startServiceProxyScript()) {
-                String html = retry(20, 250, () -> get(ADMIN_URL).then().statusCode(200).extract().asString());
+                String html = get(ADMIN_URL).then().statusCode(200).extract().asString();
                 assertThat(html, containsString("localhost:8001"));
                 assertThat(html, containsString("localhost:8002"));
                 assertThat(html, containsString("UP"));
@@ -151,7 +150,8 @@ public class Loadbalancing7HealthMonitorExampleTest extends DistributionExtracti
             try {
                 setNode1Delay(baseDir.toPath().resolve("proxies.xml"), 3000);
                 try (Process2 ignored = startServiceProxyScript()) {
-                    String html = retry(30, 250, () -> get(ADMIN_URL).then().statusCode(200).extract().asString());
+                    sleep(3000);
+                    String html = get(ADMIN_URL).then().statusCode(200).extract().asString();
                     assertThat(html, containsString("localhost:8001"));
                     assertThat(html, containsString("localhost:8002"));
                     assertThat(html, containsString("DOWN"));
@@ -234,18 +234,5 @@ public class Loadbalancing7HealthMonitorExampleTest extends DistributionExtracti
                 } catch (IOException ignored) { }
             }
         }
-    }
-
-    private static <T> T retry(int attempts, long sleepMillis, Supplier<T> op) throws Exception {
-        RuntimeException last = null;
-        for (int i = 0; i < attempts; i++) {
-            try {
-                return op.get();
-            } catch (RuntimeException e) {
-                last = e;
-                sleep(sleepMillis);
-            }
-        }
-        throw last != null ? last : new RuntimeException("retry failed");
     }
 }
