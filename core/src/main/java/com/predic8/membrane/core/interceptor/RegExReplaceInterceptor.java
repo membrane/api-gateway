@@ -87,7 +87,7 @@ public class RegExReplaceInterceptor extends AbstractInterceptor {
             hf.setValue(hf.getValue().replaceAll(regex, replace));
     }
 
-    private void replaceBody(Message res) throws Exception {
+    private void replaceBody(Message res) {
         if (res.getHeader().isBinaryContentType())
             return;
         log.debug("pattern: {}", regex);

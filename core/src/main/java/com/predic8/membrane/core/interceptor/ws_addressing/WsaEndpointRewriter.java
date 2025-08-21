@@ -24,7 +24,7 @@ import javax.xml.stream.*;
 import javax.xml.stream.events.*;
 import java.io.*;
 import java.net.*;
-import java.util.*;
+import java.util.stream.*;
 
 
 public class WsaEndpointRewriter {
@@ -107,7 +107,7 @@ public class WsaEndpointRewriter {
     }
 
     private static boolean isElement(QName name, String elementName) {
-        return List.of(ADDRESSING_URI_2004_08, ADDRESSING_URI_2005_08).stream()
+        return Stream.of(ADDRESSING_URI_2004_08, ADDRESSING_URI_2005_08)
                 .anyMatch(ns -> (name.getNamespaceURI().equals(ns) && name.getLocalPart().equals(elementName)));
     }
 }

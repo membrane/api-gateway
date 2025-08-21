@@ -15,8 +15,6 @@ package com.predic8.membrane.core;
 
 import org.junit.platform.suite.api.*;
 
-@Suite
-@SelectPackages({"com.predic8"})
 /**
  * @TODO Fix:
  * - com.predic8.membrane.core.interceptor.opentelemetry.OpenTelemetryInterceptorTest
@@ -25,6 +23,8 @@ import org.junit.platform.suite.api.*;
  * - com.predic8.membrane.core.interceptor.oauth2client.OAuth2Resource2InterceptorTest
  * - com.predic8.membrane.core.interceptor.shadowing.ShadowingInterceptorTest
  */
+@Suite
+@SelectPackages({"com.predic8"})
 @ExcludeClassNamePatterns({
 		"com.predic8.membrane.core.interceptor.opentelemetry.OpenTelemetryInterceptorTest",
 		"com.predic8.membrane.core.interceptor.balancer.NodeOnlineCheckerTest",

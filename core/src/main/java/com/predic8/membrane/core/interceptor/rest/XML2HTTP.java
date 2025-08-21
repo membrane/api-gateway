@@ -31,7 +31,9 @@ import static java.nio.charset.StandardCharsets.*;
 public class XML2HTTP {
 	private static final XMLInputFactory xmlInputFactory = XMLInputFactory.newInstance();
 	private static final XMLOutputFactory xmlOutputFactory = XMLOutputFactory.newInstance();
-	static {
+    private static StartElement sevent;
+
+    static {
 		xmlInputFactory.setProperty(XMLInputFactory.IS_REPLACING_ENTITY_REFERENCES, false);
 		xmlInputFactory.setProperty(XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES, false);
 	}
@@ -129,7 +131,7 @@ public class XML2HTTP {
 					}
 				}
 
-				if (!foundHeaders && !keepSourceHeaders)
+				if (!foundHeaders)
 					message.getHeader().clear();
 				if (!foundBody)
 					message.setBodyContent(new byte[0]);
@@ -163,7 +165,8 @@ public class XML2HTTP {
 	}
 
 	private static String slurpXMLData(XMLEventReader parser, StartElement sevent) throws XML2HTTPException, XMLStreamException {
-		StringWriter bodyStringWriter = new StringWriter();
+        XML2HTTP.sevent = sevent;
+        StringWriter bodyStringWriter = new StringWriter();
 		XMLEventWriter bodyWriter;
 		int depth = 0;
 		synchronized(xmlOutputFactory) {

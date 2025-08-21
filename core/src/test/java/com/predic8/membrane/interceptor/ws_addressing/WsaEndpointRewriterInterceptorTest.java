@@ -38,7 +38,7 @@ public class WsaEndpointRewriterInterceptorTest {
 	void rewriterInterceptor() throws Exception {
 
 		String body = """
-				<S:Envelope xmlns:S="http://www.w3.org/2003/05/soap-envelope"    
+				<S:Envelope xmlns:S="http://www.w3.org/2003/05/soap-envelope"
 				                xmlns:wsa="http://schemas.xmlsoap.org/ws/2004/08/addressing">
 				   <S:Header>
 				    <wsa:MessageID>

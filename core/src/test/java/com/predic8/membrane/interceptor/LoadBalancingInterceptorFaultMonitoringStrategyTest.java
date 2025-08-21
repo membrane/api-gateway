@@ -203,7 +203,7 @@ public class LoadBalancingInterceptorFaultMonitoringStrategyTest {
                 .successChance(1d)
                 .preSubmitCallback(integer -> {
                     if (integer == 10) {
-                        httpRouters.get(0).shutdown();
+                        httpRouters.getFirst().shutdown();
                     } else if (integer == 20) {
                         httpRouters.get(1).shutdown();
                     } else if (integer == 30) {

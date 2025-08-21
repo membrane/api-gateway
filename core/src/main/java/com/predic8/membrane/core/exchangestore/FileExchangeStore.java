@@ -155,38 +155,6 @@ public class FileExchangeStore extends AbstractExchangeStore {
 		}
 	}
 
-	public void initializeTimer() {
-		if (this.maxDays < 0) {
-			return; // don't do anything if this feature is deactivated
-		}
-
-		Timer oldFilesCleanupTimer = new Timer("Clean up old log files", true);
-
-		// schedule first run for the night
-		Calendar firstRun = Calendar.getInstance();
-		firstRun.set(Calendar.HOUR_OF_DAY, 3);
-		firstRun.set(Calendar.MINUTE, 14);
-
-		// schedule for the next day if the scheduled execution time is before now
-		if (firstRun.before(Calendar.getInstance()))
-			firstRun.add(DAY_OF_MONTH, 1);
-
-		oldFilesCleanupTimer.scheduleAtFixedRate(
-				new TimerTask() {
-					@Override
-					public void run() {
-						try {
-							deleteOldFolders(Calendar.getInstance());
-						} catch (IOException e) {
-							log.error("", e);
-						}
-					}
-				},
-				firstRun.getTime(),
-				24*60*60*1000		// one day
-				);
-	}
-
 	public void deleteOldFolders(Calendar now) throws IOException {
 		if (this.maxDays < 0) {
 			return; // don't do anything if this feature is deactivated
@@ -218,11 +186,6 @@ public class FileExchangeStore extends AbstractExchangeStore {
 	public AbstractExchange[] getExchanges(RuleKey ruleKey) {
 		throw new RuntimeException(
 				"Method getExchanges() is not supported by FileExchangeStore");
-	}
-
-	public int getNumberOfExchanges(RuleKey ruleKey) {
-		throw new RuntimeException(
-				"Method getNumberOfExchanges() is not supported by FileExchangeStore");
 	}
 
 	public void remove(AbstractExchange exchange) {
@@ -282,6 +245,7 @@ public class FileExchangeStore extends AbstractExchangeStore {
 	public boolean isSaveBodyOnly() {
 		return saveBodyOnly;
 	}
+
 	/**
 	 * @default false
 	 * @description If this is true, no headers will be written to the exchange

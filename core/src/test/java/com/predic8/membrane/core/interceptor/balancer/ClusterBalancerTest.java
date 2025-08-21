@@ -21,25 +21,26 @@ import org.junit.jupiter.api.*;
 
 import java.io.*;
 
+import static com.predic8.membrane.core.http.Response.ok;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class ClusterBalancerTest {
 
-	private static XMLElementSessionIdExtractor extracor;
+	private static XMLElementSessionIdExtractor extractor;
 	private static LoadBalancingInterceptor lb;
 	private static Router r;
 
 	@BeforeAll
 	public static void setUp() throws Exception {
 
-		extracor = new XMLElementSessionIdExtractor();
-		extracor.setLocalName("session");
-		extracor.setNamespace("http://predic8.com/session/");
+		extractor = new XMLElementSessionIdExtractor();
+		extractor.setLocalName("session");
+		extractor.setNamespace("http://predic8.com/session/");
 
 		r = new HttpRouter();
 
 		lb = new LoadBalancingInterceptor();
-		lb.setSessionIdExtractor(extracor);
+		lb.setSessionIdExtractor(extractor);
 		lb.setName("Default");
 
 		ServiceProxy sp = new ServiceProxy(new ServiceProxyKey(3011), "predic8.com", 80);
@@ -54,8 +55,6 @@ public class ClusterBalancerTest {
 	@AfterAll
 	public static void tearDown() throws Exception {
 		r.shutdown();
-		//let the test wait so the next test can reopen the same port and avoid PortOccupiedException
-		Thread.sleep(400);
 	}
 
 	@Test
@@ -69,7 +68,7 @@ public class ClusterBalancerTest {
 
 		assertEquals(2, exc.getDestinations().size());
 
-		String stickyDestination = exc.getDestinations().get(0);
+		String stickyDestination = exc.getDestinations().getFirst();
 		lb.handleRequest(exc);
 
 		assertEquals(1, BalancerUtil.getSessions(r, "Default", "Default").size());
@@ -118,7 +117,7 @@ public class ClusterBalancerTest {
 	}
 
 	private Response getResponse() throws IOException {
-		Response res = Response.ok().build();
+		Response res = ok().build();
 		res.setHeader(getHeader());
         res.setBodyContent(getClass().getResourceAsStream(
                 "/getBankResponsewithSession.xml").readAllBytes());

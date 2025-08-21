@@ -68,7 +68,7 @@ public class BeautifierInterceptor extends AbstractInterceptor {
         } catch (IOException e) {
             // If it is not possible to beautify, to nothing
             // Cause will be often user input => do not log stacktrace
-            log.info("Could not beautify message body: ", e.getMessage());
+            log.info("Could not beautify message body: {}", e.getMessage());
         }
 
         return CONTINUE;

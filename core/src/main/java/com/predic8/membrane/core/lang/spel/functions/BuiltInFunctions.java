@@ -127,7 +127,7 @@ public class BuiltInFunctions {
         return ctx.getMessage().isJSON();
     }
 
-    public static String base64Encode(String s,SpELExchangeEvaluationContext ctx) {
+    public static String base64Encode(String s, SpELExchangeEvaluationContext ctx) {
         return java.util.Base64.getEncoder().encodeToString(s.getBytes(UTF_8));
     }
 }

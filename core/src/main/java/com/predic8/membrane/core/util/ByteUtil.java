@@ -31,7 +31,7 @@ public class ByteUtil {
 
 		byte[] content = new byte[length];
 		int offset = 0;
-		int count = 0;
+		int count;
 		while (offset < length && (count = in.read(content, offset, length - offset)) >= 0) {
 			offset += count;
 		}
@@ -73,7 +73,7 @@ public class ByteUtil {
 		}
 
 		log.debug("Number of decompressed chunks: " + chunks.size());
-		if (chunks.size() > 0) {
+		if (!chunks.isEmpty()) {
 
 			ByteArrayOutputStream bos = new ByteArrayOutputStream();
 
@@ -83,7 +83,7 @@ public class ByteUtil {
 
 			try {
 				bos.close();
-			} catch (IOException e) {
+			} catch (IOException ignored) {
 			}
 			return bos.toByteArray();
 		}
@@ -115,9 +115,9 @@ public class ByteUtil {
             position = 7 - position;
 
         if(value)
-            b |= (1 << position);
+            b |= (byte) (1 << position);
         else
-            b &= ~(1 << position);
+            b &= (byte) ~(1 << position);
         return b;
     }
 
@@ -135,9 +135,5 @@ public class ByteUtil {
 
 	public static byte setBitValuesBigEndian(byte b, int beginning, int end, int value){
     	return setBitValues(b,beginning, end,value);
-	}
-
-	public static int getNumberOfBits(int i){
-		return Integer.SIZE-Integer.numberOfLeadingZeros(i);
 	}
 }

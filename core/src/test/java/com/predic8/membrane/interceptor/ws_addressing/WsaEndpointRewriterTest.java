@@ -23,7 +23,6 @@ import java.io.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class WsaEndpointRewriterTest {
-	private InputStream input;
 
 	static final String SOAP_WITH_ADDRESSING = """
 					<S:Envelope xmlns:S="http://www.w3.org/2003/05/soap-envelope"
@@ -55,14 +54,11 @@ public class WsaEndpointRewriterTest {
 		ByteArrayOutputStream output = new ByteArrayOutputStream();
 		WsaEndpointRewriter rewriter = new WsaEndpointRewriter();
 
-		int port = 2000;
 		rewriter.rewriteEndpoint(is, output, new WsaEndpointRewriterInterceptor.Location("https","localhost",1234));
 
 		String xml = output.toString();
 
-		System.out.println(xml);
-
-        assertTrue(output.toString().contains(">https://localhost:1234/client:1000/endpoint-1<"));
-		assertTrue(output.toString().contains(">https://localhost:1234/client:1000/endpoint-2<"));
+		assertTrue(xml.contains(">https://localhost:1234/client:1000/endpoint-1<"));
+		assertTrue(xml.contains(">https://localhost:1234/client:1000/endpoint-2<"));
 	}
 }

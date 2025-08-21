@@ -42,8 +42,8 @@ public class AuthHead2BodyInterceptor extends AbstractInterceptor {
 		Element header = getAuthorisationHeader(doc);
 		if (header == null) return CONTINUE;
 		Element nor = getNorElement(doc);
-		nor.appendChild(getUsername(doc, header));
-		nor.appendChild(getPassword(doc, header));
+		nor.appendChild(getUsername(doc));
+		nor.appendChild(getPassword(doc));
 
 		header.getParentNode().removeChild(header);
 		exchange.getRequest().setBody(new Body(DOM2String(doc).getBytes(getEncodingOrDefault(exchange.getRequest()))));
@@ -54,14 +54,14 @@ public class AuthHead2BodyInterceptor extends AbstractInterceptor {
 		return requireNonNullElseGet(message.getCharset(), UTF_8::name);
 	}
 
-	private Node getPassword(Document doc, Element header) {
+	private Node getPassword(Document doc) {
 		Element e = doc.createElement("password");
 		e.appendChild(doc.createTextNode(doc.getElementsByTagNameNS(COM_NS, "password").item(0).getTextContent()));
 		e.setAttributeNS(XSI_NS, "xsi:type", "xsd:string");
 		return e;
 	}
 
-	private Node getUsername(Document doc, Element header) {
+	private Node getUsername(Document doc) {
 		Element e = doc.createElement("username");
 		e.appendChild(doc.createTextNode(doc.getElementsByTagNameNS(COM_NS, "userName").item(0).getTextContent()));
 		e.setAttributeNS(XSI_NS, "xsi:type", "xsd:string");
