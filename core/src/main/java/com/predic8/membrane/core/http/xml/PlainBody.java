@@ -19,16 +19,18 @@ import com.predic8.membrane.core.http.*;
 
 import javax.xml.stream.*;
 
+import java.nio.charset.*;
+
 import static java.nio.charset.StandardCharsets.*;
 import static java.util.Objects.*;
 
 public class PlainBody extends AbstractXmlElement {
 
-	private final String charset;
+	private final Charset charset;
 	private final AbstractBody body;
 
 	public PlainBody(Message msg) {
-		charset = requireNonNullElseGet( msg.getCharset(), UTF_8::name );
+		charset = Charset.forName( requireNonNullElseGet( msg.getCharset(), UTF_8::name ));
 		body = msg.getBody();
 	}
 

@@ -17,6 +17,7 @@ package com.predic8.membrane.core.interceptor;
 import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
+import org.jetbrains.annotations.*;
 import org.w3c.dom.*;
 import org.xml.sax.*;
 
@@ -25,9 +26,10 @@ import javax.xml.transform.*;
 import javax.xml.transform.dom.*;
 import javax.xml.transform.stream.*;
 import java.io.*;
-import java.util.*;
 
+import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 import static java.nio.charset.StandardCharsets.*;
+import static java.util.Objects.*;
 
 @MCElement(name="authHead2Body")
 public class AuthHead2BodyInterceptor extends AbstractInterceptor {
@@ -36,17 +38,20 @@ public class AuthHead2BodyInterceptor extends AbstractInterceptor {
 	static final String XSI_NS  = "http://www.w3.org/2001/XMLSchema-instance";
 
 	public Outcome handleRequest(AbstractExchange exchange) throws Exception {
-		Document doc = getDocument(exchange.getRequest().getBodyAsStreamDecoded(), exchange.getRequest().getCharset());
+        Document doc = getDocument(exchange.getRequest().getBodyAsStreamDecoded(), getEncodingOrDefault(exchange.getRequest()));
 		Element header = getAuthorisationHeader(doc);
-		if (header == null) return Outcome.CONTINUE;
-		//System.out.println(DOM2String(doc));
+		if (header == null) return CONTINUE;
 		Element nor = getNorElement(doc);
 		nor.appendChild(getUsername(doc, header));
 		nor.appendChild(getPassword(doc, header));
 
 		header.getParentNode().removeChild(header);
-		exchange.getRequest().setBody(new Body(DOM2String(doc).getBytes(Objects.requireNonNullElseGet(exchange.getRequest().getCharset(), UTF_8::name))));
-		return Outcome.CONTINUE;
+		exchange.getRequest().setBody(new Body(DOM2String(doc).getBytes(getEncodingOrDefault(exchange.getRequest()))));
+		return CONTINUE;
+	}
+
+	private static @NotNull String getEncodingOrDefault(Message message) {
+		return requireNonNullElseGet(message.getCharset(), UTF_8::name);
 	}
 
 	private Node getPassword(Document doc, Element header) {

@@ -128,7 +128,7 @@ public class HTTPSchemaResolver implements SchemaResolver {
             if (response.getStatusCode() != 200) {
                 throw new ResourceRetrievalException(url, response.getStatusCode());
             }
-            return new ByteArrayInputStream(ByteUtil.getByteArrayData(response.getBodyAsStreamDecoded()));
+            return new ByteArrayInputStream(response.getBodyAsStreamDecoded().readAllBytes());
         } catch (ResourceRetrievalException e) {
             throw e;
         } catch (Exception e) {

@@ -36,6 +36,7 @@ import static com.predic8.membrane.core.http.Request.*;
 import static java.io.File.*;
 import static java.lang.Boolean.*;
 import static java.lang.System.*;
+import static java.nio.charset.StandardCharsets.*;
 import static java.nio.file.StandardCopyOption.*;
 import static javax.xml.xpath.XPathConstants.*;
 import static org.junit.jupiter.api.Assertions.*;
@@ -251,7 +252,7 @@ public class TemplateInterceptorTest {
         ti.setTextTemplate(inputJson);
         ti.setPretty( TRUE.toString());
         ti.init();
-        assertArrayEquals(expectedPrettyJson.getBytes(), ti.prettify(inputJson.getBytes()));
+        assertArrayEquals(expectedPrettyJson.getBytes(UTF_8), ti.prettify(inputJson.getBytes(UTF_8)));
     }
 
     @Test

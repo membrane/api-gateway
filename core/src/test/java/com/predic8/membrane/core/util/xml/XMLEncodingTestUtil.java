@@ -14,7 +14,7 @@
 
 package com.predic8.membrane.core.util.xml;
 
-import java.util.stream.*;
+import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -27,13 +27,8 @@ public class XMLEncodingTestUtil {
     public static final String ENTITIES = "&lt; > &amp; \" '";
 
     public static void assertChars(String actual) {
-        assertTrue(Stream.of(UMLAUTE, ACCENTS, ESPANOL, NORDIC, ENTITIES)
-                .allMatch(expected -> {
-                    boolean m = actual.contains(expected);
-                    if (m)
-                        return true;
-                    System.err.printf("%s\n does not match expectd %s\n",actual, expected);
-                    return false;
-                }));
+        for (String expected : List.of(UMLAUTE, ACCENTS, ESPANOL, NORDIC, ENTITIES)) {
+            assertTrue(actual.contains(expected), "Missing expected substring: %s Actual: %s\n".formatted(expected, actual));
+        }
     }
 }

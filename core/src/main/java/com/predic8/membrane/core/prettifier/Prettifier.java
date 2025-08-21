@@ -16,6 +16,7 @@ package com.predic8.membrane.core.prettifier;
 
 import org.slf4j.*;
 
+import java.io.*;
 import java.nio.charset.*;
 
 import static com.predic8.membrane.core.http.MimeType.*;
@@ -25,15 +26,13 @@ public interface Prettifier {
 
     Logger log = LoggerFactory.getLogger(Prettifier.class);
 
-    Prettifier JSON = new JSONPrettifier();
-    Prettifier XML = new XMLPrettifier();
-    Prettifier TEXT = new TextPrettifier();
-
     /**
-     * Returns the reference to the provided byte array without copying.
-     * Note: zero-copy aliasing — callers must not mutate the returned array unless they own it.
+     * Returns a prettified representation of the given bytes using the provided charset.
+     * Implementations may return the same reference (zero-copy) or a new byte array.
      */
     byte[] prettify(byte[] c, Charset charset);
+
+    byte[] prettify(InputStream is, Charset charset) throws IOException;
 
     /**
      * Convenient method that assumes UTF-8 as encoding
@@ -44,18 +43,21 @@ public interface Prettifier {
 
     static Prettifier getInstance(String contentType) {
         if (contentType == null)
-            return TEXT;
+            return NullPrettifier.INSTANCE;
 
-        String ct = contentType.toLowerCase(java.util.Locale.ROOT).trim();
+        String ct = contentType.trim();
 
         // JSON family: application/json, application/*+json, with or without charset/params
         if (isJson(ct))
-            return JSON;
+            return JSONPrettifier.INSTANCE;
 
         // XML/HTML family: text/xml, application/xml, text/html (and charset variants)
         if (isXML(ct) || isHtml(ct))
-            return XML;
+            return XMLPrettifier.INSTANCE;
 
-        return TEXT;
+        if (isText(ct))
+            return TextPrettifier.INSTANCE;
+
+        return NullPrettifier.INSTANCE;
     }
 }

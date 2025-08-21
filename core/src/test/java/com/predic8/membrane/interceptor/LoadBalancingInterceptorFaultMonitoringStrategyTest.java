@@ -195,7 +195,7 @@ public class LoadBalancingInterceptorFaultMonitoringStrategyTest {
      * But because 1 remains functional, in the end all requests succeed.
      */
     @Test
-    public void test_5destinations_6threads_100calls_4shutdown() throws Exception {
+    void test_5destinations_6threads_100calls_4shutdown() throws Exception {
         TestingContext ctx = new TestingContext.Builder()
                 .numNodes(5)
                 .numThreads(6)
@@ -219,7 +219,6 @@ public class LoadBalancingInterceptorFaultMonitoringStrategyTest {
 
         assertEquals(100, ctx.successCounter.get());
     }
-
 
     /**
      * Contains the variables used in one test run.

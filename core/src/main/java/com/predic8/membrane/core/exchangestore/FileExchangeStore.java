@@ -20,19 +20,19 @@ import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.Interceptor.*;
 import com.predic8.membrane.core.proxies.*;
-import com.predic8.membrane.core.util.*;
 import org.apache.commons.io.*;
 import org.slf4j.*;
 
 import java.io.*;
 import java.nio.file.*;
 import java.text.*;
-import java.util.Timer;
 import java.util.*;
 import java.util.concurrent.atomic.*;
 
+import static com.predic8.membrane.core.util.TextUtil.*;
 import static java.nio.charset.StandardCharsets.*;
-import static java.util.Calendar.DAY_OF_MONTH;
+import static java.util.Calendar.*;
+import static java.util.Objects.*;
 
 /**
  * The output file is UTF-8 encoded.
@@ -146,9 +146,8 @@ public class FileExchangeStore extends AbstractExchangeStore {
 				IOUtils.copy(body.getContentAsStream(), os);
 			} else {
 				if (msg.isXML()) {
-					os.write(TextUtil.formatXML(
-							new InputStreamReader(body.getContentAsStream(), msg
-									.getHeader().getCharset()))
+					os.write(formatXML(
+							new InputStreamReader(body.getContentAsStream(), requireNonNullElseGet(msg.getHeader().getCharset(), UTF_8::name)))
 							.getBytes(UTF_8));
 				} else
 					IOUtils.copy(body.getContentAsStream(), os);

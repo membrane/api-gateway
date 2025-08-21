@@ -29,7 +29,14 @@ class JSONPrettifierTest {
 
     @BeforeEach
     void setUp() {
-        beautifier = new JSONPrettifier();
+        beautifier = JSONPrettifier.INSTANCE;
+    }
+
+    @Test
+    void invalidJson_returnsInput() {
+        byte[] invalid = "{ foo: [1, 2,".getBytes(UTF_8); // truncated
+        byte[] pretty = beautifier.prettify(invalid);
+        assertArrayEquals(invalid, pretty);
     }
 
     @Test

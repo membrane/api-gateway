@@ -34,6 +34,11 @@ public class JSONPrettifier implements Prettifier {
             .enable(ALLOW_UNQUOTED_FIELD_NAMES)
             .build();
 
+    public static final JSONPrettifier INSTANCE = new JSONPrettifier();
+
+    private JSONPrettifier() {
+    }
+
     /**
      * Assumes UTF-8 encoding cause it is JSON
      */
@@ -42,8 +47,13 @@ public class JSONPrettifier implements Prettifier {
         try {
             return om.writerWithDefaultPrettyPrinter().writeValueAsBytes(om.readTree(c));
         } catch (IOException e) {
-            log.debug("", e);
+            log.debug("Failed to prettify JSON. Returning input unmodified.", e);
             return c;
         }
+    }
+
+    @Override
+    public byte[] prettify(InputStream is, Charset charset) throws IOException {
+        return om.writerWithDefaultPrettyPrinter().writeValueAsBytes(om.readTree(is));
     }
 }

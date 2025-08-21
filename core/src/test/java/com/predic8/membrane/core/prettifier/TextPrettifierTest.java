@@ -24,7 +24,7 @@ class TextPrettifierTest extends AbstractPrettifierTest {
 
     @BeforeEach
     void setUp() {
-        prettifier = new TextPrettifier();
+        prettifier = TextPrettifier.INSTANCE;
     }
 
     @Test

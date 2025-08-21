@@ -60,18 +60,28 @@ public class BeautifierInterceptor extends AbstractInterceptor {
             return CONTINUE;
         }
 
+        byte[] prettified;
         try {
-            msg.setBodyContent(getPrettifier(msg).prettify(msg.getBody().getRaw(), getCharset(msg, getPrettifier(msg))));
-        } catch (Exception e) {
-            throw new RuntimeException(e);
+            Prettifier prettifier = getPrettifier(msg);
+            prettified = prettifier.prettify(msg.getBodyAsStreamDecoded(), getCharset(msg, prettifier));
+            msg.setBodyContent(prettified);
+        } catch (IOException e) {
+            // If it is not possible to beautify, to nothing
+            // Cause will be often user input => do not log stacktrace
+            log.info("Could not beautify message body: ", e.getMessage());
         }
 
         return CONTINUE;
     }
 
     private static @Nullable Charset getCharset(Message msg, Prettifier prettifier) {
-        if (msg.getCharset() != null)
-            return Charset.forName(msg.getCharset());
+        if (msg.getCharset() != null) {
+            try {
+                return Charset.forName(msg.getCharset());
+            } catch (Exception e) {
+                log.info("Unsupported charset: {} fall back to UTF-8", msg.getCharset());
+            }
+        }
 
         if (prettifier instanceof XMLPrettifier) {
             return null;
@@ -85,6 +95,6 @@ public class BeautifierInterceptor extends AbstractInterceptor {
 
     @Override
     public String getShortDescription() {
-        return "Pretty printing of message body. Applies, if the body is JSON, XML or text.";
+        return "Pretty printing of message bodies. Can format JSON, JSON5, XML or text.";
     }
 }

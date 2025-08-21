@@ -14,16 +14,27 @@
 
 package com.predic8.membrane.core.prettifier;
 
+import java.io.*;
 import java.nio.charset.*;
 
 /**
  * Returns the reference to the provided byte array without copying.
  * Note: zero-copy aliasing — callers must not mutate the returned array unless they own it.
  */
-public class NullPrettifier implements Prettifier {
+public final class NullPrettifier implements Prettifier {
+
+    public static final NullPrettifier INSTANCE = new NullPrettifier();
+
+    private NullPrettifier() {
+    }
 
     @Override
     public byte[] prettify(byte[] c, Charset charset) {
         return c; // Ignore charset
+    }
+
+    @Override
+    public byte[] prettify(InputStream is, Charset charset) throws IOException {
+        return is.readAllBytes();
     }
 }

@@ -14,6 +14,7 @@
 
 package com.predic8.membrane.core.ws.relocator;
 
+import com.predic8.xml.beautifier.*;
 import org.slf4j.*;
 
 import javax.annotation.concurrent.*;
@@ -30,7 +31,6 @@ import static com.predic8.membrane.core.Constants.*;
 public class Relocator {
 	private static final Logger log = LoggerFactory.getLogger(Relocator.class.getName());
 
-	// TODO
 	private final XMLEventFactory fac = XMLEventFactory.newInstance();
 
 	private final String host;
@@ -107,15 +107,14 @@ public class Relocator {
 
 	@Deprecated
 	public void relocate(InputStreamReader isr) throws Exception {
-		XMLEventReader parser = XMLInputFactory.newInstance().createXMLEventReader(isr);
-		while (parser.hasNext()) {
-			writer.add(process(parser));
-		}
-		writer.flush();
+        relocate(XMLInputFactoryFactory.inputFactory().createXMLEventReader(isr));
 	}
 
 	public void relocate(InputStream is) throws Exception {
-		XMLEventReader parser = XMLInputFactory.newInstance().createXMLEventReader(is);
+		relocate(XMLInputFactory.newInstance().createXMLEventReader(is));
+	}
+
+	private void relocate(XMLEventReader parser) throws XMLStreamException {
 		while (parser.hasNext()) {
 			writer.add(process(parser));
 		}
@@ -133,10 +132,14 @@ public class Relocator {
 		}
 
 		return relocatingAttributes.entrySet().stream()
-				.filter(e -> getElementName(event).equals(e.getKey()))
+				.filter(e -> shouldProcess(e, event))
 				.findFirst()
 				.map(e -> replace(event, e.getValue()))
 				.orElse(event);
+	}
+
+	private boolean shouldProcess(Map.Entry<QName, String> e, XMLEvent event) {
+		return getElementName(event).equals(e.getKey());
 	}
 
 	private QName getElementName(XMLEvent event) {

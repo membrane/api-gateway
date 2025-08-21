@@ -24,17 +24,12 @@ import javax.xml.stream.events.*;
 import java.io.*;
 import java.util.*;
 
-import static javax.xml.stream.XMLInputFactory.*;
-
 
 public class TextUtil {
 	private static final Logger log = LoggerFactory.getLogger(TextUtil.class.getName());
 
 	// Guess for a very short XML
 	private static final int STRING_BUFFER_INITIAL_CAPACITY_FOR_XML = 250;
-
-	// TODO make it thread safe! See
-	private static final XMLInputFactory xmlInputFactory = newInstance();
 
 	private static final char[] source;
 	private static final String[] replace;
@@ -75,7 +70,7 @@ public class TextUtil {
             new XMLBeautifier(getXmlBeautifierFormatter(asHTML, out)).parse(r);
 			return out.toString();
 		}
-		catch (Exception e){
+		catch (XMLStreamException e){
 			log.info("Error parsing XML: {}", e.getMessage());
 			throw e;
 		}
@@ -86,7 +81,7 @@ public class TextUtil {
 			StringWriter out = new StringWriter(STRING_BUFFER_INITIAL_CAPACITY_FOR_XML);
 			new XMLBeautifier(getXmlBeautifierFormatter(asHTML, out)).parse(is);
 			return out.toString();
-		} catch (XMLStreamException e) {
+		} catch (IOException e) {
 			log.info("Error parsing XML: {}", e.getMessage());
 			throw e;
 		}
@@ -145,23 +140,13 @@ public class TextUtil {
 		return (english.charAt(0) + english.substring(1)).toUpperCase();
 	}
 
-
-
-	static {
-		xmlInputFactory.setProperty(IS_REPLACING_ENTITY_REFERENCES, false);
-		xmlInputFactory.setProperty(IS_SUPPORTING_EXTERNAL_ENTITIES, false);
-	}
-
 	/**
 	 * Checks whether s is a valid (well-formed and balanced) XML snippet.
 	 * Note that attributes escaped by single quotes are accepted (which is illegal by spec).
 	 */
 	public static boolean isValidXMLSnippet(String s) {
 		try {
-			XMLEventReader parser;
-			synchronized (xmlInputFactory) {
-				parser = xmlInputFactory.createXMLEventReader(new StringReader("<a>" + s + "</a>"));
-			}
+			XMLEventReader parser = XMLInputFactoryFactory.inputFactory().createXMLEventReader(new StringReader("<a>" + s + "</a>"));
 			XMLEvent event = null;
 			while (parser.hasNext()) {
 				event = (XMLEvent) parser.next();

@@ -16,7 +16,7 @@ package com.predic8.membrane.core;
 import org.junit.platform.suite.api.*;
 
 @Suite
-@SelectPackages({"com.predic8.membrane.core"})
+@SelectPackages({"com.predic8"})
 /**
  * @TODO Fix:
  * - com.predic8.membrane.core.interceptor.opentelemetry.OpenTelemetryInterceptorTest

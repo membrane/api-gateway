@@ -15,27 +15,51 @@
 package com.predic8.membrane.core.prettifier;
 
 import com.predic8.xml.beautifier.*;
+import org.jetbrains.annotations.*;
 import org.slf4j.*;
 
 import java.io.*;
 import java.nio.charset.*;
 
-public class XMLPrettifier implements Prettifier {
+import static java.nio.charset.StandardCharsets.*;
 
+public class XMLPrettifier extends AbstractPrettifier {
+
+    public static final XMLPrettifier INSTANCE = new XMLPrettifier();
     private static final Logger log = LoggerFactory.getLogger(XMLPrettifier.class);
+
+    private XMLPrettifier() {
+    }
+
+    /**
+     * If you want a BOM for UTF-16 output, use "UTF-16" (not BE/LE)
+     *
+     * @param charset
+     * @return
+     */
+    private static @NotNull Charset getOutputCharset(Charset charset) {
+        return ("UTF-16BE".equalsIgnoreCase(charset.name()) ||
+                "UTF-16LE".equalsIgnoreCase(charset.name()))
+                ? UTF_16
+                : getCharset(charset);
+    }
 
     @Override
     public byte[] prettify(byte[] c) {
         try {
-            StringWriter sw = new StringWriter();
-            XMLBeautifier xb = new XMLBeautifier(new StandardXMLBeautifierFormatter(sw, 4));
-            xb.parse(new ByteArrayInputStream(c));
-
-            return sw.toString().getBytes(xb.getDetectedEncoding() /* TODO charset from parse */);
+            return prettify(c, UTF_8);
         } catch (Exception e) {
             log.debug("", e);
             return c;
         }
+    }
+
+    @Override
+    public byte[] prettify(InputStream is, Charset charset) throws IOException {
+            StringWriter sw = new StringWriter();
+            XMLBeautifier xb = new XMLBeautifier(new StandardXMLBeautifierFormatter(sw, 4));
+            xb.parse(is);
+            return sw.toString().getBytes(xb.getDetectedEncoding() /* Charset from parse */);
     }
 
     @Override
@@ -48,17 +72,17 @@ public class XMLPrettifier implements Prettifier {
             xb.parse(new ByteArrayInputStream(c));
 
             if (xb.getDetectedEncoding() != null) {
-                charset = Charset.forName(xb.getDetectedEncoding());
+                try {
+                    charset = Charset.forName(xb.getDetectedEncoding());
+                } catch (IllegalArgumentException iae) {
+                    log.debug("Unknown detected XML encoding '{}'. Falling back to requested charset {}.",
+                            xb.getDetectedEncoding(), charset);
+                }
             }
-            // If you want a BOM for UTF-16 output, use "UTF-16" (not BE/LE)
-            Charset out = ("UTF-16BE".equalsIgnoreCase(charset.name()) ||
-                           "UTF-16LE".equalsIgnoreCase(charset.name()))
-                    ? java.nio.charset.StandardCharsets.UTF_16
-                    : charset;
 
-            return sw.toString().getBytes(out);
+            return sw.toString().getBytes(getOutputCharset(charset));
         } catch (Exception e) {
-            log.debug("", e);
+            log.debug("Failed to prettify XML. Returning input unmodified.", e);
             return c;
         }
     }

@@ -240,7 +240,7 @@ public class ProblemDetails {
     }
 
     private String normalizeForType(String s) {
-        return s.replace(" ", "-").toLowerCase();
+        return s.replace(" ", "-").toLowerCase(Locale.ROOT);
     }
 
     private Map<String, Object> createInternal(String type) {
@@ -261,7 +261,7 @@ public class ProblemDetails {
         if (flow != null) {
             see += "/" + flow.name().toLowerCase();
         }
-        if (!see.isEmpty()) {
+        if (!seeSuffix.isEmpty()) {
             see += "/" + seeSuffix;
         }
         internalMap.put("see", see);
@@ -304,7 +304,7 @@ public class ProblemDetails {
             else
                 createJson(root, builder);
         } catch (Exception e) {
-            builder.body("Title: %s\nType: %s\n%s".formatted(type, title, root).getBytes(UTF_8));
+            builder.body("Title: %s\nType: %s\n%s".formatted(title,type,root).getBytes(UTF_8));
             builder.contentType(TEXT_PLAIN_UTF8);
         }
         return builder.build();

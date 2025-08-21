@@ -24,23 +24,27 @@ class PrettifierTest {
 
     @Test
     void json() {
-        assertEquals(JSON, getInstance(APPLICATION_JSON));
-        assertEquals(JSON, getInstance(APPLICATION_JSON_UTF8));
-        assertEquals(JSON, getInstance(APPLICATION_PROBLEM_JSON));
+        assertEquals(JSONPrettifier.INSTANCE, getInstance(APPLICATION_JSON));
+        assertEquals(JSONPrettifier.INSTANCE, getInstance(APPLICATION_JSON_UTF8));
+        assertEquals(JSONPrettifier.INSTANCE, getInstance(APPLICATION_PROBLEM_JSON));
     }
 
     @Test
     void xml() {
-        assertEquals(XML, getInstance(APPLICATION_XML));
-        assertEquals(XML, getInstance(TEXT_XML));
-        assertEquals(XML, getInstance(TEXT_XML_UTF8));
+        assertEquals(XMLPrettifier.INSTANCE, getInstance(APPLICATION_XML));
+        assertEquals(XMLPrettifier.INSTANCE, getInstance(TEXT_XML));
+        assertEquals(XMLPrettifier.INSTANCE, getInstance(TEXT_XML_UTF8));
     }
 
     @Test
     void text() {
-        assertEquals(TEXT, getInstance(TEXT_PLAIN));
-        assertEquals(TEXT, getInstance(TEXT_PLAIN_UTF8));
-        assertEquals(TEXT, getInstance("trash"));
+        assertEquals(TextPrettifier.INSTANCE, getInstance(TEXT_PLAIN));
+        assertEquals(TextPrettifier.INSTANCE, getInstance(TEXT_PLAIN_UTF8));
+    }
+
+    @Test
+    void unknown() {
+        assertEquals(NullPrettifier.INSTANCE, getInstance("unknown"));
     }
 
 }

@@ -140,13 +140,10 @@ public class XML2HTTP {
 	}
 
 	private static XMLEventReader getXmlEventReader(Message message) throws XMLStreamException {
-		XMLEventReader parser;
 		if (message.getCharset() != null) {
-			parser = xmlInputFactory.createXMLEventReader(message.getBodyAsStreamDecoded(), message.getCharset());
-		} else {
-			parser = xmlInputFactory.createXMLEventReader(message.getBodyAsStream());
+			return xmlInputFactory.createXMLEventReader(message.getBodyAsStreamDecoded(), message.getCharset());
 		}
-		return parser;
+		return xmlInputFactory.createXMLEventReader(message.getBodyAsStreamDecoded());
 	}
 
 	private static String slurpCharacterData(XMLEventReader parser, StartElement sevent) throws XMLStreamException, XML2HTTPException {

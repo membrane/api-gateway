@@ -22,7 +22,6 @@ import org.slf4j.LoggerFactory;
 
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Response.ResponseBuilder;
-import com.predic8.membrane.core.util.ByteUtil;
 
 import static com.predic8.membrane.core.http.Header.*;
 
@@ -42,7 +41,7 @@ class PositiveNode extends Node {
 
 	public PositiveNode(Exchange exchange) throws IOException, ParseException {
 		Response response = exchange.getResponse();
-		content = ByteUtil.getByteArrayData(response.getBodyAsStreamDecoded());
+        content = response.getBodyAsStreamDecoded().readAllBytes();
 		contentType = response.getHeader().getFirstValue(CONTENT_TYPE);
 		lastModified = CacheInterceptor.fromRFC(response.getHeader().getFirstValue(LAST_MODIFIED));
 		inResponseToAccept = exchange.getRequest().getHeader().getNormalizedValue(ACCEPT);

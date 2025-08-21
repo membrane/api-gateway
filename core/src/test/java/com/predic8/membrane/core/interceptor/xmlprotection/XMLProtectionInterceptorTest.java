@@ -18,7 +18,6 @@ import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.interceptor.Outcome;
-import com.predic8.membrane.core.util.ByteUtil;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -43,7 +42,7 @@ public class XMLProtectionInterceptorTest {
 
     private void runOn(String resource, boolean expectSuccess) throws Exception {
         exc.getRequest().getHeader().setContentType(APPLICATION_XML);
-        exc.getRequest().setBodyContent(ByteUtil.getByteArrayData(this.getClass().getResourceAsStream(resource)));
+        exc.getRequest().setBodyContent(this.getClass().getResourceAsStream(resource).readAllBytes());
         Outcome outcome = interceptor.handleRequest(exc);
         assertEquals(expectSuccess ? CONTINUE : ABORT, outcome);
     }

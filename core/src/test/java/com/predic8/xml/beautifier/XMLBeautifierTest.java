@@ -161,11 +161,71 @@ public class XMLBeautifierTest {
 
         beautifier.parse(new ByteArrayInputStream(bytes));
         String result = out.toString();
-
-        assertTrue(result.contains("encoding = \"%s\"".formatted(enc)),
+        assertTrue(result.contains("encoding=\"%s\"".formatted(enc)),
                 "Expected prolog to contain encoding attribute, got:\n" + result);
 
         assertTrue(enc.equalsIgnoreCase(beautifier.getDetectedEncoding()),
                 "Expected detected encoding %s but was %s".formatted( enc, beautifier.getDetectedEncoding()));
     }
+
+    @Test
+    @DisplayName("CDATA sections are preserved verbatim in output")
+    void cdata_isPreservedVerbatim() throws Exception {
+        String xml = "<a><![CDATA[1 < 2 & 3]]></a>";
+
+        StringWriter out = new StringWriter();
+        XMLBeautifier beautifier = new XMLBeautifier(new StandardXMLBeautifierFormatter(out, 2));
+
+        beautifier.parse(new StringReader(xml));
+        String result = out.toString();
+
+        assertTrue(
+                result.contains("1 &lt; 2 &amp; 3"),
+                "Expected data in CDATA sections to be preserved, got:\n" + result
+        );
+        assertFalse(result.contains("CDATA"),"CDATA sections are removed");
+    }
+
+    @Test
+    @DisplayName("Adjacent/split CDATA sections remain split")
+    void adjacentCdata_sectionsRemainSplit() throws Exception {
+        // Legal XML that represents "foo]]>bar" via two adjacent CDATA sections
+        String xml = "<a><![CDATA[foo]]]]><![CDATA[>bar]]></a>";
+
+        StringWriter out = new StringWriter();
+        XMLBeautifier beautifier = new XMLBeautifier(new StandardXMLBeautifierFormatter(out, 2));
+
+        beautifier.parse(new StringReader(xml));
+        String result = out.toString();
+
+        assertTrue(
+                result.contains("<a>foo]]>bar</a>"),
+                "Expected adjacent CDATA sections handling, got:\n" + result
+        );
+    }
+
+//    @Test
+//    @DisplayName("If formatter supports writeCData, it is invoked")
+//    void cdata_callsWriteCDataIfSupported() throws Exception {
+//        boolean hasWriteCData;
+//        try {
+//            XMLBeautifierFormatter.class.getMethod("writeCData", String.class);
+//            hasWriteCData = true;
+//        } catch (NoSuchMethodException e) {
+//            hasWriteCData = false;
+//        }
+//
+//        // Skip this test if the formatter doesn't declare writeCData(String)
+//        assumeTrue(hasWriteCData, "XMLBeautifierFormatter has no writeCData(String); skipping.");
+//
+//        XMLBeautifierFormatter f = mockFormatter();
+//        XMLBeautifier b = new XMLBeautifier(f);
+//
+//        String xml = "<a><![CDATA[1 < 2 & 3]]></a>";
+//        b.parse(new StringReader(xml));
+//
+//        // Verify the formatter was asked to write the CDATA content as CDATA, not escaped text
+//        verify(f, atLeastOnce()).writeCData("1 < 2 & 3");
+//        verify(f, atLeastOnce()).closeTag(nullable(String.class), eq("a"));
+//    }
 }

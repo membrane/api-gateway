@@ -13,10 +13,10 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.ws_addressing;
 
+import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.interceptor.*;
 import org.slf4j.*;
-import org.springframework.context.*;
 
 import javax.xml.stream.*;
 import java.io.*;
@@ -24,9 +24,14 @@ import java.io.*;
 import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 
+@MCElement(name="wsaEndpointRewriter")
 public class WsaEndpointRewriterInterceptor extends AbstractInterceptor {
 
 	private static final Logger log = LoggerFactory.getLogger(WsaEndpointRewriterInterceptor.class);
+
+	private String protocol;
+	private String host;
+	private int port;
 
 	@Override
 	public Outcome handleRequest(Exchange exc) {
@@ -34,7 +39,7 @@ public class WsaEndpointRewriterInterceptor extends AbstractInterceptor {
 
         try {
 			// Why is port 2020 hard coded?
-            new WsaEndpointRewriter(getRegistry()).rewriteEndpoint(exc.getRequest().getBodyAsStreamDecoded(), output, 2020, exc);
+            new WsaEndpointRewriter().rewriteEndpoint(exc.getRequest().getBodyAsStreamDecoded(), output, new Location( protocol, host,  port));
         } catch (XMLStreamException e) {
 			log.error("",e);
 			internal(router.isProduction(),getDisplayName())
@@ -46,14 +51,35 @@ public class WsaEndpointRewriterInterceptor extends AbstractInterceptor {
 
         exc.getRequest().setBodyContent(output.toByteArray());
 
-		return Outcome.CONTINUE;
+		return CONTINUE;
 	}
 
-	private DecoupledEndpointRegistry getRegistry() {
-		ApplicationContext beanFactory = getRouter().getBeanFactory();
-		if (beanFactory == null) {
-			return new DecoupledEndpointRegistry();
-		}
-		return beanFactory.getBean(DecoupledEndpointRegistry.class);
+	public String getProtocol() {
+		return protocol;
 	}
+
+	@MCAttribute
+	public void setProtocol(String protocol) {
+		this.protocol = protocol;
+	}
+
+	public String getHost() {
+		return host;
+	}
+
+	@MCAttribute
+	public void setHost(String host) {
+		this.host = host;
+	}
+
+	public int getPort() {
+		return port;
+	}
+
+	@MCAttribute
+	public void setPort(int port) {
+		this.port = port;
+	}
+
+	public record Location(String protocol, String host, int port) {}
 }

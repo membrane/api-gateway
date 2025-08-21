@@ -14,14 +14,19 @@
 
 package com.predic8.xml.beautifier;
 
+import org.jetbrains.annotations.*;
+import org.slf4j.*;
+
 import javax.xml.stream.*;
 import java.io.*;
 
+import static java.lang.Boolean.FALSE;
 import static javax.xml.stream.XMLInputFactory.*;
 import static javax.xml.stream.XMLStreamConstants.*;
 
 public class XMLBeautifier {
 
+    private static final Logger log = LoggerFactory.getLogger(XMLBeautifier.class);
     private boolean empty;
 
     private boolean startTagClosed = true;
@@ -40,14 +45,22 @@ public class XMLBeautifier {
         this.formatter = formatter;
     }
 
-    public void parse(InputStream inputStream) throws Exception {
-        parse(XMLInputFactoryFactory.inputFactory().createXMLStreamReader(inputStream));
+    public void parse(InputStream inputStream) throws IOException {
+        try {
+            parse(getXmlInputFactory().createXMLStreamReader(inputStream));
+        } catch (Exception e) {
+            throw new IOException(e);
+        }
     }
 
     public void parse(Reader reader) throws Exception {
-        XMLInputFactory factory = XMLInputFactory.newInstance(); // TODO
-        factory.setProperty(SUPPORT_DTD, false);
-        parse(factory.createXMLStreamReader(reader));
+        parse(getXmlInputFactory().createXMLStreamReader(reader));
+    }
+
+    private static @NotNull XMLInputFactory getXmlInputFactory() {
+        XMLInputFactory factory = XMLInputFactoryFactory.inputFactory();
+        factory.setProperty(SUPPORT_DTD, FALSE);
+        return factory;
     }
 
     private void parse(XMLStreamReader reader) throws Exception {
@@ -85,7 +98,7 @@ public class XMLBeautifier {
                 int indent = reader.getPrefix() != null ? reader.getPrefix().length() : 0;
                 indent += reader.getLocalName().length();
                 writeNamespaceAttributes(reader, indent);
-                writeAtributes(reader, indent);
+                writeAttributes(reader, indent);
 
                 startTagClosed = false;
                 charContent = false;
@@ -123,25 +136,29 @@ public class XMLBeautifier {
                 formatter.writeText(reader.getText()); // TODO check format with <foo> \t\n<bar>
             }
             case COMMENT -> {
+                if (!startTagClosed) {
+                    formatter.closeTag();
+                    startTagClosed = true;
+                }
                 indent();
                 writeComment(reader);
+                charContent = false;
             }
-            case DTD -> {
-            }
-            case CDATA -> { // TODO
-            }
-            case ATTRIBUTE -> { // TODO
-            }
-            case END_DOCUMENT -> {
+            // The current Java XML parser does not send CDATA events. Instead it passes it as characters (See test)
+            // The implementation here is for the case that a future or different parser suddenly supports CDATA to
+            // prevent data loss.
+            case CDATA -> {
+                empty = false;
+                if (!startTagClosed) {
+                    formatter.closeTag();
+                    startTagClosed = true;
+                }
+                formatter.writeText(reader.getText());
             }
             case START_DOCUMENT -> {
                 detectedEncoding = reader.getEncoding();
-                System.out.println("Detected encoding: " + detectedEncoding);
+                log.debug("Detected encoding: {}", detectedEncoding);
                 writeStartDocument(reader);
-            }
-            case ENTITY_DECLARATION -> {
-            }
-            case PROCESSING_INSTRUCTION -> {
             }
             default -> {
             }
@@ -149,7 +166,6 @@ public class XMLBeautifier {
     }
 
     private void writeStartDocument(XMLStreamReader reader) throws IOException {
-        indent();
         formatter.writeVersionAndEncoding(reader.getVersion(), reader.getEncoding());
     }
 
@@ -163,7 +179,7 @@ public class XMLBeautifier {
         return false;
     }
 
-    private void writeAtributes(XMLStreamReader parser, int indent) throws IOException {
+    private void writeAttributes(XMLStreamReader parser, int indent) throws IOException {
         formatter.incrementIndentBy(indent);
         for (int i = 0; i < parser.getAttributeCount(); i++) {
             if (parser.getNamespaceCount() > 0 || i != 0) {

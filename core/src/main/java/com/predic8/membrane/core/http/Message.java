@@ -25,6 +25,7 @@ import static com.predic8.membrane.core.Constants.*;
 import static com.predic8.membrane.core.http.Header.*;
 import static com.predic8.membrane.core.util.ContentTypeDetector.EffectiveContentType.*;
 import static com.predic8.membrane.core.util.ContentTypeDetector.detectEffectiveContentType;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * A HTTP message (request or response).
@@ -137,9 +138,8 @@ public abstract class Message {
 	 */
 	public String getBodyAsStringDecoded() {
 		try {
-			String charset = getCharset();
-			if (charset == null)
-				charset = "UTF-8";
+			String charsetName = getCharset();
+			Charset charset = charsetName != null ? Charset.forName(charsetName) : UTF_8;
 			return new String(MessageUtil.getContent(this), charset);
 		} catch (Exception e) {
 			throw new RuntimeException(e);

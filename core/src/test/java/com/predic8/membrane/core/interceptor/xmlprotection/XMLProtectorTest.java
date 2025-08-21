@@ -13,7 +13,6 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.xmlprotection;
 
-import com.predic8.membrane.core.util.*;
 import org.junit.jupiter.api.*;
 import org.slf4j.*;
 
@@ -34,7 +33,7 @@ public class XMLProtectorTest {
 	private boolean runOn(String resource, boolean removeDTD) throws Exception {
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
         XMLProtector xmlProtector = new XMLProtector(new OutputStreamWriter(baos, UTF_8), removeDTD, 1000, 1000);
-		input = ByteUtil.getByteArrayData(this.getClass().getResourceAsStream(resource));
+        input = this.getClass().getResourceAsStream(resource).readAllBytes();
 
 		if (resource.endsWith("lmx")) {
 			reverse();

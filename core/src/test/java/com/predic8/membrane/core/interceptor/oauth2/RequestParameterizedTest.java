@@ -13,18 +13,19 @@
 
 package com.predic8.membrane.core.interceptor.oauth2;
 
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.interceptor.authentication.session.SessionManager;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.MethodSource;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.interceptor.authentication.session.*;
+import org.junit.jupiter.api.*;
+import org.junit.jupiter.params.*;
+import org.junit.jupiter.params.provider.*;
 
-import java.util.Map;
-import java.util.concurrent.Callable;
-import java.util.function.Supplier;
-import java.util.regex.Pattern;
+import java.util.*;
+import java.util.concurrent.*;
+import java.util.function.*;
+import java.util.regex.*;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static java.nio.charset.StandardCharsets.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 public abstract class RequestParameterizedTest {
 
@@ -88,7 +89,7 @@ public abstract class RequestParameterizedTest {
         return new Callable<>() {
             @Override
             public Object call() {
-                exc.getRequest().setBodyContent(exc.getRequest().getBodyAsStringDecoded().replaceFirst(Pattern.quote(value), replacement).getBytes());
+                exc.getRequest().setBodyContent(exc.getRequest().getBodyAsStringDecoded().replaceFirst(Pattern.quote(value), replacement).getBytes(UTF_8));
                 return this;
             }
         };
@@ -98,7 +99,7 @@ public abstract class RequestParameterizedTest {
         return new Callable<>() {
             @Override
             public Object call() throws Exception {
-                exc.getRequest().setBodyContent(exc.getRequest().getBodyAsStringDecoded().replaceFirst(Pattern.quote(value.call()), replacement.call()).getBytes());
+                exc.getRequest().setBodyContent(exc.getRequest().getBodyAsStringDecoded().replaceFirst(Pattern.quote(value.call()), replacement.call()).getBytes(UTF_8));
                 return this;
             }
         };

@@ -18,6 +18,8 @@ import java.io.*;
 
 public class StandardXMLBeautifierFormatter extends AbstractXMLBeautyfierFormatter {
 
+	public static final char DOUBLE_QUOTE = '"';
+
 	public StandardXMLBeautifierFormatter(Writer writer, int indent) {
 		super(writer, indent);
 	}
@@ -65,7 +67,7 @@ public class StandardXMLBeautifierFormatter extends AbstractXMLBeautyfierFormatt
 	}
 	
 	public void printNewLine() throws IOException {
-		writer.write("\r\n");
+		writer.write("\n"); // LF is canonical form of XML
 	}
 	
 	public void startTag()  throws IOException {
@@ -78,14 +80,14 @@ public class StandardXMLBeautifierFormatter extends AbstractXMLBeautyfierFormatt
 		}
 		writer.write("<?xml version=\"");
 		writer.write( version);
-		writer.write( '"');
+		writer.write(DOUBLE_QUOTE);
 		if (encoding != null) {
 			writer.write(" encoding=");
-			writer.write('"');
+			writer.write(DOUBLE_QUOTE);
 			writer.write(encoding);
-			writer.write('"');
+			writer.write(DOUBLE_QUOTE);
 		}
-		writer.write( " ?>");
+		writer.write( "?>");
 		printNewLine();
 	}
 	
@@ -124,7 +126,7 @@ public class StandardXMLBeautifierFormatter extends AbstractXMLBeautyfierFormatt
 				case '&' -> b.append("&amp;");
 				case '<' -> b.append("&lt;");
 				case '>' -> b.append("&gt;");
-				case '"' -> b.append("&quot;");
+				case DOUBLE_QUOTE -> b.append("&quot;");
 				case '\''-> b.append("&apos;");
 				default  -> b.append(c);
 			}

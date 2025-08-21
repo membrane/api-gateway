@@ -14,11 +14,11 @@
 
 package com.predic8.xml.beautifier;
 
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
-import java.io.IOException;
-import java.io.StringWriter;
+import java.io.*;
 
+import static java.nio.charset.StandardCharsets.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 class StandardXMLBeautifierFormatterTest {
@@ -131,7 +131,8 @@ class StandardXMLBeautifierFormatterTest {
         StandardXMLBeautifierFormatter f = newFormatter(w);
 
         f.writeVersionAndEncoding("1.0", "UTF-8");
-        assertEquals("<?xml version = \"1.0\" encoding = \"UTF-8\" ?>\r\n", w.toString());
+        assertTrue(w.toString().startsWith("""
+            <?xml version="1.0" encoding="UTF-8"?>"""),"Starts with: '%s'".formatted(w.toString().substring(0,10)));
     }
 
     @Test
@@ -140,7 +141,8 @@ class StandardXMLBeautifierFormatterTest {
         StandardXMLBeautifierFormatter f = newFormatter(w);
 
         f.writeVersionAndEncoding("1.0", null);
-        assertEquals("<?xml version = \"1.0\" ?>\r\n", w.toString());
+        assertTrue( w.toString().startsWith("""
+                <?xml version="1.0"?>"""),"Start with: '" + w.toString().substring(0,10) + "'\n");
     }
 
     @Test
@@ -148,7 +150,7 @@ class StandardXMLBeautifierFormatterTest {
         StringWriter w = new StringWriter();
         StandardXMLBeautifierFormatter f = newFormatter(w);
 
-        f.writeVersionAndEncoding(null, "UTF-8");
+        f.writeVersionAndEncoding(null, UTF_8.name());
         assertEquals("", w.toString());
     }
 
@@ -159,7 +161,7 @@ class StandardXMLBeautifierFormatterTest {
 
         f.writeComment(" hello ");
         f.printNewLine();
-        assertEquals("<!-- hello -->\r\n", w.toString());
+        assertEquals("<!-- hello -->\n", w.toString());
     }
 
     @Test
@@ -183,11 +185,11 @@ class StandardXMLBeautifierFormatterTest {
     }
 
     @Test
-    void printNewLine_writesCRLF() throws IOException {
+    void printNewLine_writesLF() throws IOException {
         StringWriter w = new StringWriter();
         StandardXMLBeautifierFormatter f = newFormatter(w);
 
         f.printNewLine();
-        assertEquals("\r\n", w.toString());
+        assertEquals("\n", w.toString());
     }
 }

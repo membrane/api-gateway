@@ -245,11 +245,6 @@
 				<version>2.2.0</version>
 			</dependency>
 			<dependency>
-				<groupId>com.predic8</groupId>
-				<artifactId>xmlbeautifier</artifactId>
-				<version>1.2.2</version>
-			</dependency>
-			<dependency>
 				<groupId>com.google.guava</groupId>
 				<artifactId>guava</artifactId>
 				<version>32.1.2-jre</version>

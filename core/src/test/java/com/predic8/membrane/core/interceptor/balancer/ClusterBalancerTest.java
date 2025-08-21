@@ -21,7 +21,6 @@ import org.junit.jupiter.api.*;
 
 import java.io.*;
 
-import static com.predic8.membrane.core.util.ByteUtil.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class ClusterBalancerTest {
@@ -121,8 +120,8 @@ public class ClusterBalancerTest {
 	private Response getResponse() throws IOException {
 		Response res = Response.ok().build();
 		res.setHeader(getHeader());
-		res.setBodyContent(getByteArrayData(getClass().getResourceAsStream(
-				"/getBankResponsewithSession.xml")));
+        res.setBodyContent(getClass().getResourceAsStream(
+                "/getBankResponsewithSession.xml").readAllBytes());
 		return res;
 	}
 
@@ -130,8 +129,8 @@ public class ClusterBalancerTest {
 		Exchange exc = new Exchange(null);
 		Request res = new Request();
 		res.setHeader(getHeader());
-		res.setBodyContent(getByteArrayData(getClass().getResourceAsStream(
-				"/getBankwithSession555555.xml")));
+        res.setBodyContent(getClass().getResourceAsStream(
+                "/getBankwithSession555555.xml").readAllBytes());
 		exc.setRequest(res);
 		exc.setOriginalRequestUri("/axis2/services/BLZService");
 		return exc;
@@ -141,8 +140,8 @@ public class ClusterBalancerTest {
 		Exchange exc = new Exchange(null);
 		Request res = new Request();
 		res.setHeader(getHeader());
-		res.setBodyContent(getByteArrayData(getClass().getResourceAsStream(
-				"/getBank.xml")));
+        res.setBodyContent(getClass().getResourceAsStream(
+                "/getBank.xml").readAllBytes());
 		exc.setRequest(res);
 		exc.setOriginalRequestUri("/axis2/services/BLZService");
 		return exc;

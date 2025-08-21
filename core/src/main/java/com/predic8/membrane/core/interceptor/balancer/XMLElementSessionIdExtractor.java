@@ -31,26 +31,36 @@ public class XMLElementSessionIdExtractor extends AbstractSessionIdExtractor {
 
     private String localName;
     private String namespace;
-    private final XMLInputFactory fac = XMLInputFactory.newInstance();
+
+    /*
+     * Use XMLInputFactory thread safe
+     */
+    private static final ThreadLocal<XMLInputFactory> XML_INPUT_FACTORY_THREAD_LOCAL = ThreadLocal.withInitial(XMLInputFactory::newInstance);
 
     @Override
     public String getSessionId(Message msg) throws Exception {
         if (!msg.isXML()) {
-            log.debug("Didn't search a XML element in none XML message.");
+            log.debug("Did not search for an XML element in non-XML message.");
             return null;
         }
 
         log.debug("searching for sessionid");
 
-        fac.setProperty("javax.xml.stream.isNamespaceAware", namespace != null);
         XMLStreamReader reader = getXmlStreamReader(msg);
-        while (reader.hasNext()) {
-            reader.next();
-            if (isSessionIdElement(reader)) {
-                log.debug("sessionid element found");
-                return reader.getElementText();
+        try {
+            while (reader.hasNext()) {
+                reader.next();
+                if (isSessionIdElement(reader)) {
+                    log.debug("sessionid element found");
+                    return reader.getElementText();
+                }
             }
-
+        } finally {
+            try {
+                reader.close();
+            } catch (Exception e) {
+                log.debug("Failed to close XMLStreamReader", e);
+            }
         }
 
         log.debug("no sessionid element found");
@@ -59,9 +69,9 @@ public class XMLElementSessionIdExtractor extends AbstractSessionIdExtractor {
 
     private @NotNull XMLStreamReader getXmlStreamReader(Message msg) throws XMLStreamException {
         if (msg.getCharset() != null) {
-            return new FixedStreamReader(fac.createXMLStreamReader(msg.getBodyAsStreamDecoded(), msg.getCharset()));
+            return new FixedStreamReader(XML_INPUT_FACTORY_THREAD_LOCAL.get().createXMLStreamReader(msg.getBodyAsStreamDecoded(), msg.getCharset()));
         }
-        return new FixedStreamReader(fac.createXMLStreamReader(msg.getBodyAsStream()));
+        return new FixedStreamReader(XML_INPUT_FACTORY_THREAD_LOCAL.get().createXMLStreamReader(msg.getBodyAsStream()));
     }
 
     private boolean isSessionIdElement(XMLStreamReader reader) {
@@ -119,7 +129,7 @@ public class XMLElementSessionIdExtractor extends AbstractSessionIdExtractor {
 
     @Override
     protected String getElementName() {
-        return "sessionIdExtractor";
+        return "xmlSessionIdExtractor";
     }
 
 

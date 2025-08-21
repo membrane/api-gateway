@@ -26,9 +26,9 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class HeaderTest {
 
-    private static final Header header = new Header();
+    private final Header header = new Header();
 
-    private static Header h1;
+    private Header h1;
 
     @BeforeEach
     void setUp() {
@@ -42,9 +42,6 @@ class HeaderTest {
         h1.add(X_FORWARDED_FOR, "192.3.14.1");
         h1.add(X_FORWARDED_FOR, "10.0.0.1");
         h1.add(X_FORWARDED_FOR, "2001:db8:85a3:8d3:1319:8a2e:370:7348");
-
-        Header h2 = new Header();
-        h2.add(X_FORWARDED_FOR, "  192.3.14.1 , 	10.0.0.1,2001:db8:85a3:8d3:1319:8a2e:370:7348	 ");
     }
 
     @Test

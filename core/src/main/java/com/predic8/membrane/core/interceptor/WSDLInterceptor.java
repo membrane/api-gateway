@@ -72,7 +72,12 @@ public class WSDLInterceptor extends RelocatingInterceptor {
             registerWSDL(exc);
         }
         exc.getResponse().setBodyContent(stream.toByteArray());
-        // TODO setContentType
+
+        // Preserve existing Content-Type if present; otherwise set a sane default including charset.
+        if (exc.getResponse().getHeader().getContentType() == null) {
+            exc.getResponse().getHeader().setContentType("application/xml; charset=" +
+                                                         requireNonNullElseGet(exc.getResponse().getCharset(), UTF_8::name));
+        }
     }
 
     private @NotNull Relocator getRelocator(Exchange exc, OutputStream stream) throws Exception {

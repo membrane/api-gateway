@@ -18,6 +18,8 @@ import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import org.slf4j.*;
 
+import java.nio.charset.*;
+
 import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
 import static com.predic8.membrane.core.http.Header.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
@@ -91,7 +93,8 @@ public class RegExReplaceInterceptor extends AbstractInterceptor {
         log.debug("pattern: {}", regex);
         log.debug("replacement: {}", replace);
 
-        res.setBodyContent(res.getBodyAsStringDecoded().replaceAll(regex, replace).getBytes(requireNonNullElseGet(res.getCharset(), UTF_8::name)));
+        var cs = Charset.forName(requireNonNullElseGet(res.getCharset(), UTF_8::name));
+        res.setBodyContent(res.getBodyAsStringDecoded().replaceAll(regex, replace).getBytes(cs));
         res.getHeader().removeFields( CONTENT_ENCODING);
     }
 

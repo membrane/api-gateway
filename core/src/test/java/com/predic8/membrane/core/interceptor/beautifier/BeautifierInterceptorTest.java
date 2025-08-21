@@ -57,7 +57,7 @@ class BeautifierInterceptorTest {
     }
 
     @Test
-    void empty() throws URISyntaxException {
+    void passesThroughOnGetWithoutBody() throws URISyntaxException {
         assertEquals(CONTINUE,interceptor.handleRequest(get("/foo").buildExchange()));
     }
 
@@ -73,7 +73,7 @@ class BeautifierInterceptorTest {
         Request req = exc.getRequest();
         int bodyLength = req.getBody().getLength();
         assertEquals(req.getHeader().getContentLength(), bodyLength);
-        assertEquals(bodyLength, req.getBodyAsStringDecoded().length());
+        assertEquals(bodyLength, req.getBodyAsStringDecoded().getBytes(UTF_8).length);
     }
 
     @Test
@@ -133,8 +133,14 @@ class BeautifierInterceptorTest {
         }
 
         @Test
+        @DisplayName("Fallback for unknown charsets")
+        void unknowEncodingInfoInTheHeader() throws Exception {
+            checkForFile("/charsets/utf-8-unformatted.xml", UTF_8,"unknown");
+        }
+
+        @Test
         void utf16BEWithoutEncodingInfoInTheHeader() throws Exception {
-            checkForFile("/charsets/utf-16be-unformatted.xml", UTF_16,null);
+            checkForFile("/charsets/utf-16be-unformatted.xml", UTF_16BE,null);
         }
 
         private void checkForFile(String file, Charset expectedCharset, String contentTypeCharset) throws Exception {

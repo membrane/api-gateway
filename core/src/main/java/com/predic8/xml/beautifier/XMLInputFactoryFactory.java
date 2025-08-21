@@ -15,20 +15,43 @@
 package com.predic8.xml.beautifier;
 
 import javax.xml.stream.*;
+import java.io.*;
 
-import static java.lang.Boolean.*;
 import static javax.xml.stream.XMLInputFactory.*;
 
 public final class XMLInputFactoryFactory {
 
+    public static final String JAVAX_XML_STREAM_IS_SUPPORTING_EXTERNAL_ENTITIES = "javax.xml.stream.isSupportingExternalEntities";
+
     private static final ThreadLocal<XMLInputFactory> TL = ThreadLocal.withInitial(() -> {
+
+
         XMLInputFactory f = XMLInputFactory.newInstance();
-        f.setProperty(IS_COALESCING, TRUE);
-        f.setProperty(SUPPORT_DTD, FALSE);
-        f.setProperty(IS_NAMESPACE_AWARE, TRUE);
+        f.setProperty(IS_COALESCING, Boolean.FALSE); // CDATA stays CDATA
+        f.setProperty(SUPPORT_DTD, Boolean.FALSE);
+        f.setProperty(IS_NAMESPACE_AWARE, Boolean.TRUE);
+
+        // Do not replace internal character references to avoid XML bombs that deflate the message size
+        f.setProperty(IS_REPLACING_ENTITY_REFERENCES, Boolean.FALSE);
+
+        // Defensive hardening: disable external entities if supported and use a no-op resolver.
+        try {
+            f.setProperty(JAVAX_XML_STREAM_IS_SUPPORTING_EXTERNAL_ENTITIES, Boolean.FALSE);
+        } catch (IllegalArgumentException ignore) {
+            // property not supported by this implementation
+        }
+
+        // Disable entity resolving
+        f.setXMLResolver((publicId, systemId, baseURI, namespace) -> new ByteArrayInputStream(new byte[0]));
+
         return f;
     });
 
-    public static XMLInputFactory inputFactory() { return TL.get(); }
+    private XMLInputFactoryFactory() {
+    }
+
+    public static XMLInputFactory inputFactory() {
+        return TL.get();
+    }
 }
 

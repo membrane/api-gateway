@@ -25,8 +25,6 @@ import static java.nio.charset.StandardCharsets.*;
 
 public class WellknownEndpointProcessor extends EndpointProcessor {
 
-    private final JSONPrettifier prettifier = new JSONPrettifier();
-
     public WellknownEndpointProcessor(OAuth2AuthorizationServerInterceptor authServer) {
         super(authServer);
     }
@@ -38,7 +36,7 @@ public class WellknownEndpointProcessor extends EndpointProcessor {
 
     @Override
     public Outcome process(Exchange exc) {
-        exc.setResponse(ok().contentType(APPLICATION_JSON_UTF8).body(prettifier.prettify(authServer.getWellknownFile().getWellknown().getBytes(UTF_8), UTF_8)).build());
+        exc.setResponse(ok().contentType(APPLICATION_JSON_UTF8).body(JSONPrettifier.INSTANCE.prettify(authServer.getWellknownFile().getWellknown().getBytes(UTF_8), UTF_8)).build());
         return RETURN;
     }
 }

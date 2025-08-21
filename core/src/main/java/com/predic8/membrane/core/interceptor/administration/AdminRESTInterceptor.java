@@ -146,7 +146,7 @@ public class AdminRESTInterceptor extends RESTInterceptor {
 		if (msg == null) {
 			return noContent().build();
 		}
-		return ok().contentType(TEXT_PLAIN_UTF8).body(msg.toString()).build();//TODO uses body.toString that doesn't handle different encodings than utf-8
+		return ok().contentType(TEXT_PLAIN_UTF8).body(msg.getBodyAsStringDecoded()).build();
 	}
 
 	@Mapping("/admin/web/exchanges/(-?\\d+)/(response|request)/body")

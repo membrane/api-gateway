@@ -16,15 +16,24 @@ package com.predic8.membrane.core.prettifier;
 
 import org.jetbrains.annotations.*;
 
+import java.io.*;
 import java.nio.charset.*;
 
 import static java.lang.Integer.MAX_VALUE;
 
-public class TextPrettifier implements Prettifier {
+public class TextPrettifier extends AbstractPrettifier {
+
+    public static final TextPrettifier INSTANCE = new TextPrettifier();
+    private TextPrettifier() {}
     
     @Override
     public byte[] prettify(byte[] c, Charset charset) {
-        return normalizeMultiline(new String(c, charset)).getBytes(charset);
+        return normalizeMultiline(new String(c, getCharset(charset))).getBytes(charset);
+    }
+
+    @Override
+    public byte[] prettify(InputStream is, Charset charset) throws IOException {
+        return prettify(is.readAllBytes(), charset);
     }
 
     public static String normalizeMultiline(String input) {
@@ -91,9 +100,6 @@ public class TextPrettifier implements Prettifier {
         return minIndent;
     }
 
-    /**
-     * Keep trailing empty line info
-     */
     private static String @NotNull [] splitIntoLines(String input) {
         return input.split("\\R", -1);
     }

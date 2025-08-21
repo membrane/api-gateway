@@ -44,7 +44,7 @@ public abstract class AbstractTemplateInterceptor extends AbstractInterceptor {
     protected String contentType = TEXT_PLAIN;
 
     protected Boolean pretty = false;
-    protected Prettifier prettifier = new NullPrettifier();
+    protected Prettifier prettifier = NullPrettifier.INSTANCE;
 
     protected Charset charset = UTF_8;
 

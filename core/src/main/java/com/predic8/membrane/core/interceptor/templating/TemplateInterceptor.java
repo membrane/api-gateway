@@ -75,7 +75,7 @@ public class TemplateInterceptor extends AbstractTemplateInterceptor {
                     .buildAndSetResponse(exc);
             return ABORT;
         } catch (Exception e) {
-            log.warn("", e);
+            log.warn("Error executing template.", e);
             internal(router.isProduction(), getDisplayName())
                     .addSubSee("template")
                     .exception(e)
