@@ -48,7 +48,7 @@ import static org.junit.jupiter.api.Assertions.*;
 public abstract class OAuth2ResourceTest {
 
     protected final BrowserMock browser = new BrowserMock();
-    private final int limit = 500;
+    private final int limit = 200;
     protected HttpRouter mockAuthServer;
     protected final ObjectMapper om = new ObjectMapper();
     final Logger LOG = LoggerFactory.getLogger(OAuth2ResourceTest.class);

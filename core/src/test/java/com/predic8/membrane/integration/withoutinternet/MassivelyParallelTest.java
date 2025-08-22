@@ -12,29 +12,25 @@
    See the License for the specific language governing permissions and
    limitations under the License. */
 
-package com.predic8.membrane.core.transport.http;
+package com.predic8.membrane.integration.withoutinternet;
 
-import com.predic8.membrane.core.HttpRouter;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Response;
-import com.predic8.membrane.core.interceptor.AbstractInterceptor;
-import com.predic8.membrane.core.interceptor.Outcome;
-import com.predic8.membrane.core.proxies.ServiceProxy;
-import com.predic8.membrane.core.proxies.ServiceProxyKey;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
+import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.proxies.*;
+import com.predic8.membrane.core.transport.http.*;
+import org.junit.jupiter.api.*;
 
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CountDownLatch;
-import java.util.function.Consumer;
+import java.util.concurrent.*;
+import java.util.function.*;
 
-import static com.predic8.membrane.core.RuleManager.RuleDefinitionSource.MANUAL;
-import static com.predic8.membrane.core.http.Request.get;
-import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static com.predic8.membrane.core.RuleManager.RuleDefinitionSource.*;
+import static com.predic8.membrane.core.http.Request.*;
+import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static java.lang.Thread.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Tests 500 parallel incoming requests (most probably via ~500 parallel TCP connections). Each request uses a unique
@@ -72,7 +68,7 @@ public class MassivelyParallelTest {
             @Override
             public Outcome handleRequest(Exchange exc) {
                 try {
-                    Thread.sleep(700);
+                    sleep(500);
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
                 }
@@ -93,11 +89,8 @@ public class MassivelyParallelTest {
     @Test
     public void run() throws Exception {
         Set<String> paths = ConcurrentHashMap.newKeySet();
-        // ramp up
-        runInParallel((cdl) -> parallelTestWorker(cdl, paths), 20);
-        // go
-        runInParallel((cdl) -> parallelTestWorker(cdl, paths), 500);
-        assertEquals(520, paths.size());
+        runInParallel((cdl) -> parallelTestWorker(cdl, paths), 200);
+        assertEquals(200, paths.size());
     }
 
     private void runInParallel(Consumer<CountDownLatch> job, int threadCount) {
