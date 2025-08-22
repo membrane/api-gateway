@@ -12,24 +12,20 @@ import org.apache.logging.log4j.core.config.Configuration;
 public final class DLPUtil {
 
     private static final Logger log = LogManager.getLogger(DLPUtil.class);
-    private static final LoggerContext CTX = initLoggerContext();
 
     private DLPUtil() {
     }
 
-    private static LoggerContext initLoggerContext() {
+    public static void displayTraceWarning() {
         try {
-            return (LoggerContext) LogManager.getContext(false);
+            displayTraceWarning((LoggerContext) LogManager.getContext(false));
         } catch (Exception e) {
-            log.info("Could not get LoggerContext from LogManager.", e);
-            return null;
+            log.info("Failed to get LoggerContext. TRACE logging may expose sensitive data.", e);
         }
     }
 
-    public static void displayTraceWarning() {
-        if (CTX == null) return;
-        if (!isTraceEnabledSomewhere(CTX.getConfiguration())) return;
-
+    private static void displayTraceWarning(LoggerContext ctx) {
+        if (!isTraceEnabledSomewhere(ctx.getConfiguration())) return;
         System.out.print("""
                  ================================================================================================
                 
@@ -37,7 +33,7 @@ public final class DLPUtil {
                 
                 TRACE-level logging may expose sensitive data including:
                 - Request and response headers (including Authorization headers)
-                - Request and response bodies 
+                - Request and response bodies
                 - Internal processing details
                 - Configuration values
                 
