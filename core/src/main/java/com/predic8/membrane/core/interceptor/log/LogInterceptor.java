@@ -14,23 +14,22 @@
 
 package com.predic8.membrane.core.interceptor.log;
 
-import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.interceptor.lang.*;
-import com.predic8.membrane.core.lang.*;
-import org.slf4j.*;
+import com.predic8.membrane.annot.MCAttribute;
+import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.Message;
+import com.predic8.membrane.core.interceptor.Outcome;
+import com.predic8.membrane.core.interceptor.lang.AbstractExchangeExpressionInterceptor;
+import com.predic8.membrane.core.lang.ExchangeExpressionException;
+import org.slf4j.LoggerFactory;
 
-import java.io.*;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import java.io.IOException;
 
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
-import static com.predic8.membrane.core.interceptor.Interceptor.Flow.ABORT;
-import static com.predic8.membrane.core.interceptor.Outcome.*;
-import static com.predic8.membrane.core.interceptor.log.LogInterceptor.Level.*;
-import static org.slf4j.LoggerFactory.*;
+import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
+import static com.predic8.membrane.core.interceptor.log.LogInterceptor.Level.INFO;
+import static com.predic8.membrane.core.interceptor.log.MaskSensitive.*;
+import static org.slf4j.LoggerFactory.getLogger;
 
 /**
  * @description The log feature logs request and response messages. The messages will appear either on the console or in
@@ -43,12 +42,6 @@ public class LogInterceptor extends AbstractExchangeExpressionInterceptor {
     public enum Level {
         TRACE, DEBUG, INFO, WARN, ERROR, FATAL
     }
-
-    private static final Pattern SENSITIVE_PATTERN = Pattern.compile(
-            "(?i)(?:(Cookie:\\s*[^;]+=[^;]*)|" +     // Cookies
-                    "(Authentication:\\s*(?:Basic|Bearer)?\\s*[^\\s]+)|" + // Auth headers
-                    "(api.key.?\\s*[:=]\\s*[^\\s]+))"
-    );
 
     private Level level = INFO;
     private String category = LogInterceptor.class.getName();
@@ -113,23 +106,28 @@ public class LogInterceptor extends AbstractExchangeExpressionInterceptor {
     }
 
     private void logMessage(Exchange exc, Flow flow) {
-        if(getMessage() != null && !getMessage().isEmpty()) {
+        if (getMessage() != null && !getMessage().isEmpty()) {
             try {
-                writeLog(exchangeExpression.evaluate(exc,flow,String.class));
+                writeLog(exchangeExpression.evaluate(exc, flow, String.class));
             } catch (ExchangeExpressionException e) {
-                getLogger(category).warn("Problems evaluating the expression {} . Message: {} Extensions: {}",getMessage(),  e.getMessage(), e.getExtensions());
+                getLogger(category).warn("Problems evaluating the expression {} . Message: {} Extensions: {}", getMessage(), e.getMessage(), e.getExtensions());
             }
             return;
         }
 
-        writeLog("==== %s %s ===".formatted(flow,label));
+        writeLog("==== %s %s ===".formatted(flow, label));
 
         Message msg = exc.getMessage(flow);
 
-        if (msg==null)
+        if (msg == null)
             return;
         writeLog(msg.getStartLine());
-        writeLog("\nHeaders:\n" + msg.getHeader());
+
+        if (maskSensitive) {
+            writeLog("\nHeaders:\n" + mask(msg.getHeader()));
+        } else {
+            writeLog("\nHeaders:\n" + msg.getHeader());
+        }
 
         try {
             if (!body || msg.isBodyEmpty())
@@ -138,30 +136,14 @@ public class LogInterceptor extends AbstractExchangeExpressionInterceptor {
             writeLog("Error accessing body: " + e.getMessage());
             return;
         }
-
         writeLog(dumpBody(msg));
     }
+
     private static String dumpBody(Message msg) {
         return "Body:\n%s\n".formatted(msg.getBodyAsStringDecoded());
     }
 
-    private String mask(String msg) {
-        if (msg == null) return null;
-
-        Matcher matcher = SENSITIVE_PATTERN.matcher(msg);
-        StringBuilder sb = new StringBuilder();
-        while (matcher.find()) {
-            matcher.appendReplacement(sb, matcher.group().replaceAll("(?<=[:=])\\s*.*", " ********"));
-        }
-        matcher.appendTail(sb);
-        return sb.toString();
-    }
-
     private void writeLog(String msg) {
-
-        if (maskSensitive) {
-            msg = mask(msg);
-        }
 
         switch (level) {
             case TRACE -> getLogger(category).trace(msg);
@@ -234,6 +216,7 @@ public class LogInterceptor extends AbstractExchangeExpressionInterceptor {
      * Deprecated and sunsetted!
      * Do not use this attribute. It is only there for the proxies.xml to be compatible with versions prior to 6.X.X
      * It has no effect at all!
+     *
      * @default false
      * @description It is ignored
      */
