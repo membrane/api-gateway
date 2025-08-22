@@ -11,7 +11,7 @@ public class DLPUtil {
     private static final Configuration config = ctx.getConfiguration();
 
     public static void displayTraceWarning() {
-        if (config.getLoggerConfig("com.predic8.membrane.core").getLevel() == Level.TRACE) {
+        if (config.getLoggerConfig("com.predic8.membrane.core").getLevel().intLevel() <= Level.TRACE.intLevel()) {
             System.out.print("""
                 ================================================================================================
                 
