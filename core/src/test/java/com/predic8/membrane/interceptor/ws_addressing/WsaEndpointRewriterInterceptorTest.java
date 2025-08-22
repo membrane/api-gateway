@@ -36,7 +36,7 @@ public class WsaEndpointRewriterInterceptorTest {
 	}
 
 	@Test
-	void rewriterInterceptor() throws Exception {
+	void rewriterInterceptor() {
 
 		String body = """
 				<S:Envelope xmlns:S="http://www.w3.org/2003/05/soap-envelope"

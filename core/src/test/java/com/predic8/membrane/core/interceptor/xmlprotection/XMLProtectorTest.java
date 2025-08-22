@@ -14,7 +14,6 @@
 package com.predic8.membrane.core.interceptor.xmlprotection;
 
 import org.junit.jupiter.api.*;
-import org.slf4j.*;
 
 import java.io.*;
 
@@ -23,7 +22,6 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class XMLProtectorTest {
 
-    private static final Logger LOG = LoggerFactory.getLogger(XMLProtectorTest.class);
     private byte[] input, output;
 
     private boolean runOn(String resource) throws Exception {
@@ -34,12 +32,12 @@ class XMLProtectorTest {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         OutputStreamWriter writer = new OutputStreamWriter(baos, UTF_8);
         XMLProtector xmlProtector = new XMLProtector(writer, removeDTD, 1000, 1000);
-        input = this.getClass().getResourceAsStream(resource).readAllBytes();
-
+        try(var is = this.getClass().getResourceAsStream(resource)) {
+            input = is.readAllBytes();
+        }
         if (resource.endsWith(".lmx")) {
             reverse();
         }
-
         boolean valid = xmlProtector.protect(new InputStreamReader(new ByteArrayInputStream(input), UTF_8));
         writer.flush(); // Flush before calling baos.toByteArray() to avoid truncated output on some JDKs
         if (!valid) {

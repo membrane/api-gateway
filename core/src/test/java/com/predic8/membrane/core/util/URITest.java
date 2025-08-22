@@ -14,11 +14,11 @@
 
 package com.predic8.membrane.core.util;
 
+import org.junit.jupiter.api.*;
+
+import java.net.*;
+
 import static org.junit.jupiter.api.Assertions.*;
-
-import java.net.URISyntaxException;
-
-import org.junit.jupiter.api.Test;
 
 public class URITest {
 
@@ -44,7 +44,7 @@ public class URITest {
 
 	@SuppressWarnings("UnnecessaryUnicodeEscape")
 	@Test
-	public void testEncoding() {
+	public void encoding() {
 		assertSame("http://predic8.de/path/file?a=quer\u00E4y#foo");
 		assertSame("http://predic8.de/path/file?a=quer%C3%A4y#foo%C3%A4");
 		assertSame("http://predic8.de/path/fi\u00E4le?a=query#foo");
@@ -137,6 +137,7 @@ public class URITest {
 				assertEquals(u1.getPath(), u2.getPath());
 				assertEquals(u1.getQuery(), u2.getQuery());
 				assertEquals(u1.getRawQuery(), u2.getRawQuery());
+				assertEquals(u1.getFragment(), u2.getFragment());
 			}
 			assertEquals(u1.toString(), u2.toString());
 		} catch (URISyntaxException e) {

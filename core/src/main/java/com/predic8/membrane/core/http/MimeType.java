@@ -72,8 +72,6 @@ public class MimeType {
 
     public static final ContentType APPLICATION_JSON_CONTENT_TYPE = new ContentType(APPLICATION, "json", null);
 
-    public static final ContentType APPLICATION_X_WWW_FORM_URLENCODED_CONTENT_TYPE = new ContentType(APPLICATION, APPLICATION_X_WWW_FORM_URLENCODED, null);
-
     public static boolean isXML(String mediaType) {
         try {
             return isXML(new jakarta.activation.MimeType(mediaType));

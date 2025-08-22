@@ -16,12 +16,13 @@ package com.predic8.membrane.core.interceptor.xmlcontentfilter;
 import com.predic8.xml.beautifier.*;
 
 import javax.annotation.concurrent.*;
-import javax.xml.*;
 import javax.xml.namespace.*;
 import javax.xml.stream.*;
 import javax.xml.stream.events.*;
 import java.io.*;
 import java.util.*;
+
+import static javax.xml.XMLConstants.*;
 
 /**
  * Checks whether an InputStream is XML and contains any of a set of element names.
@@ -39,7 +40,7 @@ public class XMLElementFinder {
 		boolean usesWildcardNamespace = false;
 		for (QName element : elements) {
 			this.elements.add(element);
-			if (element.getNamespaceURI() == XMLConstants.NULL_NS_URI)
+			if (NULL_NS_URI.equals(element.getNamespaceURI()))
 				usesWildcardNamespace = true;
 		}
 		this.usesWildcardNamespace = usesWildcardNamespace;

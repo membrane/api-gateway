@@ -52,7 +52,7 @@ class XMLBody extends AbstractXmlElement {
 			case XMLEvent.START_ELEMENT:
 				final String localName = parser.getLocalName();
 				final String namespaceURI = parser.getNamespaceURI();
-				if (namespaceURI != null && namespaceURI.length() > 0) {
+				if (namespaceURI != null && !namespaceURI.isEmpty()) {
 					final String prefix = parser.getPrefix();
 					if (prefix != null)
 						out.writeStartElement(prefix, localName, namespaceURI);

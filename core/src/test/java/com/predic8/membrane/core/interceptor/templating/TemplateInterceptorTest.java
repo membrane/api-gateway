@@ -36,7 +36,6 @@ import static com.predic8.membrane.core.http.Request.*;
 import static java.lang.Boolean.*;
 import static java.lang.System.*;
 import static java.nio.charset.StandardCharsets.*;
-import static java.nio.file.StandardCopyOption.*;
 import static javax.xml.xpath.XPathConstants.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -52,7 +51,7 @@ public class TemplateInterceptorTest {
     static ResolverMap map;
 
     @BeforeAll
-    static void setupFiles() throws IOException {
+    static void setupFiles() {
         router = mock(Router.class);
         map = new ResolverMap();
         when(router.getResolverMap()).thenReturn(map);
@@ -262,9 +261,5 @@ public class TemplateInterceptorTest {
         interceptor.setContentType(mimeType);
         interceptor.init(router);
         interceptor.handleRequest(exchange);
-    }
-
-    public static void copyFiles(Path orig, Path copy) throws IOException {
-        Files.copy(orig, copy, REPLACE_EXISTING);
     }
 }

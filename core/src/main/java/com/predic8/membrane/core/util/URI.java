@@ -75,6 +75,7 @@ public class URI {
 
         path = m.group(5);
         query = m.group(7);
+        fragment = m.group(9);
         return true;
     }
 

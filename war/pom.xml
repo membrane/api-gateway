@@ -152,7 +152,7 @@
                     <plugin>
                         <groupId>org.eclipse.jetty</groupId>
                         <artifactId>jetty-maven-plugin</artifactId>
-                        <version>11.0.13</version>
+                        <version>11.0.24</version>
                         <!-- documentation is at http://www.eclipse.org/jetty/documentation/current/jetty-maven-plugin.html -->
                         <configuration>
                             <war>${basedir}/target/${project.artifactId}-${project.version}-integration-test.war</war>

@@ -25,8 +25,7 @@ import java.io.*;
 import java.nio.charset.*;
 import java.util.*;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
-import static java.util.Optional.ofNullable;
+import static java.nio.charset.StandardCharsets.*;
 
 
 public class TextUtil {
@@ -66,7 +65,7 @@ public class TextUtil {
         if (encoding == null || encoding.isEmpty())
             return defaultCharset;
         try {
-            return ofNullable(encoding).map(Charset::forName).orElse(defaultCharset);
+            return Optional.of(encoding).map(Charset::forName).orElse(defaultCharset);
         } catch (Exception e) {
             log.info("Encoding '{}' caused error: {}, Use default: {}", encoding, e.getMessage(), defaultCharset);
             return defaultCharset;

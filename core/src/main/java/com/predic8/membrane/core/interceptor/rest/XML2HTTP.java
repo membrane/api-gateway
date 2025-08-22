@@ -95,7 +95,7 @@ public class XML2HTTP {
                                     Request req = (Request) message;
                                     req.setUri(requireAttribute(event.asStartElement(), "value"));
                                     // uri/... (port,host,path,query) structure is ignored, as value already contains everything
-                                    slurpXMLData(parser, event.asStartElement());
+                                    slurpXMLData(parser);
                                 }
                                 if ("headers".equals(localName)) {
                                     foundHeaders = true;
@@ -116,7 +116,7 @@ public class XML2HTTP {
                                     if ("plain".equals(type)) {
                                         message.setBodyContent(slurpCharacterData(parser, event.asStartElement()).getBytes(UTF_8));
                                     } else if ("xml".equals(type)) {
-                                        message.setBodyContent(slurpXMLData(parser, event.asStartElement()).getBytes(UTF_8));
+                                        message.setBodyContent(slurpXMLData(parser).getBytes(UTF_8));
                                     } else {
                                         throw new XML2HTTPException("XML-HTTP doc body type '" + type + "' is not supported (only 'plain' or 'xml').");
                                     }
@@ -156,7 +156,7 @@ public class XML2HTTP {
         return value.toString();
     }
 
-    private static String slurpXMLData(XMLEventReader parser, StartElement sevent) throws XML2HTTPException, XMLStreamException {
+    private static String slurpXMLData(XMLEventReader parser) throws XML2HTTPException, XMLStreamException {
         StringWriter bodyStringWriter = new StringWriter();
         XMLEventWriter bodyWriter;
         int depth = 0;

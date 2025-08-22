@@ -248,7 +248,7 @@ public class TextUtilTest {
 
         assertEquals("""
                     line1
-                    
+                
                 line2""", unifyIndent("""
                     line1\r
                 
