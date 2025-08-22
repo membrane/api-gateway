@@ -2,6 +2,7 @@ package com.predic8.membrane.core.util;
 
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.core.LoggerContext;
 import org.apache.logging.log4j.core.config.Configuration;
 
@@ -10,13 +11,23 @@ import org.apache.logging.log4j.core.config.Configuration;
  */
 public final class DLPUtil {
 
-    private static final LoggerContext CTX = (LoggerContext) LogManager.getContext(false);
-    private static final String BASE = "com.predic8.membrane.core";
+    private static final Logger log = LogManager.getLogger(DLPUtil.class);
+    private static final LoggerContext CTX = initLoggerContext();
 
     private DLPUtil() {
     }
 
+    private static LoggerContext initLoggerContext() {
+        try {
+            return (LoggerContext) LogManager.getContext(false);
+        } catch (Exception e) {
+            log.info("Could not get LoggerContext from LogManager.", e);
+            return null;
+        }
+    }
+
     public static void displayTraceWarning() {
+        if (CTX == null) return;
         if (!isTraceEnabledSomewhere(CTX.getConfiguration())) return;
 
         System.out.print("""
@@ -43,11 +54,9 @@ public final class DLPUtil {
 
     private static boolean isTraceEnabledSomewhere(Configuration config) {
         if (config.getRootLogger().getLevel() == Level.TRACE) return true;
-        if (config.getLoggerConfig(BASE).getLevel() == Level.TRACE) return true;
         return config.getLoggers()
                 .keySet()
                 .stream()
-                .filter(name -> name.startsWith(BASE + "."))
                 .map(name -> config.getLoggerConfig(name).getLevel())
                 .anyMatch(Level.TRACE::equals);
     }
