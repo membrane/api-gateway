@@ -31,6 +31,11 @@ import com.predic8.membrane.core.transport.*;
 import com.predic8.membrane.core.transport.http.*;
 import com.predic8.membrane.core.transport.http.client.*;
 import com.predic8.membrane.core.util.*;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.core.LoggerContext;
+import org.apache.logging.log4j.core.config.Configuration;
+import org.apache.logging.log4j.core.config.LoggerConfig;
 import org.slf4j.*;
 import org.springframework.beans.*;
 import org.springframework.beans.factory.*;
@@ -265,7 +270,7 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
     public void init() throws Exception {
         initRemainingRules();
         transport.init(this);
-        if (log.isTraceEnabled()) {
+        if (anyTrace()) {
             log.warn("""
                 ================================================================================================
                 
@@ -286,6 +291,20 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
                 ================================================================================================
                 """);
         }
+    }
+
+    private boolean anyTrace() {
+        LoggerContext context = (LoggerContext) LogManager.getContext(false);
+        Configuration config = context.getConfiguration();
+        boolean hasTraceLogger = false;
+
+        for (LoggerConfig loggerConfig : config.getLoggers().values()) {
+            if (loggerConfig.getLevel().equals(Level.TRACE)) {
+                hasTraceLogger = true;
+                break;
+            }
+        }
+        return hasTraceLogger;
     }
 
     private void initRemainingRules() throws Exception {
