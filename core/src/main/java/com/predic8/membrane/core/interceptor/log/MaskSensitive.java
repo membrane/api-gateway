@@ -11,7 +11,9 @@ public class MaskSensitive {
             Header.AUTHORIZATION,
             Header.PROXY_AUTHORIZATION,
             Header.COOKIE,
-            Header.SET_COOKIE
+            Header.SET_COOKIE,
+            "X-API-Key", "Api-Key", "ApiKey",
+            "X-Api-Token", "X-Auth-Token", "Authorization-Token"
     );
 
     public static String mask(Header header) {
