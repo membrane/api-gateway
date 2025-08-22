@@ -51,15 +51,9 @@ public final class DLPUtil {
         // Root logger defines the default level for all loggers
         if (isTraceOrAll(config.getRootLogger().getLevel())) return true;
 
-        if (isTraceOrAll(config.getLoggerConfig(BASE).getLevel())) return true;
-
         return config.getLoggers()
                 .entrySet()
                 .stream()
-                .filter(e -> {
-                    String name = e.getKey();
-                    return name.startsWith(BASE + ".") || BASE.startsWith(name);
-                })
                 .map(e -> e.getValue().getLevel())
                 .anyMatch(DLPUtil::isTraceOrAll);
     }
