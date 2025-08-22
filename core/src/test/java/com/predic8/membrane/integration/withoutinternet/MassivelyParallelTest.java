@@ -33,15 +33,12 @@ import static java.lang.Thread.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Tests 500 parallel incoming requests (most probably via ~500 parallel TCP connections). Each request uses a unique
+ * Tests parallel incoming requests (most probably via ~1.000 parallel TCP connections). Each request uses a unique
  * path.
- *
- * The requests wait for 700ms on the server (reducing the probability that connections are reused during the test) and
+ * <p>
+ * The requests wait for 1000ms on the server (reducing the probability that connections are reused during the test) and
  * are responded to with 200 OK and their request.uri as body. Back on the client, the response body is asserted to be
  * the request path.
- *
- * The test first starts with a ramp up of 20 parallel requests, waits for them to complete, and then proceeds to the
- * main task of 500.
  */
 public class MassivelyParallelTest {
 
@@ -68,7 +65,7 @@ public class MassivelyParallelTest {
             @Override
             public Outcome handleRequest(Exchange exc) {
                 try {
-                    sleep(500);
+                    sleep(1000);
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
                 }
@@ -87,26 +84,31 @@ public class MassivelyParallelTest {
     }
 
     @Test
+    @Timeout(30) // seconds
     public void run() throws Exception {
         Set<String> paths = ConcurrentHashMap.newKeySet();
-        runInParallel((cdl) -> parallelTestWorker(cdl, paths), 200);
-        assertEquals(200, paths.size());
+        runInParallel((cdl) -> parallelTestWorker(cdl, paths), 1000);
+        assertEquals(1000, paths.size());
     }
 
     private void runInParallel(Consumer<CountDownLatch> job, int threadCount) {
-        List<Thread> threadList = new ArrayList<>();
-        CountDownLatch cdl = new CountDownLatch(threadCount);
-        for (int i = 0; i < threadCount; i++) {
-            threadList.add(new Thread(() -> job.accept(cdl)));
-        }
-        threadList.forEach(Thread::start);
-        threadList.forEach(thread -> {
+        try(ExecutorService es = Executors.newVirtualThreadPerTaskExecutor()) {
+            CountDownLatch cdl = new CountDownLatch(threadCount);
             try {
-                thread.join();
+                for (int i = 0; i < threadCount; i++) {
+                    es.submit(() -> job.accept(cdl));
+                }
+                es.shutdown();
+                if (!es.awaitTermination(30, TimeUnit.SECONDS)) {
+                    es.shutdownNow();
+                    fail("Tasks did not complete within timeout");
+                }
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
+                es.shutdownNow();
+                fail("Interrupted while waiting for tasks to complete");
             }
-        });
+        }
     }
 
     private void parallelTestWorker(CountDownLatch cdl, Set<String> paths) {
@@ -117,8 +119,9 @@ public class MassivelyParallelTest {
             String uuid = UUID.randomUUID().toString();
             var exchange = client.call(get("http://localhost:3067/api/" + uuid).buildExchange());
 
+            assertEquals(200, exchange.getResponse().getStatusCode());
             var body = exchange.getResponse().getBodyAsStringDecoded();
-            assertTrue(body.startsWith("/api/"));
+            assertEquals("/api/" + uuid, body);
             paths.add(body);
         } catch (Exception e) {
             throw new RuntimeException(e);
