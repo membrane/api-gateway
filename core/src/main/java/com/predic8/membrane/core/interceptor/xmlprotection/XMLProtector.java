@@ -32,7 +32,7 @@ import static javax.xml.stream.XMLInputFactory.*;
  * <ul>
  * <li>DTDs can be removed.</li>
  * <li>The length of element names can be limited.</li>
- * <li>The number of attibutes per element can be limited.</li>
+ * <li>The number of attributes per element can be limited.</li>
  * </ul>
  * <p>
  * If {@link #protect(InputStreamReader)} returns false, an unrecoverable error has
@@ -41,10 +41,10 @@ import static javax.xml.stream.XMLInputFactory.*;
  * an error response should be returned to the requestor.
  */
 public class XMLProtector {
-    private static final Logger log = LoggerFactory.getLogger(XMLProtector.class.getName());
+    private static final Logger log = LoggerFactory.getLogger(XMLProtector.class);
 
     private final XMLEventWriter writer;
-    private final int maxAttibuteCount;
+    private final int maxAttributeCount;
     private final int maxElementNameLength;
     private final boolean removeDTD;
 
@@ -53,13 +53,33 @@ public class XMLProtector {
      */
     private final ThreadLocal<XMLInputFactory> xmlInputFactoryFactory;
 
-    public XMLProtector(OutputStreamWriter osw, boolean removeDTD, int maxElementNameLength, int maxAttibuteCount) throws Exception {
+    public XMLProtector(OutputStreamWriter osw, boolean removeDTD, int maxElementNameLength, int maxAttributeCount) throws Exception {
         this.writer = XMLOutputFactory.newInstance().createXMLEventWriter(osw);
         this.removeDTD = removeDTD;
         this.maxElementNameLength = maxElementNameLength;
-        this.maxAttibuteCount = maxAttibuteCount;
+        this.maxAttributeCount = maxAttributeCount;
 
         xmlInputFactoryFactory = ThreadLocal.withInitial(this::getXmlInputFactory);
+    }
+
+    private static void checkExternalEntities(DTD dtd) throws XMLProtectionException {
+        if (containsExternalEntityReferences(dtd)) {
+            String msg = "Possible attack. External entity found in DTD.";
+            log.warn(msg);
+            throw new XMLProtectionException(msg);
+        }
+    }
+
+    private static boolean containsExternalEntityReferences(DTD dtd) {
+        var entities = dtd.getEntities();
+        if (entities == null || entities.isEmpty())
+            return false;
+
+        return entities.stream().anyMatch(isExternalEntity());
+    }
+
+    private static @NotNull Predicate<EntityDeclaration> isExternalEntity() {
+        return ed -> ed.getPublicId() != null || ed.getSystemId() != null;
     }
 
     /**
@@ -76,19 +96,19 @@ public class XMLProtector {
             while (parser.hasNext()) {
                 XMLEvent event = parser.nextEvent();
                 if (event.isStartElement()) {
-                    StartElement startElement = (StartElement) event;
+                    StartElement startElement = event.asStartElement();
                     if (maxElementNameLength != -1)
                         if (startElement.getName().getLocalPart().length() > maxElementNameLength) {
                             log.warn("Element name length: Limit exceeded.");
                             return false;
                         }
-                    if (maxAttibuteCount != -1) {
+                    if (maxAttributeCount != -1) {
                         Iterator<?> attrs = startElement.getAttributes();
                         int attributeCount = 0;
                         while (attrs.hasNext()) {
                             attrs.next();
                             attributeCount++;
-                            if (attributeCount > maxAttibuteCount) {
+                            if (attributeCount > maxAttributeCount) {
                                 log.warn("Number of attributes per element: Limit exceeded.");
                                 return false;
                             }
@@ -106,7 +126,11 @@ public class XMLProtector {
             }
             writer.flush();
         } catch (XMLStreamException e) {
-            log.warn("Received not well-formed XML: {}", e.getMessage());
+            Location loc = e.getLocation();
+            log.warn("Received not well-formed XML at line {}, column {}: {}",
+                    loc != null ? loc.getLineNumber() : -1,
+                    loc != null ? loc.getColumnNumber() : -1,
+                    e.getMessage());
             return false;
         }
         return true;
@@ -132,25 +156,5 @@ public class XMLProtector {
         } catch (IllegalArgumentException ignored) {
         }
         return f;
-    }
-
-    private static void checkExternalEntities(DTD dtd) throws XMLProtectionException {
-        if (containsExternalEntityReferences(dtd)) {
-            String msg = "Possible attack. External entity found in DTD.";
-            log.warn(msg);
-            throw new XMLProtectionException(msg);
-        }
-    }
-
-    private static boolean containsExternalEntityReferences(DTD dtd) {
-        var entities = dtd.getEntities();
-        if (entities == null || entities.isEmpty())
-            return false;
-
-        return entities.stream().anyMatch(isExternalEntity());
-    }
-
-    private static @NotNull Predicate<EntityDeclaration> isExternalEntity() {
-        return ed -> ed.getPublicId() != null || ed.getSystemId() != null;
     }
 }

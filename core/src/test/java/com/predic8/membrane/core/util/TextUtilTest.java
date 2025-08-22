@@ -24,70 +24,6 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class TextUtilTest {
 
-    @Nested
-    class GetCharset {
-
-        @Nested
-        class HappyPath {
-
-            @Test
-            void nullReturnsDefault() {
-                assertSame(UTF_8,
-                        getCharset(null, UTF_8));
-            }
-
-            @Test
-            void blankReturnsDefault() {
-                assertSame(ISO_8859_1, getCharset("", ISO_8859_1));
-            }
-
-            @Test
-            void utf8Variants() {
-                assertEquals(UTF_8, getCharset("utf8", ISO_8859_1));
-                assertEquals(UTF_8, getCharset("utf-8", ISO_8859_1));
-            }
-
-            @Test
-            void latin1Alias() {
-                // "latin1" is a standard alias for ISO-8859-1 in the JDK
-                assertEquals(ISO_8859_1, getCharset("latin1", UTF_8));
-            }
-
-            @Test
-            void windows1252() {
-                Charset cs = getCharset("Windows-1252", UTF_8);
-                assertEquals("windows-1252", cs.name().toLowerCase());
-            }
-
-            @Test
-            void caseInsensitivity() {
-                assertEquals(UTF_8, getCharset("UtF-8", ISO_8859_1));
-            }
-        }
-
-        @Nested
-        @DisplayName("fallbacks")
-        class Fallbacks {
-            @Test
-            void unknownReturnsDefault() {
-                assertSame(UTF_8,
-                        getCharset("unknown-charset-xyz", UTF_8));
-            }
-
-            @Test
-            void quotedUnknownReturnsDefault() {
-                assertSame(StandardCharsets.ISO_8859_1,
-                        getCharset("'???'", StandardCharsets.ISO_8859_1));
-            }
-        }
-
-        @Test
-        void overloadDefaultsToUtf8() {
-            assertEquals(UTF_8, getCharset("utf8"));
-            assertEquals(UTF_8, getCharset(null));
-        }
-    }
-
     @Test
     void camelToKebabSimple() {
         assertEquals("tasty-kebab", camelToKebab("tastyKebab"));
@@ -159,10 +95,10 @@ public class TextUtilTest {
 
     @Test
     void getLineFromMultilineStringTest() {
-        assertEquals("a",TextUtil.getLineFromMultilineString("a\nb",1));
-        assertEquals("b",TextUtil.getLineFromMultilineString("a\nb",2));
-        assertEquals("a",TextUtil.getLineFromMultilineString("a\r\nb",1));
-        assertEquals("b",TextUtil.getLineFromMultilineString("a\r\nb",2));
+        assertEquals("a", TextUtil.getLineFromMultilineString("a\nb", 1));
+        assertEquals("b", TextUtil.getLineFromMultilineString("a\nb", 2));
+        assertEquals("a", TextUtil.getLineFromMultilineString("a\r\nb", 1));
+        assertEquals("b", TextUtil.getLineFromMultilineString("a\r\nb", 2));
         assertEquals("ccc ccc", TextUtil.getLineFromMultilineString("""
                 aaa aaa
                 bb bb
@@ -183,7 +119,6 @@ public class TextUtilTest {
         assertEquals("Test text with \\\" quotes", escapeQuotes("Test text with \" quotes"));
     }
 
-
     @Test
     void testUnifyIndent() {
         assertEquals("""
@@ -198,9 +133,9 @@ public class TextUtilTest {
                 line1
                 line2
                 line3""", unifyIndent("""
-                    line1
-                    line2
-                    line3"""));
+                line1
+                line2
+                line3"""));
 
         assertEquals("""
                 line1
@@ -318,5 +253,74 @@ public class TextUtilTest {
         assertEquals("", TextUtil.removeFinalChar(""));
         assertEquals("", TextUtil.removeFinalChar("a"));
         assertEquals("abced", TextUtil.removeFinalChar("abcedf"));
+    }
+
+    @Nested
+    class GetCharset {
+
+        @Test
+        void overloadDefaultsToUtf8() {
+            assertEquals(UTF_8, getCharset("utf8"));
+            assertEquals(UTF_8, getCharset(null));
+        }
+
+        @Nested
+        class HappyPath {
+
+            @Test
+            void nullReturnsDefault() {
+                assertSame(UTF_8,
+                        getCharset(null, UTF_8));
+            }
+
+            @Test
+            void blankReturnsDefault() {
+                assertSame(ISO_8859_1, getCharset("", ISO_8859_1));
+            }
+
+            @Test
+            void utf8Variants() {
+                assertEquals(UTF_8, getCharset("utf8", ISO_8859_1));
+                assertEquals(UTF_8, getCharset("utf-8", ISO_8859_1));
+            }
+
+            @Test
+            void latin1Alias() {
+                // "latin1" is a standard alias for ISO-8859-1 in the JDK
+                assertEquals(ISO_8859_1, getCharset("latin1", UTF_8));
+            }
+
+            @Test
+            void windows1252() {
+                Charset cs = getCharset("Windows-1252", UTF_8);
+                assertTrue(cs.name().equalsIgnoreCase("windows-1252"));
+            }
+
+            @Test
+            void caseInsensitivity() {
+                assertEquals(UTF_8, getCharset("UtF-8", ISO_8859_1));
+            }
+        }
+
+        @Nested
+        @DisplayName("fallbacks")
+        class Fallbacks {
+            @Test
+            void unknownReturnsDefault() {
+                assertSame(UTF_8,
+                        getCharset("unknown-charset-xyz", UTF_8));
+            }
+
+            @Test
+            void quotedUnknownReturnsDefault() {
+                assertSame(ISO_8859_1,
+                        getCharset("'???'", ISO_8859_1));
+            }
+
+            @Test
+            void whitespaceOnlyReturnsDefault() {
+                assertSame(UTF_8, getCharset("  \t", UTF_8));
+            }
+        }
     }
 }
