@@ -289,25 +289,6 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
         displayTraceWarning();
     }
 
-    private boolean isTraceEnabledAnywhere() {
-        final String base = "com.predic8.membrane.core";
-        if (LoggerFactory.getLogger(base).isTraceEnabled())
-            return true;
-
-        final String[] critical = new String[]{
-                "com.predic8.membrane.core.transport",
-                "com.predic8.membrane.core.interceptor",
-                "com.predic8.membrane.core.http",
-                "com.predic8.membrane.core.openapi",
-                "com.predic8.membrane.core.proxies"
-        };
-        for (String name : critical) {
-            if (LoggerFactory.getLogger(name).isTraceEnabled())
-                return true;
-        }
-        return false;
-    }
-
     private void initRemainingRules() throws Exception {
         for (Proxy proxy : getRuleManager().getRules())
             proxy.init(this);
