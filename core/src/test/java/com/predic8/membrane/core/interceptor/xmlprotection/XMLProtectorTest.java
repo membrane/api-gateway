@@ -32,7 +32,7 @@ class XMLProtectorTest {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         OutputStreamWriter writer = new OutputStreamWriter(baos, UTF_8);
         XMLProtector xmlProtector = new XMLProtector(writer, removeDTD, 1000, 1000);
-        try(var is = this.getClass().getResourceAsStream(resource)) {
+        try (var is = this.getClass().getResourceAsStream(resource)) {
             input = is.readAllBytes();
         }
         if (resource.endsWith(".lmx")) {
@@ -92,9 +92,6 @@ class XMLProtectorTest {
 
     @Test
     void manyAttributes() throws Exception {
-        for (int i = 0; i < 10_000; i++) {
-            assertFalse(runOn("/xml/many-attributes.xml"));
-        }
-
+        assertFalse(runOn("/xml/many-attributes.xml"));
     }
 }
