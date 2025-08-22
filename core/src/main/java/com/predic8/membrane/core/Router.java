@@ -14,43 +14,58 @@
 
 package com.predic8.membrane.core;
 
-import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.RuleManager.*;
-import com.predic8.membrane.core.config.spring.*;
-import com.predic8.membrane.core.exchangestore.*;
-import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.interceptor.administration.*;
-import com.predic8.membrane.core.jmx.*;
-import com.predic8.membrane.core.kubernetes.*;
-import com.predic8.membrane.core.kubernetes.client.*;
-import com.predic8.membrane.core.openapi.*;
-import com.predic8.membrane.core.openapi.serviceproxy.*;
-import com.predic8.membrane.core.proxies.*;
-import com.predic8.membrane.core.resolver.*;
-import com.predic8.membrane.core.transport.*;
-import com.predic8.membrane.core.transport.http.*;
-import com.predic8.membrane.core.transport.http.client.*;
-import com.predic8.membrane.core.util.*;
-import org.apache.logging.log4j.Level;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.core.LoggerContext;
-import org.apache.logging.log4j.core.config.Configuration;
-import org.apache.logging.log4j.core.config.LoggerConfig;
-import org.slf4j.*;
-import org.springframework.beans.*;
-import org.springframework.beans.factory.*;
-import org.springframework.context.*;
-import org.springframework.context.support.*;
+import com.predic8.membrane.annot.MCAttribute;
+import com.predic8.membrane.annot.MCChildElement;
+import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.annot.MCMain;
+import com.predic8.membrane.core.RuleManager.RuleDefinitionSource;
+import com.predic8.membrane.core.config.spring.BaseLocationApplicationContext;
+import com.predic8.membrane.core.config.spring.TrackingApplicationContext;
+import com.predic8.membrane.core.config.spring.TrackingFileSystemXmlApplicationContext;
+import com.predic8.membrane.core.exchangestore.ExchangeStore;
+import com.predic8.membrane.core.exchangestore.LimitedMemoryExchangeStore;
+import com.predic8.membrane.core.interceptor.ExchangeStoreInterceptor;
+import com.predic8.membrane.core.interceptor.FlowController;
+import com.predic8.membrane.core.interceptor.GlobalInterceptor;
+import com.predic8.membrane.core.interceptor.Interceptor;
+import com.predic8.membrane.core.interceptor.administration.AdminConsoleInterceptor;
+import com.predic8.membrane.core.jmx.JmxExporter;
+import com.predic8.membrane.core.jmx.JmxRouter;
+import com.predic8.membrane.core.kubernetes.KubernetesWatcher;
+import com.predic8.membrane.core.kubernetes.client.KubernetesClientFactory;
+import com.predic8.membrane.core.openapi.OpenAPIParsingException;
+import com.predic8.membrane.core.openapi.serviceproxy.DuplicatePathException;
+import com.predic8.membrane.core.proxies.ApiInfo;
+import com.predic8.membrane.core.proxies.Proxy;
+import com.predic8.membrane.core.proxies.SSLableProxy;
+import com.predic8.membrane.core.resolver.ResolverMap;
+import com.predic8.membrane.core.transport.Transport;
+import com.predic8.membrane.core.transport.http.HttpClientFactory;
+import com.predic8.membrane.core.transport.http.HttpServerThreadFactory;
+import com.predic8.membrane.core.transport.http.HttpTransport;
+import com.predic8.membrane.core.transport.http.client.HttpClientConfiguration;
+import com.predic8.membrane.core.util.DNSCache;
+import com.predic8.membrane.core.util.TimerManager;
+import com.predic8.membrane.core.util.URIFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.BeansException;
+import org.springframework.beans.factory.BeanNameAware;
+import org.springframework.beans.factory.NoSuchBeanDefinitionException;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
+import org.springframework.context.Lifecycle;
+import org.springframework.context.support.AbstractRefreshableApplicationContext;
 
-import javax.annotation.concurrent.*;
-import java.io.*;
-import java.util.Timer;
+import javax.annotation.concurrent.GuardedBy;
+import java.io.IOException;
 import java.util.*;
-import java.util.concurrent.*;
+import java.util.concurrent.ExecutorService;
 
-import static com.predic8.membrane.core.Constants.*;
-import static com.predic8.membrane.core.jmx.JmxExporter.*;
-import static java.util.concurrent.Executors.*;
+import static com.predic8.membrane.core.Constants.PRODUCT_NAME;
+import static com.predic8.membrane.core.Constants.VERSION;
+import static com.predic8.membrane.core.jmx.JmxExporter.JMX_EXPORTER_NAME;
+import static java.util.concurrent.Executors.newSingleThreadExecutor;
 
 /**
  * @description <p>
@@ -149,7 +164,7 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
         bf.refresh();
         bf.start();
 
-        return bf.getBean("router",Router.class);
+        return bf.getBean("router", Router.class);
     }
 
     @SuppressWarnings("NullableProblems")
@@ -261,7 +276,7 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
 
     public void add(Proxy proxy) throws IOException {
         if (!(proxy instanceof SSLableProxy sp)) {
-            ruleManager.addProxy(proxy,RuleDefinitionSource.MANUAL);
+            ruleManager.addProxy(proxy, RuleDefinitionSource.MANUAL);
         } else {
             ruleManager.addProxyAndOpenPortIfNew(sp);
         }
@@ -270,41 +285,47 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
     public void init() throws Exception {
         initRemainingRules();
         transport.init(this);
-        if (anyTrace()) {
+        if (isTraceEnabledAnywhere()) {
             log.warn("""
-                ================================================================================================
-                
-                WARNING: Trace logging is enabled for 'com.predic8.membrane.core'
-                
-                Trace level logging may expose sensitive data including:
-                - Request and response headers (including Authorization headers)
-                - Request and response bodies 
-                - Internal processing details
-                - Configuration values
-                
-                This should only be used in development environments or for debugging purposes.
-                Ensure sensitive data is not logged in production environments.
-                
-                To disable trace logging, set the log level to INFO or higher in your log4j2.xml:
-                <Logger name="com.predic8.membrane.core" level="info" additivity="false">
-                
-                ================================================================================================
-                """);
+                    ================================================================================================
+                    
+                    WARNING: TRACE logging is enabled for com.predic8.membrane.core (or one of its subpackages).
+                    
+                    TRACE-level logging may expose sensitive data including:
+                    - Request and response headers (including Authorization headers)
+                    - Request and response bodies 
+                    - Internal processing details
+                    - Configuration values
+                    
+                    This should only be used in development environments or for debugging purposes.
+                    Ensure sensitive data is not logged in production environments.
+                    
+                    To disable TRACE, set the level to INFO or higher for 'com.predic8.membrane.core'
+                    in your logging configuration (e.g., log4j2.xml or logback.xml). Example (Log4j2):
+                    <Logger name="com.predic8.membrane.core" level="info" additivity="false"/>
+                    
+                    ================================================================================================
+                    """);
         }
     }
 
-    private boolean anyTrace() {
-        LoggerContext context = (LoggerContext) LogManager.getContext(false);
-        Configuration config = context.getConfiguration();
-        boolean hasTraceLogger = false;
+    private boolean isTraceEnabledAnywhere() {
+        final String base = "com.predic8.membrane.core";
+        if (LoggerFactory.getLogger(base).isTraceEnabled())
+            return true;
 
-        for (LoggerConfig loggerConfig : config.getLoggers().values()) {
-            if (loggerConfig.getLevel().equals(Level.TRACE)) {
-                hasTraceLogger = true;
-                break;
-            }
+        final String[] critical = new String[]{
+                "com.predic8.membrane.core.transport",
+                "com.predic8.membrane.core.interceptor",
+                "com.predic8.membrane.core.http",
+                "com.predic8.membrane.core.openapi",
+                "com.predic8.membrane.core.proxies"
+        };
+        for (String name : critical) {
+            if (LoggerFactory.getLogger(name).isTraceEnabled())
+                return true;
         }
-        return hasTraceLogger;
+        return false;
     }
 
     private void initRemainingRules() throws Exception {
@@ -340,13 +361,13 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
         } catch (DuplicatePathException e) {
             System.err.printf("""
                     ================================================================================================
-
+                    
                     Configuration Error: Several OpenAPI Documents share the same path!
-
+                    
                     An API routes and validates requests according to the path of the OpenAPI's servers.url fields.
                     Within one API the same path should be used only by one OpenAPI. Change the paths or place
                     openapi-elements into separate api-elements.
-
+                    
                     Shared path: %s
                     %n""", e.getPath());
             System.exit(1);
@@ -371,13 +392,13 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
 
         startJmx();
 
-		synchronized (lock) {
-			running = true;
-		}
+        synchronized (lock) {
+            running = true;
+        }
 
-		ApiInfo.logInfosAboutStartedProxies(ruleManager);
+        ApiInfo.logInfosAboutStartedProxies(ruleManager);
         log.info("{} {} up and running!", PRODUCT_NAME, VERSION);
-	}
+    }
 
     private void startJmx() {
         if (getBeanFactory() != null) {
