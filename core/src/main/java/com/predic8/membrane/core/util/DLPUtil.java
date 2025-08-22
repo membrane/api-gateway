@@ -12,22 +12,20 @@ import org.apache.logging.log4j.core.config.Configuration;
 public final class DLPUtil {
 
     private static final Logger log = LogManager.getLogger(DLPUtil.class);
-
-    private DLPUtil() {
-    }
+    private static final String BASE = "com.predic8.membrane.core";
 
     public static void displayTraceWarning() {
         try {
             displayTraceWarning((LoggerContext) LogManager.getContext(false));
         } catch (Exception e) {
-            log.info("Failed to get LoggerContext. TRACE logging may expose sensitive data.", e);
+            log.info("Log may contain sensitive data. Make sure there is no logger with level TRACE in log configuration.", e);
         }
     }
 
     private static void displayTraceWarning(LoggerContext ctx) {
         if (!isTraceEnabledSomewhere(ctx.getConfiguration())) return;
         System.out.print("""
-                 ================================================================================================
+                ================================================================================================
                 
                 WARNING: TRACE logging is enabled for com.predic8.membrane.core (or one of its subpackages).
                 
@@ -49,11 +47,24 @@ public final class DLPUtil {
     }
 
     private static boolean isTraceEnabledSomewhere(Configuration config) {
-        if (config.getRootLogger().getLevel() == Level.TRACE) return true;
+
+        // Root logger defines the default level for all loggers
+        if (isTraceOrAll(config.getRootLogger().getLevel())) return true;
+
+        if (isTraceOrAll(config.getLoggerConfig(BASE).getLevel())) return true;
+
         return config.getLoggers()
-                .keySet()
+                .entrySet()
                 .stream()
-                .map(name -> config.getLoggerConfig(name).getLevel())
-                .anyMatch(Level.TRACE::equals);
+                .filter(e -> {
+                    String name = e.getKey();
+                    return name.startsWith(BASE + ".") || BASE.startsWith(name);
+                })
+                .map(e -> e.getValue().getLevel())
+                .anyMatch(DLPUtil::isTraceOrAll);
+    }
+
+    private static boolean isTraceOrAll(Level level) {
+        return level == Level.TRACE || level == Level.ALL;
     }
 }
