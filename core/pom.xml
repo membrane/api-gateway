@@ -415,6 +415,7 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
                     <test>**/UnitTests.java</test>
+                    <argLine>-Dfile.encoding=UTF-8</argLine>
                 </configuration>
             </plugin>
 

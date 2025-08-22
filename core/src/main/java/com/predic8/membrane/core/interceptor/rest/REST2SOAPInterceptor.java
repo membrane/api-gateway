@@ -19,6 +19,7 @@ import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.proxies.*;
+import com.predic8.xml.beautifier.*;
 import org.slf4j.*;
 import org.springframework.http.*;
 
@@ -260,7 +261,7 @@ public class REST2SOAPInterceptor extends SOAPRESTHelper {
         exc.getRequest().getHeader().setSOAPAction(mapping.soapAction);
         Header header = exc.getRequest().getHeader();
         header.removeFields(CONTENT_TYPE);
-        header.setContentType(isSOAP12(exc) ? APPLICATION_SOAP : TEXT_XML_UTF8);
+        header.setContentType(isSOAP12(exc) ? APPLICATION_SOAP_XML : TEXT_XML_UTF8);
 
         exc.setProperty("mapping", mapping);
         setServiceEndpoint(exc, mapping);
@@ -275,7 +276,7 @@ public class REST2SOAPInterceptor extends SOAPRESTHelper {
 
     private String getRootElementNamespace(InputStream stream) {
         try {
-            XMLEventReader xer = XMLInputFactory.newFactory().createXMLEventReader(stream);
+            XMLEventReader xer = XMLInputFactoryFactory.inputFactory().createXMLEventReader(stream);
             while (xer.hasNext()) {
                 XMLEvent event = xer.nextEvent();
                 if (event.isStartElement())

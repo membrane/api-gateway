@@ -72,7 +72,7 @@ public class ByteUtil {
 			}
 		}
 
-		log.debug("Number of decompressed chunks: " + chunks.size());
+		log.debug("Number of decompressed chunks: {}",chunks.size());
 		if (!chunks.isEmpty()) {
 
 			ByteArrayOutputStream bos = new ByteArrayOutputStream();
@@ -80,14 +80,8 @@ public class ByteUtil {
 			for (Chunk chunk : chunks) {
 				chunk.write(bos);
 			}
-
-			try {
-				bos.close();
-			} catch (IOException ignored) {
-			}
 			return bos.toByteArray();
 		}
-
 		return null;
 	}
 

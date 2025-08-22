@@ -24,7 +24,6 @@ import javax.xml.namespace.*;
 import java.io.*;
 
 import static com.predic8.membrane.core.Constants.*;
-import static java.nio.charset.StandardCharsets.*;
 
 @MCElement(name="wadlRewriter")
 public class WADLInterceptor extends RelocatingInterceptor {
@@ -49,7 +48,7 @@ public class WADLInterceptor extends RelocatingInterceptor {
 		ByteArrayOutputStream stream = new ByteArrayOutputStream();
 
         Relocator relocator = new Relocator(new OutputStreamWriter(stream,
-                getCharset(exc)), getLocationProtocol(), getLocationHost(exc),
+                exc.getResponse().getCharsetOrDefault()), getLocationProtocol(), getLocationHost(exc),
 				getLocationPort(exc), exc.getHandler().getContextPath(exc), pathRewriter);
 
 		relocator.getRelocatingAttributes().put(
@@ -61,12 +60,6 @@ public class WADLInterceptor extends RelocatingInterceptor {
 
 		exc.getResponse().setBodyContent(stream.toByteArray());
 		// TODO setContentType
-	}
-
-	private static String getCharset(Exchange exc) {
-		if (exc.getResponse().getCharset() == null)
-			return UTF_8.name();
-		return exc.getResponse().getCharset();
 	}
 
 	@MCAttribute

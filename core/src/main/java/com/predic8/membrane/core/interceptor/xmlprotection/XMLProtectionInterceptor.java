@@ -24,7 +24,6 @@ import java.io.*;
 import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
-import static java.nio.charset.StandardCharsets.*;
 
 /**
  * @description Prohibits XML documents to be passed through that look like XML attacks on older parsers. Too many
@@ -93,23 +92,13 @@ public class XMLProtectionInterceptor extends AbstractInterceptor {
 
     private boolean protectXML(Exchange exc) throws Exception {
         ByteArrayOutputStream stream = new ByteArrayOutputStream();
-        XMLProtector protector = new XMLProtector(new OutputStreamWriter(stream, getCharset(exc)),
+        XMLProtector protector = new XMLProtector(new OutputStreamWriter(stream, exc.getRequest().getCharsetOrDefault()),
                 removeDTD, maxElementNameLength, maxAttributeCount);
 
-        if (!protector.protect(new InputStreamReader(exc.getRequest().getBodyAsStreamDecoded(), getCharset(exc))))
+        if (!protector.protect(new InputStreamReader(exc.getRequest().getBodyAsStreamDecoded(), exc.getRequest().getCharsetOrDefault())))
             return false;
         exc.getRequest().setBodyContent(stream.toByteArray());
         return true;
-    }
-
-    /**
-     * If no charset is specified, use standard XML charset UTF-8.
-     */
-    private String getCharset(Exchange exc) {
-        String charset = exc.getRequest().getCharset();
-        if (charset == null)
-            return UTF_8.name();
-        return charset;
     }
 
     /**

@@ -14,6 +14,7 @@
 
 package com.predic8.membrane.core.interceptor.xmlprotection;
 
+import com.predic8.xml.beautifier.*;
 import org.jetbrains.annotations.*;
 import org.slf4j.*;
 
@@ -40,12 +41,6 @@ import static javax.xml.stream.XMLInputFactory.*;
  */
 public class XMLProtector {
 	private static final Logger log = LoggerFactory.getLogger(XMLProtector.class.getName());
-	private static final XMLInputFactory xmlInputFactory = XMLInputFactory.newInstance();
-	static {
-		xmlInputFactory.setProperty(IS_REPLACING_ENTITY_REFERENCES, false);
-		xmlInputFactory.setProperty(IS_SUPPORTING_EXTERNAL_ENTITIES, false);
-		xmlInputFactory.setProperty(SUPPORT_DTD,false);
-	}
 
 	private final XMLEventWriter writer;
 	private final int maxAttibuteCount;
@@ -58,8 +53,7 @@ public class XMLProtector {
 		this.maxElementNameLength = maxElementNameLength;
 		this.maxAttibuteCount = maxAttibuteCount;
 
-		if(!removeDTD)
-			xmlInputFactory.setProperty(SUPPORT_DTD,true);
+
 	}
 
 	/**
@@ -70,10 +64,7 @@ public class XMLProtector {
 	 */
 	public boolean protect(InputStreamReader isr) throws XMLProtectionException {
 		try {
-			XMLEventReader parser;
-			synchronized(xmlInputFactory) {
-				parser = xmlInputFactory.createXMLEventReader(isr);
-			}
+            XMLEventReader parser = getXmlInputFactory().createXMLEventReader(isr);
 
 			while (parser.hasNext()) {
 				XMLEvent event = parser.nextEvent();
@@ -111,6 +102,13 @@ public class XMLProtector {
 		return true;
 	}
 
+	private XMLInputFactory getXmlInputFactory() {
+		XMLInputFactory factory = XMLInputFactoryFactory.inputFactory();
+		if(!removeDTD)
+			factory.setProperty(SUPPORT_DTD,true);
+		return factory;
+	}
+
 	private static void checkExternalEntities(DTD dtd) throws XMLProtectionException {
 		if (containsExternalEntityReferences(dtd)) {
 			String msg = "Possible attack. External entity found in DTD.";
@@ -130,5 +128,4 @@ public class XMLProtector {
 	private static @NotNull Predicate<EntityDeclaration> isExternalEntity() {
 		return ed -> ed.getPublicId() != null || ed.getSystemId() != null;
 	}
-
 }

@@ -16,6 +16,7 @@ package com.predic8.membrane.core.interceptor.balancer;
 import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.http.*;
+import com.predic8.xml.beautifier.*;
 import org.jetbrains.annotations.*;
 import org.slf4j.*;
 
@@ -31,11 +32,6 @@ public class XMLElementSessionIdExtractor extends AbstractSessionIdExtractor {
 
     private String localName;
     private String namespace;
-
-    /*
-     * Use XMLInputFactory thread safe
-     */
-    private static final ThreadLocal<XMLInputFactory> XML_INPUT_FACTORY_THREAD_LOCAL = ThreadLocal.withInitial(XMLInputFactory::newInstance);
 
     @Override
     public String getSessionId(Message msg) throws Exception {
@@ -68,10 +64,7 @@ public class XMLElementSessionIdExtractor extends AbstractSessionIdExtractor {
     }
 
     private @NotNull XMLStreamReader getXmlStreamReader(Message msg) throws XMLStreamException {
-        if (msg.getCharset() != null) {
-            return new FixedStreamReader(XML_INPUT_FACTORY_THREAD_LOCAL.get().createXMLStreamReader(msg.getBodyAsStreamDecoded(), msg.getCharset()));
-        }
-        return new FixedStreamReader(XML_INPUT_FACTORY_THREAD_LOCAL.get().createXMLStreamReader(msg.getBodyAsStream()));
+        return new FixedStreamReader(XMLInputFactoryFactory.inputFactory().createXMLStreamReader(msg.getBodyAsStreamDecoded()));
     }
 
     private boolean isSessionIdElement(XMLStreamReader reader) {
@@ -102,7 +95,6 @@ public class XMLElementSessionIdExtractor extends AbstractSessionIdExtractor {
      * @description Specifies namespace of session element.
      * @example <a href="http://chat.predic8.com/">http://chat.predic8.com/</a>
      */
-    @Required
     @MCAttribute
     public void setNamespace(String namespace) {
         this.namespace = namespace;
@@ -115,7 +107,10 @@ public class XMLElementSessionIdExtractor extends AbstractSessionIdExtractor {
         out.writeStartElement("xmlSessionIdExtractor");
 
         out.writeAttribute("localName", localName);
-        out.writeAttribute("namespace", namespace);
+
+        if (namespace != null) {
+            out.writeAttribute("namespace", namespace);
+        }
 
         out.writeEndElement();
     }

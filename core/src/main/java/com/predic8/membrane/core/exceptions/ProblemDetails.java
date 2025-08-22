@@ -31,6 +31,7 @@ import java.util.*;
 import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.util.ExceptionUtil.*;
 import static java.nio.charset.StandardCharsets.*;
+import static java.util.Locale.ROOT;
 import static java.util.UUID.*;
 
 
@@ -240,7 +241,7 @@ public class ProblemDetails {
     }
 
     private String normalizeForType(String s) {
-        return s.replace(" ", "-").toLowerCase(Locale.ROOT);
+        return s.replace(" ", "-").toLowerCase(ROOT);
     }
 
     private Map<String, Object> createInternal(String type) {
@@ -259,7 +260,7 @@ public class ProblemDetails {
             see += "/" + normalizeForType(component);
         }
         if (flow != null) {
-            see += "/" + flow.name().toLowerCase();
+            see += "/" + flow.name().toLowerCase(ROOT);
         }
         if (!seeSuffix.isEmpty()) {
             see += "/" + seeSuffix;
@@ -312,7 +313,7 @@ public class ProblemDetails {
 
     private static void createXMLContent(Map<String, Object> root, Response.ResponseBuilder builder) throws Exception {
         builder.body(convertMapToXml(root));
-        builder.contentType(APPLICATION_XML);
+        builder.contentType(APPLICATION_PROBLEM_XML);
     }
 
     public static String convertMapToXml(Map<String, Object> map) throws Exception {

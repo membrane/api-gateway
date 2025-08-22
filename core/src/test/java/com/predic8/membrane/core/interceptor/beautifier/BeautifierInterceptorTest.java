@@ -78,14 +78,14 @@ class BeautifierInterceptorTest {
 
     @Test
     void jsonResponse() throws Exception {
-        Exchange exc = Response.ok().body(jsonString()).buildExchange();
+        Exchange exc = ok().json(jsonString()).buildExchange();
 
         interceptor.handleResponse(exc);
 
         Response res = exc.getResponse();
         int bodyLength = res.getBody().getLength();
         assertEquals(res.getHeader().getContentLength(), bodyLength);
-        assertEquals(bodyLength, res.getBodyAsStringDecoded().length());
+        assertEquals(bodyLength, res.getBodyAsStringDecoded().getBytes(UTF_8).length);
     }
 
     private static @NotNull String jsonString() {
@@ -134,7 +134,7 @@ class BeautifierInterceptorTest {
 
         @Test
         @DisplayName("Fallback for unknown charsets")
-        void unknowEncodingInfoInTheHeader() throws Exception {
+        void unknownEncodingInfoInTheHeader() throws Exception {
             checkForFile("/charsets/utf-8-unformatted.xml", UTF_8,"unknown");
         }
 

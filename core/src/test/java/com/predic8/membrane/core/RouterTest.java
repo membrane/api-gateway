@@ -70,7 +70,7 @@ class RouterTest {
         .then()
             .log().ifValidationFails(ALL)
             .statusCode(500)
-            .contentType(containsString(APPLICATION_XML))
+            .contentType(containsString(APPLICATION_PROBLEM_XML))
             .body("error.title", equalTo("Internal server error."))
             .body("error.type",equalTo("https://membrane-api.io/problems/internal"))
             .body("error.message", Matchers.not(containsString(INTERNAL_SECRET)));
@@ -103,7 +103,7 @@ class RouterTest {
             .then()
                 .log().ifValidationFails(ALL)
                 .statusCode(500)
-                .contentType(containsString(APPLICATION_XML))
+                .contentType(containsString(APPLICATION_PROBLEM_XML))
                 .body("problem-details.title", equalTo("Internal server error."))
                 .body("problem-details.type",equalTo("https://membrane-api.io/problems/internal"))
                 .body("problem-details.attention", containsString("development mode"))

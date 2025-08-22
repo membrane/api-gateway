@@ -18,14 +18,10 @@ import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import org.slf4j.*;
 
-import java.nio.charset.*;
-
 import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
 import static com.predic8.membrane.core.http.Header.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.interceptor.RegExReplaceInterceptor.TargetType.*;
-import static java.nio.charset.StandardCharsets.*;
-import static java.util.Objects.*;
 
 /**
  * @description Runs a regular-expression-replacement on either the message body (default) or all header values.
@@ -92,9 +88,7 @@ public class RegExReplaceInterceptor extends AbstractInterceptor {
             return;
         log.debug("pattern: {}", regex);
         log.debug("replacement: {}", replace);
-
-        var cs = Charset.forName(requireNonNullElseGet(res.getCharset(), UTF_8::name));
-        res.setBodyContent(res.getBodyAsStringDecoded().replaceAll(regex, replace).getBytes(cs));
+        res.setBodyContent(res.getBodyAsStringDecoded().replaceAll(regex, replace).getBytes(res.getCharsetOrDefault()));
         res.getHeader().removeFields( CONTENT_ENCODING);
     }
 

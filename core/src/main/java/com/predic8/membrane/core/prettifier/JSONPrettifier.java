@@ -40,7 +40,8 @@ public class JSONPrettifier implements Prettifier {
     }
 
     /**
-     * Assumes UTF-8 encoding cause it is JSON
+     * Assumes UTF-8 encoding cause it is JSON.
+     * @return byte[] always UTF-8 encoded
      */
     @Override
     public byte[] prettify(byte[] c, Charset charset) {
@@ -52,6 +53,10 @@ public class JSONPrettifier implements Prettifier {
         }
     }
 
+    /**
+     * Assumes UTF-8 encoding cause it is JSON.
+     * @return byte[] always UTF-8 encoded
+     */
     @Override
     public byte[] prettify(InputStream is, Charset charset) throws IOException {
         return om.writerWithDefaultPrettyPrinter().writeValueAsBytes(om.readTree(is));

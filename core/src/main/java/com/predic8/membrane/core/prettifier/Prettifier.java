@@ -14,8 +14,6 @@
 
 package com.predic8.membrane.core.prettifier;
 
-import org.slf4j.*;
-
 import java.io.*;
 import java.nio.charset.*;
 
@@ -23,8 +21,6 @@ import static com.predic8.membrane.core.http.MimeType.*;
 import static java.nio.charset.StandardCharsets.*;
 
 public interface Prettifier {
-
-    Logger log = LoggerFactory.getLogger(Prettifier.class);
 
     /**
      * Returns a prettified representation of the given bytes using the provided charset.

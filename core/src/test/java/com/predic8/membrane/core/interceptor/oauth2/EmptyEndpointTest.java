@@ -78,6 +78,4 @@ public class EmptyEndpointTest extends RequestParameterizedTest{
             ;
         };
     }
-
-
 }

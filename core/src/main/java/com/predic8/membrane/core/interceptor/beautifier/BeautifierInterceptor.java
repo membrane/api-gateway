@@ -26,7 +26,6 @@ import java.io.*;
 import java.nio.charset.*;
 
 import static com.predic8.membrane.core.interceptor.Outcome.*;
-import static java.nio.charset.StandardCharsets.*;
 
 /**
  * @description Beautifies request and response bodies. Supported are the Formats: JSON, JSON5, XML, TEXT
@@ -60,11 +59,12 @@ public class BeautifierInterceptor extends AbstractInterceptor {
             return CONTINUE;
         }
 
-        byte[] prettified;
         try {
             Prettifier prettifier = getPrettifier(msg);
-            prettified = prettifier.prettify(msg.getBodyAsStreamDecoded(), getCharset(msg, prettifier));
-            msg.setBodyContent(prettified);
+            // Shortcut not to avoid reading bytes in NullPrettifier
+            if (prettifier instanceof NullPrettifier)
+                return CONTINUE;
+            msg.setBodyContent(prettifier.prettify(msg.getBodyAsStreamDecoded(), getCharset(msg, prettifier)));
         } catch (IOException e) {
             // If it is not possible to beautify, to nothing
             // Cause will be often user input => do not log stacktrace
@@ -75,18 +75,11 @@ public class BeautifierInterceptor extends AbstractInterceptor {
     }
 
     private static @Nullable Charset getCharset(Message msg, Prettifier prettifier) {
-        if (msg.getCharset() != null) {
-            try {
-                return Charset.forName(msg.getCharset());
-            } catch (Exception e) {
-                log.info("Unsupported charset: {} fall back to UTF-8", msg.getCharset());
-            }
-        }
-
-        if (prettifier instanceof XMLPrettifier) {
+        // XML is fine with no charset cause the XML prolog may contain an encoding
+        if (msg.getHeader().getCharset() == null && prettifier instanceof XMLPrettifier)
             return null;
-        }
-        return UTF_8;
+
+        return msg.getCharsetOrDefault();
     }
 
     private static Prettifier getPrettifier(Message msg) {

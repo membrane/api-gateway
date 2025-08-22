@@ -13,15 +13,82 @@
    limitations under the License. */
 package com.predic8.membrane.core.util;
 
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
-import java.util.regex.Pattern;
+import java.nio.charset.*;
+import java.util.regex.*;
 
 import static com.predic8.membrane.core.util.TextUtil.*;
-import static java.lang.Integer.MAX_VALUE;
+import static java.lang.Integer.*;
+import static java.nio.charset.StandardCharsets.ISO_8859_1;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class TextUtilTest {
+
+    @Nested
+    class GetCharset {
+
+        @Nested
+        class HappyPath {
+
+            @Test
+            void nullReturnsDefault() {
+                assertSame(UTF_8,
+                        getCharset(null, UTF_8));
+            }
+
+            @Test
+            void blankReturnsDefault() {
+                assertSame(ISO_8859_1, getCharset("", ISO_8859_1));
+            }
+
+            @Test
+            void utf8Variants() {
+                assertEquals(UTF_8, getCharset("utf8", ISO_8859_1));
+                assertEquals(UTF_8, getCharset("utf-8", ISO_8859_1));
+            }
+
+            @Test
+            void latin1Alias() {
+                // "latin1" is a standard alias for ISO-8859-1 in the JDK
+                assertEquals(ISO_8859_1, getCharset("latin1", UTF_8));
+            }
+
+            @Test
+            void windows1252() {
+                Charset cs = getCharset("Windows-1252", UTF_8);
+                assertEquals("windows-1252", cs.name().toLowerCase());
+            }
+
+            @Test
+            void caseInsensitivity() {
+                assertEquals(UTF_8, getCharset("UtF-8", ISO_8859_1));
+            }
+        }
+
+        @Nested
+        @DisplayName("fallbacks")
+        class Fallbacks {
+            @Test
+            void unknownReturnsDefault() {
+                assertSame(UTF_8,
+                        getCharset("unknown-charset-xyz", UTF_8));
+            }
+
+            @Test
+            void quotedUnknownReturnsDefault() {
+                assertSame(StandardCharsets.ISO_8859_1,
+                        getCharset("'???'", StandardCharsets.ISO_8859_1));
+            }
+        }
+
+        @Test
+        void overloadDefaultsToUtf8() {
+            assertEquals(UTF_8, getCharset("utf8"));
+            assertEquals(UTF_8, getCharset(null));
+        }
+    }
 
     @Test
     void camelToKebabSimple() {

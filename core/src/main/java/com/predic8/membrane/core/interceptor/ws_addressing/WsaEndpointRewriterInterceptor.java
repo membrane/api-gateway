@@ -15,13 +15,16 @@ package com.predic8.membrane.core.interceptor.ws_addressing;
 
 import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
+import org.jetbrains.annotations.*;
 import org.slf4j.*;
 
-import javax.xml.stream.*;
 import java.io.*;
 
 import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
+import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 
 @MCElement(name="wsaEndpointRewriter")
@@ -31,26 +34,35 @@ public class WsaEndpointRewriterInterceptor extends AbstractInterceptor {
 
 	private String protocol;
 	private String host;
-	private int port;
+
+	// -1 = do not change port
+	private int port = -1;
+
+	@Override
+	public Outcome handleResponse(Exchange exc) {
+		return handleInternal(exc, RESPONSE);
+	}
 
 	@Override
 	public Outcome handleRequest(Exchange exc) {
-		ByteArrayOutputStream output = new ByteArrayOutputStream();
+		return handleInternal(exc, REQUEST);
+	}
 
-        try {
+	private @NotNull Outcome handleInternal(Exchange exchange, Flow flow) {
+		Message message = exchange.getMessage(flow);
+		ByteArrayOutputStream output = new ByteArrayOutputStream();
+		try {
 			// Why is port 2020 hard coded?
-            new WsaEndpointRewriter().rewriteEndpoint(exc.getRequest().getBodyAsStreamDecoded(), output, new Location( protocol, host,  port));
-        } catch (XMLStreamException e) {
+            new WsaEndpointRewriter().rewriteEndpoint(message.getBodyAsStreamDecoded(), output, new Location( protocol, host,  port));
+        } catch (Exception e) {
 			log.error("",e);
 			internal(router.isProduction(),getDisplayName())
 					.detail("Could not rewrite endpoint!")
 					.exception(e)
-					.buildAndSetResponse(exc);
+					.buildAndSetResponse(exchange);
 			return ABORT;
         }
-
-        exc.getRequest().setBodyContent(output.toByteArray());
-
+		message.setBodyContent(output.toByteArray());
 		return CONTINUE;
 	}
 
@@ -76,6 +88,10 @@ public class WsaEndpointRewriterInterceptor extends AbstractInterceptor {
 		return port;
 	}
 
+	/**
+	 * -1 = do not change port
+	 * @param port
+	 */
 	@MCAttribute
 	public void setPort(int port) {
 		this.port = port;

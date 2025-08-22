@@ -17,6 +17,7 @@ package com.predic8.xml.beautifier;
 import javax.xml.stream.*;
 import java.io.*;
 
+import static java.lang.Boolean.FALSE;
 import static javax.xml.stream.XMLInputFactory.*;
 
 public final class XMLInputFactoryFactory {
@@ -25,24 +26,27 @@ public final class XMLInputFactoryFactory {
 
     private static final ThreadLocal<XMLInputFactory> TL = ThreadLocal.withInitial(() -> {
 
-
         XMLInputFactory f = XMLInputFactory.newInstance();
-        f.setProperty(IS_COALESCING, Boolean.FALSE); // CDATA stays CDATA
-        f.setProperty(SUPPORT_DTD, Boolean.FALSE);
+        f.setProperty(IS_COALESCING, FALSE); // CDATA stays CDATA
+        f.setProperty(SUPPORT_DTD, FALSE);
         f.setProperty(IS_NAMESPACE_AWARE, Boolean.TRUE);
 
         // Do not replace internal character references to avoid XML bombs that deflate the message size
-        f.setProperty(IS_REPLACING_ENTITY_REFERENCES, Boolean.FALSE);
+        f.setProperty(IS_REPLACING_ENTITY_REFERENCES, FALSE);
 
         // Defensive hardening: disable external entities if supported and use a no-op resolver.
         try {
-            f.setProperty(JAVAX_XML_STREAM_IS_SUPPORTING_EXTERNAL_ENTITIES, Boolean.FALSE);
+            f.setProperty(JAVAX_XML_STREAM_IS_SUPPORTING_EXTERNAL_ENTITIES, FALSE);
         } catch (IllegalArgumentException ignore) {
             // property not supported by this implementation
         }
 
         // Disable entity resolving
         f.setXMLResolver((publicId, systemId, baseURI, namespace) -> new ByteArrayInputStream(new byte[0]));
+
+        // Ensure validation is disabled across implementations
+        try { f.setProperty(IS_VALIDATING, FALSE); }
+        catch (IllegalArgumentException ignore) {}
 
         return f;
     });

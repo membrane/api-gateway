@@ -28,6 +28,7 @@ public class URI {
     private String input;
     private String path;
     private String query;
+    private String fragment;
 
     private String scheme;
 
@@ -35,7 +36,7 @@ public class URI {
 
     private int port = -1;
 
-    private String pathDecoded, queryDecoded;
+    private String pathDecoded, queryDecoded, fragmentDecoded;
 
     private static final Pattern PATTERN = Pattern.compile("^(([^:/?#]+):)?(//([^/?#]*))?([^?#]*)(\\?([^#]*))?(#(.*))?");
     //                                                             12            3  4          5       6   7        8 9
@@ -134,6 +135,17 @@ public class URI {
         if (queryDecoded == null)
             queryDecoded = decode(query);
         return queryDecoded;
+    }
+
+    /**
+     * Returns the fragment (the part after '#'), decoded like {@link #getPath()} and {@link #getQuery()}.
+     */
+    public String getFragment() {
+        if (uri != null)
+            return uri.getFragment();
+        if (fragmentDecoded == null)
+            fragmentDecoded = decode(fragment);
+        return fragmentDecoded;
     }
 
     private String decode(String string) {

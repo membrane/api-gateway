@@ -33,7 +33,6 @@ import java.util.*;
 
 import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.http.Request.*;
-import static java.io.File.*;
 import static java.lang.Boolean.*;
 import static java.lang.System.*;
 import static java.nio.charset.StandardCharsets.*;
@@ -49,33 +48,15 @@ public class TemplateInterceptorTest {
     TemplateInterceptor ti;
     Exchange exc = new Exchange(null);
     Request req;
-    static Path copiedXml;
-    static Path copiedJson;
     static Router router;
     static ResolverMap map;
 
     @BeforeAll
     static void setupFiles() throws IOException {
-        //user.dir returns current working directory
-        copyFiles(Paths.get("src/test/resources/xml/project_template.xml"),Paths.get(System.getProperty("user.dir") +
-                                                                                     separator + "project_template.xml") );
-        copyFiles(Paths.get("src/test/resources/json/template_test.json"), Paths.get(System.getProperty("user.dir") +
-                                                                                     separator + "template_test.json"));
-
-        copiedXml = Paths.get(System.getProperty("user.dir") +
-                              separator + "project_template.xml");
-        copiedJson = Paths.get(System.getProperty("user.dir") +
-                               separator + "template_test.json");
         router = mock(Router.class);
         map = new ResolverMap();
         when(router.getResolverMap()).thenReturn(map);
         when(router.getUriFactory()).thenReturn(new URIFactory());
-    }
-
-    @AfterAll
-    static  void deleteFile() throws IOException {
-        Files.deleteIfExists(copiedXml);
-        Files.deleteIfExists(copiedJson);
     }
 
     @BeforeEach
@@ -90,7 +71,6 @@ public class TemplateInterceptorTest {
         lst.add("food1");
         lst.add("food2");
         exc.setProperty("items", lst);
-        exc.setProperty("title", "minister");
     }
 
     @Test
@@ -99,6 +79,7 @@ public class TemplateInterceptorTest {
                 { "city": "Da Nang" }
                 """).buildExchange();
 
+        // Also test save nav with ?.
         invokeInterceptor(exchange, """
                 City: <%= json.city %>
                 """, TEXT_PLAIN);
@@ -162,7 +143,7 @@ public class TemplateInterceptorTest {
 
     @Test
     void xmlFromFileTest() throws Exception {
-        setAndHandleRequest("./project_template.xml");
+        setAndHandleRequest("xml/project_template.xml");
         assertEquals("minister", evaluateXPathAndReturnFirstNode(createXPathExpression("/project/part[2]/title")).trim());
     }
 
@@ -177,7 +158,7 @@ public class TemplateInterceptorTest {
 
     @Test
     void nonXmlTemplateListTest() {
-        setAndHandleRequest("./template_test.json");
+        setAndHandleRequest("json/template_test.json");
 
         assertEquals("food1",
                 new JSONObject(exc.getRequest().getBodyAsStringDecoded()).getJSONArray("orders")
@@ -214,20 +195,20 @@ public class TemplateInterceptorTest {
 
     @Test
     void contentTypeTestXml() {
-        setAndHandleRequest("./project_template.xml");
+        setAndHandleRequest("xml/project_template.xml");
         assertTrue(exc.getRequest().isXML());
     }
 
     @Test
     void contentTypeTestOther() {
         ti.setContentType(APPLICATION_JSON);
-        setAndHandleRequest("./template_test.json");
+        setAndHandleRequest("json/template_test.json");
         assertTrue(exc.getRequest().isJSON());
     }
 
     @Test
     void contentTypeTestJson() {
-        setAndHandleRequest("./template_test.json");
+        setAndHandleRequest("json/template_test.json");
         assertEquals(APPLICATION_JSON,exc.getRequest().getHeader().getContentType());
     }
 
@@ -261,7 +242,7 @@ public class TemplateInterceptorTest {
         ti.setContentType(APPLICATION_JSON);
         ti.setTextTemplate(invalid);
         ti.setPretty("true");
-        ti.init(new Router());
+        ti.init(router);
         ti.handleRequest(exc);
 
         // Because JSON is invalid it should not change anything
@@ -269,7 +250,7 @@ public class TemplateInterceptorTest {
     }
 
     private void setAndHandleRequest(String location) {
-        ti.setLocation(location);
+        ti.setLocation(Paths.get("src/test/resources/" + location).toString());
         ti.init(router);
         ti.handleRequest(exc);
     }

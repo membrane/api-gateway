@@ -17,7 +17,6 @@ package com.predic8.membrane.core.interceptor;
 import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
-import org.jetbrains.annotations.*;
 import org.w3c.dom.*;
 import org.xml.sax.*;
 
@@ -26,10 +25,9 @@ import javax.xml.transform.*;
 import javax.xml.transform.dom.*;
 import javax.xml.transform.stream.*;
 import java.io.*;
+import java.nio.charset.*;
 
-import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
-import static java.nio.charset.StandardCharsets.*;
-import static java.util.Objects.*;
+import static com.predic8.membrane.core.interceptor.Outcome.*;
 
 @MCElement(name="authHead2Body")
 public class AuthHead2BodyInterceptor extends AbstractInterceptor {
@@ -38,20 +36,19 @@ public class AuthHead2BodyInterceptor extends AbstractInterceptor {
 	static final String XSI_NS  = "http://www.w3.org/2001/XMLSchema-instance";
 
 	public Outcome handleRequest(AbstractExchange exchange) throws Exception {
-        Document doc = getDocument(exchange.getRequest().getBodyAsStreamDecoded(), getEncodingOrDefault(exchange.getRequest()));
+		Document doc = getDocument(exchange.getRequest().getBodyAsStreamDecoded(), exchange.getRequest().getCharsetOrDefault());
 		Element header = getAuthorisationHeader(doc);
-		if (header == null) return CONTINUE;
+
+		if (header == null)
+			return CONTINUE;
+
 		Element nor = getNorElement(doc);
 		nor.appendChild(getUsername(doc));
 		nor.appendChild(getPassword(doc));
 
 		header.getParentNode().removeChild(header);
-		exchange.getRequest().setBody(new Body(DOM2String(doc).getBytes(getEncodingOrDefault(exchange.getRequest()))));
+		exchange.getRequest().setBody(new Body(DOM2String(doc).getBytes(exchange.getRequest().getCharsetOrDefault())));
 		return CONTINUE;
-	}
-
-	private static @NotNull String getEncodingOrDefault(Message message) {
-		return requireNonNullElseGet(message.getCharset(), UTF_8::name);
 	}
 
 	private Node getPassword(Document doc) {
@@ -78,12 +75,12 @@ public class AuthHead2BodyInterceptor extends AbstractInterceptor {
 		return (Element)nl.item(0);
 	}
 
-	private Document getDocument(InputStream xmlDocument, String encoding) throws Exception {
+	private Document getDocument(InputStream xmlDocument, Charset encoding) throws Exception {
 		DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
 		dbf.setNamespaceAware(true);
 		InputSource is = new InputSource(xmlDocument);
 		if (encoding != null)
-			is.setEncoding(encoding);
+			is.setEncoding(encoding.name());
 		return dbf.newDocumentBuilder().parse(is);
 	}
 

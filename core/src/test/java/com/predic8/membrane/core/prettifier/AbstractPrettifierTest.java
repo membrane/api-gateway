@@ -18,7 +18,8 @@ import org.jetbrains.annotations.*;
 
 import java.nio.charset.*;
 
-import static com.predic8.membrane.test.TestUtil.getResourceAsBytes;
+import static com.predic8.membrane.test.TestUtil.*;
+
 
 public abstract class AbstractPrettifierTest {
 
@@ -27,6 +28,6 @@ public abstract class AbstractPrettifierTest {
     protected static final String REF_CONTENT = "äöüÄÖÜßéèê";
 
     protected @NotNull String makePretty(String path, Charset charset) throws Exception {
-        return new String(prettifier.prettify(getResourceAsBytes(path), charset), charset);
+        return new String(prettifier.prettify(readResource(path), charset), charset);
     }
 }

@@ -14,10 +14,10 @@
 package com.predic8.membrane.core.interceptor.soap;
 
 import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
+import com.predic8.xml.beautifier.*;
 import org.w3c.dom.*;
 
 import javax.xml.parsers.*;
@@ -28,6 +28,7 @@ import java.util.*;
 import java.util.regex.*;
 
 import static com.predic8.membrane.core.Constants.*;
+import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
 import static com.predic8.membrane.core.http.Header.*;
 import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.http.Response.*;
@@ -56,7 +57,7 @@ public class SampleSoapServiceInterceptor extends AbstractInterceptor {
         try {
             return handleRequestInternal(exc);
         } catch (Exception e) {
-            ProblemDetails.internal(router.isProduction(), getDisplayName())
+            internal(router.isProduction(), getDisplayName())
                     .detail("Could not process SOAP request!")
                     .exception(e)
                     .buildAndSetResponse(exc);
@@ -151,10 +152,7 @@ public class SampleSoapServiceInterceptor extends AbstractInterceptor {
     }
 
     public static String getElementAsString(InputStream is, String localName) throws Exception {
-        // MLInputFactory is not required to be thread-safe, ...
-        // https://javadoc.io/static/com.sun.xml.ws/jaxws-rt/2.2.10-b140319.1121/com/sun/xml/ws/api/streaming/XMLStreamReaderFactory.Default.html#:~:text=XMLInputFactory%20is%20not%20required%20to,using%20a%20XMLInputFactory%20per%20thread.
-        XMLInputFactory factory = XMLInputFactory.newInstance();
-        XMLStreamReader reader = factory.createXMLStreamReader(is);
+        XMLStreamReader reader = XMLInputFactoryFactory.inputFactory().createXMLStreamReader(is);
 
         while (reader.hasNext()) {
             if (reader.next() == START_ELEMENT) {
@@ -170,7 +168,7 @@ public class SampleSoapServiceInterceptor extends AbstractInterceptor {
         // XMLEventFactory is not required to be thread-safe, ...
         // https://javadoc.io/static/com.sun.xml.ws/jaxws-rt/2.2.10-b140319.1121/com/sun/xml/ws/api/streaming/XMLStreamReaderFactory.Default.html
         StringWriter modifiedXmlWriter = new StringWriter();
-        XMLEventReader reader = XMLInputFactory.newInstance().createXMLEventReader(Objects.requireNonNull(is));
+        XMLEventReader reader = XMLInputFactoryFactory.inputFactory().createXMLEventReader(Objects.requireNonNull(is));
         XMLEventWriter writer = XMLOutputFactory.newInstance().createXMLEventWriter(modifiedXmlWriter);
         XMLEventFactory fac = XMLEventFactory.newInstance();
 

@@ -24,8 +24,8 @@ import java.nio.charset.*;
 import static com.predic8.membrane.core.Constants.*;
 import static com.predic8.membrane.core.http.Header.*;
 import static com.predic8.membrane.core.util.ContentTypeDetector.EffectiveContentType.*;
-import static com.predic8.membrane.core.util.ContentTypeDetector.detectEffectiveContentType;
-import static java.nio.charset.StandardCharsets.UTF_8;
+import static com.predic8.membrane.core.util.ContentTypeDetector.*;
+import static com.predic8.membrane.core.util.TextUtil.getCharset;
 
 /**
  * A HTTP message (request or response).
@@ -138,9 +138,7 @@ public abstract class Message {
 	 */
 	public String getBodyAsStringDecoded() {
 		try {
-			String charsetName = getCharset();
-			Charset charset = charsetName != null ? Charset.forName(charsetName) : UTF_8;
-			return new String(MessageUtil.getContent(this), charset);
+			return new String(MessageUtil.getContent(this), getCharsetOrDefault());
 		} catch (Exception e) {
 			throw new RuntimeException(e);
 		}
@@ -339,8 +337,13 @@ public abstract class Message {
 		return "br".equalsIgnoreCase(header.getContentEncoding());
 	}
 
-	public String getCharset() {
-		return header.getCharset();
+	/**
+	 * Tries to use the messages header to get the encoding to build a Charset.
+	 * Uses default of TextUtil if not possible
+	 * @return
+	 */
+	public Charset getCharsetOrDefault() {
+		return getCharset(header.getCharset());
 	}
 
 	public void addObserver(MessageObserver observer) {

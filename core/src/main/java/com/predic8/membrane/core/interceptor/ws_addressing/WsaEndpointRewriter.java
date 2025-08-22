@@ -36,16 +36,9 @@ public class WsaEndpointRewriter {
     public static final String REPLY_TO = "ReplyTo";
     public static final String ADDRESS = "Address";
 
-    private final XMLInputFactory inputFactory;
-    private final XMLEventFactory ef;
-
-    public WsaEndpointRewriter() {
-        inputFactory = XMLInputFactoryFactory.inputFactory();
-        ef = XMLEventFactory.newFactory();
-    }
-
     public void rewriteEndpoint(InputStream reader, OutputStream writer, WsaEndpointRewriterInterceptor.Location location) throws XMLStreamException {
-        XMLEventReader parser = inputFactory.createXMLEventReader(reader);
+        XMLEventFactory ef = XMLEventFactory.newFactory();
+        XMLEventReader parser = XMLInputFactoryFactory.inputFactory().createXMLEventReader(reader);
         XMLEventWriter eventWriter = XMLOutputFactory.newInstance().createXMLEventWriter(writer);
 
         String url;
@@ -63,7 +56,7 @@ public class WsaEndpointRewriter {
                 if (inReplyTo && isAddress(se)) {
                     url = parser.getElementText();
                     try {
-                        addRewrittenAddressElement(eventWriter, url, location, se);
+                        addRewrittenAddressElement(ef, eventWriter, url, location, se);
                     } catch (URISyntaxException ex) {
                         log.info("Error parsing addressing URI: {}", url, ex);
                         throw new RuntimeException(ex);
@@ -80,19 +73,24 @@ public class WsaEndpointRewriter {
         }
     }
 
-    private void addRewrittenAddressElement(XMLEventWriter writer, String address, WsaEndpointRewriterInterceptor.Location location, StartElement se) throws XMLStreamException, URISyntaxException {
-        writer.add(ef.createStartElement("", se.getName().getNamespaceURI(),
-                se.getName().getLocalPart(), se.getAttributes(), se.getNamespaces(),
-                se.getNamespaceContext()));
+    private void addRewrittenAddressElement(XMLEventFactory ef, XMLEventWriter writer, String address, WsaEndpointRewriterInterceptor.Location location, StartElement se) throws XMLStreamException, URISyntaxException {
+        writer.add(ef.createStartElement(se.getName(), se.getAttributes(), se.getNamespaces()));
         writer.add(ef.createCharacters(rewrite(address, location)));
-        writer.add(ef.createEndElement("", se.getName().getNamespaceURI(),
-                se.getName().getLocalPart(), se.getNamespaces()));
+        writer.add(ef.createEndElement(se.getName(), se.getNamespaces()));
     }
-
+    
     private static @NotNull String rewrite(String address, WsaEndpointRewriterInterceptor.Location location) throws URISyntaxException {
-        URI orig = new URIFactory(false).create(address);
-        return location.protocol() + "://" + location.host() + ":" + location.port() + orig.getPath();
-    }
+            URI orig = new URIFactory(false).create(address);
+            StringBuilder sb = new StringBuilder();
+            sb.append(location.protocol()).append("://").append(location.host());
+            if (location.port() > -1) {
+                    sb.append(':').append(location.port());
+                }
+            if (orig.getPath() != null) sb.append(orig.getPath());
+            if (orig.getQuery() != null) sb.append('?').append(orig.getQuery());
+            if (orig.getFragment() != null) sb.append('#').append(orig.getFragment());
+            return sb.toString();
+        }
 
     private boolean isReplyTo(StartElement startElement) {
         return isElement(startElement.getName(), REPLY_TO);

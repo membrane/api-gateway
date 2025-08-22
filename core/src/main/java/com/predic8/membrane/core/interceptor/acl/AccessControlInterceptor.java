@@ -19,6 +19,7 @@ import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.resolver.*;
+import com.predic8.xml.beautifier.*;
 import org.apache.commons.text.*;
 import org.slf4j.*;
 
@@ -128,7 +129,7 @@ public class AccessControlInterceptor extends AbstractInterceptor {
 
 	protected AccessControl parse(String fileName, Router router) {
 		try {
-			XMLInputFactory factory = XMLInputFactory.newInstance();
+			XMLInputFactory factory = XMLInputFactoryFactory.inputFactory();
 			XMLStreamReader reader = new FixedStreamReader(factory.createXMLStreamReader(router.getResolverMap()
 					.resolve(ResolverMap.combine(router.getBaseLocation(), fileName))));
 			AccessControl res = (AccessControl) new AccessControl(router).parse(reader);

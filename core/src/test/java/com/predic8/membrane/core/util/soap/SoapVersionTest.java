@@ -48,7 +48,7 @@ class SoapVersionTest {
     @Test
     void getContentType_mappingIsCorrect() {
         assertEquals(TEXT_XML, SOAP_11.getContentType());
-        assertEquals(APPLICATION_SOAP, SOAP_12.getContentType());
+        assertEquals(APPLICATION_SOAP_XML, SOAP_12.getContentType());
     }
 }
 

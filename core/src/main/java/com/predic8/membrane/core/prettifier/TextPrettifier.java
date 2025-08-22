@@ -19,16 +19,17 @@ import org.jetbrains.annotations.*;
 import java.io.*;
 import java.nio.charset.*;
 
-import static java.lang.Integer.MAX_VALUE;
+import static com.predic8.membrane.core.util.TextUtil.*;
+import static java.lang.Integer.*;
 
-public class TextPrettifier extends AbstractPrettifier {
+public class TextPrettifier implements Prettifier {
 
     public static final TextPrettifier INSTANCE = new TextPrettifier();
     private TextPrettifier() {}
     
     @Override
     public byte[] prettify(byte[] c, Charset charset) {
-        return normalizeMultiline(new String(c, getCharset(charset))).getBytes(charset);
+        return normalizeMultiline(new String(c, getCharsetOrDefault(charset))).getBytes(charset);
     }
 
     @Override

@@ -31,7 +31,6 @@ import static com.predic8.membrane.core.http.Header.*;
 import static com.predic8.membrane.core.http.Request.*;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.*;
 import static java.nio.charset.StandardCharsets.*;
-import static java.util.Objects.*;
 
 /**
  * @description <p>The <i>wsdlRewriter</i> rewrites endpoint addresses of services and XML Schema locations in WSDL documents.</p>
@@ -75,8 +74,7 @@ public class WSDLInterceptor extends RelocatingInterceptor {
 
         // Preserve existing Content-Type if present; otherwise set a sane default including charset.
         if (exc.getResponse().getHeader().getContentType() == null) {
-            exc.getResponse().getHeader().setContentType("application/xml; charset=" +
-                                                         requireNonNullElseGet(exc.getResponse().getCharset(), UTF_8::name));
+            exc.getResponse().getHeader().setContentType("application/xml; charset=" + exc.getResponse().getCharsetOrDefault());
         }
     }
 
@@ -96,7 +94,7 @@ public class WSDLInterceptor extends RelocatingInterceptor {
 
     private @NotNull Relocator createRelocator(Exchange exc, OutputStream stream) throws Exception {
         return new Relocator(new OutputStreamWriter(stream,
-                requireNonNullElseGet(exc.getResponse().getCharset(), UTF_8::name)), getLocationProtocol(), getLocationHost(exc),
+                exc.getResponse().getCharsetOrDefault()), getLocationProtocol(), getLocationHost(exc),
                 getLocationPort(exc), exc.getHandler().getContextPath(exc), pathRewriter);
     }
 

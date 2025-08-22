@@ -559,6 +559,9 @@
 				<plugin>
 					<artifactId>maven-failsafe-plugin</artifactId>
 					<version>3.1.2</version>
+					<configuration>
+					  <argLine>-Dfile.encoding=UTF-8</argLine>
+					</configuration>
 				</plugin>
 
 				<plugin>

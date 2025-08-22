@@ -29,158 +29,169 @@ import static com.predic8.membrane.core.Constants.*;
 
 @NotThreadSafe
 public class Relocator {
-	private static final Logger log = LoggerFactory.getLogger(Relocator.class.getName());
+    private static final Logger log = LoggerFactory.getLogger(Relocator.class.getName());
 
-	private final XMLEventFactory fac = XMLEventFactory.newInstance();
+    private final XMLEventFactory fac = XMLEventFactory.newInstance();
 
-	private final String host;
-	private final int port;
-	private final String contextPath;
-	private final String protocol;
-	private final XMLEventWriter writer;
-	private final PathRewriter pathRewriter;
+    private final String host;
+    private final int port;
+    private final String contextPath;
+    private final String protocol;
+    private final XMLEventWriter writer;
+    private final PathRewriter pathRewriter;
 
-	private Map<QName, String> relocatingAttributes = new HashMap<>();
+    private Map<QName, String> relocatingAttributes = new HashMap<>();
 
-	private boolean wsdlFound;
+    private boolean wsdlFound;
 
-	private class ReplaceIterator implements Iterator<Attribute> {
+    public Relocator(Writer w, String protocol, String host, int port, String contextPath, PathRewriter pathRewriter)
+            throws Exception {
+        this.writer = XMLOutputFactory.newInstance().createXMLEventWriter(w);
+        this.host = host;
+        this.port = port;
+        this.protocol = protocol;
+        this.contextPath = contextPath;
+        this.pathRewriter = pathRewriter;
+    }
 
-		private final XMLEventFactory fac;
-		private final Iterator<Attribute> attrs;
-		private final String replace;
+    public Relocator(OutputStreamWriter osw, String protocol, String host,
+                     int port, String contextPath, PathRewriter pathRewriter) throws Exception {
+        this.writer = XMLOutputFactory.newInstance().createXMLEventWriter(osw);
+        this.host = host;
+        this.port = port;
+        this.protocol = protocol;
+        this.contextPath = contextPath;
+        this.pathRewriter = pathRewriter;
+    }
 
-		public ReplaceIterator(XMLEventFactory fac, String replace, Iterator<Attribute> attrs) {
-			this.fac = fac;
-			this.replace = replace;
-			this.attrs = attrs;
-		}
+    public static String getNewLocation(String addr, String protocol,
+                                        String host, int port, String contextPath) {
+        try {
+            URL oldURL = new URL(addr);
+            if (port == -1) {
+                return new URL(protocol, host, contextPath + oldURL.getFile()).toString();
+            }
+            if ("http".equals(protocol) && port == 80)
+                port = -1;
+            if ("https".equals(protocol) && port == 443)
+                port = -1;
+            return new URL(protocol, host, port, contextPath + oldURL.getFile()).toString();
+        } catch (MalformedURLException e) {
+            log.error("", e);
+        }
+        return "";
+    }
 
-		public boolean hasNext() {
-			return attrs.hasNext();
-		}
-
-		public Attribute next() {
-			Attribute atr = attrs.next();
-			if (atr.getName().equals(new QName(replace))) {
-				String value = atr.getValue();
-				if (pathRewriter != null) {
-					value = pathRewriter.rewrite(value);
-					if (value.startsWith("http"))
-						return fac.createAttribute(replace, getNewLocation(value, protocol, host, port, contextPath));
-					return fac.createAttribute(replace, value);
-				}
-				if (value.startsWith("http"))
-					return fac.createAttribute(replace, getNewLocation(value, protocol, host, port, contextPath));
-			}
-			return atr;
-		}
-
-		public void remove() {
-			attrs.remove();
-		}
-	}
-
-	public interface PathRewriter {
-		String rewrite(String path);
-	}
-
-	public Relocator(Writer w, String protocol, String host, int port, String contextPath, PathRewriter pathRewriter)
-			throws Exception {
-		this.writer = XMLOutputFactory.newInstance().createXMLEventWriter(w);
-		this.host = host;
-		this.port = port;
-		this.protocol = protocol;
-		this.contextPath = contextPath;
-		this.pathRewriter = pathRewriter;
-	}
-
-	public Relocator(OutputStreamWriter osw, String protocol, String host,
-					 int port, String contextPath, PathRewriter pathRewriter) throws Exception {
-		this.writer = XMLOutputFactory.newInstance().createXMLEventWriter(osw);
-		this.host = host;
-		this.port = port;
-		this.protocol = protocol;
-		this.contextPath = contextPath;
-		this.pathRewriter = pathRewriter;
-	}
-
-	@Deprecated
-	public void relocate(InputStreamReader isr) throws Exception {
+    @Deprecated
+    public void relocate(InputStreamReader isr) throws Exception {
         relocate(XMLInputFactoryFactory.inputFactory().createXMLEventReader(isr));
-	}
+    }
 
-	public void relocate(InputStream is) throws Exception {
-		relocate(XMLInputFactory.newInstance().createXMLEventReader(is));
-	}
+    public void relocate(InputStream is) throws Exception {
+        relocate(XMLInputFactoryFactory.inputFactory().createXMLEventReader(is));
+    }
 
-	private void relocate(XMLEventReader parser) throws XMLStreamException {
-		while (parser.hasNext()) {
-			writer.add(process(parser));
-		}
-		writer.flush();
-	}
+    private void relocate(XMLEventReader parser) throws XMLStreamException {
+        try {
+            while (parser.hasNext()) {
+                writer.add(process(parser));
+            }
+            writer.flush();
+        } finally {
+            close(parser);
+        }
+    }
 
-	private XMLEvent process(XMLEventReader parser) throws XMLStreamException {
-		XMLEvent event = parser.nextEvent();
-		if (!event.isStartElement())
-			return event;
+    private XMLEvent process(XMLEventReader parser) throws XMLStreamException {
+        XMLEvent event = parser.nextEvent();
+        if (!event.isStartElement())
+            return event;
 
-		if (getElementName(event).getNamespaceURI().equals(WSDL_SOAP11_NS)
-				|| getElementName(event).getNamespaceURI().equals(WSDL_SOAP12_NS)) {
-			wsdlFound = true;
-		}
+        if (getElementName(event).getNamespaceURI().equals(WSDL_SOAP11_NS)
+            || getElementName(event).getNamespaceURI().equals(WSDL_SOAP12_NS)) {
+            wsdlFound = true;
+        }
 
-		return relocatingAttributes.entrySet().stream()
-				.filter(e -> shouldProcess(e, event))
-				.findFirst()
-				.map(e -> replace(event, e.getValue()))
-				.orElse(event);
-	}
+        return relocatingAttributes.entrySet().stream()
+                .filter(e -> shouldProcess(e, event))
+                .findFirst()
+                .map(e -> replace(event, e.getValue()))
+                .orElse(event);
+    }
 
-	private boolean shouldProcess(Map.Entry<QName, String> e, XMLEvent event) {
-		return getElementName(event).equals(e.getKey());
-	}
+    private boolean shouldProcess(Map.Entry<QName, String> e, XMLEvent event) {
+        return getElementName(event).equals(e.getKey());
+    }
 
-	private QName getElementName(XMLEvent event) {
-		return event.asStartElement().getName();
-	}
+    private QName getElementName(XMLEvent event) {
+        return event.asStartElement().getName();
+    }
 
-	private XMLEvent replace(XMLEvent event, String attribute) {
-		StartElement start = event.asStartElement();
-		return fac.createStartElement(start.getName(),
-				new ReplaceIterator(fac, attribute, start.getAttributes()),
-				start.getNamespaces());
-	}
+    private XMLEvent replace(XMLEvent event, String attribute) {
+        StartElement start = event.asStartElement();
+        return fac.createStartElement(start.getName(),
+                new ReplaceIterator(fac, attribute, start.getAttributes()),
+                start.getNamespaces());
+    }
 
-	public boolean isWsdlFound() {
-		return wsdlFound;
-	}
+    public boolean isWsdlFound() {
+        return wsdlFound;
+    }
 
-	public static String getNewLocation(String addr, String protocol,
-			String host, int port, String contextPath) {
-		try {
-			URL oldURL = new URL(addr);
-			if (port == -1) {
-				return new URL(protocol, host, contextPath + oldURL.getFile()).toString();
-			}
-			if ("http".equals(protocol) && port == 80)
-				port = -1;
-			if ("https".equals(protocol) && port == 443)
-				port = -1;
-			return new URL(protocol, host, port, contextPath + oldURL.getFile()).toString();
-		} catch (MalformedURLException e) {
-			log.error("", e);
-		}
-		return "";
-	}
+    public Map<QName, String> getRelocatingAttributes() {
+        return relocatingAttributes;
+    }
 
-	public Map<QName, String> getRelocatingAttributes() {
-		return relocatingAttributes;
-	}
+    public void setRelocatingAttributes(Map<QName, String> relocatingAttributes) {
+        this.relocatingAttributes = relocatingAttributes;
+    }
 
-	public void setRelocatingAttributes(Map<QName, String> relocatingAttributes) {
-		this.relocatingAttributes = relocatingAttributes;
-	}
+    public interface PathRewriter {
+        String rewrite(String path);
+    }
+
+    private class ReplaceIterator implements Iterator<Attribute> {
+
+        private final XMLEventFactory fac;
+        private final Iterator<Attribute> attrs;
+        private final String replace;
+
+        public ReplaceIterator(XMLEventFactory fac, String replace, Iterator<Attribute> attrs) {
+            this.fac = fac;
+            this.replace = replace;
+            this.attrs = attrs;
+        }
+
+        public boolean hasNext() {
+            return attrs.hasNext();
+        }
+
+        public Attribute next() {
+            Attribute atr = attrs.next();
+            if (atr.getName().equals(new QName(replace))) {
+                String value = atr.getValue();
+                if (pathRewriter != null) {
+                    value = pathRewriter.rewrite(value);
+                    if (value.startsWith("http"))
+                        return fac.createAttribute(replace, getNewLocation(value, protocol, host, port, contextPath));
+                    return fac.createAttribute(replace, value);
+                }
+                if (value.startsWith("http"))
+                    return fac.createAttribute(replace, getNewLocation(value, protocol, host, port, contextPath));
+            }
+            return atr;
+        }
+
+        public void remove() {
+            attrs.remove();
+        }
+    }
+
+    private static void close(XMLEventReader parser) {
+        try {
+            parser.close();
+        } catch (Exception ignore) {
+        }
+    }
 
 }

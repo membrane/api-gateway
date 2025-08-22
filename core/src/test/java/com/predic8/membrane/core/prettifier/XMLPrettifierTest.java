@@ -34,17 +34,17 @@ class XMLPrettifierTest extends AbstractPrettifierTest {
 
         @Test
         void iso88591() throws Exception {
-            assertChars(new String(prettifier.prettify(getResourceAsBytes("/charsets/iso-8859-1-unformatted.xml")), ISO_8859_1));
+            assertChars(new String(prettifier.prettify(readResource("/charsets/iso-8859-1-unformatted.xml")), ISO_8859_1));
         }
 
         @Test
         void utf8() throws Exception {
-            assertChars(new String(prettifier.prettify(getResourceAsBytes("/charsets/utf-8-unformatted.xml")), UTF_8));
+            assertChars(new String(prettifier.prettify(readResource("/charsets/utf-8-unformatted.xml")), UTF_8));
         }
 
         @Test
         void utf16be() throws Exception {
-            assertChars(new String(prettifier.prettify(getResourceAsBytes("/charsets/utf-16be-unformatted.xml"), UTF_16BE), UTF_16BE));
+            assertChars(new String(prettifier.prettify(readResource("/charsets/utf-16be-unformatted.xml"), UTF_16BE), UTF_16));
         }
     }
 }

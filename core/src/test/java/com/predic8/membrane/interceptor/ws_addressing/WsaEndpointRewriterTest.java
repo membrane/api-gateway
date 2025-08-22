@@ -17,12 +17,12 @@ import com.predic8.membrane.core.interceptor.ws_addressing.*;
 import org.apache.commons.io.output.ByteArrayOutputStream;
 import org.junit.jupiter.api.*;
 
-import javax.xml.stream.*;
 import java.io.*;
 
+import static java.nio.charset.StandardCharsets.*;
 import static org.junit.jupiter.api.Assertions.*;
 
-public class WsaEndpointRewriterTest {
+class WsaEndpointRewriterTest {
 
 	static final String SOAP_WITH_ADDRESSING = """
 					<S:Envelope xmlns:S="http://www.w3.org/2003/05/soap-envelope"
@@ -42,20 +42,14 @@ public class WsaEndpointRewriterTest {
 					 </S:Envelope>
 					""";
 
-	InputStream is;
-
-	@BeforeEach
-	public void setUp() {
-		is = new ByteArrayInputStream(SOAP_WITH_ADDRESSING.getBytes());
-	}
-
 	@Test
-	void rewrite_EndpointAddress() throws XMLStreamException {
+	void rewrite_EndpointAddress() throws Exception {
 		ByteArrayOutputStream output = new ByteArrayOutputStream();
 		WsaEndpointRewriter rewriter = new WsaEndpointRewriter();
 
-		rewriter.rewriteEndpoint(is, output, new WsaEndpointRewriterInterceptor.Location("https","localhost",1234));
-
+		try (InputStream is = new ByteArrayInputStream(SOAP_WITH_ADDRESSING.getBytes(UTF_8))) {
+			rewriter.rewriteEndpoint(is, output, new WsaEndpointRewriterInterceptor.Location("https", "localhost", 1234));
+		}
 		String xml = output.toString();
 
 		assertTrue(xml.contains(">https://localhost:1234/client:1000/endpoint-1<"));

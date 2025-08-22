@@ -21,9 +21,10 @@ import org.slf4j.*;
 import java.io.*;
 import java.nio.charset.*;
 
+import static com.predic8.membrane.core.util.TextUtil.*;
 import static java.nio.charset.StandardCharsets.*;
 
-public class XMLPrettifier extends AbstractPrettifier {
+public class XMLPrettifier implements Prettifier {
 
     public static final XMLPrettifier INSTANCE = new XMLPrettifier();
     private static final Logger log = LoggerFactory.getLogger(XMLPrettifier.class);
@@ -41,7 +42,7 @@ public class XMLPrettifier extends AbstractPrettifier {
         return ("UTF-16BE".equalsIgnoreCase(charset.name()) ||
                 "UTF-16LE".equalsIgnoreCase(charset.name()))
                 ? UTF_16
-                : getCharset(charset);
+                : getCharsetOrDefault(charset);
     }
 
     @Override
@@ -49,17 +50,17 @@ public class XMLPrettifier extends AbstractPrettifier {
         try {
             return prettify(c, UTF_8);
         } catch (Exception e) {
-            log.debug("", e);
+            log.debug("Failed to prettify XML input (byte[]). Returning original bytes.", e);
             return c;
         }
     }
 
     @Override
     public byte[] prettify(InputStream is, Charset charset) throws IOException {
-            StringWriter sw = new StringWriter();
+            StringWriter sw = new StringWriter(250);
             XMLBeautifier xb = new XMLBeautifier(new StandardXMLBeautifierFormatter(sw, 4));
             xb.parse(is);
-            return sw.toString().getBytes(xb.getDetectedEncoding() /* Charset from parse */);
+            return sw.toString().getBytes(getCharset( xb.getDetectedEncoding()) /* Charset from parse */);
     }
 
     @Override

@@ -16,7 +16,7 @@ package com.predic8.membrane.core.util.soap;
 
 import com.predic8.membrane.core.util.*;
 
-import static com.predic8.membrane.core.http.MimeType.APPLICATION_SOAP;
+import static com.predic8.membrane.core.http.MimeType.APPLICATION_SOAP_XML;
 import static com.predic8.membrane.core.http.MimeType.TEXT_XML;
 
 public enum SoapVersion {
@@ -36,7 +36,7 @@ public enum SoapVersion {
     public String getContentType() {
         return switch (this) {
             case SOAP_11 -> TEXT_XML;
-            case SOAP_12 -> APPLICATION_SOAP;
+            case SOAP_12 -> APPLICATION_SOAP_XML;
         };
     }
 

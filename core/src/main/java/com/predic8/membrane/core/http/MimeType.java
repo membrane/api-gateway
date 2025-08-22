@@ -32,8 +32,10 @@ public class MimeType {
 
     public static final String APPLICATION = "application";
 
-    public static final String APPLICATION_SOAP = "application/soap+xml";
+    public static final String APPLICATION_SOAP_XML = "application/soap+xml";
     public static final String APPLICATION_XML = "application/xml";
+    public static final String APPLICATION_PROBLEM_XML = "application/problem+xml";
+
     public static final String TEXT_XML = "text/xml";
     public static final String TEXT_HTML = "text/html";
     public static final String TEXT_XML_UTF8 = TEXT_XML + ";charset=UTF-8";

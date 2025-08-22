@@ -14,16 +14,14 @@
 
 package com.predic8.membrane.core.interceptor.xmlprotection;
 
-import com.predic8.membrane.core.Router;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Request;
-import com.predic8.membrane.core.interceptor.Outcome;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
+import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.interceptor.*;
+import org.junit.jupiter.api.*;
 
-import static com.predic8.membrane.core.http.MimeType.APPLICATION_XML;
-import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
-import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
+import static com.predic8.membrane.core.http.MimeType.*;
+import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class XMLProtectionInterceptorTest {
@@ -42,18 +40,21 @@ public class XMLProtectionInterceptorTest {
 
     private void runOn(String resource, boolean expectSuccess) throws Exception {
         exc.getRequest().getHeader().setContentType(APPLICATION_XML);
-        exc.getRequest().setBodyContent(this.getClass().getResourceAsStream(resource).readAllBytes());
+        try (var is = this.getClass().getResourceAsStream(resource)) {
+            assertNotNull(is, "Test resource not found: " + resource);
+            exc.getRequest().setBodyContent(is.readAllBytes());
+        }
         Outcome outcome = interceptor.handleRequest(exc);
         assertEquals(expectSuccess ? CONTINUE : ABORT, outcome);
     }
 
     @Test
-    void testInvariant() throws Exception {
+    void invariant() throws Exception {
         runOn("/customer.xml", true);
     }
 
     @Test
-    void testNotWellformed() throws Exception {
+    void notWellformed() throws Exception {
         runOn("/xml/not-wellformed.xml", false);
     }
 

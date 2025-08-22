@@ -169,7 +169,7 @@ public class XMLBeautifierTest {
     }
 
     @Test
-    @DisplayName("CDATA sections are preserved verbatim in output")
+    @DisplayName("CDATA wrappers are normalized: content escaped, no CDATA in output")
     void cdata_isPreservedVerbatim() throws Exception {
         String xml = "<a><![CDATA[1 < 2 & 3]]></a>";
 
@@ -181,14 +181,14 @@ public class XMLBeautifierTest {
 
         assertTrue(
                 result.contains("1 &lt; 2 &amp; 3"),
-                "Expected data in CDATA sections to be preserved, got:\n" + result
+                "Expected no CDATA sections in output. Got:\n" + result
         );
-        assertFalse(result.contains("CDATA"),"CDATA sections are removed");
+        assertFalse(result.contains("CDATA"), "Expected no CDATA sections in output");
     }
 
     @Test
-    @DisplayName("Adjacent/split CDATA sections remain split")
-    void adjacentCdata_sectionsRemainSplit() throws Exception {
+    @DisplayName("Adjacent CDATA sections yield the same character data (foo]]>bar)")
+    void adjacentCdata_yieldsSameCharacters() throws Exception {
         // Legal XML that represents "foo]]>bar" via two adjacent CDATA sections
         String xml = "<a><![CDATA[foo]]]]><![CDATA[>bar]]></a>";
 

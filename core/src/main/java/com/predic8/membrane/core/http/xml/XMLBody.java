@@ -19,9 +19,6 @@ import com.predic8.membrane.core.http.Message;
 import javax.xml.stream.*;
 import javax.xml.stream.events.*;
 
-import static java.nio.charset.StandardCharsets.*;
-import static java.util.Objects.*;
-
 class XMLBody extends AbstractXmlElement {
 
 	private static final XMLInputFactory xmlInputFactory = XMLInputFactory.newInstance();
@@ -35,7 +32,7 @@ class XMLBody extends AbstractXmlElement {
 
 	public XMLBody(Message msg) {
 		this.msg = msg;
-		charset = requireNonNullElseGet( msg.getCharset(), UTF_8::name );
+		charset = msg.getCharsetOrDefault().name();
 	}
 
 	@Override

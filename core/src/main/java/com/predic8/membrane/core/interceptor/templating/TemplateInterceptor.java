@@ -91,7 +91,7 @@ public class TemplateInterceptor extends AbstractTemplateInterceptor {
         return template.make(getVariableBinding(exchange, flow)).toString().getBytes(UTF_8);
     }
 
-    private @NotNull HashMap<String, Object> getVariableBinding(Exchange exc, Flow flow) {
+    private @NotNull Map<String, Object> getVariableBinding(Exchange exc, Flow flow) {
         return createParameterBindings(router, exc, flow, scriptAccessesJson && isJsonMessage(exc, flow));
     }
 
@@ -100,6 +100,9 @@ public class TemplateInterceptor extends AbstractTemplateInterceptor {
     }
 
     private Template createTemplate() {
+        if (textTemplate == null)
+            throw new ConfigurationException("No template content provided via 'location' or inline text (%s).".formatted(getTemplateLocation()));
+
         try {
             return createTemplateEngine().createTemplate(new StringReader(textTemplate));
         } catch (Exception e) {

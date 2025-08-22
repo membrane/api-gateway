@@ -18,33 +18,35 @@ import org.junit.jupiter.api.*;
 
 import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.prettifier.Prettifier.*;
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertSame;
 
 class PrettifierTest {
 
     @Test
     void json() {
-        assertEquals(JSONPrettifier.INSTANCE, getInstance(APPLICATION_JSON));
-        assertEquals(JSONPrettifier.INSTANCE, getInstance(APPLICATION_JSON_UTF8));
-        assertEquals(JSONPrettifier.INSTANCE, getInstance(APPLICATION_PROBLEM_JSON));
+        assertSame(JSONPrettifier.INSTANCE, getInstance(APPLICATION_JSON));
+        assertSame(JSONPrettifier.INSTANCE, getInstance(APPLICATION_JSON_UTF8));
+        assertSame(JSONPrettifier.INSTANCE, getInstance(APPLICATION_PROBLEM_JSON));
     }
 
     @Test
     void xml() {
-        assertEquals(XMLPrettifier.INSTANCE, getInstance(APPLICATION_XML));
-        assertEquals(XMLPrettifier.INSTANCE, getInstance(TEXT_XML));
-        assertEquals(XMLPrettifier.INSTANCE, getInstance(TEXT_XML_UTF8));
+        assertSame(XMLPrettifier.INSTANCE, getInstance(APPLICATION_XML));
+        assertSame(XMLPrettifier.INSTANCE, getInstance(APPLICATION_PROBLEM_XML));
+        assertSame(XMLPrettifier.INSTANCE, getInstance(TEXT_XML));
+        assertSame(XMLPrettifier.INSTANCE, getInstance(TEXT_XML_UTF8));
     }
 
     @Test
     void text() {
-        assertEquals(TextPrettifier.INSTANCE, getInstance(TEXT_PLAIN));
-        assertEquals(TextPrettifier.INSTANCE, getInstance(TEXT_PLAIN_UTF8));
+        assertSame(TextPrettifier.INSTANCE, getInstance(TEXT_PLAIN));
+        assertSame(TextPrettifier.INSTANCE, getInstance(TEXT_PLAIN_UTF8));
     }
 
     @Test
     void unknown() {
-        assertEquals(NullPrettifier.INSTANCE, getInstance("unknown"));
+        assertSame(NullPrettifier.INSTANCE, getInstance("unknown"));
+        assertSame(NullPrettifier.INSTANCE, getInstance(null));
     }
 
 }
