@@ -229,7 +229,9 @@ public class TextUtil {
      * @return line
      */
     public static String getLineFromMultilineString(String s, int lineNumber) {
-        return s.split("\r?\n")[lineNumber - 1];
+        String[] lines = s.split("\\r?\\n");
+        if (lineNumber <= 0 || lineNumber > lines.length) return "";
+        return lines[lineNumber - 1];
     }
 
     public static String escapeQuotes(String s) {
@@ -247,21 +249,60 @@ public class TextUtil {
         return trimLines(lines, getMinIndent(lines)).toString().replaceFirst("\\s*$", "");
     }
 
+    private static boolean isBlank(String s) {
+        return s == null || s.trim().isEmpty();
+    }
+
     /**
-     * Trims excess indentation from each line in the input array, based on a specified minimum indent level.
-     *
-     * @param lines     The array of lines to process.
-     * @param minIndent The minimum indent level to maintain.
-     * @return A StringBuilder containing lines with adjusted indentation.
+     * how many characters to remove from start to drop `columns` of indent (tab = 4).
+     */
+    private static int charsToRemoveForColumns(String s, int columns) {
+        int cols = 0, i = 0;
+        while (i < s.length() && cols < columns) {
+            char c = s.charAt(i);
+            if (c == ' ') {
+                cols += 1;
+                i++;
+            } else if (c == '\t') {
+                cols += 4;
+                i++;
+            } else break;
+        }
+        return i;
+    }
+
+    /**
+     * Trims excess indentation from each line based on minIndent (columns),
+     * drops leading/trailing blank lines, preserves internal blank lines,
+     * and produces no trailing newline.
      */
     public static StringBuilder trimLines(String[] lines, int minIndent) {
-        StringBuilder result = new StringBuilder();
-        for (String line : lines) {
-            if (!line.trim().isEmpty()) {
-                result.append(" ".repeat(Math.max(getCurrentIndent(line) - minIndent, 0))).append(line.trim()).append("\n");
-            } else {
-                result.append("\n");
+        // find first/last non-blank lines
+        int first = -1, last = -1;
+        for (int i = 0; i < lines.length; i++) {
+            if (!isBlank(lines[i])) {
+                first = i;
+                break;
             }
+        }
+        if (first == -1) return new StringBuilder(); // all blank
+        for (int i = lines.length - 1; i >= 0; i--) {
+            if (!isBlank(lines[i])) {
+                last = i;
+                break;
+            }
+        }
+
+        StringBuilder result = new StringBuilder();
+        for (int i = first; i <= last; i++) {
+            String line = lines[i];
+            if (!isBlank(line)) {
+                int curIndent = getCurrentIndent(line);               // tab = 4 per your method
+                int cutCols = Math.min(minIndent, curIndent);
+                int cutChars = charsToRemoveForColumns(line, cutCols);
+                result.append(line.substring(cutChars));
+            }
+            if (i < last) result.append("\n"); // newline only between kept lines
         }
         return result;
     }

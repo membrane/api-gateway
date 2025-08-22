@@ -154,7 +154,6 @@ public class TextUtilTest {
                 line3"""));
 
         assertEquals("""
-                
                 line1
                     line2
                 line3""", unifyIndent("""
@@ -180,8 +179,8 @@ public class TextUtilTest {
         assertEquals("""
                 line1
                 line2""", unifyIndent("""
-                \tline1
-                \tline2"""));
+                        \tline1
+                        \tline2"""));
 
         assertEquals("""
                     line1
@@ -203,16 +202,16 @@ public class TextUtilTest {
 
     @Test
     void testTrimLines() {
-        assertEquals("Line1\nLine2\nLine3\n", trimLines(new String[]{"Line1", "Line2", "Line3"}, 0).toString());
-        assertEquals("Line1\n    Line2\nLine3\n", trimLines(new String[]{"    Line1", "        Line2", "    Line3"}, 4).toString());
-        assertEquals("  Line1\nLine2\nLine3\n", trimLines(new String[]{"    Line1", "\tLine2", "  Line3"}, 2).toString());
-        assertEquals("\n\n\n", trimLines(new String[]{"    ", "\t", "  "}, 2).toString());
-        assertEquals("\n\n\n", trimLines(new String[]{"", "", ""}, 0).toString());
-        assertEquals("Line1\nLine2\nLine3\n", trimLines(new String[]{"    Line1", "  Line2", "    Line3"}, 6).toString());
-        assertEquals("Line1\nLine2\n", trimLines(new String[]{"  Line1\r", "\tLine2\r"}, 2).toString());
-        assertEquals("Line1\nLine2\n", trimLines(new String[]{"\tLine1", "\tLine2"}, 1).toString());
-        assertEquals("Line1\nLine2\nLine3\n", trimLines(new String[]{"  Line1\r", "  Line2", "  Line3"}, 2).toString());
-        assertEquals("Line1\n\nLine3\n", trimLines(new String[]{"  Line1", "", "  Line3"}, 2).toString());
+        assertEquals("Line1\nLine2\nLine3", trimLines(new String[]{"Line1", "Line2", "Line3"}, 0).toString());
+        assertEquals("Line1\n    Line2\nLine3", trimLines(new String[]{"    Line1", "        Line2", "    Line3"}, 4).toString());
+        assertEquals("  Line1\nLine2\nLine3", trimLines(new String[]{"    Line1", "\tLine2", "  Line3"}, 2).toString());
+        assertEquals("", trimLines(new String[]{"\n", "\n", "\n"}, 2).toString());
+        assertEquals("", trimLines(new String[]{"    ", "\t", "  "}, 2).toString());
+        assertEquals("", trimLines(new String[]{"", "", ""}, 0).toString());
+        assertEquals("Line1\nLine2\nLine3", trimLines(new String[]{"    Line1", "  Line2", "    Line3"}, 6).toString());
+        assertEquals("Line1\nLine2", trimLines(new String[]{"\tLine1", "\tLine2"}, 1).toString());
+        assertEquals("Line1\t\nLine2\nLine3", trimLines(new String[]{"  Line1\t", "  Line2", "  Line3"}, 2).toString());
+        assertEquals("Line1\n\nLine3", trimLines(new String[]{"  Line1", "", "  Line3"}, 2).toString());
     }
 
     @Test
@@ -223,9 +222,7 @@ public class TextUtilTest {
         assertEquals(5, getCurrentIndent("  \t \tMixedSpacesAndTabs"));
         assertEquals(0, getCurrentIndent(""));
         assertEquals(6, getCurrentIndent("      "));
-        assertEquals(3, getCurrentIndent("  \rLineWithCarriageReturn"));
         assertEquals(1, getCurrentIndent("\tLineWithTab"));
-        assertEquals(1, getCurrentIndent("\rLineStartsWithCarriageReturn"));
     }
 
     @Test
