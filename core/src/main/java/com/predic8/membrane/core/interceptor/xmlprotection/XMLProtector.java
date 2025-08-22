@@ -97,8 +97,8 @@ public class XMLProtector {
                 XMLEvent event = parser.nextEvent();
                 if (event.isStartElement()) {
                     StartElement startElement = event.asStartElement();
-                    if (maxElementNameLength != -1)
-                        if (startElement.getName().getLocalPart().length() > maxElementNameLength) {
+                    if (maxElementNameLength != -1 &&
+                        startElement.getName().getLocalPart().length() > maxElementNameLength) {
                             log.warn("Element name length: Limit exceeded.");
                             return false;
                         }
@@ -133,7 +133,6 @@ public class XMLProtector {
                     e.getMessage());
             return false;
         }
-        xmlInputFactoryFactory.remove();
         return true;
     }
 

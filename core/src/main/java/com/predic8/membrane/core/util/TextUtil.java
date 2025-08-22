@@ -156,7 +156,7 @@ public class TextUtil {
         buf.append(c);
     }
 
-    public static String toEnglishList(String conjuction, String... args) {
+    public static String toEnglishList(String conjunction, String... args) {
         ArrayList<String> l = new ArrayList<>();
         for (String arg : args)
             if (arg != null && !arg.isEmpty())
@@ -166,7 +166,7 @@ public class TextUtil {
             sb.append(l.get(i));
             if (i == l.size() - 2) {
                 sb.append(" ");
-                sb.append(conjuction);
+                sb.append(conjunction);
                 sb.append(" ");
             }
             if (i < l.size() - 2)
@@ -175,7 +175,7 @@ public class TextUtil {
         return sb.toString();
     }
 
-    public static String capitalize(String english) {
+    public static String capitalizeFirstCharacter(String english) {
         if (english.isEmpty())
             return "";
         return (english.charAt(0) + english.substring(1)).toUpperCase();
@@ -183,7 +183,6 @@ public class TextUtil {
 
     /**
      * Checks whether s is a valid (well-formed and balanced) XML snippet.
-     * Note that attributes escaped by single quotes are accepted (which is illegal by spec).
      */
     public static boolean isValidXMLSnippet(String s) {
         try {
