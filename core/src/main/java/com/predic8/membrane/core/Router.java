@@ -64,6 +64,7 @@ import java.util.concurrent.ExecutorService;
 
 import static com.predic8.membrane.core.Constants.PRODUCT_NAME;
 import static com.predic8.membrane.core.Constants.VERSION;
+import static com.predic8.membrane.core.DLPUtil.*;
 import static com.predic8.membrane.core.jmx.JmxExporter.JMX_EXPORTER_NAME;
 import static java.util.concurrent.Executors.newSingleThreadExecutor;
 
@@ -285,28 +286,7 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
     public void init() throws Exception {
         initRemainingRules();
         transport.init(this);
-        if (isTraceEnabledAnywhere()) {
-            log.warn("""
-                    ================================================================================================
-                    
-                    WARNING: TRACE logging is enabled for com.predic8.membrane.core (or one of its subpackages).
-                    
-                    TRACE-level logging may expose sensitive data including:
-                    - Request and response headers (including Authorization headers)
-                    - Request and response bodies 
-                    - Internal processing details
-                    - Configuration values
-                    
-                    This should only be used in development environments or for debugging purposes.
-                    Ensure sensitive data is not logged in production environments.
-                    
-                    To disable TRACE, set the level to INFO or higher for 'com.predic8.membrane.core'
-                    in your logging configuration (e.g., log4j2.xml or logback.xml). Example (Log4j2):
-                    <Logger name="com.predic8.membrane.core" level="info" additivity="false"/>
-                    
-                    ================================================================================================
-                    """);
-        }
+        displayTraceWarning();
     }
 
     private boolean isTraceEnabledAnywhere() {
