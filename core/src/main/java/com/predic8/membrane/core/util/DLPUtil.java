@@ -1,19 +1,23 @@
-package com.predic8.membrane.core;
+package com.predic8.membrane.core.util;
 
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.core.LoggerContext;
 import org.apache.logging.log4j.core.config.Configuration;
 
-public class DLPUtil {
+public final class DLPUtil {
 
-    private static final LoggerContext ctx = (LoggerContext) LogManager.getContext(false);
-    private static final Configuration config = ctx.getConfiguration();
+    private static final LoggerContext CTX = (LoggerContext) LogManager.getContext(false);
+    private static final String BASE = "com.predic8.membrane.core";
+
+    private DLPUtil() {
+    }
 
     public static void displayTraceWarning() {
-        if (config.getLoggerConfig("com.predic8.membrane.core").getLevel().intLevel() <= Level.TRACE.intLevel()) {
-            System.out.print("""
-                ================================================================================================
+        if (!isTraceEnabledSomewhere(CTX.getConfiguration())) return;
+
+        System.out.print("""
+                 ================================================================================================
                 
                 WARNING: TRACE logging is enabled for com.predic8.membrane.core (or one of its subpackages).
                 
@@ -32,6 +36,16 @@ public class DLPUtil {
                 
                 ================================================================================================
                 """);
-        }
+    }
+
+    private static boolean isTraceEnabledSomewhere(Configuration config) {
+        if (config.getRootLogger().getLevel() == Level.TRACE) return true;
+        if (config.getLoggerConfig(BASE).getLevel() == Level.TRACE) return true;
+        return config.getLoggers()
+                .keySet()
+                .stream()
+                .filter(name -> name.startsWith(BASE + "."))
+                .map(name -> config.getLoggerConfig(name).getLevel())
+                .anyMatch(Level.TRACE::equals);
     }
 }
