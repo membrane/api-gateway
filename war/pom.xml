@@ -170,7 +170,10 @@
                             <contextPath>/</contextPath>
                             <stopPort>3022</stopPort>
                             <stopKey>STOP</stopKey>
-                            <jvmArgs>-Xmx512m -XX:MaxPermSize=265m</jvmArgs>
+                            <jvmArgs>-Xmx512m</jvmArgs>
+                            <!-- To cap metaspace you can use:
+                                <jvmArgs>-Xmx512m -XX:MaxMetaspaceSize=256m</jvmArgs>
+                            -->
                         </configuration>
                         <executions>
                             <execution>

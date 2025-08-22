@@ -173,8 +173,7 @@ public class TextUtil {
         }
         return sb.toString();
     }
-
-    public static Object capitalize(String english) {
+    public static String capitalize(String english) {
         if (english.isEmpty())
             return "";
         return (english.charAt(0) + english.substring(1)).toUpperCase();
@@ -214,7 +213,7 @@ public class TextUtil {
         return StringEscapeUtils.escapeHtml4(url);
     }
 
-    public static Object removeFinalChar(String s) {
+    public static String removeFinalChar(String s) {
         StringBuilder sb = new StringBuilder(s);
         if (!sb.isEmpty())
             sb.deleteCharAt(sb.length() - 1);

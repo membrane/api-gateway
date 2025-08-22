@@ -14,17 +14,16 @@
 
 package com.predic8.membrane.examples.withinternet;
 
-import com.predic8.membrane.examples.util.AbstractSampleMembraneStartStopTestcase;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import com.predic8.membrane.examples.util.*;
+import org.junit.jupiter.api.*;
 
-import java.io.IOException;
+import java.io.*;
 
-import static com.predic8.membrane.core.http.MimeType.APPLICATION_SOAP_XML;
-import static com.predic8.membrane.core.util.FileUtil.writeInputStreamToFile;
-import static io.restassured.RestAssured.given;
-import static io.restassured.http.ContentType.HTML;
-import static org.hamcrest.Matchers.containsString;
+import static com.predic8.membrane.core.http.MimeType.*;
+import static com.predic8.membrane.core.util.FileUtil.*;
+import static io.restassured.RestAssured.*;
+import static io.restassured.http.ContentType.*;
+import static org.hamcrest.Matchers.*;
 
 public class TutorialSoapExampleTest extends AbstractSampleMembraneStartStopTestcase {
 
@@ -66,10 +65,11 @@ public class TutorialSoapExampleTest extends AbstractSampleMembraneStartStopTest
         given()
         .when()
             .body(validSoapRequest)
-            .contentType(APPLICATION_SOAP_XML)
+            .contentType(TEXT_XML)
             .post("http://localhost:2001/soap-service")
         .then()
             .statusCode(200)
+            .contentType(TEXT_XML)
             .body(containsString("England"));
         // @formatter:on
     }
@@ -80,10 +80,11 @@ public class TutorialSoapExampleTest extends AbstractSampleMembraneStartStopTest
         given()
         .when()
             .body(invalidSoapRequest)
-            .contentType(APPLICATION_SOAP_XML)
+            .contentType(TEXT_XML)
             .post("http://localhost:2001/soap-service")
         .then()
             .statusCode(200)
+            .contentType(TEXT_XML)
             .body(containsString("<faultcode>s11:Client</faultcode>"));
         // @formatter:on
     }
@@ -94,10 +95,11 @@ public class TutorialSoapExampleTest extends AbstractSampleMembraneStartStopTest
         given()
         .when()
             .body(invalidSoapRequest)
-            .contentType(APPLICATION_SOAP_XML)
+            .contentType(TEXT_XML)
         .post("http://localhost:2002/soap-service")
             .then()
             .statusCode(200)
+            .contentType(TEXT_XML)
             .body(containsString("<faultstring>WSDL message validation failed</faultstring>"));
         // @formatter:on
     }

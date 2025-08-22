@@ -25,7 +25,6 @@ public final class XMLInputFactoryFactory {
     public static final String JAVAX_XML_STREAM_IS_SUPPORTING_EXTERNAL_ENTITIES = "javax.xml.stream.isSupportingExternalEntities";
 
     private static final ThreadLocal<XMLInputFactory> TL = ThreadLocal.withInitial(() -> {
-
         XMLInputFactory f = XMLInputFactory.newInstance();
         f.setProperty(IS_COALESCING, FALSE); // CDATA stays CDATA
         f.setProperty(SUPPORT_DTD, FALSE);

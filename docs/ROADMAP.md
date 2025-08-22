@@ -2,6 +2,7 @@
 
 # 7.0.0
 
+- Remove WADLInterceptor
 - HttpClient
   - Change Signature: public Exchange call(Exchange exc) throws Exception
     =>  public void call(Exchange exc) throws Exception {

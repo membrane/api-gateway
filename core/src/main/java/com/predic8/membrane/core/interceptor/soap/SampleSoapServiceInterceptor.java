@@ -35,6 +35,7 @@ import static com.predic8.membrane.core.http.Response.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.openapi.util.Utils.*;
 import static com.predic8.membrane.core.util.XMLUtil.*;
+import static java.util.Objects.*;
 import static javax.xml.stream.XMLStreamConstants.*;
 
 @MCElement(name = "sampleSoapService")
@@ -94,11 +95,12 @@ public class SampleSoapServiceInterceptor extends AbstractInterceptor {
         return ok(getSoapFault("Method %s not allowed".formatted(method), "405", "Use POST to access the service.")).contentType(TEXT_XML).build();
     }
 
-    private Response createWSDLResponse(Exchange exc) throws XMLStreamException, FileNotFoundException {
-        return ok().header(CONTENT_TYPE, TEXT_XML_UTF8)
-                .body(setWsdlServer(
-                        getResourceAsStream(this, "/wsdl/city.wsdl"), exc)
-                ).build();
+    private Response createWSDLResponse(Exchange exc) throws IOException, XMLStreamException {
+        try (InputStream wsdl = requireNonNull(getResourceAsStream(this, "/wsdl/city.wsdl"), "Missing resource: /wsdl/city.wsdl")) {
+            return ok().header(CONTENT_TYPE, TEXT_XML_UTF8)
+                    .body(setWsdlServer(wsdl, exc))
+                    .build();
+        }
     }
 
     static boolean isWSDLRequest(Exchange exc) {
@@ -168,25 +170,30 @@ public class SampleSoapServiceInterceptor extends AbstractInterceptor {
         // XMLEventFactory is not required to be thread-safe, ...
         // https://javadoc.io/static/com.sun.xml.ws/jaxws-rt/2.2.10-b140319.1121/com/sun/xml/ws/api/streaming/XMLStreamReaderFactory.Default.html
         StringWriter modifiedXmlWriter = new StringWriter();
-        XMLEventReader reader = XMLInputFactoryFactory.inputFactory().createXMLEventReader(Objects.requireNonNull(is));
+        XMLEventReader reader = XMLInputFactoryFactory.inputFactory().createXMLEventReader(is);
         XMLEventWriter writer = XMLOutputFactory.newInstance().createXMLEventWriter(modifiedXmlWriter);
-        XMLEventFactory fac = XMLEventFactory.newInstance();
+        try {
+            XMLEventFactory fac = XMLEventFactory.newInstance();
 
-        while (reader.hasNext()) {
-            XMLEvent event = reader.nextEvent();
-            if (event.isStartElement()) {
-                StartElement startElement = event.asStartElement();
-                if ("address".equals(startElement.getName().getLocalPart())) {
-                    writer.add(fac.createStartElement("s", "soap", "address"));
-                    writer.add(fac.createAttribute("location", getSOAPAddress(exc)));
+            while (reader.hasNext()) {
+                XMLEvent event = reader.nextEvent();
+                if (event.isStartElement()) {
+                    StartElement startElement = event.asStartElement();
+                    if ("address".equals(startElement.getName().getLocalPart())) {
+                        writer.add(fac.createStartElement("s", "soap", "address"));
+                        writer.add(fac.createAttribute("location", getSOAPAddress(exc)));
+                    } else {
+                        writer.add(event);
+                    }
                 } else {
                     writer.add(event);
                 }
-            } else {
-                writer.add(event);
             }
+        } finally {
+            writer.flush();
+            writer.close();
+            reader.close();
         }
-
         return modifiedXmlWriter.toString();
     }
 
