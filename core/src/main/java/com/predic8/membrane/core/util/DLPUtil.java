@@ -12,19 +12,19 @@ import org.apache.logging.log4j.core.config.Configuration;
 public final class DLPUtil {
 
     private static final Logger log = LogManager.getLogger(DLPUtil.class);
-    private static final String BASE = "com.predic8.membrane.core";
+    private static final String BASE = "com.predic8";
 
     public static void displayTraceWarning() {
         try {
             displayTraceWarning((LoggerContext) LogManager.getContext(false));
         } catch (Exception e) {
-            log.info("Log may contain sensitive data. Make sure there is no logger with level TRACE in log configuration.", e);
+            log.warn("Log may contain sensitive data. Make sure there is no logger with level TRACE in log configuration.", e);
         }
     }
 
     private static void displayTraceWarning(LoggerContext ctx) {
         if (!isTraceEnabledSomewhere(ctx.getConfiguration())) return;
-        System.out.print("""
+        log.warn("""
                 ================================================================================================
                 
                 WARNING: TRACE logging is enabled for com.predic8.membrane.core (or one of its subpackages).
