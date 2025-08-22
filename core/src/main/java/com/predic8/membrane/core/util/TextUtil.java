@@ -25,6 +25,7 @@ import java.io.*;
 import java.nio.charset.*;
 import java.util.*;
 
+import static java.lang.Integer.MAX_VALUE;
 import static java.nio.charset.StandardCharsets.*;
 
 
@@ -190,7 +191,7 @@ public class TextUtil {
             XMLEvent event = null;
             try {
                 while (parser.hasNext()) {
-                    event = (XMLEvent) parser.next();
+                    event = parser.nextEvent();
                 }
                 return event != null && event.isEndDocument();
             } finally {
@@ -200,7 +201,7 @@ public class TextUtil {
                 }
             }
         } catch (Exception e) {
-            log.error("", e);
+            log.debug("Invalid XML snippet.", e);
             return false;
         }
     }
@@ -214,6 +215,8 @@ public class TextUtil {
     }
 
     public static String removeFinalChar(String s) {
+        if (s == null || s.length() == 0)
+            return "";
         StringBuilder sb = new StringBuilder(s);
         if (!sb.isEmpty())
             sb.deleteCharAt(sb.length() - 1);
@@ -228,7 +231,7 @@ public class TextUtil {
      * @return line
      */
     public static String getLineFromMultilineString(String s, int lineNumber) {
-        return s.split("\n")[lineNumber - 1];
+        return s.split("\r?\n")[lineNumber - 1];
     }
 
     public static String escapeQuotes(String s) {
@@ -282,14 +285,16 @@ public class TextUtil {
      * @return The minimum indent level found among the lines.
      */
     public static int getMinIndent(String[] lines) {
-        int minIndent = Integer.MAX_VALUE;
+        if (lines == null || lines.length == 0)
+            return 0;
+        int minIndent = MAX_VALUE;
         for (String line : lines) {
             if (!line.trim().isEmpty()) {
                 int leadingSpaces = getCurrentIndent(line);
                 minIndent = Math.min(minIndent, leadingSpaces);
             }
         }
-        return minIndent;
+        return minIndent == MAX_VALUE ? 0 : minIndent;
     }
 
 }

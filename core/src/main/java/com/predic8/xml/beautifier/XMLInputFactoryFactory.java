@@ -18,6 +18,7 @@ import javax.xml.stream.*;
 import java.io.*;
 
 import static java.lang.Boolean.FALSE;
+import static java.lang.Boolean.TRUE;
 import static javax.xml.stream.XMLInputFactory.*;
 
 public final class XMLInputFactoryFactory {
@@ -28,7 +29,7 @@ public final class XMLInputFactoryFactory {
         XMLInputFactory f = XMLInputFactory.newInstance();
         f.setProperty(IS_COALESCING, FALSE); // CDATA stays CDATA
         f.setProperty(SUPPORT_DTD, FALSE);
-        f.setProperty(IS_NAMESPACE_AWARE, Boolean.TRUE);
+        f.setProperty(IS_NAMESPACE_AWARE, TRUE);
 
         // Do not replace internal character references to avoid XML bombs that deflate the message size
         f.setProperty(IS_REPLACING_ENTITY_REFERENCES, FALSE);

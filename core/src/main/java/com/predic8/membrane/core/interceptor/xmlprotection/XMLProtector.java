@@ -14,7 +14,6 @@
 
 package com.predic8.membrane.core.interceptor.xmlprotection;
 
-import com.predic8.xml.beautifier.*;
 import org.jetbrains.annotations.*;
 import org.slf4j.*;
 
@@ -24,6 +23,8 @@ import java.io.*;
 import java.util.*;
 import java.util.function.*;
 
+import static com.predic8.xml.beautifier.XMLInputFactoryFactory.*;
+import static java.lang.Boolean.*;
 import static javax.xml.stream.XMLInputFactory.*;
 
 /**
@@ -47,11 +48,18 @@ public class XMLProtector {
     private final int maxElementNameLength;
     private final boolean removeDTD;
 
+    /**
+     * Use own XMLInputFactory with settings that might be insecure for other applications
+     */
+    private final ThreadLocal<XMLInputFactory> xmlInputFactoryFactory;
+
     public XMLProtector(OutputStreamWriter osw, boolean removeDTD, int maxElementNameLength, int maxAttibuteCount) throws Exception {
         this.writer = XMLOutputFactory.newInstance().createXMLEventWriter(osw);
         this.removeDTD = removeDTD;
         this.maxElementNameLength = maxElementNameLength;
         this.maxAttibuteCount = maxAttibuteCount;
+
+        xmlInputFactoryFactory = ThreadLocal.withInitial(() -> getXmlInputFactory());
     }
 
     /**
@@ -63,7 +71,7 @@ public class XMLProtector {
      */
     public boolean protect(InputStreamReader isr) throws XMLProtectionException {
         try {
-            XMLEventReader parser = getXmlInputFactory().createXMLEventReader(isr);
+            XMLEventReader parser = xmlInputFactoryFactory.get().createXMLEventReader(isr);
 
             while (parser.hasNext()) {
                 XMLEvent event = parser.nextEvent();
@@ -75,13 +83,16 @@ public class XMLProtector {
                             return false;
                         }
                     if (maxAttibuteCount != -1) {
-                        @SuppressWarnings("rawtypes")
-                        Iterator i = startElement.getAttributes();
-                        for (int attributeCount = 0; i.hasNext(); i.next())
-                            if (++attributeCount == maxAttibuteCount) {
+                        Iterator<?> attrs = startElement.getAttributes();
+                        int attributeCount = 0;
+                        while (attrs.hasNext()) {
+                            attrs.next();
+                            attributeCount++;
+                            if (attributeCount > maxAttibuteCount) {
                                 log.warn("Number of attributes per element: Limit exceeded.");
                                 return false;
                             }
+                        }
                     }
                 }
                 if (event instanceof javax.xml.stream.events.DTD dtd) {
@@ -95,21 +106,31 @@ public class XMLProtector {
             }
             writer.flush();
         } catch (XMLStreamException e) {
-            log.warn("Received not-wellformed XML: {}",e.getMessage());
+            log.warn("Received not well-formed XML: {}", e.getMessage());
             return false;
         }
         return true;
     }
 
     private XMLInputFactory getXmlInputFactory() {
-        if (removeDTD) {
-            return XMLInputFactoryFactory.inputFactory();
-        }
-
-        // When removeDTD = false use a one XMLInputFactory instance for every call!
-        // Otherwise the ones in the pool are modified!
+        // Return a new, fully hardened XMLInputFactory instance. That is not shared
         XMLInputFactory f = XMLInputFactory.newInstance();
-        f.setProperty(SUPPORT_DTD, true);
+        // hardening
+        f.setProperty(IS_COALESCING, FALSE);
+
+        // Support DTDs on purpose to detect them in the StAX loop!
+        f.setProperty(SUPPORT_DTD, TRUE);
+
+        f.setProperty(IS_NAMESPACE_AWARE, TRUE);
+        f.setProperty(IS_REPLACING_ENTITY_REFERENCES, FALSE);
+        try {
+            f.setProperty(JAVAX_XML_STREAM_IS_SUPPORTING_EXTERNAL_ENTITIES, FALSE);
+        } catch (IllegalArgumentException ignored) {
+        }
+        try {
+            f.setProperty(IS_VALIDATING, FALSE);
+        } catch (IllegalArgumentException ignored) {
+        }
         return f;
     }
 

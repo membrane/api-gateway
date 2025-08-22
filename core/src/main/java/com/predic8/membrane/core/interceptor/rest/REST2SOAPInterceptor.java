@@ -54,8 +54,8 @@ public class REST2SOAPInterceptor extends SOAPRESTHelper {
 
     @Override
     public Outcome handleRequest(Exchange exc) {
-        log.debug("uri: {}", getURI(exc));
         String uri = getURI(exc);
+        log.debug("uri: {}", uri);
 
         Mapping mapping = findFirstMatchingRegEx(uri);
         if (mapping == null)

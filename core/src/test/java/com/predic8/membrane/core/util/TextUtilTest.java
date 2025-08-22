@@ -161,6 +161,10 @@ public class TextUtilTest {
 
     @Test
     void getLineFromMultilineStringTest() {
+        assertEquals("a",TextUtil.getLineFromMultilineString("a\nb",1));
+        assertEquals("b",TextUtil.getLineFromMultilineString("a\nb",2));
+        assertEquals("a",TextUtil.getLineFromMultilineString("a\r\nb",1));
+        assertEquals("b",TextUtil.getLineFromMultilineString("a\r\nb",2));
         assertEquals("ccc ccc", TextUtil.getLineFromMultilineString("""
                 aaa aaa
                 bb bb
@@ -292,15 +296,29 @@ public class TextUtilTest {
     }
 
     @Test
+    void getMinIndentEmpty() {
+        assertEquals(0, getMinIndent(new String[]{}));
+        assertEquals(0, getMinIndent(null));
+    }
+
+    @Test
     void testGetMinIndent() {
         assertEquals(0, getMinIndent(new String[]{"Line1", "Line2", "Line3"}));
         assertEquals(2, getMinIndent(new String[]{"    Line1", "  Line2", "        Line3"}));
         assertEquals(1, getMinIndent(new String[]{"    Line1", "\tLine2", "  Line3"}));
-        assertEquals(MAX_VALUE, getMinIndent(new String[]{"    ", "\t", ""}));
+        assertEquals(0, getMinIndent(new String[]{"    ", "\t", ""}));
         assertEquals(0, getMinIndent(new String[]{"    Line1", "", "  Line2", "Line3"}));
-        assertEquals(MAX_VALUE, getMinIndent(new String[]{"", " ", "\t"}));
+        assertEquals(0, getMinIndent(new String[]{"", " ", "\t"}));
         assertEquals(2, getMinIndent(new String[]{"  Line1\r", "  Line2"}));
         assertEquals(1, getMinIndent(new String[]{"\tLine1", " Line2"}));
         assertEquals(0, getMinIndent(new String[]{"Line1\r", "\tLine2", "Line3"}));
+    }
+
+    @Test
+    void removeFinalChar() {
+        assertEquals("", TextUtil.removeFinalChar(null));
+        assertEquals("", TextUtil.removeFinalChar(""));
+        assertEquals("", TextUtil.removeFinalChar("a"));
+        assertEquals("abced", TextUtil.removeFinalChar("abcedf"));
     }
 }
