@@ -5,6 +5,9 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.core.LoggerContext;
 import org.apache.logging.log4j.core.config.Configuration;
 
+/**
+ * Data Loss Prevention
+ */
 public final class DLPUtil {
 
     private static final LoggerContext CTX = (LoggerContext) LogManager.getContext(false);
