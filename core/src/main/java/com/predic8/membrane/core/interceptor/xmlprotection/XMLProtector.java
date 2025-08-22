@@ -59,7 +59,7 @@ public class XMLProtector {
         this.maxElementNameLength = maxElementNameLength;
         this.maxAttibuteCount = maxAttibuteCount;
 
-        xmlInputFactoryFactory = ThreadLocal.withInitial(() -> getXmlInputFactory());
+        xmlInputFactoryFactory = ThreadLocal.withInitial(this::getXmlInputFactory);
     }
 
     /**

@@ -19,9 +19,7 @@ import java.nio.charset.*;
 import java.util.regex.*;
 
 import static com.predic8.membrane.core.util.TextUtil.*;
-import static java.lang.Integer.*;
-import static java.nio.charset.StandardCharsets.ISO_8859_1;
-import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.nio.charset.StandardCharsets.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class TextUtilTest {

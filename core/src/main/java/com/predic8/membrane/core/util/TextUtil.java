@@ -215,7 +215,7 @@ public class TextUtil {
     }
 
     public static String removeFinalChar(String s) {
-        if (s == null || s.length() == 0)
+        if (s == null || s.isEmpty())
             return "";
         StringBuilder sb = new StringBuilder(s);
         if (!sb.isEmpty())
