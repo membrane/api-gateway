@@ -92,6 +92,9 @@ class XMLProtectorTest {
 
     @Test
     void manyAttributes() throws Exception {
-        assertFalse(runOn("/xml/many-attributes.xml"));
+        for (int i = 0; i < 10_000; i++) {
+            assertFalse(runOn("/xml/many-attributes.xml"));
+        }
+
     }
 }

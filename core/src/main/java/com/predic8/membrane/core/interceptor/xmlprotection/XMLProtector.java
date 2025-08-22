@@ -49,7 +49,8 @@ public class XMLProtector {
     private final boolean removeDTD;
 
     /**
-     * Use own XMLInputFactory with settings that might be insecure for other applications
+     * Use own XMLInputFactory with settings that might be insecure for other applications.
+     * Creating 1.000.000 XMLInputFactory takes 10s, using ThreadLocal 0s
      */
     private final ThreadLocal<XMLInputFactory> xmlInputFactoryFactory;
 
@@ -132,6 +133,7 @@ public class XMLProtector {
                     e.getMessage());
             return false;
         }
+        xmlInputFactoryFactory.remove();
         return true;
     }
 

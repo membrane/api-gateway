@@ -253,6 +253,8 @@ public class TextUtilTest {
         assertEquals("", TextUtil.removeFinalChar(""));
         assertEquals("", TextUtil.removeFinalChar("a"));
         assertEquals("abced", TextUtil.removeFinalChar("abcedf"));
+        assertEquals("", TextUtil.removeFinalChar("😀"));          // single code point
+        assertEquals("ab", TextUtil.removeFinalChar("ab😀"));      // last is emoji
     }
 
     @Nested

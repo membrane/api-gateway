@@ -25,7 +25,7 @@ import java.io.*;
 import java.nio.charset.*;
 import java.util.*;
 
-import static java.lang.Integer.MAX_VALUE;
+import static java.lang.Integer.*;
 import static java.nio.charset.StandardCharsets.*;
 
 
@@ -58,8 +58,8 @@ public class TextUtil {
      * getCharset("unknown-xyz", UTF_8)         → UTF_8
      * </pre>
      *
-     * @param encoding        the charset name as it appears; may be {@code null}
-     * @param defaultCharset  the charset to fall back to; must be non-null
+     * @param encoding       the charset name as it appears; may be {@code null}
+     * @param defaultCharset the charset to fall back to; must be non-null
      * @return the resolved {@link Charset}, or {@code defaultCharset} if resolution fails
      */
     public static Charset getCharset(String encoding, Charset defaultCharset) {
@@ -108,10 +108,10 @@ public class TextUtil {
      */
     public static String formatXML(Reader reader, boolean asHTML) throws Exception {
         try {
-                StringWriter out = new StringWriter(STRING_BUFFER_INITIAL_CAPACITY_FOR_XML);
-                new XMLBeautifier(getXmlBeautifierFormatter(asHTML, out)).parse(reader);
-                return out.toString();
-            } catch (XMLStreamException e){
+            StringWriter out = new StringWriter(STRING_BUFFER_INITIAL_CAPACITY_FOR_XML);
+            new XMLBeautifier(getXmlBeautifierFormatter(asHTML, out)).parse(reader);
+            return out.toString();
+        } catch (XMLStreamException e) {
             log.info("Error parsing XML: {}", e.getMessage());
             throw e;
         }
@@ -174,6 +174,7 @@ public class TextUtil {
         }
         return sb.toString();
     }
+
     public static String capitalize(String english) {
         if (english.isEmpty())
             return "";
@@ -217,10 +218,8 @@ public class TextUtil {
     public static String removeFinalChar(String s) {
         if (s == null || s.isEmpty())
             return "";
-        StringBuilder sb = new StringBuilder(s);
-        if (!sb.isEmpty())
-            sb.deleteCharAt(sb.length() - 1);
-        return sb.toString();
+        int end = s.offsetByCodePoints(s.length(), -1);
+        return s.substring(0, end);
     }
 
     /**
