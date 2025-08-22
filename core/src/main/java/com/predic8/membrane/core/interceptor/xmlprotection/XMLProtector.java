@@ -58,7 +58,6 @@ public class XMLProtector {
         this.removeDTD = removeDTD;
         this.maxElementNameLength = maxElementNameLength;
         this.maxAttributeCount = maxAttributeCount;
-
         xmlInputFactoryFactory = ThreadLocal.withInitial(this::getXmlInputFactory);
     }
 
