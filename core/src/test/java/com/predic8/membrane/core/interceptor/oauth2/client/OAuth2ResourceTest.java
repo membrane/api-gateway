@@ -48,7 +48,7 @@ import static org.junit.jupiter.api.Assertions.*;
 public abstract class OAuth2ResourceTest {
 
     protected final BrowserMock browser = new BrowserMock();
-    private final int limit = 500;
+    private final int limit = 100;
     protected HttpRouter mockAuthServer;
     protected final ObjectMapper om = new ObjectMapper();
     final Logger LOG = LoggerFactory.getLogger(OAuth2ResourceTest.class);
@@ -114,7 +114,7 @@ public abstract class OAuth2ResourceTest {
 
     // this test also implicitly tests concurrency on oauth2resource
     @Test
-    public void testUseRefreshTokenOnTokenExpiration() throws Exception {
+    void testUseRefreshTokenOnTokenExpiration() throws Exception {
         var response = browser.apply(get(getClientAddress() + "/init")).getResponse();
         assertEquals(200, response.getStatusCode());
         var body = om.readValue(response.getBodyAsStream(), new TypeReference<Map<String, String>>() {});

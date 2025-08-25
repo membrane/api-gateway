@@ -14,7 +14,6 @@
 
 package com.predic8.membrane.core.util;
 
-
 import com.predic8.beautifier.*;
 import org.apache.commons.text.*;
 import org.slf4j.*;
