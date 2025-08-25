@@ -74,6 +74,7 @@ public abstract class AuthorizationService {
     private SSLContext sslContext;
     private boolean useJWTForClientAuth;
     private final LogHelper logHelper = new LogHelper();
+    private boolean clientIdInBody;
 
     protected boolean supportsDynamicRegistration = false;
 
@@ -224,6 +225,15 @@ public abstract class AuthorizationService {
         this.useJWTForClientAuth = useJWTForClientAuth;
     }
 
+    public boolean isClientIdInBody() {
+        return clientIdInBody;
+    }
+
+    @MCAttribute
+    public void setClientIdInBody(boolean clientIdInBody) {
+        this.clientIdInBody = clientIdInBody;
+    }
+
     public JWSSigner getJwtKeyCertHandler() {
         return JWSSigner;
     }
@@ -308,7 +318,9 @@ public abstract class AuthorizationService {
                         .contentType(APPLICATION_X_WWW_FORM_URLENCODED)
                         .header(ACCEPT, APPLICATION_JSON)
                         .header(USER_AGENT, USERAGENT),
-                refreshTokenBodyBuilder(refreshToken).scope(wantedScope).build(), fc)
+                refreshTokenBodyBuilder(refreshToken).scope(wantedScope)
+                        .clientId(clientIdInBody ? clientId : null)
+                        .build(), fc)
                 .buildExchange())));
     }
 
@@ -319,7 +331,9 @@ public abstract class AuthorizationService {
                         .contentType(APPLICATION_X_WWW_FORM_URLENCODED)
                         .header(ACCEPT, APPLICATION_JSON)
                         .header(USER_AGENT, USERAGENT),
-                authorizationCodeBodyBuilder(code, verifier).redirectUri(redirectUri).build(), flowContext).buildExchange())));
+                authorizationCodeBodyBuilder(code, verifier).redirectUri(redirectUri)
+                        .clientId(clientIdInBody ? clientId : null)
+                        .build(), flowContext).buildExchange())));
     }
 
     private OAuth2TokenResponseBody parseTokenResponse(Response response) throws IOException {

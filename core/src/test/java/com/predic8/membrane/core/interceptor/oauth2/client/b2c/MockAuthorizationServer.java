@@ -161,6 +161,8 @@ public class MockAuthorizationServer {
 
     private Response handleTokenRequest(String flowId, Exchange exc) throws Exception {
         Map<String, String> params = URLParamUtil.getParams(new URIFactory(), exc, URLParamUtil.DuplicateKeyOrInvalidFormStrategy.ERROR);
+        String client_id = params.get("client_id");
+        assertEquals(tc.clientId, client_id);
         String grantType = params.get("grant_type");
         if (grantType.equals("authorization_code")) {
             assertEquals("1234" + flowId, params.get("code"));
