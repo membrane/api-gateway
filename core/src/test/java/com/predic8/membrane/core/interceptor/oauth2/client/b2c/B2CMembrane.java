@@ -159,7 +159,7 @@ public class B2CMembrane {
         auth.setClientSecret(tc.clientSecret);
         auth.setScope("openid profile offline_access");
         auth.setSubject("sub");
-        auth.setClientIdInBody(true);
+        auth.setClientAuthorization(ClientAuthorization.client_secret_post);
         return auth;
     }
 
