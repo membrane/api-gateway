@@ -63,6 +63,7 @@ class LoadBalancingInterceptorFaultMonitoringStrategyTest {
     private final List<Router> nodes = new ArrayList<>();
 
     private void setUp(TestingContext ctx) throws Exception {
+        nodes.clear();
         for (int i = 1; i <= ctx.numNodes; i++) {
             nodes.add(createRouterForNode(ctx, i));
         }
