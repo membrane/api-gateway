@@ -507,6 +507,20 @@ public abstract class OAuth2ResourceB2CTest {
     }
 
     @Test
+    public void errorDuringSecondOAuth2FlowLogsUserOut() throws Exception {
+        browser.apply(get(tc.getClientAddress() + "/init"));
+
+        var ili = browser.apply(get(tc.getClientAddress() + "/is-logged-in"));
+        assertTrue(ili.getResponse().getBodyAsStringDecoded().contains("true"));
+
+        mockAuthorizationServer.returnOAuth2ErrorFromSignIn.set(true);
+        browser.apply(get(tc.getClientAddress() + "/pe2/init"));
+
+        ili = browser.apply(get(tc.getClientAddress() + "/is-logged-in"));
+        assertTrue(ili.getResponse().getBodyAsStringDecoded().contains("false"));
+    }
+
+    @Test
     public void api1and2() throws Exception {
         var exc = browser.apply(get(tc.getClientAddress() + "/api/"));
         Map body = om.readValue(exc.getResponse().getBodyAsStream(), Map.class);
