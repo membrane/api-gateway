@@ -149,6 +149,7 @@ public class URI {
         return fragmentDecoded;
     }
 
+    /*
      * Returns the authority component of this URI.
      *
      * <p>In default mode delegates to {@link java.net.URI#getAuthority()} and may include

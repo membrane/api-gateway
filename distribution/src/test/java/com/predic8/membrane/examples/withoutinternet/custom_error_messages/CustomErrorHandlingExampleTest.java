@@ -13,12 +13,13 @@
    limitations under the License. */
 package com.predic8.membrane.examples.withoutinternet.custom_error_messages;
 
-import com.predic8.membrane.examples.util.AbstractSampleMembraneStartStopTestcase;
-import org.junit.jupiter.api.Test;
+import com.predic8.membrane.examples.util.*;
+import org.junit.jupiter.api.*;
 
-import static io.restassured.RestAssured.given;
-import static io.restassured.http.ContentType.XML;
-import static org.hamcrest.CoreMatchers.containsString;
+import static com.predic8.membrane.core.http.MimeType.*;
+import static io.restassured.RestAssured.*;
+import static io.restassured.http.ContentType.*;
+import static org.hamcrest.CoreMatchers.*;
 
 public class CustomErrorHandlingExampleTest extends AbstractSampleMembraneStartStopTestcase {
 
@@ -32,7 +33,7 @@ public class CustomErrorHandlingExampleTest extends AbstractSampleMembraneStartS
     void caseA() {
         given()
             .queryParam("case", "a")
-            .contentType(XML)
+            .contentType(APPLICATION_XML)
             .body("""
                     <foo a="1" b="2" c="3" d="4" e="5" f="6" g="7" h="8" i="10" j="to much"/>""")
         .when()

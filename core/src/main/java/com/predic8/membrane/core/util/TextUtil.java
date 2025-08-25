@@ -16,7 +16,6 @@ package com.predic8.membrane.core.util;
 
 
 import com.predic8.xml.beautifier.*;
-import com.predic8.beautifier.*;
 import org.apache.commons.text.*;
 import org.jetbrains.annotations.*;
 import org.slf4j.*;
@@ -177,10 +176,10 @@ public class TextUtil {
         return sb.toString();
     }
 
-    public static String capitalizeFirstCharacter(String english) {
-        if (english.isEmpty())
+    public static String capitalizeFirstCharacter(String s) {
+        if (s.isEmpty())
             return "";
-        return (english.charAt(0) + english.substring(1)).toUpperCase();
+        return (s.charAt(0)+"").toUpperCase() + s.substring(1);
     }
 
     /**

@@ -26,6 +26,7 @@ import org.junit.platform.suite.api.*;
 @Suite
 @SelectPackages({"com.predic8"})
 @ExcludeClassNamePatterns({
+		"com.predic8.membrane.AllTests",
 		"com.predic8.membrane.core.interceptor.opentelemetry.OpenTelemetryInterceptorTest",
 		"com.predic8.membrane.core.interceptor.balancer.NodeOnlineCheckerTest",
 		"com.predic8.membrane.core.interceptor.tunnel.WebsocketStompTest",

@@ -16,7 +16,6 @@ package com.predic8.membrane.integration.withoutinternet;
 
 import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.proxies.*;
 import com.predic8.membrane.core.transport.http.*;
@@ -28,8 +27,10 @@ import java.util.function.*;
 
 import static com.predic8.membrane.core.RuleManager.RuleDefinitionSource.*;
 import static com.predic8.membrane.core.http.Request.*;
+import static com.predic8.membrane.core.http.Response.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static java.lang.Thread.*;
+import static java.util.concurrent.ConcurrentHashMap.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -69,7 +70,7 @@ public class MassivelyParallelTest {
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
                 }
-                exc.setResponse(Response.ok().body(exc.getRequest().getUri()).build());
+                exc.setResponse(ok().body(exc.getRequest().getUri()).build());
                 return RETURN;
             }
         });
@@ -86,7 +87,7 @@ public class MassivelyParallelTest {
     @Test
     @Timeout(30) // seconds
     public void run() throws Exception {
-        Set<String> paths = ConcurrentHashMap.newKeySet();
+        Set<String> paths = newKeySet();
         runInParallel((cdl) -> parallelTestWorker(cdl, paths), 1000);
         assertEquals(1000, paths.size());
     }
@@ -127,5 +128,4 @@ public class MassivelyParallelTest {
             throw new RuntimeException(e);
         }
     }
-
 }

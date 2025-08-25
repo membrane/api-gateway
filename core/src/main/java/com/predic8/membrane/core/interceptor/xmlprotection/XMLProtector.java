@@ -20,9 +20,9 @@ import org.slf4j.*;
 import javax.xml.stream.*;
 import javax.xml.stream.events.*;
 import java.io.*;
-import java.util.*;
 import java.util.function.*;
 
+import static com.predic8.membrane.core.util.CollectionsUtil.*;
 import static com.predic8.xml.beautifier.XMLInputFactoryFactory.*;
 import static java.lang.Boolean.*;
 import static javax.xml.stream.XMLInputFactory.*;
@@ -97,23 +97,10 @@ public class XMLProtector {
                 XMLEvent event = parser.nextEvent();
                 if (event.isStartElement()) {
                     StartElement startElement = event.asStartElement();
-                    if (maxElementNameLength != -1 &&
-                        startElement.getName().getLocalPart().length() > maxElementNameLength) {
-                            log.warn("Element name length: Limit exceeded.");
-                            return false;
-                        }
-                    if (maxAttributeCount != -1) {
-                        Iterator<?> attrs = startElement.getAttributes();
-                        int attributeCount = 0;
-                        while (attrs.hasNext()) {
-                            attrs.next();
-                            attributeCount++;
-                            if (attributeCount > maxAttributeCount) {
-                                log.warn("Number of attributes per element: Limit exceeded.");
-                                return false;
-                            }
-                        }
-                    }
+                    if (!checkElementNameLength(startElement))
+                        return false;
+                    if (!checkNumberOfAttributes(startElement))
+                        return false;
                 }
                 if (event instanceof javax.xml.stream.events.DTD dtd) {
                     checkExternalEntities(dtd);
@@ -131,6 +118,29 @@ public class XMLProtector {
                     loc != null ? loc.getLineNumber() : -1,
                     loc != null ? loc.getColumnNumber() : -1,
                     e.getMessage());
+            return false;
+        }
+        return true;
+    }
+
+    private boolean checkNumberOfAttributes(StartElement startElement) {
+        if (maxAttributeCount < 0)
+            return true;
+
+        var numberOfAttributes = count(startElement.getAttributes());
+        if (numberOfAttributes > maxAttributeCount) {
+            log.warn("Element {} has {} attributes. Exceeding limit of {}", startElement.getName(), maxAttributeCount, maxAttributeCount);
+            return false;
+        }
+
+        return true;
+    }
+
+    private boolean checkElementNameLength(StartElement startElement) {
+        var elementLenght = startElement.getName().getLocalPart().length();
+        if (maxElementNameLength != -1 &&
+            elementLenght > maxElementNameLength) {
+            log.warn("Element with {} characters exceeds limit of {}", elementLenght, maxElementNameLength);
             return false;
         }
         return true;

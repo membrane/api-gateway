@@ -61,6 +61,8 @@ public class XMLProtectionInterceptor extends AbstractInterceptor {
 
     private Outcome handleInternal(Exchange exc) throws Exception {
 
+        log.debug("Inspecting XML of content type: {}",exc.getRequest().getHeader().getContentType());
+
         if (exc.getRequest().isBodyEmpty()) {
             log.info("body is empty -> request is not scanned");
             return CONTINUE;
@@ -97,7 +99,7 @@ public class XMLProtectionInterceptor extends AbstractInterceptor {
 
         if (!protector.protect(new InputStreamReader(exc.getRequest().getBodyAsStreamDecoded(), exc.getRequest().getCharsetOrDefault())))
             return false;
-        exc.getRequest().setBodyContent(stream.toByteArray());
+        exc.getRequest().setBodyContent(stream.toByteArray()); // Allow the removal of DTDs
         return true;
     }
 

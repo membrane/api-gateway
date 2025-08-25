@@ -58,6 +58,42 @@ public class FileExchangeStore extends AbstractExchangeStore {
     private boolean saveBodyOnly = false;
     private int maxDays = -1;
 
+    public FileExchangeStore() {
+        initializeTimer();
+    }
+
+    public void initializeTimer() {
+        if (this.maxDays < 0) {
+            return; // don't do anything if this feature is deactivated
+        }
+
+        Timer oldFilesCleanupTimer = new Timer("Clean up old log files", true);
+
+        // schedule first run for the night
+        Calendar firstRun = Calendar.getInstance();
+        firstRun.set(Calendar.HOUR_OF_DAY, 3);
+        firstRun.set(Calendar.MINUTE, 14);
+
+        // schedule for the next day if the scheduled execution time is before now
+        if (firstRun.before(Calendar.getInstance()))
+            firstRun.add(DAY_OF_MONTH, 1);
+
+        oldFilesCleanupTimer.scheduleAtFixedRate(
+                new TimerTask() {
+                    @Override
+                    public void run() {
+                        try {
+                            deleteOldFolders(Calendar.getInstance());
+                        } catch (IOException e) {
+                            log.error("", e);
+                        }
+                    }
+                },
+                firstRun.getTime(),
+                24*60*60*1000		// one day
+        );
+    }
+
     public void snap(final AbstractExchange exc, final Flow flow) {
         try {
             Message m = flow == Flow.REQUEST ? exc.getRequest() : exc.getResponse();

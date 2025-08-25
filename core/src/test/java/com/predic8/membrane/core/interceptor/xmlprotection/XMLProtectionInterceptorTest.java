@@ -20,16 +20,19 @@ import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
 import org.junit.jupiter.api.*;
 
+import java.net.*;
+
 import static com.predic8.membrane.core.http.MimeType.*;
+import static com.predic8.membrane.core.http.Request.post;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static org.junit.jupiter.api.Assertions.*;
 
-public class XMLProtectionInterceptorTest {
+class XMLProtectionInterceptorTest {
     private static Exchange exc;
     private static XMLProtectionInterceptor interceptor;
 
     @BeforeAll
-    public static void setUp() throws Exception {
+    static void setUp() throws Exception {
         exc = new Exchange(null);
         exc.setRequest(Request.get("/axis2/services/BLZService").build());
         exc.setOriginalHostHeader("thomas-bayer.com:80");
@@ -49,6 +52,13 @@ public class XMLProtectionInterceptorTest {
     }
 
     @Test
+    @DisplayName("Content-Type other than XML should  pass")
+    void noXML() throws URISyntaxException {
+        Exchange exc = post("/foo").contentType(TEXT_XML).body("<foo/>").buildExchange();
+        assertEquals(CONTINUE, interceptor.handleRequest(exc));
+    }
+
+    @Test
     void invariant() throws Exception {
         runOn("/customer.xml", true);
     }
@@ -60,7 +70,7 @@ public class XMLProtectionInterceptorTest {
 
     @Test
     void removeDTD() throws Exception {
-        exc.setRequest(Request.post("/").body("""
+        exc.setRequest(post("/").body("""
                 <?xml  version="1.0" encoding="ISO-8859-1"?>
                 <!DOCTYPE foo [
                      <!ELEMENT foo ANY >
@@ -76,5 +86,16 @@ public class XMLProtectionInterceptorTest {
 
         // DTD should be removed
         assertFalse(exc.getRequest().getBodyAsStringDecoded().contains("DOCTYPE"));
+    }
+
+    @Test
+    void tooManyAttributes() throws Exception {
+        Exchange exc = post("/").contentType(APPLICATION_XML).body("""
+                    <foo a="1" b="2" c="3" d="to much"/>""").buildExchange();
+
+        interceptor.setMaxAttributeCount(4);
+        assertEquals(CONTINUE, interceptor.handleRequest(exc));
+        interceptor.setMaxAttributeCount(3);
+        assertEquals(ABORT, interceptor.handleRequest(exc));
     }
 }
