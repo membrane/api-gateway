@@ -308,7 +308,7 @@ public abstract class SessionManager {
 
 
     private Optional<Session> getSessionFromExchange(Exchange exc) {
-        return Optional.ofNullable(exc.getPropertyOrNull(SESSION, Session.class));
+        return Optional.ofNullable(exc.getProperty(SESSION, Session.class));
     }
 
     public List<String> createCookieAttributes(Exchange exc) {
