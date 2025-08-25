@@ -32,6 +32,7 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.util.Enumeration;
 
+import static com.predic8.membrane.core.exchange.Exchange.HTTP_SERVLET_REQUEST;
 import static com.predic8.membrane.core.http.Header.TRANSFER_ENCODING;
 
 class HttpServletHandler extends AbstractHttpHandler {
@@ -50,7 +51,7 @@ class HttpServletHandler extends AbstractHttpHandler {
 		localAddr = InetAddress.getByName(request.getLocalAddr());
 		exchange = new Exchange(this);
 
-		exchange.setProperty(Exchange.HTTP_SERVLET_REQUEST, request);
+		exchange.setProperty(HTTP_SERVLET_REQUEST, request);
 	}
 
 	public void run() {
@@ -100,7 +101,7 @@ class HttpServletHandler extends AbstractHttpHandler {
 		}
 
 		ServletOutputStream out = response.getOutputStream();
-		res.getBody().write(new PlainBodyTransferrer(out), false);
+		res.getBody().write(new PlainBodyTransferer(out), false);
 		out.flush();
 
 		response.flushBuffer();

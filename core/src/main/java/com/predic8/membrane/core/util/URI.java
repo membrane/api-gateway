@@ -136,6 +136,25 @@ public class URI {
         return queryDecoded;
     }
 
+    /**
+     * Returns the authority component of this URI.
+     *
+     * <p>In default mode delegates to {@link java.net.URI#getAuthority()} and may include
+     * user-info (e.g. "user:pass@host:port").<br>
+     * In custom parsing mode returns only "host[:port]" (userinfo is intentionally omitted).<br>
+     * Returns {@code null} if no authority is present (e.g. "mailto:").
+     */
+    public String getAuthority() {
+        if (uri != null)
+            return uri.getAuthority();
+        if (host == null)
+            return null;
+        StringBuilder sb = new StringBuilder(host);
+        if (port != -1)
+            sb.append(':').append(port);
+        return sb.toString();
+    }
+
     private String decode(String string) {
         if (string == null)
             return string;
