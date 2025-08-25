@@ -14,11 +14,12 @@
 package com.predic8.membrane.examples.withinternet.rest2soap;
 
 import com.predic8.membrane.examples.util.*;
-import org.hamcrest.*;
 import org.junit.jupiter.api.*;
 
+import static com.predic8.membrane.core.http.MimeType.*;
 import static io.restassured.RestAssured.*;
 import static io.restassured.filter.log.LogDetail.*;
+import static org.hamcrest.Matchers.*;
 
 public class Rest2SOAPTemplateExampleTest extends DistributionExtractingTestcase {
 
@@ -37,7 +38,8 @@ public class Rest2SOAPTemplateExampleTest extends DistributionExtractingTestcase
             .then()
                 .log().ifValidationFails(ALL)
                 .statusCode(200)
-                .body("population", Matchers.equalTo("333000"));
+                .contentType(APPLICATION_JSON)
+                .body("population", equalTo(333000));
             // @formatter:on
         }
     }

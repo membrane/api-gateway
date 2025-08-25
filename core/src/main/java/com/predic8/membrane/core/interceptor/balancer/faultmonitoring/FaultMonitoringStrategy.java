@@ -162,7 +162,8 @@ public class FaultMonitoringStrategy extends AbstractXmlElement implements Dispa
 		if (endpoints.isEmpty()) {
 			//there's nothing we can do here. no nodes configured, or all nodes were reported to be offline.
 			throw new EmptyNodeListException();
-		} else if (endpoints.size()==1) {
+		}
+		if (endpoints.size()==1) {
 			//there's nothing else we can do.
 			return endpoints.getFirst();
 		}

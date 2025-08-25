@@ -16,11 +16,9 @@
  */
 package com.predic8.membrane.core.http.cookie;
 
-import java.io.PrintWriter;
-import java.io.StringWriter;
+import org.slf4j.*;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import java.io.*;
 
 
 /**

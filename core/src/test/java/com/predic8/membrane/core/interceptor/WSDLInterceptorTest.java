@@ -127,7 +127,7 @@ public class WSDLInterceptorTest {
 	private XMLEventReader getParser() throws Exception {
 		return XMLInputFactory.newInstance().createXMLEventReader(
 				new InputStreamReader(exc.getResponse().getBodyAsStream(), exc
-						.getResponse().getCharset()));
+						.getResponse().getHeader().getCharset()));
 	}
 
 	private String getLocationAttributeFor(StartElement element) {

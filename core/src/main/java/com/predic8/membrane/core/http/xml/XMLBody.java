@@ -13,14 +13,11 @@
    limitations under the License. */
 package com.predic8.membrane.core.http.xml;
 
-import javax.xml.stream.XMLInputFactory;
-import javax.xml.stream.XMLStreamException;
-import javax.xml.stream.XMLStreamReader;
-import javax.xml.stream.XMLStreamWriter;
-import javax.xml.stream.events.XMLEvent;
-
-import com.predic8.membrane.core.config.AbstractXmlElement;
+import com.predic8.membrane.core.config.*;
 import com.predic8.membrane.core.http.Message;
+
+import javax.xml.stream.*;
+import javax.xml.stream.events.*;
 
 class XMLBody extends AbstractXmlElement {
 
@@ -35,7 +32,7 @@ class XMLBody extends AbstractXmlElement {
 
 	public XMLBody(Message msg) {
 		this.msg = msg;
-		charset = msg.getCharset();
+		charset = msg.getCharsetOrDefault().name();
 	}
 
 	@Override
@@ -55,7 +52,7 @@ class XMLBody extends AbstractXmlElement {
 			case XMLEvent.START_ELEMENT:
 				final String localName = parser.getLocalName();
 				final String namespaceURI = parser.getNamespaceURI();
-				if (namespaceURI != null && namespaceURI.length() > 0) {
+				if (namespaceURI != null && !namespaceURI.isEmpty()) {
 					final String prefix = parser.getPrefix();
 					if (prefix != null)
 						out.writeStartElement(prefix, localName, namespaceURI);

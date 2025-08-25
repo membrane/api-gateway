@@ -14,31 +14,27 @@
 
 package com.predic8.membrane.core.interceptor.beautifier;
 
-import com.fasterxml.jackson.databind.*;
 import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.prettifier.*;
+import org.jetbrains.annotations.*;
 import org.slf4j.*;
 
 import java.io.*;
+import java.nio.charset.*;
 
 import static com.predic8.membrane.core.interceptor.Outcome.*;
-import static com.predic8.membrane.core.util.TextUtil.*;
-import static java.nio.charset.StandardCharsets.*;
 
 /**
- * @description Beautifies request and response bodies. Supported are the Formats: JSON, XML
+ * @description Beautifies request and response bodies. Supported are the Formats: JSON, JSON5, XML, TEXT
  * @topic 2. Enterprise Integration Patterns
  */
 @MCElement(name = "beautifier")
 public class BeautifierInterceptor extends AbstractInterceptor {
 
     private static final Logger log = LoggerFactory.getLogger(BeautifierInterceptor.class);
-
-    private final ObjectWriter ow = new ObjectMapper().writerWithDefaultPrettyPrinter();
-    private final ObjectMapper om = new ObjectMapper();
-
 
     public BeautifierInterceptor() {
         name = "beautifier";
@@ -55,44 +51,43 @@ public class BeautifierInterceptor extends AbstractInterceptor {
     }
 
     private Outcome handleInternal(Message msg) {
-        if (msg.isJSON()) {
-            beautifyJSON(msg);
+        try {
+            if (msg.isBodyEmpty())
+                return CONTINUE;
+        } catch (IOException e) {
+            log.error("", e);
             return CONTINUE;
         }
-        if (msg.isXML()) {
-            beautifyXML(msg);
+
+        try {
+            Prettifier prettifier = getPrettifier(msg);
+            // Shortcut not to avoid reading bytes in NullPrettifier
+            if (prettifier instanceof NullPrettifier)
+                return CONTINUE;
+            msg.setBodyContent(prettifier.prettify(msg.getBodyAsStreamDecoded(), getCharset(msg, prettifier)));
+        } catch (IOException e) {
+            // If it is not possible to beautify, to nothing
+            // Cause will be often user input => do not log stacktrace
+            log.info("Could not beautify message body: {}", e.getMessage());
         }
+
         return CONTINUE;
     }
 
-    /**
-     * If it is not possible to beautify, leave body as it is.
-     */
-    private static void beautifyXML(Message msg) {
-        try {
-            InputStreamReader reader = new InputStreamReader(msg.getBodyAsStream(), msg.getHeader().getCharset());
-            msg.setBodyContent(formatXML(reader).getBytes(UTF_8));
-        } catch (Exception e) {
-            // If it is not possible to beautify, to nothing
-            log.warn("Error parsing XML: {}", e.getMessage());
-        }
+    private static @Nullable Charset getCharset(Message msg, Prettifier prettifier) {
+        // XML is fine with no charset cause the XML prolog may contain an encoding
+        if (msg.getHeader().getCharset() == null && prettifier instanceof XMLPrettifier)
+            return null;
+
+        return msg.getCharsetOrDefault();
     }
 
-    /**
-     * If it is not possible to beautify, leave body as it is.
-     */
-    private void beautifyJSON(Message msg) {
-        try {
-            JsonNode node = om.readTree(msg.getBodyAsStreamDecoded());
-            msg.setBodyContent(ow.writeValueAsBytes(node));
-        } catch (IOException e) {
-            // If it is not possible to beautify, to nothing
-            log.warn("Error parsing JSON: {}", e.getMessage());
-        }
+    private static Prettifier getPrettifier(Message msg) {
+        return Prettifier.getInstance(msg.getHeader().getContentType());
     }
 
     @Override
     public String getShortDescription() {
-        return "Pretty printing. Applies, if the body is JSON.";
+        return "Pretty printing of message bodies. Can format JSON, JSON5, XML or text.";
     }
 }

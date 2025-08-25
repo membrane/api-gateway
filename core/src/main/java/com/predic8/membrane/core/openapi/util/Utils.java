@@ -306,8 +306,4 @@ public class Utils {
             throw new RuntimeException(e);
         }
     }
-
-    public static byte[] createErrorMessage(String msg) {
-        return String.format("{ \"error\": \"%s\" }",msg).getBytes();
-    }
 }

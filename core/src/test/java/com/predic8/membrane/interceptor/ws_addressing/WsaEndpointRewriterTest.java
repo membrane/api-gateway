@@ -13,40 +13,46 @@
    limitations under the License. */
 package com.predic8.membrane.interceptor.ws_addressing;
 
+import com.predic8.membrane.core.interceptor.ws_addressing.*;
+import org.apache.commons.io.output.ByteArrayOutputStream;
+import org.junit.jupiter.api.*;
+
+import java.io.*;
+
+import static java.nio.charset.StandardCharsets.*;
 import static org.junit.jupiter.api.Assertions.*;
 
-import java.io.InputStream;
+class WsaEndpointRewriterTest {
 
-import javax.xml.stream.XMLStreamException;
-
-import org.apache.commons.io.output.ByteArrayOutputStream;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.interceptor.ws_addressing.DecoupledEndpointRegistry;
-import com.predic8.membrane.core.interceptor.ws_addressing.WsaEndpointRewriter;
-
-public class WsaEndpointRewriterTest {
-	private InputStream input;
-
-	@BeforeEach
-	public void setUp() {
-		input = WsaEndpointRewriterTest.class.getResourceAsStream("/interceptor/ws_addressing/body.xml");
-	}
+	static final String SOAP_WITH_ADDRESSING = """
+					<S:Envelope xmlns:S="http://www.w3.org/2003/05/soap-envelope"
+					            xmlns:wsa="http://schemas.xmlsoap.org/ws/2004/08/addressing">
+					   <S:Header>
+					    <wsa:MessageID>uuid:a8addabf-095f-493e-b59e-325f5b0a599c</wsa:MessageID>
+					    <wsa:ReplyTo>
+					      <wsa:Address>https://api.predic8.de/client:1000/endpoint-1</wsa:Address>
+					      <wsa:Address>https://api.predic8.de/client:1000/endpoint-2</wsa:Address>
+					    </wsa:ReplyTo>
+					    <wsa:To>https://api.predic8.de/shop/v2</wsa:To>
+					    <wsa:Action>https://api.predic8.de/shop/v2/getproduct</wsa:Action>
+					   </S:Header>
+					   <S:Body>
+					     <foo/>
+					   </S:Body>
+					 </S:Envelope>
+					""";
 
 	@Test
-	public void testRewriteEndpointAddress() throws XMLStreamException {
+	void rewrite_EndpointAddress() throws Exception {
 		ByteArrayOutputStream output = new ByteArrayOutputStream();
-		WsaEndpointRewriter rewriter = new WsaEndpointRewriter(new DecoupledEndpointRegistry());
+		WsaEndpointRewriter rewriter = new WsaEndpointRewriter();
 
-		int port = 2000;
-		rewriter.rewriteEndpoint(input, output, port, new Exchange(null));
+		try (InputStream is = new ByteArrayInputStream(SOAP_WITH_ADDRESSING.getBytes(UTF_8))) {
+			rewriter.rewriteEndpoint(is, output, new WsaEndpointRewriterInterceptor.Location("https", "localhost", 1234));
+		}
+		String xml = output.toString();
 
-		String rewrittenXml = output.toString();
-
-		System.out.println(rewrittenXml);
-
-		assertTrue(rewrittenXml.contains("<Address>http://localhost:" + port + "/decoupled_endpoint</Address>"));
+		assertTrue(xml.contains(">https://localhost:1234/client:1000/endpoint-1<"));
+		assertTrue(xml.contains(">https://localhost:1234/client:1000/endpoint-2<"));
 	}
 }

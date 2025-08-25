@@ -1,4 +1,4 @@
-/* Copyright 2009, 2011 predic8 GmbH, www.predic8.com
+/* Copyright 2025 predic8 GmbH, www.predic8.com
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -12,23 +12,22 @@
    See the License for the specific language governing permissions and
    limitations under the License. */
 
-package com.predic8.membrane.core.magic;
+package com.predic8.membrane.core.prettifier;
 
-import org.junit.jupiter.api.Test;
+import org.jetbrains.annotations.*;
 
-import com.predic8.membrane.core.ws.magic.Magic;
+import java.nio.charset.*;
 
-public class MagicTest {
+import static com.predic8.membrane.test.TestUtil.*;
 
-	Magic magic = new Magic();
 
-	@Test
-	public void testRelocator() throws Exception {
+public abstract class AbstractPrettifierTest {
 
-		//		List<Technology> res = magic.scan(this.getClass().getClassLoader().getResourceAsStream("namesservice.wsdl"));
-		//		for (Technology tech : res) {
-		//			System.out.println(tech.name);
-		//		}
+    protected Prettifier prettifier;
 
-	}
+    protected static final String REF_CONTENT = "äöüÄÖÜßéèê";
+
+    protected @NotNull String makePretty(String path, Charset charset) throws Exception {
+        return new String(prettifier.prettify(readResource(path), charset), charset);
+    }
 }

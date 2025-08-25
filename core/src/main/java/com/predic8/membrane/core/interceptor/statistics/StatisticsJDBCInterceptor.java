@@ -108,8 +108,8 @@ public class StatisticsJDBCInterceptor extends AbstractInterceptor implements Ap
 		}
 		return soapOnly &&
 				ct != null &&
-			   !ct.getBaseType().equalsIgnoreCase(APPLICATION_SOAP) &&
-			   !ct.getBaseType().equalsIgnoreCase(TEXT_XML);
+               !ct.getBaseType().equalsIgnoreCase(APPLICATION_SOAP_XML) &&
+               !ct.getBaseType().equalsIgnoreCase(TEXT_XML);
 	}
 
 	private boolean ignoreGetMethod(Exchange exc) {

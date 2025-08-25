@@ -13,6 +13,80 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.templating;
 
+import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.exchange.*;
+import org.jetbrains.annotations.*;
+import org.junit.jupiter.api.*;
+
+import java.io.*;
+import java.net.*;
+
+import static com.predic8.membrane.core.http.MimeType.*;
+import static com.predic8.membrane.core.http.Request.*;
+import static org.junit.jupiter.api.Assertions.*;
+
 class StaticInterceptorTest {
 
+    StaticInterceptor i;
+    Exchange exc;
+
+    @BeforeEach
+    void beforeAll() throws URISyntaxException {
+        i = new StaticInterceptor();
+        i.setLocation(getAbsolutePath("/json/unformatted.json"));
+
+        exc = get("/foo").buildExchange();
+    }
+
+    @Test
+    void readContentFromLocationPath() {
+        i.init(new Router());
+        i.handleRequest(exc);
+        assertEquals(27, exc.getRequest().getBodyAsStringDecoded().length());
+    }
+
+    @Test
+    void pretty() {
+        i.setPretty("true");
+        i.setContentType(APPLICATION_JSON);
+        i.init(new Router());
+
+        i.handleRequest(exc);
+
+        // Formatted with spaces and newlines it should be at least greater than 30
+        assertTrue(exc.getRequest().getBodyAsStringDecoded().length() > 30);
+    }
+
+    @Nested
+    class Charset {
+
+        static String REF_CHARS = "äöüÄÖÜßéèê";
+
+        @Test
+        void latin() throws Exception {
+            checkWithCharset("iso-8859-1");
+        }
+
+        @Test
+        void utf_8() throws Exception {
+            checkWithCharset("utf-8");
+        }
+
+        @Test
+        void utf_16() throws Exception {
+            checkWithCharset("utf-16");
+        }
+
+        private void checkWithCharset(String charset) throws Exception {
+            i.setLocation(getAbsolutePath("/charsets/%s.txt".formatted(charset)));
+            i.setCharset(charset);
+            i.init(new Router());
+            i.handleRequest(exc);
+            assertEquals(REF_CHARS, exc.getRequest().getBodyAsStringDecoded());
+        }
+    }
+
+    private @NotNull String getAbsolutePath(String path) throws URISyntaxException {
+        return new File(getClass().getResource(path).toURI()).getAbsolutePath();
+    }
 }

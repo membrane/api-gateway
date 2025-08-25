@@ -20,9 +20,6 @@ import org.apache.commons.codec.digest.Crypt;
 import java.security.SecureRandom;
 import java.util.regex.Pattern;
 
-/**
- * Created by Martin Dünkelmann(duenkelmann@predic8.de) on 20.10.17.
- */
 public class SecurityUtils {
 
     private static final SecureRandom secureRandom = new SecureRandom();

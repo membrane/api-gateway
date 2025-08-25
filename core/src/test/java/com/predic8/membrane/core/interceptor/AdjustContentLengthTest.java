@@ -59,7 +59,7 @@ public class AdjustContentLengthTest {
 	}
 
 	@Test
-	public void testAdjustContentLength() throws Exception {
+	void adjustContentLength() throws Exception {
 		GetMethod directRequest = getDirectRequest();
 		new HttpClient().executeMethod(directRequest);
 
@@ -71,18 +71,14 @@ public class AdjustContentLengthTest {
         assertEquals(monitoredRequest.getResponseContentLength(), monitoredRequest
                 .getResponseBody().length);
 
-        assertTrue(directRequest.getResponseContentLength() != monitoredRequest
-                .getResponseContentLength());
-
+		assertNotEquals(directRequest.getResponseContentLength(), monitoredRequest.getResponseContentLength());
 	}
 
 	private GetMethod getDirectRequest() {
-        return new GetMethod(
-                "http://localhost:4000/");
+        return new GetMethod("http://localhost:4000/");
 	}
 
 	private GetMethod getMonitoredRequest() {
-        return new GetMethod(
-                "http://localhost:3000/");
+        return new GetMethod("http://localhost:3000/");
 	}
 }

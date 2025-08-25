@@ -20,9 +20,11 @@ import org.slf4j.*;
 import javax.xml.stream.*;
 import javax.xml.stream.events.*;
 import java.io.*;
-import java.util.*;
 import java.util.function.*;
 
+import static com.predic8.membrane.core.util.CollectionsUtil.*;
+import static com.predic8.xml.beautifier.XMLInputFactoryFactory.*;
+import static java.lang.Boolean.*;
 import static javax.xml.stream.XMLInputFactory.*;
 
 /**
@@ -30,105 +32,139 @@ import static javax.xml.stream.XMLInputFactory.*;
  * <ul>
  * <li>DTDs can be removed.</li>
  * <li>The length of element names can be limited.</li>
- * <li>The number of attibutes per element can be limited.</li>
+ * <li>The number of attributes per element can be limited.</li>
  * </ul>
- *
+ * <p>
  * If {@link #protect(InputStreamReader)} returns false, an unrecoverable error has
  * occurred (such as not-wellformed XML or an element name length exceeded the limit),
  * the {@link OutputStreamWriter} is left at this position: It should be discarded and
  * an error response should be returned to the requestor.
  */
 public class XMLProtector {
-	private static final Logger log = LoggerFactory.getLogger(XMLProtector.class.getName());
-	private static final XMLInputFactory xmlInputFactory = XMLInputFactory.newInstance();
-	static {
-		xmlInputFactory.setProperty(IS_REPLACING_ENTITY_REFERENCES, false);
-		xmlInputFactory.setProperty(IS_SUPPORTING_EXTERNAL_ENTITIES, false);
-		xmlInputFactory.setProperty(SUPPORT_DTD,false);
-	}
+    private static final Logger log = LoggerFactory.getLogger(XMLProtector.class);
 
-	private final XMLEventWriter writer;
-	private final int maxAttibuteCount;
-	private final int maxElementNameLength;
-	private final boolean removeDTD;
+    private final XMLEventWriter writer;
+    private final int maxAttributeCount;
+    private final int maxElementNameLength;
+    private final boolean removeDTD;
 
-	public XMLProtector(OutputStreamWriter osw, boolean removeDTD, int maxElementNameLength, int maxAttibuteCount) throws Exception {
-		this.writer = XMLOutputFactory.newInstance().createXMLEventWriter(osw);
-		this.removeDTD = removeDTD;
-		this.maxElementNameLength = maxElementNameLength;
-		this.maxAttibuteCount = maxAttibuteCount;
+    /**
+     * Use own XMLInputFactory with settings that might be insecure for other applications.
+     * Creating 1.000.000 XMLInputFactory takes 10s, using ThreadLocal 0s
+     */
+    private final ThreadLocal<XMLInputFactory> xmlInputFactoryFactory;
 
-		if(!removeDTD)
-			xmlInputFactory.setProperty(SUPPORT_DTD,true);
-	}
+    public XMLProtector(OutputStreamWriter osw, boolean removeDTD, int maxElementNameLength, int maxAttributeCount) throws Exception {
+        this.writer = XMLOutputFactory.newInstance().createXMLEventWriter(osw);
+        this.removeDTD = removeDTD;
+        this.maxElementNameLength = maxElementNameLength;
+        this.maxAttributeCount = maxAttributeCount;
+        xmlInputFactoryFactory = ThreadLocal.withInitial(this::getXmlInputFactory);
+    }
 
-	/**
-	 * Is XML secure?
-	 * @param isr Stream with XML
-	 * @return false if there is any security problem in the XML
-	 * @throws XMLProtectionException if there are critical issues like external entity references
-	 */
-	public boolean protect(InputStreamReader isr) throws XMLProtectionException {
-		try {
-			XMLEventReader parser;
-			synchronized(xmlInputFactory) {
-				parser = xmlInputFactory.createXMLEventReader(isr);
-			}
+    private static void checkExternalEntities(DTD dtd) throws XMLProtectionException {
+        if (containsExternalEntityReferences(dtd)) {
+            String msg = "Possible attack. External entity found in DTD.";
+            log.warn(msg);
+            throw new XMLProtectionException(msg);
+        }
+    }
 
-			while (parser.hasNext()) {
-				XMLEvent event = parser.nextEvent();
-				if (event.isStartElement()) {
-					StartElement startElement = (StartElement)event;
-					if (maxElementNameLength != -1)
-						if (startElement.getName().getLocalPart().length() > maxElementNameLength) {
-							log.warn("Element name length: Limit exceeded.");
-							return false;
-						}
-					if (maxAttibuteCount != -1) {
-						@SuppressWarnings("rawtypes")
-						Iterator i = startElement.getAttributes();
-						for (int attributeCount = 0; i.hasNext(); i.next())
-							if (++attributeCount == maxAttibuteCount) {
-								log.warn("Number of attributes per element: Limit exceeded.");
-								return false;
-							}
-					}
-				}
-				if (event instanceof javax.xml.stream.events.DTD dtd) {
-					checkExternalEntities(dtd);
-					if (removeDTD) {
-						log.debug("removed DTD.");
-						continue;
-					}
-				}
-				writer.add(event);
-			}
-			writer.flush();
-		} catch (XMLStreamException e) {
-			log.warn("Received not-wellformed XML.");
-			return false;
-		}
-		return true;
-	}
+    private static boolean containsExternalEntityReferences(DTD dtd) {
+        var entities = dtd.getEntities();
+        if (entities == null || entities.isEmpty())
+            return false;
 
-	private static void checkExternalEntities(DTD dtd) throws XMLProtectionException {
-		if (containsExternalEntityReferences(dtd)) {
-			String msg = "Possible attack. External entity found in DTD.";
-			log.warn(msg);
-			throw new XMLProtectionException(msg);
-		}
-	}
+        return entities.stream().anyMatch(isExternalEntity());
+    }
 
-	private static boolean containsExternalEntityReferences(DTD dtd) {
-		var entities = dtd.getEntities();
-		if (entities == null || entities.isEmpty())
-			return false;
+    private static @NotNull Predicate<EntityDeclaration> isExternalEntity() {
+        return ed -> ed.getPublicId() != null || ed.getSystemId() != null;
+    }
 
-		return entities.stream().anyMatch(isExternalEntity());
-	}
+    /**
+     * Is XML secure?
+     *
+     * @param isr Stream with XML
+     * @return false if there is any security problem in the XML
+     * @throws XMLProtectionException if there are critical issues like external entity references
+     */
+    public boolean protect(InputStreamReader isr) throws XMLProtectionException {
+        try {
+            XMLEventReader parser = xmlInputFactoryFactory.get().createXMLEventReader(isr);
 
-	private static @NotNull Predicate<EntityDeclaration> isExternalEntity() {
-		return ed -> ed.getPublicId() != null || ed.getSystemId() != null;
-	}
+            while (parser.hasNext()) {
+                XMLEvent event = parser.nextEvent();
+                if (event.isStartElement()) {
+                    StartElement startElement = event.asStartElement();
+                    if (!checkElementNameLength(startElement))
+                        return false;
+                    if (!checkNumberOfAttributes(startElement))
+                        return false;
+                }
+                if (event instanceof javax.xml.stream.events.DTD dtd) {
+                    checkExternalEntities(dtd);
+                    if (removeDTD) {
+                        log.debug("removed DTD.");
+                        continue;
+                    }
+                }
+                writer.add(event);
+            }
+            writer.flush();
+        } catch (XMLStreamException e) {
+            Location loc = e.getLocation();
+            log.warn("Received not well-formed XML at line {}, column {}: {}",
+                    loc != null ? loc.getLineNumber() : -1,
+                    loc != null ? loc.getColumnNumber() : -1,
+                    e.getMessage());
+            return false;
+        }
+        return true;
+    }
 
+    private boolean checkNumberOfAttributes(StartElement startElement) {
+        if (maxAttributeCount < 0)
+            return true;
+
+        var numberOfAttributes = count(startElement.getAttributes());
+        if (numberOfAttributes > maxAttributeCount) {
+            log.warn("Element {} has {} attributes. Exceeding limit of {}", startElement.getName(), maxAttributeCount, maxAttributeCount);
+            return false;
+        }
+
+        return true;
+    }
+
+    private boolean checkElementNameLength(StartElement startElement) {
+        var elementLenght = startElement.getName().getLocalPart().length();
+        if (maxElementNameLength != -1 &&
+            elementLenght > maxElementNameLength) {
+            log.warn("Element with {} characters exceeds limit of {}", elementLenght, maxElementNameLength);
+            return false;
+        }
+        return true;
+    }
+
+    private XMLInputFactory getXmlInputFactory() {
+        // Return a new, fully hardened XMLInputFactory instance. That is not shared
+        XMLInputFactory f = XMLInputFactory.newInstance();
+        // hardening
+        f.setProperty(IS_COALESCING, FALSE);
+
+        // Support DTDs on purpose to detect them in the StAX loop!
+        f.setProperty(SUPPORT_DTD, TRUE);
+
+        f.setProperty(IS_NAMESPACE_AWARE, TRUE);
+        f.setProperty(IS_REPLACING_ENTITY_REFERENCES, FALSE);
+        try {
+            f.setProperty(JAVAX_XML_STREAM_IS_SUPPORTING_EXTERNAL_ENTITIES, FALSE);
+        } catch (IllegalArgumentException ignored) {
+        }
+        try {
+            f.setProperty(IS_VALIDATING, FALSE);
+        } catch (IllegalArgumentException ignored) {
+        }
+        return f;
+    }
 }

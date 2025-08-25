@@ -53,8 +53,8 @@ public class MessageUtil {
 		if (res.isGzip()) {
 			try (InputStream lInputStream = res.getBodyAsStream();
 				 GZIPInputStream lGZIPInputStream = new GZIPInputStream(lInputStream)) {
-				return ByteUtil.getByteArrayData(lGZIPInputStream);
-			}
+                return lGZIPInputStream.readAllBytes();
+            }
 		}
 		if (res.isDeflate()) {
 			return getDecompressedData(res.getBody().getContent());

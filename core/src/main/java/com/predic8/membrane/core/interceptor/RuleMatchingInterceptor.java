@@ -52,7 +52,6 @@ public class RuleMatchingInterceptor extends AbstractInterceptor {
 			// Do not log. 404 is too common
             user(router.isProduction(),"routing")
                     .statusCode(404)
-					.logKey(false)
                     .title("Wrong path or method")
                     .detail("This request was not accepted by Membrane. Please check HTTP method and path.")
                     .internal("method", exc.getRequest().getMethod())

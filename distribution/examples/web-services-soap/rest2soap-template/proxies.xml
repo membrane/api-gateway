@@ -21,7 +21,7 @@
 				<template contentType="application/json">
 					{
 						"country": "${property.country}",
-						"population": "${property.population}"
+						"population": ${property.population}
 					}
 				</template>
 				<setProperty name="country" value="${//country}" language="xpath"/>

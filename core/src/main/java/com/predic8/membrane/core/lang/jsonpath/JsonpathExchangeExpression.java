@@ -30,6 +30,7 @@ import java.util.*;
 
 import static com.predic8.membrane.core.util.StringUtil.*;
 import static java.lang.Boolean.*;
+import static java.nio.charset.StandardCharsets.*;
 
 public class JsonpathExchangeExpression extends AbstractExchangeExpression {
 
@@ -44,7 +45,7 @@ public class JsonpathExchangeExpression extends AbstractExchangeExpression {
 
     private static void syntaxCheckJsonpath(String source) {
         try {
-            JsonPath.read(new ByteArrayInputStream("{}".getBytes()), source);
+            JsonPath.read(new ByteArrayInputStream("{}".getBytes(UTF_8)), source);
         } catch (PathNotFoundException ignore) {
             // It is normal that nothing is found in an empty document
         } catch (Exception e) {

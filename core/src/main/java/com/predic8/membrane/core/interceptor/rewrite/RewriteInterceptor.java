@@ -254,7 +254,7 @@ public class RewriteInterceptor extends AbstractInterceptor {
         for (Mapping m : mappings)
             s.add(m.getDo());
 
-        return capitalize(toEnglishList("or",
+        return capitalizeFirstCharacter(toEnglishList("or",
                 s.contains(REDIRECT_PERMANENT) || s.contains(REDIRECT_TEMPORARY) ?
                         toEnglishList("or",
                                 s.contains(REDIRECT_PERMANENT) ? "permanently" : null,

@@ -32,6 +32,8 @@ import java.util.*;
 
 import static com.predic8.membrane.core.http.Header.*;
 import static com.predic8.membrane.core.http.MimeType.*;
+import static com.predic8.membrane.core.http.Response.noContent;
+import static com.predic8.membrane.core.http.Response.ok;
 import static com.predic8.membrane.core.transport.http2.Http2ServerHandler.*;
 import static com.predic8.membrane.core.util.ComparatorFactory.*;
 import static com.predic8.membrane.core.util.TextUtil.*;
@@ -142,9 +144,9 @@ public class AdminRESTInterceptor extends RESTInterceptor {
 		Message msg = params.getGroup(2).equals("response")?exc.getResponse():exc.getRequest();
 
 		if (msg == null) {
-			return Response.noContent().build();
+			return noContent().build();
 		}
-		return Response.ok().contentType(TEXT_PLAIN_UTF8).body(msg.toString()).build();//TODO uses body.toString that doesn't handle different encodings than utf-8
+		return ok().contentType(TEXT_PLAIN_UTF8).body(msg.getBodyAsStringDecoded()).build();
 	}
 
 	@Mapping("/admin/web/exchanges/(-?\\d+)/(response|request)/body")
@@ -158,9 +160,11 @@ public class AdminRESTInterceptor extends RESTInterceptor {
 		Message msg = params.getGroup(2).equals("response")?exc.getResponse():exc.getRequest();
 
 		if (msg== null || msg.isBodyEmpty()) {
-			return Response.noContent().build();
+			return noContent().build();
 		}
-		return Response.ok().contentType(TEXT_HTML_UTF8).body(formatXML(new InputStreamReader(msg.getBodyAsStreamDecoded(), msg.getCharset()), true)).build();
+		return ok().contentType(TEXT_HTML_UTF8)
+				.body(formatXML(msg.getBodyAsStreamDecoded(), true))
+				.build();
 	}
 
 	@Mapping("/admin/rest/exchanges/(-?\\d+)/(response|request)/body")
@@ -175,9 +179,9 @@ public class AdminRESTInterceptor extends RESTInterceptor {
 		String ct = params.getGroup(2).equals("response")?exc.getResponseContentType():exc.getRequestContentType();
 
 		if (msg== null || msg.isBodyEmpty()) {
-			return Response.noContent().build();
+			return noContent().build();
 		}
-		ResponseBuilder rb = Response.ok().contentType(ct).body(msg.getBodyAsStream(), false);
+		ResponseBuilder rb = ok().contentType(ct).body(msg.getBodyAsStream(), false);
 		String contentEncoding = msg.getHeader().getContentEncoding();
 		if (contentEncoding != null)
 			rb.header(CONTENT_ENCODING, contentEncoding);
@@ -195,7 +199,7 @@ public class AdminRESTInterceptor extends RESTInterceptor {
 		final Message msg = params.getGroup(2).equals("response")?exc.getResponse():exc.getRequest();
 
 		if (msg== null) {
-			return Response.noContent().build();
+			return noContent().build();
 		}
 
 		return json(gen -> {

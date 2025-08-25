@@ -13,20 +13,13 @@
    limitations under the License. */
 package com.predic8.membrane.core.http.xml;
 
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.util.ArrayList;
-import java.util.List;
-
-import javax.xml.stream.XMLStreamException;
-import javax.xml.stream.XMLStreamWriter;
-
-import com.fasterxml.jackson.core.JsonFactory;
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.JsonToken;
-
-import com.predic8.membrane.core.config.AbstractXmlElement;
+import com.fasterxml.jackson.core.*;
+import com.predic8.membrane.core.config.*;
 import com.predic8.membrane.core.http.Message;
+
+import javax.xml.stream.*;
+import java.io.*;
+import java.util.*;
 
 class JSONBody extends AbstractXmlElement {
 
@@ -39,11 +32,8 @@ class JSONBody extends AbstractXmlElement {
 	@Override
 	public void write(XMLStreamWriter out) throws XMLStreamException {
 		out.writeAttribute("type", "json");
-
 		try {
-
-			final JsonFactory jsonFactory = new JsonFactory();
-			final JsonParser jp = jsonFactory.createParser(new InputStreamReader(msg.getBodyAsStreamDecoded(), msg.getCharset()));
+            final JsonParser jp = new JsonFactory().createParser(msg.getBodyAsStreamDecoded());
 			final List<String> stack = new ArrayList<>();
 			String name = "root";
 			OUTER:

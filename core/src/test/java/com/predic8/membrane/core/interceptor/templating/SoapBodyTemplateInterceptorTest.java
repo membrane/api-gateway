@@ -15,15 +15,27 @@ package com.predic8.membrane.core.interceptor.templating;
 
 import com.predic8.membrane.core.util.*;
 import org.junit.jupiter.api.*;
+import org.junit.jupiter.params.*;
+import org.junit.jupiter.params.provider.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 class SoapBodyTemplateInterceptorTest {
 
-    @Test
-    void setSOAPVersion() {
-        setSoapVersion("1.1");
-        setSoapVersion("1.2");
+
+    @ParameterizedTest
+    @CsvSource({
+            "1.1,1.1",
+            "11,1.1",
+            "1.2,1.2",
+            "12,1.2",
+    })
+    void setSOAPVersion_validTokens_normalizeToCanonical(String input, String expectedCanonical) {
+
+
+        SoapBodyTemplateInterceptor i = new SoapBodyTemplateInterceptor();
+        i.setVersion(input);
+        assertEquals(expectedCanonical, i.getVersion());
     }
 
     @Test

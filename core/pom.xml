@@ -133,10 +133,6 @@
             </exclusions>
         </dependency>
         <dependency>
-            <groupId>com.predic8</groupId>
-            <artifactId>xmlbeautifier</artifactId>
-        </dependency>
-        <dependency>
             <groupId>commons-fileupload</groupId>
             <artifactId>commons-fileupload</artifactId>
         </dependency>
@@ -419,6 +415,7 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
                     <test>**/UnitTests.java</test>
+                    <argLine>-Dfile.encoding=UTF-8</argLine>
                 </configuration>
             </plugin>
 

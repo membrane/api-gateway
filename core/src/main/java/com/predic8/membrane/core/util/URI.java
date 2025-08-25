@@ -28,6 +28,7 @@ public class URI {
     private String input;
     private String path;
     private String query;
+    private String fragment;
 
     private String scheme;
 
@@ -35,7 +36,7 @@ public class URI {
 
     private int port = -1;
 
-    private String pathDecoded, queryDecoded;
+    private String pathDecoded, queryDecoded, fragmentDecoded;
 
     private static final Pattern PATTERN = Pattern.compile("^(([^:/?#]+):)?(//([^/?#]*))?([^?#]*)(\\?([^#]*))?(#(.*))?");
     //                                                             12            3  4          5       6   7        8 9
@@ -74,6 +75,7 @@ public class URI {
 
         path = m.group(5);
         query = m.group(7);
+        fragment = m.group(9);
         return true;
     }
 
@@ -137,6 +139,17 @@ public class URI {
     }
 
     /**
+     * Returns the fragment (the part after '#'), decoded like {@link #getPath()} and {@link #getQuery()}.
+     */
+    public String getFragment() {
+        if (uri != null)
+            return uri.getFragment();
+        if (fragmentDecoded == null)
+            fragmentDecoded = decode(fragment);
+        return fragmentDecoded;
+    }
+
+    /*
      * Returns the authority component of this URI.
      *
      * <p>In default mode delegates to {@link java.net.URI#getAuthority()} and may include

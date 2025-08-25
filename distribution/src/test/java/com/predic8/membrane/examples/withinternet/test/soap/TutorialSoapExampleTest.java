@@ -20,7 +20,7 @@ import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 
-import static com.predic8.membrane.core.http.MimeType.APPLICATION_SOAP;
+import static com.predic8.membrane.core.http.MimeType.APPLICATION_SOAP_XML;
 import static com.predic8.membrane.core.util.FileUtil.writeInputStreamToFile;
 import static io.restassured.RestAssured.given;
 import static io.restassured.http.ContentType.HTML;
@@ -66,7 +66,7 @@ public class TutorialSoapExampleTest extends AbstractSampleMembraneStartStopTest
         given()
         .when()
             .body(validSoapRequest)
-            .contentType(APPLICATION_SOAP)
+            .contentType(APPLICATION_SOAP_XML)
             .post("http://localhost:2001/soap-service")
         .then()
             .statusCode(200)
@@ -80,7 +80,7 @@ public class TutorialSoapExampleTest extends AbstractSampleMembraneStartStopTest
         given()
         .when()
             .body(invalidSoapRequest)
-            .contentType(APPLICATION_SOAP)
+            .contentType(APPLICATION_SOAP_XML)
             .post("http://localhost:2001/soap-service")
         .then()
             .statusCode(200)
@@ -94,7 +94,7 @@ public class TutorialSoapExampleTest extends AbstractSampleMembraneStartStopTest
         given()
         .when()
             .body(invalidSoapRequest)
-            .contentType(APPLICATION_SOAP)
+            .contentType(APPLICATION_SOAP_XML)
         .post("http://localhost:2002/soap-service")
             .then()
             .statusCode(200)

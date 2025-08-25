@@ -23,12 +23,11 @@ import java.io.InputStream;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-public class WebSocketFrameTest {
+class WebSocketFrameTest {
     static final int numberOfFrames = 100000;
 
     @Test
-    public void testDynamicBuffer() throws Exception {
-
+    void testDynamicBuffer() throws Exception {
 
         InputStream is = new InputStream() {
             int sentFrames = 0;
@@ -38,7 +37,7 @@ public class WebSocketFrameTest {
             int counter = 0;
 
             @Override
-            public int read() throws IOException {
+            public int read() {
                 int my = counter++ % frame.length;
                 if(counter == frame.length)
                     counter = 0;

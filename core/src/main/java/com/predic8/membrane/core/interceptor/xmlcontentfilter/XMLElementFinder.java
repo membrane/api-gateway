@@ -13,18 +13,16 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.xmlcontentfilter;
 
-import java.io.InputStream;
-import java.util.HashSet;
-import java.util.List;
+import com.predic8.xml.beautifier.*;
 
-import javax.annotation.concurrent.ThreadSafe;
-import javax.xml.XMLConstants;
-import javax.xml.namespace.QName;
-import javax.xml.stream.XMLEventReader;
-import javax.xml.stream.XMLInputFactory;
-import javax.xml.stream.XMLStreamException;
-import javax.xml.stream.events.StartElement;
-import javax.xml.stream.events.XMLEvent;
+import javax.annotation.concurrent.*;
+import javax.xml.namespace.*;
+import javax.xml.stream.*;
+import javax.xml.stream.events.*;
+import java.io.*;
+import java.util.*;
+
+import static javax.xml.XMLConstants.*;
 
 /**
  * Checks whether an InputStream is XML and contains any of a set of element names.
@@ -34,12 +32,6 @@ import javax.xml.stream.events.XMLEvent;
  */
 @ThreadSafe
 public class XMLElementFinder {
-	private static final XMLInputFactory xmlInputFactory = XMLInputFactory.newInstance();
-
-	static {
-		xmlInputFactory.setProperty(XMLInputFactory.IS_REPLACING_ENTITY_REFERENCES, false);
-		xmlInputFactory.setProperty(XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES, false);
-	}
 
 	private final HashSet<QName> elements = new HashSet<>();
 	private final boolean usesWildcardNamespace;
@@ -48,7 +40,7 @@ public class XMLElementFinder {
 		boolean usesWildcardNamespace = false;
 		for (QName element : elements) {
 			this.elements.add(element);
-			if (element.getNamespaceURI() == XMLConstants.NULL_NS_URI)
+			if (NULL_NS_URI.equals(element.getNamespaceURI()))
 				usesWildcardNamespace = true;
 		}
 		this.usesWildcardNamespace = usesWildcardNamespace;
@@ -59,10 +51,7 @@ public class XMLElementFinder {
 	 */
 	public boolean matches(InputStream is) {
 		try {
-			XMLEventReader parser;
-			synchronized (xmlInputFactory) {
-				parser = xmlInputFactory.createXMLEventReader(is);
-			}
+			XMLEventReader parser = XMLInputFactoryFactory.inputFactory().createXMLEventReader(is);
 
 			while (parser.hasNext()) {
 				XMLEvent event = parser.nextEvent();
