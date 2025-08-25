@@ -27,6 +27,8 @@ public class OAuth2TokenBody {
     private String redirectUri;
     private String codeVerifier;
 
+    private OAuth2TokenBody() {}
+
     public static OAuth2TokenBody refreshTokenBodyBuilder(String refreshToken) {
         OAuth2TokenBody r = new OAuth2TokenBody();
         r.grantType = "refresh_token";
