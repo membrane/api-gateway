@@ -53,7 +53,7 @@ public class URLParamUtil {
 		if (q == null) {
 			if (hasNoFormParams(exc))
 				return emptyMap();
-			q = new String(exc.getRequest().getBody().getContent(), exc.getRequest().getCharset());
+			q = exc.getRequest().getBodyAsStringDecoded();
 		}
 
 		return parseQueryString(q, duplicateKeyOrInvalidFormStrategy);

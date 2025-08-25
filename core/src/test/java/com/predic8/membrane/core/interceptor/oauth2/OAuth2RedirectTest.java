@@ -25,20 +25,19 @@ import com.predic8.membrane.core.interceptor.templating.*;
 import com.predic8.membrane.core.proxies.*;
 import com.predic8.membrane.core.transport.http.*;
 import com.predic8.membrane.test.*;
-import io.restassured.filter.log.LogDetail;
+import io.restassured.filter.log.*;
 import io.restassured.response.*;
-import org.hamcrest.Matchers;
 import org.jetbrains.annotations.*;
 import org.junit.jupiter.api.*;
 
-import java.net.URI;
-import java.net.URISyntaxException;
+import java.net.*;
 import java.util.*;
 import java.util.concurrent.atomic.*;
 
+import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 import static com.predic8.membrane.core.lang.ExchangeExpression.Language.*;
-import static com.predic8.membrane.test.TestUtil.getPathFromResource;
-import static io.restassured.RestAssured.given;
+import static io.restassured.RestAssured.*;
+import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 public abstract class OAuth2RedirectTest {
@@ -77,7 +76,7 @@ public abstract class OAuth2RedirectTest {
         .then()
             .log().ifValidationFails(LogDetail.ALL)
             .statusCode(400)
-            .body(Matchers.is("Missing session."));
+            .body(is("Missing session."));
     }
 
     @Test
@@ -178,7 +177,7 @@ public abstract class OAuth2RedirectTest {
             @Override
             public Outcome handleRequest(Exchange exc) {
                 targetUrlHit.set(exc.getRequest().getUri());
-                return Outcome.CONTINUE;
+                return CONTINUE;
             }
         });
         nginxRule.getInterceptors().add(createConditionalInterceptorWithReturnMessage("method == 'POST'", "POST | ${exc.request.header.getFirstValue('Content-Type')} | ${exc.request.body}"));
@@ -194,7 +193,7 @@ public abstract class OAuth2RedirectTest {
             public Outcome handleRequest(Exchange exc) {
                 if (firstUrlHit.get() == null)
                     firstUrlHit.set(exc.getRequest().getUri());
-                return Outcome.CONTINUE;
+                return CONTINUE;
             }
         });
         membraneRule.getInterceptors().add(new OAuth2Resource2Interceptor() {{
@@ -212,7 +211,7 @@ public abstract class OAuth2RedirectTest {
             public Outcome handleRequest(Exchange exc) {
                 if (interceptorChainHit.get() == null)
                     interceptorChainHit.set(exc.getRequest().getUri());
-                return Outcome.CONTINUE;
+                return CONTINUE;
             }
         });
         return membraneRule;

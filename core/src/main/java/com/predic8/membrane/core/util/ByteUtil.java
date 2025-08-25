@@ -14,18 +14,12 @@
 
 package com.predic8.membrane.core.util;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.zip.DataFormatException;
-import java.util.zip.Inflater;
+import com.predic8.membrane.core.http.*;
+import org.slf4j.*;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import com.predic8.membrane.core.http.Chunk;
+import java.io.*;
+import java.util.*;
+import java.util.zip.*;
 
 public class ByteUtil {
 
@@ -33,36 +27,15 @@ public class ByteUtil {
 
 	public static byte[] readByteArray(InputStream in, int length) throws IOException {
 		if (length < 0)
-			return getByteArrayData(in);
+			return in.readAllBytes();
 
 		byte[] content = new byte[length];
 		int offset = 0;
-		int count = 0;
+		int count;
 		while (offset < length && (count = in.read(content, offset, length - offset)) >= 0) {
 			offset += count;
 		}
 		return content;
-	}
-
-	public static byte[] getByteArrayData(InputStream stream) throws IOException {
-
-		ByteArrayOutputStream bos = new ByteArrayOutputStream();
-
-		byte[] buffer = new byte[2048];
-		while (true) {
-			int read = stream.read(buffer);
-			if (read < 0)
-				break;
-			bos.write(buffer, 0, read);
-		}
-
-		try {
-			bos.close();
-		} catch (IOException e) {
-			log.error("", e);
-		}
-
-		return bos.toByteArray();
 	}
 
 	public static void readStream(InputStream stream) throws IOException {
@@ -99,22 +72,16 @@ public class ByteUtil {
 			}
 		}
 
-		log.debug("Number of decompressed chunks: " + chunks.size());
-		if (chunks.size() > 0) {
+		log.debug("Number of decompressed chunks: {}",chunks.size());
+		if (!chunks.isEmpty()) {
 
 			ByteArrayOutputStream bos = new ByteArrayOutputStream();
 
 			for (Chunk chunk : chunks) {
 				chunk.write(bos);
 			}
-
-			try {
-				bos.close();
-			} catch (IOException e) {
-			}
 			return bos.toByteArray();
 		}
-
 		return null;
 	}
 
@@ -142,9 +109,9 @@ public class ByteUtil {
             position = 7 - position;
 
         if(value)
-            b |= (1 << position);
+            b |= (byte) (1 << position);
         else
-            b &= ~(1 << position);
+            b &= (byte) ~(1 << position);
         return b;
     }
 
@@ -162,9 +129,5 @@ public class ByteUtil {
 
 	public static byte setBitValuesBigEndian(byte b, int beginning, int end, int value){
     	return setBitValues(b,beginning, end,value);
-	}
-
-	public static int getNumberOfBits(int i){
-		return Integer.SIZE-Integer.numberOfLeadingZeros(i);
 	}
 }

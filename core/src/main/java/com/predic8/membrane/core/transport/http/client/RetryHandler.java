@@ -34,7 +34,7 @@ import static java.nio.charset.StandardCharsets.*;
  *
  * <p>The handler performs the initial call and, on failure, up to {@link #retries} additional attempts.
  * Waiting time before hitting the <em>same</em> node grows exponentially by
- * {@code delay × backoffMultiplier}. If several backend nodes are configured, the next retry is
+ * {@code delay backoffMultiplier}. If several backend nodes are configured, the next retry is
  * immediately directed to the next node (fail-over)  - the sleep is only applied between consecutive
  * attempts to the <strong>same</strong> destination.</p>
  *

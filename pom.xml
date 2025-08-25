@@ -72,8 +72,8 @@
 	</modules>
 
 	<properties>
-		<project.build.sourceEncoding>ISO-8859-1</project.build.sourceEncoding>
-		<project.reporting.outputEncoding>ISO-8859-1</project.reporting.outputEncoding>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 		<gpg.keyname>5B8A65F6</gpg.keyname>
 		<javac.source>21</javac.source>
 		<javac.target>21</javac.target>
@@ -188,7 +188,6 @@
 				<artifactId>log4j-core</artifactId>
 				<version>${log4j.version}</version>
 			</dependency>
-
 			<dependency>
 				<groupId>org.slf4j</groupId>
 				<artifactId>slf4j</artifactId>
@@ -244,11 +243,6 @@
 				<groupId>com.predic8</groupId>
 				<artifactId>soa-model-core</artifactId>
 				<version>2.2.0</version>
-			</dependency>
-			<dependency>
-				<groupId>com.predic8</groupId>
-				<artifactId>xmlbeautifier</artifactId>
-				<version>1.2.2</version>
 			</dependency>
 			<dependency>
 				<groupId>com.google.guava</groupId>
@@ -556,12 +550,18 @@
 
 				<plugin>
 					<artifactId>maven-surefire-plugin</artifactId>
+					<configuration>
+						<argLine>-Dfile.encoding=UTF-8</argLine>
+					</configuration>
 					<version>3.1.2</version>
 				</plugin>
 
 				<plugin>
 					<artifactId>maven-failsafe-plugin</artifactId>
 					<version>3.1.2</version>
+					<configuration>
+					  <argLine>-Dfile.encoding=UTF-8</argLine>
+					</configuration>
 				</plugin>
 
 				<plugin>
