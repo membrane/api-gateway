@@ -52,7 +52,7 @@ public class Constants {
 
 	public static final String UNKNOWN = "unknown";
 
-	public static final String N_A = "N/A";
+	public static final String NOT_APPLICABLE = "N/A";
 
 	public static final String HTTP_VERSION_11 = "1.1";
 
@@ -91,4 +91,6 @@ public class Constants {
 	 * The user agent string that will be sent when identifying as Membrane
 	 */
 	public static final String USERAGENT = "Membrane " + VERSION;
+
+
 }

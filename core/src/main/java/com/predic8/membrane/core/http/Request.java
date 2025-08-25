@@ -36,6 +36,7 @@ public class Request extends Message {
 
 	public static final String METHOD_GET = "GET";
 	public static final String METHOD_POST = "POST";
+	public static final String METHOD_PATCH = "PATCH";
 	public static final String METHOD_HEAD = "HEAD";
 	public static final String METHOD_DELETE = "DELETE";
 	public static final String METHOD_PUT = "PUT";
@@ -155,13 +156,12 @@ public class Request extends Message {
 	public boolean shouldNotContainBody() {
 		if (methodsWithoutBody.contains(method))
 			return true;
-
 		if (methodsWithOptionalBody.contains(method)) {
 			if (header.hasContentLength())
 				return header.getContentLength() == 0;
             return header.getFirstValue(TRANSFER_ENCODING) == null;
         }
-
+    
 		return false;
 	}
 
@@ -197,7 +197,7 @@ public class Request extends Message {
 		for (HeaderField hf : header.getAllHeaderFields())
 			out.write((hf.getHeaderName().toString() + ":" + hf.getValue() + "\n").getBytes(UTF_8));
 		out.write(10);
-		body.write(new PlainBodyTransferrer(out), retainBody);
+		body.write(new PlainBodyTransferer(out), retainBody);
 	}
 
 	public static Builder get(String url) throws URISyntaxException {
@@ -218,6 +218,10 @@ public class Request extends Message {
 
 	public static Builder options(String url) throws URISyntaxException {
 		return new Builder().options(url);
+	}
+
+	public static Builder connect(String url) throws URISyntaxException {
+		return new Builder().connect(url);
 	}
 
 	public static class Builder {
@@ -346,9 +350,14 @@ public class Request extends Message {
 			return options(new URIFactory(), url);
 		}
 
+		public Builder connect(String url) throws URISyntaxException {
+			req.setMethod(METHOD_CONNECT);
+            req.setUri(new URIFactory().create(url).getAuthority());
+			return this;
+		}
+
 		public Builder options(URIFactory uriFactory, String url) throws URISyntaxException {
 			return method(Request.METHOD_OPTIONS).url(uriFactory,url);
 		}
 	}
-
 }

@@ -6,6 +6,7 @@
 - HttpClient
   - Change Signature: public Exchange call(Exchange exc) throws Exception
     =>  public void call(Exchange exc) throws Exception {
+- Remove HttpClientInterceptor.setAdjustHeader(boolean) it is already in HttpClientConfiguration
 
 # 6.5.0
 
@@ -54,6 +55,11 @@
   durch '<apiKeyFileStore .. />' ersetzen (dafür topLevel=true) BT
 
 # Discussion
+
+- Util function to sanitize HTTP Headers in Logs: Authorization, Proxy-Authorization, Cookie, Set-Cookie
+  Replace value with *****
+  - Use it in MessageTracer
+
 
 - <api> without port => Change from port 80 to matches all open ports
 - ProblemDetails: (TB)
