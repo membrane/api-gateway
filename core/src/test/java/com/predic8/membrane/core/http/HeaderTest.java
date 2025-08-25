@@ -24,14 +24,14 @@ import static com.predic8.membrane.core.http.MimeType.*;
 import static java.nio.charset.StandardCharsets.*;
 import static org.junit.jupiter.api.Assertions.*;
 
-public class HeaderTest {
+class HeaderTest {
 
-    private static final Header header = new Header();
+    private final Header header = new Header();
 
-    private static Header h1;
+    private Header h1;
 
     @BeforeEach
-    public void setUp() throws Exception {
+    void setUp() {
         header.setContentType("text/xml; charset=utf-8");
         header.add(HOST, "127.0.0.1:2000");
         header.setAccept("application/soap+xml, application/dime, multipart/related, text/*");
@@ -42,26 +42,23 @@ public class HeaderTest {
         h1.add(X_FORWARDED_FOR, "192.3.14.1");
         h1.add(X_FORWARDED_FOR, "10.0.0.1");
         h1.add(X_FORWARDED_FOR, "2001:db8:85a3:8d3:1319:8a2e:370:7348");
-
-        Header h2 = new Header();
-        h2.add(X_FORWARDED_FOR, "  192.3.14.1 , 	10.0.0.1,2001:db8:85a3:8d3:1319:8a2e:370:7348	 ");
     }
 
     @Test
-    public void testGetHeader() {
+    void getHeader() {
         assertNotNull(header.getFirstValue("ACCEPT"));
         assertNotNull(header.getFirstValue("accept"));
         assertEquals("127.0.0.1:2000", header.getFirstValue("host"));
     }
 
     @Test
-    public void testAuthorization() {
+    void authorization() {
         assertEquals("Basic YWxpY2U6c2VjcmV0",
                 header.getFirstValue(AUTHORIZATION));
     }
 
     @Test
-    public void testGetMimeType() throws Exception {
+    void getMimeType() throws Exception {
         assertTrue(new MimeType(header.getContentType()).match(TEXT_XML));
     }
 
@@ -76,26 +73,26 @@ public class HeaderTest {
     }
 
     @Test
-    public void testGetCharsetNull() {
+    void getCharsetNull() {
         Header header = new Header();
         header.setContentType(TEXT_XML);
-        assertEquals(UTF_8.name(), header.getCharset());
+        assertNull(header.getCharset());
     }
 
     @Test
-    public void testStringCharset() {
+    void stringCharset() {
         Header header = new Header();
         header.setContentType("text/xml ;charset=\"UTF-8\"");
         assertEquals(UTF_8.name(), header.getCharset());
     }
 
     @Test
-    public void testGetCharsetCTNull() {
-        assertEquals(UTF_8.name(), new Header().getCharset());
+    void getCharsetCTNull() {
+        assertNull(new Header().getCharset());
     }
 
     @Test
-    public void testGetCharset() {
+    void getCharset() {
         header.setContentType("text/xml; charset=utf-8");
         assertEquals(UTF_8.name(), header.getCharset());
     }

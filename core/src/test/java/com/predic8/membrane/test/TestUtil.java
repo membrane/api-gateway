@@ -22,13 +22,21 @@ import org.junit.jupiter.api.*;
 import java.io.*;
 import java.net.*;
 
-import static com.predic8.membrane.core.util.URIUtil.pathFromFileURI;
+import static com.predic8.membrane.core.util.URIUtil.*;
+import static java.util.Objects.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class TestUtil {
 
-    public static InputStream getResourceAsStream(Object thisObj,String filename) {
+    public static InputStream getResourceAsStream(Object thisObj, String filename) {
         return thisObj.getClass().getClassLoader().getResourceAsStream(filename);
+    }
+    public static byte[] readResource(String path) throws IOException {
+        // Make sure stream is closed
+        try (InputStream is = requireNonNull(TestUtil.class.getResourceAsStream(path),
+                "Missing test resource: " + path)) {
+            return is.readAllBytes();
+        }
     }
 
     public static Exchange assembleExchange(String hostHeader, String method, String path, String proxyVersion, int port, String localIp) throws UnknownHostException {

@@ -14,22 +14,20 @@
 
 package com.predic8.membrane.core.interceptor;
 
-import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.exchange.AbstractExchange;
-import com.predic8.membrane.core.http.Body;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
-import org.xml.sax.InputSource;
+import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.*;
+import org.w3c.dom.*;
+import org.xml.sax.*;
 
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.transform.Transformer;
-import javax.xml.transform.TransformerFactory;
-import javax.xml.transform.dom.DOMSource;
-import javax.xml.transform.stream.StreamResult;
-import java.io.InputStream;
-import java.io.StringWriter;
+import javax.xml.parsers.*;
+import javax.xml.transform.*;
+import javax.xml.transform.dom.*;
+import javax.xml.transform.stream.*;
+import java.io.*;
+import java.nio.charset.*;
+
+import static com.predic8.membrane.core.interceptor.Outcome.*;
 
 @MCElement(name="authHead2Body")
 public class AuthHead2BodyInterceptor extends AbstractInterceptor {
@@ -38,27 +36,29 @@ public class AuthHead2BodyInterceptor extends AbstractInterceptor {
 	static final String XSI_NS  = "http://www.w3.org/2001/XMLSchema-instance";
 
 	public Outcome handleRequest(AbstractExchange exchange) throws Exception {
-		Document doc = getDocument(exchange.getRequest().getBodyAsStreamDecoded(), exchange.getRequest().getCharset());
+		Document doc = getDocument(exchange.getRequest().getBodyAsStreamDecoded(), exchange.getRequest().getCharsetOrDefault());
 		Element header = getAuthorisationHeader(doc);
-		if (header == null) return Outcome.CONTINUE;
-		//System.out.println(DOM2String(doc));
+
+		if (header == null)
+			return CONTINUE;
+
 		Element nor = getNorElement(doc);
-		nor.appendChild(getUsername(doc, header));
-		nor.appendChild(getPassword(doc, header));
+		nor.appendChild(getUsername(doc));
+		nor.appendChild(getPassword(doc));
 
 		header.getParentNode().removeChild(header);
-		exchange.getRequest().setBody(new Body(DOM2String(doc).getBytes(exchange.getRequest().getCharset())));
-		return Outcome.CONTINUE;
+		exchange.getRequest().setBody(new Body(DOM2String(doc).getBytes(exchange.getRequest().getCharsetOrDefault())));
+		return CONTINUE;
 	}
 
-	private Node getPassword(Document doc, Element header) {
+	private Node getPassword(Document doc) {
 		Element e = doc.createElement("password");
 		e.appendChild(doc.createTextNode(doc.getElementsByTagNameNS(COM_NS, "password").item(0).getTextContent()));
 		e.setAttributeNS(XSI_NS, "xsi:type", "xsd:string");
 		return e;
 	}
 
-	private Node getUsername(Document doc, Element header) {
+	private Node getUsername(Document doc) {
 		Element e = doc.createElement("username");
 		e.appendChild(doc.createTextNode(doc.getElementsByTagNameNS(COM_NS, "userName").item(0).getTextContent()));
 		e.setAttributeNS(XSI_NS, "xsi:type", "xsd:string");
@@ -75,11 +75,12 @@ public class AuthHead2BodyInterceptor extends AbstractInterceptor {
 		return (Element)nl.item(0);
 	}
 
-	private Document getDocument(InputStream xmlDocument, String encoding) throws Exception {
+	private Document getDocument(InputStream xmlDocument, Charset encoding) throws Exception {
 		DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
 		dbf.setNamespaceAware(true);
 		InputSource is = new InputSource(xmlDocument);
-		is.setEncoding(encoding);
+		if (encoding != null)
+			is.setEncoding(encoding.name());
 		return dbf.newDocumentBuilder().parse(is);
 	}
 

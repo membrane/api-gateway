@@ -19,6 +19,7 @@ import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.proxies.*;
+import com.predic8.xml.beautifier.*;
 import org.slf4j.*;
 import org.springframework.http.*;
 
@@ -43,6 +44,197 @@ import static java.nio.charset.StandardCharsets.*;
  */
 @MCElement(name = "rest2Soap")
 public class REST2SOAPInterceptor extends SOAPRESTHelper {
+
+    private static final Logger log = LoggerFactory.getLogger(REST2SOAPInterceptor.class.getName());
+    private List<Mapping> mappings = new ArrayList<>();
+
+    public REST2SOAPInterceptor() {
+        name = "rest 2 soap gateway";
+    }
+
+    @Override
+    public Outcome handleRequest(Exchange exc) {
+        String uri = getURI(exc);
+        log.debug("uri: {}", uri);
+
+        Mapping mapping = findFirstMatchingRegEx(uri);
+        if (mapping == null)
+            return CONTINUE;
+
+        try {
+            transformAndReplaceBody(exc.getRequest(), mapping.requestXSLT,
+                    getRequestXMLSource(exc), exc.getStringProperties());
+        } catch (Exception e) {
+            log.error("", e);
+            user(router.isProduction(), getDisplayName())
+                    .detail("Could not covert REST to SOAP!")
+                    .exception(e)
+                    .buildAndSetResponse(exc);
+            return ABORT;
+        }
+
+        modifyRequest(exc, mapping);
+
+        return CONTINUE;
+    }
+
+    @Override
+    public Outcome handleResponse(Exchange exc) {
+        try {
+            return handleResponseInternal(exc);
+        } catch (Exception e) {
+            log.error("", e);
+            user(router.isProduction(), getDisplayName())
+                    .detail("Could not covert SOAP to REST!")
+                    .exception(e)
+                    .buildAndSetResponse(exc);
+            return ABORT;
+        }
+    }
+
+    public Outcome handleResponseInternal(Exchange exc) throws Exception {
+        Mapping mapping = getRESTURL(exc);
+        log.debug("restURL: {}", mapping);
+        if (mapping == null || mapping.getResponseXSLT().isEmpty())
+            return CONTINUE;
+
+        if (log.isDebugEnabled())
+            log.debug("response: {}", new String(getTransformer(null).transform(getBodySource(exc), exc.getStringProperties()), UTF_8));
+
+        exc.getResponse().setBodyContent(getTransformer(mapping.responseXSLT).
+                transform(getBodySource(exc)));
+        Header header = exc.getResponse().getHeader();
+        header.removeFields(CONTENT_TYPE);
+        header.setContentType(TEXT_XML_UTF8);
+
+        XML2HTTP.unwrapMessageIfNecessary(exc.getResponse());
+        convertResponseToJSONIfNecessary(exc.getRequest().getHeader(), exc.getResponse(), exc.getStringProperties());
+
+        return CONTINUE;
+    }
+
+    private void convertResponseToJSONIfNecessary(Header header, Response response, Map<String, String> properties) throws Exception {
+        if (!response.isXML())
+            return;
+
+        String accept = header.getFirstValue(ACCEPT);
+        if (accept == null)
+            return;
+
+        List<MediaType> types = sortMimeTypeByQualityFactorAscending(accept);
+        if (types.isEmpty())
+            return;
+
+        if (!isJson(types.getFirst().toString()))
+            return;
+
+        response.setBodyContent(xml2json(response.getBodyAsStreamDecoded(), properties));
+        setJSONContentType(response.getHeader());
+    }
+
+    private byte[] xml2json(InputStream xmlResp, Map<String, String> properties) throws Exception {
+        return getTransformer("classpath:/com/predic8/membrane/core/interceptor/rest/xml2json.xsl").
+                transform(new StreamSource(xmlResp), properties);
+    }
+
+    private StreamSource getBodySource(Exchange exc) {
+        return new StreamSource(exc.getResponse().getBodyAsStreamDecoded());
+    }
+
+    private Mapping getRESTURL(Exchange exc) {
+        return exc.getProperty("mapping", Mapping.class);
+    }
+
+    private Mapping findFirstMatchingRegEx(String uri) {
+        for (Mapping m : mappings) {
+            if (Pattern.matches(m.regex, uri))
+                return m;
+        }
+        return null;
+    }
+
+    private void modifyRequest(AbstractExchange exc, Mapping mapping) {
+
+        exc.getRequest().setMethod("POST");
+        exc.getRequest().getHeader().setSOAPAction(mapping.soapAction);
+        Header header = exc.getRequest().getHeader();
+        header.removeFields(CONTENT_TYPE);
+        header.setContentType(isSOAP12(exc) ? APPLICATION_SOAP_XML : TEXT_XML_UTF8);
+
+        exc.setProperty("mapping", mapping);
+        setServiceEndpoint(exc, mapping);
+    }
+
+    private boolean isSOAP12(AbstractExchange exc) {
+        // Determine SOAP version per-request; do not cache in instance state
+        return SOAP12_NS.equals(getRootElementNamespace(exc.getRequest().getBodyAsStream()));
+    }
+
+    private String getRootElementNamespace(InputStream stream) {
+        try {
+            XMLEventReader xer = XMLInputFactoryFactory.inputFactory().createXMLEventReader(stream);
+            while (xer.hasNext()) {
+                XMLEvent event = xer.nextEvent();
+                if (event.isStartElement())
+                    return event.asStartElement().getName().getNamespaceURI();
+            }
+        } catch (XMLStreamException e) {
+            log.error("Could not determine root element namespace for check whether namespace is SOAP 1.2.", e);
+        }
+        return null;
+    }
+
+    private void setJSONContentType(Header header) {
+        header.removeFields(CONTENT_TYPE);
+        header.setContentType(APPLICATION_JSON_UTF8);
+    }
+
+    private void setServiceEndpoint(AbstractExchange exc, Mapping mapping) {
+        exc.getRequest().setUri(
+                getURI(exc).replaceAll(mapping.regex, mapping.soapURI));
+
+        String newDestination = getNewDestination(exc);
+        exc.getDestinations().clear();
+        exc.getDestinations().add(newDestination);
+
+        log.debug("destination set to: {}", newDestination);
+    }
+
+    private String getNewDestination(AbstractExchange exc) {
+        return getProtocol(exc) + "://" + ((AbstractServiceProxy) exc.getProxy()).getTargetHost() + ":"
+               + ((AbstractServiceProxy) exc.getProxy()).getTargetPort()
+               + exc.getRequest().getUri();
+    }
+
+    private String getProtocol(AbstractExchange exc) {
+        if (exc.getProxy() instanceof SSLableProxy sp) {
+            if (sp.getSslOutboundContext() != null) {
+                return "https";
+            }
+        }
+        return "http";
+    }
+
+    private String getURI(AbstractExchange exc) {
+        return exc.getRequest().getUri();
+    }
+
+    public List<Mapping> getMappings() {
+        return mappings;
+    }
+
+    /**
+     * @description Specifies the mappings. The first matching mapping will be applied to the request.
+     */
+    @MCChildElement
+    public void setMappings(List<Mapping> mappings) {
+        this.mappings = mappings;
+    }
+
+    @Override
+    public String getShortDescription() {
+        return "Transforms REST requests into SOAP and responses vice versa.";
+    }
 
     @MCElement(name = "mapping", topLevel = false, id = "rest2Soap-mapping")
     public static class Mapping extends AbstractXmlElement {
@@ -142,200 +334,5 @@ public class REST2SOAPInterceptor extends SOAPRESTHelper {
         public void setResponseXSLT(String responseXSLT) {
             this.responseXSLT = responseXSLT;
         }
-    }
-
-    private static final Logger log = LoggerFactory.getLogger(REST2SOAPInterceptor.class.getName());
-
-    private List<Mapping> mappings = new ArrayList<>();
-    private Boolean isSOAP12;
-
-    public REST2SOAPInterceptor() {
-        name = "rest 2 soap gateway";
-    }
-
-    @Override
-    public Outcome handleRequest(Exchange exc) {
-        log.debug("uri: {}",getURI(exc));
-        String uri = getURI(exc);
-
-        Mapping mapping = findFirstMatchingRegEx(uri);
-        if (mapping == null)
-            return CONTINUE;
-
-        try {
-            transformAndReplaceBody(exc.getRequest(), mapping.requestXSLT,
-                    getRequestXMLSource(exc), exc.getStringProperties());
-        } catch (Exception e) {
-            log.error("",e);
-            user(router.isProduction(),getDisplayName())
-                    .detail("Could not covert REST to SOAP!")
-                    .exception(e)
-                    .buildAndSetResponse(exc);
-            return ABORT;
-        }
-
-        modifyRequest(exc, mapping);
-
-        return CONTINUE;
-    }
-
-    @Override
-    public Outcome handleResponse(Exchange exc) {
-        try {
-            return handleResponseInternal(exc);
-        } catch (Exception e) {
-            log.error("",e);
-            user(router.isProduction(),getDisplayName())
-                    .detail("Could not covert SOAP to REST!")
-                    .exception(e)
-                    .buildAndSetResponse(exc);
-            return ABORT;
-        }
-    }
-
-    public Outcome handleResponseInternal(Exchange exc) throws Exception {
-        Mapping mapping = getRESTURL(exc);
-        log.debug("restURL: {}",mapping);
-       if (mapping == null || mapping.getResponseXSLT().isEmpty())
-            return CONTINUE;
-
-        if (log.isDebugEnabled())
-            log.debug("response: {}",new String(getTransformer(null).transform(getBodySource(exc), exc.getStringProperties()), UTF_8));
-
-        exc.getResponse().setBodyContent(getTransformer(mapping.responseXSLT).
-                transform(getBodySource(exc)));
-        Header header = exc.getResponse().getHeader();
-        header.removeFields(CONTENT_TYPE);
-        header.setContentType(TEXT_XML_UTF8);
-
-        XML2HTTP.unwrapMessageIfNecessary(exc.getResponse());
-        convertResponseToJSONIfNecessary(exc.getRequest().getHeader(), exc.getResponse(), exc.getStringProperties());
-
-        return CONTINUE;
-    }
-
-    private void convertResponseToJSONIfNecessary(Header header, Response response, Map<String, String> properties) throws Exception {
-        if (!response.isXML())
-            return;
-
-        String accept = header.getFirstValue(ACCEPT);
-        if (accept == null)
-            return;
-
-        List<MediaType> types = sortMimeTypeByQualityFactorAscending(accept);
-        if (types.isEmpty())
-            return;
-
-        if (!isJson(types.getFirst().toString()))
-            return;
-
-        response.setBodyContent(xml2json(response.getBodyAsStreamDecoded(), properties));
-        setJSONContentType(response.getHeader());
-    }
-
-    private byte[] xml2json(InputStream xmlResp, Map<String, String> properties) throws Exception {
-        return getTransformer("classpath:/com/predic8/membrane/core/interceptor/rest/xml2json.xsl").
-                transform(new StreamSource(xmlResp), properties);
-    }
-
-    private StreamSource getBodySource(Exchange exc) {
-        return new StreamSource(exc.getResponse().getBodyAsStreamDecoded());
-    }
-
-    private Mapping getRESTURL(Exchange exc) {
-        return exc.getProperty("mapping", Mapping.class);
-    }
-
-    private Mapping findFirstMatchingRegEx(String uri) {
-        for (Mapping m : mappings) {
-            if (Pattern.matches(m.regex, uri))
-                return m;
-        }
-        return null;
-    }
-
-    private void modifyRequest(AbstractExchange exc, Mapping mapping) {
-
-        exc.getRequest().setMethod("POST");
-        exc.getRequest().getHeader().setSOAPAction(mapping.soapAction);
-        Header header = exc.getRequest().getHeader();
-        header.removeFields(CONTENT_TYPE);
-        header.setContentType(isSOAP12(exc) ? APPLICATION_SOAP : TEXT_XML_UTF8);
-
-        exc.setProperty("mapping", mapping);
-        setServiceEndpoint(exc, mapping);
-    }
-
-    private boolean isSOAP12(AbstractExchange exc) {
-        if (isSOAP12 != null)
-            return isSOAP12;
-        isSOAP12 = SOAP12_NS.equals(getRootElementNamespace(exc.getRequest().getBodyAsStream()));
-        return isSOAP12;
-    }
-
-    private String getRootElementNamespace(InputStream stream) {
-        try {
-            XMLEventReader xer = XMLInputFactory.newFactory().createXMLEventReader(stream);
-            while (xer.hasNext()) {
-                XMLEvent event = xer.nextEvent();
-                if (event.isStartElement())
-                    return event.asStartElement().getName().getNamespaceURI();
-            }
-        } catch (XMLStreamException e) {
-            log.error("Could not determine root element namespace for check whether namespace is SOAP 1.2.", e);
-        }
-        return null;
-    }
-
-    private void setJSONContentType(Header header) {
-        header.removeFields(CONTENT_TYPE);
-        header.setContentType(APPLICATION_JSON_UTF8);
-    }
-
-    private void setServiceEndpoint(AbstractExchange exc, Mapping mapping) {
-        exc.getRequest().setUri(
-                getURI(exc).replaceAll(mapping.regex, mapping.soapURI));
-
-        String newDestination = getNewDestination(exc);
-        exc.getDestinations().clear();
-        exc.getDestinations().add(newDestination);
-
-        log.debug("destination set to: {}",newDestination);
-    }
-
-    private String getNewDestination(AbstractExchange exc) {
-        return getProtocol(exc) + "://" + ((AbstractServiceProxy) exc.getProxy()).getTargetHost() + ":"
-               + ((AbstractServiceProxy) exc.getProxy()).getTargetPort()
-               + exc.getRequest().getUri();
-    }
-
-    private String getProtocol(AbstractExchange exc) {
-        if (exc.getProxy() instanceof SSLableProxy sp) {
-            if (sp.getSslOutboundContext() != null) {
-                return "https";
-            }
-        }
-        return "http";
-    }
-
-    private String getURI(AbstractExchange exc) {
-        return exc.getRequest().getUri();
-    }
-
-    public List<Mapping> getMappings() {
-        return mappings;
-    }
-
-    /**
-     * @description Specifies the mappings. The first matching mapping will be applied to the request.
-     */
-    @MCChildElement
-    public void setMappings(List<Mapping> mappings) {
-        this.mappings = mappings;
-    }
-
-    @Override
-    public String getShortDescription() {
-        return "Transforms REST requests into SOAP and responses vice versa.";
     }
 }
