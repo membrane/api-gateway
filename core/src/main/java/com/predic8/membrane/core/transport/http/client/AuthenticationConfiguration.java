@@ -13,18 +13,60 @@
    limitations under the License. */
 package com.predic8.membrane.core.transport.http.client;
 
-import com.predic8.membrane.annot.Required;
+import com.predic8.membrane.annot.*;
 
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCElement;
+import java.util.*;
 
-import java.util.Objects;
-
+/**
+ * @description Configuration for basic HTTP authentication.
+ *              This element can be used to configure credentials for outbound requests requiring HTTP Basic Auth.
+ *              Typically used within &lt;httpClientConfig&gt;.
+ *
+ *              XML Example:
+ *              &lt;authentication username="user" password="secret"/&gt;
+ *
+ *              YAML (experimental):
+ *              authentication:
+ *                username: user
+ *                password: secret
+ *
+ * @topic 4. Transports and Clients
+ */
 @MCElement(name="authentication", topLevel=false)
 public class AuthenticationConfiguration {
 
 	private String username;
 	private String password;
+
+	public String getUsername() {
+		return username;
+	}
+
+	/**
+	 * @description Username used for HTTP Basic Authentication.
+	 * @required
+	 * @example user
+	 */
+	@Required
+	@MCAttribute
+	public void setUsername(String username) {
+		this.username = username;
+	}
+
+	public String getPassword() {
+		return password;
+	}
+
+	/**
+	 * @description Password used for HTTP Basic Authentication.
+	 * @required
+	 * @example secret
+	 */
+	@Required
+	@MCAttribute
+	public void setPassword(String password) {
+		this.password = password;
+	}
 
 	@Override
 	public boolean equals(Object o) {
@@ -37,25 +79,5 @@ public class AuthenticationConfiguration {
 	@Override
 	public int hashCode() {
 		return Objects.hash(username, password);
-	}
-
-	public String getUsername() {
-		return username;
-	}
-
-	@Required
-	@MCAttribute
-	public void setUsername(String username) {
-		this.username = username;
-	}
-
-	public String getPassword() {
-		return password;
-	}
-
-	@Required
-	@MCAttribute
-	public void setPassword(String password) {
-		this.password = password;
 	}
 }

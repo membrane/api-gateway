@@ -43,7 +43,7 @@ public class XenMessageContext {
     private static final String KEY = "xenMessageContext";
 
     public static XenMessageContext get(Exchange exchange, Interceptor.Flow flow) {
-        XenMessageContext xmc = exchange.getPropertyOrNull(KEY + flow.toString(), XenMessageContext.class);
+        XenMessageContext xmc = exchange.getProperty(KEY + flow.toString(), XenMessageContext.class);
         if (xmc != null)
             return xmc;
 

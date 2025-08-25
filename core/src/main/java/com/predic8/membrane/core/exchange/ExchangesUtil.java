@@ -51,11 +51,12 @@ public class ExchangesUtil {
 
 	public static String getResponseContentType(AbstractExchange exc) {
 		if (exc.getResponse() == null)
-			return N_A;
+			return NOT_APPLICABLE;
 		return exc.getResponseContentType();
 	}
 
 	public static String getTimeDifference(AbstractExchange exc) {
 		return "" + (exc.getTimeResReceived() - exc.getTimeReqSent());
 	}
+
 }

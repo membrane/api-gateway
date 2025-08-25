@@ -47,15 +47,34 @@ public class HTTPClientInterceptor extends AbstractInterceptor {
 
     private static final String PROXIES_HINT = " Maybe the target is only reachable over an HTTP proxy server. Please check proxy settings in conf/proxies.xml.";
 
-    private boolean failOverOn5XX;
-    private boolean adjustHostHeader = true;
-    private HttpClientConfiguration httpClientConfig;
+    // null => inherit from HttpClientConfiguration unless explicitly set here
+    private Boolean failOverOn5XX;
+    private Boolean adjustHostHeader;
+
+    private HttpClientConfiguration httpClientConfig = new HttpClientConfiguration();
 
     private HttpClient hc;
 
     public HTTPClientInterceptor() {
         name = "http client";
         setFlow(REQUEST_FLOW);
+    }
+
+    @Override
+    public void init() {
+        super.init();
+
+        // Overwrite httpClientConfiguration with local value
+        if (failOverOn5XX != null) {
+            httpClientConfig.getRetryHandler().setFailOverOn5XX(failOverOn5XX);
+        }
+
+        if (adjustHostHeader != null) {
+            httpClientConfig.setAdjustHostHeader(adjustHostHeader);
+        }
+
+        hc = router.getHttpClientFactory().createClient(httpClientConfig);
+        hc.setStreamPumpStats(getRouter().getStatistics().getStreamPumpStats());
     }
 
     @Override
@@ -69,7 +88,7 @@ public class HTTPClientInterceptor extends AbstractInterceptor {
         changeMethod(exc);
 
         try {
-            hc.call(exc, adjustHostHeader, failOverOn5XX);
+            hc.call(exc);
             return RETURN;
         } catch (ConnectException e) {
             String msg = "Target %s is not reachable.".formatted(getDestination(exc));
@@ -165,14 +184,6 @@ public class HTTPClientInterceptor extends AbstractInterceptor {
     private String getDestination(Exchange exc) {
         return exc.getDestinations().getFirst();
     }
-
-    @Override
-    public void init() {
-        super.init();
-        hc = router.getHttpClientFactory().createClient(httpClientConfig);
-        hc.setStreamPumpStats(getRouter().getStatistics().getStreamPumpStats());
-    }
-
 
     public boolean isFailOverOn5XX() {
         return failOverOn5XX;

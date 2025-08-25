@@ -44,6 +44,7 @@ import java.util.*;
 import java.util.concurrent.*;
 
 import static com.predic8.membrane.core.Constants.*;
+import static com.predic8.membrane.core.util.DLPUtil.*;
 import static com.predic8.membrane.core.jmx.JmxExporter.*;
 import static java.util.concurrent.Executors.*;
 
@@ -144,7 +145,7 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
         bf.refresh();
         bf.start();
 
-        return bf.getBean("router",Router.class);
+        return bf.getBean("router", Router.class);
     }
 
     @SuppressWarnings("NullableProblems")
@@ -256,7 +257,7 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
 
     public void add(Proxy proxy) throws IOException {
         if (!(proxy instanceof SSLableProxy sp)) {
-            ruleManager.addProxy(proxy,RuleDefinitionSource.MANUAL);
+            ruleManager.addProxy(proxy, RuleDefinitionSource.MANUAL);
         } else {
             ruleManager.addProxyAndOpenPortIfNew(sp);
         }
@@ -265,6 +266,7 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
     public void init() throws Exception {
         initRemainingRules();
         transport.init(this);
+        displayTraceWarning();
     }
 
     private void initRemainingRules() throws Exception {
@@ -300,13 +302,13 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
         } catch (DuplicatePathException e) {
             System.err.printf("""
                     ================================================================================================
-
+                    
                     Configuration Error: Several OpenAPI Documents share the same path!
-
+                    
                     An API routes and validates requests according to the path of the OpenAPI's servers.url fields.
                     Within one API the same path should be used only by one OpenAPI. Change the paths or place
                     openapi-elements into separate api-elements.
-
+                    
                     Shared path: %s
                     %n""", e.getPath());
             System.exit(1);
@@ -331,13 +333,13 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
 
         startJmx();
 
-		synchronized (lock) {
-			running = true;
-		}
+        synchronized (lock) {
+            running = true;
+        }
 
-		ApiInfo.logInfosAboutStartedProxies(ruleManager);
+        ApiInfo.logInfosAboutStartedProxies(ruleManager);
         log.info("{} {} up and running!", PRODUCT_NAME, VERSION);
-	}
+    }
 
     private void startJmx() {
         if (getBeanFactory() != null) {

@@ -20,6 +20,7 @@ import org.junit.jupiter.api.*;
 import java.io.*;
 import java.net.*;
 
+import static com.predic8.membrane.core.Constants.*;
 import static com.predic8.membrane.core.http.Request.*;
 import static com.predic8.membrane.core.util.StringTestUtil.*;
 import static com.predic8.membrane.test.TestUtil.*;
@@ -240,10 +241,14 @@ public class RequestTest {
 		assertEquals(0,inPost.available()); // Check that all bytes are read from the stream
 	}
 
+	@Test
+	void connectUsesAuthorityForm() throws URISyntaxException {
+        assertEquals("CONNECT example.com:443 HTTP/1.1" + CRLF, connect("https://example.com:443").build().getStartLine());
+	}
+
 	private AbstractBody readMessageAndGetBody() throws IOException, EndOfStreamException {
 		reqPost.read(inPost, true);
 		assertFalse(reqPost.getBody().isRead());
         return reqPost.getBody();
 	}
-
 }
