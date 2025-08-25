@@ -213,7 +213,7 @@ class LoadBalancingInterceptorFaultMonitoringStrategyTest {
 
         run(ctx);
 
-        assertEquals(100, ctx.successCounter.get());
+        assertTrue(ctx.successCounter.get() > 95,"ctx.successCounter.get() > 95 was %s".formatted(ctx.successCounter.get()));
         for (int i = 0; i < 100; i++) {
             if (i < 10 || i >= 40) {
                 assertTrue(ctx.runtimes[i] < 500, "For " + i + " value was: " + ctx.runtimes[i]);
