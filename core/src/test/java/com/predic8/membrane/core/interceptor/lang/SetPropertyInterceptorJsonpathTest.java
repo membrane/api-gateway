@@ -35,7 +35,7 @@ public class SetPropertyInterceptorJsonpathTest extends AbstractSetPropertyInter
         interceptor.setValue("${$.countries}");
         interceptor.init(router);
         interceptor.handleRequest(exc);
-        var m = exc.getPropertyOrNull("countries", Map.class);
+        var m = exc.getProperty("countries", Map.class);
         assertEquals("Germany", m.get("de"));
         assertEquals("France", m.get("fr"));
     }

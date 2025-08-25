@@ -58,7 +58,7 @@ public class ExchangeTest {
 	void getPropertyOrNull() {
 		Exchange exc = new Exchange(null);
 		exc.setProperty("foo", "10");
-		assertEquals("10",exc.getPropertyOrNull("foo", String.class));
-        assertNull(exc.getPropertyOrNull("foo", Integer.class));
+		assertEquals("10",exc.getProperty("foo", String.class));
+        assertNull(exc.getProperty("foo", Integer.class));
 	}
 }

@@ -90,7 +90,7 @@ public class HttpClient implements AutoCloseable {
         }
 
         // Check for protocol upgrades
-        String upgradedProtocol = exc.getPropertyOrNull(UPGRADED_PROTOCOL, String.class);
+        String upgradedProtocol = exc.getProperty(UPGRADED_PROTOCOL, String.class);
         if (upgradedProtocol == null)
             return false;
 

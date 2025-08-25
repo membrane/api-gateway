@@ -227,17 +227,22 @@ public abstract class AbstractExchange {
 		status = RECEIVED;
 	}
 
+	/**
+	 * @param key Name of the property
+	 * @return Value of property or null
+	 */
 	public Object getProperty(String key) {
         return properties.get(key);
 	}
 
-	public <T> T getPropertyOrNull(String key, Class<T> clazz) {
+	/**
+	 * @param key Name of the property
+	 * @param clazz Class of property
+	 * @return Value of property or null
+	 */
+	public <T> T getProperty(String key, Class<T> clazz) {
 		Object value = properties.get(key);
 		return (clazz.isInstance(value)) ? clazz.cast(value) : null;
-	}
-
-	public String getStringProperty(String key) {
-		return (String) properties.get(key);
 	}
 
 	public void setProperty(String key, Object value) {

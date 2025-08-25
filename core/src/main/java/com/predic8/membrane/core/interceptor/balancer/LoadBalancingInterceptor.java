@@ -131,7 +131,7 @@ public class LoadBalancingInterceptor extends AbstractInterceptor {
             }
 
             if (sessionId != null) {
-                balancer.addSession2Cluster(sessionId, BalancerUtil.getSingleClusterNameOrDefault(balancer), exc.getPropertyOrNull("dispatchedNode", Node.class));
+                balancer.addSession2Cluster(sessionId, BalancerUtil.getSingleClusterNameOrDefault(balancer), exc.getProperty("dispatchedNode", Node.class));
             }
         }
 
@@ -156,7 +156,7 @@ public class LoadBalancingInterceptor extends AbstractInterceptor {
     }
 
     private void updateDispatchedNode(Exchange exc) {
-        Node n = exc.getPropertyOrNull("dispatchedNode", Node.class);
+        Node n = exc.getProperty("dispatchedNode", Node.class);
         n.removeThread();
         // exc.timeResSent will be overridden later as exc really
         // completes, but to collect the statistics we use the current time

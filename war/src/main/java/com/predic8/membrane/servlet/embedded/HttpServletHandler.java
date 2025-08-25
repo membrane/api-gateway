@@ -32,6 +32,7 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.util.Enumeration;
 
+import static com.predic8.membrane.core.exchange.Exchange.HTTP_SERVLET_REQUEST;
 import static com.predic8.membrane.core.http.Header.TRANSFER_ENCODING;
 
 class HttpServletHandler extends AbstractHttpHandler {
@@ -50,7 +51,7 @@ class HttpServletHandler extends AbstractHttpHandler {
 		localAddr = InetAddress.getByName(request.getLocalAddr());
 		exchange = new Exchange(this);
 
-		exchange.setProperty(Exchange.HTTP_SERVLET_REQUEST, request);
+		exchange.setProperty(HTTP_SERVLET_REQUEST, request);
 	}
 
 	public void run() {
@@ -176,7 +177,7 @@ class HttpServletHandler extends AbstractHttpHandler {
 	public String getContextPath(Exchange exc) {
 		if (!getTransport().isRemoveContextRoot())
 			return "";
-		return exc.getPropertyOrNull(Exchange.HTTP_SERVLET_REQUEST, HttpServletRequest.class).getContextPath();
+		return exc.getProperty(Exchange.HTTP_SERVLET_REQUEST, HttpServletRequest.class).getContextPath();
 	}
 
 }

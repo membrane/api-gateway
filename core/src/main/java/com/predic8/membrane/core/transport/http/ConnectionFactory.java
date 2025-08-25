@@ -58,7 +58,7 @@ public class ConnectionFactory {
 
         SSLProvider sslProvider = getOutboundSSLProvider(exc, target);
         Http2Client h2c = null;
-        String sniServerName = exc.getPropertyOrNull(SNI_SERVER_NAME, String.class);
+        String sniServerName = exc.getProperty(SNI_SERVER_NAME, String.class);
 
         if (con == null && config.isUseExperimentalHttp2()) {
             h2c = http2ClientPool.reserveStream(target.host(), target.port(), sslProvider, sniServerName, config.getProxy(), proxySSLContext);
@@ -102,7 +102,7 @@ public class ConnectionFactory {
     }
 
     private SSLProvider getOutboundSSLProvider(Exchange exc, HostColonPort hcp) {
-        SSLProvider sslPropObj = exc.getPropertyOrNull(SSL_CONTEXT, SSLProvider.class);
+        SSLProvider sslPropObj = exc.getProperty(SSL_CONTEXT, SSLProvider.class);
         if (sslPropObj != null)
             return sslPropObj;
         if (hcp.useSSL())

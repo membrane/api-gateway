@@ -55,7 +55,7 @@ public class FlowContext {
     }
 
     public static FlowContext fromExchange(Exchange exc) {
-        FlowContext fc = exc.getPropertyOrNull("flowContext", FlowContext.class);
+        FlowContext fc = exc.getProperty("flowContext", FlowContext.class);
         log.debug("FlowContext from exchange = {}", fc);
         return fc;
     }
