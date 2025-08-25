@@ -21,6 +21,6 @@ export MEMBRANE_HOME
 
 : "${MEMBRANE_REQUIRED_JAVA_VERSION:=21}"
 
-"$SCRIPTS_DIR/check_java.sh" || exit 1
+"$SCRIPTS_DIR/java_check.sh" || exit 1
 
 exec "$SCRIPTS_DIR/start_router.sh" "$@"
