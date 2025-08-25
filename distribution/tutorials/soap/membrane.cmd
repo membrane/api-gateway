@@ -2,8 +2,7 @@
 setlocal
 set "dir=%CD%"
 :loop
-if exist "%dir%\starter.jar" goto found
-if exist "%dir%\scripts\run-membrane.cmd" goto found
+if exist "%dir%\starter.jar" if exist "%dir%\scripts\run-membrane.cmd" goto found
 for %%A in ("%dir%\..") do set "next=%%~fA"
 if /I "%next%"=="%dir%" goto notfound
 set "dir=%next%"
