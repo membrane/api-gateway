@@ -44,6 +44,7 @@ import javax.annotation.Nullable;
 import javax.annotation.concurrent.GuardedBy;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URLEncoder;
 import java.util.List;
 import java.util.UUID;
 
@@ -54,6 +55,8 @@ import static com.predic8.membrane.core.http.MimeType.APPLICATION_X_WWW_FORM_URL
 import static com.predic8.membrane.core.interceptor.oauth2.OAuth2TokenBody.authorizationCodeBodyBuilder;
 import static com.predic8.membrane.core.interceptor.oauth2.OAuth2TokenBody.refreshTokenBodyBuilder;
 import static com.predic8.membrane.core.interceptor.oauth2client.rf.JsonUtils.isJson;
+import static java.net.URLEncoder.encode;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 public abstract class AuthorizationService {
 
@@ -74,6 +77,7 @@ public abstract class AuthorizationService {
     private SSLContext sslContext;
     private boolean useJWTForClientAuth;
     private final LogHelper logHelper = new LogHelper();
+    private ClientAuthorization clientAuthorization = ClientAuthorization.client_secret_basic;
 
     protected boolean supportsDynamicRegistration = false;
 
@@ -224,6 +228,21 @@ public abstract class AuthorizationService {
         this.useJWTForClientAuth = useJWTForClientAuth;
     }
 
+    public ClientAuthorization getClientAuthorization() {
+        return clientAuthorization;
+    }
+
+    /**
+     * @description Client Authorization method (see <a
+     * href="https://openid.net/specs/openid-connect-core-1_0.html#ClientAuthentication">OIDC
+     * Core 1.0 chapter 9</a>
+     * @default client_secret_basic
+     */
+    @MCAttribute
+    public void setClientAuthorization(ClientAuthorization clientAuthorization) {
+        this.clientAuthorization = clientAuthorization;
+    }
+
     public JWSSigner getJwtKeyCertHandler() {
         return JWSSigner;
     }
@@ -235,9 +254,17 @@ public abstract class AuthorizationService {
         }
 
         String clientSecret = getClientSecret();
-        if (clientSecret != null)
+        if (clientSecret == null) {
+            requestBuilder.body(body + "&client_id=" + encode(getClientId(), UTF_8));
+            return requestBuilder;
+        }
+        if (clientAuthorization == ClientAuthorization.client_secret_basic) {
             requestBuilder.header(AUTHORIZATION, "Basic " + new String(Base64.encodeBase64((getClientId() + ":" + clientSecret).getBytes()))).body(body);
-        else requestBuilder.body(body + "&client_id=" + getClientId());
+            return requestBuilder;
+        }
+        requestBuilder.body(body +
+                "&client_id=" + encode(getClientId(), UTF_8) +
+                "&client_secret=" + encode(clientSecret, UTF_8));
         return requestBuilder;
     }
 
@@ -308,7 +335,8 @@ public abstract class AuthorizationService {
                         .contentType(APPLICATION_X_WWW_FORM_URLENCODED)
                         .header(ACCEPT, APPLICATION_JSON)
                         .header(USER_AGENT, USERAGENT),
-                refreshTokenBodyBuilder(refreshToken).scope(wantedScope).build(), fc)
+                refreshTokenBodyBuilder(refreshToken).scope(wantedScope)
+                        .build(), fc)
                 .buildExchange())));
     }
 
@@ -319,7 +347,8 @@ public abstract class AuthorizationService {
                         .contentType(APPLICATION_X_WWW_FORM_URLENCODED)
                         .header(ACCEPT, APPLICATION_JSON)
                         .header(USER_AGENT, USERAGENT),
-                authorizationCodeBodyBuilder(code, verifier).redirectUri(redirectUri).build(), flowContext).buildExchange())));
+                authorizationCodeBodyBuilder(code, verifier).redirectUri(redirectUri)
+                        .build(), flowContext).buildExchange())));
     }
 
     private OAuth2TokenResponseBody parseTokenResponse(Response response) throws IOException {
