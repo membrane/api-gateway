@@ -19,10 +19,8 @@ import org.slf4j.*;
 
 /**
  * Writes Request and Response messages to the trace log.
- *
  * Attention: Possible data leakage!
  * Tracer may write sensitive values to the log like Authorization headers and body content.
- *
  * Keep this class at that location to keep the same package for logger configuration!
  */
 public class MessageTracer {

@@ -16,7 +16,7 @@ package com.predic8.membrane.core;
 import org.junit.platform.suite.api.*;
 
 /**
- * @TODO Fix:
+ * TODO Fix:
  * - com.predic8.membrane.core.interceptor.opentelemetry.OpenTelemetryInterceptorTest
  * - com.predic8.membrane.core.interceptor.rewrite.RewriteInterceptorIntegrationTest   // Rewrite as UnitTest with sampleSOAPService
  * Still in use?

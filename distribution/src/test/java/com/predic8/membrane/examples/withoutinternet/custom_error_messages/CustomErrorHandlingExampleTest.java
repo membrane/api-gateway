@@ -35,10 +35,11 @@ public class CustomErrorHandlingExampleTest extends AbstractSampleMembraneStartS
             .queryParam("case", "a")
             .contentType(APPLICATION_XML)
             .body("""
-                    <foo a="1" b="2" c="3" d="4" e="5" f="6" g="7" h="8" i="10" j="to much"/>""")
+                    <foo a="1" b="2" c="3" d="4" e="5" f="6" g="7" h="8" i="9" j="10" j="to much"/>""")
         .when()
             .post("http://localhost:2000/service")
         .then()
+            .log().ifValidationFails()
             .statusCode(500)
             .body(
                     containsString("<case>a</case>"),

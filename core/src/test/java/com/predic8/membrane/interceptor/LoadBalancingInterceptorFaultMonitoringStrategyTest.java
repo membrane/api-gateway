@@ -417,12 +417,8 @@ class LoadBalancingInterceptorFaultMonitoringStrategyTest {
 
     private void  standardExpectations(TestingContext ctx) {
         assertEquals(ctx.numRequests, ctx.runCounter.get());
-
-        var totalInterceptorCount = randomFailingInterceptors.stream()
-                .mapToLong(RandomlyFailingDummyWebServiceInterceptor::getCount)
-                .sum();
-
         assertEquals(ctx.numRequests, ctx.exceptionCounter.get() + ctx.successCounter.get(), "Total = success + exception counts");
+
     }
 
 
