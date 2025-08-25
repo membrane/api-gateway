@@ -22,6 +22,7 @@ import com.predic8.membrane.core.interceptor.balancer.*;
 import com.predic8.membrane.core.interceptor.balancer.faultmonitoring.*;
 import com.predic8.membrane.core.proxies.*;
 import com.predic8.membrane.core.services.*;
+import com.predic8.membrane.core.transport.http.client.*;
 import org.apache.commons.httpclient.*;
 import org.apache.commons.httpclient.methods.*;
 import org.jetbrains.annotations.*;
@@ -60,7 +61,6 @@ class LoadBalancingInterceptorFaultMonitoringStrategyTest {
 
     // The simulation nodes
     private final List<Router> nodes = new ArrayList<>();
-    private final List<RandomlyFailingDummyWebServiceInterceptor> randomFailingInterceptors = new ArrayList<>();
 
     private void setUp(TestingContext ctx) throws Exception {
         for (int i = 1; i <= ctx.numNodes; i++) {
@@ -82,14 +82,19 @@ class LoadBalancingInterceptorFaultMonitoringStrategyTest {
         balancingInterceptor.setName("Default");
         sp3.getInterceptors().add(balancingInterceptor);
         r.getRuleManager().addProxyAndOpenPortIfNew(sp3);
-        enableFailOverOn5XX(r);
-
-        r.getHttpClientConfig().getRetryHandler().setRetries(5); // Cause we simulate nodes that are down
-        r.getHttpClientConfig().getRetryHandler().setDelay(11); // Fast for tests
-        r.getHttpClientConfig().getRetryHandler().setBackoffMultiplier(2);
-
+        r.getTransport().getFirstInterceptorOfType(HTTPClientInterceptor.class).get().setHttpClientConfig(getHttpClientConfigurationWithRetries());
         r.init();
         return r;
+    }
+
+    private static @NotNull HttpClientConfiguration getHttpClientConfigurationWithRetries() {
+        HttpClientConfiguration config = new HttpClientConfiguration();
+        RetryHandler rh = config.getRetryHandler();
+        rh.setRetries(5); // Cause we simulate nodes that are down
+        rh.setDelay(1); // Fast for tests
+        rh.setBackoffMultiplier(2);
+        rh.setFailOverOn5XX(true);
+        return config;
     }
 
     private Router createRouterForNode(TestingContext ctx, int i) throws Exception {
@@ -108,26 +113,25 @@ class LoadBalancingInterceptorFaultMonitoringStrategyTest {
                 return CONTINUE;
             }
         });
-        RandomlyFailingDummyWebServiceInterceptor rfi = new RandomlyFailingDummyWebServiceInterceptor(ctx.successChance);
-        randomFailingInterceptors.add(rfi);
-        serviceProxy.getInterceptors().add(rfi);
+        serviceProxy.getInterceptors().add(new RandomlyFailingDummyWebServiceInterceptor(ctx.successChance));
         return serviceProxy;
-    }
-
-
-    private void enableFailOverOn5XX(HttpRouter balancer) {
-        List<Interceptor> l = balancer.getTransport().getInterceptors();
-        ((HTTPClientInterceptor) l.getLast()).setFailOverOn5XX(true);
     }
 
     @AfterEach
     void tearDown() {
         for (Router httpRouter : nodes) {
-            httpRouter.shutdown();
+            try {
+                httpRouter.shutdown();
+            } catch (Exception e) {
+                log.warn("Node shutdown failed.", e);
+            }
         }
-        balancer.shutdown();
+        try {
+            balancer.shutdown();
+        } catch (Exception e) {
+            log.warn("Balancer shutdown failed.", e);
+        }
     }
-
 
     /**
      * Because we set the success chance to 0, none will pass.
@@ -178,8 +182,9 @@ class LoadBalancingInterceptorFaultMonitoringStrategyTest {
 
         run(ctx);
 
-        assertTrue(ctx.successCounter.get() >= 700, "ctx.successCounter.get() is %d, less then 900".formatted(ctx.successCounter.get()));
-        assertTrue(ctx.successCounter.get() < 1000, "ctx.successCounter.get() is %d, greater then 1000".formatted(ctx.successCounter.get()));
+        assertTrue(ctx.successCounter.get() >= 900, "ctx.successCounter.get() is %d, less than 900".formatted(ctx.successCounter.get()));
+        assertTrue(ctx.exceptionCounter.get() < 100, "ctx.exceptionCounter.get() is %d, greater than 100".formatted(ctx.successCounter.get()));
+        assertTrue(ctx.successCounter.get() < 1000, "ctx.successCounter.get() is %d, greater than 1000".formatted(ctx.successCounter.get()));
     }
 
     /**
@@ -242,7 +247,9 @@ class LoadBalancingInterceptorFaultMonitoringStrategyTest {
                 .build();
 
         run(ctx);
-        assertTrue(ctx.exceptionCounter.get() < ctx.successCounter.get() / 4);
+
+        assertTrue(ctx.successCounter.get() >= 90, "ctx.successCounter.get() is %d, less than 90".formatted(ctx.successCounter.get()));
+        assertTrue(ctx.exceptionCounter.get() < 10, "ctx.exceptionCounter.get() is %d, greater than 10".formatted(ctx.successCounter.get()));
     }
 
     /**
@@ -429,7 +436,6 @@ class LoadBalancingInterceptorFaultMonitoringStrategyTest {
     private void standardExpectations(TestingContext ctx) {
         assertEquals(ctx.numRequests, ctx.runCounter.get());
         assertEquals(ctx.numRequests, ctx.exceptionCounter.get() + ctx.successCounter.get(), "Total = success + exception counts");
-
     }
 
 
