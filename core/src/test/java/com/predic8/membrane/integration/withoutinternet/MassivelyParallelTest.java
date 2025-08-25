@@ -41,7 +41,10 @@ import static org.junit.jupiter.api.Assertions.*;
  * are responded to with 200 OK and their request.uri as body. Back on the client, the response body is asserted to be
  * the request path.
  */
-public class MassivelyParallelTest {
+class MassivelyParallelTest {
+
+    // Should not be to high to keep tests stable
+    private static int CONCURRENT_THREADS = 500;
 
     static HttpClient client;
     static HttpRouter server;
@@ -51,8 +54,8 @@ public class MassivelyParallelTest {
         client = new HttpClient();
 
         server = new HttpRouter();
-        server.getTransport().setConcurrentConnectionLimitPerIp(1000);
-        server.getTransport().setBacklog(1000);
+        server.getTransport().setConcurrentConnectionLimitPerIp(CONCURRENT_THREADS);
+        server.getTransport().setBacklog(CONCURRENT_THREADS);
         server.getTransport().setSocketTimeout(10000);
         server.setHotDeploy(false);
         server.getRuleManager().addProxy(createServiceProxy(), MANUAL);
@@ -88,8 +91,8 @@ public class MassivelyParallelTest {
     @Timeout(30) // seconds
     public void run() throws Exception {
         Set<String> paths = newKeySet();
-        runInParallel((cdl) -> parallelTestWorker(cdl, paths), 1000);
-        assertEquals(1000, paths.size());
+        runInParallel((cdl) -> parallelTestWorker(cdl, paths), CONCURRENT_THREADS);
+        assertEquals(CONCURRENT_THREADS, paths.size());
     }
 
     private void runInParallel(Consumer<CountDownLatch> job, int threadCount) {

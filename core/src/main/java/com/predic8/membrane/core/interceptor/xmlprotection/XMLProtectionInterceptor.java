@@ -61,7 +61,7 @@ public class XMLProtectionInterceptor extends AbstractInterceptor {
 
     private Outcome handleInternal(Exchange exc) throws Exception {
 
-        log.debug("Inspecting XML of content type: {}",exc.getRequest().getHeader().getContentType());
+        log.debug("Inspecting XML of content type: {}", exc.getRequest().getHeader().getContentType());
 
         if (exc.getRequest().isBodyEmpty()) {
             log.info("body is empty -> request is not scanned");
@@ -93,14 +93,19 @@ public class XMLProtectionInterceptor extends AbstractInterceptor {
     }
 
     private boolean protectXML(Exchange exc) throws Exception {
-        ByteArrayOutputStream stream = new ByteArrayOutputStream();
-        XMLProtector protector = new XMLProtector(new OutputStreamWriter(stream, exc.getRequest().getCharsetOrDefault()),
-                removeDTD, maxElementNameLength, maxAttributeCount);
+        var charset = exc.getRequest().getCharsetOrDefault();
 
-        if (!protector.protect(new InputStreamReader(exc.getRequest().getBodyAsStreamDecoded(), exc.getRequest().getCharsetOrDefault())))
-            return false;
-        exc.getRequest().setBodyContent(stream.toByteArray()); // Allow the removal of DTDs
-        return true;
+        // msg.getBodyAsStreamDecoded() delivers an InputStream from bytes (Chunks) -> close should not be an issue
+        try (ByteArrayOutputStream stream = new ByteArrayOutputStream();
+             OutputStreamWriter out = new OutputStreamWriter(stream, charset);
+             InputStreamReader in = new InputStreamReader(exc.getRequest().getBodyAsStreamDecoded(), charset)) {
+            XMLProtector protector = new XMLProtector(out, removeDTD, maxElementNameLength, maxAttributeCount);
+            if (!protector.protect(in))
+                return false;
+            out.flush(); // ensure all bytes are written before reading
+            exc.getRequest().setBodyContent(stream.toByteArray()); // Allow the removal of DTDs
+            return true;
+        }
     }
 
     /**

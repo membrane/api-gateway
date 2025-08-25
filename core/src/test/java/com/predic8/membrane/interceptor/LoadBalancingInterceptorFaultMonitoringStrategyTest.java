@@ -382,7 +382,7 @@ class LoadBalancingInterceptorFaultMonitoringStrategyTest {
 
         long totalTimeSpent = overallTime.elapsed(MILLISECONDS);
 
-        log.info("Total time spent: {} ms, longest run was {} ms",totalTimeSpent,ctx.getSlowestRuntime());
+        log.info("Total time spent: {} ms, longest run was {} ms", totalTimeSpent, ctx.getSlowestRuntime());
         standardExpectations(ctx);
     }
 
@@ -395,18 +395,23 @@ class LoadBalancingInterceptorFaultMonitoringStrategyTest {
             ctx.tpe.submit(() -> {
                 Stopwatch taskTime = Stopwatch.createStarted();
                 try {
-                    final HttpClient client = new HttpClient();
-                    client.getParams().setParameter(PROTOCOL_VERSION, HTTP_1_1);
-                    var statusCode = client.executeMethod(getPostMethod());
-                    if (statusCode == 200) {
-                        ctx.successCounter.incrementAndGet();
-                    } else {
-                        System.out.println("Status code: " + statusCode);
-                        ctx.exceptionCounter.incrementAndGet();
+                    final HttpClient client = getHttpClient();
+                    var method = getPostMethod();
+                    try {
+                        int statusCode = client.executeMethod(method);
+                        if (statusCode == 200) {
+                            ctx.successCounter.incrementAndGet();
+                        } else {
+                            log.warn("Non-200 status code: {}", statusCode);
+                            ctx.exceptionCounter.incrementAndGet();
+                        }
+                    } finally {
+                        method.releaseConnection();
                     }
+
                 } catch (Exception e) {
                     ctx.exceptionCounter.incrementAndGet();
-                    log.error("Error",e);
+                    log.error("Error", e);
                 }
                 ctx.runCounter.incrementAndGet();
                 ctx.runtimes[runNumber] = taskTime.elapsed(MILLISECONDS);
@@ -414,8 +419,14 @@ class LoadBalancingInterceptorFaultMonitoringStrategyTest {
         }
     }
 
+    private static @NotNull HttpClient getHttpClient() {
+        final HttpClient client = new HttpClient();
+        client.getParams().setParameter(PROTOCOL_VERSION, HTTP_1_1);
+        return client;
+    }
 
-    private void  standardExpectations(TestingContext ctx) {
+
+    private void standardExpectations(TestingContext ctx) {
         assertEquals(ctx.numRequests, ctx.runCounter.get());
         assertEquals(ctx.numRequests, ctx.exceptionCounter.get() + ctx.successCounter.get(), "Total = success + exception counts");
 

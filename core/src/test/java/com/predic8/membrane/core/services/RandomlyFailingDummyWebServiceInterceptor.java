@@ -22,7 +22,8 @@ import java.util.concurrent.atomic.*;
 
 import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.http.Response.*;
-import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
+import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static java.nio.charset.StandardCharsets.*;
 
 /**
  * Like the {@link DummyWebServiceInterceptor}, and each call has a chance to fail with a 5xx code.
@@ -57,7 +58,7 @@ public class RandomlyFailingDummyWebServiceInterceptor extends AbstractIntercept
         if (random >= successChance) {
             exc.setResponse(internalServerError("Random failure").build());
         } else {
-            exc.setResponse(ok().contentType(TEXT_HTML).body("<aaa></aaa>".getBytes()).build());
+            exc.setResponse(ok().contentType(TEXT_HTML).body("<aaa></aaa>".getBytes(UTF_8)).build());
         }
 
 		return RETURN;
