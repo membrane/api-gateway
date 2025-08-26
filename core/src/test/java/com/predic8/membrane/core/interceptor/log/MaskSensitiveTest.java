@@ -20,7 +20,6 @@ class MaskSensitiveTest {
 
         header.setValue(AUTHORIZATION, authVal);
         header.setValue(COOKIE, cookieVal);
-        header.setValue(COOKIE, "bar=baz");
         header.setValue("X-Api-Key", apiKeyVal);
         header.setValue(CONTENT_TYPE, contentTypeVal);
 
