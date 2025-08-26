@@ -25,15 +25,16 @@ import org.apache.http.client.methods.*;
 import org.apache.http.impl.client.*;
 import org.junit.jupiter.api.*;
 
-import static com.predic8.membrane.core.http.Request.get;
+import java.net.*;
+
 import static org.junit.jupiter.api.Assertions.*;
 
-public class IllegalCharactersInURLTest {
+class IllegalCharactersInURLTest {
 
     private HttpRouter r;
 
     @BeforeEach
-    public void init() throws Exception {
+    void init() throws Exception {
         r = new HttpRouter();
         r.setHotDeploy(false);
         r.add(new ServiceProxy(new ServiceProxyKey(3027), "localhost", 3028));
@@ -51,7 +52,7 @@ public class IllegalCharactersInURLTest {
     }
 
     @AfterEach
-    public void unInit() {
+    void unInit() {
         r.shutdown();
     }
 
@@ -79,9 +80,13 @@ public class IllegalCharactersInURLTest {
 
     private static void makeCallWithIllegalCharacters(int expectedStatusCode) throws Exception {
         try (HttpClient httpClient = new HttpClient()) {
-            assertEquals(expectedStatusCode, httpClient.call(
-                    get("/dummy").url(new URIFactory(true),"http://localhost:3027/foo{}").buildExchange())
+            assertEquals(expectedStatusCode, httpClient.call(buildExchange())
                     .getResponse().getStatusCode());
         }
+    }
+
+    private static Exchange buildExchange() throws URISyntaxException {
+        return new Request.Builder().get(new URIFactory(true),
+                "http://localhost:3027/foo{}").buildExchange();
     }
 }

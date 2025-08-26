@@ -103,7 +103,7 @@ class DispatchingInterceptorTest {
 		serviceProxy.getTarget().setUrl("https://api.predic8.de/");
 		exc.setProxy(serviceProxy);
 		addRequest("/foo");
-		assertEquals("https://api.predic8.de/", getGetAddressFromTargetElement());
+		assertEquals("https://api.predic8.de/foo", getGetAddressFromTargetElement());
 	}
 
 	@Test

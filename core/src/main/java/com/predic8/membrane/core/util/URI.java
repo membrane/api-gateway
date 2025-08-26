@@ -187,7 +187,11 @@ public class URI {
         return query;
     }
 
-    public String getPathQueryAndFragment() {
+    /**
+     * Fragments are client side only and should not be propagated to the backend.
+     * @return
+     */
+    public String getPathWithQuery() {
         StringBuilder r = new StringBuilder(100);
 
         if (getRawPath() != null && !getRawPath().isBlank()) {
@@ -200,12 +204,6 @@ public class URI {
         if (getRawQuery() != null && !getRawQuery().isBlank()) {
             r.append("?").append(getRawQuery());
         }
-
-        // Add fragment if present
-        if (getRawFragment() != null && !getRawFragment().isBlank()) {
-            r.append("#").append(getRawFragment());
-        }
-
         return r.toString();
     }
 

@@ -55,7 +55,7 @@ public class DispatchingInterceptor extends AbstractInterceptor {
             try {
                 exc.getDestinations().add(getForwardingDestination(exc));
             } catch (Exception e) {
-                internal(router.isProduction(),getDisplayName())
+                internal(router.isProduction(), getDisplayName())
                         .detail("Could not get forwarding destination to dispatch request")
                         .exception(e)
                         .buildAndSetResponse(exc);
@@ -80,7 +80,7 @@ public class DispatchingInterceptor extends AbstractInterceptor {
     }
 
     private String getForwardingDestination(Exchange exc) throws Exception {
-        String urlResult = getAddressFromTargetElement( exc);
+        String urlResult = getAddressFromTargetElement(exc);
         log.debug("destination: {}", urlResult);
         return urlResult != null ? urlResult : exc.getRequest().getUri();
     }
@@ -90,9 +90,13 @@ public class DispatchingInterceptor extends AbstractInterceptor {
 
         if (p.getTargetURL() != null) {
             String targetURL = p.getTarget().compileUrl(exc, REQUEST);
-
-            if (targetURL.startsWith("http") && !UriUtil.getPathFromURL(router.getUriFactory(), targetURL).contains("/")) {
-                return targetURL + getUri(exc);
+            if (targetURL.startsWith("http")) {
+                String basePath = UriUtil.getPathFromURL(router.getUriFactory(), targetURL);
+                if (basePath.isEmpty() || "/".equals(basePath)) {
+                    URL base = new URL(targetURL);
+                    // Resolve and normalize slashes consistently with the branch below.
+                    return new URL(base, getUri(exc)).toString();
+                }
             }
             return targetURL;
         }
@@ -108,7 +112,7 @@ public class DispatchingInterceptor extends AbstractInterceptor {
         if (exc.getRequest().isCONNECTRequest()) {
             return exc.getRequest().getUri();
         }
-        return router.getUriFactory().create(exc.getRequest().getUri()).getPathQueryAndFragment();
+        return router.getUriFactory().create(exc.getRequest().getUri()).getPathWithQuery();
     }
 
     @Override
