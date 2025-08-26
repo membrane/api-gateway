@@ -136,7 +136,7 @@ class URITest {
 				assertEquals(u1.getPath(), u2.getPath());
 				assertEquals(u1.getQuery(), u2.getQuery());
 				assertEquals(u1.getRawQuery(), u2.getRawQuery());
-				assertEquals(u1.getFragment(), u2.getFragment());
+				assertEquals(u1.getRawFragment(), u2.getRawFragment());
 			}
 			assertEquals(u1.toString(), u2.toString());
 		} catch (URISyntaxException e) {

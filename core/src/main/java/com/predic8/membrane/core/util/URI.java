@@ -138,6 +138,12 @@ public class URI {
         return queryDecoded;
     }
 
+    public String getRawFragment() {
+        if (uri != null)
+            return uri.getRawFragment();
+        return fragment;
+    }
+
     /**
      * Returns the fragment (the part after '#'), decoded like {@link #getPath()} and {@link #getQuery()}.
      */
@@ -148,6 +154,7 @@ public class URI {
             fragmentDecoded = decode(fragment);
         return fragmentDecoded;
     }
+
 
     /*
      * Returns the authority component of this URI.
