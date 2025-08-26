@@ -70,7 +70,6 @@ public class RiskReport {
         if (!fieldsOutput.isEmpty()) {
             sb.append(" | Fields: ").append(String.join(", ", fieldsOutput));
         }
-
         return sb.toString();
     }
 
