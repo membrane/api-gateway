@@ -56,8 +56,7 @@ paths:
 
 **Token Server**:
 
-(Instead of using Membrane API Gateway as token server, you could also integrate with your Keycloak or Entra ID, for example. To avoid additional setup effort for the demo, we tokens issued by Membrane itself.)
-
+(Instead of using Membrane API Gateway as the token server, you can also integrate with Keycloak or Microsoft Entra ID. To avoid extra setup for this demo, we use tokens issued by Membrane itself.)
 ```xml
 <!-- Token Server -->
 <api port="2000" name="Token Server">
