@@ -19,7 +19,12 @@ import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.transport.http.client.HttpClientConfiguration;
 import org.joda.time.Duration;
 
+import java.util.Arrays;
+import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
+
+import static com.predic8.membrane.core.transport.ssl.acme.Challenge.TYPE_HTTP_01;
 
 /**
  * @description
@@ -52,6 +57,7 @@ public class Acme {
     AcmeValidation validationMethod;
     String renewal = "1/3";
     int retry = 10000;
+    List<String> challengeTypes;
 
     @Override
     public boolean equals(Object o) {
@@ -67,7 +73,8 @@ public class Acme {
                 && Objects.equals(acmeSynchronizedStorage, acme.acmeSynchronizedStorage)
                 && Objects.equals(hosts, acme.hosts)
                 && Objects.equals(validationMethod, acme.validationMethod)
-                && Objects.equals(renewal, acme.renewal);
+                && Objects.equals(renewal, acme.renewal)
+                && Objects.equals(challengeTypes, acme.challengeTypes);
     }
 
     @Override
@@ -81,7 +88,8 @@ public class Acme {
                 experimental,
                 hosts,
                 validationMethod,
-                renewal);
+                renewal,
+                challengeTypes);
     }
 
     public String getDirectoryUrl() {
@@ -204,5 +212,27 @@ public class Acme {
     @MCChildElement(order=20)
     public void setValidationMethod(AcmeValidation validationMethod) {
         this.validationMethod = validationMethod;
+    }
+
+    public List<String> getChallengeTypes() {
+        return challengeTypes;
+    }
+
+    /**
+     * @description Comma-separated list of preferred ACME challenge types. Supported types: "http-01", "dns-01", "tls-alpn-01".
+     * The client will try them in the order specified.
+     * @default http-01
+     * @example "tls-alpn-01,http-01"
+     */
+    @MCAttribute
+    public void setChallengeTypes(String challengeTypes) {
+        if (challengeTypes == null || challengeTypes.trim().isEmpty()) {
+            this.challengeTypes = List.of(TYPE_HTTP_01);
+        } else {
+            this.challengeTypes = Arrays.stream(challengeTypes.split(","))
+                    .map(String::trim)
+                    .filter(s -> !s.isEmpty())
+                    .collect(Collectors.toList());
+        }
     }
 }
