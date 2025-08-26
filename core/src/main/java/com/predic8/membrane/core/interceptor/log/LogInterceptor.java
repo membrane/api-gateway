@@ -28,7 +28,7 @@ import java.io.IOException;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 import static com.predic8.membrane.core.interceptor.log.LogInterceptor.Level.INFO;
-import static com.predic8.membrane.core.interceptor.log.MaskSensitive.mask;
+import static com.predic8.membrane.core.interceptor.log.SensitiveDataFilter.mask;
 import static org.slf4j.LoggerFactory.getLogger;
 
 /**
