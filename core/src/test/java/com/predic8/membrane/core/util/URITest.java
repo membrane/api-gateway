@@ -19,7 +19,6 @@ import org.junit.jupiter.api.*;
 import java.net.*;
 
 import static org.junit.jupiter.api.Assertions.*;
-
 public class URITest {
 
 	@Test
@@ -224,4 +223,13 @@ public class URITest {
             assertEquals("[2001:db8::1]:8080", new URI("http://[2001:db8::1]:8080/foo", false).getAuthority());
         }
     }
+	@Test
+	void getPathFragmentAndQuery() throws URISyntaxException {
+		assertEquals("", new URIFactory().create("").getPathFragmentAndQuery());
+		assertEquals("/foo", new URIFactory().create("http://localhost/foo").getPathFragmentAndQuery());
+		assertEquals("/foo#frag", new URIFactory().create("http://localhost:777/foo#frag").getPathFragmentAndQuery());
+		assertEquals("/foo?q=1", new URIFactory().create("/foo?q=1").getPathFragmentAndQuery());
+		assertEquals("#frag", new URIFactory().create("#frag").getPathFragmentAndQuery());
+		assertEquals("/foo#frag?q=1", new URIFactory().create("/foo#frag?q=1").getPathFragmentAndQuery());
+	}
 }

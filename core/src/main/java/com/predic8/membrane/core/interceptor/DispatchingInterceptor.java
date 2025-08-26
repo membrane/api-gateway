@@ -14,18 +14,20 @@
 package com.predic8.membrane.core.interceptor;
 
 import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.openapi.util.*;
 import com.predic8.membrane.core.proxies.*;
+import com.predic8.membrane.core.util.*;
 import org.slf4j.*;
 
 import java.net.*;
 import java.util.*;
 
+import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
 import static com.predic8.membrane.core.exchange.Exchange.*;
-import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
-import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.REQUEST_FLOW;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.*;
+import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 
 /**
@@ -43,6 +45,8 @@ public class DispatchingInterceptor extends AbstractInterceptor {
 
     private static final Logger log = LoggerFactory.getLogger(DispatchingInterceptor.class.getName());
 
+    private URIFactory uriFactory = new URIFactory(true);
+
     public DispatchingInterceptor() {
         name = "dispatching interceptor";
     }
@@ -54,7 +58,7 @@ public class DispatchingInterceptor extends AbstractInterceptor {
             try {
                 exc.getDestinations().add(getForwardingDestination(exc));
             } catch (Exception e) {
-                ProblemDetails.internal(router.isProduction(),getDisplayName())
+                internal(router.isProduction(),getDisplayName())
                         .detail("Could not get forwarding destination to dispatch request")
                         .exception(e)
                         .buildAndSetResponse(exc);
@@ -91,16 +95,23 @@ public class DispatchingInterceptor extends AbstractInterceptor {
             String targetURL = p.getTarget().compileUrl(exc, REQUEST);
 
             if (targetURL.startsWith("http") && !UriUtil.getPathFromURL(router.getUriFactory(), targetURL).contains("/")) {
-                return targetURL + exc.getRequestURI();
+                return targetURL + getUri(exc);
             }
             return targetURL;
         }
         if (p.getTargetHost() != null) {
-            return new URL(p.getTargetScheme(), p.getTargetHost(), p.getTargetPort(), exc.getRequestURI()).toString();
+            return new URL(p.getTargetScheme(), p.getTargetHost(), p.getTargetPort(), getUri(exc)).toString();
         }
 
         // That's fine. Maybe it is a <soapProxy> without a target
         return null;
+    }
+
+    private String getUri(Exchange exc) throws URISyntaxException {
+        if (exc.getRequest().isCONNECTRequest()) {
+            return exc.getRequest().getUri();
+        }
+        return uriFactory.create(exc.getRequest().getUri()).getPathFragmentAndQuery();
     }
 
     @Override

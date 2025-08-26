@@ -180,6 +180,22 @@ public class URI {
         return query;
     }
 
+    public String getPathFragmentAndQuery() {
+        StringBuilder r = new StringBuilder(getRawPath());
+
+        // Add query if present
+        if (getRawQuery() != null) {
+            r.append("?").append(uri.getRawQuery());
+        }
+
+        // Add fragment if present
+        if (getFragment() != null) {
+            r.append("#").append(uri.getRawFragment());
+        }
+
+        return r.toString();
+    }
+
     @Override
     public String toString() {
         if (uri != null)
