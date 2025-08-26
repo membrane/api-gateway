@@ -234,4 +234,12 @@ class URITest {
 
 		assertEquals("/", new URIFactory().create("http://localhost").getPathQueryAndFragment());
 	}
+
+	@Test
+	void getPathQueryAndFragment_keep_raw() throws URISyntaxException {
+		assertEquals("/foo?q=a%20b", new URIFactory().create("/foo?q=a%20b").getPathQueryAndFragment());
+		assertEquals("/#a%20b", new URIFactory().create("#a%20b").getPathQueryAndFragment());
+		assertEquals("/foo?q=a+b", new URIFactory().create("/foo?q=a+b").getPathQueryAndFragment()); // '+' must remain '+'
+		assertEquals("/foo#c%2Fd", new URIFactory().create("/foo#c%2Fd").getPathQueryAndFragment());  // '/' in fragment is encoded
+	}
 }

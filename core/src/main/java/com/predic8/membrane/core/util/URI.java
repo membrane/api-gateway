@@ -149,7 +149,7 @@ public class URI {
      */
     public String getFragment() {
         if (uri != null)
-            return uri.getRawFragment();
+            return uri.getFragment();
         if (fragmentDecoded == null)
             fragmentDecoded = decode(fragment);
         return fragmentDecoded;
@@ -190,20 +190,20 @@ public class URI {
     public String getPathQueryAndFragment() {
         StringBuilder r = new StringBuilder(100);
 
-        if (getPath() != null && !getPath().isBlank()) {
+        if (getRawPath() != null && !getRawPath().isBlank()) {
             r.append(getRawPath());
         } else {
             r.append("/");
         }
 
         // Add query if present
-        if (getQuery() != null && !getQuery().isBlank()) {
+        if (getRawQuery() != null && !getRawQuery().isBlank()) {
             r.append("?").append(getRawQuery());
         }
 
         // Add fragment if present
-        if (getFragment() != null && !getFragment().isBlank()) {
-            r.append("#").append(getFragment());
+        if (getRawFragment() != null && !getRawFragment().isBlank()) {
+            r.append("#").append(getRawFragment());
         }
 
         return r.toString();
