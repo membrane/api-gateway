@@ -1,10 +1,10 @@
 # OpenAPI + JWT Auth with Scope Enforcement
 
-This example demonstrates how to secure an API using JWT authentication with scope validation.
+This example demonstrates how to secure an (Open)API using JWT authentication with scope validation. We use OpenAPI's JWT securityScheme to describe the authorization requirements (=required scopes). Membrane API Gateway is configured to automatically enforce the requirements specified in the OpenAPI document.
 
-## Features
+## Features in this Example
 
-1. **Issue JWT tokens** via a local token server.
+1. **Issue JWT tokens** via a local token server. (This could also be done with Keycloak or Entra ID, for example.)
 2. Use an **OpenAPI specification** with scope definitions.
 3. **Automatic scope enforcement** by Membrane (`validateSecurity="yes"`).
 
@@ -56,6 +56,7 @@ paths:
 
 **Token Server**:
 
+(Instead of using Membrane API Gateway as the token server, you can also integrate with Keycloak or Microsoft Entra ID. To avoid extra setup for this demo, we use tokens issued by Membrane itself.)
 ```xml
 <!-- Token Server -->
 <api port="2000" name="Token Server">
