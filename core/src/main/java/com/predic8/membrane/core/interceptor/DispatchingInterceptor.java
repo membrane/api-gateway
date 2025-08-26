@@ -17,7 +17,6 @@ import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.openapi.util.*;
 import com.predic8.membrane.core.proxies.*;
-import com.predic8.membrane.core.util.*;
 import org.slf4j.*;
 
 import java.net.*;
@@ -44,8 +43,6 @@ import static com.predic8.membrane.core.interceptor.Outcome.*;
 public class DispatchingInterceptor extends AbstractInterceptor {
 
     private static final Logger log = LoggerFactory.getLogger(DispatchingInterceptor.class.getName());
-
-    private final URIFactory uriFactory = new URIFactory(true);
 
     public DispatchingInterceptor() {
         name = "dispatching interceptor";
@@ -111,7 +108,7 @@ public class DispatchingInterceptor extends AbstractInterceptor {
         if (exc.getRequest().isCONNECTRequest()) {
             return exc.getRequest().getUri();
         }
-        return uriFactory.create(exc.getRequest().getUri()).getPathQueryAndFragment();
+        return router.getUriFactory().create(exc.getRequest().getUri()).getPathQueryAndFragment();
     }
 
     @Override
