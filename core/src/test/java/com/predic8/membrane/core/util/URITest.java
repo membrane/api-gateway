@@ -19,7 +19,7 @@ import org.junit.jupiter.api.*;
 import java.net.*;
 
 import static org.junit.jupiter.api.Assertions.*;
-public class URITest {
+class URITest {
 
 	@Test
 	public void doit() {
@@ -224,12 +224,14 @@ public class URITest {
         }
     }
 	@Test
-	void getPathFragmentAndQuery() throws URISyntaxException {
-		assertEquals("", new URIFactory().create("").getPathFragmentAndQuery());
-		assertEquals("/foo", new URIFactory().create("http://localhost/foo").getPathFragmentAndQuery());
-		assertEquals("/foo#frag", new URIFactory().create("http://localhost:777/foo#frag").getPathFragmentAndQuery());
-		assertEquals("/foo?q=1", new URIFactory().create("/foo?q=1").getPathFragmentAndQuery());
-		assertEquals("#frag", new URIFactory().create("#frag").getPathFragmentAndQuery());
-		assertEquals("/foo#frag?q=1", new URIFactory().create("/foo#frag?q=1").getPathFragmentAndQuery());
+	void getPathQueryAndFragment() throws URISyntaxException {
+		assertEquals("/", new URIFactory().create("").getPathQueryAndFragment());
+		assertEquals("/foo", new URIFactory().create("http://localhost/foo").getPathQueryAndFragment());
+		assertEquals("/foo#frag", new URIFactory().create("http://localhost:777/foo#frag").getPathQueryAndFragment());
+		assertEquals("/foo?q=1", new URIFactory().create("/foo?q=1").getPathQueryAndFragment());
+		assertEquals("/#frag", new URIFactory().create("#frag").getPathQueryAndFragment());
+		assertEquals("/foo?q=1#frag", new URIFactory().create("/foo?q=1#frag").getPathQueryAndFragment());
+
+		assertEquals("/", new URIFactory().create("http://localhost").getPathQueryAndFragment());
 	}
 }

@@ -45,7 +45,7 @@ public class DispatchingInterceptor extends AbstractInterceptor {
 
     private static final Logger log = LoggerFactory.getLogger(DispatchingInterceptor.class.getName());
 
-    private URIFactory uriFactory = new URIFactory(true);
+    private final URIFactory uriFactory = new URIFactory(true);
 
     public DispatchingInterceptor() {
         name = "dispatching interceptor";
@@ -111,7 +111,7 @@ public class DispatchingInterceptor extends AbstractInterceptor {
         if (exc.getRequest().isCONNECTRequest()) {
             return exc.getRequest().getUri();
         }
-        return uriFactory.create(exc.getRequest().getUri()).getPathFragmentAndQuery();
+        return uriFactory.create(exc.getRequest().getUri()).getPathQueryAndFragment();
     }
 
     @Override

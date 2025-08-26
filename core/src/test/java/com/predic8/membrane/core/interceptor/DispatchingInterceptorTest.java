@@ -136,7 +136,6 @@ class DispatchingInterceptorTest {
 
 	@Nullable
 	private String getGetAddressFromTargetElement() throws Exception {
-		dispatcher.init(new Router());
 		return dispatcher.getAddressFromTargetElement( exc);
 	}
 
