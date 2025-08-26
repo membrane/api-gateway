@@ -25,7 +25,7 @@ import static com.predic8.membrane.core.http.Request.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static org.junit.jupiter.api.Assertions.*;
 
-public class DispatchingInterceptorTest {
+class DispatchingInterceptorTest {
 
 	private DispatchingInterceptor dispatcher;
 	private ServiceProxy serviceProxy;
@@ -33,7 +33,7 @@ public class DispatchingInterceptorTest {
 	private Exchange exc;
 
 	@BeforeEach
-	public void setUp() {
+	void setUp() {
 		Router router = new Router();
 		dispatcher = new DispatchingInterceptor();
 		dispatcher.init(router);
@@ -42,9 +42,9 @@ public class DispatchingInterceptorTest {
 	}
 
 	@Test
-	public void testServiceProxy() throws Exception {
-		exc.setRequest(get("/axis2/services/BLZService?wsdl").build());
+	void testServiceProxy() throws Exception {
 		exc.setProxy(serviceProxy);
+		addRequest("/axis2/services/BLZService?wsdl");
 
 		assertEquals(CONTINUE, dispatcher.handleRequest(exc));
 
@@ -55,7 +55,7 @@ public class DispatchingInterceptorTest {
 	}
 
 	@Test
-	public void testProxyRuleHttp() throws Exception {
+	void proxyRuleHttp() throws Exception {
 		exc.setRequest(get("/dummy").build());
 		exc.getRequest().setUri("http://www.thomas-bayer.com:80/axis2/services/BLZService?wsdl");
 		exc.setProxy(getProxyRule());
@@ -76,15 +76,17 @@ public class DispatchingInterceptorTest {
     @Test
     void getAddressFromTargetElementTargetWithHostAndPort() throws Exception {
 		exc.setProxy(serviceProxy);
-		exc.setRequest(get("/foo").build());
+		addRequest("/foo");
 		assertEquals("http://thomas-bayer.com:80/foo", getGetAddressFromTargetElement());
     }
 
 	@Test
 	void getAddressFromTargetElementTargetWithURL() throws Exception {
 		serviceProxy.getTarget().setUrl("http://api.predic8.de");
+		serviceProxy.getTarget().setHost(null);
+		serviceProxy.getTarget().setPort(-1);
 		exc.setProxy(serviceProxy);
-		exc.setOriginalRequestUri("/foo");
+		addRequest("/foo");
 		assertEquals("http://api.predic8.de/foo", getGetAddressFromTargetElement());
 	}
 
@@ -92,7 +94,7 @@ public class DispatchingInterceptorTest {
 	void getAddressFromTargetElementTargetWithURLHTTPS() throws Exception {
 		serviceProxy.getTarget().setUrl("https://api.predic8.de");
 		exc.setProxy(serviceProxy);
-		exc.setOriginalRequestUri("/foo");
+		addRequest("/foo");
 		assertEquals("https://api.predic8.de/foo", getGetAddressFromTargetElement());
 	}
 
@@ -100,22 +102,44 @@ public class DispatchingInterceptorTest {
 	void getAddressFromTargetElementTargetWithSlash() throws Exception {
 		serviceProxy.getTarget().setUrl("https://api.predic8.de/");
 		exc.setProxy(serviceProxy);
-		exc.setOriginalRequestUri("/foo");
-		assertEquals("https://api.predic8.de/", getGetAddressFromTargetElement());
+		addRequest("/foo");
+		assertEquals("https://api.predic8.de/foo", getGetAddressFromTargetElement());
 	}
 
 	@Test
 	void getAddressFromTargetElementTargetWithPath() throws Exception {
 		serviceProxy.getTarget().setUrl("https://api.predic8.de/baz");
 		exc.setProxy(serviceProxy);
-		exc.setOriginalRequestUri("/foo");
+		addRequest("/foo");
 		assertEquals("https://api.predic8.de/baz", getGetAddressFromTargetElement());
+	}
+
+	@Test
+	@DisplayName("getAddressFromTargetElement HostAndPort AbsoluteURL")
+	void getAddressFromTargetElementTarget_hostAndPort_absoluteURL() throws Exception {
+		exc.setProxy(serviceProxy);
+		addRequest("https://localhost:8888/foo");
+		assertEquals("http://thomas-bayer.com:80/foo", getGetAddressFromTargetElement());
+	}
+
+	@Test
+	@DisplayName("getAddressFromTargetElement URL AbsoluteURL")
+	void getAddressFromTargetElementWith_URL_absoluteURL() throws Exception {
+		serviceProxy.getTarget().setUrl("http://api.predic8.de");
+		serviceProxy.getTarget().setHost(null);
+		serviceProxy.getTarget().setPort(-1);
+		exc.setProxy(serviceProxy);
+		exc.setRequest(get("https://localhost:8888/foo").build());
+		exc.setOriginalRequestUri("https://localhost:8888/foo");
+		assertEquals("http://api.predic8.de/foo", getGetAddressFromTargetElement());
 	}
 
 	@Nullable
 	private String getGetAddressFromTargetElement() throws Exception {
-		DispatchingInterceptor di = new DispatchingInterceptor();
-		di.init(new Router());
-		return di.getAddressFromTargetElement( exc);
+		return dispatcher.getAddressFromTargetElement( exc);
+	}
+
+	private void addRequest(String uri) throws Exception {
+		exc.setRequest(get(uri).build());
 	}
 }
