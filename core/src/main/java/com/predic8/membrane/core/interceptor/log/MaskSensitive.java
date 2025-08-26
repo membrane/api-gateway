@@ -37,9 +37,6 @@ public class MaskSensitive {
             if (SENSITIVE_HEADER_NAMES.contains(headerField.getHeaderName().toString().toLowerCase(Locale.ROOT))) {
                 headerField.setValue("*".repeat(headerField.getValue().length()));
             }
-            else {
-                headerField.setValue(headerField.getValue());
-            }
         }
         return masked;
     }
