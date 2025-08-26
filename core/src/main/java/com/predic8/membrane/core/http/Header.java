@@ -557,7 +557,7 @@ public class Header {
 		return false;
 	}
 
-	private int getBrowserVersion(String userAgent, String browserID) {
+	int getBrowserVersion(String userAgent, String browserID) {
 		int p = userAgent.indexOf(browserID);
 		p += browserID.length();
 		if (p >= userAgent.length())
