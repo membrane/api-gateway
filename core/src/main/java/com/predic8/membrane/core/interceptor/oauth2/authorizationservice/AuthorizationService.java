@@ -20,6 +20,7 @@ import com.predic8.membrane.core.config.security.SSLParser;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.http.Response;
+import com.predic8.membrane.core.interceptor.oauth2.OAuth2TokenBody;
 import com.predic8.membrane.core.interceptor.oauth2.tokengenerators.JwtGenerator;
 import com.predic8.membrane.core.interceptor.oauth2client.rf.LogHelper;
 import com.predic8.membrane.core.interceptor.oauth2client.rf.OAuth2TokenResponseBody;
@@ -57,6 +58,7 @@ import static com.predic8.membrane.core.interceptor.oauth2.OAuth2TokenBody.refre
 import static com.predic8.membrane.core.interceptor.oauth2client.rf.JsonUtils.isJson;
 import static java.net.URLEncoder.encode;
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.apache.commons.codec.binary.Base64.encodeBase64;
 
 public abstract class AuthorizationService {
 
@@ -247,25 +249,20 @@ public abstract class AuthorizationService {
         return JWSSigner;
     }
 
-    public Request.Builder applyAuth(Request.Builder requestBuilder, String body, FlowContext flowContext) {
+    public Request.Builder applyAuth(Request.Builder requestBuilder, OAuth2TokenBody body, FlowContext flowContext) {
 
         if (isUseJWTForClientAuth()) {
-            body += "&client_assertion_type=urn:ietf:params:oauth:client-assertion-type:jwt-bearer" + "&client_assertion=" + createClientToken(flowContext);
+            body.clientAssertion("urn:ietf:params:oauth:client-assertion-type:jwt-bearer", createClientToken(flowContext));
         }
 
         String clientSecret = getClientSecret();
         if (clientSecret == null) {
-            requestBuilder.body(body + "&client_id=" + encode(getClientId(), UTF_8));
-            return requestBuilder;
+            return requestBuilder.body(body.clientId(getClientId()).build());
         }
         if (clientAuthorization == ClientAuthorization.client_secret_basic) {
-            requestBuilder.header(AUTHORIZATION, "Basic " + new String(Base64.encodeBase64((getClientId() + ":" + clientSecret).getBytes()))).body(body);
-            return requestBuilder;
+            return requestBuilder.header(AUTHORIZATION, "Basic " + new String(encodeBase64((getClientId() + ":" + clientSecret).getBytes()))).body(body.build());
         }
-        requestBuilder.body(body +
-                "&client_id=" + encode(getClientId(), UTF_8) +
-                "&client_secret=" + encode(clientSecret, UTF_8));
-        return requestBuilder;
+        return requestBuilder.body(body.clientId(getClientId()).clientSecret(clientSecret).build());
     }
 
 
@@ -335,8 +332,7 @@ public abstract class AuthorizationService {
                         .contentType(APPLICATION_X_WWW_FORM_URLENCODED)
                         .header(ACCEPT, APPLICATION_JSON)
                         .header(USER_AGENT, USERAGENT),
-                refreshTokenBodyBuilder(refreshToken).scope(wantedScope)
-                        .build(), fc)
+                refreshTokenBodyBuilder(refreshToken).scope(wantedScope), fc)
                 .buildExchange())));
     }
 
@@ -347,8 +343,7 @@ public abstract class AuthorizationService {
                         .contentType(APPLICATION_X_WWW_FORM_URLENCODED)
                         .header(ACCEPT, APPLICATION_JSON)
                         .header(USER_AGENT, USERAGENT),
-                authorizationCodeBodyBuilder(code, verifier).redirectUri(redirectUri)
-                        .build(), flowContext).buildExchange())));
+                authorizationCodeBodyBuilder(code, verifier).redirectUri(redirectUri), flowContext).buildExchange())));
     }
 
     private OAuth2TokenResponseBody parseTokenResponse(Response response) throws IOException {

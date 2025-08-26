@@ -26,6 +26,10 @@ public class OAuth2TokenBody {
     private String scope;
     private String redirectUri;
     private String codeVerifier;
+    private String clientId;
+    private String clientSecret;
+    private String clientAssertion;
+    private String clientAssertionType;
 
     private OAuth2TokenBody() {}
 
@@ -49,6 +53,22 @@ public class OAuth2TokenBody {
         return this;
     }
 
+    public OAuth2TokenBody clientId(String clientId) {
+        this.clientId = clientId;
+        return this;
+    }
+
+    public OAuth2TokenBody clientSecret(String clientSecret) {
+        this.clientSecret = clientSecret;
+        return this;
+    }
+
+    public OAuth2TokenBody clientAssertion(String type, String assertion) {
+        this.clientAssertionType = type;
+        this.clientAssertion = assertion;
+        return this;
+    }
+
     public String build() {
         StringBuilder r = new StringBuilder("grant_type=" + grantType);
         appendParam(r, "refresh_token", refreshToken);
@@ -56,6 +76,10 @@ public class OAuth2TokenBody {
         appendParam(r, "redirect_uri", redirectUri);
         appendParam(r, "scope", scope, e -> encode(e, UTF_8));
         appendParam(r, "code_verifier", codeVerifier);
+        appendParam(r, "client_id", clientId);
+        appendParam(r, "client_secret", clientSecret);
+        appendParam(r, "client_assertion_type", clientAssertionType);
+        appendParam(r, "client_assertion", clientAssertion);
         return r.toString();
     }
 
