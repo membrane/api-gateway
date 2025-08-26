@@ -125,7 +125,7 @@ public class LogInterceptor extends AbstractExchangeExpressionInterceptor {
         writeLog(msg.getStartLine());
 
         writeLog("\nHeaders:\n" + (maskSensitive
-                ? filter.mask(msg.getHeader())
+                ? filter.mask(msg.getHeader()).toString()
                 : msg.getHeader().toString()));
 
         try {
