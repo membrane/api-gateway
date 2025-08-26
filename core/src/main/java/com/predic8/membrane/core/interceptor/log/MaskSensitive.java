@@ -31,16 +31,16 @@ public class MaskSensitive {
         }
     }
 
-    public static String mask(Header header) {
-        StringBuilder sb = new StringBuilder();
-        for (HeaderField headerField : header.getAllHeaderFields()) {
-            String fieldName = headerField.getHeaderName().toString();
-            if (SENSITIVE_HEADER_NAMES.contains(fieldName.toLowerCase(Locale.ROOT))) {
-                sb.append(fieldName).append(": ").append("*".repeat(headerField.getValue().length())).append("\n");
-            } else {
-                sb.append(headerField).append("\n");
+    public static Header mask(Header header) {
+        Header masked = new Header(header);
+        for (HeaderField headerField : masked.getAllHeaderFields()) {
+            if (SENSITIVE_HEADER_NAMES.contains(headerField.getHeaderName().toString().toLowerCase(Locale.ROOT))) {
+                headerField.setValue("*".repeat(headerField.getValue().length()));
+            }
+            else {
+                headerField.setValue(headerField.getValue());
             }
         }
-        return sb.toString();
+        return masked;
     }
 }

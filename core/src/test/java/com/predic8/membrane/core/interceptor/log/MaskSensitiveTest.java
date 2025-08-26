@@ -4,6 +4,7 @@ import com.predic8.membrane.core.http.Header;
 import org.junit.jupiter.api.Test;
 
 import static com.predic8.membrane.core.http.Header.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class MaskSensitiveTest {
@@ -17,37 +18,40 @@ class MaskSensitiveTest {
         String contentTypeVal = "application/json";
 
 
-        header.add(AUTHORIZATION, authVal);
-        header.add(COOKIE, cookieVal);
-        header.add("X-Api-Key", apiKeyVal);
-        header.add(CONTENT_TYPE, contentTypeVal);
+        header.setValue(AUTHORIZATION, authVal);
+        header.setValue(COOKIE, cookieVal);
+        header.setValue(COOKIE, "bar=baz");
+        header.setValue("X-Api-Key", apiKeyVal);
+        header.setValue(CONTENT_TYPE, contentTypeVal);
 
-        String masked = MaskSensitive.mask(header);
+        Header masked = MaskSensitive.mask(header);
 
-        assertTrue(masked.contains(AUTHORIZATION + ": " + stars(authVal)));
-        assertTrue(masked.contains(COOKIE + ": " + stars(cookieVal)));
-        assertTrue(masked.contains("X-Api-Key: " + stars(apiKeyVal)));
-        assertTrue(masked.contains(CONTENT_TYPE + ": " + contentTypeVal));
+        assertEquals(stars(authVal), masked.getAuthorization());
+        assertEquals(stars(cookieVal), masked.getFirstValue(COOKIE));
+        assertEquals(stars(apiKeyVal), masked.getFirstValue("X-Api-Key"));
+        assertEquals(contentTypeVal, masked.getContentType());
     }
 
     @Test
     void caseInsensitiveNames() {
         Header header = new Header();
         String authVal = "secret";
-        header.add("aUtHoRiZaTiOn", authVal);
+        header.setValue("aUtHoRiZaTiOn", authVal);
 
-        assertTrue(MaskSensitive.mask(header).contains("aUtHoRiZaTiOn: " + "*".repeat(authVal.length())));
+        assertTrue(MaskSensitive.mask(header).toString()
+                .contains("aUtHoRiZaTiOn: " + "*".repeat(authVal.length())));
     }
 
     @Test
     void emptyValues() {
         Header header = new Header();
-        header.add(AUTHORIZATION, "");
-        header.add(COOKIE, "");
+        header.setValue(AUTHORIZATION, "");
+        header.setValue(COOKIE, "");
 
-        String masked = MaskSensitive.mask(header);
-        assertTrue(masked.contains(AUTHORIZATION + ": "));
-        assertTrue(masked.contains(COOKIE + ": "));
+        Header masked = MaskSensitive.mask(header);
+        assertTrue(masked.toString().contains(header.getAuthorization()));
+        assertTrue(masked.toString().contains(header.getFirstValue(COOKIE)));
+
     }
 
     private static String stars(String s) {
