@@ -28,7 +28,7 @@ import java.io.IOException;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 import static com.predic8.membrane.core.interceptor.log.LogInterceptor.Level.INFO;
-import static com.predic8.membrane.core.interceptor.log.MaskSensitive.*;
+import static com.predic8.membrane.core.interceptor.log.MaskSensitive.mask;
 import static org.slf4j.LoggerFactory.getLogger;
 
 /**
@@ -123,11 +123,9 @@ public class LogInterceptor extends AbstractExchangeExpressionInterceptor {
             return;
         writeLog(msg.getStartLine());
 
-        if (maskSensitive) {
-            writeLog("\nHeaders:\n" + mask(msg.getHeader()));
-        } else {
-            writeLog("\nHeaders:\n" + msg.getHeader());
-        }
+        writeLog("\nHeaders:\n" + (maskSensitive
+                ? mask(msg.getHeader())
+                : msg.getHeader().toString()));
 
         try {
             if (!body || msg.isBodyEmpty())
