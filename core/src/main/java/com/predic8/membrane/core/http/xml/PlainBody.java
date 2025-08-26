@@ -13,20 +13,20 @@
    limitations under the License. */
 package com.predic8.membrane.core.http.xml;
 
-import javax.xml.stream.XMLStreamException;
-import javax.xml.stream.XMLStreamWriter;
-
-import com.predic8.membrane.core.config.AbstractXmlElement;
-import com.predic8.membrane.core.http.AbstractBody;
+import com.predic8.membrane.core.config.*;
 import com.predic8.membrane.core.http.Message;
+import com.predic8.membrane.core.http.*;
+
+import javax.xml.stream.*;
+import java.nio.charset.*;
 
 public class PlainBody extends AbstractXmlElement {
 
-	private final String charset;
+	private final Charset charset;
 	private final AbstractBody body;
 
 	public PlainBody(Message msg) {
-		charset = msg.getCharset();
+		charset = msg.getCharsetOrDefault();
 		body = msg.getBody();
 	}
 

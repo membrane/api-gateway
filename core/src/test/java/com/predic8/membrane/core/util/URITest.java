@@ -14,11 +14,11 @@
 
 package com.predic8.membrane.core.util;
 
+import org.junit.jupiter.api.*;
+
+import java.net.*;
+
 import static org.junit.jupiter.api.Assertions.*;
-
-import java.net.URISyntaxException;
-
-import org.junit.jupiter.api.Test;
 
 public class URITest {
 
@@ -44,7 +44,7 @@ public class URITest {
 
 	@SuppressWarnings("UnnecessaryUnicodeEscape")
 	@Test
-	public void testEncoding() {
+	public void encoding() {
 		assertSame("http://predic8.de/path/file?a=quer\u00E4y#foo");
 		assertSame("http://predic8.de/path/file?a=quer%C3%A4y#foo%C3%A4");
 		assertSame("http://predic8.de/path/fi\u00E4le?a=query#foo");
@@ -137,6 +137,7 @@ public class URITest {
 				assertEquals(u1.getPath(), u2.getPath());
 				assertEquals(u1.getQuery(), u2.getQuery());
 				assertEquals(u1.getRawQuery(), u2.getRawQuery());
+				assertEquals(u1.getFragment(), u2.getFragment());
 			}
 			assertEquals(u1.toString(), u2.toString());
 		} catch (URISyntaxException e) {
@@ -161,5 +162,66 @@ public class URITest {
 		}
 	}
 
+    @SuppressWarnings("UnnecessaryUnicodeEscape")
+    @Test
+    public void testEncoding() {
+        assertSame("http://predic8.de/path/file?a=quer\u00E4y#foo");
+        assertSame("http://predic8.de/path/file?a=quer%C3%A4y#foo%C3%A4");
+        assertSame("http://predic8.de/path/fi\u00E4le?a=query#foo");
+        assertSame("http://predic8.de/path/fi%C3%A4le?a=query#foo");
+        assertSame("http://predic8.de/pa\u00E4th/file?a=query#foo");
+        assertSame("http://predic8.de/pa%C3%A4th/file?a=query#foo");
+        assertSame("http://predic8.d\u00E4e/path/file?a=query#foo");
+        assertSame("http://predic8.d%C3%A4e/path/file?a=query#foo");
+        assertError("htt\u00E4p://predic8.de/path/file?a=query#foo", "/path/file", "a=query");
+        assertError("htt%C3%A4p://predic8.de/path/file?a=query#foo", "/path/file", "a=query");
+    }
 
+    @Nested
+    class Authority {
+        @Test
+        void getAuthority() throws URISyntaxException {
+            checkGetAuthority(false);
+        }
+
+        @Test
+        void getAuthorityCustom() throws URISyntaxException {
+            checkGetAuthority(true);
+        }
+
+        private void checkGetAuthority(boolean custom) throws URISyntaxException {
+            // plain host
+            assertEquals("predic8.de", new URI("http://predic8.de/foo", custom).getAuthority());
+
+            // host + port
+            assertEquals("predic8.de:8080", new URI("http://predic8.de:8080/foo", custom).getAuthority());
+
+            // with userinfo
+            if (!custom) {
+                // java.net.URI includes userinfo
+                assertEquals("user:pwd@predic8.de:8080",
+                        new URI("http://user:pwd@predic8.de:8080/foo", custom).getAuthority());
+            } else {
+                // custom parsing strips userinfo
+                assertEquals("predic8.de:8080",
+                        new URI("http://user:pwd@predic8.de:8080/foo", custom).getAuthority());
+            }
+
+            // https with port
+            assertEquals("predic8.de:8443", new URI("https://predic8.de:8443/foo", custom).getAuthority());
+
+            // https without port
+            assertEquals("predic8.de", new URI("https://predic8.de/foo", custom).getAuthority());
+
+            // no authority present (mailto)
+            assertNull(new URI("mailto:alice@example.com", custom).getAuthority());
+        }
+
+        // No IPv6 support in custom parsing
+        @Test
+        void getAuthorityIPv6Custom() throws URISyntaxException {
+            assertEquals("[2001:db8::1]", new URI("http://[2001:db8::1]/foo", false).getAuthority());
+            assertEquals("[2001:db8::1]:8080", new URI("http://[2001:db8::1]:8080/foo", false).getAuthority());
+        }
+    }
 }

@@ -29,8 +29,10 @@ import java.io.*;
 import java.util.*;
 
 import static com.predic8.membrane.core.http.MimeType.*;
-import static com.predic8.membrane.core.util.ExceptionUtil.concatMessageAndCauseMessages;
-import static java.util.UUID.randomUUID;
+import static com.predic8.membrane.core.util.ExceptionUtil.*;
+import static java.nio.charset.StandardCharsets.*;
+import static java.util.Locale.ROOT;
+import static java.util.UUID.*;
 
 
 /**
@@ -44,11 +46,6 @@ public class ProblemDetails {
     private static final ObjectWriter ow = om.writerWithDefaultPrettyPrinter();
 
     private boolean production;
-
-    /**
-     * Whether to provide a log key to the caller that points into the log
-     */
-    private boolean logKey = true;
 
     private int statusCode;
     private String type;
@@ -191,11 +188,6 @@ public class ProblemDetails {
         return this;
     }
 
-    public ProblemDetails logKey(boolean logKey) {
-        this.logKey = logKey;
-        return this;
-    }
-
     public Response build() {
         return createContent(createMap(), null);
     }
@@ -249,7 +241,7 @@ public class ProblemDetails {
     }
 
     private String normalizeForType(String s) {
-        return s.replace(" ", "-").toLowerCase();
+        return s.replace(" ", "-").toLowerCase(ROOT);
     }
 
     private Map<String, Object> createInternal(String type) {
@@ -268,9 +260,9 @@ public class ProblemDetails {
             see += "/" + normalizeForType(component);
         }
         if (flow != null) {
-            see += "/" + flow.name().toLowerCase();
+            see += "/" + flow.name().toLowerCase(ROOT);
         }
-        if (!see.isEmpty()) {
+        if (!seeSuffix.isEmpty()) {
             see += "/" + seeSuffix;
         }
         internalMap.put("see", see);
@@ -313,15 +305,15 @@ public class ProblemDetails {
             else
                 createJson(root, builder);
         } catch (Exception e) {
-            builder.body("Title: %s\nType: %s\n%s".formatted(type, title, root).getBytes());
-            builder.contentType(TEXT_PLAIN);
+            builder.body("Title: %s\nType: %s\n%s".formatted(title,type,root).getBytes(UTF_8));
+            builder.contentType(TEXT_PLAIN_UTF8);
         }
         return builder.build();
     }
 
     private static void createXMLContent(Map<String, Object> root, Response.ResponseBuilder builder) throws Exception {
         builder.body(convertMapToXml(root));
-        builder.contentType(APPLICATION_XML);
+        builder.contentType(APPLICATION_PROBLEM_XML);
     }
 
     public static String convertMapToXml(Map<String, Object> map) throws Exception {

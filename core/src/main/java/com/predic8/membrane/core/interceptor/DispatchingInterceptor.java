@@ -63,9 +63,7 @@ public class DispatchingInterceptor extends AbstractInterceptor {
             setSNIPropertyOnExchange(exc, asp);
             return CONTINUE;
         }
-
         exc.getDestinations().add(exc.getRequest().getUri());
-
         return CONTINUE;
     }
 

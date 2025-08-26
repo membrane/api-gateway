@@ -76,7 +76,8 @@ public class DynamicRegistration {
         if (router.getFlowController().invokeRequestHandlers(exc, interceptors) != CONTINUE)
             throw new RuntimeException("Registration interceptorchain (request) had a problem");
 
-        Response response = client.call(exc).getResponse();
+        client.call(exc);
+        Response response = exc.getResponse();
 
         router.getFlowController().invokeResponseHandlers(exc, interceptors);
 

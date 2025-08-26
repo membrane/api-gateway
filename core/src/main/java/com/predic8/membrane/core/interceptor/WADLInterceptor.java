@@ -14,18 +14,16 @@
 
 package com.predic8.membrane.core.interceptor;
 
-import com.googlecode.jatl.Html;
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.ws.relocator.Relocator;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.googlecode.jatl.*;
+import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.ws.relocator.*;
+import org.slf4j.*;
 
-import javax.xml.namespace.QName;
+import javax.xml.namespace.*;
 import java.io.*;
 
-import static com.predic8.membrane.core.Constants.WADL_NS;
+import static com.predic8.membrane.core.Constants.*;
 
 @MCElement(name="wadlRewriter")
 public class WADLInterceptor extends RelocatingInterceptor {
@@ -49,8 +47,8 @@ public class WADLInterceptor extends RelocatingInterceptor {
 
 		ByteArrayOutputStream stream = new ByteArrayOutputStream();
 
-		Relocator relocator = new Relocator(new OutputStreamWriter(stream,
-				exc.getResponse().getCharset()), getLocationProtocol(), getLocationHost(exc),
+        Relocator relocator = new Relocator(new OutputStreamWriter(stream,
+                exc.getResponse().getCharsetOrDefault()), getLocationProtocol(), getLocationHost(exc),
 				getLocationPort(exc), exc.getHandler().getContextPath(exc), pathRewriter);
 
 		relocator.getRelocatingAttributes().put(
@@ -58,9 +56,10 @@ public class WADLInterceptor extends RelocatingInterceptor {
 		relocator.getRelocatingAttributes().put(new QName(WADL_NS, "include"),
 				"href");
 
-		relocator.relocate(new InputStreamReader(exc.getResponse().getBodyAsStreamDecoded(), exc.getResponse().getCharset()));
+		relocator.relocate(exc.getResponse().getBodyAsStream());
 
 		exc.getResponse().setBodyContent(stream.toByteArray());
+		// TODO setContentType
 	}
 
 	@MCAttribute

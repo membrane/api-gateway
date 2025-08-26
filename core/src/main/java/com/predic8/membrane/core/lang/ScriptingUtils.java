@@ -83,8 +83,6 @@ public class ScriptingUtils {
             }
         }
 
-
-
         /**
          properties does not work in Groovy based Template Interceptor!
 
