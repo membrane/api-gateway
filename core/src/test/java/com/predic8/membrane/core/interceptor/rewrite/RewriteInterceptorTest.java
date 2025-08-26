@@ -69,6 +69,7 @@ public class RewriteInterceptorTest {
 	@Test
 	void testRewrite() throws URISyntaxException {
 		exc.setRequest(get("/buy/banana/3").build());
+		exc.setOriginalRequestUri("/buy/banana/3");
 		exc.setProxy(sp);
 
 		assertEquals(CONTINUE, di.handleRequest(exc));
@@ -88,6 +89,7 @@ public class RewriteInterceptorTest {
 	void invalidURI() throws Exception {
 		exc.setRequest(get("/dummy").build());
 		exc.getRequest().setUri("/buy/banana/%"); // Overwrite dummy
+		exc.setOriginalRequestUri("/buy/banana/%");
 		exc.setProxy(sp);
 
 		assertEquals(CONTINUE, di.handleRequest(exc));
