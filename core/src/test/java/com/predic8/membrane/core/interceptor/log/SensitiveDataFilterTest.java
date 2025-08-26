@@ -11,6 +11,7 @@ class SensitiveDataFilterTest {
     @Test
     void masksSensitiveValues() {
 
+        SensitiveDataFilter filter = new SensitiveDataFilter();
         Header header = new Header();
         String contentTypeVal = "application/json";
 
@@ -19,7 +20,7 @@ class SensitiveDataFilterTest {
         header.setValue("X-Api-Key", "abc123");
         header.setValue(CONTENT_TYPE, contentTypeVal);
 
-        Header masked = SensitiveDataFilter.mask(header);
+        Header masked = filter.mask(header);
 
         assertEquals("******************", masked.getAuthorization());
         assertEquals("*******", masked.getFirstValue(COOKIE));

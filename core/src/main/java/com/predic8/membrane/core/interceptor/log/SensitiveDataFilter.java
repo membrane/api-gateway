@@ -12,25 +12,28 @@ import static com.predic8.membrane.core.http.Header.*;
 
 public class SensitiveDataFilter {
 
-    private static final Set<HeaderName> SENSITIVE_HEADER_NAMES = new HashSet<>();
+    private final Set<HeaderName> sensitiveHeaderNames;
 
-    static {
+    public SensitiveDataFilter() {
+        Set<HeaderName> names = new HashSet<>();
+
         Stream.of(AUTHORIZATION, PROXY_AUTHORIZATION, COOKIE, SET_COOKIE)
                 .map(HeaderName::new)
-                .forEach(SENSITIVE_HEADER_NAMES::add);
+                .forEach(names::add);
 
         String[] baseKeys = {"Api-Key", "ApiToken", "Auth-Token"};
         for (String base : baseKeys) {
-            SENSITIVE_HEADER_NAMES.add(new HeaderName(base));
-            SENSITIVE_HEADER_NAMES.add(new HeaderName("X-" + base));
-            SENSITIVE_HEADER_NAMES.add(new HeaderName(base.replace("-", "")));
+            names.add(new HeaderName(base));
+            names.add(new HeaderName("X-" + base));
+            names.add(new HeaderName(base.replace("-", "")));
         }
+        this.sensitiveHeaderNames = names;
     }
 
-    public static Header mask(Header header) {
+    public Header mask(Header header) {
         Header masked = new Header(header);
         for (HeaderField headerField : masked.getAllHeaderFields()) {
-            if (SENSITIVE_HEADER_NAMES.contains(headerField.getHeaderName())) {
+            if (sensitiveHeaderNames.contains(headerField.getHeaderName())) {
                 headerField.setValue("*".repeat(headerField.getValue().length()));
             }
         }
