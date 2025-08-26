@@ -12,42 +12,39 @@
    See the License for the specific language governing permissions and
    limitations under the License. */
 
-package com.predic8.membrane.core.transport.http;
+package com.predic8.membrane.integration.withoutinternet;
 
-import com.predic8.membrane.core.HttpRouter;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Response;
-import com.predic8.membrane.core.interceptor.AbstractInterceptor;
-import com.predic8.membrane.core.interceptor.Outcome;
-import com.predic8.membrane.core.proxies.ServiceProxy;
-import com.predic8.membrane.core.proxies.ServiceProxyKey;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
+import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.proxies.*;
+import com.predic8.membrane.core.transport.http.*;
+import org.junit.jupiter.api.*;
 
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CountDownLatch;
-import java.util.function.Consumer;
+import java.util.concurrent.*;
+import java.util.function.*;
 
-import static com.predic8.membrane.core.RuleManager.RuleDefinitionSource.MANUAL;
-import static com.predic8.membrane.core.http.Request.get;
-import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static com.predic8.membrane.core.RuleManager.RuleDefinitionSource.*;
+import static com.predic8.membrane.core.http.Request.*;
+import static com.predic8.membrane.core.http.Response.*;
+import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static java.lang.Thread.*;
+import static java.util.concurrent.ConcurrentHashMap.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Tests 500 parallel incoming requests (most probably via ~500 parallel TCP connections). Each request uses a unique
+ * Tests parallel incoming requests (most probably via ~1.000 parallel TCP connections). Each request uses a unique
  * path.
- *
- * The requests wait for 700ms on the server (reducing the probability that connections are reused during the test) and
+ * <p>
+ * The requests wait for 1000ms on the server (reducing the probability that connections are reused during the test) and
  * are responded to with 200 OK and their request.uri as body. Back on the client, the response body is asserted to be
  * the request path.
- *
- * The test first starts with a ramp up of 20 parallel requests, waits for them to complete, and then proceeds to the
- * main task of 500.
  */
-public class MassivelyParallelTest {
+class MassivelyParallelTest {
+
+    // Should not be to high to keep tests stable
+    private static int CONCURRENT_THREADS = 500;
 
     static HttpClient client;
     static HttpRouter server;
@@ -57,8 +54,8 @@ public class MassivelyParallelTest {
         client = new HttpClient();
 
         server = new HttpRouter();
-        server.getTransport().setConcurrentConnectionLimitPerIp(1000);
-        server.getTransport().setBacklog(1000);
+        server.getTransport().setConcurrentConnectionLimitPerIp(CONCURRENT_THREADS);
+        server.getTransport().setBacklog(CONCURRENT_THREADS);
         server.getTransport().setSocketTimeout(10000);
         server.setHotDeploy(false);
         server.getRuleManager().addProxy(createServiceProxy(), MANUAL);
@@ -72,11 +69,11 @@ public class MassivelyParallelTest {
             @Override
             public Outcome handleRequest(Exchange exc) {
                 try {
-                    Thread.sleep(700);
+                    sleep(1000);
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
                 }
-                exc.setResponse(Response.ok().body(exc.getRequest().getUri()).build());
+                exc.setResponse(ok().body(exc.getRequest().getUri()).build());
                 return RETURN;
             }
         });
@@ -91,29 +88,31 @@ public class MassivelyParallelTest {
     }
 
     @Test
+    @Timeout(30) // seconds
     public void run() throws Exception {
-        Set<String> paths = ConcurrentHashMap.newKeySet();
-        // ramp up
-        runInParallel((cdl) -> parallelTestWorker(cdl, paths), 20);
-        // go
-        runInParallel((cdl) -> parallelTestWorker(cdl, paths), 500);
-        assertEquals(520, paths.size());
+        Set<String> paths = newKeySet();
+        runInParallel((cdl) -> parallelTestWorker(cdl, paths), CONCURRENT_THREADS);
+        assertEquals(CONCURRENT_THREADS, paths.size());
     }
 
     private void runInParallel(Consumer<CountDownLatch> job, int threadCount) {
-        List<Thread> threadList = new ArrayList<>();
-        CountDownLatch cdl = new CountDownLatch(threadCount);
-        for (int i = 0; i < threadCount; i++) {
-            threadList.add(new Thread(() -> job.accept(cdl)));
-        }
-        threadList.forEach(Thread::start);
-        threadList.forEach(thread -> {
+        try(ExecutorService es = Executors.newVirtualThreadPerTaskExecutor()) {
+            CountDownLatch cdl = new CountDownLatch(threadCount);
             try {
-                thread.join();
+                for (int i = 0; i < threadCount; i++) {
+                    es.submit(() -> job.accept(cdl));
+                }
+                es.shutdown();
+                if (!es.awaitTermination(30, TimeUnit.SECONDS)) {
+                    es.shutdownNow();
+                    fail("Tasks did not complete within timeout");
+                }
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
+                es.shutdownNow();
+                fail("Interrupted while waiting for tasks to complete");
             }
-        });
+        }
     }
 
     private void parallelTestWorker(CountDownLatch cdl, Set<String> paths) {
@@ -124,12 +123,12 @@ public class MassivelyParallelTest {
             String uuid = UUID.randomUUID().toString();
             var exchange = client.call(get("http://localhost:3067/api/" + uuid).buildExchange());
 
+            assertEquals(200, exchange.getResponse().getStatusCode());
             var body = exchange.getResponse().getBodyAsStringDecoded();
-            assertTrue(body.startsWith("/api/"));
+            assertEquals("/api/" + uuid, body);
             paths.add(body);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }
-
 }

@@ -21,7 +21,7 @@ import java.io.*;
 import java.util.*;
 
 import static com.predic8.membrane.core.Constants.*;
-import static com.predic8.membrane.core.http.ChunkedBodyTransferrer.*;
+import static com.predic8.membrane.core.http.ChunkedBodyTransferer.*;
 import static com.predic8.membrane.core.util.ByteUtil.readByteArray;
 import static java.lang.Long.*;
 import static java.nio.charset.StandardCharsets.*;
@@ -29,7 +29,7 @@ import static java.nio.charset.StandardCharsets.*;
 /**
  * Reads the body with "Transfer-Encoding: chunked".
  * <p>
- * See {@link ChunkedBodyTransferrer} for writing a body using chunks.
+ * See {@link ChunkedBodyTransferer} for writing a body using chunks.
  * <p>
  * This class internally reads body chunks piece by piece. When accessing the body using streams, not all chunks
  * might therefore be read immediately.

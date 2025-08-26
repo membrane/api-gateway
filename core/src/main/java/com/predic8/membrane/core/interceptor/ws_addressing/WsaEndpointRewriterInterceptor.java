@@ -13,47 +13,89 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.ws_addressing;
 
+import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
+import org.jetbrains.annotations.*;
 import org.slf4j.*;
-import org.springframework.context.*;
 
-import javax.xml.stream.*;
 import java.io.*;
 
 import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
+import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 
+@MCElement(name="wsaEndpointRewriter")
 public class WsaEndpointRewriterInterceptor extends AbstractInterceptor {
 
 	private static final Logger log = LoggerFactory.getLogger(WsaEndpointRewriterInterceptor.class);
 
+	private String protocol;
+	private String host;
+
+	// -1 = do not change port
+	private int port = -1;
+
+	@Override
+	public Outcome handleResponse(Exchange exc) {
+		return handleInternal(exc, RESPONSE);
+	}
+
 	@Override
 	public Outcome handleRequest(Exchange exc) {
-		ByteArrayOutputStream output = new ByteArrayOutputStream();
+		return handleInternal(exc, REQUEST);
+	}
 
-        try {
+	private @NotNull Outcome handleInternal(Exchange exchange, Flow flow) {
+		Message message = exchange.getMessage(flow);
+		ByteArrayOutputStream output = new ByteArrayOutputStream();
+		try {
 			// Why is port 2020 hard coded?
-            new WsaEndpointRewriter(getRegistry()).rewriteEndpoint(exc.getRequest().getBodyAsStreamDecoded(), output, 2020, exc);
-        } catch (XMLStreamException e) {
+            new WsaEndpointRewriter().rewriteEndpoint(message.getBodyAsStreamDecoded(), output, new Location( protocol, host,  port));
+        } catch (Exception e) {
 			log.error("",e);
 			internal(router.isProduction(),getDisplayName())
 					.detail("Could not rewrite endpoint!")
 					.exception(e)
-					.buildAndSetResponse(exc);
+					.buildAndSetResponse(exchange);
 			return ABORT;
         }
-
-        exc.getRequest().setBodyContent(output.toByteArray());
-
-		return Outcome.CONTINUE;
+		message.setBodyContent(output.toByteArray());
+		return CONTINUE;
 	}
 
-	private DecoupledEndpointRegistry getRegistry() {
-		ApplicationContext beanFactory = getRouter().getBeanFactory();
-		if (beanFactory == null) {
-			return new DecoupledEndpointRegistry();
-		}
-		return beanFactory.getBean(DecoupledEndpointRegistry.class);
+	public String getProtocol() {
+		return protocol;
 	}
+
+	@MCAttribute
+	public void setProtocol(String protocol) {
+		this.protocol = protocol;
+	}
+
+	public String getHost() {
+		return host;
+	}
+
+	@MCAttribute
+	public void setHost(String host) {
+		this.host = host;
+	}
+
+	public int getPort() {
+		return port;
+	}
+
+	/**
+	 * -1 = do not change port
+	 * @param port
+	 */
+	@MCAttribute
+	public void setPort(int port) {
+		this.port = port;
+	}
+
+	public record Location(String protocol, String host, int port) {}
 }

@@ -74,10 +74,6 @@ public class EmptyEndpointTest extends RequestParameterizedTest{
                 modifySessionAttributes("response_type", "123456789");
                 return this;
             }
-
-            ;
         };
     }
-
-
 }

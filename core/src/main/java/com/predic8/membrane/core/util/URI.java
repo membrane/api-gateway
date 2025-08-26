@@ -28,6 +28,7 @@ public class URI {
     private String input;
     private String path;
     private String query;
+    private String fragment;
 
     private String scheme;
 
@@ -35,7 +36,7 @@ public class URI {
 
     private int port = -1;
 
-    private String pathDecoded, queryDecoded;
+    private String pathDecoded, queryDecoded, fragmentDecoded;
 
     private static final Pattern PATTERN = Pattern.compile("^(([^:/?#]+):)?(//([^/?#]*))?([^?#]*)(\\?([^#]*))?(#(.*))?");
     //                                                             12            3  4          5       6   7        8 9
@@ -74,6 +75,7 @@ public class URI {
 
         path = m.group(5);
         query = m.group(7);
+        fragment = m.group(9);
         return true;
     }
 
@@ -134,6 +136,36 @@ public class URI {
         if (queryDecoded == null)
             queryDecoded = decode(query);
         return queryDecoded;
+    }
+
+    /**
+     * Returns the fragment (the part after '#'), decoded like {@link #getPath()} and {@link #getQuery()}.
+     */
+    public String getFragment() {
+        if (uri != null)
+            return uri.getFragment();
+        if (fragmentDecoded == null)
+            fragmentDecoded = decode(fragment);
+        return fragmentDecoded;
+    }
+
+    /*
+     * Returns the authority component of this URI.
+     *
+     * <p>In default mode delegates to {@link java.net.URI#getAuthority()} and may include
+     * user-info (e.g. "user:pass@host:port").<br>
+     * In custom parsing mode returns only "host[:port]" (userinfo is intentionally omitted).<br>
+     * Returns {@code null} if no authority is present (e.g. "mailto:").
+     */
+    public String getAuthority() {
+        if (uri != null)
+            return uri.getAuthority();
+        if (host == null)
+            return null;
+        StringBuilder sb = new StringBuilder(host);
+        if (port != -1)
+            sb.append(':').append(port);
+        return sb.toString();
     }
 
     private String decode(String string) {

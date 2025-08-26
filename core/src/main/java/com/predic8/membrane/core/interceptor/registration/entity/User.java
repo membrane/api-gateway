@@ -14,9 +14,6 @@
 
 package com.predic8.membrane.core.interceptor.registration.entity;
 
-/**
- * Created by Martin Dünkelmann(duenkelmann@predic8.de) on 18.10.17.
- */
 public class User {
     private String email;
     private String password;

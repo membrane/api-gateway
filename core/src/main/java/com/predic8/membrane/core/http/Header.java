@@ -431,12 +431,13 @@ public class Header {
 
 	public String getCharset() {
 		if (getContentType() == null)
-			return UTF_8.name();
+			return null;
 
 		try {
 			return new ContentType(getContentType()).getParameter("charset").toUpperCase();
 		} catch (Exception e) {
-			return UTF_8.name();
+			log.debug("Failed to parse Content-Type: {}", getContentType());
+			return null;
 		}
 	}
 

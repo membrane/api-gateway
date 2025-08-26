@@ -14,14 +14,12 @@
 package com.predic8.membrane.core.interceptor.balancer;
 
 
-import static com.predic8.membrane.core.util.ByteUtil.getByteArrayData;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-
-import java.io.IOException;
-
-import org.junit.jupiter.api.Test;
-
 import com.predic8.membrane.core.http.*;
+import org.junit.jupiter.api.*;
+
+import java.io.*;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 public class XMLSessionIdExtractorTest {
 
@@ -41,37 +39,20 @@ public class XMLSessionIdExtractorTest {
 	}
 
 	@Test
-	public void testSessionIdExtractionNoNS() throws Exception {
+	void sessionId_extractionNoNS() throws Exception {
 		Response res = new Response();
 		res.setHeader(getHeader());
-		res.setBodyContent(getBodyContent());
-
-		XMLElementSessionIdExtractor extractor = new XMLElementSessionIdExtractor();
-		extractor.setLocalName("ses:session");
-
-		assertEquals("555555", extractor.getSessionId(res));
-
-	}
-
-	@Test
-	public void testPerformace() throws Exception {
-		Response res = new Response();
-		res.setHeader(getHeader());
-		res.setBodyContent(getBodyContent());
+        res.setBodyContent(getBodyContent());
 
 		XMLElementSessionIdExtractor extractor = new XMLElementSessionIdExtractor();
 		extractor.setLocalName("session");
-		extractor.setNamespace("http://predic8.com/session/");
 
-		//long t = System.currentTimeMillis();
-		for (int i = 0; i < 1000; i++) {
-			extractor.getSessionId(res);
-		}
-		//System.out.println("Time (ms): "+(System.currentTimeMillis()-t));
+
+		assertEquals("555555", extractor.getSessionId(res));
 	}
 
 	private byte[] getBodyContent() throws IOException {
-		return getByteArrayData(getClass().getResourceAsStream("/getBankwithSession555555.xml"));
+		return getClass().getResourceAsStream("/getBankwithSession555555.xml").readAllBytes();
 	}
 
 	private Header getHeader() {
@@ -79,5 +60,4 @@ public class XMLSessionIdExtractorTest {
 		h.setContentType("application/soap+xml");
 		return h;
 	}
-
 }

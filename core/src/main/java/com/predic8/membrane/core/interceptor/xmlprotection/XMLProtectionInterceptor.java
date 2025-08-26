@@ -24,7 +24,6 @@ import java.io.*;
 import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
-import static java.nio.charset.StandardCharsets.*;
 
 /**
  * @description Prohibits XML documents to be passed through that look like XML attacks on older parsers. Too many
@@ -62,13 +61,15 @@ public class XMLProtectionInterceptor extends AbstractInterceptor {
 
     private Outcome handleInternal(Exchange exc) throws Exception {
 
+        log.debug("Inspecting XML of content type: {}", exc.getRequest().getHeader().getContentType());
+
         if (exc.getRequest().isBodyEmpty()) {
             log.info("body is empty -> request is not scanned");
             return CONTINUE;
         }
 
         if (!exc.getRequest().isXML()) {
-            String msg = ("Content-Type %s was not XML.").formatted(exc.getRequest().getHeader().getContentType());
+            String msg = "Content-Type %s is not XML.".formatted(exc.getRequest().getHeader().getContentType());
             log.warn(msg);
             user(router.isProduction(), getDisplayName())
                     .title("Request discarded by xmlProtection")
@@ -92,24 +93,19 @@ public class XMLProtectionInterceptor extends AbstractInterceptor {
     }
 
     private boolean protectXML(Exchange exc) throws Exception {
-        ByteArrayOutputStream stream = new ByteArrayOutputStream();
-        XMLProtector protector = new XMLProtector(new OutputStreamWriter(stream, getCharset(exc)),
-                removeDTD, maxElementNameLength, maxAttributeCount);
+        var charset = exc.getRequest().getCharsetOrDefault();
 
-        if (!protector.protect(new InputStreamReader(exc.getRequest().getBodyAsStreamDecoded(), getCharset(exc))))
-            return false;
-        exc.getRequest().setBodyContent(stream.toByteArray());
-        return true;
-    }
-
-    /**
-     * If no charset is specified, use standard XML charset UTF-8.
-     */
-    private String getCharset(Exchange exc) {
-        String charset = exc.getRequest().getCharset();
-        if (charset == null)
-            return UTF_8.name();
-        return charset;
+        // msg.getBodyAsStreamDecoded() delivers an InputStream from bytes (Chunks) -> close should not be an issue
+        try (ByteArrayOutputStream stream = new ByteArrayOutputStream();
+             OutputStreamWriter out = new OutputStreamWriter(stream, charset);
+             InputStreamReader in = new InputStreamReader(exc.getRequest().getBodyAsStreamDecoded(), charset)) {
+            XMLProtector protector = new XMLProtector(out, removeDTD, maxElementNameLength, maxAttributeCount);
+            if (!protector.protect(in))
+                return false;
+            out.flush(); // ensure all bytes are written before reading
+            exc.getRequest().setBodyContent(stream.toByteArray()); // Allow the removal of DTDs
+            return true;
+        }
     }
 
     /**
