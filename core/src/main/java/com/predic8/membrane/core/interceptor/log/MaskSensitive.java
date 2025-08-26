@@ -9,13 +9,15 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static com.predic8.membrane.core.http.Header.*;
+
 public class MaskSensitive {
 
     private static final Set<String> SENSITIVE_HEADER_NAMES = Stream.of(
-                    Header.AUTHORIZATION,
-                    Header.PROXY_AUTHORIZATION,
-                    Header.COOKIE,
-                    Header.SET_COOKIE
+                    AUTHORIZATION,
+                    PROXY_AUTHORIZATION,
+                    COOKIE,
+                    SET_COOKIE
             )
             .map(h -> h.toLowerCase(Locale.ROOT))
             .collect(Collectors.toCollection(HashSet::new));
