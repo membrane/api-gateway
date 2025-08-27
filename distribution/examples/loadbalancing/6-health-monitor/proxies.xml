@@ -16,7 +16,7 @@
 
         <!-- Public LB endpoint (HTTPS) -->
         <api port="8000">
-            <balancer name="Demo Balancer">
+            <balancer>
                 <clusters>
                     <cluster name="Production">
                         <node host="localhost" port="8001" healthUrl="http://localhost:8001/health"/>
@@ -24,29 +24,30 @@
                     </cluster>
                 </clusters>
             </balancer>
-            <target host="abc" port="123" />
         </api>
 
         <!-- Backend Node 1 -->
         <api port="8001" name="Node 1">
-            <static>
-                Hello from backend 1!
-            </static>
             <request>
+                <static pretty="true">
+                    Hello from backend 1!
+                </static>
                 <groovy>
-                    <!-- Set to 3000 to simulate a socket read timeout -->
+                    // Set to 5000 to simulate a socket read timeout
                     Thread.sleep(1000)
                 </groovy>
             </request>
-            <return/>
+            <return statusCode="200"/>
         </api>
 
         <!-- Backend Node 2 -->
         <api port="8002" name="Node 2">
-            <static>
-                Hello from backend 2!
-            </static>
-            <return/>
+             <request>
+                <static pretty="true">
+                    Hello from backend 2!
+                </static>
+            </request>
+            <return statusCode="200"/>
         </api>
 
         <api name="Console" port="9000">
