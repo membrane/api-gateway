@@ -39,7 +39,7 @@ public abstract class DistributionExtractingTestcase {
     public static final String MEMBRANE_LOG_LEVEL = "info";
 
     public static final String LOCALHOST_2000 = "http://localhost:2000";
-    
+
     private static File unzipDir;
     private static File membraneHome;
     protected File baseDir = new File(getExampleDirName());

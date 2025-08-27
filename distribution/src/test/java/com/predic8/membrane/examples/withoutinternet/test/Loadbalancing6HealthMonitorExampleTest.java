@@ -108,7 +108,7 @@ class Loadbalancing6HealthMonitorExampleTest extends DistributionExtractingTestc
             try {
                 setNode1Delay(baseDir.toPath().resolve("proxies.xml"), 3000);
                 try (Process2 ignored = builder.start()) {
-                    Thread.sleep(2200);
+                    Thread.sleep(3000); // Wait till health check happened!
                     String html = get(ADMIN_URL).then().statusCode(200).extract().asString();
                     assertThat(html, containsString("localhost:8001"));
                     assertThat(html, containsString("localhost:8002"));
@@ -200,7 +200,7 @@ class Loadbalancing6HealthMonitorExampleTest extends DistributionExtractingTestc
             try {
                 setNode1Delay(baseDir.toPath().resolve("proxies-tls.xml"), 3000);
                 try (Process2 ignored = builder.parameters(PROXIES_TLS_XML_OPTION).start()) {
-                    Thread.sleep(2200); // Wait for health check to happen
+                    Thread.sleep(3000); // Wait for health check to happen
                     // @formatter:off
                     String html = given()
                         .relaxedHTTPSValidation()

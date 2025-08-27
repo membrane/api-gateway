@@ -4,3 +4,6 @@
 core/src/test/resources/charsets/iso-8859-1.txt -text working-tree-encoding=ISO-8859-1
 core/src/test/resources/charsets/utf-8.txt     -text working-tree-encoding=UTF-8
 core/src/test/resources/charsets/utf-16.txt     -text
+
+# Treat PKCS#12 files as binary
+*.p12 binary
