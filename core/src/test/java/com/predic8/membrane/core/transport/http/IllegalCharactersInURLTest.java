@@ -25,15 +25,16 @@ import org.apache.http.client.methods.*;
 import org.apache.http.impl.client.*;
 import org.junit.jupiter.api.*;
 
-import static com.predic8.membrane.core.http.Request.METHOD_GET;
+import java.net.*;
+
 import static org.junit.jupiter.api.Assertions.*;
 
-public class IllegalCharactersInURLTest {
+class IllegalCharactersInURLTest {
 
     private HttpRouter r;
 
     @BeforeEach
-    public void init() throws Exception {
+    void init() throws Exception {
         r = new HttpRouter();
         r.setHotDeploy(false);
         r.add(new ServiceProxy(new ServiceProxyKey(3027), "localhost", 3028));
@@ -51,7 +52,7 @@ public class IllegalCharactersInURLTest {
     }
 
     @AfterEach
-    public void unInit() {
+    void unInit() {
         r.shutdown();
     }
 
@@ -66,12 +67,26 @@ public class IllegalCharactersInURLTest {
     }
 
     @Test
-    void doIt() throws Exception {
+    void illegal_with_router_tolerant_urifactory() throws Exception {
+        r.setUriFactory(new URIFactory(true));
+        makeCallWithIllegalCharacters(200);
+    }
+
+    @Test
+    void illegal_with_router_intolerant_urifactory() throws Exception {
+        r.setUriFactory(new URIFactory(false));
+        makeCallWithIllegalCharacters(500);
+    }
+
+    private static void makeCallWithIllegalCharacters(int expectedStatusCode) throws Exception {
         try (HttpClient httpClient = new HttpClient()) {
-            Response res = httpClient.call(
-                    new Request.Builder().method(METHOD_GET).url(new URIFactory(true), "http://localhost:3027/foo{}").buildExchange())
-                    .getResponse();
-            assertEquals(200, res.getStatusCode());
+            assertEquals(expectedStatusCode, httpClient.call(buildExchange())
+                    .getResponse().getStatusCode());
         }
+    }
+
+    private static Exchange buildExchange() throws URISyntaxException {
+        return new Request.Builder().get(new URIFactory(true),
+                "http://localhost:3027/foo{}").buildExchange();
     }
 }

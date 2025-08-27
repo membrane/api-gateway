@@ -138,6 +138,12 @@ public class URI {
         return queryDecoded;
     }
 
+    public String getRawFragment() {
+        if (uri != null)
+            return uri.getRawFragment();
+        return fragment;
+    }
+
     /**
      * Returns the fragment (the part after '#'), decoded like {@link #getPath()} and {@link #getQuery()}.
      */
@@ -148,6 +154,7 @@ public class URI {
             fragmentDecoded = decode(fragment);
         return fragmentDecoded;
     }
+
 
     /*
      * Returns the authority component of this URI.
@@ -178,6 +185,26 @@ public class URI {
         if (uri != null)
             return uri.getRawQuery();
         return query;
+    }
+
+    /**
+     * Fragments are client side only and should not be propagated to the backend.
+     * @return
+     */
+    public String getPathWithQuery() {
+        StringBuilder r = new StringBuilder(100);
+
+        if (getRawPath() != null && !getRawPath().isBlank()) {
+            r.append(getRawPath());
+        } else {
+            r.append("/");
+        }
+
+        // Add query if present
+        if (getRawQuery() != null && !getRawQuery().isBlank()) {
+            r.append("?").append(getRawQuery());
+        }
+        return r.toString();
     }
 
     @Override

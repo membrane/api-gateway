@@ -16,6 +16,7 @@ package com.predic8.membrane.core.interceptor.rewrite;
 import com.fasterxml.jackson.databind.*;
 import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.interceptor.rewrite.RewriteInterceptor.*;
 import com.predic8.membrane.core.proxies.*;
@@ -24,6 +25,7 @@ import org.junit.jupiter.api.*;
 import java.net.*;
 import java.util.*;
 
+import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
 import static com.predic8.membrane.core.http.Request.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static org.junit.jupiter.api.Assertions.*;
@@ -49,7 +51,6 @@ public class RewriteInterceptorTest {
 
 		exc = new Exchange(null);
 
-
 		rewriter = new RewriteInterceptor();
 		List<Mapping> mappings = new ArrayList<>();
 		mappings.add( new Mapping("/buy/(.*)/(.*)", "/buy?item=$1&amount=$2", null));
@@ -69,6 +70,7 @@ public class RewriteInterceptorTest {
 	@Test
 	void testRewrite() throws URISyntaxException {
 		exc.setRequest(get("/buy/banana/3").build());
+		exc.setOriginalRequestUri("/buy/banana/3");
 		exc.setProxy(sp);
 
 		assertEquals(CONTINUE, di.handleRequest(exc));
@@ -86,17 +88,17 @@ public class RewriteInterceptorTest {
 
 	@Test
 	void invalidURI() throws Exception {
-		exc.setRequest(get("/dummy").build());
-		exc.getRequest().setUri("/buy/banana/%"); // Overwrite dummy
 		exc.setProxy(sp);
-
-		assertEquals(CONTINUE, di.handleRequest(exc));
+		exc.getDestinations().add("/buy/banana/%");
+		var req = new Request();
+		req.getHeader().setContentType(APPLICATION_JSON);
+		exc.setRequest(req);
 		assertEquals(RETURN, rewriter.handleRequest(exc));
 
 		JsonNode json = om.readTree(exc.getResponse().getBodyAsStream());
 
 		assertEquals("https://membrane-api.io/problems/user/path",json.get("type").asText());
 		assertEquals("The path does not follow the URI specification. Confirm the validity of the provided URL.",json.get("title").asText());
-		assertTrue(json.get("detail").asText().contains("http://www.predic8.de:80/buy/banana/%"));
+		assertTrue(json.get("detail").asText().contains("/buy/banana/%"));
 	}
 }
