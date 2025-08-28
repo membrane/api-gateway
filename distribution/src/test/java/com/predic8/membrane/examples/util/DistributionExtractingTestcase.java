@@ -34,17 +34,12 @@ import static org.apache.commons.io.FileUtils.*;
  */
 public abstract class DistributionExtractingTestcase {
 
-    private static final Logger log = LoggerFactory.getLogger(DistributionExtractingTestcase.class.getName());
-
     public static final String MEMBRANE_LOG_LEVEL = "info";
-
     public static final String LOCALHOST_2000 = "http://localhost:2000";
-
+    private static final Logger log = LoggerFactory.getLogger(DistributionExtractingTestcase.class.getName());
     private static File unzipDir;
     private static File membraneHome;
     protected File baseDir = new File(getExampleDirName());
-
-    protected String getExampleDirName() { return "dummy"; }
 
     @BeforeAll
     public static void beforeAll() throws Exception {
@@ -69,12 +64,6 @@ public abstract class DistributionExtractingTestcase {
         log.info("cleaning up...");
         recursiveDelete(unzipDir);
         log.info("cleaning up... done");
-    }
-
-    @BeforeEach
-    public void init() {
-        baseDir = getExampleDir(getExampleDirName());
-        log.info("running test... in {}",baseDir);
     }
 
     private static File getTargetDir() throws IOException {
@@ -127,17 +116,6 @@ public abstract class DistributionExtractingTestcase {
                 log4j2xml, UTF_8);
     }
 
-    public File getExampleDir(String name) {
-        File exampleDir = new File(membraneHome, "examples" + separator + name);
-        if (!exampleDir.exists())
-            throw new RuntimeException("Example dir " + exampleDir.getAbsolutePath() + " does not exist.");
-        return exampleDir;
-    }
-
-    public File getMembraneHome() {
-        return membraneHome;
-    }
-
     private static void recursiveDelete(File file) {
         if (file.isDirectory())
             //noinspection ConstantConditions
@@ -151,27 +129,27 @@ public abstract class DistributionExtractingTestcase {
     }
 
     public static void unzip(File zip, File target) throws IOException {
-        ZipFile zipFile = new ZipFile(zip);
-        Enumeration<? extends ZipEntry> entries = zipFile.entries();
-        while (entries.hasMoreElements()) {
-            ZipEntry entry = entries.nextElement();
-            if (entry.isDirectory()) {
-                // Assume directories are stored parents first then children.
-                // This is not robust, just for demonstration purposes.
-                //noinspection ResultOfMethodCallIgnored
-                new File(target, entry.getName()).mkdir();
-            } else {
-                final File zipEntryFile = new File(target, entry.getName());
-                if (!zipEntryFile.toPath().normalize().startsWith(target.toPath().normalize())) {
-                    throw new IOException("Bad zip entry");
-                }
-                try (FileOutputStream fos = new FileOutputStream(zipEntryFile)) {
-                    copyInputStream(zipFile.getInputStream(entry),
-                            new BufferedOutputStream(fos));
+        try (ZipFile zipFile = new ZipFile(zip)) {
+            Enumeration<? extends ZipEntry> entries = zipFile.entries();
+            while (entries.hasMoreElements()) {
+                ZipEntry entry = entries.nextElement();
+                if (entry.isDirectory()) {
+                    // Assume directories are stored parents first then children.
+                    // This is not robust, just for demonstration purposes.
+                    //noinspection ResultOfMethodCallIgnored
+                    new File(target, entry.getName()).mkdir();
+                } else {
+                    final File zipEntryFile = new File(target, entry.getName());
+                    if (!zipEntryFile.toPath().normalize().startsWith(target.toPath().normalize())) {
+                        throw new IOException("Bad zip entry");
+                    }
+                    try (FileOutputStream fos = new FileOutputStream(zipEntryFile)) {
+                        copyInputStream(zipFile.getInputStream(entry),
+                                new BufferedOutputStream(fos));
+                    }
                 }
             }
         }
-        zipFile.close();
     }
 
     public static void copyInputStream(InputStream in, OutputStream out)
@@ -186,8 +164,29 @@ public abstract class DistributionExtractingTestcase {
         out.close();
     }
 
+    protected String getExampleDirName() {
+        return "dummy";
+    }
+
+    @BeforeEach
+    public void init() {
+        baseDir = getExampleDir(getExampleDirName());
+        log.info("running test... in {}", baseDir);
+    }
+
+    public File getExampleDir(String name) {
+        File exampleDir = new File(membraneHome, "examples" + separator + name);
+        if (!exampleDir.exists())
+            throw new RuntimeException("Example dir " + exampleDir.getAbsolutePath() + " does not exist.");
+        return exampleDir;
+    }
+
+    public File getMembraneHome() {
+        return membraneHome;
+    }
+
     protected String readFileFromBaseDir(String filename) throws IOException {
-        return readFileToString(new File(baseDir,filename), UTF_8);
+        return readFileToString(new File(baseDir, filename), UTF_8);
     }
 
     protected Process2 startServiceProxyScript() throws IOException, InterruptedException {
@@ -200,7 +199,7 @@ public abstract class DistributionExtractingTestcase {
     }
 
     protected Process2 startServiceProxyScript(ConsoleWatcher watch) throws IOException, InterruptedException {
-        return startServiceProxyScript(watch,"membrane");
+        return startServiceProxyScript(watch, "membrane");
     }
 
     protected Process2 startServiceProxyScript(ConsoleWatcher watch, String script) throws IOException, InterruptedException {
@@ -216,6 +215,7 @@ public abstract class DistributionExtractingTestcase {
 
     /**
      * Replace String a with b in file
+     *
      * @param a String to be replaced
      * @param b String that replaces
      * @throws IOException Problem accessing File

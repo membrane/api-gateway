@@ -1,6 +1,6 @@
-# Simple Static API Loadbalancer
+# Simple Static API Load Balancer
 
-Membrane can serve as an API software loadbalancer and distribute requests across multiple backend nodes.
+Membrane can serve as an software load balancer for API and distribute requests across multiple backend nodes.
 
 This sample shows a simple static configuration. For health checks, sticky sessions, or dynamic discovery, see the other examples.
 

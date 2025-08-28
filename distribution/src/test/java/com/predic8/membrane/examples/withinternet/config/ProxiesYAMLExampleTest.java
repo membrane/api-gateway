@@ -20,6 +20,7 @@ import org.skyscreamer.jsonassert.*;
 
 import java.io.*;
 
+import static com.predic8.membrane.core.http.Header.*;
 import static com.predic8.membrane.core.http.MimeType.*;
 import static io.restassured.RestAssured.*;
 import static org.hamcrest.Matchers.*;
@@ -37,7 +38,7 @@ class ProxiesYAMLExampleTest extends AbstractSampleMembraneStartStopTestcase {
     }
 
     @Test
-    void api_doc() throws Exception {
+    void api_doc() {
             JSONAssert.assertEquals("""
                 {
                   "fruitshop-v1-1" : {
@@ -52,14 +53,14 @@ class ProxiesYAMLExampleTest extends AbstractSampleMembraneStartStopTestcase {
     }
 
     @Test
-    void adminConsole() throws Exception {
+    void adminConsole() {
         // @formatter:off
         given().
         when().
                 get("http://localhost:9000/admin").
         then().assertThat()
                 .statusCode(200)
-                .contentType(TEXT_HTML)
+                .header(CONTENT_TYPE, startsWith(TEXT_HTML))
                 .body(containsString("Administration"));
         // @formatter:on
     }

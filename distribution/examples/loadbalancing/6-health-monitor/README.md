@@ -15,13 +15,13 @@ When a backend becomes slow or unresponsive, users hit timeouts and errors. The 
 1. Go to the example directory.
 
    ```bash
-   cd distribution/examples/loadbalancing/7-health-monitor
+   cd distribution/examples/loadbalancing/6-health-monitor
    ```
 
 2. Start Membrane.
 
-   * macOS/Linux: `./membrane.sh`
-   * Windows: `membrane.cmd`
+   - macOS/Linux: `./membrane.sh`
+   - Windows: `membrane.cmd`
 
 3. Verify the load balancer.
 
@@ -31,10 +31,10 @@ When a backend becomes slow or unresponsive, users hit timeouts and errors. The 
 
    Repeat a few times. You should see responses alternating between backend 1 and backend 2.
 
-5. Check node status in the Admin Console.
+4. Check node status in the Admin Console.
 
    * Open:
-     [Load Balancing → Demo Balancer → Production](http://localhost:9000/admin/clusters/show?balancer=Demo+Balancer&cluster=Production)
+     [Load Balancing → Default → Production](http://localhost:9000/admin/clusters/show?balancer=Default&cluster=Production)
    * Both nodes should show **UP**.
 
 
@@ -55,7 +55,7 @@ When a backend becomes slow or unresponsive, users hit timeouts and errors. The 
    * Example log lines:
 
      ```
-     Calling health endpoint failed: http://localhost:8001/health, Read timed out
+     Node localhost:8002 health check failed with HTTP 500 status code
      ```
 
    * Send a few requests again to the balancer. All responses should now come from backend 1.
@@ -63,7 +63,7 @@ When a backend becomes slow or unresponsive, users hit timeouts and errors. The 
 3. Change the status code back to 200 and observe recovery.
 
 
-### Simulate A Backend Issue
+### Simulate A Slow Backend
 
 1. Make backend 1 slow to trigger a timeout.
 

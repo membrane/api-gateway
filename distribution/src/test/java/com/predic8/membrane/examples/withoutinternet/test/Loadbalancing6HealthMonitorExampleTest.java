@@ -27,8 +27,7 @@ import java.util.regex.*;
 import static io.restassured.RestAssured.*;
 import static io.restassured.filter.log.LogDetail.*;
 import static java.nio.charset.StandardCharsets.*;
-import static java.nio.file.StandardOpenOption.CREATE;
-import static java.nio.file.StandardOpenOption.TRUNCATE_EXISTING;
+import static java.nio.file.StandardOpenOption.*;
 import static org.hamcrest.CoreMatchers.*;
 import static org.hamcrest.MatcherAssert.*;
 
@@ -53,13 +52,16 @@ class Loadbalancing6HealthMonitorExampleTest extends DistributionExtractingTestc
         builder = new Process2.Builder().in(baseDir).script("membrane").waitForMembrane();
     }
 
-    /**
-     * Without TLS (proxies.xml)
-     **/
-    @Test
-    void http_backendsReachable() throws Exception {
-        try (Process2 ignored = builder.start()) {
-            // @formatter:off
+    @Nested
+    class http {
+
+        /**
+         * Without TLS (proxies.xml)
+         **/
+        @Test
+        void http_backendsReachable() throws Exception {
+            try (Process2 ignored = builder.start()) {
+                // @formatter:off
             get("http://localhost:8001/")
                 .then()
                     .statusCode(200)
@@ -69,65 +71,69 @@ class Loadbalancing6HealthMonitorExampleTest extends DistributionExtractingTestc
                     .statusCode(200)
                     .body(containsString("backend 2!"));
             // @formatter:on
-        }
-    }
-
-    @Test
-    void http_lbAlternates() throws Exception {
-        try (Process2 ignored = builder.start()) {
-            Set<String> seen = new HashSet<>();
-            for (int i = 0; i < 4; i++) {
-                String body = get("http://localhost:8000/").then().statusCode(200).extract().asString();
-                if (body.contains("backend 1")) seen.add("b1");
-                if (body.contains("backend 2")) seen.add("b2");
-                if (seen.size() == 2) break;
             }
-            assertThat("LB should reach both backends within a few requests", seen.size(), equalTo(2));
         }
-    }
 
-    @Test
-    void http_adminShowsNodesUp() throws Exception {
-        try (Process2 ignored = builder.start()) {
-            // @formatter:off
+        @Test
+        void http_lbAlternates() throws Exception {
+            try (Process2 ignored = builder.start()) {
+                Set<String> seen = new HashSet<>();
+                for (int i = 0; i < 4; i++) {
+                    String body = get("http://localhost:8000/").then().statusCode(200).extract().asString();
+                    if (body.contains("backend 1")) seen.add("b1");
+                    if (body.contains("backend 2")) seen.add("b2");
+                    if (seen.size() == 2) break;
+                }
+                assertThat("LB should reach both backends within a few requests", seen.size(), equalTo(2));
+            }
+        }
+
+        @Test
+        void http_adminShowsNodesUp() throws Exception {
+            try (Process2 ignored = builder.start()) {
+                // @formatter:off
             String html = get(ADMIN_URL)
                             .then()
                                 .log().ifValidationFails(ALL)
                                 .statusCode(200)
                                 .extract().asString();
             // @formatter:on
-            assertThat(html, containsString("localhost:8001"));
-            assertThat(html, containsString("localhost:8002"));
-            assertThat(html, containsString(UP));
-        }
-    }
-
-    @Test
-    void http_simulateNodeDown() {
-        withBackedUpFile("proxies.xml", () -> {
-            try {
-                setNode1Delay(baseDir.toPath().resolve("proxies.xml"), 3000);
-                try (Process2 ignored = builder.start()) {
-                    Thread.sleep(3000); // Wait till health check happened!
-                    String html = get(ADMIN_URL).then().statusCode(200).extract().asString();
-                    assertThat(html, containsString("localhost:8001"));
-                    assertThat(html, containsString("localhost:8002"));
-                    assertThat(html, containsString(DOWN));
-                }
-            } catch (Exception e) {
-                throw new RuntimeException(e);
+                assertThat(html, containsString("localhost:8001"));
+                assertThat(html, containsString("localhost:8002"));
+                assertThat(html, containsString(UP));
             }
-        });
+        }
+
+        @Test
+        void http_simulateNodeDown() {
+            withBackedUpFile("proxies.xml", () -> {
+                try {
+                    setNode1Delay(baseDir.toPath().resolve("proxies.xml"), 3000);
+                    try (Process2 ignored = builder.start()) {
+                        String html = awaitStatus(ADMIN_URL, DOWN, 10000);
+                        assertThat(html, containsString("localhost:8001"));
+                        assertThat(html, containsString("localhost:8002"));
+                        assertThat(html, containsString(DOWN));
+                    }
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+            });
+        }
+
     }
 
-    /**
-     * With TLS (proxies-tls.xml)
-     **/
-    @Test
-    void https_backendsReachable() throws Exception {
-        ensureCertificates();
-        try (Process2 ignored = builder.parameters(PROXIES_TLS_XML_OPTION).start()) {
-            // @formatter:off
+    @Nested
+    class https {
+
+        /**
+         * With TLS (proxies-tls.xml)
+         **/
+        @Test
+        void https_backendsReachable() throws Exception {
+            ensureCertificates();
+            try (Process2 ignored = builder.parameters(PROXIES_TLS_XML_OPTION).start()) {
+                // @formatter:off
             given()
                 .relaxedHTTPSValidation()
             .when()
@@ -143,92 +149,104 @@ class Loadbalancing6HealthMonitorExampleTest extends DistributionExtractingTestc
                 .and()
                     .body(containsString("Hello from backend 2!"));
             // @formatter:on
-        } catch (Exception e) {
-            throw new RuntimeException(e);
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
         }
-    }
 
-    @Test
-    void https_lbAlternates() throws Exception {
-        ensureCertificates();
-        try (Process2 ignored = builder.parameters(PROXIES_TLS_XML_OPTION).start()) {
-            Set<String> seen = new HashSet<>();
-            for (int i = 0; i < 4; i++) {
-                // @formatter:off
+        @Test
+        void https_lbAlternates() throws Exception {
+            ensureCertificates();
+            try (Process2 ignored = builder.parameters(PROXIES_TLS_XML_OPTION).start()) {
+                Set<String> seen = new HashSet<>();
+                for (int i = 0; i < 4; i++) {
+                    // @formatter:off
                 String body = given()
                     .relaxedHTTPSValidation()
                 .when()
-                    .get("https://localhost:443/")
+                    .get("https://localhost:8443/")
                 .then()
                     .statusCode(200)
                     .extract().asString();
                 // @formatter:on
-                if (body.contains("backend 1")) seen.add("b1");
-                if (body.contains("backend 2")) seen.add("b2");
-                if (seen.size() == 2) break;
+                    if (body.contains("backend 1")) seen.add("b1");
+                    if (body.contains("backend 2")) seen.add("b2");
+                    if (seen.size() == 2) break;
+                }
+                assertThat("LB should reach both backends within a few requests", seen.size(), equalTo(2));
+            } catch (Exception e) {
+                throw new RuntimeException(e);
             }
-            assertThat("LB should reach both backends within a few requests", seen.size(), equalTo(2));
-        } catch (Exception e) {
-            throw new RuntimeException(e);
         }
-    }
 
-    @Test
-    void https_adminShowsNodesUp() throws Exception {
-        ensureCertificates();
-        try (Process2 ignored = builder.parameters(PROXIES_TLS_XML_OPTION).start()) {
-            // @formatter:off
+        @Test
+        void https_adminShowsNodesUp() throws Exception {
+            ensureCertificates();
+            try (Process2 ignored = builder.parameters(PROXIES_TLS_XML_OPTION).start()) {
+                // @formatter:off
             String html = given()
                 .relaxedHTTPSValidation()
             .get(ADMIN_URL_HTTPS).then()
                 .statusCode(200)
                 .extract().asString();
             // @formatter:on
-            assertThat(html, containsString("localhost:8001"));
-            assertThat(html, containsString("localhost:8002"));
-            assertThat(html, containsString(UP));
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-
-    }
-
-    @Test
-    void https_simulateNodeDown() throws Exception {
-        ensureCertificates();
-        withBackedUpFile("proxies-tls.xml", () -> {
-            try {
-                setNode1Delay(baseDir.toPath().resolve("proxies-tls.xml"), 3000);
-                try (Process2 ignored = builder.parameters(PROXIES_TLS_XML_OPTION).start()) {
-                    Thread.sleep(3000); // Wait for health check to happen
-                    // @formatter:off
-                    String html = given()
-                        .relaxedHTTPSValidation()
-                    .get(ADMIN_URL_HTTPS).then()
-                        .statusCode(200)
-                        .extract().asString();
-                    // @formatter:on
-                    assertThat(html, containsString("localhost:8001"));
-                    assertThat(html, containsString("localhost:8002"));
-                    assertThat(html, containsString(DOWN));
-                }
+                assertThat(html, containsString("localhost:8001"));
+                assertThat(html, containsString("localhost:8002"));
+                assertThat(html, containsString(UP));
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
-        });
-    }
 
-    private void ensureCertificates() throws Exception {
-        File b1 = new File(baseDir, "certificates/backend-1.p12");
-        File b2 = new File(baseDir, "certificates/backend-2.p12");
-        File bal = new File(baseDir, "certificates/balancer.p12");
-        if (b1.exists() && b2.exists() && bal.exists())
-            return;
+        }
 
-        Process p = startScript();
-        int exit = p.waitFor();
-        if (exit != 0)
-            throw new IllegalStateException("create-certificates script failed with exit code " + exit);
+        @Test
+        void https_simulateNodeDown() throws Exception {
+            ensureCertificates();
+            withBackedUpFile("proxies-tls.xml", () -> {
+                try {
+                    setNode1Delay(baseDir.toPath().resolve("proxies-tls.xml"), 3000);
+                    try (Process2 ignored = builder.parameters(PROXIES_TLS_XML_OPTION).start()) {
+
+//                    Thread.sleep(3000); // Wait for health check to happen
+
+
+                        // @formatter:off
+                    String html = given()
+                        .relaxedHTTPSValidation()
+                                          .get(awaitUrl(ADMIN_URL_HTTPS, DOWN, 10000)).then()
+
+                                                         .statusCode(200)
+                                                                                    .extract().asString();
+
+//                    .get(ADMIN_URL_HTTPS).then()
+//                        .statusCode(200)
+//                        .extract().asString();
+
+
+
+                    // @formatter:on
+                        assertThat(html, containsString("localhost:8001"));
+                        assertThat(html, containsString("localhost:8002"));
+                        assertThat(html, containsString(DOWN));
+                    }
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+            });
+        }
+
+        private void ensureCertificates() throws Exception {
+            File b1 = new File(baseDir, "certificates/backend-1.p12");
+            File b2 = new File(baseDir, "certificates/backend-2.p12");
+            File bal = new File(baseDir, "certificates/balancer.p12");
+            if (b1.exists() && b2.exists() && bal.exists())
+                return;
+
+            Process p = startScript();
+            int exit = p.waitFor();
+            if (exit != 0)
+                throw new IllegalStateException("create-certificates script failed with exit code " + exit);
+        }
     }
 
     private @NotNull Process startScript() throws IOException {
@@ -254,7 +272,7 @@ class Loadbalancing6HealthMonitorExampleTest extends DistributionExtractingTestc
         if (!m.find())
             throw new IllegalStateException("Could not find Node 1 <groovy> Thread.sleep(...) in " + proxiesXml);
         String replaced = m.replaceFirst(Matcher.quoteReplacement(m.group(1)) + m.group(2) + millis + m.group(3));
-        Files.writeString(proxiesXml, replaced, UTF_8, TRUNCATE_EXISTING);
+        Files.writeString(proxiesXml, replaced, UTF_8, TRUNCATE_EXISTING, CREATE);
     }
 
     private void withBackedUpFile(String fileName, Runnable action) {
@@ -274,5 +292,23 @@ class Loadbalancing6HealthMonitorExampleTest extends DistributionExtractingTestc
                 }
             }
         }
+    }
+
+    private static String awaitStatus(String url, String expected, long timeoutMs) {
+        long end = System.currentTimeMillis() + timeoutMs;
+        while (System.currentTimeMillis() < end) {
+            String html = given().relaxedHTTPSValidation().get(url).then().statusCode(200).extract().asString();
+            if (html.contains(expected)) return html;
+            try {
+                Thread.sleep(250);
+            } catch (InterruptedException ignored) {
+            }
+        }
+        throw new AssertionError("Timeout waiting for status " + expected + " at " + url);
+    }
+
+    private static String awaitUrl(String url, String expected, long timeoutMs) {
+        awaitStatus(url, expected, timeoutMs);
+        return url;
     }
 }

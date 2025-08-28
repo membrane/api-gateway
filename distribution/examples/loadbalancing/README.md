@@ -10,7 +10,9 @@ Each sample add a new aspect to the previous one. You can start with sample 1 an
 |--------------------------------------|-------------------------------------------------------------|
 | [Static](1-static)                   | Simple setup using a static configuration of backend nodes. |
 | [Dynamic with UI](2-dynamic)         | Managing nodes dynamically with a Web console or API.       |
-| [Dynamic with client](3-client)      | Managing nodes using the commandline                        |
-| [XML Session](4-xml-session)         | Sticky session with XML and Web Services                    |
-| [Multiple](5-multiple)               | Run multiple loadbalancers in one Membrane installation     |
-| [Health Monitor](6-health-monitor)          | Periodic health checks and TLS protection     |
+| [Dynamic with client](3-client)      | Managing nodes using the command line.                      |
+| [XML Session](4-xml-session)         | Sticky sessions with XML and Web Services.                  |
+| [Multiple](5-multiple)               | Run multiple load balancers in one Membrane installation.   |
+| [Health Monitor](6-health-monitor)   | Periodic health checks and TLS protection.                  |
+
+

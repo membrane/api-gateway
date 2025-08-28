@@ -14,7 +14,7 @@
 
     <router production="false">
 
-        <!-- Public LB endpoint (HTTPS) -->
+        <!-- Public LB endpoint -->
         <api port="8000">
             <balancer>
                 <clusters>

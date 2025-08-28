@@ -11,7 +11,7 @@
             <connection timeout="2000" soTimeout="2000"/>
             <ssl>
                 <!-- Trust CA used by backend nodes -->
-                <truststore location="certificates/balancer.p12" password="changeit" type="pkcs12"/>
+                <truststore location="certificates/balancer.p12" password="changeit"/>
             </ssl>
         </httpClientConfig>
     </balancerHealthMonitor>
@@ -19,7 +19,7 @@
     <router production="false">
 
         <!-- Public LB endpoint (HTTPS) -->
-        <api port="443">
+        <api port="8443">
             <ssl>
                 <!-- LB server cert -->
                 <keystore location="certificates/balancer.p12" password="changeit"/>

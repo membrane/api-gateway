@@ -54,9 +54,9 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  * @topic 4. Monitoring, Logging and Statistics
  */
 @MCElement(name = "balancerHealthMonitor")
-public class ClusterHealthMonitor implements ApplicationContextAware, InitializingBean, DisposableBean {
+public class BalancerHealthMonitor implements ApplicationContextAware, InitializingBean, DisposableBean {
 
-    private static final Logger log = LoggerFactory.getLogger(ClusterHealthMonitor.class);
+    private static final Logger log = LoggerFactory.getLogger(BalancerHealthMonitor.class);
 
     private Router router;
     private int interval = 10000;
@@ -74,6 +74,7 @@ public class ClusterHealthMonitor implements ApplicationContextAware, Initializi
         log.info("Starting HealthMonitor for load balancing with interval of {} ms", interval);
 
         scheduler = createScheduler();
+        httpClientConfig.setMaxRetries(-1); // Health check should never be retried.
         client = router.getHttpClientFactory().createClient(httpClientConfig);
     }
 
@@ -114,7 +115,7 @@ public class ClusterHealthMonitor implements ApplicationContextAware, Initializi
     private static Status getStatus(Node node, Exchange exc) {
         int status = exc.getResponse().getStatusCode();
         if (status >= 300) {
-            log.warn("Node {}:{} health check failed with HTTP {}", node.getHost(), node.getPort(), status);
+            log.warn("Node {}:{} health check failed with HTTP {} status code", node.getHost(), node.getPort(), status);
             return DOWN;
         }
         log.debug("Node {}:{} is healthy (HTTP {})", node.getHost(), node.getPort(), status);

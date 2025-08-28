@@ -23,8 +23,8 @@ Nodes can be organized in clusters. You can manage them either through the web-b
 
 2. Start Membrane:
 
-   * macOS/Linux: `./membrane.sh`
-   * Windows: `membrane.cmd`
+   - macOS/Linux: `./membrane.sh`
+   - Windows: `membrane.cmd`
 
 3. Open in a browser:
 
@@ -78,7 +78,7 @@ Nodes can be organized in clusters. You can manage them either through the web-b
 
 Nodes can also be controlled programmatically using the Cluster Manager API. For example, to temporarily disable node `localhost:4001`:
 
-```
+```bash
 curl "http://localhost:9010/clustermanager/down?balancer=default&host=localhost&port=4001"
 ```
 
@@ -95,4 +95,4 @@ Re-enable the node with `.../up?balancer=...`.
 ---
 See:
 - [proxies.xml](proxies.xml)
-- [balancer](https://membrane-soa.org/api-gateway-doc/current/configuration/reference/balancer.htm) reference
+- [balancer](https://www.membrane-api.io/docs/current/balancer.html) reference
