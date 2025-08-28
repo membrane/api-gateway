@@ -19,11 +19,10 @@ import org.junit.jupiter.api.*;
 import java.net.*;
 
 import static org.junit.jupiter.api.Assertions.*;
-
-public class URITest {
+class URITest {
 
 	@Test
-	public void doit() {
+	void doit() {
 		assertSame("http://predic8.de/?a=query");
 		assertSame("http://predic8.de/#foo");
 		assertSame("http://predic8.de/path/file");
@@ -44,7 +43,7 @@ public class URITest {
 
 	@SuppressWarnings("UnnecessaryUnicodeEscape")
 	@Test
-	public void encoding() {
+	void encoding() {
 		assertSame("http://predic8.de/path/file?a=quer\u00E4y#foo");
 		assertSame("http://predic8.de/path/file?a=quer%C3%A4y#foo%C3%A4");
 		assertSame("http://predic8.de/path/fi\u00E4le?a=query#foo");
@@ -58,7 +57,7 @@ public class URITest {
 	}
 
 	@Test
-	public void testIllegalCharacter() {
+	void illegalCharacter() {
 		assertError("http:///test?a=q{uery#foo", "/test", "a=q{uery");
 		assertError("http:///te{st?a=query#foo", "/te{st", "a=query");
 		assertError("http://pre{dic8.de/test?a=query#foo", "/test", "a=query");
@@ -137,7 +136,7 @@ public class URITest {
 				assertEquals(u1.getPath(), u2.getPath());
 				assertEquals(u1.getQuery(), u2.getQuery());
 				assertEquals(u1.getRawQuery(), u2.getRawQuery());
-				assertEquals(u1.getFragment(), u2.getFragment());
+				assertEquals(u1.getRawFragment(), u2.getRawFragment());
 			}
 			assertEquals(u1.toString(), u2.toString());
 		} catch (URISyntaxException e) {
@@ -224,4 +223,27 @@ public class URITest {
             assertEquals("[2001:db8::1]:8080", new URI("http://[2001:db8::1]:8080/foo", false).getAuthority());
         }
     }
+	@Test
+	void getPathWithQuery() throws URISyntaxException {
+		assertEquals("/", new URIFactory().create("").getPathWithQuery());
+		assertEquals("/foo", new URIFactory().create("http://localhost/foo").getPathWithQuery());
+		assertEquals("/foo?q=1", new URIFactory().create("/foo?q=1").getPathWithQuery());
+		assertEquals("/", new URIFactory().create("http://localhost").getPathWithQuery());
+	}
+
+	@Test
+	@DisplayName("Fragments should be removed and not propagated to backend")
+	void removeFragment() throws URISyntaxException {
+		assertEquals("/foo", new URIFactory().create("http://localhost:777/foo#frag").getPathWithQuery());
+		assertEquals("/", new URIFactory().create("#frag").getPathWithQuery());
+		assertEquals("/foo?q=1", new URIFactory().create("/foo?q=1#frag").getPathWithQuery());
+	}
+
+	@Test
+	void getPathWithQuery_keep_raw() throws URISyntaxException {
+		assertEquals("/foo?q=a%20b", new URIFactory().create("/foo?q=a%20b").getPathWithQuery());
+		assertEquals("/", new URIFactory().create("#a%20b").getPathWithQuery());
+		assertEquals("/foo?q=a+b", new URIFactory().create("/foo?q=a+b").getPathWithQuery()); // '+' must remain '+'
+		assertEquals("/foo", new URIFactory().create("/foo#c%2Fd").getPathWithQuery());  // '/' in fragment is encoded
+	}
 }
