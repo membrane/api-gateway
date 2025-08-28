@@ -74,7 +74,7 @@ public class OAuth2TokenBody {
         appendParam(r, "refresh_token", refreshToken);
         appendParam(r, "code", code);
         appendParam(r, "redirect_uri", redirectUri);
-        appendParam(r, "scope", scope, e -> encode(e, UTF_8));
+        appendParam(r, "scope", scope);
         appendParam(r, "code_verifier", codeVerifier);
         appendParam(r, "client_id", clientId);
         appendParam(r, "client_secret", clientSecret);
@@ -84,7 +84,7 @@ public class OAuth2TokenBody {
     }
 
     private void appendParam(StringBuilder sb, String paramName, String paramValue) {
-        appendParam(sb, paramName, paramValue, e -> e);
+        appendParam(sb, paramName, paramValue, e -> encode(e, UTF_8));
     }
 
     private void appendParam(StringBuilder sb, String paramName, String paramValue, Function<String, String> encoder) {
