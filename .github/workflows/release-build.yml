@@ -75,7 +75,7 @@ jobs:
             --no-transfer-progress \
             --batch-mode \
             -DskipTests \
-            -Possrh \
+            -Pcentral \
             -Dgpg.passphrase=${{ secrets.OSSRH_GPG_SECRET_KEY_PASSWORD }} \
             clean verify
       - name: Ensure release files exist
