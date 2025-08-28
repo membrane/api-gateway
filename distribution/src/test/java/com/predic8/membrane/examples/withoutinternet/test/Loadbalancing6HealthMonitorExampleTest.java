@@ -61,7 +61,7 @@ class Loadbalancing6HealthMonitorExampleTest extends DistributionExtractingTestc
         @Test
         void http_backendsReachable() throws Exception {
             try (Process2 ignored = builder.start()) {
-                // @formatter:off
+            // @formatter:off
             get("http://localhost:8001/")
                 .then()
                     .statusCode(200)
@@ -79,7 +79,13 @@ class Loadbalancing6HealthMonitorExampleTest extends DistributionExtractingTestc
             try (Process2 ignored = builder.start()) {
                 Set<String> seen = new HashSet<>();
                 for (int i = 0; i < 4; i++) {
-                    String body = get("http://localhost:8000/").then().statusCode(200).extract().asString();
+                    // @formatter:off
+                    String body = get("http://localhost:8000/")
+                        .then()
+                            .log().ifValidationFails(ALL)
+                            .statusCode(200)
+                            .extract().asString();
+                    // @formatter:on
                     if (body.contains("backend 1")) seen.add("b1");
                     if (body.contains("backend 2")) seen.add("b2");
                     if (seen.size() == 2) break;
@@ -300,7 +306,7 @@ class Loadbalancing6HealthMonitorExampleTest extends DistributionExtractingTestc
             String html = given().relaxedHTTPSValidation().get(url).then().statusCode(200).extract().asString();
             if (html.contains(expected)) return html;
             try {
-                Thread.sleep(250);
+                Thread.sleep(50);
             } catch (InterruptedException ignored) {
             }
         }

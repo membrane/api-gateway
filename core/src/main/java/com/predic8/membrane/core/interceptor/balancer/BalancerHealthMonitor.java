@@ -74,7 +74,7 @@ public class BalancerHealthMonitor implements ApplicationContextAware, Initializ
         log.info("Starting HealthMonitor for load balancing with interval of {} ms", interval);
 
         scheduler = createScheduler();
-        httpClientConfig.setMaxRetries(-1); // Health check should never be retried.
+        httpClientConfig.setMaxRetries(0); // Health check should never be retried.
         client = router.getHttpClientFactory().createClient(httpClientConfig);
     }
 
@@ -113,6 +113,8 @@ public class BalancerHealthMonitor implements ApplicationContextAware, Initializ
     }
 
     private static Status getStatus(Node node, Exchange exc) {
+        if (exc.getResponse() == null)
+            return DOWN;
         int status = exc.getResponse().getStatusCode();
         if (status >= 300) {
             log.warn("Node {}:{} health check failed with HTTP {} status code", node.getHost(), node.getPort(), status);
