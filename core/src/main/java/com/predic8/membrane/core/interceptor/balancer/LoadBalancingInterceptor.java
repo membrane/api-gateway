@@ -66,12 +66,16 @@ public class LoadBalancingInterceptor extends AbstractInterceptor {
             String msg = "No backend node found that is ready to handle this request. Check health of backends and balancer configuration.";
             log.error(msg);
             internal(router.isProduction(), getDisplayName())
+                    .statusCode(503)
+                    .title("Service unavailable")
                     .addSubSee("node-dispatching")
                     .detail(msg)
                     .buildAndSetResponse(exc);
             return ABORT;
         } catch (Exception e) {
             internal(router.isProduction(),getDisplayName())
+                    .statusCode(503)
+                    .title("Service unavailable")
                     .addSubSee("node-dispatching")
                     .detail("Could not get dispatched node!")
                     .exception(e)
