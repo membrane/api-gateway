@@ -1,10 +1,10 @@
 # Load Balancing APIs
 
-Membrans load balancer supports a variety of setups from a simple static configuration up to dynamically managed nodes in the cloud.
+Membrane's load balancer supports a variety of setups from a simple static configuration up to dynamically managed nodes in the cloud.
 
 ## Examples
 
-Each sample add a new aspect to the previous one. You can start with sample one and go on from there.
+Each sample adds a new aspect to the previous one. You can start with sample one and go on from there.
 
 | Sample                                             | Description                                                 |
 |----------------------------------------------------|-------------------------------------------------------------|

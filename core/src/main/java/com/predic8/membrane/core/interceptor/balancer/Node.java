@@ -27,6 +27,7 @@ import java.util.concurrent.atomic.*;
 
 import static com.google.common.base.Objects.equal;
 import static com.predic8.membrane.core.interceptor.balancer.Node.Status.DOWN;
+import static com.predic8.membrane.core.interceptor.balancer.Node.Status.UP;
 import static java.lang.System.currentTimeMillis;
 
 /**
@@ -45,12 +46,13 @@ public class Node extends AbstractXmlElement {
 	private String healthUrl;
 	private int priority = 10;
 
-	private volatile long lastUpTime;
+	// Initialize with a starttime
+	private volatile long lastUpTime = System.currentTimeMillis();
 
 	/**
-	 * Before a test, assume the node is up. If not there are the retries.
+	 * Assume a node is UP until proven DOWN
 	 */
-	private volatile Status status = Status.UP;
+	private volatile Status status = UP;
 
 	private final AtomicInteger counter = new AtomicInteger();
 	private final AtomicInteger threads = new AtomicInteger();
@@ -163,7 +165,7 @@ public class Node extends AbstractXmlElement {
 	}
 
 	public boolean isUp() {
-		return status == Status.UP;
+		return status == UP;
 	}
 
 	public boolean isDown() {

@@ -114,8 +114,8 @@ Samples of scripting with JSONPath, XPath and the expression language you can fi
 
 * Simple static setup
 * Dynamic node management
-* Sessions for load balancing
-* Health checks for backend nodes
+* Session-based load balancing
+* Backend health checks
 
 ## [API Testing](api-testing)
   

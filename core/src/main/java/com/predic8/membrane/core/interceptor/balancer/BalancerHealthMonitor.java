@@ -22,7 +22,6 @@ import com.predic8.membrane.core.transport.http.*;
 import com.predic8.membrane.core.transport.http.client.*;
 import com.predic8.membrane.core.util.*;
 import org.jetbrains.annotations.*;
-import org.slf4j.Logger;
 import org.slf4j.*;
 import org.springframework.beans.*;
 import org.springframework.beans.factory.*;
@@ -33,7 +32,6 @@ import java.util.concurrent.*;
 import static com.predic8.membrane.core.http.Request.*;
 import static com.predic8.membrane.core.interceptor.balancer.BalancerUtil.*;
 import static com.predic8.membrane.core.interceptor.balancer.Node.Status.*;
-import static java.lang.System.*;
 import static java.util.concurrent.Executors.*;
 import static java.util.concurrent.TimeUnit.*;
 
@@ -73,9 +71,19 @@ public class BalancerHealthMonitor implements ApplicationContextAware, Initializ
 
         log.info("Starting HealthMonitor for load balancing with interval of {} ms", interval);
 
-        scheduler = createScheduler();
         httpClientConfig.setMaxRetries(0); // Health check should never be retried.
         client = router.getHttpClientFactory().createClient(httpClientConfig);
+        scheduler = createScheduler();
+
+        ConnectionConfiguration cc = httpClientConfig.getConnection();
+        int soTimeout = cc.getSoTimeout();
+        int timeout = cc.getTimeout();
+        if (soTimeout > 1_0000) {
+            log.warn("Socket timeout is {} s. Keep timeout low to prevent the health monitor thread from hanging!", soTimeout);
+        }
+        if (timeout > 1_000) {
+            log.warn("Connection timeout is {} s. Keep timeout low to prevent the health monitor thread from hanging!", timeout);
+        }
     }
 
     private final Runnable healthCheckTask = () -> {
@@ -125,8 +133,6 @@ public class BalancerHealthMonitor implements ApplicationContextAware, Initializ
             return DOWN;
         }
         log.debug("Node {}:{} is healthy (HTTP {})", node.getHost(), node.getPort(), status);
-        if (node.isDown())
-            node.setLastUpTime(currentTimeMillis());
         return UP;
     }
 
@@ -138,7 +144,12 @@ public class BalancerHealthMonitor implements ApplicationContextAware, Initializ
 
     private Exchange doCall(String url) throws Exception {
         Exchange exc = get(url).buildExchange();
-        client.call(exc);
+        try {
+            client.call(exc);
+        } finally {
+            exc.finishExchange(false,null);
+            exc.detach();
+        }
         return exc;
     }
 

@@ -85,11 +85,11 @@ When a backend becomes slow or unresponsive, users hit timeouts and errors. The 
 
 ## Tips
 
-* Quick loop to watch distribution:
+- Quick loop to watch distribution:
 
   ```bash
   for i in {1..10}; do curl -s localhost:8000; echo; done
   ```
 
-* [balancer](https://www.membrane-api.io/docs/current/balancer.html) reference
-* [balancerHealthMonitor](https://www.membrane-api.io/docs/current/balancerHealthMonitor.html) reference
+- [balancer](https://www.membrane-api.io/docs/current/balancer.html) reference
+- [balancerHealthMonitor](https://www.membrane-api.io/docs/current/balancerHealthMonitor.html) reference
