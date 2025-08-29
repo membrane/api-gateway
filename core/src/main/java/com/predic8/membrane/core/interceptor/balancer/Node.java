@@ -26,6 +26,8 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.*;
 
 import static com.google.common.base.Objects.equal;
+import static com.predic8.membrane.core.interceptor.balancer.Node.Status.DOWN;
+import static java.lang.System.currentTimeMillis;
 
 /**
  * @description Represents a backend node in a load-balancing {@code Cluster}.
@@ -165,7 +167,7 @@ public class Node extends AbstractXmlElement {
 	}
 
 	public boolean isDown() {
-		return status == Status.DOWN;
+		return status == DOWN;
 	}
 
 	public boolean isTakeOut() {
@@ -173,9 +175,13 @@ public class Node extends AbstractXmlElement {
 	}
 
 	public void setStatus(Status status) {
-		if (status == Status.DOWN)
+		if (status == DOWN) {
 			threads.set(0);
+		}
 		this.status = status;
+		if (status == UP) {
+			lastUpTime = currentTimeMillis();
+		}
 	}
 
 	public Status getStatus() {
@@ -225,7 +231,7 @@ public class Node extends AbstractXmlElement {
 
 	public void removeThread() {
 		if (!isUp()) return;
-		threads.incrementAndGet();
+		threads.decrementAndGet();
 	}
 
 	public int getThreads() {

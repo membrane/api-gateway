@@ -87,9 +87,9 @@ Re-enable the node with `.../up?balancer=...`.
 
 ## Notes
 
-* The `adminConsole` and `clusterNotification` interceptors in `proxies.xml` are optional.
+- The `adminConsole` and `clusterNotification` interceptors in `proxies.xml` are optional.
   You can remove them if you only want programmatic control.
-* This example defaults to round-robin balancing.
+- This example defaults to round-robin balancing.
 
 
 ---

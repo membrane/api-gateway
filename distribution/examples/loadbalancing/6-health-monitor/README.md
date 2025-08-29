@@ -42,23 +42,23 @@ When a backend becomes slow or unresponsive, users hit timeouts and errors. The 
 
 1. Make backend 2 return 500.
 
-   * Edit `proxies.xml` and change the status code of backend 2 from 200 to 500:
+   - Edit `proxies.xml` and change the status code of backend 2 from 200 to 500:
 
      ```xml
      <return statusCode="500"/>
      ```
-   * Save and **restart Membrane**.
+   - Save and **restart Membrane**.
 
 2. Observe health turning **DOWN**.
 
-   * Refresh the Admin Console: backend 2 becomes **DOWN** after the next probe cycle.
-   * Example log lines:
+   - Refresh the Admin Console: backend 2 becomes **DOWN** after the next probe cycle.
+   - Example log lines:
 
      ```
      Node localhost:8002 health check failed with HTTP 500 status code
      ```
 
-   * Send a few requests again to the balancer. All responses should now come from backend 1.
+   - Send a few requests again to the balancer. All responses should now come from backend 1.
 
 3. Change the status code back to 200 and observe recovery.
 
@@ -67,20 +67,20 @@ When a backend becomes slow or unresponsive, users hit timeouts and errors. The 
 
 1. Make backend 1 slow to trigger a timeout.
 
-   * Edit `proxies.xml` and increase the delay for backend 1:
+   - Edit `proxies.xml` and increase the delay for backend 1:
 
      ```xml
      <groovy>
        Thread.sleep(3000)
      </groovy>
      ```
-   * Save and **restart Membrane**.
+   - Save and **restart Membrane**.
 
 2. Observe health turning **DOWN**.
 
-   * With `timeout="2000"` and `soTimeout="2000"`, the health probe exceeds the read timeout.
-   * Refresh the Admin Console: backend 1 becomes **DOWN** after the next probe cycle.
-   * Send a few requests again to the balancer. All responses should now come from backend 2.
+   - With `timeout="2000"` and `soTimeout="2000"`, the health probe exceeds the read timeout.
+   - Refresh the Admin Console: backend 1 becomes **DOWN** after the next probe cycle.
+   - Send a few requests again to the balancer. All responses should now come from backend 2.
 
 
 ## Tips

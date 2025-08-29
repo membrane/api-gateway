@@ -25,13 +25,10 @@ public abstract class AbstractSampleMembraneStartStopTestcase extends Distributi
     @BeforeEach
     void startMembrane() throws IOException, InterruptedException {
         process = startServiceProxyScript();
-
-        // Dump HTTP
-        // RestAssured.filters(new RequestLoggingFilter(), new ResponseLoggingFilter());
     }
 
     @AfterEach
-    void stopMembrane() throws IOException, InterruptedException {
+    void stopMembrane() {
         if (process != null)
             process.killScript();
     }

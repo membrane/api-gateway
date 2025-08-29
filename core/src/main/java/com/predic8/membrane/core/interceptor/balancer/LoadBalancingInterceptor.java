@@ -80,7 +80,6 @@ public class LoadBalancingInterceptor extends AbstractInterceptor {
             //2) All destinations got disabled externally (through Membrane maintenance API). See class EmptyNodeListException.
             String msg = "No backend node found that is ready to handle this request. Check health of backends and balancer configuration.";
             log.error(msg);
-            exc.setResponse(internalServerError().build());
             internal(router.isProduction(), getDisplayName())
                     .addSubSee("node-dispatching")
                     .detail(msg)

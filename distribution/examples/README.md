@@ -110,12 +110,12 @@ Samples of scripting with JSONPath, XPath and the expression language you can fi
 * Log into console, CSV or databases
 * Structured JSON logs
 
-### [Load Balancing](loadbalancing)
+### [Load Balancing](loadbalancing#load-balancing-apis)
 
 * Simple static setup
-* Add nodes dynamically
-* Control node status with a client
-* Use XML sessions for load balancing
+* Dynamic node management
+* Sessions for load balancing
+* Health checks for backend nodes
 
 ## [API Testing](api-testing)
   
