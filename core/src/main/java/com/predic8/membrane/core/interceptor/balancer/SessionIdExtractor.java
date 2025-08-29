@@ -24,7 +24,8 @@ public interface SessionIdExtractor {
     }
 
 	default boolean hasSessionId(Exchange exc, Flow flow) throws Exception {
-		return getSessionId(exc, flow) != null;
+        String sessionId = getSessionId(exc, flow);
+        return sessionId != null && !sessionId.isEmpty();
 	}
 
 	String getSessionId(Exchange exc, Flow flow) throws Exception;

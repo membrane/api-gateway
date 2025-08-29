@@ -22,7 +22,7 @@ import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.RESPONSE;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-public class JSESSIONIDExtractorTest extends  AbstractSessionIdExtractorTest {
+public class JSESSIONIDExtractorTest extends AbstractSessionIdExtractorTest {
 
 
 	@Test
@@ -41,10 +41,10 @@ public class JSESSIONIDExtractorTest extends  AbstractSessionIdExtractorTest {
 		assertEquals("555555", extractor.getSessionId(getExchange(req), REQUEST));
 
 		req.setHeader(getHeader("name=jim;path=root/dir;"));
-		assertEquals(false, extractor.getSessionId(getExchange(req), REQUEST));
+		assertEquals(false, extractor.hasSessionId(getExchange(req), REQUEST));
 
 		req.setHeader(getHeader(null));
-		assertEquals(false, extractor.getSessionId(getExchange(req), REQUEST));
+		assertEquals(false, extractor.hasSessionId(getExchange(req), REQUEST));
 	}
 
     @Test
@@ -63,10 +63,10 @@ public class JSESSIONIDExtractorTest extends  AbstractSessionIdExtractorTest {
 		assertEquals("555555", extractor.getSessionId(getExchange(res), RESPONSE));
 
 		res.setHeader(getHeader("name=jim;path=root/dir;"));
-		assertEquals(false, extractor.getSessionId(getExchange(res), RESPONSE));
+		assertEquals(false, extractor.hasSessionId(getExchange(res), RESPONSE));
 
 		res.setHeader(getHeader(null));
-		assertEquals(false, extractor.getSessionId(getExchange(res), RESPONSE));
+		assertEquals(false, extractor.hasSessionId(getExchange(res), RESPONSE));
 	}
 
 	private Header getHeader(String cookie) {
