@@ -61,7 +61,7 @@ class Loadbalancing6HealthMonitorExampleTest extends DistributionExtractingTestc
         @Test
         void http_backendsReachable() throws Exception {
             try (Process2 ignored = builder.start()) {
-            // @formatter:off
+                // @formatter:off
             get("http://localhost:8001/")
                 .then()
                     .statusCode(200)
@@ -213,23 +213,12 @@ class Loadbalancing6HealthMonitorExampleTest extends DistributionExtractingTestc
                     setNode1Delay(baseDir.toPath().resolve("proxies-tls.xml"), 3000);
                     try (Process2 ignored = builder.parameters(PROXIES_TLS_XML_OPTION).start()) {
 
-//                    Thread.sleep(3000); // Wait for health check to happen
-
-
-                        // @formatter:off
+                    // @formatter:off
                     String html = given()
                         .relaxedHTTPSValidation()
-                                          .get(awaitUrl(ADMIN_URL_HTTPS, DOWN, 10000)).then()
-
-                                                         .statusCode(200)
-                                                                                    .extract().asString();
-
-//                    .get(ADMIN_URL_HTTPS).then()
-//                        .statusCode(200)
-//                        .extract().asString();
-
-
-
+                    .get(awaitUrl(ADMIN_URL_HTTPS, DOWN, 10000)).then()
+                        .statusCode(200)
+                        .extract().asString();
                     // @formatter:on
                         assertThat(html, containsString("localhost:8001"));
                         assertThat(html, containsString("localhost:8002"));
