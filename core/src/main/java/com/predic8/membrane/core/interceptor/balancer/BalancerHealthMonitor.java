@@ -53,6 +53,11 @@ public class BalancerHealthMonitor implements ApplicationContextAware, Initializ
     private static final Logger log = LoggerFactory.getLogger(BalancerHealthMonitor.class);
     public static final String BALANCER_HEALTH_MONITOR = "balancer-health-monitor";
 
+    /**
+     * Initial delay of 5s
+     */
+    public static final int INITIAL_DELAY = 5000;
+
     private Router router;
     private int interval = 10000;
     private ScheduledExecutorService scheduler;
@@ -97,7 +102,7 @@ public class BalancerHealthMonitor implements ApplicationContextAware, Initializ
                 t.setDaemon(true);
                 return t;
             });
-        s.scheduleWithFixedDelay(healthCheckTask, 0, interval, MILLISECONDS);
+        s.scheduleWithFixedDelay(healthCheckTask, INITIAL_DELAY, interval, MILLISECONDS);
         return s;
     }
 

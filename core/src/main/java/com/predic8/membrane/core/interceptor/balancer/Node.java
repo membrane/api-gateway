@@ -44,7 +44,12 @@ public class Node extends AbstractXmlElement {
 	private int priority = 10;
 
 	private volatile long lastUpTime;
-	private volatile Status status;
+
+	/**
+	 * Before a test, assume the node is up. If not there are the retries.
+	 */
+	private volatile Status status = Status.UP;
+
 	private final AtomicInteger counter = new AtomicInteger();
 	private final AtomicInteger threads = new AtomicInteger();
 

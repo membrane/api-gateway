@@ -25,6 +25,7 @@ import java.util.*;
 
 import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
 import static com.predic8.membrane.core.exchange.Exchange.TRACK_NODE_STATUS;
+import static com.predic8.membrane.core.http.Response.internalServerError;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 
 /**
@@ -77,8 +78,13 @@ public class LoadBalancingInterceptor extends AbstractInterceptor {
             //This can happen for 2 reasons:
             //1) Initial server misconfiguration. None configured at all.
             //2) All destinations got disabled externally (through Membrane maintenance API). See class EmptyNodeListException.
-            log.error("No Node found.");
-            exc.setResponse(Response.internalServerError().build());
+            String msg = "No backend node found that is ready to handle this request. Check health of backends and balancer configuration.";
+            log.error(msg);
+            exc.setResponse(internalServerError().build());
+            internal(router.isProduction(), getDisplayName())
+                    .addSubSee("node-dispatching")
+                    .detail(msg)
+                    .buildAndSetResponse(exc);
             return ABORT;
         } catch (Exception e) {
             internal(router.isProduction(),getDisplayName())
