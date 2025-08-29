@@ -1,8 +1,8 @@
 # Load Balancer: Health Monitoring with TLS
 
-You can run the sample from the README.me with TLS protection. By making a few changes described here. 
+You can run the sample from the README.md with TLS protection by making the changes described here.
 
-1. `proxies-tls.xml` contains the needed TLS configuration. Take a short look at it.
+1. `proxies-tls.xml` contains the needed TLS configuration. Take a brief look at it.
 2. Start Membrane with that file:
 
     - macOS/Linux: `./membrane.sh -c proxies-tls.xml`
@@ -12,11 +12,11 @@ You can run the sample from the README.me with TLS protection. By making a few c
 
    ```bash
    curl -k https://localhost:8443
-   curl -k https://localhost:8002
+   curl -k https://localhost:8001
    curl -k https://localhost:8002
    ```
 
-   -k let curl accept the self signed certificates located in the certificates folder.
+   The `-k` option lets curl accept the self‑signed certificates located in the `certificates` folder.
 
 4. Admin console URL is `https://localhost:9443`
 

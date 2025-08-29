@@ -41,6 +41,8 @@ public abstract class DistributionExtractingTestcase {
     private static File membraneHome;
     protected File baseDir = new File(getExampleDirName());
 
+    protected abstract String getExampleDirName();
+
     @BeforeAll
     public static void beforeAll() throws Exception {
         log.info("unzipping router distribution");
@@ -162,10 +164,6 @@ public abstract class DistributionExtractingTestcase {
 
         in.close();
         out.close();
-    }
-
-    protected String getExampleDirName() {
-        return "dummy";
     }
 
     @BeforeEach

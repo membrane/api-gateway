@@ -14,13 +14,11 @@
 
 package com.predic8.membrane.examples.util;
 
-import io.restassured.*;
-import io.restassured.filter.log.*;
 import org.junit.jupiter.api.*;
 
 import java.io.*;
 
-public class AbstractSampleMembraneStartStopTestcase extends DistributionExtractingTestcase {
+public abstract class AbstractSampleMembraneStartStopTestcase extends DistributionExtractingTestcase {
 
     protected Process2 process;
 

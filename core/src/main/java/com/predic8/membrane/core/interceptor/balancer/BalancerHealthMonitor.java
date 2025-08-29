@@ -14,34 +14,28 @@
 
 package com.predic8.membrane.core.interceptor.balancer;
 
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCChildElement;
-import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.Router;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.interceptor.balancer.Node.Status;
-import com.predic8.membrane.core.transport.http.HttpClient;
-import com.predic8.membrane.core.transport.http.client.HttpClientConfiguration;
-import com.predic8.membrane.core.util.ConfigurationException;
-import org.jetbrains.annotations.NotNull;
+import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.interceptor.balancer.Node.*;
+import com.predic8.membrane.core.transport.http.*;
+import com.predic8.membrane.core.transport.http.client.*;
+import com.predic8.membrane.core.util.*;
+import org.jetbrains.annotations.*;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.BeansException;
-import org.springframework.beans.factory.DisposableBean;
-import org.springframework.beans.factory.InitializingBean;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.ApplicationContextAware;
+import org.slf4j.*;
+import org.springframework.beans.*;
+import org.springframework.beans.factory.*;
+import org.springframework.context.*;
 
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.*;
 
-import static com.predic8.membrane.core.http.Request.get;
-import static com.predic8.membrane.core.interceptor.balancer.BalancerUtil.collectClusters;
-import static com.predic8.membrane.core.interceptor.balancer.Node.Status.DOWN;
-import static com.predic8.membrane.core.interceptor.balancer.Node.Status.UP;
-import static java.lang.System.currentTimeMillis;
-import static java.util.concurrent.TimeUnit.MILLISECONDS;
-import static java.util.concurrent.TimeUnit.SECONDS;
+import static com.predic8.membrane.core.http.Request.*;
+import static com.predic8.membrane.core.interceptor.balancer.BalancerUtil.*;
+import static com.predic8.membrane.core.interceptor.balancer.Node.Status.*;
+import static java.lang.System.*;
+import static java.util.concurrent.Executors.*;
+import static java.util.concurrent.TimeUnit.*;
 
 /**
  * @description Health monitor for a {@link LoadBalancingInterceptor} {@link Cluster}.
@@ -57,6 +51,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 public class BalancerHealthMonitor implements ApplicationContextAware, InitializingBean, DisposableBean {
 
     private static final Logger log = LoggerFactory.getLogger(BalancerHealthMonitor.class);
+    public static final String BALANCER_HEALTH_MONITOR = "balancer-health-monitor";
 
     private Router router;
     private int interval = 10000;
@@ -97,8 +92,12 @@ public class BalancerHealthMonitor implements ApplicationContextAware, Initializ
     }
 
     private ScheduledExecutorService createScheduler() {
-        ScheduledExecutorService s = Executors.newSingleThreadScheduledExecutor();
-        s.scheduleAtFixedRate(healthCheckTask, interval, interval, MILLISECONDS);
+        ScheduledExecutorService s = newSingleThreadScheduledExecutor(r -> {
+                Thread t = new Thread(r, BALANCER_HEALTH_MONITOR);
+                t.setDaemon(true);
+                return t;
+            });
+        s.scheduleWithFixedDelay(healthCheckTask, 0, interval, MILLISECONDS);
         return s;
     }
 
@@ -192,7 +191,7 @@ public class BalancerHealthMonitor implements ApplicationContextAware, Initializ
     /**
      * @return current health check interval in milliseconds
      * */
-    public Integer getInterval() {
+    public int getInterval() {
         return interval;
     }
 

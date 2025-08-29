@@ -33,9 +33,9 @@ When a backend becomes slow or unresponsive, users hit timeouts and errors. The 
 
 4. Check node status in the Admin Console.
 
-   * Open:
+   - Open:
      [Load Balancing → Default → Production](http://localhost:9000/admin/clusters/show?balancer=Default&cluster=Production)
-   * Both nodes should show **UP**.
+   - Both nodes should show **UP**.
 
 
 ### Simulate A Backend Issue

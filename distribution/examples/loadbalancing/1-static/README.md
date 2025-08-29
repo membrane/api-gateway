@@ -1,6 +1,6 @@
 # Simple Static API Load Balancer
 
-Membrane can serve as an software load balancer for API and distribute requests across multiple backend nodes.
+Membrane can serve as a software load balancer for APIs. It can distribute requests across multiple backend nodes and handle failures.
 
 This sample shows a simple static configuration. For health checks, sticky sessions, or dynamic discovery, see the other examples.
 
@@ -21,7 +21,7 @@ This sample shows a simple static configuration. For health checks, sticky sessi
    - Windows: membrane.cmd
 3. Open in a browser:
    ```
-   http://localhost:8080 
+   http://localhost:8080
    ```
 4. Refresh the browser a few times. 
 

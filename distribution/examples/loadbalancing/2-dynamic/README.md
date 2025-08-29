@@ -42,15 +42,15 @@ Nodes can be organized in clusters. You can manage them either through the web-b
 
 5. Go to the **Load Balancing** tab.
 
-   * Click the entry `Default`.
-   * Enter `Default` as the cluster name.
-   * Click **Add Cluster**.
+   - Click the entry `Default`.
+   - Enter `Default` as the cluster name.
+   - Click **Add Cluster**.
 
 6. Add the first node:
 
-   * Host: `localhost`
-   * Port: `4000`
-   * Click **Add Node**.
+   - Host: `localhost`
+   - Port: `4000`
+   - Click **Add Node**.
 
 7. Open in a browser:
 
