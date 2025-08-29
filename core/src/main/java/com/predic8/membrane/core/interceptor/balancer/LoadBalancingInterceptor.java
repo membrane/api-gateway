@@ -13,19 +13,27 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.balancer;
 
-import com.google.common.collect.*;
-import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.interceptor.*;
-import org.slf4j.*;
+import com.google.common.collect.Lists;
+import com.predic8.membrane.annot.MCAttribute;
+import com.predic8.membrane.annot.MCChildElement;
+import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.Response;
+import com.predic8.membrane.core.interceptor.AbstractInterceptor;
+import com.predic8.membrane.core.interceptor.Outcome;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.io.*;
-import java.util.*;
+import java.io.Serial;
+import java.util.ArrayList;
+import java.util.List;
 
-import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
+import static com.predic8.membrane.core.exceptions.ProblemDetails.internal;
 import static com.predic8.membrane.core.exchange.Exchange.TRACK_NODE_STATUS;
-import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.RESPONSE;
+import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
+import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 
 /**
  * @description Performs load-balancing between several nodes. Nodes sharing session state may be bundled into a cluster.
@@ -41,7 +49,7 @@ public class LoadBalancingInterceptor extends AbstractInterceptor {
      * Round-robin is the default, but it's configurable.
      */
     private DispatchingStrategy strategy = new RoundRobinStrategy();
-    private AbstractSessionIdExtractor sessionIdExtractor;
+    private SessionIdExtractor sessionIdExtractor;
     private boolean failOver = true;
     private final Balancer balancer = new Balancer();
     private NodeOnlineChecker nodeOnlineChecker;
@@ -120,7 +128,7 @@ public class LoadBalancingInterceptor extends AbstractInterceptor {
         if (sessionIdExtractor != null) {
             String sessionId;
             try {
-                sessionId = getSessionId(exc.getResponse());
+                sessionId = getSessionId(exc, RESPONSE);
             } catch (Exception e) {
                 internal(router.isProduction(),getDisplayName())
                         .addSubSee("sessionid-extraction")
@@ -167,7 +175,7 @@ public class LoadBalancingInterceptor extends AbstractInterceptor {
     private Node getDispatchedNode(Exchange exc) throws Exception {
         String sessionId;
         if (sessionIdExtractor == null
-            || (sessionId = getSessionId(exc.getRequest())) == null) {
+            || (sessionId = getSessionId(exc, REQUEST)) == null) {
             log.debug("no session id found.");
             return strategy.dispatch(this, exc);
         }
@@ -189,8 +197,8 @@ public class LoadBalancingInterceptor extends AbstractInterceptor {
         return balancer.getSessions(BalancerUtil.getSingleClusterNameOrDefault(balancer)).get(sessionId);
     }
 
-    private String getSessionId(Message msg) throws Exception {
-        return sessionIdExtractor.getSessionId(msg);
+    private String getSessionId(Exchange exc, Flow flow) throws Exception {
+        return sessionIdExtractor.getSessionId(exc, flow);
     }
 
     /**
@@ -232,7 +240,7 @@ public class LoadBalancingInterceptor extends AbstractInterceptor {
         return balancer.getAvailableNodesByCluster(BalancerUtil.getSingleClusterNameOrDefault(balancer)); // fallback
     }
 
-    public AbstractSessionIdExtractor getSessionIdExtractor() {
+    public SessionIdExtractor getSessionIdExtractor() {
         return sessionIdExtractor;
     }
 
@@ -254,7 +262,7 @@ public class LoadBalancingInterceptor extends AbstractInterceptor {
      */
     @MCChildElement(order = 1)
     public void setSessionIdExtractor(
-            AbstractSessionIdExtractor sessionIdExtractor) {
+            SessionIdExtractor sessionIdExtractor) {
         this.sessionIdExtractor = sessionIdExtractor;
     }
 

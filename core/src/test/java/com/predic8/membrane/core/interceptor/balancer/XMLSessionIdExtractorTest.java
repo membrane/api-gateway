@@ -19,9 +19,11 @@ import org.junit.jupiter.api.*;
 
 import java.io.*;
 
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.RESPONSE;
 import static org.junit.jupiter.api.Assertions.*;
 
-public class XMLSessionIdExtractorTest {
+public class XMLSessionIdExtractorTest extends AbstractSessionIdExtractorTest {
 
 
 	@Test
@@ -34,7 +36,7 @@ public class XMLSessionIdExtractorTest {
 		extractor.setLocalName("session");
 		extractor.setNamespace("http://predic8.com/session/");
 
-		assertEquals("555555", extractor.getSessionId(res));
+		assertEquals("555555", extractor.getSessionId(getExchange(res), RESPONSE));
 
 	}
 
@@ -48,7 +50,7 @@ public class XMLSessionIdExtractorTest {
 		extractor.setLocalName("session");
 
 
-		assertEquals("555555", extractor.getSessionId(res));
+		assertEquals("555555", extractor.getSessionId(getExchange(res), RESPONSE));
 	}
 
 	private byte[] getBodyContent() throws IOException {

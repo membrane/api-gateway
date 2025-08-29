@@ -1,4 +1,4 @@
-/* Copyright 2012 predic8 GmbH, www.predic8.com
+/* Copyright 2025 predic8 GmbH, www.predic8.com
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -14,14 +14,14 @@
 
 package com.predic8.membrane.core.interceptor.balancer;
 
-import com.predic8.membrane.core.config.AbstractXmlElement;
-import com.predic8.membrane.core.http.Message;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.interceptor.Interceptor.Flow;
 
-public abstract class AbstractSessionIdExtractor extends AbstractXmlElement {
+public interface SessionIdExtractor {
 
-	public boolean hasSessionId(Message msg) throws Exception {
-		return getSessionId(msg) != null;
+	default boolean hasSessionId(Exchange exc, Flow flow) throws Exception {
+		return getSessionId(exc, flow) != null;
 	}
 
-	public abstract String getSessionId(Message msg) throws Exception;
+	String getSessionId(Exchange exc, Flow flow) throws Exception;
 }
