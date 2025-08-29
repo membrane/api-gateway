@@ -129,11 +129,6 @@
 				<version>2.13.0</version>
 			</dependency>
 			<dependency>
-				<groupId>commons-discovery</groupId>
-				<artifactId>commons-discovery</artifactId>
-				<version>0.5</version>
-			</dependency>
-			<dependency>
 				<groupId>commons-fileupload</groupId>
 				<artifactId>commons-fileupload</artifactId>
 				<version>1.6.0</version>
@@ -362,16 +357,6 @@
 			</dependency>
 		</dependencies>
 	</dependencyManagement>
-
-
-	<repositories>
-		<repository>
-			<id>com.springsource.repository.bundles.external</id>
-			<name>SpringSource Enterprise Bundle Repository - External Bundle Releases</name>
-			<url>https://repository.springsource.com/maven/bundles/external</url>
-		</repository>
-	</repositories>
-
 
 	<build>
 		<plugins>
@@ -637,7 +622,7 @@
 
 	<profiles>
 		<profile>
-			<id>ossrh</id>
+			<id>central</id>
 			<build>
 				<plugins>
 					<plugin>
@@ -654,29 +639,19 @@
 							</execution>
 						</executions>
 					</plugin>
-					<plugin>
-						<groupId>org.sonatype.plugins</groupId>
-						<artifactId>nexus-staging-maven-plugin</artifactId>
-						<version>1.7.0</version>
-						<extensions>true</extensions>
-						<configuration>
-							<serverId>ossrh</serverId>
-							<nexusUrl>https://oss.sonatype.org/</nexusUrl>
-							<autoReleaseAfterClose>true</autoReleaseAfterClose>
-						</configuration>
-					</plugin>
-				</plugins>
+                    <plugin>
+                        <groupId>org.sonatype.central</groupId>
+                        <artifactId>central-publishing-maven-plugin</artifactId>
+                        <version>0.8.0</version>
+                        <extensions>true</extensions>
+                        <configuration>
+                            <publishingServerId>central</publishingServerId>
+                            <autoPublish>true</autoPublish>
+                            <waitUntil>published</waitUntil>
+                        </configuration>
+                    </plugin>
+                </plugins>
 			</build>
-			<distributionManagement>
-				<repository>
-					<id>ossrh</id>
-					<url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
-				</repository>
-				<snapshotRepository>
-					<id>ossrh</id>
-					<url>https://oss.sonatype.org/content/repositories/snapshots</url>
-				</snapshotRepository>
-			</distributionManagement>
 		</profile>
 	</profiles>
 </project>

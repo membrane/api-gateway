@@ -80,16 +80,6 @@
             </exclusions>
         </dependency>
         <dependency>
-            <groupId>commons-discovery</groupId>
-            <artifactId>commons-discovery</artifactId>
-            <exclusions>
-                <exclusion>
-                    <groupId>commons-logging</groupId>
-                    <artifactId>commons-logging</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-        <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-text</artifactId>
             <version>1.14.0</version>
@@ -257,6 +247,7 @@
             <artifactId>mockito-core</artifactId>
             <scope>test</scope>
         </dependency>
+        <!-- We explicitly use an old commons-httpclient version here, only for testing features which were removed in later versions. -->
         <dependency>
             <groupId>commons-httpclient</groupId>
             <artifactId>commons-httpclient</artifactId>
@@ -296,6 +287,7 @@
             <artifactId>spotbugs-annotations</artifactId>
             <version>4.9.3</version>
         </dependency>
+        <!-- fallback parser for documents based on older Swagger standards -->
         <dependency>
             <groupId>io.swagger</groupId>
             <artifactId>swagger-parser</artifactId>
