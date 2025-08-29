@@ -78,11 +78,11 @@ public class BalancerHealthMonitor implements ApplicationContextAware, Initializ
         ConnectionConfiguration cc = httpClientConfig.getConnection();
         int soTimeout = cc.getSoTimeout();
         int timeout = cc.getTimeout();
-        if (soTimeout > 1_0000) {
-            log.warn("Socket timeout is {} s. Keep timeout low to prevent the health monitor thread from hanging!", soTimeout);
+        if (soTimeout > 10_000) {
+            log.warn("Socket timeout is {} s. Keep timeout low to prevent the health monitor thread from hanging!", soTimeout/1000);
         }
-        if (timeout > 1_000) {
-            log.warn("Connection timeout is {} s. Keep timeout low to prevent the health monitor thread from hanging!", timeout);
+        if (timeout > 10_000) {
+            log.warn("Connection timeout is {} s. Keep timeout low to prevent the health monitor thread from hanging!", timeout/1000);
         }
     }
 
