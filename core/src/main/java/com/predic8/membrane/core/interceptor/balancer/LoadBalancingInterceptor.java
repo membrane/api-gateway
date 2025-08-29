@@ -62,6 +62,11 @@ public class LoadBalancingInterceptor extends AbstractInterceptor {
     public void init() {
         super.init();
         strategy.init(router);
+
+        if (sessionIdExtractor != null) {
+            sessionIdExtractor.init(router);
+        }
+
         if (nodeOnlineChecker != null)
             nodeOnlineChecker.init(router);
 

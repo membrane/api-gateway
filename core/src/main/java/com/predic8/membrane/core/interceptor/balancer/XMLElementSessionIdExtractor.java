@@ -51,7 +51,7 @@ public class XMLElementSessionIdExtractor extends AbstractXmlElement implements 
 
         log.debug("searching for sessionid");
 
-        XMLStreamReader reader = getXmlStreamReader(exc.getRequest());
+        XMLStreamReader reader = getXmlStreamReader(exc.getMessage(flow));
         try {
             while (reader.hasNext()) {
                 reader.next();
