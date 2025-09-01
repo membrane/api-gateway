@@ -13,30 +13,26 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.balancer;
 
+import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.config.AbstractXmlElement;
 import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Message;
-import com.predic8.membrane.core.http.Request;
-import com.predic8.membrane.core.interceptor.Interceptor;
 import com.predic8.membrane.core.interceptor.Interceptor.Flow;
 import com.predic8.membrane.core.interceptor.lang.Polyglot;
 import com.predic8.membrane.core.lang.ExchangeExpression;
 import com.predic8.membrane.core.lang.ExchangeExpression.Language;
 
-import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
-
 @MCElement(name = "sessionIdExtractor")
 public class PolyglotSessionIdExtractor extends AbstractXmlElement implements SessionIdExtractor, Polyglot {
 
     private Language language;
-    private String test;
+    private String sessionSource;
     private ExchangeExpression exchangeExpression;
 
     public void init(Router router) {
-        if (test != null && !test.isEmpty()) {
-            exchangeExpression = ExchangeExpression.newInstance(router, language, test);
+        if (sessionSource != null && !sessionSource.isEmpty()) {
+            exchangeExpression = ExchangeExpression.newInstance(router, language, sessionSource);
         }
     }
 
@@ -48,17 +44,18 @@ public class PolyglotSessionIdExtractor extends AbstractXmlElement implements Se
         return language;
     }
 
-    @Override
+    @MCAttribute
     public void setLanguage(Language language) {
         this.language = language;
     }
 
-    public String getTest() {
-        return test;
+    public String getSessionSource() {
+        return sessionSource;
     }
 
-    public void setTest(String test) {
-        this.test = test;
+    @MCAttribute
+    public void setSessionSource(String sessionSource) {
+        this.sessionSource = sessionSource;
     }
 
     public ExchangeExpression getExchangeExpression() {

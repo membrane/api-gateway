@@ -32,9 +32,9 @@ public class PolyglotSessionIdExtractorTest extends AbstractSessionIdExtractorTe
 
     @BeforeAll
     static void setup() {
-        extractor =  new PolyglotSessionIdExtractor();
+        extractor = new PolyglotSessionIdExtractor();
         extractor.setLanguage(SPEL);
-        extractor.setTest("headers['%s']".formatted(X_SESSION));
+        extractor.setSessionSource("headers['%s']".formatted(X_SESSION));
         extractor.init(new Router());
     }
 
