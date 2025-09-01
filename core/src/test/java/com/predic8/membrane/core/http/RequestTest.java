@@ -21,6 +21,7 @@ import java.io.*;
 import java.net.*;
 
 import static com.predic8.membrane.core.Constants.*;
+import static com.predic8.membrane.core.http.MimeType.TEXT_XML;
 import static com.predic8.membrane.core.http.Request.*;
 import static com.predic8.membrane.core.util.StringTestUtil.*;
 import static com.predic8.membrane.test.TestUtil.*;
@@ -244,6 +245,13 @@ public class RequestTest {
 	@Test
 	void connectUsesAuthorityForm() throws URISyntaxException {
         assertEquals("CONNECT example.com:443 HTTP/1.1" + CRLF, connect("https://example.com:443").build().getStartLine());
+	}
+
+	@Test
+	void isXML() throws URISyntaxException {
+        assertTrue(post("/foo").contentType(TEXT_XML).build().isXML());
+		assertTrue(post("/foo").contentType("text/xml; charset=utf-8").build().isXML());
+		assertTrue(post("/foo").header("Content-Type", "text/xml; charset=utf-8").build().isXML());
 	}
 
 	private AbstractBody readMessageAndGetBody() throws IOException, EndOfStreamException {
