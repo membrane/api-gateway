@@ -1,9 +1,9 @@
 #!/bin/sh
-# Default config: ./proxies.xml (next to this script); fallback -> $MEMBRANE_HOME/conf/proxies.xml
-# JAVA_OPTS: relative -D paths are resolved against $MEMBRANE_HOME.
+# Default: ./proxies.xml (next to this script); fallback -> $MEMBRANE_HOME/conf/proxies.xml
+# JAVA_OPTS: relative -D paths are auto-resolved against $MEMBRANE_HOME (absolute/URI unchanged).
 # Examples:
 #   export JAVA_OPTS='-Dlog4j.configurationFile=examples/logging/access/log4j2_access.xml'
-#   ./membrane.sh -c path/to/proxies.xml
+#   export JAVA_OPTS='-Dlog4j.configurationFile=/abs/path/log4j2.xml'
 
 SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd -P)
 

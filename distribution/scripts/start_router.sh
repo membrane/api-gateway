@@ -3,13 +3,38 @@
 
 CLASSPATH="$MEMBRANE_HOME/conf:$MEMBRANE_HOME/lib/*"
 
-if [ "$#" -eq 0 ]; then
-  if [ -n "${MEMBRANE_CONFIG_DIR:-}" ] && [ -f "$MEMBRANE_CONFIG_DIR/proxies.xml" ]; then
-    set -- -c "$MEMBRANE_CONFIG_DIR/proxies.xml"
+has_c=0
+for a in "$@"; do [ "$a" = "-c" ] && { has_c=1; break; }; done
+if [ $has_c -eq 0 ]; then
+  if [ -n "${MEMBRANE_CALLER_DIR:-}" ] && [ -f "$MEMBRANE_CALLER_DIR/proxies.xml" ]; then
+    set -- -c "$MEMBRANE_CALLER_DIR/proxies.xml" "$@"
   elif [ -f "$MEMBRANE_HOME/conf/proxies.xml" ]; then
-    set -- -c "$MEMBRANE_HOME/conf/proxies.xml"
+    set -- -c "$MEMBRANE_HOME/conf/proxies.xml" "$@"
   fi
 fi
+
+normalize_java_opts() {
+  [ -n "${JAVA_OPTS:-}" ] || return 0
+
+  set -- $JAVA_OPTS
+  NEW_OPTS=
+  for tok in "$@"; do
+    case "$tok" in
+      -D*=*)
+        key=${tok%%=*}
+        val=${tok#*=}
+        case "$val" in
+          /*|~/*|[A-Za-z]:/*|\\\\*|file:*|*://*) : ;;
+          *) val="$MEMBRANE_HOME/$val" ;;
+        esac
+        tok="$key=$val"
+        ;;
+    esac
+    NEW_OPTS="$NEW_OPTS $tok"
+  done
+  JAVA_OPTS=$NEW_OPTS
+}
+normalize_java_opts
 
 java ${JAVA_OPTS:-} -cp "$CLASSPATH" com.predic8.membrane.core.cli.RouterCLI "$@"
 s=$?
