@@ -15,6 +15,7 @@ package com.predic8.membrane.core.interceptor.balancer;
 
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.annot.Required;
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.config.AbstractXmlElement;
 import com.predic8.membrane.core.exchange.Exchange;
@@ -53,6 +54,7 @@ public class PolyglotSessionIdExtractor extends AbstractXmlElement implements Se
         return sessionSource;
     }
 
+    @Required
     @MCAttribute
     public void setSessionSource(String sessionSource) {
         this.sessionSource = sessionSource;

@@ -8,7 +8,7 @@ In this example we will set up a load balancer with three nodes. The communicati
 
 To run the example execute the following steps:
 
-1. Go to the `examples/loadbalancer/4-xml-session` directory.
+1. Go to the `distribution/examples/loadbalancing/4-session` directory.
 
 2. Execute
 
