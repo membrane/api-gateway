@@ -27,4 +27,14 @@ class SensitiveDataFilterTest {
         assertEquals("******", masked.getFirstValue("X-Api-Key"));
         assertEquals(contentTypeVal, masked.getContentType());
     }
+
+    @Test
+    void maskingOfNullValuesWorks() {
+        SensitiveDataFilter filter = new SensitiveDataFilter();
+        Header header = new Header();
+        header.setValue(AUTHORIZATION, "abc123");
+
+        assertEquals("******", filter.mask(header).getAuthorization());
+        assertEquals("abc123".length(), header.getAuthorization().length());
+    }
 }
