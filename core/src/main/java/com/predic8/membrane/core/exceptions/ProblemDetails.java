@@ -217,7 +217,7 @@ public class ProblemDetails {
         root.put("type", getTypeSubtypeString());
         root.putAll(topLevel);
 
-        if (production) {
+        if (production && !logKey) {
             logProduction(root);
             return root;
         }
