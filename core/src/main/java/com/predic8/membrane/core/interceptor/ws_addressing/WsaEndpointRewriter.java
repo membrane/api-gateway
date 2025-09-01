@@ -13,99 +13,99 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.ws_addressing;
 
-import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.util.URI;
+import com.predic8.membrane.core.util.*;
+import com.predic8.xml.beautifier.*;
+import org.jetbrains.annotations.*;
+import org.slf4j.*;
 
 import javax.xml.namespace.*;
 import javax.xml.stream.*;
 import javax.xml.stream.events.*;
 import java.io.*;
+import java.net.*;
+import java.util.stream.*;
 
 
 public class WsaEndpointRewriter {
-	private static final String ADDRESSING_URI_2005_08 = "http://www.w3.org/2005/08/addressing";
-	private static final String ADDRESSING_URI_2004_08 = "http://schemas.xmlsoap.org/ws/2004/08/addressing";
 
-	private final XMLInputFactory inputFactory = XMLInputFactory.newInstance();
-	private final XMLEventFactory eventFactory = XMLEventFactory.newInstance();
-	private final DecoupledEndpointRegistry registry;
+    private static final Logger log = LoggerFactory.getLogger(WsaEndpointRewriter.class);
 
-	public WsaEndpointRewriter(DecoupledEndpointRegistry registry) {
-		this.registry = registry;
-	}
+    private static final String ADDRESSING_URI_2005_08 = "http://www.w3.org/2005/08/addressing";
+    private static final String ADDRESSING_URI_2004_08 = "http://schemas.xmlsoap.org/ws/2004/08/addressing";
+    public static final String REPLY_TO = "ReplyTo";
+    public static final String ADDRESS = "Address";
 
-	public void rewriteEndpoint(InputStream reader, OutputStream writer, int port, Exchange exc) throws XMLStreamException {
-		XMLEventReader parser = inputFactory.createXMLEventReader(reader);
-		XMLEventWriter eventWriter = XMLOutputFactory.newInstance().createXMLEventWriter(writer);
+    public void rewriteEndpoint(InputStream reader, OutputStream writer, WsaEndpointRewriterInterceptor.Location location) throws XMLStreamException {
+        XMLEventFactory ef = XMLEventFactory.newFactory();
+        XMLEventReader parser = XMLInputFactoryFactory.inputFactory().createXMLEventReader(reader);
+        XMLEventWriter eventWriter = XMLOutputFactory.newInstance().createXMLEventWriter(writer);
 
-		String id = null;
-		String url = null;
+        String url;
 
-		skip:
-			while (parser.hasNext()) {
-				XMLEvent e = parser.nextEvent();
+        boolean inReplyTo = false;
 
-				if (e.isStartElement()) {
-					if (isReplyTo(e.asStartElement())) {
-						while (e.isStartElement() || !isReplyTo(e.asEndElement())) {
-							if (e.isStartElement() && isAddress(e.asStartElement())) {
-								url = parser.getElementText();
-								addRewrittenAddressElement(eventWriter, url, port, e.asStartElement());
+        while (parser.hasNext()) {
+            XMLEvent e = parser.nextEvent();
 
-								continue skip;
-							}
+            if (e.isStartElement()) {
+                StartElement se = e.asStartElement();
+                if (isReplyTo(se)) {
+                    inReplyTo = true;
+                }
+                if (inReplyTo && isAddress(se)) {
+                    url = parser.getElementText();
+                    try {
+                        addRewrittenAddressElement(ef, eventWriter, url, location, se);
+                    } catch (URISyntaxException ex) {
+                        log.info("Error parsing addressing URI: {}", url, ex);
+                        throw new RuntimeException(ex);
+                    }
+                    continue;
+                }
+            }
+            if (e.isEndElement()) {
+                if (isReplyTo(e.asEndElement())) {
+                    inReplyTo = false;
+                }
+            }
+            eventWriter.add(e);
+        }
+    }
 
-							eventWriter.add(e);
-							e = parser.nextTag();
-						}
-					}
+    private void addRewrittenAddressElement(XMLEventFactory ef, XMLEventWriter writer, String address, WsaEndpointRewriterInterceptor.Location location, StartElement se) throws XMLStreamException, URISyntaxException {
+        writer.add(ef.createStartElement(se.getName(), se.getAttributes(), se.getNamespaces()));
+        writer.add(ef.createCharacters(rewrite(address, location)));
+        writer.add(ef.createEndElement(se.getName(), se.getNamespaces()));
+    }
+    
+    private static @NotNull String rewrite(String address, WsaEndpointRewriterInterceptor.Location location) throws URISyntaxException {
+            URI orig = new URIFactory(false).create(address);
+            StringBuilder sb = new StringBuilder();
+            sb.append(location.protocol()).append("://").append(location.host());
+            if (location.port() > -1) {
+                    sb.append(':').append(location.port());
+                }
+            if (orig.getPath() != null) sb.append(orig.getPath());
+            if (orig.getQuery() != null) sb.append('?').append(orig.getQuery());
+            if (orig.getFragment() != null) sb.append('#').append(orig.getFragment());
+            return sb.toString();
+        }
 
-					if (isMessageId(e.asStartElement())) {
-						id = parser.getElementText();
-						exc.setProperty("messageId", id);
-						addMessageIdElement(eventWriter, id, e.asStartElement());
+    private boolean isReplyTo(StartElement startElement) {
+        return isElement(startElement.getName(), REPLY_TO);
+    }
 
-						continue;
-					}
-				}
+    private boolean isReplyTo(EndElement endElement) {
+        return isElement(endElement.getName(), REPLY_TO);
+    }
 
-				eventWriter.add(e);
-			}
+    private boolean isAddress(StartElement startElement) {
+        return isElement(startElement.getName(), ADDRESS);
+    }
 
-		registry.register(id, url);
-	}
-
-	private void addMessageIdElement(XMLEventWriter writer, String id, StartElement startElement) throws XMLStreamException {
-		writer.add(eventFactory.createStartElement("", startElement.getName().getNamespaceURI(),
-				startElement.getName().getLocalPart(), startElement.getAttributes(), startElement.getNamespaces(),
-				startElement.getNamespaceContext()));
-		writer.add(eventFactory.createCharacters(id));
-		writer.add(eventFactory.createEndElement("", startElement.getName().getNamespaceURI(),
-				startElement.getName().getLocalPart(), startElement.getNamespaces()));
-	}
-
-	private boolean isMessageId(StartElement startElement) {
-		return startElement.getName().equals(new QName(ADDRESSING_URI_2005_08, "MessageID"))
-				|| startElement.getName().equals(new QName(ADDRESSING_URI_2004_08, "MessageID"));
-	}
-
-	private void addRewrittenAddressElement(XMLEventWriter writer, String address, int port, StartElement startElement) throws XMLStreamException {
-		writer.add(eventFactory.createStartElement("", startElement.getName().getNamespaceURI(),
-				startElement.getName().getLocalPart(), startElement.getAttributes(), startElement.getNamespaces(),
-				startElement.getNamespaceContext()));
-		writer.add(eventFactory.createCharacters(address.replaceFirst(":\\d+/", ":" + port + "/")));
-		writer.add(eventFactory.createEndElement("", startElement.getName().getNamespaceURI(),
-				startElement.getName().getLocalPart(), startElement.getNamespaces()));
-	}
-
-	private boolean isReplyTo(StartElement startElement) {
-		return startElement.getName().equals(new QName(ADDRESSING_URI_2005_08, "ReplyTo"));
-	}
-
-	private boolean isReplyTo(EndElement endElement) {
-		return endElement.getName().equals(new QName(ADDRESSING_URI_2005_08, "ReplyTo"));
-	}
-
-	private boolean isAddress(StartElement startElement) {
-		return startElement.getName().equals(new QName(ADDRESSING_URI_2005_08, "Address"));
-	}
+    private static boolean isElement(QName name, String elementName) {
+        return Stream.of(ADDRESSING_URI_2004_08, ADDRESSING_URI_2005_08)
+                .anyMatch(ns -> (name.getNamespaceURI().equals(ns) && name.getLocalPart().equals(elementName)));
+    }
 }

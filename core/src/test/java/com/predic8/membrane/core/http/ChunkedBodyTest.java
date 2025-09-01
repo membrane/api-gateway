@@ -42,8 +42,10 @@ import static com.google.common.io.Resources.*;
 import static com.predic8.membrane.core.Constants.*;
 import static com.predic8.membrane.core.http.ChunkedBody.*;
 import static com.predic8.membrane.core.http.ChunksBuilder.*;
+import static com.predic8.membrane.core.http.Request.get;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.transport.http2.Http2ServerHandler.*;
+import static java.lang.Thread.sleep;
 import static java.nio.charset.StandardCharsets.*;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -80,7 +82,7 @@ public class ChunkedBodyTest {
                         s.getOutputStream().write(cont.getBytes(US_ASCII));
                         s.getOutputStream().flush();
                         try {
-                            Thread.sleep(100); // a TCP close may outpace the TCP data paket elsewise
+                            sleep(100); // a TCP close may outpace the TCP data paket elsewise
                         } catch (InterruptedException e) {
                             Thread.currentThread().interrupt();
                         }
@@ -93,7 +95,7 @@ public class ChunkedBodyTest {
 
             Exchange e;
             try (HttpClient hc = new HttpClient()) {
-                e = hc.call(new Request.Builder().get("http://localhost:3058").buildExchange());
+                e = hc.call(get("http://localhost:3058").buildExchange());
             }
             e.getResponse().getBodyAsStringDecoded(); // read body
 
@@ -211,9 +213,9 @@ public class ChunkedBodyTest {
                         throw new RuntimeException("Keep-Alive is not working.");
                     }
 
-                    if (http2 && exc.getProperty(HTTP2) == null)
+                    if (http2 && exc.getProperty(HTTP2_SERVER) == null)
                         throw new RuntimeException("HTTP/2 is not being used.");
-                    if (!http2 && exc.getProperty(HTTP2) != null)
+                    if (!http2 && exc.getProperty(HTTP2_SERVER) != null)
                         throw new RuntimeException("HTTP/2 is being used.");
 
                     Response r = Response.ok().build();

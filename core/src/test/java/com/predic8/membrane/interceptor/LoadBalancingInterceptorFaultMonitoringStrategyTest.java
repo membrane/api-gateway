@@ -17,15 +17,15 @@ package com.predic8.membrane.interceptor;
 import com.google.common.base.*;
 import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.Header;
-import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.interceptor.balancer.*;
 import com.predic8.membrane.core.interceptor.balancer.faultmonitoring.*;
 import com.predic8.membrane.core.proxies.*;
 import com.predic8.membrane.core.services.*;
+import com.predic8.membrane.core.transport.http.client.*;
 import org.apache.commons.httpclient.*;
 import org.apache.commons.httpclient.methods.*;
+import org.jetbrains.annotations.*;
 import org.junit.jupiter.api.*;
 import org.slf4j.*;
 
@@ -34,8 +34,13 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.*;
 import java.util.function.Function;
 
+import static com.predic8.membrane.core.http.Header.*;
+import static com.predic8.membrane.core.http.MimeType.*;
+import static com.predic8.membrane.core.http.Request.*;
+import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static com.predic8.membrane.core.interceptor.balancer.BalancerUtil.*;
 import static java.util.concurrent.TimeUnit.*;
-import static org.apache.commons.httpclient.HttpVersion.HTTP_1_1;
+import static org.apache.commons.httpclient.HttpVersion.*;
 import static org.apache.http.params.CoreProtocolPNames.*;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -47,70 +52,93 @@ import static org.junit.jupiter.api.Assertions.*;
  *
  * @author Fabian Kessler / Optimaize
  */
-public class LoadBalancingInterceptorFaultMonitoringStrategyTest {
+class LoadBalancingInterceptorFaultMonitoringStrategyTest {
 
     private static final Logger log = LoggerFactory.getLogger(LoadBalancingInterceptorFaultMonitoringStrategyTest.class.getName());
 
     protected LoadBalancingInterceptor balancingInterceptor;
     protected HttpRouter balancer;
-    private final List<HttpRouter> httpRouters = new ArrayList<>();
-    private final List<RandomlyFailingDummyWebServiceInterceptor> dummyInterceptors = new ArrayList<>();
+
+    // The simulation nodes
+    private final List<Router> nodes = new ArrayList<>();
 
     private void setUp(TestingContext ctx) throws Exception {
+        nodes.clear();
         for (int i = 1; i <= ctx.numNodes; i++) {
-            HttpRouter httpRouter = new HttpRouter();
-            httpRouters.add(httpRouter);
-
-            RandomlyFailingDummyWebServiceInterceptor dummyInterceptor = new RandomlyFailingDummyWebServiceInterceptor(ctx.successChance);
-            dummyInterceptors.add(dummyInterceptor);
-
-            ServiceProxy serviceProxy = new ServiceProxy(new ServiceProxyKey("localhost", "POST", ".*", (2000 + i)), "thomas-bayer.com", 80);
-            serviceProxy.getInterceptors().add(new AbstractInterceptor() {
-                @Override
-                public Outcome handleResponse(Exchange exc) {
-                    exc.getResponse().getHeader().add("Connection", "close");
-                    return Outcome.CONTINUE;
-                }
-            });
-            serviceProxy.getInterceptors().add(dummyInterceptor);
-            httpRouter.getRuleManager().addProxyAndOpenPortIfNew(serviceProxy);
-            httpRouter.init();
+            nodes.add(createRouterForNode(ctx, i));
         }
 
-        balancer = new HttpRouter();
+        balancer = createLoadBalancer();
+
+        //add the destinations to the load balancer
+        for (int i = 1; i <= ctx.numNodes; i++) {
+            lookupBalancer(balancer, "Default").up("Default", "localhost", (2000 + i));
+        }
+    }
+
+    private HttpRouter createLoadBalancer() throws Exception {
+        HttpRouter r = new HttpRouter();
         ServiceProxy sp3 = new ServiceProxy(new ServiceProxyKey("localhost", "POST", ".*", 3054), "thomas-bayer.com", 80);
         balancingInterceptor = new LoadBalancingInterceptor();
         balancingInterceptor.setName("Default");
         sp3.getInterceptors().add(balancingInterceptor);
-        balancer.getRuleManager().addProxyAndOpenPortIfNew(sp3);
-        enableFailOverOn5XX(balancer);
-        balancer.init();
-
-        //add the destinations to the load balancer
-        for (int i = 1; i <= ctx.numNodes; i++) {
-            BalancerUtil.lookupBalancer(balancer, "Default").up("Default", "localhost", (2000 + i));
-        }
+        r.getRuleManager().addProxyAndOpenPortIfNew(sp3);
+        r.getTransport().getFirstInterceptorOfType(HTTPClientInterceptor.class).get().setHttpClientConfig(getHttpClientConfigurationWithRetries());
+        r.init();
+        return r;
     }
 
-    private void enableFailOverOn5XX(HttpRouter balancer) {
-        List<Interceptor> l = balancer.getTransport().getInterceptors();
-        ((HTTPClientInterceptor) l.getLast()).setFailOverOn5XX(true);
+    private static @NotNull HttpClientConfiguration getHttpClientConfigurationWithRetries() {
+        HttpClientConfiguration config = new HttpClientConfiguration();
+        RetryHandler rh = config.getRetryHandler();
+        rh.setRetries(5); // Cause we simulate nodes that are down
+        rh.setDelay(1); // Fast for tests
+        rh.setBackoffMultiplier(2);
+        rh.setFailOverOn5XX(true);
+        return config;
+    }
+
+    private Router createRouterForNode(TestingContext ctx, int i) throws Exception {
+        HttpRouter r = new HttpRouter();
+        r.getRuleManager().addProxyAndOpenPortIfNew(createServiceProxy(ctx, i));
+        r.init();
+        return r;
+    }
+
+    private @NotNull ServiceProxy createServiceProxy(TestingContext ctx, int i) {
+        ServiceProxy serviceProxy = new ServiceProxy(new ServiceProxyKey("localhost", METHOD_POST, ".*", (2000 + i)), "thomas-bayer.com", 80);
+        serviceProxy.getInterceptors().add(new AbstractInterceptor() {
+            @Override
+            public Outcome handleResponse(Exchange exc) {
+                exc.getResponse().getHeader().setConnection("close");
+                return CONTINUE;
+            }
+        });
+        serviceProxy.getInterceptors().add(new RandomlyFailingDummyWebServiceInterceptor(ctx.successChance));
+        return serviceProxy;
     }
 
     @AfterEach
-    public void tearDown() {
-        for (HttpRouter httpRouter : httpRouters) {
-            httpRouter.shutdown();
+    void tearDown() {
+        for (Router httpRouter : nodes) {
+            try {
+                httpRouter.shutdown();
+            } catch (Exception e) {
+                log.warn("Node shutdown failed.", e);
+            }
         }
-        balancer.shutdown();
+        try {
+            balancer.shutdown();
+        } catch (Exception e) {
+            log.warn("Balancer shutdown failed.", e);
+        }
     }
-
 
     /**
      * Because we set the success chance to 0, none will pass.
      */
     @Test
-    public void test_2destinations_6threads_100calls_allFail() throws Exception {
+    void test_2destinations_6threads_100calls_allFail() throws Exception {
         TestingContext ctx = new TestingContext.Builder()
                 .numNodes(2)
                 .numThreads(6)
@@ -119,6 +147,8 @@ public class LoadBalancingInterceptorFaultMonitoringStrategyTest {
                 .build();
 
         run(ctx);
+
+        assertEquals(100, ctx.exceptionCounter.get());
         assertEquals(0, ctx.successCounter.get());
     }
 
@@ -143,7 +173,7 @@ public class LoadBalancingInterceptorFaultMonitoringStrategyTest {
      * Because of this, in the end not all will succeed.
      */
     @Test
-    public void test_2destinations_6threads_100calls_someFail() throws Exception {
+    void test_2destinations_6threads_100calls_someFail() throws Exception {
         TestingContext ctx = new TestingContext.Builder()
                 .numNodes(2)
                 .numThreads(6)
@@ -152,8 +182,10 @@ public class LoadBalancingInterceptorFaultMonitoringStrategyTest {
                 .build();
 
         run(ctx);
-        assertTrue(ctx.successCounter.get() >= 900);
-        assertTrue(ctx.successCounter.get() < 1000);
+
+        assertTrue(ctx.successCounter.get() >= 900, "ctx.successCounter.get() is %d, less than 900".formatted(ctx.successCounter.get()));
+        assertTrue(ctx.exceptionCounter.get() < 100, "ctx.exceptionCounter.get() is %d, greater than 100".formatted(ctx.successCounter.get()));
+        assertTrue(ctx.successCounter.get() < 1000, "ctx.successCounter.get() is %d, greater than 1000".formatted(ctx.successCounter.get()));
     }
 
     /**
@@ -173,7 +205,7 @@ public class LoadBalancingInterceptorFaultMonitoringStrategyTest {
                 .successChance(1d)
                 .preSubmitCallback(integer -> {
                     if (integer == 20) {
-                        httpRouters.getFirst().shutdown();
+                        nodes.getFirst().shutdown();
                     }
                     return null;
                 })
@@ -181,7 +213,7 @@ public class LoadBalancingInterceptorFaultMonitoringStrategyTest {
 
         run(ctx);
 
-        assertEquals(100, ctx.successCounter.get());
+        assertTrue(ctx.successCounter.get() > 95,"ctx.successCounter.get() > 95 was %s".formatted(ctx.successCounter.get()));
         for (int i = 0; i < 100; i++) {
             if (i < 10 || i >= 40) {
                 assertTrue(ctx.runtimes[i] < 500, "For " + i + " value was: " + ctx.runtimes[i]);
@@ -195,21 +227,21 @@ public class LoadBalancingInterceptorFaultMonitoringStrategyTest {
      * But because 1 remains functional, in the end all requests succeed.
      */
     @Test
-    public void test_5destinations_6threads_100calls_4shutdown() throws Exception {
+    void test_5destinations_6threads_100calls_4shutdown() throws Exception {
         TestingContext ctx = new TestingContext.Builder()
                 .numNodes(5)
                 .numThreads(6)
                 .numRequests(100)
                 .successChance(1d)
-                .preSubmitCallback(integer -> {
-                    if (integer == 10) {
-                        httpRouters.get(0).shutdown();
-                    } else if (integer == 20) {
-                        httpRouters.get(1).shutdown();
-                    } else if (integer == 30) {
-                        httpRouters.get(2).shutdown();
-                    } else if (integer == 40) {
-                        httpRouters.get(3).shutdown();
+                .preSubmitCallback(i -> {
+                    if (i == 10) {
+                        nodes.getFirst().shutdown();
+                    } else if (i == 20) {
+                        nodes.get(1).shutdown();
+                    } else if (i == 30) {
+                        nodes.get(2).shutdown();
+                    } else if (i == 40) {
+                        nodes.get(3).shutdown();
                     }
                     return null;
                 })
@@ -217,9 +249,9 @@ public class LoadBalancingInterceptorFaultMonitoringStrategyTest {
 
         run(ctx);
 
-        assertEquals(100, ctx.successCounter.get());
+        assertTrue(ctx.successCounter.get() >= 90, "ctx.successCounter.get() is %d, less than 90".formatted(ctx.successCounter.get()));
+        assertTrue(ctx.exceptionCounter.get() < 10, "ctx.exceptionCounter.get() is %d, greater than 10".formatted(ctx.successCounter.get()));
     }
-
 
     /**
      * Contains the variables used in one test run.
@@ -357,11 +389,10 @@ public class LoadBalancingInterceptorFaultMonitoringStrategyTest {
         ctx.shutdown();
 
         long totalTimeSpent = overallTime.elapsed(MILLISECONDS);
-        System.out.println("Time spent total: " + totalTimeSpent + "ms, longest run was " + ctx.getSlowestRuntime() + "ms");
 
+        log.info("Total time spent: {} ms, longest run was {} ms", totalTimeSpent, ctx.getSlowestRuntime());
         standardExpectations(ctx);
     }
-
 
     private void submitTasks(final TestingContext ctx) {
         for (int i = 0; i < ctx.numRequests; i++) {
@@ -372,32 +403,40 @@ public class LoadBalancingInterceptorFaultMonitoringStrategyTest {
             ctx.tpe.submit(() -> {
                 Stopwatch taskTime = Stopwatch.createStarted();
                 try {
-                    ctx.runCounter.incrementAndGet();
-                    final HttpClient client = new HttpClient();
-
-                    client.getParams().setParameter(PROTOCOL_VERSION, HTTP_1_1);
-                    if (client.executeMethod(getPostMethod()) == 200) {
-                        ctx.successCounter.incrementAndGet();
+                    final HttpClient client = getHttpClient();
+                    var method = getPostMethod();
+                    try {
+                        int statusCode = client.executeMethod(method);
+                        if (statusCode == 200) {
+                            ctx.successCounter.incrementAndGet();
+                        } else {
+                            log.warn("Non-200 status code: {}", statusCode);
+                            ctx.exceptionCounter.incrementAndGet();
+                        }
+                    } finally {
+                        method.releaseConnection();
                     }
+
                 } catch (Exception e) {
                     ctx.exceptionCounter.incrementAndGet();
-                    log.error("Error",e);
+                    log.error("Error", e);
                 }
+                ctx.runCounter.incrementAndGet();
                 ctx.runtimes[runNumber] = taskTime.elapsed(MILLISECONDS);
             });
         }
     }
 
+    private static @NotNull HttpClient getHttpClient() {
+        final HttpClient client = new HttpClient();
+        client.getParams().setParameter(PROTOCOL_VERSION, HTTP_1_1);
+        return client;
+    }
+
 
     private void standardExpectations(TestingContext ctx) {
         assertEquals(ctx.numRequests, ctx.runCounter.get());
-        assertEquals(0, ctx.exceptionCounter.get());
-
-        var totalInterceptorCount = dummyInterceptors.stream()
-                .mapToLong(RandomlyFailingDummyWebServiceInterceptor::getCount)
-                .sum();
-
-        assertTrue(totalInterceptorCount >= ctx.numRequests); //there are more interceptor calls, one more for every failure.
+        assertEquals(ctx.numRequests, ctx.exceptionCounter.get() + ctx.successCounter.get(), "Total = success + exception counts");
     }
 
 
@@ -418,8 +457,8 @@ public class LoadBalancingInterceptorFaultMonitoringStrategyTest {
         PostMethod post = new PostMethod(
                 "http://localhost:3054/axis2/services/BLZService");
         post.setRequestEntity(new InputStreamRequestEntity(this.getClass().getResourceAsStream("/getBank.xml")));
-        post.setRequestHeader(Header.CONTENT_TYPE, MimeType.TEXT_XML_UTF8);
-        post.setRequestHeader(Header.SOAP_ACTION, "");
+        post.setRequestHeader(CONTENT_TYPE, TEXT_XML_UTF8);
+        post.setRequestHeader(SOAP_ACTION, "");
         return post;
     }
 

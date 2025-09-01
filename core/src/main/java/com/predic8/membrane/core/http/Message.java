@@ -24,7 +24,8 @@ import java.nio.charset.*;
 import static com.predic8.membrane.core.Constants.*;
 import static com.predic8.membrane.core.http.Header.*;
 import static com.predic8.membrane.core.util.ContentTypeDetector.EffectiveContentType.*;
-import static com.predic8.membrane.core.util.ContentTypeDetector.detectEffectiveContentType;
+import static com.predic8.membrane.core.util.ContentTypeDetector.*;
+import static com.predic8.membrane.core.util.TextUtil.getCharset;
 
 /**
  * A HTTP message (request or response).
@@ -137,7 +138,7 @@ public abstract class Message {
 	 */
 	public String getBodyAsStringDecoded() {
 		try {
-			return new String(MessageUtil.getContent(this), getCharset());
+			return new String(MessageUtil.getContent(this), getCharsetOrDefault());
 		} catch (Exception e) {
 			throw new RuntimeException(e);
 		}
@@ -218,10 +219,6 @@ public abstract class Message {
 		released = true;
 	}
 
-	public boolean hasMsgReleased() {
-		return released;
-	}
-
 	public void setHeader(Header srcHeader) {
 		header = srcHeader;
 	}
@@ -236,7 +233,7 @@ public abstract class Message {
 			return;
 		}
 
-		body.write(getHeader().isChunked() ? new ChunkedBodyTransferrer(out) : new PlainBodyTransferrer(out), retainBody);
+		body.write(getHeader().isChunked() ? new ChunkedBodyTransferer(out) : new PlainBodyTransferer(out), retainBody);
 
 		out.flush();
 	}
@@ -340,8 +337,13 @@ public abstract class Message {
 		return "br".equalsIgnoreCase(header.getContentEncoding());
 	}
 
-	public String getCharset() {
-		return header.getCharset();
+	/**
+	 * Tries to use the messages header to get the encoding to build a Charset.
+	 * Uses default of TextUtil if not possible
+	 * @return
+	 */
+	public Charset getCharsetOrDefault() {
+		return getCharset(header.getCharset());
 	}
 
 	public void addObserver(MessageObserver observer) {

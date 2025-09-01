@@ -50,14 +50,13 @@ public class BodyTest {
 
 	@Test
 	public void testWrite() throws IOException {
-
 		ByteArrayOutputStream out = new ByteArrayOutputStream(100);
-		unchunkedBody.write(new PlainBodyTransferrer(out), true);
-		assertEquals(out.toString(), new String(msg1));
+		unchunkedBody.write(new PlainBodyTransferer(out), true);
+		assertEquals(new String(msg1), out.toString());
 
 		ByteArrayOutputStream out2 = new ByteArrayOutputStream(10000);
-		unchunkedBody2.write(new PlainBodyTransferrer(out2), true);
-		assertEquals(out2.toString(), new String(msg2));
+		unchunkedBody2.write(new PlainBodyTransferer(out2), true);
+		assertEquals(new String(msg2), out2.toString());
 	}
 
 	@Test
@@ -101,10 +100,10 @@ public class BodyTest {
 	public void testPlainToChunked() throws Exception {
 		Body chunked = new Body(new ByteArrayInputStream(msg1));
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
-		chunked.write(new ChunkedBodyTransferrer(baos), true);
+		chunked.write(new ChunkedBodyTransferer(baos), true);
 
 		ChunkedBody ciob = new ChunkedBody(new ByteArrayInputStream(baos.toByteArray()));
-		assertArrayEquals(ciob.getContent(), msg1);
+		assertArrayEquals(msg1, ciob.getContent());
 	}
 
 	@Test
@@ -114,7 +113,7 @@ public class BodyTest {
 
 		Body chunked = new Body(new ByteArrayInputStream(ciob.getContent()));
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
-		chunked.write(new ChunkedBodyTransferrer(baos), true);
+		chunked.write(new ChunkedBodyTransferer(baos), true);
 
 		ChunkedBody ciob2 = new ChunkedBody(new ByteArrayInputStream(baos.toByteArray()));
 

@@ -13,58 +13,101 @@
    limitations under the License. */
 package com.predic8.membrane.core.transport.http.client;
 
-import java.security.InvalidParameterException;
-import java.util.Objects;
+import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.config.security.*;
+import com.predic8.membrane.core.config.spring.*;
+import org.springframework.beans.*;
+import org.springframework.context.*;
 
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCChildElement;
-import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.config.security.SSLParser;
-import com.predic8.membrane.core.config.spring.BaseLocationApplicationContext;
-import org.springframework.beans.BeansException;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.ApplicationContextAware;
+import java.security.*;
+import java.util.*;
 
+/**
+ * @description Configuration container for Membrane's HTTP client.
+ *              Allows defining proxy, connection, authentication, TLS, and retry behavior.
+ *              Can be used as a reusable bean and referenced via &lt;spring:bean&gt;.
+ *              Most of its sub-elements are optional.
+ *
+ *              Example XML:
+ *              &lt;httpClientConfig maxRetries="5" adjustHostHeader="true"&gt;
+ *                  &lt;connection timeout="10000"/&gt;
+ *                  &lt;proxy host="proxy.example.com" port="3128"/&gt;
+ *                  &lt;authentication type="basic" user="user" password="pass"/&gt;
+ *                  &lt;ssl keystoreLocation="classpath:client.jks" keystorePassword="secret"/&gt;
+ *              &lt;/httpClientConfig&gt;
+ *
+ *              YAML:
+ *              httpClientConfig:
+ *                maxRetries: 5
+ *                adjustHostHeader: true
+ *                connection:
+ *                  timeout: 10000
+ *                proxy:
+ *                  host: proxy.example.com
+ *                  port: 3128
+ *                authentication:
+ *                  type: basic
+ *                  user: user
+ *                  password: pass
+ *                ssl:
+ *                  keystoreLocation: classpath:client.jks
+ *                  keystorePassword: secret
+ *
+ * @topic 4. Transports and Clients
+ */
 @MCElement(name="httpClientConfig")
 public class HttpClientConfiguration implements ApplicationContextAware {
 
-	private int maxRetries = 5;
+	/**
+	 * Settings for low-level connection behavior such as timeouts and pooling.
+	 */
 	private ConnectionConfiguration connection = new ConnectionConfiguration();
+
+	/**
+	 * Optional proxy server configuration.
+	 */
 	private ProxyConfiguration proxy;
+
+	/**
+	 * Optional authentication configuration (e.g. basic auth).
+	 */
 	private AuthenticationConfiguration authentication;
+
+	/**
+	 * Optional TLS/SSL configuration for secure communication.
+	 */
 	private SSLParser sslParser;
+
+	/**
+	 * Optional base location for resolving relative paths, e.g. to certificates.
+	 * Set automatically by Spring when using BaseLocationApplicationContext.
+	 */
 	private String baseLocation;
+
+	/**
+	 * Whether the Host header should be rewritten to match the target host.
+	 * Default: true
+	 */
+	private boolean adjustHostHeader = true;
+
+	/**
+	 * Enables experimental HTTP/2 support if true.
+	 */
 	private boolean useExperimentalHttp2;
 
-	@Override
-	public boolean equals(Object o) {
-		if (this == o) return true;
-		if (o == null || getClass() != o.getClass()) return false;
-		HttpClientConfiguration that = (HttpClientConfiguration) o;
-		return maxRetries == that.maxRetries
-				&& useExperimentalHttp2 == that.useExperimentalHttp2
-				&& Objects.equals(connection, that.connection)
-				&& Objects.equals(proxy, that.proxy)
-				&& Objects.equals(authentication, that.authentication)
-				&& Objects.equals(sslParser, that.sslParser)
-				&& Objects.equals(baseLocation, that.baseLocation);
-	}
+	private RetryHandler retryHandler = new RetryHandler();
 
-	@Override
-	public int hashCode() {
-		return Objects.hash(maxRetries,
-				connection,
-				proxy,
-				authentication,
-				sslParser,
-				baseLocation,
-				useExperimentalHttp2);
+	public HttpClientConfiguration() {
 	}
 
 	public ConnectionConfiguration getConnection() {
 		return connection;
 	}
 
+	/**
+	 * @description Connection-related configuration such as timeouts and connection pooling.
+	 *              Cannot be null.
+	 */
 	@MCChildElement(order=1)
 	public void setConnection(ConnectionConfiguration connection) {
 		if (connection == null)
@@ -76,6 +119,9 @@ public class HttpClientConfiguration implements ApplicationContextAware {
 		return proxy;
 	}
 
+	/**
+	 * @description Optional proxy configuration for outbound connections.
+	 */
 	@MCChildElement(order=2)
 	public void setProxy(ProxyConfiguration proxy) {
 		this.proxy = proxy;
@@ -85,33 +131,38 @@ public class HttpClientConfiguration implements ApplicationContextAware {
 		return authentication;
 	}
 
+	/**
+	 * @description Optional authentication mechanism (e.g., basic auth).
+	 */
 	@MCChildElement(order=3)
 	public void setAuthentication(AuthenticationConfiguration authentication) {
 		this.authentication = authentication;
 	}
 
 	public int getMaxRetries() {
-		return maxRetries;
+		return retryHandler.getRetries();
 	}
 
 	/**
-	 * @description Determines how often Membrane tries to send a message to a target before it gives up and returns an
-	 *              error message to the client.
-	 *              All tries to all servers count together. For example if you have 2 targets, and a RoundRobin
-	 *              strategy, then the number 5 means it tries, in this order: one, two, one, two, one.
-	 *              NOTE: the word "retries" is used incorrectly throughout this project. The current meaning is "tries".
-	 *              The first attempt, which is semantically not a "re"-try, counts as one already.
-	 * @default 5
+	 * @description Total number of connection attempts before giving up.
+	 *              This includes the first attempt, so 5 means 1 try + 4 retries.
+	 *              Used for failover and load balancing logic.
+	 * @default 2
+	 * @example 3
 	 */
 	@MCAttribute
 	public void setMaxRetries(int maxRetries) {
-		this.maxRetries = maxRetries;
+		this.retryHandler.setRetries(maxRetries);
 	}
 
 	public SSLParser getSslParser() {
 		return sslParser;
 	}
 
+	/**
+	 * @description SSL/TLS configuration for secure connections.
+	 *              Accepts both standard and external SSL configurations.
+	 */
 	@MCChildElement(order=4, allowForeign = true)
 	public void setSslParser(SSLParser sslParser) {
 		this.sslParser = sslParser;
@@ -135,8 +186,67 @@ public class HttpClientConfiguration implements ApplicationContextAware {
 		return useExperimentalHttp2;
 	}
 
+	/**
+	 * @description Enables experimental support for HTTP/2.
+	 *              When true, HTTP/2 connections are attempted when possible.
+	 * @default false
+	 */
 	@MCAttribute
 	public void setUseExperimentalHttp2(boolean useExperimentalHttp2) {
 		this.useExperimentalHttp2 = useExperimentalHttp2;
+	}
+
+	public RetryHandler getRetryHandler() {
+		return retryHandler;
+	}
+
+	/**
+	 * @description Advanced configuration for retry behavior.
+	 *              Allows detailed retry logic beyond the simple maxRetries setting.
+	 */
+	@MCChildElement
+	public void setRetryHandler(RetryHandler retryHandler) {
+		this.retryHandler = retryHandler;
+	}
+
+	public boolean isAdjustHostHeader() {
+		return adjustHostHeader;
+	}
+
+	/**
+	 * @description Whether to automatically rewrite the Host header to match the target address.
+	 *              This is useful when routing requests to internal systems where the Host header must match the backend.
+	 * @default true
+	 */
+	@MCAttribute
+	public void setAdjustHostHeader(boolean adjustHostHeader) {
+		this.adjustHostHeader = adjustHostHeader;
+	}
+
+	@Override
+	public boolean equals(Object o) {
+		if (this == o) return true;
+		if (o == null || getClass() != o.getClass()) return false;
+		HttpClientConfiguration that = (HttpClientConfiguration) o;
+		return  Objects.equals(retryHandler, that.getRetryHandler())
+			   && useExperimentalHttp2 == that.useExperimentalHttp2
+			   && adjustHostHeader == that.adjustHostHeader
+			   && Objects.equals(connection, that.connection)
+			   && Objects.equals(proxy, that.proxy)
+			   && Objects.equals(authentication, that.authentication)
+			   && Objects.equals(sslParser, that.sslParser)
+			   && Objects.equals(baseLocation, that.baseLocation);
+	}
+
+	@Override
+	public int hashCode() {
+		return Objects.hash(retryHandler,
+				connection,
+				proxy,
+				authentication,
+				sslParser,
+				adjustHostHeader,
+				baseLocation,
+				useExperimentalHttp2);
 	}
 }

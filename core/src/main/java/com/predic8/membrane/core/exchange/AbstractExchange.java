@@ -19,8 +19,8 @@ import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.interceptor.Interceptor.*;
 import com.predic8.membrane.core.model.*;
-import com.predic8.membrane.core.proxies.*;
 import com.predic8.membrane.core.proxies.Proxy;
+import com.predic8.membrane.core.proxies.*;
 import org.slf4j.*;
 
 import java.io.*;
@@ -29,7 +29,6 @@ import java.text.*;
 import java.util.*;
 
 import static com.predic8.membrane.core.exchange.ExchangeState.*;
-import static java.lang.String.format;
 
 public abstract class AbstractExchange {
 	private static final Logger log = LoggerFactory.getLogger(AbstractExchange.class.getName());
@@ -228,25 +227,22 @@ public abstract class AbstractExchange {
 		status = RECEIVED;
 	}
 
+	/**
+	 * @param key Name of the property
+	 * @return Value of property or null
+	 */
 	public Object getProperty(String key) {
         return properties.get(key);
 	}
 
-	public <T> T getPropertyOrNull(String key, Class<T> clazz) {
-		Object value = properties.get(key);
-		return (clazz.isInstance(value)) ? clazz.cast(value) : null;
-	}
-
+	/**
+	 * @param key Name of the property
+	 * @param clazz Class of property
+	 * @return Value of property or null
+	 */
 	public <T> T getProperty(String key, Class<T> clazz) {
 		Object value = properties.get(key);
-		if (clazz.isInstance(value)) {
-			return clazz.cast(value);
-		}
-		throw new ClassCastException(format("Property with key '%s' is not of type %s", key, clazz.getName()));
-	}
-
-	public String getStringProperty(String key) {
-		return (String) properties.get(key);
+		return (clazz.isInstance(value)) ? clazz.cast(value) : null;
 	}
 
 	public void setProperty(String key, Object value) {

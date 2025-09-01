@@ -67,6 +67,8 @@ api:
         println('Here')
 ```
 
+Therefore, while most of the project still uses XML as its configuration language, everything can be expressed in YAML.
+
 ## Annotations used
 * `@MCElement(name="foo")` means that you can write `<foo>` somewhere in the configuration where it fits.
 

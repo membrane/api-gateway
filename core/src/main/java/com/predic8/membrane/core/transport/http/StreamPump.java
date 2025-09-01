@@ -14,6 +14,8 @@
 
 package com.predic8.membrane.core.transport.http;
 
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.model.*;
 import com.predic8.membrane.core.proxies.Proxy;
 import org.slf4j.*;
 
@@ -22,6 +24,8 @@ import java.io.*;
 import java.net.*;
 import java.util.*;
 import java.util.concurrent.atomic.*;
+
+import static com.predic8.membrane.core.transport.http.client.protocol.WebSocketProtocolHandler.*;
 
 public class StreamPump implements Runnable {
 
@@ -117,6 +121,59 @@ public class StreamPump implements Runnable {
 			out.close();
 		} catch (IOException e) {
 			log.error("While closing stream pump.", e);
+		}
+	}
+
+	/**
+	 * For proxy
+	 * @param exc
+	 * @param con
+	 * @param protocol
+	 * @param stats
+	 * @throws SocketException
+	 */
+	public static void setupConnectionForwarding(Exchange exc, final Connection con, final String protocol, StreamPump.StreamPumpStats stats) throws SocketException {
+		final TwoWayStreaming tws = (TwoWayStreaming) exc.getHandler();
+		String source = tws.getRemoteDescription();
+		String dest = con.toString();
+		final StreamPump a;
+		final StreamPump b;
+		if (WEBSOCKET.equalsIgnoreCase(protocol)) {
+			WebSocketStreamPump aTemp = new WebSocketStreamPump(tws.getSrcIn(), con.out, stats, protocol + " " + source + " -> " + dest, exc.getProxy(), true, exc);
+			WebSocketStreamPump bTemp = new WebSocketStreamPump(con.in, tws.getSrcOut(), stats, protocol + " " + source + " <- " + dest, exc.getProxy(), false, null);
+			aTemp.init(bTemp);
+			bTemp.init(aTemp);
+			a = aTemp;
+			b = bTemp;
+		} else {
+			a = new StreamPump(tws.getSrcIn(), con.out, stats, protocol + " " + source + " -> " + dest, exc.getProxy());
+			b = new StreamPump(con.in, tws.getSrcOut(), stats, protocol + " " + source + " <- " + dest, exc.getProxy());
+		}
+
+		tws.removeSocketSoTimeout();
+
+		exc.addExchangeViewerListener(new AbstractExchangeViewerListener() {
+
+			@Override
+			public void setExchangeFinished() {
+				runClient(log, b, protocol, a, con);
+			}
+		});
+	}
+
+	public static void runClient(Logger log, StreamPump b, String protocol, StreamPump pump, Connection con) {
+		String threadName = Thread.currentThread().getName();
+
+		new Thread(b,  "%s %s Backward Thread".formatted( threadName, protocol)).start();
+		try {
+			Thread.currentThread().setName("%s %s Onward Thread".formatted( threadName, protocol));
+			pump.run();
+		} finally {
+			try {
+				con.close();
+			} catch (IOException e) {
+				log.debug("", e);
+			}
 		}
 	}
 

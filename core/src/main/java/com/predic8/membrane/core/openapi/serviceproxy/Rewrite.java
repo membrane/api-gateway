@@ -83,7 +83,7 @@ public class Rewrite implements Cloneable {
      * @param url        URL to rewrite
      * @param uriFactory URIFactory
      * @return Rewritten URL
-     * @throws URISyntaxException syntax error ín URL
+     * @throws URISyntaxException syntax error in URL
      */
     protected String rewriteUrl(Exchange exc, String url, URIFactory uriFactory) throws URISyntaxException {
         return UriUtil.rewrite(uriFactory, rewriteUrl(url), rewriteProtocol(exc.getInboundProtocol()), rewriteHost(exc.getOriginalHostHeaderHost()), rewritePort(exc.getOriginalHostHeaderPort()));

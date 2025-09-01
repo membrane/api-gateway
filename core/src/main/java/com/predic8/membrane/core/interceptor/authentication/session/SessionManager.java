@@ -70,7 +70,7 @@ public class SessionManager extends AbstractXmlElement implements Cleaner {
 	 * Sets the Session Cookie on the response, if necessary (e.g. a session was created)
      */
 	public void postProcess(Exchange exc) {
-		String cookieValue = exc.getPropertyOrNull(SESSION_ID, String.class);
+		String cookieValue = exc.getProperty(SESSION_ID, String.class);
 		if (cookieValue != null && exc.getResponse() != null)
 			exc.getResponse().getHeader().addCookieSession(cookieName, cookieValue);
 	}
@@ -182,7 +182,7 @@ public class SessionManager extends AbstractXmlElement implements Cleaner {
 	}
 
 	public Session getSession(Exchange exc) {
-		Session s = exc.getPropertyOrNull(SESSION, Session.class);
+		Session s = exc.getProperty(SESSION, Session.class);
 		if (s != null)
 			return s;
 		String id = exc.getRequest().getHeader().getFirstCookie(cookieName);

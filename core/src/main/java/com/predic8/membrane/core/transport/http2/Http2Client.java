@@ -48,7 +48,6 @@ public class Http2Client implements Runnable, AutoCloseable {
         private Response response;
     }
 
-
     public Http2Client(Connection con, boolean showSSLExceptions) {
         this.con = con;
         this.logic = new Http2Logic(executor, con.socket, con.in, con.out, showSSLExceptions, new Http2MessageHandler() {
@@ -73,7 +72,7 @@ public class Http2Client implements Runnable, AutoCloseable {
         thread.start();
     }
 
-    public Response doCall(Exchange exc, Connection con) throws IOException, InterruptedException {
+    public Response doCall(Exchange exc) throws IOException, InterruptedException {
         int streamId;
         synchronized(this) {
             if (reserved > 0)
