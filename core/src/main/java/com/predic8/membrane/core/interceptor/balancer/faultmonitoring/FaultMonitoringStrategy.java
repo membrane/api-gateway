@@ -14,28 +14,21 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.balancer.faultmonitoring;
 
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.Router;
-import com.predic8.membrane.core.config.AbstractXmlElement;
-import com.predic8.membrane.core.exchange.AbstractExchange;
+import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.config.*;
+import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.interceptor.balancer.*;
-import com.predic8.membrane.core.transport.http.HttpClientStatusEventBus;
-import com.predic8.membrane.core.transport.http.HttpClientStatusEventListener;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.predic8.membrane.core.transport.http.*;
+import org.slf4j.*;
 
-import javax.xml.stream.XMLStreamException;
-import javax.xml.stream.XMLStreamWriter;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Random;
+import javax.xml.stream.*;
+import java.net.*;
+import java.util.*;
 
 /**
- * @description
- * Monitors the outcome of requests to each node to quickly disable/re-enable faulty ones.
+ * @author Fabian Kessler / Optimaize
+ * @description Monitors the outcome of requests to each node to quickly disable/re-enable faulty ones.
  *
  * <h2>WHY THIS CLASS</h2>
  * <p>This is a drop-in replacement for the default {@link RoundRobinStrategy}. In fact, as long as all nodes
@@ -100,268 +93,262 @@ import java.util.Random;
  * Automatic background retry of previous failed requests to see if the service is back online is a bad
  * idea... think payment service.
  * </p>
- *
- * @author Fabian Kessler / Optimaize
  */
-@MCElement(name="faultMonitoringStrategy")
+@MCElement(name = "faultMonitoringStrategy")
 public class FaultMonitoringStrategy extends AbstractXmlElement implements DispatchingStrategy {
 
-	private static final Logger log = LoggerFactory.getLogger(FaultMonitoringStrategy.class.getName());
+    private static final Logger log = LoggerFactory.getLogger(FaultMonitoringStrategy.class.getName());
 
-	private double minFlawlessServerRatioForRoundRobin = 0.5d;
+    private double minFlawlessServerRatioForRoundRobin = 0.5d;
 
-	private long clearFaultyProfilesByTimerAfterLastFailureSeconds = 5 * 60 * 1000; //five minutes
+    private long clearFaultyProfilesByTimerAfterLastFailureSeconds = 5 * 60 * 1000; //five minutes
 
-	private long clearFaultyTimerIntervalSeconds = 30 * 1000; //30 seconds
+    private long clearFaultyTimerIntervalSeconds = 30 * 1000; //30 seconds
 
-	/**
-	 * Key = destination "host:port"
-	 */
-	private final FaultMonitoringState state = new FaultMonitoringState();
+    /**
+     * Key = destination "host:port"
+     */
+    private final FaultMonitoringState state = new FaultMonitoringState();
 
-	private final Random random = new Random();
-	private HttpClientStatusEventBus httpClientStatusEventBus;
+    private final Random random = new Random();
+    private HttpClientStatusEventBus httpClientStatusEventBus;
 
-	public void init(Router router) {
-		httpClientStatusEventBus = new HttpClientStatusEventBus();
-		httpClientStatusEventBus.registerListener(new MyHttpClientStatusEventListener());
+    public void init(Router router) {
+        httpClientStatusEventBus = new HttpClientStatusEventBus();
+        httpClientStatusEventBus.registerListener(new MyHttpClientStatusEventListener());
 
-		state.scheduleRemoval(clearFaultyProfilesByTimerAfterLastFailureSeconds, clearFaultyTimerIntervalSeconds);
-	}
+        state.scheduleRemoval(clearFaultyProfilesByTimerAfterLastFailureSeconds, clearFaultyTimerIntervalSeconds);
+    }
 
-	private List<Node> filterBySuccessProfile(List<Node> endpoints) {
-		if (state.getMap().isEmpty()) return endpoints;
-		List<Node> filtered = new ArrayList<>(endpoints.size());
-		for (Node endpoint : endpoints) {
-			NodeFaultProfile nodeFaultProfile = state.getMap().get(makeHostAndPort(endpoint));
-			if (nodeFaultProfile != null) {
-				if (nodeFaultProfile.getScore() < 1d) { //in a race condition the profile could still exist, but have a perfect score.
-					continue;
-				}
-			}
-			filtered.add(endpoint);
-		}
-		return filtered;
-	}
+    private List<Node> filterBySuccessProfile(List<Node> endpoints) {
+        if (state.getMap().isEmpty()) return endpoints;
+        List<Node> filtered = new ArrayList<>(endpoints.size());
+        for (Node endpoint : endpoints) {
+            NodeFaultProfile nodeFaultProfile = state.getMap().get(makeHostAndPort(endpoint));
+            if (nodeFaultProfile != null) {
+                if (nodeFaultProfile.getScore() < 1d) { //in a race condition the profile could still exist, but have a perfect score.
+                    continue;
+                }
+            }
+            filtered.add(endpoint);
+        }
+        return filtered;
+    }
 
-	private String makeHostAndPort(Node endpoint) {
-		return endpoint.getHost()+":"+endpoint.getPort();
-	}
-
-
-	public void done(AbstractExchange exc) {
-		//nothing to do here, we get the information through the event bus.
-	}
+    private String makeHostAndPort(Node endpoint) {
+        return endpoint.getHost() + ":" + endpoint.getPort();
+    }
 
 
-	public synchronized Node dispatch(LoadBalancingInterceptor interceptor, AbstractExchange exc) throws EmptyNodeListException {
-		httpClientStatusEventBus.engageInstance(exc);
-
-		//getting a decoupled copy to avoid index out of bounds in case of concurrent modification (dynamic config files reload...)
-		List<Node> endpoints = interceptor.getEndpoints(); //this calls synchronizes access internally.
-		if (endpoints.isEmpty()) {
-			//there's nothing we can do here. no nodes configured, or all nodes were reported to be offline.
-			throw new EmptyNodeListException();
-		}
-		if (endpoints.size()==1) {
-			//there's nothing else we can do.
-			return endpoints.getFirst();
-		}
-
-		List<Node> endpointsFiltered = filterBySuccessProfile(endpoints);
-
-		if (!endpointsFiltered.isEmpty()) {
-			double ratio = endpointsFiltered.size() / (double)endpoints.size();
-			if (ratio >= minFlawlessServerRatioForRoundRobin) {
-				//got enough valid nodes. go into simple round-robin strategy
-				log.trace("Selecting round robin for "+endpointsFiltered.size()+"/"+endpoints.size()+" endpoints.");
-				return applyRoundRobinStrategy(endpointsFiltered);
-			}
-		}
-
-		//using all servers.
-		log.trace("Selecting by chance");
-		return returnByChance(endpoints);
-	}
-
-	/**
-	 * This returns a random node computed by the chance in relation to the recent success rate.
-	 * @param endpoints containing at least 2 entries
-	 */
-	private Node returnByChance(List<Node> endpoints) {
-		assert endpoints.size() >= 2;
-
-		double[] scores = new double[endpoints.size()];
-		double totalScore = 0;
-		for (int i = 0; i < endpoints.size(); i++) {
-			Node endpoint = endpoints.get(i);
-			double score;
-			NodeFaultProfile nodeFaultProfile = state.getMap().get(makeHostAndPort(endpoint));
-			if (nodeFaultProfile == null) {
-				score = 1d;
-			} else {
-				score = nodeFaultProfile.getScore();
-				if (score == 0d) {
-					// The number 0 may theoretically occur if there are 10 thousand successive failures
-					// (dividing the number 1.0d by half 10k times results in 0d).
-					// If totalScore sums to 0, we would elsewise always select the last (unavailable) node.
-					score = 0.0001d;
-				}
-			}
-			totalScore += score;
-			scores[i] = totalScore;
-		}
-		double chosen = random.nextDouble() * totalScore;
-		int selected = 0;
-		while (chosen > scores[selected] && selected + 1 < endpoints.size())
-			selected++;
-		return endpoints.get(selected);
-	}
+    public void done(AbstractExchange exc) {
+        //nothing to do here, we get the information through the event bus.
+    }
 
 
-	/**
-	 * Using the "last" variable is a bit dirty, we can't be sure to always get the same nodes.
-	 * But in practice it is irrelevant, worst case this returns the same Node twice in a row...
-	 */
-	private int last = -1;
-	private Node applyRoundRobinStrategy(List<Node> endpoints) {
-		int i = incrementAndGet(endpoints.size());
-		return endpoints.get(i);
-	}
-	/**
-	 * Must be atomic, therefore synchronized.
-	 */
-	private synchronized int incrementAndGet(int numEndpoints) {
-		last ++;
-		if (last >= numEndpoints) {
-			last = 0;
-		}
-		return last;
-	}
+    public synchronized Node dispatch(LoadBalancingInterceptor interceptor, AbstractExchange exc) throws EmptyNodeListException {
+        httpClientStatusEventBus.engageInstance(exc);
+
+        //getting a decoupled copy to avoid index out of bounds in case of concurrent modification (dynamic config files reload...)
+        List<Node> endpoints = interceptor.getEndpoints(); //this calls synchronizes access internally.
+        if (endpoints.isEmpty()) {
+            //there's nothing we can do here. no nodes configured, or all nodes were reported to be offline.
+            throw new EmptyNodeListException();
+        }
+        if (endpoints.size() == 1) {
+            //there's nothing else we can do.
+            return endpoints.getFirst();
+        }
+
+        List<Node> endpointsFiltered = filterBySuccessProfile(endpoints);
+
+        if (!endpointsFiltered.isEmpty()) {
+            double ratio = endpointsFiltered.size() / (double) endpoints.size();
+            if (ratio >= minFlawlessServerRatioForRoundRobin) {
+                //got enough valid nodes. go into simple round-robin strategy
+                log.trace("Selecting round robin for {}/{} endpoints.", endpointsFiltered.size(), endpoints.size());
+                return applyRoundRobinStrategy(endpointsFiltered);
+            }
+        }
+
+        //using all servers.
+        log.trace("Selecting by chance");
+        return returnByChance(endpoints);
+    }
+
+    /**
+     * This returns a random node computed by the chance in relation to the recent success rate.
+     *
+     * @param endpoints containing at least 2 entries
+     */
+    private Node returnByChance(List<Node> endpoints) {
+        assert endpoints.size() >= 2;
+
+        double[] scores = new double[endpoints.size()];
+        double totalScore = 0;
+        for (int i = 0; i < endpoints.size(); i++) {
+            totalScore += computeScore(endpoints.get(i));
+            scores[i] = totalScore;
+        }
+        double chosen = random.nextDouble() * totalScore;
+        int selected = 0;
+        while (chosen > scores[selected] && selected + 1 < endpoints.size())
+            selected++;
+        return endpoints.get(selected);
+    }
+
+    private double computeScore(Node endpoint) {
+        NodeFaultProfile nodeFaultProfile = state.getMap().get(makeHostAndPort(endpoint));
+        if (nodeFaultProfile == null) {
+            return 1d;
+        }
+        double score = nodeFaultProfile.getScore();
+        if (score == 0d) {
+            // The number 0 may theoretically occur if there are 10 thousand successive failures
+            // (dividing the number 1.0d by half 10k times results in 0d).
+            // If totalScore sums to 0, we would elsewise always select the last (unavailable) node.
+            return  0.0001d;
+        }
+        return score;
+    }
+
+    /**
+     * Using the "last" variable is a bit dirty, we can't be sure to always get the same nodes.
+     * But in practice it is irrelevant, worst case this returns the same Node twice in a row...
+     */
+    private int last = -1;
+
+    private Node applyRoundRobinStrategy(List<Node> endpoints) {
+        int i = incrementAndGet(endpoints.size());
+        return endpoints.get(i);
+    }
+
+    /**
+     * Must be atomic, therefore synchronized.
+     */
+    private synchronized int incrementAndGet(int numEndpoints) {
+        last++;
+        if (last >= numEndpoints) {
+            last = 0;
+        }
+        return last;
+    }
 
 
+    @Override
+    public void write(XMLStreamWriter out) throws XMLStreamException {
+        out.writeStartElement("faultMonitoringStrategy");
+        out.writeEndElement();
+    }
 
+    @Override
+    protected String getElementName() {
+        return "faultMonitoringStrategy";
+    }
 
-	@Override
-	public void write(XMLStreamWriter out) throws XMLStreamException {
-		out.writeStartElement("faultMonitoringStrategy");
-		out.writeEndElement();
-	}
+    public double getMinFlawlessServerRatioForRoundRobin() {
+        return minFlawlessServerRatioForRoundRobin;
+    }
 
-	@Override
-	protected String getElementName() {
-		return "faultMonitoringStrategy";
-	}
+    /**
+     * @description If at least this many servers in relation to the total number of servers are "flawless", then only the
+     * flawless servers are used with a round-robin strategy. The faulty ones are ignored.
+     * If too many servers had some issues, then it goes back to using all servers (faulty and flawless)
+     * using the weighted-chance strategy.
+     * @default 0.5
+     */
+    @MCAttribute
+    public void setMinFlawlessServerRatioForRoundRobin(double minFlawlessServerRatioForRoundRobin) {
+        this.minFlawlessServerRatioForRoundRobin = minFlawlessServerRatioForRoundRobin;
+    }
 
-	public double getMinFlawlessServerRatioForRoundRobin() {
-		return minFlawlessServerRatioForRoundRobin;
-	}
+    public long getClearFaultyProfilesByTimerAfterLastFailureSeconds() {
+        return clearFaultyProfilesByTimerAfterLastFailureSeconds;
+    }
 
-	/**
-	 * @description
-	 * If at least this many servers in relation to the total number of servers are "flawless", then only the
-	 * flawless servers are used with a round-robin strategy. The faulty ones are ignored.
-	 * If too many servers had some issues, then it goes back to using all servers (faulty and flawless)
-	 * using the weighted-chance strategy.
-	 * @default 0.5
-	 */
-	@MCAttribute
-	public void setMinFlawlessServerRatioForRoundRobin(double minFlawlessServerRatioForRoundRobin) {
-		this.minFlawlessServerRatioForRoundRobin = minFlawlessServerRatioForRoundRobin;
-	}
+    /**
+     * @description When this much time [milliseconds] has passed, and there was no more fault, then the node is cleared from the bad history.
+     * It is possible that the node served requests successfully since then, or that it was not called at all.
+     * If it was not called, it's very possible that the node is still faulty. But we don't know.
+     * What happens is that the node is used again, but if it fails it will instantly have a fault profile.
+     * @default 300000
+     */
+    @MCAttribute
+    public void setClearFaultyProfilesByTimerAfterLastFailureSeconds(long clearFaultyProfilesByTimerAfterLastFailureSeconds) {
+        this.clearFaultyProfilesByTimerAfterLastFailureSeconds = clearFaultyProfilesByTimerAfterLastFailureSeconds;
+    }
 
-	public long getClearFaultyProfilesByTimerAfterLastFailureSeconds() {
-		return clearFaultyProfilesByTimerAfterLastFailureSeconds;
-	}
+    public long getClearFaultyTimerIntervalSeconds() {
+        return clearFaultyTimerIntervalSeconds;
+    }
 
-	/**
-	 * @description
-	 * When this much time [milliseconds] has passed, and there was no more fault, then the node is cleared from the bad history.
-	 * It is possible that the node served requests successfully since then, or that it was not called at all.
-	 * If it was not called, it's very possible that the node is still faulty. But we don't know.
-	 * What happens is that the node is used again, but if it fails it will instantly have a fault profile.
-	 * @default 300000
-	 */
-	@MCAttribute
-	public void setClearFaultyProfilesByTimerAfterLastFailureSeconds(long clearFaultyProfilesByTimerAfterLastFailureSeconds) {
-		this.clearFaultyProfilesByTimerAfterLastFailureSeconds = clearFaultyProfilesByTimerAfterLastFailureSeconds;
-	}
+    /**
+     * @description Every this much time [milliseconds] a TimerTask runs to see if there are any fault profiles to clear.
+     * @default 30000
+     */
+    @MCAttribute
+    public void setClearFaultyTimerIntervalSeconds(long clearFaultyTimerIntervalSeconds) {
+        this.clearFaultyTimerIntervalSeconds = clearFaultyTimerIntervalSeconds;
+    }
 
-	public long getClearFaultyTimerIntervalSeconds() {
-		return clearFaultyTimerIntervalSeconds;
-	}
+    private class MyHttpClientStatusEventListener implements HttpClientStatusEventListener {
+        @Override
+        public void onResponse(long timestamp, String destination, int responseCode) {
+            log.debug("onResponse for {} with code {} at time {}", destination, responseCode, timestamp);
 
-	/**
-	 * @description
-	 * Every this much time [milliseconds] a TimerTask runs to see if there are any fault profiles to clear.
-	 * @default 30000
-	 */
-	@MCAttribute
-	public void setClearFaultyTimerIntervalSeconds(long clearFaultyTimerIntervalSeconds) {
-		this.clearFaultyTimerIntervalSeconds = clearFaultyTimerIntervalSeconds;
-	}
+            try {
+                String hostAndPort = HostColonPort.parse(destination).toString();
+                NodeFaultProfile nodeFaultProfile = state.getMap().get(hostAndPort);
+                boolean is5xx = responseCode >= 500 && responseCode < 600;
+                if (!is5xx) {
+                    if (informSuccess(timestamp, nodeFaultProfile)) {
+                        //clear from bad history:
+                        state.getMap().remove(hostAndPort);
+                        log.debug("Self-cleared from bad history: " + hostAndPort);
+                    }
+                } else {
+                    informFailure(timestamp, hostAndPort, nodeFaultProfile);
+                }
+            } catch (MalformedURLException e) {
+                log.error("Could not parse URI {}", destination, e);
+            }
+        }
 
-	private class MyHttpClientStatusEventListener implements HttpClientStatusEventListener {
-		@Override
-		public void onResponse(long timestamp, String destination, int responseCode) {
-			log.debug("onResponse for " + destination + " with code " + responseCode + " at time " + timestamp);
-			String hostAndPort = extractHostAndPort(destination);
-			NodeFaultProfile nodeFaultProfile = state.getMap().get(hostAndPort);
-			boolean is5xx = responseCode >= 500 && responseCode < 600;
-			if (!is5xx) {
-				if (informSuccess(timestamp, nodeFaultProfile)) {
-					//clear from bad history:
-					state.getMap().remove(hostAndPort);
-					log.debug("Self-cleared from bad history: " + hostAndPort);
-				}
-			} else {
-				informFailure(timestamp, hostAndPort, nodeFaultProfile);
-			}
-		}
+        @Override
+        public void onException(long timestamp, String destination, Exception exception) {
+            log.debug("onException for {} with ex {} at time {}", destination, exception.getMessage(), timestamp);
+            try {
+                String hostAndPort = HostColonPort.parse(destination).toString();
+                NodeFaultProfile nodeFaultProfile = state.getMap().get(hostAndPort);
+                //have to inform profile about this failure. if there's no profile yet, create one.
+                informFailure(timestamp, hostAndPort, nodeFaultProfile);
+            } catch (MalformedURLException e) {
+                log.error("Could not parse URI {}", destination, e);
+            }
+        }
 
-		@Override
-		public void onException(long timestamp, String destination, Exception exception) {
-			log.debug("onException for " + destination + " with ex " + exception.getMessage() + " at time " + timestamp);
-			String hostAndPort = extractHostAndPort(destination);
-			NodeFaultProfile nodeFaultProfile = state.getMap().get(hostAndPort);
-			//have to inform profile about this failure. if there's no profile yet, create one.
-			informFailure(timestamp, hostAndPort, nodeFaultProfile);
-		}
+        /**
+         * @return true to remove the destinationProfile (to clear him from bad history),
+         * false to do nothing (either because there is none or because it's still bad).
+         */
+        private boolean informSuccess(long timestamp, NodeFaultProfile nodeFaultProfile) {
+            //treat as success (from our side), server handled it well.
+            if (nodeFaultProfile == null) {
+                //fine, the server still works correctly.
+                return false;
+            }
+            //inform about that good result.
+            return nodeFaultProfile.informSuccess(timestamp);
+        }
 
-		/**
-		 * @return true to remove the destinationProfile (to clear him from bad history),
-		 *         false to do nothing (either because there is none or because it's still bad).
-		 */
-		private boolean informSuccess(long timestamp, NodeFaultProfile nodeFaultProfile) {
-			//treat as success (from our side), server handled it well.
-			if (nodeFaultProfile == null) {
-				//fine, the server still works correctly.
-				return false;
-			} else {
-				//inform about that good result.
-				return nodeFaultProfile.informSuccess(timestamp);
-			}
-		}
-
-		private void informFailure(long timestamp, String hostAndPort, NodeFaultProfile nodeFaultProfile) {
-			//have to inform profile about this failure. if there's no profile yet, create one.
-			if (nodeFaultProfile == null) {
-				nodeFaultProfile = new NodeFaultProfile(timestamp);
-				state.getMap().putIfAbsent(hostAndPort, nodeFaultProfile); //worst case we have a race condition, and another thread just set it. then one division/2 got lost. that's fine.
-				log.debug("Created bad history profile for: " + hostAndPort);
-			} else {
-				nodeFaultProfile.informFailure(timestamp);
-			}
-		}
-
-		private String extractHostAndPort(String destination) {
-			URI uri;
-			try {
-				uri = new URI(destination);
-			} catch (URISyntaxException e) {
-				throw new RuntimeException(e);
-			}
-			return uri.getHost() + ":" + uri.getPort();
-		}
-	}
+        private void informFailure(long timestamp, String hostAndPort, NodeFaultProfile nodeFaultProfile) {
+            //have to inform profile about this failure. if there's no profile yet, create one.
+            if (nodeFaultProfile == null) {
+                nodeFaultProfile = new NodeFaultProfile(timestamp);
+                state.getMap().putIfAbsent(hostAndPort, nodeFaultProfile); //worst case we have a race condition, and another thread just set it. then one division/2 got lost. that's fine.
+                log.debug("Created bad history profile for: {}", hostAndPort);
+            } else {
+                nodeFaultProfile.informFailure(timestamp);
+            }
+        }
+    }
 }
