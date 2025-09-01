@@ -34,9 +34,13 @@ public class SensitiveDataFilter {
         Header masked = new Header(header);
         for (HeaderField headerField : masked.getAllHeaderFields()) {
             if (sensitiveHeaderNames.contains(headerField.getHeaderName())) {
-                headerField.setValue("*".repeat(headerField.getValue().length()));
+                headerField.setValue(maskField(headerField));
             }
         }
         return masked;
+    }
+
+    private String maskField(HeaderField headerField) {
+        return "*".repeat(headerField.getValue().length());
     }
 }
