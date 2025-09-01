@@ -46,7 +46,6 @@ public class Cluster {
 
 	public void nodeUp(Node n) {
 		log.debug("node: " + n +" up");
-		getNodeCreateIfNeeded(n).setLastUpTime(System.currentTimeMillis());
 		getNodeCreateIfNeeded(n).setStatus(Status.UP);
 	}
 
@@ -134,10 +133,6 @@ public class Cluster {
 	@MCAttribute
 	public void setName(String name) {
 		this.name = name;
-	}
-
-	public boolean containsSession(String sessionId) {
-		return sessions.containsKey(sessionId) && sessions.get(sessionId).getNode().isUp();
 	}
 
 	public void addSession(String sessionId, Node n) {

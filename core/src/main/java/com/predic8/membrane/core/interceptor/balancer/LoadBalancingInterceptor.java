@@ -24,7 +24,6 @@ import java.io.*;
 import java.util.*;
 
 import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
-import static com.predic8.membrane.core.exchange.Exchange.TRACK_NODE_STATUS;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 
 /**
@@ -44,7 +43,6 @@ public class LoadBalancingInterceptor extends AbstractInterceptor {
     private AbstractSessionIdExtractor sessionIdExtractor;
     private boolean failOver = true;
     private final Balancer balancer = new Balancer();
-    private NodeOnlineChecker nodeOnlineChecker;
 
     public LoadBalancingInterceptor() {
         name = "balancer";
@@ -54,22 +52,10 @@ public class LoadBalancingInterceptor extends AbstractInterceptor {
     public void init() {
         super.init();
         strategy.init(router);
-        if (nodeOnlineChecker != null)
-            nodeOnlineChecker.init(router);
-
-        for (Cluster c : balancer.getClusters())
-            for (Node n : c.getNodes())
-                c.nodeUp(n);
     }
 
     @Override
     public Outcome handleRequest(Exchange exc) {
-
-        if (nodeOnlineChecker != null) {
-            exc.setProperty(TRACK_NODE_STATUS, true);
-            nodeOnlineChecker.putNodesBackUp();
-        }
-
         Node dispatchedNode;
         try {
             dispatchedNode = getDispatchedNode(exc);
@@ -77,11 +63,19 @@ public class LoadBalancingInterceptor extends AbstractInterceptor {
             //This can happen for 2 reasons:
             //1) Initial server misconfiguration. None configured at all.
             //2) All destinations got disabled externally (through Membrane maintenance API). See class EmptyNodeListException.
-            log.error("No Node found.");
-            exc.setResponse(Response.internalServerError().build());
+            String msg = "No backend node found that is ready to handle this request. Check health of backends and balancer configuration.";
+            log.error(msg);
+            internal(router.isProduction(), getDisplayName())
+                    .statusCode(503)
+                    .title("Service unavailable")
+                    .addSubSee("node-dispatching")
+                    .detail(msg)
+                    .buildAndSetResponse(exc);
             return ABORT;
         } catch (Exception e) {
             internal(router.isProduction(),getDisplayName())
+                    .statusCode(503)
+                    .title("Service unavailable")
                     .addSubSee("node-dispatching")
                     .detail("Could not get dispatched node!")
                     .exception(e)
@@ -104,19 +98,9 @@ public class LoadBalancingInterceptor extends AbstractInterceptor {
         return CONTINUE;
     }
 
-    @Override
-    public void handleAbort(Exchange exc) {
-        if (nodeOnlineChecker != null) {
-            nodeOnlineChecker.handle(exc);
-        }
-    }
 
     @Override
     public Outcome handleResponse(Exchange exc) {
-        if (nodeOnlineChecker != null) {
-            nodeOnlineChecker.handle(exc);
-        }
-
         if (sessionIdExtractor != null) {
             String sessionId;
             try {
@@ -234,19 +218,6 @@ public class LoadBalancingInterceptor extends AbstractInterceptor {
 
     public AbstractSessionIdExtractor getSessionIdExtractor() {
         return sessionIdExtractor;
-    }
-
-    /**
-     * @description Checks if nodes are still available. Sets them to "DOWN" when not reachable, else sets them back up when they are reachable.
-     */
-    @MCChildElement(order = 4)
-    public void setNodeOnlineChecker(NodeOnlineChecker noc) {
-        this.nodeOnlineChecker = noc;
-        this.nodeOnlineChecker.setLbi(this);
-    }
-
-    public NodeOnlineChecker getNodeOnlineChecker() {
-        return this.nodeOnlineChecker;
     }
 
     /**

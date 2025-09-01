@@ -22,6 +22,7 @@ import java.util.concurrent.*;
 import java.util.stream.*;
 
 import static com.predic8.membrane.core.util.OSUtil.*;
+import static java.lang.System.currentTimeMillis;
 import static java.lang.Thread.*;
 
 /**
@@ -96,7 +97,7 @@ public class Process2 implements AutoCloseable {
 		}
 
 		public Builder waitForMembrane() {
-			waitAfterStartFor("listening at ");
+			waitAfterStartFor("listening at");
 			return this;
 		}
 
@@ -223,7 +224,7 @@ public class Process2 implements AutoCloseable {
 	}
 
 	private static int waitForExit(Process p, long timeout) {
-		long start = System.currentTimeMillis();
+		long start = currentTimeMillis();
 		while (p.isAlive()) {
 			if (getTimeLeft(timeout, start) <= 0)
 				throw new RuntimeException(new TimeoutException());
@@ -238,7 +239,7 @@ public class Process2 implements AutoCloseable {
 	}
 
 	private static long getTimeLeft(long timeout, long start) {
-		return timeout - (System.currentTimeMillis() - start);
+		return timeout - (currentTimeMillis() - start);
 	}
 
 	public int waitForExit(long timeout) {
