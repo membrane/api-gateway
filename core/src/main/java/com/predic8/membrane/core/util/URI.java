@@ -87,6 +87,20 @@ public class URI {
                 hostAndPort = hostAndPort.substring(posAt + 1);
             }
 
+            var posBrackets = hostAndPort.indexOf("[");
+            if (posBrackets > -1) {
+                int end = hostAndPort.indexOf("]");
+                if (end < 0) {
+                    throw new IllegalArgumentException("Invalid IPv6 bracket literal: missing ']'.");
+                }
+                String ipv6 = hostAndPort.substring(posBrackets + 1, end);
+                if (end + 1 < hostAndPort.length() && hostAndPort.charAt(end + 1) == ':') {
+                    port = Integer.parseInt(hostAndPort.substring(end + 2));
+                }
+                host = ipv6;
+                return;
+            }
+
             var pos = hostAndPort.indexOf(":");
             if (pos > -1) {
                 host = hostAndPort.substring(0, pos);
@@ -189,6 +203,7 @@ public class URI {
 
     /**
      * Fragments are client side only and should not be propagated to the backend.
+     *
      * @return
      */
     public String getPathWithQuery() {
