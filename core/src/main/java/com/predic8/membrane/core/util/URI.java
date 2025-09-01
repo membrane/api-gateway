@@ -112,9 +112,7 @@ public class URI {
 
             if (end + 1 < hostAndPort.length() && hostAndPort.charAt(end + 1) == ':') {
                 String p = hostAndPort.substring(end + 2);
-                if (!p.isEmpty()) {
-                    port = Integer.parseInt(p);
-                }
+                validatePortDigits(p);
             }
             return;
         }
@@ -124,10 +122,20 @@ public class URI {
         if (colon >= 0) {
             host = hostAndPort.substring(0, colon);
             String p = hostAndPort.substring(colon + 1);
-            if (!p.isEmpty())
-                port = Integer.parseInt(p);
+            validatePortDigits(p);
         } else {
             host = hostAndPort;
+        }
+    }
+
+    private void validatePortDigits(String p) {
+        if (!p.isEmpty()) {
+            if (!p.matches("\\d{1,5}"))
+                throw new IllegalArgumentException("Invalid port: " + p);
+            int candidate = Integer.parseInt(p);
+            if (candidate < 0 || candidate > 65535)
+                throw new IllegalArgumentException("Port out of range: " + candidate);
+            port = candidate;
         }
     }
 
