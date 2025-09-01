@@ -47,6 +47,11 @@ public class ProblemDetails {
 
     private boolean production;
 
+    /**
+     * Whether to provide a log key to the caller that points into the log
+     */
+    private boolean logKey = true;
+
     private int statusCode;
     private String type;
     private String subType = "";
@@ -185,6 +190,11 @@ public class ProblemDetails {
 
     public ProblemDetails stacktrace(boolean stacktrace) {
         this.stacktrace = stacktrace;
+        return this;
+    }
+
+    public ProblemDetails logKey(boolean logKey) {
+        this.logKey = logKey;
         return this;
     }
 
