@@ -179,15 +179,21 @@ public class URI {
      * Returns {@code null} if no authority is present (e.g. "mailto:").
      */
     public String getAuthority() {
-        if (uri != null)
-            return uri.getAuthority();
-        if (host == null)
-            return null;
-        StringBuilder sb = new StringBuilder(host);
-        if (port != -1)
-            sb.append(':').append(port);
+        if (uri != null) return uri.getAuthority();
+        if (host == null) return null;
+
+        StringBuilder sb = new StringBuilder();
+        if (host.contains(":")) { // IPv6
+            sb.append('[').append(host);
+            if (port != -1) sb.append(':').append(port);
+            sb.append(']');
+        } else { // IPv4 / Domain
+            sb.append(host);
+            if (port != -1) sb.append(':').append(port);
+        }
         return sb.toString();
     }
+
 
     private String decode(String string) {
         if (string == null)

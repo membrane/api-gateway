@@ -252,7 +252,7 @@ class URITest {
         URI u = new URI("http://[2001:db8::1]/foo", true);
         assertEquals("2001:db8::1", u.getHost());
         assertEquals(-1, u.getPort());
-        assertEquals("2001:db8::1", u.getAuthority());
+        assertEquals("[2001:db8::1]", u.getAuthority());
         assertEquals("/foo", u.getPath());
     }
 
@@ -261,7 +261,7 @@ class URITest {
         URI u = new URI("http://[2001:db8::1]:8080/foo", true);
         assertEquals("2001:db8::1", u.getHost());
         assertEquals(8080, u.getPort());
-        assertEquals("2001:db8::1:8080", u.getAuthority());
+        assertEquals("[2001:db8::1:8080]", u.getAuthority());
         assertEquals("/foo", u.getPath());
 
     }
