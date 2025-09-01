@@ -14,35 +14,20 @@
 
 package com.predic8.membrane.core.exchangestore;
 
-import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
-import static com.predic8.membrane.core.interceptor.Interceptor.Flow.RESPONSE;
-
-import java.text.DecimalFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Queue;
-import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.atomic.AtomicInteger;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.exchange.AbstractExchange;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.BodyCollectingMessageObserver;
-import com.predic8.membrane.core.http.Request;
-import com.predic8.membrane.core.http.Response;
+import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.Interceptor.Flow;
-import com.predic8.membrane.core.model.AbstractExchangeViewerListener;
-import com.predic8.membrane.core.proxies.Proxy;
-import com.predic8.membrane.core.proxies.RuleKey;
-import com.predic8.membrane.core.proxies.StatisticCollector;
+import com.predic8.membrane.core.model.*;
+import com.predic8.membrane.core.proxies.*;
+import org.slf4j.*;
+
+import java.text.*;
+import java.util.*;
+import java.util.concurrent.*;
+import java.util.concurrent.atomic.*;
+
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
 
 /**
  * @description Stores exchange objects in-memory until a memory threshold is reached. When the threshold is reached and
@@ -53,6 +38,11 @@ import com.predic8.membrane.core.proxies.StatisticCollector;
 public class LimitedMemoryExchangeStore extends AbstractExchangeStore {
 
 	private static final Logger log = LoggerFactory.getLogger(LimitedMemoryExchangeStore.class);
+
+	/**
+	 * Time to block longpolling for new data
+	 */
+	public static final int WAIT_FOR_MODIFICATION = 5_000;
 
 	private int maxSize = 1_000_000;
 	private int maxBodySize = 100_000;
@@ -333,13 +323,18 @@ public class LimitedMemoryExchangeStore extends AbstractExchangeStore {
 	}
 
 
+	/**
+	 * Wait and block till the store is modified.
+	 * @param lastKnownModification
+	 * @throws InterruptedException
+	 */
 	@Override
 	public void waitForModification(long lastKnownModification) throws InterruptedException {
 		synchronized (this) {
 			while (lastKnownModification >= lastModification) {
-				wait(10_000);
+				wait(WAIT_FOR_MODIFICATION);
 				if (lastKnownModification >= lastModification) {
-					log.warn("Still waiting after {}ms without modification.", 10_000);
+					log.debug("Still waiting after {}ms without modification.", WAIT_FOR_MODIFICATION);
 				}
 			}
 		}
