@@ -179,7 +179,7 @@
         <dependency>
             <groupId>net.minidev</groupId>
             <artifactId>json-smart</artifactId>
-            <version>2.5.2</version>
+            <version>2.6.0</version>
         </dependency>
         <dependency>
             <groupId>com.squareup.okhttp3</groupId>
@@ -469,8 +469,7 @@
                         <configuration>
                             <target>
                                 <copy todir="../docs">
-                                    <fileset
-                                            dir="${project.build.directory}/classes/com/predic8/membrane/core/config/spring">
+                                    <fileset dir="${project.build.directory}/classes/com/predic8/membrane/core/config/spring">
                                         <include name="router-conf.xsd"/>
                                     </fileset>
                                 </copy>
