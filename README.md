@@ -166,21 +166,29 @@ You can run Membrane as Docker container, standalone Java application or install
    ```
 2. **Access the Gateway**
 
-   Test a preconfigured API by opening [http://localhost:2000](http://localhost:2000).
+   Test an APIs by opening [http://localhost:2000](http://localhost:2000).
 
 3. **Change the Configuration**
-   - Download [proxies.xml](distribution/router/conf/proxies.xml) and modify it
+   - Download [proxies.xml](https://raw.githubusercontent.com/membrane/api-gateway/refs/heads/master/distribution/router/conf/proxies.xml) or:
+
+     ```bash
+     wget https://raw.githubusercontent.com/membrane/api-gateway/refs/heads/master/distribution/router/conf/proxies.xml
+     ```
+   
    - Bind the configuration file to the container.
 
-     #### For Windows/Linux:
-     ```bash
-     docker run -v proxies.xml:/opt/membrane/conf/proxies.xml -p 2000:2000 predic8/membrane
-     ```  
-   
-     #### For Mac:
+     #### For Mac/Linux:
      ```bash
      docker run -v "$(pwd)/proxies.xml:/opt/membrane/conf/proxies.xml" -p 2000:2000 predic8/membrane
      ```  
+
+     #### For Windows:
+     ```bash
+     docker run -v proxies.xml:/opt/membrane/conf/proxies.xml -p 2000:2000 predic8/membrane
+     ```
+     
+     Now you can change the configuration in `proxies.xml` and restart the container.
+
 
 For detailed Docker setup instructions, see the [Membrane Deployment Guide](https://membrane-api.io/deployment/#docker).
 
