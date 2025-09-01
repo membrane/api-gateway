@@ -124,9 +124,7 @@ public class LogInterceptor extends AbstractExchangeExpressionInterceptor {
             return;
         writeLog(msg.getStartLine());
 
-        writeLog("\nHeaders:\n" + (maskSensitive
-                ? filter.mask(msg.getHeader()).toString()
-                : msg.getHeader().toString()));
+        writeLog(dumpHeader(msg));
 
         try {
             if (!body || msg.isBodyEmpty())
@@ -136,6 +134,12 @@ public class LogInterceptor extends AbstractExchangeExpressionInterceptor {
             return;
         }
         writeLog(dumpBody(msg));
+    }
+
+    private String dumpHeader(Message msg) {
+        return "\nHeaders:\n" + (maskSensitive
+                ? filter.mask(msg.getHeader()).toString()
+                : msg.getHeader().toString());
     }
 
     private static String dumpBody(Message msg) {
@@ -224,6 +228,11 @@ public class LogInterceptor extends AbstractExchangeExpressionInterceptor {
         LoggerFactory.getLogger(this.getClass()).warn("Configuration option `headerOnly` is not supported anymore. Use `body` instead.");
     }
 
+    /**
+     * @default true
+     * @description Masked sensitive data (e.g. passwords).
+     * @example true
+     */
     @MCAttribute
     public void setMaskSensitive(boolean maskSensitive) {
         this.maskSensitive = maskSensitive;
