@@ -40,9 +40,9 @@ public class LimitedMemoryExchangeStore extends AbstractExchangeStore {
 	private static final Logger log = LoggerFactory.getLogger(LimitedMemoryExchangeStore.class);
 
 	/**
-	 * Time to block longpolling for new data
+	 * Time to block long-polling for new data (milliseconds).
 	 */
-	public static final int WAIT_FOR_MODIFICATION = 5_000;
+	public static final int WAIT_FOR_MODIFICATION_MS = 5_000;
 
 	private int maxSize = 1_000_000;
 	private int maxBodySize = 100_000;
@@ -322,19 +322,18 @@ public class LimitedMemoryExchangeStore extends AbstractExchangeStore {
 		return lastModification;
 	}
 
-
 	/**
-	 * Wait and block till the store is modified.
-	 * @param lastKnownModification
-	 * @throws InterruptedException
+	 * Wait (milliseconds) until the store is modified or the timeout elapses.
+	 * Handles spurious wakeups by re-checking {@code lastModification}.
+	 * @param lastKnownModification last observed {@code lastModification} timestamp
 	 */
 	@Override
 	public void waitForModification(long lastKnownModification) throws InterruptedException {
 		synchronized (this) {
 			while (lastKnownModification >= lastModification) {
-				wait(WAIT_FOR_MODIFICATION);
+				wait(WAIT_FOR_MODIFICATION_MS);
 				if (lastKnownModification >= lastModification) {
-					log.debug("Still waiting after {}ms without modification.", WAIT_FOR_MODIFICATION);
+					log.debug("Still waiting after {} ms without modification (lastKnown={}, lastModification={}).", WAIT_FOR_MODIFICATION_MS, lastKnownModification, lastModification);
 				}
 			}
 		}
