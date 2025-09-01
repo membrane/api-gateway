@@ -14,21 +14,21 @@
 
 package com.predic8.membrane.core.interceptor.log;
 
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Message;
-import com.predic8.membrane.core.interceptor.Outcome;
-import com.predic8.membrane.core.interceptor.lang.AbstractExchangeExpressionInterceptor;
-import com.predic8.membrane.core.lang.ExchangeExpressionException;
-import org.slf4j.LoggerFactory;
+import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.interceptor.lang.*;
+import com.predic8.membrane.core.lang.*;
+import org.slf4j.*;
 
-import java.io.IOException;
+import java.io.*;
 
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
-import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
-import static com.predic8.membrane.core.interceptor.log.LogInterceptor.Level.INFO;
-import static org.slf4j.LoggerFactory.getLogger;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.ABORT;
+import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static com.predic8.membrane.core.interceptor.log.LogInterceptor.Level.*;
+import static org.slf4j.LoggerFactory.*;
 
 /**
  * @description The log feature logs request and response messages. The messages will appear either on the console or in
