@@ -27,13 +27,13 @@ import org.springframework.beans.*;
 import org.springframework.beans.factory.*;
 import org.springframework.context.*;
 
-import java.util.concurrent.*;
+import java.io.*;
+import java.util.*;
 
 import static com.predic8.membrane.core.http.Request.*;
 import static com.predic8.membrane.core.interceptor.balancer.BalancerUtil.*;
 import static com.predic8.membrane.core.interceptor.balancer.Node.Status.*;
-import static java.util.concurrent.Executors.*;
-import static java.util.concurrent.TimeUnit.*;
+import static com.predic8.membrane.core.util.ExceptionUtil.concatMessageAndCauseMessages;
 
 /**
  * @description Health monitor for a {@link LoadBalancingInterceptor} {@link Cluster}.
@@ -58,7 +58,6 @@ public class BalancerHealthMonitor implements ApplicationContextAware, Initializ
 
     private Router router;
     private int interval = 10000;
-    private ScheduledExecutorService scheduler;
     private HttpClient client;
 
     private HttpClientConfiguration httpClientConfig = new HttpClientConfiguration();
@@ -73,16 +72,16 @@ public class BalancerHealthMonitor implements ApplicationContextAware, Initializ
 
         httpClientConfig.setMaxRetries(0); // Health check should never be retried.
         client = router.getHttpClientFactory().createClient(httpClientConfig);
-        scheduler = createScheduler();
+        createScheduler();
 
         ConnectionConfiguration cc = httpClientConfig.getConnection();
         int soTimeout = cc.getSoTimeout();
         int timeout = cc.getTimeout();
         if (soTimeout > 10_000) {
-            log.warn("Socket timeout is {} s. Keep timeout low to prevent the health monitor thread from hanging!", soTimeout/1000);
+            log.warn("Socket timeout is {} s. Keep timeout low to prevent the health monitor thread from hanging!", soTimeout / 1000);
         }
         if (timeout > 10_000) {
-            log.warn("Connection timeout is {} s. Keep timeout low to prevent the health monitor thread from hanging!", timeout/1000);
+            log.warn("Connection timeout is {} s. Keep timeout low to prevent the health monitor thread from hanging!", timeout / 1000);
         }
     }
 
@@ -104,14 +103,13 @@ public class BalancerHealthMonitor implements ApplicationContextAware, Initializ
         node.setStatus(isHealthy(node));
     }
 
-    private ScheduledExecutorService createScheduler() {
-        ScheduledExecutorService s = newSingleThreadScheduledExecutor(r -> {
-                Thread t = new Thread(r, BALANCER_HEALTH_MONITOR);
-                t.setDaemon(true);
-                return t;
-            });
-        s.scheduleWithFixedDelay(healthCheckTask, INITIAL_DELAY, interval, MILLISECONDS);
-        return s;
+    private void createScheduler() {
+        router.getTimerManager().schedulePeriodicTask(new TimerTask() {
+            @Override
+            public void run() {
+                healthCheckTask.run();
+            }
+        }, INITIAL_DELAY, BALANCER_HEALTH_MONITOR);
     }
 
     private Status isHealthy(Node node) {
@@ -127,6 +125,12 @@ public class BalancerHealthMonitor implements ApplicationContextAware, Initializ
     private static Status getStatus(Node node, Exchange exc) {
         if (exc.getResponse() == null)
             return DOWN;
+        try {
+            exc.getResponse().getBody().read();
+        } catch (IOException e) {
+            log.debug("Calling health endpoint failed: {} {}", exc, concatMessageAndCauseMessages(e));
+            return DOWN;
+        }
         int status = exc.getResponse().getStatusCode();
         if (status >= 300) {
             log.warn("Node {}:{} health check failed with HTTP {} status code", node.getHost(), node.getPort(), status);
@@ -144,12 +148,7 @@ public class BalancerHealthMonitor implements ApplicationContextAware, Initializ
 
     private Exchange doCall(String url) throws Exception {
         Exchange exc = get(url).buildExchange();
-        try {
-            client.call(exc);
-        } finally {
-            exc.finishExchange(false,null);
-            exc.detach();
-        }
+        client.call(exc);
         return exc;
     }
 
@@ -170,20 +169,6 @@ public class BalancerHealthMonitor implements ApplicationContextAware, Initializ
     @Override
     public void destroy() {
         stopped = true;
-
-        if (scheduler == null)
-            return;
-        scheduler.shutdown();
-        try {
-            if (!scheduler.awaitTermination(10, SECONDS)) {
-                log.warn("Health check scheduler did not terminate gracefully, forcing shutdown");
-                scheduler.shutdownNow();
-            }
-        } catch (InterruptedException e) {
-            log.warn("Interrupted while waiting for scheduler shutdown");
-            scheduler.shutdownNow();
-            Thread.currentThread().interrupt();
-        }
         if (client != null) {
             try {
                 client.close();
@@ -206,7 +191,7 @@ public class BalancerHealthMonitor implements ApplicationContextAware, Initializ
 
     /**
      * @return current health check interval in milliseconds
-     * */
+     */
     public int getInterval() {
         return interval;
     }
@@ -221,7 +206,6 @@ public class BalancerHealthMonitor implements ApplicationContextAware, Initializ
     /**
      * @description Optional HTTP client configuration for health probes (e.g., timeouts, TLS).
      * If provided, it is used when creating the {@link HttpClient} via the router's client factory.
-     *
      * @see Router#getHttpClientFactory()
      * @see HttpClientConfiguration
      */
