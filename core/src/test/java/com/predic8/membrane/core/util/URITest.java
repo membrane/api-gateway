@@ -210,6 +210,10 @@ class URITest {
 
             // no authority present (mailto)
             assertNull(new URI("mailto:alice@example.com", custom).getAuthority());
+
+            // IPv6 with port and userinfo
+            assertEquals("user:pwd@[2001:db8::1]:9090",
+                    new URI("http://user:pwd@[2001:db8::1]:9090/foo", custom).getAuthority());
         }
 
         // No IPv6 support in custom parsing
