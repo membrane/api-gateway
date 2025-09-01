@@ -17,7 +17,7 @@ package com.predic8.membrane.examples.withinternet.test;
 import com.predic8.membrane.examples.util.BufferLogger;
 import com.predic8.membrane.examples.util.DistributionExtractingTestcase;
 import com.predic8.membrane.examples.util.Process2;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
 import static com.predic8.membrane.examples.util.LoadBalancerUtil.addLBNodeViaHTML;
 import static com.predic8.membrane.test.StringAssertions.assertContains;

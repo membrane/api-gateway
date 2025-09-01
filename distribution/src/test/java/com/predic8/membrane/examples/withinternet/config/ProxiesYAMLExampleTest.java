@@ -14,25 +14,18 @@
 
 package com.predic8.membrane.examples.withinternet.config;
 
-import com.predic8.membrane.examples.util.AbstractSampleMembraneStartStopTestcase;
-import com.predic8.membrane.examples.util.Process2;
-import org.json.JSONException;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.skyscreamer.jsonassert.JSONAssert;
+import com.predic8.membrane.examples.util.*;
+import org.junit.jupiter.api.*;
+import org.skyscreamer.jsonassert.*;
 
-import java.io.IOException;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.io.*;
 
-import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
-import static com.predic8.membrane.core.http.MimeType.TEXT_HTML;
-import static io.restassured.RestAssured.get;
-import static io.restassured.RestAssured.given;
-import static org.hamcrest.Matchers.containsString;
-import static org.hamcrest.Matchers.equalTo;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static com.predic8.membrane.core.http.Header.*;
+import static com.predic8.membrane.core.http.MimeType.*;
+import static io.restassured.RestAssured.*;
+import static org.hamcrest.Matchers.*;
 
-public class ProxiesYAMLExampleTest extends AbstractSampleMembraneStartStopTestcase {
+class ProxiesYAMLExampleTest extends AbstractSampleMembraneStartStopTestcase {
 
     @Override
     protected String getExampleDirName() {
@@ -41,16 +34,12 @@ public class ProxiesYAMLExampleTest extends AbstractSampleMembraneStartStopTestc
 
     @BeforeEach
     void startMembrane() throws IOException, InterruptedException {
-        process =  new Process2.Builder().in(baseDir).script("membrane").parameters("yaml -l proxies.yaml").waitForMembrane().start();
-
-        // Dump HTTP
-        //RestAssured.filters(new RequestLoggingFilter(), new ResponseLoggingFilter());
+        process = new Process2.Builder().in(baseDir).script("membrane").parameters("yaml -l proxies.yaml").waitForMembrane().start();
     }
 
-
     @Test
-    void api_doc() throws JSONException {
-        JSONAssert.assertEquals("""
+    void api_doc() {
+            JSONAssert.assertEquals("""
                 {
                   "fruitshop-v1-1" : {
                     "openapi" : "3.0.2",
@@ -71,7 +60,7 @@ public class ProxiesYAMLExampleTest extends AbstractSampleMembraneStartStopTestc
                 get("http://localhost:9000/admin").
         then().assertThat()
                 .statusCode(200)
-                .contentType(TEXT_HTML)
+                .header(CONTENT_TYPE, startsWith(TEXT_HTML))
                 .body(containsString("Administration"));
         // @formatter:on
     }

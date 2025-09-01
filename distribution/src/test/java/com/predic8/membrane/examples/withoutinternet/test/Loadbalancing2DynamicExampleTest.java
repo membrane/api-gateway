@@ -100,7 +100,7 @@ public class Loadbalancing2DynamicExampleTest extends DistributionExtractingTest
 
 			// Stop Node 1
 			ha.getAndAssert(204, "http://localhost:9010/clustermanager/down?host=localhost&port=4000");
-			ha.getAndAssert(500,"http://localhost:3023/service");
+			ha.getAndAssert(503,"http://localhost:3023/service");
 		}
 	}
 }

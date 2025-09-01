@@ -60,7 +60,7 @@ To run the example execute the following steps:
 
 3. Execute `lbclient.sh up localhost 4000`
 
-    The parameters are not encrypted, so the operation fails.
+   The parameters are not encrypted, so the operation fails.
 
 4. Open the file `client.properties`
 
@@ -70,7 +70,7 @@ To run the example execute the following steps:
 
 6. Execute `lbclient.bat up localhost 4000`
 
-    This time the parameters are encrypted.
+   This time the parameters are encrypted.
 
 7. Open http://localhost:9000/admin/clusters/show?cluster=Default
 

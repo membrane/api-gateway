@@ -300,10 +300,11 @@ public class ProblemDetails {
     private Response createContent(Map<String, Object> root, Exchange exchange) {
         Response.ResponseBuilder builder = Response.statusCode(statusCode);
         try {
-            if (exchange != null && exchange.getRequest().isXML())
+            if (exchange != null && exchange.getRequest().isXML()) {
                 createXMLContent(root, builder);
-            else
+            } else {
                 createJson(root, builder);
+            }
         } catch (Exception e) {
             builder.body("Title: %s\nType: %s\n%s".formatted(title,type,root).getBytes(UTF_8));
             builder.contentType(TEXT_PLAIN_UTF8);
