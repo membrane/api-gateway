@@ -1,3 +1,4 @@
+#!/bin/sh
 required="${MEMBRANE_REQUIRED_JAVA_VERSION:-21}"
 
 if ! command -v java >/dev/null 2>&1; then

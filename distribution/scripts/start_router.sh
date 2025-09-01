@@ -1,19 +1,21 @@
-if [ -z "${MEMBRANE_HOME:-}" ]; then
-  echo "start_router.sh: MEMBRANE_HOME not set" >&2
-  exit 1
-fi
+#!/bin/sh
+[ -n "${MEMBRANE_HOME:-}" ] || { echo "start_router.sh: MEMBRANE_HOME not set" >&2; exit 1; }
 
 CLASSPATH="$MEMBRANE_HOME/conf:$MEMBRANE_HOME/lib/*"
 
-if [ "$#" -eq 0 ] && [ -f "proxies.xml" ]; then
-  set -- -c "proxies.xml"
+if [ "$#" -eq 0 ]; then
+  if [ -n "${MEMBRANE_CONFIG_DIR:-}" ] && [ -f "$MEMBRANE_CONFIG_DIR/proxies.xml" ]; then
+    set -- -c "$MEMBRANE_CONFIG_DIR/proxies.xml"
+  elif [ -f "$MEMBRANE_HOME/conf/proxies.xml" ]; then
+    set -- -c "$MEMBRANE_HOME/conf/proxies.xml"
+  fi
 fi
 
 java ${JAVA_OPTS:-} -cp "$CLASSPATH" com.predic8.membrane.core.cli.RouterCLI "$@"
-status=$?
-if [ $status -ne 0 ]; then
-  echo "Membrane terminated with exit code $status" >&2
+s=$?
+[ $s -ne 0 ] && {
+  echo "Membrane terminated with exit code $s" >&2
   echo "MEMBRANE_HOME: $MEMBRANE_HOME" >&2
   echo "CLASSPATH: $CLASSPATH" >&2
-fi
-exit $status
+}
+exit $s
