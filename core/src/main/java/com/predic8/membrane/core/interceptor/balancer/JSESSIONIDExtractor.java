@@ -1,4 +1,4 @@
-/* Copyright 2009, 2011 predic8 GmbH, www.predic8.com
+/* Copyright 2009, 2011, 2025 predic8 GmbH, www.predic8.com
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -13,31 +13,35 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.balancer;
 
-import java.util.regex.*;
-
-import javax.xml.stream.*;
-
+import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.core.config.AbstractXmlElement;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.Message;
+import com.predic8.membrane.core.interceptor.Interceptor;
+import com.predic8.membrane.core.interceptor.Interceptor.Flow;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.http.Message;
+import javax.xml.stream.XMLStreamException;
+import javax.xml.stream.XMLStreamWriter;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * @description The <i>jSessionIdExtractor</i> extracts the JSESSIONID from a
  *              message and provides it to the {@link Balancer}.
  */
 @MCElement(name="jSessionIdExtractor")
-public class JSESSIONIDExtractor extends AbstractSessionIdExtractor {
+public class JSESSIONIDExtractor extends AbstractXmlElement implements SessionIdExtractor {
 
 	private static final Logger log = LoggerFactory.getLogger(JSESSIONIDExtractor.class.getName());
 
 	final Pattern pattern = Pattern.compile(".*JSESSIONID\\s*=([^;]*)");
 
 	@Override
-	public String getSessionId(Message msg) throws Exception {
+	public String getSessionId(Exchange exc, Flow flow) throws Exception {
 
-		String cookie = msg.getHeader().getFirstValue("Cookie");
+		String cookie = exc.getMessage(flow).getHeader().getFirstValue("Cookie");
 		if (cookie == null) {
 			log.debug("no cookie set");
 			return null;
@@ -45,7 +49,7 @@ public class JSESSIONIDExtractor extends AbstractSessionIdExtractor {
 
 		Matcher m = pattern.matcher(cookie);
 
-		log.debug("cookie: " + msg.getHeader().getFirstValue("Cookie"));
+		log.debug("cookie: " + exc.getMessage(flow).getHeader().getFirstValue("Cookie"));
 
 		if (!m.lookingAt()) return null;
 
