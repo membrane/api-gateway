@@ -115,7 +115,7 @@ public class ClusterBalancerTest {
         BalancerUtil.down(r, "Default", "Default", "localhost", 3000);
 
         lb.handleRequest(exc);
-        assertEquals(500, exc.getResponse().getStatusCode());
+        assertEquals(503, exc.getResponse().getStatusCode());
     }
 
     private Response getResponse() throws IOException {

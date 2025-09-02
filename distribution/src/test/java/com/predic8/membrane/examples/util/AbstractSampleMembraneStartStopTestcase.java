@@ -14,26 +14,21 @@
 
 package com.predic8.membrane.examples.util;
 
-import io.restassured.*;
-import io.restassured.filter.log.*;
 import org.junit.jupiter.api.*;
 
 import java.io.*;
 
-public class AbstractSampleMembraneStartStopTestcase extends DistributionExtractingTestcase {
+public abstract class AbstractSampleMembraneStartStopTestcase extends DistributionExtractingTestcase {
 
     protected Process2 process;
 
     @BeforeEach
     void startMembrane() throws IOException, InterruptedException {
         process = startServiceProxyScript();
-
-        // Dump HTTP
-        // RestAssured.filters(new RequestLoggingFilter(), new ResponseLoggingFilter());
     }
 
     @AfterEach
-    void stopMembrane() throws IOException, InterruptedException {
+    void stopMembrane() {
         if (process != null)
             process.killScript();
     }

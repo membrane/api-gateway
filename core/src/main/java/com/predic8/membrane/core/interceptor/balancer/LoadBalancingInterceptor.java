@@ -1,4 +1,4 @@
-/* Copyright 2009, 2012 predic8 GmbH, www.predic8.com
+/* Copyright 2009, 2012, 2025 predic8 GmbH, www.predic8.com
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -18,7 +18,6 @@ import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 import org.slf4j.Logger;
@@ -29,7 +28,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static com.predic8.membrane.core.exceptions.ProblemDetails.internal;
-import static com.predic8.membrane.core.exchange.Exchange.TRACK_NODE_STATUS;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.RESPONSE;
 import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
@@ -52,7 +50,6 @@ public class LoadBalancingInterceptor extends AbstractInterceptor {
     private SessionIdExtractor sessionIdExtractor;
     private boolean failOver = true;
     private final Balancer balancer = new Balancer();
-    private NodeOnlineChecker nodeOnlineChecker;
 
     public LoadBalancingInterceptor() {
         name = "balancer";
@@ -66,23 +63,10 @@ public class LoadBalancingInterceptor extends AbstractInterceptor {
         if (sessionIdExtractor != null) {
             sessionIdExtractor.init(router);
         }
-
-        if (nodeOnlineChecker != null)
-            nodeOnlineChecker.init(router);
-
-        for (Cluster c : balancer.getClusters())
-            for (Node n : c.getNodes())
-                c.nodeUp(n);
     }
 
     @Override
     public Outcome handleRequest(Exchange exc) {
-
-        if (nodeOnlineChecker != null) {
-            exc.setProperty(TRACK_NODE_STATUS, true);
-            nodeOnlineChecker.putNodesBackUp();
-        }
-
         Node dispatchedNode;
         try {
             dispatchedNode = getDispatchedNode(exc);
@@ -90,11 +74,19 @@ public class LoadBalancingInterceptor extends AbstractInterceptor {
             //This can happen for 2 reasons:
             //1) Initial server misconfiguration. None configured at all.
             //2) All destinations got disabled externally (through Membrane maintenance API). See class EmptyNodeListException.
-            log.error("No Node found.");
-            exc.setResponse(Response.internalServerError().build());
+            String msg = "No backend node found that is ready to handle this request. Check health of backends and balancer configuration.";
+            log.error(msg);
+            internal(router.isProduction(), getDisplayName())
+                    .statusCode(503)
+                    .title("Service unavailable")
+                    .addSubSee("node-dispatching")
+                    .detail(msg)
+                    .buildAndSetResponse(exc);
             return ABORT;
         } catch (Exception e) {
             internal(router.isProduction(),getDisplayName())
+                    .statusCode(503)
+                    .title("Service unavailable")
                     .addSubSee("node-dispatching")
                     .detail("Could not get dispatched node!")
                     .exception(e)
@@ -117,19 +109,9 @@ public class LoadBalancingInterceptor extends AbstractInterceptor {
         return CONTINUE;
     }
 
-    @Override
-    public void handleAbort(Exchange exc) {
-        if (nodeOnlineChecker != null) {
-            nodeOnlineChecker.handle(exc);
-        }
-    }
 
     @Override
     public Outcome handleResponse(Exchange exc) {
-        if (nodeOnlineChecker != null) {
-            nodeOnlineChecker.handle(exc);
-        }
-
         if (sessionIdExtractor != null) {
             String sessionId;
             try {
@@ -247,19 +229,6 @@ public class LoadBalancingInterceptor extends AbstractInterceptor {
 
     public SessionIdExtractor getSessionIdExtractor() {
         return sessionIdExtractor;
-    }
-
-    /**
-     * @description Checks if nodes are still available. Sets them to "DOWN" when not reachable, else sets them back up when they are reachable.
-     */
-    @MCChildElement(order = 4)
-    public void setNodeOnlineChecker(NodeOnlineChecker noc) {
-        this.nodeOnlineChecker = noc;
-        this.nodeOnlineChecker.setLbi(this);
-    }
-
-    public NodeOnlineChecker getNodeOnlineChecker() {
-        return this.nodeOnlineChecker;
     }
 
     /**
