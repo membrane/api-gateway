@@ -16,11 +16,25 @@ To run the example execute the following steps:
 
    This will initialize the `LoadBalancingInterceptor` and associate it with a rule. In addition, three nodes are started up which are configured as targets for load balancing.
 
-3. Go to the command line and run the following cURL command (install cURL if missing):
+3. Go to the command line and run one of the following cURL commands (install cURL if missing):
+
+Linux/macOS:
 ```sh
-   curl -X POST http://localhost:8080 \
-    -H "Content-Type: application/json" \
-    -d '{"id":"1"}'
+curl -X POST http://localhost:8080 \
+-H "Content-Type: application/json" \
+-d '{"id":"1"}'
+```
+
+Windows PowerShell:
+```powershell
+curl -Method POST http://localhost:8080 `
+-H 'Content-Type: application/json' `
+-Body '{\"id\":\"1\"}'
+```
+
+Windows cmd:
+```bat
+curl -X POST http://localhost:8080 -H "Content-Type: application/json" -d "{\"id\":\"1\"}"
 ```
 4. Observe sticky session behavior: the server response includes an increasing count for that session. Repeating the same request with the same id keeps incrementing the count on the same backend node. If you change the id (e.g., to "2"), the balancer routes you to another node. You will then stay on that new node and its count increases there until you change the id again.
 
