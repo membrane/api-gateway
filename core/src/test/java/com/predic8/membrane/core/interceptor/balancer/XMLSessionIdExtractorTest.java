@@ -23,11 +23,11 @@ import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.RESPONSE;
 import static org.junit.jupiter.api.Assertions.*;
 
-public class XMLSessionIdExtractorTest extends AbstractSessionIdExtractorTest {
+class XMLSessionIdExtractorTest extends AbstractSessionIdExtractorTest {
 
 
 	@Test
-	public void testSessionIdExtraction() throws Exception {
+    void sessionIdExtraction() throws Exception {
 		Request req = new Request();
 		req.setHeader(getHeader());
 		req.setBodyContent(getBodyContent());

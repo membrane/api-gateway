@@ -28,8 +28,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static com.predic8.membrane.core.exceptions.ProblemDetails.internal;
-import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
-import static com.predic8.membrane.core.interceptor.Interceptor.Flow.RESPONSE;
 import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 
@@ -115,7 +113,7 @@ public class LoadBalancingInterceptor extends AbstractInterceptor {
         if (sessionIdExtractor != null) {
             String sessionId;
             try {
-                sessionId = getSessionId(exc, RESPONSE);
+                sessionId = sessionIdExtractor.getSessionId(exc, Flow.RESPONSE);
             } catch (Exception e) {
                 internal(router.isProduction(),getDisplayName())
                         .addSubSee("sessionid-extraction")
@@ -162,7 +160,7 @@ public class LoadBalancingInterceptor extends AbstractInterceptor {
     private Node getDispatchedNode(Exchange exc) throws Exception {
         String sessionId;
         if (sessionIdExtractor == null
-            || (sessionId = getSessionId(exc, REQUEST)) == null) {
+            || (sessionId = sessionIdExtractor.getSessionId(exc, Flow.REQUEST)) == null) {
             log.debug("no session id found.");
             return strategy.dispatch(this, exc);
         }
@@ -182,10 +180,6 @@ public class LoadBalancingInterceptor extends AbstractInterceptor {
 
     private Session getSession(String sessionId) {
         return balancer.getSessions(BalancerUtil.getSingleClusterNameOrDefault(balancer)).get(sessionId);
-    }
-
-    private String getSessionId(Exchange exc, Flow flow) throws Exception {
-        return sessionIdExtractor.getSessionId(exc, flow);
     }
 
     /**

@@ -22,11 +22,11 @@ import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.RESPONSE;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-public class JSESSIONIDExtractorTest extends AbstractSessionIdExtractorTest {
+class JSESSIONIDExtractorTest extends AbstractSessionIdExtractorTest {
 
 
 	@Test
-	public void testRequestExtraction() throws Exception {
+    void requestExtraction() throws Exception {
 		Request req = new Request();
 
 		JSESSIONIDExtractor extractor = new JSESSIONIDExtractor();
@@ -48,7 +48,7 @@ public class JSESSIONIDExtractorTest extends AbstractSessionIdExtractorTest {
 	}
 
     @Test
-	public void testResponseExtraction() throws Exception {
+    void responseExtraction() throws Exception {
 		Response res = new Response();
 
 		JSESSIONIDExtractor extractor = new JSESSIONIDExtractor();

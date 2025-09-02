@@ -25,7 +25,7 @@ import static com.predic8.membrane.core.interceptor.Interceptor.Flow.RESPONSE;
 import static com.predic8.membrane.core.lang.ExchangeExpression.Language.SPEL;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-public class PolyglotSessionIdExtractorTest extends AbstractSessionIdExtractorTest {
+class PolyglotSessionIdExtractorTest extends AbstractSessionIdExtractorTest {
 
     public static final String X_SESSION = "X-Session";
     private static PolyglotSessionIdExtractor extractor;
@@ -39,7 +39,7 @@ public class PolyglotSessionIdExtractorTest extends AbstractSessionIdExtractorTe
     }
 
     @Test
-    public void testRequestExtraction() throws Exception {
+    void requestExtraction() throws Exception {
         Request req = new Request();
 
         req.setHeader(getHeader("12345"));
@@ -49,7 +49,7 @@ public class PolyglotSessionIdExtractorTest extends AbstractSessionIdExtractorTe
     }
 
     @Test
-    public void testResponseExtraction() throws Exception {
+    void responseExtraction() throws Exception {
         Response res = new Response();
 
         res.setHeader(getHeader("12345"));
