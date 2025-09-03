@@ -1,19 +1,19 @@
-## YAML CONFIGURATION
+# ~~YAML Configuration~~
 
 Membrane can be configured with YAML files instead of using the traditional XML syntax.
 
 > **Note:** YAML support is still experimental.
 
-#### RUNNING THE EXAMPLE
+## Running the Eample
 
 1. Start Membrane from this directory:
 
-    * On **Linux/macOS**:
+   - On **Linux/macOS**:
 
       ```bash
       membrane.sh yaml -l proxies.yaml
       ```
-    * On **Windows**:
+   - On **Windows**:
 
       ```cmd
       membrane.cmd yaml -l proxies.yaml
