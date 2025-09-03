@@ -1,10 +1,10 @@
-# ~~YAML Configuration~~
+# YAML Configuration
 
 Membrane can be configured with YAML files instead of using the traditional XML syntax.
 
 > **Note:** YAML support is still experimental.
 
-## Running the Eample
+## Running the Example
 
 1. Start Membrane from this directory:
 

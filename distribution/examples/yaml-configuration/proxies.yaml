@@ -24,7 +24,7 @@ spec:
 apiVersion: membrane-soa.org/v1beta1
 kind: api
 metadata:
-  name: Log
+  name: log
 spec:
   port: 2000
   interceptors:
