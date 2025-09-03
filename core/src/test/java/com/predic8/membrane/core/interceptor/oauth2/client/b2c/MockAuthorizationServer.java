@@ -41,6 +41,8 @@ import java.util.concurrent.atomic.*;
 
 import static com.predic8.membrane.core.RuleManager.RuleDefinitionSource.*;
 import static com.predic8.membrane.core.http.MimeType.*;
+import static com.predic8.membrane.core.interceptor.oauth2.ParamNames.*;
+import static com.predic8.membrane.core.util.URLParamUtil.DuplicateKeyOrInvalidFormStrategy.ERROR;
 import static java.net.URLEncoder.encode;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.*;
@@ -126,7 +128,7 @@ public class MockAuthorizationServer {
             }
 
             public synchronized Response handleRequestInternal(Exchange exc) throws Exception {
-                Map<String, String> params = URLParamUtil.getParams(new URIFactory(), exc, URLParamUtil.DuplicateKeyOrInvalidFormStrategy.ERROR);
+                Map<String, String> params = URLParamUtil.getParams(new URIFactory(), exc, ERROR);
                 String requestURI = exc.getRequestURI();
                 if (requestURI.endsWith("/.well-known/openid-configuration")) {
                     return Response.ok(wkf.getWellknown()).build();
@@ -160,13 +162,15 @@ public class MockAuthorizationServer {
     }
 
     private Response handleTokenRequest(String flowId, Exchange exc) throws Exception {
-        Map<String, String> params = URLParamUtil.getParams(new URIFactory(), exc, URLParamUtil.DuplicateKeyOrInvalidFormStrategy.ERROR);
-        String grantType = params.get("grant_type");
+        Map<String, String> params = URLParamUtil.getParams(new URIFactory(), exc, ERROR);
+        assertEquals(tc.clientId, params.get(CLIENT_ID));
+        assertEquals(tc.clientSecret, params.get(CLIENT_SECRET));
+        String grantType = params.get(GRANT_TYPE);
         if (grantType.equals("authorization_code")) {
-            assertEquals("1234" + flowId, params.get("code"));
-            assertEquals("http://localhost:31337/oauth2callback", params.get("redirect_uri"));
+            assertEquals("1234" + flowId, params.get(CODE));
+            assertEquals("http://localhost:31337/oauth2callback", params.get(REDIRECT_URI));
         } else if (grantType.equals("refresh_token")) {
-            String refreshToken = params.get("refresh_token");
+            String refreshToken = params.get(REFRESH_TOKEN);
             String flowId2 = refreshTokens.get(refreshToken);
             if (flowId2 == null)
                 throw new RuntimeException("Refresh Token not known.");
@@ -175,9 +179,6 @@ public class MockAuthorizationServer {
         } else {
             throw new RuntimeException("Illegal grant_type: " + grantType);
         }
-        String secret = tc.clientId + ":" + tc.clientSecret;
-
-        assertEquals("Basic " + Base64.getEncoder().encodeToString(secret.getBytes(UTF_8)) , exc.getRequest().getHeader().getFirstValue("Authorization"));
 
         return Response
                 .ok(om.writeValueAsString(createTokenResponse(flowId, params)))
@@ -188,7 +189,7 @@ public class MockAuthorizationServer {
     private @NotNull Map<String, Object> createTokenResponse(String flowId, Map<String, String> params) throws JoseException, JsonProcessingException {
         Map<String, Object> res = new HashMap<>();
 
-        String scope = params.get("scope");
+        String scope = params.get(SCOPE);
 
         if (scope != null) {
             res.put("access_token", createToken(accessToken(flowId, scope.contains(tc.api1Id) ? tc.api1Id : tc.api2Id)));
