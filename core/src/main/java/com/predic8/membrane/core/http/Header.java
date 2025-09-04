@@ -431,12 +431,13 @@ public class Header {
 
 	public String getCharset() {
 		if (getContentType() == null)
-			return UTF_8.name();
+			return null;
 
 		try {
 			return new ContentType(getContentType()).getParameter("charset").toUpperCase();
 		} catch (Exception e) {
-			return UTF_8.name();
+			log.debug("Failed to parse Content-Type: {}", getContentType());
+			return null;
 		}
 	}
 
@@ -556,8 +557,16 @@ public class Header {
 		return false;
 	}
 
-	private int getBrowserVersion(String userAgent, String browserID) {
-		int p = userAgent.indexOf(browserID);
+
+    /** Extracts the major version for the given browser token from a User-Agent.
+     * Returns:
+     * -1 if the token is absent or not followed by ' ', '/' or '_' and digits,
+     *  0 if the token is present but no digits follow the separator (e.g. "Chrome Safari"),
+     * >=1 for the parsed major version (e.g. "Chrome/90.0" -> 90).
+     */
+	int getBrowserVersion(String userAgent, String browserID) {
+        int p = userAgent.indexOf(browserID);
+        if (p < 0) return -1;
 		p += browserID.length();
 		if (p >= userAgent.length())
 			return -1;

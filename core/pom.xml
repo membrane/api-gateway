@@ -80,16 +80,6 @@
             </exclusions>
         </dependency>
         <dependency>
-            <groupId>commons-discovery</groupId>
-            <artifactId>commons-discovery</artifactId>
-            <exclusions>
-                <exclusion>
-                    <groupId>commons-logging</groupId>
-                    <artifactId>commons-logging</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-        <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-text</artifactId>
             <version>1.14.0</version>
@@ -131,10 +121,6 @@
                     <artifactId>jcl-over-slf4j</artifactId>
                 </exclusion>
             </exclusions>
-        </dependency>
-        <dependency>
-            <groupId>com.predic8</groupId>
-            <artifactId>xmlbeautifier</artifactId>
         </dependency>
         <dependency>
             <groupId>commons-fileupload</groupId>
@@ -193,7 +179,7 @@
         <dependency>
             <groupId>net.minidev</groupId>
             <artifactId>json-smart</artifactId>
-            <version>2.5.2</version>
+            <version>2.6.0</version>
         </dependency>
         <dependency>
             <groupId>com.squareup.okhttp3</groupId>
@@ -261,6 +247,7 @@
             <artifactId>mockito-core</artifactId>
             <scope>test</scope>
         </dependency>
+        <!-- We explicitly use an old commons-httpclient version here, only for testing features which were removed in later versions. -->
         <dependency>
             <groupId>commons-httpclient</groupId>
             <artifactId>commons-httpclient</artifactId>
@@ -298,8 +285,9 @@
         <dependency>
             <groupId>com.github.spotbugs</groupId>
             <artifactId>spotbugs-annotations</artifactId>
-            <version>4.9.3</version>
+            <version>4.9.4</version>
         </dependency>
+        <!-- fallback parser for documents based on older Swagger standards -->
         <dependency>
             <groupId>io.swagger</groupId>
             <artifactId>swagger-parser</artifactId>
@@ -419,6 +407,7 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
                     <test>**/UnitTests.java</test>
+                    <argLine>-Dfile.encoding=UTF-8</argLine>
                 </configuration>
             </plugin>
 
@@ -480,8 +469,7 @@
                         <configuration>
                             <target>
                                 <copy todir="../docs">
-                                    <fileset
-                                            dir="${project.build.directory}/classes/com/predic8/membrane/core/config/spring">
+                                    <fileset dir="${project.build.directory}/classes/com/predic8/membrane/core/config/spring">
                                         <include name="router-conf.xsd"/>
                                     </fileset>
                                 </copy>

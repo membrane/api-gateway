@@ -29,8 +29,10 @@ import java.io.*;
 import java.util.*;
 
 import static com.predic8.membrane.core.http.MimeType.*;
-import static com.predic8.membrane.core.util.ExceptionUtil.concatMessageAndCauseMessages;
-import static java.util.UUID.randomUUID;
+import static com.predic8.membrane.core.util.ExceptionUtil.*;
+import static java.nio.charset.StandardCharsets.*;
+import static java.util.Locale.ROOT;
+import static java.util.UUID.*;
 
 
 /**
@@ -43,12 +45,7 @@ public class ProblemDetails {
     private static final ObjectMapper om = new ObjectMapper();
     private static final ObjectWriter ow = om.writerWithDefaultPrettyPrinter();
 
-    private boolean production;
-
-    /**
-     * Whether to provide a log key to the caller that points into the log
-     */
-    private boolean logKey = true;
+    private boolean logKeyInsteadOfDetails;
 
     private int statusCode;
     private String type;
@@ -66,12 +63,12 @@ public class ProblemDetails {
     private String component;
 
     /**
-     * Internal information that is not returned in production
+     * Internal information that is not returned with logKey
      */
     private final HashMap<String, Object> internalFields = new LinkedHashMap<>();
 
     /**
-     * Toplevel elements that are returned to the client even in production
+     * Toplevel elements that are always returned to the client
      */
     private final HashMap<String, Object> topLevel = new LinkedHashMap<>();
     private Throwable exception;
@@ -81,45 +78,45 @@ public class ProblemDetails {
      */
     private boolean stacktrace = true;
 
-    public static ProblemDetails user(boolean production, String component) {
-        return problemDetails("user", production)
+    public static ProblemDetails user(boolean logKeyInsteadOfDetails, String component) {
+        return problemDetails("user", logKeyInsteadOfDetails)
                 .statusCode(400)
                 .title("User error.")
                 .component(component);
     }
 
-    public static ProblemDetails internal(boolean production, String component) {
-        return problemDetails("internal", production)
+    public static ProblemDetails internal(boolean logKeyInsteadOfDetails, String component) {
+        return problemDetails("internal", logKeyInsteadOfDetails)
                 .statusCode(500)
                 .title("Internal server error.")
                 .component(component);
     }
 
-    public static ProblemDetails gateway(boolean production, String component) {
-        return problemDetails("gateway", production)
+    public static ProblemDetails gateway(boolean logKeyInsteadOfDetails, String component) {
+        return problemDetails("gateway", logKeyInsteadOfDetails)
                 .statusCode(500)
                 .title("Gateway error.")
                 .component(component);
     }
 
-    public static ProblemDetails security(boolean production, String component) {
-        return problemDetails("security", production)
+    public static ProblemDetails security(boolean logKeyInsteadOfDetails, String component) {
+        return problemDetails("security", logKeyInsteadOfDetails)
                 .statusCode(500)
                 .title("Security error.")
                 .component(component);
     }
 
-    public static ProblemDetails openapi(boolean production, String component) {
-        return problemDetails("openapi", production)
+    public static ProblemDetails openapi(boolean logKeyInsteadOfDetails, String component) {
+        return problemDetails("openapi", logKeyInsteadOfDetails)
                 .statusCode(400)
                 .title("OpenAPI error.")
                 .component(component);
     }
 
-    public static ProblemDetails problemDetails(String type, boolean production) {
+    public static ProblemDetails problemDetails(String type, boolean logKeyInsteadOfDetails) {
         ProblemDetails pd = new ProblemDetails();
         pd.type = type;
-        pd.production = production;
+        pd.logKeyInsteadOfDetails = logKeyInsteadOfDetails;
         return pd;
     }
 
@@ -191,11 +188,6 @@ public class ProblemDetails {
         return this;
     }
 
-    public ProblemDetails logKey(boolean logKey) {
-        this.logKey = logKey;
-        return this;
-    }
-
     public Response build() {
         return createContent(createMap(), null);
     }
@@ -215,8 +207,8 @@ public class ProblemDetails {
         root.put("type", getTypeSubtypeString());
         root.putAll(topLevel);
 
-        if (production) {
-            logProduction(root);
+        if (logKeyInsteadOfDetails) {
+            provideLogKeyInsteadOfDetails(root);
             return root;
         }
 
@@ -228,7 +220,7 @@ public class ProblemDetails {
         return root;
     }
 
-    private void logProduction(Map<String, Object> root) {
+    private void provideLogKeyInsteadOfDetails(Map<String, Object> root) {
         String logKey = randomUUID().toString();
         log.warn("logKey={}\ntype={}\ntitle={}\n,detail={}\n,internal={},.", logKey, getTypeSubtypeString(), title, detail, internalFields);
         root.put("detail", "Details can be found in the Membrane log searching for key: %s.".formatted(logKey));
@@ -249,7 +241,7 @@ public class ProblemDetails {
     }
 
     private String normalizeForType(String s) {
-        return s.replace(" ", "-").toLowerCase();
+        return s.replace(" ", "-").toLowerCase(ROOT);
     }
 
     private Map<String, Object> createInternal(String type) {
@@ -268,9 +260,9 @@ public class ProblemDetails {
             see += "/" + normalizeForType(component);
         }
         if (flow != null) {
-            see += "/" + flow.name().toLowerCase();
+            see += "/" + flow.name().toLowerCase(ROOT);
         }
-        if (!see.isEmpty()) {
+        if (!seeSuffix.isEmpty()) {
             see += "/" + seeSuffix;
         }
         internalMap.put("see", see);
@@ -308,20 +300,21 @@ public class ProblemDetails {
     private Response createContent(Map<String, Object> root, Exchange exchange) {
         Response.ResponseBuilder builder = Response.statusCode(statusCode);
         try {
-            if (exchange != null && exchange.getRequest().isXML())
+            if (exchange != null && exchange.getRequest().isXML()) {
                 createXMLContent(root, builder);
-            else
+            } else {
                 createJson(root, builder);
+            }
         } catch (Exception e) {
-            builder.body("Title: %s\nType: %s\n%s".formatted(type, title, root).getBytes());
-            builder.contentType(TEXT_PLAIN);
+            builder.body("Title: %s\nType: %s\n%s".formatted(title,type,root).getBytes(UTF_8));
+            builder.contentType(TEXT_PLAIN_UTF8);
         }
         return builder.build();
     }
 
     private static void createXMLContent(Map<String, Object> root, Response.ResponseBuilder builder) throws Exception {
         builder.body(convertMapToXml(root));
-        builder.contentType(APPLICATION_XML);
+        builder.contentType(APPLICATION_PROBLEM_XML);
     }
 
     public static String convertMapToXml(Map<String, Object> map) throws Exception {
@@ -416,8 +409,8 @@ public class ProblemDetails {
         return statusCode;
     }
 
-    public boolean isProduction() {
-        return production;
+    public boolean isLogKeyInsteadOfDetails() {
+        return logKeyInsteadOfDetails;
     }
 
     public String getDetail() {

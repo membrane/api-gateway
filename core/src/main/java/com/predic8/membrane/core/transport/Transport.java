@@ -21,99 +21,130 @@ import com.predic8.membrane.core.model.*;
 import com.predic8.membrane.core.proxies.*;
 import com.predic8.membrane.core.transport.ssl.*;
 import com.predic8.membrane.core.util.*;
+import org.jetbrains.annotations.*;
+import org.springframework.beans.factory.*;
 
 import java.io.*;
 import java.util.*;
 
 public abstract class Transport {
 
-	/**
-	 * SSL and Non-SSL are mixed here, maybe split that in future
-	 */
-	protected final Set<IPortChangeListener> menuListeners = new HashSet<>();
+    /**
+     * SSL and Non-SSL are mixed here, maybe split that in future
+     */
+    protected final Set<IPortChangeListener> menuListeners = new HashSet<>();
 
-	private List<Interceptor> interceptors = new Vector<>();
-	private Router router;
-	private boolean reverseDNS = true;
+    private List<Interceptor> interceptors = new Vector<>();
+    private Router router;
+    private boolean reverseDNS = true;
 
-	private int concurrentConnectionLimitPerIp = -1;
+    private int concurrentConnectionLimitPerIp = -1;
 
-	public String getOpenBackendConnections(int port){
-		return "N/A";
-	}
+    public String getOpenBackendConnections(int port) {
+        return "N/A";
+    }
 
-	public List<Interceptor> getInterceptors() {
-		return interceptors;
-	}
+    public List<Interceptor> getInterceptors() {
+        return interceptors;
+    }
 
-	@MCChildElement(allowForeign=true)
-	public void setInterceptors(List<Interceptor> interceptors) {
-		this.interceptors = interceptors;
-	}
+    @MCChildElement(allowForeign = true)
+    public void setInterceptors(List<Interceptor> interceptors) {
+        this.interceptors = interceptors;
+    }
 
-	public void init(Router router) throws Exception {
-		this.router = router;
+    public void init(Router router) throws Exception {
+        this.router = router;
 
-		if (interceptors.isEmpty()) {
-			interceptors.add(new RuleMatchingInterceptor());
-			interceptors.add(new LoggingContextInterceptor());
-			interceptors.add(new ExchangeStoreInterceptor(router.getExchangeStore()));
-			interceptors.add(new DispatchingInterceptor());
-			interceptors.add(new ReverseProxyingInterceptor());
-			interceptors.add(router.getGlobalInterceptor());
-			interceptors.add(new UserFeatureInterceptor());
-			interceptors.add(new InternalRoutingInterceptor());
-			interceptors.add(new HTTPClientInterceptor());
-		}
+        if (interceptors.isEmpty()) {
+            interceptors.add(getInterceptor(RuleMatchingInterceptor.class));
+            interceptors.add(getInterceptor(LoggingContextInterceptor.class));
+            interceptors.add(getExchangeStoreInterceptor());
+            interceptors.add(getInterceptor(DispatchingInterceptor.class));
+            interceptors.add(getInterceptor(ReverseProxyingInterceptor.class));
+            interceptors.add(router.getGlobalInterceptor());
+            interceptors.add(getInterceptor(UserFeatureInterceptor.class));
+            interceptors.add(getInterceptor(InternalRoutingInterceptor.class));
+            interceptors.add(getInterceptor(HTTPClientInterceptor.class));
+        }
 
-		for (Interceptor interceptor : interceptors) {
-			interceptor.init(router);
-		}
-	}
+        for (Interceptor interceptor : interceptors) {
+            interceptor.init(router);
+        }
+    }
 
-	public Router getRouter() {
-		return router;
-	}
+    /**
+     * Look up an interceptor in the Spring context; fall back to default construction.
+     */
+    private @NotNull <T extends Interceptor> T getInterceptor(Class<T> clazz) throws ReflectiveOperationException {
+        BeanFactory bf = router.getBeanFactory();
+        if (bf instanceof ListableBeanFactory lbf) {
+            T bean = lbf.getBeanProvider(clazz).getIfAvailable();
+            if (bean != null)
+                return bean;
+        }
+        return clazz.getConstructor().newInstance();
+    }
 
-	public <T extends Interceptor> Optional<T> getFirstInterceptorOfType(Class<T> type) {
-		return InterceptorUtil.getFirstInterceptorOfType(interceptors, type);
-	}
+    /**
+     * Look up an ExchangeStoreInterceptor in the Spring context; fall back to router-backed instance.
+     */
+    private @NotNull ExchangeStoreInterceptor getExchangeStoreInterceptor() {
+        BeanFactory bf = router.getBeanFactory();
+        if (bf instanceof ListableBeanFactory lbf) {
+            ExchangeStoreInterceptor bean = lbf.getBeanProvider(ExchangeStoreInterceptor.class).getIfAvailable();
+            if (bean != null)
+                return bean;
+        }
+        return new ExchangeStoreInterceptor(router.getExchangeStore());
+    }
 
-	public void closeAll() {
-		closeAll(true);
-	}
+    public Router getRouter() {
+        return router;
+    }
 
-	public void closeAll(boolean waitForCompletion) {}
+    public <T extends Interceptor> Optional<T> getFirstInterceptorOfType(Class<T> type) {
+        return InterceptorUtil.getFirstInterceptorOfType(interceptors, type);
+    }
 
-	public void openPort(String ip, int port, SSLProvider sslProvider, TimerManager timerManager) throws IOException {}
+    public void closeAll() {
+        closeAll(true);
+    }
 
-	public void openPort(SSLableProxy proxy, TimerManager timerManager) throws IOException {}
+    public void closeAll(boolean waitForCompletion) {
+    }
 
-	public abstract boolean isOpeningPorts();
+    public void openPort(String ip, int port, SSLProvider sslProvider, TimerManager timerManager) throws IOException {
+    }
 
-	public boolean isReverseDNS() {
-		return reverseDNS;
-	}
+    public void openPort(SSLableProxy proxy, TimerManager timerManager) throws IOException {
+    }
 
-	/**
-	 * @description Whether the remote address should automatically reverse-looked up for incoming connections.
-	 * @default true
-	 */
-	@MCAttribute
-	public void setReverseDNS(boolean reverseDNS) {
-		this.reverseDNS = reverseDNS;
-	}
+    public abstract boolean isOpeningPorts();
 
-	public int getConcurrentConnectionLimitPerIp() {
-		return concurrentConnectionLimitPerIp;
-	}
+    public boolean isReverseDNS() {
+        return reverseDNS;
+    }
 
-	/**
-	 * @description Limits the number of concurrent connections from one ip
-	 * @default -1 No Limit
-	 */
-	@MCAttribute
-	public void setConcurrentConnectionLimitPerIp(int concurrentConnectionLimitPerIp) {
-		this.concurrentConnectionLimitPerIp = concurrentConnectionLimitPerIp;
-	}
+    /**
+     * @description Whether the remote address should automatically reverse-looked up for incoming connections.
+     * @default true
+     */
+    @MCAttribute
+    public void setReverseDNS(boolean reverseDNS) {
+        this.reverseDNS = reverseDNS;
+    }
+
+    public int getConcurrentConnectionLimitPerIp() {
+        return concurrentConnectionLimitPerIp;
+    }
+
+    /**
+     * @description Limits the number of concurrent connections from one ip
+     * @default -1 No Limit
+     */
+    @MCAttribute
+    public void setConcurrentConnectionLimitPerIp(int concurrentConnectionLimitPerIp) {
+        this.concurrentConnectionLimitPerIp = concurrentConnectionLimitPerIp;
+    }
 }

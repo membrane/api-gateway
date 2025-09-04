@@ -16,7 +16,6 @@ package com.predic8.membrane.integration.withoutinternet;
 
 import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.proxies.*;
 import com.predic8.membrane.core.transport.http.*;
@@ -28,8 +27,10 @@ import java.util.function.*;
 
 import static com.predic8.membrane.core.RuleManager.RuleDefinitionSource.*;
 import static com.predic8.membrane.core.http.Request.*;
+import static com.predic8.membrane.core.http.Response.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static java.lang.Thread.*;
+import static java.util.concurrent.ConcurrentHashMap.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -40,7 +41,10 @@ import static org.junit.jupiter.api.Assertions.*;
  * are responded to with 200 OK and their request.uri as body. Back on the client, the response body is asserted to be
  * the request path.
  */
-public class MassivelyParallelTest {
+class MassivelyParallelTest {
+
+    // Should not be to high to keep tests stable
+    private static int CONCURRENT_THREADS = 500;
 
     static HttpClient client;
     static HttpRouter server;
@@ -50,8 +54,8 @@ public class MassivelyParallelTest {
         client = new HttpClient();
 
         server = new HttpRouter();
-        server.getTransport().setConcurrentConnectionLimitPerIp(1000);
-        server.getTransport().setBacklog(1000);
+        server.getTransport().setConcurrentConnectionLimitPerIp(CONCURRENT_THREADS);
+        server.getTransport().setBacklog(CONCURRENT_THREADS);
         server.getTransport().setSocketTimeout(10000);
         server.setHotDeploy(false);
         server.getRuleManager().addProxy(createServiceProxy(), MANUAL);
@@ -69,7 +73,7 @@ public class MassivelyParallelTest {
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
                 }
-                exc.setResponse(Response.ok().body(exc.getRequest().getUri()).build());
+                exc.setResponse(ok().body(exc.getRequest().getUri()).build());
                 return RETURN;
             }
         });
@@ -86,9 +90,9 @@ public class MassivelyParallelTest {
     @Test
     @Timeout(30) // seconds
     public void run() throws Exception {
-        Set<String> paths = ConcurrentHashMap.newKeySet();
-        runInParallel((cdl) -> parallelTestWorker(cdl, paths), 1000);
-        assertEquals(1000, paths.size());
+        Set<String> paths = newKeySet();
+        runInParallel((cdl) -> parallelTestWorker(cdl, paths), CONCURRENT_THREADS);
+        assertEquals(CONCURRENT_THREADS, paths.size());
     }
 
     private void runInParallel(Consumer<CountDownLatch> job, int threadCount) {
@@ -127,5 +131,4 @@ public class MassivelyParallelTest {
             throw new RuntimeException(e);
         }
     }
-
 }

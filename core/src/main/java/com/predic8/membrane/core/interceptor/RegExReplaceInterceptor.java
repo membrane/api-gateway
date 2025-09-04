@@ -19,6 +19,7 @@ import com.predic8.membrane.core.http.*;
 import org.slf4j.*;
 
 import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
+import static com.predic8.membrane.core.http.Header.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.interceptor.RegExReplaceInterceptor.TargetType.*;
 
@@ -82,14 +83,13 @@ public class RegExReplaceInterceptor extends AbstractInterceptor {
             hf.setValue(hf.getValue().replaceAll(regex, replace));
     }
 
-    private void replaceBody(Message res) throws Exception {
+    private void replaceBody(Message res) {
         if (res.getHeader().isBinaryContentType())
             return;
         log.debug("pattern: {}", regex);
         log.debug("replacement: {}", replace);
-
-        res.setBodyContent(res.getBodyAsStringDecoded().replaceAll(regex, replace).getBytes(res.getCharset()));
-        res.getHeader().removeFields("Content-Encoding");
+        res.setBodyContent(res.getBodyAsStringDecoded().replaceAll(regex, replace).getBytes(res.getCharsetOrDefault()));
+        res.getHeader().removeFields( CONTENT_ENCODING);
     }
 
     public String getRegex() {

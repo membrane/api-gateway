@@ -28,6 +28,7 @@ public class URI {
     private String input;
     private String path;
     private String query;
+    private String fragment;
 
     private String scheme;
 
@@ -35,7 +36,7 @@ public class URI {
 
     private int port = -1;
 
-    private String pathDecoded, queryDecoded;
+    private String pathDecoded, queryDecoded, fragmentDecoded;
 
     private static final Pattern PATTERN = Pattern.compile("^(([^:/?#]+):)?(//([^/?#]*))?([^?#]*)(\\?([^#]*))?(#(.*))?");
     //                                                             12            3  4          5       6   7        8 9
@@ -74,6 +75,7 @@ public class URI {
 
         path = m.group(5);
         query = m.group(7);
+        fragment = m.group(9);
         return true;
     }
 
@@ -83,6 +85,20 @@ public class URI {
             var posAt = hostAndPort.indexOf("@");
             if (posAt > -1) {
                 hostAndPort = hostAndPort.substring(posAt + 1);
+            }
+
+            var posBrackets = hostAndPort.indexOf("[");
+            if (posBrackets > -1) {
+                int end = hostAndPort.indexOf("]");
+                if (end < 0) {
+                    throw new IllegalArgumentException("Invalid IPv6 bracket literal: missing ']'.");
+                }
+                String ipv6 = hostAndPort.substring(posBrackets + 1, end);
+                if (end + 1 < hostAndPort.length() && hostAndPort.charAt(end + 1) == ':') {
+                    port = Integer.parseInt(hostAndPort.substring(end + 2));
+                }
+                host = ipv6;
+                return;
             }
 
             var pos = hostAndPort.indexOf(":");
@@ -136,7 +152,25 @@ public class URI {
         return queryDecoded;
     }
 
+    public String getRawFragment() {
+        if (uri != null)
+            return uri.getRawFragment();
+        return fragment;
+    }
+
     /**
+     * Returns the fragment (the part after '#'), decoded like {@link #getPath()} and {@link #getQuery()}.
+     */
+    public String getFragment() {
+        if (uri != null)
+            return uri.getFragment();
+        if (fragmentDecoded == null)
+            fragmentDecoded = decode(fragment);
+        return fragmentDecoded;
+    }
+
+
+    /*
      * Returns the authority component of this URI.
      *
      * <p>In default mode delegates to {@link java.net.URI#getAuthority()} and may include
@@ -145,15 +179,21 @@ public class URI {
      * Returns {@code null} if no authority is present (e.g. "mailto:").
      */
     public String getAuthority() {
-        if (uri != null)
-            return uri.getAuthority();
-        if (host == null)
-            return null;
-        StringBuilder sb = new StringBuilder(host);
-        if (port != -1)
-            sb.append(':').append(port);
+        if (uri != null) return uri.getAuthority();
+        if (host == null) return null;
+
+        StringBuilder sb = new StringBuilder();
+        if (host.contains(":")) { // IPv6
+            sb.append('[').append(host);
+            if (port != -1) sb.append(':').append(port);
+            sb.append(']');
+        } else { // IPv4 / Domain
+            sb.append(host);
+            if (port != -1) sb.append(':').append(port);
+        }
         return sb.toString();
     }
+
 
     private String decode(String string) {
         if (string == null)
@@ -165,6 +205,27 @@ public class URI {
         if (uri != null)
             return uri.getRawQuery();
         return query;
+    }
+
+    /**
+     * Fragments are client side only and should not be propagated to the backend.
+     *
+     * @return
+     */
+    public String getPathWithQuery() {
+        StringBuilder r = new StringBuilder(100);
+
+        if (getRawPath() != null && !getRawPath().isBlank()) {
+            r.append(getRawPath());
+        } else {
+            r.append("/");
+        }
+
+        // Add query if present
+        if (getRawQuery() != null && !getRawQuery().isBlank()) {
+            r.append("?").append(getRawQuery());
+        }
+        return r.toString();
     }
 
     @Override

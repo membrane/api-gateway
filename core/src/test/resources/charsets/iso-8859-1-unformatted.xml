@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<sample>
+  <!-- Not formatted for BeautifierTest! -->
+  <title>ISO-8859-1 Test</title><note>Umlaute: ä ö ü Ä Ö Ü ß</note><fr>Accents: é è ê à ç ô ï</fr><es>Español: niño, corazón</es><scand>Nordic: å æ ø Å Æ Ø</scand><entities>&lt; &gt; &amp; &quot; &apos;</entities>
+</sample>
