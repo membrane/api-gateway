@@ -18,3 +18,17 @@ spec:
   port: 9000
   interceptors:
     - adminConsole: {}
+
+---
+
+apiVersion: membrane-soa.org/v1beta1
+kind: api
+metadata:
+  name: log
+spec:
+  port: 2000
+  interceptors:
+    - log:
+        message: Header ${header}
+  target:
+    url: https://api.predic8.de
