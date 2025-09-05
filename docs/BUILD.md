@@ -17,7 +17,9 @@ mvn install -DskipTests
 
 NOTE: For a Release Checkout use
 
+```sh
 git clone --branch v6.X.X https://github.com/membrane/api-gateway
+```
 
 ```sh
 After the build find the distribution and the WAR at:
