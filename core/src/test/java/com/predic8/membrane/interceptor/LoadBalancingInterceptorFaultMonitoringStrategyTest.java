@@ -36,7 +36,6 @@ import java.util.function.Function;
 
 import static com.predic8.membrane.core.http.Header.*;
 import static com.predic8.membrane.core.http.MimeType.*;
-import static com.predic8.membrane.core.http.Request.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.interceptor.balancer.BalancerUtil.*;
 import static java.util.concurrent.TimeUnit.*;
@@ -56,8 +55,8 @@ class LoadBalancingInterceptorFaultMonitoringStrategyTest {
 
     private static final Logger log = LoggerFactory.getLogger(LoadBalancingInterceptorFaultMonitoringStrategyTest.class.getName());
 
-    protected LoadBalancingInterceptor balancingInterceptor;
-    protected HttpRouter balancer;
+    LoadBalancingInterceptor balancingInterceptor;
+    HttpRouter balancer;
 
     // The simulation nodes
     private final List<Router> nodes = new ArrayList<>();
@@ -78,7 +77,7 @@ class LoadBalancingInterceptorFaultMonitoringStrategyTest {
 
     private HttpRouter createLoadBalancer() throws Exception {
         HttpRouter r = new HttpRouter();
-        ServiceProxy sp3 = new ServiceProxy(new ServiceProxyKey("localhost", "POST", ".*", 3054), "thomas-bayer.com", 80);
+        ServiceProxy sp3 = new ServiceProxy(new ServiceProxyKey("localhost", "*", ".*", 3054), "thomas-bayer.com", 80);
         balancingInterceptor = new LoadBalancingInterceptor();
         balancingInterceptor.setName("Default");
         sp3.getInterceptors().add(balancingInterceptor);
@@ -106,7 +105,7 @@ class LoadBalancingInterceptorFaultMonitoringStrategyTest {
     }
 
     private @NotNull ServiceProxy createServiceProxy(TestingContext ctx, int i) {
-        ServiceProxy serviceProxy = new ServiceProxy(new ServiceProxyKey("localhost", METHOD_POST, ".*", (2000 + i)), "thomas-bayer.com", 80);
+        ServiceProxy serviceProxy = new ServiceProxy(new ServiceProxyKey("localhost", "*", ".*", (2000 + i)), "thomas-bayer.com", 80);
         serviceProxy.getInterceptors().add(new AbstractInterceptor() {
             @Override
             public Outcome handleResponse(Exchange exc) {
@@ -439,7 +438,6 @@ class LoadBalancingInterceptorFaultMonitoringStrategyTest {
         assertEquals(ctx.numRequests, ctx.exceptionCounter.get() + ctx.successCounter.get(), "Total = success + exception counts");
     }
 
-
     /**
      * @param numThreads 1-n
      */
@@ -452,14 +450,12 @@ class LoadBalancingInterceptorFaultMonitoringStrategyTest {
         );
     }
 
-
-    private PostMethod getPostMethod() {
-        PostMethod post = new PostMethod(
+    private PutMethod getPostMethod() {
+        PutMethod put = new PutMethod(
                 "http://localhost:3054/axis2/services/BLZService");
-        post.setRequestEntity(new InputStreamRequestEntity(this.getClass().getResourceAsStream("/getBank.xml")));
-        post.setRequestHeader(CONTENT_TYPE, TEXT_XML_UTF8);
-        post.setRequestHeader(SOAP_ACTION, "");
-        return post;
+        put.setRequestEntity(new InputStreamRequestEntity(this.getClass().getResourceAsStream("/getBank.xml")));
+        put.setRequestHeader(CONTENT_TYPE, TEXT_XML_UTF8);
+        put.setRequestHeader(SOAP_ACTION, "");
+        return put;
     }
-
 }

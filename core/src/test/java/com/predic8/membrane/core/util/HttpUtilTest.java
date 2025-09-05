@@ -14,18 +14,17 @@
 
 package com.predic8.membrane.core.util;
 
-import com.predic8.membrane.core.http.Request;
+import com.predic8.membrane.core.http.*;
 import org.junit.jupiter.api.*;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.*;
+import org.junit.jupiter.params.provider.*;
 
 import java.io.*;
 import java.net.*;
-import java.net.URI;
-import java.util.List;
+import java.util.*;
 
 import static com.predic8.membrane.core.Constants.*;
-import static com.predic8.membrane.core.http.Header.X_FORWARDED_FOR;
+import static com.predic8.membrane.core.http.Header.*;
 import static com.predic8.membrane.core.http.Request.*;
 import static com.predic8.membrane.core.util.HttpUtil.*;
 import static org.junit.jupiter.api.Assertions.*;
@@ -41,7 +40,7 @@ public class HttpUtilTest {
 	}
 
 	@Test
-	public void testReadLine() throws IOException, EndOfStreamException {
+	public void testReadLine() throws IOException {
 		assertEquals("foo", readLine(is1));
 		assertEquals("bar", readLine(is1));
 		assertEquals("", readLine(is1));

@@ -154,7 +154,6 @@ public class HttpUtil {
 	 *
 	 * @param dest URL e.g. http://predic8.de/foo?name=bar
 	 * @return Path and query string without protocol and host e.g. /foo?name=bar
-	 * @throws MalformedURLException
 	 */
 	public static String getPathAndQueryString(String dest) throws MalformedURLException {
 		URL url = new URL(dest);
