@@ -38,6 +38,8 @@ public class URI {
 
     private String pathDecoded, queryDecoded, fragmentDecoded;
 
+    record HostPort(String host, Integer port) { }
+
     private static final Pattern PATTERN = Pattern.compile("^(([^:/?#]+):)?(//([^/?#]*))?([^?#]*)(\\?([^#]*))?(#(.*))?");
     //                                                             12            3  4          5       6   7        8 9
     // if defined, the groups are:
@@ -64,14 +66,26 @@ public class URI {
     }
 
     private boolean customInit(String s) {
+        if (s == null) return false;
+        s = s.trim();
+
         Matcher m = PATTERN.matcher(s);
-        if (!m.matches())
-            return false;
+        if (!m.matches()) return false;
+
         input = s;
 
         scheme = m.group(2);
 
-        processHostAndPort(m.group(4));
+        HostPort hp = parseHostPort(m.group(4));
+
+        if (hp != null) {
+            this.host = hp.host();
+            Integer p = hp.port();
+            this.port = (p != null) ? p : -1;
+        } else {
+            this.host = null;
+            this.port = -1;
+        }
 
         path = m.group(5);
         query = m.group(7);
@@ -79,36 +93,70 @@ public class URI {
         return true;
     }
 
-    private void processHostAndPort(String hostAndPort) {
-        if (hostAndPort != null) {
+    private HostPort parseHostPort(String authority) {
+        if (authority == null || authority.isEmpty()) return null;
 
-            var posAt = hostAndPort.indexOf("@");
-            if (posAt > -1) {
-                hostAndPort = hostAndPort.substring(posAt + 1);
-            }
+        String noUser = stripUserInfo(authority);
 
-            var posBrackets = hostAndPort.indexOf("[");
-            if (posBrackets > -1) {
-                int end = hostAndPort.indexOf("]");
-                if (end < 0) {
-                    throw new IllegalArgumentException("Invalid IPv6 bracket literal: missing ']'.");
-                }
-                String ipv6 = hostAndPort.substring(posBrackets + 1, end);
-                if (end + 1 < hostAndPort.length() && hostAndPort.charAt(end + 1) == ':') {
-                    port = Integer.parseInt(hostAndPort.substring(end + 2));
-                }
-                host = ipv6;
-                return;
-            }
+        return isBracketedIpv6(noUser) ? parseIpv6(noUser) : parseHostPortIpv4(noUser);
+    }
 
-            var pos = hostAndPort.indexOf(":");
-            if (pos > -1) {
-                host = hostAndPort.substring(0, pos);
-                port = Integer.parseInt(hostAndPort.substring(pos + 1));
-            } else {
-                host = hostAndPort;
-            }
+    private HostPort parseIpv6(String input) {
+        int lb = input.indexOf('['), rb = input.indexOf(']');
+
+        if (lb != 0 || rb < 0) {
+            throw new IllegalArgumentException("Invalid IPv6 bracket literal.");
         }
+
+        String host = input.substring(lb + 1, rb);
+        Integer port = hasPort(input, rb) ? parsePort(input.substring(rb + 2)) : null;
+
+        if (host.isEmpty()) {
+            throw new IllegalArgumentException("Host must not be empty.");
+        }
+
+        return new HostPort(host, port);
+    }
+
+    private HostPort parseHostPortIpv4(String authority) {
+        int last = authority.lastIndexOf(':');
+
+        String host = (last > -1 && authority.indexOf(':') == last) ? authority.substring(0, last) : authority;
+
+        Integer port = (last > -1 && authority.indexOf(':') == last && last + 1 < authority.length())
+                ? parsePort(authority.substring(last + 1)) : null;
+
+        if (host.isEmpty()) {
+            throw new IllegalArgumentException("Host must not be empty.");
+        }
+
+        return new HostPort(host, port);
+    }
+
+     Integer parsePort(String rawPort) {
+        try {
+            int port = Integer.parseInt(rawPort);
+            if (port < 0 || port > 65535) {
+                throw new IllegalArgumentException("Invalid port: " + rawPort);
+            }
+            return port;
+        } catch (NumberFormatException nfe) {
+            throw new IllegalArgumentException("Invalid port: " + rawPort, nfe);
+        }
+    }
+
+    String stripUserInfo(String input) {
+        int atSymbolPos = input.indexOf("@");
+        return (atSymbolPos > -1) ? input.substring(atSymbolPos + 1) : input;
+    }
+
+    boolean isBracketedIpv6(String input) {
+        return input.contains("[");
+    }
+
+
+    boolean hasPort(String input, int closeBracketPos) {
+        return closeBracketPos + 1 < input.length() && input.charAt(closeBracketPos + 1) == ':';
     }
 
     public String getScheme() {
@@ -169,7 +217,6 @@ public class URI {
         return fragmentDecoded;
     }
 
-
     /*
      * Returns the authority component of this URI.
      *
@@ -182,18 +229,14 @@ public class URI {
         if (uri != null) return uri.getAuthority();
         if (host == null) return null;
 
-        StringBuilder sb = new StringBuilder();
-        if (host.contains(":")) { // IPv6
-            sb.append('[').append(host);
-            if (port != -1) sb.append(':').append(port);
-            sb.append(']');
-        } else { // IPv4 / Domain
-            sb.append(host);
-            if (port != -1) sb.append(':').append(port);
-        }
-        return sb.toString();
+        String h = isIPv6Address(host) ? "[" + host + "]" : host;
+
+        return port == -1 ? h : h + ":" + port;
     }
 
+    private boolean isIPv6Address(String host) {
+        return host.indexOf(':') >= 0;
+    }
 
     private String decode(String string) {
         if (string == null)

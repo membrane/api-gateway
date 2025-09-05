@@ -19,147 +19,148 @@ import org.junit.jupiter.api.*;
 import java.net.*;
 
 import static org.junit.jupiter.api.Assertions.*;
+
 class URITest {
 
-	@Test
-	void doit() {
-		assertSame("http://predic8.de/?a=query");
-		assertSame("http://predic8.de/#foo");
-		assertSame("http://predic8.de/path/file");
-		assertSame("http://predic8.de/path/file?a=query");
-		assertSame("http://predic8.de/path/file#foo");
-		assertSame("http://predic8.de/path/file?a=query#foo");
-		assertSame("http://foo:bar@predic8.de/path/file?a=query#foo");
-		assertSame("//predic8.de/path/file?a=query#foo");
-		assertSame("/path/file?a=query#foo");
-		assertSame("scheme:/path/file?a=query#foo");
-		assertSame("path/file?a=query#foo");
-		assertSame("scheme:path/file?a=query#foo", true); // considered 'opaque' by java.net.URI - we don't support that
-		assertSame("file?a=query#foo", true); // opaque
-		assertSame("scheme:file?a=query#foo", true); // opaque
-		assertSame("?a=query#foo");
-		assertSame("scheme:?a=query#foo", true); // opaque
-	}
+    @Test
+    void doit() {
+        assertSame("http://predic8.de/?a=query");
+        assertSame("http://predic8.de/#foo");
+        assertSame("http://predic8.de/path/file");
+        assertSame("http://predic8.de/path/file?a=query");
+        assertSame("http://predic8.de/path/file#foo");
+        assertSame("http://predic8.de/path/file?a=query#foo");
+        assertSame("http://foo:bar@predic8.de/path/file?a=query#foo");
+        assertSame("//predic8.de/path/file?a=query#foo");
+        assertSame("/path/file?a=query#foo");
+        assertSame("scheme:/path/file?a=query#foo");
+        assertSame("path/file?a=query#foo");
+        assertSame("scheme:path/file?a=query#foo", true); // considered 'opaque' by java.net.URI - we don't support that
+        assertSame("file?a=query#foo", true); // opaque
+        assertSame("scheme:file?a=query#foo", true); // opaque
+        assertSame("?a=query#foo");
+        assertSame("scheme:?a=query#foo", true); // opaque
+    }
 
-	@SuppressWarnings("UnnecessaryUnicodeEscape")
-	@Test
-	void encoding() {
-		assertSame("http://predic8.de/path/file?a=quer\u00E4y#foo");
-		assertSame("http://predic8.de/path/file?a=quer%C3%A4y#foo%C3%A4");
-		assertSame("http://predic8.de/path/fi\u00E4le?a=query#foo");
-		assertSame("http://predic8.de/path/fi%C3%A4le?a=query#foo");
-		assertSame("http://predic8.de/pa\u00E4th/file?a=query#foo");
-		assertSame("http://predic8.de/pa%C3%A4th/file?a=query#foo");
-		assertSame("http://predic8.d\u00E4e/path/file?a=query#foo");
-		assertSame("http://predic8.d%C3%A4e/path/file?a=query#foo");
-		assertError("htt\u00E4p://predic8.de/path/file?a=query#foo", "/path/file", "a=query");
-		assertError("htt%C3%A4p://predic8.de/path/file?a=query#foo", "/path/file", "a=query");
-	}
+    @SuppressWarnings("UnnecessaryUnicodeEscape")
+    @Test
+    void encoding() {
+        assertSame("http://predic8.de/path/file?a=quer\u00E4y#foo");
+        assertSame("http://predic8.de/path/file?a=quer%C3%A4y#foo%C3%A4");
+        assertSame("http://predic8.de/path/fi\u00E4le?a=query#foo");
+        assertSame("http://predic8.de/path/fi%C3%A4le?a=query#foo");
+        assertSame("http://predic8.de/pa\u00E4th/file?a=query#foo");
+        assertSame("http://predic8.de/pa%C3%A4th/file?a=query#foo");
+        assertSame("http://predic8.d\u00E4e/path/file?a=query#foo");
+        assertSame("http://predic8.d%C3%A4e/path/file?a=query#foo");
+        assertError("htt\u00E4p://predic8.de/path/file?a=query#foo", "/path/file", "a=query");
+        assertError("htt%C3%A4p://predic8.de/path/file?a=query#foo", "/path/file", "a=query");
+    }
 
-	@Test
-	void illegalCharacter() {
-		assertError("http:///test?a=q{uery#foo", "/test", "a=q{uery");
-		assertError("http:///te{st?a=query#foo", "/te{st", "a=query");
-		assertError("http://pre{dic8.de/test?a=query#foo", "/test", "a=query");
-	}
+    @Test
+    void illegalCharacter() {
+        assertError("http:///test?a=q{uery#foo", "/test", "a=q{uery");
+        assertError("http:///te{st?a=query#foo", "/te{st", "a=query");
+        assertError("http://pre{dic8.de/test?a=query#foo", "/test", "a=query");
+    }
 
-	@Test
-	void getScheme() throws URISyntaxException {
-		checkGetSchemeCustomParsing(false);
-	}
+    @Test
+    void getScheme() throws URISyntaxException {
+        checkGetSchemeCustomParsing(false);
+    }
 
-	@Test
-	void getSchemeCustom() throws URISyntaxException {
-		checkGetSchemeCustomParsing(true);
-	}
+    @Test
+    void getSchemeCustom() throws URISyntaxException {
+        checkGetSchemeCustomParsing(true);
+    }
 
-	private void checkGetSchemeCustomParsing(boolean custom) throws URISyntaxException {
-		assertEquals("http", new URI("http://predic8.de",custom).getScheme());
-		assertEquals("https", new URI("https://predic8.de",custom).getScheme());
-	}
+    private void checkGetSchemeCustomParsing(boolean custom) throws URISyntaxException {
+        assertEquals("http", new URI("http://predic8.de", custom).getScheme());
+        assertEquals("https", new URI("https://predic8.de", custom).getScheme());
+    }
 
     @Test
     void getHost() throws URISyntaxException {
-		checkGetHost(false);
+        checkGetHost(false);
     }
 
-	@Test
-	void getHostCustom() throws URISyntaxException {
-		checkGetHost(true);
-	}
+    @Test
+    void getHostCustom() throws URISyntaxException {
+        checkGetHost(true);
+    }
 
-	private void checkGetHost(boolean custom) throws URISyntaxException {
-		assertEquals("predic8.de", new URI("http://predic8.de/foo",custom).getHost());
-		assertEquals("predic8.de", new URI("http://user:pwd@predic8.de:8080/foo",custom).getHost());
-		assertEquals("predic8.de", new URI("http://predic8.de:8080/foo",custom).getHost());
-		assertEquals("predic8.de", new URI("https://predic8.de/foo",custom).getHost());
-		assertEquals("predic8.de", new URI("https://predic8.de:8443/foo",custom).getHost());
-	}
+    private void checkGetHost(boolean custom) throws URISyntaxException {
+        assertEquals("predic8.de", new URI("http://predic8.de/foo", custom).getHost());
+        assertEquals("predic8.de", new URI("http://user:pwd@predic8.de:8080/foo", custom).getHost());
+        assertEquals("predic8.de", new URI("http://predic8.de:8080/foo", custom).getHost());
+        assertEquals("predic8.de", new URI("https://predic8.de/foo", custom).getHost());
+        assertEquals("predic8.de", new URI("https://predic8.de:8443/foo", custom).getHost());
+    }
 
-	@Test
-	void getPort() throws URISyntaxException {
-		getPortCustomParsing(false);
-	}
+    @Test
+    void getPort() throws URISyntaxException {
+        getPortCustomParsing(false);
+    }
 
-	@Test
-	void getPortCustom() throws URISyntaxException {
-		getPortCustomParsing(true);
-	}
+    @Test
+    void getPortCustom() throws URISyntaxException {
+        getPortCustomParsing(true);
+    }
 
-	/**
-	 * Default port should be returned as unknown.
-	 */
-	@Test
-	void urlStandardBehaviour() throws URISyntaxException {
-		assertEquals(-1, new java.net.URI("http://predic8.de/foo").getPort());
-	}
+    /**
+     * Default port should be returned as unknown.
+     */
+    @Test
+    void urlStandardBehaviour() throws URISyntaxException {
+        assertEquals(-1, new java.net.URI("http://predic8.de/foo").getPort());
+    }
 
-	private void getPortCustomParsing(boolean custom) throws URISyntaxException {
-		assertEquals(-1, new URI("http://predic8.de/foo",custom).getPort());
-		assertEquals(-1, new URI("https://predic8.de/foo",custom).getPort());
-		assertEquals(8090, new URI("http://predic8.de:8090/foo",custom).getPort());
-		assertEquals(8443, new URI("https://predic8.de:8443/foo",custom).getPort());
-		assertEquals(8090, new URI("http://user:pwd@predic8.de:8090/foo",custom).getPort());
-		assertEquals(8443, new URI("https://user:pwd@predic8.de:8443/foo",custom).getPort());
-	}
+    private void getPortCustomParsing(boolean custom) throws URISyntaxException {
+        assertEquals(-1, new URI("http://predic8.de/foo", custom).getPort());
+        assertEquals(-1, new URI("https://predic8.de/foo", custom).getPort());
+        assertEquals(8090, new URI("http://predic8.de:8090/foo", custom).getPort());
+        assertEquals(8443, new URI("https://predic8.de:8443/foo", custom).getPort());
+        assertEquals(8090, new URI("http://user:pwd@predic8.de:8090/foo", custom).getPort());
+        assertEquals(8443, new URI("https://user:pwd@predic8.de:8443/foo", custom).getPort());
+    }
 
-	private void assertSame(String uri) {
-		assertSame(uri, false);
-	}
+    private void assertSame(String uri) {
+        assertSame(uri, false);
+    }
 
-	private void assertSame(String uri, boolean mayDiffer) {
-		try {
-			URI u1 = new URI(uri, false);
-			URI u2 = new URI(uri, true);
+    private void assertSame(String uri, boolean mayDiffer) {
+        try {
+            URI u1 = new URI(uri, false);
+            URI u2 = new URI(uri, true);
 
-			if (!mayDiffer) {
-				assertEquals(u1.getPath(), u2.getPath());
-				assertEquals(u1.getQuery(), u2.getQuery());
-				assertEquals(u1.getRawQuery(), u2.getRawQuery());
-				assertEquals(u1.getRawFragment(), u2.getRawFragment());
-			}
-			assertEquals(u1.toString(), u2.toString());
-		} catch (URISyntaxException e) {
-			throw new RuntimeException(e);
-		}
-	}
+            if (!mayDiffer) {
+                assertEquals(u1.getPath(), u2.getPath());
+                assertEquals(u1.getQuery(), u2.getQuery());
+                assertEquals(u1.getRawQuery(), u2.getRawQuery());
+                assertEquals(u1.getRawFragment(), u2.getRawFragment());
+            }
+            assertEquals(u1.toString(), u2.toString());
+        } catch (URISyntaxException e) {
+            throw new RuntimeException(e);
+        }
+    }
 
-	private void assertError(String uri, String path, String query) {
-		try {
-			new URI(uri, false);
-			fail("Expected URISyntaxException.");
-		} catch (URISyntaxException e) {
-			// do nothing
-		}
-		try {
-			URI u = new URI(uri, true);
-			assertEquals(path, u.getPath());
-			assertEquals(query, u.getQuery());
-			u.getRawQuery();
-		} catch (URISyntaxException e) {
-			throw new RuntimeException(e);
-		}
-	}
+    private void assertError(String uri, String path, String query) {
+        try {
+            new URI(uri, false);
+            fail("Expected URISyntaxException.");
+        } catch (URISyntaxException e) {
+            // do nothing
+        }
+        try {
+            URI u = new URI(uri, true);
+            assertEquals(path, u.getPath());
+            assertEquals(query, u.getQuery());
+            u.getRawQuery();
+        } catch (URISyntaxException e) {
+            throw new RuntimeException(e);
+        }
+    }
 
     @SuppressWarnings("UnnecessaryUnicodeEscape")
     @Test
@@ -223,46 +224,127 @@ class URITest {
             assertEquals("[2001:db8::1]:8080", new URI("http://[2001:db8::1]:8080/foo", false).getAuthority());
         }
     }
-	@Test
-	void getPathWithQuery() throws URISyntaxException {
-		assertEquals("/", new URIFactory().create("").getPathWithQuery());
-		assertEquals("/foo", new URIFactory().create("http://localhost/foo").getPathWithQuery());
-		assertEquals("/foo?q=1", new URIFactory().create("/foo?q=1").getPathWithQuery());
-		assertEquals("/", new URIFactory().create("http://localhost").getPathWithQuery());
-	}
-
-	@Test
-	@DisplayName("Fragments should be removed and not propagated to backend")
-	void removeFragment() throws URISyntaxException {
-		assertEquals("/foo", new URIFactory().create("http://localhost:777/foo#frag").getPathWithQuery());
-		assertEquals("/", new URIFactory().create("#frag").getPathWithQuery());
-		assertEquals("/foo?q=1", new URIFactory().create("/foo?q=1#frag").getPathWithQuery());
-	}
-
-	@Test
-	void getPathWithQuery_keep_raw() throws URISyntaxException {
-		assertEquals("/foo?q=a%20b", new URIFactory().create("/foo?q=a%20b").getPathWithQuery());
-		assertEquals("/", new URIFactory().create("#a%20b").getPathWithQuery());
-		assertEquals("/foo?q=a+b", new URIFactory().create("/foo?q=a+b").getPathWithQuery()); // '+' must remain '+'
-		assertEquals("/foo", new URIFactory().create("/foo#c%2Fd").getPathWithQuery());  // '/' in fragment is encoded
-	}
 
     @Test
-    void ipv6Bracketed() throws URISyntaxException {
-        URI u = new URI("http://[2001:db8::1]/foo", true);
-        assertEquals("2001:db8::1", u.getHost());
-        assertEquals(-1, u.getPort());
-        assertEquals("[2001:db8::1]", u.getAuthority());
-        assertEquals("/foo", u.getPath());
+    void getPathWithQuery() throws URISyntaxException {
+        assertEquals("/", new URIFactory().create("").getPathWithQuery());
+        assertEquals("/foo", new URIFactory().create("http://localhost/foo").getPathWithQuery());
+        assertEquals("/foo?q=1", new URIFactory().create("/foo?q=1").getPathWithQuery());
+        assertEquals("/", new URIFactory().create("http://localhost").getPathWithQuery());
     }
 
     @Test
-    void ipv6BracketedWithPort() throws URISyntaxException {
-        URI u = new URI("http://[2001:db8::1]:8080/foo", true);
-        assertEquals("2001:db8::1", u.getHost());
-        assertEquals(8080, u.getPort());
-        assertEquals("[2001:db8::1:8080]", u.getAuthority());
-        assertEquals("/foo", u.getPath());
+    @DisplayName("Fragments should be removed and not propagated to backend")
+    void removeFragment() throws URISyntaxException {
+        assertEquals("/foo", new URIFactory().create("http://localhost:777/foo#frag").getPathWithQuery());
+        assertEquals("/", new URIFactory().create("#frag").getPathWithQuery());
+        assertEquals("/foo?q=1", new URIFactory().create("/foo?q=1#frag").getPathWithQuery());
+    }
 
+    @Test
+    void getPathWithQuery_keep_raw() throws URISyntaxException {
+        assertEquals("/foo?q=a%20b", new URIFactory().create("/foo?q=a%20b").getPathWithQuery());
+        assertEquals("/", new URIFactory().create("#a%20b").getPathWithQuery());
+        assertEquals("/foo?q=a+b", new URIFactory().create("/foo?q=a+b").getPathWithQuery()); // '+' must remain '+'
+        assertEquals("/foo", new URIFactory().create("/foo#c%2Fd").getPathWithQuery());  // '/' in fragment is encoded
+    }
+
+    @Nested
+    class renameMeLater {
+
+        @Test
+        void parsePort() throws URISyntaxException {
+            URI u = new URI("foo", true);
+            assertEquals(8080, u.parsePort("8080"));
+            assertEquals(0, u.parsePort("0"));
+            assertEquals(65535, u.parsePort("65535"));
+            assertThrows(IllegalArgumentException.class, () -> u.parsePort("-1"));
+            assertThrows(IllegalArgumentException.class, () -> u.parsePort("100000"));
+            assertThrows(IllegalArgumentException.class, () -> u.parsePort("foo"));
+        }
+
+        @Test
+        void stripUserInfo() throws URISyntaxException {
+            URI u = new URI("foo", true);
+            assertEquals("example.com", u.stripUserInfo("user:pass@example.com"));
+            assertEquals("example.com", u.stripUserInfo("example.com"));
+            assertEquals("", u.stripUserInfo("user@"));
+        }
+
+        @Test
+        void isIPv6() throws URISyntaxException {
+            URI u = new URI("foo", true);
+            assertTrue(u.isBracketedIpv6("[::1]"));
+            assertTrue(u.isBracketedIpv6("[::1"));
+            assertFalse(u.isBracketedIpv6("::1"));
+        }
+
+        @Test
+        void hasPort() throws URISyntaxException {
+            URI u = new URI("foo", true);
+            String withPort = "[::1]:";
+            String withoutPort = "[::1]x123";
+            assertTrue(u.hasPort(withPort, withPort.indexOf(']')));
+            assertFalse(u.hasPort(withoutPort, withoutPort.indexOf(']')));
+        }
+    }
+
+    @Nested
+    class IPv6Tests {
+
+        @Test
+        void withoutPort() throws URISyntaxException {
+            URI u = new URI("http://[2001:db8::1]", true);
+            assertEquals("2001:db8::1", u.getHost());
+            assertEquals(-1, u.getPort());
+        }
+
+        @Test
+        void withPort() throws URISyntaxException {
+            URI u = new URI("http://[2001:db8::1]:8080", true);
+            assertEquals("2001:db8::1", u.getHost());
+            assertEquals(8080, u.getPort());
+        }
+
+        @Test
+        void withPath() throws URISyntaxException {
+            URI u = new URI("http://[2001:db8::1]/foo", true);
+            assertEquals("2001:db8::1", u.getHost());
+            assertEquals(-1, u.getPort());
+            assertEquals("/foo", u.getPath());
+        }
+
+        @Test
+        void invalid() {
+            assertThrows(IllegalArgumentException.class, () -> new URI("http://[2001:db8::1/foo", true));
+        }
+
+        @Test
+        void withPortAndPath() throws URISyntaxException {
+            URI u = new URI("http://[2001:db8::1]:8080/foo", true);
+            assertEquals("2001:db8::1", u.getHost());
+            assertEquals(8080, u.getPort());
+            assertEquals("/foo", u.getPath());
+        }
+
+        @Test
+        void withUserInfo() throws URISyntaxException {
+            URI u = new URI("http://user:pwd@predic8.de:8080/foo", false);
+            assertEquals("predic8.de", u.getHost());
+            assertEquals(8080, u.getPort());
+            assertEquals("/foo", u.getPath());
+            // java.net.URI includes userinfo
+            assertEquals("user:pwd@predic8.de:8080", u.getAuthority());
+        }
+
+        @Test
+        void withoutUserInfo() throws URISyntaxException {
+            URI u = new URI("http://user:pwd@predic8.de:8080/foo", true);
+            assertEquals("predic8.de", u.getHost());
+            assertEquals(8080, u.getPort());
+            assertEquals("/foo", u.getPath());
+            // java.net.URI includes userinfo
+            assertEquals("predic8.de:8080", u.getAuthority());
+        }
     }
 }
