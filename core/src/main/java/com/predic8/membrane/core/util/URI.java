@@ -38,7 +38,8 @@ public class URI {
 
     private String pathDecoded, queryDecoded, fragmentDecoded;
 
-    record HostPort(String host, Integer port) { }
+    record HostPort(String host, Integer port) {
+    }
 
     private static final Pattern PATTERN = Pattern.compile("^(([^:/?#]+):)?(//([^/?#]*))?([^?#]*)(\\?([^#]*))?(#(.*))?");
     //                                                             12            3  4          5       6   7        8 9
@@ -93,7 +94,8 @@ public class URI {
         return true;
     }
 
-    private HostPort parseHostPort(String authority) {
+    // Test
+    HostPort parseHostPort(String authority) {
         if (authority == null || authority.isEmpty()) return null;
 
         String noUser = stripUserInfo(authority);
@@ -101,39 +103,97 @@ public class URI {
         return isBracketedIpv6(noUser) ? parseIpv6(noUser) : parseHostPortIpv4(noUser);
     }
 
-    private HostPort parseIpv6(String input) {
-        int lb = input.indexOf('['), rb = input.indexOf(']');
+    // Test
+    HostPort parseIpv6(String input) {
+        if (input == null) {
+            throw new IllegalArgumentException("Input must not be null.");
+        }
 
-        if (lb != 0 || rb < 0) {
+        // Must start with '[' and contain exactly one '['
+        if (input.isEmpty() || input.charAt(0) != '[' || input.indexOf('[', 1) != -1) {
             throw new IllegalArgumentException("Invalid IPv6 bracket literal.");
         }
 
-        String host = input.substring(lb + 1, rb);
-        Integer port = hasPort(input, rb) ? parsePort(input.substring(rb + 2)) : null;
+        int rb = input.lastIndexOf(']');
+        if (rb < 0) {
+            throw new IllegalArgumentException("Invalid IPv6 bracket literal: missing closing bracket.");
+        }
 
+        // No extra ']' after the one we chose
+        if (input.indexOf(']', rb + 1) != -1) {
+            throw new IllegalArgumentException("Invalid IPv6 bracket literal: multiple closing brackets.");
+        }
+
+        String host = input.substring(1, rb);
         if (host.isEmpty()) {
             throw new IllegalArgumentException("Host must not be empty.");
         }
 
-        return new HostPort(host, port);
+        // Optionally normalize RFC 6874 zone-id: allow %25 and decode to %
+        // If you prefer strictness, remove this normalization block.
+        if (host.contains("%25")) {
+            host = host.replace("%25", "%");
+        }
+
+        if (rb + 1 == input.length()) {
+            // No port
+            return new HostPort(host, null);
+        }
+
+        // If anything follows, it must be ":" + digits, with nothing after
+        if (input.charAt(rb + 1) != ':') {
+            throw new IllegalArgumentException("Invalid authority: only ':<port>' may follow the IPv6 literal.");
+        }
+
+        if (rb + 2 >= input.length()) {
+            throw new IllegalArgumentException("Port must not be empty after ':'.");
+        }
+
+        String portPart = input.substring(rb + 2);
+
+        // Enforce port is only digits
+        for (int i = 0; i < portPart.length(); i++) {
+            char c = portPart.charAt(i);
+            if (c < '0' || c > '9') {
+                throw new IllegalArgumentException("Port must contain only digits.");
+            }
+        }
+
+        return new HostPort(host, parsePort(portPart));
     }
 
-    private HostPort parseHostPortIpv4(String authority) {
-        int last = authority.lastIndexOf(':');
+    // Tests
+    HostPort parseHostPortIpv4(String authority) {
+        int lastColon = authority.lastIndexOf(':');
 
-        String host = (last > -1 && authority.indexOf(':') == last) ? authority.substring(0, last) : authority;
+        if (lastColon == -1) {
+            // No port
+            if (authority.isEmpty()) {
+                throw new IllegalArgumentException("Host must not be empty.");
+            }
+            return new HostPort(authority, null);
+        }
 
-        Integer port = (last > -1 && authority.indexOf(':') == last && last + 1 < authority.length())
-                ? parsePort(authority.substring(last + 1)) : null;
+        // Ensure only one colon (IPv4 or hostname, not IPv6)
+        if (authority.indexOf(':') != lastColon) {
+            throw new IllegalArgumentException("Invalid authority: multiple colons found.");
+        }
 
+        String host = authority.substring(0, lastColon);
         if (host.isEmpty()) {
             throw new IllegalArgumentException("Host must not be empty.");
         }
 
+        String portPart = authority.substring(lastColon + 1);
+        if (portPart.isEmpty()) {
+            throw new IllegalArgumentException("Port must not be empty if ':' is present.");
+        }
+
+        Integer port = parsePort(portPart);
         return new HostPort(host, port);
     }
 
-     Integer parsePort(String rawPort) {
+    Integer parsePort(String rawPort) {
         try {
             int port = Integer.parseInt(rawPort);
             if (port < 0 || port > 65535) {
