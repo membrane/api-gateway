@@ -231,7 +231,7 @@ public class LogInterceptor extends AbstractExchangeExpressionInterceptor {
     /**
      * @default true
      * @description Masked sensitive data (e.g. passwords).
-     * @example true
+     * @example false
      */
     @MCAttribute
     public void setMaskSensitive(boolean maskSensitive) {
