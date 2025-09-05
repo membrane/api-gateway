@@ -27,6 +27,7 @@ import java.util.*;
 import static com.predic8.membrane.core.Constants.*;
 import static com.predic8.membrane.core.http.Header.X_FORWARDED_FOR;
 import static com.predic8.membrane.core.http.MimeType.*;
+import static com.predic8.membrane.core.http.Request.*;
 import static com.predic8.membrane.core.util.Util.splitStringByComma;
 import static java.nio.charset.StandardCharsets.*;
 import static java.util.Collections.emptyList;
@@ -169,16 +170,6 @@ public class HttpUtil {
 		return uri;
 	}
 
-	public static int getPort(URL url) {
-		int port = url.getPort();
-		if (port == -1) {
-			port = url.getDefaultPort();
-			if (port == -1)
-				return  80;
-		}
-		return port;
-	}
-
 	public static boolean isAbsoluteURI(String uri) {
 		uri = uri.toLowerCase();
 		return uri.startsWith("http://") || uri.startsWith("https://");
@@ -212,6 +203,14 @@ public class HttpUtil {
 			case 503 -> "Service Unavailable";
 			case 504 -> "Gateway Timeout";
 			default -> "";
+		};
+	}
+
+	public static boolean isIdempotent(String method) {
+		return switch (method) {
+			case METHOD_GET,  METHOD_PUT, METHOD_DELETE, METHOD_OPTIONS, METHOD_HEAD, METHOD_TRACE -> true;
+			// POST, PATCH and CONNECT are not
+			default -> false;
 		};
 	}
 

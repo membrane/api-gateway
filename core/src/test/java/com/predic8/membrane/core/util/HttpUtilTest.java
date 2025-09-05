@@ -26,6 +26,7 @@ import java.util.List;
 
 import static com.predic8.membrane.core.Constants.*;
 import static com.predic8.membrane.core.http.Header.X_FORWARDED_FOR;
+import static com.predic8.membrane.core.http.Request.*;
 import static com.predic8.membrane.core.util.HttpUtil.*;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -101,18 +102,6 @@ public class HttpUtilTest {
 		assertEquals(List.of("::1", "628c::e115", "10.10.10.10", "8.8.8.8"), getForwardedForList(exc));
 	}
 
-    @Test
-    void getPortTests() throws URISyntaxException, MalformedURLException {
-		assertEquals(80, getPort("http://localhost"));
-		assertEquals(8080, getPort("http://localhost:8080"));
-		assertEquals(443, getPort("https://localhost"));
-		assertEquals(8443, getPort("https://localhost:8443"));
-    }
-
-	private static int getPort(String uri) throws MalformedURLException, URISyntaxException {
-		return HttpUtil.getPort(new URI(uri).toURL());
-	}
-
 	@ParameterizedTest
 	@CsvSource({
 			"'http://localhost', '/'",
@@ -127,5 +116,13 @@ public class HttpUtilTest {
 	})
 	public void testGetPathAndQueryString(String url, String expected) throws MalformedURLException {
 		assertEquals(expected, HttpUtil.getPathAndQueryString(url));
+	}
+
+	@Test
+	void idempotent() {
+		assertFalse(isIdempotent(METHOD_POST));
+		assertFalse(isIdempotent(METHOD_PATCH));
+		assertFalse(isIdempotent(METHOD_CONNECT));
+		assertTrue(isIdempotent(METHOD_GET));
 	}
 }

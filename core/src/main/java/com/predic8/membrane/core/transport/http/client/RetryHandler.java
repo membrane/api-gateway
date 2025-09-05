@@ -24,8 +24,8 @@ import java.net.*;
 import java.nio.*;
 import java.util.*;
 
-import static com.predic8.membrane.core.http.Request.*;
 import static com.predic8.membrane.core.transport.http.HttpClientStatusEventBus.*;
+import static com.predic8.membrane.core.util.HttpUtil.*;
 import static java.lang.Thread.*;
 import static java.nio.charset.StandardCharsets.*;
 
@@ -67,7 +67,8 @@ public class RetryHandler {
     private double backoffMultiplier = 2;
 
     /**
-     * Retry on HTTP 5xx (500, 502, 504) when <code>true</code>.
+     * Retry on HTTP 5xx (Only 500, 502, 503, 504, 507) when <code>true</code>
+     * but only idempotent methods. POST or PATCH will not be retried.
      */
     private boolean failOverOn5XX = false;
 
@@ -89,9 +90,10 @@ public class RetryHandler {
                     reportStatusCode(exc, dest, exc.getResponse().getStatusCode());
                     return;
                 }
-                int statusCode = exc.getResponse() == null ? 0 : exc.getResponse().getStatusCode();
-                if (!shouldRetry(statusCode)) {
-                    log.debug("Got status code {}. No retry.", statusCode);
+                int statusCode = getStatusCode(exc);
+                String method = exc.getRequest().getMethod();
+                if (!shouldRetry(statusCode) || !isIdempotent(method)) {
+                    log.debug("{} with status code {}. No retry.",method, statusCode);
                     reportStatusCode(exc, dest, statusCode);
                     return;
                 }
@@ -118,22 +120,31 @@ public class RetryHandler {
             throw exceptionInLastCall;
     }
 
+    private static int getStatusCode(Exchange exc) {
+        return exc.getResponse() == null ? 0 : exc.getResponse().getStatusCode();
+    }
+
+    /**
+     * @param statusCode
+     * @return
+     */
     private boolean shouldRetry(int statusCode) {
-        if (statusCode > 100 && statusCode < 400) {
-            return false;
-        }
-        // TODO Retry 50X Service Unavailable when more than  one instance
-        if (statusCode >= 500 && failOverOn5XX) {
-            return switch (statusCode) {
-                case 500, 502, 504 -> true; // All other 5XX like Not Implemented to not make sense
-                default -> false;
-            };
-        }
+        // Used to timeout preconnections. The client can try again and hope for a new  connection
         // See <a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Status/408">408 Request Timeout</a>
         if (statusCode == 408) {
             return true;
         }
-        return false;
+
+        if (statusCode < 500 || !failOverOn5XX) {
+            return false;
+        }
+
+        // Retry, maybe the next node can serve the request
+        // 501 Not Implemented: Pointless to repeat
+        return switch (statusCode) {
+            case 500, 502, 503, 504, 507 -> true; // All other 5XX like Not Implemented to not make sense
+            default -> false;
+        };
     }
 
     private boolean shouldAbortRetries(Exchange exc, Exception e, String dest, int attempt) {
@@ -154,7 +165,7 @@ public class RetryHandler {
         // Causes: Server is overloaded, network latency or drop, TLS handshake took too long
         if (e instanceof SocketTimeoutException) {
             log.debug("Connection to {} timed out.", dest);
-            return mayChangeServerStatus(exc) || !hasMultipleNodes(exc);
+            return !isIdempotent(exc.getRequest().getMethod()) || !hasMultipleNodes(exc);
         }
         // Low-level TCP error, e.g., during write or read.
         if (e instanceof SocketException) {
@@ -166,7 +177,7 @@ public class RetryHandler {
                 logException(exc, attempt, e);
                 log.info("", e); // Unknown condition => log stacktrace
             }
-            return mayChangeServerStatus(exc);
+            return !isIdempotent(exc.getRequest().getMethod());
         }
         if (e instanceof UnknownHostException) {
             log.warn("Unknown host: {}", dest); // Could be a configuration error => WARN
@@ -178,23 +189,16 @@ public class RetryHandler {
         }
         if (e instanceof NoResponseException) {
             log.debug("Server didn't respond to the request.");
-            return mayChangeServerStatus(exc);
+            return !isIdempotent(exc.getRequest().getMethod());
         }
         log.info("Error while attempting to forward request to {}. Reason: {}", dest, e.getMessage());
         logException(exc, attempt, e);
         log.info("", e); // Unknown condition => log stacktrace
-        return mayChangeServerStatus(exc); // If not sure, do not retry for non idempotent methods
+        return !isIdempotent(exc.getRequest().getMethod()); // If not sure, do not retry for non idempotent methods
     }
 
     private static boolean hasMultipleNodes(Exchange exc) {
         return exc.getDestinations().size() > 1;
-    }
-
-    private boolean mayChangeServerStatus(Exchange exc) {
-        return switch (exc.getRequest().getMethod()) {
-            case METHOD_POST, METHOD_PATCH -> true;
-            default -> false;
-        };
     }
 
     private void logException(Exchange exc, int attempt, Exception e) {
