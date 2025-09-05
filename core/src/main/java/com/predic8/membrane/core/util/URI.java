@@ -94,7 +94,6 @@ public class URI {
         return true;
     }
 
-    // Test
     HostPort parseHostPort(String authority) {
         if (authority == null || authority.isEmpty()) return null;
 
@@ -103,7 +102,6 @@ public class URI {
         return isBracketedIpv6(noUser) ? parseIpv6(noUser) : parseHostPortIpv4(noUser);
     }
 
-    // Test
     HostPort parseIpv6(String input) {
         if (input == null) {
             throw new IllegalArgumentException("Input must not be null.");
@@ -162,7 +160,6 @@ public class URI {
         return new HostPort(host, parsePort(portPart));
     }
 
-    // Tests
     HostPort parseHostPortIpv4(String authority) {
         int lastColon = authority.lastIndexOf(':');
 
@@ -211,12 +208,7 @@ public class URI {
     }
 
     boolean isBracketedIpv6(String input) {
-        return input.contains("[");
-    }
-
-
-    boolean hasPort(String input, int closeBracketPos) {
-        return closeBracketPos + 1 < input.length() && input.charAt(closeBracketPos + 1) == ':';
+        return input.startsWith("[");
     }
 
     public String getScheme() {

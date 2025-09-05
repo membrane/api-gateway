@@ -250,7 +250,7 @@ class URITest {
     }
 
     @Nested
-    class renameMeLater {
+    class ParsingUtilitiesTests {
 
         @Test
         void parsePort() throws URISyntaxException {
@@ -278,18 +278,169 @@ class URITest {
             assertTrue(u.isBracketedIpv6("[::1"));
             assertFalse(u.isBracketedIpv6("::1"));
         }
+    }
+
+    @Nested
+    class HostPortParsingTests {
 
         @Test
-        void hasPort() throws URISyntaxException {
+        void parseHostPortNullOrEmpty() throws URISyntaxException {
             URI u = new URI("foo", true);
-            String withPort = "[::1]:";
-            String withoutPort = "[::1]x123";
-            assertTrue(u.hasPort(withPort, withPort.indexOf(']')));
-            assertFalse(u.hasPort(withoutPort, withoutPort.indexOf(']')));
+            assertNull(u.parseHostPort(null));
+            assertNull(u.parseHostPort(""));
+        }
+
+        @Test
+        void parseHostPortWithIPv4AndPort() throws URISyntaxException {
+            URI u = new URI("foo", true);
+            URI.HostPort hp = u.parseHostPort("example.com:8080");
+            assertEquals("example.com", hp.host());
+            assertEquals(8080, hp.port());
+        }
+
+        @Test
+        void parseHostPortWithIPv6() throws URISyntaxException {
+            URI u = new URI("foo", true);
+            URI.HostPort hp = u.parseHostPort("[2001:db8::1]:9090");
+            assertEquals("2001:db8::1", hp.host());
+            assertEquals(9090, hp.port());
+        }
+
+        @Test
+        void parseIpv6WithoutPort() throws URISyntaxException {
+            URI u = new URI("foo", true);
+            URI.HostPort hp = u.parseIpv6("[::1]");
+            assertEquals("::1", hp.host());
+            assertNull(hp.port());
+        }
+
+        @Test
+        void parseIpv6WithZoneId() throws URISyntaxException {
+            URI u = new URI("foo", true);
+            URI.HostPort hp = u.parseIpv6("[fe80::1%25eth0]:1234");
+            assertEquals("fe80::1%eth0", hp.host());
+            assertEquals(1234, hp.port());
+        }
+
+        @Test
+        void parseIpv6InvalidCases() throws URISyntaxException {
+            URI u = new URI("foo", true);
+            assertThrows(IllegalArgumentException.class, () -> u.parseIpv6("::1"));
+            assertThrows(IllegalArgumentException.class, () -> u.parseIpv6("[::1"));
+            assertThrows(IllegalArgumentException.class, () -> u.parseIpv6("[::1]:"));
+            assertThrows(IllegalArgumentException.class, () -> u.parseIpv6("[::1]:badport"));
+        }
+
+        @Test
+        void parseHostPortIpv4WithoutPort() throws URISyntaxException {
+            URI u = new URI("foo", true);
+            URI.HostPort hp = u.parseHostPortIpv4("example.com");
+            assertEquals("example.com", hp.host());
+            assertNull(hp.port());
+        }
+
+        @Test
+        void parseHostPortIpv4InvalidCases() throws URISyntaxException {
+            URI u = new URI("foo", true);
+            assertThrows(IllegalArgumentException.class, () -> u.parseHostPortIpv4(":8080"));
+            assertThrows(IllegalArgumentException.class, () -> u.parseHostPortIpv4("example.com:"));
+            assertThrows(IllegalArgumentException.class, () -> u.parseHostPortIpv4("example.com:abc"));
+            assertThrows(IllegalArgumentException.class, () -> u.parseHostPortIpv4("host:1:2"));
+        }
+
+        @Test
+        void parseHostPortStripsUserInfoForIpv4() throws URISyntaxException {
+            URI u = new URI("foo", true);
+            URI.HostPort hp = u.parseHostPort("user:pwd@example.com:8080");
+            assertEquals("example.com", hp.host());
+            assertEquals(8080, hp.port());
+        }
+
+        @Test
+        void parseHostPortStripsUserInfoForIpv6() throws URISyntaxException {
+            URI u = new URI("foo", true);
+            URI.HostPort hp = u.parseHostPort("user:pwd@[2001:db8::1]:443");
+            assertEquals("2001:db8::1", hp.host());
+            assertEquals(443, hp.port());
+        }
+
+        @Test
+        void parseHostPortRejectsEmptyHostAfterUserInfo() throws URISyntaxException {
+            URI u = new URI("foo", true);
+            assertThrows(IllegalArgumentException.class, () -> u.parseHostPort("user@"));
+            assertThrows(IllegalArgumentException.class, () -> u.parseHostPort("user@:8080"));
+        }
+
+        @Test
+        void parseHostPortIpv4NoPortReturnsNullPort() throws URISyntaxException {
+            URI u = new URI("foo", true);
+            URI.HostPort hp = u.parseHostPort("example.com");
+            assertEquals("example.com", hp.host());
+            assertNull(hp.port());
+        }
+
+        @Test
+        void parseHostPortIpv4InvalidMultipleColons() throws URISyntaxException {
+            URI u = new URI("foo", true);
+            assertThrows(IllegalArgumentException.class, () -> u.parseHostPort("host:1:2"));
+        }
+
+        @Test
+        void parseHostPortIpv4EmptyPortOrHost() throws URISyntaxException {
+            URI u = new URI("foo", true);
+            assertThrows(IllegalArgumentException.class, () -> u.parseHostPort(":8080"));       // empty host
+            assertThrows(IllegalArgumentException.class, () -> u.parseHostPort("example.com:")); // empty port
+        }
+
+        @Test
+        void parseHostPortIpv4PortBoundsAndFormats() throws URISyntaxException {
+            URI u = new URI("foo", true);
+            assertEquals(0, u.parseHostPort("example.com:0").port().intValue());
+            assertEquals(65535, u.parseHostPort("example.com:65535").port().intValue());
+            assertThrows(IllegalArgumentException.class, () -> u.parseHostPort("example.com:-1"));
+            assertThrows(IllegalArgumentException.class, () -> u.parseHostPort("example.com:65536"));
+            assertThrows(IllegalArgumentException.class, () -> u.parseHostPort("example.com:abc"));
+        }
+
+        @Test
+        void parseHostPortIpv6WithoutPort() throws URISyntaxException {
+            URI u = new URI("foo", true);
+            URI.HostPort hp = u.parseHostPort("[2001:db8::1]");
+            assertEquals("2001:db8::1", hp.host());
+            assertNull(hp.port());
+        }
+
+        @Test
+        void parseHostPortIpv6WithZoneIdNormalization() throws URISyntaxException {
+            URI u = new URI("foo", true);
+            URI.HostPort hp = u.parseHostPort("[fe80::1%25eth0]:1234");
+            assertEquals("fe80::1%eth0", hp.host());
+            assertEquals(1234, hp.port());
+        }
+
+        @Test
+        void parseHostPortIpv6BadPortAndJunk() throws URISyntaxException {
+            URI u = new URI("foo", true);
+            assertThrows(IllegalArgumentException.class, () -> u.parseHostPort("[::1]:"));
+            assertThrows(IllegalArgumentException.class, () -> u.parseHostPort("[::1]:bad"));
+            assertThrows(IllegalArgumentException.class, () -> u.parseHostPort("[::1]x123"));
+        }
+
+        @Test
+        void parseHostPortIpv6EmptyHostRejected() throws URISyntaxException {
+            URI u = new URI("foo", true);
+            assertThrows(IllegalArgumentException.class, () -> u.parseHostPort("[]"));
+            assertThrows(IllegalArgumentException.class, () -> u.parseHostPort("[]:80"));
+        }
+
+        @Test
+        void parseHostPortRespectsUppercaseHexAndCompressed() throws URISyntaxException {
+            URI u = new URI("foo", true);
+            assertEquals("2001:DB8:0:0::1", u.parseHostPort("[2001:DB8:0:0::1]").host());
+            assertEquals("2001:db8::1", u.parseHostPort("[2001:db8::1]:8080").host());
         }
     }
 
-    // ipv6?
     @Nested
     class IPv6Tests {
 
@@ -330,22 +481,76 @@ class URITest {
 
         @Test
         void withUserInfo() throws URISyntaxException {
-            URI u = new URI("http://user:pwd@predic8.de:8080/foo", false);
-            assertEquals("predic8.de", u.getHost());
+            URI u = new URI("http://user:pwd@[2001:db8::1]:8080/foo", false);
+            assertEquals("[2001:db8::1]", u.getHost());
             assertEquals(8080, u.getPort());
             assertEquals("/foo", u.getPath());
             // java.net.URI includes userinfo
-            assertEquals("user:pwd@predic8.de:8080", u.getAuthority());
+            assertEquals("user:pwd@[2001:db8::1]:8080", u.getAuthority());
         }
 
         @Test
         void withoutUserInfo() throws URISyntaxException {
-            URI u = new URI("http://user:pwd@predic8.de:8080/foo", true);
-            assertEquals("predic8.de", u.getHost());
+            URI u = new URI("http://user:pwd@[2001:db8::1]:8080/foo", true);
+            assertEquals("2001:db8::1", u.getHost());
             assertEquals(8080, u.getPort());
             assertEquals("/foo", u.getPath());
-            // java.net.URI includes userinfo
-            assertEquals("predic8.de:8080", u.getAuthority());
+            assertEquals("[2001:db8::1]:8080", u.getAuthority());
+        }
+
+        @Test
+        void withZoneIdNormalized() throws URISyntaxException {
+            URI u = new URI("http://[fe80::1%25eth0]:1234/foo", true);
+            assertEquals("fe80::1%eth0", u.getHost());
+            assertEquals(1234, u.getPort());
+            assertEquals("/foo", u.getPath());
+            assertEquals("[fe80::1%eth0]:1234", u.getAuthority());
+        }
+
+        @Test
+        void authorityFormattingWithAndWithoutPort() throws URISyntaxException {
+            assertEquals("[2001:db8::1]", new URI("http://[2001:db8::1]/x", true).getAuthority());
+            assertEquals("[2001:db8::1]:8080", new URI("http://[2001:db8::1]:8080/x", true).getAuthority());
+        }
+
+        @Test
+        void pathQueryAndFragmentHandling() throws URISyntaxException {
+            assertEquals("/foo?q=1",
+                    new URIFactory().create("http://[2001:db8::1]:7777/foo?q=1#frag").getPathWithQuery());
+        }
+
+        @Test
+        void portLowerAndUpperBounds() throws URISyntaxException {
+            URI u1 = new URI("http://[2001:db8::1]:0/foo", true);
+            assertEquals(0, u1.getPort());
+
+            URI u2 = new URI("http://[2001:db8::1]:65535/foo", true);
+            assertEquals(65535, u2.getPort());
+        }
+
+        @Test
+        void portOutOfRangeOrNonNumeric() {
+            assertThrows(IllegalArgumentException.class, () -> new URI("http://[2001:db8::1]:65536/foo", true));
+            assertThrows(IllegalArgumentException.class, () -> new URI("http://[2001:db8::1]:-1/foo", true));
+            assertThrows(IllegalArgumentException.class, () -> new URI("http://[2001:db8::1]:abcd/foo", true));
+        }
+
+        @Test
+        void invalidJunkAfterBracket() {
+            // anything after ']' must be ':' + digits or the end
+            assertThrows(IllegalArgumentException.class, () -> new URI("http://[2001:db8::1]x123/foo", true));
+        }
+
+        @Test
+        void uppercaseHexAndCompressedForms() throws URISyntaxException {
+            assertEquals("2001:DB8:0:0::1", new URI("http://[2001:DB8:0:0::1]/", true).getHost());
+            assertEquals("2001:db8::1", new URI("http://[2001:db8::1]/", true).getHost());
+        }
+
+        @Test
+        void emptyHostIsRejected() {
+            assertThrows(IllegalArgumentException.class, () -> new URI("http://[]:80/", true));
+            assertThrows(IllegalArgumentException.class, () -> new URI("http://[]/", true));
         }
     }
 }
