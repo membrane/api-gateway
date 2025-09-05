@@ -48,6 +48,10 @@ public class LogInterceptor extends AbstractExchangeExpressionInterceptor {
     private String label = "";
     private boolean body = true;
 
+    private boolean maskSensitive = true;
+
+    private final SensitiveDataFilter filter = new SensitiveDataFilter();
+
     public LogInterceptor() {
         name = "log";
     }
@@ -103,23 +107,24 @@ public class LogInterceptor extends AbstractExchangeExpressionInterceptor {
     }
 
     private void logMessage(Exchange exc, Flow flow) {
-        if(getMessage() != null && !getMessage().isEmpty()) {
+        if (getMessage() != null && !getMessage().isEmpty()) {
             try {
-                writeLog(exchangeExpression.evaluate(exc,flow,String.class));
+                writeLog(exchangeExpression.evaluate(exc, flow, String.class));
             } catch (ExchangeExpressionException e) {
-                getLogger(category).warn("Problems evaluating the expression {} . Message: {} Extensions: {}",getMessage(),  e.getMessage(), e.getExtensions());
+                getLogger(category).warn("Problems evaluating the expression {} . Message: {} Extensions: {}", getMessage(), e.getMessage(), e.getExtensions());
             }
             return;
         }
 
-        writeLog("==== %s %s ===".formatted(flow,label));
+        writeLog("==== %s %s ===".formatted(flow, label));
 
         Message msg = exc.getMessage(flow);
 
-        if (msg==null)
+        if (msg == null)
             return;
         writeLog(msg.getStartLine());
-        writeLog("\nHeaders:\n" + msg.getHeader());
+
+        writeLog(dumpHeader(msg));
 
         try {
             if (!body || msg.isBodyEmpty())
@@ -128,14 +133,21 @@ public class LogInterceptor extends AbstractExchangeExpressionInterceptor {
             writeLog("Error accessing body: " + e.getMessage());
             return;
         }
-
         writeLog(dumpBody(msg));
     }
+
+    private String dumpHeader(Message msg) {
+        return "\nHeaders:\n" + (maskSensitive
+                ? filter.mask(msg.getHeader()).toString()
+                : msg.getHeader().toString());
+    }
+
     private static String dumpBody(Message msg) {
         return "Body:\n%s\n".formatted(msg.getBodyAsStringDecoded());
     }
 
     private void writeLog(String msg) {
+
         switch (level) {
             case TRACE -> getLogger(category).trace(msg);
             case DEBUG -> getLogger(category).debug(msg);
@@ -207,11 +219,26 @@ public class LogInterceptor extends AbstractExchangeExpressionInterceptor {
      * Deprecated and sunsetted!
      * Do not use this attribute. It is only there for the proxies.xml to be compatible with versions prior to 6.X.X
      * It has no effect at all!
+     *
      * @default false
      * @description It is ignored
      */
     @MCAttribute
     public void setHeaderOnly(boolean headerOnly) {
         LoggerFactory.getLogger(this.getClass()).warn("Configuration option `headerOnly` is not supported anymore. Use `body` instead.");
+    }
+
+    /**
+     * @default true
+     * @description Masked sensitive data (e.g. passwords).
+     * @example false
+     */
+    @MCAttribute
+    public void setMaskSensitive(boolean maskSensitive) {
+        this.maskSensitive = maskSensitive;
+    }
+
+    public boolean isMaskSensitive() {
+        return maskSensitive;
     }
 }
