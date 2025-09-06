@@ -13,24 +13,30 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor;
 
+import com.fasterxml.jackson.databind.*;
 import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.openapi.serviceproxy.*;
 import com.predic8.membrane.core.proxies.*;
 import org.jetbrains.annotations.*;
 import org.junit.jupiter.api.*;
 
 import java.net.*;
 
+import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
 import static com.predic8.membrane.core.http.Request.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 class DispatchingInterceptorTest {
 
-	private DispatchingInterceptor dispatcher;
-	private ServiceProxy serviceProxy;
+	ObjectMapper om = new ObjectMapper();
 
-	private Exchange exc;
+	DispatchingInterceptor dispatcher;
+	ServiceProxy serviceProxy;
+
+	Exchange exc;
 
 	@BeforeEach
 	void setUp() {
@@ -141,5 +147,32 @@ class DispatchingInterceptorTest {
 
 	private void addRequest(String uri) throws Exception {
 		exc.setRequest(get(uri).build());
+	}
+
+	@Nested
+	class ErrorHandling {
+
+		@Test
+		void invalidUriErrorMessage() throws Exception {
+			APIProxy api = new APIProxy();
+			api.setTarget(new AbstractServiceProxy.Target() {{
+				setHost("localhost");
+			}});
+
+			Exchange exchange = get("/dummy").buildExchange();
+			exchange.getRequest().setUri("/foo{invalidUri}");
+			exchange.setProxy(api);
+
+            assertEquals(ABORT,  dispatcher.handleRequest(exchange));
+
+			Response r = exchange.getResponse();
+			assertEquals(400, r.getStatusCode());
+
+			JsonNode jn = om.readTree(r.getBodyAsStringDecoded());
+			assertEquals("Invalid request path", jn.get(TITLE).asText());
+			assertEquals("https://membrane-api.io/problems/user", jn.get(TYPE).asText());
+			assertEquals(4, jn.get("index").asInt());
+			assertEquals("/foo{invalidUri}", jn.get("path").asText());
+		}
 	}
 }
