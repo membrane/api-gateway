@@ -75,12 +75,12 @@ class IllegalCharactersInURLTest {
     @Test
     void illegal_with_router_intolerant_urifactory() throws Exception {
         r.setUriFactory(new URIFactory(false));
-        makeCallWithIllegalCharacters(500);
+        makeCallWithIllegalCharacters(400);
     }
 
     private static void makeCallWithIllegalCharacters(int expectedStatusCode) throws Exception {
-        try (HttpClient httpClient = new HttpClient()) {
-            assertEquals(expectedStatusCode, httpClient.call(buildExchange())
+        try (HttpClient client = new HttpClient()) {
+            assertEquals(expectedStatusCode, client.call(buildExchange())
                     .getResponse().getStatusCode());
         }
     }
