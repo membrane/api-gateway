@@ -42,7 +42,7 @@ import static java.nio.charset.StandardCharsets.*;
  * <ul>
  *   <li>Connection/IO exceptions (timeout, refused, reset...)</li>
  *   <li>HTTP 408 Request Timeout</li>
- *   <li>HTTP 500 Internal Server Error, 502 Bad Gateway, 504 Gateway Timeout when {@code failOverOn5XX=true}</li>
+ *   <li>HTTP 500, 502, 503, 504, 507 (when {@code failOverOn5XX=true})</li>
  * </ul>
  * <p>
  * Non-idempotent methods (POST, PATCH) are <em>not</em> repeated if the request might already have
@@ -67,10 +67,12 @@ public class RetryHandler {
     private double backoffMultiplier = 2;
 
     /**
-     * Retry on HTTP 5xx (Only 500, 502, 503, 504, 507) when <code>true</code>
-     * but only idempotent methods. POST or PATCH will not be retried.
+     * Retry on HTTP 5xx (only 500, 502, 503, 504, 507) when <code>true</code>,
+     * but only for idempotent methods. POST, PATCH and CONNECT will not be retried.
      */
     private boolean failOverOn5XX = false;
+
+    private static final Set<Integer> RETRYABLE_5XX = Set.of(500, 502, 503, 504, 507);
 
     /**
      * Execute the given {@link RetryableCall} applying the retry logic configured in this handler.
@@ -125,9 +127,14 @@ public class RetryHandler {
     }
 
     /**
-     * @param statusCode
-     * @return
-     */
+      * Decides if an HTTP status warrants a retry under current settings.
+      * Rules:
+      * - 408: always retry.
+      * - 5xx: retry if {@link #failOverOn5XX} is true and status ∈ {500, 502, 503, 504, 507}.
+      *
+      * @param statusCode HTTP response status code
+      * @return true if a retry should be attempted, false otherwise
+      */
     private boolean shouldRetry(int statusCode) {
         // Used to timeout preconnections. The client can try again and hope for a new  connection
         // See <a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Status/408">408 Request Timeout</a>
@@ -140,11 +147,8 @@ public class RetryHandler {
         }
 
         // Retry, maybe the next node can serve the request
-        // 501 Not Implemented: Pointless to repeat
-        return switch (statusCode) {
-            case 500, 502, 503, 504, 507 -> true; // All other 5XX like Not Implemented to not make sense
-            default -> false;
-        };
+        // 501 Not Implemented: pointless to repeat
+        return RETRYABLE_5XX.contains(statusCode);
     }
 
     private boolean shouldAbortRetries(Exchange exc, Exception e, String dest, int attempt) {
@@ -286,7 +290,7 @@ public class RetryHandler {
 
 
     /**
-     * @description If <code>true</code> retry on HTTP 500, 502 and 504 responses (fail-over).
+     * @description If <code>true</code> retry on HTTP 500, 502, 503, 504 and 507 responses (fail-over).
      * @default false
      */
     @MCAttribute
