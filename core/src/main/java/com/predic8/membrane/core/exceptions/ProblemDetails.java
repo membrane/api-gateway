@@ -50,6 +50,7 @@ public class ProblemDetails {
     public static final String DETAIL = "detail";
     public static final String ATTENTION = "attention";
     public static final String SEE = "see";
+    public static final String INSTANCE = "instance";
 
 
     private boolean logKeyInsteadOfDetails;
@@ -397,7 +398,7 @@ public class ProblemDetails {
     }
 
     private boolean isReservedProblemDetailsField(String key) {
-        for (String reserved : List.of(TYPE, TITLE, DETAIL, "instance")) {
+        for (String reserved : List.of(TYPE, TITLE, DETAIL, INSTANCE)) {
             if (key.equals(reserved))
                 return true;
         }

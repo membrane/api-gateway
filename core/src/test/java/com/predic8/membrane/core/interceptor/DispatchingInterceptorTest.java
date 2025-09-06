@@ -31,7 +31,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class DispatchingInterceptorTest {
 
-	ObjectMapper om = new ObjectMapper();
+	static  final ObjectMapper om = new ObjectMapper();
 
 	DispatchingInterceptor dispatcher;
 	ServiceProxy serviceProxy;
