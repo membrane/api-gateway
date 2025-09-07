@@ -8,6 +8,7 @@
     =>  public void call(Exchange exc) throws Exception {
 - Remove HttpClientInterceptor.setAdjustHeader(boolean) it is already in HttpClientConfiguration
 - Remove xmlSessionIdExtractor if we have a replacement with language 
+- Remove HttpUtil.getHTMLErrorBody()
 
 # 6.5.0
 
