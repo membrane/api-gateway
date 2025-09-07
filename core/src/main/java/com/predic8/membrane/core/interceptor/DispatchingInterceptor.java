@@ -14,9 +14,11 @@
 package com.predic8.membrane.core.interceptor;
 
 import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.openapi.util.*;
 import com.predic8.membrane.core.proxies.*;
+import org.jetbrains.annotations.*;
 import org.slf4j.*;
 
 import java.net.*;
@@ -54,17 +56,16 @@ public class DispatchingInterceptor extends AbstractInterceptor {
             exc.getDestinations().clear();
             try {
                 exc.getDestinations().add(getForwardingDestination(exc));
-            }
-            catch (URISyntaxException e) {
-                user(false, "invalid-path")
+            } catch (URISyntaxException e) {
+                ProblemDetails pd = user(false, "invalid-path")
                         .title("Invalid request path")
-                        .detail("The request path contains an invalid character '%s' at pos %d".formatted( exc.getRequest().getUri().charAt(e.getIndex()),e.getIndex()))
-                        .internal("path", exc.getRequest().getUri())
-                        .internal("index", e.getIndex())
-                        .buildAndSetResponse(exc);
+                        .detail(getMessageForURISyntaxException(exc, e))
+                        .internal("path", exc.getRequest().getUri());
+                if (e.getIndex() >= 0)
+                    pd.internal("index", e.getIndex());
+                pd.buildAndSetResponse(exc);
                 return ABORT;
-            }
-            catch (Exception e) {
+            } catch (Exception e) {
                 internal(router.isProduction(), getDisplayName())
                         .detail("Could not get forwarding destination to dispatch request")
                         .exception(e)
@@ -76,6 +77,14 @@ public class DispatchingInterceptor extends AbstractInterceptor {
         }
         exc.getDestinations().add(exc.getRequest().getUri());
         return CONTINUE;
+    }
+
+    private static @NotNull String getMessageForURISyntaxException(Exchange exc, URISyntaxException e) {
+        var uri = exc.getRequestURI();
+        if (e.getIndex() >= 0 && e.getIndex() < uri.length()) {
+            return "The request path contains an invalid character '%s' at pos %d".formatted(uri.charAt(e.getIndex()), e.getIndex());
+        }
+        return "Invalid request URI";
     }
 
     private void setSNIPropertyOnExchange(Exchange exc, AbstractServiceProxy asp) {
