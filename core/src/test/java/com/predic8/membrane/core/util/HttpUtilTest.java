@@ -25,103 +25,110 @@ import java.util.*;
 
 import static com.predic8.membrane.core.Constants.*;
 import static com.predic8.membrane.core.http.Header.*;
-import static com.predic8.membrane.core.http.Request.*;
 import static com.predic8.membrane.core.util.HttpUtil.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class HttpUtilTest {
 
-	private static final String s1 = "foo" + CRLF + "bar" + CRLF + CRLF;
-	private static InputStream is1;
+    private static final String s1 = "foo" + CRLF + "bar" + CRLF + CRLF;
+    private static InputStream is1;
 
-	@BeforeEach
-	public void setUp() {
-		is1 = new ByteArrayInputStream(s1.getBytes());
-	}
+    @BeforeEach
+    public void setUp() {
+        is1 = new ByteArrayInputStream(s1.getBytes());
+    }
 
-	@Test
-	public void testReadLine() throws IOException {
-		assertEquals("foo", readLine(is1));
-		assertEquals("bar", readLine(is1));
-		assertEquals("", readLine(is1));
-	}
+    @Test
+    public void testReadLine() throws IOException {
+        assertEquals("foo", readLine(is1));
+        assertEquals("bar", readLine(is1));
+        assertEquals("", readLine(is1));
+    }
 
-	@SuppressWarnings("DataFlowIssue")
-	@Test
-	public void testReadLineMessage() throws Exception {
-		assertEquals("POST /operation/call HTTP/1.1", readLine(getClass().getClassLoader().getResourceAsStream("request-post.msg")));
-	}
+    @SuppressWarnings("DataFlowIssue")
+    @Test
+    public void testReadLineMessage() throws Exception {
+        assertEquals("POST /operation/call HTTP/1.1", readLine(getClass().getClassLoader().getResourceAsStream("request-post.msg")));
+    }
 
     @Test
     void unescapedHtmlMessageTest() {
-		assertEquals("<html><head><title>caption</title></head><body><h1>caption</h1><p>body</p></body></html>", unescapedHtmlMessage("caption","body"));
+        assertEquals("<html><head><title>caption</title></head><body><h1>caption</h1><p>body</p></body></html>", unescapedHtmlMessage("caption", "body"));
     }
 
-	@Test
-	void getForwardedForSimpleTest() {
-		var exc = new Request.Builder().header(X_FORWARDED_FOR, "192.168.15.15").buildExchange();
-		assertEquals(List.of("192.168.15.15"), getForwardedForList(exc));
-	}
+    @Test
+    void getForwardedForSimpleTest() {
+        var exc = new Request.Builder().header(X_FORWARDED_FOR, "192.168.15.15").buildExchange();
+        assertEquals(List.of("192.168.15.15"), getForwardedForList(exc));
+    }
 
-	@Test
-	void getForwardedForRemoveMembraneTest() {
-		var exc = new Request.Builder().header(X_FORWARDED_FOR, "192.168.15.15, 8.7.6.5, 4.4.5.5, ::1, 8.7.6.5").buildExchange();
-		exc.setRemoteAddrIp("8.7.6.5");
-		assertEquals(List.of("192.168.15.15", "8.7.6.5", "4.4.5.5", "::1"), getForwardedForList(exc));
-	}
+    @Test
+    void getForwardedForRemoveMembraneTest() {
+        var exc = new Request.Builder().header(X_FORWARDED_FOR, "192.168.15.15, 8.7.6.5, 4.4.5.5, ::1, 8.7.6.5").buildExchange();
+        exc.setRemoteAddrIp("8.7.6.5");
+        assertEquals(List.of("192.168.15.15", "8.7.6.5", "4.4.5.5", "::1"), getForwardedForList(exc));
+    }
 
-	@Test
-	void getForwardedForCompoundTest() {
-		var exc = new Request.Builder().header(X_FORWARDED_FOR, "10.10.10.10, 7.7.8.8, 192.168.15.15").buildExchange();
-		assertEquals(List.of("10.10.10.10", "7.7.8.8", "192.168.15.15"), getForwardedForList(exc));
-	}
+    @Test
+    void getForwardedForCompoundTest() {
+        var exc = new Request.Builder().header(X_FORWARDED_FOR, "10.10.10.10, 7.7.8.8, 192.168.15.15").buildExchange();
+        assertEquals(List.of("10.10.10.10", "7.7.8.8", "192.168.15.15"), getForwardedForList(exc));
+    }
 
-	@Test
-	void getForwardedForWhitespaceTest() {
-		var exc = new Request.Builder().header(X_FORWARDED_FOR, "  192.168.15.15,     10.10.10.10       ").buildExchange();
-		assertEquals(List.of("192.168.15.15", "10.10.10.10"), getForwardedForList(exc));
-	}
+    @Test
+    void getForwardedForWhitespaceTest() {
+        var exc = new Request.Builder().header(X_FORWARDED_FOR, "  192.168.15.15,     10.10.10.10       ").buildExchange();
+        assertEquals(List.of("192.168.15.15", "10.10.10.10"), getForwardedForList(exc));
+    }
 
-	@Test
-	void getForwardedForV6Test() {
-		var exc = new Request.Builder().header(X_FORWARDED_FOR, "628c:1f76:efbf:bd62:9528:869d:2333:e115").buildExchange();
-		assertEquals(List.of("628c:1f76:efbf:bd62:9528:869d:2333:e115"), getForwardedForList(exc));
-	}
+    @Test
+    void getForwardedForV6Test() {
+        var exc = new Request.Builder().header(X_FORWARDED_FOR, "628c:1f76:efbf:bd62:9528:869d:2333:e115").buildExchange();
+        assertEquals(List.of("628c:1f76:efbf:bd62:9528:869d:2333:e115"), getForwardedForList(exc));
+    }
 
-	@Test
-	void getForwardedForHostnameTest() {
-		var exc = new Request.Builder().header(X_FORWARDED_FOR, "abc.xyz").buildExchange();
-		assertEquals(List.of("abc.xyz"), getForwardedForList(exc));
-	}
+    @Test
+    void getForwardedForHostnameTest() {
+        var exc = new Request.Builder().header(X_FORWARDED_FOR, "abc.xyz").buildExchange();
+        assertEquals(List.of("abc.xyz"), getForwardedForList(exc));
+    }
 
-	@Test
-	void getForwardedForCompoundMultiHeaderTest() {
-		var exc = new Request.Builder().header(X_FORWARDED_FOR, "::1,628c::e115")
-									   .header(X_FORWARDED_FOR, "10.10.10.10, 8.8.8.8").buildExchange();
-		assertEquals(List.of("::1", "628c::e115", "10.10.10.10", "8.8.8.8"), getForwardedForList(exc));
-	}
+    @Test
+    void getForwardedForCompoundMultiHeaderTest() {
+        var exc = new Request.Builder().header(X_FORWARDED_FOR, "::1,628c::e115")
+                .header(X_FORWARDED_FOR, "10.10.10.10, 8.8.8.8").buildExchange();
+        assertEquals(List.of("::1", "628c::e115", "10.10.10.10", "8.8.8.8"), getForwardedForList(exc));
+    }
 
-	@ParameterizedTest
-	@CsvSource({
-			"'http://localhost', '/'",
-			"'http://localhost/', '/'",
-			"'http://localhost?', '/?'",
-			"'http://localhost?foo=bar', '/?foo=bar'",
-			"'http://localhost:2000', '/'",
-			"'http://localhost:2000/', '/'",
-			"'http://localhost:2000?', '/?'",
-			"'http://localhost:2000?foor=bar', '/?foor=bar'",
-			"'http://localhost:2000/foor?bar', '/foor?bar'"
-	})
-	public void testGetPathAndQueryString(String url, String expected) throws MalformedURLException {
-		assertEquals(expected, HttpUtil.getPathAndQueryString(url));
-	}
+    @ParameterizedTest
+    @CsvSource({
+            "'http://localhost', '/'",
+            "'http://localhost/', '/'",
+            "'http://localhost?', '/?'",
+            "'http://localhost?foo=bar', '/?foo=bar'",
+            "'http://localhost:2000', '/'",
+            "'http://localhost:2000/', '/'",
+            "'http://localhost:2000?', '/?'",
+            "'http://localhost:2000?foor=bar', '/?foor=bar'",
+            "'http://localhost:2000/foor?bar', '/foor?bar'"
+    })
+    public void testGetPathAndQueryString(String url, String expected) throws MalformedURLException {
+        assertEquals(expected, HttpUtil.getPathAndQueryString(url));
+    }
 
-	@Test
-	void idempotent() {
-		assertFalse(isIdempotent(METHOD_POST));
-		assertFalse(isIdempotent(METHOD_PATCH));
-		assertFalse(isIdempotent(METHOD_CONNECT));
-		assertTrue(isIdempotent(METHOD_GET));
-	}
+    @ParameterizedTest
+    @CsvSource({
+            "GET,true",
+            "PUT,true",
+            "DELETE,true",
+            "OPTIONS,true",
+            "HEAD,true",
+            "TRACE,true",
+            "POST,false",
+            "PATCH,false",
+            "CONNECT,false"
+    })
+    void idempotent(String method, boolean expected) {
+        assertEquals(expected, isIdempotent(method));
+    }
 }

@@ -403,7 +403,7 @@ class LoadBalancingInterceptorFaultMonitoringStrategyTest {
                 Stopwatch taskTime = Stopwatch.createStarted();
                 try {
                     final HttpClient client = getHttpClient();
-                    var method = getPostMethod();
+                    var method = getPutMethod();
                     try {
                         int statusCode = client.executeMethod(method);
                         if (statusCode == 200) {
@@ -450,7 +450,7 @@ class LoadBalancingInterceptorFaultMonitoringStrategyTest {
         );
     }
 
-    private PutMethod getPostMethod() {
+    private PutMethod getPutMethod() {
         PutMethod put = new PutMethod(
                 "http://localhost:3054/axis2/services/BLZService");
         put.setRequestEntity(new InputStreamRequestEntity(this.getClass().getResourceAsStream("/getBank.xml")));

@@ -45,6 +45,14 @@ public class ProblemDetails {
     private static final ObjectMapper om = new ObjectMapper();
     private static final ObjectWriter ow = om.writerWithDefaultPrettyPrinter();
 
+    public static final String TITLE = "title";
+    public static final String TYPE = "type";
+    public static final String DETAIL = "detail";
+    public static final String ATTENTION = "attention";
+    public static final String SEE = "see";
+    public static final String INSTANCE = "instance";
+
+
     private boolean logKeyInsteadOfDetails;
 
     private int statusCode;
@@ -203,8 +211,8 @@ public class ProblemDetails {
     private @NotNull Map<String, Object> createMap() {
         Map<String, Object> root = new LinkedHashMap<>();
 
-        root.put("title", title);
-        root.put("type", getTypeSubtypeString());
+        root.put(TITLE, title);
+        root.put(TYPE, getTypeSubtypeString());
         root.putAll(topLevel);
 
         if (logKeyInsteadOfDetails) {
@@ -213,7 +221,7 @@ public class ProblemDetails {
         }
 
         if (detail != null) {
-            root.put("detail", detail);
+            root.put(DETAIL, detail);
         }
 
         root.putAll(createInternal(getTypeSubtypeString()));
@@ -223,7 +231,7 @@ public class ProblemDetails {
     private void provideLogKeyInsteadOfDetails(Map<String, Object> root) {
         String logKey = randomUUID().toString();
         log.warn("logKey={}\ntype={}\ntitle={}\n,detail={}\n,internal={},.", logKey, getTypeSubtypeString(), title, detail, internalFields);
-        root.put("detail", "Details can be found in the Membrane log searching for key: %s.".formatted(logKey));
+        root.put(DETAIL, "Details can be found in the Membrane log searching for key: %s.".formatted(logKey));
         if (type.equals("internal")) {
             title = "Internal error";
         }
@@ -265,9 +273,9 @@ public class ProblemDetails {
         if (!seeSuffix.isEmpty()) {
             see += "/" + seeSuffix;
         }
-        internalMap.put("see", see);
+        internalMap.put(SEE, see);
 
-        internalMap.put("attention", """
+        internalMap.put(ATTENTION, """
                 Membrane is in development mode. For production set <router production="true"> to reduce details in error messages!""");
         return internalMap;
     }
@@ -377,9 +385,9 @@ public class ProblemDetails {
 
         Map<String, Object> m = om.readValue(r.getBodyAsStringDecoded(), typeRef);
 
-        pd.type = (String) m.get("type");
-        pd.title = (String) m.get("title");
-        pd.detail = (String) m.get("detail");
+        pd.type = (String) m.get(TYPE);
+        pd.title = (String) m.get(TITLE);
+        pd.detail = (String) m.get(DETAIL);
 
         for (Map.Entry<String, Object> e : m.entrySet()) {
             if (pd.isReservedProblemDetailsField(e.getKey()))
@@ -390,7 +398,7 @@ public class ProblemDetails {
     }
 
     private boolean isReservedProblemDetailsField(String key) {
-        for (String reserved : List.of("type", "title", "detail", "instance")) {
+        for (String reserved : List.of(TYPE, TITLE, DETAIL, INSTANCE)) {
             if (key.equals(reserved))
                 return true;
         }
