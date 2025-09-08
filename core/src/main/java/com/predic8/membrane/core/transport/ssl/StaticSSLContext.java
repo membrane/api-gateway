@@ -37,7 +37,8 @@ import static com.predic8.membrane.core.security.KeyStoreUtil.*;
 
 public class StaticSSLContext extends SSLContext {
 
-    private static final String DEFAULT_CERTIFICATE_SHA256 = "c7:e3:fd:97:2f:d3:b9:4f:38:87:9c:45:32:70:b3:d8:c1:9f:d1:64:39:fc:48:5f:f4:a1:6a:95:b5:ca:08:f7";
+    private static final String DEFAULT_CERTIFICATE_SHA256_OLD = "c7:e3:fd:97:2f:d3:b9:4f:38:87:9c:45:32:70:b3:d8:c1:9f:d1:64:39:fc:48:5f:f4:a1:6a:95:b5:ca:08:f7";
+    private static final String DEFAULT_CERTIFICATE_SHA256 = "5F:61:DC:8E:0B:5D:A4:50:65:D7:59:C9:D5:C3:22:49:5E:AA:91:C6:5A:C8:13:AC:51:6A:06:40:13:43:E8:F3";
     private static final Logger log = LoggerFactory.getLogger(StaticSSLContext.class.getName());
     public static final String PKCS_12 = "PKCS12";
     private static boolean defaultCertificateWarned = false;
@@ -308,7 +309,8 @@ public class StaticSSLContext extends SSLContext {
     public static KeyStore openKeyStore(Store store, char[] keyPass, ResolverMap resourceResolver, String baseLocation) throws NoSuchAlgorithmException, CertificateException, IOException, KeyStoreException, NoSuchProviderException {
         KeyStore ks = getAndLoadKeyStore(store, resourceResolver, baseLocation, getStoreTypeOrDefault(store), getPassword(store, keyPass));
         if (!defaultCertificateWarned && ks.getCertificate("membrane") != null) {
-            if (getDigest(ks, "membrane").equals(DEFAULT_CERTIFICATE_SHA256)) {
+            if (getDigest(ks, "membrane").equals(DEFAULT_CERTIFICATE_SHA256_OLD) ||
+                getDigest(ks, "membrane").equals(DEFAULT_CERTIFICATE_SHA256)) {
                 log.warn("Using Membrane with the default certificate. This is highly discouraged! "
                         + "Please run the generate-ssl-keys script in the conf directory.");
                 defaultCertificateWarned = true;
