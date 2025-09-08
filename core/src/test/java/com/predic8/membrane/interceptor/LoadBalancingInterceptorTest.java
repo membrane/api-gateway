@@ -29,6 +29,7 @@ import java.net.*;
 
 import static com.predic8.membrane.core.http.Header.*;
 import static com.predic8.membrane.core.http.MimeType.*;
+import static com.predic8.membrane.core.http.Response.internalServerError;
 import static com.predic8.membrane.core.interceptor.InterceptorUtil.getInterceptors;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.interceptor.balancer.BalancerUtil.*;
@@ -58,7 +59,7 @@ public class LoadBalancingInterceptorTest {
 		service1 = new HttpRouter();
 		mockInterceptor1 = new DummyWebServiceInterceptor();
 		ServiceProxy sp1 = new ServiceProxy(new ServiceProxyKey("localhost",
-				"POST", ".*", port2k), "dummy", 80);
+				"*", ".*", port2k), "dummy", 80);
 		sp1.getInterceptors().add(new AbstractInterceptor(){
 			@Override
 			public Outcome handleResponse(Exchange exc) {
@@ -73,7 +74,7 @@ public class LoadBalancingInterceptorTest {
 		service2 = new HttpRouter();
 		mockInterceptor2 = new DummyWebServiceInterceptor();
 		ServiceProxy sp2 = new ServiceProxy(new ServiceProxyKey("localhost",
-				"POST", ".*", port3k), "dummy", 80);
+				"*", ".*", port3k), "dummy", 80);
 		sp2.getInterceptors().add(new AbstractInterceptor(){
 			@Override
 			public Outcome handleResponse(Exchange exc) {
@@ -87,7 +88,7 @@ public class LoadBalancingInterceptorTest {
 
 		balancer = new HttpRouter();
 		ServiceProxy sp3 = new ServiceProxy(new ServiceProxyKey("localhost",
-				"POST", ".*", 3054), "dummy", 80);
+				"*", ".*", 3054), "dummy", 80);
 		balancingInterceptor = new LoadBalancingInterceptor();
 		balancingInterceptor.setName("Default");
 		sp3.getInterceptors().add(balancingInterceptor);
@@ -115,14 +116,14 @@ public class LoadBalancingInterceptorTest {
 	}
 
 	@Test
-	void testGetDestinationURLWithHostname() throws URISyntaxException {
+	void getDestinationURLWithHostname() throws URISyntaxException {
 		doTestGetDestinationURL(
 				"http://localhost/axis2/services/BLZService?wsdl",
 				"http://thomas-bayer.com:80/axis2/services/BLZService?wsdl");
 	}
 
 	@Test
-	void testGetDestinationURLWithoutHostname()
+	void getDestinationURLWithoutHostname()
 			throws URISyntaxException {
 		doTestGetDestinationURL("/axis2/services/BLZService?wsdl",
 				"http://thomas-bayer.com:80/axis2/services/BLZService?wsdl");
@@ -242,27 +243,29 @@ public class LoadBalancingInterceptorTest {
 		client.getParams().setParameter(PROTOCOL_VERSION,
 				HTTP_1_1);
 
-		assertEquals(200, client.executeMethod(getPostMethod()));
+		HttpMethod method = new GetMethod("http://localhost:3054");
+
+		assertEquals(200, client.executeMethod(method));
 		assertEquals(1, mockInterceptor1.getCount());
 		assertEquals(0, mockInterceptor2.getCount());
 
-		assertEquals(200, client.executeMethod(getPostMethod()));
+		assertEquals(200, client.executeMethod(method));
 		assertEquals(1, mockInterceptor1.getCount());
 		assertEquals(1, mockInterceptor2.getCount());
 
 		service1.getRuleManager().getRules().getFirst().getInterceptors().addFirst(new AbstractInterceptor(){
 			@Override
 			public Outcome handleRequest(Exchange exc) {
-				exc.setResponse(Response.internalServerError().build());
+				exc.setResponse(internalServerError().build());
 				return ABORT;
 			}
 		});
 
-		assertEquals(200, client.executeMethod(getPostMethod()));
+		assertEquals(200, client.executeMethod(method));
 		assertEquals(1, mockInterceptor1.getCount());
 		assertEquals(2, mockInterceptor2.getCount());
 
-		assertEquals(200, client.executeMethod(getPostMethod()));
+		assertEquals(200, client.executeMethod(method));
 		assertEquals(3, mockInterceptor2.getCount());
 
 	}
