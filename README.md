@@ -16,12 +16,37 @@ Solve even complex custom API requirements with simple configurations.
 </api>
 ```
 
+**Path Rewriting with an URI Template:**
+```xml
+<api port="2000">
+    <path>/fruit/{id}</path>
+    <target url="https://api.predic8.de/shop/v2/products/${pathParam.id}"/>
+</api>
+```
+
 **Deploy OpenAPI and enable Request Validation:** 
 ```xml
 <api port="2000">
     <openapi location="fruitshop-api.yml" validateRequests="yes"/>
 </api>
 ```
+
+**YAML Configuration (beta):**
+```yaml
+apiVersion: membrane-soa.org/v1beta1
+kind: api
+metadata:
+  name: log
+spec:
+  port: 2000
+  interceptors:
+    - log:
+        message: Header ${header}
+  target:
+    url: https://api.predic8.de
+```
+
+See: [YAML configuration](distribution/examples/yaml-configuration#YAML-Configuration)
 
 **Issue JSON Web Tokens for API Keys:**
 
@@ -166,21 +191,29 @@ You can run Membrane as Docker container, standalone Java application or install
    ```
 2. **Access the Gateway**
 
-   Test a preconfigured API by opening [http://localhost:2000](http://localhost:2000).
+   Test an API by opening [http://localhost:2000](http://localhost:2000).
 
 3. **Change the Configuration**
-   - Download [proxies.xml](distribution/router/conf/proxies.xml) and modify it
+   - Download [proxies.xml](https://raw.githubusercontent.com/membrane/api-gateway/master/distribution/router/conf/proxies.xml) or:
+
+     ```bash
+     wget https://raw.githubusercontent.com/membrane/api-gateway/master/distribution/router/conf/proxies.xml
+     ```
+   
    - Bind the configuration file to the container.
 
-     #### For Windows/Linux:
-     ```bash
-     docker run -v proxies.xml:/opt/membrane/conf/proxies.xml -p 2000:2000 predic8/membrane
-     ```  
-   
-     #### For Mac:
+     **Mac/Linux:**
      ```bash
      docker run -v "$(pwd)/proxies.xml:/opt/membrane/conf/proxies.xml" -p 2000:2000 predic8/membrane
      ```  
+
+     **Windows:**
+     ```bash
+     docker run -v %cd%\proxies.xml:/opt/membrane/conf/proxies.xml -p 2000:2000 predic8/membrane
+     ```
+
+     You can now edit `proxies.xml` and restart the container to apply the changes.
+
 
 For detailed Docker setup instructions, see the [Membrane Deployment Guide](https://membrane-api.io/deployment/#docker).
 

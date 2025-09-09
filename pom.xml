@@ -116,7 +116,7 @@
 			<dependency>
 				<groupId>commons-cli</groupId>
 				<artifactId>commons-cli</artifactId>
-				<version>1.9.0</version>
+				<version>1.10.0</version>
 			</dependency>
 			<dependency>
 				<groupId>commons-codec</groupId>
@@ -127,11 +127,6 @@
 				<groupId>org.apache.commons</groupId>
 				<artifactId>commons-dbcp2</artifactId>
 				<version>2.13.0</version>
-			</dependency>
-			<dependency>
-				<groupId>commons-discovery</groupId>
-				<artifactId>commons-discovery</artifactId>
-				<version>0.5</version>
 			</dependency>
 			<dependency>
 				<groupId>commons-fileupload</groupId>
@@ -323,7 +318,7 @@
 			<dependency>
 				<groupId>com.google.api-client</groupId>
 				<artifactId>google-api-client</artifactId>
-				<version>2.8.0</version>
+				<version>2.8.1</version>
 			</dependency>
 			<dependency>
 				<groupId>jakarta.mail</groupId>
@@ -362,16 +357,6 @@
 			</dependency>
 		</dependencies>
 	</dependencyManagement>
-
-
-	<repositories>
-		<repository>
-			<id>com.springsource.repository.bundles.external</id>
-			<name>SpringSource Enterprise Bundle Repository - External Bundle Releases</name>
-			<url>https://repository.springsource.com/maven/bundles/external</url>
-		</repository>
-	</repositories>
-
 
 	<build>
 		<plugins>
@@ -637,7 +622,7 @@
 
 	<profiles>
 		<profile>
-			<id>ossrh</id>
+			<id>central</id>
 			<build>
 				<plugins>
 					<plugin>
@@ -654,29 +639,19 @@
 							</execution>
 						</executions>
 					</plugin>
-					<plugin>
-						<groupId>org.sonatype.plugins</groupId>
-						<artifactId>nexus-staging-maven-plugin</artifactId>
-						<version>1.7.0</version>
-						<extensions>true</extensions>
-						<configuration>
-							<serverId>ossrh</serverId>
-							<nexusUrl>https://oss.sonatype.org/</nexusUrl>
-							<autoReleaseAfterClose>true</autoReleaseAfterClose>
-						</configuration>
-					</plugin>
-				</plugins>
+                    <plugin>
+                        <groupId>org.sonatype.central</groupId>
+                        <artifactId>central-publishing-maven-plugin</artifactId>
+                        <version>0.8.0</version>
+                        <extensions>true</extensions>
+                        <configuration>
+                            <publishingServerId>central</publishingServerId>
+                            <autoPublish>true</autoPublish>
+                            <waitUntil>published</waitUntil>
+                        </configuration>
+                    </plugin>
+                </plugins>
 			</build>
-			<distributionManagement>
-				<repository>
-					<id>ossrh</id>
-					<url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
-				</repository>
-				<snapshotRepository>
-					<id>ossrh</id>
-					<url>https://oss.sonatype.org/content/repositories/snapshots</url>
-				</snapshotRepository>
-			</distributionManagement>
 		</profile>
 	</profiles>
 </project>
