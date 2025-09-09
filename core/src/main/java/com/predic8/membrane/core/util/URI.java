@@ -100,23 +100,18 @@ public class URI {
             hostAndPort = hostAndPort.substring(at + 1);
         }
 
-        // IPv6 literal with brackets
-        int openBracket = hostAndPort.indexOf('[');
-        if (openBracket >= 0) {
-            int end = hostAndPort.indexOf(']', openBracket + 1);
-            if (end < 0) {
-                throw new IllegalArgumentException("Invalid IPv6 bracket literal: missing ']'.");
-            }
-            String ipv6 = hostAndPort.substring(openBracket + 1, end);
-            host = ipv6;
+        hostAndPort = stripUserInfo();
 
-            if (end + 1 < hostAndPort.length() && hostAndPort.charAt(end + 1) == ':') {
-                String p = hostAndPort.substring(end + 2);
-                validatePortDigits(p);
-            }
+        // IPv6 literal with brackets
+        if (isIPLiteral(hostAndPort)) {
+            parseIPV6(hostAndPort);
             return;
         }
 
+        parseIPv4OrHostname(hostAndPort);
+    }
+
+    void parseIPv4OrHostname(String hostAndPort) {
         // IPv4 / hostname
         int colon = hostAndPort.lastIndexOf(':'); // lastIndexOf to not collide with IPv6 (already handled)
         if (colon >= 0) {
@@ -125,6 +120,45 @@ public class URI {
             validatePortDigits(p);
         } else {
             host = hostAndPort;
+        }
+        if (host.isEmpty()) {
+            throw new IllegalArgumentException("Host must not be empty.");
+        }
+    }
+
+    private void parseIPV6(String hostAndPort) {
+        int end = hostAndPort.indexOf(']');
+        if (end < 0) {
+            throw new IllegalArgumentException("Invalid IPv6 bracket literal: missing ']'.");
+        }
+        String ipv6 = hostAndPort.substring(1, end);
+
+        // Optionally normalize RFC 6874 zone-id: allow %25 and decode to %
+        // If you prefer strictness, remove this normalization block.
+        if (ipv6.contains("%25")) {
+            ipv6 = ipv6.replace("%25", "%");
+        }
+
+        host = ipv6;
+        if (host.isEmpty()) {
+            throw new IllegalArgumentException("Host must not be empty.");
+        }
+
+        parsePort(hostAndPort.substring(end + 1));
+    }
+
+    boolean isIPLiteral(String hostAndPort) {
+        return hostAndPort.startsWith("[");
+    }
+
+    int parsePort(String restOfAuthority) {
+        if (restOfAuthority.isEmpty())
+            return -1;
+        if (restOfAuthority.charAt(0) == ':') {
+            validatePortDigits(restOfAuthority.substring(1));
+            return port;
+        } else {
+            throw new IllegalArgumentException("Invalid authority: only ':<port>' may follow the IPv6 literal.");
         }
     }
 
