@@ -16,12 +16,37 @@ Solve even complex custom API requirements with simple configurations.
 </api>
 ```
 
+**Path Rewriting with an URI Template:**
+```xml
+<api port="2000">
+    <path>/fruit/{id}</path>
+    <target url="https://api.predic8.de/shop/v2/products/${pathParam.id}"/>
+</api>
+```
+
 **Deploy OpenAPI and enable Request Validation:** 
 ```xml
 <api port="2000">
     <openapi location="fruitshop-api.yml" validateRequests="yes"/>
 </api>
 ```
+
+**YAML Configuration (beta):**
+```yaml
+apiVersion: membrane-soa.org/v1beta1
+kind: api
+metadata:
+  name: log
+spec:
+  port: 2000
+  interceptors:
+    - log:
+        message: Header ${header}
+  target:
+    url: https://api.predic8.de
+```
+
+See: [YAML configuration](distribution/examples/yaml-configuration#YAML-Configuration)
 
 **Issue JSON Web Tokens for API Keys:**
 
