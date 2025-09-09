@@ -77,7 +77,6 @@ public class PasswordFlow extends TokenRequest {
 			return OAuth2Util.createParameterizedJsonErrorResponse("error", "invalid_grant_type");
         }
 
-        refreshToken = authServer.getRefreshTokenGenerator().getToken(client.getClientId(), client.getClientId(), client.getClientSecret(), claimsMapForRefresh(userParams));
         authServer.getSessionFinder().addSessionForRefreshToken(refreshToken, session);
 
         if (authServer.isIssueNonSpecIdTokens() && OAuth2Util.isOpenIdScope(scope)) {
