@@ -38,7 +38,7 @@ import static com.predic8.membrane.core.security.KeyStoreUtil.*;
 public class StaticSSLContext extends SSLContext {
 
     private static final String DEFAULT_CERTIFICATE_SHA256_OLD = "c7:e3:fd:97:2f:d3:b9:4f:38:87:9c:45:32:70:b3:d8:c1:9f:d1:64:39:fc:48:5f:f4:a1:6a:95:b5:ca:08:f7";
-    private static final String DEFAULT_CERTIFICATE_SHA256 = "5F:61:DC:8E:0B:5D:A4:50:65:D7:59:C9:D5:C3:22:49:5E:AA:91:C6:5A:C8:13:AC:51:6A:06:40:13:43:E8:F3";
+    private static final String DEFAULT_CERTIFICATE_SHA256 = "5f:61:dc:8e:0b:5d:a4:50:65:d7:59:c9:d5:c3:22:49:5e:aa:91:c6:5a:c8:13:ac:51:6a:06:40:13:43:e8:f3";
     private static final Logger log = LoggerFactory.getLogger(StaticSSLContext.class.getName());
     public static final String PKCS_12 = "PKCS12";
     private static boolean defaultCertificateWarned = false;
