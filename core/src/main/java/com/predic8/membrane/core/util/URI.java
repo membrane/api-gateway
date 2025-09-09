@@ -20,7 +20,7 @@ import java.util.regex.*;
 import static java.nio.charset.StandardCharsets.*;
 
 /**
- * Same behavior as {@link java.net.URI}, but accomodates '{' in paths.
+ * Same behavior as {@link java.net.URI}, but accommodates '{' in paths.
  */
 public class URI {
     private java.net.URI uri;
@@ -30,6 +30,8 @@ public class URI {
     private String query;
     private String fragment;
 
+    private String userInfo;
+
     private String scheme;
 
     private String host;
@@ -38,11 +40,13 @@ public class URI {
 
     private String pathDecoded, queryDecoded, fragmentDecoded;
 
+    // raw authority string as it appeared in the input (may include user-info)
+    private String authority;
+
     private static final Pattern PATTERN = Pattern.compile("^(([^:/?#]+):)?(//([^/?#]*))?([^?#]*)(\\?([^#]*))?(#(.*))?");
     //                                                             12            3  4          5       6   7        8 9
     // if defined, the groups are:
-    // 2: scheme, 4: host, 5: path, 7: query, 9: fragment
-
+    // 2: scheme, 4: authority, 5: path, 7: query, 9: fragment
 
     URI(boolean allowCustomParsing, String s) throws URISyntaxException {
         try {
@@ -71,7 +75,8 @@ public class URI {
 
         scheme = m.group(2);
 
-        processHostAndPort(m.group(4));
+        authority = m.group(4);
+        processAuthority(authority);
 
         path = m.group(5);
         query = m.group(7);
@@ -79,35 +84,58 @@ public class URI {
         return true;
     }
 
-    private void processHostAndPort(String hostAndPort) {
-        if (hostAndPort != null) {
+    /**
+     * Parses authority into userInfo, host and port.
+     * Keeps original authority untouched for getAuthority().
+     */
+    private void processAuthority(String rawAuthority) {
+        if (rawAuthority == null)
+            return;
 
-            var posAt = hostAndPort.indexOf("@");
-            if (posAt > -1) {
-                hostAndPort = hostAndPort.substring(posAt + 1);
-            }
+        String hostAndPort = rawAuthority;
 
-            var posBrackets = hostAndPort.indexOf("[");
-            if (posBrackets > -1) {
-                int end = hostAndPort.indexOf("]");
-                if (end < 0) {
-                    throw new IllegalArgumentException("Invalid IPv6 bracket literal: missing ']'.");
-                }
-                String ipv6 = hostAndPort.substring(posBrackets + 1, end);
-                if (end + 1 < hostAndPort.length() && hostAndPort.charAt(end + 1) == ':') {
-                    port = Integer.parseInt(hostAndPort.substring(end + 2));
-                }
-                host = ipv6;
-                return;
-            }
+        int at = hostAndPort.indexOf('@');
+        if (at >= 0) {
+            userInfo = hostAndPort.substring(0, at);
+            hostAndPort = hostAndPort.substring(at + 1);
+        }
 
-            var pos = hostAndPort.indexOf(":");
-            if (pos > -1) {
-                host = hostAndPort.substring(0, pos);
-                port = Integer.parseInt(hostAndPort.substring(pos + 1));
-            } else {
-                host = hostAndPort;
+        // IPv6 literal with brackets
+        int openBracket = hostAndPort.indexOf('[');
+        if (openBracket >= 0) {
+            int end = hostAndPort.indexOf(']', openBracket + 1);
+            if (end < 0) {
+                throw new IllegalArgumentException("Invalid IPv6 bracket literal: missing ']'.");
             }
+            String ipv6 = hostAndPort.substring(openBracket + 1, end);
+            host = ipv6;
+
+            if (end + 1 < hostAndPort.length() && hostAndPort.charAt(end + 1) == ':') {
+                String p = hostAndPort.substring(end + 2);
+                validatePortDigits(p);
+            }
+            return;
+        }
+
+        // IPv4 / hostname
+        int colon = hostAndPort.lastIndexOf(':'); // lastIndexOf to not collide with IPv6 (already handled)
+        if (colon >= 0) {
+            host = hostAndPort.substring(0, colon);
+            String p = hostAndPort.substring(colon + 1);
+            validatePortDigits(p);
+        } else {
+            host = hostAndPort;
+        }
+    }
+
+    private void validatePortDigits(String p) {
+        if (!p.isEmpty()) {
+            if (!p.matches("\\d{1,5}"))
+                throw new IllegalArgumentException("Invalid port: " + p);
+            int candidate = Integer.parseInt(p);
+            if (candidate < 0 || candidate > 65535)
+                throw new IllegalArgumentException("Port out of range: " + candidate);
+            port = candidate;
         }
     }
 
@@ -169,31 +197,17 @@ public class URI {
         return fragmentDecoded;
     }
 
-
     /*
      * Returns the authority component of this URI.
      *
-     * <p>In default mode delegates to {@link java.net.URI#getAuthority()} and may include
-     * user-info (e.g. "user:pass@host:port").<br>
-     * In custom parsing mode returns only "host[:port]" (userinfo is intentionally omitted).<br>
+     * Default mode delegates to {@link java.net.URI#getAuthority()}.
+     * Custom parsing mode returns the original raw authority (may include user-info).
      * Returns {@code null} if no authority is present (e.g. "mailto:").
      */
     public String getAuthority() {
         if (uri != null) return uri.getAuthority();
-        if (host == null) return null;
-
-        StringBuilder sb = new StringBuilder();
-        if (host.contains(":")) { // IPv6
-            sb.append('[').append(host);
-            if (port != -1) sb.append(':').append(port);
-            sb.append(']');
-        } else { // IPv4 / Domain
-            sb.append(host);
-            if (port != -1) sb.append(':').append(port);
-        }
-        return sb.toString();
+        return authority;
     }
-
 
     private String decode(String string) {
         if (string == null)
@@ -209,8 +223,6 @@ public class URI {
 
     /**
      * Fragments are client side only and should not be propagated to the backend.
-     *
-     * @return
      */
     public String getPathWithQuery() {
         StringBuilder r = new StringBuilder(100);
@@ -221,9 +233,8 @@ public class URI {
             r.append("/");
         }
 
-        // Add query if present
         if (getRawQuery() != null && !getRawQuery().isBlank()) {
-            r.append("?").append(getRawQuery());
+            r.append('?').append(getRawQuery());
         }
         return r.toString();
     }

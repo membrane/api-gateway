@@ -179,13 +179,13 @@ class URITest {
     @Nested
     class Authority {
         @Test
-        void getAuthority() throws URISyntaxException {
-            checkGetAuthority(false);
+        void getAuthorityCustom() throws URISyntaxException {
+            checkGetAuthority(true);
         }
 
         @Test
-        void getAuthorityCustom() throws URISyntaxException {
-            checkGetAuthority(true);
+        void getAuthorityDefault() throws URISyntaxException {
+            checkGetAuthority(false);
         }
 
         private void checkGetAuthority(boolean custom) throws URISyntaxException {
@@ -196,15 +196,8 @@ class URITest {
             assertEquals("predic8.de:8080", new URI("http://predic8.de:8080/foo", custom).getAuthority());
 
             // with userinfo
-            if (!custom) {
-                // java.net.URI includes userinfo
-                assertEquals("user:pwd@predic8.de:8080",
-                        new URI("http://user:pwd@predic8.de:8080/foo", custom).getAuthority());
-            } else {
-                // custom parsing strips userinfo
-                assertEquals("predic8.de:8080",
-                        new URI("http://user:pwd@predic8.de:8080/foo", custom).getAuthority());
-            }
+            assertEquals("user:pwd@predic8.de:8080",
+                    new URI("http://user:pwd@predic8.de:8080/foo", custom).getAuthority());
 
             // https with port
             assertEquals("predic8.de:8443", new URI("https://predic8.de:8443/foo", custom).getAuthority());
@@ -212,8 +205,15 @@ class URITest {
             // https without port
             assertEquals("predic8.de", new URI("https://predic8.de/foo", custom).getAuthority());
 
+            // IPv6 with port
+            assertEquals("[2001:db8::1]:8080", new URI("http://[2001:db8::1]:8080/foo", custom).getAuthority());
+
             // no authority present (mailto)
             assertNull(new URI("mailto:alice@example.com", custom).getAuthority());
+
+            // IPv6 with port and userinfo
+            assertEquals("user:pwd@[2001:db8::1]:9090",
+                    new URI("http://user:pwd@[2001:db8::1]:9090/foo", custom).getAuthority());
         }
 
         // No IPv6 support in custom parsing
@@ -261,7 +261,7 @@ class URITest {
         URI u = new URI("http://[2001:db8::1]:8080/foo", true);
         assertEquals("2001:db8::1", u.getHost());
         assertEquals(8080, u.getPort());
-        assertEquals("[2001:db8::1:8080]", u.getAuthority());
+        assertEquals("[2001:db8::1]:8080", u.getAuthority());
         assertEquals("/foo", u.getPath());
 
     }
