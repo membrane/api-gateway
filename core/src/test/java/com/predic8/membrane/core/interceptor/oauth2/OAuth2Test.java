@@ -100,12 +100,21 @@ class OAuth2Test {
     void testJwtAuthenticationAfterRefresh() throws Exception {
         String json = getTokenRequestResponse(createTokenRequestParameters());
         JSONObject jsonObject = new JSONObject(json);
+        String at1 = jsonObject.getString("access_token");
+        assertNotNull(at1);
 
         json = getTokenRequestResponse(createTokenRequestParametersAfterRefresh(jsonObject.getString("refresh_token")));
         jsonObject = new JSONObject(json);
+        String at2 = jsonObject.getString("access_token");
+        assertNotNull(at2);
+
         assertEquals("Bearer", jsonObject.getString("token_type"));
         assertNotNull(jsonObject.getString("access_token"));
         assertEquals("Ok", sendRequestToTarget(parseTokenRequestResponse("access_token", json)));
+
+        assertEquals(getJwtClaim(at1, "iss"), getJwtClaim(at2, "iss"));
+        assertEquals(getJwtClaim(at1, "sub"), getJwtClaim(at2, "sub"));
+        assertEquals(getJwtClaim(at1, "scope"), getJwtClaim(at2, "scope"));
     }
 
     @Test
@@ -214,5 +223,17 @@ class OAuth2Test {
         wr.writeBytes(urlParameters);
         wr.flush();
         wr.close();
+    }
+
+    private static String getJwtClaim(String jwt, String claim) {
+        String[] parts = jwt.split("\\.");
+        if (parts.length < 2) throw new AssertionError("Invalid JWT format");
+        String payloadJson = new String(
+                java.util.Base64.getUrlDecoder().decode(parts[1]),
+                java.nio.charset.StandardCharsets.UTF_8
+        );
+        JSONObject payload = new JSONObject(payloadJson);
+        Object v = payload.opt(claim);
+        return (v == null) ? null : String.valueOf(v);
     }
 }
