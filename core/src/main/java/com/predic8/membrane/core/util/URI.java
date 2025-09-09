@@ -14,6 +14,8 @@
 
 package com.predic8.membrane.core.util;
 
+import com.predic8.membrane.core.http.xml.Host;
+
 import java.net.*;
 import java.util.regex.*;
 
@@ -34,9 +36,7 @@ public class URI {
 
     private String scheme;
 
-    private String host;
-
-    private int port = -1;
+    private HostPort hostPort;
 
     private String pathDecoded, queryDecoded, fragmentDecoded;
 
@@ -92,41 +92,52 @@ public class URI {
         if (rawAuthority == null)
             return;
 
-        String hostAndPort = rawAuthority;
-
-        int at = hostAndPort.indexOf('@');
+        int at = rawAuthority.indexOf('@');
         if (at >= 0) {
-            userInfo = hostAndPort.substring(0, at);
-            hostAndPort = hostAndPort.substring(at + 1);
+            userInfo = rawAuthority.substring(0, at);
         }
 
-        hostAndPort = stripUserInfo();
-
-        // IPv6 literal with brackets
-        if (isIPLiteral(hostAndPort)) {
-            parseIPV6(hostAndPort);
-            return;
-        }
-
-        parseIPv4OrHostname(hostAndPort);
+        hostPort = parseHostPort(rawAuthority);
     }
 
-    void parseIPv4OrHostname(String hostAndPort) {
-        // IPv4 / hostname
-        int colon = hostAndPort.lastIndexOf(':'); // lastIndexOf to not collide with IPv6 (already handled)
+    record HostPort(String host, int port) {}
+
+    static HostPort parseHostPort(String rawAuthority) {
+        if (rawAuthority == null)
+            throw new IllegalArgumentException("rawAuthority is null.");
+        String hostAndPort = stripUserInfo(rawAuthority);
+
+        if (isIPLiteral(hostAndPort)) {
+            return parseIpv6(hostAndPort);
+        }
+
+        return parseIPv4OrHostname(hostAndPort);
+    }
+
+    static String stripUserInfo(String authority) {
+        int at = authority.indexOf('@');
+        return at >= 0 ? authority.substring(at + 1) : authority;
+    }
+
+    static HostPort parseIPv4OrHostname(String hostAndPort) {
+        String host;
+        int port;
+        int colon = hostAndPort.indexOf(':');
         if (colon >= 0) {
             host = hostAndPort.substring(0, colon);
             String p = hostAndPort.substring(colon + 1);
-            validatePortDigits(p);
+            port = validatePortDigits(p);
         } else {
             host = hostAndPort;
+            port = -1;
         }
         if (host.isEmpty()) {
             throw new IllegalArgumentException("Host must not be empty.");
         }
+        return new HostPort(host, port);
     }
 
-    private void parseIPV6(String hostAndPort) {
+    static HostPort parseIpv6(String hostAndPort) {
         int end = hostAndPort.indexOf(']');
         if (end < 0) {
             throw new IllegalArgumentException("Invalid IPv6 bracket literal: missing ']'.");
@@ -139,38 +150,38 @@ public class URI {
             ipv6 = ipv6.replace("%25", "%");
         }
 
-        host = ipv6;
-        if (host.isEmpty()) {
+        if (ipv6.isEmpty()) {
             throw new IllegalArgumentException("Host must not be empty.");
         }
 
-        parsePort(hostAndPort.substring(end + 1));
+        int port = parsePort(hostAndPort.substring(end + 1));
+        return new HostPort(ipv6, port);
     }
 
-    boolean isIPLiteral(String hostAndPort) {
+    static boolean isIPLiteral(String hostAndPort) {
         return hostAndPort.startsWith("[");
     }
 
-    int parsePort(String restOfAuthority) {
+    static int parsePort(String restOfAuthority) {
         if (restOfAuthority.isEmpty())
             return -1;
         if (restOfAuthority.charAt(0) == ':') {
-            validatePortDigits(restOfAuthority.substring(1));
-            return port;
+            return validatePortDigits(restOfAuthority.substring(1));
         } else {
             throw new IllegalArgumentException("Invalid authority: only ':<port>' may follow the IPv6 literal.");
         }
     }
 
-    private void validatePortDigits(String p) {
+    private static int validatePortDigits(String p) {
         if (!p.isEmpty()) {
             if (!p.matches("\\d{1,5}"))
                 throw new IllegalArgumentException("Invalid port: " + p);
             int candidate = Integer.parseInt(p);
             if (candidate < 0 || candidate > 65535)
                 throw new IllegalArgumentException("Port out of range: " + candidate);
-            port = candidate;
+            return candidate;
         }
+        throw new IllegalArgumentException("Invalid port: ''.");
     }
 
     public String getScheme() {
@@ -182,14 +193,14 @@ public class URI {
     public String getHost() {
         if (uri != null)
             return uri.getHost();
-        return host;
+        return hostPort.host;
     }
 
     public int getPort() {
         if (uri != null) {
             return uri.getPort();
         }
-        return port;
+        return hostPort.port;
     }
 
     public String getPath() {

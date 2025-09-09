@@ -18,6 +18,10 @@ import org.junit.jupiter.api.*;
 
 import java.net.*;
 
+import static com.predic8.membrane.core.util.URI.*;
+import static com.predic8.membrane.core.util.URI.isIPLiteral;
+import static com.predic8.membrane.core.util.URI.parsePort;
+import static com.predic8.membrane.core.util.URI.stripUserInfo;
 import static org.junit.jupiter.api.Assertions.*;
 class URITest {
 
@@ -253,30 +257,28 @@ class URITest {
     class ParsingUtilitiesTests {
 
         @Test
-        void parsePort() throws URISyntaxException {
-            URI u = new URI("foo", true);
-            assertEquals(8080, u.parsePort("8080"));
-            assertEquals(0, u.parsePort("0"));
-            assertEquals(65535, u.parsePort("65535"));
-            assertThrows(IllegalArgumentException.class, () -> u.parsePort("-1"));
-            assertThrows(IllegalArgumentException.class, () -> u.parsePort("100000"));
-            assertThrows(IllegalArgumentException.class, () -> u.parsePort("foo"));
+        void parsePortWorks() {
+            assertEquals(8080, parsePort(":8080"));
+            assertEquals(0, parsePort(":0"));
+            assertEquals(65535, parsePort(":65535"));
+            assertThrows(IllegalArgumentException.class, () -> parsePort(":-1"));
+            assertThrows(IllegalArgumentException.class, () -> parsePort(":100000"));
+            assertThrows(IllegalArgumentException.class, () -> parsePort(":foo"));
+            assertThrows(IllegalArgumentException.class, () -> parsePort("xyz"));
         }
 
         @Test
-        void stripUserInfo() throws URISyntaxException {
-            URI u = new URI("foo", true);
-            assertEquals("example.com", u.stripUserInfo("user:pass@example.com"));
-            assertEquals("example.com", u.stripUserInfo("example.com"));
-            assertEquals("", u.stripUserInfo("user@"));
+        void stripUserInfoWorks() {
+            assertEquals("example.com", stripUserInfo("user:pass@example.com"));
+            assertEquals("example.com", stripUserInfo("example.com"));
+            assertEquals("", stripUserInfo("user@"));
         }
 
         @Test
-        void isIPv6() throws URISyntaxException {
-            URI u = new URI("foo", true);
-            assertTrue(u.isIPLiteral("[::1]"));
-            assertTrue(u.isIPLiteral("[::1"));
-            assertFalse(u.isIPLiteral("::1"));
+        void isIPv6() {
+            assertTrue(isIPLiteral("[::1]"));
+            assertTrue(isIPLiteral("[::1"));
+            assertFalse(isIPLiteral("::1"));
         }
     }
 
@@ -284,160 +286,141 @@ class URITest {
     class HostPortParsingTests {
 
         @Test
-        void parseHostPortNullOrEmpty() throws URISyntaxException {
-            URI u = new URI("foo", true);
-            assertNull(u.parseHostPort(null));
-            assertNull(u.parseHostPort(""));
+        void parseHostPortNullOrEmpty() {
+            assertThrows(IllegalArgumentException.class, () -> parseHostPort(null));
+            assertThrows(IllegalArgumentException.class, () -> parseHostPort(""));
         }
 
         @Test
-        void parseHostPortWithIPv4AndPort() throws URISyntaxException {
-            URI u = new URI("foo", true);
-            URI.HostPort hp = u.parseHostPort("example.com:8080");
+        void parseHostPortWithIPv4AndPort() {
+            URI.HostPort hp = parseHostPort("example.com:8080");
             assertEquals("example.com", hp.host());
             assertEquals(8080, hp.port());
         }
 
         @Test
-        void parseHostPortWithIPv6() throws URISyntaxException {
-            URI u = new URI("foo", true);
-            URI.HostPort hp = u.parseHostPort("[2001:db8::1]:9090");
+        void parseHostPortWithIPv6() {
+            URI.HostPort hp = parseHostPort("[2001:db8::1]:9090");
             assertEquals("2001:db8::1", hp.host());
             assertEquals(9090, hp.port());
         }
 
         @Test
-        void parseIpv6WithoutPort() throws URISyntaxException {
-            URI u = new URI("foo", true);
-            URI.HostPort hp = u.parseIpv6("[::1]");
+        void parseIpv6WithoutPort() {
+            URI.HostPort hp = parseIpv6("[::1]");
             assertEquals("::1", hp.host());
-            assertNull(hp.port());
+            assertEquals(-1, hp.port());
         }
 
         @Test
-        void parseIpv6WithZoneId() throws URISyntaxException {
-            URI u = new URI("foo", true);
-            URI.HostPort hp = u.parseIpv6("[fe80::1%25eth0]:1234");
+        void parseIpv6WithZoneId() {
+            URI.HostPort hp = parseIpv6("[fe80::1%25eth0]:1234");
             assertEquals("fe80::1%eth0", hp.host());
             assertEquals(1234, hp.port());
         }
 
         @Test
-        void parseIpv6InvalidCases() throws URISyntaxException {
-            URI u = new URI("foo", true);
-            assertThrows(IllegalArgumentException.class, () -> u.parseIpv6("::1"));
-            assertThrows(IllegalArgumentException.class, () -> u.parseIpv6("[::1"));
-            assertThrows(IllegalArgumentException.class, () -> u.parseIpv6("[::1]:"));
-            assertThrows(IllegalArgumentException.class, () -> u.parseIpv6("[::1]:badport"));
+        void parseIpv6InvalidCases() {
+            assertThrows(IllegalArgumentException.class, () -> parseIpv6("::1"));
+            assertThrows(IllegalArgumentException.class, () -> parseIpv6("[::1"));
+            assertThrows(IllegalArgumentException.class, () -> parseIpv6("[::1]:"));
+            assertThrows(IllegalArgumentException.class, () -> parseIpv6("[::1]:badport"));
         }
 
         @Test
-        void parseHostPortIpv4WithoutPort() throws URISyntaxException {
-            URI u = new URI("foo", true);
-            URI.HostPort hp = u.parseIPv4OrHostname("example.com");
+        void parseHostPortIpv4WithoutPort() {
+            URI.HostPort hp = parseIPv4OrHostname("example.com");
             assertEquals("example.com", hp.host());
-            assertNull(hp.port());
+            assertEquals(-1, hp.port());
         }
 
         @Test
-        void parseHostPortIpv4InvalidCases() throws URISyntaxException {
-            URI u = new URI("foo", true);
-            assertThrows(IllegalArgumentException.class, () -> u.parseIPv4OrHostname(":8080"));
-            assertThrows(IllegalArgumentException.class, () -> u.parseIPv4OrHostname("example.com:"));
-            assertThrows(IllegalArgumentException.class, () -> u.parseIPv4OrHostname("example.com:abc"));
-            assertThrows(IllegalArgumentException.class, () -> u.parseIPv4OrHostname("host:1:2"));
+        void parseHostPortIpv4InvalidCases() {
+            assertThrows(IllegalArgumentException.class, () -> parseIPv4OrHostname(":8080"));
+            assertThrows(IllegalArgumentException.class, () -> parseIPv4OrHostname("example.com:"));
+            assertThrows(IllegalArgumentException.class, () -> parseIPv4OrHostname("example.com:abc"));
+            assertThrows(IllegalArgumentException.class, () -> parseIPv4OrHostname("host:1:2"));
         }
 
         @Test
-        void parseHostPortStripsUserInfoForIpv4() throws URISyntaxException {
-            URI u = new URI("foo", true);
-            URI.HostPort hp = u.parseHostPort("user:pwd@example.com:8080");
+        void parseHostPortStripsUserInfoForIpv4() {
+            URI.HostPort hp = parseHostPort("user:pwd@example.com:8080");
             assertEquals("example.com", hp.host());
             assertEquals(8080, hp.port());
         }
 
         @Test
-        void parseHostPortStripsUserInfoForIpv6() throws URISyntaxException {
-            URI u = new URI("foo", true);
-            URI.HostPort hp = u.parseHostPort("user:pwd@[2001:db8::1]:443");
+        void parseHostPortStripsUserInfoForIpv6() {
+            URI.HostPort hp = parseHostPort("user:pwd@[2001:db8::1]:443");
             assertEquals("2001:db8::1", hp.host());
             assertEquals(443, hp.port());
         }
 
         @Test
-        void parseHostPortRejectsEmptyHostAfterUserInfo() throws URISyntaxException {
-            URI u = new URI("foo", true);
-            assertThrows(IllegalArgumentException.class, () -> u.parseHostPort("user@"));
-            assertThrows(IllegalArgumentException.class, () -> u.parseHostPort("user@:8080"));
+        void parseHostPortRejectsEmptyHostAfterUserInfo() {
+            assertThrows(IllegalArgumentException.class, () -> parseHostPort("user@"));
+            assertThrows(IllegalArgumentException.class, () -> parseHostPort("user@:8080"));
         }
 
         @Test
-        void parseHostPortIpv4NoPortReturnsNullPort() throws URISyntaxException {
-            URI u = new URI("foo", true);
-            URI.HostPort hp = u.parseHostPort("example.com");
+        void parseHostPortIpv4NoPortReturnsNoPort() {
+            URI.HostPort hp = parseHostPort("example.com");
             assertEquals("example.com", hp.host());
-            assertNull(hp.port());
+            assertEquals(-1, hp.port());
         }
 
         @Test
-        void parseHostPortIpv4InvalidMultipleColons() throws URISyntaxException {
-            URI u = new URI("foo", true);
-            assertThrows(IllegalArgumentException.class, () -> u.parseHostPort("host:1:2"));
+        void parseHostPortInvalidMultipleColons() {
+            assertThrows(IllegalArgumentException.class, () -> parseHostPort("host:1:2"));
+            assertThrows(IllegalArgumentException.class, () -> parseHostPort("[::1]:1:2"));
         }
 
         @Test
-        void parseHostPortIpv4EmptyPortOrHost() throws URISyntaxException {
-            URI u = new URI("foo", true);
-            assertThrows(IllegalArgumentException.class, () -> u.parseHostPort(":8080"));       // empty host
-            assertThrows(IllegalArgumentException.class, () -> u.parseHostPort("example.com:")); // empty port
+        void parseHostPortIpv4EmptyPortOrHost() {
+            assertThrows(IllegalArgumentException.class, () -> parseHostPort(":8080"));       // empty host
+            assertThrows(IllegalArgumentException.class, () -> parseHostPort("example.com:")); // empty port
         }
 
         @Test
-        void parseHostPortIpv4PortBoundsAndFormats() throws URISyntaxException {
-            URI u = new URI("foo", true);
-            assertEquals(0, u.parseHostPort("example.com:0").port().intValue());
-            assertEquals(65535, u.parseHostPort("example.com:65535").port().intValue());
-            assertThrows(IllegalArgumentException.class, () -> u.parseHostPort("example.com:-1"));
-            assertThrows(IllegalArgumentException.class, () -> u.parseHostPort("example.com:65536"));
-            assertThrows(IllegalArgumentException.class, () -> u.parseHostPort("example.com:abc"));
+        void parseHostPortIpv4PortBoundsAndFormats() {
+            assertEquals(0, parseHostPort("example.com:0").port());
+            assertEquals(65535, parseHostPort("example.com:65535").port());
+            assertThrows(IllegalArgumentException.class, () -> parseHostPort("example.com:-1"));
+            assertThrows(IllegalArgumentException.class, () -> parseHostPort("example.com:65536"));
+            assertThrows(IllegalArgumentException.class, () -> parseHostPort("example.com:abc"));
         }
 
         @Test
-        void parseHostPortIpv6WithoutPort() throws URISyntaxException {
-            URI u = new URI("foo", true);
-            URI.HostPort hp = u.parseHostPort("[2001:db8::1]");
+        void parseHostPortIpv6WithoutPort() {
+            URI.HostPort hp = parseHostPort("[2001:db8::1]");
             assertEquals("2001:db8::1", hp.host());
-            assertNull(hp.port());
+            assertEquals(-1, hp.port());
         }
 
         @Test
-        void parseHostPortIpv6WithZoneIdNormalization() throws URISyntaxException {
-            URI u = new URI("foo", true);
-            URI.HostPort hp = u.parseHostPort("[fe80::1%25eth0]:1234");
+        void parseHostPortIpv6WithZoneIdNormalization() {
+            URI.HostPort hp = parseHostPort("[fe80::1%25eth0]:1234");
             assertEquals("fe80::1%eth0", hp.host());
             assertEquals(1234, hp.port());
         }
 
         @Test
-        void parseHostPortIpv6BadPortAndJunk() throws URISyntaxException {
-            URI u = new URI("foo", true);
-            assertThrows(IllegalArgumentException.class, () -> u.parseHostPort("[::1]:"));
-            assertThrows(IllegalArgumentException.class, () -> u.parseHostPort("[::1]:bad"));
-            assertThrows(IllegalArgumentException.class, () -> u.parseHostPort("[::1]x123"));
+        void parseHostPortIpv6BadPortAndJunk() {
+            assertThrows(IllegalArgumentException.class, () -> parseHostPort("[::1]:"));
+            assertThrows(IllegalArgumentException.class, () -> parseHostPort("[::1]:bad"));
+            assertThrows(IllegalArgumentException.class, () -> parseHostPort("[::1]x123"));
         }
 
         @Test
-        void parseHostPortIpv6EmptyHostRejected() throws URISyntaxException {
-            URI u = new URI("foo", true);
-            assertThrows(IllegalArgumentException.class, () -> u.parseHostPort("[]"));
-            assertThrows(IllegalArgumentException.class, () -> u.parseHostPort("[]:80"));
+        void parseHostPortIpv6EmptyHostRejected() {
+            assertThrows(IllegalArgumentException.class, () -> parseHostPort("[]"));
+            assertThrows(IllegalArgumentException.class, () -> parseHostPort("[]:80"));
         }
 
         @Test
-        void parseHostPortRespectsUppercaseHexAndCompressed() throws URISyntaxException {
-            URI u = new URI("foo", true);
-            assertEquals("2001:DB8:0:0::1", u.parseHostPort("[2001:DB8:0:0::1]").host());
-            assertEquals("2001:db8::1", u.parseHostPort("[2001:db8::1]:8080").host());
+        void parseHostPortRespectsUppercaseHexAndCompressed() {
+            assertEquals("2001:DB8:0:0::1", parseHostPort("[2001:DB8:0:0::1]").host());
+            assertEquals("2001:db8::1", parseHostPort("[2001:db8::1]:8080").host());
         }
     }
 
