@@ -26,6 +26,12 @@ public class OAuth2TokenBody {
     private String scope;
     private String redirectUri;
     private String codeVerifier;
+    private String clientId;
+    private String clientSecret;
+    private String clientAssertion;
+    private String clientAssertionType;
+
+    private OAuth2TokenBody() {}
 
     public static OAuth2TokenBody refreshTokenBodyBuilder(String refreshToken) {
         OAuth2TokenBody r = new OAuth2TokenBody();
@@ -47,18 +53,38 @@ public class OAuth2TokenBody {
         return this;
     }
 
+    public OAuth2TokenBody clientId(String clientId) {
+        this.clientId = clientId;
+        return this;
+    }
+
+    public OAuth2TokenBody clientSecret(String clientSecret) {
+        this.clientSecret = clientSecret;
+        return this;
+    }
+
+    public OAuth2TokenBody clientAssertion(String type, String assertion) {
+        this.clientAssertionType = type;
+        this.clientAssertion = assertion;
+        return this;
+    }
+
     public String build() {
         StringBuilder r = new StringBuilder("grant_type=" + grantType);
         appendParam(r, "refresh_token", refreshToken);
         appendParam(r, "code", code);
         appendParam(r, "redirect_uri", redirectUri);
-        appendParam(r, "scope", scope, e -> encode(e, UTF_8));
+        appendParam(r, "scope", scope);
         appendParam(r, "code_verifier", codeVerifier);
+        appendParam(r, "client_id", clientId);
+        appendParam(r, "client_secret", clientSecret);
+        appendParam(r, "client_assertion_type", clientAssertionType);
+        appendParam(r, "client_assertion", clientAssertion);
         return r.toString();
     }
 
     private void appendParam(StringBuilder sb, String paramName, String paramValue) {
-        appendParam(sb, paramName, paramValue, e -> e);
+        appendParam(sb, paramName, paramValue, e -> encode(e, UTF_8));
     }
 
     private void appendParam(StringBuilder sb, String paramName, String paramValue, Function<String, String> encoder) {
