@@ -33,44 +33,43 @@ import static com.predic8.membrane.core.util.HttpUtil.readLine;
 public class Request extends Message {
 
     /**
-     * Pattern to match an HTTP/1.1 request line as used in a proxy server.
+     * Pattern to match an HTTP/1.x request line as typically received by a proxy.
      * <p>
-     * Supports all legal request-target forms defined in RFC 9110 §7.1:
+     * Supports all request-target forms defined in RFC 9110 §7.1:
      * <ul>
-     * <li>Origin-form: {@code GET /path HTTP/1.1}</li>
-     * <li>Absolute-form: {@code GET http://example.com/path HTTP/1.1}</li>
-     * <li>Authority-form: {@code CONNECT example.com:443 HTTP/1.1}</li>
-     * <li>Asterisk-form: {@code OPTIONS * HTTP/1.1}</li>
+     *   <li>Origin-form: {@code GET /path HTTP/1.1}</li>
+     *   <li>Absolute-form: {@code GET http://example.com/path HTTP/1.1}</li>
+     *   <li>Authority-form: {@code CONNECT example.com:443 HTTP/1.1}</li>
+     *   <li>Asterisk-form: {@code OPTIONS * HTTP/1.1}</li>
      * </ul>
      * <p>
-     * The pattern enforces:
+     * This simplified pattern enforces:
      * <ul>
-     * <li>A valid HTTP method (per RFC token syntax)</li>
-     * <li>Exactly one space between method, request target, and HTTP version</li>
-     * <li>A well-formed HTTP version string (e.g., "HTTP/1.1")</li>
+     *   <li>A method consisting of one or more ASCII letters (A?Z, a?z)</li>
+     *   <li>Exactly one space between method, request target, and HTTP version</li>
+     *   <li>A version of the form {@code HTTP/x.y} (single-digit major and minor)</li>
      * </ul>
      * <p>
      * Capturing groups:
      * <ol>
-     * <li>Method (e.g. "GET", "CONNECT")</li>
-     * <li>Request target (e.g. "/path", "*", "http://example.com", "example.com:443")</li>
-     * <li>HTTP version (e.g. "1.1")</li>
+     *   <li>Method (e.g. {@code GET}, {@code CONNECT})</li>
+     *   <li>Request target (e.g. {@code /path}, {@code *}, {@code http://example.com}, {@code example.com:443})</li>
+     *   <li>HTTP version number (e.g. {@code 1.0}, {@code 1.1})</li>
      * </ol>
      * <p>
-     * <p><b>Case Sensitivity:</b><br>
-     * HTTP methods are case-sensitive according to RFC 9110 §9.1.1. This pattern allows
-     * both uppercase and lowercase method names, but proxies should <i>preserve the original casing</i>
-     * and avoid rejecting unknown or lowercase methods. The decision to accept or reject
-     * nonstandard casing should be left to the origin server.
+     * <b>Case Sensitivity:</b><br>
+     * While this pattern accepts both uppercase and lowercase letters in the method,
+     * registered HTTP methods are defined in uppercase. Gateways typically normalize
+     * the method to uppercase for comparison, but may preserve the original casing
+     * when forwarding.
      * </p>
-     * This pattern is suitable for use in an HTTP proxy that needs to process all valid
-     * request-line formats from clients.
+     * <p>
+     * Note: This regex is intentionally less restrictive than the full RFC 9110
+     * <i>token</i> syntax for methods. It covers all real-world methods in use
+     * while keeping the pattern simple.
+     * </p>
      */
-    private static final Pattern requestLinePattern = Pattern.compile(
-            "([A-Za-z0-9!#$%&'*+\\-.^_`|~]+) " +                    // Method (token)
-            "(\\*|/\\S*|https?://\\S+|[\\w.-]+(?::\\d+)?) " +       // Request target
-            "HTTP/(\\d\\.\\d)"                                            // HTTP version
-    );
+    private static final Pattern requestLinePattern = Pattern.compile("([A-Za-z]+)\\s+(\\S+)\\s+HTTP/(\\d\\.\\d)");                                // HTTP version
 
     private static final Pattern stompPattern = Pattern.compile("^(.+?)$");
 
