@@ -3,9 +3,7 @@
 
 CLASSPATH="$MEMBRANE_HOME/conf:$MEMBRANE_HOME/lib/*"
 
-has_c=0
-for a in "$@"; do [ "$a" = "-c" ] && { has_c=1; break; }; done
-if [ $has_c -eq 0 ]; then
+if [ $# -eq 0 ]; then
   if [ -n "${MEMBRANE_CALLER_DIR:-}" ] && [ -f "$MEMBRANE_CALLER_DIR/proxies.xml" ]; then
     set -- -c "$MEMBRANE_CALLER_DIR/proxies.xml" "$@"
   elif [ -f "$MEMBRANE_HOME/conf/proxies.xml" ]; then
