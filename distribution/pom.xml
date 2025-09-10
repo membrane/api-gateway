@@ -121,6 +121,7 @@
 				<configuration>
 					<projectType>application</projectType>
 					<includeProvidedScope>false</includeProvidedScope>
+					<skipNotDeployed>false</skipNotDeployed>
 				</configuration>
 			</plugin>
 			<plugin>
