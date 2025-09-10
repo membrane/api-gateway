@@ -301,21 +301,21 @@ class URITest {
         @Test
         void parseHostPortWithIPv6() {
             URI.HostPort hp = parseHostPort("[2001:db8::1]:9090");
-            assertEquals("2001:db8::1", hp.host());
+            assertEquals("[2001:db8::1]", hp.host());
             assertEquals(9090, hp.port());
         }
 
         @Test
         void parseIpv6WithoutPort() {
             URI.HostPort hp = parseIpv6("[::1]");
-            assertEquals("::1", hp.host());
+            assertEquals("[::1]", hp.host());
             assertEquals(-1, hp.port());
         }
 
         @Test
         void parseIpv6WithZoneId() {
             URI.HostPort hp = parseIpv6("[fe80::1%25eth0]:1234");
-            assertEquals("fe80::1%eth0", hp.host());
+            assertEquals("[fe80::1%25eth0]", hp.host());
             assertEquals(1234, hp.port());
         }
 
@@ -352,7 +352,7 @@ class URITest {
         @Test
         void parseHostPortStripsUserInfoForIpv6() {
             URI.HostPort hp = parseHostPort("user:pwd@[2001:db8::1]:443");
-            assertEquals("2001:db8::1", hp.host());
+            assertEquals("[2001:db8::1]", hp.host());
             assertEquals(443, hp.port());
         }
 
@@ -393,14 +393,14 @@ class URITest {
         @Test
         void parseHostPortIpv6WithoutPort() {
             URI.HostPort hp = parseHostPort("[2001:db8::1]");
-            assertEquals("2001:db8::1", hp.host());
+            assertEquals("[2001:db8::1]", hp.host());
             assertEquals(-1, hp.port());
         }
 
         @Test
         void parseHostPortIpv6WithZoneIdNormalization() {
             URI.HostPort hp = parseHostPort("[fe80::1%25eth0]:1234");
-            assertEquals("fe80::1%eth0", hp.host());
+            assertEquals("[fe80::1%25eth0]", hp.host());
             assertEquals(1234, hp.port());
         }
 
@@ -419,8 +419,8 @@ class URITest {
 
         @Test
         void parseHostPortRespectsUppercaseHexAndCompressed() {
-            assertEquals("2001:DB8:0:0::1", parseHostPort("[2001:DB8:0:0::1]").host());
-            assertEquals("2001:db8::1", parseHostPort("[2001:db8::1]:8080").host());
+            assertEquals("[2001:DB8:0:0::1]", parseHostPort("[2001:DB8:0:0::1]").host());
+            assertEquals("[2001:db8::1]", parseHostPort("[2001:db8::1]:8080").host());
         }
     }
 
@@ -431,21 +431,21 @@ class URITest {
         @Test
         void withoutPort() throws URISyntaxException {
             URI u = new URI("http://[2001:db8::1]", true);
-            assertEquals("2001:db8::1", u.getHost());
+            assertEquals("[2001:db8::1]", u.getHost());
             assertEquals(-1, u.getPort());
         }
 
         @Test
         void withPort() throws URISyntaxException {
             URI u = new URI("http://[2001:db8::1]:8080", true);
-            assertEquals("2001:db8::1", u.getHost());
+            assertEquals("[2001:db8::1]", u.getHost());
             assertEquals(8080, u.getPort());
         }
 
         @Test
         void withPath() throws URISyntaxException {
             URI u = new URI("http://[2001:db8::1]/foo", true);
-            assertEquals("2001:db8::1", u.getHost());
+            assertEquals("[2001:db8::1]", u.getHost());
             assertEquals(-1, u.getPort());
             assertEquals("/foo", u.getPath());
         }
@@ -458,7 +458,7 @@ class URITest {
         @Test
         void withPortAndPath() throws URISyntaxException {
             URI u = new URI("http://[2001:db8::1]:8080/foo", true);
-            assertEquals("2001:db8::1", u.getHost());
+            assertEquals("[2001:db8::1]", u.getHost());
             assertEquals(8080, u.getPort());
             assertEquals("/foo", u.getPath());
         }
@@ -476,7 +476,7 @@ class URITest {
         @Test
         void withoutUserInfo() throws URISyntaxException {
             URI u = new URI("http://[2001:db8::1]:8080/foo", true);
-            assertEquals("2001:db8::1", u.getHost());
+            assertEquals("[2001:db8::1]", u.getHost());
             assertEquals(8080, u.getPort());
             assertEquals("/foo", u.getPath());
             assertEquals("[2001:db8::1]:8080", u.getAuthority());
@@ -485,7 +485,16 @@ class URITest {
         @Test
         void withZoneIdNormalized() throws URISyntaxException {
             URI u = new URI("http://[fe80::1%25eth0]:1234/foo", true);
-            assertEquals("fe80::1%eth0", u.getHost());
+            assertEquals("[fe80::1%25eth0]", u.getHost());
+            assertEquals(1234, u.getPort());
+            assertEquals("/foo", u.getPath());
+            assertEquals("[fe80::1%25eth0]:1234", u.getAuthority());
+        }
+
+        @Test
+        void withZoneIdNormalized2() throws URISyntaxException {
+            URI u = new URI("http://[fe80::1%25eth0]:1234/foo", false);
+            assertEquals("[fe80::1%25eth0]", u.getHost());
             assertEquals(1234, u.getPort());
             assertEquals("/foo", u.getPath());
             assertEquals("[fe80::1%25eth0]:1234", u.getAuthority());
@@ -527,8 +536,8 @@ class URITest {
 
         @Test
         void uppercaseHexAndCompressedForms() throws URISyntaxException {
-            assertEquals("2001:DB8:0:0::1", new URI("http://[2001:DB8:0:0::1]/", true).getHost());
-            assertEquals("2001:db8::1", new URI("http://[2001:db8::1]/", true).getHost());
+            assertEquals("[2001:DB8:0:0::1]", new URI("http://[2001:DB8:0:0::1]/", true).getHost());
+            assertEquals("[2001:db8::1]", new URI("http://[2001:db8::1]/", true).getHost());
         }
 
         @Test

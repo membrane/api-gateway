@@ -142,15 +142,9 @@ public class URI {
         if (end < 0) {
             throw new IllegalArgumentException("Invalid IPv6 bracket literal: missing ']'.");
         }
-        String ipv6 = hostAndPort.substring(1, end);
+        String ipv6 = hostAndPort.substring(0, end+1);
 
-        // Optionally normalize RFC 6874 zone-id: allow %25 and decode to %
-        // If you prefer strictness, remove this normalization block.
-        if (ipv6.contains("%25")) {
-            ipv6 = ipv6.replace("%25", "%");
-        }
-
-        if (ipv6.isEmpty()) {
+        if (ipv6.length() <= 2) {
             throw new IllegalArgumentException("Host must not be empty.");
         }
 
@@ -190,6 +184,11 @@ public class URI {
         return scheme;
     }
 
+    /**
+     * As {@link java.net.URI#getHost()} this method
+     * - might return an IPv6 literal including the square brackets '[' and ']',
+     * - might return something like "[fe80::1%25eth0]".
+     */
     public String getHost() {
         if (uri != null)
             return uri.getHost();
