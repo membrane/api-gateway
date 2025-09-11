@@ -31,8 +31,13 @@ import static com.predic8.membrane.core.interceptor.log.LogInterceptor.Level.*;
 import static org.slf4j.LoggerFactory.*;
 
 /**
- * @description The log feature logs request and response messages. The messages will appear either on the console or in
+ * @description Logs request and response messages. The messages will appear either on the console or in
  * a log file depending on the log configuration.
+ * <p>Typical use cases:
+ * <ul>
+ *   <li>Debugging routes during development.</li>
+ *   <li>Operational visibility in production (metadata-only, masked values).</li>
+ * </ul>
  * @topic 4. Monitoring, Logging and Statistics
  */
 @MCElement(name = "log")
@@ -60,7 +65,6 @@ public class LogInterceptor extends AbstractExchangeExpressionInterceptor {
     public Outcome handleRequest(Exchange exc) {
         logMessage(exc, REQUEST);
         return CONTINUE;
-
     }
 
     @Override
@@ -83,9 +87,14 @@ public class LogInterceptor extends AbstractExchangeExpressionInterceptor {
         return body;
     }
 
+
     /**
+     * @description Whether to include message bodies in logs.
+     *
+     * <p><strong>Warning:</strong> Body logging can expose secrets or personal data. Prefer {@code false}
+     * in production.</p>
+     *
      * @default true
-     * @description To turn off logging of message bodies set this attribute to false
      */
     @MCAttribute
     public void setBody(boolean body) {
@@ -97,8 +106,11 @@ public class LogInterceptor extends AbstractExchangeExpressionInterceptor {
     }
 
     /**
+     * @description Log level for emitted messages.
+     * <p>Values: TRACE, DEBUG, INFO, WARN, ERROR, FATAL</p>
+     *
+     *
      * @default INFO
-     * @description Sets the log level.
      * @example WARN
      */
     @MCAttribute
@@ -137,9 +149,13 @@ public class LogInterceptor extends AbstractExchangeExpressionInterceptor {
     }
 
     private String dumpHeader(Message msg) {
-        return "\nHeaders:\n" + (maskSensitive
+        return "\nHeaders:\n" + dumpHeaderFields(msg);
+    }
+
+    private String dumpHeaderFields(Message msg) {
+        return maskSensitive
                 ? filter.getMaskedHeader(msg.getHeader()).toString()
-                : msg.getHeader().toString());
+                : msg.getHeader().toString();
     }
 
     private static String dumpBody(Message msg) {
@@ -163,9 +179,10 @@ public class LogInterceptor extends AbstractExchangeExpressionInterceptor {
     }
 
     /**
-     * @default com.predic8.membrane.core.interceptor.log.LogInterceptor
-     * @description Sets the category of the logged message.
-     * @example Membrane
+     * @description Logger category to use.
+     * <p>Allows routing logs into different appenders/targets via Logback/Log4j configuration.</p>
+     *
+     * @default Fully qualified class name of {@code LogInterceptor} com.predic8.membrane.core.interceptor.log.LogInterceptor
      */
     @SuppressWarnings("unused")
     @MCAttribute
@@ -184,9 +201,11 @@ public class LogInterceptor extends AbstractExchangeExpressionInterceptor {
     }
 
     /**
-     * @default ""
-     * @description Label to find the entry in the log
+     * @description Short label printed with each log line to distinguish multiple log interceptors.
+     *
+     * <p>Useful when several APIs share the same category but you want quick visual grouping.</p>
      * @example "After Transformation"
+     * @default empty string
      */
     @SuppressWarnings("unused")
     @MCAttribute
@@ -229,9 +248,11 @@ public class LogInterceptor extends AbstractExchangeExpressionInterceptor {
     }
 
     /**
-     * @default true
-     * @description Masked sensitive data (e.g. passwords).
-     * @example false
+     * @description Whether to mask sensitive header values (e.g., Authorization, Cookies, API keys).
+     *
+     * <p>When enabled (default), values are replaced by ****.</p>
+     *
+     *
      */
     @MCAttribute
     public void setMaskSensitive(boolean maskSensitive) {
