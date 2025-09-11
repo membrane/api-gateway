@@ -1,0 +1,83 @@
+package com.predic8.membrane.core.interceptor.dlp;
+
+import java.util.*;
+import java.util.stream.Collectors;
+
+public class RiskReport {
+
+    private final Map<String, String> matchedFields = new LinkedHashMap<>();
+    private final Map<String, String> fieldCategories = new LinkedHashMap<>();
+    private final Map<String, Integer> riskCounts = new LinkedHashMap<>();
+    private final Map<String, Map<String, Integer>> riskDetails = new LinkedHashMap<>();
+
+    private static final List<String> RISK_LEVELS = List.of("high", "medium", "low", "unknown");
+
+    public String normalizeFieldKey(String field) {
+        return field.replaceFirst("^\\$\\.", "");
+    }
+
+    private String normalizeRiskLevel(String level) {
+        return switch (level.toLowerCase()) {
+            case "high", "medium", "low" -> level.toLowerCase();
+            default -> "unknown";
+        };
+    }
+
+    public void recordField(String field, String riskLevel, String category) {
+        String key = normalizeFieldKey(field);
+        String level = normalizeRiskLevel(riskLevel);
+        matchedFields.put(key, level);
+        fieldCategories.put(key, category);
+
+        riskCounts.merge(level, 1, Integer::sum);
+        riskDetails
+                .computeIfAbsent(level, r -> new LinkedHashMap<>())
+                .merge(key, 1, Integer::sum);
+    }
+
+    public String getCategoryOf(String field) {
+        return fieldCategories.getOrDefault(normalizeFieldKey(field), "Unknown");
+    }
+
+    public String getRiskLevelOf(String field) {
+        return matchedFields.getOrDefault(normalizeFieldKey(field), "Unknown");
+    }
+
+    public String getCategory() {
+        if (riskCounts.getOrDefault("high", 0) > 0) return "high";
+        if (riskCounts.getOrDefault("medium", 0) > 0) return "medium";
+        if (riskCounts.getOrDefault("low", 0) > 0) return "low";
+        return "unknown";
+    }
+
+    public String getFormattedSummaryLog() {
+        StringBuilder sb = new StringBuilder();
+
+        String riskCountsPart = RISK_LEVELS.stream()
+                .map(level -> level + "=" + riskCounts.getOrDefault(level, 0))
+                .collect(Collectors.joining(" | "));
+
+        sb.append("[Summary]: ").append(riskCountsPart);
+
+        List<String> fieldsOutput = new ArrayList<>();
+        for (String level : RISK_LEVELS) {
+            Map<String, Integer> details = riskDetails.getOrDefault(level, Collections.emptyMap());
+            if (!details.isEmpty()) {
+                fieldsOutput.add(level + "=[" + String.join(", ", details.keySet()) + "]");
+            }
+        }
+
+        if (!fieldsOutput.isEmpty()) {
+            sb.append(" | Fields: ").append(String.join(", ", fieldsOutput));
+        }
+        return sb.toString();
+    }
+
+    public Map<String, String> getMatchedFields() {
+        return Collections.unmodifiableMap(matchedFields);
+    }
+
+    public Map<String, Integer> getRiskCounts() {
+        return Collections.unmodifiableMap(riskCounts);
+    }
+}
