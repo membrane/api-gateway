@@ -23,11 +23,13 @@ import com.predic8.membrane.core.lang.*;
 import org.slf4j.*;
 
 import java.io.*;
+import java.util.regex.Pattern;
 
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.ABORT;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.interceptor.log.LogInterceptor.Level.*;
+import static java.util.regex.Pattern.*;
 import static org.slf4j.LoggerFactory.*;
 
 /**
@@ -38,6 +40,7 @@ import static org.slf4j.LoggerFactory.*;
  *   <li>Debugging routes during development.</li>
  *   <li>Operational visibility in production (metadata-only, masked values).</li>
  * </ul>
+ * </p>
  * @topic 4. Monitoring, Logging and Statistics
  */
 @MCElement(name = "log")
@@ -56,6 +59,9 @@ public class LogInterceptor extends AbstractExchangeExpressionInterceptor {
     private boolean maskSensitive = true;
 
     private final SensitiveDataFilter filter = new SensitiveDataFilter();
+
+    private static final Pattern SENSITIVE_QUERY_PARAM =
+            compile("(?i)([?&](?:access_token|token|id_token|authorization|apikey|api[_-]?key|x-api-key|api-token|api[_-]?token|client_secret|password|session|auth|code)=)[^&\\s]*");
 
     public LogInterceptor() {
         name = "log";
@@ -99,7 +105,7 @@ public class LogInterceptor extends AbstractExchangeExpressionInterceptor {
 
         if (msg == null)
             return;
-        writeLog(msg.getStartLine());
+        writeLog(dumpStartLine(msg));
 
         writeLog(dumpHeader(msg));
 
@@ -124,7 +130,11 @@ public class LogInterceptor extends AbstractExchangeExpressionInterceptor {
     }
 
     private static String dumpBody(Message msg) {
-        return "Body:\n%s\n".formatted(msg.getBodyAsStringDecoded());
+        try {
+            return "Body:\n%s\n".formatted(msg.getBodyAsStringDecoded());
+        } catch (Exception e) {
+            return "Body: [error reading body: %s]".formatted(e.getMessage());
+        }
     }
 
     private void writeLog(String msg) {
@@ -136,6 +146,10 @@ public class LogInterceptor extends AbstractExchangeExpressionInterceptor {
             case WARN -> getLogger(category).warn(msg);
             case ERROR, FATAL -> getLogger(category).error(msg);
         }
+    }
+
+    private static String dumpStartLine(Message msg) {
+        return SENSITIVE_QUERY_PARAM.matcher(msg.getStartLine()).replaceAll("$1********");
     }
 
     @Override
@@ -152,8 +166,6 @@ public class LogInterceptor extends AbstractExchangeExpressionInterceptor {
     /**
      * @description Log level for emitted messages.
      * <p>Values: TRACE, DEBUG, INFO, WARN, ERROR, FATAL</p>
-     *
-     *
      * @default INFO
      * @example WARN
      */
@@ -165,7 +177,6 @@ public class LogInterceptor extends AbstractExchangeExpressionInterceptor {
     /**
      * @description Logger category to use.
      * <p>Allows routing logs into different appenders/targets via Logback/Log4j configuration.</p>
-     *
      * @default Fully qualified class name of {@code LogInterceptor} com.predic8.membrane.core.interceptor.log.LogInterceptor
      */
     @SuppressWarnings("unused")
@@ -192,7 +203,6 @@ public class LogInterceptor extends AbstractExchangeExpressionInterceptor {
      *
      * <p><strong>Warning:</strong> Body logging can expose secrets or personal data. Prefer {@code false}
      * in production.</p>
-     *
      * @default true
      */
     @MCAttribute
