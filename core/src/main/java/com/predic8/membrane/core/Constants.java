@@ -32,7 +32,7 @@ public class Constants {
 	public static final String VERSION;
 
 	static {
-		String version = "6.2"; // fallback
+		String version = "6.3"; // fallback
 		try {
 			Properties p = new Properties(); // Production
 			p.load(Constants.class.getResourceAsStream("/META-INF/maven/org.membrane-soa/service-proxy-core/pom.properties"));

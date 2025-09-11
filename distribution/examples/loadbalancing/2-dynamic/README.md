@@ -1,54 +1,98 @@
-# Dynamic API Loadbalancing - Example
+# Dynamic API Load Balancer - Example
 
-Membrane API Gateway can balance requests to a number of different nodes. The nodes can be added and removed dynamically at runtime.
+Membrane API Gateway can balance requests across backend nodes that are added and removed dynamically at runtime.
 
-The nodes can be organized in clusters. A Web based administration interface allows you to create and remove nodes and
-clusters. In addition, a simple URL based interface can be used to add clusters and nodes. 
+Nodes can be organized in clusters. You can manage them either through the web-based administration console or via a simple URL-based API.
 
 
-## Get Started
+## What You Will Run
 
-In this example we will distribute requests to 3 different nodes. 
+- One Membrane router as the load balancer
+- Three sample web apps simulating backend nodes (ports 4000, 4001, 4002)
+- A web-based admin console for cluster and node management
+- An HTTP API for programmatic node control
 
-To run the example execute the following steps:
+
+## Run the Example
 
 1. Go to the `examples/loadbalancing/2-dynamic` directory.
-2. Execute `membrane.cmd` or `membrane.sh`
-3. Open the URL http://localhost:4000 in your browser. 
-   You will see a simple web app that counts how often it was called. There are 2 more web apps of the same kind
-   listening at port `4001` and `4002`.
-4. Open the URL:
 
-```
-http://localhost:9000/admin
-```
+   ```bash
+   cd examples/loadbalancing/2-dynamic
+   ```
 
-5. Click on the `Load Balancing` tab.
-6. Click on the list entry `Default`. On the next page, set `Default` as name and click on `add Cluster` just below the list.
-7. Nodes are identified by host name and port. Fill in the form with `localhost` as host and `4000` as port and
-   press `Add Node`.
-8. Open the URL:
+2. Start Membrane:
 
-```
-http://localhost:8080
-```
+   - macOS/Linux: `./membrane.sh`
+   - Windows: `membrane.cmd`
 
-9. Refresh your browser a few times. The request are all going to the same node.
-10. Now add another node with host name `localhost` and port `4001` as described in step 5 till 7.
-11. Open `http://localhost:8080`again. Now the requests will be distributed between to node 1 and node 2.
+3. Open in a browser:
+
+   ```
+   http://localhost:4000
+   ```
+
+   You will see a simple counter app. Identical apps are also available on ports `4001` and `4002`.
+
+4. Open the **Admin Console**:
+
+   ```
+   http://localhost:9000/admin
+   ```
+
+5. Go to the **Load Balancing** tab.
+
+   - Click the entry `Default`.
+   - Enter `Default` as the cluster name.
+   - Click **Add Cluster**.
+
+6. Add the first node:
+
+   - Host: `localhost`
+   - Port: `4000`
+   - Click **Add Node**.
+
+7. Open in a browser:
+
+   ```
+   http://localhost:8080
+   ```
+
+   Refresh a few times. All requests go to **node 4000**.
+
+8. Add a second node (`localhost:4001`) using the same steps.
+
+9. Open:
+
+   ```
+   http://localhost:8080
+   ```
+
+   Now requests are distributed between **node 4000** and **node 4001**.
+
+10. Add a third node (`localhost:4002`) to see full load balancing across three backends.
+
+
 
 ## Managing Nodes with an API
 
-Nodes can also be registered, turned off and on using a simple API.
+Nodes can also be controlled programmatically using the Cluster Manager API. For example, to temporarily disable node `localhost:4001`:
 
+```bash
+curl "http://localhost:9010/clustermanager/down?balancer=default&host=localhost&port=4001"
 ```
-http://localhost:9010/clustermanager/down?balancer=default&host=localhost&port=4001
-```
 
-You find more balancer configurations at the [Loadbalancing](..) page.
+Re-enable the node with `.../up?balancer=...`.
 
-Note that the `adminConsole` and the `clusterNotification` are optional, you can take them out of the `proxies.xml` if you want to.
+
+## Notes
+
+- The `adminConsole` and `clusterNotification` interceptors in `proxies.xml` are optional.
+  You can remove them if you only want programmatic control.
+- This example defaults to round-robin balancing.
+
 
 ---
 See:
-- [balancer](https://membrane-soa.org/api-gateway-doc/current/configuration/reference/balancer.htm) reference
+- [proxies.xml](proxies.xml)
+- [balancer](https://www.membrane-api.io/docs/current/balancer.html) reference

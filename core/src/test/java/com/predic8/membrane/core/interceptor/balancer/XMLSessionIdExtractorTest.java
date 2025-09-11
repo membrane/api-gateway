@@ -1,4 +1,4 @@
-/* Copyright 2011, 2012 predic8 GmbH, www.predic8.com
+/* Copyright 2011, 2012, 2025 predic8 GmbH, www.predic8.com
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -19,22 +19,24 @@ import org.junit.jupiter.api.*;
 
 import java.io.*;
 
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.RESPONSE;
 import static org.junit.jupiter.api.Assertions.*;
 
-public class XMLSessionIdExtractorTest {
+class XMLSessionIdExtractorTest extends AbstractSessionIdExtractorTest {
 
 
 	@Test
-	public void testSessionIdExtraction() throws Exception {
-		Request res = new Request();
-		res.setHeader(getHeader());
-		res.setBodyContent(getBodyContent());
+    void sessionIdExtraction() throws Exception {
+		Request req = new Request();
+		req.setHeader(getHeader());
+		req.setBodyContent(getBodyContent());
 
 		XMLElementSessionIdExtractor extractor = new XMLElementSessionIdExtractor();
 		extractor.setLocalName("session");
 		extractor.setNamespace("http://predic8.com/session/");
 
-		assertEquals("555555", extractor.getSessionId(res));
+		assertEquals("555555", extractor.getSessionId(getExchange(req), REQUEST));
 
 	}
 
@@ -48,7 +50,7 @@ public class XMLSessionIdExtractorTest {
 		extractor.setLocalName("session");
 
 
-		assertEquals("555555", extractor.getSessionId(res));
+		assertEquals("555555", extractor.getSessionId(getExchange(res), RESPONSE));
 	}
 
 	private byte[] getBodyContent() throws IOException {

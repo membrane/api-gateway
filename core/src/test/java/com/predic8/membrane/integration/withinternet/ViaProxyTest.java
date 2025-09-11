@@ -29,7 +29,7 @@ public class ViaProxyTest {
 	static HttpRouter router;
 
 	@BeforeAll
-	public static void setUp() throws Exception {
+	static void setUp() throws Exception {
 		ProxyConfiguration proxy = new ProxyConfiguration();
 		proxy.setHost("localhost");
 		proxy.setPort(3128);
@@ -46,7 +46,7 @@ public class ViaProxyTest {
 	}
 
 	@Test
-	public void testPost() {
+	void testPost() {
 		when()
 			.get("http://localhost:4000/shop/v2/products")
 		.then()
@@ -54,7 +54,7 @@ public class ViaProxyTest {
 	}
 
 	@AfterAll
-	public static void tearDown() {
+	static void tearDown() {
 		router.shutdown();
 		proxyRouter.shutdown();
 	}
