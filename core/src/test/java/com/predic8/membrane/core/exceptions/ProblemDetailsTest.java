@@ -136,7 +136,7 @@ public class ProblemDetailsTest {
         }
 
         @Test
-        void causeStacktrace() throws IOException {
+        void causeStacktrace() {
             String b = internal(false, "a")
                     .exception(new RuntimeException("b", new InnerExceptionGenerator().generate()))
                     .build().getBodyAsStringDecoded();
