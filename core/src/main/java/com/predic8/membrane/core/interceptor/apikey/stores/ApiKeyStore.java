@@ -19,6 +19,15 @@ import java.util.List;
 import java.util.Optional;
 
 public interface ApiKeyStore {
+
     void init(Router router);
+
+    /**
+     * Validates the API Key and returns the associated scopes. If the API key is not found in the store
+     * an UnauthorizedApiKeyException in thrown.
+     * @param apiKey
+     * @return list of Scopes
+     * @throws UnauthorizedApiKeyException Thrown when API key is invalid
+     */
     Optional<List<String>> getScopes(String apiKey) throws UnauthorizedApiKeyException;
 }
