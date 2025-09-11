@@ -83,41 +83,6 @@ public class LogInterceptor extends AbstractExchangeExpressionInterceptor {
         }
     }
 
-    public boolean isBody() {
-        return body;
-    }
-
-
-    /**
-     * @description Whether to include message bodies in logs.
-     *
-     * <p><strong>Warning:</strong> Body logging can expose secrets or personal data. Prefer {@code false}
-     * in production.</p>
-     *
-     * @default true
-     */
-    @MCAttribute
-    public void setBody(boolean body) {
-        this.body = body;
-    }
-
-    public Level getLevel() {
-        return level;
-    }
-
-    /**
-     * @description Log level for emitted messages.
-     * <p>Values: TRACE, DEBUG, INFO, WARN, ERROR, FATAL</p>
-     *
-     *
-     * @default INFO
-     * @example WARN
-     */
-    @MCAttribute
-    public void setLevel(Level level) {
-        this.level = level;
-    }
-
     private void logMessage(Exchange exc, Flow flow) {
         if (getMessage() != null && !getMessage().isEmpty()) {
             try {
@@ -173,9 +138,28 @@ public class LogInterceptor extends AbstractExchangeExpressionInterceptor {
         }
     }
 
-    @SuppressWarnings("unused")
-    public String getCategory() {
-        return category;
+    @Override
+    public String getShortDescription() {
+        return "Logs the " + (body ? "headers of " : "") + "requests and responses" +
+                " using Log4J's " + level.toString() + " level.";
+    }
+
+    @Override
+    public String getDisplayName() {
+        return "log";
+    }
+
+    /**
+     * @description Log level for emitted messages.
+     * <p>Values: TRACE, DEBUG, INFO, WARN, ERROR, FATAL</p>
+     *
+     *
+     * @default INFO
+     * @example WARN
+     */
+    @MCAttribute
+    public void setLevel(Level level) {
+        this.level = level;
     }
 
     /**
@@ -188,16 +172,6 @@ public class LogInterceptor extends AbstractExchangeExpressionInterceptor {
     @MCAttribute
     public void setCategory(String category) {
         this.category = category;
-    }
-
-    @Override
-    public String getShortDescription() {
-        return "Logs the " + (body ? "headers of " : "") + "requests and responses" +
-                " using Log4J's " + level.toString() + " level.";
-    }
-
-    public String getLabel() {
-        return label;
     }
 
     /**
@@ -213,25 +187,29 @@ public class LogInterceptor extends AbstractExchangeExpressionInterceptor {
         this.label = label;
     }
 
-    @Override
-    public String getDisplayName() {
-        return "log";
+    /**
+     * @description Whether to include message bodies in logs.
+     *
+     * <p><strong>Warning:</strong> Body logging can expose secrets or personal data. Prefer {@code false}
+     * in production.</p>
+     *
+     * @default true
+     */
+    @MCAttribute
+    public void setBody(boolean body) {
+        this.body = body;
     }
 
     /**
-     * Message to write into the log. Can be an expression.
+     * @description Whether to mask sensitive header values (e.g., Authorization, Cookies, API keys).
+     *
+     * <p>When enabled (default), values are replaced by ****.</p>
+     *
+     *
      */
     @MCAttribute
-    public void setMessage(String message) {
-        expression = message;
-    }
-
-    public String getMessage() {
-        return expression;
-    }
-
-    public boolean isHeaderOnly() {
-        return false;
+    public void setMaskSensitive(boolean maskSensitive) {
+        this.maskSensitive = maskSensitive;
     }
 
     /**
@@ -248,18 +226,39 @@ public class LogInterceptor extends AbstractExchangeExpressionInterceptor {
     }
 
     /**
-     * @description Whether to mask sensitive header values (e.g., Authorization, Cookies, API keys).
-     *
-     * <p>When enabled (default), values are replaced by ****.</p>
-     *
-     *
+     * Message to write into the log. Can be an expression.
      */
     @MCAttribute
-    public void setMaskSensitive(boolean maskSensitive) {
-        this.maskSensitive = maskSensitive;
+    public void setMessage(String message) {
+        expression = message;
+    }
+
+    public Level getLevel() {
+        return level;
+    }
+
+    @SuppressWarnings("unused")
+    public String getCategory() {
+        return category;
+    }
+
+    public String getLabel() {
+        return label;
+    }
+
+    public boolean isBody() {
+        return body;
     }
 
     public boolean isMaskSensitive() {
         return maskSensitive;
+    }
+
+    public boolean isHeaderOnly() {
+        return false;
+    }
+
+    public String getMessage() {
+        return expression;
     }
 }
