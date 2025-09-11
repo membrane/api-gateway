@@ -95,7 +95,7 @@ public class HTTPClientInterceptor extends AbstractInterceptor {
             log.warn(msg + PROXIES_HINT);
             gateway(router.isProduction(), getDisplayName())
                     .addSubSee("connect")
-                    .statusCode(502)
+                    .status(502)
                     .detail(msg)
                     .buildAndSetResponse(exc);
             return ABORT;
@@ -111,7 +111,7 @@ public class HTTPClientInterceptor extends AbstractInterceptor {
             log.warn(msg + PROXIES_HINT);
             gateway(router.isProduction(), getDisplayName())
                     .addSubSee("unknown-host")
-                    .statusCode(502)
+                    .status(502)
                     .detail(msg)
                     .buildAndSetResponse(exc);
             return ABORT;
@@ -130,7 +130,7 @@ public class HTTPClientInterceptor extends AbstractInterceptor {
         } catch (ProtocolUpgradeDeniedException e) {
             log.debug("Denied protocol upgrade request. uri={} protocol={}", exc.getRequest().getUri(), e.getProtocol());
             gateway(router.isProduction(), getDisplayName())
-                    .statusCode(401)
+                    .status(401)
                     .title("Protocol upgrade has been denied.")
                     .addSubSee("denied-protocol-upgrade")
                     .internal("hint", "Protocol upgrades are supported by Membrane for 'websocket' and 'tcp', but have to be allowed in the configuration explicitly.")

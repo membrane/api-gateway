@@ -86,37 +86,37 @@ public class ProblemDetails {
      */
     private boolean stacktrace = true;
 
-    public static ProblemDetails user(boolean logKeyInsteadOfDetails, String component) {
-        return problemDetails("user", logKeyInsteadOfDetails)
-                .statusCode(400)
+    public static ProblemDetails user(boolean production, String component) {
+        return problemDetails("user", production)
+                .status(400)
                 .title("User error.")
                 .component(component);
     }
 
-    public static ProblemDetails internal(boolean logKeyInsteadOfDetails, String component) {
-        return problemDetails("internal", logKeyInsteadOfDetails)
-                .statusCode(500)
+    public static ProblemDetails internal(boolean production, String component) {
+        return problemDetails("internal", production)
+                .status(500)
                 .title("Internal server error.")
                 .component(component);
     }
 
-    public static ProblemDetails gateway(boolean logKeyInsteadOfDetails, String component) {
-        return problemDetails("gateway", logKeyInsteadOfDetails)
-                .statusCode(500)
+    public static ProblemDetails gateway(boolean production, String component) {
+        return problemDetails("gateway", production)
+                .status(500)
                 .title("Gateway error.")
                 .component(component);
     }
 
     public static ProblemDetails security(boolean logKeyInsteadOfDetails, String component) {
         return problemDetails("security", logKeyInsteadOfDetails)
-                .statusCode(500)
+                .status(500)
                 .title("Security error.")
                 .component(component);
     }
 
     public static ProblemDetails openapi(boolean logKeyInsteadOfDetails, String component) {
         return problemDetails("openapi", logKeyInsteadOfDetails)
-                .statusCode(400)
+                .status(400)
                 .title("OpenAPI error.")
                 .component(component);
     }
@@ -140,7 +140,7 @@ public class ProblemDetails {
         return this;
     }
 
-    public ProblemDetails statusCode(int statusCode) {
+    public ProblemDetails status(int statusCode) {
         this.statusCode = statusCode;
         return this;
     }
@@ -176,6 +176,9 @@ public class ProblemDetails {
         return this;
     }
 
+    /**
+     * Hide in production mode
+     */
     public ProblemDetails internal(String key, Object value) {
         this.internalFields.put(key, value);
         return this;
@@ -224,14 +227,21 @@ public class ProblemDetails {
             root.put(DETAIL, detail);
         }
 
+        if (logKeyInsteadOfDetails) {
+            return root;
+        }
         root.putAll(createInternal(getTypeSubtypeString()));
         return root;
     }
 
     private void provideLogKeyInsteadOfDetails(Map<String, Object> root) {
+        if (internalFields.isEmpty() && !stacktrace)
+            return;
+
         String logKey = randomUUID().toString();
         log.warn("logKey={}\ntype={}\ntitle={}\n,detail={}\n,internal={},.", logKey, getTypeSubtypeString(), title, detail, internalFields);
-        root.put(DETAIL, "Details can be found in the Membrane log searching for key: %s.".formatted(logKey));
+        root.put(DETAIL, "Internal details are hidden. See server log (key: %s)".formatted(logKey));
+
         if (type.equals("internal")) {
             title = "Internal error";
         }
@@ -262,7 +272,16 @@ public class ProblemDetails {
                 internalMap.put("stackTrace", getStackTrace(exception, new StackTraceElement[0]));
             }
         }
+        internalMap.put(SEE, getString(type));
+        if (internalMap.isEmpty()) {
+            return internalMap;
+        }
+        internalMap.put(ATTENTION, """
+                Membrane is in development mode. For production set <router production="true"> to reduce details in error messages!""");
+        return internalMap;
+    }
 
+    private String getString(String type) {
         String see = type;
         if (!component.isEmpty()) {
             see += "/" + normalizeForType(component);
@@ -273,11 +292,7 @@ public class ProblemDetails {
         if (!seeSuffix.isEmpty()) {
             see += "/" + seeSuffix;
         }
-        internalMap.put(SEE, see);
-
-        internalMap.put(ATTENTION, """
-                Membrane is in development mode. For production set <router production="true"> to reduce details in error messages!""");
-        return internalMap;
+        return see;
     }
 
     private static @NotNull Map getStackTrace(Throwable exception, StackTraceElement[] enclosingTrace) {
@@ -378,7 +393,7 @@ public class ProblemDetails {
             throw new RuntimeException("Content-Type ist %s but should be %s.".formatted(r.getHeader().getContentType(), APPLICATION_PROBLEM_JSON));
 
         ProblemDetails pd = new ProblemDetails();
-        pd.statusCode(r.getStatusCode());
+        pd.status(r.getStatusCode());
 
         TypeReference<Map<String, Object>> typeRef = new TypeReference<>() {
         };

@@ -146,7 +146,7 @@ public class JsonProtectionInterceptor extends AbstractInterceptor {
         if (shouldProvideDetails()) {
             log.warn("JSON protection violation. Line: {}, col: {}, msg: {}", line, col, msg);
             ProblemDetails pd = user(false,getDisplayName())
-                    .statusCode(400)
+                    .status(400)
                     .title("JSON Protection Violation")
                     .detail(msg);
             if (line != null) pd.topLevel("line", line);
