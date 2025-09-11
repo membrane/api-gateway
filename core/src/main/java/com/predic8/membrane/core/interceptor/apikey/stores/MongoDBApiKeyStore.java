@@ -14,19 +14,15 @@
 
 package com.predic8.membrane.core.interceptor.apikey.stores;
 
-import com.mongodb.client.MongoClient;
-import com.mongodb.client.MongoClients;
-import com.mongodb.client.MongoDatabase;
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.Router;
-import com.predic8.membrane.core.util.ConfigurationException;
-import org.bson.Document;
+import com.mongodb.client.*;
+import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.util.*;
+import org.bson.*;
 
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
-import static com.mongodb.client.model.Filters.eq;
+import static com.mongodb.client.model.Filters.*;
 
 @MCElement(name = "mongoDBApiKeyStore")
 public class MongoDBApiKeyStore implements ApiKeyStore {
@@ -52,14 +48,14 @@ public class MongoDBApiKeyStore implements ApiKeyStore {
     }
 
     @Override
-    public Optional<List<String>> getScopes(String apiKey) throws UnauthorizedApiKeyException {
+    public Optional<Set<String>> getScopes(String apiKey) throws UnauthorizedApiKeyException {
         Document apiKeyDoc = mongoDatabase.getCollection(collection).find(eq("_id", apiKey)).first();
 
         if (apiKeyDoc == null) {
             throw new UnauthorizedApiKeyException();
         }
 
-        return Optional.ofNullable(apiKeyDoc.getList("scopes", String.class));
+        return Optional.ofNullable(new HashSet<>(apiKeyDoc.getList("scopes", String.class)));
     }
 
     @MCAttribute()

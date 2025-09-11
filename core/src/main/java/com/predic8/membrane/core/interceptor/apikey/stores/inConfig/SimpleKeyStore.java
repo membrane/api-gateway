@@ -13,18 +13,14 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.apikey.stores.inConfig;
 
-import com.predic8.membrane.annot.MCChildElement;
-import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.Router;
-import com.predic8.membrane.core.interceptor.apikey.stores.ApiKeyStore;
-import com.predic8.membrane.core.interceptor.apikey.stores.UnauthorizedApiKeyException;
+import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.interceptor.apikey.stores.*;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
-import static java.util.Optional.ofNullable;
-import static java.util.stream.Collectors.toList;
+import static java.util.Optional.*;
+import static java.util.stream.Collectors.*;
 
 /**
  * @description Stores api keys inline as XML.
@@ -52,12 +48,12 @@ public class SimpleKeyStore implements ApiKeyStore {
     }
 
     @Override
-    public Optional<List<String>> getScopes(String apiKey) throws UnauthorizedApiKeyException {
+    public Optional<Set<String>> getScopes(String apiKey) throws UnauthorizedApiKeyException {
         var key = keys.stream().filter(k -> k.getValue().equals(apiKey)).findFirst();
         if (key.isPresent()) {
-            List<String> scopeValues = key.get().getScopes().stream()
+            Set<String> scopeValues = key.get().getScopes().stream()
                     .map(Scope::getValue)
-                    .collect(toList());
+                    .collect(toSet());
             return ofNullable(scopeValues.isEmpty() ? null : scopeValues);
         } else {
             throw new UnauthorizedApiKeyException();

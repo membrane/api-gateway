@@ -13,23 +13,20 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.apikey.stores;
 
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.Router;
-import com.predic8.membrane.core.util.ConfigurationException;
+import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.util.*;
 
-import java.io.IOException;
-import java.util.AbstractMap.SimpleEntry;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.stream.Stream;
+import java.io.*;
+import java.util.AbstractMap.*;
+import java.util.*;
+import java.util.stream.*;
 
-import static com.predic8.membrane.core.interceptor.apikey.ApiKeyUtils.readFile;
-import static java.util.Arrays.stream;
-import static java.util.Optional.empty;
+import static com.predic8.membrane.core.interceptor.apikey.ApiKeyUtils.*;
+import static java.util.Arrays.*;
 import static java.util.Optional.of;
-import static java.util.stream.Collectors.toMap;
+import static java.util.Optional.*;
+import static java.util.stream.Collectors.*;
 
 /**
  * @description Loads api keys from a file. File has to be one key per line, blank lines for formatting are allowed. Optionally, a comma separated list of scopes after the key and a colon in between the two. Hash symbol can be used for comments at the end of each line, including empty lines.
@@ -39,7 +36,7 @@ import static java.util.stream.Collectors.toMap;
 public class ApiKeyFileStore implements ApiKeyStore {
 
     private String location;
-    private Map<String, Optional<List<String>>> scopes;
+    private Map<String, Optional<Set<String>>> scopes;
 
     @Override
     public void init(Router router) {
@@ -50,8 +47,8 @@ public class ApiKeyFileStore implements ApiKeyStore {
         }
     }
 
-    public static Map<String, Optional<List<String>>> readKeyData(Stream<String> lines) throws IOException {
-        Map<String, Optional<List<String>>> collect;
+    public static Map<String, Optional<Set<String>>> readKeyData(Stream<String> lines) throws IOException {
+        Map<String, Optional<Set<String>>> collect;
         try {
             collect = lines
                     .map(ApiKeyFileStore::extractKeyBeforeHash)
@@ -70,7 +67,7 @@ public class ApiKeyFileStore implements ApiKeyStore {
         return line.split("#", 2)[0];
     }
 
-    static SimpleEntry<String, Optional<List<String>>> parseLine(String line) {
+    static SimpleEntry<String, Optional<Set<String>>> parseLine(String line) {
         List<String> parts = getParts(line);
         return new SimpleEntry<>(parts.get(0), getValue(parts));
     }
@@ -79,18 +76,18 @@ public class ApiKeyFileStore implements ApiKeyStore {
         return stream(line.split(":", 2)).map(String::trim).toList();
     }
 
-    private static Optional<List<String>> getValue(List<String> parts) {
+    private static Optional<Set<String>> getValue(List<String> parts) {
         return (parts.size() > 1 && !parts.get(1).isEmpty()) ? of(parseValues(parts.get(1))) : empty();
     }
 
-    static List<String> parseValues(String valuesPart) {
+    static Set<String> parseValues(String valuesPart) {
         return stream(valuesPart.split(","))
                 .map(String::trim)
-                .toList();
+                .collect(toSet());
     }
 
     @Override
-    public Optional<List<String>> getScopes(String key) throws UnauthorizedApiKeyException {
+    public Optional<Set<String>> getScopes(String key) throws UnauthorizedApiKeyException {
         if (scopes.containsKey(key)) {
             return scopes.get(key);
         } else {

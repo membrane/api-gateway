@@ -55,7 +55,7 @@ public class JDBCApiKeyStore extends AbstractJdbcSupport implements ApiKeyStore 
     }
 
     @Override
-    public Optional<List<String>> getScopes(String apiKey) throws UnauthorizedApiKeyException {
+    public Optional<Set<String>> getScopes(String apiKey) throws UnauthorizedApiKeyException {
         try {
             checkApiKey(apiKey);
             return fetchScopes(apiKey);
@@ -77,12 +77,12 @@ public class JDBCApiKeyStore extends AbstractJdbcSupport implements ApiKeyStore 
         }
     }
 
-    private @NotNull Optional<List<String>> fetchScopes(String apiKey) throws SQLException {
+    private @NotNull Optional<Set<String>> fetchScopes(String apiKey) throws SQLException {
         try (Connection con = getDatasource().getConnection()) {
             try (PreparedStatement stmt = con.prepareStatement("SELECT * FROM %s a,%s s WHERE a.apikey=s.apikey AND a.apikey = ?".formatted(keyTable.getName(), scopeTable.getName()))) {
                 stmt.setString(1, apiKey);
                 try (ResultSet rs = stmt.executeQuery()) {
-                    List<String> scopes = new ArrayList<>();
+                    Set<String> scopes = new HashSet<>();
                     while (rs.next()) {
                         scopes.add(rs.getString("scope"));
                     }

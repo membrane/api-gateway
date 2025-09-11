@@ -13,21 +13,28 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.apikey.stores;
 
-import com.predic8.membrane.core.Router;
+import com.predic8.membrane.core.*;
 
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 public interface ApiKeyStore {
 
-    void init(Router router);
+    /**
+     * Lifecycle hook invoked once to provide the {@link Router} context.
+     * Default is a no-op to preserve backward compatibility; implementations may override.
+     *
+     * @param router non-null router instance
+     */
+    default void init(Router router) {
+    }
 
     /**
-     * Validates the API Key and returns the associated scopes. If the API key is not found in the store
-     * an UnauthorizedApiKeyException in thrown.
-     * @param apiKey
-     * @return list of Scopes
-     * @throws UnauthorizedApiKeyException Thrown when API key is invalid
+     * Validates the API key and returns the associated scopes.
+     * If the key is not found, expired, or invalid, an {@link UnauthorizedApiKeyException} is thrown.
+     *
+     * @param apiKey the presented API key
+     * @return an {@code Optional} containing the scopes for a valid key; {@code Optional.empty()} if the key is valid but has no scopes
+     * @throws UnauthorizedApiKeyException if the API key is not found or is invalid
      */
-    Optional<List<String>> getScopes(String apiKey) throws UnauthorizedApiKeyException;
+    Optional<Set<String>> getScopes(String apiKey) throws UnauthorizedApiKeyException;
 }
