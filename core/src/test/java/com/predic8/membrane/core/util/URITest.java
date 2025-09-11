@@ -250,7 +250,7 @@ class URITest {
     }
 
     @Nested
-    class ParsingUtilitiesTests {
+    class ParsingUtilTests {
 
         @Test
         void parsePort() throws URISyntaxException {
@@ -274,9 +274,11 @@ class URITest {
         @Test
         void isIPv6() throws URISyntaxException {
             URI u = new URI("foo", true);
-            assertTrue(u.isBracketedIpv6("[::1]"));
-            assertTrue(u.isBracketedIpv6("[::1"));
-            assertFalse(u.isBracketedIpv6("::1"));
+            assertTrue(u.isIPv6(u.stripUserInfo("[::1]")));
+            assertTrue(u.isIPv6(u.stripUserInfo("[2001:db8::1]")));
+            assertTrue(u.isIPv6(u.stripUserInfo("[fe80::1%25eth0]")));
+            assertTrue(u.isIPv6(u.stripUserInfo("[fe80::1234%en0]:443")));
+            assertTrue(u.isIPv6(u.stripUserInfo("user:pass@[::1]:8080")));
         }
     }
 

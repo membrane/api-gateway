@@ -99,7 +99,7 @@ public class URI {
 
         String noUser = stripUserInfo(authority);
 
-        return isBracketedIpv6(noUser) ? parseIpv6(noUser) : parseIpv4(noUser);
+        return isIPv6(noUser) ? parseIpv6(noUser) : parseIpv4(noUser);
     }
 
     HostPort parseIpv6(String input) {
@@ -207,8 +207,8 @@ public class URI {
         return (atSymbolPos > -1) ? input.substring(atSymbolPos + 1) : input;
     }
 
-    boolean isBracketedIpv6(String input) {
-        return input.startsWith("[");
+    boolean isIPv6(String input) {
+        return input.contains("[") && input.contains("]");
     }
 
     public String getScheme() {
