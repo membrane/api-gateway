@@ -15,6 +15,7 @@ import com.fasterxml.jackson.core.*;
 import com.fasterxml.jackson.databind.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.util.*;
 import org.junit.jupiter.api.*;
 import org.xml.sax.*;
 
@@ -56,7 +57,7 @@ public class ProblemDetailsTest {
             assertEquals("https://membrane-api.io/problems/user/catastrophy",json.get("type").asText());
 
             // Assert Order
-            assertIterableEquals(List.of("title","type", "see", "attention"), toList( json.fieldNames()));
+            assertIterableEquals(List.of("title","type", "status","see", "attention"), toList( json.fieldNames()));
         }
 
         @Test
@@ -109,7 +110,7 @@ public class ProblemDetailsTest {
             String pdJson = getResponseWithDetailsAndExtensions(false).getBodyAsStringDecoded();
             System.out.println("pdJson = " + pdJson);
             JsonNode json = om.readTree(pdJson);
-            assertEquals(7,json.size());
+            assertEquals(8,json.size());
             assertEquals("https://membrane-api.io/problems/user/catastrophy",json.get("type").asText());
             assertEquals("Something happend!",json.get("title").asText());
             assertEquals("A detailed description.",json.get("detail").asText());
@@ -144,6 +145,7 @@ public class ProblemDetailsTest {
             assertTrue(b.contains("more_frames_in_common"));
         }
 
+
     }
 
     @Nested
@@ -171,14 +173,15 @@ public class ProblemDetailsTest {
         @Test
         void productionUser() throws Exception {
             JsonNode json = parseJson(getResponseWithDetailsAndExtensions(true));
-            assertEquals(3,json.size());
+            assertEquals(4,json.size());
             assertEquals("https://membrane-api.io/problems/user/catastrophy",json.get("type").asText());
             assertEquals("Something happend!", json.get("title").asText());
         }
 
         @Test
         void exception() throws Exception {
-            Response r = internal(true, "a b").addSubType("catastrophe").title("Something happened!")
+            Response r = internal(true, "a b").addSubType("catastrophe")
+                    .title("Something happened!")
                     .detail("A detailed description.")
                     .internal("a", "1")
                     .internal("b", "2").build();
@@ -187,9 +190,9 @@ public class ProblemDetailsTest {
 
             JsonNode json = parseJson(r);
 
-            assertEquals(3,json.size());
-            assertEquals("https://membrane-api.io/problems/internal/catastrophe",json.get("type").asText());
-            assertEquals("Something happened!",json.get("title").asText());
+            assertEquals(4,json.size());
+            assertEquals("https://membrane-api.io/problems/internal",json.get("type").asText());
+            assertEquals(INTERNAL_SERVER_ERROR,json.get("title").asText());
         }
     }
 
@@ -230,7 +233,7 @@ public class ProblemDetailsTest {
 
     @Test
     void parse() throws JsonProcessingException {
-        ProblemDetails pd = ProblemDetails.parse(ProblemDetails.user(false, "a")
+        ProblemDetails pd = ProblemDetailsTestUtil.parse(ProblemDetails.user(false, "a")
                 .addSubType("validation")
                 .status(421)
                 .title("Validation error")
@@ -253,7 +256,6 @@ public class ProblemDetailsTest {
     }
 
     private static JsonNode parseJson(Response r) throws Exception {
-        JsonNode json = om.readTree(r.getBodyAsStringDecoded());
-        return json;
+        return om.readTree(r.getBodyAsStringDecoded());
     }
 }
