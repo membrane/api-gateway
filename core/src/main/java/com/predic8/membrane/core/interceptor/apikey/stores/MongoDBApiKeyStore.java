@@ -31,14 +31,12 @@ public class MongoDBApiKeyStore implements ApiKeyStore {
     private String database;
     private String collection;
 
-    private MongoClient mongoClient;
     private MongoDatabase mongoDatabase;
 
     @Override
     public void init(Router router) {
         try {
-            mongoClient = MongoClients.create(connection);
-            mongoDatabase = mongoClient.getDatabase(database);
+            mongoDatabase = MongoClients.create(connection).getDatabase(database);
         } catch (Exception e) {
             throw new ConfigurationException("""
                             Failed to initialize MongoDB connection.
@@ -55,7 +53,7 @@ public class MongoDBApiKeyStore implements ApiKeyStore {
             throw new UnauthorizedApiKeyException();
         }
 
-        return Optional.ofNullable(new HashSet<>(apiKeyDoc.getList("scopes", String.class)));
+        return Optional.of(new HashSet<>(apiKeyDoc.getList("scopes", String.class)));
     }
 
     @MCAttribute()

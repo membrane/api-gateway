@@ -14,7 +14,6 @@
 package com.predic8.membrane.core.interceptor.apikey.stores.inConfig;
 
 import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.interceptor.apikey.stores.*;
 
 import java.util.*;
@@ -40,11 +39,6 @@ public class SimpleKeyStore implements ApiKeyStore {
 
     public List<Key> getKeys() {
         return keys;
-    }
-
-
-    @Override
-    public void init(Router router) {
     }
 
     @Override

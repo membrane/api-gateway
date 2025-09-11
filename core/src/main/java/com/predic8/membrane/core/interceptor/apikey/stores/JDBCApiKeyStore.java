@@ -131,7 +131,7 @@ public class JDBCApiKeyStore extends AbstractJdbcSupport implements ApiKeyStore 
     /**
      * @descriptio Table with the scopes.
      */
-    @MCChildElement(order = 0)
+    @MCChildElement()
     public void setKeyTable(KeyTable keyTable) {
         this.keyTable = keyTable;
     }
