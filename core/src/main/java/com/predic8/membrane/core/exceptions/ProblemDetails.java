@@ -53,6 +53,7 @@ public class ProblemDetails {
     private static final Set<String> RESERVED = Set.of(TYPE, TITLE, DETAIL, INSTANCE, STATUS);
     public static final String MESSAGE = "message";
     public static final String STACK_TRACE = "stackTrace";
+    public static final String LOG_KEY = "logKey";
 
     /**
      * If router is in production mode that should not expose internal details
@@ -261,7 +262,7 @@ public class ProblemDetails {
         String logKey = randomUUID().toString();
 
         try {
-            MDC.put("logKey", logKey);
+            MDC.put(LOG_KEY, logKey);
             log.info("ProblemDetails hidden. type={}, title={}, detail={}, internal={}",
                     getTypeSubtypeString(), title, detail, internalFields);
             if (exception != null) {
@@ -271,7 +272,7 @@ public class ProblemDetails {
                 }
             }
         } finally {
-            MDC.remove("logKey");
+            MDC.remove(LOG_KEY);
         }
         root.put(DETAIL, "Internal details are hidden. See server log (key: %s)".formatted(logKey));
     }
@@ -319,8 +320,8 @@ public class ProblemDetails {
     }
 
 
-    private static @NotNull Map getStackTrace(Throwable exception, StackTraceElement[] enclosingTrace) {
-        var m = new LinkedHashMap<>();
+    private static @NotNull Map<String, Object> getStackTrace(Throwable exception, StackTraceElement[] enclosingTrace) {
+        var m = new LinkedHashMap<String,Object>();
 
         StackTraceElement[] trace = exception.getStackTrace();
         int m2 = trace.length - 1;
@@ -364,7 +365,7 @@ public class ProblemDetails {
         builder.contentType(APPLICATION_PROBLEM_JSON);
     }
 
-    public boolean isReservedProblemDetailsField(String key) {
+    public static boolean isReservedProblemDetailsField(String key) {
         return RESERVED.contains(key);
     }
 

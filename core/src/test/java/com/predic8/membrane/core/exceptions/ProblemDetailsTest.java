@@ -47,8 +47,6 @@ public class ProblemDetailsTest {
             assertEquals(400, r.getStatusCode());
             assertEquals(APPLICATION_PROBLEM_JSON, r.getHeader().getContentType());
 
-//            System.out.println("r.getBodyAsStringDecoded() = " + r.getBodyAsStringDecoded());
-
             JsonNode json = parseJson(r);
 
             assertEquals("Something happened!", json.get("title").asText());
@@ -79,8 +77,6 @@ public class ProblemDetailsTest {
                     .title("Something happened!")
                     .detail("The barn burned down and the roof fell on cow Elsa.").build();
 
-//        System.out.println("r.getBodyAsStringDecoded() = " + r.getBodyAsStringDecoded());
-
             JsonNode json = parseJson(r);
 
             assertEquals("The barn burned down and the roof fell on cow Elsa.", json.get("detail").asText());
@@ -93,8 +89,6 @@ public class ProblemDetailsTest {
                     .title("Something happened!")
                     .internal("a", "1")
                     .internal("b", "2").build();
-
-//            System.out.println("r.getBodyAsStringDecoded() = " + r.getBodyAsStringDecoded());
 
             JsonNode json = parseJson(r);
 
@@ -128,8 +122,6 @@ public class ProblemDetailsTest {
                     .addSubSee("io")
                     .build();
 
-//        System.out.println("r.getBodyAsStringDecoded() = " + r.getBodyAsStringDecoded());
-
             JsonNode json = parseJson(r);
 
             assertEquals("https://membrane-api.io/problems/user/flux-generator/request/io", json.get("see").asText());
@@ -140,8 +132,6 @@ public class ProblemDetailsTest {
             String b = internal(false, "a")
                     .exception(new RuntimeException("b", new InnerExceptionGenerator().generate()))
                     .build().getBodyAsStringDecoded();
-
-//        System.out.println(b);
 
             assertTrue(b.contains("InnerExceptionGenerator"));
             assertTrue(b.contains("more_frames_in_common"));
@@ -188,18 +178,19 @@ public class ProblemDetailsTest {
                     .internal("foo", "baz")
                     .build();
 
-//            System.out.println("r.getBodyAsStringDecoded() = " + r.getBodyAsStringDecoded());
             JsonNode j = parseJson(r);
 
             assertFalse(j.hasNonNull("foo"));
             assertTrue(j.hasNonNull("detail"));
             assertTrue(j.get("detail").asText().contains("key"));
+            assertFalse(j.has("attention"));
         }
 
         @Test
         void productionUser() throws Exception {
             JsonNode json = parseJson(getResponseWithDetailsAndExtensions(true));
             assertEquals(4, json.size());
+            assertTrue(toList(json.fieldNames()).containsAll(List.of("title","type","status","detail")));
             assertEquals("https://membrane-api.io/problems/user/catastrophe", json.get("type").asText());
             assertEquals("Something happened!", json.get("title").asText());
         }
@@ -212,13 +203,25 @@ public class ProblemDetailsTest {
                     .internal("a", "1")
                     .internal("b", "2").build();
 
-//        System.out.println("r.getBodyAsStringDecoded() = " + r.getBodyAsStringDecoded());
-
             JsonNode json = parseJson(r);
 
             assertEquals(4, json.size());
+            assertTrue(toList(json.fieldNames()).containsAll(List.of("title","type","status","detail")));
             assertEquals("https://membrane-api.io/problems/internal", json.get("type").asText());
             assertEquals(INTERNAL_SERVER_ERROR, json.get("title").asText());
+        }
+
+        @Test
+        void productionExceptionNoStacktraceStillHasDetail() throws Exception {
+            Response r = user(true, "x")
+                    .title("Hidden")
+                    .exception(new Exception("boom"))
+                    .stacktrace(false)
+                    .build();
+            JsonNode j = parseJson(r);
+            assertTrue(j.hasNonNull("detail"));
+            assertTrue(j.get("detail").asText().contains("key")); // references log key
+            assertFalse(j.has("attention"));
         }
     }
 
