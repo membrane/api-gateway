@@ -1,32 +1,37 @@
-# Static API Loadbalancer - Example
+# Simple Static API Load Balancer
 
-Membrane can work as a software loadbalancer and distribute requests to a number of backend nodes organized in a clusters.
+Membrane can serve as a software load balancer for APIs. It can distribute requests across multiple backend nodes and handle failures.
 
-This sample shows a simple static configuration of nodes in the `proxies.xml` file. See the [overview](..) for more dynamic setups.
+This sample shows a simple static configuration. For health checks, sticky sessions, or dynamic discovery, see the other examples.
 
+## What You Will Run
 
+- One Membrane router as the load balancer
+- Three mock services that simulate backend nodes
+- Round-robin request distribution
 
-## Get Started
-
-This example sets up a loadbalancer to distribute requests to 3 different nodes. 
-
-Execute the following steps:
+## Run the Example
 
 1. Go to the `examples/loadbalancing/1-static` directory.
-2. Run `membrane.sh` or `membrane.cmd` in a terminal.
-3. Open the URL:
+   ```bash
+   cd examples/loadbalancing/1-static
+   ```
+2. Start Membrane:
+   - macOS/Linux: ./membrane.sh
+   - Windows: membrane.cmd
+3. Open in a browser:
+   ```
+   http://localhost:8080
+   ```
+4. Refresh the browser a few times. 
 
-```
-http://localhost:8080 
-```
+By refreshing the browser or resending the request you should see responses alternating between node 1, node 2, and node 3.
 
-5. Refresh the browser a few times. 
-
-You will notice that requests will be routed to node 1, 2 and 3.
 
 ---
 See:
-- [balancer](https://membrane-soa.org/api-gateway-doc/current/configuration/reference/balancer.htm) reference
+- [proxies.xml](proxies.xml)
+- [balancer](https://www.membrane-api.io/docs/current/balancer.html) reference
 
 
 

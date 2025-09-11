@@ -17,7 +17,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>org.membrane-soa</groupId>
 	<artifactId>service-proxy-parent</artifactId>
-	<version>6.2.7-SNAPSHOT</version>
+	<version>6.3.2-SNAPSHOT</version>
 	<name>${project.artifactId}</name>
 	<description>Membrane is an open source API Gateway written in Java that features:
 	- OpenAPI support with validation
@@ -318,7 +318,7 @@
 			<dependency>
 				<groupId>com.google.api-client</groupId>
 				<artifactId>google-api-client</artifactId>
-				<version>2.8.0</version>
+				<version>2.8.1</version>
 			</dependency>
 			<dependency>
 				<groupId>jakarta.mail</groupId>

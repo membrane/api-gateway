@@ -14,34 +14,26 @@
 
 package com.predic8.membrane.core.interceptor.balancer;
 
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCChildElement;
-import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.Router;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.interceptor.balancer.Node.Status;
-import com.predic8.membrane.core.transport.http.HttpClient;
-import com.predic8.membrane.core.transport.http.client.HttpClientConfiguration;
-import com.predic8.membrane.core.util.ConfigurationException;
-import org.jetbrains.annotations.NotNull;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.BeansException;
-import org.springframework.beans.factory.DisposableBean;
-import org.springframework.beans.factory.InitializingBean;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.ApplicationContextAware;
+import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.interceptor.balancer.Node.*;
+import com.predic8.membrane.core.transport.http.*;
+import com.predic8.membrane.core.transport.http.client.*;
+import com.predic8.membrane.core.util.*;
+import org.jetbrains.annotations.*;
+import org.slf4j.*;
+import org.springframework.beans.*;
+import org.springframework.beans.factory.*;
+import org.springframework.context.*;
 
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
+import java.io.*;
+import java.util.*;
 
-import static com.predic8.membrane.core.http.Request.get;
-import static com.predic8.membrane.core.interceptor.balancer.BalancerUtil.collectClusters;
-import static com.predic8.membrane.core.interceptor.balancer.Node.Status.DOWN;
-import static com.predic8.membrane.core.interceptor.balancer.Node.Status.UP;
-import static java.lang.System.currentTimeMillis;
-import static java.util.concurrent.TimeUnit.MILLISECONDS;
-import static java.util.concurrent.TimeUnit.SECONDS;
+import static com.predic8.membrane.core.http.Request.*;
+import static com.predic8.membrane.core.interceptor.balancer.BalancerUtil.*;
+import static com.predic8.membrane.core.interceptor.balancer.Node.Status.*;
+import static com.predic8.membrane.core.util.ExceptionUtil.concatMessageAndCauseMessages;
 
 /**
  * @description Health monitor for a {@link LoadBalancingInterceptor} {@link Cluster}.
@@ -50,20 +42,25 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  * When initialized, it schedules a task to call each {@link Node}'s health
  * endpoint and marks nodes as {@link Status#UP} or {@link Status#DOWN} based on the HTTP response.
  * This ensures the load balancer always has up-to-date status for routing decisions.
- * @example <a href="https://github.com/membrane/api-gateway/tree/master/distribution/examples/loadbalancing/7-healthMoniotor">health monitor example</a>
+ * @example <a href="https://github.com/membrane/api-gateway/tree/master/distribution/examples/loadbalancing/6-health-monitor">health monitor example</a>
  * @topic 4. Monitoring, Logging and Statistics
  */
 @MCElement(name = "balancerHealthMonitor")
-public class ClusterHealthMonitor implements ApplicationContextAware, InitializingBean, DisposableBean {
+public class BalancerHealthMonitor implements ApplicationContextAware, InitializingBean, DisposableBean {
 
-    private static final Logger log = LoggerFactory.getLogger(ClusterHealthMonitor.class);
+    private static final Logger log = LoggerFactory.getLogger(BalancerHealthMonitor.class);
+    public static final String BALANCER_HEALTH_MONITOR = "balancer-health-monitor";
+
+    /**
+     * Initial delay of 5s
+     */
+    public static final int INITIAL_DELAY = 5000;
 
     private Router router;
     private int interval = 10000;
-    private ScheduledExecutorService scheduler;
     private HttpClient client;
 
-    private HttpClientConfiguration httpClientConfig;
+    private HttpClientConfiguration httpClientConfig = new HttpClientConfiguration();
 
     private volatile boolean stopped;
 
@@ -73,8 +70,19 @@ public class ClusterHealthMonitor implements ApplicationContextAware, Initializi
 
         log.info("Starting HealthMonitor for load balancing with interval of {} ms", interval);
 
-        scheduler = createScheduler();
+        httpClientConfig.setMaxRetries(0); // Health check should never be retried.
         client = router.getHttpClientFactory().createClient(httpClientConfig);
+        createScheduler();
+
+        ConnectionConfiguration cc = httpClientConfig.getConnection();
+        int soTimeout = cc.getSoTimeout();
+        int timeout = cc.getTimeout();
+        if (soTimeout > 10_000) {
+            log.warn("Socket timeout is {} s. Keep timeout low to prevent the health monitor thread from hanging!", soTimeout / 1000);
+        }
+        if (timeout > 10_000) {
+            log.warn("Connection timeout is {} s. Keep timeout low to prevent the health monitor thread from hanging!", timeout / 1000);
+        }
     }
 
     private final Runnable healthCheckTask = () -> {
@@ -95,10 +103,13 @@ public class ClusterHealthMonitor implements ApplicationContextAware, Initializi
         node.setStatus(isHealthy(node));
     }
 
-    private ScheduledExecutorService createScheduler() {
-        ScheduledExecutorService s = Executors.newSingleThreadScheduledExecutor();
-        s.scheduleAtFixedRate(healthCheckTask, interval, interval, MILLISECONDS);
-        return s;
+    private void createScheduler() {
+        router.getTimerManager().schedulePeriodicTask(new TimerTask() {
+            @Override
+            public void run() {
+                healthCheckTask.run();
+            }
+        }, INITIAL_DELAY, BALANCER_HEALTH_MONITOR);
     }
 
     private Status isHealthy(Node node) {
@@ -112,14 +123,20 @@ public class ClusterHealthMonitor implements ApplicationContextAware, Initializi
     }
 
     private static Status getStatus(Node node, Exchange exc) {
+        if (exc.getResponse() == null)
+            return DOWN;
+        try {
+            exc.getResponse().getBody().read();
+        } catch (IOException e) {
+            log.debug("Calling health endpoint failed: {} {}", exc, concatMessageAndCauseMessages(e));
+            return DOWN;
+        }
         int status = exc.getResponse().getStatusCode();
         if (status >= 300) {
-            log.warn("Node {}:{} health check failed with HTTP {}", node.getHost(), node.getPort(), status);
+            log.warn("Node {}:{} health check failed with HTTP {} status code", node.getHost(), node.getPort(), status);
             return DOWN;
         }
         log.debug("Node {}:{} is healthy (HTTP {})", node.getHost(), node.getPort(), status);
-        if (node.isDown())
-            node.setLastUpTime(currentTimeMillis());
         return UP;
     }
 
@@ -152,20 +169,6 @@ public class ClusterHealthMonitor implements ApplicationContextAware, Initializi
     @Override
     public void destroy() {
         stopped = true;
-
-        if (scheduler == null)
-            return;
-        scheduler.shutdown();
-        try {
-            if (!scheduler.awaitTermination(10, SECONDS)) {
-                log.warn("Health check scheduler did not terminate gracefully, forcing shutdown");
-                scheduler.shutdownNow();
-            }
-        } catch (InterruptedException e) {
-            log.warn("Interrupted while waiting for scheduler shutdown");
-            scheduler.shutdownNow();
-            Thread.currentThread().interrupt();
-        }
         if (client != null) {
             try {
                 client.close();
@@ -188,8 +191,8 @@ public class ClusterHealthMonitor implements ApplicationContextAware, Initializi
 
     /**
      * @return current health check interval in milliseconds
-     * */
-    public Integer getInterval() {
+     */
+    public int getInterval() {
         return interval;
     }
 
@@ -203,7 +206,6 @@ public class ClusterHealthMonitor implements ApplicationContextAware, Initializi
     /**
      * @description Optional HTTP client configuration for health probes (e.g., timeouts, TLS).
      * If provided, it is used when creating the {@link HttpClient} via the router's client factory.
-     *
      * @see Router#getHttpClientFactory()
      * @see HttpClientConfiguration
      */

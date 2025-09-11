@@ -16,6 +16,11 @@
     </dependencySets>
     <fileSets>
         <fileSet>
+            <directory>scripts</directory>
+            <outputDirectory>/scripts</outputDirectory>
+            <fileMode>0755</fileMode>
+        </fileSet>
+        <fileSet>
             <!-- examples fileSet: bod build folder or .sh scripts -->
             <directory>examples</directory>
             <outputDirectory>/examples</outputDirectory>
