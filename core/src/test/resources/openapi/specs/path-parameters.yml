@@ -58,6 +58,32 @@ paths:
       responses:
         '200':
           description: OK
+  /encoded-allow/{p1}:
+    get:
+      parameters:
+        - name: p1
+          in: path
+          required: true
+          schema:
+            type: string
+            pattern: '[a-z_.~:/?#&$]+'
+            maxLength: 5
+      responses:
+        '200':
+          description: OK
+  /encoded-block/{p1}:
+    get:
+      parameters:
+        - name: p1
+          in: path
+          required: true
+          schema:
+            type: string
+            pattern: '.*[^_#].*'
+            maxLength: 5
+      responses:
+        '200':
+          description: OK
 
 components:
   parameters:

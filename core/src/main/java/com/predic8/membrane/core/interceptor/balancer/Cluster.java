@@ -14,17 +14,17 @@
 
 package com.predic8.membrane.core.interceptor.balancer;
 
+import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.interceptor.balancer.Node.*;
+import org.slf4j.*;
+
 import java.io.*;
 import java.util.*;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCChildElement;
-import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.interceptor.balancer.Node.Status;
-
+/**
+ * @description Represents a load-balancing cluster (a named group of {@link Node}s).
+ * Provides status management (UP/DOWN/TAKEOUT), node lookup, and simple session tracking.
+ */
 @MCElement(name="cluster", topLevel=false)
 public class Cluster {
 
@@ -46,7 +46,6 @@ public class Cluster {
 
 	public void nodeUp(Node n) {
 		log.debug("node: " + n +" up");
-		getNodeCreateIfNeeded(n).setLastUpTime(System.currentTimeMillis());
 		getNodeCreateIfNeeded(n).setStatus(Status.UP);
 	}
 
@@ -114,9 +113,9 @@ public class Cluster {
 		};
 	}
 
-	/**
-	 * @description Specifies a node.
-	 */
+    /**
+     * @description Specifies the child nodes of this cluster.
+     */
 	@MCChildElement
 	public void setNodes(List<Node> nodes) {
 		this.nodes.clear();
@@ -134,10 +133,6 @@ public class Cluster {
 	@MCAttribute
 	public void setName(String name) {
 		this.name = name;
-	}
-
-	public boolean containsSession(String sessionId) {
-		return sessions.containsKey(sessionId) && sessions.get(sessionId).getNode().isUp();
 	}
 
 	public void addSession(String sessionId, Node n) {

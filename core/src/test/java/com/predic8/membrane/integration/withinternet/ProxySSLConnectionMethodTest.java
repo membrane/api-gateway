@@ -27,12 +27,12 @@ import org.junit.jupiter.api.Test;
 
 import static com.predic8.membrane.test.StringAssertions.assertContains;
 
-public class ProxySSLConnectionMethodTest {
+class ProxySSLConnectionMethodTest {
 
 	private Router router;
 
 	@BeforeEach
-	public void setUp() throws Exception {
+	void setUp() throws Exception {
 		router = new HttpRouter();
 		router.setExchangeStore(new MemoryExchangeStore());
 		router.getRuleManager().addProxyAndOpenPortIfNew(new ProxyRule(new ProxyRuleKey(3129)));
@@ -40,12 +40,12 @@ public class ProxySSLConnectionMethodTest {
 	}
 
 	@AfterEach
-	public void tearDown() {
+	void tearDown() {
 		router.shutdown();
 	}
 
 	@Test
-	public void testSSLConnectionMethod() throws Exception {
+	void testSSLConnectionMethod() throws Exception {
 		HttpClient client = new HttpClient();
 		client.getHostConfiguration().setProxy("localhost", 3129);
 

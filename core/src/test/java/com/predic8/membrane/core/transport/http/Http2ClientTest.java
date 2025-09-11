@@ -14,25 +14,19 @@
 package com.predic8.membrane.core.transport.http;
 
 import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.transport.http.client.*;
+import org.jetbrains.annotations.*;
 import org.junit.jupiter.api.*;
 
+import static com.predic8.membrane.core.http.Request.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class Http2ClientTest {
 
     @Test
-    public void getGoogleHomepage() throws Throwable {
-        HttpClientConfiguration configuration = new HttpClientConfiguration();
-        configuration.setUseExperimentalHttp2(true);
-        ConnectionConfiguration connection = new ConnectionConfiguration();
-        connection.setKeepAliveTimeout(100);
-        configuration.setConnection(connection);
-
-        Exchange e = new Request.Builder().get("https://www.google.de").buildExchange();
-
-        try(HttpClient hc = new HttpClient(configuration)) {
+    void getGoogleHomepage() throws Throwable {
+        Exchange e = get("https://www.google.com").buildExchange();
+        try(HttpClient hc = new HttpClient(getHttpClientConfiguration())) {
             hc.call(e);
 
             assertEquals(200, e.getResponse().getStatusCode());
@@ -41,5 +35,18 @@ public class Http2ClientTest {
             assertTrue(body.startsWith("<!doctype html>"));
             assertTrue(body.endsWith("</html>"));
         }
+    }
+
+    private static @NotNull HttpClientConfiguration getHttpClientConfiguration() {
+        HttpClientConfiguration configuration = new HttpClientConfiguration();
+        configuration.setUseExperimentalHttp2(true);
+        configuration.setConnection(getConnectionConfiguration());
+        return configuration;
+    }
+
+    private static @NotNull ConnectionConfiguration getConnectionConfiguration() {
+        ConnectionConfiguration connection = new ConnectionConfiguration();
+        connection.setKeepAliveTimeout(100);
+        return connection;
     }
 }

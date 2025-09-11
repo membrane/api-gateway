@@ -16,6 +16,7 @@ package com.predic8.membrane.core.util;
 
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.multipart.*;
+import com.predic8.xml.beautifier.*;
 import org.jetbrains.annotations.*;
 import org.slf4j.*;
 import org.w3c.dom.*;
@@ -41,7 +42,7 @@ public class SOAPUtil {
 
     public static boolean isSOAP( XOPReconstitutor xopr, Message msg) {
         try {
-            XMLEventReader parser = XMLInputFactory.newInstance().createXMLEventReader(xopr.reconstituteIfNecessary(msg));
+            XMLEventReader parser = XMLInputFactoryFactory.inputFactory().createXMLEventReader(xopr.reconstituteIfNecessary(msg));
 
             while (parser.hasNext()) {
                 XMLEvent event = parser.nextEvent();

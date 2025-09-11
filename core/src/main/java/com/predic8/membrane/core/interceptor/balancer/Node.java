@@ -14,35 +14,46 @@
 
 package com.predic8.membrane.core.interceptor.balancer;
 
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicInteger;
-
-import javax.xml.stream.XMLStreamException;
-import javax.xml.stream.XMLStreamReader;
-import javax.xml.stream.XMLStreamWriter;
-
-import com.predic8.membrane.annot.Required;
-
 import com.google.common.base.Objects;
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.config.AbstractXmlElement;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.proxies.StatisticCollector;
+import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.config.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.proxies.*;
 
+import javax.xml.stream.*;
+import java.util.*;
+import java.util.concurrent.*;
+import java.util.concurrent.atomic.*;
+
+import static com.google.common.base.Objects.equal;
+import static com.predic8.membrane.core.interceptor.balancer.Node.Status.DOWN;
+import static com.predic8.membrane.core.interceptor.balancer.Node.Status.UP;
+import static java.lang.System.currentTimeMillis;
+
+/**
+ * @description Represents a backend node in a load-balancing {@code Cluster}.
+ * <p>Identity is {@code host}+{@code port}. </p>
+ */
 @MCElement(name="node", topLevel=false)
 public class Node extends AbstractXmlElement {
 
-	public static enum Status {
-		UP, DOWN, TAKEOUT;
+	public enum Status {
+		UP, DOWN, TAKEOUT
 	}
 
 	private String host;
 	private int port;
+	private String healthUrl;
+	private int priority = 10;
 
-	private volatile long lastUpTime;
-	private volatile Status status;
+	// Initialize with a starttime
+	private volatile long lastUpTime = System.currentTimeMillis();
+
+	/**
+	 * Assume a node is UP until proven DOWN
+	 */
+	private volatile Status status = UP;
+
 	private final AtomicInteger counter = new AtomicInteger();
 	private final AtomicInteger threads = new AtomicInteger();
 
@@ -58,9 +69,9 @@ public class Node extends AbstractXmlElement {
 
 	@Override
 	public boolean equals(Object obj) {
-		return obj instanceof Node &&
-                host.equals(((Node) obj).getHost()) &&
-                port == ((Node) obj).getPort();
+		return obj instanceof Node n &&
+			   equal(host, n.host) &&
+			   port == n.port;
 	}
 
 	@Override
@@ -105,8 +116,8 @@ public class Node extends AbstractXmlElement {
 	 * @description The node's host.
 	 * @example server3
 	 */
-	@Required
 	@MCAttribute
+	@Required
 	public void setHost(String host) {
 		this.host = host;
 	}
@@ -125,12 +136,40 @@ public class Node extends AbstractXmlElement {
 		this.port = port;
 	}
 
+	/**
+	 * @description Sets the node's health-check URL.  If not set, the default URL derived from host and port will be used.
+	 * @param healthUrl the full HTTP(s) endpoint for this node's health check
+	 * @example &lt;node host="localhost" port="8080" healthUrl="http://localhost:8080/health"/&gt;
+	 */
+	@MCAttribute
+	public void setHealthUrl(String healthUrl) {
+		this.healthUrl = healthUrl;
+	}
+
+	public String getHealthUrl() {
+		return healthUrl;
+	}
+
+    /**
+     * @description Node priority; lower values are preferred.
+     * @default 10
+     * @example 2
+     */
+	@MCAttribute
+	public void setPriority(int priority) {
+		this.priority = priority;
+	}
+
+	public int getPriority() {
+		return priority;
+	}
+
 	public boolean isUp() {
-		return status == Status.UP;
+		return status == UP;
 	}
 
 	public boolean isDown() {
-		return status == Status.DOWN;
+		return status == DOWN;
 	}
 
 	public boolean isTakeOut() {
@@ -138,9 +177,13 @@ public class Node extends AbstractXmlElement {
 	}
 
 	public void setStatus(Status status) {
-		if (status == Status.DOWN)
+		if (status == DOWN) {
 			threads.set(0);
+		}
 		this.status = status;
+		if (status == UP) {
+			lastUpTime = currentTimeMillis();
+		}
 	}
 
 	public Status getStatus() {
@@ -190,7 +233,7 @@ public class Node extends AbstractXmlElement {
 
 	public void removeThread() {
 		if (!isUp()) return;
-		threads.incrementAndGet();
+		threads.decrementAndGet();
 	}
 
 	public int getThreads() {

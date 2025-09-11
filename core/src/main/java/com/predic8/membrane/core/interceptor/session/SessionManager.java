@@ -175,7 +175,7 @@ public abstract class SessionManager {
     private void dropRedundantCookieHeaders(Exchange exc) {
         Map<String, List<String>> setCookieHeaders = getAllRelevantSetCookieHeaders(exc)
                 .map(HeaderField::getValue)
-                .map(v -> new AbstractMap.SimpleEntry(v.split("=true")[0], List.of(v)))
+                .map(v -> new AbstractMap.SimpleEntry(getKeyOfCookie(v), List.of(v)))
                 .collect(Collectors.toMap(e -> (String)e.getKey(), e -> (List)e.getValue(), (a,b) -> Stream.concat(a.stream(),b.stream()).collect(Collectors.toList())));
 
         removeRedundantExpireCookieIfRefreshed(exc, setCookieHeaders);
@@ -263,7 +263,7 @@ public abstract class SessionManager {
     private List<String> expireCookies(Exchange exc, List<String> invalidCookies) {
         return invalidCookies
                 .stream()
-                .map(cookie -> cookie + ";" + String.join(";", createInvalidationAttributes(exc)))
+                .map(cookie -> cookie + "=true;" + String.join(";", createInvalidationAttributes(exc)))
                 .collect(Collectors.toList());
     }
 
@@ -308,7 +308,7 @@ public abstract class SessionManager {
 
 
     private Optional<Session> getSessionFromExchange(Exchange exc) {
-        return Optional.ofNullable(exc.getPropertyOrNull(SESSION, Session.class));
+        return Optional.ofNullable(exc.getProperty(SESSION, Session.class));
     }
 
     public List<String> createCookieAttributes(Exchange exc) {
@@ -318,7 +318,7 @@ public abstract class SessionManager {
                 "Path=/",
 
                 needsSecureAttribute(exc) ? "Secure" : null,
-                domain != null ? "Domain=" + domain + "; " : null,
+                domain != null ? "Domain=" + domain : null,
                 httpOnly ? "HttpOnly" : null,
                 sameSite != null ? "SameSite="+sameSite : null
         )
@@ -455,4 +455,9 @@ public abstract class SessionManager {
         this.sessionCookie = sessionCookie;
         return this;
     }
+
+    protected String getKeyOfCookie(String validCookie) {
+        return validCookie.split("=true")[0];
+    }
+
 }

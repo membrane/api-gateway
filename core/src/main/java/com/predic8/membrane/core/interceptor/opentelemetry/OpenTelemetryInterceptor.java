@@ -24,10 +24,12 @@ import io.opentelemetry.api.*;
 import io.opentelemetry.api.trace.*;
 import io.opentelemetry.context.*;
 import org.slf4j.*;
+import org.slf4j.bridge.SLF4JBridgeHandler;
 
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.interceptor.opentelemetry.HTTPTraceContextUtil.*;
 import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPIInterceptor.*;
+import static com.predic8.membrane.core.util.ExceptionUtil.*;
 import static io.opentelemetry.api.common.AttributeKey.*;
 import static io.opentelemetry.api.common.Attributes.*;
 import static io.opentelemetry.api.trace.SpanKind.*;
@@ -49,9 +51,17 @@ public class OpenTelemetryInterceptor extends AbstractInterceptor {
     @Override
     public void init() {
         super.init();
+        try {
+            if (!SLF4JBridgeHandler.isInstalled()) {
+                SLF4JBridgeHandler.removeHandlersForRootLogger();
+                SLF4JBridgeHandler.install();
+            }
+        } catch (Throwable t) {
+            log.warn("jul-to-slf4j not available; OpenTelemetry logs may go to stderr.", t);
+        }
+
         otel = OpenTelemetryConfigurator.openTelemetry("Membrane", exporter, getSampleRate());
         tracer = otel.getTracer("MEMBRANE-TRACER");
-
     }
 
     public OpenTelemetryInterceptor() {
@@ -75,10 +85,16 @@ public class OpenTelemetryInterceptor extends AbstractInterceptor {
         var span = getExchangeSpan(exc);
         setSpanHttpHeaderAttributes(exc.getRequest().getHeader(), span);
 
-        if (logBody) {
+        if (!logBody)
+            return CONTINUE;
+
+        // try is needed to catch network errors in getBodyAsStringDecoded()
+        try {
             span.addEvent("Request", of(
                     stringKey("Request Body"), exc.getRequest().getBodyAsStringDecoded()
             ));
+        } catch (Exception e) {
+            log.debug("Can't log request body having problems to read stream. {}", concatMessageAndCauseMessages(e));
         }
 
         return CONTINUE;
@@ -95,9 +111,15 @@ public class OpenTelemetryInterceptor extends AbstractInterceptor {
         }
 
         if (logBody) {
-            span.addEvent("Response", of(
-                    stringKey("Response Body"), exc.getResponse().getBodyAsStringDecoded()
-            ));
+            // try is needed to catch network errors in getBodyAsStringDecoded()
+            try {
+                span.addEvent("Response", of(
+                        stringKey("Response Body"),
+                        exc.getResponse().getBodyAsStringDecoded()
+                ));
+            } catch (Exception e) {
+                log.debug("Can't log response body having problems to read stream. {}", concatMessageAndCauseMessages(e));
+            }
         }
 
         span.addEvent("Close Exchange").end();

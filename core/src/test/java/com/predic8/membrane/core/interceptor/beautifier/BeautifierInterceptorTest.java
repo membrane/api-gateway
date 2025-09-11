@@ -21,13 +21,18 @@ import com.predic8.membrane.core.http.*;
 import org.jetbrains.annotations.*;
 import org.junit.jupiter.api.*;
 
+import java.net.*;
+import java.nio.charset.*;
+
 import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.http.Request.*;
 import static com.predic8.membrane.core.http.Response.*;
+import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static com.predic8.membrane.core.util.xml.XMLEncodingTestUtil.*;
 import static java.nio.charset.StandardCharsets.*;
 import static org.junit.jupiter.api.Assertions.*;
 
-public class BeautifierInterceptorTest {
+class BeautifierInterceptorTest {
 
     static final ObjectMapper om = new ObjectMapper();
 
@@ -41,8 +46,6 @@ public class BeautifierInterceptorTest {
     JsonNode json;
     static final byte[] xml = ("<foo><bar>baz</bar></foo>").getBytes(UTF_8);
 
-    public BeautifierInterceptorTest() {}
-
     @BeforeEach
     void setUp() throws Exception {
         json = om.readTree("{\"test\": \"foo\", \"sad\": \"sad\"}");
@@ -52,10 +55,15 @@ public class BeautifierInterceptorTest {
         xmlExc = post("/foo").contentType(APPLICATION_XML).buildExchange();
         response = ok().contentType(TEXT_PLAIN).body("Message").build();
     }
-    
+
+    @Test
+    void passesThroughOnGetWithoutBody() throws URISyntaxException {
+        assertEquals(CONTINUE,interceptor.handleRequest(get("/foo").buildExchange()));
+    }
+
     @Test
     void jsonRequest() throws Exception {
-        Exchange exc = Request.post("/foo")
+        Exchange exc = post("/foo")
                 .contentType(APPLICATION_JSON)
                 .body(jsonString())
                 .buildExchange();
@@ -65,19 +73,19 @@ public class BeautifierInterceptorTest {
         Request req = exc.getRequest();
         int bodyLength = req.getBody().getLength();
         assertEquals(req.getHeader().getContentLength(), bodyLength);
-        assertEquals(bodyLength, req.getBodyAsStringDecoded().length());
+        assertEquals(bodyLength, req.getBodyAsStringDecoded().getBytes(UTF_8).length);
     }
 
     @Test
     void jsonResponse() throws Exception {
-        Exchange exc = Response.ok().body(jsonString()).buildExchange();
+        Exchange exc = ok().json(jsonString()).buildExchange();
 
         interceptor.handleResponse(exc);
 
         Response res = exc.getResponse();
         int bodyLength = res.getBody().getLength();
         assertEquals(res.getHeader().getContentLength(), bodyLength);
-        assertEquals(bodyLength, res.getBodyAsStringDecoded().length());
+        assertEquals(bodyLength, res.getBodyAsStringDecoded().getBytes(UTF_8).length);
     }
 
     private static @NotNull String jsonString() {
@@ -104,5 +112,56 @@ public class BeautifierInterceptorTest {
         assertFalse(xmlExc.getRequest().getBody().toString().contains("\n"));
         interceptor.handleRequest(xmlExc);
         assertTrue(xmlExc.getRequest().getBody().toString().contains("\n"));
+    }
+
+    @Nested
+    class Encoding {
+
+        @Test
+        void isoCharsetInHttpHeader() throws Exception {
+            checkForFile("/charsets/iso-8859-1-unformatted.xml", ISO_8859_1, "iso-8859-1");
+        }
+
+        @Test
+        void isoWithoutEncodingInfoInTheHeader() throws Exception {
+            checkForFile("/charsets/iso-8859-1-unformatted.xml", ISO_8859_1,null);
+        }
+
+        @Test
+        void utf8WithoutEncodingInfoInTheHeader() throws Exception {
+            checkForFile("/charsets/utf-8-unformatted.xml", UTF_8,null);
+        }
+
+        @Test
+        @DisplayName("Fallback for unknown charsets")
+        void unknownEncodingInfoInTheHeader() throws Exception {
+            checkForFile("/charsets/utf-8-unformatted.xml", UTF_8,"unknown");
+        }
+
+        @Test
+        void utf16BEWithoutEncodingInfoInTheHeader() throws Exception {
+            checkForFile("/charsets/utf-16be-unformatted.xml", UTF_16BE,null);
+        }
+
+        private void checkForFile(String file, Charset expectedCharset, String contentTypeCharset) throws Exception {
+            Exchange exc = post("/foo")
+                    .contentType(getContentType(contentTypeCharset))
+                    .body(getClass().getResourceAsStream(file))
+                    .buildExchange();
+
+            interceptor.handleRequest(exc);
+
+            String text = new String(exc.getRequest().getBodyAsStream().readAllBytes(), expectedCharset);
+
+            assertChars(text );
+        }
+
+        private static String getContentType(String contentTypeCharset) {
+            String contentType = APPLICATION_XML;
+            if (contentTypeCharset != null) {
+                return contentType + "; charset=" + contentTypeCharset;
+            }
+            return contentType;
+        }
     }
 }

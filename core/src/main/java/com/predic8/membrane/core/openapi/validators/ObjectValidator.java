@@ -18,12 +18,14 @@ package com.predic8.membrane.core.openapi.validators;
 
 import com.fasterxml.jackson.databind.*;
 import com.fasterxml.jackson.databind.node.*;
+import com.predic8.membrane.core.openapi.util.SchemaUtil;
 import io.swagger.v3.oas.models.*;
 import io.swagger.v3.oas.models.media.*;
 import org.slf4j.*;
 
 import java.io.*;
 import java.util.*;
+import java.util.regex.Pattern;
 
 import static com.predic8.membrane.core.openapi.util.Utils.*;
 import static java.lang.String.*;
@@ -75,31 +77,49 @@ public class ObjectValidator implements IJSONSchemaValidator {
         ValidationErrors errors = validateRequiredProperties(ctx, node);
         errors.add(validateAddionalProperties(ctx, node));
         errors.add(validateProperties(ctx, node));
+        errors.add(validatePatternProperties(ctx, node));
         errors.add(validateSize(ctx, node));
         errors.add(validateDiscriminator(ctx,node));
         return errors;
     }
 
-    /**
-     * @TODO implement Discriminator/mapping
-     *
-     */
     private ValidationErrors validateDiscriminator(ValidationContext ctx, JsonNode node) {
         if (schema.getDiscriminator() == null)
             return null;
 
         String propertyName = schema.getDiscriminator().getPropertyName();
 
-        if (schema.getType().equals(propertyName))
-            return null;
+        String propertyValue = getBaseSchemaName(node, propertyName);
+        if (propertyValue == null) {
+            return ValidationErrors.create(ctx.statusCode(400), format("Discriminator property '%s' is not set.", propertyName));
+        }
+        if (isMapped(propertyValue)) {
+            propertyValue = schema.getDiscriminator().getMapping().get(propertyValue);
+            if (propertyValue != null && propertyValue.startsWith("#"))
+                return validateRef(ctx, propertyValue);
+        }
 
-        return new SchemaValidator(api, getBaseSchema(node, propertyName)).validate(ctx,node);
+        Schema<?> schema = getBaseSchema(node, propertyValue);
+        if (schema == null) {
+            return ValidationErrors.create(ctx.statusCode(400), format("Discriminator value %s is not an valid type.", propertyValue));
+        }
+        return new SchemaValidator(api, schema).validate(ctx,node);
     }
 
+    private ValidationErrors validateRef(ValidationContext ctx, String propertyValue) {
+        var schema2 = SchemaUtil.getSchemaFromRef(api, propertyValue);
+        if (schema2 == null)
+            throw new RuntimeException("Should not happen!");
+        return new SchemaValidator(api, schema2).validate(ctx, node);
+    }
+
+    private boolean isMapped(String discriminatorValue) {
+        return schema.getDiscriminator().getMapping() != null && schema.getDiscriminator().getMapping().containsKey(discriminatorValue);
+    }
 
     @SuppressWarnings("rawtypes")
-    private Schema getBaseSchema(JsonNode node, String propertyName) {
-        return api.getComponents().getSchemas().get(getBaseSchemaName(node, propertyName));
+    private Schema getBaseSchema(JsonNode node, String propertyValue) {
+        return api.getComponents().getSchemas().get(propertyValue);
     }
 
     private String getBaseSchemaName(JsonNode node, String propertyName) {
@@ -234,9 +254,35 @@ public class ObjectValidator implements IJSONSchemaValidator {
         return errors;
     }
 
+    private ValidationErrors validatePatternProperties(ValidationContext ctx, JsonNode node) {
+        if(schema.getPatternProperties() == null) {
+            return null;
+        }
+        ValidationErrors errors = new ValidationErrors();
+
+        getPatternPropertiesFromSchema().forEach((regex, propSchema) -> {
+            Pattern pattern = Pattern.compile(regex);
+
+            for (Iterator<String> it = node.fieldNames(); it.hasNext(); ) {
+                String fieldName = it.next();
+                if (pattern.matcher(fieldName).matches()) {
+                    JsonNode childNode = node.get(fieldName);
+                    errors.add(new SchemaValidator(api, propSchema)
+                            .validate(ctx, childNode));
+                }
+            }
+        });
+        return errors;
+    }
+
     @SuppressWarnings({"rawtypes", "unchecked"})
     private Map<String, Schema> getPropertiesFromSchema() {
         return (Map<String, Schema>) schema.getProperties();
+    }
+
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    private Map<String, Schema> getPatternPropertiesFromSchema() {
+        return (Map<String, Schema>) schema.getPatternProperties();
     }
 
     @SuppressWarnings("rawtypes")

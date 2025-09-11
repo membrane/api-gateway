@@ -18,7 +18,6 @@ import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.transport.http.*;
-import com.predic8.membrane.core.util.*;
 import com.predic8.membrane.core.ws.relocator.*;
 import org.jetbrains.annotations.*;
 import org.slf4j.*;
@@ -28,6 +27,8 @@ import java.io.*;
 import java.net.*;
 
 import static com.predic8.membrane.core.Constants.*;
+import static com.predic8.membrane.core.http.Header.*;
+import static com.predic8.membrane.core.http.Request.*;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.*;
 import static java.nio.charset.StandardCharsets.*;
 
@@ -65,17 +66,20 @@ public class WSDLInterceptor extends RelocatingInterceptor {
 
         ByteArrayOutputStream stream = new ByteArrayOutputStream();
         Relocator relocator = getRelocator(exc, stream);
-        relocator.relocate(new InputStreamReader(exc.getResponse().getBodyAsStreamDecoded(), exc.getResponse().getCharset()));
+        relocator.relocate(exc.getResponse().getBodyAsStream());
         if (relocator.isWsdlFound()) {
             registerWSDL(exc);
         }
         exc.getResponse().setBodyContent(stream.toByteArray());
+
+        // Preserve existing Content-Type if present; otherwise set a sane default including charset.
+        if (exc.getResponse().getHeader().getContentType() == null) {
+            exc.getResponse().getHeader().setContentType("application/xml; charset=" + exc.getResponse().getCharsetOrDefault());
+        }
     }
 
     private @NotNull Relocator getRelocator(Exchange exc, OutputStream stream) throws Exception {
-        Relocator relocator = new Relocator(new OutputStreamWriter(stream,
-                exc.getResponse().getCharset()), getLocationProtocol(), getLocationHost(exc),
-                getLocationPort(exc), exc.getHandler().getContextPath(exc), pathRewriter);
+        Relocator relocator = createRelocator(exc, stream);
 
         if (rewriteEndpoint) {
             relocator.getRelocatingAttributes().put(WSDL11_ADDRESS_SOAP11, LOCATION);
@@ -88,11 +92,17 @@ public class WSDLInterceptor extends RelocatingInterceptor {
         return relocator;
     }
 
+    private @NotNull Relocator createRelocator(Exchange exc, OutputStream stream) throws Exception {
+        return new Relocator(new OutputStreamWriter(stream,
+                exc.getResponse().getCharsetOrDefault()), getLocationProtocol(), getLocationHost(exc),
+                getLocationPort(exc), exc.getHandler().getContextPath(exc), pathRewriter);
+    }
+
     private void registerWSDL(Exchange exc) {
         if (registryWSDLRegisterURL == null)
             return;
 
-        StringBuilder buf = new StringBuilder();
+        StringBuilder buf = new StringBuilder(2000);
         buf.append(registryWSDLRegisterURL);
         buf.append("?wsdl=");
 
@@ -113,14 +123,13 @@ public class WSDLInterceptor extends RelocatingInterceptor {
         }
     }
 
-    private Exchange createExchange(String uri) throws MalformedURLException {
-        URL url = new URL(uri);
-        Request req = MessageUtil.getGetRequest(getCompletePath(url));
-        req.getHeader().setHost(url.getHost());
-        Exchange exc = new Exchange(null);
-        exc.setRequest(req);
-        exc.getDestinations().add(uri);
-        return exc;
+    private Exchange createExchange(String uri) throws MalformedURLException, URISyntaxException {
+        return get(getCompletePath(new URL(uri))).header(HOST, getHost(uri)).buildExchange();
+
+    }
+
+    private static String getHost(String uri) throws MalformedURLException {
+        return new URL(uri).getHost();
     }
 
     private String getCompletePath(URL url) {

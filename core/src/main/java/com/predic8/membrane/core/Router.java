@@ -44,6 +44,7 @@ import java.util.*;
 import java.util.concurrent.*;
 
 import static com.predic8.membrane.core.Constants.*;
+import static com.predic8.membrane.core.util.DLPUtil.*;
 import static com.predic8.membrane.core.jmx.JmxExporter.*;
 import static java.util.concurrent.Executors.*;
 
@@ -144,7 +145,7 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
         bf.refresh();
         bf.start();
 
-        return bf.getBean("router",Router.class);
+        return bf.getBean("router", Router.class);
     }
 
     @SuppressWarnings("NullableProblems")
@@ -183,6 +184,12 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
         return transport;
     }
 
+    /**
+     * @description Used to override the default 'transport' chain. The transport chain is the one global
+     * interceptor chain called *for every* incoming HTTP Exchanges. The transport chain uses &lt;userFeature/&gt;
+     * to call 'down' to a specific &lt;api/&gt;, &lt;serviceProxy/&gt; or similar. The default transport chain
+     * is shown in proxies-full-sample.xml .
+     */
     @MCChildElement(order = 1, allowForeign = true)
     public void setTransport(Transport transport) {
         this.transport = transport;
@@ -192,6 +199,11 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
         return resolverMap.getHTTPSchemaResolver().getHttpClientConfig();
     }
 
+    /**
+     * @description A 'global' (per router) &lt;httpClientConfig&gt;. This instance is used everywhere
+     * a HTTP Client is used. Usually, in every specific place, you can still configure a local
+     * &lt;httpClientConfig&gt; (with higher precedence compared to this global instance).
+     */
     @MCChildElement()
     public void setHttpClientConfig(HttpClientConfiguration httpClientConfig) {
         resolverMap.getHTTPSchemaResolver().setHttpClientConfig(httpClientConfig);
@@ -245,7 +257,7 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
 
     public void add(Proxy proxy) throws IOException {
         if (!(proxy instanceof SSLableProxy sp)) {
-            ruleManager.addProxy(proxy,RuleDefinitionSource.MANUAL);
+            ruleManager.addProxy(proxy, RuleDefinitionSource.MANUAL);
         } else {
             ruleManager.addProxyAndOpenPortIfNew(sp);
         }
@@ -254,6 +266,7 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
     public void init() throws Exception {
         initRemainingRules();
         transport.init(this);
+        displayTraceWarning();
     }
 
     private void initRemainingRules() throws Exception {
@@ -289,13 +302,13 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
         } catch (DuplicatePathException e) {
             System.err.printf("""
                     ================================================================================================
-
+                    
                     Configuration Error: Several OpenAPI Documents share the same path!
-
+                    
                     An API routes and validates requests according to the path of the OpenAPI's servers.url fields.
                     Within one API the same path should be used only by one OpenAPI. Change the paths or place
                     openapi-elements into separate api-elements.
-
+                    
                     Shared path: %s
                     %n""", e.getPath());
             System.exit(1);
@@ -320,13 +333,13 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
 
         startJmx();
 
-		synchronized (lock) {
-			running = true;
-		}
+        synchronized (lock) {
+            running = true;
+        }
 
-		ProxyDisplayInfo.logInfosAboutStartedProxies(ruleManager);
+        ApiInfo.logInfosAboutStartedProxies(ruleManager);
         log.info("{} {} up and running!", PRODUCT_NAME, VERSION);
-	}
+    }
 
     private void startJmx() {
         if (getBeanFactory() != null) {
@@ -542,6 +555,10 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
         return uriFactory;
     }
 
+    /**
+     * @description Sets the URI factory used by the router. Use this only, if you need to allow
+     * special (off-spec) characters in URLs which are not supported by java.net.URI .
+     */
     @MCChildElement(order = -1, allowForeign = true)
     public void setUriFactory(URIFactory uriFactory) {
         this.uriFactory = uriFactory;
@@ -568,6 +585,9 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
         return statistics;
     }
 
+    /**
+     * @description Sets the JMX name for this router. Also declare a global &lt;jmxExporter&gt; instance.
+     */
     @MCAttribute
     public void setJmx(String name) {
         jmxRouterName = name;

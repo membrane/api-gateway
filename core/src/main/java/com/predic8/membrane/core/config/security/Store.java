@@ -13,9 +13,19 @@
    limitations under the License. */
 package com.predic8.membrane.core.config.security;
 
-import com.google.common.base.Objects;
+
 import com.predic8.membrane.annot.MCAttribute;
 
+import static com.google.common.base.Objects.equal;
+import static java.util.Objects.hash;
+
+/**
+ * Abstract base for keystore/truststore configuration.
+ *
+ * <p>Holds the common properties required to load a Java {@link java.security.KeyStore KeyStore}:
+ * {@linkplain #getLocation() location}, {@linkplain #getPassword() password},
+ * {@linkplain #getType() type}, and {@linkplain #getProvider() provider}.
+ */
 public abstract class Store {
 
 	protected String location;
@@ -23,59 +33,76 @@ public abstract class Store {
 	protected String type;
 	protected String provider;
 
+	/**
+	 * <p>Two stores are equal if and only if their {@code location}, {@code password},
+	 * {@code type}, and {@code provider} are equal.
+	 */
 	@Override
 	public boolean equals(Object obj) {
-		if (!(obj instanceof Store))
+		if (!(obj instanceof Store other))
 			return false;
-		Store other = (Store) obj;
-		return Objects.equal(location, other.location)
-				&& Objects.equal(password, other.password)
-				&& Objects.equal(type, other.type)
-				&& Objects.equal(provider, other.provider);
+        return equal(location, other.location)
+				&& equal(password, other.password)
+				&& equal(type, other.type)
+				&& equal(provider, other.provider);
 	}
 
+	/** Computes a hash code based on {@code location}, {@code password}, {@code type}, and {@code provider}. */
 	@Override
 	public int hashCode() {
-		return java.util.Objects.hash(location, password, type, provider);
+		return hash(location, password, type, provider);
 	}
 
+	/** @return the resource location of the store. */
 	public String getLocation() {
 		return location;
 	}
 
 	/**
 	 * @description A file/resource containing the PKCS#12 keystore (*.p12).
-	 * See <a href="https://www.membrane-soa.org/service-proxy-doc/current/configuration/location.htm">here</a> for a description of the format.
 	 */
 	@MCAttribute
 	public void setLocation(String location) {
 		this.location = location;
 	}
 
+	/** @return the password protecting the store, or {@code null} if none is set. */
 	public String getPassword() {
 		return password;
 	}
 
+	/**
+	 * @description The password used to open the keystore/truststore.
+	 */
 	@MCAttribute
 	public void setPassword(String password) {
 		this.password = password;
 	}
 
+	/** @return the keystore type (e.g., {@code PKCS12}, {@code JKS}). */
 	public String getType() {
 		return type;
 	}
 
+	/**
+	 * @description Keystore type (e.g., {@code PKCS12}, {@code JKS}).
+	 */
 	@MCAttribute
 	public void setType(String type) {
 		this.type = type;
 	}
 
+	/** @return the provider used to load the store. */
 	public String getProvider() {
 		return provider;
 	}
 
+	/**
+	 * @description Provider to use when loading the keystore.
+	 */
 	@MCAttribute
 	public void setProvider(String provider) {
 		this.provider = provider;
 	}
+
 }

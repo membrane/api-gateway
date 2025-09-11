@@ -32,7 +32,7 @@ public class Constants {
 	public static final String VERSION;
 
 	static {
-		String version = "6.1"; // fallback
+		String version = "6.3"; // fallback
 		try {
 			Properties p = new Properties(); // Production
 			p.load(Constants.class.getResourceAsStream("/META-INF/maven/org.membrane-soa/service-proxy-core/pom.properties"));
@@ -52,7 +52,7 @@ public class Constants {
 
 	public static final String UNKNOWN = "unknown";
 
-	public static final String N_A = "N/A";
+	public static final String NOT_APPLICABLE = "N/A";
 
 	public static final String HTTP_VERSION_11 = "1.1";
 
@@ -74,8 +74,6 @@ public class Constants {
 
 	public static final String PRODUCT_NAME = "Membrane API Gateway";
 
-	public static final String PRODUCT_CONTACT_EMAIL = "info@predic8.de";
-
 	public static final String HTML_FOOTER =
 			"Copyright &copy;2009-2025 " +
 					"<a href=\"http://predic8.com/\">predic8 GmbH</a>" +
@@ -93,4 +91,6 @@ public class Constants {
 	 * The user agent string that will be sent when identifying as Membrane
 	 */
 	public static final String USERAGENT = "Membrane " + VERSION;
+
+
 }

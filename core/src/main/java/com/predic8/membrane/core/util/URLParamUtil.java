@@ -19,7 +19,6 @@ import org.slf4j.*;
 
 import java.io.*;
 import java.net.*;
-import java.nio.charset.*;
 import java.util.*;
 import java.util.regex.*;
 
@@ -27,6 +26,7 @@ import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.util.URLParamUtil.DuplicateKeyOrInvalidFormStrategy.*;
 import static java.net.URLDecoder.*;
 import static java.nio.charset.StandardCharsets.*;
+import static java.util.Collections.*;
 
 public class URLParamUtil {
 
@@ -39,7 +39,7 @@ public class URLParamUtil {
 
 		// Avoid unnecessary log entries
 		if (uri == null || uri.isEmpty())
-			return Collections.emptyMap();
+			return emptyMap();
 
 		URI jUri;
 		try {
@@ -52,8 +52,8 @@ public class URLParamUtil {
 		String q = jUri.getRawQuery();
 		if (q == null) {
 			if (hasNoFormParams(exc))
-				return new HashMap<>();
-			q = new String(exc.getRequest().getBody().getContent(), exc.getRequest().getCharset());
+				return emptyMap();
+			q = exc.getRequest().getBodyAsStringDecoded();
 		}
 
 		return parseQueryString(q, duplicateKeyOrInvalidFormStrategy);
@@ -78,9 +78,9 @@ public class URLParamUtil {
 		StringBuilder buf = new StringBuilder();
 		for (int i = 0; i < params.length; i+=2) {
 			if (i != 0) buf.append('&');
-			buf.append(URLEncoder.encode(params[i], StandardCharsets.UTF_8));
+			buf.append(URLEncoder.encode(params[i], UTF_8));
 			buf.append('=');
-			buf.append(URLEncoder.encode(params[i+1], StandardCharsets.UTF_8));
+			buf.append(URLEncoder.encode(params[i+1], UTF_8));
 		}
 		return buf.toString();
 	}

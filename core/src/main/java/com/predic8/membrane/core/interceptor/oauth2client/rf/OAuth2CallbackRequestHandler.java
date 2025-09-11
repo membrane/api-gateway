@@ -27,15 +27,23 @@ import org.slf4j.*;
 import java.math.*;
 import java.security.*;
 
+import static com.predic8.membrane.core.http.Response.badRequest;
 import static com.predic8.membrane.core.interceptor.oauth2.OAuth2AnswerParameters.createFrom;
+import static com.predic8.membrane.core.interceptor.oauth2.authorizationservice.FlowContext.applyToSession;
 import static com.predic8.membrane.core.interceptor.oauth2client.rf.StateManager.*;
 import static com.predic8.membrane.core.interceptor.oauth2client.temp.OAuth2Constants.*;
 
 public class OAuth2CallbackRequestHandler {
     private static final Logger log = LoggerFactory.getLogger(OAuth2CallbackRequestHandler.class);
-    public static final String MEMBRANE_MISSING_SESSION = "Missing session.";
-    public static final String MEMBRANE_CSRF_TOKEN_MISSING_IN_SESSION = "CSRF token missing in session.";
-    public static final String MEMBRANE_CSRF_TOKEN_MISMATCH = "CSRF token mismatch.";
+
+    public static final String MEMBRANE_MISSING_SESSION_DESCRIPTION = "Missing session.";
+    public static final String MEMBRANE_MISSING_SESSION = "MEMBRANE_MISSING_SESSION";
+    public static final String MEMBRANE_CSRF_TOKEN_MISSING_IN_SESSION_DESCRIPTION = "CSRF token missing in session.";
+    public static final String MEMBRANE_CSRF_TOKEN_MISSING_IN_SESSION = "MEMBRANE_CSRF_TOKEN_MISSING_IN_SESSION";
+    public static final String MEMBRANE_CSRF_TOKEN_MISMATCH_DESCRIPTION = "CSRF token mismatch.";
+    public static final String MEMBRANE_CSRF_TOKEN_MISMATCH = "MEMBRANE_CSRF_TOKEN_MISMATCH";
+    public static final String MEMBRANE_EXCHANGE_NOT_FOUND_DESCRIPTION = "Exchange to reconstruct not found. Might be a replay of the login.";
+    public static final String MEMBRANE_EXCHANGE_NOT_FOUND = "MEMBRANE_EXCHANGE_NOT_FOUND";
 
     private URIFactory uriFactory;
     private AuthorizationService auth;
@@ -78,7 +86,16 @@ public class OAuth2CallbackRequestHandler {
 
             verifyCsrfToken(session, stateFromUri);
 
-            AbstractExchangeSnapshot originalRequest = originalExchangeStore.reconstruct(exc, session, stateFromUri);
+            AbstractExchangeSnapshot originalRequest;
+            try {
+                originalRequest = originalExchangeStore.reconstruct(exc, session, stateFromUri);
+            } catch (Exception e) {
+                log.warn("Could not reconstruct exchange snapshot '{}'", stateFromUri);
+                throw new OAuth2Exception(
+                        MEMBRANE_EXCHANGE_NOT_FOUND,
+                        MEMBRANE_EXCHANGE_NOT_FOUND_DESCRIPTION,
+                        badRequest().body(MEMBRANE_EXCHANGE_NOT_FOUND_DESCRIPTION).build());
+            }
             originalExchangeStore.remove(exc, session, stateFromUri);
 
             if (log.isDebugEnabled()) {
@@ -87,7 +104,7 @@ public class OAuth2CallbackRequestHandler {
 
             OAuth2TokenResponseBody tokenResponse = auth.codeTokenRequest(
                     publicUrlManager.getPublicURLAndReregister(exc) + callbackPath, params.getCode(),
-                    PKCEVerifier.getVerifier(stateFromUri, session));
+                    PKCEVerifier.getVerifier(stateFromUri, session), stateFromUri.getFlowContext());
 
             if (tokenResponse.getAccessToken() == null) {
                 if (!onlyRefreshToken)
@@ -105,6 +122,7 @@ public class OAuth2CallbackRequestHandler {
                     sessionAuthorizer.retrieveUserInfo(tokenResponse, createFrom(tokenResponse), session);
                 }
             }
+            applyToSession(stateFromUri.getFlowContext(), session);
 
             continueOriginalExchange(exc, originalRequest, session);
 
@@ -114,7 +132,7 @@ public class OAuth2CallbackRequestHandler {
             throw e;
         } catch (Exception e) {
             log.error("Could not exchange code for token.", e);
-            exc.setResponse(Response.badRequest().body(e.getMessage()).build());
+            exc.setResponse(badRequest().body(e.getMessage()).build());
             originalExchangeStore.postProcess(exc);
         }
     }

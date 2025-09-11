@@ -46,50 +46,28 @@ public class Header {
 	// Header field names
 
 	public static final String TRANSFER_ENCODING = "Transfer-Encoding";
-
 	public static final String CONTENT_ENCODING = "Content-Encoding";
-
 	public static final String CONTENT_LENGTH = "Content-Length";
-
 	public static final String CONTENT_TYPE = "Content-Type";
-
 	public static final String CONNECTION = "Connection";
-
 	public static final String PROXY_CONNECTION = "Proxy-Connection";
-
 	public static final String HOST = "Host";
-
 	public static final String EXPECT = "Expect";
-
 	public static final String X_FORWARDED_FOR = "X-Forwarded-For";
-
 	public static final String X_FORWARDED_PROTO = "X-Forwarded-Proto";
-
 	public static final String X_FORWARDED_HOST = "X-Forwarded-Host";
-
 	public static final String PROXY_AUTHORIZATION = "Proxy-Authorization";
-
 	public static final String SOAP_ACTION = "SOAPAction";
-
 	public static final String ACCEPT = "Accept";
 	public static final String LOCATION = "Location";
-
 	public static final String AUTHORIZATION = "Authorization";
-
 	public static final String SET_COOKIE = "Set-Cookie";
-
 	public static final String COOKIE = "Cookie";
-
 	public static final String DESTINATION = "Destination";
-
 	public static final String VALIDATION_ERROR_SOURCE = "X-Validation-Error-Source";
-
 	public static final String USER_AGENT = "User-Agent";
-
 	public static final String X_REQUESTED_WITH = "X-Requested-With";
-
 	public static final String EXPIRES = "Expires";
-
 	public static final String KEEP_ALIVE = "Keep-Alive";
 
 	public static final String SERVER = "Server";
@@ -453,12 +431,13 @@ public class Header {
 
 	public String getCharset() {
 		if (getContentType() == null)
-			return UTF_8.name();
+			return null;
 
 		try {
 			return new ContentType(getContentType()).getParameter("charset").toUpperCase();
 		} catch (Exception e) {
-			return UTF_8.name();
+			log.debug("Failed to parse Content-Type: {}", getContentType());
+			return null;
 		}
 	}
 
@@ -578,8 +557,16 @@ public class Header {
 		return false;
 	}
 
-	private int getBrowserVersion(String userAgent, String browserID) {
-		int p = userAgent.indexOf(browserID);
+
+    /** Extracts the major version for the given browser token from a User-Agent.
+     * Returns:
+     * -1 if the token is absent or not followed by ' ', '/' or '_' and digits,
+     *  0 if the token is present but no digits follow the separator (e.g. "Chrome Safari"),
+     * >=1 for the parsed major version (e.g. "Chrome/90.0" -> 90).
+     */
+	int getBrowserVersion(String userAgent, String browserID) {
+        int p = userAgent.indexOf(browserID);
+        if (p < 0) return -1;
 		p += browserID.length();
 		if (p >= userAgent.length())
 			return -1;

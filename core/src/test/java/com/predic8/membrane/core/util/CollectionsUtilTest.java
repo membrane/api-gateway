@@ -17,6 +17,8 @@ import org.junit.jupiter.api.*;
 
 import java.util.*;
 
+import static com.predic8.membrane.core.util.CollectionsUtil.*;
+import static java.util.Collections.emptyIterator;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class CollectionsUtilTest {
@@ -43,6 +45,12 @@ public class CollectionsUtilTest {
 
     @Test
     void toList() {
-        Assertions.assertIterableEquals(List.of(1,2,3), CollectionsUtil.toList(List.of(1,2,3).iterator()));
+        assertIterableEquals(List.of(1,2,3), CollectionsUtil.toList(List.of(1,2,3).iterator()));
+    }
+
+    @Test
+    void count_iterator() {
+        assertEquals(0, count(emptyIterator()));
+        assertEquals(3, count(List.of("a", "b", "c").iterator()));
     }
 }

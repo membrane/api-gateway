@@ -20,6 +20,8 @@ import org.junit.jupiter.api.*;
 import java.io.*;
 import java.net.*;
 
+import static com.predic8.membrane.core.Constants.*;
+import static com.predic8.membrane.core.http.MimeType.TEXT_XML;
 import static com.predic8.membrane.core.http.Request.*;
 import static com.predic8.membrane.core.util.StringTestUtil.*;
 import static com.predic8.membrane.test.TestUtil.*;
@@ -190,6 +192,43 @@ public class RequestTest {
 		assertTrue(originalBody.isRead()); // Assert that the original body is read
 	}
 
+	@Test
+	void optionsWithBodyContentLength() throws EndOfStreamException, IOException {
+		shouldBodyBeRead("""
+				OPTIONS /products HTTP/1.1
+				Content-Length: 5
+				Origin: https://predic8.de
+				
+				Dummy
+				""", true);
+	}
+
+	@Test
+	void optionsWithBody() throws EndOfStreamException, IOException {
+		shouldBodyBeRead("""
+				OPTIONS /products HTTP/1.1
+				Transfer-Encoding: chunked
+				Origin: https://predic8.de
+			
+				Dummy
+				""", true);
+	}
+
+	@Test
+	void optionsWithoutBody() throws EndOfStreamException, IOException {
+        shouldBodyBeRead("""
+                OPTIONS /products HTTP/1.1
+                Origin: https://predic8.de
+                
+                """, false);
+	}
+
+	private static void shouldBodyBeRead(String message, boolean expect) throws IOException, EndOfStreamException {
+		Request req = new Request();
+		req.read(new ByteArrayInputStream(message.getBytes(UTF_8)), true);
+		assertEquals(expect, !req.shouldNotContainBody());
+	}
+
 	/**
 	 * Same as setBodyShouldReadTheOriginalBody test but with Request.setBodyContent
 	 * @throws EndOfStreamException
@@ -203,10 +242,21 @@ public class RequestTest {
 		assertEquals(0,inPost.available()); // Check that all bytes are read from the stream
 	}
 
+	@Test
+	void connectUsesAuthorityForm() throws URISyntaxException {
+        assertEquals("CONNECT example.com:443 HTTP/1.1" + CRLF, connect("https://example.com:443").build().getStartLine());
+	}
+
+	@Test
+	void isXML() throws URISyntaxException {
+        assertTrue(post("/foo").contentType(TEXT_XML).build().isXML());
+		assertTrue(post("/foo").contentType("text/xml; charset=utf-8").build().isXML());
+		assertTrue(post("/foo").header("Content-Type", "text/xml; charset=utf-8").build().isXML());
+	}
+
 	private AbstractBody readMessageAndGetBody() throws IOException, EndOfStreamException {
 		reqPost.read(inPost, true);
 		assertFalse(reqPost.getBody().isRead());
         return reqPost.getBody();
 	}
-
 }

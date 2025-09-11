@@ -15,18 +15,17 @@ package com.predic8.membrane.interceptor.ws_addressing;
 
 import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.interceptor.ws_addressing.*;
-import com.predic8.membrane.core.util.*;
 import org.junit.jupiter.api.*;
 
+import static com.predic8.membrane.core.http.MimeType.*;
+import static com.predic8.membrane.core.http.Response.*;
+import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 
 public class WsaEndpointRewriterInterceptorTest {
 	private WsaEndpointRewriterInterceptor rewriter;
-	private Exchange exc;
 
 	@BeforeEach
 	public void setUp() throws Exception {
@@ -34,32 +33,32 @@ public class WsaEndpointRewriterInterceptorTest {
 		router.init();
 		rewriter = new WsaEndpointRewriterInterceptor();
 		rewriter.init(router);
-		exc = new Exchange(null);
 	}
 
 	@Test
-	public void testRewriterInterceptor() throws Exception {
-		exc.setRequest(MessageUtil.getPostRequest("http://localhost:9000/SoapContext/SoapPort?wsdl"));
-			exc.getRequest().setBody(new Body("""
-					<S:Envelope xmlns:S="http://www.w3.org/2003/05/soap-envelope"     \s
-					                xmlns:wsa="http://schemas.xmlsoap.org/ws/2004/08/addressing">
-					   <S:Header>
-					    <wsa:MessageID>
-					      uuid:a8addabf-095f-493e-b59e-325f5b0a599c
-					    </wsa:MessageID>
-					    <wsa:ReplyTo>
-					      <wsa:Address>https://api.predic8.de/client</wsa:Address>
-					    </wsa:ReplyTo>
-					    <wsa:To>https://api.predic8.de/shop/v2</wsa:To>
-					    <wsa:Action>https://api.predic8.de/shop/v2/getproduct</wsa:Action>
-					   </S:Header>
-					   <S:Body>
-					     <foo/>
-					   </S:Body>
-					 </S:Envelope>
-					""".getBytes()));
+	void rewriterInterceptor() {
 
-		assertEquals(Outcome.CONTINUE, rewriter.handleRequest(exc));
-		assertEquals("uuid:a8addabf-095f-493e-b59e-325f5b0a599c",  ((String)exc.getProperty("messageId")).trim());
+		String body = """
+				<S:Envelope xmlns:S="http://www.w3.org/2003/05/soap-envelope"
+				                xmlns:wsa="http://schemas.xmlsoap.org/ws/2004/08/addressing">
+				   <S:Header>
+				    <wsa:ReplyTo>
+				      <wsa:Address>https://api.predic8.de/client</wsa:Address>
+				    </wsa:ReplyTo>
+				   </S:Header>
+				 </S:Envelope>
+				""";
+
+		Exchange exchange = ok(body).contentType(APPLICATION_SOAP_XML).buildExchange();
+		rewriter.setProtocol("https");
+		rewriter.setHost("membrane-api.io");
+		rewriter.setPort(8080);
+		assertEquals(CONTINUE, rewriter.handleResponse(exchange));
+
+		String rewritten = exchange.getResponse().getBodyAsStringDecoded();
+
+		System.out.println(rewritten);
+		assertTrue(rewritten.contains("https://membrane-api.io:8080/client"));
+		assertFalse(rewritten.contains("api.predic8.de"));
 	}
 }

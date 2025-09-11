@@ -32,12 +32,11 @@ import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.*;
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
 
 import static com.predic8.membrane.core.http.Header.*;
 import static com.predic8.membrane.core.http.Request.get;
 import static com.predic8.membrane.core.interceptor.oauth2.client.b2c.MockAuthorizationServer.SERVER_PORT;
-import static com.predic8.membrane.core.interceptor.oauth2client.rf.OAuth2CallbackRequestHandler.MEMBRANE_MISSING_SESSION;
+import static com.predic8.membrane.core.interceptor.oauth2client.rf.OAuth2CallbackRequestHandler.MEMBRANE_MISSING_SESSION_DESCRIPTION;
 import static com.predic8.membrane.core.util.URLParamUtil.DuplicateKeyOrInvalidFormStrategy.ERROR;
 import static com.predic8.membrane.core.util.URLParamUtil.parseQueryString;
 import static org.junit.jupiter.api.Assertions.*;
@@ -53,7 +52,7 @@ public abstract class OAuth2ResourceB2CTest {
     private final B2CMembrane b2cMembrane = new B2CMembrane(tc, createSessionManager());
 
     @BeforeEach
-    public void init() throws Exception {
+    void init() throws Exception {
         didLogIn.set(false);
         didLogOut.set(false);
         mockAuthorizationServer.resetBehavior();
@@ -62,13 +61,13 @@ public abstract class OAuth2ResourceB2CTest {
     }
 
     @AfterEach
-    public void done() {
+    void done() {
         mockAuthorizationServer.stop();
         b2cMembrane.stop();
     }
 
     @Test
-    public void getOriginalRequest() throws Exception {
+    void getOriginalRequest() throws Exception {
         var excCallResource = browser.apply(get(tc.getClientAddress() + "/init"));
         var body2 = om.readValue(excCallResource.getResponse().getBodyAsStream(), Map.class);
         assertEquals("/init", body2.get("path"));
@@ -78,7 +77,7 @@ public abstract class OAuth2ResourceB2CTest {
     }
 
     @Test
-    public void postOriginalRequest() throws Exception {
+    void postOriginalRequest() throws Exception {
         var excCallResource = browser.apply(new Request.Builder().post(tc.getClientAddress() + "/init").body("demobody"));
         var body2 = om.readValue(excCallResource.getResponse().getBodyAsStream(), Map.class); // No
         assertEquals("/init", body2.get("path"));
@@ -88,7 +87,7 @@ public abstract class OAuth2ResourceB2CTest {
 
     // this test also implicitly tests concurrency on oauth2resource
     @Test
-    public void testUseRefreshTokenOnTokenExpiration() throws Exception {
+    void useRefreshTokenOnTokenExpiration() throws Exception {
         mockAuthorizationServer.expiresIn = 1;
 
         var excCallResource = browser.apply(get(tc.getClientAddress() + "/init"));
@@ -139,7 +138,7 @@ public abstract class OAuth2ResourceB2CTest {
 
 
     @Test
-    public void testStateAttack() throws Exception {
+    void stateAttack() throws Exception {
         AtomicReference<String> ref = new AtomicReference<>();
         AtomicInteger state = new AtomicInteger();
         // state 0: the attacker aborts the OAuth2 flow at the AS
@@ -167,12 +166,12 @@ public abstract class OAuth2ResourceB2CTest {
         browser.clearCookies();
 
         // send the auth link to some helpless (other) user
-        excCallResource = browser.apply(get("http://localhost:1337" + ref.get()));
+        excCallResource = browser.apply(get("http://localhost:" + SERVER_PORT + ref.get()));
 
         assertEquals(400, excCallResource.getResponse().getStatusCode());
 
         String response = excCallResource.getResponse().getBodyAsStringDecoded();
-        assertTrue(response.contains(MEMBRANE_MISSING_SESSION));
+        assertTrue(response.contains(MEMBRANE_MISSING_SESSION_DESCRIPTION));
     }
 
     private List<String> getLinesContaining(String haystackLines, String needle) {
@@ -202,8 +201,8 @@ public abstract class OAuth2ResourceB2CTest {
 
         // we assert: session id has changed
         assertNotEquals(
-                getLinesContaining(cookiesBefore, "=true").get(0),
-                getLinesContaining(cookiesAfter, "=true").get(0));
+                getLinesContaining(cookiesBefore, "=true").getFirst(),
+                getLinesContaining(cookiesAfter, "=true").getFirst());
     }
 
     @Test
@@ -223,6 +222,35 @@ public abstract class OAuth2ResourceB2CTest {
         assertTrue(ili.getResponse().getBodyAsStringDecoded().contains("false"));
 
         assertEquals(0, browser.getCookieCount());
+        assertTrue(didLogOut.get());
+
+        // accessing the API triggers a login
+        Response response = browser.applyWithoutRedirect(get(tc.getClientAddress() + "/api/")).getResponse();
+        assertEquals(302, response.getStatusCode());
+        assertTrue(response.getHeader().getFirstValue("Location").startsWith("http://localhost:" + SERVER_PORT + "/" + tc.tenantId + "/" + tc.susiFlowId));
+    }
+
+    @Test
+    public void logoutClearsOldCookie() throws Exception {
+        browser.apply(get(tc.getClientAddress() + "/init"));
+
+        var ili = browser.apply(get(tc.getClientAddress() + "/is-logged-in"));
+
+        assertTrue(ili.getResponse().getBodyAsStringDecoded().contains("true"));
+
+        assertEquals(200, browser.apply(get(tc.getClientAddress() + "/api/")).getResponse().getStatusCode());
+
+        Map<String, Map<String, String>> cookiesSnapshot = browser.createCookiesSnapshot();
+
+        browser.apply(get(tc.getClientAddress() + "/logout"));
+
+        browser.applyCookiesSnapshot(cookiesSnapshot);
+
+        ili = browser.apply(get(tc.getClientAddress() + "/is-logged-in"));
+
+        assertTrue(ili.getResponse().getBodyAsStringDecoded().contains("false"));
+
+        assertEquals(1, browser.getCookieCount());
         assertTrue(didLogOut.get());
 
         // accessing the API triggers a login
@@ -267,7 +295,7 @@ public abstract class OAuth2ResourceB2CTest {
 
         exc = browser.apply(get(tc.getClientAddress() + "/api/"));
 
-        JwtClaims c2 = createJwtConsumer().processToClaims(getAccessToken(exc));
+        JwtClaims c2 = createJwtConsumer(tc.api1Id).processToClaims(getAccessToken(exc));
         assertEquals(12, c2.getClaimsMap().size());
         assertEquals("b2c_1_susi", c2.getClaimValue("tfp"));
     }
@@ -282,7 +310,7 @@ public abstract class OAuth2ResourceB2CTest {
 
         exc = browser.apply(get(tc.getClientAddress() + "/api/"));
 
-        JwtClaims c2 = createJwtConsumer().processToClaims(getAccessToken(exc));
+        JwtClaims c2 = createJwtConsumer(tc.api1Id).processToClaims(getAccessToken(exc));
         assertEquals(11, c2.getClaimsMap().size());
         assertEquals("b2c_1_profile_editing", c2.getClaimValue("tfp"));
     }
@@ -300,9 +328,37 @@ public abstract class OAuth2ResourceB2CTest {
         exc = browser.apply(get(tc.getClientAddress() + "/api/"));
 
         String a2 = getAccessToken(exc);
-        JwtClaims c2 = createJwtConsumer().processToClaims(a2);
+        JwtClaims c2 = createJwtConsumer(tc.api1Id).processToClaims(a2);
         assertEquals(11, c2.getClaimsMap().size());
         assertEquals("b2c_1_profile_editing2", c2.getClaimValue("tfp"));
+    }
+
+    @Test
+    public void startingUserFlowButContinueToUseOldRefreshToken() throws Exception {
+        var exc = browser.apply(get(tc.getClientAddress() + "/init"));
+
+        mockAuthorizationServer.abortSignIn.set(true);
+        browser.apply(get(tc.getClientAddress() + "/pe2/init"));
+
+        exc = browser.apply(get(tc.getClientAddress() + "/api/"));
+
+        String a2 = getAccessToken(exc);
+        JwtClaims c2 = createJwtConsumer(tc.api1Id).processToClaims(a2);
+        assertEquals(12, c2.getClaimsMap().size());
+        // the token for /api/ was issued from 1_susi because 1_profile_editing was aborted
+        assertEquals("b2c_1_susi", c2.getClaimValue("tfp"));
+
+        // this should get a new refresh token from the pe2 flow
+        mockAuthorizationServer.abortSignIn.set(false);
+        browser.apply(get(tc.getClientAddress() + "/pe2/init"));
+
+        exc = browser.apply(get(tc.getClientAddress() + "/api2/"));
+
+        String a3 = getAccessToken(exc);
+        JwtClaims c3 = createJwtConsumer(tc.api2Id).processToClaims(a3);
+        assertEquals(11, c3.getClaimsMap().size());
+        // the token for /api2/ was issued from 1_profile_editing2 because that one was actually completed
+        assertEquals("b2c_1_profile_editing2", c3.getClaimValue("tfp"));
     }
 
     @Test
@@ -335,9 +391,9 @@ public abstract class OAuth2ResourceB2CTest {
         exc = browser.apply(get(tc.getClientAddress() + "/api-no-auth-needed/"));
 
         // valid access token, since still logged in
-        JwtClaims c2 = createJwtConsumer().processToClaims(getAccessToken(exc));
-        assertEquals(11, c2.getClaimsMap().size());
-        assertEquals("b2c_1_profile_editing2", c2.getClaimValue("tfp"));
+        JwtClaims c2 = createJwtConsumer(tc.api1Id).processToClaims(getAccessToken(exc));
+        assertEquals(12, c2.getClaimsMap().size());
+        assertEquals("b2c_1_susi", c2.getClaimValue("tfp"));
     }
 
     @Test
@@ -451,6 +507,20 @@ public abstract class OAuth2ResourceB2CTest {
     }
 
     @Test
+    public void errorDuringSecondOAuth2FlowLogsUserOut() throws Exception {
+        browser.apply(get(tc.getClientAddress() + "/init"));
+
+        var ili = browser.apply(get(tc.getClientAddress() + "/is-logged-in"));
+        assertTrue(ili.getResponse().getBodyAsStringDecoded().contains("true"));
+
+        mockAuthorizationServer.returnOAuth2ErrorFromSignIn.set(true);
+        browser.apply(get(tc.getClientAddress() + "/pe2/init"));
+
+        ili = browser.apply(get(tc.getClientAddress() + "/is-logged-in"));
+        assertTrue(ili.getResponse().getBodyAsStringDecoded().contains("false"));
+    }
+
+    @Test
     public void api1and2() throws Exception {
         var exc = browser.apply(get(tc.getClientAddress() + "/api/"));
         Map body = om.readValue(exc.getResponse().getBodyAsStream(), Map.class);
@@ -469,12 +539,12 @@ public abstract class OAuth2ResourceB2CTest {
 
     protected abstract SessionManager createSessionManager();
 
-    private JwtConsumer createJwtConsumer() {
+    private JwtConsumer createJwtConsumer(String expectedAudience) {
         return new JwtConsumerBuilder()
                 .setRequireExpirationTime()
                 .setAllowedClockSkewInSeconds(30)
                 .setRequireSubject()
                 .setVerificationKey(mockAuthorizationServer.getPublicKey())
-                .setExpectedAudience(true, tc.api1Id).build();
+                .setExpectedAudience(true, expectedAudience).build();
     }
 }

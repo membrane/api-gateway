@@ -1,1 +1,9 @@
 *.sh	eol=lf
+
+# Test fixtures: never transcode or touch
+/core/src/test/resources/charsets/** binary
+
+# Keystore files as binary (no diff/merge/CRLF)
+*.p12 binary
+*.pfx binary
+*.jks binary

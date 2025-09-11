@@ -364,7 +364,7 @@ public class Response extends Message {
 	}
 
 	@Override
-	public void parseStartLine(InputStream in) throws IOException {
+	protected void parseStartLine(InputStream in) throws IOException {
 		String line;
 		try {
 			line = readLine(in);
@@ -382,6 +382,27 @@ public class Response extends Message {
 		version = matcher.group(1);
 		statusCode = parseInt(matcher.group(2));
 		statusMessage = matcher.group(4);
+	}
+
+
+	/**
+	 * Creates and returns a new {@link Response}.
+	 *
+	 * @param in the {@link InputStream} from which the HTTP response is read. This stream must contain a complete
+	 *           HTTP response, starting with the status line, followed by headers, and optionally a body.
+	 *
+	 * @param createBody if {@code true}, the response body will be parsed and included in the resulting {@link Response} object.
+	 *                   If {@code false}, only the status line and headers are read, and the body is skipped or ignored.
+	 *
+	 * @return a {@link Response} populated by the stream object.
+	 *
+	 * @throws IOException if an I/O error occurs while reading the response.
+	 * @throws EndOfStreamException if the end of the stream is reached unexpectedly before the response is fully read.
+	 */
+	public static Response fromStream(InputStream in, boolean createBody) throws IOException, EndOfStreamException {
+		Response res = new Response();
+		res.read(in, createBody);
+		return res;
 	}
 
 	@Override

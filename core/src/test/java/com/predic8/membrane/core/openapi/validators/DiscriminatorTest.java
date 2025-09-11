@@ -17,6 +17,7 @@
 package com.predic8.membrane.core.openapi.validators;
 
 import com.predic8.membrane.core.openapi.model.*;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.*;
 
 import java.util.*;
@@ -29,8 +30,29 @@ import static org.junit.jupiter.api.Assertions.*;
 public class DiscriminatorTest extends AbstractValidatorTest {
 
     @Override
-protected String getOpenAPIFileName() {
+    protected String getOpenAPIFileName() {
         return "/openapi/specs/discriminator.yml";
+    }
+
+    @Test
+    public void discriminatorWorkingTrain() throws RuntimeException{
+        ValidationErrors errors = validator.validate(Request.post().path("/public-transports").body(mapToJson(createTrain())));
+        assertEquals(0,errors.size());
+    }
+
+    @Test
+    public void singleTypeFromDiscriminator() throws RuntimeException{
+        ValidationErrors errors = validator.validate(Request.post().path("/train").body(mapToJson(createTrain())));
+        assertEquals(0,errors.size());
+    }
+
+    private static @NotNull Map<String, Object> createTrain() {
+        Map<String,Object> publicTransport = new HashMap<>();
+        publicTransport.put("kind", "Train");
+        publicTransport.put("name", "MyTrain");
+        publicTransport.put("length", 5);
+        publicTransport.put("seats", 123);
+        return publicTransport;
     }
 
     @Test
@@ -71,4 +93,38 @@ protected String getOpenAPIFileName() {
         ValidationError allOf = errors.stream().filter(e -> e.getMessage().contains("allOf")).findAny().get();
         assertTrue(allOf.getMessage().contains("subschemas"));
     }
+
+    @Test
+    public void discriminatorWorkingUnmappedCar() throws RuntimeException{
+        Map<String,Object> publicTransport = new HashMap<>();
+        publicTransport.put("kind", "Car");
+        publicTransport.put("name", "MyCar");
+        publicTransport.put("length", 5);
+
+        ValidationErrors errors = validator.validate(Request.post().path("/private-transports").body(mapToJson(publicTransport)));
+        assertEquals(0,errors.size());
+    }
+
+    @Test
+    public void discriminatorWorkingMappedRef() throws RuntimeException{
+        Map<String,Object> publicTransport = new HashMap<>();
+        publicTransport.put("kind", "CAR");
+        publicTransport.put("name", "MyCar");
+        publicTransport.put("length", 5);
+
+        ValidationErrors errors = validator.validate(Request.post().path("/private-transports").body(mapToJson(publicTransport)));
+        assertEquals(0,errors.size());
+    }
+
+    @Test
+    public void discriminatorWorkingMappedType() throws RuntimeException{
+        Map<String,Object> publicTransport = new HashMap<>();
+        publicTransport.put("kind", "BIKE");
+        publicTransport.put("name", "MyBike");
+        publicTransport.put("wheels", 2);
+
+        ValidationErrors errors = validator.validate(Request.post().path("/private-transports").body(mapToJson(publicTransport)));
+        assertEquals(0,errors.size());
+    }
+
 }

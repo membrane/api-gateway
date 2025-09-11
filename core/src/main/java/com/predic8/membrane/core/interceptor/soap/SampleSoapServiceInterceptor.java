@@ -14,10 +14,10 @@
 package com.predic8.membrane.core.interceptor.soap;
 
 import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
+import com.predic8.xml.beautifier.*;
 import org.w3c.dom.*;
 
 import javax.xml.parsers.*;
@@ -28,12 +28,14 @@ import java.util.*;
 import java.util.regex.*;
 
 import static com.predic8.membrane.core.Constants.*;
+import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
 import static com.predic8.membrane.core.http.Header.*;
 import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.http.Response.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.openapi.util.Utils.*;
 import static com.predic8.membrane.core.util.XMLUtil.*;
+import static java.util.Objects.*;
 import static javax.xml.stream.XMLStreamConstants.*;
 
 @MCElement(name = "sampleSoapService")
@@ -56,7 +58,7 @@ public class SampleSoapServiceInterceptor extends AbstractInterceptor {
         try {
             return handleRequestInternal(exc);
         } catch (Exception e) {
-            ProblemDetails.internal(router.isProduction(),getDisplayName())
+            internal(router.isProduction(), getDisplayName())
                     .detail("Could not process SOAP request!")
                     .exception(e)
                     .buildAndSetResponse(exc);
@@ -93,11 +95,12 @@ public class SampleSoapServiceInterceptor extends AbstractInterceptor {
         return ok(getSoapFault("Method %s not allowed".formatted(method), "405", "Use POST to access the service.")).contentType(TEXT_XML).build();
     }
 
-    private Response createWSDLResponse(Exchange exc) throws XMLStreamException, FileNotFoundException {
-        return ok().header(CONTENT_TYPE, TEXT_XML_UTF8)
-                .body(setWsdlServer(
-                        getResourceAsStream(this, "/wsdl/city.wsdl"), exc)
-                ).build();
+    private Response createWSDLResponse(Exchange exc) throws IOException, XMLStreamException {
+        try (InputStream wsdl = requireNonNull(getResourceAsStream(this, "/wsdl/city.wsdl"), "Missing resource: /wsdl/city.wsdl")) {
+            return ok().header(CONTENT_TYPE, TEXT_XML_UTF8)
+                    .body(setWsdlServer(wsdl, exc))
+                    .build();
+        }
     }
 
     static boolean isWSDLRequest(Exchange exc) {
@@ -108,14 +111,30 @@ public class SampleSoapServiceInterceptor extends AbstractInterceptor {
         return getElementAsString(exc.getRequest().getBodyAsStream(), "name");
     }
 
-    private static final HashMap<String, City> cityMap = new HashMap<>() {{
+    private static final HashMap<String, City> cities = new HashMap<>() {{
         put("Bonn", new City("Bonn", 327_000, "Germany"));
         put("Bielefeld", new City("Bielefeld", 333_000, "Germany"));
+        put("Berlin", new City("Berlin", 3_897_000, "Germany"));
         put("Manila", new City("Manila", 1_780_000, "Philippines"));
         put("Da Nang", new City("Da Nang", 1_220_000, "Vietnam"));
         put("London", new City("London", 8_980_000, "England"));
         put("New York", new City("New York", 8_460_000, "USA"));
+        put("Delhi", new City("Delhi", 34_665_600, "India"));
+        put("Beijing", new City("Beijing", 22_596_500, "China"));
+        put("Tokyo", new City("Tokyo", 37_036_200, "Japan"));
+        put("Shanghai", new City("Shanghai", 30_482_100, "China"));
+        put("São Paulo", new City("São Paulo", 22_990_000, "Brazil"));
+        put("Jakarta", new City("Jakarta", 11_350_000, "Indonesia"));
+        put("San Francisco", new City("San Francisco", 842_000, "USA"));
+        put("Mumbai", new City("Mumbai", 22_088_953, "India"));
+        put("Nairobi", new City("Nairobi", 5_767_000, "Kenya"));
+        put("Paris", new City("Paris", 11_346_800, "France"));
+        put("Toronto", new City("Toronto", 7_106_400, "Canada"));
+        put("Seoul", new City("Seoul", 10_025_800, "South Korea"));
+        put("Sydney", new City("Sydney", 5_248_790, "Australia"));
+        put("Barcelona", new City("Barcelona", 5_733_250, "Spain"));
     }};
+
 
     public static String getSoapFault(String faultString, String code, String errorMessage) {
         return """
@@ -135,10 +154,7 @@ public class SampleSoapServiceInterceptor extends AbstractInterceptor {
     }
 
     public static String getElementAsString(InputStream is, String localName) throws Exception {
-        // MLInputFactory is not required to be thread-safe, ...
-        // https://javadoc.io/static/com.sun.xml.ws/jaxws-rt/2.2.10-b140319.1121/com/sun/xml/ws/api/streaming/XMLStreamReaderFactory.Default.html#:~:text=XMLInputFactory%20is%20not%20required%20to,using%20a%20XMLInputFactory%20per%20thread.
-        XMLInputFactory factory = XMLInputFactory.newInstance();
-        XMLStreamReader reader = factory.createXMLStreamReader(is);
+        XMLStreamReader reader = XMLInputFactoryFactory.inputFactory().createXMLStreamReader(is);
 
         while (reader.hasNext()) {
             if (reader.next() == START_ELEMENT) {
@@ -154,25 +170,30 @@ public class SampleSoapServiceInterceptor extends AbstractInterceptor {
         // XMLEventFactory is not required to be thread-safe, ...
         // https://javadoc.io/static/com.sun.xml.ws/jaxws-rt/2.2.10-b140319.1121/com/sun/xml/ws/api/streaming/XMLStreamReaderFactory.Default.html
         StringWriter modifiedXmlWriter = new StringWriter();
-        XMLEventReader reader = XMLInputFactory.newInstance().createXMLEventReader(Objects.requireNonNull(is));
+        XMLEventReader reader = XMLInputFactoryFactory.inputFactory().createXMLEventReader(is);
         XMLEventWriter writer = XMLOutputFactory.newInstance().createXMLEventWriter(modifiedXmlWriter);
-        XMLEventFactory fac = XMLEventFactory.newInstance();
+        try {
+            XMLEventFactory fac = XMLEventFactory.newInstance();
 
-        while (reader.hasNext()) {
-            XMLEvent event = reader.nextEvent();
-            if (event.isStartElement()) {
-                StartElement startElement = event.asStartElement();
-                if ("address".equals(startElement.getName().getLocalPart())) {
-                    writer.add(fac.createStartElement("s", "soap", "address"));
-                    writer.add(fac.createAttribute("location", getSOAPAddress(exc)));
+            while (reader.hasNext()) {
+                XMLEvent event = reader.nextEvent();
+                if (event.isStartElement()) {
+                    StartElement startElement = event.asStartElement();
+                    if ("address".equals(startElement.getName().getLocalPart())) {
+                        writer.add(fac.createStartElement("s", "soap", "address"));
+                        writer.add(fac.createAttribute("location", getSOAPAddress(exc)));
+                    } else {
+                        writer.add(event);
+                    }
                 } else {
                     writer.add(event);
                 }
-            } else {
-                writer.add(event);
             }
+        } finally {
+            writer.flush();
+            writer.close();
+            reader.close();
         }
-
         return modifiedXmlWriter.toString();
     }
 
@@ -223,13 +244,13 @@ public class SampleSoapServiceInterceptor extends AbstractInterceptor {
 
     private static Element createPopulation(String city, Document res) {
         Element pop = res.createElement("population");
-        pop.appendChild(res.createTextNode(String.valueOf(cityMap.get(city).population)));
+        pop.appendChild(res.createTextNode(String.valueOf(cities.get(city).population)));
         return pop;
     }
 
     private static Element createCountry(String city, Document res) {
         Element country = res.createElement("country");
-        country.appendChild(res.createTextNode(cityMap.get(city).country));
+        country.appendChild(res.createTextNode(cities.get(city).country));
         return country;
     }
 

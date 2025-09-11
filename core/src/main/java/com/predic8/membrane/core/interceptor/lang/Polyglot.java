@@ -13,7 +13,9 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.lang;
 
+import com.predic8.membrane.core.lang.ExchangeExpression.Language;
+
 public interface Polyglot {
 
-    void setLanguage(String language);
+    void setLanguage(Language language);
 }

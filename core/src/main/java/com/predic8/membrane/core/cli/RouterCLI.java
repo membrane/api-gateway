@@ -45,6 +45,7 @@ import java.util.*;
 import static com.predic8.membrane.core.Constants.*;
 import static com.predic8.membrane.core.config.spring.TrackingFileSystemXmlApplicationContext.*;
 import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPISpec.YesNoOpenAPIOption.*;
+import static com.predic8.membrane.core.openapi.util.OpenAPIUtil.isOpenAPIMisplacedError;
 import static com.predic8.membrane.core.util.ExceptionUtil.*;
 import static com.predic8.membrane.core.util.OSUtil.*;
 import static com.predic8.membrane.core.util.URIUtil.*;
@@ -82,6 +83,19 @@ public class RouterCLI {
             System.exit(0);
         }
 
+        if (commandLine.getCommand().getName().equals("private-jwk-to-public")) {
+            String input = commandLine.getCommand().getOptionValue("i");
+            String output = commandLine.getCommand().getOptionValue("o");
+            if (input == null || output == null) {
+                log.error("Both input (-i) and output (-o) files must be specified.");
+                System.exit(1);
+            }
+            privateJWKtoPublic(
+                    input,
+                    output);
+            System.exit(0);
+        }
+
         try {
             getRouter(commandLine).waitFor();
         } catch (InterruptedException e) {
@@ -107,7 +121,12 @@ public class RouterCLI {
                 default -> initRouterByConfig(commandLine);
             };
         } catch (InvalidConfigurationException e) {
-            log.error("Fatal error: {}", concatMessageAndCauseMessages(e));
+            String errorMsg = concatMessageAndCauseMessages(e);
+            if (isOpenAPIMisplacedError(errorMsg)) {
+                log.error("Fatal error caused by <openapi /> element. Make sure it is the first element of the API.\n{}", errorMsg);
+            } else {
+                log.error("Fatal error: {}", errorMsg);
+            }
         } catch (Exception ex) {
             SpringConfigurationErrorHandler.handleRootCause(ex, log);
         }
@@ -161,6 +180,12 @@ public class RouterCLI {
         boolean overwrite = commandLine.getCommand().isOptionSet("overwrite");
         String outputFile = commandLine.getCommand().getOptionValue("o");
 
+        if (outputFile == null) {
+            log.error("Missing required option: -o <output file>");
+            commandLine.getCommand().printHelp();
+            System.exit(1);
+        }
+
         RsaJsonWebKey rsaJsonWebKey = null;
         try {
             rsaJsonWebKey = RsaJwkGenerator.generateJwk(bits);
@@ -179,6 +204,17 @@ public class RouterCLI {
         try {
             Files.writeString(path, rsaJsonWebKey.toJson(JsonWebKey.OutputControlLevel.INCLUDE_PRIVATE));
         } catch (IOException e) {
+            log.error(e.getMessage());
+            System.exit(1);
+        }
+    }
+
+    private static void privateJWKtoPublic(String input, String output) {
+        try {
+            Map map = new ObjectMapper().readValue(new File(input), Map.class);
+            RsaJsonWebKey rsa = new RsaJsonWebKey(map);
+            Files.writeString(Paths.get(output), rsa.toJson(JsonWebKey.OutputControlLevel.PUBLIC_ONLY));
+        } catch (IOException | JoseException e) {
             log.error(e.getMessage());
             System.exit(1);
         }

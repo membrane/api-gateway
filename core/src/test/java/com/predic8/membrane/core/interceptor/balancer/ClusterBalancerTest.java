@@ -21,137 +21,134 @@ import org.junit.jupiter.api.*;
 
 import java.io.*;
 
-import static com.predic8.membrane.core.util.ByteUtil.*;
+import static com.predic8.membrane.core.http.MimeType.*;
+import static com.predic8.membrane.core.http.Response.*;
+import static com.predic8.membrane.test.TestUtil.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class ClusterBalancerTest {
 
-	private static XMLElementSessionIdExtractor extracor;
-	private static LoadBalancingInterceptor lb;
-	private static Router r;
+    private static XMLElementSessionIdExtractor extractor;
+    private static LoadBalancingInterceptor lb;
+    private static Router r;
 
-	@BeforeAll
-	public static void setUp() throws Exception {
+    @BeforeAll
+    public static void setUp() throws Exception {
 
-		extracor = new XMLElementSessionIdExtractor();
-		extracor.setLocalName("session");
-		extracor.setNamespace("http://predic8.com/session/");
+        extractor = new XMLElementSessionIdExtractor();
+        extractor.setLocalName("session");
+        extractor.setNamespace("http://predic8.com/session/");
 
-		r = new HttpRouter();
+        r = new HttpRouter();
 
-		lb = new LoadBalancingInterceptor();
-		lb.setSessionIdExtractor(extracor);
-		lb.setName("Default");
+        lb = new LoadBalancingInterceptor();
+        lb.setSessionIdExtractor(extractor);
+        lb.setName("Default");
 
-		ServiceProxy sp = new ServiceProxy(new ServiceProxyKey(3011), "predic8.com", 80);
-		sp.getInterceptors().add(lb);
-		r.getRuleManager().addProxyAndOpenPortIfNew(sp);
-		r.init();
+        ServiceProxy sp = new ServiceProxy(new ServiceProxyKey(3011), "predic8.com", 80);
+        sp.getInterceptors().add(lb);
+        r.getRuleManager().addProxyAndOpenPortIfNew(sp);
+        r.init();
 
-		BalancerUtil.up(r, "Default", "Default", "localhost", 2000);
-		BalancerUtil.up(r, "Default", "Default", "localhost", 3000);
-	}
+        BalancerUtil.up(r, "Default", "Default", "localhost", 2000);
+        BalancerUtil.up(r, "Default", "Default", "localhost", 3000);
+    }
 
-	@AfterAll
-	public static void tearDown() throws Exception {
-		r.shutdown();
-		//let the test wait so the next test can reopen the same port and avoid PortOccupiedException
-		Thread.sleep(400);
-	}
+    @AfterAll
+    public static void tearDown() throws Exception {
+        r.shutdown();
+    }
 
-	@Test
-	public void testClusterBalancerRequest() throws Exception {
-		Exchange exc = getExchangeWithSession();
+    @Test
+    public void testClusterBalancerRequest() throws Exception {
+        Exchange exc = getExchangeWithSession();
 
-		lb.handleRequest(exc);
+        lb.handleRequest(exc);
 
-		Session s = BalancerUtil.getSessions(r, "Default", "Default").get("555555");
-		assertEquals("localhost", s.getNode().getHost());
+        Session s = BalancerUtil.getSessions(r, "Default", "Default").get("555555");
+        assertEquals("localhost", s.getNode().getHost());
 
-		assertEquals(2, exc.getDestinations().size());
+        assertEquals(2, exc.getDestinations().size());
 
-		String stickyDestination = exc.getDestinations().get(0);
-		lb.handleRequest(exc);
+        String stickyDestination = exc.getDestinations().getFirst();
+        lb.handleRequest(exc);
 
-		assertEquals(1, BalancerUtil.getSessions(r, "Default", "Default").size());
-		assertEquals(stickyDestination, exc.getDestinations().getFirst());
+        assertEquals(1, BalancerUtil.getSessions(r, "Default", "Default").size());
+        assertEquals(stickyDestination, exc.getDestinations().getFirst());
 
-		BalancerUtil.takeout(r, "Default", "Default", "localhost", s.getNode().getPort());
-		assertEquals(1, BalancerUtil.getAvailableNodesByCluster(r, "Default", "Default").size());
+        BalancerUtil.takeout(r, "Default", "Default", "localhost", s.getNode().getPort());
+        assertEquals(1, BalancerUtil.getAvailableNodesByCluster(r, "Default", "Default").size());
         assertNotEquals(stickyDestination, BalancerUtil.getAvailableNodesByCluster(r, "Default", "Default").getFirst());
 
-		lb.handleRequest(exc);
-		assertEquals(stickyDestination, exc.getDestinations().getFirst());
+        lb.handleRequest(exc);
+        assertEquals(stickyDestination, exc.getDestinations().getFirst());
 
-		BalancerUtil.down(r, "Default", "Default", "localhost", s.getNode().getPort());
-		lb.handleRequest(exc);
+        BalancerUtil.down(r, "Default", "Default", "localhost", s.getNode().getPort());
+        lb.handleRequest(exc);
 
         assertNotEquals(stickyDestination, exc.getDestinations().getFirst());
-	}
+    }
 
-	@Test
-	public void testClusterBalancerNoSessionRequestResponse() throws Exception {
-		Exchange exc = getExchangeWithOutSession();
+    @Test
+    public void testClusterBalancerNoSessionRequestResponse() throws Exception {
+        Exchange exc = getExchangeWithOutSession();
 
-		lb.handleRequest(exc);
-		assertNull(BalancerUtil.getSessions(r, "Default", "Default").get("444444"));
+        lb.handleRequest(exc);
+        assertNull(BalancerUtil.getSessions(r, "Default", "Default").get("444444"));
 
-		Node stickyNode = (Node)exc.getProperty("dispatchedNode");
-		assertNotNull(stickyNode);
+        Node stickyNode = (Node) exc.getProperty("dispatchedNode");
+        assertNotNull(stickyNode);
 
-		exc.setResponse(getResponse());
+        exc.setResponse(getResponse());
 
-		lb.handleResponse(exc);
+        lb.handleResponse(exc);
 
-		assertEquals(stickyNode, BalancerUtil.getSessions(r, "Default", "Default").get("444444").getNode());
+        assertEquals(stickyNode, BalancerUtil.getSessions(r, "Default", "Default").get("444444").getNode());
 
-	}
+    }
 
-	@Test
-	public void testNoNodeFound() throws Exception {
-		Exchange exc = getExchangeWithOutSession();
+    @Test
+    public void testNoNodeFound() throws Exception {
+        Exchange exc = getExchangeWithOutSession();
 
-		BalancerUtil.down(r, "Default", "Default", "localhost", 2000);
-		BalancerUtil.down(r, "Default", "Default", "localhost", 3000);
+        BalancerUtil.down(r, "Default", "Default", "localhost", 2000);
+        BalancerUtil.down(r, "Default", "Default", "localhost", 3000);
 
-		lb.handleRequest(exc);
-		assertEquals(500, exc.getResponse().getStatusCode());
-	}
+        lb.handleRequest(exc);
+        assertEquals(503, exc.getResponse().getStatusCode());
+    }
 
-	private Response getResponse() throws IOException {
-		Response res = Response.ok().build();
-		res.setHeader(getHeader());
-		res.setBodyContent(getByteArrayData(getClass().getResourceAsStream(
-				"/getBankResponsewithSession.xml")));
-		return res;
-	}
+    private Response getResponse() throws IOException {
+        Response res = ok().build();
+        res.setHeader(getHeader());
+        res.setBodyContent(readResource("/getBankResponsewithSession.xml"));
+        return res;
+    }
 
-	private Exchange getExchangeWithSession() throws IOException {
-		Exchange exc = new Exchange(null);
-		Request res = new Request();
-		res.setHeader(getHeader());
-		res.setBodyContent(getByteArrayData(getClass().getResourceAsStream(
-				"/getBankwithSession555555.xml")));
-		exc.setRequest(res);
-		exc.setOriginalRequestUri("/axis2/services/BLZService");
-		return exc;
-	}
+    private Exchange getExchangeWithSession() throws IOException {
+        Exchange exc = new Exchange(null);
+        Request res = new Request();
+        res.setHeader(getHeader());
+        res.setBodyContent(readResource("/getBankwithSession555555.xml"));
+        exc.setRequest(res);
+        exc.setOriginalRequestUri("/axis2/services/BLZService");
+        return exc;
+    }
 
-	private Exchange getExchangeWithOutSession() throws IOException {
-		Exchange exc = new Exchange(null);
-		Request res = new Request();
-		res.setHeader(getHeader());
-		res.setBodyContent(getByteArrayData(getClass().getResourceAsStream(
-				"/getBank.xml")));
-		exc.setRequest(res);
-		exc.setOriginalRequestUri("/axis2/services/BLZService");
-		return exc;
-	}
+    private Exchange getExchangeWithOutSession() throws IOException {
+        Exchange exc = new Exchange(null);
+        Request res = new Request();
+        res.setHeader(getHeader());
+        res.setBodyContent(readResource("/getBank.xml"));
+        exc.setRequest(res);
+        exc.setOriginalRequestUri("/axis2/services/BLZService");
+        return exc;
+    }
 
-	private Header getHeader() {
-		Header h = new Header();
-		h.setContentType("application/soap+xml");
-		return h;
-	}
+    private Header getHeader() {
+        Header h = new Header();
+        h.setContentType(APPLICATION_SOAP_XML);
+        return h;
+    }
 
 }

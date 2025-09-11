@@ -87,7 +87,7 @@ public class SchemaValidator implements IJSONSchemaValidator {
 
         if (schema.get$ref() != null && !getSchemaNameFromRef(schema).equals(ctx.getComplexType())) {
             ctx = ctx.complexType(getSchemaNameFromRef(schema));
-            schema = SchemaUtil.getSchemaFromRef(api, schema);
+            schema = SchemaUtil.getSchemaFromRef(api, schema.get$ref());
             if (schema == null)
                 throw new RuntimeException("Should not happen!");
         }
@@ -107,7 +107,8 @@ public class SchemaValidator implements IJSONSchemaValidator {
     }
 
     private boolean isNullable() {
-        return (schema.getNullable() != null && schema.getNullable()) || schema.getTypes().contains("null");
+        return (schema.getNullable() != null && schema.getNullable()) || (schema.getTypes() != null && schema.getTypes().contains("null")) ||
+                (schema.getType() != null && schema.getType().equals("null"));
     }
 
     private ValidationErrors validateByType(ValidationContext ctx, Object value) {
@@ -115,7 +116,7 @@ public class SchemaValidator implements IJSONSchemaValidator {
         String type = schema.getType();
 
         if (schemaHasNoTypeAndTypes(type)) {
-            return null;
+            return validateMultipleTypes(List.of("string", "number", "integer", "boolean", "array", "object", "null"), ctx, value);
         }
 
         // type in schema has only one type
@@ -183,6 +184,7 @@ public class SchemaValidator implements IJSONSchemaValidator {
     private ValidationErrors validateSingleType(ValidationContext ctx, Object value, String type) {
         try {
             return switch (type) {
+                case NULL -> new NullValidator().validate(ctx, value);
                 case NUMBER -> new NumberValidator().validate(ctx, value);
                 case "integer" -> new IntegerValidator().validate(ctx, value);
                 case "string" -> new StringValidator(schema).validate(ctx, value);
@@ -202,6 +204,7 @@ public class SchemaValidator implements IJSONSchemaValidator {
 
     private static List<IJSONSchemaValidator> getValidatorClasses() {
         return List.of(
+                new NullValidator(),
                 new IntegerValidator(),
                 new NumberValidator(),
                 new StringValidator(null),

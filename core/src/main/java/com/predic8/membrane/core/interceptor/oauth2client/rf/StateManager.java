@@ -14,8 +14,7 @@
 package com.predic8.membrane.core.interceptor.oauth2client.rf;
 
 import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Response;
-import com.predic8.membrane.core.interceptor.oauth2.OAuth2Util;
+import com.predic8.membrane.core.interceptor.oauth2.authorizationservice.FlowContext;
 import com.predic8.membrane.core.interceptor.session.Session;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
@@ -27,6 +26,10 @@ import java.util.Arrays;
 import java.util.Map;
 import java.util.Optional;
 
+import static com.predic8.membrane.core.http.Response.badRequest;
+import static com.predic8.membrane.core.interceptor.oauth2.OAuth2Util.urlencode;
+import static com.predic8.membrane.core.interceptor.oauth2.authorizationservice.FlowContext.fromUrlParam;
+import static com.predic8.membrane.core.interceptor.oauth2.authorizationservice.FlowContext.toUrlParam;
 import static com.predic8.membrane.core.interceptor.oauth2client.rf.OAuth2CallbackRequestHandler.*;
 import static com.predic8.membrane.core.interceptor.session.SessionManager.SESSION_VALUE_SEPARATOR;
 import static com.predic8.membrane.core.util.URLParamUtil.DuplicateKeyOrInvalidFormStrategy.ERROR;
@@ -42,23 +45,27 @@ public class StateManager {
 
     private final String securityToken;
     private final String verifierId;
+    private final FlowContext flowContext;
 
-    public StateManager(PKCEVerifier pkceVerifier) {
+    public StateManager(PKCEVerifier pkceVerifier, FlowContext flowContext) {
         securityToken = generateNewState();
         verifierId = pkceVerifier.getId();
+        this.flowContext = flowContext;
     }
 
     public StateManager(String stateFromUri) {
         securityToken = getValueFromState(stateFromUri, "security_token");
         verifierId = getValueFromState(stateFromUri, "verifierId");
+        flowContext = fromUrlParam(stateFromUri);
     }
+
 
     @NotNull
     public static String generateNewState() {
         return new BigInteger(130, sr).toString(32);
     }
 
-    private static String getValueFromState(String state, String key) {
+    public static String getValueFromState(String state, String key) {
         if (state == null)
             throw new RuntimeException("State is null, No "+key+".");
 
@@ -72,20 +79,20 @@ public class StateManager {
         if (!matchesCsrfToken(stateFromUri, session.get(SESSION_PARAMETER_STATE))) {
             if (session.isNew()) {
                 throw new OAuth2Exception(
-                        "MEMBRANE_MISSING_SESSION",
                         MEMBRANE_MISSING_SESSION,
-                        Response.badRequest().body(MEMBRANE_MISSING_SESSION).build());
+                        MEMBRANE_MISSING_SESSION_DESCRIPTION,
+                        badRequest().body(MEMBRANE_MISSING_SESSION_DESCRIPTION).build());
             } else if (!StateManager.hasState(session)) {
                 throw new OAuth2Exception(
-                        "MEMBRANE_CSRF_TOKEN_MISSING_IN_SESSION",
                         MEMBRANE_CSRF_TOKEN_MISSING_IN_SESSION,
-                        Response.badRequest().body(MEMBRANE_CSRF_TOKEN_MISSING_IN_SESSION).build());
+                        MEMBRANE_CSRF_TOKEN_MISSING_IN_SESSION_DESCRIPTION,
+                        badRequest().body(MEMBRANE_CSRF_TOKEN_MISSING_IN_SESSION_DESCRIPTION).build());
             } else {
                 log.warn("Token from Session: '{}', Token from URI: '{}'", session.get(SESSION_PARAMETER_STATE), stateFromUri.getSecurityToken());
                 throw new OAuth2Exception(
-                        "MEMBRANE_CSRF_TOKEN_MISMATCH",
                         MEMBRANE_CSRF_TOKEN_MISMATCH,
-                        Response.badRequest().body(MEMBRANE_CSRF_TOKEN_MISMATCH).build());
+                        MEMBRANE_CSRF_TOKEN_MISMATCH_DESCRIPTION,
+                        badRequest().body(MEMBRANE_CSRF_TOKEN_MISMATCH_DESCRIPTION).build());
             }
         }
 
@@ -113,8 +120,8 @@ public class StateManager {
     }
 
     public String buildStateParameter(Exchange exchange) {
-        return "&state=security_token%3D" + securityToken + "%26url%3D" + OAuth2Util.urlencode(exchange.getRequestURI())
-                + "%26verifierId%3D" + verifierId;
+        return "&state=security_token%3D" + securityToken + "%26url%3D" + urlencode(exchange.getRequestURI())
+                + "%26verifierId%3D" + verifierId + toUrlParam(flowContext);
     }
 
     public void saveToSession(Session session) {
@@ -132,11 +139,17 @@ public class StateManager {
         return Optional.ofNullable(verifierId);
     }
 
+    public FlowContext getFlowContext() {
+        return flowContext;
+    }
+
     @Override
     public String toString() {
         return "StateManager{" +
                 "securityToken='" + securityToken + '\'' +
                 ", verifierId='" + verifierId + '\'' +
+                ", flowContext=" + flowContext +
                 '}';
     }
+
 }

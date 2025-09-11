@@ -26,13 +26,17 @@ import org.apache.commons.httpclient.methods.*;
 import org.junit.jupiter.api.*;
 
 import java.net.*;
-import java.util.*;
 
 import static com.predic8.membrane.core.http.Header.*;
 import static com.predic8.membrane.core.http.MimeType.*;
+import static com.predic8.membrane.core.http.Response.internalServerError;
+import static com.predic8.membrane.core.interceptor.InterceptorUtil.getInterceptors;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static com.predic8.membrane.core.interceptor.balancer.BalancerUtil.*;
 import static com.predic8.membrane.core.util.NetworkUtil.*;
+import static java.lang.Thread.*;
 import static java.util.Objects.*;
+import static org.apache.commons.httpclient.HttpVersion.*;
 import static org.apache.http.params.HttpProtocolParams.*;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -41,8 +45,9 @@ public class LoadBalancingInterceptorTest {
 	private DummyWebServiceInterceptor mockInterceptor1;
 	private DummyWebServiceInterceptor mockInterceptor2;
 	protected LoadBalancingInterceptor balancingInterceptor;
-	private DispatchingStrategy roundRobinStrategy;
+	private DispatchingStrategy roundRobin;
 	private DispatchingStrategy byThreadStrategy;
+	private DispatchingStrategy priorityStrategy;
 	private HttpRouter service1;
 	private HttpRouter service2;
 	protected HttpRouter balancer;
@@ -54,7 +59,7 @@ public class LoadBalancingInterceptorTest {
 		service1 = new HttpRouter();
 		mockInterceptor1 = new DummyWebServiceInterceptor();
 		ServiceProxy sp1 = new ServiceProxy(new ServiceProxyKey("localhost",
-				"POST", ".*", port2k), "dummy", 80);
+				"*", ".*", port2k), "dummy", 80);
 		sp1.getInterceptors().add(new AbstractInterceptor(){
 			@Override
 			public Outcome handleResponse(Exchange exc) {
@@ -69,7 +74,7 @@ public class LoadBalancingInterceptorTest {
 		service2 = new HttpRouter();
 		mockInterceptor2 = new DummyWebServiceInterceptor();
 		ServiceProxy sp2 = new ServiceProxy(new ServiceProxyKey("localhost",
-				"POST", ".*", port3k), "dummy", 80);
+				"*", ".*", port3k), "dummy", 80);
 		sp2.getInterceptors().add(new AbstractInterceptor(){
 			@Override
 			public Outcome handleResponse(Exchange exc) {
@@ -83,42 +88,42 @@ public class LoadBalancingInterceptorTest {
 
 		balancer = new HttpRouter();
 		ServiceProxy sp3 = new ServiceProxy(new ServiceProxyKey("localhost",
-				"POST", ".*", 3054), "dummy", 80);
+				"*", ".*", 3054), "dummy", 80);
 		balancingInterceptor = new LoadBalancingInterceptor();
 		balancingInterceptor.setName("Default");
 		sp3.getInterceptors().add(balancingInterceptor);
 		balancer.getRuleManager().addProxyAndOpenPortIfNew(sp3);
-		enableFailOverOn5XX(balancer);
+		enableFailOverOn5XX();
 		balancer.init();
 
-		BalancerUtil.lookupBalancer(balancer, "Default").up("Default", "localhost", port2k);
-		BalancerUtil.lookupBalancer(balancer, "Default").up("Default", "localhost", port3k);
+		lookupBalancer(balancer, "Default").up("Default", "localhost", port2k);
+		lookupBalancer(balancer, "Default").up("Default", "localhost", port3k);
 
-		roundRobinStrategy = new RoundRobinStrategy();
+		roundRobin = new RoundRobinStrategy();
 		byThreadStrategy = new ByThreadStrategy();
+		priorityStrategy = new PriorityStrategy();
 	}
 
-	private void enableFailOverOn5XX(HttpRouter balancer2) {
-		List<Interceptor> l = balancer.getTransport().getInterceptors();
-		((HTTPClientInterceptor)l.getLast()).setFailOverOn5XX(true);
+	private void enableFailOverOn5XX() {
+		getInterceptors(balancer.getTransport().getInterceptors(),  HTTPClientInterceptor.class).getLast().setFailOverOn5XX(true);
 	}
 
 	@AfterEach
-	public void tearDown() {
+	void tearDown() {
 		service1.shutdown();
 		service2.shutdown();
 		balancer.shutdown();
 	}
 
 	@Test
-	public void testGetDestinationURLWithHostname() throws URISyntaxException {
+	void getDestinationURLWithHostname() throws URISyntaxException {
 		doTestGetDestinationURL(
 				"http://localhost/axis2/services/BLZService?wsdl",
 				"http://thomas-bayer.com:80/axis2/services/BLZService?wsdl");
 	}
 
 	@Test
-	public void testGetDestinationURLWithoutHostname()
+	void getDestinationURLWithoutHostname()
 			throws URISyntaxException {
 		doTestGetDestinationURL("/axis2/services/BLZService?wsdl",
 				"http://thomas-bayer.com:80/axis2/services/BLZService?wsdl");
@@ -133,11 +138,11 @@ public class LoadBalancingInterceptorTest {
 	}
 
 	@Test
-	public void testRoundRobinDispachingStrategy() throws Exception {
-		balancingInterceptor.setDispatchingStrategy(roundRobinStrategy);
+	void roundRobinDispatchingStrategy() throws Exception {
+		balancingInterceptor.setDispatchingStrategy(roundRobin);
 
 		HttpClient client = new HttpClient();
-		client.getParams().setParameter(PROTOCOL_VERSION, HttpVersion.HTTP_1_1);
+		client.getParams().setParameter(PROTOCOL_VERSION, HTTP_1_1);
 
 		PostMethod vari = getPostMethod();
 		int status = client.executeMethod(vari);
@@ -161,8 +166,13 @@ public class LoadBalancingInterceptorTest {
 	}
 
 	@Test
-	public void testExpect100Continue() throws Exception {
-		balancingInterceptor.setDispatchingStrategy(roundRobinStrategy);
+	void testPriorityStrategyDispatching() {
+		balancingInterceptor.setDispatchingStrategy(priorityStrategy);
+	}
+
+	@Test
+	void testExpect100Continue() throws Exception {
+		balancingInterceptor.setDispatchingStrategy(roundRobin);
 
 		HttpClient client = new HttpClient();
 		Http11Test.initExpect100ContinueWithFastFail(client);
@@ -199,12 +209,11 @@ public class LoadBalancingInterceptorTest {
 	}
 
 	@Test
-	public void testFailOverOnConnectionRefused() throws Exception {
-		balancingInterceptor.setDispatchingStrategy(roundRobinStrategy);
+	void failOverOnConnectionRefused() throws Exception {
+		balancingInterceptor.setDispatchingStrategy(roundRobin);
 
 		HttpClient client = new HttpClient();
-		client.getParams().setParameter(PROTOCOL_VERSION,
-				HttpVersion.HTTP_1_1);
+		client.getParams().setParameter(PROTOCOL_VERSION, HTTP_1_1);
 
 		assertEquals(200, client.executeMethod(getPostMethod()));
 		assertEquals(1, mockInterceptor1.getCount());
@@ -215,7 +224,7 @@ public class LoadBalancingInterceptorTest {
 		assertEquals(1, mockInterceptor2.getCount());
 
 		service1.shutdown();
-		Thread.sleep(1000);
+		sleep(1000);
 
 		assertEquals(200, client.executeMethod(getPostMethod()));
 		assertEquals(1, mockInterceptor1.getCount());
@@ -227,40 +236,42 @@ public class LoadBalancingInterceptorTest {
 	}
 
 	@Test
-	public void testFailOverOnStatus500() throws Exception {
-		balancingInterceptor.setDispatchingStrategy(roundRobinStrategy);
+	void testFailOverOnStatus500() throws Exception {
+		balancingInterceptor.setDispatchingStrategy(roundRobin);
 
 		HttpClient client = new HttpClient();
 		client.getParams().setParameter(PROTOCOL_VERSION,
-				HttpVersion.HTTP_1_1);
+				HTTP_1_1);
 
-		assertEquals(200, client.executeMethod(getPostMethod()));
+		HttpMethod method = new GetMethod("http://localhost:3054");
+
+		assertEquals(200, client.executeMethod(method));
 		assertEquals(1, mockInterceptor1.getCount());
 		assertEquals(0, mockInterceptor2.getCount());
 
-		assertEquals(200, client.executeMethod(getPostMethod()));
+		assertEquals(200, client.executeMethod(method));
 		assertEquals(1, mockInterceptor1.getCount());
 		assertEquals(1, mockInterceptor2.getCount());
 
 		service1.getRuleManager().getRules().getFirst().getInterceptors().addFirst(new AbstractInterceptor(){
 			@Override
 			public Outcome handleRequest(Exchange exc) {
-				exc.setResponse(Response.internalServerError().build());
+				exc.setResponse(internalServerError().build());
 				return ABORT;
 			}
 		});
 
-		assertEquals(200, client.executeMethod(getPostMethod()));
+		assertEquals(200, client.executeMethod(method));
 		assertEquals(1, mockInterceptor1.getCount());
 		assertEquals(2, mockInterceptor2.getCount());
 
-		assertEquals(200, client.executeMethod(getPostMethod()));
+		assertEquals(200, client.executeMethod(method));
 		assertEquals(3, mockInterceptor2.getCount());
 
 	}
 
 	@Test
-	public void testByThreadStrategy() {
+	void testByThreadStrategy() {
 		balancingInterceptor.setDispatchingStrategy(byThreadStrategy);
 	}
 }

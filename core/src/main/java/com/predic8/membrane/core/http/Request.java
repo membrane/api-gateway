@@ -21,13 +21,13 @@ import com.predic8.membrane.core.util.*;
 
 import java.io.*;
 import java.net.*;
-import java.nio.charset.*;
 import java.util.*;
 import java.util.regex.*;
 
 import static com.predic8.membrane.core.Constants.*;
 import static com.predic8.membrane.core.http.Header.*;
 import static com.predic8.membrane.core.http.MimeType.*;
+import static java.nio.charset.StandardCharsets.*;
 
 public class Request extends Message {
 
@@ -36,6 +36,7 @@ public class Request extends Message {
 
 	public static final String METHOD_GET = "GET";
 	public static final String METHOD_POST = "POST";
+	public static final String METHOD_PATCH = "PATCH";
 	public static final String METHOD_HEAD = "HEAD";
 	public static final String METHOD_DELETE = "DELETE";
 	public static final String METHOD_PUT = "PUT";
@@ -44,10 +45,11 @@ public class Request extends Message {
 	public static final String METHOD_CONNECT = "CONNECT";
 	public static final String METHOD_OPTIONS = "OPTIONS";
 
-	private static final HashSet<String> methodsWithoutBody = Sets.newHashSet("GET", "HEAD", "CONNECT");
+	private static final HashSet<String> methodsWithoutBody = Sets.newHashSet(METHOD_GET, METHOD_HEAD, METHOD_CONNECT);
 	private static final HashSet<String> methodsWithOptionalBody = Sets.newHashSet(
-			"DELETE",
+			METHOD_DELETE,
 			/* some WebDAV methods, see http://www.ietf.org/rfc/rfc2518.txt */
+			METHOD_OPTIONS,
 			"PROPFIND",
 			"MKCOL",
 			"COPY",
@@ -60,7 +62,7 @@ public class Request extends Message {
 	String uri;
 
 	@Override
-	public void parseStartLine(InputStream in) throws IOException {
+	protected void parseStartLine(InputStream in) throws IOException {
 		try {
 			String firstLine = HttpUtil.readLine(in);
 			Matcher matcher = pattern.matcher(firstLine);
@@ -154,14 +156,12 @@ public class Request extends Message {
 	public boolean shouldNotContainBody() {
 		if (methodsWithoutBody.contains(method))
 			return true;
-
 		if (methodsWithOptionalBody.contains(method)) {
 			if (header.hasContentLength())
 				return header.getContentLength() == 0;
-
-			return !(getBody() instanceof ChunkedBody);
-		}
-
+            return header.getFirstValue(TRANSFER_ENCODING) == null;
+        }
+    
 		return false;
 	}
 
@@ -192,12 +192,12 @@ public class Request extends Message {
 	}
 
 	public final void writeSTOMP(OutputStream out, boolean retainBody) throws IOException {
-		out.write(getMethod().getBytes(StandardCharsets.UTF_8));
+		out.write(getMethod().getBytes(UTF_8));
 		out.write(10);
 		for (HeaderField hf : header.getAllHeaderFields())
-			out.write((hf.getHeaderName().toString() + ":" + hf.getValue() + "\n").getBytes(StandardCharsets.UTF_8));
+			out.write((hf.getHeaderName().toString() + ":" + hf.getValue() + "\n").getBytes(UTF_8));
 		out.write(10);
-		body.write(new PlainBodyTransferrer(out), retainBody);
+		body.write(new PlainBodyTransferer(out), retainBody);
 	}
 
 	public static Builder get(String url) throws URISyntaxException {
@@ -218,6 +218,10 @@ public class Request extends Message {
 
 	public static Builder options(String url) throws URISyntaxException {
 		return new Builder().options(url);
+	}
+
+	public static Builder connect(String url) throws URISyntaxException {
+		return new Builder().connect(url);
 	}
 
 	public static class Builder {
@@ -278,7 +282,7 @@ public class Request extends Message {
 		}
 
 		public Builder body(String body) {
-			req.setBodyContent(body.getBytes());
+			req.setBodyContent(body.getBytes(UTF_8));
 			return this;
 		}
 
@@ -302,7 +306,7 @@ public class Request extends Message {
 		}
 
 		public Builder json(String body) {
-			req.setBodyContent(body.getBytes());
+			req.setBodyContent(body.getBytes(UTF_8));
 			req.header.setContentType(APPLICATION_JSON);
 			return this;
 		}
@@ -316,7 +320,7 @@ public class Request extends Message {
 		}
 
 		public Builder get(URIFactory uriFactory, String url) throws URISyntaxException {
-			return method(Request.METHOD_GET).url(uriFactory, url);
+			return method(METHOD_GET).url(uriFactory, url);
 		}
 
 		/**
@@ -346,9 +350,14 @@ public class Request extends Message {
 			return options(new URIFactory(), url);
 		}
 
+		public Builder connect(String url) throws URISyntaxException {
+			req.setMethod(METHOD_CONNECT);
+            req.setUri(new URIFactory().create(url).getAuthority());
+			return this;
+		}
+
 		public Builder options(URIFactory uriFactory, String url) throws URISyntaxException {
 			return method(Request.METHOD_OPTIONS).url(uriFactory,url);
 		}
 	}
-
 }

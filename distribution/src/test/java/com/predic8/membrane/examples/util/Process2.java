@@ -22,6 +22,7 @@ import java.util.concurrent.*;
 import java.util.stream.*;
 
 import static com.predic8.membrane.core.util.OSUtil.*;
+import static java.lang.System.currentTimeMillis;
 import static java.lang.Thread.*;
 
 /**
@@ -50,6 +51,7 @@ public class Process2 implements AutoCloseable {
 		private String waitAfterStartFor;
 		private String parameters = "";
 		private final ArrayList<ConsoleWatcher> watchers = new ArrayList<>();
+		private final Map<String, String> env = new HashMap<>();
 
 		public Builder() {}
 
@@ -79,6 +81,11 @@ public class Process2 implements AutoCloseable {
 			return this;
 		}
 
+		public Builder env(String key, String value) {
+			env.put(key, value);
+			return this;
+		}
+
 		public Builder withWatcher(ConsoleWatcher watcher) {
 			watchers.add(watcher);
 			return this;
@@ -90,7 +97,7 @@ public class Process2 implements AutoCloseable {
 		}
 
 		public Builder waitForMembrane() {
-			waitAfterStartFor("listening at ");
+			waitAfterStartFor("listening at");
 			return this;
 		}
 
@@ -104,7 +111,7 @@ public class Process2 implements AutoCloseable {
 
 			line += " " + parameters;
 			System.out.println("Starting: " + line);
-			return new Process2(baseDir, id, line, watchers, waitAfterStartFor);
+			return new Process2(baseDir, id, line, watchers, waitAfterStartFor, env);
 		}
 	}
 
@@ -144,14 +151,14 @@ public class Process2 implements AutoCloseable {
 	private Thread inputReader, errorReader;
 	private final List<ConsoleWatcher> watchers = new ArrayList<>();
 
-	private Process2(File exampleDir, String id, String startCommand, List<ConsoleWatcher> consoleWatchers, String waitAfterStartFor) throws IOException, InterruptedException {
+	private Process2(File exampleDir, String id, String startCommand, List<ConsoleWatcher> consoleWatchers, String waitAfterStartFor, Map<String, String> envVars) throws IOException, InterruptedException {
 
 		log.info("exampleDir = {}, id = {}, startCommand = {}, consoleWatchers = {}, waitAfterStartFor = {}", exampleDir,id,startCommand,consoleWatchers,waitAfterStartFor);
 
 		if (!exampleDir.exists())
 			throw new RuntimeException("Example dir " + exampleDir.getAbsolutePath() + " does not exist.");
 
-		p = getProcessBuilder(exampleDir, startCommand).start();
+		p = getProcessBuilder(exampleDir, startCommand, envVars).start();
 		p.getOutputStream().close();
 
 		consoleWatchers.add((error, line) -> System.out.println(line));
@@ -182,15 +189,19 @@ public class Process2 implements AutoCloseable {
 		);
 	}
 
-	private ProcessBuilder getProcessBuilder(File exampleDir, String startCommand) {
+	private ProcessBuilder getProcessBuilder(File exampleDir, String startCommand, Map<String, String> envVars) {
 		ProcessBuilder pb = new ProcessBuilder(startCommand.split(" "));
 		pb.directory(exampleDir);
-		pb.environment().remove("MEMBRANE_HOME");
+		Map<String, String> pbEnv = pb.environment();
+		pbEnv.remove("MEMBRANE_HOME");
+
 		if (!isWindows()) {
-			pb.environment().put("PATH", System.getProperty("java.home") + "/bin:" + System.getenv("PATH"));
-			pb.environment().put("JAVA_HOME", System.getProperty("java.home"));
+			pbEnv.put("PATH", System.getProperty("java.home") + "/bin:" + System.getenv("PATH"));
+			pbEnv.put("JAVA_HOME", System.getProperty("java.home"));
 		}
-		//pb.redirectError(ProcessBuilder.Redirect.PIPE).redirectOutput(Redirect.PIPE).redirectInput(Redirect.PIPE);
+
+        pbEnv.putAll(envVars);
+
 		return pb;
 	}
 
@@ -213,7 +224,7 @@ public class Process2 implements AutoCloseable {
 	}
 
 	private static int waitForExit(Process p, long timeout) {
-		long start = System.currentTimeMillis();
+		long start = currentTimeMillis();
 		while (p.isAlive()) {
 			if (getTimeLeft(timeout, start) <= 0)
 				throw new RuntimeException(new TimeoutException());
@@ -228,7 +239,7 @@ public class Process2 implements AutoCloseable {
 	}
 
 	private static long getTimeLeft(long timeout, long start) {
-		return timeout - (System.currentTimeMillis() - start);
+		return timeout - (currentTimeMillis() - start);
 	}
 
 	public int waitForExit(long timeout) {

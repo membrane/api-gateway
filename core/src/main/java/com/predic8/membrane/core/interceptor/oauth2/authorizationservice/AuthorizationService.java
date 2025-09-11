@@ -20,6 +20,7 @@ import com.predic8.membrane.core.config.security.SSLParser;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.http.Response;
+import com.predic8.membrane.core.interceptor.oauth2.OAuth2TokenBody;
 import com.predic8.membrane.core.interceptor.oauth2.tokengenerators.JwtGenerator;
 import com.predic8.membrane.core.interceptor.oauth2client.rf.LogHelper;
 import com.predic8.membrane.core.interceptor.oauth2client.rf.OAuth2TokenResponseBody;
@@ -40,9 +41,11 @@ import org.jose4j.lang.JoseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nullable;
 import javax.annotation.concurrent.GuardedBy;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URLEncoder;
 import java.util.List;
 import java.util.UUID;
 
@@ -53,12 +56,16 @@ import static com.predic8.membrane.core.http.MimeType.APPLICATION_X_WWW_FORM_URL
 import static com.predic8.membrane.core.interceptor.oauth2.OAuth2TokenBody.authorizationCodeBodyBuilder;
 import static com.predic8.membrane.core.interceptor.oauth2.OAuth2TokenBody.refreshTokenBodyBuilder;
 import static com.predic8.membrane.core.interceptor.oauth2client.rf.JsonUtils.isJson;
+import static java.net.URLEncoder.encode;
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.apache.commons.codec.binary.Base64.encodeBase64;
 
 public abstract class AuthorizationService {
+
     protected Logger log;
 
     private HttpClient httpClient;
-    protected Router router;
+    Router router;
 
     protected HttpClientConfiguration httpClientConfiguration;
     private final Object lock = new Object();
@@ -72,6 +79,7 @@ public abstract class AuthorizationService {
     private SSLContext sslContext;
     private boolean useJWTForClientAuth;
     private final LogHelper logHelper = new LogHelper();
+    private ClientAuthorization clientAuthorization = ClientAuthorization.client_secret_basic;
 
     protected boolean supportsDynamicRegistration = false;
 
@@ -110,7 +118,11 @@ public abstract class AuthorizationService {
 
     public abstract String getSubject();
 
-    public abstract String getTokenEndpoint();
+    /**
+     * Note that this method does not honor the B2C flows. Use {@link #getTokenEndpoint(FlowContext)} instead.
+     * @return The Token Endpoint URL.
+     */
+    protected abstract String getTokenEndpoint();
 
     public abstract String getRevocationEndpoint();
 
@@ -218,29 +230,46 @@ public abstract class AuthorizationService {
         this.useJWTForClientAuth = useJWTForClientAuth;
     }
 
+    public ClientAuthorization getClientAuthorization() {
+        return clientAuthorization;
+    }
+
+    /**
+     * @description Client Authorization method (see <a
+     * href="https://openid.net/specs/openid-connect-core-1_0.html#ClientAuthentication">OIDC
+     * Core 1.0 chapter 9</a>
+     * @default client_secret_basic
+     */
+    @MCAttribute
+    public void setClientAuthorization(ClientAuthorization clientAuthorization) {
+        this.clientAuthorization = clientAuthorization;
+    }
+
     public JWSSigner getJwtKeyCertHandler() {
         return JWSSigner;
     }
 
-    public Request.Builder applyAuth(Request.Builder requestBuilder, String body) {
+    public Request.Builder applyAuth(Request.Builder requestBuilder, OAuth2TokenBody body, FlowContext flowContext) {
 
         if (isUseJWTForClientAuth()) {
-            body += "&client_assertion_type=urn:ietf:params:oauth:client-assertion-type:jwt-bearer" + "&client_assertion=" + createClientToken();
+            body.clientAssertion("urn:ietf:params:oauth:client-assertion-type:jwt-bearer", createClientToken(flowContext));
         }
 
         String clientSecret = getClientSecret();
-        if (clientSecret != null)
-            requestBuilder.header(AUTHORIZATION, "Basic " + new String(Base64.encodeBase64((getClientId() + ":" + clientSecret).getBytes()))).body(body);
-        else requestBuilder.body(body + "&client_id=" + getClientId());
-        return requestBuilder;
+        if (clientSecret == null) {
+            return requestBuilder.body(body.clientId(getClientId()).build());
+        }
+        if (clientAuthorization == ClientAuthorization.client_secret_basic) {
+            return requestBuilder.header(AUTHORIZATION, "Basic " + new String(encodeBase64((getClientId() + ":" + clientSecret).getBytes()))).body(body.build());
+        }
+        return requestBuilder.body(body.clientId(getClientId()).clientSecret(clientSecret).build());
     }
 
 
-
-    public String getTokenEndpoint(Session session) {
+    public String getTokenEndpoint(@Nullable FlowContext flowContext) {
         String tokenEndpoint = getTokenEndpoint();
-        if (session.get("defaultFlow") != null) {
-            tokenEndpoint = tokenEndpoint.replaceAll(session.get("defaultFlow"), session.get("triggerFlow"));
+        if (flowContext != null) {
+            tokenEndpoint = tokenEndpoint.replaceAll(flowContext.defaultFlow, flowContext.triggerFlow);
         }
         return tokenEndpoint;
     }
@@ -264,10 +293,10 @@ public abstract class AuthorizationService {
         }
     }
 
-    private String createClientToken() {
+    private String createClientToken(FlowContext flowContext) {
         try {
             String jwtSub = this.getClientId();
-            String jwtAud = this.getTokenEndpoint();
+            String jwtAud = this.getTokenEndpoint(flowContext);
 
             // see https://docs.microsoft.com/en-us/azure/active-directory/develop/active-directory-certificate-credentials
             JwtClaims jwtClaims = new JwtClaims();
@@ -297,23 +326,24 @@ public abstract class AuthorizationService {
     }
 
     public OAuth2TokenResponseBody refreshTokenRequest(Session session, String wantedScope, String refreshToken) throws Exception {
+        FlowContext fc = FlowContext.fromSession(session);
         return parseTokenResponse(checkTokenResponse(doRequest(applyAuth(
-                new Request.Builder().post(getTokenEndpoint(session))
+                new Request.Builder().post(getTokenEndpoint(fc))
                         .contentType(APPLICATION_X_WWW_FORM_URLENCODED)
                         .header(ACCEPT, APPLICATION_JSON)
                         .header(USER_AGENT, USERAGENT),
-                refreshTokenBodyBuilder(refreshToken).scope(wantedScope).build())
+                refreshTokenBodyBuilder(refreshToken).scope(wantedScope), fc)
                 .buildExchange())));
     }
 
-    public OAuth2TokenResponseBody codeTokenRequest(String redirectUri, String code, String verifier) throws Exception {
+    public OAuth2TokenResponseBody codeTokenRequest(String redirectUri, String code, String verifier, FlowContext flowContext) throws Exception {
         return parseTokenResponse(checkTokenResponse(doRequest(applyAuth(
                 new Request.Builder()
-                        .post(getTokenEndpoint())
+                        .post(getTokenEndpoint(flowContext))
                         .contentType(APPLICATION_X_WWW_FORM_URLENCODED)
                         .header(ACCEPT, APPLICATION_JSON)
                         .header(USER_AGENT, USERAGENT),
-                authorizationCodeBodyBuilder(code, verifier).redirectUri(redirectUri).build()).buildExchange())));
+                authorizationCodeBodyBuilder(code, verifier).redirectUri(redirectUri), flowContext).buildExchange())));
     }
 
     private OAuth2TokenResponseBody parseTokenResponse(Response response) throws IOException {

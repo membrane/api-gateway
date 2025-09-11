@@ -42,13 +42,13 @@ import java.util.stream.IntStream;
 import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.http.Request.get;
 import static com.predic8.membrane.core.http.Request.post;
-import static com.predic8.membrane.core.interceptor.oauth2client.rf.OAuth2CallbackRequestHandler.MEMBRANE_MISSING_SESSION;
+import static com.predic8.membrane.core.interceptor.oauth2client.rf.OAuth2CallbackRequestHandler.MEMBRANE_MISSING_SESSION_DESCRIPTION;
 import static org.junit.jupiter.api.Assertions.*;
 
 public abstract class OAuth2ResourceTest {
 
     protected final BrowserMock browser = new BrowserMock();
-    private final int limit = 500;
+    private final int limit = 100;
     protected HttpRouter mockAuthServer;
     protected final ObjectMapper om = new ObjectMapper();
     final Logger LOG = LoggerFactory.getLogger(OAuth2ResourceTest.class);
@@ -114,7 +114,7 @@ public abstract class OAuth2ResourceTest {
 
     // this test also implicitly tests concurrency on oauth2resource
     @Test
-    public void testUseRefreshTokenOnTokenExpiration() throws Exception {
+    void testUseRefreshTokenOnTokenExpiration() throws Exception {
         var response = browser.apply(get(getClientAddress() + "/init")).getResponse();
         assertEquals(200, response.getStatusCode());
         var body = om.readValue(response.getBodyAsStream(), new TypeReference<Map<String, String>>() {});
@@ -187,7 +187,7 @@ public abstract class OAuth2ResourceTest {
 
         var response = browser.apply(get("http://localhost:" + serverPort + ref.get())).getResponse();
         assertEquals(400, response.getStatusCode());
-        assertTrue(response.getBodyAsStringDecoded().contains(MEMBRANE_MISSING_SESSION));
+        assertTrue(response.getBodyAsStringDecoded().contains(MEMBRANE_MISSING_SESSION_DESCRIPTION));
     }
 
     @Test

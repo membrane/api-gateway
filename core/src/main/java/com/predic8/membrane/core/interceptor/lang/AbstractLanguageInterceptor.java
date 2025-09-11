@@ -14,13 +14,13 @@
 
 package com.predic8.membrane.core.interceptor.lang;
 
-import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.lang.ExchangeExpression.*;
-import com.predic8.membrane.core.util.*;
-import org.slf4j.*;
+import com.predic8.membrane.annot.MCAttribute;
+import com.predic8.membrane.core.interceptor.AbstractInterceptor;
+import com.predic8.membrane.core.lang.ExchangeExpression.Language;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import static com.predic8.membrane.core.lang.ExchangeExpression.Language.*;
+import static com.predic8.membrane.core.lang.ExchangeExpression.Language.SPEL;
 
 abstract class AbstractLanguageInterceptor extends AbstractInterceptor implements Polyglot{
 
@@ -41,18 +41,7 @@ abstract class AbstractLanguageInterceptor extends AbstractInterceptor implement
      * @example SpEL, groovy, jsonpath, xpath
      */
     @MCAttribute
-    public void setLanguage(String language) {
-        try {
-            this.language = Language.valueOf(language.toUpperCase());
-        } catch (IllegalArgumentException e) {
-            log.error("Language {} is not supported by {} use one of {}", language,getDisplayName(),Language.values());
-
-            // Exception is not shown by Spring Framework, but it shows the right error message anyway
-            throw new ConfigurationException("""
-                    Wrong Language
-                    
-                    Language %s is not supported as an expression language for %s.
-                    """.formatted(language,getDisplayName()));
-        }
+    public void setLanguage(Language language) {
+        this.language = language;
     }
 }
