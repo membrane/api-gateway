@@ -30,7 +30,7 @@ public class SensitiveDataFilter {
         this.sensitiveHeaderNames = names;
     }
 
-    public Header mask(Header header) {
+    public Header getMaskedHeader(Header header) {
         Header masked = new Header(header);
         for (HeaderField headerField : masked.getAllHeaderFields()) {
             if (sensitiveHeaderNames.contains(headerField.getHeaderName())) {

@@ -138,7 +138,7 @@ public class LogInterceptor extends AbstractExchangeExpressionInterceptor {
 
     private String dumpHeader(Message msg) {
         return "\nHeaders:\n" + (maskSensitive
-                ? filter.mask(msg.getHeader()).toString()
+                ? filter.getMaskedHeader(msg.getHeader()).toString()
                 : msg.getHeader().toString());
     }
 
