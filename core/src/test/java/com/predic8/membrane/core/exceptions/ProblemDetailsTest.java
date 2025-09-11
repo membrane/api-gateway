@@ -147,7 +147,33 @@ public class ProblemDetailsTest {
             assertTrue(b.contains("more_frames_in_common"));
         }
 
+        @Test
+        void exceptionStacktrace() throws Exception {
 
+            Response r = user(false, "a")
+                    .title("Something happened!")
+                    .exception(new Exception("And the message is..."))
+                    .stacktrace(true)
+                    .build();
+
+            JsonNode j = parseJson(r);
+            assertEquals("And the message is...", j.get(MESSAGE).asText());
+            assertTrue(j.hasNonNull("stackTrace"));
+        }
+
+        @Test
+        void exceptionButNoStacktrace() throws Exception {
+
+            Response r = user(false, "a")
+                    .title("Something happened!")
+                    .exception(new Exception("And the message is..."))
+                    .stacktrace(false)
+                    .build();
+
+            JsonNode j = parseJson(r);
+            assertEquals("And the message is...", j.get(MESSAGE).asText());
+            assertFalse(j.hasNonNull("stackTrace"));
+        }
     }
 
     @Nested

@@ -255,7 +255,7 @@ public class ProblemDetails {
     }
 
     private void provideLogKeyInsteadOfDetails(Map<String, Object> root) {
-        if (internalFields.isEmpty() && !stacktrace)
+        if (internalFields.isEmpty() && exception == null && !stacktrace)
             return;
 
         String logKey = randomUUID().toString();
