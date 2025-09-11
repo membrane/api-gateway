@@ -3,9 +3,11 @@ package com.predic8.membrane.core.interceptor.log;
 import com.predic8.membrane.core.http.*;
 
 import java.util.*;
+import java.util.regex.Pattern;
 import java.util.stream.*;
 
 import static com.predic8.membrane.core.http.Header.*;
+import static java.util.regex.Pattern.compile;
 
 /**
  * Utility to redact secret-bearing headers from logs.
@@ -44,6 +46,8 @@ public class SensitiveDataFilter {
      * Names of headers whose values must be masked.
      */
     private final Set<HeaderName> sensitiveHeaderNames;
+    private final Pattern SENSITIVE_QUERY_PARAM =
+            compile("(?i)([?&](?:access_token|token|id_token|authorization|apikey|api[_-]?key|x-api-key|api-token|api[_-]?token|client_secret|password|session|auth|code)=)[^&\\s]*");
 
     public SensitiveDataFilter() {
         Set<HeaderName> names = new HashSet<>();
@@ -73,5 +77,9 @@ public class SensitiveDataFilter {
 
     private String maskField(HeaderField headerField) {
         return "*".repeat(headerField.getValue().length());
+    }
+
+    String maskStartLine(Message msg) {
+        return SENSITIVE_QUERY_PARAM.matcher(msg.getStartLine()).replaceAll("$1********");
     }
 }

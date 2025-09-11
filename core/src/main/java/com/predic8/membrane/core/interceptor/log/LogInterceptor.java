@@ -23,13 +23,11 @@ import com.predic8.membrane.core.lang.*;
 import org.slf4j.*;
 
 import java.io.*;
-import java.util.regex.Pattern;
 
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.ABORT;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.interceptor.log.LogInterceptor.Level.*;
-import static java.util.regex.Pattern.*;
 import static org.slf4j.LoggerFactory.*;
 
 /**
@@ -59,9 +57,6 @@ public class LogInterceptor extends AbstractExchangeExpressionInterceptor {
     private boolean maskSensitive = true;
 
     private final SensitiveDataFilter filter = new SensitiveDataFilter();
-
-    private static final Pattern SENSITIVE_QUERY_PARAM =
-            compile("(?i)([?&](?:access_token|token|id_token|authorization|apikey|api[_-]?key|x-api-key|api-token|api[_-]?token|client_secret|password|session|auth|code)=)[^&\\s]*");
 
     public LogInterceptor() {
         name = "log";
@@ -105,7 +100,7 @@ public class LogInterceptor extends AbstractExchangeExpressionInterceptor {
 
         if (msg == null)
             return;
-        writeLog(dumpStartLine(msg));
+        writeLog(filter.maskStartLine(msg));
 
         writeLog(dumpHeader(msg));
 
@@ -146,10 +141,6 @@ public class LogInterceptor extends AbstractExchangeExpressionInterceptor {
             case WARN -> getLogger(category).warn(msg);
             case ERROR, FATAL -> getLogger(category).error(msg);
         }
-    }
-
-    private static String dumpStartLine(Message msg) {
-        return SENSITIVE_QUERY_PARAM.matcher(msg.getStartLine()).replaceAll("$1********");
     }
 
     @Override
