@@ -187,7 +187,7 @@ public class ProblemDetailsTest {
         }
 
         @Test
-        void productionUser() throws Exception {
+        void userDetailsException() throws Exception {
             JsonNode json = parseJson(getResponseWithDetailsAndExtensions(true));
             assertEquals(4, json.size());
             assertTrue(toList(json.fieldNames()).containsAll(List.of("title","type","status","detail")));
@@ -196,19 +196,21 @@ public class ProblemDetailsTest {
         }
 
         @Test
-        void exception() throws Exception {
+        void hidesInternal() throws Exception {
             Response r = internal(true, "a b").addSubType("catastrophe")
                     .title("Something happened!")
                     .detail("A detailed description.")
                     .internal("a", "1")
                     .internal("b", "2").build();
 
-            JsonNode json = parseJson(r);
+            JsonNode j = parseJson(r);
 
-            assertEquals(4, json.size());
-            assertTrue(toList(json.fieldNames()).containsAll(List.of("title","type","status","detail")));
-            assertEquals("https://membrane-api.io/problems/internal", json.get("type").asText());
-            assertEquals(INTERNAL_SERVER_ERROR, json.get("title").asText());
+            assertEquals(4, j.size());
+            assertFalse(j.has("a"));
+            assertFalse(j.has("b"));
+            assertTrue(toList(j.fieldNames()).containsAll(List.of("title","type","status","detail")));
+            assertEquals("https://membrane-api.io/problems/internal", j.get("type").asText());
+            assertEquals(INTERNAL_SERVER_ERROR, j.get("title").asText());
         }
 
         @Test

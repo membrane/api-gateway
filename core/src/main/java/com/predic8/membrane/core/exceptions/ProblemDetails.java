@@ -256,7 +256,7 @@ public class ProblemDetails {
     }
 
     private void provideLogKeyInsteadOfDetails(Map<String, Object> root) {
-        if (internalFields.isEmpty() && exception == null && !stacktrace)
+        if (internalFields.isEmpty() && exception == null)
             return;
 
         String logKey = randomUUID().toString();
@@ -348,7 +348,7 @@ public class ProblemDetails {
     private Response createContent(Map<String, Object> root, Exchange exchange) {
         Response.ResponseBuilder builder = statusCode(status);
         try {
-            if (exchange != null && exchange.getRequest().isXML()) {
+            if (exchange != null && (acceptXML(exchange) || exchange.getRequest().isXML())) {
                 createXMLContent(root, builder);
             } else {
                 createJson(root, builder);
@@ -358,6 +358,13 @@ public class ProblemDetails {
             builder.contentType(TEXT_PLAIN_UTF8);
         }
         return builder.build();
+    }
+
+    private boolean acceptXML(Exchange exchange) {
+        String accept = exchange.getRequest().getHeader().getAccept();
+        if (accept == null)
+            return false;
+        return accept.toLowerCase().contains("xml");
     }
 
     private static void createJson(Map<String, Object> root, Response.ResponseBuilder builder) throws JsonProcessingException {
