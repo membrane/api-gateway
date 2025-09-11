@@ -54,9 +54,12 @@ public class ProblemDetails {
     public static final String MESSAGE = "message";
     public static final String STACK_TRACE = "stackTrace";
 
-    private boolean logKeyInsteadOfDetails;
+    /**
+     * If router is in production mode that should not expose internal details
+     */
+    private boolean production;
 
-    protected int statusCode;
+    protected int status;
     protected String type;
     protected String subType = "";
 
@@ -108,24 +111,24 @@ public class ProblemDetails {
                 .component(component);
     }
 
-    public static ProblemDetails security(boolean logKeyInsteadOfDetails, String component) {
-        return problemDetails("security", logKeyInsteadOfDetails)
+    public static ProblemDetails security(boolean production, String component) {
+        return problemDetails("security", production)
                 .status(500)
                 .title("Security error.")
                 .component(component);
     }
 
-    public static ProblemDetails openapi(boolean logKeyInsteadOfDetails, String component) {
-        return problemDetails("openapi", logKeyInsteadOfDetails)
+    public static ProblemDetails openapi(boolean production, String component) {
+        return problemDetails("openapi", production)
                 .status(400)
                 .title("OpenAPI error.")
                 .component(component);
     }
 
-    public static ProblemDetails problemDetails(String type, boolean logKeyInsteadOfDetails) {
+    public static ProblemDetails problemDetails(String type, boolean production) {
         ProblemDetails pd = new ProblemDetails();
         pd.type = type;
-        pd.logKeyInsteadOfDetails = logKeyInsteadOfDetails;
+        pd.production = production;
         return pd;
     }
 
@@ -142,7 +145,7 @@ public class ProblemDetails {
     }
 
     public ProblemDetails status(int statusCode) {
-        this.statusCode = statusCode;
+        this.status = statusCode;
         return this;
     }
 
@@ -229,10 +232,10 @@ public class ProblemDetails {
 
         root.put(TITLE, maskTitle(title));
         root.put(TYPE, getTypeSubtypeString());
-        root.put(STATUS, statusCode);
+        root.put(STATUS, status);
         root.putAll(topLevel);
 
-        if (logKeyInsteadOfDetails) {
+        if (production) {
             provideLogKeyInsteadOfDetails(root);
             return root;
         }
@@ -246,7 +249,7 @@ public class ProblemDetails {
     }
 
     private String maskTitle(String title) {
-        if (logKeyInsteadOfDetails && statusCode >= 500)
+        if (production && status >= 500)
             return INTERNAL_SERVER_ERROR;
         return title;
     }
@@ -270,20 +273,12 @@ public class ProblemDetails {
         } finally {
             MDC.remove("logKey");
         }
-
         root.put(DETAIL, "Internal details are hidden. See server log (key: %s)".formatted(logKey));
-
-        if (INTERNAL.equals(type)) {
-            title = "Internal error";
-        }
-        if (stacktrace && exception != null) {
-            log.info("", exception);
-        }
     }
 
     private @NotNull String getTypeSubtypeString() {
         String type = "https://membrane-api.io/problems/" + this.type;
-        if ((!logKeyInsteadOfDetails || (statusCode >= 400 &&  statusCode < 500))&& !subType.isEmpty()) {
+        if ((!production || (status >= 400 && status < 500)) && !subType.isEmpty()) {
             return  type + subType;
         }
         return type;
@@ -350,7 +345,7 @@ public class ProblemDetails {
     }
 
     private Response createContent(Map<String, Object> root, Exchange exchange) {
-        Response.ResponseBuilder builder = statusCode(statusCode);
+        Response.ResponseBuilder builder = statusCode(status);
         try {
             if (exchange != null && exchange.getRequest().isXML()) {
                 createXMLContent(root, builder);
@@ -381,12 +376,12 @@ public class ProblemDetails {
         return type;
     }
 
-    public int getStatusCode() {
-        return statusCode;
+    public int getStatus() {
+        return status;
     }
 
-    public boolean isLogKeyInsteadOfDetails() {
-        return logKeyInsteadOfDetails;
+    public boolean isProduction() {
+        return production;
     }
 
     public String getDetail() {

@@ -24,8 +24,9 @@ import javax.xml.transform.stream.*;
 import java.io.*;
 import java.util.*;
 
-import static com.predic8.membrane.core.http.MimeType.APPLICATION_PROBLEM_XML;
-import static javax.xml.transform.OutputKeys.INDENT;
+import static com.predic8.membrane.core.http.MimeType.*;
+import static javax.xml.XMLConstants.*;
+import static javax.xml.transform.OutputKeys.*;
 
 public class ProblemDetailsXML {
 
@@ -35,18 +36,23 @@ public class ProblemDetailsXML {
     }
 
     private static String convertMapToXml(Map<String, Object> map) throws Exception {
-        Document document = DocumentBuilderFactory.newInstance().newDocumentBuilder().newDocument();
-        Element root = document.createElement("problem-details");
-        document.appendChild(root);
-        mapToXmlElements(map, document, root);
-        return document2string(document);
+        DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+        dbf.setFeature(FEATURE_SECURE_PROCESSING, true);
+        Document doc = dbf.newDocumentBuilder().newDocument();
+        Element root = doc.createElement("problem-details");
+        doc.appendChild(root);
+        mapToXmlElements(map, doc, root);
+        return document2string(doc);
     }
 
     private static String document2string(Document document) throws TransformerException {
         StringWriter writer = new StringWriter();
         TransformerFactory tf = TransformerFactory.newInstance();
+        tf.setFeature(FEATURE_SECURE_PROCESSING, true);
         Transformer t = tf.newTransformer();
         t.setOutputProperty(INDENT, "yes");
+        t.setOutputProperty(ENCODING, "UTF-8");
+        t.setOutputProperty(OMIT_XML_DECLARATION, "no");
         t.transform(new DOMSource(document), new StreamResult(writer));
         return writer.toString();
     }
@@ -56,20 +62,34 @@ public class ProblemDetailsXML {
             Object value = entry.getValue();
             if (value == null)
                 continue;
-            Element element = document.createElement(entry.getKey());
-            if (value instanceof Map mv) {
-                mapToXmlElements(mv, document, element);
-            } else if (value instanceof Object[] oa) {
-                for (Object obj : oa) {
-                    Element arrayElement = document.createElement(entry.getKey());
-                    arrayElement.setTextContent(obj.toString());
+            String name = entry.getKey();
+            if (value instanceof Map<?, ?> mv) {
+                Element element = document.createElement(name);
+                @SuppressWarnings("unchecked")
+                Map<String, Object> nested = (Map<String, Object>) mv;
+                mapToXmlElements(nested, document, element);
+                parent.appendChild(element);
+            } else if (value instanceof java.util.Collection<?> col) {
+                for (Object obj : col) {
+                    if (obj == null) continue;
+                    Element arrayElement = document.createElement(name);
+                    arrayElement.setTextContent(String.valueOf(obj));
                     parent.appendChild(arrayElement);
                 }
-                continue;
+            } else if (value.getClass().isArray()) {
+                int len = java.lang.reflect.Array.getLength(value);
+                for (int i = 0; i < len; i++) {
+                    Object obj = java.lang.reflect.Array.get(value, i);
+                    if (obj == null) continue;
+                    Element arrayElement = document.createElement(name);
+                    arrayElement.setTextContent(String.valueOf(obj));
+                    parent.appendChild(arrayElement);
+                }
             } else {
-                element.setTextContent(value.toString());
+                Element element = document.createElement(name);
+                element.setTextContent(String.valueOf(value));
+                parent.appendChild(element);
             }
-            parent.appendChild(element);
         }
     }
 }

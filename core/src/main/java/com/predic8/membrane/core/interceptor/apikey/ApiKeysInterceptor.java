@@ -91,7 +91,7 @@ public class ApiKeysInterceptor extends AbstractInterceptor {
                 if (!required) {
                     return CONTINUE;
                 }
-                log.warn("The provided API {} key is invalid.", key.get());
+                log.warn("API key is invalid.");
                 security(false, getDisplayName())
                         .title(TITLE_4XX)
                         .status(403)

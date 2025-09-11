@@ -90,7 +90,7 @@ public class JavascriptInterceptorTest {
         assertEquals(ABORT, outcome);
         assertEquals(500, exc.getResponse().getStatusCode());
         ProblemDetails pd = parse(exc.getResponse());
-        assertEquals(500, pd.getStatusCode());
+        assertEquals(500, pd.getStatus());
         System.out.println("pd = " + pd);
         assertTrue(pd.getType().startsWith("https://membrane-api.io/problems/internal"));
         assertTrue(pd.getTitle().contains("Error executing"));
