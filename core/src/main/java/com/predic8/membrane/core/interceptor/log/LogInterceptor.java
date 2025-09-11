@@ -35,8 +35,8 @@ import static org.slf4j.LoggerFactory.*;
  * a log file depending on the log configuration.
  * <p>Typical use cases:
  * <ul>
- *   <li>Debugging routes during development.</li>
- *   <li>Operational visibility in production (metadata-only, masked values).</li>
+ *   <li>Debugging APIs during development.</li>
+ *   <li>Operational visibility in production (metadata-only, masked values, message, body).</li>
  * </ul>
  * </p>
  * @topic 4. Monitoring, Logging and Statistics
@@ -155,6 +155,38 @@ public class LogInterceptor extends AbstractExchangeExpressionInterceptor {
     }
 
     /**
+     * @description Whether to include message bodies in logs.
+     *
+     * <p><strong>Warning:</strong> Body logging can expose secrets or personal data. Prefer {@code false}
+     * in production.</p>
+     * @default true
+     */
+    @MCAttribute
+    public void setBody(boolean body) {
+        this.body = body;
+    }
+
+    /**
+     * Message to write into the log. Can be an expression.
+     */
+    @MCAttribute
+    public void setMessage(String message) {
+        expression = message;
+    }
+
+    /**
+     * @description Whether to mask sensitive header values (e.g., Authorization, Cookies, API keys).
+     *
+     * <p>When enabled (default), values are replaced by ****.</p>
+     *
+     *
+     */
+    @MCAttribute
+    public void setMaskSensitive(boolean maskSensitive) {
+        this.maskSensitive = maskSensitive;
+    }
+
+    /**
      * @description Log level for emitted messages.
      * <p>Values: TRACE, DEBUG, INFO, WARN, ERROR, FATAL</p>
      * @default INFO
@@ -163,17 +195,6 @@ public class LogInterceptor extends AbstractExchangeExpressionInterceptor {
     @MCAttribute
     public void setLevel(Level level) {
         this.level = level;
-    }
-
-    /**
-     * @description Logger category to use.
-     * <p>Allows routing logs into different appenders/targets via Logback/Log4j configuration.</p>
-     * @default Fully qualified class name of {@code LogInterceptor} com.predic8.membrane.core.interceptor.log.LogInterceptor
-     */
-    @SuppressWarnings("unused")
-    @MCAttribute
-    public void setCategory(String category) {
-        this.category = category;
     }
 
     /**
@@ -190,27 +211,14 @@ public class LogInterceptor extends AbstractExchangeExpressionInterceptor {
     }
 
     /**
-     * @description Whether to include message bodies in logs.
-     *
-     * <p><strong>Warning:</strong> Body logging can expose secrets or personal data. Prefer {@code false}
-     * in production.</p>
-     * @default true
+     * @description Logger category to use.
+     * <p>Allows routing logs into different appenders/targets via Logback/Log4j configuration.</p>
+     * @default Fully qualified class name of {@code LogInterceptor} com.predic8.membrane.core.interceptor.log.LogInterceptor
      */
+    @SuppressWarnings("unused")
     @MCAttribute
-    public void setBody(boolean body) {
-        this.body = body;
-    }
-
-    /**
-     * @description Whether to mask sensitive header values (e.g., Authorization, Cookies, API keys).
-     *
-     * <p>When enabled (default), values are replaced by ****.</p>
-     *
-     *
-     */
-    @MCAttribute
-    public void setMaskSensitive(boolean maskSensitive) {
-        this.maskSensitive = maskSensitive;
+    public void setCategory(String category) {
+        this.category = category;
     }
 
     /**
@@ -219,23 +227,31 @@ public class LogInterceptor extends AbstractExchangeExpressionInterceptor {
      * It has no effect at all!
      *
      * @default false
-     * @description It is ignored
+     * @description Ignored. Still there for compatibility.
      */
     @MCAttribute
     public void setHeaderOnly(boolean headerOnly) {
         LoggerFactory.getLogger(this.getClass()).warn("Configuration option `headerOnly` is not supported anymore. Use `body` instead.");
     }
 
-    /**
-     * Message to write into the log. Can be an expression.
-     */
-    @MCAttribute
-    public void setMessage(String message) {
-        expression = message;
+    public boolean isBody() {
+        return body;
+    }
+
+    public String getMessage() {
+        return expression;
+    }
+
+    public boolean isMaskSensitive() {
+        return maskSensitive;
     }
 
     public Level getLevel() {
         return level;
+    }
+
+    public String getLabel() {
+        return label;
     }
 
     @SuppressWarnings("unused")
@@ -243,23 +259,7 @@ public class LogInterceptor extends AbstractExchangeExpressionInterceptor {
         return category;
     }
 
-    public String getLabel() {
-        return label;
-    }
-
-    public boolean isBody() {
-        return body;
-    }
-
-    public boolean isMaskSensitive() {
-        return maskSensitive;
-    }
-
     public boolean isHeaderOnly() {
         return false;
-    }
-
-    public String getMessage() {
-        return expression;
     }
 }
