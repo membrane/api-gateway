@@ -5,7 +5,7 @@
 [![GitHub release](https://img.shields.io/github/release/membrane/service-proxy.svg)](https://github.com/membrane/service-proxy/releases/latest)
 [![Hex.pm](https://img.shields.io/hexpm/l/plug.svg)](https://raw.githubusercontent.com/membrane/api-gateway/master/distribution/router/LICENSE.txt)
 
-<img src="docs/images/api-gateway-demo.gif" alt="Animated demo of Membrane API Gateway" width="720"></img>s
+<img src="docs/images/api-gateway-demo.gif" alt="Animated demo of Membrane API Gateway" width="720"></img>
 
 Lightweight **API Gateway** for **REST**, **GraphQL** and **legacy SOAP Web Services**, easily extended with powerful plugins and Java.
 
