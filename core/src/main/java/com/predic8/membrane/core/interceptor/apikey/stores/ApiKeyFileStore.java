@@ -29,8 +29,28 @@ import static java.util.Optional.*;
 import static java.util.stream.Collectors.*;
 
 /**
- * @description Loads api keys from a file. File has to be one key per line, blank lines for formatting are allowed. Optionally, a comma separated list of scopes after the key and a colon in between the two. Hash symbol can be used for comments at the end of each line, including empty lines.
- * @example See: https://github.com/membrane/api-gateway/blob/master/distribution/examples/security/api-key/simple/demo-keys.txt
+ * @description Loads API keys and optional scopes from a text file. Each non-empty line must contain a key.
+ * <ul>
+ *   <li>Blank lines are ignored.</li>
+ *   <li>A hash sign ({@code #}) starts a comment (line or end-of-line).</li>
+ *   <li>Scopes can follow the key, separated by a colon. Multiple scopes are comma-separated.</li>
+ * </ul>
+ * <p>
+ * Example file:
+ * </p>
+ * <pre>
+ * # demo API keys
+ * 123456                 # key without scopes
+ * 7890:read,write        # key with two scopes
+ *
+ * # another valid key
+ * abcd:admin
+ * </pre>
+ * @example See:
+ * <a href="https://github.com/membrane/api-gateway/blob/master/distribution/examples/security/api-key/simple/demo-keys.txt" target="_blank">
+ * GitHub example file
+ * </a>
+ * @topic 3. Security and Validation
  */
 @MCElement(name = "apiKeyFileStore")
 public class ApiKeyFileStore implements ApiKeyStore {
@@ -96,7 +116,8 @@ public class ApiKeyFileStore implements ApiKeyStore {
     }
 
     /**
-     * @description Path/URL to the api key file.
+     * @description Path or URL to the API key file. Can point to local files or classpath resources.
+     * @example classpath:demo-keys.txt
      */
     @MCAttribute
     public void setLocation(String location) {

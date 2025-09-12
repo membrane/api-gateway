@@ -26,7 +26,27 @@ import java.sql.*;
 import java.util.*;
 
 /**
- * @description <p>JDBC database store for API keys and their associated scopes.</p>
+ * @description JDBC database store for API keys and their associated scopes.
+ * Uses two tables:
+ * <ul>
+ *   <li><strong>Key table</strong>: contains API keys (one per row).</li>
+ *   <li><strong>Scope table</strong>: maps keys to one or more scopes.</li>
+ * </ul>
+ * <p>
+ * By default, the store will attempt to create the required tables at startup if they do not exist
+ * (controlled by {@code autoCreate}).
+ * </p>
+ * <p>
+ * Example configuration:
+ * </p>
+ * <pre>
+ * &lt;apiKey&gt;
+ *   &lt;databaseApiKeyStore autoCreate="true"&gt;
+ *     &lt;keyTable name="api_keys"/&gt;
+ *     &lt;scopeTable name="api_scopes"/&gt;
+ *   &lt;/databaseApiKeyStore&gt;
+ * &lt;/apiKey&gt;
+ * </pre>
  * @topic 3. Security and Validation
  */
 @MCElement(name = "databaseApiKeyStore")
@@ -129,7 +149,7 @@ public class JDBCApiKeyStore extends AbstractJdbcSupport implements ApiKeyStore 
     }
 
     /**
-     * @descriptio Table with the scopes.
+     * @description The table containing API keys. Each row must define a unique {@code apikey}.
      */
     @MCChildElement()
     public void setKeyTable(KeyTable keyTable) {
@@ -137,7 +157,7 @@ public class JDBCApiKeyStore extends AbstractJdbcSupport implements ApiKeyStore 
     }
 
     /**
-     * @description The table mapping API keys to their scopes.
+     * @description The table mapping API keys to scopes. Each row links one {@code apikey} to one {@code scope}.
      */
     @MCChildElement(order = 1)
     public void setScopeTable(ScopeTable scopeTable) {
@@ -145,8 +165,9 @@ public class JDBCApiKeyStore extends AbstractJdbcSupport implements ApiKeyStore 
     }
 
     /**
-     * @description Whether the required tables should be created automatically on startup.
+     * @description Whether the required key/scope tables should be created automatically if they do not exist.
      * @default true
+     * @example false
      */
     @MCAttribute
     public void setAutoCreate(boolean autoCreate) {

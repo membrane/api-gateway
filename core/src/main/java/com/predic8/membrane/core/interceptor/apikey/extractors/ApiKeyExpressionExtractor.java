@@ -27,6 +27,25 @@ import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
 import static com.predic8.membrane.core.lang.ExchangeExpression.Language.SPEL;
 import static com.predic8.membrane.core.security.ApiKeySecurityScheme.In.EXPRESSION;
 
+/**
+ * @description Extracts an API key by evaluating an expression on the incoming request.
+ * The result (a string) is treated as the API key. The expression is evaluated in the configured language
+ * (default: {@code SPEL}) during the request flow.
+ * <p>
+ * Typical usage inside {@code &lt;apiKey&gt;}:
+ * </p>
+ * <pre>
+ * &lt;apiKey&gt;
+ *   &lt;expressionExtractor
+ *       language="SPEL"
+ *       expression="request.headers['X-Api-Key']"/&gt;
+ * &lt;/apiKey&gt;
+ * </pre>
+ * <p>
+ * If the expression evaluates to {@code null} or an empty string, no key is extracted.
+ * </p>
+ * @topic 3. Security and Validation
+ */
 @MCElement(name="expressionExtractor", topLevel = false)
 public class ApiKeyExpressionExtractor implements ApiKeyExtractor, Polyglot {
 
@@ -63,6 +82,18 @@ public class ApiKeyExpressionExtractor implements ApiKeyExtractor, Polyglot {
         return expression;
     }
 
+    /**
+     * @description The expression evaluated against the message. It must resolve to a String
+     * containing the API key. Empty or null results mean “no key found”.
+     * <p>
+     * Examples (SPEL):
+     * </p>
+     * <pre>
+     * expression="request.headers['X-Api-Key']"
+     *
+     * expression="request.query['api_key']"
+     * </pre>
+     */
     @MCAttribute
     public void setExpression(String expression) {
         this.expression = expression;

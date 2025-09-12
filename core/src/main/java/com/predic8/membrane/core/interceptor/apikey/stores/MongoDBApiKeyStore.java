@@ -24,6 +24,32 @@ import java.util.*;
 
 import static com.mongodb.client.model.Filters.*;
 
+/**
+ * @description Uses a MongoDB collection as a store for API keys and their scopes.
+ * Each document in the collection must use the API key as its {@code _id}
+ * and may define an array field {@code scopes} listing the allowed scopes.
+ * <p>
+ * Example MongoDB document:
+ * </p>
+ * <pre>
+ * {
+ *   "_id": "123456",
+ *   "scopes": ["read", "write"]
+ * }
+ * </pre>
+ * <p>
+ * Configuration example:
+ * </p>
+ * <pre>
+ * &lt;apiKey&gt;
+ *   &lt;mongoDBApiKeyStore
+ *       connection="mongodb://localhost:27017"
+ *       database="security"
+ *       collection="apikeys"/&gt;
+ * &lt;/apiKey&gt;
+ * </pre>
+ * @topic 3. Security and Validation
+ */
 @MCElement(name = "mongoDBApiKeyStore")
 public class MongoDBApiKeyStore implements ApiKeyStore {
 
@@ -56,16 +82,28 @@ public class MongoDBApiKeyStore implements ApiKeyStore {
         return Optional.of(new HashSet<>(apiKeyDoc.getList("scopes", String.class)));
     }
 
+    /**
+     * @description MongoDB connection string.
+     * @example mongodb://localhost:27017
+     */
     @MCAttribute()
     public void setConnection(String connection) {
         this.connection = connection;
     }
 
+    /**
+     * @description The database name where API keys are stored.
+     * @example security
+     */
     @MCAttribute()
     public void setDatabase(String database) {
         this.database = database;
     }
 
+    /**
+     * @description The collection name within the database containing the API key documents.
+     * @example apikeys
+     */
     @MCAttribute()
     public void setCollection(String collection) {
         this.collection = collection;
