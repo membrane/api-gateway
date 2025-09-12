@@ -97,7 +97,7 @@ public class ApiKeysInterceptor extends AbstractInterceptor {
             log.warn("Tried access apiKey protected resource without key. Uri: {}", exc.getRequestURI());
             security(false, getDisplayName())
                     .title(TITLE_4XX)
-                    .statusCode(401)
+                    .status(401)
                     .addSubType(TYPE_4XX)
                     .detail("Tried to access API key protected resource without key.")
                     .buildAndSetResponse(exc);
@@ -112,10 +112,10 @@ public class ApiKeysInterceptor extends AbstractInterceptor {
                 if (!required) {
                     return CONTINUE;
                 }
-                log.warn("The provided API {} key is invalid.", key.get());
+                log.warn("API key is invalid.");
                 security(false, getDisplayName())
                         .title(TITLE_4XX)
-                        .statusCode(403)
+                        .status(403)
                         .addSubType(TYPE_4XX)
                         .detail("The provided API key is invalid.")
                         .buildAndSetResponse(exc);

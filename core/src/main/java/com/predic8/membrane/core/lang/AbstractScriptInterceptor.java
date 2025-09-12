@@ -19,7 +19,6 @@ package com.predic8.membrane.core.lang;
 import com.fasterxml.jackson.core.*;
 import com.fasterxml.jackson.databind.*;
 import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
@@ -30,7 +29,7 @@ import org.slf4j.*;
 import java.util.*;
 import java.util.function.*;
 
-import static com.predic8.membrane.core.exceptions.ProblemDetails.internal;
+import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
 import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
 import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
@@ -175,18 +174,12 @@ public abstract class AbstractScriptInterceptor extends AbstractInterceptor {
         log.warn("Error executing {} script: {}", name, e.getMessage());
         log.warn("Script: {}", src);
 
-        ProblemDetails pd = internal(router.isProduction(),getDisplayName())
+        exc.setResponse(internal(router.isProduction(),getDisplayName())
                 .addSubSee("script-execution")
-                .title("Error executing script.");
-
-        if (!router.isProduction()) {
-            pd.internal("message", e.getMessage())
-                    .internal("source", trim(src));
-        } else {
-            pd.detail("See logs for details.");
-        }
-
-        exc.setResponse(pd.build());
+                .title("Error executing script.")
+                .addSubType("scripting")
+                .exception(e)
+                .internal("source", trim(src)).build());
     }
 
     private HashMap<String, Object> getParameterBindings(Exchange exc, Flow flow, Message msg) {

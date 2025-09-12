@@ -34,6 +34,7 @@ import java.util.*;
 
 import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static com.predic8.membrane.core.util.ProblemDetailsTestUtil.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 @SuppressWarnings("unchecked")
@@ -88,8 +89,8 @@ public class JavascriptInterceptorTest {
         Outcome outcome= executeScript("adsfasf;", engine);
         assertEquals(ABORT, outcome);
         assertEquals(500, exc.getResponse().getStatusCode());
-        ProblemDetails pd = ProblemDetails.parse(exc.getResponse());
-        assertEquals(500, pd.getStatusCode());
+        ProblemDetails pd = parse(exc.getResponse());
+        assertEquals(500, pd.getStatus());
         System.out.println("pd = " + pd);
         assertTrue(pd.getType().startsWith("https://membrane-api.io/problems/internal"));
         assertTrue(pd.getTitle().contains("Error executing"));

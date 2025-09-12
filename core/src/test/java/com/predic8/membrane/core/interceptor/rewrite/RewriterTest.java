@@ -14,7 +14,6 @@
 package com.predic8.membrane.core.interceptor.rewrite;
 
 import com.predic8.membrane.core.*;
-import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.rewrite.RewriteInterceptor.*;
@@ -22,6 +21,7 @@ import org.junit.jupiter.api.*;
 
 import java.util.*;
 
+import static com.predic8.membrane.core.util.ProblemDetailsTestUtil.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class RewriterTest {
@@ -50,7 +50,7 @@ public class RewriterTest {
 
         assertEquals(400, exc.getResponse().getStatusCode());
 
-        var pd = ProblemDetails.parse(exc.getResponse());
+        var pd = parse(exc.getResponse());
         assertEquals("https://membrane-api.io/problems/user/path", pd.getType());
 
     }

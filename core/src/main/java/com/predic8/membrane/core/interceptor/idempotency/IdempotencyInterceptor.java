@@ -82,7 +82,7 @@ public class IdempotencyInterceptor extends AbstractInterceptor {
 
     private Outcome handleDuplicateKey(Exchange exc, String key) {
         user(false, "idempotency")
-                .statusCode(409)
+                .status(409)
                 .detail("key %s has already been processed".formatted(key))
                 .buildAndSetResponse(exc);
         return ABORT;

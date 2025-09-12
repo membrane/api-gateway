@@ -195,7 +195,7 @@ public class SoapProxyInvocationTest {
         .then().statusCode(404)
                 .log().ifValidationFails()
                 .contentType(APPLICATION_PROBLEM_XML)
-                .body("error.title", equalTo("Wrong path or method"));
+                .body("error.title", equalTo("Invalid path or method"));
         // @formatter:on
     }
 
