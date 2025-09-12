@@ -11,7 +11,6 @@
 
 package com.predic8.membrane.core.exceptions;
 
-import com.fasterxml.jackson.core.*;
 import com.fasterxml.jackson.databind.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
@@ -31,7 +30,7 @@ import static org.junit.jupiter.api.Assertions.*;
 public class ProblemDetailsTest {
 
     private static final XPathFactory xPathFactory = XPathFactory.newInstance();
-    private static final  ObjectMapper om = new ObjectMapper();
+    private static final ObjectMapper om = new ObjectMapper();
 
     @Nested
     class productionFalse {
@@ -43,16 +42,16 @@ public class ProblemDetailsTest {
                     .addSubType("catastrophe")
                     .title("Something happened!")
                     .build();
-re
+
             assertEquals(400, r.getStatusCode());
             assertEquals(APPLICATION_PROBLEM_JSON, r.getHeader().getContentType());
 
             JsonNode json = parseJson(r);
 
-            assertEquals("Something happened!", json.get("title").asText());
-            assertEquals("https://membrane-api.io/problems/user/catastrophe", json.get("type").asText());
+            assertEquals("Something happened!", json.get(TITLE).asText());
+            assertEquals("https://membrane-api.io/problems/user/catastrophe", json.get(TYPE).asText());
 
-            assertTrue(toList(json.fieldNames()).containsAll(List.of("title", "type", "status", "see", "attention")));
+            assertTrue(toList(json.fieldNames()).containsAll(List.of(TITLE, TYPE, STATUS, SEE, ATTENTION)));
         }
 
         @Test
@@ -67,7 +66,7 @@ re
             JsonNode j = parseJson(r);
 
             assertEquals("baz", j.get("foo").asText());
-            assertTrue(j.hasNonNull("attention"));
+            assertTrue(j.hasNonNull(ATTENTION));
         }
 
         @Test
@@ -79,7 +78,7 @@ re
 
             JsonNode json = parseJson(r);
 
-            assertEquals("The barn burned down and the roof fell on cow Elsa.", json.get("detail").asText());
+            assertEquals("The barn burned down and the roof fell on cow Elsa.", json.get(DETAIL).asText());
         }
 
         @Test
@@ -97,20 +96,19 @@ re
         }
 
         @Test
-        void nonProduction() throws JsonProcessingException {
-            String pdJson = getResponseWithDetailsAndExtensions(false).getBodyAsStringDecoded();
-            JsonNode j = om.readTree(pdJson);
-            assertTrue(j.hasNonNull("title"));
-            assertTrue(j.hasNonNull("type"));
-            assertTrue(j.hasNonNull("status"));
-            assertTrue(j.hasNonNull("detail"));
+        void nonProduction() throws Exception {
+            JsonNode j = parseJson(getResponseWithDetailsAndExtensions(false));
+            assertTrue(j.hasNonNull(TITLE));
+            assertTrue(j.hasNonNull(TYPE));
+            assertTrue(j.hasNonNull(STATUS));
+            assertTrue(j.hasNonNull(DETAIL));
             assertTrue(j.hasNonNull("a"));
             assertTrue(j.hasNonNull("b"));
-            assertTrue(j.hasNonNull("see"));
-            assertTrue(j.hasNonNull("attention"));
-            assertEquals("https://membrane-api.io/problems/user/catastrophe", j.get("type").asText());
-            assertEquals("Something happened!", j.get("title").asText());
-            assertEquals("A detailed description.", j.get("detail").asText());
+            assertTrue(j.hasNonNull(SEE));
+            assertTrue(j.hasNonNull(ATTENTION));
+            assertEquals("https://membrane-api.io/problems/user/catastrophe", j.get(TYPE).asText());
+            assertEquals("Something happened!", j.get(TITLE).asText());
+            assertEquals("A detailed description.", j.get(DETAIL).asText());
         }
 
         @Test
@@ -124,7 +122,7 @@ re
 
             JsonNode json = parseJson(r);
 
-            assertEquals("https://membrane-api.io/problems/user/flux-generator/request/io", json.get("see").asText());
+            assertEquals("https://membrane-api.io/problems/user/flux-generator/request/io", json.get(SEE).asText());
         }
 
         @Test
@@ -148,7 +146,7 @@ re
 
             JsonNode j = parseJson(r);
             assertEquals("And the message is...", j.get(MESSAGE).asText());
-            assertTrue(j.hasNonNull("stackTrace"));
+            assertTrue(j.hasNonNull(STACK_TRACE));
         }
 
         @Test
@@ -162,7 +160,7 @@ re
 
             JsonNode j = parseJson(r);
             assertEquals("And the message is...", j.get(MESSAGE).asText());
-            assertFalse(j.hasNonNull("stackTrace"));
+            assertFalse(j.hasNonNull(STACK_TRACE));
         }
     }
 
@@ -173,9 +171,9 @@ re
         void userDetailsException() throws Exception {
             JsonNode json = parseJson(getResponseWithDetailsAndExtensions(true));
             assertEquals(4, json.size());
-            assertTrue(toList(json.fieldNames()).containsAll(List.of("title", "type", "status", "detail")));
-            assertEquals("https://membrane-api.io/problems/user/catastrophe", json.get("type").asText());
-            assertEquals("Something happened!", json.get("title").asText());
+            assertTrue(toList(json.fieldNames()).containsAll(List.of(TITLE, TYPE, STATUS, DETAIL)));
+            assertEquals("https://membrane-api.io/problems/user/catastrophe", json.get(TYPE).asText());
+            assertEquals("Something happened!", json.get(TITLE).asText());
         }
 
         @Test
@@ -191,9 +189,9 @@ re
             assertEquals(4, j.size());
             assertFalse(j.has("a"));
             assertFalse(j.has("b"));
-            assertTrue(toList(j.fieldNames()).containsAll(List.of("title", "type", "status", "detail")));
-            assertEquals("https://membrane-api.io/problems/internal", j.get("type").asText());
-            assertEquals(INTERNAL_SERVER_ERROR, j.get("title").asText());
+            assertTrue(toList(j.fieldNames()).containsAll(List.of(TITLE, TYPE, STATUS, DETAIL)));
+            assertEquals("https://membrane-api.io/problems/internal", j.get(TYPE).asText());
+            assertEquals(INTERNAL_SERVER_ERROR, j.get(TITLE).asText());
         }
 
         @Nested
@@ -207,9 +205,10 @@ re
                         .stacktrace(false)
                         .build();
                 JsonNode j = parseJson(r);
-                assertTrue(j.hasNonNull("detail"));
-                assertTrue(j.get("detail").asText().contains("key")); // references log key
-                assertFalse(j.has("attention"));
+                assertEquals(400, j.get(STATUS).asInt());
+                assertTrue(j.hasNonNull(DETAIL));
+                assertTrue(j.get(DETAIL).asText().contains("key")); // references log key
+                assertFalse(j.has(ATTENTION));
             }
 
             @Test
@@ -224,14 +223,14 @@ re
                 JsonNode j = parseJson(r);
 
                 assertFalse(j.hasNonNull("foo"));
-                assertTrue(j.hasNonNull("detail"));
-                assertTrue(j.get("detail").asText().contains("key"));
-                assertFalse(j.has("attention"));
+                assertTrue(j.hasNonNull(DETAIL));
+                assertTrue(j.get(DETAIL).asText().contains("key"));
+                assertFalse(j.has(ATTENTION));
             }
 
             @Test
             void subType() throws Exception {
-                Response r = user(false, "a")
+                Response r = user(true, "a")
                         .title("Validation failed!")
                         .addSubType("validation")
                         .build();
