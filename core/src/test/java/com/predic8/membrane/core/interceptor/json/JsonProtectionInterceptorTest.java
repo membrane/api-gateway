@@ -24,6 +24,7 @@ import org.junit.jupiter.api.*;
 import static com.google.common.base.Strings.*;
 import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static com.predic8.membrane.core.util.ProblemDetailsTestUtil.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class JsonProtectionInterceptorTest {
@@ -49,7 +50,7 @@ public class JsonProtectionInterceptorTest {
     }
 
     @BeforeAll
-    public static void init() throws Exception {
+    public static void init() {
         jpiProd = buildJPI(true);
         jpiDev = buildJPI(false);
     }
@@ -260,7 +261,7 @@ public class JsonProtectionInterceptorTest {
 
             System.out.println("exc.getResponse() = " + exc.getResponse());
 
-            ProblemDetails pd = ProblemDetails.parse(exc.getResponse());
+            ProblemDetails pd = parse(exc.getResponse());
 
             System.out.println("pd = " + pd);
 

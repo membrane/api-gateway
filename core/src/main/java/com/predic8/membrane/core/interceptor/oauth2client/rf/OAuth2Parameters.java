@@ -60,7 +60,7 @@ public class OAuth2Parameters {
         log.warn("OAuth2 Error from Authentication Server: {}", error);
         ProblemDetails pd = security(false,"oauth2-callback-request-handler")
                 .title("OAuth2 Error from Authentication Server")
-                .statusCode(500)
+                .status(500)
                 .addSubSee("oauth2-error-from-authentication-server")
                 .detail(getErrorDescription())
                 .internal("error", error);

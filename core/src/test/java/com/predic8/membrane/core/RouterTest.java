@@ -16,11 +16,11 @@ package com.predic8.membrane.core;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.openapi.serviceproxy.*;
-import org.hamcrest.*;
 import org.junit.jupiter.api.*;
 
 import java.io.*;
 
+import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
 import static com.predic8.membrane.core.http.MimeType.*;
 import static io.restassured.RestAssured.*;
 import static io.restassured.filter.log.LogDetail.*;
@@ -54,10 +54,10 @@ class RouterTest {
             .log().ifValidationFails()
             .statusCode(500)
             .contentType( containsString(APPLICATION_PROBLEM_JSON))
-            .body("title", equalTo("Internal server error."))
+            .body("title", equalTo( INTERNAL_SERVER_ERROR))
             .body("type",equalTo("https://membrane-api.io/problems/internal"))
-            .body("message", Matchers.not(containsString(INTERNAL_SECRET)))
-            .body("$",aMapWithSize(3));
+            .body("message", not(containsString(INTERNAL_SECRET)))
+            .body("$",aMapWithSize(4));
         // @formatter:on
     }
 
@@ -71,9 +71,9 @@ class RouterTest {
             .log().ifValidationFails(ALL)
             .statusCode(500)
             .contentType(containsString(APPLICATION_PROBLEM_XML))
-            .body("error.title", equalTo("Internal server error."))
+            .body("error.title", equalTo(INTERNAL_SERVER_ERROR))
             .body("error.type",equalTo("https://membrane-api.io/problems/internal"))
-            .body("error.message", Matchers.not(containsString(INTERNAL_SECRET)));
+            .body("error.message", not(containsString(INTERNAL_SECRET)));
         // @formatter:on
     }
 
@@ -108,7 +108,7 @@ class RouterTest {
                 .body("problem-details.type",equalTo("https://membrane-api.io/problems/internal"))
                 .body("problem-details.attention", containsString("development mode"))
                 .body("problem-details.message", containsString("supersecret"))
-                .body("problem-details.stacktrace", Matchers.not(containsString("HttpServerHandler")));
+                .body("problem-details.stacktrace", not(containsString("HttpServerHandler")));
         // @formatter:on
     }
 
