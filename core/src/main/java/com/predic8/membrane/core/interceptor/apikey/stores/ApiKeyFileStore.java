@@ -89,7 +89,7 @@ public class ApiKeyFileStore implements ApiKeyStore {
 
     static SimpleEntry<String, Optional<Set<String>>> parseLine(String line) {
         List<String> parts = getParts(line);
-        return new SimpleEntry<>(parts.get(0), getValue(parts));
+        return new SimpleEntry<>(parts.getFirst(), getValue(parts));
     }
 
     private static List<String> getParts(String line) {
