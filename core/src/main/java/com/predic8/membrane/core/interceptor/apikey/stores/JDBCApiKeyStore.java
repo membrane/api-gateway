@@ -151,7 +151,7 @@ public class JDBCApiKeyStore extends AbstractJdbcSupport implements ApiKeyStore 
     /**
      * @description The table containing API keys. Each row must define a unique {@code apikey}.
      */
-    @MCChildElement()
+    @MCChildElement(order = 0)
     public void setKeyTable(KeyTable keyTable) {
         this.keyTable = keyTable;
     }
