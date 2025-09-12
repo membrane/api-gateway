@@ -14,25 +14,17 @@
 
 package com.predic8.membrane.evaluation;
 
-import com.predic8.membrane.core.Router;
-import com.predic8.membrane.core.interceptor.apikey.stores.JDBCApiKeyStore;
-import com.predic8.membrane.core.interceptor.apikey.stores.KeyTable;
-import com.predic8.membrane.core.interceptor.apikey.stores.ScopeTable;
-import com.predic8.membrane.core.interceptor.apikey.stores.UnauthorizedApiKeyException;
-import org.apache.derby.jdbc.EmbeddedDataSource;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.interceptor.apikey.stores.*;
+import org.apache.derby.jdbc.*;
+import org.junit.jupiter.api.*;
 
 import java.sql.*;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-import java.util.logging.Logger;
+import java.util.*;
+import java.util.logging.*;
 
-import static com.predic8.membrane.core.interceptor.statistics.util.JDBCUtil.tableExists;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static com.predic8.membrane.core.interceptor.statistics.util.JDBCUtil.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * To test the performance of API key lookups in a database
@@ -43,7 +35,7 @@ public class JDBCApiKeyStorePerformanceTest {
     private static final int USERS = 10;
     private static final String DATABASE_NAME = "test";
     private static final String CREATE_DB_FLAG = "create";
-    private final Map<String, List<String>> keyToScopesMap = new HashMap<>();
+    private final Map<String, Set<String>> keyToScopesMap = new HashMap<>();
 
     private JDBCApiKeyStore jdbcApiKeyStore;
     private EmbeddedDataSource dataSource;
@@ -104,11 +96,11 @@ public class JDBCApiKeyStorePerformanceTest {
         ResultSet rs = ps.executeQuery();
         while (rs.next()) {
             String key = rs.getString("apikey");
-            List<String> scopes = jdbcApiKeyStore.getScopes(key)
+            Set<String> scopes = jdbcApiKeyStore.getScopes(key)
                     .orElseThrow(() -> new RuntimeException("No scopes found for key: " + key));
             keyToScopesMap.put(key, scopes);
         }
-        for (Map.Entry<String, List<String>> entry : keyToScopesMap.entrySet()) {
+        for (Map.Entry<String, Set<String>> entry : keyToScopesMap.entrySet()) {
             assertNotNull(entry.getValue(), "Scopes should not be null for key: " + entry.getKey());
         }
     }

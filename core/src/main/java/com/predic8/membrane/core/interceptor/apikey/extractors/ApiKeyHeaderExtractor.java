@@ -21,6 +21,22 @@ import java.util.*;
 
 import static com.predic8.membrane.core.security.ApiKeySecurityScheme.In.*;
 
+/**
+ * @description Extracts an API key from a specific HTTP request header. By default, the header name
+ * is {@code X-Api-Key}. If the header is present, its first value is returned as the API key.
+ * <p>
+ * Example usage inside {@code &lt;apiKey&gt;}:
+ * </p>
+ * <pre>
+ * &lt;apiKey&gt;
+ *   &lt;headerExtractor /&gt; <!-- default: X-Api-Key -->
+ *
+ *   &lt;!-- custom header name --&gt;
+ *   &lt;headerExtractor name="Authorization"/&gt;
+ * &lt;/apiKey&gt;
+ * </pre>
+ * @topic 3. Security and Validation
+ */
 @MCElement(name="headerExtractor", topLevel = false)
 public class ApiKeyHeaderExtractor implements ApiKeyExtractor{
 
@@ -37,6 +53,11 @@ public class ApiKeyHeaderExtractor implements ApiKeyExtractor{
         return Optional.empty();
     }
 
+    /**
+     * @description The HTTP header name to check for an API key.
+     * @default X-Api-Key
+     * @example Authorization
+     */
     @MCAttribute(attributeName = "name")
     public void setHeaderName(String headerName) {
         this.headerName = new HeaderName(headerName);
