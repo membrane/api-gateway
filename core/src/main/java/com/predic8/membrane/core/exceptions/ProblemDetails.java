@@ -145,8 +145,8 @@ public class ProblemDetails {
         return this;
     }
 
-    public ProblemDetails status(int statusCode) {
-        this.status = statusCode;
+    public ProblemDetails status(int status) {
+        this.status = status;
         return this;
     }
 
