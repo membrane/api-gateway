@@ -31,7 +31,7 @@ import static org.junit.jupiter.api.Assertions.*;
 public class ProblemDetailsTest {
 
     private static final XPathFactory xPathFactory = XPathFactory.newInstance();
-    private final static ObjectMapper om = new ObjectMapper();
+    private static final  ObjectMapper om = new ObjectMapper();
 
     @Nested
     class productionFalse {
@@ -43,7 +43,7 @@ public class ProblemDetailsTest {
                     .addSubType("catastrophe")
                     .title("Something happened!")
                     .build();
-
+re
             assertEquals(400, r.getStatusCode());
             assertEquals(APPLICATION_PROBLEM_JSON, r.getHeader().getContentType());
 
@@ -236,12 +236,8 @@ public class ProblemDetailsTest {
                         .addSubType("validation")
                         .build();
 
-                System.out.println(r.getBodyAsStringDecoded());
-
-                JsonNode json = parseJson(r);
-
-
-                assertEquals("https://membrane-api.io/problems/user/validation", json.get(TYPE).asText());
+                JsonNode j = parseJson(r);
+                assertEquals("https://membrane-api.io/problems/user/validation", j.get(TYPE).asText());
             }
         }
     }
@@ -262,7 +258,7 @@ public class ProblemDetailsTest {
 
             String body = exc.getResponse().getBodyAsStringDecoded();
             assertTrue(exc.getResponse().isXML());
-            assertTrue(exc.getResponse().getHeader().getContentType().toLowerCase().contains("xml"));
+            assertEquals(APPLICATION_PROBLEM_XML, exc.getResponse().getHeader().getContentType());
 
             assertEquals("Catastrophe!", xPath(body, "/problem-details/title"));
             assertEquals("https://membrane-api.io/problems/user/atomic", xPath(body, "/problem-details/type"));
