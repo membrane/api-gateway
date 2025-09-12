@@ -40,7 +40,7 @@ import static java.util.stream.Stream.*;
  * &lt;api&gt;
  *   &lt;apiKey required="true"&gt;
  *     &lt;!-- one or more key stores --&gt;
- *     &lt;.../ &gt;
+ *     ...
  *
  *     &lt;!-- optional: customize extraction (header/query) --&gt;
  *     &lt;headerExtractor name="X-Api-Key"/&gt;
