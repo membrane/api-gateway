@@ -159,6 +159,7 @@ public class RouterCLI {
         var router = new HttpRouter();
         router.setBaseLocation(location);
         router.setHotDeploy(false);
+        router.setAsynchronousInitialization(true);
         router.start();
 
         var beanCache = new BeanCache(router);
@@ -170,12 +171,16 @@ public class RouterCLI {
             Map<?, ?> m = om.readValue(parser, Map.class);
             Map<Object, Object> meta = (Map<Object, Object>) m.get("metadata");
 
+            // TODO generate name, if it doesnt exist
             // fake UID
-            meta.put("uid", location + "-" + meta.get("name"));
+            meta.put("uid", location + "-" + meta.get("name")); // TODO random UUID in case the name is null
+
 
             beanCache.handle(WatchAction.ADDED, m);
             parser.nextToken();
         }
+
+        beanCache.fireConfigurationLoaded();
 
         return router;
     }
