@@ -146,7 +146,7 @@ class EnvelopeTest {
         assertInstanceOf(TemplateInterceptor.class, reqChain.get(1));
         assertInstanceOf(ReturnInterceptor.class, reqChain.get(2));
 
-        // api minimal
+        // api target
         Envelope e3 = docs.get(3);
         APIProxy a3 = (APIProxy) e3.getSpec();
         assertEquals("api", e3.metadata.name);
@@ -205,23 +205,17 @@ class EnvelopeTest {
         assertEquals(1000, api.getPort());
     }
 
-
     private static List<Envelope> parseEnvelopes(String yaml, BeanRegistry registry) {
+        Iterator<Event> it = new Yaml().parse(new StringReader(yaml)).iterator();
         List<Envelope> res = new ArrayList<>();
-        for (String doc : splitDocs(yaml)) {
-            Iterator<Event> it = singleDocEvents(doc);
+        while (it.hasNext()) {
             Envelope e = new Envelope();
             e.parse(it, registry);
+            if (e.getSpec() == null && e.getMetadata() == null && e.kind == null && e.apiVersion == null)
+                break;
             res.add(e);
         }
         return res;
-    }
-
-    private static List<String> splitDocs(String yaml) {
-        return Arrays.stream(yaml.split("(?m)^---\\s*$"))
-                .map(String::trim)
-                .filter(s -> !s.isEmpty())
-                .toList();
     }
 
     private static Iterator<Event> singleDocEvents(String docYaml) {
