@@ -25,7 +25,6 @@ import com.predic8.membrane.core.kubernetes.client.WatchAction;
 import com.predic8.membrane.core.openapi.serviceproxy.*;
 import com.predic8.membrane.core.resolver.*;
 import org.apache.commons.cli.*;
-import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.jetbrains.annotations.*;
 import org.jose4j.jwk.JsonWebKey;
 import org.jose4j.jwk.RsaJsonWebKey;
@@ -117,7 +116,7 @@ public class RouterCLI {
         try {
             return switch (commandLine.getCommand().getName()) {
                 case "oas" -> initRouterByOpenApiSpec(commandLine);
-                case "yaml" -> initRouterByYAML(commandLine);
+                case "yaml" -> initRouterByYAML(commandLine, "l");
                 default -> initRouterByConfig(commandLine);
             };
         } catch (InvalidConfigurationException e) {
@@ -135,6 +134,17 @@ public class RouterCLI {
         return null;
     }
 
+    private static Router initRouterByConfig(MembraneCommandLine commandLine) throws Exception {
+        String config = getRulesFile(commandLine);
+        if(config.endsWith(".xml")) {
+            return initRouterByXml(commandLine);
+        } else if (config.endsWith(".yaml") || config.endsWith(".yml")) {
+            return initRouterByYAML(commandLine, "c");
+        }else {
+            throw new RuntimeException("Unsupported file extension.");
+        }
+    }
+
     private static Router initRouterByOpenApiSpec(MembraneCommandLine commandLine) throws Exception {
         Router router = new HttpRouter();
         router.getRuleManager().addProxyAndOpenPortIfNew(getApiProxy(commandLine));
@@ -142,8 +152,8 @@ public class RouterCLI {
         return router;
     }
 
-    private static Router initRouterByYAML(MembraneCommandLine commandLine) throws Exception {
-        String location = commandLine.getCommand().getOptionValue("l");
+    private static Router initRouterByYAML(MembraneCommandLine commandLine, String option) throws Exception {
+        String location = commandLine.getCommand().getOptionValue(option);
         var fileReader = new FileReader(location);
 
         var router = new HttpRouter();
@@ -238,7 +248,7 @@ public class RouterCLI {
         return spec;
     }
 
-    private static Router initRouterByConfig(MembraneCommandLine commandLine) throws Exception {
+    private static Router initRouterByXml(MembraneCommandLine commandLine) throws Exception {
         try {
             return Router.init(getRulesFile(commandLine));
         } catch (XmlBeanDefinitionStoreException e) {
