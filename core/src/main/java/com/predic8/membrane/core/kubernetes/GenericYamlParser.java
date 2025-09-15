@@ -75,7 +75,7 @@ public class GenericYamlParser {
                 }
 
                 Class wanted = setter.getParameterTypes()[0];
-                if (wanted.equals(List.class)) {
+                if (wanted.equals(List.class) || wanted.equals(Enumeration.class)) {
                     setSetter(obj, setter, parseList(context, events, registry));
                 } else if (wanted.isEnum()) {
                     setSetter(obj, setter, Enum.valueOf(wanted, readString(events).toUpperCase(Locale.ROOT)));
