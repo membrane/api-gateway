@@ -12,26 +12,21 @@
 package com.predic8.membrane.core.exceptions;
 
 import com.fasterxml.jackson.core.*;
-import com.fasterxml.jackson.core.type.*;
 import com.fasterxml.jackson.databind.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
 import org.jetbrains.annotations.*;
 import org.slf4j.*;
-import org.w3c.dom.*;
 
-import javax.xml.parsers.*;
-import javax.xml.transform.*;
-import javax.xml.transform.dom.*;
-import javax.xml.transform.stream.*;
-import java.io.*;
 import java.util.*;
 
+import static com.predic8.membrane.core.exceptions.ProblemDetailsXML.*;
 import static com.predic8.membrane.core.http.MimeType.*;
+import static com.predic8.membrane.core.http.Response.*;
 import static com.predic8.membrane.core.util.ExceptionUtil.*;
 import static java.nio.charset.StandardCharsets.*;
-import static java.util.Locale.ROOT;
+import static java.util.Locale.*;
 import static java.util.UUID.*;
 
 
@@ -51,19 +46,29 @@ public class ProblemDetails {
     public static final String ATTENTION = "attention";
     public static final String SEE = "see";
     public static final String INSTANCE = "instance";
+    public static final String STATUS = "status";
+    public static final String INTERNAL = "internal";
+    public static final String INTERNAL_SERVER_ERROR = "Internal Server Error";
 
+    private static final Set<String> RESERVED = Set.of(TYPE, TITLE, DETAIL, INSTANCE, STATUS);
+    public static final String MESSAGE = "message";
+    public static final String STACK_TRACE = "stackTrace";
+    public static final String LOG_KEY = "logKey";
 
-    private boolean logKeyInsteadOfDetails;
+    /**
+     * If router is in production mode that should not expose internal details
+     */
+    private boolean production;
 
-    private int statusCode;
-    private String type;
-    private String subType = "";
+    protected int status;
+    protected String type;
+    protected String subType = "";
 
-    private String title;
-    private String detail;
+    protected String title;
+    protected String detail;
 
-    private Interceptor.Flow flow;
-    private String seeSuffix = "";
+    protected Interceptor.Flow flow;
+    protected String seeSuffix = "";
 
     /**
      * Component e.g. plugin
@@ -86,45 +91,45 @@ public class ProblemDetails {
      */
     private boolean stacktrace = true;
 
-    public static ProblemDetails user(boolean logKeyInsteadOfDetails, String component) {
-        return problemDetails("user", logKeyInsteadOfDetails)
-                .statusCode(400)
+    public static ProblemDetails user(boolean production, String component) {
+        return problemDetails("user", production)
+                .status(400)
                 .title("User error.")
                 .component(component);
     }
 
-    public static ProblemDetails internal(boolean logKeyInsteadOfDetails, String component) {
-        return problemDetails("internal", logKeyInsteadOfDetails)
-                .statusCode(500)
+    public static ProblemDetails internal(boolean production, String component) {
+        return problemDetails(INTERNAL, production)
+                .status(500)
                 .title("Internal server error.")
                 .component(component);
     }
 
-    public static ProblemDetails gateway(boolean logKeyInsteadOfDetails, String component) {
-        return problemDetails("gateway", logKeyInsteadOfDetails)
-                .statusCode(500)
+    public static ProblemDetails gateway(boolean production, String component) {
+        return problemDetails("gateway", production)
+                .status(500)
                 .title("Gateway error.")
                 .component(component);
     }
 
-    public static ProblemDetails security(boolean logKeyInsteadOfDetails, String component) {
-        return problemDetails("security", logKeyInsteadOfDetails)
-                .statusCode(500)
+    public static ProblemDetails security(boolean production, String component) {
+        return problemDetails("security", production)
+                .status(500)
                 .title("Security error.")
                 .component(component);
     }
 
-    public static ProblemDetails openapi(boolean logKeyInsteadOfDetails, String component) {
-        return problemDetails("openapi", logKeyInsteadOfDetails)
-                .statusCode(400)
+    public static ProblemDetails openapi(boolean production, String component) {
+        return problemDetails("openapi", production)
+                .status(400)
                 .title("OpenAPI error.")
                 .component(component);
     }
 
-    public static ProblemDetails problemDetails(String type, boolean logKeyInsteadOfDetails) {
+    public static ProblemDetails problemDetails(String type, boolean production) {
         ProblemDetails pd = new ProblemDetails();
         pd.type = type;
-        pd.logKeyInsteadOfDetails = logKeyInsteadOfDetails;
+        pd.production = production;
         return pd;
     }
 
@@ -140,13 +145,21 @@ public class ProblemDetails {
         return this;
     }
 
-    public ProblemDetails statusCode(int statusCode) {
-        this.statusCode = statusCode;
+    public ProblemDetails status(int status) {
+        this.status = status;
         return this;
     }
 
     public ProblemDetails title(String title) {
         this.title = title;
+        return this;
+    }
+
+    /**
+     * Should not be set from the typical user. Method is for tests.
+     */
+    protected ProblemDetails type(String type) {
+        this.type = type;
         return this;
     }
 
@@ -176,12 +189,19 @@ public class ProblemDetails {
         return this;
     }
 
+    /**
+     * Hide in production mode
+     */
     public ProblemDetails internal(String key, Object value) {
         this.internalFields.put(key, value);
         return this;
     }
 
     public ProblemDetails topLevel(String key, Object value) {
+        if (isReservedProblemDetailsField(key)) {
+            log.warn("Ignoring topLevel field '{}': reserved by RFC 7807.", key);
+            return this;
+        }
         this.topLevel.put(key, value);
         return this;
     }
@@ -211,11 +231,12 @@ public class ProblemDetails {
     private @NotNull Map<String, Object> createMap() {
         Map<String, Object> root = new LinkedHashMap<>();
 
-        root.put(TITLE, title);
+        root.put(TITLE, maskTitle(title));
         root.put(TYPE, getTypeSubtypeString());
+        root.put(STATUS, status);
         root.putAll(topLevel);
 
-        if (logKeyInsteadOfDetails) {
+        if (production) {
             provideLogKeyInsteadOfDetails(root);
             return root;
         }
@@ -228,22 +249,38 @@ public class ProblemDetails {
         return root;
     }
 
+    private String maskTitle(String title) {
+        if (production && status >= 500)
+            return INTERNAL_SERVER_ERROR;
+        return title;
+    }
+
     private void provideLogKeyInsteadOfDetails(Map<String, Object> root) {
+        if (internalFields.isEmpty() && exception == null)
+            return;
+
         String logKey = randomUUID().toString();
-        log.warn("logKey={}\ntype={}\ntitle={}\n,detail={}\n,internal={},.", logKey, getTypeSubtypeString(), title, detail, internalFields);
-        root.put(DETAIL, "Details can be found in the Membrane log searching for key: %s.".formatted(logKey));
-        if (type.equals("internal")) {
-            title = "Internal error";
+
+        try {
+            MDC.put(LOG_KEY, logKey);
+            log.info("ProblemDetails hidden. type={}, title={}, detail={}, internal={}",
+                    getTypeSubtypeString(), title, detail, internalFields);
+            if (exception != null) {
+                log.info("Message={}", exception.getMessage());
+                if (stacktrace) {
+                    log.info("Stacktrace for hidden details:", exception);
+                }
+            }
+        } finally {
+            MDC.remove(LOG_KEY);
         }
-        if (stacktrace && exception != null) {
-            log.warn("", exception);
-        }
+        root.put(DETAIL, "Internal details are hidden. See server log (key: %s)".formatted(logKey));
     }
 
     private @NotNull String getTypeSubtypeString() {
         String type = "https://membrane-api.io/problems/" + this.type;
-        if (!subType.isEmpty()) {
-            type += subType;
+        if ((!production || (status >= 400 && status < 500)) && !subType.isEmpty()) {
+            return  type + subType;
         }
         return type;
     }
@@ -255,33 +292,36 @@ public class ProblemDetails {
     private Map<String, Object> createInternal(String type) {
         var internalMap = new LinkedHashMap<>(internalFields);
         if (exception != null) {
-            if (internalMap.containsKey("message"))
+            if (internalMap.containsKey(MESSAGE))
                 log.error("Overriding ProblemDetails extensionsMap 'message' entry. Please notify Membrane developers.", new RuntimeException());
-            internalMap.put("message", concatMessageAndCauseMessages(exception));
+            internalMap.put(MESSAGE, concatMessageAndCauseMessages(exception));
             if (stacktrace) {
-                internalMap.put("stackTrace", getStackTrace(exception, new StackTraceElement[0]));
+                internalMap.put(STACK_TRACE, getStackTrace(exception, new StackTraceElement[0]));
             }
         }
-
-        String see = type;
-        if (!component.isEmpty()) {
-            see += "/" + normalizeForType(component);
-        }
-        if (flow != null) {
-            see += "/" + flow.name().toLowerCase(ROOT);
-        }
-        if (!seeSuffix.isEmpty()) {
-            see += "/" + seeSuffix;
-        }
-        internalMap.put(SEE, see);
-
+        internalMap.put(SEE, getFullType(type));
         internalMap.put(ATTENTION, """
                 Membrane is in development mode. For production set <router production="true"> to reduce details in error messages!""");
         return internalMap;
     }
 
-    private static @NotNull Map getStackTrace(Throwable exception, StackTraceElement[] enclosingTrace) {
-        var m = new LinkedHashMap<>();
+    private String getFullType(String type) {
+        StringBuilder sb = new StringBuilder(type);
+        if (component != null && !component.isEmpty()) {
+            sb.append('/').append(normalizeForType(component));
+        }
+        if (flow != null) {
+            sb.append('/').append(flow.name().toLowerCase(ROOT));
+        }
+        if (!seeSuffix.isEmpty()) {
+            sb.append('/').append(seeSuffix);
+        }
+        return sb.toString();
+    }
+
+
+    private static @NotNull Map<String, Object> getStackTrace(Throwable exception, StackTraceElement[] enclosingTrace) {
+        var m = new LinkedHashMap<String,Object>();
 
         StackTraceElement[] trace = exception.getStackTrace();
         int m2 = trace.length - 1;
@@ -306,9 +346,9 @@ public class ProblemDetails {
     }
 
     private Response createContent(Map<String, Object> root, Exchange exchange) {
-        Response.ResponseBuilder builder = Response.statusCode(statusCode);
+        Response.ResponseBuilder builder = statusCode(status);
         try {
-            if (exchange != null && exchange.getRequest().isXML()) {
+            if (exchange != null && (acceptXML(exchange) || exchange.getRequest().isXML())) {
                 createXMLContent(root, builder);
             } else {
                 createJson(root, builder);
@@ -320,48 +360,11 @@ public class ProblemDetails {
         return builder.build();
     }
 
-    private static void createXMLContent(Map<String, Object> root, Response.ResponseBuilder builder) throws Exception {
-        builder.body(convertMapToXml(root));
-        builder.contentType(APPLICATION_PROBLEM_XML);
-    }
-
-    public static String convertMapToXml(Map<String, Object> map) throws Exception {
-        Document document = DocumentBuilderFactory.newInstance().newDocumentBuilder().newDocument();
-        Element root = document.createElement("problem-details");
-        document.appendChild(root);
-        mapToXmlElements(map, document, root);
-        return document2string(document);
-    }
-
-    private static String document2string(Document document) throws TransformerException {
-        StringWriter writer = new StringWriter();
-        TransformerFactory tf = TransformerFactory.newInstance();
-        Transformer t = tf.newTransformer();
-        t.setOutputProperty(OutputKeys.INDENT, "yes");
-        t.transform(new DOMSource(document), new StreamResult(writer));
-        return writer.toString();
-    }
-
-    private static void mapToXmlElements(Map<String, Object> map, Document document, Element parent) {
-        for (Map.Entry<String, Object> entry : map.entrySet()) {
-            Object value = entry.getValue();
-            if (value == null)
-                continue;
-            Element element = document.createElement(entry.getKey());
-            if (value instanceof Map mv) {
-                mapToXmlElements(mv, document, element);
-            } else if (value instanceof Object[] oa) {
-                for (Object obj : oa) {
-                    Element arrayElement = document.createElement(entry.getKey());
-                    arrayElement.setTextContent(obj.toString());
-                    parent.appendChild(arrayElement);
-                }
-                continue;
-            } else {
-                element.setTextContent(value.toString());
-            }
-            parent.appendChild(element);
-        }
+    private boolean acceptXML(Exchange exchange) {
+        String accept = exchange.getRequest().getHeader().getAccept();
+        if (accept == null)
+            return false;
+        return accept.toLowerCase().contains("xml");
     }
 
     private static void createJson(Map<String, Object> root, Response.ResponseBuilder builder) throws JsonProcessingException {
@@ -369,40 +372,8 @@ public class ProblemDetails {
         builder.contentType(APPLICATION_PROBLEM_JSON);
     }
 
-    public static ProblemDetails parse(Response r) throws JsonProcessingException {
-
-        if (r.getHeader().getContentType() == null)
-            throw new RuntimeException("No Content-Type in message with ProblemDetails!");
-
-        if (!r.getHeader().getContentType().equals(APPLICATION_PROBLEM_JSON))
-            throw new RuntimeException("Content-Type ist %s but should be %s.".formatted(r.getHeader().getContentType(), APPLICATION_PROBLEM_JSON));
-
-        ProblemDetails pd = new ProblemDetails();
-        pd.statusCode(r.getStatusCode());
-
-        TypeReference<Map<String, Object>> typeRef = new TypeReference<>() {
-        };
-
-        Map<String, Object> m = om.readValue(r.getBodyAsStringDecoded(), typeRef);
-
-        pd.type = (String) m.get(TYPE);
-        pd.title = (String) m.get(TITLE);
-        pd.detail = (String) m.get(DETAIL);
-
-        for (Map.Entry<String, Object> e : m.entrySet()) {
-            if (pd.isReservedProblemDetailsField(e.getKey()))
-                continue;
-            pd.internal(e.getKey(), e.getValue());
-        }
-        return pd;
-    }
-
-    private boolean isReservedProblemDetailsField(String key) {
-        for (String reserved : List.of(TYPE, TITLE, DETAIL, INSTANCE)) {
-            if (key.equals(reserved))
-                return true;
-        }
-        return false;
+    public static boolean isReservedProblemDetailsField(String key) {
+        return RESERVED.contains(key);
     }
 
     public String getTitle() {
@@ -413,12 +384,12 @@ public class ProblemDetails {
         return type;
     }
 
-    public int getStatusCode() {
-        return statusCode;
+    public int getStatus() {
+        return status;
     }
 
-    public boolean isLogKeyInsteadOfDetails() {
-        return logKeyInsteadOfDetails;
+    public boolean isProduction() {
+        return production;
     }
 
     public String getDetail() {
@@ -440,6 +411,4 @@ public class ProblemDetails {
     public boolean isStacktrace() {
         return stacktrace;
     }
-
-
 }

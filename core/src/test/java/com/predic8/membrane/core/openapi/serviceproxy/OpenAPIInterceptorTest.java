@@ -31,6 +31,7 @@ import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPISpec.YesNoOpenAPIOption.*;
 import static com.predic8.membrane.core.openapi.util.JsonUtil.*;
 import static com.predic8.membrane.core.openapi.util.TestUtils.*;
+import static com.predic8.membrane.core.util.ProblemDetailsTestUtil.parse;
 import static com.predic8.membrane.test.TestUtil.getPathFromResource;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -93,7 +94,7 @@ class OpenAPIInterceptorTest {
         assertEquals(404, exc.getResponse().getStatusCode());
         exc.getResponse().getBody().getContent();
 
-        ProblemDetails pd = ProblemDetails.parse(exc.getResponse());
+        ProblemDetails pd = parse(exc.getResponse());
 
         assertEquals("No matching API found!", pd.getTitle());
         assertEquals("https://membrane-api.io/problems/user", pd.getType());

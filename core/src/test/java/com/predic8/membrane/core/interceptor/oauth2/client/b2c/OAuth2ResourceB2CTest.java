@@ -37,6 +37,7 @@ import static com.predic8.membrane.core.http.Header.*;
 import static com.predic8.membrane.core.http.Request.get;
 import static com.predic8.membrane.core.interceptor.oauth2.client.b2c.MockAuthorizationServer.SERVER_PORT;
 import static com.predic8.membrane.core.interceptor.oauth2client.rf.OAuth2CallbackRequestHandler.MEMBRANE_MISSING_SESSION_DESCRIPTION;
+import static com.predic8.membrane.core.util.ProblemDetailsTestUtil.parse;
 import static com.predic8.membrane.core.util.URLParamUtil.DuplicateKeyOrInvalidFormStrategy.ERROR;
 import static com.predic8.membrane.core.util.URLParamUtil.parseQueryString;
 import static org.junit.jupiter.api.Assertions.*;
@@ -501,7 +502,7 @@ public abstract class OAuth2ResourceB2CTest {
         mockAuthorizationServer.returnOAuth2ErrorFromSignIn.set(true);
         var exc = browser.apply(get(tc.getClientAddress() + "/api/"));
 
-        ProblemDetails pd = ProblemDetails.parse(exc.getResponse());
+        ProblemDetails pd = parse(exc.getResponse());
         assertEquals("https://membrane-api.io/problems/security", pd.getType());
         assertEquals("DEMO-123", pd.getInternal().get("error"));
     }

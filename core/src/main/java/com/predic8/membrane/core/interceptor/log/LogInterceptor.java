@@ -31,8 +31,14 @@ import static com.predic8.membrane.core.interceptor.log.LogInterceptor.Level.*;
 import static org.slf4j.LoggerFactory.*;
 
 /**
- * @description The log feature logs request and response messages. The messages will appear either on the console or in
+ * @description Logs request and response messages. The messages will appear either on the console or in
  * a log file depending on the log configuration.
+ * <p>Typical use cases:
+ * <ul>
+ *   <li>Debugging APIs during development.</li>
+ *   <li>Operational visibility in production (metadata-only, masked values, message, body).</li>
+ * </ul>
+ * </p>
  * @topic 4. Monitoring, Logging and Statistics
  */
 @MCElement(name = "log")
@@ -48,6 +54,10 @@ public class LogInterceptor extends AbstractExchangeExpressionInterceptor {
     private String label = "";
     private boolean body = true;
 
+    private boolean maskSensitive = true;
+
+    private final SensitiveDataFilter filter = new SensitiveDataFilter();
+
     public LogInterceptor() {
         name = "log";
     }
@@ -56,7 +66,6 @@ public class LogInterceptor extends AbstractExchangeExpressionInterceptor {
     public Outcome handleRequest(Exchange exc) {
         logMessage(exc, REQUEST);
         return CONTINUE;
-
     }
 
     @Override
@@ -75,51 +84,25 @@ public class LogInterceptor extends AbstractExchangeExpressionInterceptor {
         }
     }
 
-    public boolean isBody() {
-        return body;
-    }
-
-    /**
-     * @default true
-     * @description To turn off logging of message bodies set this attribute to false
-     */
-    @MCAttribute
-    public void setBody(boolean body) {
-        this.body = body;
-    }
-
-    public Level getLevel() {
-        return level;
-    }
-
-    /**
-     * @default INFO
-     * @description Sets the log level.
-     * @example WARN
-     */
-    @MCAttribute
-    public void setLevel(Level level) {
-        this.level = level;
-    }
-
     private void logMessage(Exchange exc, Flow flow) {
-        if(getMessage() != null && !getMessage().isEmpty()) {
+        if (getMessage() != null && !getMessage().isEmpty()) {
             try {
-                writeLog(exchangeExpression.evaluate(exc,flow,String.class));
+                writeLog(exchangeExpression.evaluate(exc, flow, String.class));
             } catch (ExchangeExpressionException e) {
-                getLogger(category).warn("Problems evaluating the expression {} . Message: {} Extensions: {}",getMessage(),  e.getMessage(), e.getExtensions());
+                getLogger(category).warn("Problems evaluating the expression {} . Message: {} Extensions: {}", getMessage(), e.getMessage(), e.getExtensions());
             }
             return;
         }
 
-        writeLog("==== %s %s ===".formatted(flow,label));
+        writeLog("==== %s %s ===".formatted(flow, label));
 
         Message msg = exc.getMessage(flow);
 
-        if (msg==null)
+        if (msg == null)
             return;
-        writeLog(msg.getStartLine());
-        writeLog("\nHeaders:\n" + msg.getHeader());
+        writeLog(filter.maskStartLine(msg));
+
+        writeLog(dumpHeader(msg));
 
         try {
             if (!body || msg.isBodyEmpty())
@@ -128,14 +111,29 @@ public class LogInterceptor extends AbstractExchangeExpressionInterceptor {
             writeLog("Error accessing body: " + e.getMessage());
             return;
         }
-
         writeLog(dumpBody(msg));
     }
+
+    private String dumpHeader(Message msg) {
+        return "\nHeaders:\n" + dumpHeaderFields(msg);
+    }
+
+    private String dumpHeaderFields(Message msg) {
+        return maskSensitive
+                ? filter.getMaskedHeader(msg.getHeader()).toString()
+                : msg.getHeader().toString();
+    }
+
     private static String dumpBody(Message msg) {
-        return "Body:\n%s\n".formatted(msg.getBodyAsStringDecoded());
+        try {
+            return "Body:\n%s\n".formatted(msg.getBodyAsStringDecoded());
+        } catch (Exception e) {
+            return "Body: [error reading body: %s]".formatted(e.getMessage());
+        }
     }
 
     private void writeLog(String msg) {
+
         switch (level) {
             case TRACE -> getLogger(category).trace(msg);
             case DEBUG -> getLogger(category).debug(msg);
@@ -145,46 +143,27 @@ public class LogInterceptor extends AbstractExchangeExpressionInterceptor {
         }
     }
 
-    @SuppressWarnings("unused")
-    public String getCategory() {
-        return category;
-    }
-
-    /**
-     * @default com.predic8.membrane.core.interceptor.log.LogInterceptor
-     * @description Sets the category of the logged message.
-     * @example Membrane
-     */
-    @SuppressWarnings("unused")
-    @MCAttribute
-    public void setCategory(String category) {
-        this.category = category;
-    }
-
     @Override
     public String getShortDescription() {
         return "Logs the " + (body ? "headers of " : "") + "requests and responses" +
                 " using Log4J's " + level.toString() + " level.";
     }
 
-    public String getLabel() {
-        return label;
-    }
-
-    /**
-     * @default ""
-     * @description Label to find the entry in the log
-     * @example "After Transformation"
-     */
-    @SuppressWarnings("unused")
-    @MCAttribute
-    public void setLabel(String label) {
-        this.label = label;
-    }
-
     @Override
     public String getDisplayName() {
         return "log";
+    }
+
+    /**
+     * @description Whether to include message bodies in logs.
+     *
+     * <p><strong>Warning:</strong> Body logging can expose secrets or personal data. Prefer {@code false}
+     * in production.</p>
+     * @default true
+     */
+    @MCAttribute
+    public void setBody(boolean body) {
+        this.body = body;
     }
 
     /**
@@ -195,23 +174,92 @@ public class LogInterceptor extends AbstractExchangeExpressionInterceptor {
         expression = message;
     }
 
-    public String getMessage() {
-        return expression;
+    /**
+     * @description Whether to mask sensitive header values (e.g., Authorization, Cookies, API keys).
+     *
+     * <p>When enabled (default), values are replaced by ****.</p>
+     *
+     *
+     */
+    @MCAttribute
+    public void setMaskSensitive(boolean maskSensitive) {
+        this.maskSensitive = maskSensitive;
     }
 
-    public boolean isHeaderOnly() {
-        return false;
+    /**
+     * @description Log level for emitted messages.
+     * <p>Values: TRACE, DEBUG, INFO, WARN, ERROR, FATAL</p>
+     * @default INFO
+     * @example WARN
+     */
+    @MCAttribute
+    public void setLevel(Level level) {
+        this.level = level;
+    }
+
+    /**
+     * @description Short label printed with each log line to distinguish multiple log interceptors.
+     *
+     * <p>Useful when several APIs share the same category but you want quick visual grouping.</p>
+     * @example "After Transformation"
+     * @default empty string
+     */
+    @SuppressWarnings("unused")
+    @MCAttribute
+    public void setLabel(String label) {
+        this.label = label;
+    }
+
+    /**
+     * @description Logger category to use.
+     * <p>Allows routing logs into different appenders/targets via Logback/Log4j configuration.</p>
+     * @default Fully qualified class name of {@code LogInterceptor} com.predic8.membrane.core.interceptor.log.LogInterceptor
+     */
+    @SuppressWarnings("unused")
+    @MCAttribute
+    public void setCategory(String category) {
+        this.category = category;
     }
 
     /**
      * Deprecated and sunsetted!
      * Do not use this attribute. It is only there for the proxies.xml to be compatible with versions prior to 6.X.X
      * It has no effect at all!
+     *
      * @default false
-     * @description It is ignored
+     * @description Ignored. Still there for compatibility.
      */
     @MCAttribute
     public void setHeaderOnly(boolean headerOnly) {
         LoggerFactory.getLogger(this.getClass()).warn("Configuration option `headerOnly` is not supported anymore. Use `body` instead.");
+    }
+
+    public boolean isBody() {
+        return body;
+    }
+
+    public String getMessage() {
+        return expression;
+    }
+
+    public boolean isMaskSensitive() {
+        return maskSensitive;
+    }
+
+    public Level getLevel() {
+        return level;
+    }
+
+    public String getLabel() {
+        return label;
+    }
+
+    @SuppressWarnings("unused")
+    public String getCategory() {
+        return category;
+    }
+
+    public boolean isHeaderOnly() {
+        return false;
     }
 }

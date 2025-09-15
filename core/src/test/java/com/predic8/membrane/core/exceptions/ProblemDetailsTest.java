@@ -11,190 +11,268 @@
 
 package com.predic8.membrane.core.exceptions;
 
-import com.fasterxml.jackson.core.*;
 import com.fasterxml.jackson.databind.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.util.*;
 import org.junit.jupiter.api.*;
 import org.xml.sax.*;
 
-
 import javax.xml.xpath.*;
-
 import java.io.*;
 import java.util.*;
 
 import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
 import static com.predic8.membrane.core.http.MimeType.*;
-
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
-
-import static java.nio.charset.StandardCharsets.*;
+import static com.predic8.membrane.core.util.CollectionsUtil.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class ProblemDetailsTest {
 
     private static final XPathFactory xPathFactory = XPathFactory.newInstance();
-    private final static ObjectMapper om = new ObjectMapper();
+    private static final ObjectMapper om = new ObjectMapper();
 
-    @Test
-    void simple() throws JsonProcessingException {
+    @Nested
+    class productionFalse {
 
-        Response r = user(false,"component-a")
-                .addSubType("catastrophy")
-                .title("Something happened!")
-                .build();
+        @Test
+        void simple() throws Exception {
 
-        assertEquals(400, r.getStatusCode());
-        assertEquals(APPLICATION_PROBLEM_JSON, r.getHeader().getContentType());
+            Response r = user(false, "component-a")
+                    .addSubType("catastrophe")
+                    .title("Something happened!")
+                    .build();
 
-//        System.out.println("r.getBodyAsStringDecoded() = " + r.getBodyAsStringDecoded());
+            assertEquals(400, r.getStatusCode());
+            assertEquals(APPLICATION_PROBLEM_JSON, r.getHeader().getContentType());
 
-        JsonNode json = om.readTree(r.getBodyAsStringDecoded());
+            JsonNode json = parseJson(r);
 
-        assertEquals("Something happened!",json.get("title").asText());
-        assertEquals("https://membrane-api.io/problems/user/catastrophy",json.get("type").asText());
+            assertEquals("Something happened!", json.get(TITLE).asText());
+            assertEquals("https://membrane-api.io/problems/user/catastrophe", json.get(TYPE).asText());
 
-        // Assert Order
-        assertIterableEquals(List.of("title","type","see","attention"), CollectionsUtil.toList( json.fieldNames()));
+            assertTrue(toList(json.fieldNames()).containsAll(List.of(TITLE, TYPE, STATUS, SEE, ATTENTION)));
+        }
+
+        @Test
+        void internals() throws Exception {
+
+            Response r = user(false, "a")
+                    .addSubType("catastrophe")
+                    .title("Something happened!")
+                    .internal("foo", "baz")
+                    .build();
+
+            JsonNode j = parseJson(r);
+
+            assertEquals("baz", j.get("foo").asText());
+            assertTrue(j.hasNonNull(ATTENTION));
+        }
+
+        @Test
+        void details() throws Exception {
+            Response r = user(false, "component-b")
+                    .addSubType("catastrophe")
+                    .title("Something happened!")
+                    .detail("The barn burned down and the roof fell on cow Elsa.").build();
+
+            JsonNode json = parseJson(r);
+
+            assertEquals("The barn burned down and the roof fell on cow Elsa.", json.get(DETAIL).asText());
+        }
+
+        @Test
+        void extensions() throws Exception {
+            Response r = user(false, "component c")
+                    .addSubType("catastrophe")
+                    .title("Something happened!")
+                    .internal("a", "1")
+                    .internal("b", "2").build();
+
+            JsonNode json = parseJson(r);
+
+            assertEquals("1", json.get("a").asText());
+            assertEquals("2", json.get("b").asText());
+        }
+
+        @Test
+        void nonProduction() throws Exception {
+            JsonNode j = parseJson(getResponseWithDetailsAndExtensions(false));
+            assertTrue(j.hasNonNull(TITLE));
+            assertTrue(j.hasNonNull(TYPE));
+            assertTrue(j.hasNonNull(STATUS));
+            assertTrue(j.hasNonNull(DETAIL));
+            assertTrue(j.hasNonNull("a"));
+            assertTrue(j.hasNonNull("b"));
+            assertTrue(j.hasNonNull(SEE));
+            assertTrue(j.hasNonNull(ATTENTION));
+            assertEquals("https://membrane-api.io/problems/user/catastrophe", j.get(TYPE).asText());
+            assertEquals("Something happened!", j.get(TITLE).asText());
+            assertEquals("A detailed description.", j.get(DETAIL).asText());
+        }
+
+        @Test
+        void see() throws Exception {
+            Response r = user(false, "component-b")
+                    .title("Something happened!")
+                    .flow(REQUEST)
+                    .component("flux-generator")
+                    .addSubSee("io")
+                    .build();
+
+            JsonNode json = parseJson(r);
+
+            assertEquals("https://membrane-api.io/problems/user/flux-generator/request/io", json.get(SEE).asText());
+        }
+
+        @Test
+        void causeStacktrace() {
+            String b = internal(false, "a")
+                    .exception(new RuntimeException("b", new InnerExceptionGenerator().generate()))
+                    .build().getBodyAsStringDecoded();
+
+            assertTrue(b.contains("InnerExceptionGenerator"));
+            assertTrue(b.contains("more_frames_in_common"));
+        }
+
+        @Test
+        void exceptionStacktrace() throws Exception {
+
+            Response r = user(false, "a")
+                    .title("Something happened!")
+                    .exception(new Exception("And the message is..."))
+                    .stacktrace(true)
+                    .build();
+
+            JsonNode j = parseJson(r);
+            assertEquals("And the message is...", j.get(MESSAGE).asText());
+            assertTrue(j.hasNonNull(STACK_TRACE));
+        }
+
+        @Test
+        void exceptionButNoStacktrace() throws Exception {
+
+            Response r = user(false, "a")
+                    .title("Something happened!")
+                    .exception(new Exception("And the message is..."))
+                    .stacktrace(false)
+                    .build();
+
+            JsonNode j = parseJson(r);
+            assertEquals("And the message is...", j.get(MESSAGE).asText());
+            assertFalse(j.hasNonNull(STACK_TRACE));
+        }
     }
 
-    @Test
-    void details() throws JsonProcessingException {
-        Response r = user(false, "component-b")
-                .addSubType("catastrophy")
-                .title("Something happend!")
-                .detail("The barn burned down and the roof fell on cow Elsa.").build();
+    @Nested
+    class production {
 
-//        System.out.println("r.getBodyAsStringDecoded() = " + r.getBodyAsStringDecoded());
+        @Test
+        void userDetailsException() throws Exception {
+            JsonNode json = parseJson(getResponseWithDetailsAndExtensions(true));
+            assertEquals(4, json.size());
+            assertTrue(toList(json.fieldNames()).containsAll(List.of(TITLE, TYPE, STATUS, DETAIL)));
+            assertEquals("https://membrane-api.io/problems/user/catastrophe", json.get(TYPE).asText());
+            assertEquals("Something happened!", json.get(TITLE).asText());
+        }
 
-        JsonNode json = om.readTree(r.getBodyAsStringDecoded());
+        @Test
+        void hidesInternal() throws Exception {
+            Response r = internal(true, "a b").addSubType("catastrophe")
+                    .title("Something happened!")
+                    .detail("A detailed description.")
+                    .internal("a", "1")
+                    .internal("b", "2").build();
 
-        assertEquals("The barn burned down and the roof fell on cow Elsa.", json.get("detail").asText());
+            JsonNode j = parseJson(r);
+
+            assertEquals(4, j.size());
+            assertFalse(j.has("a"));
+            assertFalse(j.has("b"));
+            assertTrue(toList(j.fieldNames()).containsAll(List.of(TITLE, TYPE, STATUS, DETAIL)));
+            assertEquals("https://membrane-api.io/problems/internal", j.get(TYPE).asText());
+            assertEquals(INTERNAL_SERVER_ERROR, j.get(TITLE).asText());
+        }
+
+        @Nested
+        class status400 {
+
+            @Test
+            void productionExceptionNoStacktraceStillHasDetail() throws Exception {
+                Response r = user(true, "x")
+                        .title("Hidden")
+                        .exception(new Exception("boom"))
+                        .stacktrace(false)
+                        .build();
+                JsonNode j = parseJson(r);
+                assertEquals(400, j.get(STATUS).asInt());
+                assertTrue(j.hasNonNull(DETAIL));
+                assertTrue(j.get(DETAIL).asText().contains("key")); // references log key
+                assertFalse(j.has(ATTENTION));
+            }
+
+            @Test
+            void internals() throws Exception {
+
+                Response r = user(true, "a")
+                        .addSubType("catastrophe")
+                        .title("Something happened!")
+                        .internal("foo", "baz")
+                        .build();
+
+                JsonNode j = parseJson(r);
+
+                assertFalse(j.hasNonNull("foo"));
+                assertTrue(j.hasNonNull(DETAIL));
+                assertTrue(j.get(DETAIL).asText().contains("key"));
+                assertFalse(j.has(ATTENTION));
+            }
+
+            @Test
+            void subType() throws Exception {
+                Response r = user(true, "a")
+                        .title("Validation failed!")
+                        .addSubType("validation")
+                        .build();
+
+                JsonNode j = parseJson(r);
+                assertEquals("https://membrane-api.io/problems/user/validation", j.get(TYPE).asText());
+            }
+        }
     }
 
-    @Test
-    void extensions() throws JsonProcessingException {
-        Response r = user(false, "component c")
-                .addSubType("catastrophy")
-                .title("Something happend!")
-                .internal("a", "1")
-                .internal("b", "2").build();
+    @Nested
+    class xml {
+        @Test
+        void pd() throws Exception {
+            Exchange exc = Request.post("/foo")
+                    .contentType(APPLICATION_XML)
+                    .buildExchange();
 
-//        System.out.println("r.getBodyAsStringDecoded() = " + r.getBodyAsStringDecoded());
+            user(false, "blaster")
+                    .addSubType("atomic")
+                    .title("Catastrophe!")
+                    .internal("foo", "7")
+                    .buildAndSetResponse(exc);
 
-        JsonNode json = om.readTree(r.getBodyAsStringDecoded());
+            String body = exc.getResponse().getBodyAsStringDecoded();
+            assertTrue(exc.getResponse().isXML());
+            assertEquals(APPLICATION_PROBLEM_XML, exc.getResponse().getHeader().getContentType());
 
-        assertEquals("1", json.get("a").asText());
-        assertEquals("2", json.get("b").asText());
-    }
-
-    @Test
-    void productionUser() throws JsonProcessingException {
-        JsonNode json = om.readTree(getResponseWithDetailsAndExtensions(true).getBodyAsStringDecoded());
-        assertEquals(3,json.size());
-        assertEquals("https://membrane-api.io/problems/user/catastrophy",json.get("type").asText());
-        assertEquals("Something happend!", json.get("title").asText());
-    }
-
-    @Test
-    void noProduction() throws JsonProcessingException {
-        String pdJson = getResponseWithDetailsAndExtensions(false).getBodyAsStringDecoded();
-        System.out.println("pdJson = " + pdJson);
-        JsonNode json = om.readTree(pdJson);
-        assertEquals(7,json.size());
-        assertEquals("https://membrane-api.io/problems/user/catastrophy",json.get("type").asText());
-        assertEquals("Something happend!",json.get("title").asText());
-        assertEquals("A detailed description.",json.get("detail").asText());
+            assertEquals("Catastrophe!", xPath(body, "/problem-details/title"));
+            assertEquals("https://membrane-api.io/problems/user/atomic", xPath(body, "/problem-details/type"));
+            assertEquals("7", xPath(body, "/problem-details/foo"));
+            assertTrue(xPath(body, "/problem-details/attention").contains("development mode"));
+        }
     }
 
     private static Response getResponseWithDetailsAndExtensions(boolean production) {
         return user(production, "component a b c")
-                .addSubType("catastrophy")
-                .title("Something happend!")
+                .addSubType("catastrophe")
+                .title("Something happened!")
                 .detail("A detailed description.")
                 .internal("a", "1")
                 .internal("b", "2").build();
-    }
-
-    @Test
-    void exception() throws JsonProcessingException {
-        Response r = internal(true, "a b").addSubType("catastrophe").title("Something happened!")
-                .detail("A detailed description.")
-                .internal("a", "1")
-                .internal("b", "2").build();
-
-//        System.out.println("r.getBodyAsStringDecoded() = " + r.getBodyAsStringDecoded());
-        
-        JsonNode json = om.readTree(r.getBodyAsStringDecoded());
-
-        assertEquals(3,json.size());
-        assertEquals("https://membrane-api.io/problems/internal/catastrophe",json.get("type").asText());
-        assertEquals("Something happened!",json.get("title").asText());
-    }
-
-    @Test
-    void parse() throws JsonProcessingException {
-        ProblemDetails pd = ProblemDetails.parse(ProblemDetails.user(false, "a")
-                .addSubType("validation")
-                .statusCode(421)
-                .title("Validation error")
-                .detail("Wrong format")
-                .build());
-
-        assertEquals(421,pd.getStatusCode());
-        assertEquals("https://membrane-api.io/problems/user/validation",pd.getType());
-    }
-
-    @Test
-    void see() throws JsonProcessingException {
-        Response r = user(false,"component-b")
-                .title("Something happend!")
-                .flow(REQUEST)
-                .component("flux-generator")
-                .addSubSee("io")
-                .build();
-
-//        System.out.println("r.getBodyAsStringDecoded() = " + r.getBodyAsStringDecoded());
-
-        JsonNode json = om.readTree(r.getBodyAsStringDecoded());
-
-        assertEquals("https://membrane-api.io/problems/user/flux-generator/request/io",json.get("see").asText());
-    }
-
-    @Test
-    void causeStacktrace() throws IOException {
-        byte[] responseBody = internal(false, "a")
-                .exception(new RuntimeException("b", new InnerExceptionGenerator().generate()))
-                .build().getBody().getContentAsStream().readAllBytes();
-
-        String b = new String(responseBody, UTF_8);
-//        System.out.println(b);
-
-        assertTrue(b.contains("InnerExceptionGenerator"));
-        assertTrue(b.contains("more_frames_in_common"));
-    }
-
-    @Test
-    void xmlPd() throws Exception {
-        Exchange exc = Request.post("/foo")
-                .contentType(APPLICATION_XML)
-                .buildExchange();
-
-        user(false, "blaster")
-                .addSubType("atomic")
-                .title("Catastrophe!")
-                .internal("foo", "7")
-                .buildAndSetResponse(exc);
-
-        String body = exc.getResponse().getBodyAsStringDecoded();
-        assertTrue(exc.getResponse().isXML());
-
-        assertEquals("Catastrophe!", xPath(body, "/problem-details/title"));
-        assertEquals("https://membrane-api.io/problems/user/atomic", xPath(body, "/problem-details/type"));
-        assertEquals("7", xPath(body, "/problem-details/foo"));
-        assertTrue(xPath(body, "/problem-details/attention").contains("development mode"));
     }
 
     private static String xPath(String body, String expression) throws XPathExpressionException {
@@ -205,5 +283,9 @@ public class ProblemDetailsTest {
         public Exception generate() {
             return new RuntimeException("inner");
         }
+    }
+
+    private static JsonNode parseJson(Response r) throws Exception {
+        return om.readTree(r.getBodyAsStringDecoded());
     }
 }

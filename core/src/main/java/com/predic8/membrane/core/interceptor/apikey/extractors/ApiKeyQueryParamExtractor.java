@@ -26,6 +26,23 @@ import static com.predic8.membrane.core.util.URLParamUtil.*;
 import static java.lang.String.*;
 import static java.util.Optional.*;
 
+/**
+ * @description Extracts an API key from a URL query parameter. By default, the parameter name
+ * is {@code api-key}. If the parameter is present in the request URI, its value is returned as the API key.
+ * Parameter name matching is case-insensitive.
+ * <p>
+ * Example usage inside {@code &lt;apiKey&gt;}:
+ * </p>
+ * <pre>
+ * &lt;apiKey&gt;
+ *   &lt;queryParamExtractor /&gt; <!-- default: api-key -->
+ *
+ *   &lt;!-- custom parameter name --&gt;
+ *   &lt;queryParamExtractor name="api_key"/&gt;
+ * &lt;/apiKey&gt;
+ * </pre>
+ * @topic 3. Security and Validation
+ */
 @MCElement(name="queryParamExtractor", topLevel = false)
 public class ApiKeyQueryParamExtractor implements ApiKeyExtractor{
 
@@ -51,6 +68,11 @@ public class ApiKeyQueryParamExtractor implements ApiKeyExtractor{
         return empty();
     }
 
+    /**
+     * @description The query parameter name to check for an API key.
+     * @default api-key
+     * @example api_key
+     */
     @MCAttribute(attributeName = "name")
     public void setParamName(String paramName) {
         this.paramName = paramName;
