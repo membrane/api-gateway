@@ -29,7 +29,6 @@ import java.util.concurrent.ConcurrentHashMap.KeySetView;
 import java.util.concurrent.atomic.*;
 
 import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
-import static java.lang.Boolean.*;
 import static java.lang.System.*;
 
 public class HttpEndpointListener extends Thread {
@@ -254,7 +253,7 @@ public class HttpEndpointListener extends Thread {
         else {
             log.warn("Limit of {} concurrent connections per client is reached.", transport.getConcurrentConnectionLimitPerIp());
             user(false,"http-endpoint-listener")
-                    .statusCode(429)
+                    .status(429)
                     .addSubType("rate-limit")
                     .title("Limit of concurrent connections per client is reached.")
                     .detail("There is a limit of concurrent connections per client to avoid denial of service attacks.")

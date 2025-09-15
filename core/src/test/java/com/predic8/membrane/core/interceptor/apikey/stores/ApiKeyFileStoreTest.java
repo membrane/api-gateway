@@ -13,28 +13,24 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.apikey.stores;
 
-import com.predic8.membrane.core.Router;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import com.predic8.membrane.core.*;
+import org.junit.jupiter.api.*;
 
-import java.util.AbstractMap.SimpleEntry;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Optional;
-import java.util.stream.Stream;
+import java.util.AbstractMap.*;
+import java.util.*;
+import java.util.stream.*;
 
-import static com.predic8.membrane.core.interceptor.apikey.stores.ApiKeyFileStore.parseLine;
-import static java.util.List.of;
-import static java.util.Objects.requireNonNull;
+import static com.predic8.membrane.core.interceptor.apikey.stores.ApiKeyFileStore.*;
+import static java.util.Objects.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class ApiKeyFileStoreTest {
 
-    private static final HashMap<String, Optional<List<String>>> EXPECTED_API_KEYS = new HashMap<>() {{
-        put("5XF27", Optional.of(List.of("finance", "internal")));
-        put("73D29", Optional.of(List.of("accounting", "management")));
-        put("89D5C", Optional.of(List.of("internal")));
-        put("NMB3B", Optional.of(List.of("demo", "test")));
+    private static final HashMap<String, Optional<Set<String>>> EXPECTED_API_KEYS = new HashMap<>() {{
+        put("5XF27", Optional.of(Set.of("finance", "internal")));
+        put("73D29", Optional.of(Set.of("accounting", "management")));
+        put("89D5C", Optional.of(Set.of("internal")));
+        put("NMB3B", Optional.of(Set.of("demo", "test")));
         put("L62NA", Optional.empty());
         put("G62NB", Optional.empty());
     }};
@@ -65,7 +61,7 @@ public class ApiKeyFileStoreTest {
 
     @Test
     void getScope() throws UnauthorizedApiKeyException {
-        assertEquals(Optional.of(of("finance", "internal")), store.getScopes("5XF27"));
+        assertEquals(Optional.of(Set.of("finance", "internal")), store.getScopes("5XF27"));
     }
 
     @Test
@@ -89,17 +85,17 @@ public class ApiKeyFileStoreTest {
 
     @Test
     void parseLineTest() {
-        assertEquals(new SimpleEntry<>("5XF27", Optional.of(of("finance", "internal"))), parseLine("5XF27: finance , internal "));
-        assertEquals(new SimpleEntry<>("89D5C", Optional.of(of("internal"))), parseLine("89D5C: internal,"));
+        assertEquals(new SimpleEntry<>("5XF27", Optional.of(Set.of("finance", "internal"))), parseLine("5XF27: finance , internal "));
+        assertEquals(new SimpleEntry<>("89D5C", Optional.of(Set.of("internal"))), parseLine("89D5C: internal,"));
         assertEquals(new SimpleEntry<>("L62NA", Optional.empty()), parseLine("L62NA"));
         assertEquals(new SimpleEntry<>("L62NA", Optional.empty()), parseLine("L62NA: "));
     }
 
     @Test
     void parseValues() {
-        assertEquals(of(""), ApiKeyFileStore.parseValues(""));
-        assertEquals(of("foo", "bar"), ApiKeyFileStore.parseValues(" foo, bar "));
-        assertEquals(of("foo", "bar"), ApiKeyFileStore.parseValues(" foo, bar ,"));
+        assertEquals(Set.of(""), ApiKeyFileStore.parseValues(""));
+        assertEquals(Set.of("foo", "bar"), ApiKeyFileStore.parseValues(" foo, bar "));
+        assertEquals(Set.of("foo", "bar"), ApiKeyFileStore.parseValues(" foo, bar ,"));
     }
 
     private static void loadFromFile(ApiKeyFileStore store, String path) {

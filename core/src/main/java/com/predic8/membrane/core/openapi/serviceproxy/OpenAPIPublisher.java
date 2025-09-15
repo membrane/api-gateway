@@ -67,7 +67,7 @@ public class OpenAPIPublisher {
             user(false,"openapi-publisher")
                     .title("No OpenAPI document id")
                     .addSubType("openapi")
-                    .statusCode(404)
+                    .status(404)
                     .addSubSee("wrong-id")
                     .detail("Please specify an id of an OpenAPI document. Path should match this pattern: /api-docs/ui/<<id>>")
                     .buildAndSetResponse(exc);
@@ -125,7 +125,7 @@ public class OpenAPIPublisher {
         // Do not log. Too common.
         user(false,"openapi-publisher")
                 .title("OpenAPI not found.")
-                .statusCode(404)
+                .status(404)
                 .addSubType("openapi")
                 .addSubSee("wrong-id")
                 .detail("OpenAPI document with the id %s not found.".formatted(id))
