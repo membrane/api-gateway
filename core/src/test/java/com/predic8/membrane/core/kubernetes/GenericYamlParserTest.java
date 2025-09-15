@@ -1,8 +1,10 @@
 package com.predic8.membrane.core.kubernetes;
 
 import com.predic8.membrane.core.interceptor.Interceptor;
+import com.predic8.membrane.core.interceptor.balancer.LoadBalancingInterceptor;
 import com.predic8.membrane.core.interceptor.beautifier.BeautifierInterceptor;
 import com.predic8.membrane.core.interceptor.flow.ResponseInterceptor;
+import com.predic8.membrane.core.interceptor.lang.SetCookiesInterceptor;
 import com.predic8.membrane.core.interceptor.log.LogInterceptor;
 import com.predic8.membrane.core.interceptor.ratelimit.RateLimitInterceptor;
 import com.predic8.membrane.core.interceptor.rewrite.RewriteInterceptor;
@@ -103,6 +105,34 @@ class GenericYamlParserMembraneTest {
         assertEquals(1, api.getSpecs().size());
         assertEquals("fruitshop-api.yml", api.getSpecs().getFirst().getLocation());
         assertEquals(YES, api.getSpecs().getFirst().getValidateRequests());
+    }
+
+    @Test
+    void parseTypes() {
+        String yaml = """
+          port: 8080
+          interceptors:
+            - balancer:
+                sessionTimeout: 10000
+            - setCookies:
+                cookies:
+                  - cookie:
+                      name: foo
+                      value: bar
+                      secure: false
+        """;
+
+        APIProxy api = GenericYamlParser.parse("api", APIProxy.class, events(yaml),null);
+
+        LoadBalancingInterceptor lb = (LoadBalancingInterceptor) api.getInterceptors().getFirst();
+        assertInstanceOf(Long.class, lb.getSessionTimeout());
+        assertEquals(10000, lb.getSessionTimeout());
+
+        SetCookiesInterceptor sc = (SetCookiesInterceptor) api.getInterceptors().get(1);
+        assertEquals("foo", sc.getCookies().getFirst().getName());
+        assertEquals("bar", sc.getCookies().getFirst().getValue());
+        assertInstanceOf(Boolean.class, sc.getCookies().getFirst().isSecure());
+        assertFalse(sc.getCookies().getFirst().isSecure());
     }
 
     @Test
