@@ -1,16 +1,21 @@
 package com.predic8.membrane.core.kubernetes;
 
 import com.predic8.membrane.core.interceptor.Interceptor;
+import com.predic8.membrane.core.interceptor.authentication.BasicAuthenticationInterceptor;
+import com.predic8.membrane.core.interceptor.authentication.session.StaticUserDataProvider;
 import com.predic8.membrane.core.interceptor.balancer.LoadBalancingInterceptor;
 import com.predic8.membrane.core.interceptor.beautifier.BeautifierInterceptor;
 import com.predic8.membrane.core.interceptor.flow.ResponseInterceptor;
 import com.predic8.membrane.core.interceptor.lang.SetCookiesInterceptor;
 import com.predic8.membrane.core.interceptor.log.LogInterceptor;
+import com.predic8.membrane.core.interceptor.oauth2client.MemcachedOriginalExchangeStore;
+import com.predic8.membrane.core.interceptor.oauth2client.OAuth2Resource2Interceptor;
 import com.predic8.membrane.core.interceptor.ratelimit.RateLimitInterceptor;
 import com.predic8.membrane.core.interceptor.rewrite.RewriteInterceptor;
 import com.predic8.membrane.core.interceptor.xml.Xml2JsonInterceptor;
 import com.predic8.membrane.core.openapi.serviceproxy.APIProxy;
 import com.predic8.membrane.core.proxies.AbstractServiceProxy;
+import com.predic8.membrane.core.util.MemcachedConnector;
 import org.junit.jupiter.api.Test;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.events.*;
@@ -133,6 +138,54 @@ class GenericYamlParserMembraneTest {
         assertEquals("bar", sc.getCookies().getFirst().getValue());
         assertInstanceOf(Boolean.class, sc.getCookies().getFirst().isSecure());
         assertFalse(sc.getCookies().getFirst().isSecure());
+    }
+
+    @Test
+    void mcOtherAttributes() {
+        String yaml = """
+          port: 8080
+          interceptors:
+            - basicAuthentication:
+                staticUserDataProvider:
+                  users:
+                    - user:
+                        username: foo
+                        password: bar
+                        "a1": "t1"
+                        "a2": "t2"
+        """;
+
+        APIProxy api = GenericYamlParser.parse("api", APIProxy.class, events(yaml),null);
+
+        BasicAuthenticationInterceptor ba = (BasicAuthenticationInterceptor) api.getInterceptors().getFirst();
+        StaticUserDataProvider.User user = ba.getUsers().getFirst();
+        assertInstanceOf(Map.class, user.getAttributes());
+        assertEquals(Map.of("a1", "t1", "a2", "t2", "password", "bar", "username", "foo"), user.getAttributes());
+    }
+
+    @Test
+    void mcAttributeParam() {
+        MemcachedConnector memcachedConnector = new MemcachedConnector();
+        memcachedConnector.setHost("localhost");
+        memcachedConnector.setPort(3000);
+
+        TestRegistry reg = new TestRegistry().with("mem", memcachedConnector);
+
+        String yaml = """
+          port: 8080
+          interceptors:
+            - oauth2Resource2:
+                memcachedOriginalExchangeStore:
+                  connector: mem
+                membrane:
+                  src: https://localhost/oauth2/
+        """;
+
+        APIProxy api = GenericYamlParser.parse("api", APIProxy.class, events(yaml),reg);
+        OAuth2Resource2Interceptor resource2Interceptor = (OAuth2Resource2Interceptor) api.getInterceptors().getFirst();
+
+        MemcachedOriginalExchangeStore originalExchangeStore = (MemcachedOriginalExchangeStore)  resource2Interceptor.getOriginalExchangeStore();
+        assertSame(memcachedConnector, originalExchangeStore.getConnector());
     }
 
     @Test
