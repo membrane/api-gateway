@@ -1,7 +1,7 @@
-apiVersion: membrane-soa.org/v1beta1
-kind: api
-metadata:
-  name: Fruitshop
+#apiVersion: membrane-soa.org/v1beta1
+#kind: api
+#metadata:
+#  name: Fruitshop
 spec:
   port: 2000
   specs:
@@ -11,8 +11,8 @@ spec:
 
 ---
 
-apiVersion: membrane-soa.org/v1beta1
-kind: api
+#apiVersion: membrane-soa.org/v1beta1
+#kind: api
 metadata:
   name: api-rewrite
 spec:

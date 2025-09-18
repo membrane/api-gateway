@@ -81,33 +81,39 @@ public class GenericYamlParser {
     private static Object resolveSetterValue(Class<?> wanted, Method setter, String context, Iterator<Event> events, BeanRegistry registry, String key, Class clazz2, Event event) {
         if (wanted.equals(List.class) || wanted.equals(Enumeration.class)) {
             return parseList(context, events, registry);
-        } else if (wanted.isEnum()) {
+        }
+        if (wanted.isEnum()) {
            return Enum.valueOf((Class<Enum>) wanted, readString(events).toUpperCase(Locale.ROOT));
-        } else if (wanted.equals(String.class)) {
+        }
+        if (wanted.equals(String.class)) {
             return readString(events);
-        } else if (wanted.equals(Integer.TYPE)) {
+        }
+        if (wanted.equals(Integer.TYPE)) {
             return Integer.parseInt(readString(events));
-        } else if (wanted.equals(Long.TYPE)) {
+        }
+        if (wanted.equals(Long.TYPE)) {
             return Long.parseLong(readString(events));
-        } else if (wanted.equals(Boolean.TYPE)) {
+        }
+        if (wanted.equals(Boolean.TYPE)) {
             return Boolean.parseBoolean(readString(events));
-        } else if (wanted.equals(Map.class) && findAnnotation(setter, MCOtherAttributes.class) != null) {
+        }
+        if (wanted.equals(Map.class) && findAnnotation(setter, MCOtherAttributes.class) != null) {
             return ImmutableMap.of(key, readString(events));
-        } else if (isStructured(setter)) {
+        }
+        if (isStructured(setter)) {
             if (clazz2 != null)
                 return parseMapToObj(context, events, event, registry);
             else
                return parse(context, wanted, events, registry);
-        } else if (findAnnotation(setter, MCAttribute.class) != null && findAnnotation(setter.getParameterTypes()[0], MCElement.class) != null) {
-            return registry.resolveReference(readString(events));
-        } else {
-            throw new RuntimeException("Not implemented setter type " + wanted);
         }
+        if (findAnnotation(setter, MCAttribute.class) != null && findAnnotation(setter.getParameterTypes()[0], MCElement.class) != null) {
+            return registry.resolveReference(readString(events));
+        }
+        throw new RuntimeException("Not implemented setter type " + wanted);
     }
 
     private static <T> void handleTopLevelRefs(Class<T> clazz, Iterator<Event> events, BeanRegistry registry, T obj) throws InvocationTargetException, IllegalAccessException {
-        Event event;
-        event = events.next();
+        Event event = events.next();
         if (!(event instanceof ScalarEvent))
             throw new IllegalStateException("Expected a string after the '$ref' key.");
         Object o = registry.resolveReference(((ScalarEvent) event).getValue());

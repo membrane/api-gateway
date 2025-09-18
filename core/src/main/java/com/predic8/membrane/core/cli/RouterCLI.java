@@ -167,14 +167,21 @@ public class RouterCLI {
 
         YAMLParser parser = new YAMLFactory().createParser(new File(location));
         var om = new ObjectMapper();
+        int count = 0;
         while (!parser.isClosed()) {
             Map<?, ?> m = om.readValue(parser, Map.class);
             Map<Object, Object> meta = (Map<Object, Object>) m.get("metadata");
 
-            // TODO generate name, if it doesnt exist
-            // fake UID
-            meta.put("uid", location + "-" + meta.get("name")); // TODO random UUID in case the name is null
-
+            if (meta == null) {
+                // generate name, if it doesnt exist
+                meta = new HashMap<>();
+                ((Map<Object, Object>)m).put("metadata", meta);
+                meta.put("name", "artifact" + ++count);
+                meta.put("uid", UUID.randomUUID().toString());
+            } else {
+                // fake UID
+                meta.put("uid", location + "-" + meta.get("name"));
+            }
 
             beanCache.handle(WatchAction.ADDED, m);
             parser.nextToken();
