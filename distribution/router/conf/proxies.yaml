@@ -1,0 +1,83 @@
+#apiVersion: membrane-soa.org/v1beta1
+#kind: api
+#metadata:
+#  name: Fruitshop
+spec:
+  port: 2000
+  specs:
+    - openapi:
+        location: fruitshop-api.yml
+        validateRequests: "yes"
+
+---
+
+#apiVersion: membrane-soa.org/v1beta1
+#kind: api
+metadata:
+  name: api-rewrite
+spec:
+  port: 2000
+  path:
+    value: /names
+  interceptors:
+    - rateLimiter:
+        requestLimit: 3
+        requestLimitDuration: PT30S
+    - rewriter:
+        mappings:
+          - map:
+              from: ^/names/(.*)
+              to: /restnames/name\.groovy\?name=$1
+    - response:
+        interceptors:
+          - beautifier: {}
+          - xml2Json: {}
+          - log: {}
+  target:
+    url: https://api.predic8.de
+
+---
+
+apiVersion: membrane-soa.org/v1beta1
+kind: api
+metadata:
+  name: header
+spec:
+  port: 2000
+  path:
+    value: /header
+  interceptors:
+    - request:
+        interceptors:
+          - groovy:
+              src: |
+                println "Request headers:"
+                header.allHeaderFields.each { println it }
+                CONTINUE
+          - template:
+              contentType: application/json
+              textTemplate: '{ "ok": 1 }'
+          - return:
+              statusCode: 200
+
+---
+
+apiVersion: membrane-soa.org/v1beta1
+kind: api
+metadata:
+  name: api
+spec:
+  port: 2000
+  target:
+    url: https://api.predic8.de
+
+---
+
+apiVersion: membrane-soa.org/v1beta1
+kind: api
+metadata:
+  name: admin
+spec:
+  port: 9000
+  interceptors:
+    - adminConsole: {}
