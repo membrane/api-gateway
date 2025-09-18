@@ -51,12 +51,8 @@ public class ExceptionInterceptorTest extends AbstractSecurityValidatorTest {
     }
 
     @Test
-    void paramWithNoType() throws Exception {
-        Exchange exc = getExchange("/param-with-no-type?bar=7", null);
-        assertEquals(RETURN, interceptor.handleRequest(exc));
-        assertEquals(500,exc.getResponse().getStatusCode());
-        JsonNode json = om.readTree(exc.getResponse().getBodyAsStream());
-        assertEquals("https://membrane-api.io/problems/internal",json.get("type").asText());
+    void paramWithNoSchema() throws Exception {
+        assertEquals(CONTINUE, interceptor.handleRequest(getExchange("/param-with-no-type?bar=7", null)));
     }
 
     @Test

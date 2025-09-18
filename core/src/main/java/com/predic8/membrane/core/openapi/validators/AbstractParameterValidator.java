@@ -18,37 +18,35 @@ package com.predic8.membrane.core.openapi.validators;
 
 import com.predic8.membrane.core.openapi.validators.ValidationContext.*;
 import io.swagger.v3.oas.models.*;
+import io.swagger.v3.oas.models.media.*;
 import io.swagger.v3.oas.models.parameters.*;
 
 import java.util.*;
 import java.util.stream.*;
 
+import static com.predic8.membrane.core.openapi.util.Utils.*;
 import static com.predic8.membrane.core.util.CollectionsUtil.*;
-import static java.lang.String.*;
 
 public abstract class AbstractParameterValidator {
+
     final OpenAPI api;
     final PathItem pathItem;
 
-    public AbstractParameterValidator(OpenAPI api, PathItem pathItem) {
+    protected AbstractParameterValidator(OpenAPI api, PathItem pathItem) {
         this.api = api;
         this.pathItem = pathItem;
     }
 
-    public Stream<Parameter> getParametersOfType(Operation operation, Class<?> paramClazz) {
+    protected Stream<Parameter> getParametersOfType(Operation operation, Class<?> paramClazz) {
         return getAllParameterSchemas(operation).stream().filter(p -> isTypeOf(p, paramClazz));
     }
 
-    public List<Parameter> getAllParameterSchemas(Operation operation) {
+    protected List<Parameter> getAllParameterSchemas(Operation operation) {
         return concat(pathItem.getParameters(), operation.getParameters());
     }
 
     boolean isTypeOf(Parameter p, Class<?> clazz) {
         return p.getClass().equals(clazz);
-    }
-
-    public ValidationErrors getValidationErrors(ValidationContext ctx, Map<String, String> parameters, Parameter param, ValidatedEntityType type) {
-        return validateParameter(getCtx(ctx, param, type), parameters, param, type);
     }
 
     private static ValidationContext getCtx(ValidationContext ctx, Parameter param, ValidatedEntityType type) {
@@ -57,19 +55,15 @@ public abstract class AbstractParameterValidator {
                 .statusCode(400);
     }
 
-    public ValidationErrors validateParameter(ValidationContext ctx, Map<String, String> params, Parameter param, ValidatedEntityType type) {
-        ValidationErrors errors = new ValidationErrors();
-        String value = params.get(param.getName());
-
-        if (value != null) {
-            errors.add(new SchemaValidator(api, param.getSchema()).validate(ctx
-                            .statusCode(400)
-                            .entity(param.getName())
-                            .entityType(type)
-                    , value));
-        } else if (param.getRequired()) {
-            errors.add(ctx, format("Missing required %s %s.", type.name, param.getName()));
+    protected Schema getSchema(Parameter p) {
+        Schema schema = p.getSchema();
+        if (schema == null) {
+            return null;
         }
-        return errors;
+        if(schema.get$ref() != null) {
+            String componentLocalNameFromRef = getComponentLocalNameFromRef(schema.get$ref());
+            return  api.getComponents().getSchemas().get(componentLocalNameFromRef);
+        }
+        return schema;
     }
 }

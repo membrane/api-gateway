@@ -50,6 +50,10 @@ public class CollectionsUtil {
         return String.join(", ", l);
     }
 
+    public static @NotNull String join(Set<String> s) {
+        return join(new ArrayList<>(s));
+    }
+
     /**
      * @param it Iterator
      * @return Number of items that Iterator provides

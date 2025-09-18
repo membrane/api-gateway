@@ -1,0 +1,66 @@
+openapi: 3.1.0
+info:
+  title: Simple Parameters API
+  version: "1.0.0"
+
+paths:
+  /array:
+    get:
+      parameters:
+        - name: number
+          in: query
+          explode: true
+          schema:
+            $ref: "#/components/schemas/Numbers"
+        - name: string
+          description: String param
+          in: query
+          explode: true
+          schema:
+            type: array
+            items:
+              type: string
+        - name: bool
+          in: query
+          explode: true
+          schema:
+            $ref: "#/components/schemas/Booleans"
+        - name: other # To test if it is ignored!
+          in: header
+      responses:
+        "200":
+          description: OK
+  /required:
+    parameters:
+      - name: foo
+        in: query
+        required: true
+      - name: bar
+        in: query
+        required: false
+      - name: baz
+        in: query
+    get:
+      parameters:
+        - name: zap
+          in: query
+          required: true
+        - name: pap
+          in: query
+          required: false
+        - name: rap
+          in: query
+      responses:
+        '200':
+          description: Ok
+
+components:
+  schemas:
+    Numbers:
+      type: array
+      items:
+        type: number
+    Booleans:
+      type: array
+      items:
+        type: boolean

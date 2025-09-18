@@ -71,4 +71,8 @@ public class OpenAPIUtil {
     public static boolean isOpenAPIMisplacedError(String errorMsg) {
         return errorMsg.matches("(?i).*invalid.+element.+http://membrane-soa.org/proxies/1/\":openapi.*'\\..*");
     }
+
+    public static PathItem getPath(OpenAPI api, String path) {
+        return api.getPaths().get(path);
+    }
 }
