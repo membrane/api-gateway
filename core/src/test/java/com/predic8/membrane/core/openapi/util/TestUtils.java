@@ -47,7 +47,10 @@ public class TestUtils {
      * @throws IOException Can not read resource
      */
     public static JsonNode getYAMLResource(Object thisObj, String path) throws IOException {
-        return omYaml.readTree(getResourceAsStream(thisObj, path));
+        try (InputStream is = getResourceAsStream(thisObj, path)) {
+            if (is == null) throw new FileNotFoundException("Resource not found: " + path);
+            return omYaml.readTree(is);
+        }
     }
 
     public static OpenAPI parseOpenAPI(InputStream is) {

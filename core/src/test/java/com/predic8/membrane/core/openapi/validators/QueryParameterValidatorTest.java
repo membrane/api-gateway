@@ -32,6 +32,10 @@ class QueryParameterValidatorTest extends AbstractValidatorTest {
 
     QueryParameterValidator queryParameterValidator;
 
+    private static boolean operationHasParamWithName(Operation get, String name) {
+        return get.getParameters().stream().anyMatch(param -> param.getName().equals(name));
+    }
+
     @Override
     protected String getOpenAPIFileName() {
         return "/openapi/specs/query-params.yml";
@@ -69,10 +73,6 @@ class QueryParameterValidatorTest extends AbstractValidatorTest {
         assertTrue(operationHasParamWithName(get, "bar"));
     }
 
-    private static boolean operationHasParamWithName(Operation get, String name) {
-        return get.getParameters().stream().anyMatch(param -> param.getName().equals(name));
-    }
-
     @Test
     void validateAdditionalQueryParametersValid() {
         assertTrue(queryParameterValidator.validateAdditionalQueryParameters(
@@ -108,7 +108,7 @@ class QueryParameterValidatorTest extends AbstractValidatorTest {
 
     @Test
     void getQueryString() {
-        assertEquals("bar=1",QueryParameterValidator.getQueryString(Request.get().path("/foo?bar=1")));
+        assertEquals("bar=1", QueryParameterValidator.getQueryString(Request.get().path("/foo?bar=1")));
     }
 
     @Nested
@@ -127,6 +127,13 @@ class QueryParameterValidatorTest extends AbstractValidatorTest {
             PathItem pathItem = getPathItem("/array");
             QueryParameterValidator qpv = new QueryParameterValidator(null, pathItem);
             assertEquals("String param", qpv.getQueryParameter(pathItem, pathItem.getGet(), "string").getDescription());
+        }
+
+        @Test
+        void get_QueryParameter_Absent_ReturnsNull() {
+            PathItem pathItem = getPathItem("/array");
+            QueryParameterValidator qpv = new QueryParameterValidator(null, pathItem);
+            assertNull(qpv.getQueryParameter(pathItem, pathItem.getGet(), "absent"));
         }
 
         private PathItem getPathItem(String path) {

@@ -19,12 +19,14 @@ package com.predic8.membrane.core.openapi.validators;
 import io.swagger.v3.oas.models.*;
 import io.swagger.v3.oas.models.media.*;
 import io.swagger.v3.oas.models.parameters.*;
+import org.jetbrains.annotations.*;
 
 import java.util.*;
 import java.util.stream.*;
 
 import static com.predic8.membrane.core.openapi.util.Utils.*;
-import static java.util.Optional.ofNullable;
+import static java.util.Locale.ROOT;
+import static java.util.Optional.*;
 
 public abstract class AbstractParameterValidator {
 
@@ -43,6 +45,7 @@ public abstract class AbstractParameterValidator {
     /**
      * Operation level parameters are overwriting parameters on the path level. But only
      * If in like query or header is the same.
+     *
      * @param operation
      * @return
      */
@@ -59,9 +62,16 @@ public abstract class AbstractParameterValidator {
         // path-level first, then operation-level to override
         Stream.concat(pathParams.stream(), opParams.stream())
                 .filter(Objects::nonNull)
-                .forEach(p -> byKey.put(p.getName() + "|" + p.getIn(), p));
-
+                .forEach(p -> byKey.put(getParameterKey(p), p));
         return new ArrayList<>(byKey.values());
+    }
+
+    private static @NotNull String getParameterKey(Parameter p) {
+        return p.getName() + "|" + getInNormalized(p);
+    }
+
+    private static @NotNull String getInNormalized(Parameter p) {
+        return p.getIn() == null ? "" : p.getIn().toLowerCase(ROOT);
     }
 
     boolean isTypeOf(Parameter p, Class<?> clazz) {
