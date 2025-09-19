@@ -1,0 +1,19 @@
+openapi: 3.1.0
+info:
+  title: Simple Parameters API
+  version: "1.0.0"
+
+paths:
+  /array:
+    get:
+      parameters:
+        - name: number
+          in: query
+          explode: true
+          schema:
+            type: array
+            items:
+              type: [number, "null"]
+      responses:
+        "200":
+          description: Ok

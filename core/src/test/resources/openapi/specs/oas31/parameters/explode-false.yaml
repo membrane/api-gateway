@@ -1,0 +1,40 @@
+openapi: 3.1.0
+info:
+  title: Simple Parameters API
+  version: "1.0.0"
+
+paths:
+  /array:
+    get:
+      parameters:
+        - name: number
+          in: query
+          explode: false
+          schema:
+            $ref: "#/components/schemas/Numbers"
+        - name: string
+          in: query
+          explode: false
+          schema:
+            type: array
+            items:
+              type: string
+        - name: bool
+          in: query
+          explode: false
+          schema:
+            $ref: "#/components/schemas/Booleans"
+      responses:
+        "200":
+          description: OK
+
+components:
+  schemas:
+    Numbers:
+      type: [array,"null"]
+      items:
+        type: number
+    Booleans:
+      type: array
+      items:
+        type: boolean
