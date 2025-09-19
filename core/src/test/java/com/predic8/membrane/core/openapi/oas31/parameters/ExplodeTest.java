@@ -31,4 +31,10 @@ public class ExplodeTest {
         ValidationErrors err = validator.validate(get().path("/search?a=b&a=c"));
         assertEquals(0,err.size());
     }
+
+    @Test
+    void unknownParamIsRejected() {
+        ValidationErrors err = validator.validate(get().path("/search?unknown=1"));
+        assertTrue(err.size() > 0, "Unknown query parameter should be reported");
+    }
 }

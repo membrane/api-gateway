@@ -32,7 +32,7 @@ import java.util.concurrent.atomic.*;
 import java.util.regex.*;
 
 import static com.predic8.membrane.core.openapi.validators.ValidationContext.ValidatedEntityType.*;
-import static com.predic8.membrane.core.util.CollectionsUtil.join;
+import static com.predic8.membrane.core.util.CollectionsUtil.*;
 import static io.swagger.v3.oas.models.security.SecurityScheme.In.*;
 import static io.swagger.v3.oas.models.security.SecurityScheme.Type.*;
 import static java.net.URLDecoder.*;
@@ -48,23 +48,35 @@ public class QueryParameterValidator extends AbstractParameterValidator {
         super(api, pathItem);
     }
 
+    @NotNull Set<String> getRequiredQueryParameters(PathItem pathItem, Operation operation) {
+        Set<Parameter> parameters = getQueryParameters(pathItem, operation);
+        if (parameters == null) {
+            return emptySet();
+        }
+        return parameters.stream()
+                .filter(Parameter::getRequired).map(Parameter::getName).collect(toSet());
+    }
+
+    static String getQueryString(Request<?> request) {
+        return (new URIFactory().createWithoutException(request.getPath())).getQuery();
+    }
+
     /**
      * Not only GET can have query parameters! Strange, but true!
      * e.g. POST /users?dryRun=true
-     *
      */
-    ValidationErrors validateQueryParameters(ValidationContext ctx, Request<?> request, PathItem pathItem, Operation operation) {
+    ValidationErrors validateQueryParameters(ValidationContext ctx, Request<?> request, Operation operation) {
 
-        Set<String> required = getRequiredQueryParameters( pathItem,operation);
+        Set<String> required = getRequiredQueryParameters(pathItem, operation);
 
         ValidationErrors errors = new ValidationErrors();
 
-        Map<String, Set<String>> parameterMap = getParameterMapFromQuery(getQueryString(request));
+        Map<String, List<String>> parameterMap = getParameterMapFromQuery(getQueryString(request));
 
         parameterMap.forEach((parameterName, v) -> {
             required.remove(parameterName);
 
-            Parameter parameter = getQueryParameter(pathItem,operation, parameterName);
+            Parameter parameter = getQueryParameter(pathItem, operation, parameterName);
             if (parameter == null) {
                 errors.add(ctx.entityType(QUERY_PARAMETER), "Query parameter '" + parameterName + "' is invalid!");
                 return;
@@ -78,19 +90,19 @@ public class QueryParameterValidator extends AbstractParameterValidator {
         });
 
         if (!required.isEmpty()) {
-            errors.add(ctx.entityType(QUERY_PARAMETER), "Required query parameter(s) '%s' missing.".formatted( join(required)));
+            errors.add(ctx.entityType(QUERY_PARAMETER), "Required query parameter(s) '%s' missing.".formatted(join(required)));
         }
         return errors;
     }
 
-    private ValidationErrors validate(ValidationContext ctx, String parameterName, Set<String> v, Schema schema, Parameter parameter) {
+    private ValidationErrors validate(ValidationContext ctx, String parameterName, List<String> v, Schema schema, Parameter parameter) {
         ValidationErrors errors = new ValidationErrors();
         ValidationErrors localErrors = new ValidationErrors();
         AtomicBoolean validated = new AtomicBoolean();
         // Try all e.g. type: [array, null]
         Set<String> types = schema.getTypes();
         types.forEach(type -> {
-            AbstractParameter ap = AbstractParameter.instance(schema, parameter).iterator().next();
+            AbstractParameter ap = AbstractParameter.instance(type, parameter);
             ap.addAllValues(v);
             try {
                 ValidationErrors err = new SchemaValidator(api, schema).validate(ctx
@@ -111,76 +123,58 @@ public class QueryParameterValidator extends AbstractParameterValidator {
             if (types.size() == 1) {
                 return errors.add(localErrors);
             }
-            return errors.add(ctx, "Validation of query parameter '%s' failed against all types(%s). Details are: %s".formatted( parameterName, types, localErrors ));
-
+            return errors.add(ctx, "Validation of query parameter '%s' failed against all types(%s). Details are: %s".formatted(parameterName, types, localErrors));
         }
         return errors;
     }
 
-    static @NotNull Set<String> getRequiredQueryParameters(PathItem pathItem, Operation operation) {
-        Set<Parameter> parameters = getQueryParameters(pathItem,operation);
-        if (parameters == null) {
-            return emptySet();
-        }
-        return parameters.stream()
-                .filter(p -> p.getRequired()).map(Parameter::getName).collect(toSet());
-    }
-
-    private static String getQueryString(Request<?> request) {
-        return (new URIFactory().createWithoutException(request.getPath())).getQuery();
-    }
-
     ValidationErrors validateAdditionalQueryParameters(ValidationContext ctx, Map<String, JsonNode> qparams, OpenAPI api) {
-        securitySchemeApiKeyQueryParamNames(api).forEach(qparams::remove);
+            Set<String> allowList = new HashSet<>(securitySchemeApiKeyQueryParamNames(api));
+            Set<String> unsupported = qparams.keySet().stream()
+                    .filter(k -> !allowList.contains(k))
+                    .collect(toCollection(LinkedHashSet::new));
+            if (!unsupported.isEmpty()) {
+                return ValidationErrors.create(ctx.entityType(QUERY_PARAMETER),
+                        "There are query parameters that are not supported by the API: " + join(unsupported));
+            }
 
-        if (!qparams.isEmpty()) {
-            return ValidationErrors.create(ctx.entityType(QUERY_PARAMETER), "There are query parameters that are not supported by the API: " + qparams.keySet());
+            return ValidationErrors.empty();
         }
 
-        return ValidationErrors.empty();
-    }
+        public List<String> securitySchemeApiKeyQueryParamNames (OpenAPI api){
+            if (api.getComponents() == null || api.getComponents().getSecuritySchemes() == null)
+                return emptyList();
 
-    public List<String> securitySchemeApiKeyQueryParamNames(OpenAPI api) {
-        if (api.getComponents() == null || api.getComponents().getSecuritySchemes() == null)
-            return emptyList();
+            return api.getComponents().getSecuritySchemes().values().stream()
+                    .filter(scheme -> scheme != null && scheme.getType() != null && scheme.getType().equals(APIKEY) && scheme.getIn().equals(QUERY))
+                    .map(SecurityScheme::getName)
+                    .toList();
+        }
 
-        return api.getComponents().getSecuritySchemes().values().stream()
-                .filter(scheme -> scheme != null && scheme.getType() != null && scheme.getType().equals(APIKEY) && scheme.getIn().equals(QUERY))
-                .map(SecurityScheme::getName)
-                .toList();
-    }
-
-    private static @NotNull Map<String, Set<String>> getParameterMapFromQuery(String query) {
-        Map<String, Set<String>> parameterMap = new HashMap<>();
-        if (query == null) {
+        private static @NotNull Map<String, List<String>> getParameterMapFromQuery (String query){
+            Map<String, List<String>> parameterMap = new HashMap<>();
+            if (query == null) {
+                return parameterMap;
+            }
+            for (String p : query.split("&")) {
+                Matcher m = QUERY_PARAMS_PATTERN.matcher(p);
+                if (m.matches()) {
+                    String key = decode(m.group(1), UTF_8);
+                    String value = decode(m.group(2), UTF_8);
+                    List<String> ab = parameterMap.computeIfAbsent(key, k -> new ArrayList<>());
+                    ab.add(value);
+                }
+            }
             return parameterMap;
         }
-        for (String p : query.split("&")) {
-            Matcher m = QUERY_PARAMS_PATTERN.matcher(p);
-            if (m.matches()) {
-                String key = decode(m.group(1), UTF_8);
-                String value = decode(m.group(2), UTF_8);
-                Set<String> ab = parameterMap.computeIfAbsent(key, k -> new HashSet<>());
-                ab.add(value);
-            }
-        }
-        return parameterMap;
-    }
 
-    // TODO
-    static Parameter getQueryParameter(PathItem pathItem, Operation operation, String name) {
-        return getQueryParameters(pathItem, operation).stream().filter(p -> p.getName().equals(name)).findFirst().orElse(null);
-    }
-
-    static Set<Parameter> getQueryParameters(PathItem pathItem,Operation operation) {
-        Set<Parameter> parameters = new HashSet<>();
-        if (operation.getParameters() != null) {
-            parameters.addAll(operation.getParameters());
+        // TODO
+        Parameter getQueryParameter (PathItem pathItem, Operation operation, String name){
+            return getQueryParameters(pathItem, operation).stream().filter(p -> p.getName().equals(name)).findFirst().orElse(null);
         }
-        if (pathItem.getParameters() != null) {
-            parameters.addAll(pathItem.getParameters());
-        }
-        return parameters.stream().filter(p -> p instanceof QueryParameter).collect(toSet());
-    }
 
-}
+        Set<Parameter> getQueryParameters (PathItem pathItem, Operation operation){
+            return getAllParameter(operation).stream().filter(p -> p instanceof QueryParameter).collect(toSet());
+        }
+
+    }

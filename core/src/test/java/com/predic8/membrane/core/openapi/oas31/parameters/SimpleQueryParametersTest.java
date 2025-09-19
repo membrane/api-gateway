@@ -10,7 +10,7 @@ import static com.predic8.membrane.core.openapi.model.Request.*;
 import static com.predic8.membrane.core.openapi.util.TestUtils.*;
 import static org.junit.jupiter.api.Assertions.*;
 
-public class SimpleTest {
+public class SimpleQueryParametersTest {
 
     OpenAPIValidator validator;
 

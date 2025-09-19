@@ -49,7 +49,7 @@ public class OperationValidator {
         if (response == null) {
             validatePathParameters(ctx, req, operation.getParameters());
 
-            errors.add(new QueryParameterValidator(api,pathItem).validateQueryParameters(ctx, req, pathItem, operation));
+            errors.add(new QueryParameterValidator(api,pathItem).validateQueryParameters(ctx, req, operation));
             errors.add(new RequestHeaderParameterValidator(api,pathItem).validateHeaderParameters(ctx, req, operation));
             if (shouldValidate(api, SECURITY))
                 errors.add(new SecurityValidator(api).validateSecurity(ctx,req, operation));

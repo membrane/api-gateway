@@ -3,6 +3,8 @@ package com.predic8.membrane.core.openapi.validators.parameters;
 import com.fasterxml.jackson.databind.*;
 import org.junit.jupiter.api.*;
 
+import java.math.*;
+
 import static com.predic8.membrane.core.openapi.validators.parameters.AbstractParameter.asJson;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -29,17 +31,24 @@ class AbstractParameterTest {
     }
 
     @Test
-    void testLong() {
-        JsonNode node = asJson("1234567890123");
-        assertTrue(node.isLong());
-        assertEquals(1234567890123L, node.longValue());
+    void parseLong() {
+        JsonNode node = asJson("12345678901233333");
+        assertTrue(node.isBigInteger() );
+        assertEquals(new BigInteger("12345678901233333"), node.bigIntegerValue());
     }
 
     @Test
-    void testDouble() {
+    void parseDecimal() {
         JsonNode node = asJson("3.14");
-        assertTrue(node.isDouble());
+        assertTrue(node.isBigDecimal());
         assertEquals(3.14, node.doubleValue(), 0.0001);
+    }
+
+    @Test
+    void scientific() {
+        JsonNode node = asJson("3e4");
+        assertTrue(node.isBigDecimal());
+        assertEquals(3e4, node.doubleValue(), 0.0001);
     }
 
     @Test
@@ -48,4 +57,19 @@ class AbstractParameterTest {
         assertTrue(node.isTextual());
         assertEquals("foo", node.textValue());
     }
+
+    @Test
+    void explicitNull() {
+        JsonNode node = asJson("null");
+        assertTrue(node.isNull());
+    }
+
+    @Test
+    void emptyString() {
+        JsonNode node = asJson("");
+        assertTrue(node.isTextual());
+        assertEquals("", node.textValue());
+    }
+
+
 }

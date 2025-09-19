@@ -29,8 +29,13 @@ public class SimpleNullTest {
             @Test
             void number() {
                 ValidationErrors err = validator.validate(get().path("/array?number=1&number=2.2&number=null&number=3e4&number=-1&number=0"));
-                System.out.println("err = " + err);
                 assertEquals(0, err.size());
+            }
+
+            @Test
+            void emptyValueIsInvalid() {
+                ValidationErrors err = validator.validate(get().path("/array?number="));
+                assertTrue(err.size() > 0, "Empty value should not satisfy number|null");
             }
         }
     }

@@ -11,11 +11,11 @@ public class ArrayParameter extends AbstractParameter {
 
     @Override
     public JsonNode getJson() throws JsonProcessingException {
-        ArrayNode an = factory.arrayNode();
+        ArrayNode an = FACTORY.arrayNode();
         Stream<String> items = getItems();
         // e.g. foo=null
         if (items == null) {
-            return factory.missingNode();
+            return FACTORY.missingNode();
         }
         items.forEach(s -> an.add(asJson(s)));
         return an;
@@ -34,7 +34,7 @@ public class ArrayParameter extends AbstractParameter {
                 return null;
             }
             // foo= => foo: "" => Let assume an empty parameter is an empty array
-            if ("".equals(items[0])) {
+            if (items[0].isEmpty()) {
                 return Stream.empty();
             }
         }

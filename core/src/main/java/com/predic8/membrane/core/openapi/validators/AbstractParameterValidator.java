@@ -16,7 +16,6 @@
 
 package com.predic8.membrane.core.openapi.validators;
 
-import com.predic8.membrane.core.openapi.validators.ValidationContext.*;
 import io.swagger.v3.oas.models.*;
 import io.swagger.v3.oas.models.media.*;
 import io.swagger.v3.oas.models.parameters.*;
@@ -25,7 +24,7 @@ import java.util.*;
 import java.util.stream.*;
 
 import static com.predic8.membrane.core.openapi.util.Utils.*;
-import static com.predic8.membrane.core.util.CollectionsUtil.*;
+import static java.util.Optional.ofNullable;
 
 public abstract class AbstractParameterValidator {
 
@@ -38,31 +37,45 @@ public abstract class AbstractParameterValidator {
     }
 
     protected Stream<Parameter> getParametersOfType(Operation operation, Class<?> paramClazz) {
-        return getAllParameterSchemas(operation).stream().filter(p -> isTypeOf(p, paramClazz));
+        return getAllParameter(operation).stream().filter(p -> isTypeOf(p, paramClazz));
     }
 
-    protected List<Parameter> getAllParameterSchemas(Operation operation) {
-        return concat(pathItem.getParameters(), operation.getParameters());
+    /**
+     * Operation level parameters are overwriting parameters on the path level. But only
+     * If in like query or header is the same.
+     * @param operation
+     * @return
+     */
+    protected List<Parameter> getAllParameter(Operation operation) {
+        Objects.requireNonNull(operation, "operation must not be null");
+
+        List<Parameter> pathParams = ofNullable(pathItem.getParameters()).orElseGet(List::of);
+        List<Parameter> opParams = ofNullable(operation.getParameters()).orElseGet(List::of);
+
+        // Sample key set: [number|query, string|query, bool|query, other|header]
+        Map<String, Parameter> byKey = new LinkedHashMap<>();
+
+
+        // path-level first, then operation-level to override
+        Stream.concat(pathParams.stream(), opParams.stream())
+                .filter(Objects::nonNull)
+                .forEach(p -> byKey.put(p.getName() + "|" + p.getIn(), p));
+
+        return new ArrayList<>(byKey.values());
     }
 
     boolean isTypeOf(Parameter p, Class<?> clazz) {
-        return p.getClass().equals(clazz);
+        return clazz.isInstance(p);
     }
 
-    private static ValidationContext getCtx(ValidationContext ctx, Parameter param, ValidatedEntityType type) {
-        return ctx.entity(param.getName())
-                .entityType(type)
-                .statusCode(400);
-    }
-
-    protected Schema getSchema(Parameter p) {
-        Schema schema = p.getSchema();
+    protected Schema<?> getSchema(Parameter p) {
+        Schema<?> schema = p.getSchema();
         if (schema == null) {
             return null;
         }
-        if(schema.get$ref() != null) {
+        if (schema.get$ref() != null) {
             String componentLocalNameFromRef = getComponentLocalNameFromRef(schema.get$ref());
-            return  api.getComponents().getSchemas().get(componentLocalNameFromRef);
+            return api.getComponents().getSchemas().get(componentLocalNameFromRef);
         }
         return schema;
     }

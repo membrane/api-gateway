@@ -23,7 +23,7 @@ import static java.util.stream.Collectors.*;
 public class CollectionsUtil {
 
     public static <T> List<T> concat(List<T> l1, List<T> l2) {
-        return Stream.of(l1,l2).filter(Objects::nonNull).flatMap(Collection::stream).toList();
+        return Stream.of(l1, l2).filter(Objects::nonNull).flatMap(Collection::stream).toList();
     }
 
     public static <T> List<T> toList(Iterator<T> iterator) {
@@ -51,7 +51,7 @@ public class CollectionsUtil {
     }
 
     public static @NotNull String join(Set<String> s) {
-        return join(new ArrayList<>(s));
+        return join(s.stream().sorted().toList());
     }
 
     /**

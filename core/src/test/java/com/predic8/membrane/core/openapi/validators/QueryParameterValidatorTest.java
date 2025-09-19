@@ -14,6 +14,7 @@
 package com.predic8.membrane.core.openapi.validators;
 
 import com.fasterxml.jackson.databind.node.*;
+import com.predic8.membrane.core.openapi.model.*;
 import io.swagger.v3.oas.models.*;
 import io.swagger.v3.oas.models.parameters.*;
 import io.swagger.v3.oas.models.security.*;
@@ -23,14 +24,11 @@ import java.util.*;
 
 import static com.predic8.membrane.core.openapi.util.OpenAPIUtil.*;
 import static com.predic8.membrane.core.openapi.util.TestUtils.*;
-import static com.predic8.membrane.core.openapi.validators.QueryParameterValidator.*;
 import static io.swagger.v3.oas.models.security.SecurityScheme.In.*;
 import static io.swagger.v3.oas.models.security.SecurityScheme.Type.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 class QueryParameterValidatorTest extends AbstractValidatorTest {
-
-    private static final JsonNodeFactory fac = JsonNodeFactory.instance;
 
     QueryParameterValidator queryParameterValidator;
 
@@ -57,7 +55,7 @@ class QueryParameterValidatorTest extends AbstractValidatorTest {
     }
 
     private List<Parameter> getParameterSchemas(QueryParameterValidator val) {
-        return val.getAllParameterSchemas(validator.getApi().getPaths().get("/cities").getGet());
+        return val.getAllParameter(validator.getApi().getPaths().get("/cities").getGet());
     }
 
     /**
@@ -79,9 +77,7 @@ class QueryParameterValidatorTest extends AbstractValidatorTest {
     void validateAdditionalQueryParametersValid() {
         assertTrue(queryParameterValidator.validateAdditionalQueryParameters(
                 new ValidationContext(),
-                new HashMap<>() {{
-                    put("api-key", new TextNode("234523"));
-                }},
+                new HashMap<>(Map.of("api-key", new TextNode("234523"))),
                 new OpenAPI().components(new Components() {{
                     addSecuritySchemes("schemaA", new SecurityScheme().type(APIKEY).name("api-key").in(QUERY));
                 }})
@@ -93,9 +89,7 @@ class QueryParameterValidatorTest extends AbstractValidatorTest {
 
         assertFalse(queryParameterValidator.validateAdditionalQueryParameters(
                 new ValidationContext(),
-                new HashMap<>() {{
-                    put("bar", new TextNode("2315124"));
-                }},
+                new HashMap<>(Map.of("bar", new TextNode("2315124"))),
                 new OpenAPI().components(new Components() {{
                     addSecuritySchemes("schemaA", new SecurityScheme().type(APIKEY).name("api-key").in(QUERY));
                 }})
@@ -112,12 +106,18 @@ class QueryParameterValidatorTest extends AbstractValidatorTest {
         assertEquals(List.of("api-key", "x-api-key"), queryParameterValidator.securitySchemeApiKeyQueryParamNames(spec));
     }
 
+    @Test
+    void getQueryString() {
+        assertEquals("bar=1",QueryParameterValidator.getQueryString(Request.get().path("/foo?bar=1")));
+    }
+
     @Nested
     class UtilMethods {
         @Test
         void get_QueryParameters() {
             PathItem pathItem = getPathItem("/array");
-            var qp = getQueryParameters(pathItem,pathItem.getGet());
+            QueryParameterValidator qpv = new QueryParameterValidator(null, pathItem);
+            var qp = qpv.getQueryParameters(pathItem, pathItem.getGet());
             assertEquals(3, qp.size());
             assertTrue(qp.stream().allMatch(p -> p instanceof QueryParameter));
         }
@@ -125,7 +125,8 @@ class QueryParameterValidatorTest extends AbstractValidatorTest {
         @Test
         void get_QueryParameter_WithName() {
             PathItem pathItem = getPathItem("/array");
-            assertEquals("String param", QueryParameterValidator.getQueryParameter(pathItem, pathItem.getGet(), "string").getDescription());
+            QueryParameterValidator qpv = new QueryParameterValidator(null, pathItem);
+            assertEquals("String param", qpv.getQueryParameter(pathItem, pathItem.getGet(), "string").getDescription());
         }
 
         private PathItem getPathItem(String path) {
@@ -135,7 +136,8 @@ class QueryParameterValidatorTest extends AbstractValidatorTest {
         @Test
         void get_Required_QueryParameters() {
             PathItem pathItem = getPathItem("/required");
-            var rq = getRequiredQueryParameters(pathItem, pathItem.getGet());
+            QueryParameterValidator qpv = new QueryParameterValidator(null, pathItem);
+            var rq = qpv.getRequiredQueryParameters(pathItem, pathItem.getGet());
             assertEquals(2, rq.size());
         }
     }
