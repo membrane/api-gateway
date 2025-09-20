@@ -42,7 +42,7 @@ public class ShadowingInterceptor extends AbstractInterceptor {
 
     private List<Target> targets = new ArrayList<>();
 
-    private final ExecutorService executor = Executors.newCachedThreadPool();
+    private final ExecutorService executor = newCachedThreadPool();
 
     @Override
     public Outcome handleRequest(Exchange exc) {
