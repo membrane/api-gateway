@@ -21,18 +21,12 @@ import com.predic8.membrane.core.util.*;
 import org.junit.jupiter.api.*;
 
 import static com.predic8.membrane.core.openapi.model.Request.*;
-import static com.predic8.membrane.core.openapi.util.TestUtils.*;
+import static com.predic8.membrane.core.openapi.util.OpenAPITestUtils.*;
 import static org.junit.jupiter.api.Assertions.*;
 
-public class ExplodeFalseTest {
+public class ArrayQueryParameterTest {
 
     OpenAPIValidator validator;
-
-//    @BeforeEach
-//    void setUp() {
-//        OpenAPIRecord apiRecord = new OpenAPIRecord(parseOpenAPI(getResourceAsStream(this, "/openapi/specs/oas31/parameters/explode-false.yaml")), new OpenAPISpec());
-//        validator = new OpenAPIValidator(new URIFactory(), apiRecord);
-//    }
 
     @BeforeEach
     void setUp(TestInfo info) {
@@ -48,45 +42,42 @@ public class ExplodeFalseTest {
     @Nested
     class Explode {
 
+
         @Nested
-        class Array {
+        class Valid {
 
-            @Nested
-            class Valid {
+            @Test
+            void empty() {
+                assertEquals(0, validator.validate(get().path("/array?number=")).size());
+            }
 
-                @Test
-                void empty() {
-                    assertEquals(0, validator.validate(get().path("/array?number=")).size());
-                }
+            @Test
+            void nullValue() {
+                ValidationErrors err = validator.validate(get().path("/array?number=null"));
+                System.out.println("err = " + err);
+                assertEquals(0, err.size());
+            }
 
-                @Test
-                void nullValue() {
-                    ValidationErrors err = validator.validate(get().path("/array?number=null"));
-                    System.out.println("err = " + err);
-                    assertEquals(0, err.size());
-                }
+            @Test
+            void one() {
+                assertEquals(0, validator.validate(get().path("/array?number=-10")).size());
+            }
 
-                @Test
-                void one() {
-                    assertEquals(0, validator.validate(get().path("/array?number=-10")).size());
-                }
+            @Test
+            void number() {
+                ValidationErrors err = validator.validate(get().path("/array?number=1,2,3"));
+                System.out.println("err = " + err);
+                assertEquals(0, err.size());
+            }
 
-                @Test
-                void number() {
-                    ValidationErrors err = validator.validate(get().path("/array?number=1,2,3"));
-                    System.out.println("err = " + err);
-                    assertEquals(0, err.size());
-                }
+            @Test
+            void string() {
+                assertEquals(0, validator.validate(get().path("/array?string=blue,black,brown")).size());
+            }
 
-                @Test
-                void string() {
-                    assertEquals(0, validator.validate(get().path("/array?string=blue,black,brown")).size());
-                }
-
-                @Test
-                void bool() {
-                    assertEquals(0, validator.validate(get().path("/array?bool=true,false,true")).size());
-                }
+            @Test
+            void bool() {
+                assertEquals(0, validator.validate(get().path("/array?bool=true,false,true")).size());
             }
 
             @Nested

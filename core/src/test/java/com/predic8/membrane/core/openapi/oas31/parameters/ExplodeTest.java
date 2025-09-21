@@ -21,7 +21,7 @@ import com.predic8.membrane.core.util.*;
 import org.junit.jupiter.api.*;
 
 import static com.predic8.membrane.core.openapi.model.Request.*;
-import static com.predic8.membrane.core.openapi.util.TestUtils.*;
+import static com.predic8.membrane.core.openapi.util.OpenAPITestUtils.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class ExplodeTest {
@@ -50,5 +50,15 @@ public class ExplodeTest {
     void unknownParamIsRejected() {
         ValidationErrors err = validator.validate(get().path("/search?unknown=1"));
         assertTrue(!err.isEmpty(), "Unknown query parameter should be reported");
+    }
+
+    @Nested
+    class Objects {
+
+        @Test
+        void explode() {
+            ValidationErrors err = validator.validate(get().path("/object?color=R,100,G,200,B,150"));
+        }
+
     }
 }

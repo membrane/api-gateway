@@ -21,10 +21,10 @@ import com.predic8.membrane.core.util.*;
 import org.junit.jupiter.api.*;
 
 import static com.predic8.membrane.core.openapi.model.Request.*;
-import static com.predic8.membrane.core.openapi.util.TestUtils.*;
+import static com.predic8.membrane.core.openapi.util.OpenAPITestUtils.*;
 import static org.junit.jupiter.api.Assertions.*;
 
-public class SimpleQueryParametersTest {
+public class ExplodedArrayQueryParameterTest {
 
     OpenAPIValidator validator;
 
@@ -32,14 +32,6 @@ public class SimpleQueryParametersTest {
     void setUp() {
         OpenAPIRecord apiRecord = new OpenAPIRecord(parseOpenAPI(getResourceAsStream(this, "/openapi/specs/oas31/parameters/simple.yaml")), new OpenAPISpec());
         validator = new OpenAPIValidator(new URIFactory(), apiRecord);
-    }
-
-    @Test
-    void string() {
-//        ValidationErrors errors = validator.validate(Request.get().path("/simple?empty=&string=blue&array=blue,black,brown&object=R=100,G=200,B=150"));
-        //   ValidationErrors errors = validator.validate(Request.get().path("/simple?defau="));
-//        System.out.println(errors);
-//        assertEquals(0,errors.size());
     }
 
     @Test
@@ -80,9 +72,6 @@ public class SimpleQueryParametersTest {
                 assertEquals(0, validator.validate(get().path("/array")).size());
             }
 
-            @Test
-            void array() {}
-
             @Nested
             class Invalid {
 
@@ -93,8 +82,6 @@ public class SimpleQueryParametersTest {
                     assertTrue(err.get(0).getMessage().contains("does not match any of [number]"));
                 }
             }
-
-
         }
     }
 }

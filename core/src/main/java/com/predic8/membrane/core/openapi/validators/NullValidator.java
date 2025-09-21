@@ -18,7 +18,7 @@ package com.predic8.membrane.core.openapi.validators;
 
 import com.fasterxml.jackson.databind.node.NullNode;
 
-public class NullValidator implements IJSONSchemaValidator {
+public class NullValidator implements JsonSchemaValidator {
 
     @Override
     public String canValidate(Object value) {

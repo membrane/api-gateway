@@ -18,7 +18,7 @@ package com.predic8.membrane.core.openapi.validators;
 
 import com.fasterxml.jackson.databind.node.*;
 
-public class BooleanValidator implements IJSONSchemaValidator {
+public class BooleanValidator implements JsonSchemaValidator {
 
     @Override
     public String canValidate(Object obj) {

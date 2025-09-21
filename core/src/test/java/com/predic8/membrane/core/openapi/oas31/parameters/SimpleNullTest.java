@@ -21,7 +21,7 @@ import com.predic8.membrane.core.util.*;
 import org.junit.jupiter.api.*;
 
 import static com.predic8.membrane.core.openapi.model.Request.*;
-import static com.predic8.membrane.core.openapi.util.TestUtils.*;
+import static com.predic8.membrane.core.openapi.util.OpenAPITestUtils.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class SimpleNullTest {

@@ -16,7 +16,7 @@
 
 package com.predic8.membrane.core.openapi.validators;
 
-interface IJSONSchemaValidator {
+public interface JsonSchemaValidator {
 
     String NULL = "null";
     String NUMBER = "number";

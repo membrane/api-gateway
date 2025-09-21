@@ -31,7 +31,7 @@ import java.util.*;
 import static com.predic8.membrane.core.util.FileUtil.*;
 import static java.util.Collections.*;
 
-public class TestUtils {
+public class OpenAPITestUtils {
 
     public static final ObjectMapper om = new ObjectMapper();
     private static final ObjectMapper omYaml = ObjectMapperFactory.createYaml();
@@ -79,7 +79,7 @@ public class TestUtils {
     }
 
     public static OpenAPIRecord getSingleOpenAPIRecord(Map<String, OpenAPIRecord> m) {
-        return (OpenAPIRecord) m.values().toArray()[0];
+        return m.values().iterator().next();
     }
 
     public static OpenAPI getApi(Object obj, String path) {

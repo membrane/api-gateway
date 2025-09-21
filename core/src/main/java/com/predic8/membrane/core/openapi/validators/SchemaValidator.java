@@ -35,7 +35,7 @@ import java.util.Objects;
 import static com.predic8.membrane.core.openapi.util.SchemaUtil.getSchemaNameFromRef;
 import static com.predic8.membrane.core.openapi.validators.ValidationContext.ValidatedEntityType.BODY;
 
-public class SchemaValidator implements IJSONSchemaValidator {
+public class SchemaValidator implements JsonSchemaValidator {
 
     private static final Logger log = LoggerFactory.getLogger(SchemaValidator.class.getName());
 
@@ -108,7 +108,7 @@ public class SchemaValidator implements IJSONSchemaValidator {
 
     private boolean isNullable() {
         return (schema.getNullable() != null && schema.getNullable()) || (schema.getTypes() != null && schema.getTypes().contains("null")) ||
-                (schema.getType() != null && schema.getType().equals("null"));
+               (schema.getType() != null && schema.getType().equals("null"));
     }
 
     private ValidationErrors validateByType(ValidationContext ctx, Object value) {
@@ -202,7 +202,7 @@ public class SchemaValidator implements IJSONSchemaValidator {
         return type == null && (schema.getTypes() == null || schema.getTypes().isEmpty());
     }
 
-    private static List<IJSONSchemaValidator> getValidatorClasses() {
+    private static List<JsonSchemaValidator> getValidatorClasses() {
         return List.of(
                 new NullValidator(),
                 new IntegerValidator(),

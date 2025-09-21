@@ -14,31 +14,35 @@
 
 package com.predic8.membrane.core.openapi.validators.parameters;
 
-import java.util.*;
 import java.util.stream.*;
 
-public class ArrayParameter extends AbstractArrayParameter {
+public class ExplodedArrayParameter extends AbstractArrayParameter {
 
     protected Stream<String> getItems() {
 
         System.out.println("values = " + values);
 
-        var x = values.get(parameter.getName());
+        var x =values.get(parameter.getName());
+        return x.stream();
 
-        String[] items = x.getFirst().split(",");
-        if (items.length == 0) {
-            return Stream.empty();
-        }
-        if (items.length == 1) {
-            if (items[0].equals("null")) {
-                return null;
-            }
-            // foo= => foo: "" => Let assume an empty parameter is an empty array
-            if (items[0].isEmpty()) {
-                return Stream.empty();
-            }
-        }
-        return Arrays.stream(items);
+//        if (explode) {
+//            return values.stream();
+//        }
+//        String[] items = values.getFirst().split(",");
+//        if (items.length == 0) {
+//            return Stream.empty();
+//        }
+//        if (items.length == 1) {
+//            if (items[0].equals("null")) {
+//                return null;
+//            }
+//            // foo= => foo: "" => Let assume an empty parameter is an empty array
+//            if (items[0].isEmpty()) {
+//                return Stream.empty();
+//            }
+//        }
+//        return Arrays.stream(items);
+
     }
 
 }

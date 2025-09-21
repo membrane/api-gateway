@@ -17,73 +17,55 @@ package com.predic8.membrane.core.openapi.validators.parameters;
 import com.fasterxml.jackson.core.*;
 import com.fasterxml.jackson.databind.*;
 import com.fasterxml.jackson.databind.node.*;
+import io.swagger.v3.oas.models.*;
 import io.swagger.v3.oas.models.parameters.*;
 
 import java.util.*;
+
+import static com.predic8.membrane.core.openapi.validators.JsonSchemaValidator.*;
 
 public abstract class AbstractParameter {
 
     protected static final JsonNodeFactory FACTORY = JsonNodeFactory.instance;
 
-    protected List<String> values = new ArrayList<>();
+//    protected List<String> values = new ArrayList<>();
+    protected Map<String, List<String>> values;
 
     protected String type;
     protected boolean explode;
+    protected Parameter parameter;
+    protected OpenAPI api; // To grab $ref Schema types
 
-    public static AbstractParameter instance(String type, Parameter parameter) {
-        AbstractParameter ap = getParameter(type);
-        ap.explode = parameter.getExplode();
-        return ap;
-    }
-
-    public static AbstractParameter getParameter(String typeName) {
-        AbstractParameter parameter = switch (typeName) {
-            case "array" -> new ArrayParameter();
+    public static AbstractParameter instance(OpenAPI api, String type, Parameter parameter) {
+        AbstractParameter paramParser = switch (type) {
+            case ARRAY -> {
+                if (parameter.getExplode())
+                    yield new ExplodedArrayParameter();
+                yield  new ArrayParameter();
+            }
+            case OBJECT -> {
+                if (parameter.getExplode())
+                    yield new ExplodedObjectParameter();
+                yield new ObjectParameter();
+            }
             default -> new ScalarParameter();
         };
-        parameter.type = typeName;
-        return parameter;
+        paramParser.type = type;
+        paramParser.explode = parameter.getExplode();
+        paramParser.parameter = parameter;
+        paramParser.api = api;
+        return paramParser;
     }
 
-    public void addAllValues(Collection<String> values) {
-        this.values.addAll(values);
+    public void setValues(Map<String, List<String>> values) {
+        this.values = values;
+    }
+
+    protected List<String> getValuesForParameter() {
+        return values.get(parameter.getName());
     }
 
     public abstract JsonNode getJson() throws JsonProcessingException;
 
-    public static JsonNode asJson(String value) {
-        if (value == null) return FACTORY.nullNode();
-        switch (value) {
-            case "true" -> {
-                return FACTORY.booleanNode(true);
-            }
-            case "false" -> {
-                return FACTORY.booleanNode(false);
-            }
-            case "null" -> {
-                return FACTORY.nullNode();
-            }
-        }
-
-        // integer?
-        try {
-            if (!value.contains(".") && !value.contains("e") && !value.contains("E")) {
-                java.math.BigInteger bi = new java.math.BigInteger(value);
-                int bl = bi.bitLength();
-                if (bl <= 31) return FACTORY.numberNode(bi.intValue());
-                if (bl <= 63) return FACTORY.numberNode(bi.longValue());
-                return FACTORY.numberNode(bi);
-            }
-        } catch (NumberFormatException ignore) { /* try decimal */ }
-
-        // decimal?
-        try {
-            java.math.BigDecimal bd = new java.math.BigDecimal(value);
-            // reject NaN/Infinity-equivalents (BigDecimal won’t parse them anyway)
-            return FACTORY.numberNode(bd);
-        } catch (NumberFormatException ignore) { /* fall through */ }
-
-        return FACTORY.textNode(value);
-    }
 
 }

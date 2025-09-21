@@ -17,8 +17,11 @@
 package com.predic8.membrane.core.openapi.util;
 
 import com.fasterxml.jackson.databind.*;
+import io.swagger.models.properties.*;
 import io.swagger.v3.core.util.*;
 import io.swagger.v3.oas.models.*;
+import io.swagger.v3.oas.models.media.*;
+import io.swagger.v3.oas.models.parameters.*;
 import io.swagger.v3.parser.ObjectMapperFactory;
 import org.slf4j.*;
 
@@ -74,5 +77,28 @@ public class OpenAPIUtil {
 
     public static PathItem getPath(OpenAPI api, String path) {
         return api.getPaths().get(path);
+    }
+
+    public static Parameter getParameter(Operation operation, String parameterName) {
+        return operation.getParameters().stream().filter(parameter -> parameter.getName().equals(parameterName)).findFirst().orElse(null);
+    }
+
+    public static Property getProperty(Schema schema, String propertyName) {
+        Object o = schema.getProperties().get(propertyName);
+        if (o == null)
+            return null;
+        return (Property) o;
+    }
+
+    public static Schema<?> getSchema(OpenAPI api, Parameter p) {
+        Schema<?> schema = p.getSchema();
+        if (schema == null) {
+            return null;
+        }
+        if (schema.get$ref() != null) {
+            String componentLocalNameFromRef = getComponentLocalNameFromRef(schema.get$ref());
+            return api.getComponents().getSchemas().get(componentLocalNameFromRef);
+        }
+        return schema;
     }
 }

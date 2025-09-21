@@ -21,7 +21,7 @@ import org.junit.jupiter.api.*;
 import java.io.*;
 
 import static com.predic8.membrane.core.openapi.util.OpenAPIUtil.*;
-import static com.predic8.membrane.core.openapi.util.TestUtils.*;
+import static com.predic8.membrane.core.openapi.util.OpenAPITestUtils.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class OpenAPIUtilTest {
@@ -65,7 +65,7 @@ public class OpenAPIUtilTest {
 
     @Test
     void getPath() {
-        assertEquals("Single paths", OpenAPIUtil.getPath(TestUtils.getApi(this,"/openapi/specs/customers.yml"), "/customers/{cid}").getDescription());
+        assertEquals("Single paths", OpenAPIUtil.getPath(OpenAPITestUtils.getApi(this,"/openapi/specs/customers.yml"), "/customers/{cid}").getDescription());
     }
 
     @Test

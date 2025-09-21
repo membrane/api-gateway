@@ -28,7 +28,7 @@ import static java.lang.Double.*;
  *
  * If numbers appear in a JSON string "123.45", this is a TextNode (which is not OK). (See JSON Schema Spec.)
  */
-public class NumberValidator implements IJSONSchemaValidator {
+public class NumberValidator implements JsonSchemaValidator {
 
     @Override
     public String canValidate(Object value) {

@@ -1,0 +1,48 @@
+openapi: 3.1.0
+info:
+  title: RGB API
+  version: "1.0.0"
+
+paths:
+  /color:
+    get:
+      parameters:
+        - name: rgb
+          in: query
+          style: form
+          explode: false
+          schema:
+            $ref: "#/components/schemas/Color"
+      responses:
+        "200":
+          description: Ok
+  /exploded:
+    get:
+      parameters:
+        - name: rgb
+          in: query
+          style: form
+          exploded: true
+          schema:
+            $ref: "#/components/schemas/Color"
+      responses:
+        "200":
+          description: Ok
+
+components:
+  schemas:
+    Color:
+      type: object
+      properties:
+        R:
+          type: integer
+          minimum: 0
+          maximum: 255
+        G:
+          type: integer
+          minimum: 0
+          maximum: 255
+        B:
+          type: integer
+          minimum: 0
+          maximum: 255

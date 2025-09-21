@@ -37,7 +37,7 @@ import static java.lang.String.*;
  * - is it part of OpenAPI?
  */
 
-public class ObjectValidator implements IJSONSchemaValidator {
+public class ObjectValidator implements JsonSchemaValidator {
 
     private static final Logger log = LoggerFactory.getLogger(ObjectValidator.class.getName());
 

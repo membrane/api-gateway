@@ -51,7 +51,7 @@ public class TestUtil {
     }
 
     public static String getPathFromResource(String resourcePaht) {
-        return pathFromFileURI(TestUtils.class.getResource("../../../../../..").getPath() + resourcePaht);
+        return pathFromFileURI(OpenAPITestUtils.class.getResource("../../../../../..").getPath() + resourcePaht);
     }
 
     @Test

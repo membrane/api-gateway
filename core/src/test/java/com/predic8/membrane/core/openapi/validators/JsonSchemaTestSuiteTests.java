@@ -42,8 +42,8 @@ import java.util.Map;
 
 import static com.google.common.collect.ImmutableMap.of;
 import static com.predic8.membrane.core.openapi.model.Request.post;
-import static com.predic8.membrane.core.openapi.util.TestUtils.om;
-import static com.predic8.membrane.core.openapi.util.TestUtils.parseOpenAPI;
+import static com.predic8.membrane.core.openapi.util.OpenAPITestUtils.om;
+import static com.predic8.membrane.core.openapi.util.OpenAPITestUtils.parseOpenAPI;
 import static java.util.regex.Pattern.quote;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 

@@ -59,7 +59,9 @@ protected String getOpenAPIFileName() {
     @Test
     void missingRequiredParam() {
         ValidationErrors err = validator.validate(get().path("/cities"));
+        System.out.println("err = " + err);
         assertEquals(1,err.size());
+
         ValidationError e = err.get(0);
         assertEquals(400, e.getContext().getStatusCode());
         assertTrue(e.getMessage().contains("'limit' missing."));

@@ -22,7 +22,7 @@ import java.io.*;
 import java.util.*;
 
 import static com.predic8.membrane.core.http.MimeType.*;
-import static com.predic8.membrane.core.openapi.util.TestUtils.*;
+import static com.predic8.membrane.core.openapi.util.OpenAPITestUtils.*;
 import static com.predic8.membrane.core.util.FileUtil.*;
 import static io.swagger.v3.oas.models.SpecVersion.*;
 import static org.junit.jupiter.api.Assertions.*;

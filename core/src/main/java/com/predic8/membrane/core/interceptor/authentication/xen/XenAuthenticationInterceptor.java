@@ -22,7 +22,7 @@ import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.interceptor.authentication.session.*;
 import com.predic8.membrane.core.util.*;
-import org.jose4j.json.*;
+import org.jose4j.json.JsonUtil;
 import org.jose4j.jwk.*;
 import org.jose4j.jws.*;
 import org.jose4j.jwt.*;

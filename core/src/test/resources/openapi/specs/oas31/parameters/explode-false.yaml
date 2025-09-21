@@ -27,9 +27,32 @@ paths:
       responses:
         "200":
           description: OK
+  /objects:
+    get:
+      parameters:
+        - name: color
+          in: query
+          explode: false
+          schema:
+            type: object
+            additionalProperties: false
+            properties:
+              R:
+                $ref: "#/components/schemas/Color"
+              G:
+                $ref: "#/components/schemas/Color"
+              B:
+                $ref: "#/components/schemas/Color"
+      responses:
+        "200":
+          description: OK
 
 components:
   schemas:
+    Color:
+      type: integer
+      min: 0
+      max: 255
     Numbers:
       type: [array,"null"]
       items:

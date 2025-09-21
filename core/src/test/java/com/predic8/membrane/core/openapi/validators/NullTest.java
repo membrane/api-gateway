@@ -21,7 +21,7 @@ import org.junit.jupiter.api.Test;
 import java.util.*;
 
 import static com.predic8.membrane.core.openapi.model.Request.post;
-import static com.predic8.membrane.core.openapi.util.JsonUtil.mapToJson;
+import static com.predic8.membrane.core.openapi.util.JsonTestUtil.mapToJson;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 

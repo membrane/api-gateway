@@ -21,7 +21,7 @@ import com.predic8.membrane.core.openapi.model.Body;
 
 import static java.lang.Long.parseLong;
 
-public class IntegerValidator implements IJSONSchemaValidator {
+public class IntegerValidator implements JsonSchemaValidator {
 
     @Override
     public String canValidate(Object obj) {

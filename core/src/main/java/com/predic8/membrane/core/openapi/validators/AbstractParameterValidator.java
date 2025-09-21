@@ -17,15 +17,13 @@
 package com.predic8.membrane.core.openapi.validators;
 
 import io.swagger.v3.oas.models.*;
-import io.swagger.v3.oas.models.media.*;
 import io.swagger.v3.oas.models.parameters.*;
 import org.jetbrains.annotations.*;
 
 import java.util.*;
 import java.util.stream.*;
 
-import static com.predic8.membrane.core.openapi.util.Utils.*;
-import static java.util.Locale.ROOT;
+import static java.util.Locale.*;
 import static java.util.Optional.*;
 
 public abstract class AbstractParameterValidator {
@@ -76,17 +74,5 @@ public abstract class AbstractParameterValidator {
 
     boolean isTypeOf(Parameter p, Class<?> clazz) {
         return clazz.isInstance(p);
-    }
-
-    protected Schema<?> getSchema(Parameter p) {
-        Schema<?> schema = p.getSchema();
-        if (schema == null) {
-            return null;
-        }
-        if (schema.get$ref() != null) {
-            String componentLocalNameFromRef = getComponentLocalNameFromRef(schema.get$ref());
-            return api.getComponents().getSchemas().get(componentLocalNameFromRef);
-        }
-        return schema;
     }
 }

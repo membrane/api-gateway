@@ -28,7 +28,7 @@ import static java.lang.String.*;
 
 
 @SuppressWarnings("rawtypes")
-public class ArrayValidator implements IJSONSchemaValidator {
+public class ArrayValidator implements JsonSchemaValidator {
 
     private final Schema schema;
     private final OpenAPI api;

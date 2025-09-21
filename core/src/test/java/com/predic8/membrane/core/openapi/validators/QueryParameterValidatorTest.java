@@ -22,8 +22,8 @@ import org.junit.jupiter.api.*;
 
 import java.util.*;
 
+import static com.predic8.membrane.core.openapi.util.OpenAPITestUtils.*;
 import static com.predic8.membrane.core.openapi.util.OpenAPIUtil.*;
-import static com.predic8.membrane.core.openapi.util.TestUtils.*;
 import static io.swagger.v3.oas.models.security.SecurityScheme.In.*;
 import static io.swagger.v3.oas.models.security.SecurityScheme.Type.*;
 import static org.junit.jupiter.api.Assertions.*;
@@ -31,10 +31,6 @@ import static org.junit.jupiter.api.Assertions.*;
 class QueryParameterValidatorTest extends AbstractValidatorTest {
 
     QueryParameterValidator queryParameterValidator;
-
-    private static boolean operationHasParamWithName(Operation get, String name) {
-        return get.getParameters().stream().anyMatch(param -> param.getName().equals(name));
-    }
 
     @Override
     protected String getOpenAPIFileName() {
@@ -77,7 +73,7 @@ class QueryParameterValidatorTest extends AbstractValidatorTest {
     void validateAdditionalQueryParametersValid() {
         assertTrue(queryParameterValidator.validateAdditionalQueryParameters(
                 new ValidationContext(),
-                new HashMap<>(Map.of("api-key", new TextNode("234523"))),
+                Map.of("api-key", new TextNode("234523")),
                 new OpenAPI().components(new Components() {{
                     addSecuritySchemes("schemaA", new SecurityScheme().type(APIKEY).name("api-key").in(QUERY));
                 }})
@@ -117,7 +113,7 @@ class QueryParameterValidatorTest extends AbstractValidatorTest {
         void get_QueryParameters() {
             PathItem pathItem = getPathItem("/array");
             QueryParameterValidator qpv = new QueryParameterValidator(null, pathItem);
-            var qp = qpv.getQueryParameters(pathItem, pathItem.getGet());
+            var qp = qpv.getAllQueryParameters(pathItem.getGet());
             assertEquals(3, qp.size());
             assertTrue(qp.stream().allMatch(p -> p instanceof QueryParameter));
         }
@@ -126,26 +122,37 @@ class QueryParameterValidatorTest extends AbstractValidatorTest {
         void get_QueryParameter_WithName() {
             PathItem pathItem = getPathItem("/array");
             QueryParameterValidator qpv = new QueryParameterValidator(null, pathItem);
-            assertEquals("String param", qpv.getQueryParameter(pathItem, pathItem.getGet(), "string").getDescription());
+            assertEquals("String param", qpv.getQueryParameter(pathItem.getGet(), "string").getDescription());
         }
 
         @Test
         void get_QueryParameter_Absent_ReturnsNull() {
             PathItem pathItem = getPathItem("/array");
             QueryParameterValidator qpv = new QueryParameterValidator(null, pathItem);
-            assertNull(qpv.getQueryParameter(pathItem, pathItem.getGet(), "absent"));
-        }
-
-        private PathItem getPathItem(String path) {
-            return getPath(getApi(this, "/openapi/specs/oas31/parameters/simple.yaml"), path);
+            assertNull(qpv.getQueryParameter(pathItem.getGet(), "absent"));
         }
 
         @Test
         void get_Required_QueryParameters() {
             PathItem pathItem = getPathItem("/required");
             QueryParameterValidator qpv = new QueryParameterValidator(null, pathItem);
-            var rq = qpv.getRequiredQueryParameters(pathItem, pathItem.getGet());
+            var rq = qpv.getRequiredQueryParameters(pathItem.getGet());
             assertEquals(2, rq.size());
         }
+
+        @Test
+        void get_PossibleObjectPropertiesNamesForOperation() {
+            var propertyNames = queryParameterValidator.getPossibleObjectPropertiesNamesForOperation(         getPath(   queryParameterValidator.api, "/object").getGet());
+            assertEquals(5, propertyNames.size());
+            assertTrue(propertyNames.containsAll(Arrays.asList("age", "kind", "color","brand","power")));
+        }
+
+        private PathItem getPathItem(String path) {
+            return getPath(getApi(this, "/openapi/specs/oas31/parameters/simple.yaml"), path);
+        }
+    }
+
+    private static boolean operationHasParamWithName(Operation get, String name) {
+        return get.getParameters() != null && get.getParameters().stream().anyMatch(param -> param.getName().equals(name));
     }
 }

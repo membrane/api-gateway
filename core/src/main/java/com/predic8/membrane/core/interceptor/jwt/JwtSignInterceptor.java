@@ -20,15 +20,14 @@ import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.interceptor.session.*;
 import com.predic8.membrane.core.util.*;
-import org.jose4j.json.*;
+import org.jose4j.json.JsonUtil;
 import org.jose4j.jwk.*;
 import org.jose4j.jws.*;
 import org.jose4j.lang.*;
 import org.slf4j.*;
 
 import java.io.*;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 
 import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;

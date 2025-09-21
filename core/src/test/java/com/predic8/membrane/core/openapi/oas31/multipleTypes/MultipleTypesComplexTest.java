@@ -26,7 +26,7 @@ import org.junit.jupiter.params.provider.*;
 import java.util.stream.*;
 
 import static com.predic8.membrane.core.http.MimeType.*;
-import static com.predic8.membrane.core.openapi.util.TestUtils.*;
+import static com.predic8.membrane.core.openapi.util.OpenAPITestUtils.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class MultipleTypesComplexTest {

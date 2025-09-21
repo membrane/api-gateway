@@ -27,7 +27,7 @@ import static com.predic8.membrane.core.openapi.util.Utils.*;
 import static java.lang.String.*;
 
 @SuppressWarnings("rawtypes")
-public class StringValidator implements IJSONSchemaValidator {
+public class StringValidator implements JsonSchemaValidator {
 
     private static final Logger log = LoggerFactory.getLogger(StringValidator.class.getName());
 
