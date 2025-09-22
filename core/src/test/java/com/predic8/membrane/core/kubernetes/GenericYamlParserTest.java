@@ -1,9 +1,5 @@
 /* Copyright 2025 predic8 GmbH, www.predic8.com
-
    Licensed under the Apache License, Version 2.0 (the "License");
-   you may not use this file except in compliance with the License.
-   You may obtain a copy of the License at
-
    http://www.apache.org/licenses/LICENSE-2.0
 
    Unless required by applicable law or agreed to in writing, software
@@ -14,7 +10,6 @@
 
 package com.predic8.membrane.core.kubernetes;
 
-import com.predic8.membrane.core.interceptor.Interceptor;
 import com.predic8.membrane.core.interceptor.authentication.BasicAuthenticationInterceptor;
 import com.predic8.membrane.core.interceptor.authentication.session.StaticUserDataProvider;
 import com.predic8.membrane.core.interceptor.balancer.LoadBalancingInterceptor;
@@ -30,209 +25,315 @@ import com.predic8.membrane.core.interceptor.xml.Xml2JsonInterceptor;
 import com.predic8.membrane.core.openapi.serviceproxy.APIProxy;
 import com.predic8.membrane.core.proxies.AbstractServiceProxy;
 import com.predic8.membrane.core.util.MemcachedConnector;
-import org.junit.jupiter.api.Test;
+import org.jetbrains.annotations.NotNull;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.api.TestInstance.Lifecycle;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.events.*;
 
 import java.io.StringReader;
 import java.util.*;
+import java.util.stream.Stream;
 
+import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPISpec.YesNoOpenAPIOption.NO;
 import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPISpec.YesNoOpenAPIOption.YES;
 import static org.junit.jupiter.api.Assertions.*;
 
+@TestInstance(Lifecycle.PER_CLASS)
 class GenericYamlParserMembraneTest {
 
-    @Test
-    void parseSimpleApi() {
-        String yaml = """
-          port: 2000
-          target:
-            url: https://api.predic8.de
-        """;
-
-        APIProxy api = GenericYamlParser.parse("api", APIProxy.class, events(yaml),null);
-
-        assertEquals(2000, api.getPort());
-        assertEquals("https://api.predic8.de", api.getTarget().getUrl());
+    @ParameterizedTest
+    @MethodSource("successCases")
+    void parses_with_expectations(Case c) {
+        c.check().accept(parse(c.yaml(), c.reg()));
     }
 
-    @Test
-    void parsePathAndInterceptors() {
-        String yaml = """
-          port: 2000
-          path:
-            value: /names
-          interceptors:
-            - rateLimiter:
-                requestLimit: 3
-                requestLimitDuration: PT30S
-            - rewriter:
-                mappings:
-                  - map:
-                      from: ^/names/(.*)
-                      to: /restnames/name\\.groovy\\?name=$1
-            - response:
-                interceptors:
-                  - beautifier: {}
-                  - xml2Json: {}
-                  - log: {}
-          target:
-            url: https://api.predic8.de
-        """;
-
-        APIProxy api = GenericYamlParser.parse("api", APIProxy.class, events(yaml),null);
-
-        assertEquals("/names", api.getPath().getValue());
-        assertEquals(2000, api.getPort());
-        assertEquals("https://api.predic8.de", api.getTarget().getUrl());
-
-        List<Interceptor> interceptors = api.getInterceptors();
-        assertEquals(3, interceptors.size());
-        assertInstanceOf(RateLimitInterceptor.class, interceptors.get(0));
-        assertInstanceOf(RewriteInterceptor.class, interceptors.get(1));
-        assertInstanceOf(ResponseInterceptor.class, interceptors.get(2));
-
-        RateLimitInterceptor rateLimitInterceptor = (RateLimitInterceptor) interceptors.get(0);
-        assertEquals(3, rateLimitInterceptor.getRequestLimit());
-
-        RewriteInterceptor rewriteInterceptor = (RewriteInterceptor) interceptors.get(1);
-        assertEquals(1, rewriteInterceptor.getMappings().size());
-        RewriteInterceptor.Mapping m = rewriteInterceptor.getMappings().getFirst();
-        assertEquals("^/names/(.*)", m.getFrom());
-        assertEquals("/restnames/name\\.groovy\\?name=$1", m.getTo());
-
-        ResponseInterceptor responseInterceptor = (ResponseInterceptor) interceptors.get(2);
-        List<Interceptor> responseInterceptorInterceptors = responseInterceptor.getInterceptors();
-        assertEquals(3, responseInterceptorInterceptors.size());
-        assertInstanceOf(BeautifierInterceptor.class, responseInterceptorInterceptors.get(0));
-        assertInstanceOf(Xml2JsonInterceptor.class, responseInterceptorInterceptors.get(1));
-        assertInstanceOf(LogInterceptor.class, responseInterceptorInterceptors.get(2));
+    @ParameterizedTest
+    @MethodSource("errorCases")
+    void fails_with_exception(ErrCase c) {
+        assertThrows(c.expected(), () -> parse(c.yaml(), c.reg()));
     }
 
-    @Test
-    void parseOpenApi() {
-        String yaml = """
-          specs:
-            - openapi:
-                location: fruitshop-api.yml
-                validateRequests: "yes"
-        """;
+    Stream<Case> successCases() {
 
-        APIProxy api = GenericYamlParser.parse("api", APIProxy.class, events(yaml),null);
+        // Registries for ref/injection rows
+        MemcachedConnector mem = new MemcachedConnector() {{
+            setHost("localhost");
+            setPort(3000);
+        }};
+        BeanRegistry memReg = new TestRegistry().with("mem", mem);
 
-        assertNotNull(api.getSpecs());
-        assertEquals(1, api.getSpecs().size());
-        assertEquals("fruitshop-api.yml", api.getSpecs().getFirst().getLocation());
-        assertEquals(YES, api.getSpecs().getFirst().getValidateRequests());
-    }
+        AbstractServiceProxy.Target target = new AbstractServiceProxy.Target() {{
+            setUrl("https://ref.example");
+        }};
+        BeanRegistry targetReg = new TestRegistry().with("target", target);
 
-    @Test
-    void parseTypes() {
-        String yaml = """
-          port: 8080
-          interceptors:
-            - balancer:
-                sessionTimeout: 10000
-            - setCookies:
-                cookies:
-                  - cookie:
-                      name: foo
-                      value: bar
-                      secure: false
-        """;
-
-        APIProxy api = GenericYamlParser.parse("api", APIProxy.class, events(yaml),null);
-
-        LoadBalancingInterceptor lb = (LoadBalancingInterceptor) api.getInterceptors().getFirst();
-        assertInstanceOf(Long.class, lb.getSessionTimeout());
-        assertEquals(10000, lb.getSessionTimeout());
-
-        SetCookiesInterceptor sc = (SetCookiesInterceptor) api.getInterceptors().get(1);
-        assertEquals("foo", sc.getCookies().getFirst().getName());
-        assertEquals("bar", sc.getCookies().getFirst().getValue());
-        assertInstanceOf(Boolean.class, sc.getCookies().getFirst().isSecure());
-        assertFalse(sc.getCookies().getFirst().isSecure());
-    }
-
-    @Test
-    void mcOtherAttributes() {
-        String yaml = """
-          port: 8080
-          interceptors:
-            - basicAuthentication:
-                staticUserDataProvider:
-                  users:
-                    - user:
-                        username: foo
-                        password: bar
-                        "a1": "t1"
-                        "a2": "t2"
-        """;
-
-        APIProxy api = GenericYamlParser.parse("api", APIProxy.class, events(yaml),null);
-
-        BasicAuthenticationInterceptor ba = (BasicAuthenticationInterceptor) api.getInterceptors().getFirst();
-        StaticUserDataProvider.User user = ba.getUsers().getFirst();
-        assertInstanceOf(Map.class, user.getAttributes());
-        assertEquals(Map.of("a1", "t1", "a2", "t2", "password", "bar", "username", "foo"), user.getAttributes());
-    }
-
-    @Test
-    void mcAttributeParam() {
-        MemcachedConnector memcachedConnector = new MemcachedConnector();
-        memcachedConnector.setHost("localhost");
-        memcachedConnector.setPort(3000);
-
-        TestRegistry reg = new TestRegistry().with("mem", memcachedConnector);
-
-        String yaml = """
-          port: 8080
-          interceptors:
-            - oauth2Resource2:
-                memcachedOriginalExchangeStore:
-                  connector: mem
-                membrane:
-                  src: https://localhost/oauth2/
-        """;
-
-        APIProxy api = GenericYamlParser.parse("api", APIProxy.class, events(yaml),reg);
-        OAuth2Resource2Interceptor resource2Interceptor = (OAuth2Resource2Interceptor) api.getInterceptors().getFirst();
-
-        MemcachedOriginalExchangeStore originalExchangeStore = (MemcachedOriginalExchangeStore)  resource2Interceptor.getOriginalExchangeStore();
-        assertSame(memcachedConnector, originalExchangeStore.getConnector());
-    }
-
-    @Test
-    void parseTopLevelRef() {
-        AbstractServiceProxy.Target target = new AbstractServiceProxy.Target();
-        target.setUrl("https://ref.example");
-
-        TestRegistry reg = new TestRegistry().with("target", target);
-
-        String yaml = """
-          $ref: target
-        """;
-
-        APIProxy api = GenericYamlParser.parse("api", APIProxy.class, events(yaml), reg);
-
-        assertSame(target, api.getTarget());
-        assertEquals("https://ref.example", api.getTarget().getUrl());
-    }
-
-    @Test
-    void parseListItemRef() {
         ResponseInterceptor responseInterceptor = new ResponseInterceptor();
-        TestRegistry reg = new TestRegistry().with("response", responseInterceptor);
+        BeanRegistry responseReg = new TestRegistry().with("response", responseInterceptor);
 
-        String yaml = """
-          interceptors:
-            - $ref: response
-        """;
+        return Stream.of(
+                ok(
+                        "port_parsed",
+                        """
+                        port: 2000
+                        """,
+                        a -> assertEquals(2000, a.getPort())
+                ),
+                ok(
+                        "target_url_parsed",
+                        """
+                        target:
+                          url: https://api.predic8.de
+                        """,
+                        a -> assertEquals("https://api.predic8.de", a.getTarget().getUrl())
+                ),
+                ok(
+                        "path_value_parsed",
+                        """
+                        path:
+                          value: /names
+                        """,
+                        a -> assertEquals("/names", a.getPath().getValue())
+                ),
+                ok(
+                        "interceptors_parsed",
+                        """
+                        interceptors:
+                          - rateLimiter:
+                              requestLimit: 3
+                          - rewriter:
+                              mappings: []
+                          - response:
+                              interceptors: []
+                        """,
+                        a -> assertAll(
+                                () -> assertEquals(3, a.getInterceptors().size()),
+                                () -> assertInstanceOf(RateLimitInterceptor.class, a.getInterceptors().getFirst()),
+                                () -> assertInstanceOf(RewriteInterceptor.class, a.getInterceptors().get(1)),
+                                () -> assertInstanceOf(ResponseInterceptor.class, a.getInterceptors().get(2))
+                        )
+                ),
+                ok(
+                        "rateLimiter_requestLimit_parsed",
+                        """
+                        interceptors:
+                          - rateLimiter:
+                              requestLimit: 3
+                              requestLimitDuration: PT30S
+                        """,
+                        a -> assertAll(
+                                () -> assertEquals(3, ((RateLimitInterceptor) a.getInterceptors().getFirst()).getRequestLimit()),
+                                () -> assertEquals("PT30S", ((RateLimitInterceptor) a.getInterceptors().getFirst()).getRequestLimitDuration())
+                        )
+                ),
+                ok(
+                        "rewriter_mapping",
+                        """
+                        interceptors:
+                          - rewriter:
+                              mappings:
+                                - map:
+                                    from: ^/names/(.*)
+                                    to: /restnames/name\\.groovy\\?name=$1
+                        """,
+                        a -> assertAll(
+                                () -> assertEquals("^/names/(.*)", ((RewriteInterceptor) a.getInterceptors().getFirst()).getMappings().getFirst().getFrom()),
+                                () -> assertEquals("/restnames/name\\.groovy\\?name=$1", ((RewriteInterceptor) a.getInterceptors().getFirst()).getMappings().getFirst().getTo())
+                        )
+                ),
+                ok(
+                        "response_interceptors_parsed",
+                        """
+                        interceptors:
+                          - response:
+                              interceptors:
+                                - beautifier: {}
+                                - xml2Json: {}
+                                - log: {}
+                        """,
+                        a -> assertAll(
+                                () -> assertEquals(3, ((ResponseInterceptor) a.getInterceptors().getFirst()).getInterceptors().size()),
+                                () -> assertInstanceOf(BeautifierInterceptor.class, ((ResponseInterceptor) a.getInterceptors().getFirst()).getInterceptors().getFirst()),
+                                () -> assertInstanceOf(Xml2JsonInterceptor.class, ((ResponseInterceptor) a.getInterceptors().getFirst()).getInterceptors().get(1)),
+                                () -> assertInstanceOf(LogInterceptor.class, ((ResponseInterceptor) a.getInterceptors().getFirst()).getInterceptors().get(2))
+                        )
+                ),
+                ok(
+                        "balancer_sessionTimeout_parsed",
+                        """
+                        interceptors:
+                          - balancer:
+                              sessionTimeout: 10000
+                        """,
+                        a -> assertAll(
+                                () ->assertInstanceOf(Long.class, ((LoadBalancingInterceptor) a.getInterceptors().getFirst()).getSessionTimeout()),
+                                () -> assertEquals(10000L, ((LoadBalancingInterceptor) a.getInterceptors().getFirst()).getSessionTimeout())
+                        )
+                ),
+                ok(
+                        "setCookies_cookie_fields",
+                        """
+                        interceptors:
+                          - setCookies:
+                              cookies:
+                                - cookie:
+                                    name: foo
+                                    value: bar
+                                    secure: false
+                        """,
+                        a -> {
+                            SetCookiesInterceptor.CookieDef c = ((SetCookiesInterceptor) a.getInterceptors().getFirst()).getCookies().getFirst();
+                            assertEquals("foo", c.getName());
+                            assertEquals("bar", c.getValue());
+                            assertInstanceOf(Boolean.class, c.isSecure());
+                            assertFalse(c.isSecure());
+                        }
+                ),
+                ok(
+                        "basicAuth_user_attributes_map",
+                        """
+                        interceptors:
+                          - basicAuthentication:
+                              staticUserDataProvider:
+                                users:
+                                  - user:
+                                      username: foo
+                                      password: bar
+                                      "a1": "t1"
+                                      "a2": "t2"
+                        """,
+                        a -> {
+                            StaticUserDataProvider.User u = ((BasicAuthenticationInterceptor) a.getInterceptors().getFirst()).getUsers().getFirst();
+                            assertInstanceOf(Map.class, u.getAttributes());
+                            assertEquals(Map.of("a1","t1","a2","t2","password","bar","username","foo"), u.getAttributes());
+                        }
+                ),
 
-        APIProxy api = GenericYamlParser.parse("api", APIProxy.class, events(yaml), reg);
+                ok(
+                        "oauth2_memcached_ref_injected",
+                        """
+                        interceptors:
+                          - oauth2Resource2:
+                              memcachedOriginalExchangeStore:
+                                connector: mem
+                              membrane:
+                                src: https://localhost/oauth2/
+                        """,
+                        memReg,
+                        a -> {
+                            OAuth2Resource2Interceptor i = (OAuth2Resource2Interceptor) a.getInterceptors().getFirst();
+                            MemcachedOriginalExchangeStore store = (MemcachedOriginalExchangeStore) i.getOriginalExchangeStore();
+                            assertSame(mem, store.getConnector());
+                        }
+                ),
+                ok(
+                        "ref_top_level_target",
+                        """
+                        $ref: target
+                        """,
+                        targetReg,
+                        a -> {
+                            assertSame(target, a.getTarget());
+                            assertEquals("https://ref.example", a.getTarget().getUrl());
+                        }
+                ),
+                ok(
+                        "ref_interceptor_response",
+                        """
+                        interceptors:
+                          - $ref: response
+                        """,
+                        responseReg,
+                        a -> {
+                            assertEquals(1, a.getInterceptors().size());
+                            assertSame(responseInterceptor, a.getInterceptors().getFirst());
+                        }
+                ),
+                ok(
+                        "openapi_spec_single",
+                        """
+                        specs:
+                          - openapi:
+                              location: fruitshop-api.yml
+                              validateRequests: "yes"
+                        """,
+                        a -> {
+                            assertEquals(1, a.getSpecs().size());
+                            assertEquals("fruitshop-api.yml", a.getSpecs().getFirst().getLocation());
+                            assertEquals(YES, a.getSpecs().getFirst().getValidateRequests());
+                        }
+                ),
+                ok(
+                        "openapi_spec_multiple",
+                        """
+                        specs:
+                          - openapi:
+                              location: a.yml
+                              validateRequests: "no"
+                          - openapi:
+                              location: b.yml
+                              validateRequests: "yes"
+                        """,
+                        a -> {
+                            assertEquals(2, a.getSpecs().size());
+                            assertEquals("a.yml", a.getSpecs().getFirst().getLocation());
+                            assertEquals("b.yml", a.getSpecs().get(1).getLocation());
+                            assertEquals(NO, a.getSpecs().get(0).getValidateRequests());
+                            assertEquals(YES, a.getSpecs().get(1).getValidateRequests());
+                        }
+                )
+        );
+    }
 
-        assertEquals(1, api.getInterceptors().size());
-        assertSame(responseInterceptor, api.getInterceptors().getFirst());
+    Stream<ErrCase> errorCases() {
+        BeanRegistry empty = new TestRegistry();
+        return Stream.of(
+                err(
+                        "invalid_ref",
+                        """
+                        $ref: target
+                        """,
+                        empty, RuntimeException.class
+                ),
+                err(
+                        "port_not_a_number",
+                        """
+                        port: not-a-number
+                        """,
+                        empty, RuntimeException.class
+                )
+        );
+    }
+
+    record Case(String testName, String yaml, BeanRegistry reg, java.util.function.Consumer<APIProxy> check) {
+        @Override public @NotNull String toString() { return testName; }
+    }
+
+    record ErrCase(String testName, String yaml, BeanRegistry reg, Class<? extends Throwable> expected) {
+        @Override public @NotNull String toString() { return testName; }
+    }
+
+    private static Case ok(String testName, String yaml, java.util.function.Consumer<APIProxy> check) {
+        return new Case(testName, yaml, null, check);
+    }
+    private static Case ok(String testName, String yaml, BeanRegistry reg, java.util.function.Consumer<APIProxy> check) {
+        return new Case(testName, yaml, reg, check);
+    }
+
+    private static ErrCase err(String testName, String yaml, BeanRegistry reg, Class<? extends Throwable> expected) {
+        return new ErrCase(testName, yaml, reg, expected);
+    }
+
+    static class TestRegistry implements BeanRegistry {
+        private final Map<String, Object> refs = new HashMap<>();
+        TestRegistry with(String key, Object v) { refs.put(key, v); return this; }
+        @Override public Object resolveReference(String ref) { return refs.get(ref); }
+    }
+
+    private static APIProxy parse(String yaml, BeanRegistry reg) {
+        return GenericYamlParser.parse("api", APIProxy.class, events(yaml), reg);
     }
 
     private static Iterator<Event> events(String yaml) {
@@ -244,11 +345,5 @@ class GenericYamlParserMembraneTest {
             filtered.add(e);
         }
         return filtered.iterator();
-    }
-
-    static class TestRegistry implements BeanRegistry {
-        private final Map<String, Object> refs = new HashMap<>();
-        TestRegistry with(String key, Object v) { refs.put(key, v); return this; }
-        @Override public Object resolveReference(String ref) { return refs.get(ref); }
     }
 }
