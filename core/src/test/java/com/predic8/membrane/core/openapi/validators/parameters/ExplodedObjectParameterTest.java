@@ -37,7 +37,6 @@ class ExplodedObjectParameterTest extends AbstractValidatorTest {
 
     /**
      * protected to be able to call super
-     * @throws Exception
      */
     @BeforeEach
     protected void setUp() throws Exception {

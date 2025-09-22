@@ -88,7 +88,7 @@ public class OpenAPIUtil {
                 .orElse(null);
     }
 
-    public static Schema<?> getProperty(Schema schema, String propertyName) {
+    public static Schema<?> getProperty(Schema<?> schema, String propertyName) {
         if (schema == null || schema.getProperties() == null) return null;
         return (Schema<?>) schema.getProperties().get(propertyName);
     }

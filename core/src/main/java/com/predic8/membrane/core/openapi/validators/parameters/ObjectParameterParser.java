@@ -34,7 +34,7 @@ public class ObjectParameterParser extends AbstractParameterParser {
     private static final Logger log = LoggerFactory.getLogger(ObjectParameterParser.class.getName());
 
     @Override
-    public JsonNode getJson() throws JsonProcessingException, AdditionalPropertiesException {
+    public JsonNode getJson() throws JsonProcessingException {
         List<String> values = getValuesForParameter();
         if (values == null || values.isEmpty())
             return FACTORY.objectNode();
@@ -61,6 +61,9 @@ public class ObjectParameterParser extends AbstractParameterParser {
             JsonNode json = scalarAsJson(tokens.pollFirst());
 
             Schema<?> parameterSchema = OpenAPIUtil.resolveSchema(api, parameter);
+            if (parameterSchema == null) {
+                return FACTORY.objectNode();
+            }
 
             // If parameter is listed as a property of the object
             if (OpenAPIUtil.getProperty(parameterSchema, fieldName) != null) {
@@ -79,7 +82,7 @@ public class ObjectParameterParser extends AbstractParameterParser {
             // additionalProperties is true or false
             if (additionalProperties instanceof
                     Boolean apb) {
-                if (apb.booleanValue()) {
+                if (apb) {
                     obj.replace(fieldName, json);
                     continue;
                 }

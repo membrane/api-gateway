@@ -151,8 +151,7 @@ public class JsonSchemaTestSuiteTests {
         return null;
     }
 
-    private void runSingleTestRun(Map tr, String ignoredReason, OpenAPIValidator validator) throws JsonProcessingException, ParseException {
-        Map testRun = tr;
+    private void runSingleTestRun(Map testRun, String ignoredReason, OpenAPIValidator validator) throws JsonProcessingException, ParseException {
 
         log.info("  - testRun = {}", om.writeValueAsString(testRun));
 

@@ -221,9 +221,7 @@ public class QueryParameterValidator extends AbstractParameterValidator {
             if (schema == null)
                 return;
             if (schema.getTypes().contains("object")) {
-                schema.getProperties().forEach((name, ignored) -> {
-                    names.add(name);
-                });
+                schema.getProperties().forEach((name, ignored) -> names.add(name));
             }
         });
         return names;

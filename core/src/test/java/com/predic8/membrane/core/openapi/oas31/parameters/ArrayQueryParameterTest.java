@@ -34,7 +34,7 @@ public class ArrayQueryParameterTest {
     OpenAPIValidator validator;
 
     @BeforeEach
-    void setUp(TestInfo info) {
+    void setUp() {
         OpenAPIRecord apiRecord = new OpenAPIRecord(
                 parseOpenAPI(getResourceAsStream(this, "/openapi/specs/oas31/parameters/explode-false.yaml")),
                 new OpenAPISpec()
