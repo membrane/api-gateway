@@ -29,9 +29,6 @@ import java.util.*;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 
-import static com.predic8.membrane.core.Constants.PRODUCT_NAME;
-import static com.predic8.membrane.core.Constants.VERSION;
-
 public class BeanCache implements BeanRegistry {
     private static final Logger LOG = LoggerFactory.getLogger(KubernetesWatcher.class);
     private final Router router;
@@ -41,7 +38,7 @@ public class BeanCache implements BeanRegistry {
     private Thread thread;
 
     interface ChangeEvent {}
-    record BeanDefintionChanged(BeanDefinition bd) implements ChangeEvent {}
+    record BeanDefinitionChanged(BeanDefinition bd) implements ChangeEvent {}
     record StaticConfigurationLoaded() implements ChangeEvent {}
 
     public BeanCache(Router router) {
@@ -58,7 +55,7 @@ public class BeanCache implements BeanRegistry {
                         router.handleAsynchronousInitializationResult(uidsToActivate.isEmpty());
                         continue;
                     }
-                    if (changeEvent instanceof BeanDefintionChanged(BeanDefinition bd)) {
+                    if (changeEvent instanceof BeanDefinitionChanged(BeanDefinition bd)) {
                         handle(bd);
                     }
                 } catch (InterruptedException e) {
@@ -89,7 +86,7 @@ public class BeanCache implements BeanRegistry {
      * May be called from multiple threads.
      */
     public void handle(WatchAction action, Map m) {
-        changeEvents.add(new BeanDefintionChanged(new BeanDefinition(action, m)));
+        changeEvents.add(new BeanDefinitionChanged(new BeanDefinition(action, m)));
     }
 
     /**
