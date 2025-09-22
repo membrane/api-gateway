@@ -53,7 +53,7 @@ public class SchemaValidatorTest {
         if (input instanceof InputStream) {
             assertThrows(RuntimeException.class, () -> validator.canValidate(input), "InputStream should not happen!");
         } else {
-            assertEquals(expected, validator.canValidate(input));
+            assertEquals(expected, validator.canValidate(input),"Input: " + input);
         }
     }
 

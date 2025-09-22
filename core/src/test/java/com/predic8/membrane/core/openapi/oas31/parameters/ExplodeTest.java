@@ -49,16 +49,6 @@ public class ExplodeTest {
     @Test
     void unknownParamIsRejected() {
         ValidationErrors err = validator.validate(get().path("/search?unknown=1"));
-        assertTrue(!err.isEmpty(), "Unknown query parameter should be reported");
-    }
-
-    @Nested
-    class Objects {
-
-        @Test
-        void explode() {
-            ValidationErrors err = validator.validate(get().path("/object?color=R,100,G,200,B,150"));
-        }
-
+        assertFalse(err.isEmpty(), "Unknown query parameter should be reported");
     }
 }

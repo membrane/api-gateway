@@ -1,0 +1,55 @@
+openapi: 3.1.0
+info:
+  title: Additional API
+  version: "1.0.0"
+
+paths:
+  /additional-boolean-false-explode-false:
+    get:
+      parameters:
+        - name: foo
+          in: query
+          style: form
+          explode: false
+          schema:
+            type: object
+            additionalProperties: false
+            properties:
+              a:
+                type: string
+      responses:
+        "200":
+          description: Ok
+  /additional-boolean-true-explode-false:
+    get:
+      parameters:
+        - name: foo
+          in: query
+          style: form
+          explode: false
+          schema:
+            type: object
+            additionalProperties: true
+            properties:
+              a:
+                type: string
+      responses:
+        "200":
+          description: Ok
+  /additional-schema-explode-false:
+    get:
+      parameters:
+        - name: foo
+          in: query
+          style: form
+          explode: false
+          schema:
+            type: object
+            additionalProperties:
+              type: number
+            properties:
+              a:
+                type: string
+      responses:
+        "200":
+          description: Ok

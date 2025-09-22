@@ -34,8 +34,12 @@ public abstract class AbstractValidatorTest {
 
     protected OpenAPIValidator validator;
 
+    /**
+     * protected to allow subclasses to call setUp
+     * @throws Exception
+     */
     @BeforeEach
-    public void setUp() throws Exception {
+    protected void setUp() throws Exception {
         validator = new OpenAPIValidator(new URIFactory(), new OpenAPIRecord(parseOpenAPI(getResourceAsStream(getOpenAPIFileName())),new OpenAPISpec()));
         validator.getApi().setExtensions(new HashMap<>() {{
             put(X_MEMBRANE_VALIDATION, new HashMap<>() {{

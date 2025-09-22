@@ -216,7 +216,7 @@ public class APIProxyOpenAPITest {
     }
 
     @SuppressWarnings("unchecked")
-    private Map<String, Object> getXValidation(OpenAPISpec spec) throws Exception {
+    private Map<String, Object> getXValidation(OpenAPISpec spec) {
         return (Map<String, Object>) getOpenAPI(spec).getExtensions().get(X_MEMBRANE_VALIDATION);
     }
 

@@ -34,7 +34,7 @@ public class NumberValidationTest {
     OpenAPIValidator validator;
 
     @BeforeEach
-    void setUp() throws Exception {
+    void setUp() {
         OpenAPIRecord apiRecord = new OpenAPIRecord(parseOpenAPI(getResourceAsStream(this, "/openapi/specs/oas31/number-validation.yaml")), new OpenAPISpec());
         validator = new OpenAPIValidator(new URIFactory(), apiRecord);
     }

@@ -49,7 +49,7 @@ public class SimpleNullTest {
             @Test
             void emptyValueIsInvalid() {
                 ValidationErrors err = validator.validate(get().path("/array?number="));
-                assertTrue(!err.isEmpty(), "Empty value should not satisfy number|null");
+                assertFalse(err.isEmpty(), "Empty value should not satisfy number|null");
             }
         }
     }

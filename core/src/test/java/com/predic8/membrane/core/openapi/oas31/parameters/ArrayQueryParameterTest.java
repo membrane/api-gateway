@@ -19,10 +19,15 @@ import com.predic8.membrane.core.openapi.serviceproxy.*;
 import com.predic8.membrane.core.openapi.validators.*;
 import com.predic8.membrane.core.util.*;
 import org.junit.jupiter.api.*;
+import org.junit.jupiter.params.*;
+import org.junit.jupiter.params.provider.*;
+
+import java.util.stream.*;
 
 import static com.predic8.membrane.core.openapi.model.Request.*;
 import static com.predic8.membrane.core.openapi.util.OpenAPITestUtils.*;
 import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.params.provider.Arguments.*;
 
 public class ArrayQueryParameterTest {
 
@@ -35,49 +40,31 @@ public class ArrayQueryParameterTest {
                 new OpenAPISpec()
         );
         validator = new OpenAPIValidator(new URIFactory(), apiRecord);
-        System.out.println(info.getDisplayName() +
-                           " validator@" + System.identityHashCode(validator));
     }
 
     @Nested
     class Explode {
 
-
         @Nested
         class Valid {
 
-            @Test
-            void empty() {
-                assertEquals(0, validator.validate(get().path("/array?number=")).size());
+            static Stream<Arguments> valid() {
+                return Stream.of(
+                        arguments("no query", "/array"),
+                        arguments("empty number", "/array?number="),
+                        arguments("null value number", "/array?number=null"),
+                        arguments("single negative number", "/array?number=-10"),
+                        arguments("multiple numbers", "/array?number=1,2,3"),
+                        arguments("multiple strings", "/array?string=blue,black,brown"),
+                        arguments("multiple strings with null", "/array?string=blue,black,brown"),
+                        arguments("multiple booleans", "/array?bool=true,false,true")
+                );
             }
 
-            @Test
-            void nullValue() {
-                ValidationErrors err = validator.validate(get().path("/array?number=null"));
-                System.out.println("err = " + err);
-                assertEquals(0, err.size());
-            }
-
-            @Test
-            void one() {
-                assertEquals(0, validator.validate(get().path("/array?number=-10")).size());
-            }
-
-            @Test
-            void number() {
-                ValidationErrors err = validator.validate(get().path("/array?number=1,2,3"));
-                System.out.println("err = " + err);
-                assertEquals(0, err.size());
-            }
-
-            @Test
-            void string() {
-                assertEquals(0, validator.validate(get().path("/array?string=blue,black,brown")).size());
-            }
-
-            @Test
-            void bool() {
-                assertEquals(0, validator.validate(get().path("/array?bool=true,false,true")).size());
+            @ParameterizedTest(name = "{index}: {0}")
+            @MethodSource("valid")
+            void zeroErrorsForValidInputs(String caseName, String path) {
+                assertEquals(0, validator.validate(get().path(path)).size(), () -> caseName + " should have 0 errors");
             }
 
             @Nested
@@ -86,14 +73,17 @@ public class ArrayQueryParameterTest {
                 @Test
                 void number() {
                     ValidationErrors err = validator.validate(get().path("/array?number=1,foo,3"));
-                    System.out.println("err = " + err);
                     assertEquals(1, err.size());
-
                     assertTrue(err.get(0).getMessage().contains("\"foo\" is of type string"));
                 }
 
+                @Test
+                void nullValue() {
+                    ValidationErrors err = validator.validate(get().path("/array?string=blue,null,brown"));
+                    assertEquals(1, err.size());
+                    assertTrue(err.get(0).getMessage().contains("null is of type"));
+                }
             }
-
         }
     }
 }

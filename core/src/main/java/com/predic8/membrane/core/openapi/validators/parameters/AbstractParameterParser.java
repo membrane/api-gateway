@@ -14,8 +14,6 @@
 
 package com.predic8.membrane.core.openapi.validators.parameters;
 
-import com.fasterxml.jackson.core.*;
-import com.fasterxml.jackson.databind.*;
 import com.fasterxml.jackson.databind.node.*;
 import io.swagger.v3.oas.models.*;
 import io.swagger.v3.oas.models.parameters.*;
@@ -24,11 +22,10 @@ import java.util.*;
 
 import static com.predic8.membrane.core.openapi.validators.JsonSchemaValidator.*;
 
-public abstract class AbstractParameter {
+public abstract class AbstractParameterParser implements ParameterParser {
 
     protected static final JsonNodeFactory FACTORY = JsonNodeFactory.instance;
 
-//    protected List<String> values = new ArrayList<>();
     protected Map<String, List<String>> values;
 
     protected String type;
@@ -36,19 +33,19 @@ public abstract class AbstractParameter {
     protected Parameter parameter;
     protected OpenAPI api; // To grab $ref Schema types
 
-    public static AbstractParameter instance(OpenAPI api, String type, Parameter parameter) {
-        AbstractParameter paramParser = switch (type) {
+    public static ParameterParser instance(OpenAPI api, String type, Parameter parameter) {
+        AbstractParameterParser paramParser = switch (type) {
             case ARRAY -> {
                 if (parameter.getExplode())
-                    yield new ExplodedArrayParameter();
-                yield  new ArrayParameter();
+                    yield new ExplodedArrayParameterParser();
+                yield new ArrayParameterParser();
             }
             case OBJECT -> {
                 if (parameter.getExplode())
-                    yield new ExplodedObjectParameter();
-                yield new ObjectParameter();
+                    yield new ExplodedObjectParameterParser();
+                yield new ObjectParameterParser();
             }
-            default -> new ScalarParameter();
+            default -> new ScalarParameterParser();
         };
         paramParser.type = type;
         paramParser.explode = parameter.getExplode();
@@ -57,15 +54,16 @@ public abstract class AbstractParameter {
         return paramParser;
     }
 
+    @Override
     public void setValues(Map<String, List<String>> values) {
         this.values = values;
     }
 
     protected List<String> getValuesForParameter() {
-        return values.get(parameter.getName());
+        String paramName = parameter.getName();
+        if (paramName == null) {
+            return List.of();
+        }
+        return values.getOrDefault(paramName, List.of());
     }
-
-    public abstract JsonNode getJson() throws JsonProcessingException;
-
-
 }

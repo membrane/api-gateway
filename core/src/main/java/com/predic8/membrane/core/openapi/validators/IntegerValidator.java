@@ -16,63 +16,58 @@
 
 package com.predic8.membrane.core.openapi.validators;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.predic8.membrane.core.openapi.model.Body;
+import com.fasterxml.jackson.databind.*;
+import com.predic8.membrane.core.openapi.model.*;
 
-import static java.lang.Long.parseLong;
+import java.math.*;
 
 public class IntegerValidator implements JsonSchemaValidator {
 
     @Override
     public String canValidate(Object obj) {
         if (obj instanceof JsonNode j) {
-            obj = j.numberValue();
+            return j.isIntegralNumber() ? INTEGER : null;
         }
-
-        try {
-            if (obj instanceof String s) {
-                parseLong(s);
+        if (obj instanceof String s) {
+            try {
+                new BigInteger(s);
                 return INTEGER;
+            } catch (NumberFormatException ex) {
+                return null;
             }
-            if (obj instanceof Integer)
-                return INTEGER;
-            return null;
-        } catch (Exception e) {
-            return null;
         }
+        if (obj instanceof Byte || obj instanceof Short || obj instanceof Integer || obj instanceof Long || obj instanceof BigInteger) {
+            return INTEGER;
+        }
+        return null;
     }
 
-    /**
-     * Only check if value can be parsed as an integer.
-     * @param ctx
-     * @param value
-     * @return
-     */
-    @Override
     public ValidationErrors validate(ValidationContext ctx, Object value) {
-
-        if (value instanceof JsonNode) {
-            value = ((JsonNode) value).numberValue();
+        if (value instanceof JsonNode j) {
+            return j.isIntegralNumber() ? null
+                    : ValidationErrors.create(ctx.schemaType("integer"),
+                    String.format("%s is not an integer.", j.asText()));
         }
-
-        try {
-            if (value instanceof String) {
-                parseLong((String) value);
+        if (value instanceof String s) {
+            try {
+                new BigInteger(s);
                 return null;
+            } catch (NumberFormatException e) {
+                return ValidationErrors.create(ctx.schemaType("integer"),
+                        String.format("%s is not an integer.", s));
             }
-            if (value instanceof Integer) {
-                return null;
-            }
-            if (value instanceof Body)
-                return null;
-
-            if (value != null)
-                throw new RuntimeException("Do not know type " + value.getClass());
-            throw new RuntimeException("Value is null!");
-
-        } catch (NumberFormatException e) {
-            return ValidationErrors.create(ctx.schemaType("integer"), String.format("%s is not an integer.", value));
         }
+        if (value instanceof Byte || value instanceof Short || value instanceof Integer || value instanceof Long || value instanceof java.math.BigInteger) {
+            return null;
+        }
+        if (value instanceof Body) {
+            return null;
+        }
+        if (value == null) {
+            return ValidationErrors.create(ctx.schemaType("integer"), "null is not an integer.");
+        }
+        return ValidationErrors.create(ctx.schemaType("integer"),
+                String.format("Do not know type %s for integer validation.", value.getClass().getName()));
     }
 }
 

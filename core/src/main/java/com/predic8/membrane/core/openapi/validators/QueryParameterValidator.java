@@ -16,7 +16,6 @@
 
 package com.predic8.membrane.core.openapi.validators;
 
-import com.fasterxml.jackson.core.*;
 import com.fasterxml.jackson.databind.*;
 import com.predic8.membrane.core.openapi.model.*;
 import com.predic8.membrane.core.openapi.util.*;
@@ -67,19 +66,36 @@ public class QueryParameterValidator extends AbstractParameterValidator {
 
         Map<String, List<String>> parameterMap = getParameterMapFromQuery(getQueryString(request));
 
+//        getAllQueryParameters(operation).forEach(p -> {
+//            Schema schema = OpenAPIUtil.getSchema(api, p);
+//            if (!parameterMap.containsKey(p.getName())) {
+//                if (p.getRequired()) {
+//                    errors.add(ctx, "Required query parameter(s) '%s' missing.".formatted(join(required)));
+//                }
+//                return;
+//            }
+//            errors.add(validate(ctx, p.getName(), parameterMap, schema, p));
+//            fields.remove(p.getName());
+//        });
+
         Set<String> fields = new HashSet<>(parameterMap.keySet());
 
+        // report all missing required params once
+        var missingRequired = required.stream()
+                .filter(r -> !parameterMap.containsKey(r))
+                .collect(toCollection(LinkedHashSet::new));
+        if (!missingRequired.isEmpty()) {
+            errors.add(ctx, "Required query parameter(s) '%s' missing.".formatted(join(missingRequired)));
+        }
+
         getAllQueryParameters(operation).forEach(p -> {
-            Schema schema = OpenAPIUtil.getSchema(api, p);
-            if (!parameterMap.containsKey(p.getName())) {
-                if (p.getRequired()) {
-                    errors.add(ctx, "Required query parameter(s) '%s' missing.".formatted(join(required)));
-                }
+            Schema schema = OpenAPIUtil.resolveSchema(api, p);
+            if (!parameterMap.containsKey(p.getName()))
                 return;
-            }
             errors.add(validate(ctx, p.getName(), parameterMap, schema, p));
             fields.remove(p.getName());
         });
+
 
         var validFieldNamesFromObjects = getPossibleObjectPropertiesNamesForOperation(operation);
         fields.forEach(f -> {
@@ -105,7 +121,7 @@ public class QueryParameterValidator extends AbstractParameterValidator {
             return errors;
         }
         types.forEach(type -> {
-            AbstractParameter ap = AbstractParameter.instance(api, type, parameter);
+            ParameterParser ap = AbstractParameterParser.instance(api, type, parameter);
             ap.setValues(v);
             try {
                 ValidationErrors err = new SchemaValidator(api, schema).validate(ctx
@@ -116,7 +132,7 @@ public class QueryParameterValidator extends AbstractParameterValidator {
                     return;
                 }
                 validated.set(true); // Validation against one type succeeded
-            } catch (JsonProcessingException e) {
+            } catch (Exception e) {
                 throw new RuntimeException(e); // ToDO test foo=ff'ff
             }
         });
@@ -147,7 +163,7 @@ public class QueryParameterValidator extends AbstractParameterValidator {
             return emptyList();
 
         return api.getComponents().getSecuritySchemes().values().stream()
-                .filter(scheme -> scheme != null && scheme.getType() != null && scheme.getType().equals(APIKEY) && scheme.getIn().equals(QUERY))
+                .filter(scheme -> scheme != null && APIKEY.equals(scheme.getType()) && QUERY.equals(scheme.getIn()))
                 .map(SecurityScheme::getName)
                 .toList();
     }
@@ -201,7 +217,7 @@ public class QueryParameterValidator extends AbstractParameterValidator {
 
         List<String> names = new ArrayList<>(parameters.size());
         parameters.forEach(p -> {
-            var schema = OpenAPIUtil.getSchema(api, p);
+            var schema = OpenAPIUtil.resolveSchema(api, p);
             if (schema == null)
                 return;
             if (schema.getTypes().contains("object")) {

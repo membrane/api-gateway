@@ -83,7 +83,7 @@ class OpenAPIInterceptorTest {
     @Test
     void nonMatchingBasePathMultipleServers() {
         exc.getRequest().setUri("/goo/boo");
-        assertNull(null, interceptor3Server.getMatchingBasePath(exc));
+        assertNull( interceptor3Server.getMatchingBasePath(exc));
     }
 
     @Test
@@ -112,8 +112,6 @@ class OpenAPIInterceptorTest {
         urls.add("https://localhost:3000/foo/boo");
         urls.add("https://localhost:4000/foo/boo");
         urls.add("https://localhost:5000/foo/boo");
-
-        System.out.println("exc = " + exc.getRequest().getHeader());
 
         assertEquals(urls, exc.getDestinations());
     }

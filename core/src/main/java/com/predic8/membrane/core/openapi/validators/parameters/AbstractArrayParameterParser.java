@@ -16,26 +16,26 @@ package com.predic8.membrane.core.openapi.validators.parameters;
 
 import com.fasterxml.jackson.core.*;
 import com.fasterxml.jackson.databind.*;
-import com.predic8.membrane.core.util.*;
+import com.fasterxml.jackson.databind.node.*;
 
-public class ScalarParameter extends AbstractParameter {
+import java.util.stream.*;
+
+import static com.predic8.membrane.core.util.JsonUtil.*;
+
+public abstract class AbstractArrayParameterParser extends AbstractParameterParser {
+
+    protected abstract Stream<String> getItems();
 
     @Override
     public JsonNode getJson() throws JsonProcessingException {
-
-        System.out.println("values = " + values);
-
-//        // TODO What if foo=1&foo=2 ?
-//        List<String> values = getValuesForParameter();
-//        if (values == null) {
-//
-//        }
-        return JsonUtil.scalarAsJson(getValuesForParameter().getFirst());
-
-//        if (values.isEmpty()) {
-//            // Interpret absence of a concrete value as JSON null; validator will enforce required/nullable.
-//            return FACTORY.nullNode();
-//        }
-//        return scalarAsJson(values.getFirst());
+        ArrayNode an = FACTORY.arrayNode();
+        Stream<String> items = getItems();
+        // e.g. foo=null
+        if (items == null) {
+            return FACTORY.nullNode();
+        }
+        items.forEach(s -> an.add( scalarAsJson(s)));
+        return an;
     }
+
 }

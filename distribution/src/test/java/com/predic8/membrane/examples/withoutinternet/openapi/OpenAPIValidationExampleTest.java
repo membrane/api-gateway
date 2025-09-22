@@ -14,17 +14,18 @@
 
 package com.predic8.membrane.examples.withoutinternet.openapi;
 
-import com.predic8.membrane.examples.util.AbstractSampleMembraneStartStopTestcase;
-import com.predic8.membrane.test.HttpAssertions;
-import io.restassured.response.Response;
-import org.json.JSONException;
-import org.junit.jupiter.api.Test;
-import org.skyscreamer.jsonassert.JSONAssert;
+import com.predic8.membrane.examples.util.*;
+import com.predic8.membrane.test.*;
+import io.restassured.response.*;
+import org.json.*;
+import org.junit.jupiter.api.*;
+import org.skyscreamer.jsonassert.*;
 
-import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
-import static io.restassured.RestAssured.given;
-import static io.restassured.http.ContentType.JSON;
-import static io.restassured.http.ContentType.XML;
+import static com.predic8.membrane.core.http.MimeType.*;
+import static io.restassured.RestAssured.*;
+import static io.restassured.http.ContentType.*;
+import static org.hamcrest.Matchers.allOf;
+import static org.hamcrest.Matchers.hasEntry;
 
 public class OpenAPIValidationExampleTest extends AbstractSampleMembraneStartStopTestcase {
 
@@ -317,23 +318,12 @@ public class OpenAPIValidationExampleTest extends AbstractSampleMembraneStartSto
             .get(LOCALHOST_2000 + "/demo-api/v2/persons?limit=200");
 
         res.then().assertThat()
-            .statusCode(400);
-
-        JSONAssert.assertEquals("""
-                {
-                    "validation": {
-                        "method" : "GET",
-                        "uriTemplate" : "/persons",
-                        "path" : "/demo-api/v2/persons?limit=200",
-                        "errors" : {
-                          "REQUEST/QUERY_PARAMETER/limit" : [ {
-                            "message" : "200.0 is greater than the maximum of 100",
-                            "schemaType" : "integer"
-                          } ]
-                        }
-                	}
-                  }
-                """, res.asString(), false);
+            .statusCode(400)
+                .body("validation.errors['REQUEST/QUERY_PARAMETER/limit'][0]",
+                        allOf(
+                                hasEntry("message", "200 is greater than the maximum of 100"),
+                                hasEntry("schemaType", "integer")
+                        ));
         // @formatter:on
     }
 

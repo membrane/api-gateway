@@ -61,11 +61,11 @@ public class ArrayValidator implements JsonSchemaValidator {
         }
 
         if (schema.getMinItems() != null && node.size() < schema.getMinItems()) {
-            errors.add(ctx, format("Array has %d items. This is less then minItems of %d.", node.size(), schema.getMinItems()));
+            errors.add(ctx, format("Array has %d items. This is less than minItems of %d.", node.size(), schema.getMinItems()));
         }
 
         if (schema.getMaxItems() != null && node.size() > schema.getMaxItems()) {
-            errors.add(ctx, format("Array has %d items. This is more then maxItems of %d.", node.size(), schema.getMaxItems()));
+            errors.add(ctx, format("Array has %d items. This is more than maxItems of %d.", node.size(), schema.getMaxItems()));
         }
 
         errors.add(validateUniqueItems(ctx, node));
@@ -85,8 +85,8 @@ public class ArrayValidator implements JsonSchemaValidator {
             }
             itemValues.add(node.get(i));
         }
-        if (moreThanOnce.size() > 0) {
-            return ValidationErrors.create(ctx, format("Array with restriction uniqueItems has the not unique values %s.", Utils.joinByComma(moreThanOnce)));
+        if (!moreThanOnce.isEmpty()) {
+            return ValidationErrors.create(ctx, format("Array with restriction uniqueItems contains non-unique values: %s.", Utils.joinByComma(moreThanOnce)));
         }
 
         return null;

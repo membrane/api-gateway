@@ -16,10 +16,12 @@
 
 package com.predic8.membrane.core.openapi.util;
 
+import io.swagger.v3.oas.models.*;
 import org.junit.jupiter.api.*;
 
 import java.io.*;
 
+import static com.predic8.membrane.core.openapi.util.OpenAPITestUtils.getApi;
 import static com.predic8.membrane.core.openapi.util.OpenAPIUtil.*;
 import static com.predic8.membrane.core.openapi.util.OpenAPITestUtils.*;
 import static org.junit.jupiter.api.Assertions.*;
@@ -65,11 +67,22 @@ public class OpenAPIUtilTest {
 
     @Test
     void getPath() {
-        assertEquals("Single paths", OpenAPIUtil.getPath(OpenAPITestUtils.getApi(this,"/openapi/specs/customers.yml"), "/customers/{cid}").getDescription());
+        assertEquals("Single paths", OpenAPIUtil.getPath(getCustomerAPI(), "/customers/{cid}").getDescription());
     }
 
     @Test
-    void getOperation() {
+    void get_Parameter() {
+        var op = OpenAPIUtil.getPath(getCustomerAPI(),"/images/{iid}").getGet();
+        assertEquals("Id of image", getParameter( op, "iid").getDescription());
+    }
 
+    @Test
+    void get_Parameter_unknown() {
+        var op = OpenAPIUtil.getPath(getCustomerAPI(),"/images/{iid}").getGet();
+        assertNull( getParameter( op, "unknown"));
+    }
+
+    private OpenAPI getCustomerAPI() {
+        return OpenAPITestUtils.getApi(this, "/openapi/specs/customers.yml");
     }
 }

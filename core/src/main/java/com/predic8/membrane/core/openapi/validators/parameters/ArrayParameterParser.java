@@ -17,15 +17,16 @@ package com.predic8.membrane.core.openapi.validators.parameters;
 import java.util.*;
 import java.util.stream.*;
 
-public class ArrayParameter extends AbstractArrayParameter {
+public class ArrayParameterParser extends AbstractArrayParameterParser {
 
     protected Stream<String> getItems() {
 
-        System.out.println("values = " + values);
+        var value = values.get(parameter.getName());
+        if (value == null || value.isEmpty()) {
+            return Stream.empty();
+        }
 
-        var x = values.get(parameter.getName());
-
-        String[] items = x.getFirst().split(",");
+        String[] items = value.getFirst().split(",");
         if (items.length == 0) {
             return Stream.empty();
         }

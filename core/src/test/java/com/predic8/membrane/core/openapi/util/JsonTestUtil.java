@@ -26,7 +26,6 @@ import java.util.*;
 public class JsonTestUtil {
 
     public static final ObjectMapper om = new ObjectMapper();
-    protected static final JsonNodeFactory FACTORY = JsonNodeFactory.instance;
 
     public static JsonNode mapToJson(Object m) {
         return om.convertValue(m, JsonNode.class);

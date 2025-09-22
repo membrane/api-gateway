@@ -38,7 +38,6 @@ protected String getOpenAPIFileName() {
     @Test
     void invalidQueryParam()  {
         ValidationErrors errors = validator.validate(get().path("/cities?limit=200"));
-//        System.out.println("errors = " + errors);
         assertEquals(1,errors.size());
         ValidationError e = errors.get(0);
         assertEquals("limit",e.getContext().getValidatedEntity());
@@ -49,7 +48,6 @@ protected String getOpenAPIFileName() {
     @Test
     void unknownQueryParam() {
         ValidationErrors errors = validator.validate(get().path("/cities?unknown=3&limit=10"));
-        System.out.println("errors = " + errors);
         assertEquals(1,errors.size());
         ValidationError e = errors.get(0);
         assertEquals("REQUEST/QUERY_PARAMETER", e.getContext().getLocationForRequest());
@@ -59,7 +57,6 @@ protected String getOpenAPIFileName() {
     @Test
     void missingRequiredParam() {
         ValidationErrors err = validator.validate(get().path("/cities"));
-        System.out.println("err = " + err);
         assertEquals(1,err.size());
 
         ValidationError e = err.get(0);
@@ -71,7 +68,6 @@ protected String getOpenAPIFileName() {
     @Test
     void queryParamAtPathLevel()  {
         ValidationErrors errors = validator.validate(get().path("/cities?foo=-1&limit=10"));
-//        System.out.println("errors = " + errors);
         assertEquals(1,errors.size());
         ValidationError e = errors.get(0);
         assertEquals(QUERY_PARAMETER,e.getContext().getValidatedEntityType());
@@ -84,7 +80,6 @@ protected String getOpenAPIFileName() {
     @Test
     void escapedTest() {
         ValidationErrors errors = validator.validate(get().path("/cities?name=Bad%20Godesberg&limit=10"));
-//        System.out.println("errors = " + errors);
         assertEquals(1,errors.size());
         ValidationError e = errors.get(0);
         assertEquals("REQUEST/QUERY_PARAMETER/name", e.getContext().getLocationForRequest());
@@ -92,22 +87,17 @@ protected String getOpenAPIFileName() {
 
     @Test
     void utf8Test() {
-        ValidationErrors errors = validator.validate(get().path("/cities?name=K%C3%B6%C3%B6%C3%B6ln&limit=10"));
-//        System.out.println("errors = " + errors);
-        assertEquals(0,errors.size());
+        assertEquals(0, validator.validate(get().path("/cities?name=K%C3%B6%C3%B6%C3%B6ln&limit=10")).size());
     }
 
     @Test
     void referencedParamTest() {
-        ValidationErrors errors = validator.validate(get().path("/cities?limit=1&page=10"));
-//        System.out.println("errors = " + errors);
-        assertEquals(0,errors.size());
+        assertEquals(0, validator.validate(get().path("/cities?limit=1&page=10")).size());
     }
 
     @Test
     public void referencedParamValueTest()  {
         ValidationErrors errors = validator.validate(get().path("/cities?limit=1&page=-1"));
-//        System.out.println("errors = " + errors);
         assertEquals(1,errors.size());
         ValidationError e = errors.get(0);
         assertEquals("page",e.getContext().getValidatedEntity());

@@ -34,7 +34,7 @@ public class MultipleTypesNestedTest {
     OpenAPIValidator validator;
 
     @BeforeEach
-    void setUp() throws Exception {
+    void setUp() {
         OpenAPIRecord apiRecord = new OpenAPIRecord(parseOpenAPI(getResourceAsStream(this, "/openapi/specs/oas31/multiple-types-nested.yaml")), new OpenAPISpec());
         validator = new OpenAPIValidator(new URIFactory(), apiRecord);
     }

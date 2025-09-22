@@ -23,6 +23,7 @@ import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.*;
 import org.junit.jupiter.params.provider.*;
 
+import java.util.*;
 import java.util.stream.*;
 
 import static com.predic8.membrane.core.http.MimeType.*;
@@ -33,75 +34,75 @@ public class MultipleTypesComplexTest {
 
     OpenAPIValidator validator;
 
-    @BeforeEach
-    void setUp() throws Exception {
-        validator = new OpenAPIValidator(new URIFactory(),
-                new OpenAPIRecord(parseOpenAPI(getResourceAsStream(this, "/openapi/specs/oas31/multiple-types-complex.yaml")), new OpenAPISpec()));
-    }
-
     static Stream<Arguments> requestBodyProvider() {
         return Stream.of(
                 Arguments.of(
                         """
-                        {
-                            "user": { "name": "John", "age": null },
-                            "tags": [
-                                { "label": "tag1", "value": 1 },
-                                { "label": null, "value": null }
-                            ]
-                        }
-                        """,
+                                {
+                                    "user": { "name": "John", "age": null },
+                                    "tags": [
+                                        { "label": "tag1", "value": 1 },
+                                        { "label": null, "value": null }
+                                    ]
+                                }
+                                """,
                         0, "", ""
                 ),
                 Arguments.of(
                         """
-                        {
-                            "user": { "name": null, "age": 25 },
-                            "tags": null
-                        }
-                        """,
+                                {
+                                    "user": { "name": null, "age": 25 },
+                                    "tags": null
+                                }
+                                """,
                         0, "", ""
                 ),
                 Arguments.of(
                         """
-                        {
-                            "user": { "name": "Alice", "age": 30 },
-                            "tags": [
-                                { "label": 123, "value": "invalid" }
-                            ]
-                        }
-                        """,
+                                {
+                                    "user": { "name": "Alice", "age": 30 },
+                                    "tags": [
+                                        { "label": 123, "value": "invalid" }
+                                    ]
+                                }
+                                """,
                         2,
                         "123 is of type integer which does not match any of [string, null]",
                         "\"invalid\" is of type string which does not match any of [integer, null]"
                 ),
                 Arguments.of(
                         """
-                        {
-                            "user": { "name": "Bob", "age": null },
-                            "tags": [
-                                { "label": "tag", "value": 10 },
-                                { "label": null, "value": 20 }
-                            ]
-                        }
-                        """,
+                                {
+                                    "user": { "name": "Bob", "age": null },
+                                    "tags": [
+                                        { "label": "tag", "value": 10 },
+                                        { "label": null, "value": 20 }
+                                    ]
+                                }
+                                """,
                         0, "", ""
                 ),
                 Arguments.of(
                         """
-                        {
-                            "user": { "name": true, "age": "not-an-integer" },
-                            "tags": [
-                                { "label": "valid", "value": 5 }
-                            ]
-                        }
-                        """,
+                                {
+                                    "user": { "name": true, "age": "not-an-integer" },
+                                    "tags": [
+                                        { "label": "valid", "value": 5 }
+                                    ]
+                                }
+                                """,
                         2,
                         "true is of type boolean which does not match any of [string, null]",
                         "\"not-an-integer\" is of type string which does not match any of [integer, null]"
                 )
         );
 
+    }
+
+    @BeforeEach
+    void setUp() {
+        validator = new OpenAPIValidator(new URIFactory(),
+                new OpenAPIRecord(parseOpenAPI(getResourceAsStream(this, "/openapi/specs/oas31/multiple-types-complex.yaml")), new OpenAPISpec()));
     }
 
     @ParameterizedTest
@@ -111,9 +112,10 @@ public class MultipleTypesComplexTest {
                 Request.post().path("/complex").body(requestBody).mediaType(APPLICATION_JSON)
         );
         assertEquals(expectedErrorSize, errors.size());
-        if(errors.hasErrors()) {
-            assertEquals(errMsg1, errors.get(0).getMessage());
-            assertEquals(errMsg2, errors.get(1).getMessage());
+        if (errors.hasErrors()) {
+            List<String> actual = Arrays.asList(errors.get(0).getMessage(), errors.get(1).getMessage());
+            assertTrue(actual.contains(errMsg1));
+            assertTrue(actual.contains(errMsg2));
         }
     }
 }

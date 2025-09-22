@@ -18,14 +18,14 @@ package com.predic8.membrane.core.openapi.validators;
 
 import com.fasterxml.jackson.databind.*;
 import com.fasterxml.jackson.databind.node.*;
-import com.predic8.membrane.core.openapi.util.SchemaUtil;
+import com.predic8.membrane.core.openapi.util.*;
 import io.swagger.v3.oas.models.*;
 import io.swagger.v3.oas.models.media.*;
 import org.slf4j.*;
 
 import java.io.*;
 import java.util.*;
-import java.util.regex.Pattern;
+import java.util.regex.*;
 
 import static com.predic8.membrane.core.openapi.util.Utils.*;
 import static java.lang.String.*;
@@ -43,7 +43,6 @@ public class ObjectValidator implements JsonSchemaValidator {
 
     @SuppressWarnings("rawtypes")
     private final Schema schema;
-    private JsonNode node;
 
     private final OpenAPI api;
 
@@ -55,23 +54,21 @@ public class ObjectValidator implements JsonSchemaValidator {
 
     public String canValidate(Object obj) {
         if (obj instanceof JsonNode j) {
-            node = j;
+            return j instanceof ObjectNode ? OBJECT : null;
         } else if (obj instanceof InputStream) {
             throw new RuntimeException("InputStream should not happen!");
         } else {
             log.warn("This should not happen. Please check.");
             throw new RuntimeException("Value cannot be read as object.");
         }
-
-        return (node instanceof ObjectNode ? OBJECT : null);
     }
 
     @Override
     public ValidationErrors validate(ValidationContext ctx, Object obj) {
         ctx = ctx.schemaType("object");
 
-        if (canValidate(obj) == null) {
-            return ValidationErrors.create(ctx.statusCode(400),format("Value %s is not an object.",node));
+        if (canValidate(obj) == null || !(obj instanceof ObjectNode node)) {
+            return ValidationErrors.create(ctx.statusCode(400), format("Value %s is not an object.", obj));
         }
 
         ValidationErrors errors = validateRequiredProperties(ctx, node);
@@ -79,7 +76,7 @@ public class ObjectValidator implements JsonSchemaValidator {
         errors.add(validateProperties(ctx, node));
         errors.add(validatePatternProperties(ctx, node));
         errors.add(validateSize(ctx, node));
-        errors.add(validateDiscriminator(ctx,node));
+        errors.add(validateDiscriminator(ctx, node));
         return errors;
     }
 
@@ -96,17 +93,17 @@ public class ObjectValidator implements JsonSchemaValidator {
         if (isMapped(propertyValue)) {
             propertyValue = schema.getDiscriminator().getMapping().get(propertyValue);
             if (propertyValue != null && propertyValue.startsWith("#"))
-                return validateRef(ctx, propertyValue);
+                return validateRef(ctx, node, propertyValue);
         }
 
-        Schema<?> schema = getBaseSchema(node, propertyValue);
+        Schema<?> schema = getBaseSchema(propertyValue);
         if (schema == null) {
             return ValidationErrors.create(ctx.statusCode(400), format("Discriminator value %s is not an valid type.", propertyValue));
         }
-        return new SchemaValidator(api, schema).validate(ctx,node);
+        return new SchemaValidator(api, schema).validate(ctx, node);
     }
 
-    private ValidationErrors validateRef(ValidationContext ctx, String propertyValue) {
+    private ValidationErrors validateRef(ValidationContext ctx, JsonNode node, String propertyValue) {
         var schema2 = SchemaUtil.getSchemaFromRef(api, propertyValue);
         if (schema2 == null)
             throw new RuntimeException("Should not happen!");
@@ -118,7 +115,7 @@ public class ObjectValidator implements JsonSchemaValidator {
     }
 
     @SuppressWarnings("rawtypes")
-    private Schema getBaseSchema(JsonNode node, String propertyValue) {
+    private Schema getBaseSchema(String propertyValue) {
         return api.getComponents().getSchemas().get(propertyValue);
     }
 
@@ -141,7 +138,7 @@ public class ObjectValidator implements JsonSchemaValidator {
     }
 
     private ValidationErrors validateMaxProperties(ValidationContext ctx, JsonNode node) {
-        if (schema.getMaxProperties() != null &&node.size() > schema.getMaxProperties()) {
+        if (schema.getMaxProperties() != null && node.size() > schema.getMaxProperties()) {
             return ValidationErrors.create(ctx, String.format("Object has %d properties. This is more then maxProperties of %d.", node.size(), schema.getMaxProperties()));
         }
         return null;
@@ -154,18 +151,27 @@ public class ObjectValidator implements JsonSchemaValidator {
 
         Map<String, JsonNode> additionalProperties = getAddionalProperties(node);
 
-        if (additionalProperties.size() == 0)
+        if (additionalProperties.isEmpty())
             return null;
 
         ValidationErrors errors = new ValidationErrors();
 
         if (schema.getAdditionalProperties() instanceof Schema) {
             additionalProperties.forEach((propName, value) ->
-                errors.add(new SchemaValidator(api, (Schema) schema.getAdditionalProperties()).validate(ctx.addJSONpointerSegment(propName), value)));
+                    errors.add(new SchemaValidator(api, (Schema) schema.getAdditionalProperties()).validate(ctx.addJSONpointerSegment(propName), value)));
             return errors;
+        } if (schema.getAdditionalProperties() instanceof Boolean b) {
+            if (b) {
+                return null; // allowed
+            }
+            return errors.add(ctx.statusCode(400),
+                    format("The object has the additional %s: %s. But the schema does not allow additional properties.",
+                            getPropertyOrIes(additionalProperties.keySet()),
+                            joinByComma(additionalProperties.keySet())));
         }
-
-        return errors.add(ctx.statusCode(400), format("The object has the additional %s: %s .But the schema does not allow additional properties.", getPropertyOrIes(additionalProperties.keySet()), joinByComma(additionalProperties.keySet())));
+        // Unknown type – be safe and return an error
+        return errors.add(ctx.statusCode(400),
+                format("Unsupported additionalProperties type: %s", joinByComma(additionalProperties.keySet())));
     }
 
     private String getPropertyOrIes(Set<String> addionalProperties) {
@@ -231,7 +237,7 @@ public class ObjectValidator implements JsonSchemaValidator {
         ValidationErrors errors = new ValidationErrors();
 
         if (missingProperties.size() == 1) {
-            errors.add(new ValidationError(ctx.addJSONpointerSegment(missingProperties.get(0)), format("Required property %s is missing.", missingProperties.get(0))));
+            errors.add(new ValidationError(ctx.addJSONpointerSegment(missingProperties.getFirst()), format("Required property %s is missing.", missingProperties.getFirst())));
         } else if (missingProperties.size() > 1) {
             String missing = String.join(",", missingProperties);
             errors.add(new ValidationError(ctx, format("Required properties %s are missing in object %s.", missing, ctx.getJSONpointer())));
@@ -255,7 +261,7 @@ public class ObjectValidator implements JsonSchemaValidator {
     }
 
     private ValidationErrors validatePatternProperties(ValidationContext ctx, JsonNode node) {
-        if(schema.getPatternProperties() == null) {
+        if (schema.getPatternProperties() == null) {
             return null;
         }
         ValidationErrors errors = new ValidationErrors();
@@ -268,7 +274,7 @@ public class ObjectValidator implements JsonSchemaValidator {
                 if (pattern.matcher(fieldName).matches()) {
                     JsonNode childNode = node.get(fieldName);
                     errors.add(new SchemaValidator(api, propSchema)
-                            .validate(ctx, childNode));
+                            .validate(ctx.addJSONpointerSegment(fieldName), childNode));
                 }
             }
         });

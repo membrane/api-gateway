@@ -22,7 +22,7 @@ paths:
         - name: rgb
           in: query
           style: form
-          exploded: true
+          explode: true
           schema:
             $ref: "#/components/schemas/Color"
       responses:

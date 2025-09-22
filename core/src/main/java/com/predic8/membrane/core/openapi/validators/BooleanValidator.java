@@ -28,6 +28,7 @@ public class BooleanValidator implements JsonSchemaValidator {
         return null;
     }
 
+    @Override
     public ValidationErrors validate(ValidationContext ctx, Object value) {
 
         ValidationErrors errors = new ValidationErrors();

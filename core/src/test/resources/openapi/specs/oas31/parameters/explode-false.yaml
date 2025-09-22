@@ -51,10 +51,10 @@ components:
   schemas:
     Color:
       type: integer
-      min: 0
-      max: 255
+      minimum: 0
+      maximum: 255
     Numbers:
-      type: [array,"null"]
+      type: [array, "null"]
       items:
         type: number
     Booleans:

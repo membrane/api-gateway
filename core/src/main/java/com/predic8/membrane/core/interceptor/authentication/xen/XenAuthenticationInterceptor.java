@@ -84,7 +84,7 @@ public class XenAuthenticationInterceptor extends AbstractInterceptor {
     public Outcome handleResponse(Exchange exc) {
         // map session ids
         String sessionId = new XenSessionIdAccessor().getSessionId(exc, Flow.RESPONSE);
-        if (sessionId == null || sessionId.length() == 0)
+        if (sessionId == null || sessionId.isEmpty())
             return Outcome.CONTINUE;
 
         String newSessionId = sessionManager.getExistingSessionId(sessionId);
@@ -142,7 +142,7 @@ public class XenAuthenticationInterceptor extends AbstractInterceptor {
 
         public void init(Router router) throws Exception {
             String key = jwk.get(router.getResolverMap(), router.getBaseLocation());
-            if (key == null || key.length() == 0)
+            if (key == null || key.isEmpty())
                 rsaJsonWebKey = generateKey();
             else
                 rsaJsonWebKey = new RsaJsonWebKey(JsonUtil.parseJson(key));

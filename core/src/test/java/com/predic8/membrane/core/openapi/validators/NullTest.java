@@ -48,14 +48,14 @@ public class NullTest extends AbstractValidatorTest {
 
     @Test
     public void nullOrIntegerArrayValid() {
-        List<?> l = Arrays.asList(new Object[] {null, 1});
+        List<?> l = Arrays.asList(null, 1);
         ValidationErrors errors = validator.validate(post().path("/array-null-or-integer-type").body(mapToJson(l)));
         assertEquals(0,errors.size());
     }
 
     @Test
     public void nullOrIntegerArrayInvalid() {
-        List<?> l = Arrays.asList(new Object[] {null, "foo"});
+        List<?> l = Arrays.asList(null, "foo");
         ValidationErrors errors = validator.validate(post().path("/array-null-or-integer-type").body(mapToJson(l)));
         assertEquals(1,errors.size());
         assertTrue(errors.get(0).getMessage().contains("\"foo\" is of type string"));

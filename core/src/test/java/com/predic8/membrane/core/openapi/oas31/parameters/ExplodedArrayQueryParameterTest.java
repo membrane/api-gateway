@@ -40,12 +40,6 @@ public class ExplodedArrayQueryParameterTest {
         assertEquals(0, errors.size());
     }
 
-    @Test
-    void parameterIsNotDescribed() {
-        assertTrue(true); //TODO
-    }
-
-
     @Nested
     class Explode {
 

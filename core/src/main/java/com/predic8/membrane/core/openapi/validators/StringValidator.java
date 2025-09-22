@@ -41,11 +41,11 @@ public class StringValidator implements JsonSchemaValidator {
     public String canValidate(Object obj) {
         if (obj instanceof JsonNode node && JsonNodeType.STRING.equals(node.getNodeType())) {
             return STRING;
-        } else if(obj instanceof String) {
-            return STRING;
-        } else {
-            return null;
         }
+        if (obj instanceof String) {
+            return STRING;
+        }
+        return null;
     }
 
     @Override
@@ -66,7 +66,7 @@ public class StringValidator implements JsonSchemaValidator {
                 return errors;
             }
             value = node.textValue();
-        } else if(obj instanceof String s) {
+        } else if (obj instanceof String s) {
             value = s;
         } else {
             throw new RuntimeException("Should not happen! " + obj.getClass());
@@ -91,7 +91,7 @@ public class StringValidator implements JsonSchemaValidator {
                 }
                 case "date": {
                     if (!isValidDate(value))
-                        errors.add(ctx,format("The string '%s' is not a valid date of the pattern YYYY-MM-DD.", value));
+                        errors.add(ctx, format("The string '%s' is not a valid date of the pattern YYYY-MM-DD.", value));
                     break;
                 }
                 case "date-time": {
@@ -185,14 +185,13 @@ public class StringValidator implements JsonSchemaValidator {
         }
 
         if (schema.getConst() != null && !schema.getConst().equals(value)) {
-            errors.add(ctx,format("The string '%s' does not match the const %s.", value, schema.getConst()));
-        }
-        else if (schema.getEnum() != null && !schema.getEnum().contains(value)) {
-            errors.add(ctx,format("The string '%s' does not contain a value from the enum %s.",value,getEnumValues()));
+            errors.add(ctx, format("The string '%s' does not match the const %s.", value, schema.getConst()));
+        } else if (schema.getEnum() != null && !schema.getEnum().contains(value)) {
+            errors.add(ctx, format("The string '%s' does not contain a value from the enum %s.", value, getEnumValues()));
         }
 
         if (schema.getPattern() != null && !matchRegexPattern(value)) {
-                errors.add(ctx,format("The string '%s' does not match the regex pattern %s.",value,schema.getPattern()));
+            errors.add(ctx, format("The string '%s' does not match the regex pattern %s.", value, schema.getPattern()));
         }
 
         return errors;
@@ -200,7 +199,7 @@ public class StringValidator implements JsonSchemaValidator {
 
     private String getEnumValues() {
         //noinspection unchecked
-        return String.join(",",schema.getEnum());
+        return String.join(",", schema.getEnum());
     }
 
     private boolean matchRegexPattern(String v) {
