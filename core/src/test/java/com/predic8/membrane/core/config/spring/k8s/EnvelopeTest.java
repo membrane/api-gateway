@@ -218,6 +218,18 @@ class EnvelopeTest {
         APIProxy api = (APIProxy) e.getSpec();
         assertEquals(1000, api.getPort());
     }
+    @Test
+    void missingKindDefaultsToApi() {
+        String yaml = """
+        apiVersion: membrane-soa.org/v1beta1
+        metadata: { name: demo2 }
+        spec:
+          port: 1001
+        """;
+        Envelope e = parseEnvelopes(yaml, null).getFirst();
+        assertInstanceOf(APIProxy.class, e.getSpec());
+        assertEquals(1001, ((APIProxy) e.getSpec()).getPort());
+    }
 
     private static List<Envelope> parseEnvelopes(String yaml, BeanRegistry registry) {
         Iterator<Event> it = new Yaml().parse(new StringReader(yaml)).iterator();
