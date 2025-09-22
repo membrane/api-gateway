@@ -138,11 +138,11 @@ public class RouterCLI {
         String config = getRulesFile(commandLine);
         if(config.endsWith(".xml")) {
             return initRouterByXml(commandLine);
-        } else if (config.endsWith(".yaml") || config.endsWith(".yml")) {
-            return initRouterByYAML(commandLine, "c");
-        }else {
-            throw new RuntimeException("Unsupported file extension.");
         }
+        if (config.endsWith(".yaml") || config.endsWith(".yml")) {
+            return initRouterByYAML(commandLine, "c");
+        }
+        throw new RuntimeException("Unsupported file extension.");
     }
 
     private static Router initRouterByOpenApiSpec(MembraneCommandLine commandLine) throws Exception {
@@ -154,7 +154,6 @@ public class RouterCLI {
 
     private static Router initRouterByYAML(MembraneCommandLine commandLine, String option) throws Exception {
         String location = commandLine.getCommand().getOptionValue(option);
-        var fileReader = new FileReader(location);
 
         var router = new HttpRouter();
         router.setBaseLocation(location);
@@ -164,32 +163,35 @@ public class RouterCLI {
 
         var beanCache = new BeanCache(router);
         beanCache.start();
+        sendYamlToBeanCache(location, beanCache);
+        return router;
+    }
 
-        YAMLParser parser = new YAMLFactory().createParser(new File(location));
-        var om = new ObjectMapper();
-        int count = 0;
-        while (!parser.isClosed()) {
-            Map<?, ?> m = om.readValue(parser, Map.class);
-            Map<Object, Object> meta = (Map<Object, Object>) m.get("metadata");
+    private static void sendYamlToBeanCache(String location, BeanCache beanCache) throws IOException {
+        try (YAMLParser parser = new YAMLFactory().createParser(new File(location))) {
+            var om = new ObjectMapper();
+            int count = 0;
+            while (!parser.isClosed()) {
+                Map<?, ?> m = om.readValue(parser, Map.class);
+                Map<Object, Object> meta = (Map<Object, Object>) m.get("metadata");
 
-            if (meta == null) {
-                // generate name, if it doesnt exist
-                meta = new HashMap<>();
-                ((Map<Object, Object>)m).put("metadata", meta);
-                meta.put("name", "artifact" + ++count);
-                meta.put("uid", UUID.randomUUID().toString());
-            } else {
-                // fake UID
-                meta.put("uid", location + "-" + meta.get("name"));
+                if (meta == null) {
+                    // generate name, if it doesnt exist
+                    meta = new HashMap<>();
+                    ((Map<Object, Object>) m).put("metadata", meta);
+                    meta.put("name", "artifact" + ++count);
+                    meta.put("uid", UUID.randomUUID().toString());
+                } else {
+                    // fake UID
+                    meta.put("uid", location + "-" + meta.get("name"));
+                }
+
+                beanCache.handle(WatchAction.ADDED, m);
+                parser.nextToken();
             }
 
-            beanCache.handle(WatchAction.ADDED, m);
-            parser.nextToken();
+            beanCache.fireConfigurationLoaded();
         }
-
-        beanCache.fireConfigurationLoaded();
-
-        return router;
     }
 
     private static void generateJWK(MembraneCommandLine commandLine) {
