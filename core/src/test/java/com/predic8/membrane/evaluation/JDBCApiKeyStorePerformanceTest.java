@@ -86,7 +86,6 @@ public class JDBCApiKeyStorePerformanceTest {
     private EmbeddedDataSource getDataSource() throws IOException {
         if (dataSource == null) {
             if (new File(DATABASE_NAME).exists()) {
-                // Delete the existing database if it exists
                 FileUtils.deleteDirectory(new File(DATABASE_NAME));
             }
             dataSource = new EmbeddedDataSource();
