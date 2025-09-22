@@ -14,7 +14,6 @@
 
 package com.predic8.membrane.core.openapi.validators.parameters;
 
-import com.fasterxml.jackson.core.*;
 import com.fasterxml.jackson.databind.*;
 import com.fasterxml.jackson.databind.node.*;
 import com.predic8.membrane.core.openapi.validators.*;
@@ -28,7 +27,7 @@ import static com.predic8.membrane.core.util.JsonUtil.*;
 
 public class ExplodedObjectParameterParser extends AbstractParameterParser {
     @Override
-    public JsonNode getJson() throws JsonProcessingException {
+    public JsonNode getJson() throws ParameterParsingException {
         ObjectNode obj = FACTORY.objectNode();
 
         var schema = resolveSchema(api, parameter);
@@ -45,7 +44,10 @@ public class ExplodedObjectParameterParser extends AbstractParameterParser {
             return obj;
         }
 
-        if (additionalBoolean(additional, known, obj)) return obj;
+        // AdditionalProperties is boolean, handle here and exit
+        if (additionalBoolean(additional, known, obj))
+            return obj;
+
         additionalSchemaProperties(additional, known, obj);
         return obj;
     }

@@ -14,28 +14,14 @@
 
 package com.predic8.membrane.core.openapi.validators.parameters;
 
-import com.fasterxml.jackson.core.*;
 import com.fasterxml.jackson.databind.*;
-import com.predic8.membrane.core.util.*;
+
+import static com.predic8.membrane.core.util.JsonUtil.*;
 
 public class ScalarParameterParser extends AbstractParameterParser {
 
     @Override
-    public JsonNode getJson() throws JsonProcessingException {
-
-        System.out.println("values = " + values);
-
-//        // TODO What if foo=1&foo=2 ?
-//        List<String> values = getValuesForParameter();
-//        if (values == null) {
-//
-//        }
-        return JsonUtil.scalarAsJson(getValuesForParameter().getFirst());
-
-//        if (values.isEmpty()) {
-//            // Interpret absence of a concrete value as JSON null; validator will enforce required/nullable.
-//            return FACTORY.nullNode();
-//        }
-//        return scalarAsJson(values.getFirst());
+    public JsonNode getJson() throws ParameterParsingException {
+        return scalarAsJson(getValuesForParameter().getFirst());
     }
 }

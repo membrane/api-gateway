@@ -17,6 +17,8 @@ package com.predic8.membrane.core.util;
 import com.fasterxml.jackson.databind.*;
 import com.fasterxml.jackson.databind.node.*;
 
+import java.math.*;
+
 public class JsonUtil {
 
     protected static final JsonNodeFactory FACTORY = JsonNodeFactory.instance;
@@ -25,14 +27,18 @@ public class JsonUtil {
      * Transforms a scalar value like:
      * - 1 => NumberNode
      * - foo => TextNode
-     * - true => BooleNode
+     * - true => BooleanNode
      * - null => NullNode
-     * into a JsonNode. String are not quoted!
+     * into a JsonNode. Strings are not quoted!
+     *
      * @param value String with a JSON scalar value
      * @return Parameter as JsonNode
      */
     public static JsonNode scalarAsJson(String value) {
         if (value == null) return FACTORY.nullNode();
+
+        // Be lenient towards accidental whitespace in query strings
+        value = value.trim();
         switch (value) {
             case "true" -> {
                 return FACTORY.booleanNode(true);
@@ -48,10 +54,15 @@ public class JsonUtil {
         // integer?
         try {
             if (!value.contains(".") && !value.contains("e") && !value.contains("E")) {
-                java.math.BigInteger bi = new java.math.BigInteger(value);
-                int bl = bi.bitLength();
-                if (bl <= 31) return FACTORY.numberNode(bi.intValue());
-                if (bl <= 63) return FACTORY.numberNode(bi.longValue());
+                BigInteger bi = new BigInteger(value);
+                if (bi.compareTo(BigInteger.valueOf(Integer.MIN_VALUE)) >= 0
+                    && bi.compareTo(BigInteger.valueOf(Integer.MAX_VALUE)) <= 0) {
+                    return FACTORY.numberNode(bi.intValue());
+                }
+                if (bi.compareTo(BigInteger.valueOf(Long.MIN_VALUE)) >= 0
+                    && bi.compareTo(BigInteger.valueOf(Long.MAX_VALUE)) <= 0) {
+                    return FACTORY.numberNode(bi.longValue());
+                }
                 return FACTORY.numberNode(bi);
             }
         } catch (NumberFormatException ignore) { /* try decimal */ }

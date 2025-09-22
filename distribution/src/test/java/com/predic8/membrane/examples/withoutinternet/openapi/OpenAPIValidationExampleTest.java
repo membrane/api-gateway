@@ -24,8 +24,11 @@ import org.skyscreamer.jsonassert.*;
 import static com.predic8.membrane.core.http.MimeType.*;
 import static io.restassured.RestAssured.*;
 import static io.restassured.http.ContentType.*;
+import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.Matchers.allOf;
-import static org.hamcrest.Matchers.hasEntry;
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.*;
 
 public class OpenAPIValidationExampleTest extends AbstractSampleMembraneStartStopTestcase {
 
@@ -35,7 +38,7 @@ public class OpenAPIValidationExampleTest extends AbstractSampleMembraneStartSto
     }
 
     @Test
-    public void validRequest() throws Exception {
+    void validRequest() throws Exception {
         try (HttpAssertions ha = new HttpAssertions()) {
             ha.getAndAssert(200, LOCALHOST_2000 + "/demo-api/v2/persons?limit=10");
         }
@@ -310,7 +313,7 @@ public class OpenAPIValidationExampleTest extends AbstractSampleMembraneStartSto
     }
 
     @Test
-    void limitGreaterThan100() throws JSONException {
+    void limitGreaterThan100() {
         // @formatter:off
         Response res = given()
             .contentType(JSON)
@@ -319,11 +322,11 @@ public class OpenAPIValidationExampleTest extends AbstractSampleMembraneStartSto
 
         res.then().assertThat()
             .statusCode(400)
-                .body("validation.errors['REQUEST/QUERY_PARAMETER/limit'][0]",
-                        allOf(
-                                hasEntry("message", "200 is greater than the maximum of 100"),
-                                hasEntry("schemaType", "integer")
-                        ));
+            .body("validation.errors['REQUEST/QUERY_PARAMETER/limit']",
+        hasItem(allOf(
+                    hasEntry(equalTo("schemaType"), equalTo("integer")),
+                    hasEntry(equalTo("message"), containsString("maximum of 100"))
+                )));
         // @formatter:on
     }
 

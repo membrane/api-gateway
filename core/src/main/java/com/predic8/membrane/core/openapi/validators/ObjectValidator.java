@@ -72,7 +72,7 @@ public class ObjectValidator implements JsonSchemaValidator {
         }
 
         ValidationErrors errors = validateRequiredProperties(ctx, node);
-        errors.add(validateAddionalProperties(ctx, node));
+        errors.add(validateAdditionalProperties(ctx, node));
         errors.add(validateProperties(ctx, node));
         errors.add(validatePatternProperties(ctx, node));
         errors.add(validateSize(ctx, node));
@@ -120,7 +120,8 @@ public class ObjectValidator implements JsonSchemaValidator {
     }
 
     private String getBaseSchemaName(JsonNode node, String propertyName) {
-        return node.get(propertyName).asText();
+        JsonNode v = node.get(propertyName);
+        return (v == null || v.isNull()) ? null : v.asText();
     }
 
     private ValidationErrors validateSize(ValidationContext ctx, JsonNode node) {
@@ -132,20 +133,20 @@ public class ObjectValidator implements JsonSchemaValidator {
 
     private ValidationErrors validateMinProperties(ValidationContext ctx, JsonNode node) {
         if (schema.getMinProperties() != null && node.size() < schema.getMinProperties()) {
-            return ValidationErrors.create(ctx, String.format("Object has %d properties. This is smaller then minProperties of %d.", node.size(), schema.getMinProperties()));
+            return ValidationErrors.create(ctx, String.format("Object has %d properties. This is smaller than minProperties of %d.", node.size(), schema.getMinProperties()));
         }
         return null;
     }
 
     private ValidationErrors validateMaxProperties(ValidationContext ctx, JsonNode node) {
         if (schema.getMaxProperties() != null && node.size() > schema.getMaxProperties()) {
-            return ValidationErrors.create(ctx, String.format("Object has %d properties. This is more then maxProperties of %d.", node.size(), schema.getMaxProperties()));
+            return ValidationErrors.create(ctx, String.format("Object has %d properties. This is more than maxProperties of %d.", node.size(), schema.getMaxProperties()));
         }
         return null;
     }
 
     @SuppressWarnings("rawtypes")
-    private ValidationErrors validateAddionalProperties(ValidationContext ctx, JsonNode node) {
+    private ValidationErrors validateAdditionalProperties(ValidationContext ctx, JsonNode node) {
         if (schema.getAdditionalProperties() == null)
             return null;
 
@@ -160,7 +161,8 @@ public class ObjectValidator implements JsonSchemaValidator {
             additionalProperties.forEach((propName, value) ->
                     errors.add(new SchemaValidator(api, (Schema) schema.getAdditionalProperties()).validate(ctx.addJSONpointerSegment(propName), value)));
             return errors;
-        } if (schema.getAdditionalProperties() instanceof Boolean b) {
+        }
+        if (schema.getAdditionalProperties() instanceof Boolean b) {
             if (b) {
                 return null; // allowed
             }
@@ -171,7 +173,7 @@ public class ObjectValidator implements JsonSchemaValidator {
         }
         // Unknown type – be safe and return an error
         return errors.add(ctx.statusCode(400),
-                format("Unsupported additionalProperties type: %s", joinByComma(additionalProperties.keySet())));
+                format("Unsupported additionalProperties: %s", joinByComma(additionalProperties.keySet())));
     }
 
     private String getPropertyOrIes(Set<String> addionalProperties) {
@@ -186,7 +188,7 @@ public class ObjectValidator implements JsonSchemaValidator {
         Map<String, JsonNode> addionalProperties = new HashMap<>();
         for (Iterator<String> it = node.fieldNames(); it.hasNext(); ) {
             String propName = it.next();
-            if (!schema.getProperties().containsKey(propName)) {
+            if (schema.getProperties() == null || !schema.getProperties().containsKey(propName)) {
                 addionalProperties.put(propName, node.get(propName));
             }
         }

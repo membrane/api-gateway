@@ -23,7 +23,7 @@ public class BooleanValidator implements JsonSchemaValidator {
     @Override
     public String canValidate(Object obj) {
         String str = getStringValue(obj);
-        if(obj instanceof BooleanNode || str.equals("true") || str.equals("false"))
+        if (obj instanceof BooleanNode || str.equals("true") || str.equals("false"))
             return BOOLEAN;
         return null;
     }
@@ -41,17 +41,20 @@ public class BooleanValidator implements JsonSchemaValidator {
         if (str.equals("true") || str.equals("false"))
             return errors;
 
-        errors.add(ctx.schemaType("boolean"),String.format("Value '%s' is not a boolean (true/false).",value));
+        errors.add(ctx.schemaType("boolean"), String.format("Value '%s' is not a boolean (true/false).", value));
 
         return errors;
     }
 
     private static String getStringValue(Object value) {
         if (value instanceof TextNode tn) {
-            return  tn.asText();
+            return tn.asText();
         }
         if (value instanceof String s) {
             return s;
+        }
+        if (value instanceof Boolean b) {
+            return b.booleanValue() ? "true" : "false";
         }
         return "";
     }

@@ -39,7 +39,7 @@ public class ArrayParameterParser extends AbstractArrayParameterParser {
                 return Stream.empty();
             }
         }
-        return Arrays.stream(items);
+        return Arrays.stream(items).map(String::trim);
     }
 
 }

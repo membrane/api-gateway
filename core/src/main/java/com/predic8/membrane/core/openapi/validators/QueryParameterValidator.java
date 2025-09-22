@@ -133,7 +133,7 @@ public class QueryParameterValidator extends AbstractParameterValidator {
                 }
                 validated.set(true); // Validation against one type succeeded
             } catch (Exception e) {
-                throw new RuntimeException(e); // ToDO test foo=ff'ff
+                throw new RuntimeException("Failed to parse/validate query parameter '%s': %s".formatted(parameterName,e.getMessage()), e);
             }
         });
         if (!validated.get()) {
@@ -220,7 +220,7 @@ public class QueryParameterValidator extends AbstractParameterValidator {
             var schema = OpenAPIUtil.resolveSchema(api, p);
             if (schema == null)
                 return;
-            if (schema.getTypes().contains("object")) {
+            if (schema.getTypes().contains("object") && schema.getProperties() != null) {
                 schema.getProperties().forEach((name, ignored) -> names.add(name));
             }
         });

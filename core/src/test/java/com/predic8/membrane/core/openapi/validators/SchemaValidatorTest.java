@@ -91,9 +91,9 @@ public class SchemaValidatorTest {
                 Arguments.of(numberValidator, "456.78", NUMBER),
                 Arguments.of(numberValidator, "invalid", null),
                 Arguments.of(numberValidator, 123, NUMBER),
-                Arguments.of(numberValidator, 3.142, NUMBER), // Float
+                Arguments.of(numberValidator, 3.142, NUMBER), // Double
                 Arguments.of(numberValidator, 382147189247.141592653589793, NUMBER), // Double
-                Arguments.of(numberValidator, 10_000_000_000L, NUMBER), // Double
+                Arguments.of(numberValidator, 10_000_000_000L, NUMBER), // Long
                 Arguments.of(numberValidator, null, null),
 
                 // ObjectValidator test cases

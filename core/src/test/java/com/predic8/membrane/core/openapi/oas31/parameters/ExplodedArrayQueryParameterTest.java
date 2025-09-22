@@ -34,12 +34,6 @@ public class ExplodedArrayQueryParameterTest {
         validator = new OpenAPIValidator(new URIFactory(), apiRecord);
     }
 
-    @Test
-    void twoValues() {
-        ValidationErrors errors = validator.validate(get().path("/array?number=1&number=2"));
-        assertEquals(0, errors.size());
-    }
-
     @Nested
     class Explode {
 

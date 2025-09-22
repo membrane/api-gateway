@@ -14,15 +14,12 @@
 package com.predic8.membrane.core.openapi.serviceproxy;
 
 import com.predic8.membrane.core.*;
-import io.swagger.parser.*;
-import io.swagger.v3.oas.models.*;
 import org.junit.jupiter.api.*;
 
 import java.util.*;
 
 import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.openapi.util.OpenAPITestUtils.*;
-import static com.predic8.membrane.core.util.FileUtil.*;
 import static io.swagger.v3.oas.models.SpecVersion.*;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -44,11 +41,11 @@ class OpenAPIRecordFactoryTest {
     }
 
     private static OpenAPIRecord getOpenAPIRecord(String fileName, String id) {
-        return factory.create(new ArrayList<>() {{
-            add(new OpenAPISpec() {{
-                setLocation(fileName);
-            }});
-        }}).get(id);
+        List<OpenAPISpec> specs = new ArrayList<>();
+        OpenAPISpec spec = new OpenAPISpec();
+        spec.setLocation(fileName);
+        specs.add(spec);
+        return factory.create(specs).get(id);
     }
 
     @Test
@@ -131,17 +128,13 @@ class OpenAPIRecordFactoryTest {
 
     @Test
     void getUniqueIdNoCollision() {
-        assertEquals("customers-api-v1-0", factory.getUniqueId(new HashMap<>(), new OpenAPIRecord(getApi("/openapi/specs/customers.yml"), null)));
+        assertEquals("customers-api-v1-0", factory.getUniqueId(new HashMap<>(), new OpenAPIRecord(getApi(this,"/openapi/specs/customers.yml"), null)));
     }
 
     @Test
     void getUniqueIdCollision() {
         HashMap<String, OpenAPIRecord> recs = new HashMap<>();
         recs.put("customers-api-v1-0", new OpenAPIRecord());
-        assertEquals("customers-api-v1-0-0", factory.getUniqueId(recs, new OpenAPIRecord(getApi("/openapi/specs/customers.yml"), null)));
-    }
-
-    private OpenAPI getApi(String pfad) {
-        return new OpenAPIParser().readContents(readInputStream(getResourceAsStream(this, pfad)), null, null).getOpenAPI();
+        assertEquals("customers-api-v1-0-0", factory.getUniqueId(recs, new OpenAPIRecord(getApi(this,"/openapi/specs/customers.yml"), null)));
     }
 }

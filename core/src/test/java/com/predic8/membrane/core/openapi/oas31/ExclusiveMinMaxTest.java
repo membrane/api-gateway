@@ -31,12 +31,12 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class ExclusiveMinMaxTest {
 
+    public static final String OPENAPI_PATH = "/openapi/specs/oas31/exclusive-min-max.yaml";
     OpenAPIValidator validator;
 
     @BeforeEach
     void setUp() {
-        OpenAPIRecord apiRecord = new OpenAPIRecord(parseOpenAPI(getResourceAsStream(this, "/openapi/specs/oas31/exclusive-min-max.yaml")), new OpenAPISpec());
-        validator = new OpenAPIValidator(new URIFactory(), apiRecord);
+        validator = new OpenAPIValidator(new URIFactory(), new OpenAPIRecord(getApi(this, OPENAPI_PATH), new OpenAPISpec()));
     }
 
     static Stream<Arguments> requestBodyProvider() {

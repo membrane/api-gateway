@@ -55,7 +55,6 @@ class ObjectAdditionalParameterTest extends AbstractValidatorTest {
             ParameterParser parameterParser = getParser(parameter);
             parameterParser.setValues(Map.of("foo",List.of("a,baz,b,314")));
             var fields = parameterParser.getJson();
-            System.out.println("fields = " + fields);
             assertEquals(2, fields.size());
             assertEquals("baz", fields.get("a").asText());
             assertEquals(314, fields.get("b").asInt());
@@ -67,17 +66,21 @@ class ObjectAdditionalParameterTest extends AbstractValidatorTest {
             ParameterParser parameterParser = getParser(parameter);
             parameterParser.setValues(Map.of("foo",List.of("a,baz,b,314")));
             var fields = parameterParser.getJson();
-            System.out.println("fields = " + fields);
             assertEquals(2, fields.size());
             assertEquals("baz", fields.get("a").asText());
             assertEquals(314, fields.get("b").asInt());
         }
 
         @Test
-        void additionalBooleanFalse() {
+        void additionalBooleanFalse() throws Exception {
             Parameter parameter = OpenAPIUtil.getParameter( OpenAPIUtil.getPath(validator.getApi(),"/additional-boolean-false-explode-false").getGet(),"foo");
             ParameterParser parameterParser = getParser(parameter);
             parameterParser.setValues(Map.of("foo",List.of("a,baz,b,314")));
+            var fields = parameterParser.getJson();
+            System.out.println("fields = " + fields);
+            assertEquals(1, fields.size());
+            assertEquals("baz", fields.get("a").asText());
+            assertNull(fields.get("b"));
         }
     }
 

@@ -14,7 +14,6 @@
 
 package com.predic8.membrane.core.openapi.validators.parameters;
 
-import com.fasterxml.jackson.core.*;
 import com.fasterxml.jackson.databind.*;
 import com.fasterxml.jackson.databind.node.*;
 
@@ -27,7 +26,7 @@ public abstract class AbstractArrayParameterParser extends AbstractParameterPars
     protected abstract Stream<String> getItems();
 
     @Override
-    public JsonNode getJson() throws JsonProcessingException {
+    public JsonNode getJson() throws ParameterParsingException {
         ArrayNode an = FACTORY.arrayNode();
         Stream<String> items = getItems();
         // e.g. foo=null

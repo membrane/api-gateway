@@ -16,12 +16,18 @@ package com.predic8.membrane.core.openapi.validators.parameters;
 
 import java.util.stream.*;
 
+import static com.predic8.membrane.core.openapi.validators.JsonSchemaValidator.*;
+
 public class ExplodedArrayParameterParser extends AbstractArrayParameterParser {
 
     protected Stream<String> getItems() {
-        var parameterValues = values.get(parameter.getName());
-        if (parameterValues == null)
-            return Stream.empty();
-        return parameterValues.stream();
+        var vs = getValuesForParameter();
+        if (vs.isEmpty()) return Stream.empty();
+        if (vs.size() == 1) {
+            var v = vs.getFirst();
+            if (NULL.equals(v)) return null;
+            if (v.isEmpty()) return Stream.empty();
+        }
+        return vs.stream();
     }
 }

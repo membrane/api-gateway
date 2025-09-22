@@ -57,10 +57,11 @@ public class IntegerValidator implements JsonSchemaValidator {
                         String.format("%s is not an integer.", s));
             }
         }
-        if (value instanceof Byte || value instanceof Short || value instanceof Integer || value instanceof Long || value instanceof java.math.BigInteger) {
+        if (value instanceof Body) {
             return null;
         }
-        if (value instanceof Body) {
+        // Numeric types (Byte/Short/Integer/Long/BigInteger) are already validated by canValidate()
+        if (canValidate(value) != null) {
             return null;
         }
         if (value == null) {

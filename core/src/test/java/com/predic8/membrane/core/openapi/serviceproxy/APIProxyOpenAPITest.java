@@ -116,7 +116,7 @@ public class APIProxyOpenAPITest {
 
     @Test
     public void responsesExtensions() {
-        Map<String,Object> xValidation = getXValidation(getSpec("/validate-responses-extensions.yml"));
+        Map<String,Object> xValidation = getXValidation(getSpec("validate-responses-extensions.yml"));
         assertNotNull(xValidation);
         assertFalse(isValidateRequests(xValidation));
         assertTrue(isValidateResponses(xValidation));

@@ -14,7 +14,6 @@
 
 package com.predic8.membrane.core.openapi.validators.parameters;
 
-import com.fasterxml.jackson.core.*;
 import com.fasterxml.jackson.databind.*;
 import com.fasterxml.jackson.databind.node.*;
 import com.predic8.membrane.core.openapi.util.*;
@@ -34,7 +33,7 @@ public class ObjectParameterParser extends AbstractParameterParser {
     private static final Logger log = LoggerFactory.getLogger(ObjectParameterParser.class.getName());
 
     @Override
-    public JsonNode getJson() throws JsonProcessingException {
+    public JsonNode getJson() throws ParameterParsingException {
         List<String> values = getValuesForParameter();
         if (values == null || values.isEmpty())
             return FACTORY.objectNode();
@@ -49,18 +48,21 @@ public class ObjectParameterParser extends AbstractParameterParser {
             if ("null".equals(tokens.getFirst())) {
                 return FACTORY.nullNode();
             }
-            // foo= => foo: "" => Let assume an empty parameter is an empty array
+            // foo= => interpret empty parameter as JSON null for object type
             if (tokens.getFirst().isEmpty()) {
                 return FACTORY.nullNode();
             }
         }
         ObjectNode obj = FACTORY.objectNode();
+
+        Schema<?> parameterSchema = OpenAPIUtil.resolveSchema(api, parameter);
+        if (parameterSchema == null) {
+                return FACTORY.objectNode();
+        }
         while (!tokens.isEmpty()) {
             String fieldName = tokens.pollFirst();
-
             JsonNode json = scalarAsJson(tokens.pollFirst());
 
-            Schema<?> parameterSchema = OpenAPIUtil.resolveSchema(api, parameter);
             if (parameterSchema == null) {
                 return FACTORY.objectNode();
             }
@@ -75,39 +77,37 @@ public class ObjectParameterParser extends AbstractParameterParser {
 
             // Default for additionalProperties is true
             if (additionalProperties == null) {
-                obj.replace(fieldName, json);
-                return obj;
+                obj.set(fieldName, json);
+                continue;
             }
 
             // additionalProperties is true or false
-            if (additionalProperties instanceof
-                    Boolean apb) {
+            if (additionalProperties instanceof Boolean apb) {
                 if (apb) {
                     obj.replace(fieldName, json);
-                    continue;
                 }
+                continue;
             }
 
-            if (!(additionalProperties instanceof
-                    Schema aps))
-                return obj;
+            if (!(additionalProperties instanceof Schema aps))
+                continue;
 
             // Schema but boolean
             if (aps.getBooleanSchemaValue() != null) {
                 if (aps.getBooleanSchemaValue()) {
-                    obj.replace(fieldName, json);
-                    continue;
+                    obj.set(fieldName, json);
                 }
+                continue;
             }
 
             // Validate additional property against Schema
             ValidationErrors errors = new SchemaValidator(api, aps).validate(new ValidationContext(), json);
             if (!errors.hasErrors()) {
-                obj.replace(fieldName, json);
+                obj.set(fieldName, json);
                 continue;
             }
 
-            log.debug("Field '{}' does not conform to schema for additionalProperties", fieldName);
+            log.debug("Field '{}' does not conform to schema for additionalProperties. Errors: {}", fieldName, errors);
         }
         return obj;
     }

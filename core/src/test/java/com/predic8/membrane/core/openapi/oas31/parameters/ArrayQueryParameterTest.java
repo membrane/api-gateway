@@ -56,7 +56,6 @@ public class ArrayQueryParameterTest {
                         arguments("single negative number", "/array?number=-10"),
                         arguments("multiple numbers", "/array?number=1,2,3"),
                         arguments("multiple strings", "/array?string=blue,black,brown"),
-                        arguments("multiple strings with null", "/array?string=blue,black,brown"),
                         arguments("multiple booleans", "/array?bool=true,false,true")
                 );
             }

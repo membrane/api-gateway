@@ -53,5 +53,17 @@ class ArrayParameterTest extends AbstractValidatorTest {
         assertEquals(3, items.get(2).asInt());
     }
 
+    @Test
+    void single_null() throws Exception {
+        Map<String, List<String>> params = Map.of("number",List.of("null"));
+        parameter.setValues(params);
+        assertEquals(0, parameter.getJson().size());
+    }
 
+    @Test
+    void single_null_values() throws Exception {
+        Map<String, List<String>> params = Map.of("number",Collections.emptyList());
+        parameter.setValues(params);
+        assertEquals(0, parameter.getJson().size());
+    }
 }

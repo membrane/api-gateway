@@ -57,13 +57,14 @@ class ObjectParameterParserTest extends AbstractValidatorTest {
 
         @Test
         void one_element_more_additionalProperties_true() throws Exception {
-            parameter.setValues(Map.of("rgb",List.of("R,100,G,200,B,150,other,baz")));
+            parameter.setValues(Map.of("rgb",List.of("R,100,cuckoo,314,G,200,B,150,other,baz")));
             var fields = parameter.getJson();
-            assertEquals(4, fields.size());
+            assertEquals(5, fields.size());
             assertEquals(100, fields.get("R").asInt());
             assertEquals(200, fields.get("G").asInt());
             assertEquals(150, fields.get("B").asInt());
             assertEquals("baz", fields.get("other").asText());
+            assertEquals(314, fields.get("cuckoo").asInt());
         }
 
         @Test
