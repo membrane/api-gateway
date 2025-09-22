@@ -118,6 +118,9 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
     private final TimerManager timerManager = new TimerManager();
     private final HttpClientFactory httpClientFactory = new HttpClientFactory(timerManager);
     private final KubernetesClientFactory kubernetesClientFactory = new KubernetesClientFactory(httpClientFactory);
+    private boolean asynchronousInitialization = false;
+
+    private String beanName;
 
     public Router() {
         ruleManager.setRouter(this);
@@ -338,7 +341,8 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
         }
 
         ApiInfo.logInfosAboutStartedProxies(ruleManager);
-        log.info("{} {} up and running!", PRODUCT_NAME, VERSION);
+        if (!asynchronousInitialization)
+            log.info("{} {} up and running!", PRODUCT_NAME, VERSION);
     }
 
     private void startJmx() {
@@ -643,5 +647,31 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
 
     public GlobalInterceptor getGlobalInterceptor() {
         return globalInterceptor;
+    }
+
+    public synchronized boolean isAsynchronousInitialization() {
+        return asynchronousInitialization;
+    }
+
+    public synchronized void setAsynchronousInitialization(boolean asynchronousInitialization) {
+        this.asynchronousInitialization = asynchronousInitialization;
+        notifyAll();
+    }
+
+    public synchronized void waitForAsynchronousInitialization() {
+        while (asynchronousInitialization) {
+            try {
+                wait();
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+        }
+    }
+
+    public void handleAsynchronousInitializationResult(boolean success) {
+        if (!success && !retryInit)
+            System.exit(1);
+        log.info("{} {} up and running!", PRODUCT_NAME, VERSION);
+        setAsynchronousInitialization(false);
     }
 }
