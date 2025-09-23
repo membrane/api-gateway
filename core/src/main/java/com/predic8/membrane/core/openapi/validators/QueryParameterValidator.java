@@ -197,8 +197,6 @@ public class QueryParameterValidator extends AbstractParameterValidator {
     /**
      * Needed to get the possible properties from objects and to not report them, if they are not declared as separate parameter
      *
-     * @param operation
-     * @return
      */
     List<String> getPossibleObjectPropertiesNamesForOperation(Operation operation) {
         var parameters = getAllQueryParameters(operation);

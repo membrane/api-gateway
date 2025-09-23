@@ -105,7 +105,7 @@ public class ObjectValidator implements JsonSchemaValidator {
     private ValidationErrors validateRef(ValidationContext ctx, JsonNode node, String propertyValue) {
         var refSchema = SchemaUtil.getSchemaFromRef(api, propertyValue);
         if (refSchema == null) {
-            String msg = format("Can't resolve reference {}.", propertyValue);
+            String msg = format("Can't resolve reference %s.", propertyValue);
             log.warn(msg);
             return error(ctx.statusCode(400), msg);
         }
@@ -184,17 +184,6 @@ public class ObjectValidator implements JsonSchemaValidator {
     }
 
     private Map<String, JsonNode> getAdditionalProperties(JsonNode node) {
-        Map<String, JsonNode> props = new HashMap<>();
-        for (Iterator<String> it = node.fieldNames(); it.hasNext(); ) {
-            String propName = it.next();
-            if (schema.getProperties() == null || !schema.getProperties().containsKey(propName)) {
-                props.put(propName, node.get(propName));
-            }
-        }
-        return props;
-    }
-
-    private Map<String, JsonNode> getAdditionalProperties2(JsonNode node) {
         Map<String, JsonNode> props = new HashMap<>();
         Set<String> regexes = getRegexes();
         for (Iterator<String> it = node.fieldNames(); it.hasNext(); ) {

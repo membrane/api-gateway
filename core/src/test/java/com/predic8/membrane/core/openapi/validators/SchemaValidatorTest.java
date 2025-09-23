@@ -113,6 +113,6 @@ public class SchemaValidatorTest {
 
     @Test
     void canValidateWithInputStream() {
-        assertEquals(null , objectValidator.canValidate(nullInputStream()));
+        assertNull(objectValidator.canValidate(nullInputStream()));
     }
 }
