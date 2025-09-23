@@ -96,7 +96,7 @@ public abstract class AbstractBodyValidator<T extends Message<? extends Body,?>>
         try {
             mostSpecificMediaType = getMostSpecificMediaType(msg.getMediaType().toString(), content.keySet()).orElseThrow();
         } catch (Exception e) {
-            return ValidationErrors.create(ctx.statusCode(getStatusCodeForWrongMediaType()).entityType(MEDIA_TYPE).entity(msg.getMediaType().toString()),  "The media type(Content-Type header) of the %s does not match any of %s.".formatted(getMessageName(), content.keySet()));
+            return ValidationErrors.error(ctx.statusCode(getStatusCodeForWrongMediaType()).entityType(MEDIA_TYPE).entity(msg.getMediaType().toString()),  "The media type(Content-Type header) of the %s does not match any of %s.".formatted(getMessageName(), content.keySet()));
         }
 
         return validateMediaTypeForMessageType(ctx.statusCode(getStatusCodeForWrongMediaType()), mostSpecificMediaType, content.get(mostSpecificMediaType), msg);

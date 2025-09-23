@@ -145,7 +145,7 @@ public class SchemaValidator implements JsonSchemaValidator {
      */
     private @Nullable ValidationErrors getTypeNotMatchError(List<String> types, ValidationContext ctx, Object value, String typeOfValue) {
         if (typeOfValue == null || !types.contains(typeOfValue)) {
-            return ValidationErrors.create(ctx,"%s is of type %s which does not match any of %s".formatted( value, typeOfValue, types));
+            return ValidationErrors.error(ctx,"%s is of type %s which does not match any of %s".formatted( value, typeOfValue, types));
         }
         return null;
     }
@@ -189,7 +189,7 @@ public class SchemaValidator implements JsonSchemaValidator {
                 default -> throw new RuntimeException("Should not happen! " + type);
             };
         } catch (Exception e) {
-            return ValidationErrors.create(ctx, "%s is not of %s format.".formatted(value, type));
+            return ValidationErrors.error(ctx, "%s is not of %s format.".formatted(value, type));
         }
     }
 

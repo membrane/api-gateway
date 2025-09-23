@@ -37,7 +37,7 @@ public class NotValidator {
         if (ve.size() > 0)
             return null;
 
-        return ValidationErrors.create(ctx,"Subschema is declared with not. Should not validate against subschema.");
+        return ValidationErrors.error(ctx,"Subschema is declared with not. Should not validate against subschema.");
     }
 
 

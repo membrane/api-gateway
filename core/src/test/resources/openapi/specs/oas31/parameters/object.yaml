@@ -28,9 +28,35 @@ paths:
       responses:
         "200":
           description: Ok
+  /encoding:
+    get:
+      parameters:
+        - name: explode
+          in: query
+          style: form
+          explode: true
+          schema:
+            $ref: "#/components/schemas/Encoding"
+        - name: explode-false
+          in: query
+          style: form
+          explode: false
+          schema:
+            $ref: "#/components/schemas/Encoding"
+      responses:
+        "200":
+          description: Ok
 
 components:
   schemas:
+    Encoding:
+      type: object
+      properties:
+        code:
+          type: string
+          enum: ["foo","äöü","ä=&,"]
+        value:
+          type: number
     Color:
       type: object
       properties:

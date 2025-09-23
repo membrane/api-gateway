@@ -17,6 +17,7 @@ package com.predic8.membrane.core.openapi.validators.parameters;
 import com.fasterxml.jackson.databind.*;
 import com.fasterxml.jackson.databind.node.*;
 
+import java.net.*;
 import java.util.stream.*;
 
 import static com.predic8.membrane.core.util.JsonUtil.*;
@@ -33,7 +34,7 @@ public abstract class AbstractArrayParameterParser extends AbstractParameterPars
         if (items == null) {
             return FACTORY.nullNode();
         }
-        items.forEach(s -> an.add( scalarAsJson(s)));
+        items.forEach(s -> an.add( scalarAsJson(URLDecoder.decode(s))));
         return an;
     }
 

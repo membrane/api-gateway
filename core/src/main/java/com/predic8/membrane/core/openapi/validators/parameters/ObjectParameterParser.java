@@ -63,10 +63,6 @@ public class ObjectParameterParser extends AbstractParameterParser {
             String fieldName = tokens.pollFirst();
             JsonNode json = scalarAsJson(tokens.pollFirst());
 
-            if (parameterSchema == null) {
-                return FACTORY.objectNode();
-            }
-
             // If parameter is listed as a property of the object
             if (OpenAPIUtil.getProperty(parameterSchema, fieldName) != null) {
                 obj.set(fieldName, json);
@@ -89,7 +85,7 @@ public class ObjectParameterParser extends AbstractParameterParser {
                 continue;
             }
 
-            if (!(additionalProperties instanceof Schema aps))
+            if (!(additionalProperties instanceof Schema<?> aps))
                 continue;
 
             // Schema but boolean

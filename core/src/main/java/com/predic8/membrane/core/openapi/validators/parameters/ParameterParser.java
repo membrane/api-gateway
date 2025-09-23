@@ -9,6 +9,7 @@ public interface ParameterParser {
     /**
      * Build a JSON representation of the bound parameter values.
      * Implementations must be side‑effect free and thread‑safe.
+     * This method is responsible to URL decode the single parameter values.
      */
     JsonNode getJson() throws ParameterParsingException;
 

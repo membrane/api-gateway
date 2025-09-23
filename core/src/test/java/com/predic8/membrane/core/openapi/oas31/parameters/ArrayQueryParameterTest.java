@@ -56,7 +56,8 @@ public class ArrayQueryParameterTest {
                         arguments("single negative number", "/array?number=-10"),
                         arguments("multiple numbers", "/array?number=1,2,3"),
                         arguments("multiple strings", "/array?string=blue,black,brown"),
-                        arguments("multiple booleans", "/array?bool=true,false,true")
+                        arguments("multiple booleans", "/array?bool=true,false,true"),
+                        arguments("encoding", "/array?const=baz,foo,bar")
                 );
             }
 
@@ -64,6 +65,25 @@ public class ArrayQueryParameterTest {
             @MethodSource("valid")
             void zeroErrorsForValidInputs(String caseName, String path) {
                 assertEquals(0, validator.validate(get().path(path)).size(), () -> caseName + " should have 0 errors");
+            }
+
+            @Test
+            void rawQueryIsUsedToSplitParameters() {
+                var err = validator.validate(get().path("/array?const=foo%2Cbar,baz"));
+                assertEquals(1, err.size());
+                var e0 = err.get(0);
+                assertTrue(e0.getMessage().contains("is not part of the enum"));
+                assertTrue(e0.getMessage().contains("'foo,bar'"));
+            }
+
+            @Test
+            void valuesUTF8() {
+                assertEquals(0, validator.validate(get().path("/array?const=foo,äöü,baz")).size());
+            }
+
+            @Test
+            void valuesAreDecoded() {
+                assertEquals(0, validator.validate(get().path("/array?const=foo,%C3%A4%3D%23,baz")).size());
             }
 
             @Nested

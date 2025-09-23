@@ -14,19 +14,20 @@
 
 package com.predic8.membrane.core.openapi.validators.parameters;
 
+import com.fasterxml.jackson.databind.*;
 import com.predic8.membrane.core.openapi.util.*;
 import com.predic8.membrane.core.openapi.validators.*;
-import io.swagger.v3.oas.models.parameters.*;
 import org.junit.jupiter.api.*;
 
 import java.util.*;
 
+import static com.predic8.membrane.core.openapi.validators.JsonSchemaValidator.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 class ObjectParameterParserTest extends AbstractValidatorTest {
 
-    ParameterParser parameter;
-    Parameter color;
+    ParameterParser colorParser;
+    ParameterParser encodingParser;
 
     @Override
     protected String getOpenAPIFileName() {
@@ -36,8 +37,11 @@ class ObjectParameterParserTest extends AbstractValidatorTest {
     @BeforeEach
     public void setUp() throws Exception {
         super.setUp();
-        color = OpenAPIUtil.getParameter( OpenAPIUtil.getPath(validator.getApi(),"/color").getGet(),"rgb");
-        parameter = AbstractParameterParser.instance( validator.getApi(),"object", color);
+        var color = OpenAPIUtil.getParameter(OpenAPIUtil.getPath(validator.getApi(), "/color").getGet(), "rgb");
+        colorParser = AbstractParameterParser.instance(validator.getApi(), "object", color);
+
+        var encoding = OpenAPIUtil.getParameter(OpenAPIUtil.getPath(validator.getApi(), "/encoding").getGet(), "explode-false");
+        encodingParser = AbstractParameterParser.instance(validator.getApi(), OBJECT, encoding);
     }
 
     @Nested
@@ -46,9 +50,9 @@ class ObjectParameterParserTest extends AbstractValidatorTest {
 
         @Test
         void valid() throws Exception {
-            Map<String, List<String>> params = Map.of("rgb",List.of("R,100,G,200,B,150"));
-            parameter.setValues(params);
-            var fields = parameter.getJson();
+            Map<String, List<String>> params = Map.of("rgb", List.of("R,100,G,200,B,150"));
+            colorParser.setValues(params);
+            var fields = colorParser.getJson();
             assertEquals(3, fields.size());
             assertEquals(100, fields.get("R").asInt());
             assertEquals(200, fields.get("G").asInt());
@@ -57,8 +61,8 @@ class ObjectParameterParserTest extends AbstractValidatorTest {
 
         @Test
         void one_element_more_additionalProperties_true() throws Exception {
-            parameter.setValues(Map.of("rgb",List.of("R,100,cuckoo,314,G,200,B,150,other,baz")));
-            var fields = parameter.getJson();
+            colorParser.setValues(Map.of("rgb", List.of("R,100,cuckoo,314,G,200,B,150,other,baz")));
+            var fields = colorParser.getJson();
             assertEquals(5, fields.size());
             assertEquals(100, fields.get("R").asInt());
             assertEquals(200, fields.get("G").asInt());
@@ -69,8 +73,8 @@ class ObjectParameterParserTest extends AbstractValidatorTest {
 
         @Test
         void one_too_much_no_value() throws Exception {
-            parameter.setValues(Map.of("rgb",List.of("R,100,G,200,B,150,NoValue")));
-            var fields = parameter.getJson();
+            colorParser.setValues(Map.of("rgb", List.of("R,100,G,200,B,150,NoValue")));
+            var fields = colorParser.getJson();
             assertEquals(4, fields.size());
             assertEquals(100, fields.get("R").asInt());
             assertEquals(200, fields.get("G").asInt());
@@ -80,8 +84,35 @@ class ObjectParameterParserTest extends AbstractValidatorTest {
 
         @Test
         void empty() throws Exception {
-            parameter.setValues(Map.of("rgb",List.of("")));
-            assertEquals(0, parameter.getJson().size());
+            colorParser.setValues(Map.of("rgb", List.of("")));
+            assertEquals(0, colorParser.getJson().size());
+        }
+
+        @Nested
+        class Encoding {
+
+            @Test
+            void simple() throws Exception {
+                encodingParser.setValues(Map.of("explode-false", List.of("code,foo,value,7")));
+                JsonNode j = encodingParser.getJson();
+                assertEquals(2, j.size());
+                assertEquals("foo", j.get("code").asText());
+                assertEquals("7", j.get("value").asText());
+            }
+
+            @Test
+            void encoding() throws Exception {
+                encodingParser.setValues(Map.of("explode-false", List.of("code,äöü")));
+                JsonNode j = encodingParser.getJson();
+                assertEquals(1, j.size());
+            }
+
+            @Test
+            void valueIsEncoded() throws Exception {
+                encodingParser.setValues(Map.of("explode-false", List.of("code,%C3%A4%3D%23")));
+                JsonNode j = encodingParser.getJson();
+                assertEquals(1, j.size());
+            }
         }
     }
 }

@@ -60,7 +60,7 @@ public class NumberValidator implements JsonSchemaValidator {
         }
         try {
             if (value instanceof TextNode) {
-                return ValidationErrors.create(ctx.schemaType(NUMBER), String.format("%s is not a number.", value));
+                return ValidationErrors.error(ctx.schemaType(NUMBER), String.format("%s is not a number.", value));
             }
             if (value instanceof JsonNode jn) {
                 // Not using double prevents from losing fractions
@@ -72,7 +72,7 @@ public class NumberValidator implements JsonSchemaValidator {
                 return null;
             }
         } catch (NumberFormatException ignored) {
-            return ValidationErrors.create(ctx.schemaType(NUMBER), String.format("%s is not a number.", value));
+            return ValidationErrors.error(ctx.schemaType(NUMBER), String.format("%s is not a number.", value));
         }
         throw new RuntimeException("Should never happen!");
     }

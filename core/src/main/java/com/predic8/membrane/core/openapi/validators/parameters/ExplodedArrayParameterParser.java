@@ -16,7 +16,7 @@ package com.predic8.membrane.core.openapi.validators.parameters;
 
 import java.util.stream.*;
 
-import static com.predic8.membrane.core.openapi.validators.JsonSchemaValidator.*;
+import static com.predic8.membrane.core.openapi.validators.JsonSchemaValidator.NULL;
 
 public class ExplodedArrayParameterParser extends AbstractArrayParameterParser {
 

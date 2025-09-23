@@ -21,7 +21,7 @@ import java.math.*;
 
 public class JsonUtil {
 
-    protected static final JsonNodeFactory FACTORY = JsonNodeFactory.instance;
+    private static final JsonNodeFactory FACTORY = JsonNodeFactory.instance;
 
     /**
      * Transforms a scalar value like:
@@ -69,9 +69,8 @@ public class JsonUtil {
 
         // decimal?
         try {
-            java.math.BigDecimal bd = new java.math.BigDecimal(value);
             // reject NaN/Infinity-equivalents (BigDecimal won’t parse them anyway)
-            return FACTORY.numberNode(bd);
+            return FACTORY.numberNode(new BigDecimal(value));
         } catch (NumberFormatException ignore) { /* fall through */ }
 
         return FACTORY.textNode(value);

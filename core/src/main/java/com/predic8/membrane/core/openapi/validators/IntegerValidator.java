@@ -21,6 +21,8 @@ import com.predic8.membrane.core.openapi.model.*;
 
 import java.math.*;
 
+import static com.predic8.membrane.core.openapi.validators.ValidationErrors.error;
+
 public class IntegerValidator implements JsonSchemaValidator {
 
     @Override
@@ -45,7 +47,7 @@ public class IntegerValidator implements JsonSchemaValidator {
     public ValidationErrors validate(ValidationContext ctx, Object value) {
         if (value instanceof JsonNode j) {
             return j.isIntegralNumber() ? null
-                    : ValidationErrors.create(ctx.schemaType("integer"),
+                    : error(ctx.schemaType("integer"),
                     String.format("%s is not an integer.", j.asText()));
         }
         if (value instanceof String s) {
@@ -53,7 +55,7 @@ public class IntegerValidator implements JsonSchemaValidator {
                 new BigInteger(s);
                 return null;
             } catch (NumberFormatException e) {
-                return ValidationErrors.create(ctx.schemaType("integer"),
+                return error(ctx.schemaType("integer"),
                         String.format("%s is not an integer.", s));
             }
         }
@@ -64,10 +66,13 @@ public class IntegerValidator implements JsonSchemaValidator {
         if (canValidate(value) != null) {
             return null;
         }
-        if (value == null) {
-            return ValidationErrors.create(ctx.schemaType("integer"), "null is not an integer.");
+        if (value instanceof Number) {
+            return error(ctx.schemaType("integer"), "%s is not an integer.".formatted(value));
         }
-        return ValidationErrors.create(ctx.schemaType("integer"),
+        if (value == null) {
+            return error(ctx.schemaType("integer"), "null is not an integer.");
+        }
+        return error(ctx.schemaType("integer"),
                 String.format("Do not know type %s for integer validation.", value.getClass().getName()));
     }
 }

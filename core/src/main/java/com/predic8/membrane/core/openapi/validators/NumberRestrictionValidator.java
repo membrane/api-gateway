@@ -71,7 +71,7 @@ public class NumberRestrictionValidator {
         BigDecimal multiplesOf = schema.getMultipleOf();
         BigDecimal[] remainder = value.divideAndRemainder(multiplesOf);
         if (remainder[1].intValue() != 0) {
-            return ValidationErrors.create(ctx, String.format("Value %d is not a multiple of %d.", value.intValue(), multiplesOf.intValue()));
+            return ValidationErrors.error(ctx, String.format("Value %d is not a multiple of %d.", value.intValue(), multiplesOf.intValue()));
         }
 
         return null;
@@ -80,10 +80,10 @@ public class NumberRestrictionValidator {
     private ValidationErrors validateExclusiveMaximum(ValidationContext ctx, BigDecimal value) {
         if (schema.getExclusiveMaximumValue() != null) {
             if (schema.getExclusiveMaximumValue().compareTo(value) < 0) {
-                return ValidationErrors.create(ctx, value + " is greater than the maximum of " + schema.getExclusiveMaximumValue());
+                return ValidationErrors.error(ctx, value + " is greater than the maximum of " + schema.getExclusiveMaximumValue());
             }
             if (schema.getExclusiveMaximumValue().compareTo(value) == 0) {
-                return ValidationErrors.create(ctx, format("The value of %s should be less than the exclusive maximum %s.", value, schema.getExclusiveMaximumValue()));
+                return ValidationErrors.error(ctx, format("The value of %s should be less than the exclusive maximum %s.", value, schema.getExclusiveMaximumValue()));
             }
         }
         return null;
@@ -92,10 +92,10 @@ public class NumberRestrictionValidator {
     private ValidationErrors validateMaximum(ValidationContext ctx, BigDecimal value) {
         if (schema.getMaximum() != null) {
             if (schema.getMaximum().compareTo(value) < 0) {
-                return ValidationErrors.create(ctx, value + " is greater than the maximum of " + schema.getMaximum());
+                return ValidationErrors.error(ctx, value + " is greater than the maximum of " + schema.getMaximum());
             }
             if (isExclusiveMaximum() && schema.getMaximum().compareTo(value) == 0) {
-                return ValidationErrors.create(ctx, format("The value of %s should be less than the exclusive maximum %s.", value, schema.getMaximum()));
+                return ValidationErrors.error(ctx, format("The value of %s should be less than the exclusive maximum %s.", value, schema.getMaximum()));
             }
         }
         return null;
@@ -104,10 +104,10 @@ public class NumberRestrictionValidator {
     private ValidationErrors validateExclusiveMinimum(ValidationContext ctx, BigDecimal value) {
         if(schema.getExclusiveMinimumValue() != null) {
            if (schema.getExclusiveMinimumValue().compareTo(value) > 0) {
-               return ValidationErrors.create(ctx, value + " is smaller than the minimum of " + schema.getExclusiveMinimumValue());
+               return ValidationErrors.error(ctx, value + " is smaller than the minimum of " + schema.getExclusiveMinimumValue());
             }
             if (schema.getExclusiveMinimumValue().compareTo(value) == 0) {
-                return ValidationErrors.create(ctx, format("The value of %s should be greater than the exclusive minimum. %s", value, schema.getExclusiveMinimumValue()));
+                return ValidationErrors.error(ctx, format("The value of %s should be greater than the exclusive minimum. %s", value, schema.getExclusiveMinimumValue()));
             }
         }
         return null;
@@ -116,10 +116,10 @@ public class NumberRestrictionValidator {
     private ValidationErrors validateMinimum(ValidationContext ctx, BigDecimal value) {
         if (schema.getMinimum() != null) {
             if (schema.getMinimum().compareTo(value) > 0) {
-                return ValidationErrors.create(ctx, value + " is smaller than the minimum of " + schema.getMinimum());
+                return ValidationErrors.error(ctx, value + " is smaller than the minimum of " + schema.getMinimum());
             }
             if (isExclusiveMinimum() && schema.getMinimum().compareTo(value) == 0) {
-                return ValidationErrors.create(ctx, format("The value of %s should be greater than the exclusive minimum %s.", value, schema.getMinimum()));
+                return ValidationErrors.error(ctx, format("The value of %s should be greater than the exclusive minimum %s.", value, schema.getMinimum()));
             }
         }
         return null;

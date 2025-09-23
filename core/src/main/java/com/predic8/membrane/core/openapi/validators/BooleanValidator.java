@@ -18,6 +18,8 @@ package com.predic8.membrane.core.openapi.validators;
 
 import com.fasterxml.jackson.databind.node.*;
 
+import static java.util.Locale.*;
+
 public class BooleanValidator implements JsonSchemaValidator {
 
     @Override
@@ -30,31 +32,25 @@ public class BooleanValidator implements JsonSchemaValidator {
 
     @Override
     public ValidationErrors validate(ValidationContext ctx, Object value) {
-
-        ValidationErrors errors = new ValidationErrors();
-
         if (value instanceof BooleanNode)
-            return errors;
+            return null;
 
-        String str = getStringValue(value);
-
+        String str = getStringValue(value).toLowerCase(ROOT);
         if (str.equals("true") || str.equals("false"))
-            return errors;
+            return null;
 
-        errors.add(ctx.schemaType("boolean"), String.format("Value '%s' is not a boolean (true/false).", value));
-
-        return errors;
+        return ValidationErrors.error(ctx.schemaType("boolean"), String.format("Value '%s' is not a boolean (true/false).", value));
     }
 
     private static String getStringValue(Object value) {
         if (value instanceof TextNode tn) {
-            return tn.asText();
+            return tn.asText().trim();
         }
         if (value instanceof String s) {
-            return s;
+            return s.trim();
         }
         if (value instanceof Boolean b) {
-            return b.booleanValue() ? "true" : "false";
+            return b ? "true" : "false";
         }
         return "";
     }

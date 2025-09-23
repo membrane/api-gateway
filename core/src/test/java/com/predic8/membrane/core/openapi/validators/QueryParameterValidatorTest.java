@@ -22,8 +22,10 @@ import org.junit.jupiter.api.*;
 
 import java.util.*;
 
+import static com.predic8.membrane.core.openapi.model.Request.*;
 import static com.predic8.membrane.core.openapi.util.OpenAPITestUtils.*;
 import static com.predic8.membrane.core.openapi.util.OpenAPIUtil.*;
+import static com.predic8.membrane.core.openapi.validators.QueryParameterValidator.getQueryString;
 import static io.swagger.v3.oas.models.security.SecurityScheme.In.*;
 import static io.swagger.v3.oas.models.security.SecurityScheme.Type.*;
 import static org.junit.jupiter.api.Assertions.*;
@@ -31,6 +33,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class QueryParameterValidatorTest extends AbstractValidatorTest {
 
     QueryParameterValidator queryParameterValidator;
+    ValidationContext ctx;
 
     @Override
     protected String getOpenAPIFileName() {
@@ -41,6 +44,12 @@ class QueryParameterValidatorTest extends AbstractValidatorTest {
     public void setUp() throws Exception {
         super.setUp();
         queryParameterValidator = new QueryParameterValidator(validator.getApi(), validator.getApi().getPaths().get("/cities"));
+        ctx = new ValidationContext();
+    }
+
+    @Test
+    void emptyQueryParameter() {
+        assertEquals(0, queryParameterValidator.validateQueryParameters(ctx, Request.get().path("/object?"), getGET("/object")).size());
     }
 
     @Test
@@ -55,7 +64,7 @@ class QueryParameterValidatorTest extends AbstractValidatorTest {
     }
 
     private List<Parameter> getParameterSchemas(QueryParameterValidator val) {
-        return val.getAllParameter(validator.getApi().getPaths().get("/cities").getGet());
+        return val.getAllParameter(getGET("/cities"));
     }
 
     /**
@@ -64,9 +73,13 @@ class QueryParameterValidatorTest extends AbstractValidatorTest {
      */
     @Test
     void resolveReferencedParameter() {
-        Operation get = validator.getApi().getPaths().get("/cities").getGet();
+        Operation get = getGET("/cities");
         assertTrue(operationHasParamWithName(get, "foo"));
         assertTrue(operationHasParamWithName(get, "bar"));
+    }
+
+    private Operation getGET(String path) {
+        return validator.getApi().getPaths().get(path).getGet();
     }
 
     @Test
@@ -81,8 +94,7 @@ class QueryParameterValidatorTest extends AbstractValidatorTest {
     }
 
     @Test
-    void testValidateAdditionalQueryParametersInvalid() {
-
+    void validateAdditionalQueryParametersInvalid() {
         assertFalse(queryParameterValidator.validateAdditionalQueryParameters(
                 new ValidationContext(),
                 new HashMap<>(Map.of("bar", new TextNode("2315124"))),
@@ -93,7 +105,7 @@ class QueryParameterValidatorTest extends AbstractValidatorTest {
     }
 
     @Test
-    void testCollectSchemeQueryParamKeys() {
+    void collectSchemeQueryParamKeys() {
         var spec = new OpenAPI().components(new Components() {{
             addSecuritySchemes("schemaA", new SecurityScheme().type(APIKEY).name("api-key").in(QUERY));
             addSecuritySchemes("schemaB", new SecurityScheme().type(APIKEY).name("x-api-key").in(QUERY));
@@ -103,9 +115,18 @@ class QueryParameterValidatorTest extends AbstractValidatorTest {
     }
 
     @Test
-    void getQueryString() {
-        assertEquals("bar=1", QueryParameterValidator.getQueryString(Request.get().path("/foo?bar=1")));
+    void get_QueryString() {
+        assertEquals("bar=1", getQueryString(get().path("/foo?bar=1")));
     }
+
+    /**
+     * The encoding must be preserved. It must be applied after array or object parsing
+     */
+    @Test
+    void preserveRAWencoding() {
+        assertEquals("p=1%2C2", getQueryString(get().path("/foo?p=1%2C2")));
+    }
+
 
     @Nested
     class UtilMethods {
@@ -114,7 +135,7 @@ class QueryParameterValidatorTest extends AbstractValidatorTest {
             PathItem pathItem = getPathItem("/array");
             QueryParameterValidator qpv = new QueryParameterValidator(null, pathItem);
             var qp = qpv.getAllQueryParameters(pathItem.getGet());
-            assertEquals(3, qp.size());
+            assertEquals(4, qp.size());
             assertTrue(qp.stream().allMatch(p -> p instanceof QueryParameter));
         }
 

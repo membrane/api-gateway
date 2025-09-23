@@ -144,7 +144,7 @@ public class SecurityValidator {
 
     @NotNull
     private static ValidationErrors getValidationErrorsProblemServerSide(ValidationContext ctx) {
-        return ValidationErrors.create(ctx, "There is a problem with the OpenAPI configuration at the server side.");
+        return ValidationErrors.error(ctx, "There is a problem with the OpenAPI configuration at the server side.");
     }
 
     private String getOpenAPITitle() {
@@ -215,7 +215,7 @@ public class SecurityValidator {
 
     private ValidationErrors checkOAuth2OrOpenIdConnectScheme(ValidationContext ctx, Request<?> request) {
         if (securitySchemeIsNotPresent(request,OAuth2SecurityScheme.class) && securitySchemeIsNotPresent(request,JWTSecurityScheme.class)) {
-            return ValidationErrors.create(ctx.statusCode(401), "OAuth2 or JWT authentication is required.");
+            return ValidationErrors.error(ctx.statusCode(401), "OAuth2 or JWT authentication is required.");
         }
         return ValidationErrors.empty();
     }

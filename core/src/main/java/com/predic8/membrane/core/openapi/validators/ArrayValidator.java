@@ -86,7 +86,7 @@ public class ArrayValidator implements JsonSchemaValidator {
             itemValues.add(node.get(i));
         }
         if (!moreThanOnce.isEmpty()) {
-            return ValidationErrors.create(ctx, format("Array with restriction uniqueItems contains non-unique values: %s.", Utils.joinByComma(moreThanOnce)));
+            return ValidationErrors.error(ctx, format("Array with restriction uniqueItems contains non-unique values: %s.", Utils.joinByComma(moreThanOnce)));
         }
 
         return null;

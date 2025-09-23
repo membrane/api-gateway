@@ -16,12 +16,14 @@ package com.predic8.membrane.core.openapi.validators.parameters;
 
 import com.fasterxml.jackson.databind.*;
 
+import java.net.*;
+
 import static com.predic8.membrane.core.util.JsonUtil.*;
 
 public class ScalarParameterParser extends AbstractParameterParser {
 
     @Override
     public JsonNode getJson() throws ParameterParsingException {
-        return scalarAsJson(getValuesForParameter().getFirst());
+        return scalarAsJson(URLDecoder.decode(getValuesForParameter().getFirst()));
     }
 }

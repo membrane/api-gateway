@@ -42,6 +42,6 @@ public class NullValidator implements JsonSchemaValidator {
         if (value instanceof NullNode) {
             return null;
         }
-        return ValidationErrors.create(ctx.schemaType(NULL), String.format("%s is not null.", value));
+        return ValidationErrors.error(ctx.schemaType(NULL), String.format("%s is not null.", value));
     }
 }

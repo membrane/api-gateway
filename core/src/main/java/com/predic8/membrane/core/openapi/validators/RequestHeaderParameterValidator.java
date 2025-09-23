@@ -51,7 +51,7 @@ public class RequestHeaderParameterValidator extends AbstractParameterValidator{
                                     , value);
                         }
                     } else if (param.getRequired()) {
-                        return ValidationErrors.create(ctx.entity(param.getName()).entityType(HEADER_PARAMETER), format("Missing required header %s.", param.getName()));
+                        return ValidationErrors.error(ctx.entity(param.getName()).entityType(HEADER_PARAMETER), format("Missing required header %s.", param.getName()));
                     }
 
                     return new ValidationErrors();

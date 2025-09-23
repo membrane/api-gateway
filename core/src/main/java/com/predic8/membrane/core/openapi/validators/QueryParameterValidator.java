@@ -31,6 +31,7 @@ import java.util.*;
 import java.util.concurrent.atomic.*;
 import java.util.regex.*;
 
+import static com.predic8.membrane.core.openapi.validators.JsonSchemaValidator.OBJECT;
 import static com.predic8.membrane.core.openapi.validators.ValidationContext.ValidatedEntityType.*;
 import static com.predic8.membrane.core.util.CollectionsUtil.*;
 import static io.swagger.v3.oas.models.security.SecurityScheme.In.*;
@@ -65,18 +66,6 @@ public class QueryParameterValidator extends AbstractParameterValidator {
         ValidationErrors errors = new ValidationErrors();
 
         Map<String, List<String>> parameterMap = getParameterMapFromQuery(getQueryString(request));
-
-//        getAllQueryParameters(operation).forEach(p -> {
-//            Schema schema = OpenAPIUtil.getSchema(api, p);
-//            if (!parameterMap.containsKey(p.getName())) {
-//                if (p.getRequired()) {
-//                    errors.add(ctx, "Required query parameter(s) '%s' missing.".formatted(join(required)));
-//                }
-//                return;
-//            }
-//            errors.add(validate(ctx, p.getName(), parameterMap, schema, p));
-//            fields.remove(p.getName());
-//        });
 
         Set<String> fields = new HashSet<>(parameterMap.keySet());
 
@@ -133,7 +122,7 @@ public class QueryParameterValidator extends AbstractParameterValidator {
                 }
                 validated.set(true); // Validation against one type succeeded
             } catch (Exception e) {
-                throw new RuntimeException("Failed to parse/validate query parameter '%s': %s".formatted(parameterName,e.getMessage()), e);
+                throw new RuntimeException("Failed to parse/validate query parameter '%s': %s".formatted(parameterName, e.getMessage()), e);
             }
         });
         if (!validated.get()) {
@@ -151,7 +140,7 @@ public class QueryParameterValidator extends AbstractParameterValidator {
                 .filter(k -> !allowList.contains(k))
                 .collect(toCollection(LinkedHashSet::new));
         if (!unsupported.isEmpty()) {
-            return ValidationErrors.create(ctx.entityType(QUERY_PARAMETER),
+            return ValidationErrors.error(ctx.entityType(QUERY_PARAMETER),
                     "There are query parameters that are not supported by the API: " + join(unsupported));
         }
 
@@ -170,14 +159,14 @@ public class QueryParameterValidator extends AbstractParameterValidator {
 
     private static @NotNull Map<String, List<String>> getParameterMapFromQuery(String query) {
         Map<String, List<String>> parameterMap = new HashMap<>();
-        if (query == null) {
+        if (query == null || query.isEmpty()) {
             return parameterMap;
         }
         for (String p : query.split("&")) {
             Matcher m = QUERY_PARAMS_PATTERN.matcher(p);
             if (m.matches()) {
-                String key = decode(m.group(1), UTF_8);
-                String value = decode(m.group(2), UTF_8);
+                String key = decode(m.group(1), UTF_8); // Key can here be decoded
+                String value = m.group(2); // Do not decode here cause it has to be done after array or object splitting
                 List<String> ab = parameterMap.computeIfAbsent(key, k -> new ArrayList<>());
                 ab.add(value);
             }
@@ -220,11 +209,16 @@ public class QueryParameterValidator extends AbstractParameterValidator {
             var schema = OpenAPIUtil.resolveSchema(api, p);
             if (schema == null)
                 return;
-            if (schema.getTypes().contains("object") && schema.getProperties() != null) {
+            if (isObjectType(schema) && schema.getProperties() != null) {
                 schema.getProperties().forEach((name, ignored) -> names.add(name));
             }
         });
         return names;
+    }
+
+    private static boolean isObjectType(Schema<?> schema) {
+        Set<String> types = schema.getTypes();
+        return types != null && types.contains(OBJECT) || OBJECT.equals(schema.getType());
     }
 
 
@@ -238,6 +232,6 @@ public class QueryParameterValidator extends AbstractParameterValidator {
     }
 
     static String getQueryString(Request<?> request) {
-        return (new URIFactory().createWithoutException(request.getPath())).getQuery();
+        return (new URIFactory().createWithoutException(request.getPath())).getRawQuery();
     }
 }

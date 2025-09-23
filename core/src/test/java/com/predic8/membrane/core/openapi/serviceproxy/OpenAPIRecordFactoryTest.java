@@ -21,6 +21,7 @@ import java.util.*;
 import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.openapi.util.OpenAPITestUtils.*;
 import static io.swagger.v3.oas.models.SpecVersion.*;
+import static java.util.Collections.singletonList;
 import static org.junit.jupiter.api.Assertions.*;
 
 class OpenAPIRecordFactoryTest {
@@ -41,11 +42,9 @@ class OpenAPIRecordFactoryTest {
     }
 
     private static OpenAPIRecord getOpenAPIRecord(String fileName, String id) {
-        List<OpenAPISpec> specs = new ArrayList<>();
         OpenAPISpec spec = new OpenAPISpec();
         spec.setLocation(fileName);
-        specs.add(spec);
-        return factory.create(specs).get(id);
+        return factory.create(singletonList(spec)).get(id);
     }
 
     @Test
@@ -128,13 +127,13 @@ class OpenAPIRecordFactoryTest {
 
     @Test
     void getUniqueIdNoCollision() {
-        assertEquals("customers-api-v1-0", factory.getUniqueId(new HashMap<>(), new OpenAPIRecord(getApi(this,"/openapi/specs/customers.yml"), null)));
+        assertEquals("customers-api-v1-0", factory.getUniqueId(new HashMap<>(), new OpenAPIRecord(getApi(this, "/openapi/specs/customers.yml"), null)));
     }
 
     @Test
     void getUniqueIdCollision() {
         HashMap<String, OpenAPIRecord> recs = new HashMap<>();
         recs.put("customers-api-v1-0", new OpenAPIRecord());
-        assertEquals("customers-api-v1-0-0", factory.getUniqueId(recs, new OpenAPIRecord(getApi(this,"/openapi/specs/customers.yml"), null)));
+        assertEquals("customers-api-v1-0-0", factory.getUniqueId(recs, new OpenAPIRecord(getApi(this, "/openapi/specs/customers.yml"), null)));
     }
 }

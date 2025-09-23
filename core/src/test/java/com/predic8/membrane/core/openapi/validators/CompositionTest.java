@@ -228,7 +228,8 @@ protected String getOpenAPIFileName() {
         assertEquals(2,errors.size());
         ValidationError enumError = errors.stream().filter(e -> e.getMessage().contains("enum")).findAny().get();
         assertEquals("/inheritance/country", enumError.getContext().getJSONpointer());
-        assertTrue(enumError.getMessage().contains("does not contain a value from the enum"));
+        System.out.println("enumError = " + enumError);
+        assertTrue(enumError.getMessage().contains("is not part of the enum"));
         assertEquals("REQUEST/BODY#/inheritance/country", enumError.getContext().getLocationForRequest());
 
         ValidationError allOf = errors.stream().filter(e -> e.getMessage().contains("allOf")).findAny().get();

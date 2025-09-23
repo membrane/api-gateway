@@ -15,7 +15,6 @@ package com.predic8.membrane.core.openapi.oas31;
 
 import com.predic8.membrane.core.openapi.*;
 import com.predic8.membrane.core.openapi.serviceproxy.*;
-import com.predic8.membrane.core.openapi.validators.*;
 import com.predic8.membrane.core.util.*;
 import jakarta.mail.internet.*;
 import org.junit.jupiter.api.*;
@@ -35,8 +34,7 @@ public class ConstValueTest {
 
     @BeforeEach
     void setUp() {
-        OpenAPIRecord apiRecord = new OpenAPIRecord(parseOpenAPI(getResourceAsStream(this, "/openapi/specs/oas31/const-value.yaml")), new OpenAPISpec());
-        validator = new OpenAPIValidator(new URIFactory(), apiRecord);
+        validator = new OpenAPIValidator(new URIFactory(), new OpenAPIRecord(parseOpenAPI(getResourceAsStream(this, "/openapi/specs/oas31/const-value.yaml")), new OpenAPISpec()));
     }
 
     static Stream<Arguments> jsonConstRequestBodyProvider() {
@@ -50,7 +48,7 @@ public class ConstValueTest {
     @ParameterizedTest
     @MethodSource("jsonConstRequestBodyProvider")
     void testJsonConst(String requestBody, int expectedErrorSize) throws ParseException {
-        ValidationErrors errors = validator.validate(
+        var errors = validator.validate(
                 post().path("/const-check").body(requestBody).mediaType(APPLICATION_JSON)
         );
         assertEquals(expectedErrorSize, errors.size());

@@ -19,6 +19,14 @@ paths:
             type: array
             items:
               type: string
+        - name: const
+          in: query
+          explode: false
+          schema:
+            type: array
+            items:
+              type: string
+              enum: ["foo","bar","baz", "äöü","ä=#"]
         - name: bool
           in: query
           explode: false

@@ -23,7 +23,6 @@ import io.swagger.v3.oas.models.*;
 import io.swagger.v3.oas.models.media.*;
 import org.slf4j.*;
 
-import java.io.*;
 import java.util.*;
 import java.util.regex.*;
 
@@ -55,12 +54,9 @@ public class ObjectValidator implements JsonSchemaValidator {
     public String canValidate(Object obj) {
         if (obj instanceof JsonNode j) {
             return j instanceof ObjectNode ? OBJECT : null;
-        } else if (obj instanceof InputStream) {
-            throw new RuntimeException("InputStream should not happen!");
-        } else {
-            log.warn("This should not happen. Please check.");
-            throw new RuntimeException("Value cannot be read as object.");
         }
+        log.debug("Value is not a JsonNode. Returning null. Object clas: {}", obj.getClass());
+        return null;
     }
 
     @Override
@@ -68,7 +64,7 @@ public class ObjectValidator implements JsonSchemaValidator {
         ctx = ctx.schemaType("object");
 
         if (canValidate(obj) == null || !(obj instanceof ObjectNode node)) {
-            return ValidationErrors.create(ctx.statusCode(400), format("Value %s is not an object.", obj));
+            return ValidationErrors.error(ctx.statusCode(400), format("Value %s is not an object.", obj));
         }
 
         ValidationErrors errors = validateRequiredProperties(ctx, node);
@@ -88,7 +84,7 @@ public class ObjectValidator implements JsonSchemaValidator {
 
         String propertyValue = getBaseSchemaName(node, propertyName);
         if (propertyValue == null) {
-            return ValidationErrors.create(ctx.statusCode(400), format("Discriminator property '%s' is not set.", propertyName));
+            return ValidationErrors.error(ctx.statusCode(400), format("Discriminator property '%s' is not set.", propertyName));
         }
         if (isMapped(propertyValue)) {
             propertyValue = schema.getDiscriminator().getMapping().get(propertyValue);
@@ -96,26 +92,28 @@ public class ObjectValidator implements JsonSchemaValidator {
                 return validateRef(ctx, node, propertyValue);
         }
 
-        Schema<?> schema = getBaseSchema(propertyValue);
-        if (schema == null) {
-            return ValidationErrors.create(ctx.statusCode(400), format("Discriminator value %s is not an valid type.", propertyValue));
+        Schema<?> baseSchema = getBaseSchema(propertyValue);
+        if (baseSchema == null) {
+            return ValidationErrors.error(ctx.statusCode(400), format("Discriminator value %s is not an valid type.", propertyValue));
         }
-        return new SchemaValidator(api, schema).validate(ctx, node);
+        return new SchemaValidator(api, baseSchema).validate(ctx, node);
     }
 
     private ValidationErrors validateRef(ValidationContext ctx, JsonNode node, String propertyValue) {
-        var schema2 = SchemaUtil.getSchemaFromRef(api, propertyValue);
-        if (schema2 == null)
-            throw new RuntimeException("Should not happen!");
-        return new SchemaValidator(api, schema2).validate(ctx, node);
+        var refSchema = SchemaUtil.getSchemaFromRef(api, propertyValue);
+        if (refSchema == null) {
+            log.warn("Ref {} is not a valid reference.", propertyValue);
+        }
+        return new SchemaValidator(api, refSchema).validate(ctx, node);
     }
 
     private boolean isMapped(String discriminatorValue) {
         return schema.getDiscriminator().getMapping() != null && schema.getDiscriminator().getMapping().containsKey(discriminatorValue);
     }
 
-    @SuppressWarnings("rawtypes")
     private Schema getBaseSchema(String propertyValue) {
+        if (api.getComponents() == null || api.getComponents().getSchemas() == null)
+            return null;
         return api.getComponents().getSchemas().get(propertyValue);
     }
 
@@ -133,14 +131,14 @@ public class ObjectValidator implements JsonSchemaValidator {
 
     private ValidationErrors validateMinProperties(ValidationContext ctx, JsonNode node) {
         if (schema.getMinProperties() != null && node.size() < schema.getMinProperties()) {
-            return ValidationErrors.create(ctx, String.format("Object has %d properties. This is smaller than minProperties of %d.", node.size(), schema.getMinProperties()));
+            return ValidationErrors.error(ctx, String.format("Object has %d properties. This is smaller than minProperties of %d.", node.size(), schema.getMinProperties()));
         }
         return null;
     }
 
     private ValidationErrors validateMaxProperties(ValidationContext ctx, JsonNode node) {
         if (schema.getMaxProperties() != null && node.size() > schema.getMaxProperties()) {
-            return ValidationErrors.create(ctx, String.format("Object has %d properties. This is more than maxProperties of %d.", node.size(), schema.getMaxProperties()));
+            return ValidationErrors.error(ctx, String.format("Object has %d properties. This is more than maxProperties of %d.", node.size(), schema.getMaxProperties()));
         }
         return null;
     }
@@ -150,7 +148,7 @@ public class ObjectValidator implements JsonSchemaValidator {
         if (schema.getAdditionalProperties() == null)
             return null;
 
-        Map<String, JsonNode> additionalProperties = getAddionalProperties(node);
+        Map<String, JsonNode> additionalProperties = getAdditionalProperties(node);
 
         if (additionalProperties.isEmpty())
             return null;
@@ -167,8 +165,8 @@ public class ObjectValidator implements JsonSchemaValidator {
                 return null; // allowed
             }
             return errors.add(ctx.statusCode(400),
-                    format("The object has the additional %s: %s. But the schema does not allow additional properties.",
-                            getPropertyOrIes(additionalProperties.keySet()),
+                    format("Object has the additional %s: %s. But the schema does not allow additional properties.",
+                            propertyOrProperties(additionalProperties.keySet()),
                             joinByComma(additionalProperties.keySet())));
         }
         // Unknown type – be safe and return an error
@@ -176,23 +174,19 @@ public class ObjectValidator implements JsonSchemaValidator {
                 format("Unsupported additionalProperties: %s", joinByComma(additionalProperties.keySet())));
     }
 
-    private String getPropertyOrIes(Set<String> addionalProperties) {
-        String propWord = "Property";
-        if (addionalProperties.size() > 1) {
-            propWord = "Properties";
-        }
-        return propWord;
+    private String propertyOrProperties(Set<String> additionalProperties) {
+        return additionalProperties.size() > 1 ? "Properties" : "Property";
     }
 
-    private Map<String, JsonNode> getAddionalProperties(JsonNode node) {
-        Map<String, JsonNode> addionalProperties = new HashMap<>();
+    private Map<String, JsonNode> getAdditionalProperties(JsonNode node) {
+        Map<String, JsonNode> props = new HashMap<>();
         for (Iterator<String> it = node.fieldNames(); it.hasNext(); ) {
             String propName = it.next();
             if (schema.getProperties() == null || !schema.getProperties().containsKey(propName)) {
-                addionalProperties.put(propName, node.get(propName));
+                props.put(propName, node.get(propName));
             }
         }
-        return addionalProperties;
+        return props;
     }
 
     private ValidationErrors validateRequiredProperties(ValidationContext ctx, JsonNode node) {
@@ -304,7 +298,7 @@ public class ObjectValidator implements JsonSchemaValidator {
         if (node.get(propertyName) == null)
             return null;
 
-        return ValidationErrors.create(ctx.addJSONpointerSegment(propertyName), String.format("The property %s is read only. But the request contains the value %s for this field.", propertyName, node.get(propertyName)));
+        return ValidationErrors.error(ctx.addJSONpointerSegment(propertyName), String.format("The property %s is read only. But the request contains the value %s for this field.", propertyName, node.get(propertyName)));
     }
 
     @SuppressWarnings("rawtypes")
@@ -319,7 +313,7 @@ public class ObjectValidator implements JsonSchemaValidator {
         if (node.get(propertyName) == null)
             return null;
 
-        return ValidationErrors.create(ctx.addJSONpointerSegment(propertyName), String.format("The property %s is write only. But the response contained the value %s.", propertyName, node.get(propertyName)));
+        return ValidationErrors.error(ctx.addJSONpointerSegment(propertyName), String.format("The property %s is write only. But the response contained the value %s.", propertyName, node.get(propertyName)));
     }
 
     @SuppressWarnings("rawtypes")
