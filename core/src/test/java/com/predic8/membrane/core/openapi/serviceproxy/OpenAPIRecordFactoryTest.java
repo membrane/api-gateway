@@ -116,7 +116,7 @@ class OpenAPIRecordFactoryTest {
     }
 
     @Test
-    void deep() {
+    void referencesDepth() {
 
         OpenAPIRecord rec = getOpenAPIRecord("oas31/references/deep/deep.oas.yaml", "deep-refs-v1-0-0");
 

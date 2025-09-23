@@ -34,7 +34,7 @@ public class NotValidator {
         Schema notSchema = schema.getNot();
 
         ValidationErrors ve = new SchemaValidator(api,notSchema).validate(ctx,obj);
-        if (ve.size() > 0)
+        if (!ve.isEmpty())
             return null;
 
         return ValidationErrors.error(ctx,"Subschema is declared with not. Should not validate against subschema.");

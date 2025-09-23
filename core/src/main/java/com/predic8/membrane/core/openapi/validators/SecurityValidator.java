@@ -182,7 +182,7 @@ public class SecurityValidator {
 
             if (!hasScope.get()) {
                 log.info("Caller of {} {} is not in scope {} required by OpenAPI definition.", ctx.getMethod(), ctx.getPath(), scope);
-                errors.add(ctx, "Caller ist not in scope %s".formatted(scope));
+                errors.add(ctx, "Caller is not in scope %s".formatted(scope));
             }
         }
         return errors;
@@ -197,7 +197,7 @@ public class SecurityValidator {
                 if (request.hasScheme(BASIC())) {
                     return errors;
                 }
-                errors.add(ctx.statusCode(401), "Caller ist not authenticated with HTTP and %s.".formatted(BASIC()));
+                errors.add(ctx.statusCode(401), "Caller is not authenticated with HTTP and %s.".formatted(BASIC()));
                 return errors;
             }
             case "bearer": {

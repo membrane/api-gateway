@@ -23,10 +23,15 @@ import org.slf4j.*;
 
 import java.util.*;
 
+import static com.predic8.membrane.core.openapi.validators.JsonSchemaValidator.NULL;
 import static com.predic8.membrane.core.util.JsonUtil.*;
+import static java.net.URLDecoder.*;
+import static java.nio.charset.StandardCharsets.*;
+import static java.util.Objects.requireNonNullElse;
 
 /**
- * TODO implement for objects in parameters
+ * Parser for form-style object parameters (non-exploded).
+ *
  */
 public class ObjectParameterParser extends AbstractParameterParser {
 
@@ -60,8 +65,9 @@ public class ObjectParameterParser extends AbstractParameterParser {
                 return FACTORY.objectNode();
         }
         while (!tokens.isEmpty()) {
-            String fieldName = tokens.pollFirst();
-            JsonNode json = scalarAsJson(tokens.pollFirst());
+            String fieldName = Optional.ofNullable(tokens.pollFirst()).orElse("").trim();
+            if (fieldName.isEmpty()) continue;
+            JsonNode json = scalarAsJson(decode(requireNonNullElse(tokens.pollFirst(), NULL), UTF_8));
 
             // If parameter is listed as a property of the object
             if (OpenAPIUtil.getProperty(parameterSchema, fieldName) != null) {
@@ -80,7 +86,7 @@ public class ObjectParameterParser extends AbstractParameterParser {
             // additionalProperties is true or false
             if (additionalProperties instanceof Boolean apb) {
                 if (apb) {
-                    obj.replace(fieldName, json);
+                    obj.set(fieldName, json);
                 }
                 continue;
             }
@@ -107,4 +113,5 @@ public class ObjectParameterParser extends AbstractParameterParser {
         }
         return obj;
     }
+
 }

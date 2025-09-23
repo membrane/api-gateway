@@ -21,6 +21,8 @@ import io.swagger.v3.oas.models.parameters.*;
 import java.util.*;
 
 import static com.predic8.membrane.core.openapi.validators.JsonSchemaValidator.*;
+import static io.swagger.v3.oas.models.parameters.Parameter.StyleEnum.FORM;
+import static java.lang.Boolean.TRUE;
 
 public abstract class AbstractParameterParser implements ParameterParser {
 
@@ -34,24 +36,36 @@ public abstract class AbstractParameterParser implements ParameterParser {
     protected OpenAPI api; // To grab $ref Schema types
 
     public static ParameterParser instance(OpenAPI api, String type, Parameter parameter) {
+
+        boolean explode = isExplode(parameter);
+
         AbstractParameterParser paramParser = switch (type) {
             case ARRAY -> {
-                if (parameter.getExplode())
+                if (explode)
                     yield new ExplodedArrayParameterParser();
                 yield new ArrayParameterParser();
             }
             case OBJECT -> {
-                if (parameter.getExplode())
+                if (explode)
                     yield new ExplodedObjectParameterParser();
                 yield new ObjectParameterParser();
             }
             default -> new ScalarParameterParser();
         };
         paramParser.type = type;
-        paramParser.explode = parameter.getExplode();
+        paramParser.explode = explode;
         paramParser.parameter = parameter;
         paramParser.api = api;
         return paramParser;
+    }
+
+    public static boolean isExplode(Parameter parameter) {
+        if (parameter.getExplode() == null) {
+            if (parameter.getStyle() == FORM) {
+                return true;
+            }
+        }
+        return TRUE.equals(parameter.getExplode());
     }
 
     @Override

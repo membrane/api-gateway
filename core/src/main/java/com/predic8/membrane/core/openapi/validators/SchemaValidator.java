@@ -119,7 +119,7 @@ public class SchemaValidator implements JsonSchemaValidator {
             return validateSingleType(ctx, value, type);
 
         // At that point: schema.types is used
-        return validateMultipleTypes(new ArrayList<>(schema.getTypes()), ctx, value);
+        return validateMultipleTypes(new ArrayList<String>(schema.getTypes()), ctx, value);
     }
 
     private @Nullable ValidationErrors validateMultipleTypes(List<String> types, ValidationContext ctx, Object value) {

@@ -23,6 +23,7 @@ paths:
         - name: const
           in: query
           explode: true
+          allowReserved: true
           schema:
             type: array
             items:
@@ -49,7 +50,6 @@ paths:
           type: string
       - name: bar
         in: query
-        required: false
         schema:
           type: string
       - name: baz
@@ -65,7 +65,6 @@ paths:
             type: string
         - name: pap
           in: query
-          required: false
           schema:
             type: string
         - name: rap

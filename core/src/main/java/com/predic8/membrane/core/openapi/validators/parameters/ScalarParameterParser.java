@@ -19,11 +19,12 @@ import com.fasterxml.jackson.databind.*;
 import java.net.*;
 
 import static com.predic8.membrane.core.util.JsonUtil.*;
+import static java.nio.charset.StandardCharsets.*;
 
 public class ScalarParameterParser extends AbstractParameterParser {
 
     @Override
     public JsonNode getJson() throws ParameterParsingException {
-        return scalarAsJson(URLDecoder.decode(getValuesForParameter().getFirst()));
+        return scalarAsJson(URLDecoder.decode(getValuesForParameter().getFirst(), UTF_8));
     }
 }

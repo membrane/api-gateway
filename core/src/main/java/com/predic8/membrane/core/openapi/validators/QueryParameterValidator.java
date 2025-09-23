@@ -31,7 +31,7 @@ import java.util.*;
 import java.util.concurrent.atomic.*;
 import java.util.regex.*;
 
-import static com.predic8.membrane.core.openapi.validators.JsonSchemaValidator.OBJECT;
+import static com.predic8.membrane.core.openapi.validators.JsonSchemaValidator.*;
 import static com.predic8.membrane.core.openapi.validators.ValidationContext.ValidatedEntityType.*;
 import static com.predic8.membrane.core.util.CollectionsUtil.*;
 import static io.swagger.v3.oas.models.security.SecurityScheme.In.*;
@@ -78,7 +78,7 @@ public class QueryParameterValidator extends AbstractParameterValidator {
         }
 
         getAllQueryParameters(operation).forEach(p -> {
-            Schema schema = OpenAPIUtil.resolveSchema(api, p);
+            Schema<?> schema = OpenAPIUtil.resolveSchema(api, p);
             if (!parameterMap.containsKey(p.getName()))
                 return;
             errors.add(validate(ctx, p.getName(), parameterMap, schema, p));
@@ -96,7 +96,7 @@ public class QueryParameterValidator extends AbstractParameterValidator {
         return errors;
     }
 
-    private ValidationErrors validate(ValidationContext ctx, String parameterName, Map<String, List<String>> v, Schema schema, Parameter parameter) {
+    private ValidationErrors validate(ValidationContext ctx, String parameterName, Map<String, List<String>> v, Schema<?> schema, Parameter parameter) {
         ValidationErrors errors = new ValidationErrors();
         ValidationErrors localErrors = new ValidationErrors();
         AtomicBoolean validated = new AtomicBoolean();
@@ -104,11 +104,7 @@ public class QueryParameterValidator extends AbstractParameterValidator {
         if (schema == null) {
             return errors;
         }
-        Set<String> types = schema.getTypes(); // Try all e.g. type: [array, null]
-        // Maybe there is no type
-        if (types == null) {
-            return errors;
-        }
+        Set<String> types = getTypes(schema);
         types.forEach(type -> {
             ParameterParser ap = AbstractParameterParser.instance(api, type, parameter);
             ap.setValues(v);
@@ -132,6 +128,15 @@ public class QueryParameterValidator extends AbstractParameterValidator {
             return errors.add(ctx, "Validation of query parameter '%s' failed against all types(%s). Details are: %s".formatted(parameterName, types, localErrors));
         }
         return errors;
+    }
+
+    private static @NotNull Set<String> getTypes(Schema<?> schema) {
+        Set<String> types = schema.getTypes(); // Try all e.g. type: [array, null]
+        if (types == null || types.isEmpty()) {
+            String t = schema.getType();
+            return t != null ? Set.of(t) : Set.of("string");
+        }
+        return types;
     }
 
     ValidationErrors validateAdditionalQueryParameters(ValidationContext ctx, Map<String, JsonNode> qparams, OpenAPI api) {
@@ -166,6 +171,7 @@ public class QueryParameterValidator extends AbstractParameterValidator {
             Matcher m = QUERY_PARAMS_PATTERN.matcher(p);
             if (m.matches()) {
                 String key = decode(m.group(1), UTF_8); // Key can here be decoded
+                if (key.isEmpty()) continue; // ignore stray separators
                 String value = m.group(2); // Do not decode here cause it has to be done after array or object splitting
                 List<String> ab = parameterMap.computeIfAbsent(key, k -> new ArrayList<>());
                 ab.add(value);
@@ -176,10 +182,6 @@ public class QueryParameterValidator extends AbstractParameterValidator {
 
     /**
      * Lookup query parameter in the operation and in the path.
-     *
-     * @param operation
-     * @param name
-     * @return
      */
     Parameter getQueryParameter(Operation operation, String name) {
         return getAllQueryParameters(operation).stream().filter(p -> p.getName().equals(name)).findFirst().orElse(null);
@@ -187,9 +189,6 @@ public class QueryParameterValidator extends AbstractParameterValidator {
 
     /**
      * Get all query parameters declared in the operation and in the path.
-     *
-     * @param operation
-     * @return
      */
     Set<Parameter> getAllQueryParameters(Operation operation) {
         return getAllParameter(operation).stream().filter(p -> p instanceof QueryParameter).collect(toSet());

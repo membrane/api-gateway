@@ -21,6 +21,7 @@ import java.net.*;
 import java.util.stream.*;
 
 import static com.predic8.membrane.core.util.JsonUtil.*;
+import static java.nio.charset.StandardCharsets.*;
 
 public abstract class AbstractArrayParameterParser extends AbstractParameterParser {
 
@@ -34,7 +35,7 @@ public abstract class AbstractArrayParameterParser extends AbstractParameterPars
         if (items == null) {
             return FACTORY.nullNode();
         }
-        items.forEach(s -> an.add( scalarAsJson(URLDecoder.decode(s))));
+        items.forEach(s -> an.add( scalarAsJson(URLDecoder.decode(s, UTF_8))));
         return an;
     }
 

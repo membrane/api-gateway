@@ -26,6 +26,7 @@ import java.util.regex.*;
 import static com.predic8.membrane.core.openapi.util.OpenAPIUtil.*;
 import static com.predic8.membrane.core.util.JsonUtil.*;
 import static java.net.URLDecoder.*;
+import static java.nio.charset.StandardCharsets.*;
 
 public class ExplodedObjectParameterParser extends AbstractParameterParser {
 
@@ -64,7 +65,7 @@ public class ExplodedObjectParameterParser extends AbstractParameterParser {
         schema.getProperties().forEach((propName, propSchema) -> {
             var paramValues = values.get(propName);
             if (paramValues != null && !paramValues.isEmpty()) {
-                obj.set(propName, scalarAsJson(decode(paramValues.getFirst())));
+                obj.set(propName, scalarAsJson(decode(paramValues.getFirst(), UTF_8)));
                 known.add(propName);
             }
         });
@@ -78,7 +79,7 @@ public class ExplodedObjectParameterParser extends AbstractParameterParser {
         SchemaValidator validator = new SchemaValidator(api, aps);
         values.forEach((k, vs) -> {
             if (known.contains(k) || vs == null || vs.isEmpty()) return;
-            var json = scalarAsJson(decode(vs.getFirst()));
+            var json = scalarAsJson(decode(vs.getFirst(),UTF_8));
             ValidationErrors errs = validator.validate(new ValidationContext(), json);
             if (!errs.hasErrors()) {
                 obj.set(k, json);
@@ -94,7 +95,7 @@ public class ExplodedObjectParameterParser extends AbstractParameterParser {
         if (apb) {
             values.forEach((k, vs) -> {
                 if (!known.contains(k) && vs != null && !vs.isEmpty()) {
-                    obj.set(k, scalarAsJson(decode(vs.getFirst())));
+                    obj.set(k, scalarAsJson(decode(vs.getFirst(),UTF_8)));
                 }
             });
         }
@@ -111,7 +112,7 @@ public class ExplodedObjectParameterParser extends AbstractParameterParser {
                 values.forEach((k, vs) -> {
                     if (known.contains(k)) return; // avoid double set
                     if (vs != null && !vs.isEmpty() && pattern.matcher(k).matches()) {
-                        obj.set(k, scalarAsJson(decode(vs.getFirst())));
+                        obj.set(k, scalarAsJson(decode(vs.getFirst(),UTF_8)));
                         known.add(k);
                     }
                 });

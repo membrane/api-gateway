@@ -34,7 +34,10 @@ public class ConstValueTest {
 
     @BeforeEach
     void setUp() {
-        validator = new OpenAPIValidator(new URIFactory(), new OpenAPIRecord(parseOpenAPI(getResourceAsStream(this, "/openapi/specs/oas31/const-value.yaml")), new OpenAPISpec()));
+        validator = new OpenAPIValidator(
+                new URIFactory(),
+                new OpenAPIRecord(getApi(this, "/openapi/specs/oas31/const-value.yaml"), new OpenAPISpec())
+        );
     }
 
     static Stream<Arguments> jsonConstRequestBodyProvider() {

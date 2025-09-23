@@ -24,6 +24,7 @@ import java.util.stream.*;
 
 import static com.fasterxml.jackson.databind.node.BooleanNode.*;
 import static com.predic8.membrane.core.openapi.validators.JsonSchemaValidator.*;
+import static java.io.InputStream.nullInputStream;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class SchemaValidatorTest {
@@ -51,7 +52,7 @@ public class SchemaValidatorTest {
     @MethodSource("validatorTestCases")
     void testCanValidate(JsonSchemaValidator validator, Object input, String expected) {
         if (input instanceof InputStream) {
-            assertThrows(RuntimeException.class, () -> validator.canValidate(input), "InputStream should not happen!");
+            assertNull(validator.canValidate(input));
         } else {
             assertEquals(expected, validator.canValidate(input),"Input: " + input);
         }
@@ -99,7 +100,7 @@ public class SchemaValidatorTest {
                 // ObjectValidator test cases
                 Arguments.of(objectValidator, mapper.createObjectNode(), OBJECT),
                 Arguments.of(objectValidator, stringNode, null),
-                Arguments.of(objectValidator, InputStream.nullInputStream(), null),
+                Arguments.of(objectValidator, nullInputStream(), null),
 
                 // StringValidator test cases
                 Arguments.of(stringValidator, stringNode, STRING),
@@ -111,8 +112,7 @@ public class SchemaValidatorTest {
     }
 
     @Test
-    void testCanValidateWithInputStream() {
-        assertThrows(RuntimeException.class, () ->
-                objectValidator.canValidate(InputStream.nullInputStream()), "InputStream should not happen!");
+    void canValidateWithInputStream() {
+        assertEquals(null , objectValidator.canValidate(nullInputStream()));
     }
 }
