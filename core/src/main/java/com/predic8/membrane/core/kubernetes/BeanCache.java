@@ -34,8 +34,12 @@ public class BeanCache implements BeanRegistry {
     private final Router router;
     private final ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
     private final ConcurrentHashMap<String, Object> uuidMap = new ConcurrentHashMap<>();
-    private final ArrayBlockingQueue<BeanDefinition> changeEvents = new ArrayBlockingQueue<>(1000);
+    private final ArrayBlockingQueue<ChangeEvent> changeEvents = new ArrayBlockingQueue<>(1000);
     private Thread thread;
+
+    interface ChangeEvent {}
+    record BeanDefinitionChanged(BeanDefinition bd) implements ChangeEvent {}
+    record StaticConfigurationLoaded() implements ChangeEvent {}
 
     public BeanCache(Router router) {
         this.router = router;
@@ -45,8 +49,15 @@ public class BeanCache implements BeanRegistry {
         thread = new Thread(() -> {
             while (!Thread.interrupted()) {
                 try {
-                    BeanDefinition beanDefinition = changeEvents.take();
-                    handle(beanDefinition);
+                    ChangeEvent changeEvent = changeEvents.take();
+                    if (changeEvent instanceof StaticConfigurationLoaded) {
+                        activationRun();
+                        router.handleAsynchronousInitializationResult(uidsToActivate.isEmpty());
+                        continue;
+                    }
+                    if (changeEvent instanceof BeanDefinitionChanged(BeanDefinition bd)) {
+                        handle(bd);
+                    }
                 } catch (InterruptedException e) {
                     break;
                 }
@@ -75,7 +86,15 @@ public class BeanCache implements BeanRegistry {
      * May be called from multiple threads.
      */
     public void handle(WatchAction action, Map m) {
-        changeEvents.add(new BeanDefinition(action, m));
+        changeEvents.add(new BeanDefinitionChanged(new BeanDefinition(action, m)));
+    }
+
+    /**
+     * Signals that all {@link ChangeEvent}s have been passed to {@link #handle(WatchAction, Map)} which originate from
+     * static configuration (e.g. a file).
+     */
+    public void fireConfigurationLoaded() {
+        changeEvents.add(new StaticConfigurationLoaded());
     }
 
     // uid -> bean definition
