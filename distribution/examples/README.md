@@ -87,7 +87,7 @@ Samples of scripting with JSONPath, XPath and the expression language you can fi
 
 ## Other Protocols
 
-### [GraphQL](graphql#validation---graphql)
+### [GraphQL](graphql#graphql)
 
 * Validate GraphQL requests
 
