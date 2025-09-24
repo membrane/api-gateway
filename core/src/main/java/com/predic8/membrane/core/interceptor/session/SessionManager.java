@@ -313,7 +313,7 @@ public abstract class SessionManager {
                 "Path=/",
 
                 needsSecureAttribute(exc) ? "Secure" : null,
-                domain != null ? "Domain=" + domain + "; " : null,
+                domain != null ? "Domain=" + domain : null,
                 httpOnly ? "HttpOnly" : null,
                 sameSite != null ? "SameSite="+sameSite : null
         )
