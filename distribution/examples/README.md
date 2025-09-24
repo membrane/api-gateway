@@ -71,7 +71,7 @@ Samples of scripting with JSONPath, XPath and the expression language you can fi
 
 ## [Legacy Integration for XML and Web Services](web-services-soap#web-services-soap)
 
-### [XML](xml#xml)
+### [XML](xml#xml-examples)
 
 * XML validation and XSLT transformation
 * Create XML plugins with DOM or StAX
@@ -100,7 +100,7 @@ Samples of scripting with JSONPath, XPath and the expression language you can fi
 
 ### [YAML Configuration](yaml-configuration#yaml-configuration)
 
-### [Monitoring and Tracing](monitoring-tracing#monitoring-tracing)
+### [Monitoring and Tracing](monitoring-tracing#monitoring-and-tracing)
 
 * OpenTelemetry & Prometheus
 
