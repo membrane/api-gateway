@@ -49,7 +49,7 @@ public class Request<T extends Body> extends Message<T,Request<T>> {
     }
 
     public static <T extends Body> Request<T> get(String path) {
-        return new Request<T>("GET",path);
+        return new Request<>("GET",path);
     }
 
     public static <T extends Body> Request<T> post() {

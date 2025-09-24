@@ -15,6 +15,7 @@
 package com.predic8.membrane.core.openapi.validators.parameters;
 
 public class ParameterParsingException extends Exception {
+    private static final long serialVersionUID = 1L;
     public ParameterParsingException(String message) { super(message); }
     public ParameterParsingException(String message, Throwable cause) { super(message, cause); }
 }

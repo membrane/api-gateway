@@ -167,7 +167,7 @@ class QueryParameterValidatorTest extends AbstractValidatorTest {
             @Test
             void valid() {
                 assertEquals(0, objectValidator.validate(ctx,
-                        get().path("/object?pet=kind,mammal,age=9"), objectPathItem.getGet()).size());
+                        get().path("/object?pet=kind,mammal,age,9"), objectPathItem.getGet()).size());
             }
 
             @Test
