@@ -29,7 +29,7 @@ import static com.predic8.membrane.core.lang.ExchangeExpression.Language.*;
 
 /**
  * @description <p>
- * The if allows conditional execution of nested interceptors.
+ * if allows conditional execution of nested interceptors.
  * </p>
  * <pre><code><if test="method == 'POST'" language="SpEL">
  *     ...
