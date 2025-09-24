@@ -31,6 +31,7 @@ import java.util.*;
 import java.util.concurrent.atomic.*;
 import java.util.regex.*;
 
+import static com.predic8.membrane.core.openapi.util.OpenAPIUtil.hasObjectType;
 import static com.predic8.membrane.core.openapi.util.OpenAPIUtil.isExplode;
 import static com.predic8.membrane.core.openapi.validators.JsonSchemaValidator.*;
 import static com.predic8.membrane.core.openapi.validators.ValidationContext.ValidatedEntityType.*;
@@ -111,7 +112,7 @@ public class QueryParameterValidator extends AbstractParameterValidator {
         for (Parameter p : getAllQueryParameters(operation)) {
             Schema<?> s = OpenAPIUtil.resolveSchema(api, p);
             if (s == null) continue;
-            if (!OpenAPIUtil.hasObjectType(s)) continue;
+            if (!hasObjectType(s)) continue;
             if (!isExplode(p)) continue;
             Object additional = s.getAdditionalProperties();
             if (TRUE.equals(additional) || (additional instanceof Schema)) {
@@ -196,7 +197,7 @@ public class QueryParameterValidator extends AbstractParameterValidator {
     }
 
     private static @NotNull Map<String, List<String>> getParameterMapFromQuery(String query) {
-        Map<String, List<String>> parameterMap = new HashMap<>();
+        Map<String, List<String>> parameterMap = new LinkedHashMap<>();
         if (query == null || query.isEmpty()) {
             return parameterMap;
         }
@@ -238,18 +239,12 @@ public class QueryParameterValidator extends AbstractParameterValidator {
             var schema = OpenAPIUtil.resolveSchema(api, p);
             if (schema == null)
                 return;
-            if (isObjectType(schema) && schema.getProperties() != null) {
+            if (hasObjectType(schema) && schema.getProperties() != null) {
                 schema.getProperties().forEach((name, ignored) -> names.add(name));
             }
         });
         return names;
     }
-
-    private static boolean isObjectType(Schema<?> schema) {
-        var types = schema.getTypes();
-        return types != null && types.contains(OBJECT) || OBJECT.equals(schema.getType());
-    }
-
 
     @NotNull Set<String> getRequiredQueryParameters(Operation operation) {
         var parameters = getAllQueryParameters(operation);

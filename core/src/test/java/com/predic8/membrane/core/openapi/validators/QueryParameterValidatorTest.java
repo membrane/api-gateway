@@ -14,7 +14,6 @@
 package com.predic8.membrane.core.openapi.validators;
 
 import com.fasterxml.jackson.databind.node.*;
-import com.predic8.membrane.core.openapi.model.*;
 import io.swagger.v3.oas.models.*;
 import io.swagger.v3.oas.models.parameters.*;
 import io.swagger.v3.oas.models.security.*;
@@ -25,7 +24,7 @@ import java.util.*;
 import static com.predic8.membrane.core.openapi.model.Request.*;
 import static com.predic8.membrane.core.openapi.util.OpenAPITestUtils.*;
 import static com.predic8.membrane.core.openapi.util.OpenAPIUtil.*;
-import static com.predic8.membrane.core.openapi.validators.QueryParameterValidator.getQueryString;
+import static com.predic8.membrane.core.openapi.validators.QueryParameterValidator.*;
 import static io.swagger.v3.oas.models.security.SecurityScheme.In.*;
 import static io.swagger.v3.oas.models.security.SecurityScheme.Type.*;
 import static org.junit.jupiter.api.Assertions.*;
@@ -59,14 +58,14 @@ class QueryParameterValidatorTest extends AbstractValidatorTest {
         additionalValidator = new QueryParameterValidator(validator.getApi(),additionalPathItem);
 
         objectPathItem = validator.getApi().getPaths().get("/object");
-        objectValidator = new QueryParameterValidator(validator.getApi(),additionalPathItem);
+        objectValidator = new QueryParameterValidator(validator.getApi(),objectPathItem);
 
         ctx = new ValidationContext().statusCode(400).method("GET").path("/dummy");
     }
 
     @Test
     void emptyQueryParameter() {
-        assertEquals(0, citiesValidator.validate(ctx, Request.get().path("/object?"), getGET("/object")).size());
+        assertEquals(0, objectValidator.validate(ctx, get("/object?"), getGET("/object")).size());
     }
 
     @Test

@@ -11,6 +11,7 @@
 - Remove HttpUtil.getHTMLErrorBody()
 - LogInterceptor:
   - Remove: headerOnly
+- Rewrite JSONAssert Tests with RESTAssured
 
 # 6.5.0
 

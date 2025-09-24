@@ -38,7 +38,7 @@ paths:
           schema:
             type: array
             items:
-              enum: ["Bonn","New York","Delhi"]
+              enum: ["Bonn", "New York", "Delhi"]
         - name: names
           in: query
           explode: false

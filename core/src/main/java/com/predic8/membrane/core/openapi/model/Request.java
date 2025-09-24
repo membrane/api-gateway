@@ -48,6 +48,10 @@ public class Request<T extends Body> extends Message<T,Request<T>> {
         return new Request<>("GET");
     }
 
+    public static <T extends Body> Request<T> get(String path) {
+        return new Request<T>("GET").path(path);
+    }
+
     public static <T extends Body> Request<T> post() {
         return new Request<>("POST");
     }

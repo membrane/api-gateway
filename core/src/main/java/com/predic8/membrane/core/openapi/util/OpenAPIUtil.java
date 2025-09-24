@@ -99,6 +99,12 @@ public class OpenAPIUtil {
     public static Schema<?> resolveSchema(OpenAPI api, Parameter p) {
         Schema<?> schema = p.getSchema();
         if (schema == null) {
+            // OAS allows parameter.content with schema instead of parameter.schema. Resolving from content as fallback.
+            if (p.getContent() != null && !p.getContent().isEmpty()) {
+                    var mt = p.getContent().values().iterator().next();
+                    schema = mt != null ? mt.getSchema() : null;
+                }
+            if (schema == null) return null;
             return null;
         }
         if (schema.get$ref() != null) {

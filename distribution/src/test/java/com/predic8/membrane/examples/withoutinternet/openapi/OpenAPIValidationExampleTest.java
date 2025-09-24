@@ -194,7 +194,7 @@ public class OpenAPIValidationExampleTest extends AbstractSampleMembraneStartSto
                       "path" : "/demo-api/v2/persons/4077C19D-2C1D-427B-B2DD-FC3112CE89D1",
                       "errors" : {
                         "REQUEST/BODY" : [ {
-                          "message" : "Object has the additional property: role .But the schema does not allow additional properties.",
+                          "message" : "Object has the additional property: role. But the schema does not allow additional properties.",
                           "complexType" : "Person",
                           "schemaType" : "object"
                         } ]
