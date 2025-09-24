@@ -20,6 +20,9 @@
 - <apiKey/>
     <scriptXX>${json[key]}</scriptXX>
   - See: RateLimitInterceptor
+- OpenAPIValidator:
+  - <openapi unknownQueryParameters="accept|report|block" .../>
+    Default: accept
 
 # 6.4.0
 

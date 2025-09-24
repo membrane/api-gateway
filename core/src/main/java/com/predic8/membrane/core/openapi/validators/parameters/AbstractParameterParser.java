@@ -20,9 +20,8 @@ import io.swagger.v3.oas.models.parameters.*;
 
 import java.util.*;
 
+import static com.predic8.membrane.core.openapi.util.OpenAPIUtil.*;
 import static com.predic8.membrane.core.openapi.validators.JsonSchemaValidator.*;
-import static io.swagger.v3.oas.models.parameters.Parameter.StyleEnum.FORM;
-import static java.lang.Boolean.TRUE;
 
 public abstract class AbstractParameterParser implements ParameterParser {
 
@@ -59,25 +58,23 @@ public abstract class AbstractParameterParser implements ParameterParser {
         return paramParser;
     }
 
-    public static boolean isExplode(Parameter parameter) {
-        if (parameter.getExplode() == null) {
-            if (parameter.getStyle() == FORM) {
-                return true;
-            }
-        }
-        return TRUE.equals(parameter.getExplode());
-    }
-
     @Override
     public void setValues(Map<String, List<String>> values) {
         this.values = values;
     }
 
-    protected List<String> getValuesForParameter() {
+    protected List<String> getValues() {
         String paramName = parameter.getName();
         if (paramName == null) {
             return List.of();
         }
         return values.getOrDefault(paramName, List.of());
+    }
+
+    protected String getValue() {
+        var values = getValues();
+        if (values.isEmpty())
+            return "";
+        return values.getFirst();
     }
 }

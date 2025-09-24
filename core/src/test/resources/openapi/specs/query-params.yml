@@ -32,6 +32,21 @@ paths:
           schema:
             type: string
             maxLength: 10
+        - in: query
+          explode: true
+          name: city
+          schema:
+            type: array
+            items:
+              enum: ["Bonn","New York","Delhi"]
+        - name: names
+          in: query
+          explode: false
+          schema:
+            type: array
+            items:
+              type: string
+              maxLength: 3
       responses:
         '200':
           description: OK
@@ -52,6 +67,7 @@ paths:
       parameters:
         - in: query
           name: pet
+          explode: false
           schema:
             type: object
             properties:
@@ -66,6 +82,24 @@ paths:
             properties:
               size:
                 type: number
+      responses:
+        '200':
+          description: OK
+  /additional:
+    get:
+      parameters:
+        - name: foo
+          in: query
+          style: form
+          explode: true
+          schema:
+            type: object
+            additionalProperties: true
+            properties:
+              a:
+                type: number
+              b:
+                type: string
       responses:
         '200':
           description: OK

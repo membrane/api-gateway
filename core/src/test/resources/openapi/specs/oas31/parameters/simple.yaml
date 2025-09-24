@@ -72,7 +72,7 @@ paths:
           schema:
             type: string
       responses:
-        '200':
+        "200":
           description: Ok
 
 components:

@@ -60,7 +60,7 @@ public class SchemaValidator implements JsonSchemaValidator {
     @Override
     public ValidationErrors validate(ValidationContext ctx, Object obj) {
 
-        ValidationErrors errors = new ValidationErrors();
+        var errors = new ValidationErrors();
 
         if (obj == null)
             return errors.add(ctx, "Got null to validate!");
@@ -108,7 +108,7 @@ public class SchemaValidator implements JsonSchemaValidator {
 
     private ValidationErrors validateByType(ValidationContext ctx, Object value) {
 
-        String type = schema.getType();
+        var type = schema.getType();
 
         if (schemaHasNoTypeAndTypes(type)) {
             return validateMultipleTypes(List.of("string", "number", "integer", "boolean", "array", "object", "null"), ctx, value);
@@ -123,9 +123,9 @@ public class SchemaValidator implements JsonSchemaValidator {
     }
 
     private @Nullable ValidationErrors validateMultipleTypes(List<String> types, ValidationContext ctx, Object value) {
-        String typeOfValue = getTypeOfValue(types, value);
+        var typeOfValue = getTypeOfValue(types, value);
 
-        ValidationErrors errors = getTypeNotMatchError(types, ctx, value, typeOfValue);
+        var errors = getTypeNotMatchError(types, ctx, value, typeOfValue);
         if (errors != null) return errors;
 
         return validateSingleType(ctx, value, typeOfValue);
@@ -161,7 +161,7 @@ public class SchemaValidator implements JsonSchemaValidator {
      * @return name of the type that applies
      */
     private static @Nullable String getTypeOfValue(List<String> types, Object value) {
-        String typeOfValue = getType(value);
+        var typeOfValue = getType(value);
         if (Objects.equals(typeOfValue, INTEGER) && !types.contains(typeOfValue) && types.contains(NUMBER))
             return NUMBER;
         return typeOfValue;
@@ -220,7 +220,6 @@ public class SchemaValidator implements JsonSchemaValidator {
         if (obj instanceof InputStream) {
             throw new RuntimeException("InputStream!");
         }
-
         return obj;
     }
 }

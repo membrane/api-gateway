@@ -16,15 +16,14 @@ package com.predic8.membrane.core.openapi.validators.parameters;
 
 import com.fasterxml.jackson.databind.*;
 
-import java.net.*;
-
 import static com.predic8.membrane.core.util.JsonUtil.*;
+import static java.net.URLDecoder.*;
 import static java.nio.charset.StandardCharsets.*;
 
 public class ScalarParameterParser extends AbstractParameterParser {
 
     @Override
     public JsonNode getJson() throws ParameterParsingException {
-        return scalarAsJson(URLDecoder.decode(getValuesForParameter().getFirst(), UTF_8));
+        return scalarAsJson(decode(getValue(), UTF_8));
     }
 }

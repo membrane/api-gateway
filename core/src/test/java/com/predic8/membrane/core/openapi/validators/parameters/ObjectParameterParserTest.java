@@ -38,7 +38,7 @@ class ObjectParameterParserTest extends AbstractValidatorTest {
     public void setUp() throws Exception {
         super.setUp();
         var color = OpenAPIUtil.getParameter(OpenAPIUtil.getPath(validator.getApi(), "/color").getGet(), "rgb");
-        colorParser = AbstractParameterParser.instance(validator.getApi(), "object", color);
+        colorParser = AbstractParameterParser.instance(validator.getApi(), OBJECT, color);
 
         var encoding = OpenAPIUtil.getParameter(OpenAPIUtil.getPath(validator.getApi(), "/encoding").getGet(), "explode-false");
         encodingParser = AbstractParameterParser.instance(validator.getApi(), OBJECT, encoding);
@@ -75,7 +75,6 @@ class ObjectParameterParserTest extends AbstractValidatorTest {
         void one_too_much_no_value() throws Exception {
             colorParser.setValues(Map.of("rgb", List.of("R,100,G,200,B,150,NoValue")));
             var fields = colorParser.getJson();
-            System.out.println("fields = " + fields);
             assertEquals(4, fields.size());
             assertEquals(100, fields.get("R").asInt());
             assertEquals(200, fields.get("G").asInt());

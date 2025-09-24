@@ -29,6 +29,9 @@ import java.util.*;
 
 import static com.predic8.membrane.core.openapi.serviceproxy.APIProxy.*;
 import static com.predic8.membrane.core.openapi.util.Utils.*;
+import static com.predic8.membrane.core.openapi.validators.JsonSchemaValidator.OBJECT;
+import static io.swagger.v3.oas.models.parameters.Parameter.StyleEnum.FORM;
+import static java.lang.Boolean.TRUE;
 
 public class OpenAPIUtil {
 
@@ -103,5 +106,23 @@ public class OpenAPIUtil {
             return api.getComponents().getSchemas().get(getComponentLocalNameFromRef(schema.get$ref()));
         }
         return schema;
+    }
+
+    /**
+     * If schema has type: object or type: [..., object]
+     * @param schema
+     * @return
+     */
+    public static boolean hasObjectType(Schema schema) {
+        return (schema.getTypes() != null && (schema.getTypes().contains(OBJECT)) || OBJECT.equals(schema.getType()));
+    }
+
+    public static boolean isExplode(Parameter parameter) {
+        if (parameter.getExplode() == null) {
+            if (parameter.getStyle() == FORM) {
+                return true;
+            }
+        }
+        return TRUE.equals(parameter.getExplode());
     }
 }

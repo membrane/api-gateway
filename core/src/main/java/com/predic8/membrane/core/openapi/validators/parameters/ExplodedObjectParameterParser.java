@@ -34,8 +34,7 @@ public class ExplodedObjectParameterParser extends AbstractParameterParser {
 
     @Override
     public JsonNode getJson() throws ParameterParsingException {
-        ObjectNode obj = FACTORY.objectNode();
-
+        var obj = FACTORY.objectNode();
         var schema = resolveSchema(api, parameter);
         if (schema == null) {
             return obj;
@@ -45,7 +44,7 @@ public class ExplodedObjectParameterParser extends AbstractParameterParser {
         explicitProperties(schema, obj, known);
         patternProperties(schema, obj, known);
 
-        Object additional = schema.getAdditionalProperties();
+        var additional = schema.getAdditionalProperties();
         if (additional == null) {
             return obj;
         }
@@ -76,7 +75,7 @@ public class ExplodedObjectParameterParser extends AbstractParameterParser {
         if (!(additional instanceof Schema<?> aps))
             return;
 
-        SchemaValidator validator = new SchemaValidator(api, aps);
+        var validator = new SchemaValidator(api, aps);
         values.forEach((k, vs) -> {
             if (known.contains(k) || vs == null || vs.isEmpty()) return;
             var json = scalarAsJson(decode(vs.getFirst(),UTF_8));

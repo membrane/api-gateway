@@ -49,10 +49,9 @@ class OpenAPIRecordFactoryTest {
 
     @Test
     void readAndParseOpenAPI30() {
-        Collection<OpenAPISpec> specs = new ArrayList<>();
-        specs.add(new OpenAPISpec() {{
-            setLocation("customers.yml");
-        }});
+        OpenAPISpec spec = new OpenAPISpec();
+        spec.setLocation("customers.yml");
+        Collection<OpenAPISpec> specs = singletonList(spec);
 
         Map<String, OpenAPIRecord> recs = factory.create(specs);
         OpenAPIRecord rec = recs.get("customers-api-v1-0");
@@ -94,11 +93,10 @@ class OpenAPIRecordFactoryTest {
 
     @Test
     void referencesTest() {
-        OpenAPIRecord rec = factory.create(new ArrayList<>() {{
-            add(new OpenAPISpec() {{
-                setLocation("oas31/request-reference.yaml");
-            }});
-        }}).get("demo-v1-0-0");
+        OpenAPISpec spec = new OpenAPISpec();
+        spec.setLocation("oas31/request-reference.yaml");
+        OpenAPIRecord rec = factory.create(singletonList(spec)).get("demo-v1-0-0");
+        
         assertNotNull(rec);
         assertEquals("Demo", rec.api.getInfo().getTitle());
         assertEquals(V31, rec.api.getSpecVersion());

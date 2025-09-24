@@ -16,7 +16,6 @@ package com.predic8.membrane.core.openapi.oas31.parameters;
 
 import com.predic8.membrane.core.openapi.*;
 import com.predic8.membrane.core.openapi.serviceproxy.*;
-import com.predic8.membrane.core.openapi.validators.*;
 import com.predic8.membrane.core.util.*;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.*;
@@ -35,7 +34,7 @@ public class ArrayQueryParameterTest {
 
     @BeforeEach
     void setUp() {
-        OpenAPIRecord apiRecord = new OpenAPIRecord(
+        var apiRecord = new OpenAPIRecord(
                 parseOpenAPI(getResourceAsStream(this, "/openapi/specs/oas31/parameters/explode-false.yaml")),
                 new OpenAPISpec()
         );
@@ -91,14 +90,14 @@ public class ArrayQueryParameterTest {
 
                 @Test
                 void number() {
-                    ValidationErrors err = validator.validate(get().path("/array?number=1,foo,3"));
+                    var err = validator.validate(get().path("/array?number=1,foo,3"));
                     assertEquals(1, err.size());
                     assertTrue(err.get(0).getMessage().contains("\"foo\" is of type string"));
                 }
 
                 @Test
                 void nullValue() {
-                    ValidationErrors err = validator.validate(get().path("/array?string=blue,null,brown"));
+                    var err = validator.validate(get().path("/array?string=blue,null,brown"));
                     assertEquals(1, err.size());
                     assertTrue(err.get(0).getMessage().contains("null is of type"));
                 }

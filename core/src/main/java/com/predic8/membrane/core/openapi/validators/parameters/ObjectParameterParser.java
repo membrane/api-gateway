@@ -15,7 +15,6 @@
 package com.predic8.membrane.core.openapi.validators.parameters;
 
 import com.fasterxml.jackson.databind.*;
-import com.fasterxml.jackson.databind.node.*;
 import com.predic8.membrane.core.openapi.util.*;
 import com.predic8.membrane.core.openapi.validators.*;
 import io.swagger.v3.oas.models.media.*;
@@ -23,11 +22,11 @@ import org.slf4j.*;
 
 import java.util.*;
 
-import static com.predic8.membrane.core.openapi.validators.JsonSchemaValidator.NULL;
+import static com.predic8.membrane.core.openapi.validators.JsonSchemaValidator.*;
 import static com.predic8.membrane.core.util.JsonUtil.*;
 import static java.net.URLDecoder.*;
 import static java.nio.charset.StandardCharsets.*;
-import static java.util.Objects.requireNonNullElse;
+import static java.util.Objects.*;
 
 /**
  * Parser for form-style object parameters (non-exploded).
@@ -39,7 +38,7 @@ public class ObjectParameterParser extends AbstractParameterParser {
 
     @Override
     public JsonNode getJson() throws ParameterParsingException {
-        List<String> values = getValuesForParameter();
+        var values = getValues();
         if (values == null || values.isEmpty())
             return FACTORY.objectNode();
 
@@ -58,16 +57,16 @@ public class ObjectParameterParser extends AbstractParameterParser {
                 return FACTORY.nullNode();
             }
         }
-        ObjectNode obj = FACTORY.objectNode();
+        var obj = FACTORY.objectNode();
 
-        Schema<?> parameterSchema = OpenAPIUtil.resolveSchema(api, parameter);
+        var parameterSchema = OpenAPIUtil.resolveSchema(api, parameter);
         if (parameterSchema == null) {
                 return FACTORY.objectNode();
         }
         while (!tokens.isEmpty()) {
             String fieldName = Optional.ofNullable(tokens.pollFirst()).orElse("").trim();
             if (fieldName.isEmpty()) continue;
-            JsonNode json = scalarAsJson(decode(requireNonNullElse(tokens.pollFirst(), NULL), UTF_8));
+            var json = scalarAsJson(decode(requireNonNullElse(tokens.pollFirst(), NULL), UTF_8));
 
             // If parameter is listed as a property of the object
             if (OpenAPIUtil.getProperty(parameterSchema, fieldName) != null) {
@@ -75,7 +74,7 @@ public class ObjectParameterParser extends AbstractParameterParser {
                 continue;
             }
 
-            Object additionalProperties = parameterSchema.getAdditionalProperties();
+            var additionalProperties = parameterSchema.getAdditionalProperties();
 
             // Default for additionalProperties is true
             if (additionalProperties == null) {
@@ -103,7 +102,7 @@ public class ObjectParameterParser extends AbstractParameterParser {
             }
 
             // Validate additional property against Schema
-            ValidationErrors errors = new SchemaValidator(api, aps).validate(new ValidationContext(), json);
+            var errors = new SchemaValidator(api, aps).validate(new ValidationContext(), json);
             if (!errors.hasErrors()) {
                 obj.set(fieldName, json);
                 continue;

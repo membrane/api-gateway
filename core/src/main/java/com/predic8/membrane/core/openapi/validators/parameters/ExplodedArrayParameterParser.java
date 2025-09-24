@@ -21,7 +21,7 @@ import static com.predic8.membrane.core.openapi.validators.JsonSchemaValidator.N
 public class ExplodedArrayParameterParser extends AbstractArrayParameterParser {
 
     protected Stream<String> getItems() {
-        var vs = getValuesForParameter();
+        var vs = getValues();
         if (vs.isEmpty()) return Stream.empty();
         if (vs.size() == 1) {
             var v = vs.getFirst();

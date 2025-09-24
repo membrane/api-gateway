@@ -31,11 +31,14 @@ import java.util.*;
 import java.util.concurrent.atomic.*;
 import java.util.regex.*;
 
+import static com.predic8.membrane.core.openapi.util.OpenAPIUtil.isExplode;
 import static com.predic8.membrane.core.openapi.validators.JsonSchemaValidator.*;
 import static com.predic8.membrane.core.openapi.validators.ValidationContext.ValidatedEntityType.*;
+import static com.predic8.membrane.core.openapi.validators.ValidationErrors.error;
 import static com.predic8.membrane.core.util.CollectionsUtil.*;
 import static io.swagger.v3.oas.models.security.SecurityScheme.In.*;
 import static io.swagger.v3.oas.models.security.SecurityScheme.Type.*;
+import static java.lang.Boolean.TRUE;
 import static java.net.URLDecoder.*;
 import static java.nio.charset.StandardCharsets.*;
 import static java.util.Collections.*;
@@ -57,34 +60,25 @@ public class QueryParameterValidator extends AbstractParameterValidator {
      * Not only GET can have query parameters! Strange, but true!
      * e.g. POST /users?dryRun=true
      */
-    ValidationErrors validateQueryParameters(ValidationContext validationContext, Request<?> request, Operation operation) {
+    ValidationErrors validate(ValidationContext validationContext, Request<?> request, Operation operation) {
 
         final var ctx = validationContext.entityType(QUERY_PARAMETER).statusCode(400);
 
-        Set<String> required = getRequiredQueryParameters(operation);
+        var errors = new ValidationErrors();
+        var parameterMap = getParameterMapFromQuery(getQueryString(request));
+        var fields = new LinkedHashSet<String>(parameterMap.keySet());
 
-        ValidationErrors errors = new ValidationErrors();
-
-        Map<String, List<String>> parameterMap = getParameterMapFromQuery(getQueryString(request));
-
-        Set<String> fields = new HashSet<>(parameterMap.keySet());
-
-        // report all missing required params once
-        var missingRequired = required.stream()
-                .filter(r -> !parameterMap.containsKey(r))
-                .collect(toCollection(LinkedHashSet::new));
-        if (!missingRequired.isEmpty()) {
-            errors.add(ctx, "Required query parameter(s) '%s' missing.".formatted(join(missingRequired)));
-        }
+        errors.add(checkMissingRequiredFields(operation, parameterMap, ctx));
 
         getAllQueryParameters(operation).forEach(p -> {
-            Schema<?> schema = OpenAPIUtil.resolveSchema(api, p);
-            if (!parameterMap.containsKey(p.getName()))
-                return;
-            errors.add(validate(ctx, p.getName(), parameterMap, schema, p));
+            errors.add(validateParameter(ctx, p.getName(), parameterMap, p));
             fields.remove(p.getName());
         });
 
+        // At least one parameter with type object and explode collects all unknown query parameters
+        if (hasExplodedObjectWithAdditionalProperties(operation)) {
+            return errors;
+        }
 
         var validFieldNamesFromObjects = getPossibleObjectPropertiesNamesForOperation(operation);
         fields.forEach(f -> {
@@ -93,19 +87,58 @@ public class QueryParameterValidator extends AbstractParameterValidator {
             }
             errors.add(ctx, "Query parameter '%s' is invalid!".formatted(f));
         });
+
         return errors;
     }
 
-    private ValidationErrors validate(ValidationContext ctx, String parameterName, Map<String, List<String>> v, Schema<?> schema, Parameter parameter) {
-        ValidationErrors errors = new ValidationErrors();
-        ValidationErrors localErrors = new ValidationErrors();
+    /**
+     * Report all missing required params once
+     */
+    private ValidationErrors checkMissingRequiredFields(Operation operation, Map<String, List<String>> parameterMap, ValidationContext ctx) {
+        var missingRequired = getMissingRequiredFields(getRequiredQueryParameters(operation), parameterMap);
+        if (missingRequired.isEmpty())
+            return null;
+        return error(ctx, "Required query parameter(s) '%s' missing.".formatted(join(missingRequired)));
+    }
+
+    private static @NotNull LinkedHashSet<String> getMissingRequiredFields(Set<String> required, Map<String, List<String>> parameterMap) {
+        return required.stream()
+                .filter(r -> !parameterMap.containsKey(r))
+                .collect(toCollection(LinkedHashSet::new));
+    }
+
+    private boolean hasExplodedObjectWithAdditionalProperties(Operation operation) {
+        for (Parameter p : getAllQueryParameters(operation)) {
+            Schema<?> s = OpenAPIUtil.resolveSchema(api, p);
+            if (s == null) continue;
+             if (!OpenAPIUtil.hasObjectType(s)) continue;
+            if (!isExplode(p)) continue;
+            Object additional = s.getAdditionalProperties();
+            if (TRUE.equals(additional) || (additional instanceof Schema)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private ValidationErrors validateParameter(ValidationContext ctx, String parameterName, Map<String, List<String>> v, Parameter parameter) {
+        var schema = OpenAPIUtil.resolveSchema(api, parameter);
+        var errors = new ValidationErrors();
+        var localErrors = new ValidationErrors();
         AtomicBoolean validated = new AtomicBoolean();
         // Maybe there is no schema for that parameter
         if (schema == null) {
             return errors;
         }
-        Set<String> types = getTypes(schema);
-        types.forEach(type -> {
+        getTypes(schema).forEach(type -> {
+
+            // Do not try to validate parameters that are not in the query string unless it is an object.
+            // Maybe the query parameter is a property from that object
+            if (v.get(parameterName) == null && !OBJECT.equals(type)) {
+                validated.set(true);
+                return;
+            }
+
             ParameterParser ap = AbstractParameterParser.instance(api, type, parameter);
             ap.setValues(v);
             try {
@@ -122,30 +155,30 @@ public class QueryParameterValidator extends AbstractParameterValidator {
             }
         });
         if (!validated.get()) {
-            if (types.size() == 1) {
+            if (getTypes(schema).size() == 1) {
                 return errors.add(localErrors);
             }
-            return errors.add(ctx, "Validation of query parameter '%s' failed against all types(%s). Details are: %s".formatted(parameterName, types, localErrors));
+            return errors.add(ctx, "Validation of query parameter '%s' failed against all types(%s). Details are: %s".formatted(parameterName, getTypes(schema), localErrors));
         }
         return errors;
     }
 
     private static @NotNull Set<String> getTypes(Schema<?> schema) {
-        Set<String> types = schema.getTypes(); // Try all e.g. type: [array, null]
+        var types = schema.getTypes(); // Try all e.g. type: [array, null]
         if (types == null || types.isEmpty()) {
-            String t = schema.getType();
+            var t = schema.getType();
             return t != null ? Set.of(t) : Set.of("string");
         }
         return types;
     }
 
     ValidationErrors validateAdditionalQueryParameters(ValidationContext ctx, Map<String, JsonNode> qparams, OpenAPI api) {
-        Set<String> allowList = new HashSet<>(securitySchemeApiKeyQueryParamNames(api));
-        Set<String> unsupported = qparams.keySet().stream()
+        var allowList = new HashSet<>(securitySchemeApiKeyQueryParamNames(api));
+        var unsupported = qparams.keySet().stream()
                 .filter(k -> !allowList.contains(k))
                 .collect(toCollection(LinkedHashSet::new));
         if (!unsupported.isEmpty()) {
-            return ValidationErrors.error(ctx.entityType(QUERY_PARAMETER),
+            return error(ctx.entityType(QUERY_PARAMETER),
                     "There are query parameters that are not supported by the API: " + join(unsupported));
         }
 
@@ -170,10 +203,10 @@ public class QueryParameterValidator extends AbstractParameterValidator {
         for (String p : query.split("&")) {
             Matcher m = QUERY_PARAMS_PATTERN.matcher(p);
             if (m.matches()) {
-                String key = decode(m.group(1), UTF_8); // Key can here be decoded
+                var key = decode(m.group(1), UTF_8); // Key can here be decoded
                 if (key.isEmpty()) continue; // ignore stray separators
-                String value = m.group(2); // Do not decode here cause it has to be done after array or object splitting
-                List<String> ab = parameterMap.computeIfAbsent(key, k -> new ArrayList<>());
+                var value = m.group(2); // Do not decode here cause it has to be done after array or object splitting
+                var ab = parameterMap.computeIfAbsent(key, k -> new ArrayList<>());
                 ab.add(value);
             }
         }
@@ -196,7 +229,6 @@ public class QueryParameterValidator extends AbstractParameterValidator {
 
     /**
      * Needed to get the possible properties from objects and to not report them, if they are not declared as separate parameter
-     *
      */
     List<String> getPossibleObjectPropertiesNamesForOperation(Operation operation) {
         var parameters = getAllQueryParameters(operation);
@@ -214,13 +246,13 @@ public class QueryParameterValidator extends AbstractParameterValidator {
     }
 
     private static boolean isObjectType(Schema<?> schema) {
-        Set<String> types = schema.getTypes();
+        var types = schema.getTypes();
         return types != null && types.contains(OBJECT) || OBJECT.equals(schema.getType());
     }
 
 
     @NotNull Set<String> getRequiredQueryParameters(Operation operation) {
-        Set<Parameter> parameters = getAllQueryParameters(operation);
+        var parameters = getAllQueryParameters(operation);
         if (parameters == null) {
             return emptySet();
         }

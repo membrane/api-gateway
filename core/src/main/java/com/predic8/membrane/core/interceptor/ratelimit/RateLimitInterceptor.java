@@ -47,6 +47,7 @@ import static java.lang.String.*;
  * reachable directly. Only activate this feature when you know what you are doing.
  * </p>
  * @see <a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-Forwarded-For">X-Forwarded-For &#64;Mozilla</a>
+ * @topic 3. Security and Validation
  */
 @MCElement(name = "rateLimiter")
 public class RateLimitInterceptor extends AbstractExchangeExpressionInterceptor {
