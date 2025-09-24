@@ -86,7 +86,7 @@ public class QueryParameterValidator extends AbstractParameterValidator {
             if (validFieldNamesFromObjects.contains(f)) {
                 return;
             }
-            errors.add(ctx, "Query parameter '%s' is invalid!".formatted(f));
+            errors.add(ctx, "Unknown query parameter '%s' is invalid!".formatted(f));
         });
 
         return errors;
@@ -225,7 +225,7 @@ public class QueryParameterValidator extends AbstractParameterValidator {
      * Get all query parameters declared in the operation and in the path.
      */
     Set<Parameter> getAllQueryParameters(Operation operation) {
-        return getAllParameter(operation).stream().filter(p -> p instanceof QueryParameter).collect(toSet());
+        return getAllParameter(operation).stream().filter(p -> p instanceof QueryParameter).collect(toCollection(LinkedHashSet::new));
     }
 
     /**

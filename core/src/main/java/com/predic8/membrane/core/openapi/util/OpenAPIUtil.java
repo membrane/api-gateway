@@ -129,4 +129,8 @@ public class OpenAPIUtil {
         }
         return TRUE.equals(parameter.getExplode());
     }
+
+    public static boolean isQueryParameter(Parameter p) {
+        return "query".equalsIgnoreCase(p.getIn());
+    }
 }

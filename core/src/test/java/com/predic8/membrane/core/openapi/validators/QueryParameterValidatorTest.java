@@ -14,6 +14,7 @@
 package com.predic8.membrane.core.openapi.validators;
 
 import com.fasterxml.jackson.databind.node.*;
+import com.predic8.membrane.core.openapi.util.*;
 import io.swagger.v3.oas.models.*;
 import io.swagger.v3.oas.models.parameters.*;
 import io.swagger.v3.oas.models.security.*;
@@ -24,6 +25,7 @@ import java.util.*;
 import static com.predic8.membrane.core.openapi.model.Request.*;
 import static com.predic8.membrane.core.openapi.util.OpenAPITestUtils.*;
 import static com.predic8.membrane.core.openapi.util.OpenAPIUtil.*;
+import static com.predic8.membrane.core.openapi.validators.JsonSchemaValidator.STRING;
 import static com.predic8.membrane.core.openapi.validators.QueryParameterValidator.*;
 import static io.swagger.v3.oas.models.security.SecurityScheme.In.*;
 import static io.swagger.v3.oas.models.security.SecurityScheme.Type.*;
@@ -65,7 +67,7 @@ class QueryParameterValidatorTest extends AbstractValidatorTest {
 
     @Test
     void emptyQueryParameter() {
-        assertEquals(0, objectValidator.validate(ctx, get("/object?"), getGET("/object")).size());
+        assertTrue(objectValidator.validate(ctx, get("/object?"), getGET("/object")).isEmpty());
     }
 
     @Test
@@ -124,7 +126,7 @@ class QueryParameterValidatorTest extends AbstractValidatorTest {
             addSecuritySchemes("schemaA", new SecurityScheme().type(APIKEY).name("api-key").in(QUERY));
             addSecuritySchemes("schemaB", new SecurityScheme().type(APIKEY).name("x-api-key").in(QUERY));
         }});
-        assertEquals(List.of("api-key", "x-api-key"), citiesValidator.securitySchemeApiKeyQueryParamNames(spec));
+        assertEquals(List.of("api-key", "x-api-key"), citiesValidator.securitySchemeApiKeyQueryParamNames(spec).stream().sorted().toList());
     }
 
     @Test
@@ -229,7 +231,7 @@ class QueryParameterValidatorTest extends AbstractValidatorTest {
     class additional {
 
         @Test
-        void ignoreAddtionalFromObject() {
+        void ignoreAdditionalFromObject() {
             var pi = validator.getApi().getPaths().get("/additional");
             var addValidator = new QueryParameterValidator(validator.getApi(), pi);
             var ctx = new ValidationContext();
@@ -248,14 +250,15 @@ class QueryParameterValidatorTest extends AbstractValidatorTest {
             var qpv = new QueryParameterValidator(null, pathItem);
             var qp = qpv.getAllQueryParameters(pathItem.getGet());
             assertEquals(4, qp.size());
-            assertTrue(qp.stream().allMatch(p -> p instanceof QueryParameter));
+            assertTrue(qp.stream().allMatch(OpenAPIUtil::isQueryParameter));
         }
+
 
         @Test
         void get_QueryParameter_WithName() {
             var pathItem = getPathItem("/array");
             QueryParameterValidator qpv = new QueryParameterValidator(null, pathItem);
-            assertEquals("String param", qpv.getQueryParameter(pathItem.getGet(), "string").getDescription());
+            assertEquals("String param", qpv.getQueryParameter(pathItem.getGet(), STRING).getDescription());
         }
 
         @Test
