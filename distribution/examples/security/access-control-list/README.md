@@ -1,4 +1,4 @@
-### ACCESS CONTROL INTERCEPTOR
+### Access CONTROL INTERCEPTOR
 
 With the AccessControlInterceptor you can restrict access to services and resources.
 
