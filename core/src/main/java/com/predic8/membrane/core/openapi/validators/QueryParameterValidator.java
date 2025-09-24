@@ -66,7 +66,7 @@ public class QueryParameterValidator extends AbstractParameterValidator {
 
         var errors = new ValidationErrors();
         var parameterMap = getParameterMapFromQuery(getQueryString(request));
-        var fields = new LinkedHashSet<String>(parameterMap.keySet());
+        var fields = new LinkedHashSet<>(parameterMap.keySet());
 
         errors.add(checkMissingRequiredFields(operation, parameterMap, ctx));
 
@@ -111,7 +111,7 @@ public class QueryParameterValidator extends AbstractParameterValidator {
         for (Parameter p : getAllQueryParameters(operation)) {
             Schema<?> s = OpenAPIUtil.resolveSchema(api, p);
             if (s == null) continue;
-             if (!OpenAPIUtil.hasObjectType(s)) continue;
+            if (!OpenAPIUtil.hasObjectType(s)) continue;
             if (!isExplode(p)) continue;
             Object additional = s.getAdditionalProperties();
             if (TRUE.equals(additional) || (additional instanceof Schema)) {

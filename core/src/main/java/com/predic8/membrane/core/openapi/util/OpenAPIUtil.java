@@ -110,10 +110,8 @@ public class OpenAPIUtil {
 
     /**
      * If schema has type: object or type: [..., object]
-     * @param schema
-     * @return
      */
-    public static boolean hasObjectType(Schema schema) {
+    public static boolean hasObjectType(Schema<?> schema) {
         return (schema.getTypes() != null && (schema.getTypes().contains(OBJECT)) || OBJECT.equals(schema.getType()));
     }
 
