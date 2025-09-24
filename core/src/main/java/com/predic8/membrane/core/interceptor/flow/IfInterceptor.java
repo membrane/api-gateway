@@ -100,7 +100,7 @@ public class IfInterceptor extends AbstractFlowWithChildrenInterceptor {
 
     /**
      * @description Language of the 'test' condition
-     * @default groovy
+     * @default SpEL
      * @example SpEL, groovy, jsonpath, xpath
      */
     @MCAttribute
