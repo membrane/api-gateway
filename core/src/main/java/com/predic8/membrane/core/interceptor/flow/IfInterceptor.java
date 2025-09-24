@@ -29,13 +29,12 @@ import static com.predic8.membrane.core.lang.ExchangeExpression.Language.*;
 
 /**
  * @description <p>
- * The "if" interceptor supports conditional execution of nested plugins.
+ * The if allows conditional execution of nested interceptors.
  * </p>
- * See:
- * - com.predic8.membrane.core.interceptor.flow.IfInterceptorSpELTest
- * - com.predic8.membrane.core.interceptor.flow.IfInterceptorGroovyTest
- * - com.predic8.membrane.core.interceptor.flow.IfInterceptorJsonpathTest
- * - com.predic8.membrane.core.interceptor.flow.IfInterceptorXPathTest
+ * <pre><code><if test="method == 'POST'" language="SpEL">
+ *     ...
+ * </if>
+ * </code></pre>
  * @topic 1. Proxies and Flow
  */
 @MCElement(name = "if")
@@ -100,7 +99,7 @@ public class IfInterceptor extends AbstractFlowWithChildrenInterceptor {
     }
 
     /**
-     * @description the language of the 'test' condition
+     * @description Language of the 'test' condition
      * @default groovy
      * @example SpEL, groovy, jsonpath, xpath
      */
@@ -114,8 +113,8 @@ public class IfInterceptor extends AbstractFlowWithChildrenInterceptor {
     }
 
     /**
-     * @description the condition to be tested
-     * @example exc.request.header.userAgentSupportsSNI
+     * @description Condition to be tested
+     * @example <ul><li>request.isJSON()</li><li>params['limit'] >= 0</li><li>statusCode matches '[45]\d\d'</li></ul>
      */
     @Required
     @MCAttribute
