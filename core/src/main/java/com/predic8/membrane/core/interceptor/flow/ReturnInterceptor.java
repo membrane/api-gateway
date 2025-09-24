@@ -39,7 +39,7 @@ import static java.lang.String.*;
  * 2. If there is no response in the exchange, the body and contentType of the request is copied into a new response.
  * </p>
  * <p>
- * The options statusCode and contentType will overwrite the values from the messages.
+ * The options <i>statusCode</i> and <i>contentType</i> will overwrite the values from the messages.
  * </p>
  * <p>
  * This plugin is useful together with the template plugin. See examples/template.
@@ -121,7 +121,7 @@ public class ReturnInterceptor extends AbstractInterceptor {
     }
 
     /**
-     * @description The HTTP status code to be returned.
+     * @description HTTP status code to be returned.
      * @default 200
      * @example 400
      */
@@ -135,7 +135,7 @@ public class ReturnInterceptor extends AbstractInterceptor {
     }
 
     /**
-     * @description The content type of the response. If not set, the content type of the request (if available) or no content type will be used.
+     * @description Content type of the response. If not set, the content type of the request (if available) or no content type will be used.
      * @default null
      * @example application/json; charset=utf-8
      */
