@@ -103,7 +103,7 @@ public class FormValidationInterceptor extends AbstractInterceptor {
 
 	public FormValidationInterceptor() {
 		name = "form validation";
-		setFlow(REQUEST_FLOW);
+		setAppliedFlow(REQUEST_FLOW);
 	}
 
 	@Override

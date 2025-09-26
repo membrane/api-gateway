@@ -49,7 +49,7 @@ public class AccessControlInterceptor extends AbstractInterceptor {
 
     public AccessControlInterceptor() {
         setDisplayName("access control");
-        setFlow(REQUEST_FLOW);
+        setAppliedFlow(REQUEST_FLOW);
     }
 
     @Override

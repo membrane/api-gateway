@@ -81,7 +81,7 @@ public class SoapAndInternalProxyTest {
         InternalProxy internalProxy = new InternalProxy();
         internalProxy.setName("int");
         AbstractServiceProxy.Target target = new AbstractServiceProxy.Target();
-        internalProxy.getInterceptors().add(new SampleSoapServiceInterceptor());
+        internalProxy.getFlow().add(new SampleSoapServiceInterceptor());
         target.setHost("localhost");
         target.setPort(9501);
 
@@ -100,11 +100,11 @@ public class SoapAndInternalProxyTest {
         e.setPort("443");
         e.setProtocol("https");
         e.setHost("a.b.local");
-        sp.getInterceptors().add(e);
+        sp.getFlow().add(e);
 
         WSDLPublisherInterceptor publisher = new WSDLPublisherInterceptor();
         publisher.setWsdl("internal://int/?wsdl");
-        sp.getInterceptors().add(publisher);
+        sp.getFlow().add(publisher);
         return sp;
     }
 }

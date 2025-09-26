@@ -48,12 +48,12 @@ abstract class InterceptorContainer {
             .buildAndSetResponse(exc);
     }
 
-    public List<Interceptor> getInterceptors() {
+    public List<Interceptor> getFlow() {
         return interceptors;
     }
 
     @MCChildElement(allowForeign = true)
-    public void setInterceptors(List<Interceptor> interceptors) {
-        this.interceptors = interceptors;
+    public void setFlow(List<Interceptor> flow) {
+        this.interceptors = flow;
     }
 }

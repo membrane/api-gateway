@@ -122,7 +122,7 @@ public class IfInterceptorSpELTest extends ConditionalEvaluationTestContext {
         when(mi.handlesRequests()).thenReturn(true);
         IfInterceptor i = new IfInterceptor();
         i.setTest("isXML()");
-        i.getInterceptors().add(mi);
+        i.getFlow().add(mi);
         i.init(router);
         i.handleRequest(exc);
         return mi;

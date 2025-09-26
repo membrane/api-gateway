@@ -25,7 +25,7 @@ public class BalancerUtil {
 	public static List<Cluster> collectClusters(Router router) {
 		ArrayList<Cluster> result = new ArrayList<>();
 		for (Proxy r : router.getRuleManager().getRules()) {
-			List<Interceptor> interceptors = r.getInterceptors();
+			List<Interceptor> interceptors = r.getFlow();
 			if (interceptors != null)
 				for (Interceptor i : interceptors)
 					if (i instanceof LoadBalancingInterceptor)
@@ -37,7 +37,7 @@ public class BalancerUtil {
 	public static List<LoadBalancingInterceptor> collectBalancers(Router router) {
 		ArrayList<LoadBalancingInterceptor> result = new ArrayList<>();
 		for (Proxy r : router.getRuleManager().getRules()) {
-			List<Interceptor> interceptors = r.getInterceptors();
+			List<Interceptor> interceptors = r.getFlow();
 			if (interceptors != null)
 				for (Interceptor i : interceptors)
 					if (i instanceof LoadBalancingInterceptor)
@@ -48,7 +48,7 @@ public class BalancerUtil {
 
 	public static Balancer lookupBalancer(Router router, String name) {
 		for (Proxy r : router.getRuleManager().getRules()) {
-			List<Interceptor> interceptors = r.getInterceptors();
+			List<Interceptor> interceptors = r.getFlow();
 			if (interceptors != null)
 				for (Interceptor i : interceptors)
 					if (i instanceof LoadBalancingInterceptor)
@@ -60,7 +60,7 @@ public class BalancerUtil {
 
 	public static LoadBalancingInterceptor lookupBalancerInterceptor(Router router, String name) {
 		for (Proxy r : router.getRuleManager().getRules()) {
-			List<Interceptor> interceptors = r.getInterceptors();
+			List<Interceptor> interceptors = r.getFlow();
 			if (interceptors != null)
 				for (Interceptor i : interceptors)
 					if (i instanceof LoadBalancingInterceptor)
@@ -72,7 +72,7 @@ public class BalancerUtil {
 
 	public static boolean hasLoadBalancing(Router router) {
 		for (Proxy r : router.getRuleManager().getRules()) {
-			List<Interceptor> interceptors = r.getInterceptors();
+			List<Interceptor> interceptors = r.getFlow();
 			if (interceptors == null)
 				continue;
 			for (Interceptor i : interceptors)

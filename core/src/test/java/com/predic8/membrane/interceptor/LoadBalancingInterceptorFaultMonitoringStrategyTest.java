@@ -80,7 +80,7 @@ class LoadBalancingInterceptorFaultMonitoringStrategyTest {
         ServiceProxy sp3 = new ServiceProxy(new ServiceProxyKey("localhost", "*", ".*", 3054), "thomas-bayer.com", 80);
         balancingInterceptor = new LoadBalancingInterceptor();
         balancingInterceptor.setName("Default");
-        sp3.getInterceptors().add(balancingInterceptor);
+        sp3.getFlow().add(balancingInterceptor);
         r.getRuleManager().addProxyAndOpenPortIfNew(sp3);
         r.getTransport().getFirstInterceptorOfType(HTTPClientInterceptor.class).get().setHttpClientConfig(getHttpClientConfigurationWithRetries());
         r.init();
@@ -106,14 +106,14 @@ class LoadBalancingInterceptorFaultMonitoringStrategyTest {
 
     private @NotNull ServiceProxy createServiceProxy(TestingContext ctx, int i) {
         ServiceProxy serviceProxy = new ServiceProxy(new ServiceProxyKey("localhost", "*", ".*", (2000 + i)), "thomas-bayer.com", 80);
-        serviceProxy.getInterceptors().add(new AbstractInterceptor() {
+        serviceProxy.getFlow().add(new AbstractInterceptor() {
             @Override
             public Outcome handleResponse(Exchange exc) {
                 exc.getResponse().getHeader().setConnection("close");
                 return CONTINUE;
             }
         });
-        serviceProxy.getInterceptors().add(new RandomlyFailingDummyWebServiceInterceptor(ctx.successChance));
+        serviceProxy.getFlow().add(new RandomlyFailingDummyWebServiceInterceptor(ctx.successChance));
         return serviceProxy;
     }
 

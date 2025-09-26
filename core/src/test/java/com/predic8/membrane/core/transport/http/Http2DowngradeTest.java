@@ -34,7 +34,7 @@ public class Http2DowngradeTest {
     public static void beforeAll() {
         router = new HttpRouter();
         ServiceProxy proxy = new ServiceProxy(new ServiceProxyKey(3064), null, 0);
-        proxy.getInterceptors().add(new AbstractInterceptor() {
+        proxy.getFlow().add(new AbstractInterceptor() {
             @Override
             public Outcome handleRequest(Exchange exc) {
                 exc.setResponse(Response.ok(exc.getRequest().getHeader().toString()).build());

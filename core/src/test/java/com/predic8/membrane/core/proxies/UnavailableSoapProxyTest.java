@@ -33,7 +33,7 @@ public class UnavailableSoapProxyTest {
 	@BeforeAll
 	static void setup() throws Exception {
 		ServiceProxy cityAPI = new ServiceProxy(new ServiceProxyKey(4000), null, 0);
-		cityAPI.getInterceptors().add(new SampleSoapServiceInterceptor());
+		cityAPI.getFlow().add(new SampleSoapServiceInterceptor());
 		backendRouter = new HttpRouter();
 		backendRouter.getRuleManager().addProxyAndOpenPortIfNew(cityAPI);
 		backendRouter.init();
@@ -62,7 +62,7 @@ public class UnavailableSoapProxyTest {
 		sp3.setTarget(new AbstractServiceProxy.Target("localhost", 2001));
 		ValidatorInterceptor v = new ValidatorInterceptor(); // Calling init on interceptor will break test!
 		v.setWsdl("http://localhost:2001?wsdl");
-		sp3.getInterceptors().add(v);
+		sp3.getFlow().add(v);
 
 		SOAPProxy sp2 = new SOAPProxy();
 		sp2.setPort(2001);
@@ -105,7 +105,7 @@ public class UnavailableSoapProxyTest {
 
 	@Test
 	void checkWSDLDownloadFailureInSoapProxyAndValidator() {
-		sp.getInterceptors().add(new ValidatorInterceptor());
+		sp.getFlow().add(new ValidatorInterceptor());
 		r.getRules().add(sp);
 		test();
 	}

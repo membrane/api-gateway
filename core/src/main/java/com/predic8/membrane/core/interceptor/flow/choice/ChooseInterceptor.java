@@ -38,9 +38,9 @@ public class ChooseInterceptor extends AbstractFlowInterceptor {
     public void init() {
         cases.forEach(c -> c.init(router));
         interceptors.addAll(concat(
-            otherwise != null ? otherwise.getInterceptors().stream() : empty(),
+            otherwise != null ? otherwise.getFlow().stream() : empty(),
             cases.stream()
-                .map(InterceptorContainer::getInterceptors)
+                .map(InterceptorContainer::getFlow)
                 .flatMap(Collection::stream)
         ).toList());
         // Has to be called after adding interceptors.
@@ -49,7 +49,7 @@ public class ChooseInterceptor extends AbstractFlowInterceptor {
 
     public ChooseInterceptor() {
         this.name = "choose";
-        this.setFlow(REQUEST_RESPONSE_ABORT_FLOW);
+        this.setAppliedFlow(REQUEST_RESPONSE_ABORT_FLOW);
     }
 
     @Override
