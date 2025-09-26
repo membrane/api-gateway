@@ -67,7 +67,14 @@ public class APIKeyWithOpenAPIExampleTest extends AbstractSampleMembraneStartSto
         .then().assertThat()
             .log().ifValidationFails(ALL)
             .statusCode(403)
-            .body(containsString("Caller ist not in scope write"));
+            .body("title", equalTo("OpenAPI message validation failed"))
+            .body("type", equalTo("https://membrane-api.io/problems/user/validation"))
+            .body("status", equalTo(403))
+            .body("validation.method", equalTo("POST"))
+            .body("validation.uriTemplate", equalTo("/products"))
+            .body("validation.path", equalTo("/shop/v2/products"))
+            .body("validation.errors.'REQUEST/'.size()", equalTo(1))
+            .body("validation.errors.'REQUEST/'[0].message", equalTo("Caller is not in scope write"));
     }
 
     @Test

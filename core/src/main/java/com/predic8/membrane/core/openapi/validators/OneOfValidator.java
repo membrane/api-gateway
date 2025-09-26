@@ -49,7 +49,7 @@ public class OneOfValidator {
         if (numberValid.get() == 1) {
             return null;
         }
-        return ValidationErrors.create(ctx,String.format("OneOf requires that exactly one subschema is valid. But there are %d subschemas valid.",numberValid.get()));
+        return ValidationErrors.error(ctx,String.format("OneOf requires that exactly one subschema is valid. But there are %d subschemas valid.",numberValid.get()));
     }
 
 

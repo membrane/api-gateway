@@ -14,11 +14,9 @@
 package com.predic8.membrane.core.openapi.oas31;
 
 import com.predic8.membrane.core.openapi.*;
-import com.predic8.membrane.core.openapi.model.*;
 import com.predic8.membrane.core.openapi.serviceproxy.*;
 import com.predic8.membrane.core.openapi.validators.*;
 import com.predic8.membrane.core.util.*;
-import jakarta.mail.internet.*;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.*;
 import org.junit.jupiter.params.provider.*;
@@ -26,17 +24,18 @@ import org.junit.jupiter.params.provider.*;
 import java.util.stream.*;
 
 import static com.predic8.membrane.core.http.MimeType.*;
-import static com.predic8.membrane.core.openapi.util.TestUtils.*;
+import static com.predic8.membrane.core.openapi.model.Request.*;
+import static com.predic8.membrane.core.openapi.util.OpenAPITestUtils.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class ExclusiveMinMaxTest {
 
+    private static final String OPENAPI_PATH = "/openapi/specs/oas31/exclusive-min-max.yaml";
     OpenAPIValidator validator;
 
     @BeforeEach
-    void setUp() throws Exception {
-        OpenAPIRecord apiRecord = new OpenAPIRecord(parseOpenAPI(getResourceAsStream(this, "/openapi/specs/oas31/exclusive-min-max.yaml")), new OpenAPISpec());
-        validator = new OpenAPIValidator(new URIFactory(), apiRecord);
+    void setUp() {
+        validator = new OpenAPIValidator(new URIFactory(), new OpenAPIRecord(getApi(this, OPENAPI_PATH), new OpenAPISpec()));
     }
 
     static Stream<Arguments> requestBodyProvider() {
@@ -52,10 +51,8 @@ public class ExclusiveMinMaxTest {
 
     @ParameterizedTest
     @MethodSource("requestBodyProvider")
-    void testExclusiveMinMax(String requestBody, int expectedErrorSize) throws ParseException {
-        ValidationErrors errors = validator.validate(
-                Request.post().path("/range-check").body(requestBody).mediaType(APPLICATION_JSON)
-        );
+    void testExclusiveMinMax(String requestBody, int expectedErrorSize) throws Exception {
+        ValidationErrors errors = validator.validate(post().path("/range-check").body(requestBody).mediaType(APPLICATION_JSON));
         assertEquals(expectedErrorSize, errors.size());
     }
 }

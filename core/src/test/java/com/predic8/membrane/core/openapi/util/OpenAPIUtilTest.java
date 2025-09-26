@@ -16,32 +16,27 @@
 
 package com.predic8.membrane.core.openapi.util;
 
-import io.swagger.parser.*;
 import io.swagger.v3.oas.models.*;
 import org.junit.jupiter.api.*;
 
 import java.io.*;
 
+import static com.predic8.membrane.core.openapi.util.OpenAPITestUtils.getApi;
 import static com.predic8.membrane.core.openapi.util.OpenAPIUtil.*;
-import static com.predic8.membrane.core.openapi.util.TestUtils.*;
-import static com.predic8.membrane.core.util.FileUtil.*;
+import static com.predic8.membrane.core.openapi.util.OpenAPITestUtils.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class OpenAPIUtilTest {
 
     @Test
     void getIdFromAPITest() {
-        assertEquals("customers-api-v1-0", getIdFromAPI(getApi("/openapi/specs/customers.yml")) );
-        assertEquals("servers-3-api-v1-0", getIdFromAPI(getApi("/openapi/specs/info-3-servers.yml")) );
+        assertEquals("customers-api-v1-0", getIdFromAPI(getApi(this,"/openapi/specs/customers.yml")) );
+        assertEquals("servers-3-api-v1-0", getIdFromAPI(getApi(this,"/openapi/specs/info-3-servers.yml")) );
     }
 
     @Test
     void idFromXMembraneId() {
-        assertEquals("extension-sample-v1-4", getIdFromAPI(getApi("/openapi/specs/x-membrane.yaml")) );
-    }
-
-    private OpenAPI getApi(String pfad) {
-        return new OpenAPIParser().readContents(readInputStream(getResourceAsStream(this,pfad)), null, null).getOpenAPI();
+        assertEquals("extension-sample-v1-4", getIdFromAPI(getApi(this,"/openapi/specs/x-membrane.yaml")) );
     }
 
     @Test
@@ -70,5 +65,24 @@ public class OpenAPIUtilTest {
         assertFalse(isOpenAPIMisplacedError("Invalid content was found starting with element '{\"http://membrane-soa.org/proxies/1/\":api}'"));
     }
 
+    @Test
+    void getPath() {
+        assertEquals("Single paths", OpenAPIUtil.getPath(getCustomerAPI(), "/customers/{cid}").getDescription());
+    }
 
+    @Test
+    void get_Parameter() {
+        var op = OpenAPIUtil.getPath(getCustomerAPI(),"/images/{iid}").getGet();
+        assertEquals("Id of image", getParameter( op, "iid").getDescription());
+    }
+
+    @Test
+    void get_Parameter_unknown() {
+        var op = OpenAPIUtil.getPath(getCustomerAPI(),"/images/{iid}").getGet();
+        assertNull( getParameter( op, "unknown"));
+    }
+
+    private OpenAPI getCustomerAPI() {
+        return OpenAPITestUtils.getApi(this, "/openapi/specs/customers.yml");
+    }
 }

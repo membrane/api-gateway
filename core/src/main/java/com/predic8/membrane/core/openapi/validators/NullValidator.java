@@ -18,7 +18,7 @@ package com.predic8.membrane.core.openapi.validators;
 
 import com.fasterxml.jackson.databind.node.NullNode;
 
-public class NullValidator implements IJSONSchemaValidator {
+public class NullValidator implements JsonSchemaValidator {
 
     @Override
     public String canValidate(Object value) {
@@ -42,6 +42,6 @@ public class NullValidator implements IJSONSchemaValidator {
         if (value instanceof NullNode) {
             return null;
         }
-        return ValidationErrors.create(ctx.schemaType(NULL), String.format("%s is not null.", value));
+        return ValidationErrors.error(ctx.schemaType(NULL), String.format("%s is not null.", value));
     }
 }

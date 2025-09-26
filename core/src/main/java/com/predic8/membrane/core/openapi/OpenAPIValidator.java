@@ -86,7 +86,7 @@ public class OpenAPIValidator {
             }
         }
 
-        return ValidationErrors.create( ValidationContext.fromRequest(req)
+        return ValidationErrors.error( ValidationContext.fromRequest(req)
                 .entity(req.getPath())
                 .entityType(PATH)
                 .statusCode(404), format("Path %s is invalid.", req.getPath()));

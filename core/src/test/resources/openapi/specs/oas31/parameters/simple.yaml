@@ -1,0 +1,87 @@
+openapi: 3.1.0
+info:
+  title: Simple Parameters API
+  version: "1.0.0"
+
+paths:
+  /array:
+    get:
+      parameters:
+        - name: number
+          in: query
+          explode: true
+          schema:
+            $ref: "#/components/schemas/Numbers"
+        - name: string
+          description: String param
+          in: query
+          explode: true
+          schema:
+            type: array
+            items:
+              type: string
+        - name: const
+          in: query
+          explode: true
+          allowReserved: true
+          schema:
+            type: array
+            items:
+              type: string
+              enum: ["foo","bar","baz", "äöü","ä=#"]
+        - name: bool
+          in: query
+          explode: true
+          schema:
+            $ref: "#/components/schemas/Booleans"
+        - name: other # To test if it is ignored!
+          in: header
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK
+  /required:
+    parameters:
+      - name: foo
+        in: query
+        required: true
+        schema:
+          type: string
+      - name: bar
+        in: query
+        schema:
+          type: string
+      - name: baz
+        in: query
+        schema:
+          type: string
+    get:
+      parameters:
+        - name: zap
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: pap
+          in: query
+          schema:
+            type: string
+        - name: rap
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Ok
+
+components:
+  schemas:
+    Numbers:
+      type: array
+      items:
+        type: number
+    Booleans:
+      type: array
+      items:
+        type: boolean

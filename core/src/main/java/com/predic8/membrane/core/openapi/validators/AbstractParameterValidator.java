@@ -16,60 +16,63 @@
 
 package com.predic8.membrane.core.openapi.validators;
 
-import com.predic8.membrane.core.openapi.validators.ValidationContext.*;
 import io.swagger.v3.oas.models.*;
 import io.swagger.v3.oas.models.parameters.*;
+import org.jetbrains.annotations.*;
 
 import java.util.*;
 import java.util.stream.*;
 
-import static com.predic8.membrane.core.util.CollectionsUtil.*;
-import static java.lang.String.*;
+import static java.util.Locale.*;
+import static java.util.Optional.*;
 
 public abstract class AbstractParameterValidator {
+
     final OpenAPI api;
     final PathItem pathItem;
 
-    public AbstractParameterValidator(OpenAPI api, PathItem pathItem) {
+    protected AbstractParameterValidator(OpenAPI api, PathItem pathItem) {
         this.api = api;
         this.pathItem = pathItem;
     }
 
-    public Stream<Parameter> getParametersOfType(Operation operation, Class<?> paramClazz) {
-        return getAllParameterSchemas(operation).stream().filter(p -> isTypeOf(p, paramClazz));
+    protected Stream<Parameter> getParametersOfType(Operation operation, Class<?> paramClazz) {
+        return getAllParameter(operation).stream().filter(p -> isTypeOf(p, paramClazz));
     }
 
-    public List<Parameter> getAllParameterSchemas(Operation operation) {
-        return concat(pathItem.getParameters(), operation.getParameters());
+    /**
+     * Operation level parameters are overwriting parameters on the path level. But only
+     * If in like query or header is the same.
+     *
+     * @param operation
+     * @return
+     */
+    protected List<Parameter> getAllParameter(Operation operation) {
+        Objects.requireNonNull(operation, "operation must not be null");
+
+        List<Parameter> pathParams = ofNullable(pathItem.getParameters()).orElseGet(List::of);
+        List<Parameter> opParams = ofNullable(operation.getParameters()).orElseGet(List::of);
+
+        // Sample key set: [number|query, string|query, bool|query, other|header]
+        Map<String, Parameter> byKey = new LinkedHashMap<>();
+
+
+        // path-level first, then operation-level to override
+        Stream.concat(pathParams.stream(), opParams.stream())
+                .filter(Objects::nonNull)
+                .forEach(p -> byKey.put(getParameterKey(p), p));
+        return new ArrayList<>(byKey.values());
+    }
+
+    private static @NotNull String getParameterKey(Parameter p) {
+        return p.getName() + "|" + getInNormalized(p);
+    }
+
+    private static @NotNull String getInNormalized(Parameter p) {
+        return p.getIn() == null ? "" : p.getIn().toLowerCase(ROOT);
     }
 
     boolean isTypeOf(Parameter p, Class<?> clazz) {
-        return p.getClass().equals(clazz);
-    }
-
-    public ValidationErrors getValidationErrors(ValidationContext ctx, Map<String, String> parameters, Parameter param, ValidatedEntityType type) {
-        return validateParameter(getCtx(ctx, param, type), parameters, param, type);
-    }
-
-    private static ValidationContext getCtx(ValidationContext ctx, Parameter param, ValidatedEntityType type) {
-        return ctx.entity(param.getName())
-                .entityType(type)
-                .statusCode(400);
-    }
-
-    public ValidationErrors validateParameter(ValidationContext ctx, Map<String, String> params, Parameter param, ValidatedEntityType type) {
-        ValidationErrors errors = new ValidationErrors();
-        String value = params.get(param.getName());
-
-        if (value != null) {
-            errors.add(new SchemaValidator(api, param.getSchema()).validate(ctx
-                            .statusCode(400)
-                            .entity(param.getName())
-                            .entityType(type)
-                    , value));
-        } else if (param.getRequired()) {
-            errors.add(ctx, format("Missing required %s %s.", type.name, param.getName()));
-        }
-        return errors;
+        return clazz.isInstance(p);
     }
 }

@@ -42,8 +42,8 @@ import java.util.Map;
 
 import static com.google.common.collect.ImmutableMap.of;
 import static com.predic8.membrane.core.openapi.model.Request.post;
-import static com.predic8.membrane.core.openapi.util.TestUtils.om;
-import static com.predic8.membrane.core.openapi.util.TestUtils.parseOpenAPI;
+import static com.predic8.membrane.core.openapi.util.OpenAPITestUtils.om;
+import static com.predic8.membrane.core.openapi.util.OpenAPITestUtils.parseOpenAPI;
 import static java.util.regex.Pattern.quote;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -54,7 +54,10 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  */
 public class JsonSchemaTestSuiteTests {
     private final static Logger log = LoggerFactory.getLogger(JsonSchemaTestSuiteTests.class);
-    public final String TEST_SUITE_BASE_PATH = "git\\JSON-Schema-Test-Suite\\tests\\draft6";
+
+    public final String TEST_SUITE_BASE_PATH = "git" + File.separator
+                                               + "JSON-Schema-Test-Suite" + File.separator
+                                               + "tests" + File.separator + "draft6";
 
     private final ObjectMapper objectMapper = new ObjectMapper();
     private final ObjectMapper yamlMapper = new ObjectMapper(new YAMLFactory().disable(YAMLGenerator.Feature.WRITE_DOC_START_MARKER));
@@ -148,8 +151,7 @@ public class JsonSchemaTestSuiteTests {
         return null;
     }
 
-    private void runSingleTestRun(Map tr, String ignoredReason, OpenAPIValidator validator) throws JsonProcessingException, ParseException {
-        Map testRun = tr;
+    private void runSingleTestRun(Map testRun, String ignoredReason, OpenAPIValidator validator) throws JsonProcessingException, ParseException {
 
         log.info("  - testRun = {}", om.writeValueAsString(testRun));
 
@@ -167,10 +169,10 @@ public class JsonSchemaTestSuiteTests {
             return;
         }
 
-        Request<Body> post = post().path("/test").mediaType("application/json");
+        Request<Body> request = post().path("/test").mediaType("application/json");
         ValidationErrors errors = null;
         try {
-            errors = validator.validate(post.body(body));
+            errors = validator.validate(request.body(body));
 
             log.info("    validation result = {}", errors);
         } catch (Exception e) {

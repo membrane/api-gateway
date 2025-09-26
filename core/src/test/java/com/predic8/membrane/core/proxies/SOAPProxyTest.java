@@ -97,7 +97,7 @@ public class SOAPProxyTest {
 
         // @formatter: off
         given().when()
-            .body(TestUtils.getResourceAsStream(this, "/soap-sample/soap-request-bonn.xml"))
+            .body(OpenAPITestUtils.getResourceAsStream(this, "/soap-sample/soap-request-bonn.xml"))
             .post("http://localhost:2000/city-service")
         .then()
             .log().ifValidationFails(ALL)

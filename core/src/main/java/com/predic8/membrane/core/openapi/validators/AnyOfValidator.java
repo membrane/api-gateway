@@ -48,7 +48,7 @@ public class AnyOfValidator {
         if (oneIsValid.get()) {
             return null;
         }
-        return ValidationErrors.create(ctx,"None of the subschemas of anyOf was true.");
+        return ValidationErrors.error(ctx,"None of the subschemas of anyOf was true.");
     }
 
 

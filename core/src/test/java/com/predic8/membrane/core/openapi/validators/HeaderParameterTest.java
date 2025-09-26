@@ -75,7 +75,9 @@ class HeaderParameterTest extends AbstractValidatorTest {
 
         ValidationErrors errors = validator.validate(getOpenapiValidatorRequest(exc));
 
+        System.out.println("errors = " + errors);
         assertEquals(expected, errors.size());
+
 
         if (errors.isEmpty())
             return;
