@@ -14,13 +14,15 @@
 
 package com.predic8.membrane.core.util;
 
+import com.predic8.membrane.core.http.xml.Host;
+
 import java.net.*;
 import java.util.regex.*;
 
 import static java.nio.charset.StandardCharsets.*;
 
 /**
- * Same behavior as {@link java.net.URI}, but accomodates '{' in paths.
+ * Same behavior as {@link java.net.URI}, but accommodates '{' in paths.
  */
 public class URI {
     private java.net.URI uri;
@@ -28,20 +30,23 @@ public class URI {
     private String input;
     private String path;
     private String query;
+    private String fragment;
+
+    private String userInfo;
 
     private String scheme;
 
-    private String host;
+    private HostPort hostPort;
 
-    private int port = -1;
+    private String pathDecoded, queryDecoded, fragmentDecoded;
 
-    private String pathDecoded, queryDecoded;
+    // raw authority string as it appeared in the input (may include user-info)
+    private String authority;
 
     private static final Pattern PATTERN = Pattern.compile("^(([^:/?#]+):)?(//([^/?#]*))?([^?#]*)(\\?([^#]*))?(#(.*))?");
     //                                                             12            3  4          5       6   7        8 9
     // if defined, the groups are:
-    // 2: scheme, 4: host, 5: path, 7: query, 9: fragment
-
+    // 2: scheme, 4: authority, 5: path, 7: query, 9: fragment
 
     URI(boolean allowCustomParsing, String s) throws URISyntaxException {
         try {
@@ -70,29 +75,107 @@ public class URI {
 
         scheme = m.group(2);
 
-        processHostAndPort(m.group(4));
+        authority = m.group(4);
+        processAuthority(authority);
 
         path = m.group(5);
         query = m.group(7);
+        fragment = m.group(9);
         return true;
     }
 
-    private void processHostAndPort(String hostAndPort) {
-        if (hostAndPort != null) {
+    /**
+     * Parses authority into userInfo, host and port.
+     * Keeps original authority untouched for getAuthority().
+     */
+    private void processAuthority(String rawAuthority) {
+        if (rawAuthority == null)
+            return;
 
-            var posAt = hostAndPort.indexOf("@");
-            if (posAt > -1) {
-                hostAndPort = hostAndPort.substring(posAt + 1);
-            }
-
-            var pos = hostAndPort.indexOf(":");
-            if (pos > -1) {
-                host = hostAndPort.substring(0, pos);
-                port = Integer.parseInt(hostAndPort.substring(pos + 1));
-            } else {
-                host = hostAndPort;
-            }
+        int at = rawAuthority.indexOf('@');
+        if (at >= 0) {
+            userInfo = rawAuthority.substring(0, at);
         }
+
+        hostPort = parseHostPort(rawAuthority);
+    }
+
+    record HostPort(String host, int port) {}
+
+    static HostPort parseHostPort(String rawAuthority) {
+        if (rawAuthority == null)
+            throw new IllegalArgumentException("rawAuthority is null.");
+        String hostAndPort = stripUserInfo(rawAuthority);
+
+        if (isIPLiteral(hostAndPort)) {
+            return parseIpv6(hostAndPort);
+        }
+
+        return parseIPv4OrHostname(hostAndPort);
+    }
+
+    static String stripUserInfo(String authority) {
+        int at = authority.indexOf('@');
+        return at >= 0 ? authority.substring(at + 1) : authority;
+    }
+
+    static HostPort parseIPv4OrHostname(String hostAndPort) {
+        String host;
+        int port;
+        int colon = hostAndPort.indexOf(':');
+        if (colon >= 0) {
+            host = hostAndPort.substring(0, colon);
+            String p = hostAndPort.substring(colon + 1);
+            port = validatePortDigits(p);
+        } else {
+            host = hostAndPort;
+            port = -1;
+        }
+        if (host.isEmpty()) {
+            throw new IllegalArgumentException("Host must not be empty.");
+        }
+        return new HostPort(host, port);
+    }
+
+    static HostPort parseIpv6(String hostAndPort) {
+        int end = hostAndPort.indexOf(']');
+        if (end < 0) {
+            throw new IllegalArgumentException("Invalid IPv6 bracket literal: missing ']'.");
+        }
+        String ipv6 = hostAndPort.substring(0, end+1);
+
+        if (ipv6.length() <= 2) {
+            throw new IllegalArgumentException("Host must not be empty.");
+        }
+
+        int port = parsePort(hostAndPort.substring(end + 1));
+        return new HostPort(ipv6, port);
+    }
+
+    static boolean isIPLiteral(String hostAndPort) {
+        return hostAndPort.startsWith("[");
+    }
+
+    static int parsePort(String restOfAuthority) {
+        if (restOfAuthority.isEmpty())
+            return -1;
+        if (restOfAuthority.charAt(0) == ':') {
+            return validatePortDigits(restOfAuthority.substring(1));
+        } else {
+            throw new IllegalArgumentException("Invalid authority: only ':<port>' may follow the IPv6 literal.");
+        }
+    }
+
+    private static int validatePortDigits(String p) {
+        if (!p.isEmpty()) {
+            if (!p.matches("\\d{1,5}"))
+                throw new IllegalArgumentException("Invalid port: " + p);
+            int candidate = Integer.parseInt(p);
+            if (candidate < 0 || candidate > 65535)
+                throw new IllegalArgumentException("Port out of range: " + candidate);
+            return candidate;
+        }
+        throw new IllegalArgumentException("Invalid port: ''.");
     }
 
     public String getScheme() {
@@ -101,17 +184,22 @@ public class URI {
         return scheme;
     }
 
+    /**
+     * As {@link java.net.URI#getHost()} this method
+     * - might return an IPv6 literal including the square brackets '[' and ']',
+     * - might return something like "[fe80::1%25eth0]".
+     */
     public String getHost() {
         if (uri != null)
             return uri.getHost();
-        return host;
+        return hostPort.host;
     }
 
     public int getPort() {
         if (uri != null) {
             return uri.getPort();
         }
-        return port;
+        return hostPort.port;
     }
 
     public String getPath() {
@@ -136,6 +224,35 @@ public class URI {
         return queryDecoded;
     }
 
+    public String getRawFragment() {
+        if (uri != null)
+            return uri.getRawFragment();
+        return fragment;
+    }
+
+    /**
+     * Returns the fragment (the part after '#'), decoded like {@link #getPath()} and {@link #getQuery()}.
+     */
+    public String getFragment() {
+        if (uri != null)
+            return uri.getFragment();
+        if (fragmentDecoded == null)
+            fragmentDecoded = decode(fragment);
+        return fragmentDecoded;
+    }
+
+    /*
+     * Returns the authority component of this URI.
+     *
+     * Default mode delegates to {@link java.net.URI#getAuthority()}.
+     * Custom parsing mode returns the original raw authority (may include user-info).
+     * Returns {@code null} if no authority is present (e.g. "mailto:").
+     */
+    public String getAuthority() {
+        if (uri != null) return uri.getAuthority();
+        return authority;
+    }
+
     private String decode(String string) {
         if (string == null)
             return string;
@@ -146,6 +263,24 @@ public class URI {
         if (uri != null)
             return uri.getRawQuery();
         return query;
+    }
+
+    /**
+     * Fragments are client side only and should not be propagated to the backend.
+     */
+    public String getPathWithQuery() {
+        StringBuilder r = new StringBuilder(100);
+
+        if (getRawPath() != null && !getRawPath().isBlank()) {
+            r.append(getRawPath());
+        } else {
+            r.append("/");
+        }
+
+        if (getRawQuery() != null && !getRawQuery().isBlank()) {
+            r.append('?').append(getRawQuery());
+        }
+        return r.toString();
     }
 
     @Override

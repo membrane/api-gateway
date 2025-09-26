@@ -186,7 +186,7 @@ public class JDBCUtil {
 	}
 
 	public static String getFilePath(AbstractExchange exc) {
-		String messageFilePath = exc.getPropertyOrNull(FileExchangeStore.MESSAGE_FILE_PATH, String.class);
+		String messageFilePath = exc.getProperty(FileExchangeStore.MESSAGE_FILE_PATH, String.class);
 		if (messageFilePath != null)
 			return messageFilePath;
 		return "";

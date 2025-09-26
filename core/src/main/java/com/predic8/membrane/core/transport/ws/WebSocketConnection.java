@@ -13,27 +13,23 @@
    limitations under the License. */
 package com.predic8.membrane.core.transport.ws;
 
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.EmptyBody;
-import com.predic8.membrane.core.http.Response;
-import com.predic8.membrane.core.interceptor.Outcome;
-import com.predic8.membrane.core.model.AbstractExchangeViewerListener;
-import com.predic8.membrane.core.transport.http.TwoWayStreaming;
-import org.jetbrains.annotations.NotNull;
-import org.jose4j.base64url.Base64;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.model.*;
+import com.predic8.membrane.core.transport.http.*;
+import org.jetbrains.annotations.*;
+import org.jose4j.base64url.*;
+import org.slf4j.*;
 
-import java.io.IOException;
-import java.io.OutputStream;
-import java.net.SocketException;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.util.concurrent.ArrayBlockingQueue;
+import java.io.*;
+import java.net.*;
+import java.security.*;
+import java.util.concurrent.*;
 
 import static com.predic8.membrane.core.http.Header.*;
-import static java.nio.charset.StandardCharsets.UTF_8;
-import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static java.nio.charset.StandardCharsets.*;
+import static java.util.concurrent.TimeUnit.*;
 
 /**
  * An RFC 6455 implementation.

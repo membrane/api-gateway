@@ -16,7 +16,7 @@ package com.predic8.membrane.core.interceptor.apikey.stores.inConfig;
 import com.predic8.membrane.core.interceptor.apikey.stores.UnauthorizedApiKeyException;
 import org.junit.jupiter.api.Test;
 
-import java.util.Optional;
+import java.util.*;
 
 import static java.util.List.of;
 import static java.util.Optional.empty;
@@ -39,7 +39,7 @@ class SimpleKeyStoreTest {
                 }})
         );
         assertEquals(empty(), simpleKeyStore.getScopes("12345"));
-        assertEquals(Optional.of(of("admin", "user")), simpleKeyStore.getScopes("67890"));
+        assertEquals(Optional.of(Set.of("admin", "user")), simpleKeyStore.getScopes("67890"));
         assertThrows(UnauthorizedApiKeyException.class, () -> simpleKeyStore.getScopes("ABCDE"));
     }
 }

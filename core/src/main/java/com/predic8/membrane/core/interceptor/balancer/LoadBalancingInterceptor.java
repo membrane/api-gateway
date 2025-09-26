@@ -1,4 +1,4 @@
-/* Copyright 2009, 2012 predic8 GmbH, www.predic8.com
+/* Copyright 2009, 2012, 2025 predic8 GmbH, www.predic8.com
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -13,38 +13,43 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.balancer;
 
-import com.google.common.collect.*;
-import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.interceptor.*;
-import org.slf4j.*;
+import com.google.common.collect.Lists;
+import com.predic8.membrane.annot.MCAttribute;
+import com.predic8.membrane.annot.MCChildElement;
+import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.interceptor.AbstractInterceptor;
+import com.predic8.membrane.core.interceptor.Outcome;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.io.*;
-import java.util.*;
+import java.io.Serial;
+import java.util.ArrayList;
+import java.util.List;
 
-import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
-import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static com.predic8.membrane.core.exceptions.ProblemDetails.internal;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.RESPONSE;
+import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
+import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 
 /**
  * @description Performs load-balancing between several nodes. Nodes sharing session state may be bundled into a cluster.
- * @explanation May only be used as interceptor in a ServiceProxy.
+ * @explanation May only be used as interceptor in a serviceProxy or api.
  * @topic 2. Enterprise Integration Patterns
  */
 @MCElement(name = "balancer")
 public class LoadBalancingInterceptor extends AbstractInterceptor {
 
-    private static final Logger log = LoggerFactory.getLogger(LoadBalancingInterceptor.class
-            .getName());
+    private static final Logger log = LoggerFactory.getLogger(LoadBalancingInterceptor.class.getName());
 
     /**
      * Round-robin is the default, but it's configurable.
      */
     private DispatchingStrategy strategy = new RoundRobinStrategy();
-    private AbstractSessionIdExtractor sessionIdExtractor;
+    private SessionIdExtractor sessionIdExtractor;
     private boolean failOver = true;
     private final Balancer balancer = new Balancer();
-    private NodeOnlineChecker nodeOnlineChecker;
 
     public LoadBalancingInterceptor() {
         name = "balancer";
@@ -54,22 +59,14 @@ public class LoadBalancingInterceptor extends AbstractInterceptor {
     public void init() {
         super.init();
         strategy.init(router);
-        if (nodeOnlineChecker != null)
-            nodeOnlineChecker.init(router);
 
-        for (Cluster c : balancer.getClusters())
-            for (Node n : c.getNodes())
-                c.nodeUp(n);
+        if (sessionIdExtractor != null) {
+            sessionIdExtractor.init(router);
+        }
     }
 
     @Override
     public Outcome handleRequest(Exchange exc) {
-
-        if (nodeOnlineChecker != null) {
-            exc.setProperty(Exchange.TRACK_NODE_STATUS, true);
-            nodeOnlineChecker.putNodesBackUp();
-        }
-
         Node dispatchedNode;
         try {
             dispatchedNode = getDispatchedNode(exc);
@@ -77,11 +74,19 @@ public class LoadBalancingInterceptor extends AbstractInterceptor {
             //This can happen for 2 reasons:
             //1) Initial server misconfiguration. None configured at all.
             //2) All destinations got disabled externally (through Membrane maintenance API). See class EmptyNodeListException.
-            log.error("No Node found.");
-            exc.setResponse(Response.internalServerError().build());
+            String msg = "No backend node found that is ready to handle this request. Check health of backends and balancer configuration.";
+            log.error(msg);
+            internal(router.isProduction(), getDisplayName())
+                    .status(503)
+                    .title("Service unavailable")
+                    .addSubSee("node-dispatching")
+                    .detail(msg)
+                    .buildAndSetResponse(exc);
             return ABORT;
         } catch (Exception e) {
             internal(router.isProduction(),getDisplayName())
+                    .status(503)
+                    .title("Service unavailable")
                     .addSubSee("node-dispatching")
                     .detail("Could not get dispatched node!")
                     .exception(e)
@@ -104,23 +109,13 @@ public class LoadBalancingInterceptor extends AbstractInterceptor {
         return CONTINUE;
     }
 
-    @Override
-    public void handleAbort(Exchange exc) {
-        if (nodeOnlineChecker != null) {
-            nodeOnlineChecker.handle(exc);
-        }
-    }
 
     @Override
     public Outcome handleResponse(Exchange exc) {
-        if (nodeOnlineChecker != null) {
-            nodeOnlineChecker.handle(exc);
-        }
-
         if (sessionIdExtractor != null) {
             String sessionId;
             try {
-                sessionId = getSessionId(exc.getResponse());
+                sessionId = sessionIdExtractor.getSessionId(exc, RESPONSE);
             } catch (Exception e) {
                 internal(router.isProduction(),getDisplayName())
                         .addSubSee("sessionid-extraction")
@@ -167,7 +162,7 @@ public class LoadBalancingInterceptor extends AbstractInterceptor {
     private Node getDispatchedNode(Exchange exc) throws Exception {
         String sessionId;
         if (sessionIdExtractor == null
-            || (sessionId = getSessionId(exc.getRequest())) == null) {
+            || (sessionId = sessionIdExtractor.getSessionId(exc, REQUEST)) == null) {
             log.debug("no session id found.");
             return strategy.dispatch(this, exc);
         }
@@ -189,15 +184,11 @@ public class LoadBalancingInterceptor extends AbstractInterceptor {
         return balancer.getSessions(BalancerUtil.getSingleClusterNameOrDefault(balancer)).get(sessionId);
     }
 
-    private String getSessionId(Message msg) throws Exception {
-        return sessionIdExtractor.getSessionId(msg);
-    }
-
     /**
      * This is *NOT* {@link #setDisplayName(String)}, but the balancer's name
      * set in the proxy configuration to identify this balancer.
      *
-     * @description Uniquely identifies this Load Balancer, if there is more than one. Used
+     * @description Uniquely identifies this load balancer, if there is more than one. Used
      * in the web administration interface and lbclient to manage nodes.
      * @example balancer1
      * @default Default
@@ -232,21 +223,8 @@ public class LoadBalancingInterceptor extends AbstractInterceptor {
         return balancer.getAvailableNodesByCluster(BalancerUtil.getSingleClusterNameOrDefault(balancer)); // fallback
     }
 
-    public AbstractSessionIdExtractor getSessionIdExtractor() {
+    public SessionIdExtractor getSessionIdExtractor() {
         return sessionIdExtractor;
-    }
-
-    /**
-     * @description Checks if nodes are still available. Sets them to "DOWN" when not reachable, else sets them back up when they are reachable.
-     */
-    @MCChildElement(order = 4)
-    public void setNodeOnlineChecker(NodeOnlineChecker noc) {
-        this.nodeOnlineChecker = noc;
-        this.nodeOnlineChecker.setLbi(this);
-    }
-
-    public NodeOnlineChecker getNodeOnlineChecker() {
-        return this.nodeOnlineChecker;
     }
 
     /**
@@ -254,7 +232,7 @@ public class LoadBalancingInterceptor extends AbstractInterceptor {
      */
     @MCChildElement(order = 1)
     public void setSessionIdExtractor(
-            AbstractSessionIdExtractor sessionIdExtractor) {
+            SessionIdExtractor sessionIdExtractor) {
         this.sessionIdExtractor = sessionIdExtractor;
     }
 

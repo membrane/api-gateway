@@ -44,6 +44,7 @@ import java.util.*;
 import java.util.concurrent.*;
 
 import static com.predic8.membrane.core.Constants.*;
+import static com.predic8.membrane.core.util.DLPUtil.*;
 import static com.predic8.membrane.core.jmx.JmxExporter.*;
 import static java.util.concurrent.Executors.*;
 
@@ -117,6 +118,9 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
     private final TimerManager timerManager = new TimerManager();
     private final HttpClientFactory httpClientFactory = new HttpClientFactory(timerManager);
     private final KubernetesClientFactory kubernetesClientFactory = new KubernetesClientFactory(httpClientFactory);
+    private boolean asynchronousInitialization = false;
+
+    private String beanName;
 
     public Router() {
         ruleManager.setRouter(this);
@@ -144,7 +148,7 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
         bf.refresh();
         bf.start();
 
-        return bf.getBean("router",Router.class);
+        return bf.getBean("router", Router.class);
     }
 
     @SuppressWarnings("NullableProblems")
@@ -256,7 +260,7 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
 
     public void add(Proxy proxy) throws IOException {
         if (!(proxy instanceof SSLableProxy sp)) {
-            ruleManager.addProxy(proxy,RuleDefinitionSource.MANUAL);
+            ruleManager.addProxy(proxy, RuleDefinitionSource.MANUAL);
         } else {
             ruleManager.addProxyAndOpenPortIfNew(sp);
         }
@@ -265,6 +269,7 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
     public void init() throws Exception {
         initRemainingRules();
         transport.init(this);
+        displayTraceWarning();
     }
 
     private void initRemainingRules() throws Exception {
@@ -300,13 +305,13 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
         } catch (DuplicatePathException e) {
             System.err.printf("""
                     ================================================================================================
-
+                    
                     Configuration Error: Several OpenAPI Documents share the same path!
-
+                    
                     An API routes and validates requests according to the path of the OpenAPI's servers.url fields.
                     Within one API the same path should be used only by one OpenAPI. Change the paths or place
                     openapi-elements into separate api-elements.
-
+                    
                     Shared path: %s
                     %n""", e.getPath());
             System.exit(1);
@@ -331,13 +336,14 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
 
         startJmx();
 
-		synchronized (lock) {
-			running = true;
-		}
+        synchronized (lock) {
+            running = true;
+        }
 
-		ApiInfo.logInfosAboutStartedProxies(ruleManager);
-        log.info("{} {} up and running!", PRODUCT_NAME, VERSION);
-	}
+        ApiInfo.logInfosAboutStartedProxies(ruleManager);
+        if (!asynchronousInitialization)
+            log.info("{} {} up and running!", PRODUCT_NAME, VERSION);
+    }
 
     private void startJmx() {
         if (getBeanFactory() != null) {
@@ -641,5 +647,31 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
 
     public GlobalInterceptor getGlobalInterceptor() {
         return globalInterceptor;
+    }
+
+    public synchronized boolean isAsynchronousInitialization() {
+        return asynchronousInitialization;
+    }
+
+    public synchronized void setAsynchronousInitialization(boolean asynchronousInitialization) {
+        this.asynchronousInitialization = asynchronousInitialization;
+        notifyAll();
+    }
+
+    public synchronized void waitForAsynchronousInitialization() {
+        while (asynchronousInitialization) {
+            try {
+                wait();
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+        }
+    }
+
+    public void handleAsynchronousInitializationResult(boolean success) {
+        if (!success && !retryInit)
+            System.exit(1);
+        log.info("{} {} up and running!", PRODUCT_NAME, VERSION);
+        setAsynchronousInitialization(false);
     }
 }

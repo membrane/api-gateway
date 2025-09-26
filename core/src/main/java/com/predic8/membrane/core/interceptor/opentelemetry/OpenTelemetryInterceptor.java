@@ -24,6 +24,7 @@ import io.opentelemetry.api.*;
 import io.opentelemetry.api.trace.*;
 import io.opentelemetry.context.*;
 import org.slf4j.*;
+import org.slf4j.bridge.SLF4JBridgeHandler;
 
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.interceptor.opentelemetry.HTTPTraceContextUtil.*;
@@ -50,9 +51,17 @@ public class OpenTelemetryInterceptor extends AbstractInterceptor {
     @Override
     public void init() {
         super.init();
+        try {
+            if (!SLF4JBridgeHandler.isInstalled()) {
+                SLF4JBridgeHandler.removeHandlersForRootLogger();
+                SLF4JBridgeHandler.install();
+            }
+        } catch (Throwable t) {
+            log.warn("jul-to-slf4j not available; OpenTelemetry logs may go to stderr.", t);
+        }
+
         otel = OpenTelemetryConfigurator.openTelemetry("Membrane", exporter, getSampleRate());
         tracer = otel.getTracer("MEMBRANE-TRACER");
-
     }
 
     public OpenTelemetryInterceptor() {

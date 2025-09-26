@@ -24,13 +24,12 @@ import com.predic8.membrane.core.interceptor.schemavalidation.*;
 import com.predic8.membrane.core.resolver.*;
 import org.slf4j.*;
 
-import java.io.*;
-import java.nio.charset.*;
 import java.util.*;
 import java.util.concurrent.*;
 
 import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
-import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
+import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 
 /**
@@ -124,7 +123,7 @@ import static com.predic8.membrane.core.interceptor.Outcome.*;
  * Once this setup is complete, you can enable serviceProxies like this:
  * </p>
  * <code>
- * apiVersion: membrane-soa.org/v1beta1
+ * apiVersion: membrane-api.io/v1beta2
  * kind: serviceproxy
  * metadata:
  * name: demo
@@ -165,26 +164,25 @@ public class KubernetesValidationInterceptor extends AbstractInterceptor {
         try {
 
 
-        if (exc.getRequest().isBodyEmpty())
-            return CONTINUE;
+            if (exc.getRequest().isBodyEmpty())
+                return CONTINUE;
 
-        ObjectMapper mapper = new ObjectMapper();
-        AdmissionReview review = mapper.readValue(new BufferedReader(new InputStreamReader(
-                        exc.getRequest().getBodyAsStreamDecoded(), Charset.forName(exc.getRequest().getCharset())))
-                , AdmissionReview.class);
-        Map<String, Object> object = review.getRequest().getObject();
-        if (object != null) { // DELETE requests do not carry an object
-            String requestKind = (String) object.get("kind");
+            ObjectMapper mapper = new ObjectMapper();
+            AdmissionReview review = mapper.readValue(exc.getRequest().getBodyAsStreamDecoded(), AdmissionReview.class);
 
-            MessageValidator validator = validators.computeIfAbsent(requestKind.toLowerCase(), schema -> new JSONSchemaValidator(resourceResolver, "classpath:/com/predic8/membrane/core/config/kubernetes/" + schema + ".schema.json", null));
-            validator.validateMessage(exc, REQUEST);
-        }
-        setExchangeResponse(exc, mapper, review);
+            Map<String, Object> object = review.getRequest().getObject();
+            if (object != null) { // DELETE requests do not carry an object
+                String requestKind = (String) object.get("kind");
 
-        return RETURN;
+                MessageValidator validator = validators.computeIfAbsent(requestKind.toLowerCase(), schema -> new JSONSchemaValidator(resourceResolver, "classpath:/com/predic8/membrane/core/config/kubernetes/" + schema + ".schema.json", null));
+                validator.validateMessage(exc, REQUEST);
+            }
+            setExchangeResponse(exc, mapper, review);
+
+            return RETURN;
         } catch (Exception e) {
-            log.error("",e);
-            internal(router.isProduction(),getDisplayName())
+            log.error("", e);
+            internal(router.isProduction(), getDisplayName())
                     .component(getDisplayName())
                     .detail("Error handling request!")
                     .exception(e)

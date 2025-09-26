@@ -237,12 +237,10 @@ public class Utils {
         if (!exc.getRequest().isBodyEmpty()) {
             request.body(exc.getRequest().getBodyAsStreamDecoded());
         }
-
         if (exc.getProperty(SECURITY_SCHEMES) != null) {
             //noinspection unchecked
             request.setSecuritySchemes((List<SecurityScheme>) exc.getProperty(SECURITY_SCHEMES));
         }
-
         return request;
     }
 
@@ -305,9 +303,5 @@ public class Utils {
             LOG.error(e.getMessage());
             throw new RuntimeException(e);
         }
-    }
-
-    public static byte[] createErrorMessage(String msg) {
-        return String.format("{ \"error\": \"%s\" }",msg).getBytes();
     }
 }

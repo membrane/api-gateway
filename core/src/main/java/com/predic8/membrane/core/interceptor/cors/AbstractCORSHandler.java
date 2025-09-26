@@ -78,7 +78,7 @@ public abstract class AbstractCORSHandler {
 
     protected Outcome createProblemDetails(Exchange exc, String value, String type) {
         security(false, "cors")
-                .statusCode(403)
+                .status(403)
                 .addSubType("%s-not-allowed".formatted(type))
                 .detail("The %s '%s' is not allowed by the CORS policy.".formatted(type, value))
                 .buildAndSetResponse(exc);

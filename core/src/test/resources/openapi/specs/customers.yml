@@ -43,6 +43,7 @@ paths:
                     type: string
                 minLength: 3
   /customers/{cid}:
+    description: Single paths
     parameters:
       - in: path
         name: cid

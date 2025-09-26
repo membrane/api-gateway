@@ -137,9 +137,9 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
             handleOriginalRequest(exc);
         }
 
-        String wantedScope = exc.getPropertyOrNull(WANTED_SCOPE, String.class);
+        String wantedScope = exc.getProperty(WANTED_SCOPE, String.class);
         if (tokenAuthenticator.userInfoIsNullAndShouldRedirect(session, exc, wantedScope)) {
-            return respondWithRedirect(exc);
+            return respondWithRedirect(exc, FlowContext.fromExchange(exc));
         }
 
         accessTokenRevalidator.revalidateIfNeeded(session, wantedScope);
@@ -166,7 +166,7 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
             }
 
             log.debug("session present, but not verified, redirecting.");
-            return respondWithRedirect(exc);
+            return respondWithRedirect(exc, FlowContext.fromExchange(exc));
         } catch (OAuth2Exception e) {
             session.clear();
             if (afterErrorUrl != null) {
@@ -249,15 +249,15 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
         }
     }
 
-    public Outcome respondWithRedirect(Exchange exc) throws Exception {
-        Integer errorStatus = exc.getPropertyOrNull(ERROR_STATUS, Integer.class);
+    public Outcome respondWithRedirect(Exchange exc, FlowContext flowContext) throws Exception {
+        Integer errorStatus = exc.getProperty(ERROR_STATUS, Integer.class);
         if (errorStatus != null) {
             exc.setResponse(Response.statusCode(errorStatus).header(CONTENT_LENGTH, "0").build());
             return RETURN;
         }
 
         PKCEVerifier verifier = new PKCEVerifier();
-        StateManager stateManager = new StateManager(verifier);
+        StateManager stateManager = new StateManager(verifier, flowContext);
         Response redirectResponse = Response
                 .redirect(auth.getLoginURL(publicUrlManager.getPublicURLAndReregister(exc) + callbackPath)
                         + stateManager.buildStateParameter(exc)
@@ -330,7 +330,7 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
             return;
         if (exc.getProperty(OAUTH2) == null)
             return;
-        OAuth2AnswerParameters params = exc.getPropertyOrNull(OAUTH2, OAuth2AnswerParameters.class);
+        OAuth2AnswerParameters params = exc.getProperty(OAUTH2, OAuth2AnswerParameters.class);
         if (params.getAccessToken() == null)
             return;
         exc.getRequest().getHeader().setValue(AUTHORIZATION, "Bearer " + params.getAccessToken());

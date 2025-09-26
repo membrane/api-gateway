@@ -5,6 +5,8 @@
 [![GitHub release](https://img.shields.io/github/release/membrane/service-proxy.svg)](https://github.com/membrane/service-proxy/releases/latest)
 [![Hex.pm](https://img.shields.io/hexpm/l/plug.svg)](https://raw.githubusercontent.com/membrane/api-gateway/master/distribution/router/LICENSE.txt)
 
+<img src="docs/images/api-gateway-demo.gif" alt="Animated demo of Membrane API Gateway" width="720"></img>
+
 Lightweight **API Gateway** for **REST**, **GraphQL** and **legacy SOAP Web Services**, easily extended with powerful plugins and Java.
 
 Solve even complex custom API requirements with simple configurations.
@@ -16,12 +18,37 @@ Solve even complex custom API requirements with simple configurations.
 </api>
 ```
 
+**Path Rewriting with an URI Template:**
+```xml
+<api port="2000">
+    <path>/fruit/{id}</path>
+    <target url="https://api.predic8.de/shop/v2/products/${pathParam.id}"/>
+</api>
+```
+
 **Deploy OpenAPI and enable Request Validation:** 
 ```xml
 <api port="2000">
     <openapi location="fruitshop-api.yml" validateRequests="yes"/>
 </api>
 ```
+
+**YAML Configuration (beta):**
+```yaml
+apiVersion: membrane-api.io/v1beta2
+kind: api
+metadata:
+  name: log
+spec:
+  port: 2000
+  interceptors:
+    - log:
+        message: Header ${header}
+  target:
+    url: https://api.predic8.de
+```
+
+See: [YAML configuration](distribution/examples/yaml-configuration#YAML-Configuration)
 
 **Issue JSON Web Tokens for API Keys:**
 
@@ -166,21 +193,29 @@ You can run Membrane as Docker container, standalone Java application or install
    ```
 2. **Access the Gateway**
 
-   Test a preconfigured API by opening [http://localhost:2000](http://localhost:2000).
+   Test an API by opening [http://localhost:2000](http://localhost:2000).
 
 3. **Change the Configuration**
-   - Download [proxies.xml](distribution/router/conf/proxies.xml) and modify it
+   - Download [proxies.xml](https://raw.githubusercontent.com/membrane/api-gateway/master/distribution/router/conf/proxies.xml) or:
+
+     ```bash
+     wget https://raw.githubusercontent.com/membrane/api-gateway/master/distribution/router/conf/proxies.xml
+     ```
+   
    - Bind the configuration file to the container.
 
-     #### For Windows/Linux:
-     ```bash
-     docker run -v proxies.xml:/opt/membrane/conf/proxies.xml -p 2000:2000 predic8/membrane
-     ```  
-   
-     #### For Mac:
+     **Mac/Linux:**
      ```bash
      docker run -v "$(pwd)/proxies.xml:/opt/membrane/conf/proxies.xml" -p 2000:2000 predic8/membrane
      ```  
+
+     **Windows:**
+     ```bash
+     docker run -v %cd%\proxies.xml:/opt/membrane/conf/proxies.xml -p 2000:2000 predic8/membrane
+     ```
+
+     You can now edit `proxies.xml` and restart the container to apply the changes.
+
 
 For detailed Docker setup instructions, see the [Membrane Deployment Guide](https://membrane-api.io/deployment/#docker).
 
@@ -304,13 +339,13 @@ The configuration below demonstrates several routing rules:
 
 ### Configuration Options
 
-| Option   | Description                                                                |
-|----------|----------------------------------------------------------------------------|
-| `port`   | port Membrane listens for incoming connections.                            |
-| `method` | - HTTP method (e.g., `GET`, `POST`, `DELETE`).<br>- `*` matchs any method. |
-| `host`   | - Hostname e.g. `api.predic8.de`<br> - Supports basic globbing with `*`    |
-| `test` | - Custum script e.g. `$pathParm.id == '42'`, `$header.contentType == '...'`     |
-| `path`   | - Request path<br>- Regular expressions can be used with `isRegExp="true"` |
+| Option   | Description                                                                   |
+|----------|-------------------------------------------------------------------------------|
+| `port`   | port Membrane listens for incoming connections.                               |
+| `method` | - HTTP method (e.g., `GET`, `POST`, `DELETE`).<br>- `*` matches any method.   |
+| `host`   | - Hostname e.g. `api.predic8.de`<br> - Supports basic globbing with `*`       |
+| `test` | - Custum script e.g. `$pathParam.id == '42'`, `$header.contentType == '...'`  |
+| `path`   | - Request path<br>- Regular expressions can be used with `isRegExp="true"`    |
 
 For more routing options, see the [Membrane API documentation](https://www.membrane-api.io/docs/current/api.html).
 
@@ -325,7 +360,7 @@ The following configuration creates a health check endpoint that responds to req
 <api port="2000">
   <path>/health</path>
   <response>
-    <static>I'am fine.</static>
+    <static>I'm good.</static>
   </response>
   <return statusCode="200"/>
 </api>
@@ -398,7 +433,7 @@ The following API executes a Groovy script during the request and the response.
 ```xml
 <api port="2000">
   <groovy>
-    println "I'am executed in the ${flow} flow" 
+    println "I'm executed in the ${flow} flow" 
     println "HTTP Headers:\n${header}"
   </groovy>
   <target url="https://api.predic8.de"/>
@@ -408,13 +443,13 @@ The following API executes a Groovy script during the request and the response.
 After invoking [http://localhost:2000](http://localhost:2000) you can see the following output in the console where you have started Membrane:
 
 ```text
-I'am executed in the REQUEST flow
+I'm executed in the REQUEST flow
 HTTP Headers:
 Host: localhost:2000
 User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:133.0) Gecko/20100101 Firefox/133.0
 ...
 
-I'am executed in the RESPONSE flow
+I'm executed in the RESPONSE flow
 HTTP Headers:
 Content-Length: 390
 Content-Type: application/json
@@ -657,7 +692,7 @@ This template will transform the JSON input into plain text:
 
 ### Transform XML into Text or JSON
 
-Using `setProperty` you can extract values from XML request or response bodies and store it in properties. Then the properties are available as variables inside `template`.
+Using `setProperty` you can extract values from XML request or response bodies and store it in properties. Then the properties are available as variables inside the `template` plugin.
 plugin.
 
 ```xml
@@ -978,7 +1013,7 @@ The `jsonProtection` plugin safeguards APIs from JSON-based vulnerabilities by s
 
 - **Depth**: Prevents overly nested JSON structures.
 - **Key Length**: Restricts excessively long keys.
-- **Object Size**: Maximum number of fields in aJSON object.
+- **Object Size**: Maximum number of fields in a JSON object.
 - **String Length**: Controls maximum length of string values.
 - **...**
 

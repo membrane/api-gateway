@@ -47,7 +47,7 @@ public class AccessTokenRefresher {
     }
 
     public void refreshIfNeeded(Session session, Exchange exc) {
-        String wantedScope = exc.getPropertyOrNull(WANTED_SCOPE, String.class);
+        String wantedScope = exc.getProperty(WANTED_SCOPE, String.class);
         if (!refreshingOfAccessTokenIsNeeded(session, wantedScope)) {
             return;
         }

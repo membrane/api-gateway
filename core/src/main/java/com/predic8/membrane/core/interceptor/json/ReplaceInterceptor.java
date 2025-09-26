@@ -13,19 +13,16 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.json;
 
-import com.jayway.jsonpath.Configuration;
-import com.jayway.jsonpath.JsonPath;
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Message;
-import com.predic8.membrane.core.interceptor.AbstractInterceptor;
-import com.predic8.membrane.core.interceptor.Outcome;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.jayway.jsonpath.*;
+import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.interceptor.*;
+import org.slf4j.*;
 
-import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
-import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
+import static com.predic8.membrane.core.http.MimeType.*;
+import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static java.nio.charset.StandardCharsets.*;
 
 @SuppressWarnings("unused")
 @MCElement(name="replace")
@@ -48,8 +45,8 @@ public class ReplaceInterceptor extends AbstractInterceptor {
     }
 
     private Outcome handleInternal(String contentType, Message msg) {
-        if(contentType.equals(APPLICATION_JSON)) {
-            msg.setBodyContent(replaceWithJsonPath(msg, jsonPath, with).getBytes());
+        if(contentType != null && contentType.equals(APPLICATION_JSON)) {
+            msg.setBodyContent(replaceWithJsonPath(msg, jsonPath, with).getBytes(UTF_8));
         }
         return CONTINUE;
     }

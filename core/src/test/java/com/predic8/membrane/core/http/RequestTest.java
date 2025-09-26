@@ -29,7 +29,9 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class RequestTest {
 
-	private static final Request request = new Request();
+	private static final Request reqPost = new Request();
+
+	private static final Request reqChunked = new Request();
 
 	private InputStream inPost;
 
@@ -116,57 +118,57 @@ public class RequestTest {
 
 	@Test
 	void readChunked() throws Exception {
-		request.read(inChunked, true);
-		assertNotNull(request.getBodyAsStream());
+		reqChunked.read(inChunked, true);
+		assertNotNull(reqChunked.getBodyAsStream());
 	}
 
 	@Test
 	void readPost() throws Exception {
-		request.read(inPost, true);
-		assertEquals(POST, request.getMethod());
-		assertEquals("/operation/call", request.getUri());
-		assertNotNull(request.getBody());
+		reqPost.read(inPost, true);
+		assertEquals(METHOD_POST, reqPost.getMethod());
+		assertEquals("/operation/call", reqPost.getUri());
+		assertNotNull(reqPost.getBody());
 
-		assertEquals(168, request.getBody().getLength());
+		assertEquals(168, reqPost.getBody().getLength());
 	}
 
 	@Test
 	void writePost() throws Exception {
-		request.read(inPost, true);
+		reqPost.read(inPost, true);
 
 		tempOut = new ByteArrayOutputStream();
-		request.write(tempOut, true);
+		reqPost.write(tempOut, true);
 
 		tempIn = new ByteArrayInputStream(tempOut.toByteArray());
 
 		Request reqTemp = new Request();
 		reqTemp.read(tempIn, true);
 
-		assertEquals(request.getUri(), reqTemp.getUri());
-		assertEquals(request.getMethod(), reqTemp.getMethod());
+		assertEquals(reqPost.getUri(), reqTemp.getUri());
+		assertEquals(reqPost.getMethod(), reqTemp.getMethod());
 
-		assertArrayEquals(request.getBody().getContent(), reqTemp.getBody().getContent());
-		assertArrayEquals(request.getBody().getRaw(), reqTemp.getBody().getRaw());
+		assertArrayEquals(reqPost.getBody().getContent(), reqTemp.getBody().getContent());
+		assertArrayEquals(reqPost.getBody().getRaw(), reqTemp.getBody().getRaw());
 	}
 
 	@Test
 	void isHTTP11() {
-		assertTrue(request.isHTTP11());
+		assertTrue(reqPost.isHTTP11());
 	}
 
 	@Test
 	void isHTTP11Chunked() {
-		assertTrue(request.isHTTP11());
+		assertTrue(reqChunked.isHTTP11());
 	}
 
 	@Test
 	void isKeepAlive() {
-		assertTrue(request.isKeepAlive());
+		assertTrue(reqPost.isKeepAlive());
 	}
 
 	@Test
 	void isKeepAliveChunked() {
-		assertTrue(request.isKeepAlive());
+		assertTrue(reqChunked.isKeepAlive());
 	}
 
 	@Test
@@ -191,14 +193,14 @@ public class RequestTest {
 	@Test
 	void createFromStreamMethodGETDoNotSupportBody() throws IOException {
 		Request req = new Request();
-		req.create(GET, "http://test", "HTTP/", new Header(), getResourceAsStream(this,"/getBank.xml"));
+		req.create(METHOD_GET , "http://test", "HTTP/", new Header(), getResourceAsStream(this,"/getBank.xml"));
 		assertTrue(req.isBodyEmpty());
 	}
 
 	@Test
 	void createFromStreamMethodHEADDoNotSupportBody() throws IOException {
 		Request req = new Request();
-		req.create(HEAD, "http://test", "HTTP/", new Header(), getResourceAsStream(this,"/getBank.xml"));
+		req.create(METHOD_HEAD, "http://test", "HTTP/", new Header(), getResourceAsStream(this,"/getBank.xml"));
 		assertTrue(req.isBodyEmpty());
 	}
 	
@@ -225,7 +227,7 @@ public class RequestTest {
 	@Test
 	void setBodyShouldReadTheOriginalBody() throws EndOfStreamException, IOException {
 		AbstractBody originalBody = readMessageAndGetBody();
-		request.setBody(new Body("ABC".getBytes(UTF_8))); // Replace body with a different one
+		reqPost.setBody(new Body("ABC".getBytes(UTF_8))); // Replace body with a different one
 		assertTrue(originalBody.isRead()); // Assert that the original body is read
 	}
 
@@ -274,15 +276,26 @@ public class RequestTest {
 	@Test
 	void setBodyContentShouldReadTheOriginalBody() throws EndOfStreamException, IOException {
 		AbstractBody originalBody = readMessageAndGetBody();
-		request.setBodyContent("ABC".getBytes(UTF_8));
+		reqPost.setBodyContent("ABC".getBytes(UTF_8));
 		assertTrue(originalBody.isRead()); // Assert that the original body is read
-		assertEquals(0, inPost.available()); // Check that all bytes are read from the stream
+		assertEquals(0,inPost.available()); // Check that all bytes are read from the stream
+	}
+
+	@Test
+	void connectUsesAuthorityForm() throws URISyntaxException {
+        assertEquals("CONNECT example.com:443 HTTP/1.1" + CRLF, connect("https://example.com:443").build().getStartLine());
+	}
+
+	@Test
+	void isXML() throws URISyntaxException {
+        assertTrue(post("/foo").contentType(TEXT_XML).build().isXML());
+		assertTrue(post("/foo").contentType("text/xml; charset=utf-8").build().isXML());
+		assertTrue(post("/foo").header("Content-Type", "text/xml; charset=utf-8").build().isXML());
 	}
 
 	private AbstractBody readMessageAndGetBody() throws IOException, EndOfStreamException {
-		request.read(inPost, true);
-		assertFalse(request.getBody().isRead());
-        return request.getBody();
+		reqPost.read(inPost, true);
+		assertFalse(reqPost.getBody().isRead());
+        return reqPost.getBody();
 	}
-
 }

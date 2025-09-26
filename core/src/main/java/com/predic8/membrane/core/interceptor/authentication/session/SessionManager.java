@@ -18,6 +18,7 @@ import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.config.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.interceptor.authentication.session.CleanupThread.*;
+import com.predic8.membrane.core.interceptor.oauth2.SessionFinder;
 import com.predic8.membrane.core.proxies.*;
 import org.apache.commons.lang3.*;
 import org.jetbrains.annotations.*;
@@ -43,11 +44,15 @@ public class SessionManager extends AbstractXmlElement implements Cleaner {
 	private String cookieName;
 	private long timeout;
 	private String domain;
+	protected boolean httpOnly = false;
+	protected String sameSite = null;
 
 	// TODO: bind session also to remote IP (for public Membrane release)
 	protected final HashMap<String, Session> sessions = new HashMap<>();
 	protected final static String SESSION_ID = "SESSION_ID";
 	protected final static String SESSION = "SESSION";
+
+	private SessionFinder sessionFinder = null;
 
 	@Override
 	protected void parseAttributes(XMLStreamReader token) {
@@ -65,7 +70,7 @@ public class SessionManager extends AbstractXmlElement implements Cleaner {
 	 * Sets the Session Cookie on the response, if necessary (e.g. a session was created)
      */
 	public void postProcess(Exchange exc) {
-		String cookieValue = exc.getPropertyOrNull(SESSION_ID, String.class);
+		String cookieValue = exc.getProperty(SESSION_ID, String.class);
 		if (cookieValue != null && exc.getResponse() != null)
 			exc.getResponse().getHeader().addCookieSession(cookieName, cookieValue);
 	}
@@ -114,6 +119,7 @@ public class SessionManager extends AbstractXmlElement implements Cleaner {
 		public synchronized boolean isAuthorized() {
 			return level == 2;
 		}
+
 		public synchronized boolean isPreAuthorized() {
 			return level == 1;
 		}
@@ -176,7 +182,7 @@ public class SessionManager extends AbstractXmlElement implements Cleaner {
 	}
 
 	public Session getSession(Exchange exc) {
-		Session s = exc.getPropertyOrNull(SESSION, Session.class);
+		Session s = exc.getProperty(SESSION, Session.class);
 		if (s != null)
 			return s;
 		String id = exc.getRequest().getHeader().getFirstCookie(cookieName);
@@ -217,11 +223,12 @@ public class SessionManager extends AbstractXmlElement implements Cleaner {
 		return s;
 	}
 
-	// TODO is that all for the value or is there something missing?
 	protected @NotNull String getCookieValue(Exchange exc, String value) {
 		return value + "; " +
 			   (domain != null ? "Domain=" + domain + "; " : "") +
-			   "Path=/" + getSecureString(exc);
+			   "Path=/" + getSecureString(exc) +
+				(httpOnly ? "; HttpOnly" : "") +
+                (sameSite != null ? "; SameSite=" + sameSite : "");
 	}
 
 	protected static @NotNull String getSecureString(Exchange exc) {
@@ -231,16 +238,35 @@ public class SessionManager extends AbstractXmlElement implements Cleaner {
 		return sp.isInboundSSL() ? "; Secure" : "";
 	}
 
+	@Override
 	public void cleanup() {
 		long death = System.currentTimeMillis() - timeout;
 		List<String> removeUs = new ArrayList<>();
+		Set<Session> removedSessions = new HashSet<>();
+
 		synchronized (sessions) {
 			for (Map.Entry<String, Session> e : sessions.entrySet())
 				if (e.getValue().getLastUse() < death)
 					removeUs.add(e.getKey());
-			for (String sessionId : removeUs)
-				sessions.remove(sessionId);
+			for (String sessionId : removeUs) {
+				Session removedSession = sessions.remove(sessionId);
+				if (removedSession!= null) {
+				    removedSessions.add(removedSession);
+				}
+			}
 		}
+
+		if (sessionFinder != null) {
+			sessionFinder.cleanupSessions(removedSessions);
+		}
+	}
+
+	public SessionFinder getSessionFinder() {
+		return sessionFinder;
+	}
+
+	public void setSessionFinder(SessionFinder sessionFinder) {
+		this.sessionFinder = sessionFinder;
 	}
 
 	public String getCookieName() {
@@ -268,5 +294,23 @@ public class SessionManager extends AbstractXmlElement implements Cleaner {
 	@MCAttribute
 	public void setDomain(String domain) {
 		this.domain = domain;
+	}
+
+	@MCAttribute
+	public void setHttpOnly(boolean httpOnly) {
+		this.httpOnly = httpOnly;
+	}
+
+	public boolean isHttpOnly() {
+		return httpOnly;
+	}
+
+	@MCAttribute
+	public void setSameSite(String sameSite) {
+		this.sameSite = sameSite;
+	}
+
+	public String getSameSite() {
+		return sameSite;
 	}
 }

@@ -194,8 +194,8 @@ public class SoapProxyInvocationTest {
                 .post("http://localhost:2000/services/b")  // This service is not selected!
         .then().statusCode(404)
                 .log().ifValidationFails()
-                .contentType(APPLICATION_XML)
-                .body("error.title", equalTo("Wrong path or method"));
+                .contentType(APPLICATION_PROBLEM_XML)
+                .body("error.title", equalTo("Invalid path or method"));
         // @formatter:on
     }
 

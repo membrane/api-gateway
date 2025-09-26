@@ -35,7 +35,7 @@ public class SOAPProxyValidationExampleTest extends DistributionExtractingTestca
         try (Process2 ignored = startServiceProxyScript()) {
             // @formatter:off
 			given()
-				.contentType(APPLICATION_SOAP)
+				.contentType(APPLICATION_SOAP_XML)
 				.body(readFile("city-soap.xml"))
 			.when()
 				.post("http://localhost:2000/")
@@ -51,7 +51,7 @@ public class SOAPProxyValidationExampleTest extends DistributionExtractingTestca
         try (Process2 ignored = startServiceProxyScript()) {
             // @formatter:off
 			given()
-				.contentType(APPLICATION_SOAP)
+				.contentType(APPLICATION_SOAP_XML)
 				.body(readFile("invalid-city-soap.xml"))
 			.when()
 				.post("http://localhost:2000/")

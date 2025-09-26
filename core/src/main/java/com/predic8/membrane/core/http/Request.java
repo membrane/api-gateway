@@ -21,7 +21,6 @@ import com.predic8.membrane.core.util.*;
 
 import java.io.*;
 import java.net.*;
-import java.nio.charset.*;
 import java.util.*;
 import java.util.regex.*;
 
@@ -29,13 +28,14 @@ import static com.predic8.membrane.core.Constants.*;
 import static com.predic8.membrane.core.http.Header.*;
 import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.util.HttpUtil.readLine;
+import static java.nio.charset.StandardCharsets.*;
 
 public class Request extends Message {
 
     /**
      * Pattern to match an HTTP/1.x request line as typically received by a proxy.
      * <p>
-     * Supports all request-target forms defined in RFC 9110 §7.1:
+     * Supports all request-target forms defined in RFC 9110 ï¿½7.1:
      * <ul>
      *   <li>Origin-form: {@code GET /path HTTP/1.1}</li>
      *   <li>Absolute-form: {@code GET http://example.com/path HTTP/1.1}</li>
@@ -73,6 +73,16 @@ public class Request extends Message {
 
     private static final Pattern stompPattern = Pattern.compile("^(.+?)$");
 
+	public static final String METHOD_GET = "GET";
+	public static final String METHOD_POST = "POST";
+	public static final String METHOD_PATCH = "PATCH";
+	public static final String METHOD_HEAD = "HEAD";
+	public static final String METHOD_DELETE = "DELETE";
+	public static final String METHOD_PUT = "PUT";
+	@SuppressWarnings("unused")
+	public static final String METHOD_TRACE = "TRACE";
+	public static final String METHOD_CONNECT = "CONNECT";
+	public static final String METHOD_OPTIONS = "OPTIONS";
     public static final String GET = "GET";
     public static final String POST = "POST";
     public static final String HEAD = "HEAD";
@@ -156,40 +166,41 @@ public class Request extends Message {
         createBody(in);
     }
 
-    @Override
-    public String getStartLine() {
-        return method + " " + uri + " HTTP/" + version + CRLF;
-    }
 
-    @SuppressWarnings("BooleanMethodIsAlwaysInverted")
-    public boolean isHEADRequest() {
-        return HEAD.equals(method);
-    }
+	@Override
+	public String getStartLine() {
+		return method + " " + uri + " HTTP/" + version + CRLF;
+	}
 
-    public boolean isGETRequest() {
-        return GET.equals(method);
-    }
+	@SuppressWarnings("BooleanMethodIsAlwaysInverted")
+	public boolean isHEADRequest() {
+		return METHOD_HEAD.equals(method);
+	}
 
-    public boolean isPOSTRequest() {
-        return POST.equals(method);
-    }
+	public boolean isGETRequest() {
+		return METHOD_GET.equals(method);
+	}
 
-    public boolean isDELETERequest() {
-        return DELETE.equals(method);
-    }
+	public boolean isPOSTRequest() {
+		return METHOD_POST.equals(method);
+	}
 
-    public boolean isCONNECTRequest() {
-        return CONNECT.equals(method);
-    }
+	public boolean isDELETERequest() {
+		return METHOD_DELETE.equals(method);
+	}
 
-    public boolean isOPTIONSRequest() {
-        return OPTIONS.equals(method);
-    }
+	public boolean isCONNECTRequest() {
+		return METHOD_CONNECT.equals(method);
+	}
 
-    @Override
-    public String getName() {
-        return uri;
-    }
+	public boolean isOPTIONSRequest() {
+		return METHOD_OPTIONS.equals(method);
+	}
+
+	@Override
+	public String getName() {
+		return uri;
+	}
 
     @Override
     public boolean shouldNotContainBody() {
@@ -205,190 +216,197 @@ public class Request extends Message {
         return false;
     }
 
-    /**
-     * NTLM and SPNEGO authentication schemes authorize HTTP connections, not single requests.
-     * We therefore have to "bind" the targetConnection to the incoming connection to ensure
-     * the same targetConnection is used again for further requests.
-     */
-    public boolean isBindTargetConnectionToIncoming() {
-        String auth = header.getFirstValue(AUTHORIZATION);
-        return auth != null && (auth.startsWith("NTLM") || auth.startsWith("Negotiate"));
-    }
+	/**
+	 * NTLM and SPNEGO authentication schemes authorize HTTP connections, not single requests.
+	 * We therefore have to "bind" the targetConnection to the incoming connection to ensure
+	 * the same targetConnection is used again for further requests.
+	 */
+	public boolean isBindTargetConnectionToIncoming() {
+		String auth = header.getFirstValue(AUTHORIZATION);
+		return auth != null && (auth.startsWith("NTLM") || auth.startsWith("Negotiate"));
+	}
 
-    @Override
-    public int estimateHeapSize() {
-        return super.estimateHeapSize() +
-               12 +
-               (method != null ? 2 * method.length() : 0) +
-               (uri != null ? 2 * uri.length() : 0);
-    }
+	@Override
+	public int estimateHeapSize() {
+		return super.estimateHeapSize() +
+				12 +
+				(method != null ? 2*method.length() : 0) +
+				(uri != null ? 2*uri.length() : 0);
+	}
 
-    @Override
-    public <T extends Message> T createSnapshot(Runnable bodyUpdatedCallback, BodyCollectingMessageObserver.Strategy strategy, long limit) {
-        Request result = createMessageSnapshot(new Request(), bodyUpdatedCallback, strategy, limit);
-        result.setUri(getUri());
-        result.setMethod(getMethod());
-        return (T) result;
-    }
+	@Override
+	public <T extends Message> T createSnapshot(Runnable bodyUpdatedCallback, BodyCollectingMessageObserver.Strategy strategy, long limit) {
+		Request result = createMessageSnapshot(new Request(), bodyUpdatedCallback, strategy, limit);
+		result.setUri(getUri());
+		result.setMethod(getMethod());
+		return (T) result;
+	}
 
-    public final void writeSTOMP(OutputStream out, boolean retainBody) throws IOException {
-        out.write(getMethod().getBytes(StandardCharsets.UTF_8));
-        out.write(10);
-        for (HeaderField hf : header.getAllHeaderFields())
-            out.write((hf.getHeaderName().toString() + ":" + hf.getValue() + "\n").getBytes(StandardCharsets.UTF_8));
-        out.write(10);
-        body.write(new PlainBodyTransferrer(out), retainBody);
-    }
+	public final void writeSTOMP(OutputStream out, boolean retainBody) throws IOException {
+		out.write(getMethod().getBytes(UTF_8));
+		out.write(10);
+		for (HeaderField hf : header.getAllHeaderFields())
+			out.write((hf.getHeaderName().toString() + ":" + hf.getValue() + "\n").getBytes(UTF_8));
+		out.write(10);
+		body.write(new PlainBodyTransferer(out), retainBody);
+	}
 
-    public static Builder get(String url) throws URISyntaxException {
-        return new Builder().get(url);
-    }
+	public static Builder get(String url) throws URISyntaxException {
+		return new Builder().get(url);
+	}
 
-    public static Builder put(String url) throws URISyntaxException {
-        return new Builder().put(url);
-    }
+	public static Builder put(String url) throws URISyntaxException {
+		return new Builder().put(url);
+	}
 
-    public static Builder post(String url) throws URISyntaxException {
-        return new Builder().post(url);
-    }
+	public static Builder post(String url) throws URISyntaxException {
+		return new Builder().post(url);
+	}
 
-    public static Builder delete(String url) throws URISyntaxException {
-        return new Builder().delete(url);
-    }
+	public static Builder delete(String url) throws URISyntaxException {
+		return new Builder().delete(url);
+	}
 
-    public static Builder options(String url) throws URISyntaxException {
-        return new Builder().options(url);
-    }
+	public static Builder options(String url) throws URISyntaxException {
+		return new Builder().options(url);
+	}
 
-    public static class Builder {
+    public static Builder connect(String url) throws URISyntaxException {
+		return new Builder().connect(url);
+	}public static class Builder {
         private final Request req;
         private String fullURL;
 
-        public Builder() {
-            req = new Request();
-            req.setVersion("1.1");
-        }
+		public Builder() {
+			req = new Request();
+			req.setVersion("1.1");
+		}
 
-        public Request build() {
-            return req;
-        }
+		public Request build() {
+			return req;
+		}
 
-        public Exchange buildExchange() {
-            return buildExchange(null);
-        }
+		public Exchange buildExchange() {
+			return buildExchange(null);
+		}
 
-        public Exchange buildExchange(AbstractHttpHandler handler) {
-            Exchange exc = new Exchange(handler);
-            Request req = build();
-            exc.setRequest(req);
-            exc.getDestinations().add(fullURL);
-            exc.setOriginalRequestUri(req.getUri());
-            return exc;
-        }
+		public Exchange buildExchange(AbstractHttpHandler handler) {
+			Exchange exc = new Exchange(handler);
+			Request req = build();
+			exc.setRequest(req);
+			exc.getDestinations().add(fullURL);
+			exc.setOriginalRequestUri(req.getUri());
+			return exc;
+		}
 
-        public Builder method(String method) {
-            req.setMethod(method);
-            return this;
-        }
+		public Builder method(String method) {
+			req.setMethod(method);
+			return this;
+		}
 
-        public Builder url(URIFactory uriFactory, String url) throws URISyntaxException {
-            fullURL = url;
-            req.setUri(URLUtil.getPathQuery(uriFactory, url));
-            return this;
-        }
+		public Builder url(URIFactory uriFactory, String url) throws URISyntaxException {
+			fullURL = url;
+			req.setUri(URLUtil.getPathQuery(uriFactory, url));
+			return this;
+		}
 
-        public Builder authorization(String username, String password) {
-            req.getHeader().setAuthorization(username, password);
-            return this;
-        }
+		public Builder authorization(String username, String password) {
+			req.getHeader().setAuthorization(username,password);
+			return this;
+		}
 
-        public Builder header(String headerName, String headerValue) {
-            req.getHeader().add(headerName, headerValue);
-            return this;
-        }
+		public Builder header(String headerName, String headerValue) {
+			req.getHeader().add(headerName, headerValue);
+			return this;
+		}
 
-        public Builder contentType(String value) {
-            req.getHeader().add(CONTENT_TYPE, value);
-            return this;
-        }
+		public Builder contentType(String value) {
+			req.getHeader().add(CONTENT_TYPE, value);
+			return this;
+		}
 
-        public Builder header(Header headers) {
-            req.setHeader(headers);
-            return this;
-        }
+		public Builder header(Header headers) {
+			req.setHeader(headers);
+			return this;
+		}
 
         public Builder body(String body) {
-            req.setBodyContent(body.getBytes());
+            req.setBodyContent(body.getBytes(UTF_8));
             return this;
         }
 
-        public Builder body(InputStream is) {
-            req.setBody(new Body(is));
-            return this;
-        }
+		public Builder body(InputStream is) {
+			req.setBody(new Body(is));
+			return this;
+		}
 
-        public Builder body(byte[] body) {
-            req.setBodyContent(body);
-            return this;
-        }
+		public Builder body(byte[] body) {
+			req.setBodyContent(body);
+			return this;
+		}
 
-        public Builder body(long contentLength, InputStream body) {
-            req.body = new Body(body, contentLength);
-            Header header = req.getHeader();
-            header.removeFields(CONTENT_ENCODING);
-            header.removeFields(TRANSFER_ENCODING);
-            header.setContentLength(contentLength);
-            return this;
-        }
+		public Builder body(long contentLength, InputStream body) {
+			req.body = new Body(body, contentLength);
+			Header header = req.getHeader();
+			header.removeFields(CONTENT_ENCODING);
+			header.removeFields(TRANSFER_ENCODING);
+			header.setContentLength(contentLength);
+			return this;
+		}
 
         public Builder json(String body) {
-            req.setBodyContent(body.getBytes());
+            req.setBodyContent(body.getBytes(UTF_8));
             req.header.setContentType(APPLICATION_JSON);
             return this;
         }
 
-        public Builder post(URIFactory uriFactory, String url) throws URISyntaxException {
-            return method(Request.POST).url(uriFactory, url);
-        }
+		public Builder post(URIFactory uriFactory, String url) throws URISyntaxException {
+			return method(Request.METHOD_POST).url(uriFactory, url);
+		}
 
-        public Builder post(String url) throws URISyntaxException {
-            return post(new URIFactory(), url);
-        }
+		public Builder post(String url) throws URISyntaxException {
+			return post(new URIFactory(), url);
+		}
 
-        public Builder get(URIFactory uriFactory, String url) throws URISyntaxException {
-            return method(GET).url(uriFactory, url);
-        }
+		public Builder get(URIFactory uriFactory, String url) throws URISyntaxException {
+			return method(METHOD_GET).url(uriFactory, url);
+		}
 
-        /**
-         * Sets the request's method to "GET" and the URI to the parameter. Uses a standard {@link URIFactory}.
-         */
-        public Builder get(String url) throws URISyntaxException {
-            return get(new URIFactory(), url);
-        }
+		/**
+		 * Sets the request's method to "GET" and the URI to the parameter. Uses a standard {@link URIFactory}.
+		 */
+		public Builder get(String url) throws URISyntaxException {
+			return get(new URIFactory(), url);
+		}
+		
+		public Builder delete(URIFactory uriFactory, String url) throws URISyntaxException {
+			return method(Request.METHOD_DELETE).url(uriFactory, url);
+		}
 
-        public Builder delete(URIFactory uriFactory, String url) throws URISyntaxException {
-            return method(Request.DELETE).url(uriFactory, url);
-        }
+		public Builder delete(String url) throws URISyntaxException {
+			return delete(new URIFactory(), url);
+		}
+		
+		public Builder put(URIFactory uriFactory, String url) throws URISyntaxException {
+			return method(Request.METHOD_PUT).url(uriFactory, url);
+		}
 
-        public Builder delete(String url) throws URISyntaxException {
-            return delete(new URIFactory(), url);
-        }
+		public Builder put(String url) throws URISyntaxException {
+			return put(new URIFactory(), url);
+		}
 
-        public Builder put(URIFactory uriFactory, String url) throws URISyntaxException {
-            return method(Request.PUT).url(uriFactory, url);
-        }
+		public Builder options(String url) throws URISyntaxException {
+			return options(new URIFactory(), url);
+		}
 
-        public Builder put(String url) throws URISyntaxException {
-            return put(new URIFactory(), url);
-        }
+		public Builder connect(String url) throws URISyntaxException {
+			req.setMethod(METHOD_CONNECT);
+            req.setUri(new URIFactory().create(url).getAuthority());
+			return this;
+		}
 
-        public Builder options(String url) throws URISyntaxException {
-            return options(new URIFactory(), url);
-        }
-
-        public Builder options(URIFactory uriFactory, String url) throws URISyntaxException {
-            return method(Request.OPTIONS).url(uriFactory, url);
-        }
-    }
-
+		public Builder options(URIFactory uriFactory, String url) throws URISyntaxException {
+			return method(Request.METHOD_OPTIONS).url(uriFactory,url);
+		}
+	}
 }

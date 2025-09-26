@@ -49,4 +49,22 @@ public class CollectionsUtil {
     public static @NotNull String join(List<String> l) {
         return String.join(", ", l);
     }
+
+    public static @NotNull String join(Set<String> s) {
+        return join(new ArrayList<>(s));
+    }
+
+    /**
+     * @param it Iterator
+     * @return Number of items that Iterator provides
+     */
+    public static int count(Iterator<?> it) {
+        int cnt = 0;
+        while (it.hasNext()) {
+            it.next();
+            cnt++;
+        }
+        return cnt;
+    }
+
 }

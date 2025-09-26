@@ -2,9 +2,15 @@
 
 # 7.0.0
 
+- Remove WADLInterceptor
 - HttpClient
   - Change Signature: public Exchange call(Exchange exc) throws Exception
     =>  public void call(Exchange exc) throws Exception {
+- Remove HttpClientInterceptor.setAdjustHeader(boolean) it is already in HttpClientConfiguration
+- Remove xmlSessionIdExtractor if we have a replacement with language 
+- Remove HttpUtil.getHTMLErrorBody()
+- LogInterceptor:
+  - Remove: headerOnly
 
 # 6.5.0
 
@@ -34,14 +40,14 @@
 
 # 6.3.0
 
-- Describe RPM Setup
-- examples/routing-traffic/outgoing-api-gateway (TB)
-- Cook Book: outgoing-api-gateway (TB)
-- Template/Static Interceptor: Refactor (TB) 
-  - one protected method to overwrite for byte[] content
-  - Prettify logic only once
+- Convert to UTF-8 source and outputEncoding to UTF-8 (TB)
+- TemplateInterceptor Refactoring (TB)
 - Template/Static Interceptor: Pretty for text/* (Refactor first) (TB)
   - Pretty on text should trim whitespace incl. linebreaks at start and end
+- Refactor: Beautifier to use the Code from above
+- Describe RPM Setup (TP)
+- examples/routing-traffic/outgoing-api-gateway (TB)
+- Cook Book: outgoing-api-gateway (TB) done
 - READMEs in example folders listing the examples (TB)
 - Refactor HttpClient (TB)
 - Refactor: interceptor.session
@@ -53,6 +59,11 @@
   durch '<apiKeyFileStore .. />' ersetzen (dafür topLevel=true) BT
 
 # Discussion
+
+- Util function to sanitize HTTP Headers in Logs: Authorization, Proxy-Authorization, Cookie, Set-Cookie
+  Replace value with *****
+  - Use it in MessageTracer
+
 
 - <api> without port => Change from port 80 to matches all open ports
 - ProblemDetails: (TB)

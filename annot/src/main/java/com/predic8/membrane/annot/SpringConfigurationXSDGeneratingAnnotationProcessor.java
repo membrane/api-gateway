@@ -13,35 +13,21 @@
    limitations under the License. */
 package com.predic8.membrane.annot;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.lang.annotation.Annotation;
+import com.predic8.membrane.annot.generator.*;
+import com.predic8.membrane.annot.generator.kubernetes.*;
+import com.predic8.membrane.annot.model.*;
+
+import javax.annotation.processing.*;
+import javax.lang.model.*;
+import javax.lang.model.element.*;
+import javax.lang.model.type.*;
+import javax.tools.Diagnostic.*;
+import javax.tools.*;
+import java.io.*;
+import java.lang.annotation.*;
 import java.util.*;
 
-import javax.annotation.processing.AbstractProcessor;
-import javax.annotation.processing.RoundEnvironment;
-import javax.annotation.processing.SupportedAnnotationTypes;
-import javax.lang.model.SourceVersion;
-import javax.lang.model.element.*;
-import javax.lang.model.type.DeclaredType;
-import javax.lang.model.type.TypeMirror;
-import javax.tools.FileObject;
-import javax.tools.Diagnostic.Kind;
-
-import com.predic8.membrane.annot.generator.*;
-import com.predic8.membrane.annot.generator.kubernetes.KubernetesBootstrapper;
-import com.predic8.membrane.annot.model.AttributeInfo;
-import com.predic8.membrane.annot.model.ChildElementDeclarationInfo;
-import com.predic8.membrane.annot.model.ChildElementInfo;
-import com.predic8.membrane.annot.model.ElementInfo;
-import com.predic8.membrane.annot.model.MainInfo;
-import com.predic8.membrane.annot.model.Model;
-import com.predic8.membrane.annot.model.OtherAttributesInfo;
-import com.predic8.membrane.annot.model.TextContentInfo;
-
-import static javax.tools.StandardLocation.CLASS_OUTPUT;
+import static javax.tools.StandardLocation.*;
 
 /**
  * The annotation processor for the annotations defining Membrane's configuration language ({@link MCMain} and others).
@@ -193,7 +179,7 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
 			if (roundEnv.processingOver())
 				write();
 
-			if (annotations.size() > 0) { // a class with one of our annotation needs to be compiled
+			if (!annotations.isEmpty()) { // a class with one of our annotation needs to be compiled
 
 				status = "working with " + getCachedElementsAnnotatedWith(roundEnv, MCMain.class).size() + " and " + getCachedElementsAnnotatedWith(roundEnv, MCElement.class).size();
 				log(status);
@@ -318,11 +304,11 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
 				cei.setAnnotation(b);
 				cei.setE((ExecutableElement) e2);
 				List<? extends VariableElement> parameters = cei.getE().getParameters();
-				if (parameters.size() == 0)
+				if (parameters.isEmpty())
 					throw new ProcessingException("Setter must have exactly one parameter.", e2);
-				TypeMirror setterArgType = parameters.get(0).asType();
+				TypeMirror setterArgType = parameters.getFirst().asType();
 				if (!(setterArgType instanceof DeclaredType))
-					throw new ProcessingException("Setter argument must be of an @MCElement-annotated type.", parameters.get(0));
+					throw new ProcessingException("Setter argument must be of an @MCElement-annotated type.", parameters.getFirst());
 				cei.setTypeDeclaration((TypeElement) ((DeclaredType) setterArgType).asElement());
 				cei.setPropertyName(AnnotUtils.dejavaify(e2.getSimpleName().toString().substring(3)));
 				cei.setRequired(isRequired(e2));
@@ -331,7 +317,7 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
 				// unwrap "java.util.List<?>" and "java.util.Collection<?>"
 				if (cei.getTypeDeclaration().getQualifiedName().toString().startsWith("java.util.List") ||
 						cei.getTypeDeclaration().getQualifiedName().toString().startsWith("java.util.Collection")) {
-					cei.setTypeDeclaration((TypeElement) ((DeclaredType) ((DeclaredType) setterArgType).getTypeArguments().get(0)).asElement());
+					cei.setTypeDeclaration((TypeElement) ((DeclaredType) ((DeclaredType) setterArgType).getTypeArguments().getFirst()).asElement());
 					cei.setList(true);
 				}
 

@@ -29,6 +29,7 @@ import java.security.*;
 
 import static com.predic8.membrane.core.http.Response.badRequest;
 import static com.predic8.membrane.core.interceptor.oauth2.OAuth2AnswerParameters.createFrom;
+import static com.predic8.membrane.core.interceptor.oauth2.authorizationservice.FlowContext.applyToSession;
 import static com.predic8.membrane.core.interceptor.oauth2client.rf.StateManager.*;
 import static com.predic8.membrane.core.interceptor.oauth2client.temp.OAuth2Constants.*;
 
@@ -103,7 +104,7 @@ public class OAuth2CallbackRequestHandler {
 
             OAuth2TokenResponseBody tokenResponse = auth.codeTokenRequest(
                     publicUrlManager.getPublicURLAndReregister(exc) + callbackPath, params.getCode(),
-                    PKCEVerifier.getVerifier(stateFromUri, session));
+                    PKCEVerifier.getVerifier(stateFromUri, session), stateFromUri.getFlowContext());
 
             if (tokenResponse.getAccessToken() == null) {
                 if (!onlyRefreshToken)
@@ -121,6 +122,7 @@ public class OAuth2CallbackRequestHandler {
                     sessionAuthorizer.retrieveUserInfo(tokenResponse, createFrom(tokenResponse), session);
                 }
             }
+            applyToSession(stateFromUri.getFlowContext(), session);
 
             continueOriginalExchange(exc, originalRequest, session);
 
