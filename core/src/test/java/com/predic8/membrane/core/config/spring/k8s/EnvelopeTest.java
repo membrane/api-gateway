@@ -57,7 +57,7 @@ class EnvelopeTest {
         spec:
           port: 2000
           path:
-            value: /names
+            uri: /names
           interceptors:
             - rateLimiter:
                 requestLimit: 3
@@ -82,7 +82,7 @@ class EnvelopeTest {
         spec:
           port: 2000
           path:
-            value: /header
+            uri: /header
           interceptors:
             - request:
                 interceptors:
@@ -92,7 +92,7 @@ class EnvelopeTest {
                         CONTINUE
                   - template:
                       contentType: application/json
-                      textTemplate: '{ "ok": 1 }'
+                      src: '{ "ok": 1 }'
                   - return:
                       statusCode: 200
         ---
