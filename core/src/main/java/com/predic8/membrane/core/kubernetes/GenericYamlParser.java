@@ -111,7 +111,7 @@ public class GenericYamlParser {
         Method setter = childSetters.get(0);
         Class<?> paramType = setter.getParameterTypes()[0];
         if (!java.util.Collection.class.isAssignableFrom(paramType)) {
-            throw new RuntimeException("The single @MCChildElement setter in " + clazz.getName()
+            throw new RuntimeException("The single @MCChildElement setter in " + clazz.getName() +
                  " must accept a Collection/List when noEnvelope=true, but found: " + paramType.getName());
         }
         return setter;
