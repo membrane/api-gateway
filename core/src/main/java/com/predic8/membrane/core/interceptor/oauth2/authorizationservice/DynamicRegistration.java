@@ -113,7 +113,7 @@ public class DynamicRegistration {
     }
 
     @MCChildElement(order = 20)
-    public void getFlow(List<Interceptor> flow) {
+    public void setFlow(List<Interceptor> flow) {
         this.interceptors = flow;
     }
 
