@@ -93,9 +93,9 @@ class GenericYamlParserMembraneTest {
                         "path_value_parsed",
                         """
                         path:
-                          value: /names
+                          uri: /names
                         """,
-                        a -> assertEquals("/names", a.getPath().getValue())
+                        a -> assertEquals("/names", a.getPath().getUri())
                 ),
                 ok(
                         "interceptors_parsed",

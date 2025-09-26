@@ -57,7 +57,7 @@ class EnvelopeTest {
         spec:
           port: 2000
           path:
-            value: /names
+            uri: /names
           interceptors:
             - rateLimiter:
                 requestLimit: 3
@@ -81,18 +81,19 @@ class EnvelopeTest {
         spec:
           port: 2000
           path:
-            value: /header
+            uri: /header
           interceptors:
             - request:
-              - groovy:
-                  src: |
-                    println "Request headers:"
-                    CONTINUE
-              - template:
-                  contentType: application/json
-                  textTemplate: '{ "ok": 1 }'
-              - return:
-                  statusCode: 200
+                interceptors:
+                  - groovy:
+                      src: |
+                        println "Request headers:"
+                        CONTINUE
+                  - template:
+                      contentType: application/json
+                      src: '{ "ok": 1 }'
+                  - return:
+                      statusCode: 200
         ---
         apiVersion: membrane-soa.org/v1beta1
         kind: api
@@ -134,7 +135,7 @@ class EnvelopeTest {
         APIProxy a1 = (APIProxy) e1.getSpec();
         assertEquals("api-rewrite", e1.metadata.name);
         assertEquals(2000, a1.getPort());
-        assertEquals("/names", a1.getPath().getValue());
+        assertEquals("/names", a1.getPath().getUri());
         List<Interceptor> is1 = a1.getInterceptors();
         assertEquals(3, is1.size());
         assertInstanceOf(RateLimitInterceptor.class, is1.get(0));
@@ -149,7 +150,7 @@ class EnvelopeTest {
         Envelope e2 = docs.get(2);
         APIProxy a2 = (APIProxy) e2.getSpec();
         assertEquals("header", e2.metadata.name);
-        assertEquals("/header", a2.getPath().getValue());
+        assertEquals("/header", a2.getPath().getUri());
         assertEquals(1, a2.getInterceptors().size());
         assertInstanceOf(RequestInterceptor.class, a2.getInterceptors().getFirst());
         List<Interceptor> reqChain = ((RequestInterceptor) a2.getInterceptors().getFirst()).getInterceptors();

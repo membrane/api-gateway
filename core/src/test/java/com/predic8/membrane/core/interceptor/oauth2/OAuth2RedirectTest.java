@@ -154,7 +154,7 @@ public abstract class OAuth2RedirectTest {
                 new ResponseInterceptor() {{
                     setInterceptors(List.of(
                         new TemplateInterceptor() {{
-                            setTextTemplate(returnMessage);
+                            setSrc(returnMessage);
                         }}
                     ));
                 }}

@@ -108,7 +108,7 @@ public class ApisJsonInterceptor extends AbstractInterceptor {
                 ? apiRecord.getApi().getInfo().getDescription()
                 : ofNullable(api.getDescription()).map(ApiDescription::getContent).orElse("API"));
         apiJson.put("humanUrl", getProtocol(api) + getHost(api) + ((apiRecord != null) ? "/api-docs/ui/" + recordId : "/api-docs"));
-        apiJson.put("baseUrl", getProtocol(api) + getHost(api) + ofNullable(api.getPath()).map(Path::getValue).orElse("/"));
+        apiJson.put("baseUrl", getProtocol(api) + getHost(api) + ofNullable(api.getPath()).map(Path::getUri).orElse("/"));
         if (apiRecord != null)
             apiJson.put("version", apiRecord.getApi().getInfo().getVersion());
         return apiJson;

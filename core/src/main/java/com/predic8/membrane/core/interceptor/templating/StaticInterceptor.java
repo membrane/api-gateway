@@ -38,7 +38,7 @@ public class StaticInterceptor extends AbstractTemplateInterceptor {
 
     @Override
     protected byte[] getContent(Exchange exchange, Flow flow) {
-        return textTemplate.getBytes(UTF_8);
+        return src.getBytes(UTF_8);
     }
 
     @Override
