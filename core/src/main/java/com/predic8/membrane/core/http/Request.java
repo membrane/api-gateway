@@ -137,10 +137,6 @@ public class Request extends Message {
 
     /**
      * Reads the first line. According to RFC: leading empty lines are ignored
-     *
-     * @param in
-     * @return
-     * @throws IOException
      */
     private static @NotNull String readFirstLine(InputStream in) throws IOException {
         String firstLine;
