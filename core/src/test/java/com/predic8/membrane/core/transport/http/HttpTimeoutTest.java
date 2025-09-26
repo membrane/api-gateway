@@ -61,7 +61,7 @@ public class HttpTimeoutTest {
         slowBackend.setHotDeploy(false);
         ServiceProxy sp = new ServiceProxy(new ServiceProxyKey("*",
                 "*", ".*", 3022), "", -1);
-        sp.getInterceptors().add(new AbstractInterceptor(){
+        sp.getFlow().add(new AbstractInterceptor(){
             @Override
             public Outcome handleRequest(Exchange exc) {
                 try {

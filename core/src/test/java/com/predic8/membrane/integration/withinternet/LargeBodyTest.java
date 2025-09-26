@@ -46,7 +46,7 @@ public class LargeBodyTest {
         hcc.setMaxRetries(1);
 
         ServiceProxy proxy = new ServiceProxy(new ServiceProxyKey("localhost", "POST", ".*", 3040), "thomas-bayer.com", 80);
-        proxy.getInterceptors().add(new AbstractInterceptor() {
+        proxy.getFlow().add(new AbstractInterceptor() {
             @Override
             public Outcome handleRequest(Exchange exc) {
                 exc.setResponse(ok().body("").build());
@@ -61,7 +61,7 @@ public class LargeBodyTest {
         router.init();
 
         ServiceProxy proxy1 = new ServiceProxy(new ServiceProxyKey("localhost", "POST", ".*", 3041), "localhost", 3040);
-        proxy1.getInterceptors().add(new AbstractInterceptor() {
+        proxy1.getFlow().add(new AbstractInterceptor() {
             @Override
             public Outcome handleRequest(Exchange exc) {
                 middleExchange.set(exc);

@@ -84,7 +84,7 @@ public class RateLimitInterceptor extends AbstractExchangeExpressionInterceptor 
     public RateLimitInterceptor(Duration requestLimitDuration, int requestLimit) {
         strategy = new LazyRateLimit(requestLimitDuration, requestLimit);
         name = "rate limiter";
-        setFlow(REQUEST_FLOW);
+        setAppliedFlow(REQUEST_FLOW);
     }
 
     @Override

@@ -159,7 +159,7 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 				h2().text("Status Codes").end();
 				createStatusCodesTable(rule.getStatisticCollector().getStatisticsByStatusCodes());
 				h2().text("Interceptors").end();
-				createInterceptorTable(rule.getInterceptors());
+				createInterceptorTable(rule.getFlow());
 			}
 
 		}.createPage());
@@ -255,7 +255,7 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 				h2().text("Transport").end();
 
 				h3().text("Transport Interceptors").end();
-				createInterceptorTable(router.getTransport().getInterceptors());
+				createInterceptorTable(router.getTransport().getFlow());
 			}
 
 		}.createPage());

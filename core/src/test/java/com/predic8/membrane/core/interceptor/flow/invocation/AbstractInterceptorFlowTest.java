@@ -62,8 +62,8 @@ public abstract class AbstractInterceptorFlowTest {
 
     private static @NotNull APIProxy getApiProxy(Interceptor[] interceptors) {
         APIProxy api = getServiceProxy();
-        api.getInterceptors().addAll(Arrays.asList(interceptors));
-        api.getInterceptors().add(new EchoInterceptor());
+        api.getFlow().addAll(Arrays.asList(interceptors));
+        api.getFlow().add(new EchoInterceptor());
         return api;
     }
 

@@ -26,7 +26,7 @@ class OpenTelemetryInterceptorTest {
     @Test
     void initTest() throws Exception {
         Proxy r = new ServiceProxy(new ServiceProxyKey("localhost", "POST", ".*", 3141), null, 0);
-        r.getInterceptors().add(new OpenTelemetryInterceptor());
+        r.getFlow().add(new OpenTelemetryInterceptor());
 
         HttpRouter rtr = new HttpRouter();
         rtr.getRuleManager().addProxy(r, SPRING);
