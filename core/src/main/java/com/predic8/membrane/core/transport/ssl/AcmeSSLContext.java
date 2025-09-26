@@ -63,6 +63,8 @@ public class AcmeSSLContext extends SSLContext {
     }
 
     public static String[] computeHostList(String[] hostsWantedByRule, String hostsRequestedForCertificate) {
+        if (hostsWantedByRule.length == 1 && hostsWantedByRule[0].equals("*"))
+            log.warn("When using ACME, each rule should declare hostnames it accepts, e.g. <api host=\"...\"> . You can multiple hosts separated by spaces, and use \"*.example.com\" to accept all subdomains.");
         if (hostsRequestedForCertificate == null)
             return hostsWantedByRule;
         String[] cs = hostsRequestedForCertificate.split(" +");
