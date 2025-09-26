@@ -68,10 +68,9 @@ class EnvelopeTest {
                       from: ^/names/(.*)
                       to: /restnames/name\\.groovy\\?name=$1
             - response:
-                interceptors:
-                  - beautifier: {}
-                  - xml2Json: {}
-                  - log: {}
+              - beautifier: {}
+              - xml2Json: {}
+              - log: {}
           target:
             url: https://api.predic8.de
         ---
