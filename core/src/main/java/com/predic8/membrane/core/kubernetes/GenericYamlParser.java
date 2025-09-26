@@ -113,7 +113,7 @@ public class GenericYamlParser {
 
     @SuppressWarnings({"rawtypes", "unchecked"})
     private static Object resolveSetterValue(Class<?> wanted, Method setter, String context, Iterator<Event> events, BeanRegistry registry, String key, Class clazz2, Event event) {
-        if (wanted.equals(List.class) || wanted.equals(Enumeration.class)) {
+        if (wanted.equals(List.class) || wanted.equals(Collection.class)) {
             return parseListIncludingStartEvent(context, events, registry);
         }
         if (wanted.isEnum()) {
