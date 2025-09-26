@@ -74,7 +74,7 @@ public class JsonSchemaGenerator extends AbstractK8sGenerator {
                 SchemaObject envelope = new SchemaObject(elementInfo.getXSDTypeName(m).replaceFirst("Parser$", "Envelope"));
 
                 envelope.addAttribute("additionalProperties", false);
-                envelope.addAttribute("required", List.of("\"kind\"", "\"metadata\"", "\"spec\""));
+                envelope.addAttribute("required", List.of("\"spec\""));
                 envelope.addProperty(
                         new SchemaObject("apiVersion") {{
                             addAttribute("type", "string");
