@@ -108,7 +108,13 @@ public class GenericYamlParser {
         if (childSetters.size() > 1) {
             throw new RuntimeException("Multiple @MCChildElement setters found in " + clazz.getName() + ". Only one is allowed when noEnvelope=true.");
         }
-        return childSetters.get(0);
+        Method setter = childSetters.get(0);
+        Class<?> paramType = setter.getParameterTypes()[0];
+        if (!java.util.Collection.class.isAssignableFrom(paramType)) {
+            throw new RuntimeException("The single @MCChildElement setter in " + clazz.getName()
+                 " must accept a Collection/List when noEnvelope=true, but found: " + paramType.getName());
+        }
+        return setter;
     }
 
     @SuppressWarnings({"rawtypes", "unchecked"})
