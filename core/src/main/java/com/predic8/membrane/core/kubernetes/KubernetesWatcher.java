@@ -100,7 +100,7 @@ public class KubernetesWatcher {
     @SuppressWarnings("rawtypes")
     private void createWatcher(String namespace, String crd) {
         try {
-            watches.put(namespace + "/" + crd, client.watch("membrane-soa.org/v1beta1", crd, namespace, null, executors, new Watcher() {
+            watches.put(namespace + "/" + crd, client.watch("membrane-api.io/v1beta2", crd, namespace, null, executors, new Watcher() {
                 @Override
                 public void onEvent(WatchAction action, Map m) {
                     try {
