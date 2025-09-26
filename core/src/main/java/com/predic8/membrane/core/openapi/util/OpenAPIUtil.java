@@ -29,9 +29,9 @@ import java.util.*;
 
 import static com.predic8.membrane.core.openapi.serviceproxy.APIProxy.*;
 import static com.predic8.membrane.core.openapi.util.Utils.*;
-import static com.predic8.membrane.core.openapi.validators.JsonSchemaValidator.OBJECT;
-import static io.swagger.v3.oas.models.parameters.Parameter.StyleEnum.FORM;
-import static java.lang.Boolean.TRUE;
+import static com.predic8.membrane.core.openapi.validators.JsonSchemaValidator.*;
+import static io.swagger.v3.oas.models.parameters.Parameter.StyleEnum.*;
+import static java.lang.Boolean.*;
 
 public class OpenAPIUtil {
 
@@ -101,10 +101,9 @@ public class OpenAPIUtil {
         if (schema == null) {
             // OAS allows parameter.content with schema instead of parameter.schema. Resolving from content as fallback.
             if (p.getContent() != null && !p.getContent().isEmpty()) {
-                    var mt = p.getContent().values().iterator().next();
-                    schema = mt != null ? mt.getSchema() : null;
-                }
-            if (schema == null) return null;
+                var mt = p.getContent().values().iterator().next();
+                return mt != null ? mt.getSchema() : null;
+            }
             return null;
         }
         if (schema.get$ref() != null) {

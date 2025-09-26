@@ -108,7 +108,7 @@ class QueryParameterValidatorTest extends AbstractValidatorTest {
     void validateParameterAdditionalQueryParametersInvalid() {
         assertFalse(citiesValidator.validateAdditionalQueryParameters(
                 ctx,
-                new HashMap<>(Map.of("bar", new TextNode("2315124"))),
+                Map.of("bar", new TextNode("2315124")),
                 new OpenAPI().components(new Components() {{
                     addSecuritySchemes("schemaA", new SecurityScheme().type(APIKEY).name("api-key").in(QUERY));
                 }})
@@ -153,6 +153,7 @@ class QueryParameterValidatorTest extends AbstractValidatorTest {
                 assertEquals(1, err.size());
                 assertTrue(err.get(0).getMessage().contains("is not a number"));
                 assertTrue(err.get(0).getMessage().contains("wrong"));
+                assertEquals("/a", err.get(0).getContext().getJSONpointer());
             }
         }
 
@@ -194,6 +195,7 @@ class QueryParameterValidatorTest extends AbstractValidatorTest {
             void invalid() {
                 var err = citiesValidator.validate(ctx,
                         get().path("/cities?city=Bonn&city=Bielefeld&limit=10"), citiesPathItem.getGet());
+                System.out.println("err = " + err);
                 assertEquals(1, err.size());
                 assertTrue(err.get(0).getMessage().contains("enum"));
                 assertTrue(err.get(0).getMessage().contains("Bielefeld"));
@@ -229,7 +231,6 @@ class QueryParameterValidatorTest extends AbstractValidatorTest {
         void ignoreAdditionalFromObject() {
             var pi = validator.getApi().getPaths().get("/additional");
             var addValidator = new QueryParameterValidator(validator.getApi(), pi);
-            var ctx = new ValidationContext();
             var err = addValidator.validate(ctx, get().path("/additional?a=1&b=txt&additional=t"), pi.getGet());
             assertEquals(0, err.size());
         }

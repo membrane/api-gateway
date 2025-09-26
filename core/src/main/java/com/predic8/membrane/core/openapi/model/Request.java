@@ -24,11 +24,11 @@ import java.util.*;
 import static java.util.Collections.*;
 import static java.util.stream.Collectors.*;
 
-public class Request<T extends Body> extends Message<T,Request<T>> {
+public class Request<T extends Body> extends Message<T, Request<T>> {
 
     private final String method;
     private String path;
-    private Map<String,String> pathParameters;
+    private Map<String, String> pathParameters;
 
     private List<SecurityScheme> securitySchemes = emptyList();
 
@@ -49,7 +49,7 @@ public class Request<T extends Body> extends Message<T,Request<T>> {
     }
 
     public static <T extends Body> Request<T> get(String path) {
-        return new Request<>("GET",path);
+        return new Request<>("GET", path);
     }
 
     public static <T extends Body> Request<T> post() {
@@ -60,17 +60,18 @@ public class Request<T extends Body> extends Message<T,Request<T>> {
      * Use to simplify tests
      */
     public static <T extends Body> Request<T> post(String path) {
-        return new Request<>("POST",path);
+        return new Request<>("POST", path);
     }
 
     public static <T extends Body> Request<T> put() {
         return new Request<>("PUT");
     }
+
     /**
      * Use to simplify tests
      */
     public static <T extends Body> Request<T> put(String path) {
-        return new Request<>("PUT",path);
+        return new Request<>("PUT", path);
     }
 
     public static <T extends Body> Request<T> delete() {
@@ -81,7 +82,7 @@ public class Request<T extends Body> extends Message<T,Request<T>> {
      * Use to simplify tests
      */
     public static <T extends Body> Request<T> delete(String path) {
-        return new Request<>("DELETE",path);
+        return new Request<>("DELETE", path);
     }
 
     public static <T extends Body> Request<T> patch() {
@@ -136,7 +137,7 @@ public class Request<T extends Body> extends Message<T,Request<T>> {
     }
 
     public boolean hasScheme(SecurityScheme scheme) {
-       return securitySchemes.stream().anyMatch(s -> s.equals(scheme));
+        return securitySchemes.stream().anyMatch(s -> s.equals(scheme));
     }
 
     public void parsePathParameters(String uriTemplate) throws PathDoesNotMatchException {
