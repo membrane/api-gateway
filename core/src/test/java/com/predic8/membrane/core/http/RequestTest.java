@@ -21,6 +21,7 @@ import java.io.*;
 import java.net.*;
 
 import static com.predic8.membrane.core.Constants.*;
+import static com.predic8.membrane.core.http.MimeType.TEXT_XML;
 import static com.predic8.membrane.core.http.Request.*;
 import static com.predic8.membrane.core.util.StringTestUtil.*;
 import static com.predic8.membrane.test.TestUtil.*;
@@ -29,9 +30,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class RequestTest {
 
-	private static final Request reqPost = new Request();
-
-	private static final Request reqChunked = new Request();
+	private static final Request request = new Request();
 
 	private InputStream inPost;
 
@@ -118,57 +117,57 @@ public class RequestTest {
 
 	@Test
 	void readChunked() throws Exception {
-		reqChunked.read(inChunked, true);
-		assertNotNull(reqChunked.getBodyAsStream());
+		request.read(inChunked, true);
+		assertNotNull(request.getBodyAsStream());
 	}
 
 	@Test
 	void readPost() throws Exception {
-		reqPost.read(inPost, true);
-		assertEquals(METHOD_POST, reqPost.getMethod());
-		assertEquals("/operation/call", reqPost.getUri());
-		assertNotNull(reqPost.getBody());
+		request.read(inPost, true);
+		assertEquals(METHOD_POST, request.getMethod());
+		assertEquals("/operation/call", request.getUri());
+		assertNotNull(request.getBody());
 
-		assertEquals(168, reqPost.getBody().getLength());
+		assertEquals(168, request.getBody().getLength());
 	}
 
 	@Test
 	void writePost() throws Exception {
-		reqPost.read(inPost, true);
+		request.read(inPost, true);
 
 		tempOut = new ByteArrayOutputStream();
-		reqPost.write(tempOut, true);
+		request.write(tempOut, true);
 
 		tempIn = new ByteArrayInputStream(tempOut.toByteArray());
 
 		Request reqTemp = new Request();
 		reqTemp.read(tempIn, true);
 
-		assertEquals(reqPost.getUri(), reqTemp.getUri());
-		assertEquals(reqPost.getMethod(), reqTemp.getMethod());
+		assertEquals(request.getUri(), reqTemp.getUri());
+		assertEquals(request.getMethod(), reqTemp.getMethod());
 
-		assertArrayEquals(reqPost.getBody().getContent(), reqTemp.getBody().getContent());
-		assertArrayEquals(reqPost.getBody().getRaw(), reqTemp.getBody().getRaw());
+		assertArrayEquals(request.getBody().getContent(), reqTemp.getBody().getContent());
+		assertArrayEquals(request.getBody().getRaw(), reqTemp.getBody().getRaw());
 	}
 
 	@Test
 	void isHTTP11() {
-		assertTrue(reqPost.isHTTP11());
+		assertTrue(request.isHTTP11());
 	}
 
 	@Test
 	void isHTTP11Chunked() {
-		assertTrue(reqChunked.isHTTP11());
+		assertTrue(request.isHTTP11());
 	}
 
 	@Test
 	void isKeepAlive() {
-		assertTrue(reqPost.isKeepAlive());
+		assertTrue(request.isKeepAlive());
 	}
 
 	@Test
 	void isKeepAliveChunked() {
-		assertTrue(reqChunked.isKeepAlive());
+		assertTrue(request.isKeepAlive());
 	}
 
 	@Test
@@ -227,7 +226,7 @@ public class RequestTest {
 	@Test
 	void setBodyShouldReadTheOriginalBody() throws EndOfStreamException, IOException {
 		AbstractBody originalBody = readMessageAndGetBody();
-		reqPost.setBody(new Body("ABC".getBytes(UTF_8))); // Replace body with a different one
+		request.setBody(new Body("ABC".getBytes(UTF_8))); // Replace body with a different one
 		assertTrue(originalBody.isRead()); // Assert that the original body is read
 	}
 
@@ -276,7 +275,7 @@ public class RequestTest {
 	@Test
 	void setBodyContentShouldReadTheOriginalBody() throws EndOfStreamException, IOException {
 		AbstractBody originalBody = readMessageAndGetBody();
-		reqPost.setBodyContent("ABC".getBytes(UTF_8));
+		request.setBodyContent("ABC".getBytes(UTF_8));
 		assertTrue(originalBody.isRead()); // Assert that the original body is read
 		assertEquals(0,inPost.available()); // Check that all bytes are read from the stream
 	}
@@ -294,8 +293,8 @@ public class RequestTest {
 	}
 
 	private AbstractBody readMessageAndGetBody() throws IOException, EndOfStreamException {
-		reqPost.read(inPost, true);
-		assertFalse(reqPost.getBody().isRead());
-        return reqPost.getBody();
+		request.read(inPost, true);
+		assertFalse(request.getBody().isRead());
+        return request.getBody();
 	}
 }
