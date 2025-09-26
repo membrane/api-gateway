@@ -16,7 +16,11 @@ package com.predic8.membrane.core.openapi.validators.parameters;
 
 import java.io.*;
 
-public class ParameterParsingException extends Exception {
+/**
+  * Thrown when parsing an OpenAPI parameter value (style/explode/form; arrays/objects) fails.
+  * Intended for use by parameter parser implementations and validators.
+  */
+public class ParameterParsingException extends RuntimeException {
 
     @Serial
     private static final long serialVersionUID = 1L;

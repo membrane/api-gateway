@@ -16,7 +16,6 @@ package com.predic8.membrane.core.openapi.validators;
 import com.fasterxml.jackson.databind.node.*;
 import com.predic8.membrane.core.openapi.util.*;
 import io.swagger.v3.oas.models.*;
-import io.swagger.v3.oas.models.parameters.*;
 import io.swagger.v3.oas.models.security.*;
 import org.junit.jupiter.api.*;
 
@@ -72,15 +71,11 @@ class QueryParameterValidatorTest extends AbstractValidatorTest {
 
     @Test
     void getPathAndOperationParameters() {
-        var parameterSchemas = getParameterSchemas(citiesValidator);
+        var parameterSchemas = citiesValidator.getAllParameter(getGET("/cities"));
         assertEquals(8, parameterSchemas.size());
 
         // All Parameters must have a name. Referenced params do not have a name.
         assertFalse(parameterSchemas.stream().anyMatch(param -> param.getName() == null));
-    }
-
-    private List<Parameter> getParameterSchemas(QueryParameterValidator val) {
-        return val.getAllParameter(getGET("/cities"));
     }
 
     /**
