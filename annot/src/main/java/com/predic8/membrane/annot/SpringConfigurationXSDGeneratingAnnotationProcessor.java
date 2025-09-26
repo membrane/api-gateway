@@ -218,6 +218,8 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
 					if (uniquenessError != null)
 						throw new ProcessingException(uniquenessError, ii.getElement());
                     if (ii.getAnnotation().noEnvelope()) {
+                        if (ii.getAnnotation().topLevel())
+                            throw new ProcessingException("@MCElement(noEnvelope=true, topLevel=true) is invalid.", ii.getElement());
                         if (ii.getChildElementSpecs().size() != 1)
                             throw new ProcessingException("@MCElement(noEnvelope=true) requires exactly one @MCChildElement.", ii.getElement());
                         if (!ii.getChildElementSpecs().get(0).isList())
@@ -229,7 +231,7 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
                         if (ii.getTci() != null)
                             throw new ProcessingException("@MCElement(noEnvelope=true) requires @MCTextContent to be not present.", ii.getElement());
                     }
-					if (ii.getTci() != null && !ii.getAnnotation().mixed())
+                    if (ii.getTci() != null && !ii.getAnnotation().mixed())
 						throw new ProcessingException("@MCTextContent requires @MCElement(..., mixed=true) on the class.", ii.getElement());
 					if (ii.getTci() == null && ii.getAnnotation().mixed())
 						throw new ProcessingException("@MCElement(..., mixed=true) requires @MCTextContent on a property.", ii.getElement());
