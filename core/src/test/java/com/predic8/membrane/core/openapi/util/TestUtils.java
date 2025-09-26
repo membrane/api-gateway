@@ -63,9 +63,7 @@ public class TestUtils {
         return new OpenAPIParser().readLocation(file, null, parseOptions).getOpenAPI();
     }
 
-    public static InputStream getResourceAsStream(Object obj, String fileName) {
-        return obj.getClass().getResourceAsStream(fileName);
-    }
+
 
     public static APIProxy createProxy(Router router, OpenAPISpec spec) {
         APIProxy proxy = new APIProxy();
@@ -81,5 +79,13 @@ public class TestUtils {
 
     public static OpenAPIRecord getSingleOpenAPIRecord(Map<String,OpenAPIRecord> m) {
         return (OpenAPIRecord) m.values().toArray()[0];
+    }
+
+    public static OpenAPI getApi(Object obj, String pfad) {
+        return new OpenAPIParser().readContents(readInputStream(getResourceAsStream(obj,pfad)), null, null).getOpenAPI();
+    }
+
+    public static InputStream getResourceAsStream(Object obj, String fileName) {
+        return obj.getClass().getResourceAsStream(fileName);
     }
 }

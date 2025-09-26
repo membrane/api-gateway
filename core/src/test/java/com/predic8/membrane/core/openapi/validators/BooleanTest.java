@@ -52,6 +52,7 @@ protected String getOpenAPIFileName() {
     @Test
     public void validInQuery() {
         ValidationErrors errors = validator.validate(Request.get().path("/boolean?truth=true"));
+        System.out.println("errors = " + errors);
         assertEquals(0,errors.size());
     }
 

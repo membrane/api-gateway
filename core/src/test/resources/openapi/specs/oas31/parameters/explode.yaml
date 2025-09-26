@@ -1,0 +1,27 @@
+openapi: 3.1.0
+info:
+  title: Explode Test API
+  version: "1.0.0"
+
+# query param array (default 'exploded=true') ?a=b&a=c
+paths:
+  /search:
+    get:
+      parameters:
+        - name: filter
+          in: query
+          required: false
+          style: form
+          explode: false
+          schema:
+            type: string
+            nullable: true
+          description: |
+            Equivalent to allowEmptyValue: supports ?filter=
+        - name: a
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK

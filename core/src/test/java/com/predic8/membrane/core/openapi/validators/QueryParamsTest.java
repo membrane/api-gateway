@@ -16,11 +16,11 @@
 
 package com.predic8.membrane.core.openapi.validators;
 
-import com.predic8.membrane.core.openapi.model.Request;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
-import static com.predic8.membrane.core.openapi.validators.ValidationContext.ValidatedEntityType.QUERY_PARAMETER;
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static com.predic8.membrane.core.openapi.model.Request.*;
+import static com.predic8.membrane.core.openapi.validators.ValidationContext.ValidatedEntityType.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 
 public class QueryParamsTest extends AbstractValidatorTest {
@@ -31,14 +31,13 @@ protected String getOpenAPIFileName() {
     }
 
     @Test
-    public void differentTypesOk()  {
-        ValidationErrors errors = validator.validate(Request.get().path("/cities?limit=10"));
-        assertEquals(0,errors.size());
+    void differentTypesOk()  {
+        assertEquals(0, validator.validate(get().path("/cities?limit=10")).size());
     }
 
     @Test
-    public void invalidQueryParam()  {
-        ValidationErrors errors = validator.validate(Request.get().path("/cities?limit=200"));
+    void invalidQueryParam()  {
+        ValidationErrors errors = validator.validate(get().path("/cities?limit=200"));
 //        System.out.println("errors = " + errors);
         assertEquals(1,errors.size());
         ValidationError e = errors.get(0);
@@ -48,25 +47,28 @@ protected String getOpenAPIFileName() {
     }
 
     @Test
-    public void unknownQueryParam() {
-        ValidationErrors errors = validator.validate(Request.get().path("/cities?unknown=3&limit=10"));
-//        System.out.println("errors = " + errors);
+    void unknownQueryParam() {
+        ValidationErrors errors = validator.validate(get().path("/cities?unknown=3&limit=10"));
+        System.out.println("errors = " + errors);
         assertEquals(1,errors.size());
         ValidationError e = errors.get(0);
         assertEquals("REQUEST/QUERY_PARAMETER", e.getContext().getLocationForRequest());
+        assertTrue(e.getMessage().contains("parameter 'unknown' is invalid"));
     }
 
     @Test
-    public void missingRequiredParam() {
-        ValidationErrors errors = validator.validate(Request.get().path("/cities"));
-//        System.out.println("errors = " + errors);
-        assertEquals(1,errors.size());
+    void missingRequiredParam() {
+        ValidationErrors err = validator.validate(get().path("/cities"));
+        assertEquals(1,err.size());
+        ValidationError e = err.get(0);
+        assertEquals(400, e.getContext().getStatusCode());
+        assertTrue(e.getMessage().contains("'limit' missing."));
     }
 
 
     @Test
-    public void queryParamAtPathLevel()  {
-        ValidationErrors errors = validator.validate(Request.get().path("/cities?foo=-1&limit=10"));
+    void queryParamAtPathLevel()  {
+        ValidationErrors errors = validator.validate(get().path("/cities?foo=-1&limit=10"));
 //        System.out.println("errors = " + errors);
         assertEquals(1,errors.size());
         ValidationError e = errors.get(0);
@@ -78,8 +80,8 @@ protected String getOpenAPIFileName() {
     }
 
     @Test
-    public void escapedTest() {
-        ValidationErrors errors = validator.validate(Request.get().path("/cities?name=Bad%20Godesberg&limit=10"));
+    void escapedTest() {
+        ValidationErrors errors = validator.validate(get().path("/cities?name=Bad%20Godesberg&limit=10"));
 //        System.out.println("errors = " + errors);
         assertEquals(1,errors.size());
         ValidationError e = errors.get(0);
@@ -87,22 +89,22 @@ protected String getOpenAPIFileName() {
     }
 
     @Test
-    public void utf8Test() {
-        ValidationErrors errors = validator.validate(Request.get().path("/cities?name=K%C3%B6%C3%B6%C3%B6ln&limit=10"));
+    void utf8Test() {
+        ValidationErrors errors = validator.validate(get().path("/cities?name=K%C3%B6%C3%B6%C3%B6ln&limit=10"));
 //        System.out.println("errors = " + errors);
         assertEquals(0,errors.size());
     }
 
     @Test
-    public void referencedParamTest() {
-        ValidationErrors errors = validator.validate(Request.get().path("/cities?limit=1&page=10"));
+    void referencedParamTest() {
+        ValidationErrors errors = validator.validate(get().path("/cities?limit=1&page=10"));
 //        System.out.println("errors = " + errors);
         assertEquals(0,errors.size());
     }
 
     @Test
     public void referencedParamValueTest()  {
-        ValidationErrors errors = validator.validate(Request.get().path("/cities?limit=1&page=-1"));
+        ValidationErrors errors = validator.validate(get().path("/cities?limit=1&page=-1"));
 //        System.out.println("errors = " + errors);
         assertEquals(1,errors.size());
         ValidationError e = errors.get(0);
@@ -111,7 +113,4 @@ protected String getOpenAPIFileName() {
         assertEquals("REQUEST/QUERY_PARAMETER/page", e.getContext().getLocationForRequest());
         assertEquals(400,e.getContext().getStatusCode());
     }
-
-
-
 }

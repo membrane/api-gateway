@@ -13,6 +13,7 @@
    limitations under the License. */
 package com.predic8.membrane.core.openapi.validators;
 
+import com.fasterxml.jackson.databind.node.*;
 import io.swagger.v3.oas.models.*;
 import io.swagger.v3.oas.models.parameters.*;
 import io.swagger.v3.oas.models.security.*;
@@ -20,23 +21,28 @@ import org.junit.jupiter.api.*;
 
 import java.util.*;
 
+import static com.predic8.membrane.core.openapi.util.OpenAPIUtil.*;
+import static com.predic8.membrane.core.openapi.util.TestUtils.*;
+import static com.predic8.membrane.core.openapi.validators.QueryParameterValidator.*;
 import static io.swagger.v3.oas.models.security.SecurityScheme.In.*;
 import static io.swagger.v3.oas.models.security.SecurityScheme.Type.*;
 import static org.junit.jupiter.api.Assertions.*;
 
-class QueryParameterValidatorTest extends AbstractValidatorTest{
+class QueryParameterValidatorTest extends AbstractValidatorTest {
+
+    private static final JsonNodeFactory fac = JsonNodeFactory.instance;
 
     QueryParameterValidator queryParameterValidator;
 
     @Override
-   protected String getOpenAPIFileName() {
+    protected String getOpenAPIFileName() {
         return "/openapi/specs/query-params.yml";
     }
 
     @BeforeEach
     public void setUp() throws Exception {
         super.setUp();
-        queryParameterValidator = new QueryParameterValidator(validator.getApi(),validator.getApi().getPaths().get("/cities"));
+        queryParameterValidator = new QueryParameterValidator(validator.getApi(), validator.getApi().getPaths().get("/cities"));
     }
 
     @Test
@@ -44,7 +50,7 @@ class QueryParameterValidatorTest extends AbstractValidatorTest{
 
         List<Parameter> parameterSchemas = getParameterSchemas(queryParameterValidator);
 
-        assertEquals(6,parameterSchemas.size());
+        assertEquals(6, parameterSchemas.size());
 
         // All Parameters must have a name. Referenced params do not have a name.
         assertFalse(parameterSchemas.stream().anyMatch(param -> param.getName() == null));
@@ -70,10 +76,12 @@ class QueryParameterValidatorTest extends AbstractValidatorTest{
     }
 
     @Test
-    void testValidateAdditionalQueryParametersValid() {
+    void validateAdditionalQueryParametersValid() {
         assertTrue(queryParameterValidator.validateAdditionalQueryParameters(
                 new ValidationContext(),
-                new HashMap<>(){{put("api-key", "234523");}},
+                new HashMap<>() {{
+                    put("api-key", new TextNode("234523"));
+                }},
                 new OpenAPI().components(new Components() {{
                     addSecuritySchemes("schemaA", new SecurityScheme().type(APIKEY).name("api-key").in(QUERY));
                 }})
@@ -85,7 +93,9 @@ class QueryParameterValidatorTest extends AbstractValidatorTest{
 
         assertFalse(queryParameterValidator.validateAdditionalQueryParameters(
                 new ValidationContext(),
-                new HashMap<>(){{put("bar", "2315124");}},
+                new HashMap<>() {{
+                    put("bar", new TextNode("2315124"));
+                }},
                 new OpenAPI().components(new Components() {{
                     addSecuritySchemes("schemaA", new SecurityScheme().type(APIKEY).name("api-key").in(QUERY));
                 }})
@@ -100,5 +110,33 @@ class QueryParameterValidatorTest extends AbstractValidatorTest{
         }});
 
         assertEquals(List.of("api-key", "x-api-key"), queryParameterValidator.securitySchemeApiKeyQueryParamNames(spec));
+    }
+
+    @Nested
+    class UtilMethods {
+        @Test
+        void get_QueryParameters() {
+            PathItem pathItem = getPathItem("/array");
+            var qp = getQueryParameters(pathItem,pathItem.getGet());
+            assertEquals(3, qp.size());
+            assertTrue(qp.stream().allMatch(p -> p instanceof QueryParameter));
+        }
+
+        @Test
+        void get_QueryParameter_WithName() {
+            PathItem pathItem = getPathItem("/array");
+            assertEquals("String param", QueryParameterValidator.getQueryParameter(pathItem, pathItem.getGet(), "string").getDescription());
+        }
+
+        private PathItem getPathItem(String path) {
+            return getPath(getApi(this, "/openapi/specs/oas31/parameters/simple.yaml"), path);
+        }
+
+        @Test
+        void get_Required_QueryParameters() {
+            PathItem pathItem = getPathItem("/required");
+            var rq = getRequiredQueryParameters(pathItem, pathItem.getGet());
+            assertEquals(2, rq.size());
+        }
     }
 }
