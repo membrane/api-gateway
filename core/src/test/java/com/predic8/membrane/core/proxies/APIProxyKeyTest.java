@@ -93,7 +93,7 @@ public class APIProxyKeyTest {
             }});
             if (path != null) {
                 Path p = new Path();
-                p.setValue(path);
+                p.setUri(path);
                 p.setRegExp(false);
                 setPath(p);
             }

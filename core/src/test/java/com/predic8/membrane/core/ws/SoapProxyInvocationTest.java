@@ -105,7 +105,7 @@ public class SoapProxyInvocationTest {
     private static @NotNull APIProxy createAServiceProxy() {
         APIProxy aServiceAPI = new APIProxy();
         Path p2 = new Path();
-        p2.setValue("/services/a");
+        p2.setUri("/services/a");
         aServiceAPI.setPath(p2 );
         aServiceAPI.setPort(2001);
         aServiceAPI.getInterceptors().add(new ResponseInterceptor() {{

@@ -57,7 +57,7 @@ public class SpELExchangeEvaluationContextTest {
     private static @NotNull APIProxy getApiProxy() {
         APIProxy ap = new APIProxy();
         Path p = new Path();
-        p.setValue("/products/{category}");
+        p.setUri("/products/{category}");
         ap.setPath(p);
         return ap;
     }

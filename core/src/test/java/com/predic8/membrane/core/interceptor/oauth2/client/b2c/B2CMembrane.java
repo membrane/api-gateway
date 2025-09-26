@@ -166,7 +166,7 @@ public class B2CMembrane {
     private ServiceProxy createFlowInitiatorServiceProxy(String path, String triggerFlow, boolean logoutBeforeFlow) {
         ServiceProxy sp = new ServiceProxy(new ServiceProxyKey(tc.clientPort), null, 99999);
         Path p = new Path();
-        p.setValue(path);
+        p.setUri(path);
         sp.setPath(p);
 
         var flowInitiator = new FlowInitiator();
@@ -187,7 +187,7 @@ public class B2CMembrane {
     private ServiceProxy createAfterLogoutServiceProxy() {
         ServiceProxy sp = new ServiceProxy(new ServiceProxyKey(tc.clientPort), null, 99999);
         Path p = new Path();
-        p.setValue("/after-logout");
+        p.setUri("/after-logout");
         sp.setPath(p);
 
         sp.getInterceptors().add(new AbstractInterceptor() {
@@ -246,7 +246,7 @@ public class B2CMembrane {
         ServiceProxy sp = new ServiceProxy(new ServiceProxyKey(tc.clientPort), null, 99999);
 
         Path path2 = new Path();
-        path2.setValue(path);
+        path2.setUri(path);
         sp.setPath(path2);
 
         var requireAuth = new RequireAuth();

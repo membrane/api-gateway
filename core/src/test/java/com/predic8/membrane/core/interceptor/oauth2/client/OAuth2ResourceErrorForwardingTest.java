@@ -242,7 +242,7 @@ public class OAuth2ResourceErrorForwardingTest {
 
         ServiceProxy sp = new ServiceProxy(new ServiceProxyKey(clientPort), null, 99999);
         Path path = new Path();
-        path.setValue("/error");
+        path.setUri("/error");
         sp.setPath(path);
 
 
