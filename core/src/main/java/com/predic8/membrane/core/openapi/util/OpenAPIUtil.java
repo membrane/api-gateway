@@ -28,11 +28,11 @@ import org.slf4j.*;
 import java.io.*;
 import java.util.*;
 
+import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.openapi.serviceproxy.APIProxy.*;
 import static com.predic8.membrane.core.openapi.util.Utils.*;
 import static com.predic8.membrane.core.openapi.validators.JsonSchemaValidator.*;
 import static io.swagger.v3.oas.models.parameters.Parameter.StyleEnum.*;
-import static org.springframework.http.MediaType.*;
 
 public class OpenAPIUtil {
 
@@ -95,7 +95,7 @@ public class OpenAPIUtil {
 
     public static Schema<?> getProperty(Schema<?> schema, String propertyName) {
         if (schema == null || schema.getProperties() == null) return null;
-        return (Schema<?>) schema.getProperties().get(propertyName);
+        return schema.getProperties().get(propertyName);
     }
 
     public static Schema<?> resolveSchema(OpenAPI api, Parameter p) {
