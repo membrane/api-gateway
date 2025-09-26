@@ -84,7 +84,7 @@ public abstract class AbstractServiceProxy extends SSLableProxy {
         k.setUsePathPattern(path != null);
         if (path != null) {
             k.setPathRegExp(path.isRegExp());
-            k.setPath(path.getValue());
+            k.setPath(path.getUri());
         }
     }
 

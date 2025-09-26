@@ -106,7 +106,7 @@ class ElasticSearchExchangeStoreTest {
         back.setHotDeploy(false);
         ServiceProxy sp = new ServiceProxy(new ServiceProxyKey(3065), null, 0);
         StaticInterceptor si = new StaticInterceptor();
-        si.setTextTemplate(RESPONSE_BODY);
+        si.setSrc(RESPONSE_BODY);
         sp.getInterceptors().add(si);
         ReturnInterceptor ri = new ReturnInterceptor();
         ri.setStatusCode(200);

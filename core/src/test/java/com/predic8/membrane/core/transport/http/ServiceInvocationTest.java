@@ -71,7 +71,7 @@ public class ServiceInvocationTest {
 	private ServiceProxy createEndpointRule() {
 		ServiceProxy rule = new ServiceProxy(new ServiceProxyKey("localhost","*", "*", 4000), "localhost", 80);
 		rule.getInterceptors().add(new StaticInterceptor() {{
-			setTextTemplate("Pong");
+			setSrc("Pong");
 		}});
 		rule.getInterceptors().add(new ReturnInterceptor());
 		return rule;

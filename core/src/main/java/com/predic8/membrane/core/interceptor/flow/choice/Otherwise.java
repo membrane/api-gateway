@@ -15,5 +15,5 @@ package com.predic8.membrane.core.interceptor.flow.choice;
 
 import com.predic8.membrane.annot.MCElement;
 
-@MCElement(name = "otherwise", topLevel = false)
+@MCElement(name = "otherwise", topLevel = false, noEnvelope = true)
 public class Otherwise extends InterceptorContainer {}

@@ -32,8 +32,6 @@ import org.jose4j.lang.*;
 
 import java.io.*;
 import java.math.*;
-import java.net.URLEncoder;
-import java.nio.charset.*;
 import java.security.*;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -108,7 +106,7 @@ public class MockAuthorizationServer {
         ServiceProxy sp = new ServiceProxy(new ServiceProxyKey(port), null, 99999);
 
         Path path = new Path();
-        path.setValue("/" + tc.tenantId + "/" + flowId + "/");
+        path.setUri("/" + tc.tenantId + "/" + flowId + "/");
         sp.setPath(path);
 
         WellknownFile wkf = createWellKnown(flowId);

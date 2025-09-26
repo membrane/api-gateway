@@ -2,7 +2,7 @@
 
 This is information for Membrane developers.
 
-Membrane API Gateway's configuration can be written in XML or (experimentally) in YAML.
+Membrane API Gateway's configuration can be written in XML or in YAML.
 
 Everything that is configurable is driven by Java Code annotations from the `annot` submodule. `annot` defines 7 annotations. Here, we document the most common ones.
 

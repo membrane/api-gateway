@@ -105,7 +105,7 @@ public class SoapProxyInvocationTest {
     private static @NotNull APIProxy createAServiceProxy() {
         APIProxy aServiceAPI = new APIProxy();
         Path p2 = new Path();
-        p2.setValue("/services/a");
+        p2.setUri("/services/a");
         aServiceAPI.setPath(p2 );
         aServiceAPI.setPort(2001);
         aServiceAPI.getInterceptors().add(new ResponseInterceptor() {{
@@ -116,7 +116,7 @@ public class SoapProxyInvocationTest {
         }});
         aServiceAPI.getInterceptors().add(new ResponseInterceptor() {{
             setInterceptors(List.of(new TemplateInterceptor() {{
-                setTextTemplate("""
+                setSrc("""
                 <s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/" xmlns:cs="https://predic8.de/cities">
                     <s:Body>
                         <ns:aResponse xmlns:ns="https://predic8.de/">Panama</ns:aResponse>

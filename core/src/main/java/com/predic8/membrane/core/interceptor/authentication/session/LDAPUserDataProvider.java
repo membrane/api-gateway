@@ -110,7 +110,7 @@ public class LDAPUserDataProvider implements UserDataProvider {
 	AttributeMap map;
 	SSLParser sslParser;
 
-	@MCElement(name="map", topLevel=false, id="ldapUserDataProvider-map")
+	@MCElement(name="map", topLevel=false, id="ldapUserDataProvider-map", noEnvelope = true)
 	public static class AttributeMap {
 
 		@MCElement(name="attribute", topLevel=false)

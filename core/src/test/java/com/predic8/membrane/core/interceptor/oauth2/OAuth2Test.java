@@ -73,7 +73,7 @@ class OAuth2Test {
 
         jwtAuthProxy.setInterceptors(List.of(
                 jwtAuthInterceptor,
-                new StaticInterceptor(){{setTextTemplate("{\"success\": \"true\"}");}},
+                new StaticInterceptor(){{setSrc("{\"success\": \"true\"}");}},
                 new ReturnInterceptor()));
 
         router2.getRuleManager().addProxyAndOpenPortIfNew(jwtAuthProxy);
