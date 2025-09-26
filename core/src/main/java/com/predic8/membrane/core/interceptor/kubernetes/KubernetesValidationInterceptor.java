@@ -123,7 +123,7 @@ import static com.predic8.membrane.core.interceptor.Outcome.*;
  * Once this setup is complete, you can enable serviceProxies like this:
  * </p>
  * <code>
- * apiVersion: membrane-soa.org/v1beta1
+ * apiVersion: membrane-api.io/v1beta2
  * kind: serviceproxy
  * metadata:
  * name: demo

@@ -65,6 +65,16 @@ public class BuiltInFunctions {
         }
     }
 
+    public static long getDefaultSessionLifetime(String beanName, SpELExchangeEvaluationContext ctx) {
+        try {
+            return ((AbstractInterceptorWithSession) requireNonNull(ctx.getExchange().getHandler().getTransport().getRouter().getBeanFactory()).getBean(beanName))
+                    .getSessionManager().getExpiresAfterSeconds();
+        } catch (Exception e) {
+            log.info("Failed to resolve bean with name '{}'", beanName);
+            return -1;
+        }
+    }
+
     public static boolean isBearerAuthorization(SpELExchangeEvaluationContext ctx) {
         return ctx.getExchange().getRequest().getHeader().contains(AUTHORIZATION)
                 && ctx.getExchange().getRequest().getHeader().getFirstValue(AUTHORIZATION).startsWith("Bearer");
