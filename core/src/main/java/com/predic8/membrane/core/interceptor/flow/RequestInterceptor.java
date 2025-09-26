@@ -28,7 +28,7 @@ import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
  * &lt;request&gt; Element you can limit their application to requests only.
  * @topic 1. Proxies and Flow
  */
-@MCElement(name = "request", topLevel = false)
+@MCElement(name = "request", topLevel = false, noEnvelope = true)
 public class RequestInterceptor extends AbstractFlowWithChildrenInterceptor {
 
     private static final Logger log = LoggerFactory.getLogger(RequestInterceptor.class);

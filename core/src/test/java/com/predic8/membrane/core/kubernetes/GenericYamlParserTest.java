@@ -105,8 +105,7 @@ class GenericYamlParserMembraneTest {
                               requestLimit: 3
                           - rewriter:
                               mappings: []
-                          - response:
-                              interceptors: []
+                          - response: []
                         """,
                         a -> assertAll(
                                 () -> assertEquals(3, a.getInterceptors().size()),
@@ -148,10 +147,9 @@ class GenericYamlParserMembraneTest {
                         """
                         interceptors:
                           - response:
-                              interceptors:
-                                - beautifier: {}
-                                - xml2Json: {}
-                                - log: {}
+                            - beautifier: {}
+                            - xml2Json: {}
+                            - log: {}
                         """,
                         a -> assertAll(
                                 () -> assertEquals(3, ((ResponseInterceptor) a.getInterceptors().getFirst()).getInterceptors().size()),

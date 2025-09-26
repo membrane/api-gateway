@@ -68,10 +68,9 @@ class EnvelopeTest {
                       from: ^/names/(.*)
                       to: /restnames/name\\.groovy\\?name=$1
             - response:
-                interceptors:
-                  - beautifier: {}
-                  - xml2Json: {}
-                  - log: {}
+              - beautifier: {}
+              - xml2Json: {}
+              - log: {}
           target:
             url: https://api.predic8.de
         ---
@@ -85,16 +84,15 @@ class EnvelopeTest {
             value: /header
           interceptors:
             - request:
-                interceptors:
-                  - groovy:
-                      src: |
-                        println "Request headers:"
-                        CONTINUE
-                  - template:
-                      contentType: application/json
-                      textTemplate: '{ "ok": 1 }'
-                  - return:
-                      statusCode: 200
+              - groovy:
+                  src: |
+                    println "Request headers:"
+                    CONTINUE
+              - template:
+                  contentType: application/json
+                  textTemplate: '{ "ok": 1 }'
+              - return:
+                  statusCode: 200
         ---
         apiVersion: membrane-soa.org/v1beta1
         kind: api

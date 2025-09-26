@@ -63,7 +63,7 @@ public class JsonSchemaGenerator extends AbstractK8sGenerator {
             }
 
             SchemaObject parser = new SchemaObject(elementInfo.getXSDTypeName(m));
-            parser.addAttribute("type", "object");
+            parser.addAttribute("type", elementInfo.getAnnotation().noEnvelope() ? "array" : "object");
             parser.addAttribute("additionalProperties", elementInfo.getOai() != null);
             parser.addAttribute("description", getDescriptionAsText(elementInfo));
             parser.addAttribute("x-intellij-html-description", getDescriptionAsHtml(elementInfo));
@@ -201,15 +201,19 @@ public class JsonSchemaGenerator extends AbstractK8sGenerator {
                 items.addAttribute("type", "object");
                 items.addAttribute("additionalProperties", cei.getAnnotation().allowForeign());
 
-                SchemaObject sop = new SchemaObject(cei.getPropertyName());
-                sop.setRequired(cei.isRequired());
-                sop.addAttribute("description", getDescriptionAsText(cei));
-                sop.addAttribute("x-intellij-html-description", getDescriptionAsHtml(cei));
-                sop.addAttribute("type", "array");
-                sop.addAttribute("additionalItems", false);
-                sop.addAttribute("items", items);
+                if (i.getAnnotation().noEnvelope()) {
+                    so.addAttribute("items", items);
+                } else {
+                    SchemaObject sop = new SchemaObject(cei.getPropertyName());
+                    sop.setRequired(cei.isRequired());
+                    sop.addAttribute("description", getDescriptionAsText(cei));
+                    sop.addAttribute("x-intellij-html-description", getDescriptionAsHtml(cei));
+                    sop.addAttribute("type", "array");
+                    sop.addAttribute("additionalItems", false);
+                    sop.addAttribute("items", items);
 
-                so.addProperty(sop);
+                    so.addProperty(sop);
+                }
 
                 parent2 = items;
             } else {
