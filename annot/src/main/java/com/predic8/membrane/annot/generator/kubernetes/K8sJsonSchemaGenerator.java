@@ -156,7 +156,8 @@ public class K8sJsonSchemaGenerator extends AbstractK8sGenerator {
 
             for (ElementInfo ei : main.getChildElementDeclarations().get(cei.getTypeDeclaration()).getElementInfo()) {
                 SchemaObject sop = new SchemaObject(ei.getAnnotation().name());
-                sop.setRequired(cei.isRequired());
+                //sop.setRequired(cei.isRequired());
+                // TODO only one is required, not all
                 sop.addAttribute("$ref", "#/definitions/" + ei.getXSDTypeName(m));
                 parent2.addProperty(sop);
             }
