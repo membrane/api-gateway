@@ -100,7 +100,7 @@ class GenericYamlParserMembraneTest {
                 ok(
                         "interceptors_parsed",
                         """
-                        interceptors:
+                        flow:
                           - rateLimiter:
                               requestLimit: 3
                           - rewriter:
@@ -117,7 +117,7 @@ class GenericYamlParserMembraneTest {
                 ok(
                         "rateLimiter_requestLimit_parsed",
                         """
-                        interceptors:
+                        flow:
                           - rateLimiter:
                               requestLimit: 3
                               requestLimitDuration: PT30S
@@ -130,7 +130,7 @@ class GenericYamlParserMembraneTest {
                 ok(
                         "rewriter_mapping",
                         """
-                        interceptors:
+                        flow:
                           - rewriter:
                               mappings:
                                 - map:
@@ -145,7 +145,7 @@ class GenericYamlParserMembraneTest {
                 ok(
                         "response_interceptors_parsed",
                         """
-                        interceptors:
+                        flow:
                           - response:
                             - beautifier: {}
                             - xml2Json: {}
@@ -161,7 +161,7 @@ class GenericYamlParserMembraneTest {
                 ok(
                         "balancer_sessionTimeout_parsed",
                         """
-                        interceptors:
+                        flow:
                           - balancer:
                               sessionTimeout: 10000
                         """,
@@ -173,7 +173,7 @@ class GenericYamlParserMembraneTest {
                 ok(
                         "setCookies_cookie_fields",
                         """
-                        interceptors:
+                        flow:
                           - setCookies:
                               cookies:
                                 - cookie:
@@ -192,7 +192,7 @@ class GenericYamlParserMembraneTest {
                 ok(
                         "basicAuth_user_attributes_map",
                         """
-                        interceptors:
+                        flow:
                           - basicAuthentication:
                               staticUserDataProvider:
                                 users:
@@ -212,7 +212,7 @@ class GenericYamlParserMembraneTest {
                 ok(
                         "oauth2_memcached_ref_injected",
                         """
-                        interceptors:
+                        flow:
                           - oauth2Resource2:
                               memcachedOriginalExchangeStore:
                                 connector: mem
@@ -240,7 +240,7 @@ class GenericYamlParserMembraneTest {
                 ok(
                         "ref_interceptor_response",
                         """
-                        interceptors:
+                        flow:
                           - $ref: response
                         """,
                         responseReg,

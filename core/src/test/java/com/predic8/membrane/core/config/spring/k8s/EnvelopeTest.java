@@ -58,7 +58,7 @@ class EnvelopeTest {
           port: 2000
           path:
             uri: /names
-          interceptors:
+          flow:
             - rateLimiter:
                 requestLimit: 3
                 requestLimitDuration: PT30S
@@ -82,18 +82,17 @@ class EnvelopeTest {
           port: 2000
           path:
             uri: /header
-          interceptors:
+          flow:
             - request:
-                interceptors:
-                  - groovy:
-                      src: |
-                        println "Request headers:"
-                        CONTINUE
-                  - template:
-                      contentType: application/json
-                      src: '{ "ok": 1 }'
-                  - return:
-                      statusCode: 200
+              - groovy:
+                  src: |
+                    println "Request headers:"
+                    CONTINUE
+              - template:
+                  contentType: application/json
+                  src: '{ "ok": 1 }'
+              - return:
+                  statusCode: 200
         ---
         apiVersion: membrane-soa.org/v1beta1
         kind: api
@@ -110,7 +109,7 @@ class EnvelopeTest {
           name: admin
         spec:
           port: 9000
-          interceptors:
+          flow:
             - adminConsole: {}
         """;
 
