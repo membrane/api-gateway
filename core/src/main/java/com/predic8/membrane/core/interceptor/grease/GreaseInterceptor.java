@@ -38,7 +38,7 @@ public class GreaseInterceptor extends AbstractInterceptor {
 
     public GreaseInterceptor() {
         name = "grease";
-        setFlow(of(REQUEST, RESPONSE));
+        setAppliedFlow(of(REQUEST, RESPONSE));
     }
 
     private Message handleInternal(Message msg) {

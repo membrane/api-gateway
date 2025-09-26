@@ -37,7 +37,7 @@ class ConditionalEvaluationTestContext {
         exc.setProperty("bar", "123");
 
         ifInt.setLanguage(lang);
-        ifInt.setInterceptors(of(mockInt));
+        ifInt.setFlow(of(mockInt));
         ifInt.setTest(condition);
         ifInt.init(new HttpRouter());
 

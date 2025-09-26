@@ -37,9 +37,9 @@ public class WebSocketStreamPump extends StreamPump {
         super(in, out, stats, name, proxy);
         this.pumpsToRight = pumpsToRight;
         frameAssembler = new WebSocketFrameAssembler(in, originalExchange);
-        for (Interceptor i : proxy.getInterceptors()) {
+        for (Interceptor i : proxy.getFlow()) {
             if (i instanceof WebSocketInterceptor) {
-                chain = ((WebSocketInterceptor) i).getInterceptors();
+                chain = ((WebSocketInterceptor) i).getFlow();
                 for (WebSocketInterceptorInterface i2 : chain)
                     try {
                         i2.init(i.getRouter());

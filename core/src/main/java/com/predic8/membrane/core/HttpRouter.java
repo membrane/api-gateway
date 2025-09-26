@@ -44,7 +44,7 @@ public class HttpRouter extends Router {
 		interceptors.add(new InternalRoutingInterceptor());
 		HTTPClientInterceptor httpClientInterceptor = new HTTPClientInterceptor();
 		interceptors.add(httpClientInterceptor);
-		transport.setInterceptors(interceptors);
+		transport.setFlow(interceptors);
 		return transport;
 	}
 
@@ -58,7 +58,7 @@ public class HttpRouter extends Router {
 	 * the list. In tests interceptors in the proxy can be used instead.
 	 */
 	public void addUserFeatureInterceptor(Interceptor i) {
-		List<Interceptor> is = getTransport().getInterceptors();
+		List<Interceptor> is = getTransport().getFlow();
 		is.add(is.size()-3, i);
 	}
 

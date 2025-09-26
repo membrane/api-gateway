@@ -48,8 +48,8 @@ public class SOAPProxyTest {
         StaticInterceptor e = new StaticInterceptor();
         e.setSrc("<foo></foo>");
         e.setContentType(TEXT_XML);
-        backend.getInterceptors().add(e);
-        backend.getInterceptors().add(new ReturnInterceptor());
+        backend.getFlow().add(e);
+        backend.getFlow().add(new ReturnInterceptor());
         router.add(backend);
     }
 

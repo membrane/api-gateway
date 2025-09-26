@@ -60,14 +60,14 @@ public class LoadBalancingInterceptorTest {
 		mockInterceptor1 = new DummyWebServiceInterceptor();
 		ServiceProxy sp1 = new ServiceProxy(new ServiceProxyKey("localhost",
 				"*", ".*", port2k), "dummy", 80);
-		sp1.getInterceptors().add(new AbstractInterceptor(){
+		sp1.getFlow().add(new AbstractInterceptor(){
 			@Override
 			public Outcome handleResponse(Exchange exc) {
 				exc.getResponse().getHeader().add("Connection", "close");
 				return CONTINUE;
 			}
 		});
-		sp1.getInterceptors().add(mockInterceptor1);
+		sp1.getFlow().add(mockInterceptor1);
 		service1.getRuleManager().addProxyAndOpenPortIfNew(sp1);
 		service1.init();
 
@@ -75,14 +75,14 @@ public class LoadBalancingInterceptorTest {
 		mockInterceptor2 = new DummyWebServiceInterceptor();
 		ServiceProxy sp2 = new ServiceProxy(new ServiceProxyKey("localhost",
 				"*", ".*", port3k), "dummy", 80);
-		sp2.getInterceptors().add(new AbstractInterceptor(){
+		sp2.getFlow().add(new AbstractInterceptor(){
 			@Override
 			public Outcome handleResponse(Exchange exc) {
 				exc.getResponse().getHeader().add("Connection", "close");
 				return CONTINUE;
 			}
 		});
-		sp2.getInterceptors().add(mockInterceptor2);
+		sp2.getFlow().add(mockInterceptor2);
 		service2.getRuleManager().addProxyAndOpenPortIfNew(sp2);
 		service2.init();
 
@@ -91,7 +91,7 @@ public class LoadBalancingInterceptorTest {
 				"*", ".*", 3054), "dummy", 80);
 		balancingInterceptor = new LoadBalancingInterceptor();
 		balancingInterceptor.setName("Default");
-		sp3.getInterceptors().add(balancingInterceptor);
+		sp3.getFlow().add(balancingInterceptor);
 		balancer.getRuleManager().addProxyAndOpenPortIfNew(sp3);
 		enableFailOverOn5XX();
 		balancer.init();
@@ -105,7 +105,7 @@ public class LoadBalancingInterceptorTest {
 	}
 
 	private void enableFailOverOn5XX() {
-		getInterceptors(balancer.getTransport().getInterceptors(),  HTTPClientInterceptor.class).getLast().setFailOverOn5XX(true);
+		getInterceptors(balancer.getTransport().getFlow(),  HTTPClientInterceptor.class).getLast().setFailOverOn5XX(true);
 	}
 
 	@AfterEach
@@ -253,7 +253,7 @@ public class LoadBalancingInterceptorTest {
 		assertEquals(1, mockInterceptor1.getCount());
 		assertEquals(1, mockInterceptor2.getCount());
 
-		service1.getRuleManager().getRules().getFirst().getInterceptors().addFirst(new AbstractInterceptor(){
+		service1.getRuleManager().getRules().getFirst().getFlow().addFirst(new AbstractInterceptor(){
 			@Override
 			public Outcome handleRequest(Exchange exc) {
 				exc.setResponse(internalServerError().build());

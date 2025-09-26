@@ -50,7 +50,7 @@ public class HttpsKeepAliveTest {
         ksIB.setKeyAlias("key1");
         sslIB.setKeyStore(ksIB);
         sp.setSslInboundParser(sslIB);
-        sp.getInterceptors().add(new AbstractInterceptor() {
+        sp.getFlow().add(new AbstractInterceptor() {
             @Override
             public Outcome handleRequest(Exchange exc) {
                 exc.setResponse(Response.ok("ssltest").build());
