@@ -32,7 +32,7 @@ public class OpenAPIConfigErrorTest extends DistributionExtractingTestcase {
         BufferLogger logger = new BufferLogger();
         writeInputStreamToFile(baseDir + "/conf/proxies.xml", getResourceAsStream("com/predic8/membrane/errorhandling/wrong-file-location-proxies.xml"));
         try(Process2 ignored = new Process2.Builder().in(baseDir).script("service-proxy").withWatcher(logger).waitAfterStartFor("giving up").start()) {
-            assertTrue(logger.contains("Could not read and parse OpenAPI"));
+            assertTrue(logger.contains("Could not read or parse OpenAPI"));
             assertTrue(logger.contains("/abc"));
         }
     }
@@ -43,7 +43,7 @@ public class OpenAPIConfigErrorTest extends DistributionExtractingTestcase {
         writeInputStreamToFile(baseDir + "/conf/proxies.xml", getResourceAsStream("com/predic8/membrane/errorhandling/wrong-url-location-proxies.xml"));
         try(Process2 ignored = new Process2.Builder().in(baseDir).script("service-proxy").withWatcher(logger).waitAfterStartFor("giving up").start()) {
             System.out.println("logger = " + logger);
-            assertTrue(logger.contains("Could not read and parse OpenAPI"));
+            assertTrue(logger.contains("Could not read or parse OpenAPI"));
             assertTrue(logger.contains("/abc"));
         }
     }
@@ -53,7 +53,7 @@ public class OpenAPIConfigErrorTest extends DistributionExtractingTestcase {
         BufferLogger logger = new BufferLogger();
         writeInputStreamToFile(baseDir + "/conf/proxies.xml", getResourceAsStream("com/predic8/membrane/errorhandling/wrong-content-proxies.xml"));
         try(Process2 ignored = new Process2.Builder().in(baseDir).script("service-proxy").withWatcher(logger).waitAfterStartFor("giving up").start()) {
-            assertTrue(logger.contains("Could not read and parse OpenAPI"));
+            assertTrue(logger.contains("Could not read or parse OpenAPI"));
             assertTrue(logger.contains("client.cer"));
         }
     }
