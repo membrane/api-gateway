@@ -1,4 +1,4 @@
-apiVersion: membrane-soa.org/v1beta1
+apiVersion: membrane-api.io/v1beta2
 kind: api
 metadata:
   name: fruitshop-demo
@@ -10,7 +10,7 @@ spec:
 
 ---
 
-apiVersion: membrane-soa.org/v1beta1
+apiVersion: membrane-api.io/v1beta2
 kind: serviceProxy
 metadata:
   name: admin-console
@@ -21,7 +21,7 @@ spec:
 
 ---
 
-apiVersion: membrane-soa.org/v1beta1
+apiVersion: membrane-api.io/v1beta2
 kind: api
 metadata:
   name: log
