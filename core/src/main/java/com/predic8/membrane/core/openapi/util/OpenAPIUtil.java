@@ -22,6 +22,7 @@ import io.swagger.v3.oas.models.*;
 import io.swagger.v3.oas.models.media.*;
 import io.swagger.v3.oas.models.parameters.*;
 import io.swagger.v3.parser.ObjectMapperFactory;
+import org.jetbrains.annotations.*;
 import org.slf4j.*;
 
 import java.io.*;
@@ -31,7 +32,7 @@ import static com.predic8.membrane.core.openapi.serviceproxy.APIProxy.*;
 import static com.predic8.membrane.core.openapi.util.Utils.*;
 import static com.predic8.membrane.core.openapi.validators.JsonSchemaValidator.*;
 import static io.swagger.v3.oas.models.parameters.Parameter.StyleEnum.*;
-import static java.lang.Boolean.*;
+import static org.springframework.http.MediaType.*;
 
 public class OpenAPIUtil {
 
@@ -79,6 +80,7 @@ public class OpenAPIUtil {
     }
 
     public static PathItem getPath(OpenAPI api, String path) {
+        if (api == null || api.getPaths() == null) return null;
         return api.getPaths().get(path);
     }
 
@@ -97,18 +99,22 @@ public class OpenAPIUtil {
     }
 
     public static Schema<?> resolveSchema(OpenAPI api, Parameter p) {
+        if (p == null) return null;
         Schema<?> schema = p.getSchema();
-        if (schema == null) {
-            // OAS allows parameter.content with schema instead of parameter.schema. Resolving from content as fallback.
-            if (p.getContent() != null && !p.getContent().isEmpty()) {
-                var mt = p.getContent().values().iterator().next();
-                return mt != null ? mt.getSchema() : null;
-            }
-            return null;
+        if (schema == null && p.getContent() != null && !p.getContent().isEmpty()) {
+            // Prefer application/json if present; otherwise take first
+            var mt = p.getContent().get(APPLICATION_JSON);
+            if (mt == null) mt = p.getContent().values().iterator().next();
+            schema = mt != null ? mt.getSchema() : null;
         }
+        if (schema == null) return null;
         if (schema.get$ref() != null) {
-            if (api.getComponents() == null || api.getComponents().getSchemas() == null) return null;
-            return api.getComponents().getSchemas().get(getComponentLocalNameFromRef(schema.get$ref()));
+            if (api == null || api.getComponents() == null || api.getComponents().getSchemas() == null) return null;
+            try {
+                return api.getComponents().getSchemas().get(getComponentLocalNameFromRef(schema.get$ref()));
+            } catch (RuntimeException ignore) {
+                return null; // external or malformed ref not resolvable here
+            }
         }
         return schema;
     }
@@ -117,16 +123,21 @@ public class OpenAPIUtil {
      * If schema has type: object or type: [..., object]
      */
     public static boolean hasObjectType(Schema<?> schema) {
+        if (schema == null) return false;
         return (schema.getTypes() != null && (schema.getTypes().contains(OBJECT)) || OBJECT.equals(schema.getType()));
     }
 
     public static boolean isExplode(Parameter parameter) {
         if (parameter.getExplode() == null) {
-            if (parameter.getStyle() == FORM) {
-                return true;
-            }
+            Parameter.StyleEnum style = getStyle(parameter);
+            return style == FORM || style == DEEPOBJECT;
         }
-        return TRUE.equals(parameter.getExplode());
+        return parameter.getExplode();
+    }
+
+    private static Parameter.@NotNull StyleEnum getStyle(Parameter parameter) {
+        if (parameter.getStyle() != null) return parameter.getStyle();
+        return ("query".equalsIgnoreCase(parameter.getIn()) || "cookie".equalsIgnoreCase(parameter.getIn())) ? FORM : SIMPLE;
     }
 
     public static boolean isQueryParameter(Parameter p) {

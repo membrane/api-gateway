@@ -71,11 +71,11 @@ class QueryParameterValidatorTest extends AbstractValidatorTest {
 
     @Test
     void getPathAndOperationParameters() {
-        var parameterSchemas = citiesValidator.getAllParameter(getGET("/cities"));
-        assertEquals(8, parameterSchemas.size());
+        var parameters = citiesValidator.getAllParameter(getGET("/cities"));
+        assertEquals(8, parameters.size());
 
         // All Parameters must have a name. Referenced params do not have a name.
-        assertFalse(parameterSchemas.stream().anyMatch(param -> param.getName() == null));
+        assertFalse(parameters.stream().anyMatch(param -> param.getName() == null));
     }
 
     /**
@@ -195,7 +195,6 @@ class QueryParameterValidatorTest extends AbstractValidatorTest {
             void invalid() {
                 var err = citiesValidator.validate(ctx,
                         get().path("/cities?city=Bonn&city=Bielefeld&limit=10"), citiesPathItem.getGet());
-                System.out.println("err = " + err);
                 assertEquals(1, err.size());
                 assertTrue(err.get(0).getMessage().contains("enum"));
                 assertTrue(err.get(0).getMessage().contains("Bielefeld"));
@@ -229,13 +228,9 @@ class QueryParameterValidatorTest extends AbstractValidatorTest {
 
         @Test
         void ignoreAdditionalFromObject() {
-            var pi = validator.getApi().getPaths().get("/additional");
-            var addValidator = new QueryParameterValidator(validator.getApi(), pi);
-            var err = addValidator.validate(ctx, get().path("/additional?a=1&b=txt&additional=t"), pi.getGet());
-            assertEquals(0, err.size());
+            assertEquals(0, additionalValidator.validate(ctx, get().path("/additional?a=1&b=txt&additional=t"), additionalPathItem.getGet()).size());
         }
     }
-
 
     @Nested
     class UtilMethods {
