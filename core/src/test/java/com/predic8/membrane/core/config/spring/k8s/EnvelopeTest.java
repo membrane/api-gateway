@@ -85,16 +85,15 @@ class EnvelopeTest {
             value: /header
           interceptors:
             - request:
-                interceptors:
-                  - groovy:
-                      src: |
-                        println "Request headers:"
-                        CONTINUE
-                  - template:
-                      contentType: application/json
-                      textTemplate: '{ "ok": 1 }'
-                  - return:
-                      statusCode: 200
+              - groovy:
+                  src: |
+                    println "Request headers:"
+                    CONTINUE
+              - template:
+                  contentType: application/json
+                  textTemplate: '{ "ok": 1 }'
+              - return:
+                  statusCode: 200
         ---
         apiVersion: membrane-soa.org/v1beta1
         kind: api

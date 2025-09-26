@@ -111,7 +111,7 @@ public class K8sJsonSchemaGenerator extends AbstractK8sGenerator {
 
         for (Map.Entry<String, ElementInfo> entry : all.entrySet()) {
             SchemaObject so = new SchemaObject(entry.getKey());
-            so.addAttribute("type", "object");
+            so.addAttribute("type", entry.getValue().getAnnotation().noEnvelope() ? "array" : "object");
             so.addAttribute("additionalProperties", entry.getValue().getOai() != null);
 
             collectProperties(m, main, entry.getValue(), so);
@@ -140,13 +140,17 @@ public class K8sJsonSchemaGenerator extends AbstractK8sGenerator {
                 items.addAttribute("type", "object");
                 items.addAttribute("additionalProperties", cei.getAnnotation().allowForeign());
 
-                SchemaObject sop = new SchemaObject(cei.getPropertyName());
-                sop.setRequired(cei.isRequired());
-                sop.addAttribute("type", "array");
-                sop.addAttribute("additionalItems", false);
-                sop.addAttribute("items", items);
+                if (i.getAnnotation().noEnvelope()) {
+                    so.addAttribute("items", items);
+                } else {
+                    SchemaObject sop = new SchemaObject(cei.getPropertyName());
+                    sop.setRequired(cei.isRequired());
+                    sop.addAttribute("type", "array");
+                    sop.addAttribute("additionalItems", false);
+                    sop.addAttribute("items", items);
 
-                so.addProperty(sop);
+                    so.addProperty(sop);
+                }
 
                 parent2 = items;
             } else {

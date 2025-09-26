@@ -26,4 +26,25 @@ public @interface MCElement {
 	boolean mixed() default false;
 	boolean topLevel() default true;
 	String configPackage() default "";
+
+    /**
+     * If set, this activates the 'no envelope' mode for this element.
+     *
+     * In 'no envelope' mode, the class annotated by <code>@MCElement</code> must have no <code>@MCAttribute</code>
+     * setter methods, no <code>@MCTextContent</code> setter methods, no <code>@MCOtherAttributes</code> setter methods
+     * and exactly one <code>@MCChildElement</code> setter, which must accept a List or Collection as parameter.
+     *
+     * In JSON/YAML representations, the element's content is then represented directly by the item list
+     *
+     * ["item1":{}, "item2":{}]
+     *
+     * instead of
+     *
+     * {"propertyName": ["item1":{}, "item2":{}]}
+     *
+     * .
+     *
+     * This does not have any effect on the XML grammar.
+     */
+    boolean noEnvelope() default false;
 }

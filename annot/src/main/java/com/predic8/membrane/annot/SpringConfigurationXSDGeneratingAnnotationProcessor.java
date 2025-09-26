@@ -217,6 +217,18 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
 					String uniquenessError = getUniquenessError(ii);
 					if (uniquenessError != null)
 						throw new ProcessingException(uniquenessError, ii.getElement());
+                    if (ii.getAnnotation().noEnvelope()) {
+                        if (ii.getChildElementSpecs().size() != 1)
+                            throw new ProcessingException("@MCElement(noEnvelope=true) requires exactly one @MCChildElement.", ii.getElement());
+                        if (!ii.getChildElementSpecs().get(0).isList())
+                            throw new ProcessingException("@MCElement(noEnvelope=true) requires its @MCChildElement() to be a List or Collection.", ii.getElement());
+                        if (!ii.getAis().isEmpty())
+                            throw new ProcessingException("@MCElement(noEnvelope=true) requires @MCAttribute to be not present.", ii.getElement());
+                        if (ii.getOai() != null)
+                            throw new ProcessingException("@MCElement(noEnvelope=true) requires @MCOtherAttributes to be not present.", ii.getElement());
+                        if (ii.getTci() != null)
+                            throw new ProcessingException("@MCElement(noEnvelope=true) requires @MCTextContent to be not present.", ii.getElement());
+                    }
 					if (ii.getTci() != null && !ii.getAnnotation().mixed())
 						throw new ProcessingException("@MCTextContent requires @MCElement(..., mixed=true) on the class.", ii.getElement());
 					if (ii.getTci() == null && ii.getAnnotation().mixed())
