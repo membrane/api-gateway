@@ -25,7 +25,6 @@ import com.predic8.membrane.core.kubernetes.client.WatchAction;
 import com.predic8.membrane.core.openapi.serviceproxy.*;
 import com.predic8.membrane.core.resolver.*;
 import org.apache.commons.cli.*;
-import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.jetbrains.annotations.*;
 import org.jose4j.jwk.JsonWebKey;
 import org.jose4j.jwk.RsaJsonWebKey;
@@ -117,7 +116,7 @@ public class RouterCLI {
         try {
             return switch (commandLine.getCommand().getName()) {
                 case "oas" -> initRouterByOpenApiSpec(commandLine);
-                case "yaml" -> initRouterByYAML(commandLine);
+                case "yaml" -> initRouterByYAML(commandLine, "l");
                 default -> initRouterByConfig(commandLine);
             };
         } catch (InvalidConfigurationException e) {
@@ -135,6 +134,17 @@ public class RouterCLI {
         return null;
     }
 
+    private static Router initRouterByConfig(MembraneCommandLine commandLine) throws Exception {
+        String config = getRulesFile(commandLine);
+        if(config.endsWith(".xml")) {
+            return initRouterByXml(commandLine);
+        }
+        if (config.endsWith(".yaml") || config.endsWith(".yml")) {
+            return initRouterByYAML(commandLine, "c");
+        }
+        throw new RuntimeException("Unsupported file extension.");
+    }
+
     private static Router initRouterByOpenApiSpec(MembraneCommandLine commandLine) throws Exception {
         Router router = new HttpRouter();
         router.getRuleManager().addProxyAndOpenPortIfNew(getApiProxy(commandLine));
@@ -142,32 +152,46 @@ public class RouterCLI {
         return router;
     }
 
-    private static Router initRouterByYAML(MembraneCommandLine commandLine) throws Exception {
-        String location = commandLine.getCommand().getOptionValue("l");
-        var fileReader = new FileReader(location);
+    private static Router initRouterByYAML(MembraneCommandLine commandLine, String option) throws Exception {
+        String location = commandLine.getCommand().getOptionValue(option);
 
         var router = new HttpRouter();
         router.setBaseLocation(location);
         router.setHotDeploy(false);
+        router.setAsynchronousInitialization(true);
         router.start();
 
         var beanCache = new BeanCache(router);
         beanCache.start();
-
-        YAMLParser parser = new YAMLFactory().createParser(new File(location));
-        var om = new ObjectMapper();
-        while (!parser.isClosed()) {
-            Map<?, ?> m = om.readValue(parser, Map.class);
-            Map<Object, Object> meta = (Map<Object, Object>) m.get("metadata");
-
-            // fake UID
-            meta.put("uid", location + "-" + meta.get("name"));
-
-            beanCache.handle(WatchAction.ADDED, m);
-            parser.nextToken();
-        }
-
+        sendYamlToBeanCache(location, beanCache);
         return router;
+    }
+
+    private static void sendYamlToBeanCache(String location, BeanCache beanCache) throws IOException {
+        try (YAMLParser parser = new YAMLFactory().createParser(new File(location))) {
+            var om = new ObjectMapper();
+            int count = 0;
+            while (!parser.isClosed()) {
+                Map<?, ?> m = om.readValue(parser, Map.class);
+                Map<Object, Object> meta = (Map<Object, Object>) m.get("metadata");
+
+                if (meta == null) {
+                    // generate name, if it doesnt exist
+                    meta = new HashMap<>();
+                    ((Map<Object, Object>) m).put("metadata", meta);
+                    meta.put("name", "artifact" + ++count);
+                    meta.put("uid", UUID.randomUUID().toString());
+                } else {
+                    // fake UID
+                    meta.put("uid", location + "-" + meta.get("name"));
+                }
+
+                beanCache.handle(WatchAction.ADDED, m);
+                parser.nextToken();
+            }
+
+            beanCache.fireConfigurationLoaded();
+        }
     }
 
     private static void generateJWK(MembraneCommandLine commandLine) {
@@ -238,7 +262,7 @@ public class RouterCLI {
         return spec;
     }
 
-    private static Router initRouterByConfig(MembraneCommandLine commandLine) throws Exception {
+    private static Router initRouterByXml(MembraneCommandLine commandLine) throws Exception {
         try {
             return Router.init(getRulesFile(commandLine));
         } catch (XmlBeanDefinitionStoreException e) {
