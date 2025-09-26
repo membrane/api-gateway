@@ -89,7 +89,7 @@ public class APIProxyKeyTest {
         router.getRuleManager().addProxyAndOpenPortIfNew(new APIProxy() {{
             setKey(new APIProxyKey("127.0.0.1", "localhost", 3000, path, "*", null,false));
             getInterceptors().add(new TemplateInterceptor() {{
-                setTextTemplate(body);
+                setSrc(body);
             }});
             if (path != null) {
                 Path p = new Path();

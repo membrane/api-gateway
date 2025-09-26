@@ -46,7 +46,7 @@ public class SOAPProxyTest {
         APIProxy backend = new APIProxy();
         backend.setKey(new APIProxyKey(2001));
         StaticInterceptor e = new StaticInterceptor();
-        e.setTextTemplate("<foo></foo>");
+        e.setSrc("<foo></foo>");
         e.setContentType(TEXT_XML);
         backend.getInterceptors().add(e);
         backend.getInterceptors().add(new ReturnInterceptor());

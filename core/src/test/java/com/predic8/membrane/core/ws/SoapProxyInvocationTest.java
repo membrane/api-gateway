@@ -116,7 +116,7 @@ public class SoapProxyInvocationTest {
         }});
         aServiceAPI.getInterceptors().add(new ResponseInterceptor() {{
             setInterceptors(List.of(new TemplateInterceptor() {{
-                setTextTemplate("""
+                setSrc("""
                 <s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/" xmlns:cs="https://predic8.de/cities">
                     <s:Body>
                         <ns:aResponse xmlns:ns="https://predic8.de/">Panama</ns:aResponse>

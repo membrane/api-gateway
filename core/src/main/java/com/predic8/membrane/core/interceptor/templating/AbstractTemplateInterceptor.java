@@ -39,7 +39,7 @@ public abstract class AbstractTemplateInterceptor extends AbstractInterceptor {
     protected static final Logger log = LoggerFactory.getLogger(AbstractTemplateInterceptor.class);
 
     protected String location;
-    protected String textTemplate;
+    protected String src;
 
     protected String contentType = TEXT_PLAIN;
 
@@ -53,10 +53,10 @@ public abstract class AbstractTemplateInterceptor extends AbstractInterceptor {
         super.init();
 
         if (getLocation() != null) {
-            if (getTextTemplate() != null && !getTextTemplate().isBlank()) {
+            if (getSrc() != null && !getSrc().isBlank()) {
                 throw new ConfigurationException("On <%s>, ./text() and ./@location cannot be set at the same time.".formatted(getName()));
             }
-            textTemplate = readFromLocation();
+            src = readFromLocation();
         }
 
         if (pretty)
@@ -141,8 +141,8 @@ public abstract class AbstractTemplateInterceptor extends AbstractInterceptor {
         this.location = location;
     }
 
-    public String getTextTemplate() {
-        return textTemplate; // TODO Encoding
+    public String getSrc() {
+        return src; // TODO Encoding
     }
 
     /**
@@ -151,8 +151,8 @@ public abstract class AbstractTemplateInterceptor extends AbstractInterceptor {
      * @example { "foo": 1 }
      */
     @MCTextContent
-    public void setTextTemplate(String textTemplate) {
-        this.textTemplate = textTemplate;
+    public void setSrc(String src) {
+        this.src = src;
     }
 
     protected String getName() {
@@ -207,7 +207,7 @@ public abstract class AbstractTemplateInterceptor extends AbstractInterceptor {
         if (contentType != null) {
             s += "Content-Type: %s<br/>".formatted(contentType);
         }
-        return s + formatAsHtml(textTemplate);
+        return s + formatAsHtml(src);
     }
 
     protected String formatAsHtml(String plaintext) {
