@@ -16,9 +16,12 @@ package com.predic8.membrane.evaluation;
 
 import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.interceptor.apikey.stores.*;
+import org.apache.commons.io.FileUtils;
 import org.apache.derby.jdbc.*;
 import org.junit.jupiter.api.*;
 
+import java.io.File;
+import java.io.IOException;
 import java.sql.*;
 import java.util.*;
 import java.util.logging.*;
@@ -44,7 +47,7 @@ public class JDBCApiKeyStorePerformanceTest {
     private ScopeTable scopeTable;
 
     @BeforeEach
-    void setUp() throws SQLException {
+    void setUp() throws SQLException, IOException {
         jdbcApiKeyStore = createApiKeyStore();
         connection = getDataSource().getConnection();
         jdbcApiKeyStore.init(new Router());
@@ -80,8 +83,11 @@ public class JDBCApiKeyStorePerformanceTest {
         return apiKeyStore;
     }
 
-    private EmbeddedDataSource getDataSource() {
+    private EmbeddedDataSource getDataSource() throws IOException {
         if (dataSource == null) {
+            if (new File(DATABASE_NAME).exists()) {
+                FileUtils.deleteDirectory(new File(DATABASE_NAME));
+            }
             dataSource = new EmbeddedDataSource();
             dataSource.setDatabaseName(DATABASE_NAME);
             dataSource.setCreateDatabase(CREATE_DB_FLAG);
