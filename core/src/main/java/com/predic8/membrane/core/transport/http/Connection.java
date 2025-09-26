@@ -158,9 +158,16 @@ public class Connection implements Closeable, MessageObserver, NonRelevantBodyOb
 		this.proxySSLProvider = proxySSLProvider;
     }
 
-	public boolean isSame(String host, int port) {
-		return socket != null && host.equals(this.host) && port == socket.getPort();
-	}
+    public boolean isSame(String host, int port) {
+        if (socket == null || port != socket.getPort()) return false;
+        try {
+            InetAddress target = InetAddress.getByName(host);
+            InetAddress remote = ((InetSocketAddress) socket.getRemoteSocketAddress()).getAddress();
+            return target.equals(remote) || (target.isLoopbackAddress() && remote.isLoopbackAddress());
+        } catch (UnknownHostException e) {
+            return host.equals(this.host);
+        }
+    }
 
 	public void close() throws IOException {
 		if (socket == null)
