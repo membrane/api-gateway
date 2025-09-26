@@ -51,11 +51,11 @@ public class ServiceProxyWSDLInterceptorsTest {
         WSDLInterceptor rewritter = new WSDLInterceptor();
         rewritter.setHost("api.predic8.de");
         rewritter.setPort("1234");
-        sp.getInterceptors().add(rewritter);
+        sp.getFlow().add(rewritter);
 
         WSDLPublisherInterceptor publisher = new WSDLPublisherInterceptor();
         publisher.setWsdl(getPathFromResource("validation/ArticleService.wsdl"));
-        sp.getInterceptors().add(publisher);
+        sp.getFlow().add(publisher);
 
         sp.setTarget(new AbstractServiceProxy.Target("localhost", 8888));
 

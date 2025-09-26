@@ -61,7 +61,7 @@ abstract class AbstractInternalServiceRoutingInterceptorTest {
 
     protected static class TestAPIProxy extends APIProxy {
         public void add(Interceptor... i) {
-            getInterceptors().addAll(Arrays.asList(i));
+            getFlow().addAll(Arrays.asList(i));
         }
     }
 
@@ -74,7 +74,7 @@ abstract class AbstractInternalServiceRoutingInterceptorTest {
 
     protected static class TestInternalProxy extends InternalProxy {
         public void add(Interceptor... i) {
-            getInterceptors().addAll(Arrays.asList(i));
+            getFlow().addAll(Arrays.asList(i));
         }
     }
 

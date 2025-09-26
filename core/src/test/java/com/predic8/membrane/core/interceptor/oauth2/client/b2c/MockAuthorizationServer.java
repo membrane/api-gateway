@@ -111,7 +111,7 @@ public class MockAuthorizationServer {
 
         WellknownFile wkf = createWellKnown(flowId);
 
-        sp.getInterceptors().add(new AbstractInterceptor() {
+        sp.getFlow().add(new AbstractInterceptor() {
 
             final String baseUri = "/" + tc.tenantId + "/" + flowId;
 

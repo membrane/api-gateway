@@ -38,10 +38,10 @@ public class OAuth2RedirectNormalTest extends OAuth2RedirectTest {
 
     @NotNull SSLableProxy getAuthorizationServerRule() {
         SSLableProxy azureRule = new ServiceProxy(new ServiceProxyKey(AUTH_SERVER_BASE_URL.getHost(), "*", ".*", AUTH_SERVER_BASE_URL.getPort()), "localhost", 80);
-        azureRule.getInterceptors().add(new LogInterceptor() {{
+        azureRule.getFlow().add(new LogInterceptor() {{
             setLevel(DEBUG);
         }});
-        azureRule.getInterceptors().add(new OAuth2AuthorizationServerInterceptor() {
+        azureRule.getFlow().add(new OAuth2AuthorizationServerInterceptor() {
             {
                 setLocation(getPathFromResource("openId/dialog"));
                 setConsentFile(getPathFromResource("openId/consentFile.json"));

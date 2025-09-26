@@ -45,7 +45,7 @@ public class PaddingHeaderInterceptor extends AbstractInterceptor {
 
     private void setInterceptorMeta() {
         name = "padding header";
-        setFlow(of(REQUEST, RESPONSE));
+        setAppliedFlow(of(REQUEST, RESPONSE));
     }
 
     @Override

@@ -283,7 +283,7 @@ public class OpenAPIPublisherInterceptor extends AbstractInterceptor {
     }
 
     @Override
-    public EnumSet<Flow> getFlow() {
+    public EnumSet<Flow> getAppliedFlow() {
         return REQUEST_FLOW;
     }
 }

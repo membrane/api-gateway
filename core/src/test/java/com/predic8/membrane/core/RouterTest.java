@@ -117,7 +117,7 @@ class RouterTest {
         r.setProduction(production);
         APIProxy api = new APIProxy();
         api.setKey(new APIProxyKey(port));
-        api.getInterceptors().add(new AbstractInterceptor() {
+        api.getFlow().add(new AbstractInterceptor() {
             @Override
             public Outcome handleRequest(Exchange exc) {
                 throw new RuntimeException(INTERNAL_SECRET);

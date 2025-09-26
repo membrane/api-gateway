@@ -40,7 +40,7 @@ public class SpringReferencesTest {
 	@Test
 	public void doit() {
 		ServiceProxy p = (ServiceProxy) r.getRules().iterator().next();
-		List<Interceptor> is = p.getInterceptors();
+		List<Interceptor> is = p.getFlow();
 
 		assertEquals(LogInterceptor.class, is.get(0).getClass());
 		assertEquals(LogInterceptor.class, is.get(1).getClass());
