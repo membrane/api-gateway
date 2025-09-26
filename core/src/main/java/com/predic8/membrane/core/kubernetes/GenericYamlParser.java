@@ -46,6 +46,8 @@ public class GenericYamlParser {
                 return obj;
             }
             ensureMappingStart(event);
+            if (clazz.getAnnotation(MCElement.class) != null && clazz.getAnnotation(MCElement.class).noEnvelope())
+                throw new RuntimeException("Class " + clazz.getName() + " is annotated with @MCElement(noEnvelope=true), but the YAML/JSON structure does not contain a list.");
 
             while(true) {
                 event = events.next();

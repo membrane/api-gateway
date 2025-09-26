@@ -219,7 +219,9 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
 						throw new ProcessingException(uniquenessError, ii.getElement());
                     if (ii.getAnnotation().noEnvelope()) {
                         if (ii.getAnnotation().topLevel())
-                            throw new ProcessingException("@MCElement(noEnvelope=true, topLevel=true) is invalid.", ii.getElement());
+                            throw new ProcessingException("@MCElement(..., noEnvelope=true, topLevel=true) is invalid.", ii.getElement());
+                        if (ii.getAnnotation().mixed())
+                            throw new ProcessingException("@MCElement(..., noEnvelope=true, mixed=true) is invalid.", ii.getElement());
                         if (ii.getChildElementSpecs().size() != 1)
                             throw new ProcessingException("@MCElement(noEnvelope=true) requires exactly one @MCChildElement.", ii.getElement());
                         if (!ii.getChildElementSpecs().get(0).isList())
