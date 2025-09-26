@@ -36,7 +36,7 @@ public class AbortInterceptor extends AbstractFlowWithChildrenInterceptor {
 
     public AbortInterceptor() {
         name = "abort";
-        setFlow(RESPONSE_ABORT_FLOW);
+        setAppliedFlow(RESPONSE_ABORT_FLOW);
     }
 
     @Override

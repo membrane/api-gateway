@@ -56,11 +56,11 @@ class APIProxySpringConfigurationTest extends AbstractProxySpringConfigurationTe
     void interceptorSequenceFromSpringConfiguration() {
         Router router = startSpringContextAndReturnRouter(publisherSeparate);
         APIProxy ap = getApiProxy(router);
-        assertEquals(4, ap.getInterceptors().size());
-        assertInstanceOf(ApiKeysInterceptor.class, ap.getInterceptors().get(0));
-        assertInstanceOf(HeaderFilterInterceptor.class, ap.getInterceptors().get(1));
-        assertInstanceOf(OpenAPIPublisherInterceptor.class, ap.getInterceptors().get(2));
-        assertInstanceOf(LogInterceptor.class, ap.getInterceptors().get(3));
+        assertEquals(4, ap.getFlow().size());
+        assertInstanceOf(ApiKeysInterceptor.class, ap.getFlow().get(0));
+        assertInstanceOf(HeaderFilterInterceptor.class, ap.getFlow().get(1));
+        assertInstanceOf(OpenAPIPublisherInterceptor.class, ap.getFlow().get(2));
+        assertInstanceOf(LogInterceptor.class, ap.getFlow().get(3));
     }
 
     @Test
@@ -68,12 +68,12 @@ class APIProxySpringConfigurationTest extends AbstractProxySpringConfigurationTe
         Router router = startSpringContextAndReturnRouter(publisherSeparate);
         APIProxy ap = getApiProxy(router);
         ap.init(router);
-        assertEquals(5, ap.getInterceptors().size());
-        assertInstanceOf(OpenAPIInterceptor.class, ap.getInterceptors().get(0)); // Got added
-        assertInstanceOf(ApiKeysInterceptor.class, ap.getInterceptors().get(1));
-        assertInstanceOf(HeaderFilterInterceptor.class, ap.getInterceptors().get(2));
-        assertInstanceOf(OpenAPIPublisherInterceptor.class, ap.getInterceptors().get(3));
-        assertInstanceOf(LogInterceptor.class, ap.getInterceptors().get(4));
+        assertEquals(5, ap.getFlow().size());
+        assertInstanceOf(OpenAPIInterceptor.class, ap.getFlow().get(0)); // Got added
+        assertInstanceOf(ApiKeysInterceptor.class, ap.getFlow().get(1));
+        assertInstanceOf(HeaderFilterInterceptor.class, ap.getFlow().get(2));
+        assertInstanceOf(OpenAPIPublisherInterceptor.class, ap.getFlow().get(3));
+        assertInstanceOf(LogInterceptor.class, ap.getFlow().get(4));
     }
 
     @Test
@@ -81,11 +81,11 @@ class APIProxySpringConfigurationTest extends AbstractProxySpringConfigurationTe
         Router router = startSpringContextAndReturnRouter(noPublisherNoOpenAPIInterceptor);
         APIProxy ap = getApiProxy(router);
         ap.init(router);
-        assertEquals(5, ap.getInterceptors().size());
-        assertInstanceOf(OpenAPIPublisherInterceptor.class, ap.getInterceptors().get(0)); // Was added
-        assertInstanceOf(OpenAPIInterceptor.class, ap.getInterceptors().get(1)); //
-        assertInstanceOf(ApiKeysInterceptor.class, ap.getInterceptors().get(2));
-        assertInstanceOf(HeaderFilterInterceptor.class, ap.getInterceptors().get(3));
-        assertInstanceOf(LogInterceptor.class, ap.getInterceptors().get(4));
+        assertEquals(5, ap.getFlow().size());
+        assertInstanceOf(OpenAPIPublisherInterceptor.class, ap.getFlow().get(0)); // Was added
+        assertInstanceOf(OpenAPIInterceptor.class, ap.getFlow().get(1)); //
+        assertInstanceOf(ApiKeysInterceptor.class, ap.getFlow().get(2));
+        assertInstanceOf(HeaderFilterInterceptor.class, ap.getFlow().get(3));
+        assertInstanceOf(LogInterceptor.class, ap.getFlow().get(4));
     }
 }

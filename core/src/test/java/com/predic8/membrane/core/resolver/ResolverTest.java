@@ -247,7 +247,7 @@ public class ResolverTest {
 	public static void setup() throws Exception {
 		ServiceProxy sp = new ServiceProxy(new ServiceProxyKey(3029), "localhost", 8080);
 
-		sp.getInterceptors().add(new AbstractInterceptor() {
+		sp.getFlow().add(new AbstractInterceptor() {
 			@Override
 			public Outcome handleRequest(Exchange exc) {
 				hit = true;
@@ -262,7 +262,7 @@ public class ResolverTest {
 			i.setDocBase("/test");
 			router.getResolverMap().addSchemaResolver(resolverMap.getFileSchemaResolver());
 		}
-		sp.getInterceptors().add(i);
+		sp.getFlow().add(i);
 
 		router.add(sp);
 		router.init();

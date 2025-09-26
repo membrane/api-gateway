@@ -84,7 +84,7 @@ public class SoapProxyInvocationTest {
         sp.setPort(2000);
         sp.setWsdl("classpath:/ws/two-separated-services.wsdl");
         sp.setServiceName(serviceName);
-        sp.getInterceptors().add(new ValidatorInterceptor());
+        sp.getFlow().add(new ValidatorInterceptor());
         return sp;
     }
 
@@ -98,7 +98,7 @@ public class SoapProxyInvocationTest {
     private static @NotNull APIProxy createCitiesServiceProxy() {
         APIProxy api = new APIProxy();
         api.setPort(2001);
-        api.getInterceptors().add(new SampleSoapServiceInterceptor());
+        api.getFlow().add(new SampleSoapServiceInterceptor());
         return api;
     }
 
@@ -108,14 +108,14 @@ public class SoapProxyInvocationTest {
         p2.setUri("/services/a");
         aServiceAPI.setPath(p2 );
         aServiceAPI.setPort(2001);
-        aServiceAPI.getInterceptors().add(new ResponseInterceptor() {{
-            setInterceptors(List.of(new SetHeaderInterceptor() {{
+        aServiceAPI.getFlow().add(new ResponseInterceptor() {{
+            setFlow(List.of(new SetHeaderInterceptor() {{
                 setFieldName("AService");
                 setValue("123");
             }}));
         }});
-        aServiceAPI.getInterceptors().add(new ResponseInterceptor() {{
-            setInterceptors(List.of(new TemplateInterceptor() {{
+        aServiceAPI.getFlow().add(new ResponseInterceptor() {{
+            setFlow(List.of(new TemplateInterceptor() {{
                 setSrc("""
                 <s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/" xmlns:cs="https://predic8.de/cities">
                     <s:Body>
@@ -126,7 +126,7 @@ public class SoapProxyInvocationTest {
             }}));
             }});
 
-        aServiceAPI.getInterceptors().add(new ReturnInterceptor());
+        aServiceAPI.getFlow().add(new ReturnInterceptor());
         return aServiceAPI;
     }
 

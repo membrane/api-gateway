@@ -55,13 +55,13 @@ public abstract class AbstractProxy implements Proxy {
         return InterceptorUtil.getFirstInterceptorOfType(interceptors, type);
     }
 
-    public List<Interceptor> getInterceptors() {
+    public List<Interceptor> getFlow() {
         return interceptors;
     }
 
     @MCChildElement(allowForeign = true, order = 100)
-    public void setInterceptors(List<Interceptor> interceptors) {
-        this.interceptors = interceptors;
+    public void setFlow(List<Interceptor> flow) {
+        this.interceptors = flow;
     }
 
     public String getName() {

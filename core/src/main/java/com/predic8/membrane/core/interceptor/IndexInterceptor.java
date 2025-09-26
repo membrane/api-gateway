@@ -54,7 +54,7 @@ public class IndexInterceptor extends AbstractInterceptor {
 	}
 
 	private ServiceInfo getServiceInfo(Exchange exc, AbstractServiceProxy sp) {
-		if (sp.getInterceptors().size() == 1 && sp.getInterceptors().getFirst() instanceof IndexInterceptor)
+		if (sp.getFlow().size() == 1 && sp.getFlow().getFirst() instanceof IndexInterceptor)
 			return null;
 
 		ServiceProxyKey k = (ServiceProxyKey) sp.getKey();

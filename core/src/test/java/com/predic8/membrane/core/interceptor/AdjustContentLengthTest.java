@@ -43,7 +43,7 @@ public class AdjustContentLengthTest {
 
 	private static ServiceProxy createMonitorRule() {
 		ServiceProxy rule = new ServiceProxy(new ServiceProxyKey("localhost","*", "*", 3000), "localhost", 4000);
-		rule.getInterceptors().add(new StaticInterceptor() {{
+		rule.getFlow().add(new StaticInterceptor() {{
 			setSrc("Ping Pong");
 		}});
 		return rule;
@@ -51,10 +51,10 @@ public class AdjustContentLengthTest {
 
 	private static ServiceProxy createEndpointRule() {
 		ServiceProxy rule = new ServiceProxy(new ServiceProxyKey("localhost","*", "*", 4000), "localhost", 80);
-		rule.getInterceptors().add(new StaticInterceptor() {{
+		rule.getFlow().add(new StaticInterceptor() {{
 			setSrc("Pong");
 		}});
-		rule.getInterceptors().add(new ReturnInterceptor());
+		rule.getFlow().add(new ReturnInterceptor());
 		return rule;
 	}
 

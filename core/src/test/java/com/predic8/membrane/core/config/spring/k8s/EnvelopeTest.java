@@ -136,7 +136,7 @@ class EnvelopeTest {
         assertEquals("api-rewrite", e1.metadata.name);
         assertEquals(2000, a1.getPort());
         assertEquals("/names", a1.getPath().getUri());
-        List<Interceptor> is1 = a1.getInterceptors();
+        List<Interceptor> is1 = a1.getFlow();
         assertEquals(3, is1.size());
         assertInstanceOf(RateLimitInterceptor.class, is1.get(0));
         assertInstanceOf(RewriteInterceptor.class, is1.get(1));
@@ -151,9 +151,9 @@ class EnvelopeTest {
         APIProxy a2 = (APIProxy) e2.getSpec();
         assertEquals("header", e2.metadata.name);
         assertEquals("/header", a2.getPath().getUri());
-        assertEquals(1, a2.getInterceptors().size());
-        assertInstanceOf(RequestInterceptor.class, a2.getInterceptors().getFirst());
-        List<Interceptor> reqChain = ((RequestInterceptor) a2.getInterceptors().getFirst()).getInterceptors();
+        assertEquals(1, a2.getFlow().size());
+        assertInstanceOf(RequestInterceptor.class, a2.getFlow().getFirst());
+        List<Interceptor> reqChain = ((RequestInterceptor) a2.getFlow().getFirst()).getFlow();
         assertEquals(3, reqChain.size());
         assertInstanceOf(GroovyInterceptor.class, reqChain.get(0));
         assertInstanceOf(TemplateInterceptor.class, reqChain.get(1));
@@ -171,7 +171,7 @@ class EnvelopeTest {
         APIProxy a4 = (APIProxy) e4.getSpec();
         assertEquals("admin", e4.metadata.name);
         assertEquals(9000, a4.getPort());
-        assertTrue(a4.getInterceptors().stream().anyMatch(i -> i instanceof AdminConsoleInterceptor));
+        assertTrue(a4.getFlow().stream().anyMatch(i -> i instanceof AdminConsoleInterceptor));
     }
 
     @Test

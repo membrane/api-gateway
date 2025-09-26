@@ -210,7 +210,7 @@ public class AdminApiInterceptor extends AbstractInterceptor {
             StringWriter writer = new StringWriter();
             JsonGenerator gen = om.getFactory().createGenerator(writer);
             gen.writeStartArray();
-            writePluginRow(proxy.getInterceptors(), null, gen);
+            writePluginRow(proxy.getFlow(), null, gen);
             gen.writeEndArray();
             gen.close();
 
@@ -224,12 +224,12 @@ public class AdminApiInterceptor extends AbstractInterceptor {
     private void writePluginRow(List<Interceptor> plugins, Flow limitedFlow, JsonGenerator gen) throws IOException {
         for (Interceptor p : plugins) {
             switch (p) {
-                case RequestInterceptor rqi -> writePluginRow(rqi.getInterceptors(), REQUEST, gen);
-                case ResponseInterceptor rsi -> writePluginRow(rsi.getInterceptors(), RESPONSE, gen);
-                case AbortInterceptor ai -> writePluginRow(ai.getInterceptors(), ABORT, gen);
+                case RequestInterceptor rqi -> writePluginRow(rqi.getFlow(), REQUEST, gen);
+                case ResponseInterceptor rsi -> writePluginRow(rsi.getFlow(), RESPONSE, gen);
+                case AbortInterceptor ai -> writePluginRow(ai.getFlow(), ABORT, gen);
                 default -> {
                     gen.writeStartObject();
-                    gen.writeStringField("flow", String.valueOf(limitedFlow != null ? limitedFlow : p.getFlow()));
+                    gen.writeStringField("flow", String.valueOf(limitedFlow != null ? limitedFlow : p.getAppliedFlow()));
                     gen.writeStringField("name", p.getDisplayName());
                     gen.writeStringField("shortDescription", p.getShortDescription());
                     gen.writeStringField("longDescription", p.getLongDescription());

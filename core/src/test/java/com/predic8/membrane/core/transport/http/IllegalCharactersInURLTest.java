@@ -39,7 +39,7 @@ class IllegalCharactersInURLTest {
         r.setHotDeploy(false);
         r.add(new ServiceProxy(new ServiceProxyKey(3027), "localhost", 3028));
         ServiceProxy sp2 = new ServiceProxy(new ServiceProxyKey(3028), null, 80);
-        sp2.getInterceptors().add(new AbstractInterceptor() {
+        sp2.getFlow().add(new AbstractInterceptor() {
             @Override
             public Outcome handleRequest(Exchange exc) {
                 assertEquals("/foo{}", exc.getRequestURI());

@@ -72,8 +72,8 @@ class ElasticSearchExchangeStoreTest {
         elasticMock = new HttpRouter();
         elasticMock.setHotDeploy(false);
         ServiceProxy sp = new ServiceProxy(new ServiceProxyKey(3066), null, 0);
-        sp.getInterceptors().add(createBodyLoggingInterceptor());
-        sp.getInterceptors().add(createElasticSearchMockInterceptor());
+        sp.getFlow().add(createBodyLoggingInterceptor());
+        sp.getFlow().add(createElasticSearchMockInterceptor());
         elasticMock.add(sp);
         elasticMock.start();
     }
@@ -93,10 +93,10 @@ class ElasticSearchExchangeStoreTest {
         gateway.setExchangeStore(es);
         int index = 4;
         if (addLoggingInterceptors)
-            gateway.getTransport().getInterceptors().add(index++, createBodyLoggingInterceptor());
-        gateway.getTransport().getInterceptors().add(index++, new ExchangeStoreInterceptor());
+            gateway.getTransport().getFlow().add(index++, createBodyLoggingInterceptor());
+        gateway.getTransport().getFlow().add(index++, new ExchangeStoreInterceptor());
         if (addLoggingInterceptors)
-            gateway.getTransport().getInterceptors().add(index++, createBodyLoggingInterceptor());
+            gateway.getTransport().getFlow().add(index++, createBodyLoggingInterceptor());
         gateway.add(new ServiceProxy(new ServiceProxyKey(3064), "localhost", 3065));
         gateway.start();
     }
@@ -107,10 +107,10 @@ class ElasticSearchExchangeStoreTest {
         ServiceProxy sp = new ServiceProxy(new ServiceProxyKey(3065), null, 0);
         StaticInterceptor si = new StaticInterceptor();
         si.setSrc(RESPONSE_BODY);
-        sp.getInterceptors().add(si);
+        sp.getFlow().add(si);
         ReturnInterceptor ri = new ReturnInterceptor();
         ri.setStatusCode(200);
-        sp.getInterceptors().add(ri);
+        sp.getFlow().add(ri);
         back.add(sp);
         back.start();
     }

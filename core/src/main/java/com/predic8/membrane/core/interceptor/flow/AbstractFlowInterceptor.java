@@ -31,12 +31,12 @@ public abstract class AbstractFlowInterceptor extends AbstractInterceptor {
 
     protected List<Interceptor> interceptors = new ArrayList<>();
 
-    public List<Interceptor> getInterceptors() {
+    public List<Interceptor> getFlow() {
         return interceptors;
     }
 
-    public void setInterceptors(List<Interceptor> interceptors) {
-        this.interceptors = interceptors;
+    public void setFlow(List<Interceptor> flow) {
+        this.interceptors = flow;
     }
 
     @Override

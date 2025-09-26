@@ -40,7 +40,7 @@ public class BoundConnectionTest {
 		router.getRuleManager().addProxyAndOpenPortIfNew(sp1);
 		ServiceProxy sp2 = new ServiceProxy(new ServiceProxyKey("*",
 				"*", ".*", 3022), "", -1);
-		sp2.getInterceptors().add(new AbstractInterceptor(){
+		sp2.getFlow().add(new AbstractInterceptor(){
 			@Override
 			public Outcome handleRequest(Exchange exc) {
                 try {

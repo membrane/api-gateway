@@ -121,12 +121,12 @@ public class WebSocketStompReassembler implements WebSocketInterceptorInterface 
                         (frame.getPayloadLength() == 1 && frame.getPayload()[0] == 0x0A);
     }
 
-    public List<Interceptor> getInterceptors() {
+    public List<Interceptor> getFlow() {
         return interceptors;
     }
 
     @MCChildElement
-    public void setInterceptors(List<Interceptor> interceptors) {
-        this.interceptors = interceptors;
+    public void setFlow(List<Interceptor> flow) {
+        this.interceptors = flow;
     }
 }

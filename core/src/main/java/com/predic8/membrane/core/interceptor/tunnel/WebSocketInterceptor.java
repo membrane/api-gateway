@@ -89,12 +89,12 @@ public class WebSocketInterceptor extends AbstractInterceptor {
 		this.url = url;
 	}
 
-	public List<WebSocketInterceptorInterface> getInterceptors() {
+	public List<WebSocketInterceptorInterface> getFlow() {
 		return interceptors;
 	}
 
 	@MCChildElement
-	public void setInterceptors(List<WebSocketInterceptorInterface> interceptors) {
-		this.interceptors = interceptors;
+	public void setFlow(List<WebSocketInterceptorInterface> flow) {
+		this.interceptors = flow;
 	}
 }

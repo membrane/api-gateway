@@ -101,12 +101,12 @@ public class SSLProxy implements Proxy {
     }
 
     @Override
-    public List<Interceptor> getInterceptors() {
+    public List<Interceptor> getFlow() {
         return null;
     }
 
     @Override
-    public void setInterceptors(List<Interceptor> interceptors) {
+    public void setFlow(List<Interceptor> flow) {
 
     }
 

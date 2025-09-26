@@ -56,7 +56,7 @@ public class XMLContentFilterInterceptor extends AbstractInterceptor {
 
     public XMLContentFilterInterceptor() {
         name = "xml content filter";
-        setFlow(Flow.Set.REQUEST_RESPONSE_ABORT_FLOW);
+        setAppliedFlow(Flow.Set.REQUEST_RESPONSE_ABORT_FLOW);
     }
 
     @Override

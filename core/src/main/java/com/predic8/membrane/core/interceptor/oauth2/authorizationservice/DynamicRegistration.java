@@ -108,13 +108,13 @@ public class DynamicRegistration {
         this.sslParser = sslParser;
     }
 
-    public List<Interceptor> getInterceptors() {
+    public List<Interceptor> getFlow() {
         return interceptors;
     }
 
     @MCChildElement(order = 20)
-    public void setInterceptors(List<Interceptor> interceptors) {
-        this.interceptors = interceptors;
+    public void getFlow(List<Interceptor> flow) {
+        this.interceptors = flow;
     }
 
     public HttpClientConfiguration getHttpClientConfiguration() {

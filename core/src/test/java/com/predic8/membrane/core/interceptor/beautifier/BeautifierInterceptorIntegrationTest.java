@@ -36,9 +36,9 @@ public class BeautifierInterceptorIntegrationTest extends AbstractTestWithRouter
         p.setKey(new APIProxyKey(2000));
 
         RequestInterceptor req = new RequestInterceptor();
-        req.getInterceptors().add(new BeautifierInterceptor());
-        p.getInterceptors().add(req);
-        p.getInterceptors().add(new ReturnInterceptor());
+        req.getFlow().add(new BeautifierInterceptor());
+        p.getFlow().add(req);
+        p.getFlow().add(new ReturnInterceptor());
         router.add(p);
         router.start();
     }
