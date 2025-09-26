@@ -35,7 +35,7 @@ Solve even complex custom API requirements with simple configurations.
 
 **YAML Configuration (beta):**
 ```yaml
-apiVersion: membrane-soa.org/v1beta1
+apiVersion: membrane-api.io/v1beta2
 kind: api
 metadata:
   name: log
