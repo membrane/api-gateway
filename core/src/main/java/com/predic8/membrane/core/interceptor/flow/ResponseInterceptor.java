@@ -25,7 +25,7 @@ import static com.predic8.membrane.core.interceptor.Outcome.*;
  * &lt;response&gt; plugin you can limit their application to responses only.
  * @topic 1. Proxies and Flow
  */
-@MCElement(name = "response", topLevel = false)
+@MCElement(name = "response", topLevel = false, noEnvelope = true)
 public class ResponseInterceptor extends AbstractFlowWithChildrenInterceptor {
 
     @Override
