@@ -28,7 +28,7 @@ public class ValidationErrors {
 
     public enum Direction { REQUEST, RESPONSE }
 
-    public static ValidationErrors create(ValidationContext ctx, String message) {
+    public static ValidationErrors error(ValidationContext ctx, String message) {
         ValidationErrors ve = new ValidationErrors();
         ve.add(ctx, message);
         return ve;

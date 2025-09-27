@@ -46,11 +46,13 @@ public abstract class AbstractBodyValidator<T extends Message<? extends Body,?>>
             if (mediaTypeObj.getSchema() != null && mediaTypeObj.getSchema().get$ref() != null) {
                 ctx = ctx.schemaType(mediaTypeObj.getSchema().get$ref());
             }
-            errors.add(new SchemaValidator(api, mediaTypeObj.getSchema()).validate(ctx, message.getBody()));
-        } else if(isXML(mediaType)) {
-            errors.add(ctx,"Validation of XML messages is not implemented yet!");
-        } else if(isWWWFormUrlEncoded(mediaType)) {
-            errors.add(ctx,"Validation of 'application/x-www-form-urlencoded' messages is not implemented yet!");
+            return errors.add(new SchemaValidator(api, mediaTypeObj.getSchema()).validate(ctx, message.getBody()));
+        }
+        if(isXML(mediaType)) {
+            return errors.add(ctx,"Validation of XML messages is not implemented yet!");
+        }
+        if(isWWWFormUrlEncoded(mediaType)) {
+            return errors.add(ctx,"Validation of 'application/x-www-form-urlencoded' messages is not implemented yet!");
         }
         // Other types that can't be validated against OpenAPI are Ok.
         return errors;
@@ -94,7 +96,7 @@ public abstract class AbstractBodyValidator<T extends Message<? extends Body,?>>
         try {
             mostSpecificMediaType = getMostSpecificMediaType(msg.getMediaType().toString(), content.keySet()).orElseThrow();
         } catch (Exception e) {
-            return ValidationErrors.create(ctx.statusCode(getStatusCodeForWrongMediaType()).entityType(MEDIA_TYPE).entity(msg.getMediaType().toString()),  "The media type(Content-Type header) of the %s does not match any of %s.".formatted(getMessageName(), content.keySet()));
+            return ValidationErrors.error(ctx.statusCode(getStatusCodeForWrongMediaType()).entityType(MEDIA_TYPE).entity(msg.getMediaType().toString()),  "The media type(Content-Type header) of the %s does not match any of %s.".formatted(getMessageName(), content.keySet()));
         }
 
         return validateMediaTypeForMessageType(ctx.statusCode(getStatusCodeForWrongMediaType()), mostSpecificMediaType, content.get(mostSpecificMediaType), msg);

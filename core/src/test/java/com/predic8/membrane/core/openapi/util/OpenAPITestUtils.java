@@ -31,7 +31,7 @@ import java.util.*;
 import static com.predic8.membrane.core.util.FileUtil.*;
 import static java.util.Collections.*;
 
-public class TestUtils {
+public class OpenAPITestUtils {
 
     public static final ObjectMapper om = new ObjectMapper();
     private static final ObjectMapper omYaml = ObjectMapperFactory.createYaml();
@@ -41,14 +41,16 @@ public class TestUtils {
     }
 
     /**
-     *
      * @param thisObj this of the caller
-     * @param path path into src/resources
+     * @param path    path into src/resources
      * @return YAML as JsonNode
      * @throws IOException Can not read resource
      */
-    public static JsonNode getYAMLResource(Object thisObj,String path) throws IOException {
-        return omYaml.readTree(getResourceAsStream(thisObj,path));
+    public static JsonNode getYAMLResource(Object thisObj, String path) throws IOException {
+        try (InputStream is = getResourceAsStream(thisObj, path)) {
+            if (is == null) throw new FileNotFoundException("Resource not found: " + path);
+            return omYaml.readTree(is);
+        }
     }
 
     public static OpenAPI parseOpenAPI(InputStream is) {
@@ -63,9 +65,6 @@ public class TestUtils {
         return new OpenAPIParser().readLocation(file, null, parseOptions).getOpenAPI();
     }
 
-    public static InputStream getResourceAsStream(Object obj, String fileName) {
-        return obj.getClass().getResourceAsStream(fileName);
-    }
 
     public static APIProxy createProxy(Router router, OpenAPISpec spec) {
         APIProxy proxy = new APIProxy();
@@ -75,11 +74,25 @@ public class TestUtils {
         return proxy;
     }
 
-    public static Map<String,Map<String,Object>> getMapFromResponse(Exchange exc) throws IOException {
+    public static Map<String, Map<String, Object>> getMapFromResponse(Exchange exc) throws IOException {
         return om.readValue(exc.getResponse().getBody().getContent(), Map.class);
     }
 
-    public static OpenAPIRecord getSingleOpenAPIRecord(Map<String,OpenAPIRecord> m) {
-        return (OpenAPIRecord) m.values().toArray()[0];
+    public static OpenAPIRecord getSingleOpenAPIRecord(Map<String, OpenAPIRecord> m) {
+        return m.values().iterator().next();
+    }
+
+    public static OpenAPI getApi(Object obj, String path) {
+        ParseOptions opts = new ParseOptions();
+        opts.setResolve(true);
+        try (InputStream is = getResourceAsStream(obj, path)) {
+            return new OpenAPIParser().readContents(readInputStream(is), null, opts).getOpenAPI();
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    public static InputStream getResourceAsStream(Object obj, String fileName) {
+        return obj.getClass().getResourceAsStream(fileName);
     }
 }

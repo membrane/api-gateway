@@ -97,7 +97,7 @@ public class OpenAPIPublisherInterceptorTest {
     public void getApiDirectory(String testPath) throws Exception {
         get.getRequest().setUri(testPath);
         assertEquals( RETURN, interceptor.handleRequest(get));
-        assertTrue(TestUtils.getMapFromResponse(get).size() >= 27);
+        assertTrue(OpenAPITestUtils.getMapFromResponse(get).size() >= 27);
     }
 
     @ParameterizedTest

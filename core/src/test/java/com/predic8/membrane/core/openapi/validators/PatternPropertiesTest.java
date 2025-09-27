@@ -35,7 +35,7 @@ public class PatternPropertiesTest extends AbstractValidatorTest{
                 {"foo": []}
                 """));
         assertEquals(1,errors.size());
-        assertTrue(errors.toString().contains("Array has 0 items. This is less then minItems of 2."));
+        assertTrue(errors.toString().contains("Array has 0 items. This is less than minItems of 2."));
     }
 
     @Test

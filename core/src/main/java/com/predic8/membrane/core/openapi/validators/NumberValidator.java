@@ -17,18 +17,16 @@
 package com.predic8.membrane.core.openapi.validators;
 
 import com.fasterxml.jackson.databind.*;
-import com.fasterxml.jackson.databind.node.TextNode;
+import com.fasterxml.jackson.databind.node.*;
 
 import java.math.*;
 
-import static java.lang.Double.*;
-
 /**
  * When numbers appear in parameters, they enter as Strings (which is OK).
- *
+ * <p>
  * If numbers appear in a JSON string "123.45", this is a TextNode (which is not OK). (See JSON Schema Spec.)
  */
-public class NumberValidator implements IJSONSchemaValidator {
+public class NumberValidator implements JsonSchemaValidator {
 
     @Override
     public String canValidate(Object value) {
@@ -44,7 +42,7 @@ public class NumberValidator implements IJSONSchemaValidator {
                 return NUMBER;
             }
             if (value instanceof String s) {
-                parseDouble(s);
+                new BigDecimal(s);
                 return NUMBER;
             }
         } catch (NumberFormatException ignored) {
@@ -57,9 +55,12 @@ public class NumberValidator implements IJSONSchemaValidator {
      */
     @Override
     public ValidationErrors validate(ValidationContext ctx, Object value) {
+        if (value instanceof Number) {
+            return null;
+        }
         try {
             if (value instanceof TextNode) {
-                return ValidationErrors.create(ctx.schemaType(NUMBER), String.format("%s is not a number.", value));
+                return ValidationErrors.error(ctx.schemaType(NUMBER), String.format("%s is not a number.", value));
             }
             if (value instanceof JsonNode jn) {
                 // Not using double prevents from losing fractions
@@ -67,11 +68,11 @@ public class NumberValidator implements IJSONSchemaValidator {
                 return null;
             }
             if (value instanceof String s) {
-                parseDouble(s);
+                new BigDecimal(s);
                 return null;
             }
         } catch (NumberFormatException ignored) {
-            return ValidationErrors.create(ctx.schemaType(NUMBER), String.format("%s is not a number.", value));
+            return ValidationErrors.error(ctx.schemaType(NUMBER), String.format("%s is not a number.", value));
         }
         throw new RuntimeException("Should never happen!");
     }

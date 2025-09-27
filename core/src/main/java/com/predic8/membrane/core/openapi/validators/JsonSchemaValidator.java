@@ -16,7 +16,7 @@
 
 package com.predic8.membrane.core.openapi.validators;
 
-interface IJSONSchemaValidator {
+public interface JsonSchemaValidator {
 
     String NULL = "null";
     String NUMBER = "number";
@@ -39,10 +39,9 @@ interface IJSONSchemaValidator {
     String canValidate(Object value);
 
     /**
-     * Validates value against a schema definition
-     * @param ctx
-     * @param value
-     * @return Validation errors
+     * Validates value against a schema definition. Implementations can just return null if there is no error to avoid object creation.
+     *
+     * @return null or empty ValidationErrors
      */
     ValidationErrors validate(ValidationContext ctx, Object value);
 }
