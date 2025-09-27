@@ -42,6 +42,8 @@ public class ShadowingInterceptor extends AbstractInterceptor {
 
     private List<Target> targets = new ArrayList<>();
 
+    private final ExecutorService executor = newCachedThreadPool();
+
     @Override
     public Outcome handleRequest(Exchange exc) {
         // Copy the request headers to ensure we maintain original request details for use in the cloned requests.
@@ -68,8 +70,7 @@ public class ShadowingInterceptor extends AbstractInterceptor {
     }
 
     public void cloneRequestAndSend(AbstractBody completeBody, Exchange mainExchange, Header copiedHeader) {
-        try(ExecutorService executor = newCachedThreadPool()) {
-            for (Target shadowTarget : targets) {
+         for (Target shadowTarget : targets) {
                 Exchange newExchange;
                 try {
                     newExchange = buildExchange(completeBody, mainExchange, shadowTarget, copiedHeader);
@@ -88,7 +89,6 @@ public class ShadowingInterceptor extends AbstractInterceptor {
                     }
                 });
             }
-        }
     }
 
     static Exchange buildExchange(AbstractBody completeBody, Exchange mainExchange, Target shadowTarget, Header copiedHeader) throws URISyntaxException, IOException {

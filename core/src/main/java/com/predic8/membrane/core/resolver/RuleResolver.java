@@ -87,7 +87,7 @@ public class RuleResolver implements SchemaResolver {
 
             additionalInterceptors.clear(); // TODO !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-            router.getFlowController().invokeRequestHandlers(exchange, Stream.concat(p.getInterceptors().stream(), additionalInterceptors.stream()).toList());
+            router.getFlowController().invokeRequestHandlers(exchange, Stream.concat(p.getFlow().stream(), additionalInterceptors.stream()).toList());
             return exchange.getResponse().getBodyAsStream();
         } catch (Exception e) {
             throw new RuntimeException(e);

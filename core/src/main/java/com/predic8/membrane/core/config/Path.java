@@ -43,16 +43,16 @@ import com.predic8.membrane.annot.MCTextContent;
 @MCElement(name="path", topLevel=false, mixed=true)
 public class Path {
 
-	private String value;
+	private String uri;
 
 	private boolean regExp;
 
 	public Path() {
 	}
 
-	public Path(boolean regExp, String value) {
+	public Path(boolean regExp, String uri) {
 		this.regExp = regExp;
-		this.value = value;
+		this.uri = uri;
 	}
 
 	public boolean isRegExp() {
@@ -69,13 +69,13 @@ public class Path {
 		this.regExp = regExp;
 	}
 
-	public String getValue() {
-		return value;
+	public String getUri() {
+		return uri;
 	}
 
 	@MCTextContent
-	public void setValue(String value) {
-		this.value = value;
+	public void setUri(String uri) {
+		this.uri = uri;
 	}
 
 }

@@ -22,8 +22,8 @@ import java.util.List;
 public abstract class AbstractFlowWithChildrenInterceptor extends AbstractFlowInterceptor {
 
     @MCChildElement(allowForeign = true)
-    public void setInterceptors(List<Interceptor> interceptors) {
-        super.setInterceptors(interceptors);
+    public void setFlow(List<Interceptor> flow) {
+        super.setFlow(flow);
     }
 
 }

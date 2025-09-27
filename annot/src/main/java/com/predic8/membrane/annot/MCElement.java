@@ -21,9 +21,37 @@ import java.lang.annotation.Target;
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
 public @interface MCElement {
-	String name();
-	String id() default "";
-	boolean mixed() default false;
-	boolean topLevel() default true;
-	String configPackage() default "";
+    String name();
+
+    String id() default "";
+
+    boolean mixed() default false;
+
+    /**
+     * Whether the element can be a separate bean in the XML schema, or a separate document in YAML/JSON.
+     */
+    boolean topLevel() default true;
+
+    String configPackage() default "";
+
+    /**
+     * If set, this activates the 'no envelope' mode for this element.
+     * <p>
+     * In 'no envelope' mode, the class annotated by <code>@MCElement</code> must have no <code>@MCAttribute</code>
+     * setter methods, no <code>@MCTextContent</code> setter methods, no <code>@MCOtherAttributes</code> setter methods
+     * and exactly one <code>@MCChildElement</code> setter, which must accept a List or Collection as parameter.
+     * <p>
+     * In JSON/YAML representations, the element's content is then represented directly by the item list
+     * <p>
+     * ["item1":{}, "item2":{}]
+     * <p>
+     * instead of
+     * <p>
+     * {"propertyName": ["item1":{}, "item2":{}]}
+     * <p>
+     * .
+     * <p>
+     * This does not have any effect on the XML grammar.
+     */
+    boolean noEnvelope() default false;
 }

@@ -29,21 +29,21 @@ public class UserFeatureInterceptor extends AbstractInterceptor {
 
 	public UserFeatureInterceptor() {
 		name = "user feature";
-		setFlow(REQUEST_RESPONSE_ABORT_FLOW); // ?
+		setAppliedFlow(REQUEST_RESPONSE_ABORT_FLOW); // ?
 	}
 
 	@Override
 	public Outcome handleRequest(Exchange exc) {
-        return getFlowController().invokeRequestHandlers(exc, exc.getProxy().getInterceptors());
+        return getFlowController().invokeRequestHandlers(exc, exc.getProxy().getFlow());
 	}
 
 	@Override
 	public Outcome handleResponse(Exchange exc) {
-        return getFlowController().invokeResponseHandlers(exc, exc.getProxy().getInterceptors());
+        return getFlowController().invokeResponseHandlers(exc, exc.getProxy().getFlow());
 	}
 
 	@Override
 	public void handleAbort(Exchange exc) {
-        getFlowController().invokeAbortHandlers(exc, exc.getProxy().getInterceptors(), exc.getProxy().getInterceptors().size());
+        getFlowController().invokeAbortHandlers(exc, exc.getProxy().getFlow(), exc.getProxy().getFlow().size());
 	}
 }

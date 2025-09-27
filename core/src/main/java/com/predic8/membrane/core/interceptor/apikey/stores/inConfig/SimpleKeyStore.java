@@ -24,7 +24,7 @@ import static java.util.stream.Collectors.*;
 /**
  * @description Stores api keys inline as XML.
  */
-@MCElement(name = "keys", topLevel = false)
+@MCElement(name = "keys", topLevel = false, noEnvelope = true)
 public class SimpleKeyStore implements ApiKeyStore {
 
     private final List<Key> keys = new ArrayList<>();

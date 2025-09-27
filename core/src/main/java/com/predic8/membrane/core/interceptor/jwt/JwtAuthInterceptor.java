@@ -60,7 +60,7 @@ public class JwtAuthInterceptor extends AbstractInterceptor {
 
     public JwtAuthInterceptor() {
         name = "jwt checker.";
-        setFlow(of(REQUEST));
+        setAppliedFlow(of(REQUEST));
     }
 
     @Override

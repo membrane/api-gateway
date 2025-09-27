@@ -51,7 +51,7 @@ public class WSDLInterceptor extends RelocatingInterceptor {
 
     public WSDLInterceptor() {
         name = "wsdl rewriting";
-        setFlow(RESPONSE_FLOW);
+        setAppliedFlow(RESPONSE_FLOW);
     }
 
     @Override

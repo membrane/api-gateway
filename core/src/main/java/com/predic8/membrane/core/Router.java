@@ -250,8 +250,8 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
 
     public Proxy getParentProxy(Interceptor interceptor) {
         for (Proxy r : getRuleManager().getRules()) {
-            if (r.getInterceptors() != null)
-                for (Interceptor i : r.getInterceptors())
+            if (r.getFlow() != null)
+                for (Interceptor i : r.getFlow())
                     if (i == interceptor)
                         return r;
         }

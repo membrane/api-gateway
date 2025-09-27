@@ -56,7 +56,7 @@ class OAuth2Test {
 
         oAuth2ServerProxy = new ServiceProxy(new ServiceProxyKey("localhost", "*", ".*", 2000), null, 0);
         oAuth2ASI = createOAuth2AuthServerInterceptor();
-        oAuth2ServerProxy.setInterceptors(List.of(oAuth2ASI));
+        oAuth2ServerProxy.setFlow(List.of(oAuth2ASI));
 
 
         router.getRuleManager().addProxyAndOpenPortIfNew(oAuth2ServerProxy);
@@ -71,9 +71,9 @@ class OAuth2Test {
         jwtAuthProxy = new ServiceProxy(new ServiceProxyKey("localhost", "*", ".*", 3000), null, 0);
         jwtAuthInterceptor = createJwtAuthInterceptor();
 
-        jwtAuthProxy.setInterceptors(List.of(
+        jwtAuthProxy.setFlow(List.of(
                 jwtAuthInterceptor,
-                new StaticInterceptor(){{setTextTemplate("{\"success\": \"true\"}");}},
+                new StaticInterceptor(){{setSrc("{\"success\": \"true\"}");}},
                 new ReturnInterceptor()));
 
         router2.getRuleManager().addProxyAndOpenPortIfNew(jwtAuthProxy);

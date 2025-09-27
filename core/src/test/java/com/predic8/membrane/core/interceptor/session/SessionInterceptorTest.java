@@ -68,8 +68,8 @@ public class SessionInterceptorTest {
 
         AbstractInterceptorWithSession interceptor = defineInterceptor(counter,vals);
 
-        sp.getInterceptors().add(interceptor);
-        sp.getInterceptors().add(testResponseInterceptor());
+        sp.getFlow().add(interceptor);
+        sp.getFlow().add(testResponseInterceptor());
 
         router.init();
 
@@ -97,8 +97,8 @@ public class SessionInterceptorTest {
 
         AbstractInterceptorWithSession interceptor = defineInterceptor(counter, vals);
 
-        sp.getInterceptors().add(interceptor);
-        sp.getInterceptors().add(testResponseInterceptor());
+        sp.getFlow().add(interceptor);
+        sp.getFlow().add(testResponseInterceptor());
 
         router.init();
 
@@ -115,8 +115,8 @@ public class SessionInterceptorTest {
         ServiceProxy sp = createTestServiceProxy();
         router.getRuleManager().addProxyAndOpenPortIfNew(sp);
 
-        sp.getInterceptors().add(createAndReadOnlySessionInterceptor());
-        sp.getInterceptors().add(testResponseInterceptor());
+        sp.getFlow().add(createAndReadOnlySessionInterceptor());
+        sp.getFlow().add(testResponseInterceptor());
 
         router.init();
 
@@ -136,8 +136,8 @@ public class SessionInterceptorTest {
         ServiceProxy sp = createTestServiceProxy();
         AbstractInterceptorWithSession createAndReadOnlySessionInterceptor = createAndReadOnlySessionInterceptor();
 
-        sp.getInterceptors().add(createAndReadOnlySessionInterceptor);
-        sp.getInterceptors().add(testResponseInterceptor());
+        sp.getFlow().add(createAndReadOnlySessionInterceptor);
+        sp.getFlow().add(testResponseInterceptor());
 
         router.getRuleManager().addProxyAndOpenPortIfNew(sp);
         router.init();

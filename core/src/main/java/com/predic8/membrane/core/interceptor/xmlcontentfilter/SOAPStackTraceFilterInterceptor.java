@@ -57,7 +57,7 @@ public class SOAPStackTraceFilterInterceptor extends AbstractInterceptor {
 	public SOAPStackTraceFilterInterceptor() throws XPathExpressionException {
 		this.xmlContentFilter = new XMLContentFilter(XPATH);
 		setDisplayName("soap stacktrace filter");
-		setFlow(REQUEST_RESPONSE_ABORT_FLOW);
+		setAppliedFlow(REQUEST_RESPONSE_ABORT_FLOW);
 	}
 
 	@Override

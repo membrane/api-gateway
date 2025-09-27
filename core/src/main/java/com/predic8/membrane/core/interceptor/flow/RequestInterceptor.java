@@ -28,14 +28,14 @@ import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
  * &lt;request&gt; Element you can limit their application to requests only.
  * @topic 1. Proxies and Flow
  */
-@MCElement(name = "request", topLevel = false)
+@MCElement(name = "request", topLevel = false, noEnvelope = true)
 public class RequestInterceptor extends AbstractFlowWithChildrenInterceptor {
 
     private static final Logger log = LoggerFactory.getLogger(RequestInterceptor.class);
 
     public RequestInterceptor() {
         name = "request interceptor";
-        setFlow(REQUEST_FLOW);
+        setAppliedFlow(REQUEST_FLOW);
     }
 
     @Override
@@ -43,7 +43,7 @@ public class RequestInterceptor extends AbstractFlowWithChildrenInterceptor {
         // The behaviour here differs from FlowController. Here after RETURN
         // the previous interceptors inside <request> should not execute
         // handleResponse().
-        for (Interceptor i : getInterceptors()) {
+        for (Interceptor i : getFlow()) {
             if (!i.handlesRequests())
                 continue;
             log.debug("Invoking handler: {} on exchange: {}", i.getDisplayName(), exc);

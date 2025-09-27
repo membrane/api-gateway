@@ -48,7 +48,7 @@ public class AzureDnsApiSimulator {
 
         var sp = new ServiceProxy(new ServiceProxyKey(port), "localhost", port);
 
-        sp.getInterceptors().add(new AbstractInterceptor() {
+        sp.getFlow().add(new AbstractInterceptor() {
 
             @Override
             public Outcome handleRequest(Exchange exc) {
