@@ -31,8 +31,8 @@ import static com.predic8.membrane.core.interceptor.balancer.Node.Status.UP;
 import static java.lang.System.currentTimeMillis;
 
 /**
- * @description Represents a backend node in a load-balancing {@code Cluster}.
- * <p>Identity is {@code host}+{@code port}. </p>
+ * @description Represents a backend node in a load-balancing <code>Cluster</code>.
+ * <p>Identity is <code>host</code>+<code>port</code>.</p>
  */
 @MCElement(name="node", topLevel=false)
 public class Node extends AbstractXmlElement {
