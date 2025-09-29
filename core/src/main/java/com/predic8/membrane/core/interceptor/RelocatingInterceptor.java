@@ -79,7 +79,7 @@ abstract public class RelocatingInterceptor extends AbstractInterceptor {
 	}
 
 	private boolean wasGetRequest(Exchange exc) {
-		return Request.METHOD_GET.equals(exc.getRequest().getMethod());
+		return Request.GET.equals(exc.getRequest().getMethod());
 	}
 
 	protected int getLocationPort(Exchange exc) {
