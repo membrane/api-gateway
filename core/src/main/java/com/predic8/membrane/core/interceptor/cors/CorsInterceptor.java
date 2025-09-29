@@ -140,11 +140,6 @@ public class CorsInterceptor extends AbstractInterceptor {
         responseHandler = new ResponseHandler(this);
     }
 
-    /**
-     * text1
-     * @param exc text2
-     * @return text3
-     */
     @Override
     public Outcome handleRequest(Exchange exc) {
         if (!exc.getRequest().isOPTIONSRequest())
