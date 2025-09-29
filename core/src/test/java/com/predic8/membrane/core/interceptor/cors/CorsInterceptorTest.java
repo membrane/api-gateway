@@ -306,7 +306,6 @@ class CorsInterceptorTest {
         /**
          * Normal OPTIONS request
          *
-         * @throws URISyntaxException
          */
         @Test
         void withoutOriginPreflight() throws Exception {

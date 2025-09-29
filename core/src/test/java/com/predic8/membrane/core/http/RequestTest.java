@@ -185,8 +185,6 @@ public class RequestTest {
 	/**
 	 * If we replace the body, the original body should be read, to make sure there is nothing left
 	 * in the inputStream that can be read as part of the next message in an keep alive session.
-	 * @throws EndOfStreamException
-	 * @throws IOException
 	 */
 	@Test
 	void setBodyShouldReadTheOriginalBody() throws EndOfStreamException, IOException {
@@ -234,8 +232,6 @@ public class RequestTest {
 
 	/**
 	 * Same as setBodyShouldReadTheOriginalBody test but with Request.setBodyContent
-	 * @throws EndOfStreamException
-	 * @throws IOException
 	 */
 	@Test
 	void setBodyContentShouldReadTheOriginalBody() throws EndOfStreamException, IOException {
