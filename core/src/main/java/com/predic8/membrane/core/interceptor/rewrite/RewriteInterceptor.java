@@ -138,7 +138,7 @@ public class RewriteInterceptor extends AbstractInterceptor {
 
     public RewriteInterceptor() {
         name = "url rewriter";
-        setFlow(REQUEST_FLOW);
+        setAppliedFlow(REQUEST_FLOW);
     }
 
     @Override

@@ -57,23 +57,23 @@ public class ServiceInvocationTest {
 	private ServiceProxy createFirstRule() {
 		ServiceProxy rule = new ServiceProxy(new ServiceProxyKey("localhost", POST, "*", 2000), "localhost", 80);
 		rule.getTarget().setUrl("internal:log");
-		rule.getInterceptors().add(new MockInterceptor("process"));
+		rule.getFlow().add(new MockInterceptor("process"));
 		return rule;
 	}
 
 	private ServiceProxy createServiceRule() {
 		ServiceProxy rule = new ServiceProxy(new ServiceProxyKey("localhost","*", "*", 3000), "localhost", 4000);
 		rule.setName("log");
-		rule.getInterceptors().add(new MockInterceptor("log"));
+		rule.getFlow().add(new MockInterceptor("log"));
 		return rule;
 	}
 
 	private ServiceProxy createEndpointRule() {
 		ServiceProxy rule = new ServiceProxy(new ServiceProxyKey("localhost","*", "*", 4000), "localhost", 80);
-		rule.getInterceptors().add(new StaticInterceptor() {{
-			setTextTemplate("Pong");
+		rule.getFlow().add(new StaticInterceptor() {{
+			setSrc("Pong");
 		}});
-		rule.getInterceptors().add(new ReturnInterceptor());
+		rule.getFlow().add(new ReturnInterceptor());
 		return rule;
 	}
 
@@ -93,7 +93,7 @@ public class ServiceInvocationTest {
 		router.getRuleManager().addProxyAndOpenPortIfNew(createFirstRule());
 		router.getRuleManager().addProxyAndOpenPortIfNew(createServiceRule());
 		router.getRuleManager().addProxyAndOpenPortIfNew(createEndpointRule());
-		router.getTransport().getInterceptors().add(router.getTransport().getInterceptors().size()-1, new MockInterceptor("transport-log"));
+		router.getTransport().getFlow().add(router.getTransport().getFlow().size()-1, new MockInterceptor("transport-log"));
 		router.init();
 		return router;
 	}

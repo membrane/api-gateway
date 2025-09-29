@@ -36,7 +36,7 @@ public class REST2SOAPInterceptorIntegrationTest {
 				".*", 3004), "", 0);
 		router = new HttpRouter();
 		router.getRuleManager().addProxyAndOpenPortIfNew(proxy);
-		var interceptors = proxy.getInterceptors();
+		var interceptors = proxy.getFlow();
 
 		REST2SOAPInterceptor rest2SoapInt = new REST2SOAPInterceptor();
 		rest2SoapInt.setMappings(getMappings());

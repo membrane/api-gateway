@@ -42,7 +42,7 @@ public class XMLProtectionInterceptor extends AbstractInterceptor {
 
     public XMLProtectionInterceptor() {
         name = "xml protection";
-        setFlow(REQUEST_FLOW);
+        setAppliedFlow(REQUEST_FLOW);
     }
 
     @Override

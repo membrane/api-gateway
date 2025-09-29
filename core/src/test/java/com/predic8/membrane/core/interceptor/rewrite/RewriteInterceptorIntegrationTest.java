@@ -36,7 +36,7 @@ public class RewriteInterceptorIntegrationTest {
 		interceptor.getMappings().add(new Mapping("/blz-service\\?wsdl", "/axis2/services/BLZService?wsdl", null));
 
 		ServiceProxy proxy = new ServiceProxy(new ServiceProxyKey("localhost", "POST", ".*", 3006), "thomas-bayer.com", 80);
-		proxy.getInterceptors().add(interceptor);
+		proxy.getFlow().add(interceptor);
 
 		router = new HttpRouter();
 		router.getRuleManager().addProxyAndOpenPortIfNew(proxy);

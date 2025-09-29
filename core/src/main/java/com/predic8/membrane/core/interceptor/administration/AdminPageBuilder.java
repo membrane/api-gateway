@@ -781,20 +781,20 @@ public class AdminPageBuilder extends Html {
 
     public void createServiceProxyVisualization(AbstractServiceProxy proxy, String relativeRootPath) {
         List<Interceptor> leftStack = new ArrayList<>(), rightStack = new ArrayList<>();
-        List<Interceptor> list = new ArrayList<>(proxy.getInterceptors());
+        List<Interceptor> list = new ArrayList<>(proxy.getFlow());
         list.add(new AbstractInterceptor() { // fake interceptor so that both stacks end with the same size
             @Override
-            public EnumSet<Flow> getFlow() {
+            public EnumSet<Flow> getAppliedFlow() {
                 return Flow.Set.REQUEST_RESPONSE_ABORT_FLOW;
             }
         });
         // build left and right stacks
         for (Interceptor i : list) {
-            EnumSet<Flow> f = i.getFlow();
+            EnumSet<Flow> f = i.getAppliedFlow();
             if (i instanceof ResponseInterceptor) {
-                rightStack.addAll(((ResponseInterceptor) i).getInterceptors());
+                rightStack.addAll(((ResponseInterceptor) i).getFlow());
             } else if (i instanceof RequestInterceptor) {
-                leftStack.addAll(((RequestInterceptor) i).getInterceptors());
+                leftStack.addAll(((RequestInterceptor) i).getFlow());
             } else if (f.contains(REQUEST)) {
                 if (f.contains(RESPONSE)) {
                     // fill left and right to same height

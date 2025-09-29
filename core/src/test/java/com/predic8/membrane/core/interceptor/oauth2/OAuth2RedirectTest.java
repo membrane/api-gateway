@@ -150,11 +150,11 @@ public abstract class OAuth2RedirectTest {
         return new IfInterceptor() {{
             setLanguage(SPEL);
             setTest(test);
-            setInterceptors(List.of(
+            setFlow(List.of(
                 new ResponseInterceptor() {{
-                    setInterceptors(List.of(
+                    setFlow(List.of(
                         new TemplateInterceptor() {{
-                            setTextTemplate(returnMessage);
+                            setSrc(returnMessage);
                         }}
                     ));
                 }}
@@ -173,22 +173,22 @@ public abstract class OAuth2RedirectTest {
 
     private static @NotNull SSLableProxy getBackendRule() {
         SSLableProxy nginxRule = new ServiceProxy(new ServiceProxyKey(BACKEND_BASE_URL.getHost(), "*", ".*", BACKEND_BASE_URL.getPort()), "localhost", 80);
-        nginxRule.getInterceptors().add(new AbstractInterceptor() {
+        nginxRule.getFlow().add(new AbstractInterceptor() {
             @Override
             public Outcome handleRequest(Exchange exc) {
                 targetUrlHit.set(exc.getRequest().getUri());
                 return CONTINUE;
             }
         });
-        nginxRule.getInterceptors().add(createConditionalInterceptorWithReturnMessage("method == 'POST'", "POST | ${exc.request.header.getFirstValue('Content-Type')} | ${exc.request.body}"));
-        nginxRule.getInterceptors().add(createConditionalInterceptorWithReturnMessage("method == 'GET'", "GET | ${exc.request.header.getFirstValue('Content-Type')} | ${exc.request.body}"));
-        nginxRule.getInterceptors().add(new ReturnInterceptor());
+        nginxRule.getFlow().add(createConditionalInterceptorWithReturnMessage("method == 'POST'", "POST | ${exc.request.header.getFirstValue('Content-Type')} | ${exc.request.body}"));
+        nginxRule.getFlow().add(createConditionalInterceptorWithReturnMessage("method == 'GET'", "GET | ${exc.request.header.getFirstValue('Content-Type')} | ${exc.request.body}"));
+        nginxRule.getFlow().add(new ReturnInterceptor());
         return nginxRule;
     }
 
     private static @NotNull SSLableProxy getOAuth2ResourceRule() {
         SSLableProxy membraneRule = new ServiceProxy(new ServiceProxyKey(CLIENT_BASE_URL.getHost(), "*", ".*", CLIENT_BASE_URL.getPort()), BACKEND_BASE_URL.getHost(), BACKEND_BASE_URL.getPort());
-        membraneRule.getInterceptors().add(new AbstractInterceptor() {
+        membraneRule.getFlow().add(new AbstractInterceptor() {
             @Override
             public Outcome handleRequest(Exchange exc) {
                 if (firstUrlHit.get() == null)
@@ -196,7 +196,7 @@ public abstract class OAuth2RedirectTest {
                 return CONTINUE;
             }
         });
-        membraneRule.getInterceptors().add(new OAuth2Resource2Interceptor() {{
+        membraneRule.getFlow().add(new OAuth2Resource2Interceptor() {{
             setSessionManager(new InMemorySessionManager());
             setAuthService(new MembraneAuthorizationService() {{
                 setSrc(AUTH_SERVER_BASE_URL.toString());
@@ -206,7 +206,7 @@ public abstract class OAuth2RedirectTest {
             }});
             setOriginalExchangeStore(new SessionOriginalExchangeStore());
         }});
-        membraneRule.getInterceptors().add(new AbstractInterceptor() {
+        membraneRule.getFlow().add(new AbstractInterceptor() {
             @Override
             public Outcome handleRequest(Exchange exc) {
                 if (interceptorChainHit.get() == null)

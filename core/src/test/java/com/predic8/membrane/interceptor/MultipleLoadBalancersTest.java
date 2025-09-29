@@ -50,7 +50,7 @@ public class MultipleLoadBalancersTest {
 			mockInterceptor1 = new DummyWebServiceInterceptor();
 			ServiceProxy sp1 = new ServiceProxy(new ServiceProxyKey("localhost",
 					"POST", ".*", port), "thomas-bayer.com", 80);
-			sp1.getInterceptors().add(mockInterceptor1);
+			sp1.getFlow().add(mockInterceptor1);
 			service1.getRuleManager().addProxyAndOpenPortIfNew(sp1);
 			service1.init();
 		}
@@ -64,7 +64,7 @@ public class MultipleLoadBalancersTest {
 		ServiceProxy sp3 = new ServiceProxy(new ServiceProxyKey("localhost", "POST", ".*", port), "thomas-bayer.com", 80);
 		LoadBalancingInterceptor balancingInterceptor1 = new LoadBalancingInterceptor();
 		balancingInterceptor1.setName(name);
-		sp3.getInterceptors().add(balancingInterceptor1);
+		sp3.getFlow().add(balancingInterceptor1);
 		balancer.getRuleManager().addProxyAndOpenPortIfNew(sp3);
 		balancer.init();
 		return balancingInterceptor1;

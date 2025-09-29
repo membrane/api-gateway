@@ -93,45 +93,44 @@ class GenericYamlParserMembraneTest {
                         "path_value_parsed",
                         """
                         path:
-                          value: /names
+                          uri: /names
                         """,
-                        a -> assertEquals("/names", a.getPath().getValue())
+                        a -> assertEquals("/names", a.getPath().getUri())
                 ),
                 ok(
                         "interceptors_parsed",
                         """
-                        interceptors:
+                        flow:
                           - rateLimiter:
                               requestLimit: 3
                           - rewriter:
                               mappings: []
-                          - response:
-                              interceptors: []
+                          - response: []
                         """,
                         a -> assertAll(
-                                () -> assertEquals(3, a.getInterceptors().size()),
-                                () -> assertInstanceOf(RateLimitInterceptor.class, a.getInterceptors().getFirst()),
-                                () -> assertInstanceOf(RewriteInterceptor.class, a.getInterceptors().get(1)),
-                                () -> assertInstanceOf(ResponseInterceptor.class, a.getInterceptors().get(2))
+                                () -> assertEquals(3, a.getFlow().size()),
+                                () -> assertInstanceOf(RateLimitInterceptor.class, a.getFlow().getFirst()),
+                                () -> assertInstanceOf(RewriteInterceptor.class, a.getFlow().get(1)),
+                                () -> assertInstanceOf(ResponseInterceptor.class, a.getFlow().get(2))
                         )
                 ),
                 ok(
                         "rateLimiter_requestLimit_parsed",
                         """
-                        interceptors:
+                        flow:
                           - rateLimiter:
                               requestLimit: 3
                               requestLimitDuration: PT30S
                         """,
                         a -> assertAll(
-                                () -> assertEquals(3, ((RateLimitInterceptor) a.getInterceptors().getFirst()).getRequestLimit()),
-                                () -> assertEquals("PT30S", ((RateLimitInterceptor) a.getInterceptors().getFirst()).getRequestLimitDuration())
+                                () -> assertEquals(3, ((RateLimitInterceptor) a.getFlow().getFirst()).getRequestLimit()),
+                                () -> assertEquals("PT30S", ((RateLimitInterceptor) a.getFlow().getFirst()).getRequestLimitDuration())
                         )
                 ),
                 ok(
                         "rewriter_mapping",
                         """
-                        interceptors:
+                        flow:
                           - rewriter:
                               mappings:
                                 - map:
@@ -139,43 +138,42 @@ class GenericYamlParserMembraneTest {
                                     to: /restnames/name\\.groovy\\?name=$1
                         """,
                         a -> assertAll(
-                                () -> assertEquals("^/names/(.*)", ((RewriteInterceptor) a.getInterceptors().getFirst()).getMappings().getFirst().getFrom()),
-                                () -> assertEquals("/restnames/name\\.groovy\\?name=$1", ((RewriteInterceptor) a.getInterceptors().getFirst()).getMappings().getFirst().getTo())
+                                () -> assertEquals("^/names/(.*)", ((RewriteInterceptor) a.getFlow().getFirst()).getMappings().getFirst().getFrom()),
+                                () -> assertEquals("/restnames/name\\.groovy\\?name=$1", ((RewriteInterceptor) a.getFlow().getFirst()).getMappings().getFirst().getTo())
                         )
                 ),
                 ok(
                         "response_interceptors_parsed",
                         """
-                        interceptors:
+                        flow:
                           - response:
-                              interceptors:
-                                - beautifier: {}
-                                - xml2Json: {}
-                                - log: {}
+                            - beautifier: {}
+                            - xml2Json: {}
+                            - log: {}
                         """,
                         a -> assertAll(
-                                () -> assertEquals(3, ((ResponseInterceptor) a.getInterceptors().getFirst()).getInterceptors().size()),
-                                () -> assertInstanceOf(BeautifierInterceptor.class, ((ResponseInterceptor) a.getInterceptors().getFirst()).getInterceptors().getFirst()),
-                                () -> assertInstanceOf(Xml2JsonInterceptor.class, ((ResponseInterceptor) a.getInterceptors().getFirst()).getInterceptors().get(1)),
-                                () -> assertInstanceOf(LogInterceptor.class, ((ResponseInterceptor) a.getInterceptors().getFirst()).getInterceptors().get(2))
+                                () -> assertEquals(3, ((ResponseInterceptor) a.getFlow().getFirst()).getFlow().size()),
+                                () -> assertInstanceOf(BeautifierInterceptor.class, ((ResponseInterceptor) a.getFlow().getFirst()).getFlow().getFirst()),
+                                () -> assertInstanceOf(Xml2JsonInterceptor.class, ((ResponseInterceptor) a.getFlow().getFirst()).getFlow().get(1)),
+                                () -> assertInstanceOf(LogInterceptor.class, ((ResponseInterceptor) a.getFlow().getFirst()).getFlow().get(2))
                         )
                 ),
                 ok(
                         "balancer_sessionTimeout_parsed",
                         """
-                        interceptors:
+                        flow:
                           - balancer:
                               sessionTimeout: 10000
                         """,
                         a -> assertAll(
-                                () ->assertInstanceOf(Long.class, ((LoadBalancingInterceptor) a.getInterceptors().getFirst()).getSessionTimeout()),
-                                () -> assertEquals(10000L, ((LoadBalancingInterceptor) a.getInterceptors().getFirst()).getSessionTimeout())
+                                () ->assertInstanceOf(Long.class, ((LoadBalancingInterceptor) a.getFlow().getFirst()).getSessionTimeout()),
+                                () -> assertEquals(10000L, ((LoadBalancingInterceptor) a.getFlow().getFirst()).getSessionTimeout())
                         )
                 ),
                 ok(
                         "setCookies_cookie_fields",
                         """
-                        interceptors:
+                        flow:
                           - setCookies:
                               cookies:
                                 - cookie:
@@ -184,7 +182,7 @@ class GenericYamlParserMembraneTest {
                                     secure: false
                         """,
                         a -> {
-                            SetCookiesInterceptor.CookieDef c = ((SetCookiesInterceptor) a.getInterceptors().getFirst()).getCookies().getFirst();
+                            SetCookiesInterceptor.CookieDef c = ((SetCookiesInterceptor) a.getFlow().getFirst()).getCookies().getFirst();
                             assertEquals("foo", c.getName());
                             assertEquals("bar", c.getValue());
                             assertInstanceOf(Boolean.class, c.isSecure());
@@ -194,7 +192,7 @@ class GenericYamlParserMembraneTest {
                 ok(
                         "basicAuth_user_attributes_map",
                         """
-                        interceptors:
+                        flow:
                           - basicAuthentication:
                               staticUserDataProvider:
                                 users:
@@ -205,7 +203,7 @@ class GenericYamlParserMembraneTest {
                                       "a2": "t2"
                         """,
                         a -> {
-                            StaticUserDataProvider.User u = ((BasicAuthenticationInterceptor) a.getInterceptors().getFirst()).getUsers().getFirst();
+                            StaticUserDataProvider.User u = ((BasicAuthenticationInterceptor) a.getFlow().getFirst()).getUsers().getFirst();
                             assertInstanceOf(Map.class, u.getAttributes());
                             assertEquals(Map.of("a1","t1","a2","t2","password","bar","username","foo"), u.getAttributes());
                         }
@@ -214,7 +212,7 @@ class GenericYamlParserMembraneTest {
                 ok(
                         "oauth2_memcached_ref_injected",
                         """
-                        interceptors:
+                        flow:
                           - oauth2Resource2:
                               memcachedOriginalExchangeStore:
                                 connector: mem
@@ -223,7 +221,7 @@ class GenericYamlParserMembraneTest {
                         """,
                         memReg,
                         a -> {
-                            OAuth2Resource2Interceptor i = (OAuth2Resource2Interceptor) a.getInterceptors().getFirst();
+                            OAuth2Resource2Interceptor i = (OAuth2Resource2Interceptor) a.getFlow().getFirst();
                             MemcachedOriginalExchangeStore store = (MemcachedOriginalExchangeStore) i.getOriginalExchangeStore();
                             assertSame(mem, store.getConnector());
                         }
@@ -242,13 +240,13 @@ class GenericYamlParserMembraneTest {
                 ok(
                         "ref_interceptor_response",
                         """
-                        interceptors:
+                        flow:
                           - $ref: response
                         """,
                         responseReg,
                         a -> {
-                            assertEquals(1, a.getInterceptors().size());
-                            assertSame(responseInterceptor, a.getInterceptors().getFirst());
+                            assertEquals(1, a.getFlow().size());
+                            assertSame(responseInterceptor, a.getFlow().getFirst());
                         }
                 ),
                 ok(

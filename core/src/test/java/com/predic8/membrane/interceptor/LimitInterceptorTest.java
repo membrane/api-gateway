@@ -34,7 +34,7 @@ class LimitInterceptorTest {
     public static void before() {
         li = new LimitInterceptor();
         li.setMaxBodyLength(10);
-        li.setFlow(REQUEST_FLOW);
+        li.setAppliedFlow(REQUEST_FLOW);
     }
 
     @Test

@@ -2,7 +2,7 @@
 
 This is information for Membrane developers.
 
-Membrane API Gateway's configuration can be written in XML or (experimentally) in YAML.
+Membrane API Gateway's configuration can be written in XML or in YAML.
 
 Everything that is configurable is driven by Java Code annotations from the `annot` submodule. `annot` defines 7 annotations. Here, we document the most common ones.
 
@@ -26,7 +26,7 @@ public class ApiProxy {
   public void setSSLParser(SSLParser sslParser) { ... }
   
   @MCChildElement(order=20)
-  public void setInterceptors(List<Interceptor> interceptors) { ... }
+  public void setFlow(List<Interceptor> flow) { ... }
 }
 
 @MCElement(name = "ssl")
@@ -121,7 +121,7 @@ Therefore, while most of the project still uses XML as its configuration languag
   ```java
   var apiProxy = new ApiProxy();
   apiProxy.setSSLParser(new SSLParser());
-  apiProxy.setInterceptors(Lists.of(
+  apiProxy.setFlow(Lists.of(
     new LogInterceptor(),
     new GroovyInterceptor()
   ));

@@ -78,7 +78,7 @@ public class TestServiceInterceptor extends AbstractInterceptor {
             if (path != null) {
                 if (path.isRegExp())
                     throw new ConfigurationException("<testService> may not be used together with <path isRegExp=\"true\">.");
-                final String keyPath = path.getValue();
+                final String keyPath = path.getUri();
                 final String name = getName(router, keyPath);
                 wi.setPathRewriter(path2 -> {
                     try {

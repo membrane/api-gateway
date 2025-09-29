@@ -101,7 +101,7 @@ public class InternalRoutingInterceptor extends AbstractInterceptor {
         AbstractServiceProxy service = getRuleByDest(exchange);
         RuleMatchingInterceptor.assignRule(exchange, service);
         updateRequestPath(exchange);
-        Outcome outcome = callInterceptors(exchange, service.getInterceptors());
+        Outcome outcome = callInterceptors(exchange, service.getFlow());
         exchange.getDestinations().clear();
         exchange.getDestinations().add(getTargetAsUri(exchange, service));
         if (outcome == ABORT || outcome == RETURN) {

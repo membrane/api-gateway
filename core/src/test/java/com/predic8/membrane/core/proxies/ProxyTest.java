@@ -57,7 +57,7 @@ public class ProxyTest {
         router.setHotDeploy(false);
 
         ProxyRule rule = new ProxyRule(new ProxyRuleKey(3055));
-        rule.getInterceptors().add(new AbstractInterceptor() {
+        rule.getFlow().add(new AbstractInterceptor() {
             @Override
             public Outcome handleRequest(Exchange exc) {
                 lastMethod.set(exc.getRequest().getMethod());
@@ -67,7 +67,7 @@ public class ProxyTest {
         router.getRules().add(rule);
 
         ServiceProxy sp = new ServiceProxy(new ServiceProxyKey(3056), null, 0);
-        sp.getInterceptors().add(new AbstractInterceptor() {
+        sp.getFlow().add(new AbstractInterceptor() {
             @Override
             public Outcome handleRequest(Exchange exc) {
                 exc.setResponse(Response.ok("secret1").build());
@@ -82,7 +82,7 @@ public class ProxyTest {
         sslParser.getKeyStore().setKeyPassword("secret");
         ServiceProxy sp2 = new ServiceProxy(new ServiceProxyKey(3057), null, 0);
         sp2.setSslInboundParser(sslParser);
-        sp2.getInterceptors().add(new AbstractInterceptor() {
+        sp2.getFlow().add(new AbstractInterceptor() {
             @Override
             public Outcome handleRequest(Exchange exc) {
                 exc.setResponse(Response.ok("secret2").build());

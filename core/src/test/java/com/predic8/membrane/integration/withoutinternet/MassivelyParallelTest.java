@@ -65,7 +65,7 @@ class MassivelyParallelTest {
     private static ServiceProxy createServiceProxy() {
         ServiceProxy sp = new ServiceProxy(new ServiceProxyKey(3067), null, 99999);
 
-        sp.getInterceptors().add(new AbstractInterceptor() {
+        sp.getFlow().add(new AbstractInterceptor() {
             @Override
             public Outcome handleRequest(Exchange exc) {
                 try {

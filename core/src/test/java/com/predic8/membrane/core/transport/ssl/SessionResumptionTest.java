@@ -95,7 +95,7 @@ public class SessionResumptionTest {
         sslInboundParser.setKeyStore(keyStore);
 
         rule.setSslInboundParser(sslInboundParser);
-        rule.getInterceptors().add(new AbstractInterceptor() {
+        rule.getFlow().add(new AbstractInterceptor() {
             @Override
             public Outcome handleRequest(Exchange exc) {
                 // Inlined from Exchange. Maybe use EchoIntercepor

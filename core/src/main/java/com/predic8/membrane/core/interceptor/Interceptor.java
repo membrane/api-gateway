@@ -70,8 +70,8 @@ public interface Interceptor {
 
 	Router getRouter();
 
-	void setFlow(EnumSet<Flow> flow);
-	EnumSet<Flow> getFlow();
+	void setAppliedFlow(EnumSet<Flow> flow);
+	EnumSet<Flow> getAppliedFlow();
 
 	/**
 	 * If interceptor can handle messages in the request flow.

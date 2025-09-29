@@ -72,7 +72,7 @@ public class AcmeRenewTest {
         sslParser.setAcme(acme);
         ServiceProxy sp1 = new ServiceProxy(new ServiceProxyKey(3051), "localhost", 80);
         sp1.setHost("localhost example.com");
-        sp1.getInterceptors().add(new AbstractInterceptor() {
+        sp1.getFlow().add(new AbstractInterceptor() {
             @Override
             public Outcome handleRequest(Exchange exc) {
                 exc.setResponse(ok().status(234, "Successful test.").build());
@@ -83,7 +83,7 @@ public class AcmeRenewTest {
         ServiceProxy sp2 = new ServiceProxy(new ServiceProxyKey(3052), "localhost", 80);
         AcmeHttpChallengeInterceptor acmeHttpChallengeInterceptor = new AcmeHttpChallengeInterceptor();
         acmeHttpChallengeInterceptor.setIgnorePort(true);
-        sp2.getInterceptors().add(acmeHttpChallengeInterceptor);
+        sp2.getFlow().add(acmeHttpChallengeInterceptor);
         router.setRules(ImmutableList.of(sp1, sp2));
         router.start();
 

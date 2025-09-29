@@ -44,7 +44,7 @@ class AbstractServiceProxyTest extends AbstractTestWithRouter {
     private static @NotNull AbstractServiceProxy getAPI() {
         AbstractServiceProxy proxy = new AbstractServiceProxy() {};
         proxy.setKey(new ServiceProxyKey(2000));
-        proxy.getInterceptors().add(A);
+        proxy.getFlow().add(A);
 
         AbstractServiceProxy.Target target = new AbstractServiceProxy.Target() {
         };
@@ -62,8 +62,8 @@ class AbstractServiceProxyTest extends AbstractTestWithRouter {
         SetHeaderInterceptor sh = new SetHeaderInterceptor();
         sh.setFieldName("X-Called-Method");
         sh.setValue("${method}");
-        p.getInterceptors().add(sh);
-        p.getInterceptors().add(new ReturnInterceptor());
+        p.getFlow().add(sh);
+        p.getFlow().add(new ReturnInterceptor());
         return p;
     }
 
