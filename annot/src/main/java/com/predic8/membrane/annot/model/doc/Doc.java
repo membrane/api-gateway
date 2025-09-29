@@ -92,7 +92,7 @@ public class Doc {
 	List<Entry> entries = new ArrayList<>();
 
 	static final List<String> POSITIVE = Arrays.asList("topic", "description", "example", "default", "explanation");
-	static final List<String> NEGATIVE = Arrays.asList("author", "param");
+	static final List<String> NEGATIVE = Arrays.asList("author", "param", "see");
 
 	private void handle(String key, String value) {
 		value = value.trim();
