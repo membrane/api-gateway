@@ -55,7 +55,7 @@ public class JWTInterceptorAndSecurityValidatorTest {
         privateKey = RsaJwkGenerator.generateJwk(2048);
         privateKey.setKeyId("membrane");
 
-        proxy.getInterceptors().add(getJwtAuthInterceptor(router));
+        proxy.getFlow().add(getJwtAuthInterceptor(router));
 
         router.setTransport(new HttpTransport());
         router.setExchangeStore(new ForgetfulExchangeStore());
@@ -81,7 +81,7 @@ public class JWTInterceptorAndSecurityValidatorTest {
     }
 
     private void callInterceptorChain(Exchange exc) {
-        proxy.getInterceptors().forEach(interceptor -> {
+        proxy.getFlow().forEach(interceptor -> {
             try {
                 interceptor.handleRequest(exc);
             } catch (Exception e) {

@@ -48,7 +48,7 @@ public class ApiInfo {
 
     private static String getPathString(SOAPProxy s) {
         if (s.getPath() != null) {
-            return s.getPath().getValue();
+            return s.getPath().getUri();
         }
         return "";
     }

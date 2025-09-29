@@ -19,7 +19,6 @@ import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.oauth2client.OAuth2Resource2Interceptor;
-import com.predic8.membrane.core.interceptor.session.InMemorySessionManager;
 import com.predic8.membrane.core.interceptor.session.JwtSessionManager;
 import org.jose4j.jwt.consumer.InvalidJwtException;
 import org.jose4j.jwt.consumer.JwtConsumer;
@@ -50,7 +49,7 @@ public class JwtSMOAuth2R2Test extends OAuth2ResourceTest {
         CountDownLatch cdl = new CountDownLatch(limit);
         AtomicInteger goodTests = new AtomicInteger();
 
-        mockAuthServer.getTransport().getInterceptors().addFirst(new AbstractInterceptor() {
+        mockAuthServer.getTransport().getFlow().addFirst(new AbstractInterceptor() {
             @Override
             public Outcome handleRequest(Exchange exc) {
                 cdl.countDown();
@@ -92,7 +91,7 @@ public class JwtSMOAuth2R2Test extends OAuth2ResourceTest {
     public void testConsecutiveCalls() throws Exception {
         AtomicInteger authCounter = new AtomicInteger(0);
 
-        mockAuthServer.getTransport().getInterceptors().addFirst(new AbstractInterceptor() {
+        mockAuthServer.getTransport().getFlow().addFirst(new AbstractInterceptor() {
             @Override
             public Outcome handleRequest(Exchange exc) {
                 if (exc.getRequest().getUri().startsWith("/auth"))

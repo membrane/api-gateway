@@ -39,7 +39,7 @@ public class Http11Test {
 		port4k = getFreePortEqualAbove(4000);
         int port5k = getFreePortEqualAbove(5000);
 		ServiceProxy proxy2 = new ServiceProxy(new ServiceProxyKey("localhost", "POST", ".*", port5k), null, 0);
-		proxy2.getInterceptors().add(new SampleSoapServiceInterceptor());
+		proxy2.getFlow().add(new SampleSoapServiceInterceptor());
 		router2 = new HttpRouter();
 		router2.getRuleManager().addProxyAndOpenPortIfNew(proxy2);
 		router2.init();

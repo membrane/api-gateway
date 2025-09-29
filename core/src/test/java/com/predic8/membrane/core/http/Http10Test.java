@@ -36,7 +36,7 @@ public class Http10Test {
 	@BeforeAll
 	public static void setUp() throws Exception {
 		ServiceProxy proxy2 = new ServiceProxy(new ServiceProxyKey("localhost", "POST", ".*", 2000), null, 0);
-		proxy2.getInterceptors().add(new SampleSoapServiceInterceptor());
+		proxy2.getFlow().add(new SampleSoapServiceInterceptor());
         router2 = new HttpRouter();
 		router2.getRuleManager().addProxyAndOpenPortIfNew(proxy2);
 		router2.init();

@@ -113,7 +113,7 @@ public class OAuth2ResourceErrorForwardingTest {
         WellknownFile wkf = getWellknownFile();
         wkf.init();
 
-        sp.getInterceptors().add(new AbstractInterceptor() {
+        sp.getFlow().add(new AbstractInterceptor() {
 
             @Override
             public synchronized Outcome handleRequest(Exchange exc) {
@@ -167,7 +167,7 @@ public class OAuth2ResourceErrorForwardingTest {
         OAuth2Resource2Interceptor oAuth2ResourceInterceptor = getoAuth2Resource2Interceptor();
 
 
-        sp.getInterceptors().add(new AbstractInterceptor() {
+        sp.getFlow().add(new AbstractInterceptor() {
             @Override
             public Outcome handleRequest(Exchange exc) {
                 if (!exc.getRequest().getUri().contains("is-logged-in"))
@@ -179,8 +179,8 @@ public class OAuth2ResourceErrorForwardingTest {
                 return Outcome.RETURN;
             }
         });
-        sp.getInterceptors().add(oAuth2ResourceInterceptor);
-        sp.getInterceptors().add(new AbstractInterceptor() {
+        sp.getFlow().add(oAuth2ResourceInterceptor);
+        sp.getFlow().add(new AbstractInterceptor() {
             @Override
             public Outcome handleRequest(Exchange exc) {
                 try {
@@ -242,11 +242,11 @@ public class OAuth2ResourceErrorForwardingTest {
 
         ServiceProxy sp = new ServiceProxy(new ServiceProxyKey(clientPort), null, 99999);
         Path path = new Path();
-        path.setValue("/error");
+        path.setUri("/error");
         sp.setPath(path);
 
 
-        sp.getInterceptors().add(new AbstractInterceptor() {
+        sp.getFlow().add(new AbstractInterceptor() {
             @Override
             public Outcome handleRequest(Exchange exc) {
                 Map<String, String> params;

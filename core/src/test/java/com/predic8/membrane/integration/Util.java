@@ -44,7 +44,7 @@ public class Util {
         sp.setTarget(target);
 
         for (Interceptor interceptor : interceptors)
-            sp.getInterceptors().add(interceptor);
+            sp.getFlow().add(interceptor);
 
         return sp;
     }

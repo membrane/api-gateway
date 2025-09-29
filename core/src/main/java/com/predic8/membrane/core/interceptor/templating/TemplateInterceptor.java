@@ -59,7 +59,7 @@ public class TemplateInterceptor extends AbstractTemplateInterceptor {
 
         // If the template accesses somewhere the json variable make sure it is there
         // You can even access json in an XML or Text Template. See tests.
-        scriptAccessesJson = textTemplate.contains("json.");
+        scriptAccessesJson = src.contains("json.");
     }
 
     protected Outcome handleInternal(Exchange exc, Flow flow) {
@@ -100,11 +100,11 @@ public class TemplateInterceptor extends AbstractTemplateInterceptor {
     }
 
     private Template createTemplate() {
-        if (textTemplate == null)
+        if (src == null)
             throw new ConfigurationException("No template content provided via 'location' or inline text (%s).".formatted(getTemplateLocation()));
 
         try {
-            return createTemplateEngine().createTemplate(new StringReader(textTemplate));
+            return createTemplateEngine().createTemplate(new StringReader(src));
         } catch (Exception e) {
             throw new ConfigurationException("Could not create template from " + getTemplateLocation(), e);
         }

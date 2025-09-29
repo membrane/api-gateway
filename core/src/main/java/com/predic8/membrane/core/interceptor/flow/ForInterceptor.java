@@ -139,7 +139,7 @@ public class ForInterceptor extends AbstractFlowWithChildrenInterceptor {
     @Override
     public String getShortDescription() {
         StringBuilder ret = new StringBuilder("for (" + in + ") {");
-        for (Interceptor i : getInterceptors()) {
+        for (Interceptor i : getFlow()) {
             ret.append("<br/>&nbsp;&nbsp;&nbsp;&nbsp;").append(i.getDisplayName());
         }
         ret.append("<br/>}");

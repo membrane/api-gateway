@@ -102,12 +102,12 @@ public class LoadBalancingWithClusterManagerTest {
 		lbi.setSessionIdExtractor(extractor);
 
 		ServiceProxy lbiRule = new ServiceProxy(new ServiceProxyKey("localhost", "*", ".*", 3017), "thomas-bayer.com", 80);
-		lbiRule.getInterceptors().add(lbi);
+		lbiRule.getFlow().add(lbi);
 
 		ClusterNotificationInterceptor cni = new ClusterNotificationInterceptor();
 
 		ServiceProxy cniRule = new ServiceProxy(new ServiceProxyKey("localhost", "*", ".*", 3012), "thomas-bayer.com", 80);
-		cniRule.getInterceptors().add(cni);
+		cniRule.getFlow().add(cni);
 
 		lb = new HttpRouter();
 		lb.getRuleManager().addProxyAndOpenPortIfNew(lbiRule);

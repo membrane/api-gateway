@@ -48,7 +48,7 @@ public class LimitedMemoryExchangeStoreIntegrationTest {
         hcc.setMaxRetries(1);
 
         ServiceProxy proxy = new ServiceProxy(new ServiceProxyKey("localhost", "POST", ".*", 3045), "dummy", 80);
-        proxy.getInterceptors().add(new AbstractInterceptor() {
+        proxy.getFlow().add(new AbstractInterceptor() {
             @Override
             public Outcome handleRequest(Exchange exc) {
                 exc.setResponse(Response.ok().body("").build());
@@ -63,7 +63,7 @@ public class LimitedMemoryExchangeStoreIntegrationTest {
         router.init();
 
         ServiceProxy proxy1 = new ServiceProxy(new ServiceProxyKey("localhost", "POST", ".*", 3046), "localhost", 3045);
-        proxy1.getInterceptors().add(new AbstractInterceptor() {
+        proxy1.getFlow().add(new AbstractInterceptor() {
             @Override
             public Outcome handleRequest(Exchange exc) {
                 middleExchange.set(exc);
@@ -75,14 +75,14 @@ public class LimitedMemoryExchangeStoreIntegrationTest {
 
         getHttpClientInterceptor(router2).setHttpClientConfig(hcc);
 
-        router2.getTransport().getInterceptors().add(3, new ExchangeStoreInterceptor(lmes));
+        router2.getTransport().getFlow().add(3, new ExchangeStoreInterceptor(lmes));
 
         router2.getRuleManager().addProxyAndOpenPortIfNew(proxy1);
         router2.init();
     }
 
     private static @NotNull HTTPClientInterceptor getHttpClientInterceptor(Router router) {
-        return (HTTPClientInterceptor) router.getTransport().getInterceptors().stream().filter(i -> i instanceof HTTPClientInterceptor).findFirst().get();
+        return (HTTPClientInterceptor) router.getTransport().getFlow().stream().filter(i -> i instanceof HTTPClientInterceptor).findFirst().get();
     }
 
     @BeforeEach

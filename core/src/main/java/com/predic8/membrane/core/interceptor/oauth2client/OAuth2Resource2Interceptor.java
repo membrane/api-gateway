@@ -78,7 +78,7 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
     public void init() {
         super.init();
         name = "oauth2 client";
-        setFlow(Flow.Set.REQUEST_RESPONSE_ABORT_FLOW);
+        setAppliedFlow(Flow.Set.REQUEST_RESPONSE_ABORT_FLOW);
 
         if (originalExchangeStore == null) {
             originalExchangeStore = new CookieOriginialExchangeStore();

@@ -33,11 +33,11 @@ public class ChainDef {
      * @description The list of interceptors to be executed in sequence.
      */
     @MCChildElement
-    public void setInterceptors(List<Interceptor> interceptors) {
-        this.interceptors = interceptors;
+    public void setFlow(List<Interceptor> flow) {
+        this.interceptors = flow;
     }
 
-    public List<Interceptor> getInterceptors() {
+    public List<Interceptor> getFlow() {
         return interceptors;
     }
 

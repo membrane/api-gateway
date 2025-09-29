@@ -29,7 +29,7 @@ public class SOAPProxyIntegrationTest {
 	@BeforeAll
 	public static void setup() throws Exception {
 		ServiceProxy proxy = new ServiceProxy(new ServiceProxyKey(3000), null, 0);
-		proxy.getInterceptors().add(new SampleSoapServiceInterceptor());
+		proxy.getFlow().add(new SampleSoapServiceInterceptor());
 
 		targetRouter = new HttpRouter();
 		targetRouter.getRuleManager().addProxyAndOpenPortIfNew(proxy);

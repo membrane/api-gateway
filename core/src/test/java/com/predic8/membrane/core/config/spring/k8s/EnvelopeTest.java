@@ -57,8 +57,8 @@ class EnvelopeTest {
         spec:
           port: 2000
           path:
-            value: /names
-          interceptors:
+            uri: /names
+          flow:
             - rateLimiter:
                 requestLimit: 3
                 requestLimitDuration: PT30S
@@ -68,10 +68,9 @@ class EnvelopeTest {
                       from: ^/names/(.*)
                       to: /restnames/name\\.groovy\\?name=$1
             - response:
-                interceptors:
-                  - beautifier: {}
-                  - xml2Json: {}
-                  - log: {}
+              - beautifier: {}
+              - xml2Json: {}
+              - log: {}
           target:
             url: https://api.predic8.de
         ---
@@ -82,19 +81,18 @@ class EnvelopeTest {
         spec:
           port: 2000
           path:
-            value: /header
-          interceptors:
+            uri: /header
+          flow:
             - request:
-                interceptors:
-                  - groovy:
-                      src: |
-                        println "Request headers:"
-                        CONTINUE
-                  - template:
-                      contentType: application/json
-                      textTemplate: '{ "ok": 1 }'
-                  - return:
-                      statusCode: 200
+              - groovy:
+                  src: |
+                    println "Request headers:"
+                    CONTINUE
+              - template:
+                  contentType: application/json
+                  src: '{ "ok": 1 }'
+              - return:
+                  statusCode: 200
         ---
         apiVersion: membrane-soa.org/v1beta1
         kind: api
@@ -111,7 +109,7 @@ class EnvelopeTest {
           name: admin
         spec:
           port: 9000
-          interceptors:
+          flow:
             - adminConsole: {}
         """;
 
@@ -136,8 +134,8 @@ class EnvelopeTest {
         APIProxy a1 = (APIProxy) e1.getSpec();
         assertEquals("api-rewrite", e1.metadata.name);
         assertEquals(2000, a1.getPort());
-        assertEquals("/names", a1.getPath().getValue());
-        List<Interceptor> is1 = a1.getInterceptors();
+        assertEquals("/names", a1.getPath().getUri());
+        List<Interceptor> is1 = a1.getFlow();
         assertEquals(3, is1.size());
         assertInstanceOf(RateLimitInterceptor.class, is1.get(0));
         assertInstanceOf(RewriteInterceptor.class, is1.get(1));
@@ -151,10 +149,10 @@ class EnvelopeTest {
         Envelope e2 = docs.get(2);
         APIProxy a2 = (APIProxy) e2.getSpec();
         assertEquals("header", e2.metadata.name);
-        assertEquals("/header", a2.getPath().getValue());
-        assertEquals(1, a2.getInterceptors().size());
-        assertInstanceOf(RequestInterceptor.class, a2.getInterceptors().getFirst());
-        List<Interceptor> reqChain = ((RequestInterceptor) a2.getInterceptors().getFirst()).getInterceptors();
+        assertEquals("/header", a2.getPath().getUri());
+        assertEquals(1, a2.getFlow().size());
+        assertInstanceOf(RequestInterceptor.class, a2.getFlow().getFirst());
+        List<Interceptor> reqChain = ((RequestInterceptor) a2.getFlow().getFirst()).getFlow();
         assertEquals(3, reqChain.size());
         assertInstanceOf(GroovyInterceptor.class, reqChain.get(0));
         assertInstanceOf(TemplateInterceptor.class, reqChain.get(1));
@@ -172,7 +170,7 @@ class EnvelopeTest {
         APIProxy a4 = (APIProxy) e4.getSpec();
         assertEquals("admin", e4.metadata.name);
         assertEquals(9000, a4.getPort());
-        assertTrue(a4.getInterceptors().stream().anyMatch(i -> i instanceof AdminConsoleInterceptor));
+        assertTrue(a4.getFlow().stream().anyMatch(i -> i instanceof AdminConsoleInterceptor));
     }
 
     @Test

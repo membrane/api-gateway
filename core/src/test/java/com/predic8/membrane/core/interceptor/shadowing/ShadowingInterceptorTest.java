@@ -78,7 +78,7 @@ class ShadowingInterceptorTest {
             setHost("localhost");
             setPort(3000);
         }}));
-        interceptorProxy.setInterceptors(List.of(
+        interceptorProxy.setFlow(List.of(
                 shadowingInterceptor,
                 new SetHeaderInterceptor() {{
                     setFieldName("foo");
@@ -99,7 +99,7 @@ class ShadowingInterceptorTest {
         shadowingProxy = new ServiceProxy(new ServiceProxyKey("localhost", "*", ".*", 3000), null, 0);
         returnInterceptorMock = Mockito.spy(new ReturnInterceptor());
         returnInterceptorMock.setStatusCode(200);
-        shadowingProxy.setInterceptors(List.of(returnInterceptorMock));
+        shadowingProxy.setFlow(List.of(returnInterceptorMock));
 
         shadowingRouter.getRuleManager().addProxyAndOpenPortIfNew(shadowingProxy);
         shadowingRouter.init();

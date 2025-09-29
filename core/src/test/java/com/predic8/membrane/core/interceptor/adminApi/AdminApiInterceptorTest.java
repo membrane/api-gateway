@@ -48,10 +48,10 @@ class AdminApiInterceptorTest {
         router = new HttpRouter();
         router.setHotDeploy(false);
         ServiceProxy sp = new ServiceProxy(new ServiceProxyKey(3065), null, 0);
-        sp.getInterceptors().add(new FastWebSocketClosingInterceptor()); // speeds up test execution
+        sp.getFlow().add(new FastWebSocketClosingInterceptor()); // speeds up test execution
         AdminApiInterceptor e = new AdminApiInterceptor();
         e.getMemoryWatcher().setIntervalMilliseconds(50); // speeds up test execution
-        sp.getInterceptors().add(e);
+        sp.getFlow().add(e);
         router.getRules().add(sp);
         router.start();
     }

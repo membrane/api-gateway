@@ -38,7 +38,7 @@ public class RuleMatchingInterceptor extends AbstractInterceptor {
 
 	public RuleMatchingInterceptor() {
 		name = "rule matching interceptor";
-		setFlow(REQUEST_FLOW);
+		setAppliedFlow(REQUEST_FLOW);
 	}
 
 	@Override

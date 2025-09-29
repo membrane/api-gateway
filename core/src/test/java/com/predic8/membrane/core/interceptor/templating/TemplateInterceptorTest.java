@@ -171,7 +171,7 @@ public class TemplateInterceptorTest {
     void initTest() {
         assertThrows(ConfigurationException.class, () -> {
             ti.setLocation("./template_test.json");
-            ti.setTextTemplate("${minister}");
+            ti.setSrc("${minister}");
             ti.init(router);
         });
     }
@@ -186,7 +186,7 @@ public class TemplateInterceptorTest {
 
     @Test
     void innerTagTest() {
-        ti.setTextTemplate("${property.title}");
+        ti.setSrc("${property.title}");
         ti.init(router);
         ti.handleRequest(exc);
         assertEquals("minister", exc.getRequest().getBodyAsStringDecoded());
@@ -213,7 +213,7 @@ public class TemplateInterceptorTest {
 
     @Test
     void contentTypeTestNoXml() {
-        ti.setTextTemplate("normal text");
+        ti.setSrc("normal text");
         ti.init(router);
         ti.handleRequest(exc);
         assertEquals(TEXT_PLAIN,exc.getRequest().getHeader().getContentType());
@@ -229,7 +229,7 @@ public class TemplateInterceptorTest {
                                     + lineSeparator() + "}";
 
         ti.setContentType(APPLICATION_JSON);
-        ti.setTextTemplate(inputJson);
+        ti.setSrc(inputJson);
         ti.setPretty( TRUE.toString());
         ti.init();
         assertArrayEquals(expectedPrettyJson.getBytes(UTF_8), ti.prettify(inputJson.getBytes(UTF_8)));
@@ -239,7 +239,7 @@ public class TemplateInterceptorTest {
     void prettifyWithInvalidJson() {
         String invalid = "{name:\"John,age:30}";
         ti.setContentType(APPLICATION_JSON);
-        ti.setTextTemplate(invalid);
+        ti.setSrc(invalid);
         ti.setPretty("true");
         ti.init(router);
         ti.handleRequest(exc);
@@ -257,7 +257,7 @@ public class TemplateInterceptorTest {
 
     private static void invokeInterceptor(Exchange exchange, String template, String mimeType) {
         TemplateInterceptor interceptor = new TemplateInterceptor();
-        interceptor.setTextTemplate(template);
+        interceptor.setSrc(template);
         interceptor.setContentType(mimeType);
         interceptor.init(router);
         interceptor.handleRequest(exchange);

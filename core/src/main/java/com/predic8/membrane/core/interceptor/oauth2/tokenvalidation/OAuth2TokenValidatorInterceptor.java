@@ -35,7 +35,7 @@ public class OAuth2TokenValidatorInterceptor extends AbstractInterceptor {
     @Override
     public void init() {
         super.init();
-        setFlow(REQUEST_FLOW);
+        setAppliedFlow(REQUEST_FLOW);
         name = "oauth2 token validator";
         client = router.getHttpClientFactory().createClient(null);
     }
