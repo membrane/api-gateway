@@ -26,6 +26,9 @@ import javax.tools.*;
 import java.io.*;
 import java.lang.annotation.*;
 import java.util.*;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static javax.tools.StandardLocation.*;
 
@@ -214,9 +217,9 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
 
 					scan(m, main, ii);
 
-					String uniquenessError = getUniquenessError(ii);
-					if (uniquenessError != null)
-						throw new ProcessingException(uniquenessError, ii.getElement());
+					List<String> uniquenessErrors = getUniquenessError(ii);
+					if (uniquenessErrors != null && !uniquenessErrors.isEmpty())
+                        throw new ProcessingException(String.join(System.lineSeparator(), uniquenessErrors), ii.getElement());
                     if (ii.getAnnotation().noEnvelope()) {
                         if (ii.getAnnotation().topLevel())
                             throw new ProcessingException("@MCElement(..., noEnvelope=true, topLevel=true) is invalid.", ii.getElement());
@@ -281,7 +284,8 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
 		}
 	}
 
-	private String getUniquenessError(ElementInfo ii) {
+	private List<String> getUniquenessError(ElementInfo ii) {
+        List<String> errors = new ArrayList<>();
         // TODO ensure all cases
         
         TypeElement el = ii.getElement();
@@ -298,14 +302,22 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
         }
         
         
-        // 2 attributes with same setter names
-        var dupes = getDuplicateAttributes(ii);
-        if (!dupes.isEmpty()) {
-            return "Duplicate type parameter(s): " + String.join(", ", dupes);
+        // duplicate attributes
+        var dupAttr = duplicates(attributeNames(ii));
+        if (!dupAttr.isEmpty()) {
+            errors.add("Duplicate attributes: " + String.join(", ", dupAttr));
         }
 
+        // duplicate child elements
+        var dupChild = duplicates(childElementNames(ii));
+        if (!dupChild.isEmpty()) {
+            errors.add("Duplicate child elements: " + String.join(", ", dupChild));
+        }
 
         // attribuites + childelements
+        addAttributeChildNameClash(ii, errors);
+
+
         // attributes + ssl
         // childelements + ssl
         // e.g. oauth2ressource2: github + google
@@ -315,16 +327,41 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
 
 
 		// TODO ii.getChildElementSpecs().map(::getPropertyName) aber isList siehe JsonSchemaGenerator:140
-		return null;
+		return errors;
 	}
 
-    private static List<String> getDuplicateAttributes(ElementInfo ii) {
+    private void addAttributeChildNameClash(ElementInfo ii, List<String> errors) {
+        var attrs  = attributeNames(ii).toList();
+        var childs = childElementNames(ii).toList();
+        if (attrs.isEmpty() || childs.isEmpty()) return;
+
+        var clash = new java.util.TreeSet<>(attrs);
+        clash.retainAll(new java.util.HashSet<>(childs));
+        if (!clash.isEmpty()) {
+            errors.add("Name clash between attributes and child elements: " + String.join(", ", clash));
+        }
+    }
+
+    private Stream<String> attributeNames(ElementInfo ii) {
         return ii.getAis().stream()
                 .map(AttributeInfo::getXMLName)
-                .collect(java.util.stream.Collectors.groupingBy(n -> n, java.util.stream.Collectors.counting()))
+                .filter(n -> n != null && !n.isBlank())
+                .map(String::trim);
+    }
+
+    private Stream<String> childElementNames(ElementInfo ii) {
+        return ii.getChildElementSpecs().stream()
+                .map(ChildElementInfo::getPropertyName)
+                .filter(n -> n != null && !n.isBlank())
+                .map(String::trim);
+    }
+
+    private List<String> duplicates(Stream<String> names) {
+        return names.collect(Collectors.groupingBy(Function.identity(), Collectors.counting()))
                 .entrySet().stream()
                 .filter(e -> e.getValue() > 1)
                 .map(Map.Entry::getKey)
+                .sorted()
                 .toList();
     }
 
