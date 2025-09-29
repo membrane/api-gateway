@@ -145,7 +145,7 @@ public abstract class OAuth2ResourceB2CTest {
         // state 0: the attacker aborts the OAuth2 flow at the AS
         // state 1: the helpless user continues using the same link
 
-        mockAuthorizationServer.getMockAuthServer().getTransport().getInterceptors().add(2, new AbstractInterceptor() {
+        mockAuthorizationServer.getMockAuthServer().getTransport().getFlow().add(2, new AbstractInterceptor() {
             @Override
             public Outcome handleRequest(Exchange exc) {
                 if (state.get() == 0) {

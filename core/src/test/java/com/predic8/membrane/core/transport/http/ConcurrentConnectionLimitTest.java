@@ -45,8 +45,8 @@ public class ConcurrentConnectionLimitTest {
 
         ServiceProxy sp = new ServiceProxy(new ServiceProxyKey("*", "*", ".*", port), "", -1);
 
-        sp.getInterceptors().add(GROOVY("Thread.sleep(1000)"));
-        sp.getInterceptors().add(RETURN);
+        sp.getFlow().add(GROOVY("Thread.sleep(1000)"));
+        sp.getFlow().add(RETURN);
 
         router.getRuleManager().addProxyAndOpenPortIfNew(sp);
         router.init();

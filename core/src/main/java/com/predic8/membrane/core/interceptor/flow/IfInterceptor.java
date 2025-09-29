@@ -32,9 +32,8 @@ import static com.predic8.membrane.core.lang.ExchangeExpression.Language.*;
  * if allows conditional execution of nested interceptors.
  * </p>
  * <pre><code><if test="method == 'POST'" language="SpEL">
- *     ...
- * </if>
- * </code></pre>
+ *         ...
+ * </if></code></pre>
  * @topic 1. Proxies and Flow
  */
 @MCElement(name = "if")
@@ -88,8 +87,8 @@ public class IfInterceptor extends AbstractFlowWithChildrenInterceptor {
             return CONTINUE;
 
         return switch (flow) {
-            case REQUEST -> getFlowController().invokeRequestHandlers(exc, getInterceptors());
-            case RESPONSE -> getFlowController().invokeResponseHandlers(exc, getInterceptors());
+            case REQUEST -> getFlowController().invokeRequestHandlers(exc, getFlow());
+            case RESPONSE -> getFlowController().invokeResponseHandlers(exc, getFlow());
             default -> throw new RuntimeException("Should never happen");
         };
     }
@@ -125,7 +124,7 @@ public class IfInterceptor extends AbstractFlowWithChildrenInterceptor {
     @Override
     public String getShortDescription() {
         StringBuilder ret = new StringBuilder("if (" + test + ") {");
-        for (Interceptor i : getInterceptors()) {
+        for (Interceptor i : getFlow()) {
             ret.append("<br/>&nbsp;&nbsp;&nbsp;&nbsp;").append(i.getDisplayName());
         }
         ret.append("<br/>}");

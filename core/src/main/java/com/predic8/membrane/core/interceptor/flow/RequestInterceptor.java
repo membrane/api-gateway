@@ -35,7 +35,7 @@ public class RequestInterceptor extends AbstractFlowWithChildrenInterceptor {
 
     public RequestInterceptor() {
         name = "request interceptor";
-        setFlow(REQUEST_FLOW);
+        setAppliedFlow(REQUEST_FLOW);
     }
 
     @Override
@@ -43,7 +43,7 @@ public class RequestInterceptor extends AbstractFlowWithChildrenInterceptor {
         // The behaviour here differs from FlowController. Here after RETURN
         // the previous interceptors inside <request> should not execute
         // handleResponse().
-        for (Interceptor i : getInterceptors()) {
+        for (Interceptor i : getFlow()) {
             if (!i.handlesRequests())
                 continue;
             log.debug("Invoking handler: {} on exchange: {}", i.getDisplayName(), exc);

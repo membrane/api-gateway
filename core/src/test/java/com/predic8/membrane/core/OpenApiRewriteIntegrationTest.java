@@ -45,7 +45,7 @@ public class OpenApiRewriteIntegrationTest {
     @NotNull
     private ServiceProxy getTargetProxy() {
         ServiceProxy tp = new ServiceProxy(new ServiceProxyKey("localhost", "GET", ".*", 3000), null, 8000);
-        tp.getInterceptors().add(new ReturnInterceptor());
+        tp.getFlow().add(new ReturnInterceptor());
         tp.init(r);
         return tp;
     }
@@ -60,7 +60,7 @@ public class OpenApiRewriteIntegrationTest {
         spec.setValidateRequests(OpenAPISpec.YesNoOpenAPIOption.YES);
         proxy.setSpecs(singletonList(spec));
         proxy.setKey(new APIProxyKey(null, "*", 2000, null, "*", null,false));
-        proxy.getInterceptors().add(new LogInterceptor());
+        proxy.getFlow().add(new LogInterceptor());
       //  proxy.init(r);
         return proxy;
     }

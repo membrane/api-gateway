@@ -46,7 +46,7 @@ public class BasicAuthenticationInterceptor extends AbstractInterceptor {
 
 	public BasicAuthenticationInterceptor() {
 		name = "basic authenticator";
-		setFlow(REQUEST_FLOW);
+		setAppliedFlow(REQUEST_FLOW);
 	}
 
 	@Override

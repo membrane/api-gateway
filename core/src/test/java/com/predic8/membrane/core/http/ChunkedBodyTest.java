@@ -196,14 +196,14 @@ public class ChunkedBodyTest {
         }
         AtomicReference<String> remoteSocketAddr = new AtomicReference<>();
         if (http2Client) {
-            HTTPClientInterceptor interceptor = (HTTPClientInterceptor) router.getTransport().getInterceptors().stream().filter(i -> i instanceof HTTPClientInterceptor).findFirst().get();
+            HTTPClientInterceptor interceptor = (HTTPClientInterceptor) router.getTransport().getFlow().stream().filter(i -> i instanceof HTTPClientInterceptor).findFirst().get();
             HttpClientConfiguration httpClientConfig = new HttpClientConfiguration();
             httpClientConfig.setUseExperimentalHttp2(true);
             interceptor.setHttpClientConfig(httpClientConfig);
             SSLParser sslParser2 = getSslParserForHttp2Client();
             sp.getTarget().setSslParser(sslParser2);
         } else {
-            sp.getInterceptors().add(new AbstractInterceptor() {
+            sp.getFlow().add(new AbstractInterceptor() {
                 @Override
                 public Outcome handleRequest(Exchange exc) {
                     String remoteAddr = getRemoteAddr(exc);

@@ -65,7 +65,7 @@ public class ProxySSLTest {
         Router proxy = new Router();
         proxy.setHotDeploy(false);
         ProxyRule rule = new ProxyRule(new ProxyRuleKey(proxyPort));
-        rule.getInterceptors().add(new AbstractInterceptor() {
+        rule.getFlow().add(new AbstractInterceptor() {
             @Override
             public Outcome handleRequest(Exchange exc) {
                 proxyCounter.incrementAndGet();
@@ -123,7 +123,7 @@ public class ProxySSLTest {
         if (backendUsesSSL) {
             sp.setSslInboundParser(getSslParser("classpath:/ssl-rsa.keystore"));
         }
-        sp.getInterceptors().add(new CountInterceptor());
+        sp.getFlow().add(new CountInterceptor());
         backend.getRuleManager().addProxy(sp, RuleManager.RuleDefinitionSource.MANUAL);
         backend.start();
         return backend;

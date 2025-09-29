@@ -23,18 +23,16 @@ import static com.predic8.membrane.core.security.ApiKeySecurityScheme.In.*;
 
 /**
  * @description Extracts an API key from a specific HTTP request header. By default, the header name
- * is {@code X-Api-Key}. If the header is present, its first value is returned as the API key.
+ * is <code>X-Api-Key</code>. If the header is present, its first value is returned as the API key.
  * <p>
- * Example usage inside {@code &lt;apiKey&gt;}:
+ * Example usage inside <code>&lt;apiKey&gt;</code>:
  * </p>
- * <pre>
- * &lt;apiKey&gt;
- *   &lt;headerExtractor /&gt; <!-- default: X-Api-Key -->
+ * <pre><code><apiKey>
+ *   <headerExtractor /> <!-- default: X-Api-Key -->
  *
- *   &lt;!-- custom header name --&gt;
- *   &lt;headerExtractor name="Authorization"/&gt;
- * &lt;/apiKey&gt;
- * </pre>
+ *   <!-- custom header name -->
+ *   <headerExtractor name="Authorization"/>
+ * </apiKey></code></pre>
  * @topic 3. Security and Validation
  */
 @MCElement(name="headerExtractor", topLevel = false)

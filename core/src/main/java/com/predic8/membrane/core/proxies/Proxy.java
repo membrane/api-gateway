@@ -24,9 +24,9 @@ import java.util.*;
  */
 public interface Proxy extends Cloneable {
 
-	List<Interceptor> getInterceptors();
+	List<Interceptor> getFlow();
 
-	void setInterceptors(List<Interceptor> interceptors);
+	void setFlow(List<Interceptor> interceptors);
 
 	boolean isBlockRequest();
 

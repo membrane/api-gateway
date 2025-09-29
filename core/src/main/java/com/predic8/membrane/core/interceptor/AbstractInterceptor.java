@@ -57,11 +57,11 @@ public class AbstractInterceptor implements Interceptor {
 		this.name = name;
 	}
 
-	public void setFlow(EnumSet<Flow> flow) {
+	public void setAppliedFlow(EnumSet<Flow> flow) {
 		this.flow = flow;
 	}
 
-	public EnumSet<Flow> getFlow() {
+	public EnumSet<Flow> getAppliedFlow() {
 		return flow;
 	}
 
@@ -111,9 +111,9 @@ public class AbstractInterceptor implements Interceptor {
 				.getRules()
 				.stream()
 				.filter(proxy -> proxy
-						.getInterceptors() != null)
+						.getFlow() != null)
 				.filter(proxy -> proxy
-						.getInterceptors()
+						.getFlow()
 						.stream().anyMatch(this::hasSameReferenceAs))
 				.findAny()
 				.get();
@@ -121,7 +121,7 @@ public class AbstractInterceptor implements Interceptor {
 
 	private boolean hasSameReferenceAs(Interceptor i){
 		if(i instanceof AbstractFlowWithChildrenInterceptor){
-			return ((AbstractFlowWithChildrenInterceptor) i).getInterceptors().stream().anyMatch(this::hasSameReferenceAs);
+			return ((AbstractFlowWithChildrenInterceptor) i).getFlow().stream().anyMatch(this::hasSameReferenceAs);
 		}
 		return i == this;
 	}

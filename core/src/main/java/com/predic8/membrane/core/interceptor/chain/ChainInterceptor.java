@@ -43,7 +43,7 @@ public class ChainInterceptor extends AbstractFlowWithChildrenInterceptor {
 
     private List<Interceptor> getInterceptorChainForRef(String ref) {
         return Optional.of(router.getBeanFactory().getBean(ref, ChainDef.class))
-                .map(ChainDef::getInterceptors)
+                .map(ChainDef::getFlow)
                 .orElseThrow(() -> new ConfigurationException("No chain found for reference: " + ref));
     }
 

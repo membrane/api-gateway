@@ -121,11 +121,11 @@ public class ApiDocsInterceptor extends AbstractInterceptor {
     }
 
     private boolean hasOpenAPIInterceptor(Proxy proxy) {
-        return proxy.getInterceptors().stream().anyMatch(OpenAPIInterceptor.class::isInstance);
+        return proxy.getFlow().stream().anyMatch(OpenAPIInterceptor.class::isInstance);
     }
 
     static Optional<OpenAPIInterceptor> getOpenAPIInterceptor(Proxy proxy) {
-        return proxy.getInterceptors().stream()
+        return proxy.getFlow().stream()
                 .filter(OpenAPIInterceptor.class::isInstance)
                 .map(ic -> (OpenAPIInterceptor) ic) // Previous line checks type, so cast should be fine
                 .findFirst();

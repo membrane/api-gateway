@@ -16,7 +16,7 @@ metadata:
   name: admin-console
 spec:
   port: 9000
-  interceptors:
+  flow:
     - adminConsole: {}
 
 ---
@@ -27,11 +27,7 @@ metadata:
   name: log
 spec:
   port: 2000
-  ssl:
-    key:
-      private:
-
-  interceptors:
+  flow:
     - log:
         message: Header ${header}
   target:
