@@ -164,6 +164,7 @@ public class Http1ProtocolHandler extends AbstractProtocolHandler {
                 exchange.setResponse(internal(true, "proxy")
                         .detail("Could not connect to proxy server")
                         .build());
+                return exchange;
             }
         }
         exchange.getRequest().setUri(NOT_APPLICABLE); // TODO Why?
