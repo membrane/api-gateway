@@ -282,11 +282,53 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
 	}
 
 	private String getUniquenessError(ElementInfo ii) {
+        // TODO ensure all cases
+        
+        TypeElement el = ii.getElement();
+        
+        if(el.getSimpleName().contentEquals("APIProxy")) {
+            System.out.println("--------------------------BMW-------------------------");
+            System.out.println("el = " + el);
+            System.out.println("el.getTypeParameters() = " + el.getTypeParameters());
+            System.out.println("el.getPermittedSubclasses() = " + el.getPermittedSubclasses());
+            el.getInterfaces().forEach(System.out::println);
+            System.out.println("ii.getChildElementSpecs() = " + ii.getChildElementSpecs());
+            System.out.println("ii.getAis() = " + ii.getAis());
+            System.out.println("ii.getOai() = " + ii.getOai());
+        }
+        
+        
+        // 2 attributes with same setter names
+        var dupes = getDuplicateAttributes(ii);
+        if (!dupes.isEmpty()) {
+            return "Duplicate type parameter(s): " + String.join(", ", dupes);
+        }
+
+
+        // attribuites + childelements
+        // attributes + ssl
+        // childelements + ssl
+        // e.g. oauth2ressource2: github + google
+        // e.g. oauth2ressource2: github/google + other attribute
+
+
+
+
 		// TODO ii.getChildElementSpecs().map(::getPropertyName) aber isList siehe JsonSchemaGenerator:140
 		return null;
 	}
 
-	private static final String REQUIRED = "com.predic8.membrane.annot.Required";
+    private static List<String> getDuplicateAttributes(ElementInfo ii) {
+        return ii.getAis().stream()
+                .map(AttributeInfo::getXMLName)
+                .collect(java.util.stream.Collectors.groupingBy(n -> n, java.util.stream.Collectors.counting()))
+                .entrySet().stream()
+                .filter(e -> e.getValue() > 1)
+                .map(Map.Entry::getKey)
+                .toList();
+    }
+
+    private static final String REQUIRED = "com.predic8.membrane.annot.Required";
 
 	private void scan(Model m, MainInfo main, ElementInfo ii) {
 		scan(m, main, ii, ii.getElement());
