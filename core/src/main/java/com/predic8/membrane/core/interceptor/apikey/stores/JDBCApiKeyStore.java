@@ -34,19 +34,17 @@ import java.util.*;
  * </ul>
  * <p>
  * By default, the store will attempt to create the required tables at startup if they do not exist
- * (controlled by {@code autoCreate}).
+ * (controlled by <code>autoCreate</code>).
  * </p>
  * <p>
  * Example configuration:
  * </p>
- * <pre>
- * &lt;apiKey&gt;
- *   &lt;databaseApiKeyStore autoCreate="true"&gt;
- *     &lt;keyTable name="api_keys"/&gt;
- *     &lt;scopeTable name="api_scopes"/&gt;
- *   &lt;/databaseApiKeyStore&gt;
- * &lt;/apiKey&gt;
- * </pre>
+ * <pre><code><apiKey>
+ *   <databaseApiKeyStore autoCreate="true">
+ *     <keyTable name="api_keys"/>
+ *     <scopeTable name="api_scopes"/>
+ *   </databaseApiKeyStore>
+ * </apiKey></code></pre>
  * @topic 3. Security and Validation
  */
 @MCElement(name = "databaseApiKeyStore")
@@ -149,7 +147,7 @@ public class JDBCApiKeyStore extends AbstractJdbcSupport implements ApiKeyStore 
     }
 
     /**
-     * @description The table containing API keys. Each row must define a unique {@code apikey}.
+     * @description The table containing API keys. Each row must define a unique <code>apikey</code>.
      */
     @MCChildElement(order = 0)
     public void setKeyTable(KeyTable keyTable) {
@@ -157,7 +155,7 @@ public class JDBCApiKeyStore extends AbstractJdbcSupport implements ApiKeyStore 
     }
 
     /**
-     * @description The table mapping API keys to scopes. Each row links one {@code apikey} to one {@code scope}.
+     * @description The table mapping API keys to scopes. Each row links one <code>apikey</code> to one <code>scope</code>.
      */
     @MCChildElement(order = 1)
     public void setScopeTable(ScopeTable scopeTable) {

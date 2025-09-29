@@ -113,6 +113,10 @@ public class Doc {
 			return;
 		}
 
+        if (value.contains("{@code")) {
+            processingEnv.getMessager().printMessage(Kind.ERROR, "@code not allowed!", e);
+        }
+
 		keys.add(key);
 		entries.add(new Entry(key, value));
 	}

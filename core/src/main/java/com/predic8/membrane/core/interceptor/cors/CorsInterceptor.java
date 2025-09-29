@@ -81,7 +81,6 @@ import static com.predic8.membrane.core.util.UrlNormalizer.*;
  * <p>see: <a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS">MDN CORS Documentation</a></p>
  *
  * @author predic8 GmbH
- * @since 6.3.0
  * @topic 3. Security and Validation
  */
 @MCElement(name = "cors")
@@ -160,8 +159,7 @@ public class CorsInterceptor extends AbstractInterceptor {
      * @default false
      *
      * @example
-     * <pre><code><cors allowAll="true" />
-     * </code></pre>
+     * <pre><code><cors allowAll="true" /></code></pre>
      */
     @MCAttribute
     public void setAllowAll(boolean allowAll) {
@@ -169,6 +167,7 @@ public class CorsInterceptor extends AbstractInterceptor {
     }
 
     /**
+     * @throws ConfigurationException if an origin URL is malformed
      * @description Configures the list of allowed origins for CORS requests.
      *
      * <p>Origins must be specified as complete URLs including protocol (http/https).
@@ -178,10 +177,8 @@ public class CorsInterceptor extends AbstractInterceptor {
      * @default "*" (allow all origins)
      *
      * @example
-     * <pre><code><cors origins="https://example.com https://app.example.com null" />
-     * </code></pre>
+     * <pre><code><cors origins="https://example.com https://app.example.com null" /></code></pre>
      *
-     * @throws ConfigurationException if an origin URL is malformed
      */
     @MCAttribute
     public void setOrigins(String origins) {
@@ -224,8 +221,7 @@ public class CorsInterceptor extends AbstractInterceptor {
      * @default "*" (allow all methods)
      *
      * @example
-     * <pre><code><cors methods="GET,POST,PUT,DELETE" />
-     * </code></pre>
+     * <pre><code><cors methods="GET,POST,PUT,DELETE" /></code></pre>
      */
     @MCAttribute
     public void setMethods(String methods) {
@@ -248,8 +244,7 @@ public class CorsInterceptor extends AbstractInterceptor {
      * @default "" (no additional headers beyond safe headers)
      *
      * @example
-     * <pre><code><cors headers="Authorization,X-Custom-Header,X-Requested-With" />
-     * </code></pre>
+     * <pre><code><cors headers="Authorization,X-Custom-Header,X-Requested-With" /></code></pre>
      */
     @MCAttribute
     public void setHeaders(String headers) {
@@ -272,8 +267,7 @@ public class CorsInterceptor extends AbstractInterceptor {
      * @default "" (expose no additional headers)
      *
      * @example
-     * <pre><code><cors exposeHeaders="X-Total-Count,X-Custom-Info" />
-     * </code></pre>
+     * <pre><code><cors exposeHeaders="X-Total-Count,X-Custom-Info" /></code></pre>
      */
     @MCAttribute
     public void setExposeHeaders(String headers) {
@@ -323,8 +317,7 @@ public class CorsInterceptor extends AbstractInterceptor {
      * @default 5 seconds
      *
      * @example
-     * <pre><code><cors maxAge="3600" />
-     * </code></pre>
+     * <pre><code><cors maxAge="3600" /></code></pre>
      */
     @MCAttribute
     public void setMaxAge(int maxAge) {

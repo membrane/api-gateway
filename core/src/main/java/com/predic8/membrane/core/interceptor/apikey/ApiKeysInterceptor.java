@@ -151,8 +151,8 @@ public class ApiKeysInterceptor extends AbstractInterceptor {
     }
 
     /**
-     * @description Controls whether API key validation is enforced. If set to {@code false}, the interceptor still extracts
-     * keys and loads scopes so they remain available for downstream checks (e.g., via {@code hasScope("...")}), but requests
+     * @description Controls whether API key validation is enforced. If set to <code>false</code>, the interceptor still extracts
+     * keys and loads scopes so they remain available for downstream checks (e.g., via <code>hasScope("...")</code>), but requests
      * without a valid key are allowed to pass.
      * @default true
      * @example false
@@ -173,12 +173,11 @@ public class ApiKeysInterceptor extends AbstractInterceptor {
      * <p>
      * Example:
      * </p>
-     * <pre><code>
-     * &lt;apiKey&gt;
-     *   &lt;!-- store elements; order does not matter --&gt;
-     *   &lt;yourFileStore src="classpath:keys.txt"/&gt;
-     *   &lt;yourXmlStore  ref="sharedKeysBean"/&gt;
-     * &lt;/apiKey&gt;</code></pre>
+     * <pre><code><apiKey>
+     *   <!-- store elements; order does not matter -->
+     *   <yourFileStore src="classpath:keys.txt"/>
+     *   <yourXmlStore  ref="sharedKeysBean"/>;
+     * </apiKey></code></pre>
      */
     @MCChildElement(allowForeign = true)
     public void setStores(List<ApiKeyStore> stores) {
@@ -192,7 +191,7 @@ public class ApiKeysInterceptor extends AbstractInterceptor {
     /**
      * @description Configures how and where API keys are extracted from requests (e.g., HTTP header or URL query parameter).
      * Provide one or more extractor elements. If omitted, a header extractor using <code>X-Api-Key</code> is used.
-     * @default &lt;headerExtractor /&gt; (header name <code>X-Api-Key</code>)
+     * @default <headerExtractor /> (header name <code>X-Api-Key</code>)
      * <p>
      * Examples:
      * </p>

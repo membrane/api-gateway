@@ -26,8 +26,8 @@ import static com.mongodb.client.model.Filters.*;
 
 /**
  * @description Uses a MongoDB collection as a store for API keys and their scopes.
- * Each document in the collection must use the API key as its {@code _id}
- * and may define an array field {@code scopes} listing the allowed scopes.
+ * Each document in the collection must use the API key as its <code>_id}</code>
+ * and may define an array field <code>scopes</code> listing the allowed scopes.
  * <p>
  * Example MongoDB document:
  * </p>
@@ -40,14 +40,12 @@ import static com.mongodb.client.model.Filters.*;
  * <p>
  * Configuration example:
  * </p>
- * <pre>
- * &lt;apiKey&gt;
- *   &lt;mongoDBApiKeyStore
+ * <pre><code><apiKey>
+ *   <mongoDBApiKeyStore
  *       connection="mongodb://localhost:27017"
  *       database="security"
- *       collection="apikeys"/&gt;
- * &lt;/apiKey&gt;
- * </pre>
+ *       collection="apikeys"/>
+ * </apiKey></code></pre>
  * @topic 3. Security and Validation
  */
 @MCElement(name = "mongoDBApiKeyStore")

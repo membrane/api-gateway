@@ -204,10 +204,11 @@ public class BalancerHealthMonitor implements ApplicationContextAware, Initializ
     }
 
     /**
-     * @description Optional HTTP client configuration for health probes (e.g., timeouts, TLS).
-     * If provided, it is used when creating the {@link HttpClient} via the router's client factory.
      * @see Router#getHttpClientFactory()
      * @see HttpClientConfiguration
+     *
+     * @description Optional HTTP client configuration for health probes (e.g., timeouts, TLS).
+     * If provided, it is used when creating the {@link HttpClient} via the router's client factory.
      */
     @MCChildElement
     public void setHttpClientConfig(HttpClientConfiguration httpClientConfig) {
