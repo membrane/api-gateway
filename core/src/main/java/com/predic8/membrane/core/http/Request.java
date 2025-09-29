@@ -31,31 +31,40 @@ import static java.nio.charset.StandardCharsets.*;
 
 public class Request extends Message {
 
-	private static final Pattern pattern = Pattern.compile("(.+?) (.+?) HTTP/(.+?)$");
+//	private static final Pattern pattern = Pattern.compile("(.+?) (.+?) HTTP/(.+?)$");
+	private static final Pattern pattern = Pattern.compile("^([A-Za-z]+)\\s+(\\S+)\\s+HTTP/(\\d\\.\\d)$");
 	private static final Pattern stompPattern = Pattern.compile("^(.+?)$");
 
-	public static final String METHOD_GET = "GET";
-	public static final String METHOD_POST = "POST";
-	public static final String METHOD_PATCH = "PATCH";
-	public static final String METHOD_HEAD = "HEAD";
-	public static final String METHOD_DELETE = "DELETE";
-	public static final String METHOD_PUT = "PUT";
+	public static final String GET = "GET";
+	public static final String POST = "POST";
+	public static final String PATCH = "PATCH";
+	public static final String HEAD = "HEAD";
+	public static final String DELETE = "DELETE";
+	public static final String PUT = "PUT";
 	@SuppressWarnings("unused")
-	public static final String METHOD_TRACE = "TRACE";
-	public static final String METHOD_CONNECT = "CONNECT";
-	public static final String METHOD_OPTIONS = "OPTIONS";
+	public static final String TRACE = "TRACE";
+	public static final String CONNECT = "CONNECT";
+	public static final String OPTIONS = "OPTIONS";
 
-	private static final HashSet<String> methodsWithoutBody = Sets.newHashSet(METHOD_GET, METHOD_HEAD, METHOD_CONNECT);
-	private static final HashSet<String> methodsWithOptionalBody = Sets.newHashSet(
-			METHOD_DELETE,
+    public static final String PROPFIND = "PROPFIND";
+    public static final String MKCOL = "MKCOL";
+    public static final String COPY = "COPY";
+    public static final String MOVE = "MOVE";
+    public static final String LOCK = "LOCK";
+    public static final String UNLOCK = "UNLOCK";
+
+	private static final HashSet<String> methodsWithoutBody = Sets.newHashSet(GET, HEAD, CONNECT);
+
+    private static final HashSet<String> methodsWithOptionalBody = Sets.newHashSet(
+            DELETE,
 			/* some WebDAV methods, see http://www.ietf.org/rfc/rfc2518.txt */
-			METHOD_OPTIONS,
-			"PROPFIND",
-			"MKCOL",
-			"COPY",
-			"MOVE",
-			"LOCK",
-			"UNLOCK");
+            OPTIONS,
+            PROPFIND,
+            MKCOL,
+            COPY,
+            MOVE,
+            LOCK,
+            UNLOCK);
 
 
 	String method;
@@ -124,27 +133,27 @@ public class Request extends Message {
 
 	@SuppressWarnings("BooleanMethodIsAlwaysInverted")
 	public boolean isHEADRequest() {
-		return METHOD_HEAD.equals(method);
+		return HEAD.equals(method);
 	}
 
 	public boolean isGETRequest() {
-		return METHOD_GET.equals(method);
+		return GET.equals(method);
 	}
 
 	public boolean isPOSTRequest() {
-		return METHOD_POST.equals(method);
+		return POST.equals(method);
 	}
 
 	public boolean isDELETERequest() {
-		return METHOD_DELETE.equals(method);
+		return DELETE.equals(method);
 	}
 
 	public boolean isCONNECTRequest() {
-		return METHOD_CONNECT.equals(method);
+		return CONNECT.equals(method);
 	}
 
 	public boolean isOPTIONSRequest() {
-		return METHOD_OPTIONS.equals(method);
+		return OPTIONS.equals(method);
 	}
 
 	@Override
@@ -312,7 +321,7 @@ public class Request extends Message {
 		}
 
 		public Builder post(URIFactory uriFactory, String url) throws URISyntaxException {
-			return method(Request.METHOD_POST).url(uriFactory, url);
+			return method(Request.POST).url(uriFactory, url);
 		}
 
 		public Builder post(String url) throws URISyntaxException {
@@ -320,7 +329,7 @@ public class Request extends Message {
 		}
 
 		public Builder get(URIFactory uriFactory, String url) throws URISyntaxException {
-			return method(METHOD_GET).url(uriFactory, url);
+			return method(GET).url(uriFactory, url);
 		}
 
 		/**
@@ -331,7 +340,7 @@ public class Request extends Message {
 		}
 		
 		public Builder delete(URIFactory uriFactory, String url) throws URISyntaxException {
-			return method(Request.METHOD_DELETE).url(uriFactory, url);
+			return method(Request.DELETE).url(uriFactory, url);
 		}
 
 		public Builder delete(String url) throws URISyntaxException {
@@ -339,7 +348,7 @@ public class Request extends Message {
 		}
 		
 		public Builder put(URIFactory uriFactory, String url) throws URISyntaxException {
-			return method(Request.METHOD_PUT).url(uriFactory, url);
+			return method(Request.PUT).url(uriFactory, url);
 		}
 
 		public Builder put(String url) throws URISyntaxException {
@@ -351,13 +360,13 @@ public class Request extends Message {
 		}
 
 		public Builder connect(String url) throws URISyntaxException {
-			req.setMethod(METHOD_CONNECT);
+			req.setMethod(CONNECT);
             req.setUri(new URIFactory().create(url).getAuthority());
 			return this;
 		}
 
 		public Builder options(URIFactory uriFactory, String url) throws URISyntaxException {
-			return method(Request.METHOD_OPTIONS).url(uriFactory,url);
+			return method(Request.OPTIONS).url(uriFactory,url);
 		}
 	}
 }

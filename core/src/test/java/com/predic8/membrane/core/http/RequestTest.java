@@ -15,10 +15,13 @@
 package com.predic8.membrane.core.http;
 
 import com.predic8.membrane.core.util.*;
+import org.bouncycastle.cert.ocsp.*;
+import org.jetbrains.annotations.*;
 import org.junit.jupiter.api.*;
 
 import java.io.*;
 import java.net.*;
+import java.nio.charset.*;
 
 import static com.predic8.membrane.core.Constants.*;
 import static com.predic8.membrane.core.http.MimeType.TEXT_XML;
@@ -30,9 +33,9 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class RequestTest {
 
-	private static final Request reqPost = new Request();
+	private Request reqPost;
 
-	private static final Request reqChunked = new Request();
+	private Request reqChunked;
 
 	private InputStream inPost;
 
@@ -46,11 +49,12 @@ public class RequestTest {
 	public void setUp() {
 		inPost = getResourceAsStream(this,"request-post.msg");
 		inChunked = getResourceAsStream(this,"request-chunked-soap.msg");
+        reqPost = new Request();
+        reqChunked = new Request();
 	}
 
 	@AfterEach
 	public void tearDown() throws Exception {
-
 		if (inPost != null) {
 			inPost.close();
 		}
@@ -66,7 +70,6 @@ public class RequestTest {
 		if (tempOut != null) {
 			tempOut.close();
 		}
-
 	}
 	
 	@Test
@@ -86,7 +89,7 @@ public class RequestTest {
 	@Test
 	void readPost() throws Exception {
 		reqPost.read(inPost, true);
-		assertEquals(METHOD_POST, reqPost.getMethod());
+		assertEquals(POST, reqPost.getMethod());
 		assertEquals("/operation/call", reqPost.getUri());
 		assertNotNull(reqPost.getBody());
 
@@ -154,14 +157,14 @@ public class RequestTest {
 	@Test
 	void createFromStreamMethodGETDoNotSupportBody() throws IOException {
 		Request req = new Request();
-		req.create(METHOD_GET , "http://test", "HTTP/", new Header(), getResourceAsStream(this,"/getBank.xml"));
+		req.create(GET, "http://test", "HTTP/", new Header(), getResourceAsStream(this,"/getBank.xml"));
 		assertTrue(req.isBodyEmpty());
 	}
 
 	@Test
 	void createFromStreamMethodHEADDoNotSupportBody() throws IOException {
 		Request req = new Request();
-		req.create(METHOD_HEAD, "http://test", "HTTP/", new Header(), getResourceAsStream(this,"/getBank.xml"));
+		req.create(HEAD, "http://test", "HTTP/", new Header(), getResourceAsStream(this,"/getBank.xml"));
 		assertTrue(req.isBodyEmpty());
 	}
 	
@@ -253,8 +256,43 @@ public class RequestTest {
 		assertTrue(post("/foo").contentType("text/xml; charset=utf-8").build().isXML());
 		assertTrue(post("/foo").header("Content-Type", "text/xml; charset=utf-8").build().isXML());
 	}
+    
+    @Test
+    void lowerCaseMethod() throws Exception {
+        Request req = getRequestFromStartLine("get / HTTP/1.1");
+        System.out.println("req.getMethod() = " + req);
+        assertEquals("get", req.getMethod());
+        assertEquals("/", req.getUri());
+        assertEquals("1.1", req.getVersion());
+    }
 
-	private AbstractBody readMessageAndGetBody() throws IOException, EndOfStreamException {
+    @Test
+    void mixedCase() throws Exception {
+        Request req = getRequestFromStartLine("GeT / HTTP/1.1");
+        System.out.println("req.getMethod() = " + req);
+        assertEquals("GeT", req.getMethod());
+        assertEquals("/", req.getUri());
+        assertEquals("1.1", req.getVersion());
+    }
+
+    @Test
+    void mehtodWithNonLetterChars() throws Exception {
+        Request req = getRequestFromStartLine("GeT3 / HTTP/1.1");
+        System.out.println("req.getMethod() = " + req);
+        assertNotEquals("1.1", req.getVersion());
+    }
+
+    private static @NotNull Request getRequestFromStartLine(String line) throws IOException, EndOfStreamException {
+        Request req = new Request();
+        req.read((InputStream) getStartLineAsStream(line), false);
+        return req;
+    }
+
+    private static @NotNull ByteArrayInputStream getStartLineAsStream(String line) {
+        return new ByteArrayInputStream((line + CRLF + CRLF).getBytes(UTF_8));
+    }
+
+    private AbstractBody readMessageAndGetBody() throws IOException, EndOfStreamException {
 		reqPost.read(inPost, true);
 		assertFalse(reqPost.getBody().isRead());
         return reqPost.getBody();

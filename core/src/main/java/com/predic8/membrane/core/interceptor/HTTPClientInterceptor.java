@@ -28,7 +28,7 @@ import java.net.*;
 
 import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
 import static com.predic8.membrane.core.http.Header.*;
-import static com.predic8.membrane.core.http.Request.METHOD_GET;
+import static com.predic8.membrane.core.http.Request.GET;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 
@@ -164,7 +164,7 @@ public class HTTPClientInterceptor extends AbstractInterceptor {
         log.debug("Changing method from {} to {}", exc.getRequest().getMethod(), newMethod);
         exc.getRequest().setMethod(newMethod);
 
-        if (newMethod.equalsIgnoreCase(METHOD_GET)) {
+        if (newMethod.equalsIgnoreCase(GET)) {
             handleBodyContentWhenChangingToGET(exc);
         }
     }

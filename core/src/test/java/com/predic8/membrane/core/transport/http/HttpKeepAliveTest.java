@@ -30,7 +30,7 @@ import java.util.*;
 import static com.predic8.membrane.core.http.Header.KEEP_ALIVE;
 import static com.predic8.membrane.core.http.Header.SOAP_ACTION;
 import static com.predic8.membrane.core.http.MimeType.TEXT_XML_UTF8;
-import static com.predic8.membrane.core.http.Request.METHOD_POST;
+import static com.predic8.membrane.core.http.Request.POST;
 import static com.predic8.membrane.core.http.Response.ok;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
@@ -49,7 +49,7 @@ public class HttpKeepAliveTest {
 
 		service1 = new HttpRouter();
 		sp1 = new ServiceProxy(new ServiceProxyKey("localhost",
-				METHOD_POST, ".*", 2003), "thomas-bayer.com", 80);
+                POST, ".*", 2003), "thomas-bayer.com", 80);
 		sp1.getFlow().add(new AbstractInterceptor(){
 			@Override
 			public Outcome handleRequest(Exchange exc) {

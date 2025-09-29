@@ -168,7 +168,7 @@ public class Http1ProtocolHandler extends AbstractProtocolHandler {
         }
         exchange.getRequest().setUri(NOT_APPLICABLE); // TODO Why?
         exchange.setResponse(ok().build());
-        exchange.setProperty(UPGRADED_PROTOCOL, METHOD_CONNECT);
+        exchange.setProperty(UPGRADED_PROTOCOL, CONNECT);
         return exchange;
     }
 }
