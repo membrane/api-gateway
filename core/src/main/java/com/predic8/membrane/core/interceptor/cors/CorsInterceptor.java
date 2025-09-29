@@ -14,18 +14,27 @@
 
 package com.predic8.membrane.core.interceptor.cors;
 
-import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.util.*;
-import org.slf4j.*;
+import com.predic8.membrane.annot.MCAttribute;
+import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.interceptor.AbstractInterceptor;
+import com.predic8.membrane.core.interceptor.Outcome;
+import com.predic8.membrane.core.util.CollectionsUtil;
+import com.predic8.membrane.core.util.ConfigurationException;
+import com.predic8.membrane.core.util.StringList;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
-import static com.predic8.membrane.core.interceptor.cors.AbstractCORSHandler.*;
-import static com.predic8.membrane.core.interceptor.cors.CorsUtil.*;
-import static com.predic8.membrane.core.util.UrlNormalizer.*;
+import static com.predic8.membrane.core.interceptor.cors.AbstractCORSHandler.NULL_STRING;
+import static com.predic8.membrane.core.interceptor.cors.CorsUtil.SPACE;
+import static com.predic8.membrane.core.interceptor.cors.CorsUtil.splitBySpace;
+import static com.predic8.membrane.core.util.UrlNormalizer.normalizeBaseUrl;
 
 /**
  * @description Cross-Origin Resource Sharing (CORS) plugin that enables secure cross-origin HTTP requests.
@@ -131,6 +140,11 @@ public class CorsInterceptor extends AbstractInterceptor {
         responseHandler = new ResponseHandler(this);
     }
 
+    /**
+     * text1
+     * @param exc text2
+     * @return text3
+     */
     @Override
     public Outcome handleRequest(Exchange exc) {
         if (!exc.getRequest().isOPTIONSRequest())
