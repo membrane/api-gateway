@@ -14,7 +14,7 @@
 package com.predic8.membrane.core.interceptor;
 
 /**
- * Also see {@link InterceptorFlowController}.
+ * Also see {@link FlowController}.
  */
 public enum Outcome {
 

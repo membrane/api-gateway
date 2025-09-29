@@ -46,7 +46,7 @@ import static java.lang.String.*;
  * The X-Forwarded-For header can only be trusted when a trustworthy reverse proxy or load balancer is between the client and server. The gateway not should be
  * reachable directly. Only activate this feature when you know what you are doing.
  * </p>
- * @see <a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-Forwarded-For">X-Forwarded-For &#64;Mozilla</a>
+ * <p>see: <a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-Forwarded-For">X-Forwarded-For &#64;Mozilla</a></p>
  */
 @MCElement(name = "rateLimiter")
 public class RateLimitInterceptor extends AbstractExchangeExpressionInterceptor {
@@ -241,7 +241,7 @@ public class RateLimitInterceptor extends AbstractExchangeExpressionInterceptor 
      * @description Duration after the limit is reset in the <i>ISO 8600 Duration</i> format, e.g. PT10S for 10 seconds,
      * PT5M for 5 minutes or PT8H for eight hours.
      * @default PT3600S
-     * @see <a href="https://en.wikipedia.org/wiki/ISO_8601#Durations">ISO 8601 Durations</a>
+     * <p>see: <a href="https://en.wikipedia.org/wiki/ISO_8601#Durations">ISO 8601 Durations</a></p>
      */
     @MCAttribute
     public void setRequestLimitDuration(String duration) {

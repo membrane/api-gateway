@@ -167,6 +167,7 @@ public class CorsInterceptor extends AbstractInterceptor {
     }
 
     /**
+     * @throws ConfigurationException if an origin URL is malformed
      * @description Configures the list of allowed origins for CORS requests.
      *
      * <p>Origins must be specified as complete URLs including protocol (http/https).
@@ -178,7 +179,6 @@ public class CorsInterceptor extends AbstractInterceptor {
      * @example
      * <pre><code><cors origins="https://example.com https://app.example.com null" /></code></pre>
      *
-     * @throws ConfigurationException if an origin URL is malformed
      */
     @MCAttribute
     public void setOrigins(String origins) {
