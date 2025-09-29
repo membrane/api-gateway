@@ -15,6 +15,7 @@
 package com.predic8.membrane.core.http;
 
 import com.predic8.membrane.core.util.*;
+import org.jetbrains.annotations.*;
 import org.junit.jupiter.api.*;
 
 import java.io.*;
@@ -30,7 +31,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class RequestTest {
 
-	private static final Request request = new Request();
+	private Request request;
 
 	private InputStream inPost;
 
@@ -40,20 +41,15 @@ public class RequestTest {
 
 	private InputStream tempIn;
 
-	private static final InputStream isPOSTStartLine = new ByteArrayInputStream(("POST /foo HTTP/1.1" + CRLF).getBytes(UTF_8));
-	private static final InputStream isPosTStartLine = new ByteArrayInputStream(("PosT /foo HTTP/1.1" + CRLF).getBytes(UTF_8));
-	private static final InputStream isLowercaseMethodStartLine = new ByteArrayInputStream(("get /foo HTTP/1.1" + CRLF).getBytes(UTF_8));
-	private static final InputStream isProxyStartLine = new ByteArrayInputStream(("GET http://example.com/foo HTTP/1.0" + CRLF).getBytes(UTF_8));
-
 	@BeforeEach
 	void setUp() {
 		inPost = getResourceAsStream(this,"request-post.msg");
 		inChunked = getResourceAsStream(this,"request-chunked-soap.msg");
+        request = new Request();
 	}
 
 	@AfterEach
 	void tearDown() throws Exception {
-
 		if (inPost != null) {
 			inPost.close();
 		}
@@ -69,7 +65,6 @@ public class RequestTest {
 		if (tempOut != null) {
 			tempOut.close();
 		}
-
 	}
 
 	@Nested
@@ -85,7 +80,7 @@ public class RequestTest {
 
 		@Test
 		void post() throws IOException {
-			request.parseStartLine(isPOSTStartLine);
+			request.parseStartLine(postStartLine());
 			assertTrue(request.isPOSTRequest());
 			assertEquals("1.1", request.getVersion());
 			assertEquals("/foo", request.getUri());
@@ -93,7 +88,7 @@ public class RequestTest {
 
 		@Test
 		void postWrongCasing() throws IOException {
-			request.parseStartLine(isPosTStartLine);
+			request.parseStartLine(PosTStartLine());
 			assertEquals("PosT",request.getMethod());
 			assertEquals("1.1", request.getVersion());
 			assertEquals("/foo", request.getUri());
@@ -101,13 +96,13 @@ public class RequestTest {
 
 		@Test
 		void lowerCaseMethod() throws IOException {
-			request.parseStartLine(isLowercaseMethodStartLine);
+			request.parseStartLine(lowercaseMethodStartLine());
 			assertEquals("get",request.getMethod());
 		}
 
 		@Test
 		void absoluteFormForProxying() throws IOException {
-			request.parseStartLine(isProxyStartLine);
+			request.parseStartLine(proxyStartLine());
 			assertEquals("GET",request.getMethod());
 			assertEquals("1.0", request.getVersion());
 			assertEquals("http://example.com/foo", request.getUri());
@@ -124,10 +119,9 @@ public class RequestTest {
 	@Test
 	void readPost() throws Exception {
 		request.read(inPost, true);
-		assertEquals(METHOD_POST, request.getMethod());
+		assertEquals(POST, request.getMethod());
 		assertEquals("/operation/call", request.getUri());
 		assertNotNull(request.getBody());
-
 		assertEquals(168, request.getBody().getLength());
 	}
 
@@ -192,14 +186,14 @@ public class RequestTest {
 	@Test
 	void createFromStreamMethodGETDoNotSupportBody() throws IOException {
 		Request req = new Request();
-		req.create(METHOD_GET , "http://test", "HTTP/", new Header(), getResourceAsStream(this,"/getBank.xml"));
+		req.create(GET , "http://test", "HTTP/", new Header(), getResourceAsStream(this,"/getBank.xml"));
 		assertTrue(req.isBodyEmpty());
 	}
 
 	@Test
 	void createFromStreamMethodHEADDoNotSupportBody() throws IOException {
 		Request req = new Request();
-		req.create(METHOD_HEAD, "http://test", "HTTP/", new Header(), getResourceAsStream(this,"/getBank.xml"));
+		req.create(HEAD, "http://test", "HTTP/", new Header(), getResourceAsStream(this,"/getBank.xml"));
 		assertTrue(req.isBodyEmpty());
 	}
 	
@@ -223,7 +217,7 @@ public class RequestTest {
 	 */
 	@Test
 	void setBodyShouldReadTheOriginalBody() throws EndOfStreamException, IOException {
-		AbstractBody originalBody = readMessageAndGetBody();
+		AbstractBody originalBody = readMessageAndGetBody(request);
 		request.setBody(new Body("ABC".getBytes(UTF_8))); // Replace body with a different one
 		assertTrue(originalBody.isRead()); // Assert that the original body is read
 	}
@@ -270,7 +264,7 @@ public class RequestTest {
 	 */
 	@Test
 	void setBodyContentShouldReadTheOriginalBody() throws EndOfStreamException, IOException {
-		AbstractBody originalBody = readMessageAndGetBody();
+		AbstractBody originalBody = readMessageAndGetBody(request);
 		request.setBodyContent("ABC".getBytes(UTF_8));
 		assertTrue(originalBody.isRead()); // Assert that the original body is read
 		assertEquals(0,inPost.available()); // Check that all bytes are read from the stream
@@ -288,9 +282,18 @@ public class RequestTest {
 		assertTrue(post("/foo").header("Content-Type", "text/xml; charset=utf-8").build().isXML());
 	}
 
-	private AbstractBody readMessageAndGetBody() throws IOException, EndOfStreamException {
-		request.read(inPost, true);
-		assertFalse(request.getBody().isRead());
-        return request.getBody();
+	private AbstractBody readMessageAndGetBody(Request req) throws IOException, EndOfStreamException {
+        req.read(inPost, true);
+        assertFalse(req.getBody().isRead());
+        return req.getBody();
 	}
+
+    private static InputStream postStartLine() { return getStartLineAsStream("POST /foo HTTP/1.1"); }
+    private static InputStream PosTStartLine() { return getStartLineAsStream("PosT /foo HTTP/1.1" ); }
+    private static InputStream lowercaseMethodStartLine() { return getStartLineAsStream("get /foo HTTP/1.1"); }
+    private static InputStream proxyStartLine() { return getStartLineAsStream("GET http://example.com/foo HTTP/1.0"); }
+
+    private static @NotNull ByteArrayInputStream getStartLineAsStream(String line) {
+        return new ByteArrayInputStream((line + CRLF).getBytes(UTF_8));
+    }
 }

@@ -207,7 +207,7 @@ public class HttpUtil {
 
 	public static boolean isIdempotent(String method) {
 		return switch (method) {
-			case METHOD_GET,  METHOD_PUT, METHOD_DELETE, METHOD_OPTIONS, METHOD_HEAD, METHOD_TRACE -> true;
+            case GET,  PUT, DELETE, OPTIONS, HEAD, TRACE -> true;
 			// POST, PATCH and CONNECT are not
 			default -> false;
 		};
