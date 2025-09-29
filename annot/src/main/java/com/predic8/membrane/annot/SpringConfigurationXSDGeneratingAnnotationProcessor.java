@@ -217,9 +217,6 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
 
 					scan(m, main, ii);
 
-					List<String> uniquenessErrors = getUniquenessError(ii);
-					if (uniquenessErrors != null && !uniquenessErrors.isEmpty())
-                        throw new ProcessingException(String.join(System.lineSeparator(), uniquenessErrors), ii.getElement());
                     if (ii.getAnnotation().noEnvelope()) {
                         if (ii.getAnnotation().topLevel())
                             throw new ProcessingException("@MCElement(..., noEnvelope=true, topLevel=true) is invalid.", ii.getElement());
@@ -249,8 +246,9 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
 						ElementInfo ei = main.getElements().get(f.getKey());
 
 						if (ei != null)
-							cedi.getElementInfo().add(ei);
+							cedi.getElementInfo().add(ei); // e.g. SSLParser
 						else {
+                            // e.g. AuthorizationService
 							for (Map.Entry<TypeElement, ElementInfo> e : main.getElements().entrySet())
 								if (processingEnv.getTypeUtils().isAssignable(e.getKey().asType(), f.getKey().asType()))
 									cedi.getElementInfo().add(e.getValue());
@@ -265,6 +263,14 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
 						}
 					}
 				}
+
+                for (MainInfo main : m.getMains()) {
+                    for (Map.Entry<TypeElement, ElementInfo> f : main.getElements().entrySet()) {
+                        List < String > uniquenessErrors = getUniquenessError(f.getValue(), main);
+                        if (uniquenessErrors != null && !uniquenessErrors.isEmpty())
+                            throw new ProcessingException(String.join(System.lineSeparator(), uniquenessErrors), f.getValue().getElement());
+                    }
+                }
 
 
 				if (mcmains.isEmpty()) {
@@ -284,63 +290,68 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
 		}
 	}
 
-	private List<String> getUniquenessError(ElementInfo ii) {
+    private List<String> getUniquenessError(ElementInfo ii, MainInfo main) {
         List<String> errors = new ArrayList<>();
-        // TODO ensure all cases
-        
-        TypeElement el = ii.getElement();
-        
-        if(el.getSimpleName().contentEquals("APIProxy")) {
-            System.out.println("--------------------------BMW-------------------------");
-            System.out.println("el = " + el);
-            System.out.println("el.getTypeParameters() = " + el.getTypeParameters());
-            System.out.println("el.getPermittedSubclasses() = " + el.getPermittedSubclasses());
-            el.getInterfaces().forEach(System.out::println);
-            System.out.println("ii.getChildElementSpecs() = " + ii.getChildElementSpecs());
-            System.out.println("ii.getAis() = " + ii.getAis());
-            System.out.println("ii.getOai() = " + ii.getOai());
-        }
-        
-        
-        // duplicate attributes
-        var dupAttr = duplicates(attributeNames(ii));
-        if (!dupAttr.isEmpty()) {
-            errors.add("Duplicate attributes: " + String.join(", ", dupAttr));
+        var groups = collectNameGroups(ii, main);
+
+        // Check for duplicates within a group
+        for (var g : groups) {
+            var dups = duplicates(g.names());
+            if (!dups.isEmpty()) {
+                errors.add("Duplicate " + g.label() + ": " + String.join(", ", dups));
+            }
         }
 
-        // duplicate child elements
-        var dupChild = duplicates(childElementNames(ii));
-        if (!dupChild.isEmpty()) {
-            errors.add("Duplicate child elements: " + String.join(", ", dupChild));
+        Map<String, Set<String>> index = new TreeMap<>();
+        for (var g : groups) {
+            // use a set to avoid inflating clashes due to internal duplicates
+            for (String n : new TreeSet<>(g.names())) {
+                index.computeIfAbsent(n, __ -> new TreeSet<>()).add(g.label());
+            }
         }
+        index.forEach((name, usedIn) -> {
+            if (usedIn.size() > 1) {
+                errors.add("Name clash: '" + name + "' used by " + String.join(" & ", usedIn));
+            }
+        });
 
-        // attribuites + childelements
-        addAttributeChildNameClash(ii, errors);
-
-
-        // attributes + ssl
-        // childelements + ssl
-        // e.g. oauth2ressource2: github + google
-        // e.g. oauth2ressource2: github/google + other attribute
-
-
-
-
-		// TODO ii.getChildElementSpecs().map(::getPropertyName) aber isList siehe JsonSchemaGenerator:140
-		return errors;
-	}
-
-    private void addAttributeChildNameClash(ElementInfo ii, List<String> errors) {
-        var attrs  = attributeNames(ii).toList();
-        var childs = childElementNames(ii).toList();
-        if (attrs.isEmpty() || childs.isEmpty()) return;
-
-        var clash = new java.util.TreeSet<>(attrs);
-        clash.retainAll(new java.util.HashSet<>(childs));
-        if (!clash.isEmpty()) {
-            errors.add("Name clash between attributes and child elements: " + String.join(", ", clash));
-        }
+        return errors;
     }
+
+    private List<NameGroup> collectNameGroups(ElementInfo ii, MainInfo main) {
+        var groups = new ArrayList<NameGroup>();
+        groups.add(group("attributes", attributeNames(ii)));
+        groups.add(group("textContent", textContentNames(ii)));
+        groups.addAll(childElementNames(ii, main));
+        return groups.stream().filter(g -> !g.names().isEmpty()).toList();
+    }
+
+    private Stream<String> textContentNames(ElementInfo ii) {
+        if (ii.getTci() != null) {
+            return ii.getTci().getPropertyName().lines();
+        }
+        return Stream.<String>builder().build();
+    }
+
+    private NameGroup group(String label, Stream<String> names) {
+        return new NameGroup(
+                label,
+                names.filter(Objects::nonNull).map(String::trim).filter(s -> !s.isEmpty()).toList()
+        );
+    }
+
+    private record NameGroup(String label, List<String> names) {}
+
+    private List<String> duplicates(Collection<String> names) {
+        return names.stream()
+                .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()))
+                .entrySet().stream()
+                .filter(e -> e.getValue() > 1)
+                .map(Map.Entry::getKey)
+                .sorted()
+                .toList();
+    }
+
 
     private Stream<String> attributeNames(ElementInfo ii) {
         return ii.getAis().stream()
@@ -349,21 +360,50 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
                 .map(String::trim);
     }
 
-    private Stream<String> childElementNames(ElementInfo ii) {
-        return ii.getChildElementSpecs().stream()
-                .map(ChildElementInfo::getPropertyName)
-                .filter(n -> n != null && !n.isBlank())
-                .map(String::trim);
+    private ArrayList<NameGroup> childElementNames(ElementInfo ii, MainInfo main) {
+        var groups = new ArrayList<NameGroup>();
+
+        for (ChildElementInfo cei : ii.getChildElementSpecs()) {
+            List<String> names = new ArrayList<>();
+            if (cei.isList()) {
+                // e.g. api.interceptors
+                names.add(cei.getPropertyName());
+                var decl = main.getChildElementDeclarations().get(cei.getTypeDeclaration());
+                if (decl != null) {
+                    var dupes = decl.getElementInfo().stream()
+                            .map(ei -> {
+                                var ann = ei.getAnnotation();
+                                return ann == null ? null : ann.name();
+                            })
+                            .filter(n -> n != null && !n.isBlank())
+                            .map(String::trim)
+                            .collect(java.util.stream.Collectors.groupingBy(java.util.function.Function.identity(),
+                                    java.util.stream.Collectors.counting()))
+                            .entrySet().stream()
+                            .filter(e -> e.getValue() > 1)
+                            .map(java.util.Map.Entry::getKey)
+                            .sorted()
+                            .toList();
+                    if (!dupes.isEmpty()) {
+                        throw new ProcessingException(
+                                "Duplicate child names for setter '" + cei.getPropertyName() + "': "
+                                        + String.join(", ", dupes),
+                                cei.getTypeDeclaration());
+                    }
+                }
+            } else {
+                // e.g. api.path, oauth2resource2.google
+                for (ElementInfo ei : main.getChildElementDeclarations().get(cei.getTypeDeclaration()).getElementInfo()) {
+                    names.add(ei.getAnnotation().name());
+                }
+            }
+
+            String label = "childElement_" + cei.getPropertyName() ;
+            groups.add(new NameGroup(label, names));
+        }
+        return groups;
     }
 
-    private List<String> duplicates(Stream<String> names) {
-        return names.collect(Collectors.groupingBy(Function.identity(), Collectors.counting()))
-                .entrySet().stream()
-                .filter(e -> e.getValue() > 1)
-                .map(Map.Entry::getKey)
-                .sorted()
-                .toList();
-    }
 
     private static final String REQUIRED = "com.predic8.membrane.annot.Required";
 
