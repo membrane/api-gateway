@@ -30,19 +30,17 @@ import static com.predic8.membrane.core.security.ApiKeySecurityScheme.In.EXPRESS
 /**
  * @description Extracts an API key by evaluating an expression on the incoming request.
  * The result (a string) is treated as the API key. The expression is evaluated in the configured language
- * (default: {@code SPEL}) during the request flow.
+ * (default: <code>SPEL</code>) during the request flow.
  * <p>
- * Typical usage inside {@code &lt;apiKey&gt;}:
+ * Typical usage inside <code><apiKey></code>:
  * </p>
- * <pre>
- * &lt;apiKey&gt;
- *   &lt;expressionExtractor
+ * <pre><code><apiKey>
+ *   <expressionExtractor
  *       language="SPEL"
- *       expression="request.headers['X-Api-Key']"/&gt;
- * &lt;/apiKey&gt;
- * </pre>
+ *       expression="request.headers['X-Api-Key']"/>
+ * </apiKey></code></pre>
  * <p>
- * If the expression evaluates to {@code null} or an empty string, no key is extracted.
+ * If the expression evaluates to <code>null</code> or an empty string, no key is extracted.
  * </p>
  * @topic 3. Security and Validation
  */
@@ -88,11 +86,8 @@ public class ApiKeyExpressionExtractor implements ApiKeyExtractor, Polyglot {
      * <p>
      * Examples (SPEL):
      * </p>
-     * <pre>
-     * expression="request.headers['X-Api-Key']"
-     *
-     * expression="request.query['api_key']"
-     * </pre>
+     * <pre><code>expression="request.headers['X-Api-Key']"
+     *  expression="request.query['api_key']"</code></pre>
      */
     @MCAttribute
     public void setExpression(String expression) {
