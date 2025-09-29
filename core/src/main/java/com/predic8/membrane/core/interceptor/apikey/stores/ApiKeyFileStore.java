@@ -32,7 +32,7 @@ import static java.util.stream.Collectors.*;
  * @description Loads API keys and optional scopes from a text file. Each non-empty line must contain a key.
  * <ul>
  *   <li>Blank lines are ignored.</li>
- *   <li>A hash sign ({@code #}) starts a comment (line or end-of-line).</li>
+ *   <li>A hash sign (<code> #</code>) starts a comment (line or end-of-line).</li>
  *   <li>Scopes can follow the key, separated by a colon. Multiple scopes are comma-separated.</li>
  * </ul>
  * <p>

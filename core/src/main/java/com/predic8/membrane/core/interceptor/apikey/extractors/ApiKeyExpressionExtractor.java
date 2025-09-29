@@ -32,7 +32,7 @@ import static com.predic8.membrane.core.security.ApiKeySecurityScheme.In.EXPRESS
  * The result (a string) is treated as the API key. The expression is evaluated in the configured language
  * (default: <code>SPEL</code>) during the request flow.
  * <p>
- * Typical usage inside <code><apiKey></code>:
+ * Typical usage inside <code>&lt;apiKey&gt;</code>:
  * </p>
  * <pre><code><apiKey>
  *   <expressionExtractor

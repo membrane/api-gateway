@@ -81,7 +81,6 @@ import static com.predic8.membrane.core.util.UrlNormalizer.*;
  * <p>see: <a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS">MDN CORS Documentation</a></p>
  *
  * @author predic8 GmbH
- * @since 6.3.0
  * @topic 3. Security and Validation
  */
 @MCElement(name = "cors")

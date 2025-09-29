@@ -28,19 +28,17 @@ import static java.util.Optional.*;
 
 /**
  * @description Extracts an API key from a URL query parameter. By default, the parameter name
- * is {@code api-key}. If the parameter is present in the request URI, its value is returned as the API key.
+ * is <code>api-key</code>. If the parameter is present in the request URI, its value is returned as the API key.
  * Parameter name matching is case-insensitive.
  * <p>
- * Example usage inside {@code &lt;apiKey&gt;}:
+ * Example usage inside <code>&lt;apiKey&gt;</code>:
  * </p>
- * <pre>
- * &lt;apiKey&gt;
- *   &lt;queryParamExtractor /&gt; <!-- default: api-key -->
+ * <pre><code><apiKey>
+ *   <queryParamExtractor /> <!-- default: api-key -->
  *
- *   &lt;!-- custom parameter name --&gt;
- *   &lt;queryParamExtractor name="api_key"/&gt;
- * &lt;/apiKey&gt;
- * </pre>
+ *   <!-- custom parameter name -->
+ *   <queryParamExtractor name="api_key"/>
+ * </apiKey></code></pre>
  * @topic 3. Security and Validation
  */
 @MCElement(name="queryParamExtractor", topLevel = false)
