@@ -253,11 +253,9 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
                             boolean targetIsObject = processingEnv.getTypeUtils().isSameType(f.getKey().asType(), processingEnv.getElementUtils().getTypeElement("java.lang.Object").asType());
                             // e.g. AuthorizationService
                             for (Map.Entry<TypeElement, ElementInfo> e : main.getElements().entrySet()) {
-                                if (
-                                        !processingEnv.getTypeUtils().isAssignable(e.getKey().asType(), f.getKey().asType()) &&
-                                        targetIsObject && !isTopLevelMCElement(e.getKey()) // only allow topLevel MCElements for Object
-                                )
-                                    cedi.getElementInfo().add(e.getValue());
+                                if (!processingEnv.getTypeUtils().isAssignable(e.getKey().asType(), f.getKey().asType())) continue;
+                                if (targetIsObject && !isTopLevelMCElement(e.getKey())) continue; // only allow topLevel MCElements for Object
+                                cedi.getElementInfo().add(e.getValue());
                             }
                         }
 
