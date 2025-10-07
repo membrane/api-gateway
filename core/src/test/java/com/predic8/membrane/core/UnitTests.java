@@ -21,9 +21,9 @@ import org.junit.platform.suite.api.*;
         "com.predic8.membrane.AllTests", // Replaced with package scan
         "com.predic8.membrane.core.transport.http.ConnectionTest", // #2180 should fix it
         "com.predic8.membrane.core.interceptor.rewrite.RewriteInterceptorIntegrationTest", // Rewrite as UnitTest with sampleSOAPService
-        "com.predic8.membrane.core.interceptor.tunnel.WebsocketStompTest", // Fails
-        "com.predic8.membrane.core.interceptor.oauth2client.OAuth2Resource2InterceptorTest", // Fails
-        "com.predic8.membrane.core.util.MemcachedConnectorTest" // Fails
+        "com.predic8.membrane.core.interceptor.tunnel.WebsocketStompTest", // Fails: not standalone; depends on external WS+STOMP setup
+        "com.predic8.membrane.core.interceptor.oauth2client.OAuth2Resource2InterceptorTest", // Disabled: incomplete setup; AuthorizationService (and other) not configured
+        "com.predic8.membrane.core.util.MemcachedConnectorTest" // Disabled: not standalone; needs Memcached at 127.0.0.1:11211 (fails with Connection refused)
 })
 public class UnitTests {
     /*
