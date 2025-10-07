@@ -21,6 +21,8 @@ import javax.annotation.processing.*;
 import javax.lang.model.*;
 import javax.lang.model.element.*;
 import javax.lang.model.type.*;
+import javax.lang.model.util.Elements;
+import javax.lang.model.util.Types;
 import javax.tools.Diagnostic.*;
 import javax.tools.*;
 import java.io.*;
@@ -248,11 +250,16 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
 						if (ei != null)
 							cedi.getElementInfo().add(ei); // e.g. SSLParser
 						else {
+                            boolean targetIsObject = processingEnv.getTypeUtils().isSameType(f.getKey().asType(), processingEnv.getElementUtils().getTypeElement("java.lang.Object").asType());
                             // e.g. AuthorizationService
-							for (Map.Entry<TypeElement, ElementInfo> e : main.getElements().entrySet())
-								if (processingEnv.getTypeUtils().isAssignable(e.getKey().asType(), f.getKey().asType()))
-									cedi.getElementInfo().add(e.getValue());
-						}
+                            for (Map.Entry<TypeElement, ElementInfo> e : main.getElements().entrySet()) {
+                                if (
+                                        !processingEnv.getTypeUtils().isAssignable(e.getKey().asType(), f.getKey().asType()) &&
+                                        targetIsObject && !isTopLevelMCElement(e.getKey()) // only allow topLevel MCElements for Object
+                                )
+                                    cedi.getElementInfo().add(e.getValue());
+                            }
+                        }
 
 						for (ElementInfo ei2 : cedi.getElementInfo())
 							ei2.addUsedBy(f.getValue());
@@ -289,6 +296,11 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
 			return true;
 		}
 	}
+
+    private boolean isTopLevelMCElement(TypeElement type) {
+        MCElement mcElement = type.getAnnotation(MCElement.class);
+        return (mcElement != null) && mcElement.topLevel();
+    }
 
     private List<String> getUniquenessError(ElementInfo ii, MainInfo main) {
         List<String> errors = new ArrayList<>();
