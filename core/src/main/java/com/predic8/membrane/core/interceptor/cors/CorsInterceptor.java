@@ -54,28 +54,22 @@ import static com.predic8.membrane.core.util.UrlNormalizer.*;
  * <h3>Configuration Examples</h3>
  *
  * <p><strong>Basic Configuration (Allow all origins):</strong></p>
- * <pre>{@code
- * <cors />
- * }</pre>
+ * <pre><code><cors />
+ * </code></pre>
  *
  * <p><strong>Restrictive Configuration:</strong></p>
- * <pre>{@code
- * <cors
- *   origins="https://example.com https://app.example.com"
- *   methods="GET,POST,PUT"
+ * <pre><code><cors origins="https://example.com https://app.example.com" methods="GET,POST,PUT"
  *   headers="Authorization,X-Custom-Header"
  *   credentials="true"
- *   maxAge="3600" />
- * }</pre>
+ *   maxAge="3600" /></code></pre>
  *
  * <p><strong>Permissive Configuration:</strong></p>
- * <pre>{@code
- * <cors allowAll="true" />
- * }</pre>
+ * <pre><code><cors allowAll="true" />
+ * </code></pre>
  *
  * <h3>Security Considerations</h3>
  * <ul>
- *   <li>When {@code credentials="true"}, wildcard origins (*) are forbidden for security reasons</li>
+ *   <li>When <code>credentials="true"</code>, wildcard origins (*) are forbidden for security reasons</li>
  *   <li>Always specify explicit origins in production when possible</li>
  * </ul>
  *
@@ -83,11 +77,10 @@ import static com.predic8.membrane.core.util.UrlNormalizer.*;
  * <p>This implementation follows the
  * <a href="https://fetch.spec.whatwg.org/#cors-preflight-fetch">Fetch Living Standard by WHATWG</a>.</p>
  *
- * @see <a href="https://www.membrane-api.io/cors-api-gateway.html">CORS Guide for API Developers</a>
- * @see <a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS">MDN CORS Documentation</a>
+ * <p>see: <a href="https://www.membrane-api.io/cors-api-gateway.html">CORS Guide for API Developers</a></p>
+ * <p>see: <a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS">MDN CORS Documentation</a></p>
  *
  * @author predic8 GmbH
- * @since 6.3.0
  * @topic 3. Security and Validation
  */
 @MCElement(name = "cors")
@@ -166,9 +159,7 @@ public class CorsInterceptor extends AbstractInterceptor {
      * @default false
      *
      * @example
-     * <pre>{@code
-     * <cors allowAll="true" />
-     * }</pre>
+     * <pre><code><cors allowAll="true" /></code></pre>
      */
     @MCAttribute
     public void setAllowAll(boolean allowAll) {
@@ -176,6 +167,7 @@ public class CorsInterceptor extends AbstractInterceptor {
     }
 
     /**
+     * @throws ConfigurationException if an origin URL is malformed
      * @description Configures the list of allowed origins for CORS requests.
      *
      * <p>Origins must be specified as complete URLs including protocol (http/https).
@@ -185,11 +177,8 @@ public class CorsInterceptor extends AbstractInterceptor {
      * @default "*" (allow all origins)
      *
      * @example
-     * <pre>{@code
-     * <cors origins="https://example.com https://app.example.com null" />
-     * }</pre>
+     * <pre><code><cors origins="https://example.com https://app.example.com null" /></code></pre>
      *
-     * @throws ConfigurationException if an origin URL is malformed
      */
     @MCAttribute
     public void setOrigins(String origins) {
@@ -232,9 +221,7 @@ public class CorsInterceptor extends AbstractInterceptor {
      * @default "*" (allow all methods)
      *
      * @example
-     * <pre>{@code
-     * <cors methods="GET,POST,PUT,DELETE" />
-     * }</pre>
+     * <pre><code><cors methods="GET,POST,PUT,DELETE" /></code></pre>
      */
     @MCAttribute
     public void setMethods(String methods) {
@@ -257,9 +244,7 @@ public class CorsInterceptor extends AbstractInterceptor {
      * @default "" (no additional headers beyond safe headers)
      *
      * @example
-     * <pre>{@code
-     * <cors headers="Authorization,X-Custom-Header,X-Requested-With" />
-     * }</pre>
+     * <pre><code><cors headers="Authorization,X-Custom-Header,X-Requested-With" /></code></pre>
      */
     @MCAttribute
     public void setHeaders(String headers) {
@@ -282,9 +267,7 @@ public class CorsInterceptor extends AbstractInterceptor {
      * @default "" (expose no additional headers)
      *
      * @example
-     * <pre>{@code
-     * <cors exposeHeaders="X-Total-Count,X-Custom-Info" />
-     * }</pre>
+     * <pre><code><cors exposeHeaders="X-Total-Count,X-Custom-Info" /></code></pre>
      */
     @MCAttribute
     public void setExposeHeaders(String headers) {
@@ -299,7 +282,7 @@ public class CorsInterceptor extends AbstractInterceptor {
      * @description Configures whether credentials should be included in CORS requests.
      *
      * <p>When enabled, browsers will include cookies, authorization headers, and client certificates
-     * in cross-origin requests. This also requires the client to set {@code withCredentials: true}
+     * in cross-origin requests. This also requires the client to set <code>withCredentials: true</code>
      * in their request configuration.</p>
      *
      * <p><strong>Security Restriction:</strong> Cannot be used with wildcard origins (*) due to security risks.</p>
@@ -308,11 +291,9 @@ public class CorsInterceptor extends AbstractInterceptor {
      * @default false
      *
      * @example
-     * <pre>{@code
-     * <cors
+     * <pre><code><cors
      *   origins="https://trusted-app.com"
-     *   credentials="true" />
-     * }</pre>
+     *   credentials="true" /></code></pre>
      */
     @MCAttribute
     public void setCredentials(boolean credentials) {
@@ -336,9 +317,7 @@ public class CorsInterceptor extends AbstractInterceptor {
      * @default 5 seconds
      *
      * @example
-     * <pre>{@code
-     * <cors maxAge="3600" />
-     * }</pre>
+     * <pre><code><cors maxAge="3600" /></code></pre>
      */
     @MCAttribute
     public void setMaxAge(int maxAge) {
