@@ -15,42 +15,27 @@ package com.predic8.membrane.core;
 
 import org.junit.platform.suite.api.*;
 
-/**
- * TODO Fix:
- * - com.predic8.membrane.core.interceptor.opentelemetry.OpenTelemetryInterceptorTest
- * - com.predic8.membrane.core.interceptor.rewrite.RewriteInterceptorIntegrationTest   // Rewrite as UnitTest with sampleSOAPService
- * Still in use?
- * - com.predic8.membrane.core.interceptor.oauth2client.OAuth2Resource2InterceptorTest
- * - com.predic8.membrane.core.interceptor.shadowing.ShadowingInterceptorTest
- */
 @Suite
 @SelectPackages({"com.predic8"})
 @ExcludeClassNamePatterns({
-		"com.predic8.membrane.AllTests",
-		"com.predic8.membrane.core.interceptor.opentelemetry.OpenTelemetryInterceptorTest",
-		"com.predic8.membrane.core.interceptor.balancer.NodeOnlineCheckerTest",
-		"com.predic8.membrane.core.interceptor.tunnel.WebsocketStompTest",
-		"com.predic8.membrane.core.interceptor.oauth2client.OAuth2Resource2InterceptorTest",
-		"com.predic8.membrane.core.interceptor.shadowing.ShadowingInterceptorTest",
-		"com.predic8.membrane.core.interceptor.rewrite.RewriteInterceptorIntegrationTest",
-		//
-		// From includes, weren't run before!
-		// TODO: Fix or delete
-		"com.predic8.membrane.core.transport.http.ConnectionTest",
-		"com.predic8.membrane.core.util.MemcachedConnectorTest"
-
+        "com.predic8.membrane.AllTests", // Replaced with package scan
+        "com.predic8.membrane.core.transport.http.ConnectionTest", // #2180 should fix it
+        "com.predic8.membrane.core.interceptor.rewrite.RewriteInterceptorIntegrationTest", // Rewrite as UnitTest with sampleSOAPService
+        "com.predic8.membrane.core.interceptor.tunnel.WebsocketStompTest", // Fails
+        "com.predic8.membrane.core.interceptor.oauth2client.OAuth2Resource2InterceptorTest", // Fails
+        "com.predic8.membrane.core.util.MemcachedConnectorTest" // Fails
 })
 public class UnitTests {
     /*
      * Uncomment below to speed up test execution!
      *
      */
-	/*
-	 * @BeforeClass public static void forbidScreenOutput() { PrintStream ps =
-	 * new PrintStream(new OutputStream() {
-	 *
-	 * @Override public void write(int b) throws IOException { throw new
-	 * RuntimeException("this test uses stdout"); } }); System.setOut(ps);
-	 * System.setErr(ps); }
-	 */
+    /*
+     * @BeforeClass public static void forbidScreenOutput() { PrintStream ps =
+     * new PrintStream(new OutputStream() {
+     *
+     * @Override public void write(int b) throws IOException { throw new
+     * RuntimeException("this test uses stdout"); } }); System.setOut(ps);
+     * System.setErr(ps); }
+     */
 }
