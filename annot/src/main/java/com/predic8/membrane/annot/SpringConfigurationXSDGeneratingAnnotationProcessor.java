@@ -89,7 +89,7 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
 						}
 						if (element != null) {
 							if (element.getAnnotation(annotationClass) != null)
-								currentSet.add(element);
+								Objects.requireNonNull(currentSet).add(element);
 						}
 					} else {
 						try {
@@ -224,7 +224,7 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
                             throw new ProcessingException("@MCElement(..., noEnvelope=true, mixed=true) is invalid.", ii.getElement());
                         if (ii.getChildElementSpecs().size() != 1)
                             throw new ProcessingException("@MCElement(noEnvelope=true) requires exactly one @MCChildElement.", ii.getElement());
-                        if (!ii.getChildElementSpecs().get(0).isList())
+                        if (!ii.getChildElementSpecs().getFirst().isList())
                             throw new ProcessingException("@MCElement(noEnvelope=true) requires its @MCChildElement() to be a List or Collection.", ii.getElement());
                         if (!ii.getAis().isEmpty())
                             throw new ProcessingException("@MCElement(noEnvelope=true) requires @MCAttribute to be not present.", ii.getElement());
@@ -267,7 +267,7 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
                 for (MainInfo main : m.getMains()) {
                     for (Map.Entry<TypeElement, ElementInfo> f : main.getElements().entrySet()) {
                         List < String > uniquenessErrors = getUniquenessError(f.getValue(), main);
-                        if (uniquenessErrors != null && !uniquenessErrors.isEmpty())
+                        if (!uniquenessErrors.isEmpty())
                             throw new ProcessingException(String.join(System.lineSeparator(), uniquenessErrors), f.getValue().getElement());
                     }
                 }
@@ -398,8 +398,7 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
                 }
             }
 
-            String label = "childElement_" + cei.getPropertyName() ;
-            groups.add(new NameGroup(label, names));
+            groups.add(new NameGroup("childElement '" + cei.getPropertyName() + "'", names));
         }
         return groups;
     }
