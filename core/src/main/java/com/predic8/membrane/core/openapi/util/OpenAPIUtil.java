@@ -19,13 +19,20 @@ package com.predic8.membrane.core.openapi.util;
 import com.fasterxml.jackson.databind.*;
 import io.swagger.v3.core.util.*;
 import io.swagger.v3.oas.models.*;
+import io.swagger.v3.oas.models.media.*;
+import io.swagger.v3.oas.models.parameters.*;
 import io.swagger.v3.parser.ObjectMapperFactory;
+import org.jetbrains.annotations.*;
 import org.slf4j.*;
 
 import java.io.*;
+import java.util.*;
 
+import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.openapi.serviceproxy.APIProxy.*;
 import static com.predic8.membrane.core.openapi.util.Utils.*;
+import static com.predic8.membrane.core.openapi.validators.JsonSchemaValidator.*;
+import static io.swagger.v3.oas.models.parameters.Parameter.StyleEnum.*;
 
 public class OpenAPIUtil {
 
@@ -70,5 +77,70 @@ public class OpenAPIUtil {
 
     public static boolean isOpenAPIMisplacedError(String errorMsg) {
         return errorMsg.matches("(?i).*invalid.+element.+http://membrane-soa.org/proxies/1/\":openapi.*'\\..*");
+    }
+
+    public static PathItem getPath(OpenAPI api, String path) {
+        if (api == null || api.getPaths() == null) return null;
+        return api.getPaths().get(path);
+    }
+
+    public static Parameter getParameter(Operation operation, String parameterName) {
+        if (operation == null || operation.getParameters() == null) return null;
+        return operation.getParameters().stream()
+                .filter(Objects::nonNull)
+                .filter(p -> parameterName.equals(p.getName()))
+                .findFirst()
+                .orElse(null);
+    }
+
+    public static Schema<?> getProperty(Schema<?> schema, String propertyName) {
+        if (schema == null || schema.getProperties() == null) return null;
+        return schema.getProperties().get(propertyName);
+    }
+
+    public static Schema<?> resolveSchema(OpenAPI api, Parameter p) {
+        if (p == null) return null;
+        Schema<?> schema = p.getSchema();
+        if (schema == null && p.getContent() != null && !p.getContent().isEmpty()) {
+            // Prefer application/json if present; otherwise take first
+            var mt = p.getContent().get(APPLICATION_JSON);
+            if (mt == null) mt = p.getContent().values().iterator().next();
+            schema = mt != null ? mt.getSchema() : null;
+        }
+        if (schema == null) return null;
+        if (schema.get$ref() != null) {
+            if (api == null || api.getComponents() == null || api.getComponents().getSchemas() == null) return null;
+            try {
+                return api.getComponents().getSchemas().get(getComponentLocalNameFromRef(schema.get$ref()));
+            } catch (RuntimeException ignore) {
+                return null; // external or malformed ref not resolvable here
+            }
+        }
+        return schema;
+    }
+
+    /**
+     * If schema has type: object or type: [..., object]
+     */
+    public static boolean hasObjectType(Schema<?> schema) {
+        if (schema == null) return false;
+        return (schema.getTypes() != null && (schema.getTypes().contains(OBJECT)) || OBJECT.equals(schema.getType()));
+    }
+
+    public static boolean isExplode(Parameter parameter) {
+        if (parameter.getExplode() == null) {
+            Parameter.StyleEnum style = getStyle(parameter);
+            return style == FORM || style == DEEPOBJECT;
+        }
+        return parameter.getExplode();
+    }
+
+    private static Parameter.@NotNull StyleEnum getStyle(Parameter parameter) {
+        if (parameter.getStyle() != null) return parameter.getStyle();
+        return ("query".equalsIgnoreCase(parameter.getIn()) || "cookie".equalsIgnoreCase(parameter.getIn())) ? FORM : SIMPLE;
+    }
+
+    public static boolean isQueryParameter(Parameter p) {
+        return "query".equalsIgnoreCase(p.getIn());
     }
 }

@@ -28,6 +28,7 @@ import java.util.*;
 import java.util.concurrent.atomic.*;
 import java.util.stream.*;
 
+import static com.predic8.membrane.core.openapi.validators.ValidationErrors.*;
 import static com.predic8.membrane.core.security.BasicHttpSecurityScheme.*;
 import static org.slf4j.LoggerFactory.*;
 
@@ -106,7 +107,7 @@ public class SecurityValidator {
     private ValidationErrors checkSecurityRequirements(ValidationContext ctx, SecurityRequirement requirement, Request<?> request) {
         return requirement.keySet().stream() // Names of SecurityRequirements
                 .map(requirementName -> checkSingleRequirement(ctx, requirement, request, requirementName))
-                .reduce(new ValidationErrors(), ValidationErrors::add);
+                .collect(ValidationErrors::new, ValidationErrors::add, ValidationErrors::add);
     }
 
     private ValidationErrors checkSingleRequirement(ValidationContext ctx, SecurityRequirement requirement, Request<?> request, String schemeName) {
@@ -117,34 +118,33 @@ public class SecurityValidator {
         Map<String, SecurityScheme> securitySchemes = api.getComponents().getSecuritySchemes();
 
         if (securitySchemes == null) {
-            log.error("In OpenAPI with title '%s' there are no securitySchemes. Check the OpenAPI document!".formatted(getOpenAPITitle()));
+            log.error("In OpenAPI with title '{}' there are no securitySchemes. Check the OpenAPI document!",getOpenAPITitle());
             return getValidationErrorsProblemServerSide(ctx);
         }
 
         SecurityScheme schemeDefinition = securitySchemes.get(schemeName);
 
         if (schemeDefinition == null) {
-            log.error("In OpenAPI with title '%s' there is no securityScheme '%s'. Check the OpenAPI document!".formatted(getOpenAPITitle(),schemeName));
+            log.error("In OpenAPI with title '{}' there is no securityScheme '{}'. Check the OpenAPI document!",getOpenAPITitle(), schemeName);
             return getValidationErrorsProblemServerSide(ctx);
         }
 
         // Type field on securityScheme not set
         if (schemeDefinition.getType() == null) {
-            log.error("In OpenAPI with title '%s' the securityScheme '%s' has no type. Check the OpenAPI document!".formatted(api.getInfo().getTitle(),schemeName));
+            log.error("In OpenAPI with title '{}' the securityScheme '{}' has no type. Check the OpenAPI document!",api.getInfo().getTitle(), schemeName);
             return getValidationErrorsProblemServerSide(ctx);
         }
 
         ValidationErrors errorsInt = checkSecuritySchemeType(ctx, request, schemeDefinition, errors);
-        assert errorsInt != null;
-        if (!errorsInt.isEmpty()) return errorsInt;
+        if (errorsInt != null && !errorsInt.isEmpty())
+            return errorsInt;
 
-        errors.add(checkScopes(ctx, requirement, request, schemeName));
-        return errors;
+        return errors.add(checkScopes(ctx, requirement, request, schemeName));
     }
 
     @NotNull
     private static ValidationErrors getValidationErrorsProblemServerSide(ValidationContext ctx) {
-        return ValidationErrors.create(ctx, "There is a problem with the OpenAPI configuration at the server side.");
+        return error(ctx.statusCode(500), "There is a problem with the OpenAPI configuration at the server side.");
     }
 
     private String getOpenAPITitle() {
@@ -182,40 +182,39 @@ public class SecurityValidator {
 
             if (!hasScope.get()) {
                 log.info("Caller of {} {} is not in scope {} required by OpenAPI definition.", ctx.getMethod(), ctx.getPath(), scope);
-                errors.add(ctx, "Caller ist not in scope %s".formatted(scope));
+                errors.add(ctx, "Caller is not in scope %s".formatted(scope));
             }
         }
         return errors;
     }
 
     private static ValidationErrors checkHttp(ValidationContext ctx, Request<?> request, SecurityScheme schemeDefinition) {
-
-        ValidationErrors errors = new ValidationErrors();
-
-        switch (schemeDefinition.getScheme().toLowerCase()) {
+        String httpScheme = schemeDefinition.getScheme();
+        if (httpScheme == null) {
+            // OpenAPI misconfiguration on server side
+            return getValidationErrorsProblemServerSide(ctx);
+        }
+        switch (httpScheme.toLowerCase()) {
             case "basic": {
                 if (request.hasScheme(BASIC())) {
-                    return errors;
+                    return null;
                 }
-                errors.add(ctx.statusCode(401), "Caller ist not authenticated with HTTP and %s.".formatted(BASIC()));
-                return errors;
+                return error(ctx.statusCode(401), "Caller is not authenticated with HTTP and %s.".formatted(BASIC()));
             }
             case "bearer": {
                 if (request.hasScheme(BEARER())) {
-                    return errors;
+                    return null;
                 }
-                errors.add(ctx.statusCode(401), "Caller ist not authenticated with HTTP and %s.".formatted(BEARER()));
-                return errors;
+                return error(ctx.statusCode(401), "Caller is not authenticated with HTTP and %s.".formatted(BEARER()));
             }
         }
 
-        errors.add(ctx.statusCode(401), "Scheme %s is not supported".formatted(schemeDefinition.getScheme()));
-        return errors;
+        return error(ctx.statusCode(401), "Scheme %s is not supported".formatted(schemeDefinition.getScheme()));
     }
 
     private ValidationErrors checkOAuth2OrOpenIdConnectScheme(ValidationContext ctx, Request<?> request) {
-        if (securitySchemeIsNotPresent(request,OAuth2SecurityScheme.class) && securitySchemeIsNotPresent(request,JWTSecurityScheme.class)) {
-            return ValidationErrors.create(ctx.statusCode(401), "OAuth2 or JWT authentication is required.");
+        if (securitySchemeIsNotPresent(request, OAuth2SecurityScheme.class) && securitySchemeIsNotPresent(request, JWTSecurityScheme.class)) {
+            return error(ctx.statusCode(401), "OAuth2 or JWT authentication is required.");
         }
         return ValidationErrors.empty();
     }

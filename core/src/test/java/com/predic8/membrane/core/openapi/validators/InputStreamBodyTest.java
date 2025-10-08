@@ -28,6 +28,6 @@ public class InputStreamBodyTest {
 
     @Test
     public void asString() throws IOException {
-        assertEquals("foo", new InputStreamBody(TestUtils.toInputStrom("foo")).asString());
+        assertEquals("foo", new InputStreamBody(OpenAPITestUtils.toInputStrom("foo")).asString());
     }
 }
