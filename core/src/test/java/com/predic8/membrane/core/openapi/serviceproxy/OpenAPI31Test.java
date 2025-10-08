@@ -23,7 +23,7 @@ import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.util.*;
 import org.junit.jupiter.api.*;
 
-import static com.predic8.membrane.core.openapi.util.TestUtils.createProxy;
+import static com.predic8.membrane.core.openapi.util.OpenAPITestUtils.createProxy;
 import static com.predic8.membrane.test.TestUtil.getPathFromResource;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 

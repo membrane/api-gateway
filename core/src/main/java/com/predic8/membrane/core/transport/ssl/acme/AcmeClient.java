@@ -41,7 +41,7 @@ import org.bouncycastle.util.io.pem.*;
 import org.jetbrains.annotations.*;
 import org.joda.time.*;
 import org.jose4j.base64url.Base64;
-import org.jose4j.json.*;
+import org.jose4j.json.JsonUtil;
 import org.jose4j.jwk.*;
 import org.jose4j.jws.*;
 import org.jose4j.keys.*;
