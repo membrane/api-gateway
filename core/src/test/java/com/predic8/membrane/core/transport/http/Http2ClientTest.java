@@ -38,10 +38,11 @@ public class Http2ClientTest {
     }
 
     private static @NotNull HttpClientConfiguration getHttpClientConfiguration() {
-        HttpClientConfiguration configuration = new HttpClientConfiguration();
-        configuration.setUseExperimentalHttp2(true);
-        configuration.setConnection(getConnectionConfiguration());
-        return configuration;
+        HttpClientConfiguration config = new HttpClientConfiguration();
+        config.setUseExperimentalHttp2(true);
+        config.setConnection(getConnectionConfiguration());
+        config.getConnection().setSoTimeout(10000);
+        return config;
     }
 
     private static @NotNull ConnectionConfiguration getConnectionConfiguration() {

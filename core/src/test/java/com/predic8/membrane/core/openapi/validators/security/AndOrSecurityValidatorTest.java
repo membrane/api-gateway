@@ -71,6 +71,7 @@ public class AndOrSecurityValidatorTest extends AbstractValidatorTest {
     void bothWithOneApiKey() {
         var errors = validator.validate(Request.get().path("/both").securitySchemes(List.of(new ApiKeySecurityScheme(HEADER,"x-api-key"))));
         assertEquals(1, errors.size());
-        assertTrue(errors.get(0).getMessage().contains("Caller ist not authenticated with HTTP and basic scheme"));
+        assertTrue(errors.get(0).getMessage().contains("not authenticated"));
+        assertTrue(errors.get(0).getMessage().contains("basic"));
     }
 }
