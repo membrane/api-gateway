@@ -237,12 +237,10 @@ public class Utils {
         if (!exc.getRequest().isBodyEmpty()) {
             request.body(exc.getRequest().getBodyAsStreamDecoded());
         }
-
         if (exc.getProperty(SECURITY_SCHEMES) != null) {
             //noinspection unchecked
             request.setSecuritySchemes((List<SecurityScheme>) exc.getProperty(SECURITY_SCHEMES));
         }
-
         return request;
     }
 

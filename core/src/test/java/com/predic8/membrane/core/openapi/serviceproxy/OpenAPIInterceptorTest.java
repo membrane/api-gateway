@@ -29,8 +29,8 @@ import java.util.*;
 import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPISpec.YesNoOpenAPIOption.*;
-import static com.predic8.membrane.core.openapi.util.JsonUtil.*;
-import static com.predic8.membrane.core.openapi.util.TestUtils.*;
+import static com.predic8.membrane.core.openapi.util.JsonTestUtil.*;
+import static com.predic8.membrane.core.openapi.util.OpenAPITestUtils.*;
 import static com.predic8.membrane.core.util.ProblemDetailsTestUtil.parse;
 import static com.predic8.membrane.test.TestUtil.getPathFromResource;
 import static org.junit.jupiter.api.Assertions.*;
@@ -83,7 +83,7 @@ class OpenAPIInterceptorTest {
     @Test
     void nonMatchingBasePathMultipleServers() {
         exc.getRequest().setUri("/goo/boo");
-        assertNull(null, interceptor3Server.getMatchingBasePath(exc));
+        assertNull( interceptor3Server.getMatchingBasePath(exc));
     }
 
     @Test
@@ -112,8 +112,6 @@ class OpenAPIInterceptorTest {
         urls.add("https://localhost:3000/foo/boo");
         urls.add("https://localhost:4000/foo/boo");
         urls.add("https://localhost:5000/foo/boo");
-
-        System.out.println("exc = " + exc.getRequest().getHeader());
 
         assertEquals(urls, exc.getDestinations());
     }

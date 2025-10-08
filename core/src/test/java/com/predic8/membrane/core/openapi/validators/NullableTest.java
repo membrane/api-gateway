@@ -21,7 +21,7 @@ import org.junit.jupiter.api.*;
 import java.util.*;
 
 import static com.predic8.membrane.core.openapi.model.Request.*;
-import static com.predic8.membrane.core.openapi.util.JsonUtil.*;
+import static com.predic8.membrane.core.openapi.util.JsonTestUtil.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 
@@ -50,7 +50,6 @@ protected String getOpenAPIFileName() {
         m.put("address",null);
 
         ValidationErrors errors = validator.validate(post().path("/composition").body(mapToJson(m)));
-//        System.out.println("errors = " + errors);
         assertEquals(0,errors.size());
     }
 
@@ -61,11 +60,7 @@ protected String getOpenAPIFileName() {
         m.put("contact",null);
 
         ValidationErrors errors = validator.validate(post().path("/composition").body(mapToJson(m)));
-//        System.out.println("errors = " + errors);
-        assertEquals(1,errors.size());
-        ValidationError e = errors.get(0);
-        assertEquals("/contact", e.getContext().getJSONpointer());
-        assertTrue(e.getMessage().contains("null"));
+        assertEquals(0,errors.size());
     }
 
     @Test

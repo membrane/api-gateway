@@ -34,7 +34,7 @@ import org.junit.jupiter.api.*;
 import java.util.*;
 
 import static com.predic8.membrane.core.exchange.Exchange.SECURITY_SCHEMES;
-import static com.predic8.membrane.core.openapi.util.TestUtils.*;
+import static com.predic8.membrane.core.openapi.util.OpenAPITestUtils.*;
 import static com.predic8.membrane.test.TestUtil.getPathFromResource;
 import static org.junit.jupiter.api.Assertions.*;
 

@@ -283,7 +283,7 @@
         <dependency>
             <groupId>com.github.spotbugs</groupId>
             <artifactId>spotbugs-annotations</artifactId>
-            <version>4.9.4</version>
+            <version>4.9.5</version>
         </dependency>
         <!-- fallback parser for documents based on older Swagger standards -->
         <dependency>
@@ -379,7 +379,7 @@
         <dependency>
             <groupId>org.mongodb</groupId>
             <artifactId>mongodb-driver-sync</artifactId>
-            <version>5.5.1</version>
+            <version>5.6.0</version>
             <scope>provided</scope>
         </dependency>
     </dependencies>

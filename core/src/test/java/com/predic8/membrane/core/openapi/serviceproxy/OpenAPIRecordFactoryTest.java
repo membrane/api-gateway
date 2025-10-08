@@ -14,17 +14,14 @@
 package com.predic8.membrane.core.openapi.serviceproxy;
 
 import com.predic8.membrane.core.*;
-import io.swagger.parser.*;
-import io.swagger.v3.oas.models.*;
 import org.junit.jupiter.api.*;
 
-import java.io.*;
 import java.util.*;
 
 import static com.predic8.membrane.core.http.MimeType.*;
-import static com.predic8.membrane.core.openapi.util.TestUtils.*;
-import static com.predic8.membrane.core.util.FileUtil.*;
+import static com.predic8.membrane.core.openapi.util.OpenAPITestUtils.*;
 import static io.swagger.v3.oas.models.SpecVersion.*;
+import static java.util.Collections.singletonList;
 import static org.junit.jupiter.api.Assertions.*;
 
 class OpenAPIRecordFactoryTest {
@@ -38,12 +35,23 @@ class OpenAPIRecordFactoryTest {
         factory = new OpenAPIRecordFactory(router);
     }
 
+    private static Object getMail(OpenAPIRecord rec) {
+        return rec.api.getPaths().get("/users").getPost()
+                .getRequestBody().getContent().get(APPLICATION_JSON)
+                .getSchema().getProperties().get("email");
+    }
+
+    private static OpenAPIRecord getOpenAPIRecord(String fileName, String id) {
+        OpenAPISpec spec = new OpenAPISpec();
+        spec.setLocation(fileName);
+        return factory.create(singletonList(spec)).get(id);
+    }
+
     @Test
-    void readAndParseOpenAPI31() {
-        Collection<OpenAPISpec> specs = new ArrayList<>();
-        specs.add(new OpenAPISpec() {{
-            setLocation("customers.yml");
-        }});
+    void readAndParseOpenAPI30() {
+        OpenAPISpec spec = new OpenAPISpec();
+        spec.setLocation("customers.yml");
+        Collection<OpenAPISpec> specs = singletonList(spec);
 
         Map<String, OpenAPIRecord> recs = factory.create(specs);
         OpenAPIRecord rec = recs.get("customers-api-v1-0");
@@ -53,7 +61,7 @@ class OpenAPIRecordFactoryTest {
     }
 
     @Test
-    void readAndParseSwagger2() throws IOException {
+    void readAndParseSwagger2() {
         OpenAPIRecord rec = getOpenAPIRecord("fruitshop-swagger-2.0.json", "fruit-shop-api-swagger-2-v1-0-0");
         assertNotNull(rec);
         assertEquals("Fruit Shop API Swagger 2", rec.api.getInfo().getTitle());
@@ -61,14 +69,14 @@ class OpenAPIRecordFactoryTest {
     }
 
     @Test
-    void swagger2ConversionNoticeAdded() throws IOException {
+    void swagger2ConversionNoticeAdded() {
         OpenAPIRecord rec = getOpenAPIRecord("fruitshop-swagger-2.0.json", "fruit-shop-api-swagger-2-v1-0-0");
         String description = rec.api.getInfo().getDescription();
         assertTrue(description.contains("Membrane API Gateway"));
     }
 
     @Test
-    void swagger2ConversionNoticeAddedWithExistingDescription() throws IOException {
+    void swagger2ConversionNoticeAddedWithExistingDescription() {
         OpenAPIRecord rec = getOpenAPIRecord("fruitshop-swagger-2.0.json", "fruit-shop-api-swagger-2-v1-0-0");
         String description = rec.api.getInfo().getDescription();
         assertTrue(description.startsWith("This is a showcase"));
@@ -76,20 +84,19 @@ class OpenAPIRecordFactoryTest {
     }
 
     @Test
-    void openapi3NoConversionNoticeAdded() throws IOException {
+    void openapi3NoConversionNoticeAdded() {
         OpenAPIRecord rec = getOpenAPIRecord("fruitshop-api-v2-openapi-3.yml", "fruit-shop-api-v2-0-0");
-        assertFalse("OpenAPI description was converted to OAS 3 from Swagger 2 by Membrane API Gateway.".contains(
-                rec.api.getInfo().getDescription()
+        assertFalse(rec.api.getInfo().getDescription().contains(
+                "OpenAPI description was converted to OAS 3 from Swagger 2 by Membrane API Gateway."
         ));
     }
 
     @Test
     void referencesTest() {
-        OpenAPIRecord rec = factory.create(new ArrayList<>() {{
-            add(new OpenAPISpec() {{
-                setLocation("oas31/request-reference.yaml");
-            }});
-        }}).get("demo-v1-0-0");
+        OpenAPISpec spec = new OpenAPISpec();
+        spec.setLocation("oas31/request-reference.yaml");
+        OpenAPIRecord rec = factory.create(singletonList(spec)).get("demo-v1-0-0");
+        
         assertNotNull(rec);
         assertEquals("Demo", rec.api.getInfo().getTitle());
         assertEquals(V31, rec.api.getSpecVersion());
@@ -97,7 +104,7 @@ class OpenAPIRecordFactoryTest {
     }
 
     @Test
-    void referencesRelativeFilesInSameDirectory() throws IOException {
+    void referencesRelativeFilesInSameDirectory() {
 
         OpenAPIRecord rec = getOpenAPIRecord("oas31/references/request-reference.yaml", "demo-v1-0-0");
 
@@ -107,17 +114,7 @@ class OpenAPIRecordFactoryTest {
     }
 
     @Test
-    void referencesRelativeFilesInSameDirectory2() throws IOException {
-
-        OpenAPIRecord rec = getOpenAPIRecord("oas31/references/request-reference.yaml", "demo-v1-0-0");
-
-        assertEquals("Demo", rec.api.getInfo().getTitle());
-        assertEquals(V31, rec.api.getSpecVersion());
-        assertNotNull(getMail(rec));
-    }
-
-    @Test
-    void deep() throws IOException {
+    void referencesDepth() {
 
         OpenAPIRecord rec = getOpenAPIRecord("oas31/references/deep/deep.oas.yaml", "deep-refs-v1-0-0");
 
@@ -126,33 +123,15 @@ class OpenAPIRecordFactoryTest {
         assertNotNull(getMail(rec));
     }
 
-    private static Object getMail(OpenAPIRecord rec) {
-        return rec.api.getPaths().get("/users").getPost()
-                .getRequestBody().getContent().get(APPLICATION_JSON)
-                .getSchema().getProperties().get("email");
-    }
-
-    private static OpenAPIRecord getOpenAPIRecord(String fileName, String id) {
-        return factory.create(new ArrayList<>() {{
-            add(new OpenAPISpec() {{
-                setLocation(fileName);
-            }});
-        }}).get(id);
-    }
-
     @Test
     void getUniqueIdNoCollision() {
-        assertEquals("customers-api-v1-0",  factory.getUniqueId(new HashMap<>(), new OpenAPIRecord(getApi("/openapi/specs/customers.yml"),null)));
+        assertEquals("customers-api-v1-0", factory.getUniqueId(new HashMap<>(), new OpenAPIRecord(getApi(this, "/openapi/specs/customers.yml"), null)));
     }
 
     @Test
     void getUniqueIdCollision() {
         HashMap<String, OpenAPIRecord> recs = new HashMap<>();
-        recs.put("customers-api-v1-0",new OpenAPIRecord());
-        assertEquals("customers-api-v1-0-0",  factory.getUniqueId(recs, new OpenAPIRecord(getApi("/openapi/specs/customers.yml"),null)));
-    }
-
-    private OpenAPI getApi(String pfad) {
-        return new OpenAPIParser().readContents(readInputStream(getResourceAsStream(this,pfad)), null, null).getOpenAPI();
+        recs.put("customers-api-v1-0", new OpenAPIRecord());
+        assertEquals("customers-api-v1-0-0", factory.getUniqueId(recs, new OpenAPIRecord(getApi(this, "/openapi/specs/customers.yml"), null)));
     }
 }
