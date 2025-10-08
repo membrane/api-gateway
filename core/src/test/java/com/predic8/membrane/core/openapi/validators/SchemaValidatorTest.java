@@ -23,19 +23,20 @@ import java.io.*;
 import java.util.stream.*;
 
 import static com.fasterxml.jackson.databind.node.BooleanNode.*;
-import static com.predic8.membrane.core.openapi.validators.IJSONSchemaValidator.*;
+import static com.predic8.membrane.core.openapi.validators.JsonSchemaValidator.*;
+import static java.io.InputStream.nullInputStream;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class SchemaValidatorTest {
 
     private static final ObjectMapper mapper = new ObjectMapper();
 
-    static IJSONSchemaValidator arrayValidator;
-    static IJSONSchemaValidator booleanValidator;
-    static IJSONSchemaValidator integerValidator;
-    static IJSONSchemaValidator numberValidator;
-    static IJSONSchemaValidator objectValidator;
-    static IJSONSchemaValidator stringValidator;
+    static JsonSchemaValidator arrayValidator;
+    static JsonSchemaValidator booleanValidator;
+    static JsonSchemaValidator integerValidator;
+    static JsonSchemaValidator numberValidator;
+    static JsonSchemaValidator objectValidator;
+    static JsonSchemaValidator stringValidator;
 
     @BeforeAll
     static void setUp() {
@@ -49,11 +50,11 @@ public class SchemaValidatorTest {
 
     @ParameterizedTest
     @MethodSource("validatorTestCases")
-    void testCanValidate(IJSONSchemaValidator validator, Object input, String expected) {
+    void testCanValidate(JsonSchemaValidator validator, Object input, String expected) {
         if (input instanceof InputStream) {
-            assertThrows(RuntimeException.class, () -> validator.canValidate(input), "InputStream should not happen!");
+            assertNull(validator.canValidate(input));
         } else {
-            assertEquals(expected, validator.canValidate(input));
+            assertEquals(expected, validator.canValidate(input),"Input: " + input);
         }
     }
 
@@ -91,15 +92,15 @@ public class SchemaValidatorTest {
                 Arguments.of(numberValidator, "456.78", NUMBER),
                 Arguments.of(numberValidator, "invalid", null),
                 Arguments.of(numberValidator, 123, NUMBER),
-                Arguments.of(numberValidator, 3.142, NUMBER), // Float
+                Arguments.of(numberValidator, 3.142, NUMBER), // Double
                 Arguments.of(numberValidator, 382147189247.141592653589793, NUMBER), // Double
-                Arguments.of(numberValidator, 10_000_000_000L, NUMBER), // Double
+                Arguments.of(numberValidator, 10_000_000_000L, NUMBER), // Long
                 Arguments.of(numberValidator, null, null),
 
                 // ObjectValidator test cases
                 Arguments.of(objectValidator, mapper.createObjectNode(), OBJECT),
                 Arguments.of(objectValidator, stringNode, null),
-                Arguments.of(objectValidator, InputStream.nullInputStream(), null),
+                Arguments.of(objectValidator, nullInputStream(), null),
 
                 // StringValidator test cases
                 Arguments.of(stringValidator, stringNode, STRING),
@@ -111,8 +112,7 @@ public class SchemaValidatorTest {
     }
 
     @Test
-    void testCanValidateWithInputStream() {
-        assertThrows(RuntimeException.class, () ->
-                objectValidator.canValidate(InputStream.nullInputStream()), "InputStream should not happen!");
+    void canValidateWithInputStream() {
+        assertNull(objectValidator.canValidate(nullInputStream()));
     }
 }

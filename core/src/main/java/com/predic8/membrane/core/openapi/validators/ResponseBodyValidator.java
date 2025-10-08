@@ -125,7 +125,7 @@ public class ResponseBodyValidator extends AbstractBodyValidator<Response<?>> {
         }
 
         if (response.hasBody()) {
-            return ValidationErrors.create(ctx, "Response shouldn't have a body. There is no content described in the API specification.");
+            return ValidationErrors.error(ctx, "Response shouldn't have a body. There is no content described in the API specification.");
         }
         return new ValidationErrors();
     }
