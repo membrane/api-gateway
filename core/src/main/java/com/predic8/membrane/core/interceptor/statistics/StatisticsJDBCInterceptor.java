@@ -113,7 +113,7 @@ public class StatisticsJDBCInterceptor extends AbstractInterceptor implements Ap
 	}
 
 	private boolean ignoreGetMethod(Exchange exc) {
-		return postMethodOnly && !METHOD_POST.equals(exc.getRequest().getMethod());
+		return postMethodOnly && !POST.equals(exc.getRequest().getMethod());
 	}
 
 	private void createTableIfNecessary(Connection con) throws Exception {

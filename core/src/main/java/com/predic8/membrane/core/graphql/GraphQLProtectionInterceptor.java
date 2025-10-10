@@ -26,8 +26,8 @@ import org.slf4j.*;
 import java.security.*;
 import java.util.*;
 
-import static com.predic8.membrane.core.http.Request.METHOD_GET;
-import static com.predic8.membrane.core.http.Request.METHOD_POST;
+import static com.predic8.membrane.core.http.Request.GET;
+import static com.predic8.membrane.core.http.Request.POST;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 
 /**
@@ -130,7 +130,7 @@ public class GraphQLProtectionInterceptor extends AbstractInterceptor {
     public void setAllowedMethods(String allowedMethods) {
         this.allowedMethods = Arrays.asList(allowedMethods.split(","));
         for (String allowedMethod : this.allowedMethods)
-            if (!METHOD_GET.equals(allowedMethod) && !METHOD_POST.equals(allowedMethod))
+            if (!GET.equals(allowedMethod) && !POST.equals(allowedMethod))
                 throw new InvalidParameterException("<graphQLProtectionInterceptor allowedMethods=\"...\" /> may only allow GET or POST.");
     }
 
