@@ -434,6 +434,8 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
 				ai.setRequired(isRequired(e2));
 				ii.getAis().add(ai);
 				ii.setHasIdField(ii.isHasIdField() || ai.getXMLName().equals("id"));
+
+                validateEnumAttribute(ai);
 			}
 			MCOtherAttributes d = e2.getAnnotation(MCOtherAttributes.class);
 			if (d != null) {
@@ -513,4 +515,29 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
 			new BlueprintParsers(processingEnv).writeParsers(m);
 		}
 	}
+
+    private void validateEnumAttribute(AttributeInfo ai) {
+        List<? extends VariableElement> params = ai.getE().getParameters();
+        if (params.size() != 1) return;
+        var paramType = params.getFirst().asType();
+        if (paramType.getKind() != TypeKind.DECLARED) return;
+        TypeElement paramTypeElement = (TypeElement) processingEnv.getTypeUtils().asElement(paramType);
+        if (paramTypeElement.getSuperclass().getKind() == TypeKind.DECLARED) {
+            TypeElement superClass = (TypeElement) processingEnv.getTypeUtils().asElement(paramTypeElement.getSuperclass());
+            if ("java.lang.Enum".equals(superClass.getQualifiedName().toString())) {
+                validateEnumConstantsUppercase(paramTypeElement);
+            }
+        }
+    }
+
+    private void validateEnumConstantsUppercase(TypeElement enumType) {
+        for (Element enclosed : enumType.getEnclosedElements()) {
+            if (enclosed.getKind() == ElementKind.ENUM_CONSTANT) {
+                String name = enclosed.getSimpleName().toString();
+                if (!name.equals(name.toUpperCase(Locale.ROOT))) {
+                    throw new IllegalArgumentException("write error message later!");
+                }
+            }
+        }
+    }
 }
