@@ -20,6 +20,6 @@ package com.predic8.membrane.core.interceptor.oauth2.authorizationservice;
  * Core 1.0 chapter 9</a>.
  */
 public enum ClientAuthorization {
-    client_secret_basic,
-    client_secret_post
-}
+    CLIENT_SECRET_BASIC,
+    CLIENT_SECRET_POST
+    }
