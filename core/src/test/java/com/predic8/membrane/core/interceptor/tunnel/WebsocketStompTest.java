@@ -23,7 +23,7 @@ import java.util.Scanner;
 public class WebsocketStompTest {
     @Test
     public void testWebsocketStomp() throws Exception{
-        // Preparation: tart the Websocket-Stomp example from an external source
+        // Preparation: Start the Websocket-Stomp example from an external source
 
         // Starts embedded ActiveMQ and places "Hello world!" into the "foo" queue
         // Verification: If you open "localhost:4333" with running example the message appears -> Server part works
