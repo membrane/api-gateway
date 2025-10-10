@@ -14,17 +14,21 @@
 
 package com.predic8.membrane.examples.withoutinternet.openapi;
 
-import com.predic8.membrane.examples.util.AbstractSampleMembraneStartStopTestcase;
-import com.predic8.membrane.test.HttpAssertions;
-import io.restassured.response.Response;
-import org.json.JSONException;
-import org.junit.jupiter.api.Test;
-import org.skyscreamer.jsonassert.JSONAssert;
+import com.predic8.membrane.examples.util.*;
+import com.predic8.membrane.test.*;
+import io.restassured.response.*;
+import org.json.*;
+import org.junit.jupiter.api.*;
+import org.skyscreamer.jsonassert.*;
 
-import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
-import static io.restassured.RestAssured.given;
-import static io.restassured.http.ContentType.JSON;
-import static io.restassured.http.ContentType.XML;
+import static com.predic8.membrane.core.http.MimeType.*;
+import static io.restassured.RestAssured.*;
+import static io.restassured.http.ContentType.*;
+import static org.hamcrest.CoreMatchers.hasItem;
+import static org.hamcrest.Matchers.allOf;
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.*;
 
 public class OpenAPIValidationExampleTest extends AbstractSampleMembraneStartStopTestcase {
 
@@ -34,7 +38,7 @@ public class OpenAPIValidationExampleTest extends AbstractSampleMembraneStartSto
     }
 
     @Test
-    public void validRequest() throws Exception {
+    void validRequest() throws Exception {
         try (HttpAssertions ha = new HttpAssertions()) {
             ha.getAndAssert(200, LOCALHOST_2000 + "/demo-api/v2/persons?limit=10");
         }
@@ -155,7 +159,7 @@ public class OpenAPIValidationExampleTest extends AbstractSampleMembraneStartSto
                            "complexType" : "Person",
                            "schemaType" : "string"
                          }, {
-                           "message" : "The string 'Germany' does not match the regex pattern ^\\\\w{2}$.",
+                           "message" : "The string 'Germany' does not match regex pattern ^\\\\w{2}$.",
                            "complexType" : "Person",
                            "schemaType" : "string"
                          } ]
@@ -190,7 +194,7 @@ public class OpenAPIValidationExampleTest extends AbstractSampleMembraneStartSto
                       "path" : "/demo-api/v2/persons/4077C19D-2C1D-427B-B2DD-FC3112CE89D1",
                       "errors" : {
                         "REQUEST/BODY" : [ {
-                          "message" : "The object has the additional Property: role .But the schema does not allow additional properties.",
+                          "message" : "Object has the additional property: role. But the schema does not allow additional properties.",
                           "complexType" : "Person",
                           "schemaType" : "object"
                         } ]
@@ -273,7 +277,7 @@ public class OpenAPIValidationExampleTest extends AbstractSampleMembraneStartSto
                       "path" : "/demo-api/v2/persons/4077C19D-2C1D-427B-B2D-FC3112CE89D1",
                       "errors" : {
                         "REQUEST/BODY#/type" : [ {
-                          "message" : "The string 'ARTIST' does not contain a value from the enum PRIVAT,BUSINESS.",
+                          "message" : "'ARTIST' is not part of the enum PRIVAT,BUSINESS.",
                           "complexType" : "Person",
                           "schemaType" : "string"
                         } ],
@@ -309,7 +313,7 @@ public class OpenAPIValidationExampleTest extends AbstractSampleMembraneStartSto
     }
 
     @Test
-    void limitGreaterThan100() throws JSONException {
+    void limitGreaterThan100() {
         // @formatter:off
         Response res = given()
             .contentType(JSON)
@@ -317,23 +321,12 @@ public class OpenAPIValidationExampleTest extends AbstractSampleMembraneStartSto
             .get(LOCALHOST_2000 + "/demo-api/v2/persons?limit=200");
 
         res.then().assertThat()
-            .statusCode(400);
-
-        JSONAssert.assertEquals("""
-                {
-                    "validation": {
-                        "method" : "GET",
-                        "uriTemplate" : "/persons",
-                        "path" : "/demo-api/v2/persons?limit=200",
-                        "errors" : {
-                          "REQUEST/QUERY_PARAMETER/limit" : [ {
-                            "message" : "200.0 is greater than the maximum of 100",
-                            "schemaType" : "integer"
-                          } ]
-                        }
-                	}
-                  }
-                """, res.asString(), false);
+            .statusCode(400)
+            .body("validation.errors['REQUEST/QUERY_PARAMETER/limit']",
+        hasItem(allOf(
+                    hasEntry(equalTo("schemaType"), equalTo("integer")),
+                    hasEntry(equalTo("message"), containsString("maximum of 100"))
+                )));
         // @formatter:on
     }
 

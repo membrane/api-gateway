@@ -35,7 +35,7 @@ import java.util.Objects;
 import static com.predic8.membrane.core.openapi.util.SchemaUtil.getSchemaNameFromRef;
 import static com.predic8.membrane.core.openapi.validators.ValidationContext.ValidatedEntityType.BODY;
 
-public class SchemaValidator implements IJSONSchemaValidator {
+public class SchemaValidator implements JsonSchemaValidator {
 
     private static final Logger log = LoggerFactory.getLogger(SchemaValidator.class.getName());
 
@@ -60,7 +60,7 @@ public class SchemaValidator implements IJSONSchemaValidator {
     @Override
     public ValidationErrors validate(ValidationContext ctx, Object obj) {
 
-        ValidationErrors errors = new ValidationErrors();
+        var errors = new ValidationErrors();
 
         if (obj == null)
             return errors.add(ctx, "Got null to validate!");
@@ -92,13 +92,8 @@ public class SchemaValidator implements IJSONSchemaValidator {
                 throw new RuntimeException("Should not happen!");
         }
 
-        if (schemaHasNoTypeAndTypes(schema.getType())) {
-            if ((value == null || value instanceof NullNode) && isNullable())
-                return ValidationErrors.create(ctx, "Value is null and no type is set.");
-        } else {
-            if ((value == null || value instanceof NullNode) && isNullable())
-                return errors;
-        }
+        if ((value == null || value instanceof NullNode) && isNullable())
+            return errors;
 
         errors.add(new StringRestrictionValidator(schema).validate(ctx, value));
         errors.add(new NumberRestrictionValidator(schema).validate(ctx, value));
@@ -108,12 +103,12 @@ public class SchemaValidator implements IJSONSchemaValidator {
 
     private boolean isNullable() {
         return (schema.getNullable() != null && schema.getNullable()) || (schema.getTypes() != null && schema.getTypes().contains("null")) ||
-                (schema.getType() != null && schema.getType().equals("null"));
+               (schema.getType() != null && schema.getType().equals("null"));
     }
 
     private ValidationErrors validateByType(ValidationContext ctx, Object value) {
 
-        String type = schema.getType();
+        var type = schema.getType();
 
         if (schemaHasNoTypeAndTypes(type)) {
             return validateMultipleTypes(List.of("string", "number", "integer", "boolean", "array", "object", "null"), ctx, value);
@@ -124,13 +119,13 @@ public class SchemaValidator implements IJSONSchemaValidator {
             return validateSingleType(ctx, value, type);
 
         // At that point: schema.types is used
-        return validateMultipleTypes(new ArrayList<>(schema.getTypes()), ctx, value);
+        return validateMultipleTypes(new ArrayList<String>(schema.getTypes()), ctx, value);
     }
 
     private @Nullable ValidationErrors validateMultipleTypes(List<String> types, ValidationContext ctx, Object value) {
-        String typeOfValue = getTypeOfValue(types, value);
+        var typeOfValue = getTypeOfValue(types, value);
 
-        ValidationErrors errors = getTypeNotMatchError(types, ctx, value, typeOfValue);
+        var errors = getTypeNotMatchError(types, ctx, value, typeOfValue);
         if (errors != null) return errors;
 
         return validateSingleType(ctx, value, typeOfValue);
@@ -150,7 +145,7 @@ public class SchemaValidator implements IJSONSchemaValidator {
      */
     private @Nullable ValidationErrors getTypeNotMatchError(List<String> types, ValidationContext ctx, Object value, String typeOfValue) {
         if (typeOfValue == null || !types.contains(typeOfValue)) {
-            return ValidationErrors.create(ctx,"%s is of type %s which does not match any of %s".formatted( value, typeOfValue, types));
+            return ValidationErrors.error(ctx,"%s is of type %s which does not match any of %s".formatted( value, typeOfValue, types));
         }
         return null;
     }
@@ -166,7 +161,7 @@ public class SchemaValidator implements IJSONSchemaValidator {
      * @return name of the type that applies
      */
     private static @Nullable String getTypeOfValue(List<String> types, Object value) {
-        String typeOfValue = getType(value);
+        var typeOfValue = getType(value);
         if (Objects.equals(typeOfValue, INTEGER) && !types.contains(typeOfValue) && types.contains(NUMBER))
             return NUMBER;
         return typeOfValue;
@@ -194,7 +189,7 @@ public class SchemaValidator implements IJSONSchemaValidator {
                 default -> throw new RuntimeException("Should not happen! " + type);
             };
         } catch (Exception e) {
-            return ValidationErrors.create(ctx, "%s is not of %s format.".formatted(value, type));
+            return ValidationErrors.error(ctx, "%s is not of %s format.".formatted(value, type));
         }
     }
 
@@ -202,7 +197,7 @@ public class SchemaValidator implements IJSONSchemaValidator {
         return type == null && (schema.getTypes() == null || schema.getTypes().isEmpty());
     }
 
-    private static List<IJSONSchemaValidator> getValidatorClasses() {
+    private static List<JsonSchemaValidator> getValidatorClasses() {
         return List.of(
                 new NullValidator(),
                 new IntegerValidator(),
@@ -225,7 +220,6 @@ public class SchemaValidator implements IJSONSchemaValidator {
         if (obj instanceof InputStream) {
             throw new RuntimeException("InputStream!");
         }
-
         return obj;
     }
 }

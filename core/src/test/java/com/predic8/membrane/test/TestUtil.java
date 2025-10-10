@@ -50,12 +50,12 @@ public class TestUtil {
         }};
     }
 
-    public static String getPathFromResource(String resourcePaht) {
-        return pathFromFileURI(TestUtils.class.getResource("../../../../../..").getPath() + resourcePaht);
+    @Test
+    void get_PathFromResource() {
+        assertTrue(new File(getPathFromResource("log4j2.xml")).exists());
     }
 
-    @Test
-    void getPathFromResource() {
-        assertTrue(new File(getPathFromResource("log4j2.xml")).exists());
+    public static String getPathFromResource(String resourcePaht) {
+        return pathFromFileURI(OpenAPITestUtils.class.getResource("../../../../../..").getPath() + resourcePaht);
     }
 }

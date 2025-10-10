@@ -23,7 +23,7 @@ import org.junit.jupiter.api.*;
 import java.util.*;
 
 import static com.predic8.membrane.core.http.MimeType.*;
-import static com.predic8.membrane.core.openapi.util.JsonUtil.*;
+import static com.predic8.membrane.core.openapi.util.JsonTestUtil.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 
