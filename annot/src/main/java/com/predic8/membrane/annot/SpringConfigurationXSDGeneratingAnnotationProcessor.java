@@ -535,7 +535,8 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
             if (enclosed.getKind() == ElementKind.ENUM_CONSTANT) {
                 String name = enclosed.getSimpleName().toString();
                 if (!name.equals(name.toUpperCase(Locale.ROOT))) {
-                    throw new IllegalArgumentException("write error message later!");
+                    throw new IllegalArgumentException("Enum constant '" + name + "' in " + enumType.getQualifiedName() +
+                            " must be uppercase. Found: " + name + ", expected: " + name.toUpperCase(Locale.ROOT));
                 }
             }
         }
