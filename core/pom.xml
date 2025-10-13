@@ -283,7 +283,7 @@
         <dependency>
             <groupId>com.github.spotbugs</groupId>
             <artifactId>spotbugs-annotations</artifactId>
-            <version>4.9.5</version>
+            <version>4.9.6</version>
         </dependency>
         <!-- fallback parser for documents based on older Swagger standards -->
         <dependency>
