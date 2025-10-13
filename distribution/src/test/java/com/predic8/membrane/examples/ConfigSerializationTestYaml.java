@@ -6,14 +6,15 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.github.fge.jsonschema.core.report.ProcessingReport;
 import com.github.fge.jsonschema.main.JsonSchema;
 import com.github.fge.jsonschema.main.JsonSchemaFactory;
-import com.predic8.membrane.core.interceptor.schemavalidation.JSONSchemaValidator;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
-import java.nio.file.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 import java.util.stream.Stream;
 
@@ -30,6 +31,18 @@ public class ConfigSerializationTestYaml {
 
     private static final String SCHEMA_CLASSPATH =
             "/com/predic8/membrane/core/config/json/membrane.schema.json";
+
+    private static final JsonSchema SCHEMA;
+
+    static {
+        try (InputStream in = ConfigSerializationTestYaml.class.getResourceAsStream(SCHEMA_CLASSPATH)) {
+            if (in == null)
+                throw new IOException("Schema not found on classpath: " + SCHEMA_CLASSPATH);
+            SCHEMA = SCHEMA_FACTORY.getJsonSchema(JSON.readTree(in));
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to load JSON schema", e);
+        }
+    }
 
     public static final List<String> EXCLUDED = asList("custom-interceptor",
             "custom-websocket-interceptor",
@@ -53,23 +66,23 @@ public class ConfigSerializationTestYaml {
 
     public static Stream<String> getYamlConfigs() {
         List<String> roots = List.of("examples", "router");
-
-        Stream<Path> allFiles = roots.stream()
+        List<String> configs = roots.stream()
                 .map(Paths::get)
                 .filter(Files::exists)
                 .flatMap(root -> {
                     try {
-                        return Files.walk(root);
+                        try (Stream<Path> paths = Files.walk(root)) {
+                            return paths.filter(Files::isRegularFile)
+                                    .filter(p -> p.getFileName().toString().matches("proxies\\.ya?ml"))
+                                    .map(Path::toString)
+                                    .toList().stream();
+                        }
                     } catch (IOException e) {
                         throw new RuntimeException(e);
                     }
-                });
+                }).filter(string -> EXCLUDED.stream().noneMatch(ex -> string.contains("/" + ex + "/"))).toList();
 
-        return allFiles
-                .filter(Files::isRegularFile)
-                .filter(p -> p.getFileName().toString().matches("proxies\\.ya?ml"))
-                .map(Path::toString)
-                .filter(string -> EXCLUDED.stream().noneMatch(ex -> string.contains("/" + ex + "/")));
+        return configs.stream();
     }
 
     @ParameterizedTest
@@ -80,15 +93,7 @@ public class ConfigSerializationTestYaml {
                 MappingIterator<Object> it = YAML.readerFor(Object.class).readValues(reader);
 
                 while (it.hasNext()) {
-                    Object originalObj = it.next();
-
-                    JsonSchema schema;
-                    try (InputStream in = getClass().getResourceAsStream(SCHEMA_CLASSPATH)) {
-                        if (in == null)
-                            throw new IOException("Schema not found on classpath: " + SCHEMA_CLASSPATH);
-                        schema = SCHEMA_FACTORY.getJsonSchema(JSON.readTree(in));
-                    }
-                    ProcessingReport report = schema.validateUnchecked(JSON.valueToTree(originalObj));
+                    ProcessingReport report = SCHEMA.validateUnchecked(JSON.valueToTree(it.next()));
                     assertThat("Schema validation failed for " + yamlPath + ":\n" + report,
                             report.isSuccess(), is(true));
 
