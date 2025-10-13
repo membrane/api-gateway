@@ -221,7 +221,7 @@ public class OpenTelemetryInterceptor extends AbstractInterceptor {
         return customAttributes;
     }
 
-    @MCChildElement
+    @MCChildElement(order = 20)
     public void setCustomAttributes(List<CustomAttribute> customAttributes) {
         this.customAttributes.addAll(customAttributes);
     }
@@ -235,7 +235,7 @@ public class OpenTelemetryInterceptor extends AbstractInterceptor {
         return logBody;
     }
 
-    @MCChildElement
+    @MCChildElement(order = 10)
     public void setExporter(OtelExporter exporter) {
         this.exporter = exporter;
     }
