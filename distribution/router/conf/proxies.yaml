@@ -1,7 +1,7 @@
-#apiVersion: membrane-soa.org/v1beta1
-#kind: api
-#metadata:
-#  name: Fruitshop
+apiVersion: membrane-soa.org/v1beta1
+kind: api
+metadata:
+ name: Fruitshop
 spec:
   port: 2000
   specs:
@@ -11,15 +11,15 @@ spec:
 
 ---
 
-#apiVersion: membrane-soa.org/v1beta1
-#kind: api
+apiVersion: membrane-soa.org/v1beta1
+kind: api
 metadata:
   name: api-rewrite
 spec:
   port: 2000
   path:
-    value: /names
-  interceptors:
+    uri: /names
+  flow:
     - rateLimiter:
         requestLimit: 3
         requestLimitDuration: PT30S
@@ -29,10 +29,9 @@ spec:
               from: ^/names/(.*)
               to: /restnames/name\.groovy\?name=$1
     - response:
-        interceptors:
-          - beautifier: {}
-          - xml2Json: {}
-          - log: {}
+        - beautifier: {}
+        - xml2Json: {}
+        - log: {}
   target:
     url: https://api.predic8.de
 
@@ -45,20 +44,19 @@ metadata:
 spec:
   port: 2000
   path:
-    value: /header
-  interceptors:
+    uri: /header
+  flow:
     - request:
-        interceptors:
-          - groovy:
-              src: |
-                println "Request headers:"
-                header.allHeaderFields.each { println it }
-                CONTINUE
-          - template:
-              contentType: application/json
-              textTemplate: '{ "ok": 1 }'
-          - return:
-              statusCode: 200
+        - groovy:
+            src: |
+              println "Request headers:"
+              header.allHeaderFields.each { println it }
+              CONTINUE
+        - template:
+            contentType: application/json
+            src: '{ "ok": 1 }'
+        - return:
+            statusCode: 200
 
 ---
 
@@ -79,5 +77,5 @@ metadata:
   name: admin
 spec:
   port: 9000
-  interceptors:
+  flow:
     - adminConsole: {}
