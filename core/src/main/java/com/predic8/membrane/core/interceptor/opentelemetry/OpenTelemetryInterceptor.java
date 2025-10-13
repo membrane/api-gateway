@@ -14,28 +14,42 @@
 
 package com.predic8.membrane.core.interceptor.opentelemetry;
 
-import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.interceptor.opentelemetry.exporter.*;
-import com.predic8.membrane.core.openapi.serviceproxy.*;
-import io.opentelemetry.api.*;
-import io.opentelemetry.api.trace.*;
-import io.opentelemetry.context.*;
-import org.slf4j.*;
+import com.predic8.membrane.annot.MCAttribute;
+import com.predic8.membrane.annot.MCChildElement;
+import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.Header;
+import com.predic8.membrane.core.http.HeaderField;
+import com.predic8.membrane.core.interceptor.AbstractInterceptor;
+import com.predic8.membrane.core.interceptor.Outcome;
+import com.predic8.membrane.core.interceptor.opentelemetry.exporter.OtelExporter;
+import com.predic8.membrane.core.interceptor.opentelemetry.exporter.OtlpExporter;
+import com.predic8.membrane.core.openapi.serviceproxy.APIProxy;
+import com.predic8.membrane.core.openapi.serviceproxy.OpenAPIRecord;
+import io.opentelemetry.api.OpenTelemetry;
+import io.opentelemetry.api.trace.Span;
+import io.opentelemetry.api.trace.StatusCode;
+import io.opentelemetry.api.trace.Tracer;
+import io.opentelemetry.context.Context;
+import io.opentelemetry.context.Scope;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.slf4j.bridge.SLF4JBridgeHandler;
 
-import static com.predic8.membrane.core.interceptor.Outcome.*;
-import static com.predic8.membrane.core.interceptor.opentelemetry.HTTPTraceContextUtil.*;
-import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPIInterceptor.*;
-import static com.predic8.membrane.core.util.ExceptionUtil.*;
-import static io.opentelemetry.api.common.AttributeKey.*;
-import static io.opentelemetry.api.common.Attributes.*;
-import static io.opentelemetry.api.trace.SpanKind.*;
-import static io.opentelemetry.api.trace.StatusCode.*;
-import static io.opentelemetry.context.Context.*;
+import java.util.ArrayList;
+import java.util.List;
 
+import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
+import static com.predic8.membrane.core.interceptor.opentelemetry.HTTPTraceContextUtil.getContextFromRequestHeader;
+import static com.predic8.membrane.core.interceptor.opentelemetry.HTTPTraceContextUtil.setContextInHeader;
+import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPIInterceptor.OPENAPI_RECORD;
+import static com.predic8.membrane.core.util.ExceptionUtil.concatMessageAndCauseMessages;
+import static io.opentelemetry.api.common.AttributeKey.stringKey;
+import static io.opentelemetry.api.common.Attributes.of;
+import static io.opentelemetry.api.trace.SpanKind.INTERNAL;
+import static io.opentelemetry.api.trace.StatusCode.ERROR;
+import static io.opentelemetry.api.trace.StatusCode.OK;
+import static io.opentelemetry.context.Context.current;
 
 @MCElement(name = "openTelemetry")
 public class OpenTelemetryInterceptor extends AbstractInterceptor {
@@ -43,6 +57,7 @@ public class OpenTelemetryInterceptor extends AbstractInterceptor {
     private OtelExporter exporter = new OtlpExporter();
     private OpenTelemetry otel;
     private Tracer tracer;
+    private final List<CustomAttribute> customAttributes = new ArrayList<>();
 
     private boolean logBody = false;
 
@@ -84,6 +99,7 @@ public class OpenTelemetryInterceptor extends AbstractInterceptor {
         startMembraneScope(exc, getExtractContext(exc), getSpanName(exc)); // Params in Methode
         var span = getExchangeSpan(exc);
         setSpanHttpHeaderAttributes(exc.getRequest().getHeader(), span);
+        setSpanCustomAttributes(span);
 
         if (!logBody)
             return CONTINUE;
@@ -98,6 +114,12 @@ public class OpenTelemetryInterceptor extends AbstractInterceptor {
         }
 
         return CONTINUE;
+    }
+
+    private void setSpanCustomAttributes(Span span) {
+        for (CustomAttribute customAttribute : customAttributes) {
+            span.setAttribute(stringKey(customAttribute.getName()), customAttribute.getValue());
+        }
     }
 
     @Override
@@ -195,6 +217,15 @@ public class OpenTelemetryInterceptor extends AbstractInterceptor {
                 .extract(current(), exc, getContextFromRequestHeader());
     }
 
+    public List<CustomAttribute> getCustomAttributes() {
+        return customAttributes;
+    }
+
+    @MCChildElement
+    public void setCustomAttributes(List<CustomAttribute> customAttributes) {
+        this.customAttributes.addAll(customAttributes);
+    }
+
     @MCAttribute
     public void setLogBody(boolean logBody) {
         this.logBody = logBody;
@@ -220,5 +251,30 @@ public class OpenTelemetryInterceptor extends AbstractInterceptor {
 
     public double getSampleRate() {
         return sampleRate;
+    }
+
+    @MCElement(name = "customAttribute", topLevel = false)
+    public static class CustomAttribute {
+
+        private String name;
+        private String value;
+
+        @MCAttribute
+        public void setName(String name) {
+            this.name = name;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        @MCAttribute
+        public void setValue(String value) {
+            this.value = value;
+        }
+
+        public String getValue() {
+            return value;
+        }
     }
 }
