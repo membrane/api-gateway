@@ -99,7 +99,8 @@ public class JsonSchemaGenerator extends AbstractK8sGenerator {
 
         }
 
-        schema.addAttribute("oneOf", oneOfArray);
+        // TODO: change back to 'oneOf' but support objects where 'kind' is missing
+        schema.addAttribute("anyOf", oneOfArray);
 
         FileObject fo = createFile(main);
         try (BufferedWriter w = new BufferedWriter(fo.openWriter())) {
