@@ -138,7 +138,7 @@ exit 0
 %{__rm} -f %{buildroot}%{homedir}/build-install-wrapper.xml
 
 # TODO use %{confdir} macro here, does not get replaced currently
-if [ -e %{buildroot}%{homedir}/scripts/start_router.sh ] ; then sed -i 's#CLASSPATH="$MEMBRANE_HOME/conf"#CLASSPATH="/etc/membrane"#' %{buildroot}%{homedir}/scripts/start_router.sh ; fi
+if [ -e %{buildroot}%{homedir}/scripts/start_router.sh ] ; then sed -i 's#CLASSPATH="$MEMBRANE_HOME/conf#CLASSPATH="/etc/membrane#' %{buildroot}%{homedir}/scripts/start_router.sh ; fi
 sed -i 's#CLASSPATH="$MEMBRANE_HOME/conf"#CLASSPATH="/etc/membrane"#' %{buildroot}%{homedir}/membrane.sh
 sed -i 's#CLASSPATH="$membrane_home/conf:#CLASSPATH="/etc/membrane:#' %{buildroot}%{homedir}/membrane.sh
 
