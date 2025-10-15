@@ -27,6 +27,7 @@ import io.swagger.v3.oas.models.parameters.*;
 import io.swagger.v3.oas.models.security.*;
 import org.jetbrains.annotations.*;
 
+import java.net.*;
 import java.util.*;
 import java.util.concurrent.atomic.*;
 import java.util.regex.*;
@@ -66,13 +67,22 @@ public class QueryParameterValidator extends AbstractParameterValidator {
         final var ctx = validationContext.entityType(QUERY_PARAMETER).statusCode(400);
 
         var errors = new ValidationErrors();
-        var parameterMap = getParameterMapFromQuery(getQueryString(request));
+        Map<String, List<String>> parameterMap = null;
+        try {
+            parameterMap = getParameterMapFromQuery(getQueryString(request));
+        } catch (IllegalArgumentException e) {
+            var cause = e.getCause();
+            if (cause instanceof URISyntaxException) {
+                return errors.add(ctx, "Invalid query string: " + e.getMessage());
+            }
+        }
         var fields = new LinkedHashSet<>(parameterMap.keySet());
 
         errors.add(checkMissingRequiredFields(operation, parameterMap, ctx));
 
+        Map<String, List<String>> finalParameterMap = parameterMap;
         getAllQueryParameters(operation).forEach(p -> {
-            errors.add(validateParameter(ctx, p.getName(), parameterMap, p));
+            errors.add(validateParameter(ctx, p.getName(), finalParameterMap, p));
             fields.remove(p.getName());
         });
 

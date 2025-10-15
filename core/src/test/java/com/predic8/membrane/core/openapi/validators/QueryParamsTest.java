@@ -68,8 +68,6 @@ public class QueryParamsTest extends AbstractValidatorTest {
     @Test
     void  numberForAStringInvalid() {
         ValidationErrors errors = validator.validate(get().path("/cities?name=12345678901&limit=10"));
-        System.out.println("errors = " + errors);
-
         ValidationError e = errors.get(0);
         assertEquals("REQUEST/QUERY_PARAMETER/name", e.getContext().getLocationForRequest());
         assertTrue(e.getMessage().contains("12345678901"));

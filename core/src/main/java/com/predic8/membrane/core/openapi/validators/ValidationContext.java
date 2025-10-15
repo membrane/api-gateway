@@ -229,6 +229,7 @@ public class ValidationContext {
         return "ValidationContext{" +
                 "method='" + method + '\'' +
                 ", path='" + path + '\'' +
+                ", parameter='" + parameter + '\'' +
                 ", uriTemplate='" + uriTemplate + '\'' +
                 ", xpointer='" + jsonPointer + '\'' +
                 ", schemaType='" + schemaType + '\'' +
