@@ -70,11 +70,12 @@ public class QueryParameterValidator extends AbstractParameterValidator {
         Map<String, List<String>> parameterMap = null;
         try {
             parameterMap = getParameterMapFromQuery(getQueryString(request));
-        } catch (IllegalArgumentException e) {
+        } catch (Exception e) {
             var cause = e.getCause();
             if (cause instanceof URISyntaxException) {
                 return errors.add(ctx, "Invalid query string: " + e.getMessage());
             }
+            return errors.add(ctx, "Invalid query string.");
         }
         var fields = new LinkedHashSet<>(parameterMap.keySet());
 
