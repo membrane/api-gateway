@@ -31,7 +31,6 @@ import static java.nio.charset.StandardCharsets.*;
 
 public class Request extends Message {
 
-//	private static final Pattern pattern = Pattern.compile("(.+?) (.+?) HTTP/(.+?)$");
 	private static final Pattern pattern = Pattern.compile("^([A-Za-z]+)\\s+(\\S+)\\s+HTTP/(\\d\\.\\d)$");
 	private static final Pattern stompPattern = Pattern.compile("^(.+?)$");
 
