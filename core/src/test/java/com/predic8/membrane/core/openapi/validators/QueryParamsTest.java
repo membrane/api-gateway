@@ -26,7 +26,7 @@ import static org.junit.jupiter.api.Assertions.*;
 public class QueryParamsTest extends AbstractValidatorTest {
 
     @Override
-protected String getOpenAPIFileName() {
+    protected String getOpenAPIFileName() {
         return "/openapi/specs/query-params.yml";
     }
 
@@ -51,7 +51,30 @@ protected String getOpenAPIFileName() {
         assertEquals(1,errors.size());
         ValidationError e = errors.get(0);
         assertEquals("REQUEST/QUERY_PARAMETER", e.getContext().getLocationForRequest());
+        assertEquals("unknown",e.getContext().getParameter());
         assertTrue(e.getMessage().contains("parameter 'unknown' is invalid"));
+    }
+
+    /**
+     * Schema defines query parameter as string, but query parameter contains a number. It should still be treated as String.
+     */
+    @Test
+    @DisplayName("A string containing numbers if string is expected")
+    void  numberForAString() {
+        ValidationErrors errors = validator.validate(get().path("/cities?name=123&limit=10"));
+        assertEquals(0, errors.size());
+    }
+
+    @Test
+    void  numberForAStringInvalid() {
+        ValidationErrors errors = validator.validate(get().path("/cities?name=12345678901&limit=10"));
+        System.out.println("errors = " + errors);
+
+        ValidationError e = errors.get(0);
+        assertEquals("REQUEST/QUERY_PARAMETER/name", e.getContext().getLocationForRequest());
+        assertTrue(e.getMessage().contains("12345678901"));
+        assertTrue(e.getMessage().contains("MaxLength"));
+        assertTrue(e.getMessage().contains("exceeded"));
     }
 
     @Test
@@ -63,7 +86,6 @@ protected String getOpenAPIFileName() {
         assertEquals(400, e.getContext().getStatusCode());
         assertTrue(e.getMessage().contains("'limit' missing."));
     }
-
 
     @Test
     void queryParamAtPathLevel()  {

@@ -93,6 +93,8 @@ public class ValidationErrors {
         setFieldIfNotNull(root, "method", ctx.getMethod());
         setFieldIfNotNull(root, "uriTemplate", ctx.getUriTemplate());
         setFieldIfNotNull(root, "path", ctx.getPath());
+        setFieldIfNotNull(root, "parameter", ctx.getParameter());
+        setFieldIfNotNull(root, "schemaType", ctx.getSchemaType());
         root.put("errors", m);
         return root;
     }

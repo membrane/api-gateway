@@ -15,6 +15,7 @@
 package com.predic8.membrane.core.openapi.validators.parameters;
 
 import com.fasterxml.jackson.databind.node.*;
+import com.predic8.membrane.core.openapi.validators.*;
 import io.swagger.v3.oas.models.*;
 import io.swagger.v3.oas.models.parameters.*;
 
@@ -39,6 +40,7 @@ public abstract class AbstractParameterParser implements ParameterParser {
         boolean explode = isExplode(parameter);
 
         AbstractParameterParser paramParser = switch (type) {
+            case STRING -> new StringParameterParser();
             case ARRAY -> {
                 if (explode)
                     yield new ExplodedArrayParameterParser();

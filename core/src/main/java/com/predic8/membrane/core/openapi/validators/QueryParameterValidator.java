@@ -86,7 +86,7 @@ public class QueryParameterValidator extends AbstractParameterValidator {
             if (validFieldNamesFromObjects.contains(f)) {
                 return;
             }
-            errors.add(ctx, "Unknown query parameter '%s' is invalid!".formatted(f));
+            errors.add(ctx.parameter(f), "Unknown query parameter '%s' is invalid!".formatted(f));
         });
 
         return errors;
