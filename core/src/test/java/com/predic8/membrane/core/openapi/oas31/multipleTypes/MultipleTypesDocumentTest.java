@@ -26,7 +26,7 @@ import java.util.stream.*;
 
 import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.openapi.model.Request.*;
-import static com.predic8.membrane.core.openapi.util.TestUtils.*;
+import static com.predic8.membrane.core.openapi.util.OpenAPITestUtils.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class MultipleTypesDocumentTest {
@@ -34,7 +34,7 @@ public class MultipleTypesDocumentTest {
     OpenAPIValidator validator;
 
     @BeforeEach
-    void setUp() throws Exception {
+    void setUp() {
         OpenAPIRecord apiRecord = new OpenAPIRecord(parseOpenAPI(getResourceAsStream(this, "/openapi/specs/oas31/multiple-types-document.yaml")), new OpenAPISpec());
         validator = new OpenAPIValidator(new URIFactory(), apiRecord);
     }

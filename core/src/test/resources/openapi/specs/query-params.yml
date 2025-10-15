@@ -32,7 +32,77 @@ paths:
           schema:
             type: string
             maxLength: 10
-
+        - in: query
+          explode: true
+          name: city
+          schema:
+            type: array
+            items:
+              enum: ["Bonn", "New York", "Delhi"]
+        - name: names
+          in: query
+          explode: false
+          schema:
+            type: array
+            items:
+              type: string
+              maxLength: 3
+      responses:
+        '200':
+          description: OK
+  /object:
+    parameters:
+      - in: query
+        name: car
+        style: form
+        explode: true
+        schema:
+          type: object
+          properties:
+            color:
+              type: string
+            brand:
+              type: string
+            power:
+              type: integer
+    get:
+      parameters:
+        - in: query
+          name: pet
+          style: form
+          explode: false
+          schema:
+            type: object
+            properties:
+              age:
+                type: number
+              kind:
+                type: string
+        - in: header
+          name: plant
+          schema:
+            type: object
+            properties:
+              size:
+                type: number
+      responses:
+        '200':
+          description: OK
+  /additional:
+    get:
+      parameters:
+        - name: foo
+          in: query
+          style: form
+          explode: true
+          schema:
+            type: object
+            additionalProperties: true
+            properties:
+              a:
+                type: number
+              b:
+                type: string
       responses:
         '200':
           description: OK

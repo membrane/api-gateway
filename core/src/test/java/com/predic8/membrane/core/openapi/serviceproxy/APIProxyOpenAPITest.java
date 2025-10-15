@@ -27,7 +27,7 @@ import java.util.*;
 import static com.predic8.membrane.core.openapi.serviceproxy.APIProxy.*;
 import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPISpec.YesNoOpenAPIOption.NO;
 import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPISpec.YesNoOpenAPIOption.YES;
-import static com.predic8.membrane.core.openapi.util.TestUtils.*;
+import static com.predic8.membrane.core.openapi.util.OpenAPITestUtils.*;
 import static com.predic8.membrane.test.TestUtil.getPathFromResource;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -46,7 +46,7 @@ public class APIProxyOpenAPITest {
     }
 
     @Test
-    public void noOptionsNoExtensions() throws Exception {
+    public void noOptionsNoExtensions() {
         Map<String,Object> xValidation = getXValidation(getSpec("no-extensions.yml"));
         assertNotNull(xValidation);
         assertFalse(isValidateRequests(xValidation));
@@ -56,7 +56,7 @@ public class APIProxyOpenAPITest {
     }
 
     @Test
-    public void validationRequestNoExtensions() throws Exception {
+    public void validationRequestNoExtensions() {
         OpenAPISpec spec = getSpec("no-extensions.yml");
         spec.validateRequests = YES;
 
@@ -69,7 +69,7 @@ public class APIProxyOpenAPITest {
     }
 
     @Test
-    public void validationResponsesNoExtensions() throws Exception {
+    public void validationResponsesNoExtensions() {
         OpenAPISpec spec = getSpec("no-extensions.yml");
         spec.validateResponses = YES;
         spec.validateSecurity = NO;
@@ -83,7 +83,7 @@ public class APIProxyOpenAPITest {
     }
 
     @Test
-    public void validationAllNoExtensions() throws Exception {
+    public void validationAllNoExtensions() {
         OpenAPISpec spec = getSpec("no-extensions.yml");
         spec.validateRequests = YES;
         spec.validateResponses = YES;
@@ -97,7 +97,7 @@ public class APIProxyOpenAPITest {
     }
 
     @Test
-    public void requestsExtensions() throws Exception {
+    public void requestsExtensions() {
         Map<String,Object> xValidation = getXValidation(getSpec("validate-requests-extensions.yml"));
         assertNotNull(xValidation);
         assertTrue(isValidateRequests(xValidation));
@@ -106,7 +106,7 @@ public class APIProxyOpenAPITest {
     }
 
     @Test
-    public void securityExtension() throws Exception {
+    public void securityExtension() {
         Map<String,Object> xValidation = getXValidation(getSpec("validate-only-security-extensions.yml"));
         assertNotNull(xValidation);
         assertTrue(isValidateRequests(xValidation));
@@ -115,8 +115,8 @@ public class APIProxyOpenAPITest {
     }
 
     @Test
-    public void responsesExtensions() throws Exception {
-        Map<String,Object> xValidation = getXValidation(getSpec("/validate-responses-extensions.yml"));
+    public void responsesExtensions() {
+        Map<String,Object> xValidation = getXValidation(getSpec("validate-responses-extensions.yml"));
         assertNotNull(xValidation);
         assertFalse(isValidateRequests(xValidation));
         assertTrue(isValidateResponses(xValidation));
@@ -125,7 +125,7 @@ public class APIProxyOpenAPITest {
     }
 
     @Test
-    public void validationRequestNoDetailsNoExtensions() throws Exception {
+    public void validationRequestNoDetailsNoExtensions() {
         OpenAPISpec spec = getSpec("no-extensions.yml");
         spec.validateRequests = YES;
         spec.validationDetails = NO;
@@ -216,7 +216,7 @@ public class APIProxyOpenAPITest {
     }
 
     @SuppressWarnings("unchecked")
-    private Map<String, Object> getXValidation(OpenAPISpec spec) throws Exception {
+    private Map<String, Object> getXValidation(OpenAPISpec spec) {
         return (Map<String, Object>) getOpenAPI(spec).getExtensions().get(X_MEMBRANE_VALIDATION);
     }
 

@@ -1,0 +1,30 @@
+openapi: 3.1.0
+info:
+  title: Overwrite API
+  version: "1.0.0"
+
+paths:
+  /overwrite:
+    parameters:
+      - name: a
+        in: query
+        schema:
+          type: string
+      - name: b
+        in: query
+        schema:
+          type: boolean
+    get:
+      parameters:
+        - name: a
+          in: query
+          style: form
+          schema:
+            type: number
+        - name: b
+          in: header
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK

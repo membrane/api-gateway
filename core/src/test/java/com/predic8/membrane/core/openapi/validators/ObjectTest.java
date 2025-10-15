@@ -24,7 +24,7 @@ import org.junit.jupiter.api.*;
 import java.math.*;
 import java.util.*;
 
-import static com.predic8.membrane.core.openapi.util.JsonUtil.*;
+import static com.predic8.membrane.core.openapi.util.JsonTestUtil.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 
