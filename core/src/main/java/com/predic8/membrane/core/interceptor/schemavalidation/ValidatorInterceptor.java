@@ -90,6 +90,14 @@ public class ValidatorInterceptor extends AbstractInterceptor implements Applica
             throw new ConfigurationException("validator/@skipFaults only makes sense with validator/@wsdl.");
     }
 
+    /**
+     * Selects and constructs the appropriate MessageValidator based on configured attributes
+     * (wsdl, schema, jsonSchema, schematron) or a SOAP proxy's WSDL.
+     *
+     * @return the constructed MessageValidator for the selected validation source
+     * @throws RuntimeException if no validator configuration or SOAP proxy WSDL is available
+     * @throws Exception if an error occurs while constructing the chosen validator
+     */
     private MessageValidator getMessageValidator() throws Exception {
         if (wsdl != null) {
             return new WSDLValidator(resourceResolver, combine(getBaseLocation(), wsdl), serviceName, createFailureHandler(), skipFaults);
@@ -207,28 +215,39 @@ public class ValidatorInterceptor extends AbstractInterceptor implements Applica
     }
 
     /**
-     * @description The JSON Schema (URL or file) to validate against.
-     * @example examples/validation/json-schema/schema2000.json
+     * Specifies the JSON or YAML Schema location used for validation.
+     *
+     * @param jsonSchema the schema location — a URL or file system path pointing to a JSON or YAML schema
      */
     @MCAttribute
     public void setJsonSchema(String jsonSchema) {
         this.jsonSchema = jsonSchema;
     }
 
+    /**
+     * The schema version identifier used for JSON/YAML schema validation.
+     *
+     * @return the configured schema version string (for example, "2020-12")
+     */
     public String getSchemaVersion() {
         return schemaVersion;
     }
 
     /**
-     * @description The version of the Schema.
-     * @example 04, 05, 06, 07, 2019-09, 2020-12
-     * @default 2020-12
+     * Set the JSON/YAML Schema version identifier used when validating JSON/YAML schemas.
+     *
+     * @param version the schema version identifier (examples: "04", "05", "06", "07", "2019-09", "2020-12"); defaults to "2020-12"
      */
     @MCAttribute
     public void setSchemaVersion(String version) {
         this.schemaVersion = version;
     }
 
+    /**
+     * Returns the configured Schematron schema location used for validation.
+     *
+     * @return the Schematron location as a string, or `null` if not configured
+     */
     public String getSchematron() {
         return schematron;
     }
@@ -279,6 +298,14 @@ public class ValidatorInterceptor extends AbstractInterceptor implements Applica
         return validator.getInvalid() + " of " + (validator.getValid() + validator.getInvalid()) + " messages have been invalid.";
     }
 
+    /**
+     * Constructs a descriptive string that lists which validation artifacts were used and provides links to them.
+     *
+     * The description starts from the short summary and, when configured, appends references and clickable links
+     * for the WSDL, XML Schema, JSON Schema, and Schematron resources used for validation.
+     *
+     * @return a human-readable description of validation outcomes including links to configured validation resources
+     */
     @Override
     public String getLongDescription() {
         StringBuilder sb = new StringBuilder(getShortDescription());

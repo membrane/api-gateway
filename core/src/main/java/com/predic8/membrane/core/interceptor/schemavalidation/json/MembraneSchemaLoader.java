@@ -22,10 +22,21 @@ public class MembraneSchemaLoader implements SchemaLoader {
 
     Resolver resolver;
 
+    /**
+     * Create a MembraneSchemaLoader that uses the given Resolver to locate schema resources.
+     *
+     * @param resolver the Resolver used to resolve schema IRIs to input streams containing schema content
+     */
     public MembraneSchemaLoader(Resolver resolver) {
         this.resolver = resolver;
     }
 
+    /**
+     * Create an InputStreamSource for the schema identified by the provided absolute IRI.
+     *
+     * @param absoluteIri the absolute IRI of the JSON schema to load
+     * @return an InputStreamSource that provides an InputStream for the schema content resolved from the given IRI
+     */
     @Override
     public InputStreamSource getSchema(AbsoluteIri absoluteIri) {
 

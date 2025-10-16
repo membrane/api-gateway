@@ -59,6 +59,14 @@ public class JSONYAMLSchemaValidator extends AbstractMessageValidator {
      */
     JsonSchema schema;
 
+    /**
+     * Construct a JSONYAMLSchemaValidator configured with a resolver, the JSON Schema source, a failure handler, and the schema version.
+     *
+     * @param resolver       resolver used to load referenced schemas and resources
+     * @param jsonSchema     the schema location or JSON/YAML schema content to validate against
+     * @param failureHandler handler used to build problem-detail responses on validation failures
+     * @param schemaVersion  JSON Schema version identifier (e.g., "2020-12"); parsed into the validator's internal schemaId
+     */
     public JSONYAMLSchemaValidator(Resolver resolver, String jsonSchema, FailureHandler failureHandler, String schemaVersion) {
         this.resolver = resolver;
         this.jsonSchema = jsonSchema;
@@ -66,15 +74,35 @@ public class JSONYAMLSchemaValidator extends AbstractMessageValidator {
         this.schemaId = JSONSchemaVersionParser.parse( schemaVersion);
     }
 
+    /**
+     * Creates a JSONYAMLSchemaValidator using the default JSON Schema version "2020-12".
+     *
+     * @param resolver         resolver used to load external schemas or resources referenced by the JSON Schema
+     * @param jsonSchema       schema location or the schema content to validate messages against
+     * @param failureHandler   handler used to build and set problem-detail responses for validation failures
+     */
     public JSONYAMLSchemaValidator(Resolver resolver, String jsonSchema, FailureHandler failureHandler) {
         this(resolver, jsonSchema, failureHandler, "2020-12");
     }
 
+    /**
+     * Provides the validator's display name.
+     *
+     * @return the name "JSON Schema Validator"
+     */
     @Override
     public String getName() {
         return "JSON Schema Validator";
     }
 
+    /**
+     * Initializes the JSON Schema validation infrastructure for this validator.
+     *
+     * <p>Configures a thread-safe JsonSchemaFactory (using the configured schema version and the
+     * instance's Resolver), builds the SchemaValidatorsConfig, loads the JsonSchema from the
+     * configured schema location, and initializes its validators so the schema instance is ready
+     * for concurrent validation calls.</p>
+     */
     @Override
     public void init() {
         super.init();
@@ -97,10 +125,27 @@ public class JSONYAMLSchemaValidator extends AbstractMessageValidator {
 
     }
 
+    /**
+     * Validates the message body of the given exchange against the configured JSON Schema using UTF-8 encoding.
+     *
+     * @param exc the exchange containing the message to validate
+     * @param flow the flow (REQUEST/RESPONSE) indicating which message direction to validate
+     * @return an Outcome indicating whether processing should continue (`CONTINUE`) or be aborted (`ABORT`)
+     */
     public Outcome validateMessage(Exchange exc, Flow flow) throws Exception {
         return validateMessage(exc, flow, UTF_8);
     }
 
+    /**
+     * Validates the message body for the given flow against the configured JSON Schema and sets a problem-details
+     * response on the exchange when validation fails.
+     *
+     * @param exc     the exchange containing the message to validate
+     * @param flow    the flow (e.g. REQUEST or RESPONSE) whose message is validated
+     * @param ignored unused charset parameter (kept for API compatibility)
+     * @return        `CONTINUE` if the message conforms to the schema, `ABORT` if validation failed and a
+     *                problem-details response was set on the exchange
+     */
     public Outcome validateMessage(Exchange exc, Flow flow, Charset ignored) throws Exception {
 
         Set<ValidationMessage> assertions = schema.validate(exc.getMessage(flow).getBodyAsStringDecoded(), JSON);
@@ -124,10 +169,31 @@ public class JSONYAMLSchemaValidator extends AbstractMessageValidator {
         return ABORT;
     }
 
+    /**
+     * Convert a set of schema validation messages into a list of problem-detail maps.
+     *
+     * @param assertions the validation messages produced by JSON Schema validation
+     * @return a list of maps where each map contains problem-detail fields derived from a validation message
+     */
     private @NotNull List<Map<String, Object>> getMapForProblemDetails(Set<ValidationMessage> assertions) {
         return assertions.stream().map(this::validationMessageToProblemDetailsMap).toList();
     }
 
+    /**
+     * Converts a ValidationMessage into an ordered map of problem-detail fields suitable for inclusion
+     * in a Problem Details response.
+     *
+     * @param vm the ValidationMessage to convert
+     * @return a LinkedHashMap with the following keys:
+     *         "message" (human-readable message),
+     *         "code" (validation code),
+     *         "key" (message key),
+     *         "details" (optional additional details),
+     *         "type" (message type),
+     *         "error" (error identifier),
+     *         "pointer" (RFC 6901 JSON Pointer to the failing location),
+     *         "node" (the JSON node instance related to the message)
+     */
     private @NotNull Map<String, Object> validationMessageToProblemDetailsMap(ValidationMessage vm) {
         Map<String, Object> m = new LinkedHashMap<>();
         m.put("message", vm.getMessage());
@@ -142,6 +208,12 @@ public class JSONYAMLSchemaValidator extends AbstractMessageValidator {
         return m;
     }
 
+    /**
+     * Builds an RFC 6901 JSON Pointer string for the given evaluation path.
+     *
+     * @param evaluationPath the JSON node path to convert; may be null or empty
+     * @return the JSON Pointer string (empty string if the path is null or has no components)
+     */
     private String getPointer(JsonNodePath evaluationPath) {
         if (evaluationPath == null || evaluationPath.getNameCount() == 0) {
             return "";
@@ -160,16 +232,31 @@ public class JSONYAMLSchemaValidator extends AbstractMessageValidator {
         return sb.toString();
     }
 
+    /**
+     * Provides the count of successfully validated messages.
+     *
+     * @return the number of messages that passed validation
+     */
     @Override
     public long getValid() {
         return valid.get();
     }
 
+    /**
+     * Current count of messages that failed JSON Schema validation.
+     *
+     * @return the number of messages that failed validation
+     */
     @Override
     public long getInvalid() {
         return invalid.get();
     }
 
+    /**
+     * Provides the human-readable title used for JSON validation error responses.
+     *
+     * @return the error title "JSON validation failed"
+     */
     @Override
     public String getErrorTitle() {
         return "JSON validation failed";
