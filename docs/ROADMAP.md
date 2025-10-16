@@ -12,6 +12,9 @@
 - LogInterceptor:
   - Remove: headerOnly
 - Rewrite JSONAssert Tests with RESTAssured
+- ValidatorInterceptor: remove FailureHandler
+  - It is often called and only used for logging.
+  - Put logging in validators
 
 # 6.5.0
 
@@ -41,6 +44,9 @@
       - public abstract void init() throws Exception;
       - getEndSessionEndpoint() throws Exception
       - doDynamicRegistration(List<String> callbackURLs) throws Exception
+
+Release Notes:
+- JSON Schema validation support for schema versions 2019-09 and 2020-12
 
 # 6.3.0
 

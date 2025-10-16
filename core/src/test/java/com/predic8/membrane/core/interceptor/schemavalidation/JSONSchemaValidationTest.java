@@ -78,8 +78,6 @@ public class JSONSchemaValidationTest {
         assertEquals("JSON validation failed", jn.get("title").textValue());
         assertEquals("https://membrane-api.io/problems/user/validation",jn.get("type").textValue());
         assertEquals(1, jn.get("errors").size());
-
-        System.out.println("exc.getResponse().getBodyAsStringDecoded() = " + exc.getResponse().getBodyAsStringDecoded());
     }
 
     @Test
@@ -147,8 +145,6 @@ public class JSONSchemaValidationTest {
         assertEquals("JSON validation failed", jn.get("title").textValue());
         assertEquals("https://membrane-api.io/problems/user/validation",jn.get("type").textValue());
         assertEquals(2, jn.get("errors").size());
-
-        System.out.println("exc.getResponse().getBodyAsStringDecoded() = " + exc.getResponse().getBodyAsStringDecoded());
     }
 
     private static @NotNull JSONSchemaValidator getValidator(String schema) {

@@ -14,16 +14,14 @@
 
 package com.predic8.membrane.examples.withoutinternet.validation;
 
-import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.examples.util.*;
 import org.hamcrest.*;
 import org.junit.jupiter.api.*;
 
-import static com.predic8.membrane.core.http.MimeType.APPLICATION_PROBLEM_JSON;
-import static io.restassured.RestAssured.given;
-import static io.restassured.http.ContentType.JSON;
+import static com.predic8.membrane.core.http.MimeType.*;
+import static io.restassured.RestAssured.*;
+import static io.restassured.http.ContentType.*;
 import static java.io.File.*;
-import static java.lang.Thread.sleep;
 
 public class JSONSchemaValidationExampleTest extends DistributionExtractingTestcase {
 
@@ -86,7 +84,6 @@ public class JSONSchemaValidationExampleTest extends DistributionExtractingTestc
             .when()
                 .post("http://localhost:2001")
             .then()
-                .log().all()
                 .statusCode(400)
                 .contentType(APPLICATION_PROBLEM_JSON)
                 .body("title", Matchers.equalTo("JSON validation failed"))

@@ -20,7 +20,7 @@ import com.predic8.membrane.core.resolver.*;
 
 public class MembraneSchemaLoader implements SchemaLoader {
 
-    Resolver resolver;
+    private final Resolver resolver;
 
     public MembraneSchemaLoader(Resolver resolver) {
         this.resolver = resolver;
@@ -28,13 +28,6 @@ public class MembraneSchemaLoader implements SchemaLoader {
 
     @Override
     public InputStreamSource getSchema(AbsoluteIri absoluteIri) {
-
-
-        System.out.println("absoluteIri = " + absoluteIri);
-        System.out.println("absoluteIri = " + absoluteIri.toString());
-
         return () -> resolver.resolve(absoluteIri.toString());
-
-
     }
 }

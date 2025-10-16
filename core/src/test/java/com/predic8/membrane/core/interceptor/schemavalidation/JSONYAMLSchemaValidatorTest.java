@@ -32,7 +32,7 @@ class JSONYAMLSchemaValidatorTest {
 
     @BeforeEach
     void setup() {
-        validator = new JSONYAMLSchemaValidator(new ClasspathSchemaResolver(), "/validation/json-schema/simple-schema.json", null);
+        validator = new JSONYAMLSchemaValidator(new ClasspathSchemaResolver(), "/validation/json-schema/simple-schema.json", (a,b) -> {});
         validator.init();
     }
 
@@ -63,7 +63,6 @@ class JSONYAMLSchemaValidatorTest {
         validator.validateMessage( exc, REQUEST);
         assertEquals(1, validator.getInvalid());
         assertEquals(0, validator.getValid());
-        System.out.println("exc.getResponse().getBodyAsStringDecoded() = " + exc.getResponse().getBodyAsStringDecoded());
     }
 
     @Test
@@ -74,6 +73,5 @@ class JSONYAMLSchemaValidatorTest {
                 }
                 """).buildExchange();
         validator.validateMessage( exc, REQUEST);
-        System.out.println("exc.getResponse().getBodyAsStringDecoded() = " + exc.getResponse().getBodyAsStringDecoded());
     }
 }

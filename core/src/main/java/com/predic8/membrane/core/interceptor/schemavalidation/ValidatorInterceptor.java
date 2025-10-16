@@ -98,7 +98,7 @@ public class ValidatorInterceptor extends AbstractInterceptor implements Applica
             return new XMLSchemaValidator(resourceResolver, combine(getBaseLocation(), schema), createFailureHandler());
         }
         if (jsonSchema != null) {
-            return new JSONYAMLSchemaValidator(resourceResolver, combine(getBaseLocation(), jsonSchema, schemaVersion), createFailureHandler());
+            return new JSONYAMLSchemaValidator(resourceResolver, combine(getBaseLocation(), jsonSchema), createFailureHandler(), schemaVersion);
         }
         if (schematron != null) {
             return new SchematronValidator(combine(getBaseLocation(), schematron), createFailureHandler(), router, applicationContext);
@@ -313,7 +313,7 @@ public class ValidatorInterceptor extends AbstractInterceptor implements Applica
 
     private FailureHandler createFailureHandler() {
         if (failureHandler == null || failureHandler.equals("response"))
-            return null;
+            return (msg,exchange) -> {};
         if (failureHandler.equals("log"))
             return (message, exc) -> log.info("Validation failure: {}", message);
         throw new IllegalArgumentException("Unknown failureHandler type: " + failureHandler);

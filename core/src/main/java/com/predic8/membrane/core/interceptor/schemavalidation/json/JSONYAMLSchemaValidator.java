@@ -111,14 +111,18 @@ public class JSONYAMLSchemaValidator extends AbstractMessageValidator {
         }
         invalid.incrementAndGet();
 
+
         log.debug("Validation failed: {}", assertions);
+
+        List<Map<String, Object>> mapForProblemDetails = getMapForProblemDetails(assertions);
+        failureHandler.handleFailure(mapForProblemDetails.toString(), exc);
 
         user(false, getName())
                 .title(getErrorTitle())
                 .addSubType("validation")
                 .component(getName())
                 .internal("flow", flow.name())
-                .internal("errors", getMapForProblemDetails(assertions))
+                .internal("errors", mapForProblemDetails)
                 .buildAndSetResponse(exc);
 
         return ABORT;
