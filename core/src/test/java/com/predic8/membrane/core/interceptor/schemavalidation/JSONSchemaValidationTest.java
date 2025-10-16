@@ -79,7 +79,7 @@ public class JSONSchemaValidationTest {
         assertEquals("https://membrane-api.io/problems/user/validation",jn.get("type").textValue());
         assertEquals(1, jn.get("errors").size());
 
-//        System.out.println("exc.getResponse().getBodyAsStringDecoded() = " + exc.getResponse().getBodyAsStringDecoded());
+        System.out.println("exc.getResponse().getBodyAsStringDecoded() = " + exc.getResponse().getBodyAsStringDecoded());
     }
 
     @Test

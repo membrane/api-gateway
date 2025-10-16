@@ -14,9 +14,12 @@
 
 package com.predic8.membrane.examples.withoutinternet.validation;
 
+import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.examples.util.*;
+import org.hamcrest.*;
 import org.junit.jupiter.api.*;
 
+import static com.predic8.membrane.core.http.MimeType.APPLICATION_PROBLEM_JSON;
 import static io.restassured.RestAssured.given;
 import static io.restassured.http.ContentType.JSON;
 import static java.io.File.*;
@@ -29,30 +32,73 @@ public class JSONSchemaValidationExampleTest extends DistributionExtractingTestc
 		return "validation" + separator + "json-schema";
 	}
 
-	@Test
-	public void test() throws Exception {
-		try(Process2 ignored = startServiceProxyScript()) {
-			for (int port : new int[] { 2000, 2001 }) {
-				// @formatter:off
-                // Test good JSON
-				given()
-					.contentType(JSON)
-					.body(readFileFromBaseDir("good" + port + ".json"))
-				.when()
-					.post("http://localhost:" + port + "/")
-				.then()
-					.statusCode(200);
+    @Test
+    void port2000() throws Exception {
+        try(Process2 ignored = startServiceProxyScript()) {
 
-				// Test bad JSON
-				given()
-					.contentType(JSON)
-				.body(readFileFromBaseDir("bad" + port + ".json"))
-					.when()
-				.post("http://localhost:" + port + "/")
-					.then()
-					.statusCode(400);
-				// @formatter:on
-			}
-		}
-	}
+            // @formatter:off
+            // Test good JSON
+            given()
+                .contentType(JSON)
+                .body(readFileFromBaseDir("good2000.json"))
+            .when()
+                .post("http://localhost:2000")
+            .then()
+                .statusCode(200);
+
+            // Test bad JSON
+            given()
+                .contentType(JSON)
+                .body(readFileFromBaseDir("bad2000.json"))
+            .when()
+                .post("http://localhost:2000")
+            .then()
+                .statusCode(400)
+                .contentType(APPLICATION_PROBLEM_JSON)
+                .body("title", Matchers.equalTo("JSON validation failed"))
+                .body("type", Matchers.equalTo("https://membrane-api.io/problems/user/validation"))
+                .body(Matchers.containsString("not found"))
+                .body(Matchers.containsString("/required"))
+                .body(Matchers.containsString("p1"));
+            // @formatter:on
+
+        }
+    }
+
+    @Test
+    void port2001() throws Exception {
+        try(Process2 ignored = startServiceProxyScript()) {
+
+            // @formatter:off
+            // Test good JSON
+            given()
+                .contentType(JSON)
+                .body(readFileFromBaseDir("good2001.json"))
+            .when()
+                .post("http://localhost:2001")
+            .then()
+                .statusCode(200);
+
+            // Test bad JSON
+            given()
+                .contentType(JSON)
+                .body(readFileFromBaseDir("bad2001.json"))
+            .when()
+                .post("http://localhost:2001")
+            .then()
+                .log().all()
+                .statusCode(400)
+                .contentType(APPLICATION_PROBLEM_JSON)
+                .body("title", Matchers.equalTo("JSON validation failed"))
+                .body("type", Matchers.equalTo("https://membrane-api.io/problems/user/validation"))
+                .body(Matchers.containsString("number expected"))
+                .body(Matchers.containsString("/price"))
+                .body(Matchers.containsString("array expected"))
+                .body(Matchers.containsString("/properties/tags/type"))
+                .body(Matchers.containsString("diesel"))
+                .body(Matchers.containsString("/price"));
+            // @formatter:on
+
+        }
+    }
 }
