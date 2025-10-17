@@ -1,3 +1,3 @@
-This example shows OAuth2 authorization with OpenID-Connect and OpenID-Discovery. It uses Membrane as authorization server.
+This example shows OAuth2 authorization with OpenID-Connect and OpenID-Discovery. It uses Membrane as an authorization server.
 
-Please follow https://www.membrane-soa.org/api-gateway-doc/current/oauth2-code-flow-example.html
+Please follow https://www.membrane-api.io/tutorials/oauth2/oauth2-code-flow-example.html

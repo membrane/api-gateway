@@ -1,3 +1,3 @@
-This example shows OAuth2 authorization with help of Google as authorization server.
+This example shows OAuth2 authorization with help of Google as an authorization server.
 
-Please follow https://www.membrane-soa.org/api-gateway-doc/current/oauth2-google.html
+Please follow https://www.membrane-api.io/tutorials/oauth2/oauth2-google.html
