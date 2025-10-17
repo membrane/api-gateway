@@ -34,11 +34,6 @@ class JSONSchemaVersionParserTest {
     }
 
     @Test
-    void parseDraft2019() {
-        assertEquals(V201909, parse("draft-2019-09"));
-    }
-
-    @Test
     void parseFromAlias() {
         assertEquals(V4, parse("04"));
         assertEquals(V6, parse("06"));

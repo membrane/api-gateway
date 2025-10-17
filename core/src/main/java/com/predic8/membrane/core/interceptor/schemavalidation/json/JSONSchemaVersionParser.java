@@ -33,8 +33,8 @@ public class JSONSchemaVersionParser {
             case "04","draft-04" -> V4;
             case "06","draft-06" -> V6;
             case "07","draft-07" -> V7;
-            case "2019-09","draft-2019-09" -> V201909;
-            case "2020-12", "draft-2020-12" -> V202012;
+            case "2019-09" -> V201909;
+            case "2020-12" -> V202012;
             default -> throw new ConfigurationException("Unknown JSON Schema version: " + alias);
         };
     }
