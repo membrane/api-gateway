@@ -1,34 +1,33 @@
 # OAuth Examples
 
-## JWT Token Validation against Microsoft's Azure AD
+- [JWT Token Validation (Azure AD)](azure-ad-with-jwts#jwt-token-validation-against-microsofts-azure-ad)
 
-See: [Tutorial](azure-ad-with-jwts/README.md)
+    Validate JWT tokens issued by Microsoft Azure Active Directory.
 
-## Securing APIs with OAuth2 and the Resource Owner Password Flow
+- [OAuth2 Resource Owner Password Flow](api#tutorial-oauth2-resource-owner-password-flow)
 
-See [Tutorial](api/README.md)
+    Secure APIs using username/password-based OAuth2 authentication.
 
-## OAuth2 authorization with OpenID-Connect and OpenID-Discovery using Membrane
+- [OAuth2 Authorization Code Flow](membrane#oauth2-authorization-code-flow-with-membrane-tutorial)
 
-Membrane API Gateway serves as authorization server.
+    Standard OAuth2 flow using authorization codes for web applications.
 
-See [Tutorial](membrane/README.md)
+- [OAuth2 Client Credentials Flow](credentials#oauth2-password-flow-tutorial)
 
-## OAuth2 authorization with OpenID-Connect and OpenID-Discovery using Google
+    Machine-to-machine authentication using client credentials.
 
-Google serves as authorization server.
+- [OAuth2 with OpenID Connect](openid#oauth2-with-openid-connect-and-discovery-tutorial)
+  
+    Use Membrane as an OpenID Connect authorization server.
 
-See [Tutorial](membrane/README.md)
+- [OAuth2 with Google](google#oauth2-with-google-as-authorization-server-tutorial)
+  
+    Authenticate users via Google OAuth2.
 
-## OAuth2 authorization with github as Authorization Server.
+- [OAuth2 with GitHub](github#oauth2-with-github-as-authorization-server-tutorial)
 
-See: [Tutorial](github/README.md)
+    Authenticate users via GitHub OAuth2.
 
-## OAuth2 authorization with google as Authorization Server.
+- [OAuth2 Implicit Flow](implicit#oauth2-implicit-flow-with-javascript-client-tutorial)
 
-See: [Tutorial](google/README.md)
-
-## OAuth2 implicit Flow
-
-See. [Tutorial](implicit/README.md)
-
+    Browser-based authentication example.
