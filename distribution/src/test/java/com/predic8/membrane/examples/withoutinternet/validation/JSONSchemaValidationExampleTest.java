@@ -22,6 +22,8 @@ import static com.predic8.membrane.core.http.MimeType.*;
 import static io.restassured.RestAssured.*;
 import static io.restassured.http.ContentType.*;
 import static java.io.File.*;
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.equalTo;
 
 public class JSONSchemaValidationExampleTest extends DistributionExtractingTestcase {
 
@@ -53,11 +55,12 @@ public class JSONSchemaValidationExampleTest extends DistributionExtractingTestc
             .then()
                 .statusCode(400)
                 .contentType(APPLICATION_PROBLEM_JSON)
-                .body("title", Matchers.equalTo("JSON validation failed"))
-                .body("type", Matchers.equalTo("https://membrane-api.io/problems/user/validation"))
-                .body(Matchers.containsString("not found"))
-                .body(Matchers.containsString("/required"))
-                .body(Matchers.containsString("p1"));
+                .body("title", equalTo("JSON validation failed"))
+                .body("type", equalTo("https://membrane-api.io/problems/user/validation"))
+                .body(containsString("not found"))
+                .body(containsString("/required"))
+                .body(containsString("p1"))
+                .body("errors.find { it.pointer == '/required' }.message", containsString("not found"));
             // @formatter:on
 
         }
@@ -86,14 +89,13 @@ public class JSONSchemaValidationExampleTest extends DistributionExtractingTestc
             .then()
                 .statusCode(400)
                 .contentType(APPLICATION_PROBLEM_JSON)
-                .body("title", Matchers.equalTo("JSON validation failed"))
-                .body("type", Matchers.equalTo("https://membrane-api.io/problems/user/validation"))
-                .body(Matchers.containsString("number expected"))
-                .body(Matchers.containsString("/price"))
-                .body(Matchers.containsString("array expected"))
-                .body(Matchers.containsString("/properties/tags/type"))
-                .body(Matchers.containsString("diesel"))
-                .body(Matchers.containsString("/price"));
+                    .log().all()
+                .body("title", equalTo("JSON validation failed"))
+                .body("type", equalTo("https://membrane-api.io/problems/user/validation"))
+                .body("errors.find { it.pointer == '/properties/id/type' }.message", containsString("integer expected"))
+                .body("errors.find { it.pointer == '/properties/price/type' }.message", containsString("number expected"))
+                .body("errors.find { it.pointer == '/properties/tags/type' }.message", containsString("array expected"))
+                .body("errors.find { it.pointer == '/properties/weight/minimum' }.message", containsString("700"));
             // @formatter:on
 
         }

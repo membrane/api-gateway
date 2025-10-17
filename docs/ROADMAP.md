@@ -13,8 +13,9 @@
   - Remove: headerOnly
 - Rewrite JSONAssert Tests with RESTAssured
 - ValidatorInterceptor: remove FailureHandler
-  - It is often called and only used for logging.
-  - Put logging in validators
+  - Predominantly used for logging; move logging into validators.
+  - Migration: replace FailureHandler usages with validator-level logging; ensure correlation IDs/Exchange context remain available for logs.
+  - Check if it is used by customer installations
 
 # 6.5.0
 
@@ -44,9 +45,10 @@
       - public abstract void init() throws Exception;
       - getEndSessionEndpoint() throws Exception
       - doDynamicRegistration(List<String> callbackURLs) throws Exception
+## Release Notes:
 
-Release Notes:
-- JSON Schema validation support for schema versions 2019-09 and 2020-12
+- JSON Schema validation support for JSON Schema 2019-09 and 2020-12 (via networknt json-schema-validator).
+  - Document how to select the schema version (e.g., schemaVersion attribute) and the "format" behavior (annotation vs assertion), with a link to usage docs/examples.
 
 # 6.3.0
 

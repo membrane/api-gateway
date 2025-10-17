@@ -19,8 +19,6 @@ import com.predic8.membrane.core.util.*;
 import org.jetbrains.annotations.*;
 
 import static com.networknt.schema.SchemaId.*;
-import static com.networknt.schema.SchemaId.V4;
-import static com.networknt.schema.SchemaId.V6;
 
 public class JSONSchemaVersionParser {
 
