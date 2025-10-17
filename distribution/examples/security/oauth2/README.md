@@ -12,7 +12,7 @@
 
     Standard OAuth2 flow using authorization codes for web applications.
 
-- [OAuth2 Client Credentials Flow](credentials#oauth2-client-credentials-flow-tutorial)
+- [OAuth2 Client Credentials Flow](credentials#oauth2-password-flow-tutorial)
 
     Machine-to-machine authentication using client credentials.
 
