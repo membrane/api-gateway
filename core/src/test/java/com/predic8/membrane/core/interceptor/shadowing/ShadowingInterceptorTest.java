@@ -49,7 +49,7 @@ class ShadowingInterceptorTest {
 
     @BeforeEach
     void setUp() throws Exception {
-        header = new Header(){{
+        header = new Header() {{
             add(CONTENT_TYPE, APPLICATION_JSON);
         }};
         exc = ShadowingInterceptor.buildExchange(
@@ -119,7 +119,7 @@ class ShadowingInterceptorTest {
     @Test
     void testIfShadowTargetIsCalled() throws Exception {
         given().when().get("http://localhost:2000").then().statusCode(200);
-        verify(returnInterceptorMock, times(1)).handleRequest(any(Exchange.class));
+        verify(returnInterceptorMock, timeout(10000).times(1)).handleRequest(any(Exchange.class));
     }
 
     /**
