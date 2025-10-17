@@ -1,0 +1,18 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "name": {
+      "type": "string",
+      "minLength": 3
+    },
+    "age": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "zip": {
+      "type": "string",
+      "pattern": "^\\d{5}$"
+    }
+  }
+}

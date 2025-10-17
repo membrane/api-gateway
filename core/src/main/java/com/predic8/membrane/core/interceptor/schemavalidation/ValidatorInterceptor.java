@@ -17,6 +17,7 @@ package com.predic8.membrane.core.interceptor.schemavalidation;
 import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.interceptor.schemavalidation.json.*;
 import com.predic8.membrane.core.proxies.*;
 import com.predic8.membrane.core.resolver.*;
 import com.predic8.membrane.core.util.*;
@@ -32,6 +33,7 @@ import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
 import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.resolver.ResolverMap.*;
+import static com.predic8.membrane.core.util.TextUtil.linkURL;
 
 /**
  * Basically switches over {@link WSDLValidator}, {@link XMLSchemaValidator},
@@ -49,6 +51,13 @@ public class ValidatorInterceptor extends AbstractInterceptor implements Applica
     private String schema;
     private String serviceName;
     private String jsonSchema;
+
+    /**
+     * Schema version e.g. JSON Schema version 04, 07, 2020-12
+     * Could also be used for XML or WSDL schema versions later.
+     */
+    private String schemaVersion = "2020-12";
+
     private String schematron;
     private String failureHandler;
     private boolean skipFaults;
@@ -89,7 +98,7 @@ public class ValidatorInterceptor extends AbstractInterceptor implements Applica
             return new XMLSchemaValidator(resourceResolver, combine(getBaseLocation(), schema), createFailureHandler());
         }
         if (jsonSchema != null) {
-            return new JSONSchemaValidator(resourceResolver, combine(getBaseLocation(), jsonSchema), createFailureHandler());
+            return new JSONYAMLSchemaValidator(resourceResolver, combine(getBaseLocation(), jsonSchema), createFailureHandler(), schemaVersion);
         }
         if (schematron != null) {
             return new SchematronValidator(combine(getBaseLocation(), schematron), createFailureHandler(), router, applicationContext);
@@ -206,6 +215,20 @@ public class ValidatorInterceptor extends AbstractInterceptor implements Applica
         this.jsonSchema = jsonSchema;
     }
 
+    public String getSchemaVersion() {
+        return schemaVersion;
+    }
+
+    /**
+     * @description The version of the Schema.
+     * @example 04, 05, 06, 07, 2019-09, 2020-12
+     * @default 2020-12
+     */
+    @MCAttribute
+    public void setSchemaVersion(String version) {
+        this.schemaVersion = version;
+    }
+
     public String getSchematron() {
         return schematron;
     }
@@ -263,19 +286,19 @@ public class ValidatorInterceptor extends AbstractInterceptor implements Applica
         sb.append(" according to ");
         if (wsdl != null) {
             sb.append("the WSDL at <br/>");
-            sb.append(TextUtil.linkURL(wsdl));
+            sb.append(linkURL(wsdl));
         }
         if (schema != null) {
             sb.append("the XML Schema at <br/>");
-            sb.append(TextUtil.linkURL(schema));
+            sb.append(linkURL(schema));
         }
         if (jsonSchema != null) {
             sb.append("the JSON Schema at <br/>");
-            sb.append(TextUtil.linkURL(jsonSchema));
+            sb.append(linkURL(jsonSchema));
         }
         if (schematron != null) {
             sb.append("the Schematron at <br/>");
-            sb.append(TextUtil.linkURL(schematron));
+            sb.append(linkURL(schematron));
         }
         sb.append(" .");
         return sb.toString();
@@ -290,7 +313,7 @@ public class ValidatorInterceptor extends AbstractInterceptor implements Applica
 
     private FailureHandler createFailureHandler() {
         if (failureHandler == null || failureHandler.equals("response"))
-            return null;
+            return (msg,exchange) -> {};
         if (failureHandler.equals("log"))
             return (message, exc) -> log.info("Validation failure: {}", message);
         throw new IllegalArgumentException("Unknown failureHandler type: " + failureHandler);
