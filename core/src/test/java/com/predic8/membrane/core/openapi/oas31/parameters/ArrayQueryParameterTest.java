@@ -101,6 +101,13 @@ public class ArrayQueryParameterTest {
                     assertEquals(1, err.size());
                     assertTrue(err.get(0).getMessage().contains("null is of type"));
                 }
+
+                @Test
+                void wrongCharacter() {
+                    var err = validator.validate(get().path("/array?string=blue,%GG"));
+                    assertEquals(1, err.size());
+                    assertTrue(err.get(0).getMessage().contains("Invalid query string"));
+                }
             }
         }
     }
