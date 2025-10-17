@@ -1,3 +1,3 @@
-# Tutorial: OAuth2 with GitHub as Authorization Server
+# OAuth2 with GitHub as Authorization Server Tutorial
 
 See [OAuth2 with GitHub (Login Integration)](https://www.membrane-api.io/tutorials/oauth2/oauth2-github.html)
