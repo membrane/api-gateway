@@ -1,3 +1,2 @@
-# Tutorial: OAuth2 Client Credentials Flow
-
+# Tutorial: OAuth2 password flow. A client requests an access token and validates it.
 See [OAuth2 Client Credentials Flow (API Access)](https://www.membrane-api.io/tutorials/oauth2/oauth2-credentials-flow.html)
