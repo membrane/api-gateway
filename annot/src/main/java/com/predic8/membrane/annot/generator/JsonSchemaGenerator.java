@@ -148,7 +148,6 @@ public class JsonSchemaGenerator extends AbstractK8sGenerator {
         return sb.toString();
     }
 
-
     private FileObject createFile(MainInfo main) throws IOException {
         List<Element> sources = new ArrayList<>(main.getInterceptorElements());
         sources.add(main.getElement());

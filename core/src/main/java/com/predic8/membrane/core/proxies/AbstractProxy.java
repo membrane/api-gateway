@@ -72,14 +72,6 @@ public abstract class AbstractProxy implements Proxy {
         return key;
     }
 
-    public boolean isBlockRequest() {
-        return blockRequest;
-    }
-
-    public boolean isBlockResponse() {
-        return blockResponse;
-    }
-
     /**
      * @description The name as shown in the Admin Console.
      * @default By default, a name will be automatically generated from the target host, port, etc.
@@ -92,25 +84,6 @@ public abstract class AbstractProxy implements Proxy {
     public void setKey(RuleKey ruleKey) {
         this.key = ruleKey;
     }
-
-    /**
-     * @description <i>legacy attribute</i> for usage by Membrane Monitor
-     * @default false
-     */
-    @MCAttribute
-    public void setBlockRequest(boolean blockStatus) {
-        this.blockRequest = blockStatus;
-    }
-
-    /**
-     * @description <i>legacy attribute</i> for usage by Membrane Monitor
-     * @default false
-     */
-    @MCAttribute
-    public void setBlockResponse(boolean blockStatus) {
-        this.blockResponse = blockStatus;
-    }
-
 
     /**
      * Called after parsing is complete and this has been added to the object tree (whose root is Router).
