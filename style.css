@@ -1,0 +1,233 @@
+/* ===========================
+   🌸 ESTILOS GENERALES
+   =========================== */
+:root {
+  --petal-color: #ff7b7b;
+  --petal-dark: #e04f4f;
+  --center-color: #ffd166;
+  --bg-color: #3c0000;
+  --bg-gradient: radial-gradient(circle at top, #5c0000, #000);
+  --size: 300px;
+  --petal-w: calc(var(--size) * 0.36);
+  --petal-h: calc(var(--size) * 0.52);
+  --open-scale: 1;
+  --closed-scale: 0.18;
+  --dur: 900ms;
+}
+
+html, body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  font-family: 'Poppins', Arial, sans-serif;
+  color: #fff;
+  background: var(--bg-gradient);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* ===========================
+   🩷 CONTENEDOR PRINCIPAL
+   =========================== */
+body {
+  max-width: 1000px;
+  margin: 30px auto;
+  padding: 30px;
+  border-radius: 20px;
+  box-shadow: 0 8px 20px rgba(255, 0, 0, 0.4);
+  text-align: center;
+}
+
+/* ===========================
+   💐 ENCABEZADO
+   =========================== */
+header h1 {
+  font-size: 40px;
+  color: #ffdede;
+  text-shadow: 3px 3px 8px #000;
+  margin-bottom: 10px;
+}
+
+header p {
+  font-size: 18px;
+  color: #ffeaea;
+  font-style: italic;
+}
+
+/* ===========================
+   🌸 FLOR ANIMADA
+   =========================== */
+.wrap {
+  text-align: center;
+  margin: 40px auto;
+}
+
+#toggle {
+  display: none;
+}
+
+.label {
+  display: block;
+  margin-bottom: 12px;
+  cursor: pointer;
+  user-select: none;
+  color: #ffeaea;
+  font-weight: 600;
+}
+
+/* Flor */
+.flower {
+  width: var(--size);
+  height: var(--size);
+  position: relative;
+  margin: 0 auto;
+  filter: drop-shadow(0 12px 28px rgba(20, 30, 40, .3));
+  animation: sway 6s ease-in-out infinite;
+  transform-origin: 50% 60%;
+}
+
+/* Centro */
+.center {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: calc(var(--size) * 0.26);
+  height: calc(var(--size) * 0.26);
+  transform: translate(-50%, -50%) scale(0.9);
+  background: radial-gradient(circle at 35% 30%, #fff6c8 0 10%, var(--center-color) 40%);
+  border-radius: 50%;
+  z-index: 12;
+  opacity: 0;
+  animation: centerIn 700ms ease forwards 600ms;
+}
+
+/* Pétalos */
+.petal {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: var(--petal-w);
+  height: var(--petal-h);
+  transform-origin: 50% 88%;
+  background: radial-gradient(60% 60% at 40% 25%, #fff 0 6%, var(--petal-color) 30%, var(--petal-dark) 100%);
+  border-radius: 50% 50% 40% 40% / 55% 55% 45% 45%;
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.15);
+  z-index: 1;
+  transform: translate(-50%, -88%) rotate(0deg) scaleY(var(--closed-scale));
+  transition: transform var(--dur) cubic-bezier(.2, .85, .3, 1);
+  animation: petalIn calc(var(--dur) * 1.05) ease forwards;
+}
+
+/* Animaciones */
+@keyframes centerIn {
+  from { opacity: 0; transform: translate(-50%, -50%) scale(0.6); }
+  to { opacity: 1; transform: translate(-50%, -50%) scale(0.9); }
+}
+
+@keyframes petalIn {
+  from { transform: translate(-50%, -88%) rotate(var(--r, 0deg)) scaleY(var(--closed-scale)); }
+  to { transform: translate(-50%, -88%) rotate(var(--r, 0deg)) scaleY(var(--open-scale)); }
+}
+
+/* Pétalos en distintas posiciones */
+.petal:nth-child(1){ --r: 0deg; animation-delay: 0ms; }
+.petal:nth-child(2){ --r: 45deg; animation-delay: 60ms; }
+.petal:nth-child(3){ --r: 90deg; animation-delay: 120ms; }
+.petal:nth-child(4){ --r:135deg; animation-delay: 180ms; }
+.petal:nth-child(5){ --r:180deg; animation-delay: 240ms; }
+.petal:nth-child(6){ --r:225deg; animation-delay: 300ms; }
+.petal:nth-child(7){ --r:270deg; animation-delay: 360ms; }
+.petal:nth-child(8){ --r:315deg; animation-delay: 420ms; }
+
+#toggle:checked + .flower .petal {
+  transform: translate(-50%, -78%) rotate(var(--r, 0deg)) scaleY(var(--open-scale));
+}
+
+#toggle:checked + .flower .center {
+  transform: translate(-50%, -50%) scale(1);
+}
+
+/* Movimiento natural */
+@keyframes sway {
+  0% { transform: rotate(-1deg); }
+  50% { transform: rotate(1deg); }
+  100% { transform: rotate(-1deg); }
+}
+
+/* ===========================
+   🌺 TEXTOS Y SECCIONES
+   =========================== */
+h2 {
+  font-size: 26px;
+  color: #ffd1d1;
+  margin-top: 30px;
+}
+
+p {
+  font-size: 17px;
+  line-height: 1.6;
+  margin: 15px auto;
+  max-width: 800px;
+}
+
+/* ===========================
+   🖼️ CARRUSEL DE IMÁGENES
+   =========================== */
+.carousel-container {
+  position: relative;
+  max-width: 700px;
+  margin: 40px auto;
+  overflow: hidden;
+  border-radius: 20px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.6);
+}
+
+.carousel-slide img {
+  width: 100%;
+  height: 400px;
+  object-fit: cover;
+  border-radius: 20px;
+}
+
+.prev, .next {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background-color: rgba(255, 255, 255, 0.5);
+  color: #900;
+  border: none;
+  padding: 10px 15px;
+  cursor: pointer;
+  border-radius: 50%;
+  font-size: 22px;
+  transition: background 0.3s;
+}
+
+.prev:hover, .next:hover {
+  background-color: rgba(255, 200, 200, 0.9);
+}
+
+.prev { left: 10px; }
+.next { right: 10px; }
+
+/* ===========================
+   💞 PIE DE PÁGINA
+   =========================== */
+footer {
+  margin-top: 40px;
+  font-size: 14px;
+  color: #ffd1d1;
+  opacity: 0.8;
+}
+
+/* ===========================
+   📱 RESPONSIVE
+   =========================== */
+@media (max-width: 520px) {
+  :root { --size: 200px; }
+  body { padding: 15px; }
+  h1 { font-size: 30px; }
+  h2 { font-size: 22px; }
+  .carousel-slide img { height: 250px; }
+}

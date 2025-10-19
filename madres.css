@@ -1,0 +1,77 @@
+html {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  background-color: rgb(0, 0, 0);
+}
+
+body {
+  background-color: rgb(138, 10, 10);
+  font-family: Arial, sans-serif;
+  margin: 20px auto;
+  padding: 20px;
+  border: 2px solid #080707;
+  border-radius: 20px;
+  box-shadow: 0 4px 8px rgba(255, 0, 0, 0.53);
+  max-width: 1000px;
+  color: white;
+}
+
+header, main, footer {
+  text-align: center;
+}
+audio {
+  display: block;
+  margin: 100px auto;
+
+}
+a {
+  color: blue;
+  text-decoration: none;
+
+}
+
+h1 {
+  font-size: 36px;
+  margin-bottom: 10px;
+  color: rgb(255, 255, 255);
+  text-shadow: 2px 2px 4px black;
+}
+a:hover {
+  text-decoration: underline;
+}
+
+
+h2 {
+  font-size: 28px;
+  margin-bottom: 10px;
+  color: #ffd1d1;
+}
+
+p {
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+footer {
+  margin-top: 20px;
+  font-size: 14px;
+  color: #fff;
+  opacity: 0.8;
+}
+
+.carousel-container {
+  position: relative;
+  max-width: 700px; /* ajusta el ancho del carrusel */
+  margin: 20px auto;
+  overflow: hidden;
+  border-radius: 15px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+}
+
+.carousel-slide img {
+  width: 100%;     /* la imagen ocupa todo el ancho del carrusel */
+  height: 400px;   /* ajustá la altura que quieras */
+  object-fit: cover; /* recorta sin deformar */
+  border-radius: 20px;
+}
