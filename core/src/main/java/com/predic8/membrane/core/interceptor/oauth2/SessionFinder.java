@@ -62,19 +62,31 @@ public class SessionFinder {
 
     public SessionManager.Session getSessionForCode(String code) {
         synchronized (authCodesToSession) {
-            return authCodesToSession.get(code);
+            Session session = authCodesToSession.get(code);
+            if (session != null) {
+                session.touch();
+            }
+            return session;
         }
     }
 
     public SessionManager.Session getSessionForToken(String token) {
         synchronized (tokensToSession) {
-            return tokensToSession.get(token);
+            Session session = tokensToSession.get(token);
+            if (session != null) {
+                session.touch();
+            }
+            return session;
         }
     }
 
     public SessionManager.Session getSessionForRefreshToken(String refreshToken) {
         synchronized (refreshTokensToSession) {
-            return refreshTokensToSession.get(refreshToken);
+            Session session = refreshTokensToSession.get(refreshToken);
+            if (session != null) {
+                session.touch();
+            }
+            return session;
         }
     }
 
