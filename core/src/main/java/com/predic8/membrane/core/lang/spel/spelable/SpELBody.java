@@ -29,4 +29,9 @@ public class SpELBody {
     public Message getMessage() {
         return message;
     }
+
+    @Override
+    public String toString() {
+        return message.getBodyAsStringDecoded();
+    }
 }

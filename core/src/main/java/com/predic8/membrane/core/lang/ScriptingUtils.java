@@ -71,6 +71,7 @@ public class ScriptingUtils {
 
         if (msg != null) {
             params.put("message", msg);
+            params.put("body", msg.getBodyAsStringDecoded());
             params.put("header", msg.getHeader());
             params.put("headers", msg.getHeader());
             if (includeJsonObject) {

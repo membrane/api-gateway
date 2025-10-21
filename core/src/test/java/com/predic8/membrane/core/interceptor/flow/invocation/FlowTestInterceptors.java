@@ -51,7 +51,7 @@ public class FlowTestInterceptors {
         }};
     }
 
-    public static ChooseInterceptor CHOICE(Otherwise otherwise, Case... cases) {
+    public static ChooseInterceptor CHOOSE(Otherwise otherwise, Case... cases) {
         return new ChooseInterceptor() {{
             setOtherwise(otherwise);
             setCases(asList(cases));
