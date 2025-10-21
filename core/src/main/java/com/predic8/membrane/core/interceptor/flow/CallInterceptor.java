@@ -88,10 +88,10 @@ public class CallInterceptor extends AbstractExchangeExpressionInterceptor {
 
         try {
             /**
-             * The content is copied from the response without decoding. The response headers like transfer-encoding are also copied. So
-             * when the content is later accessed using Stream or StringDecoded the decoding is done.
+             * The content is copied from the response with decoding. The response headers transfer-encoding
+             * and content-encoding are removed by the setBodyContent method.
              */
-            exc.getRequest().setBodyContent(newExc.getResponse().getBody().getContent());
+            exc.getRequest().setBodyContent(newExc.getResponse().getBodyAsStreamDecoded().readAllBytes());
             copyHeadersFromResponseToRequest(newExc, exc);
             return CONTINUE;
         } catch (Exception e) {

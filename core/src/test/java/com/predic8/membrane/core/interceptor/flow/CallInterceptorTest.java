@@ -47,8 +47,6 @@ class CallInterceptorTest {
 
         // preserve
         assertEquals("42",exc.getRequest().getHeader().getFirstValue("X-FOO"));
-        assertEquals("foo",exc.getRequest().getHeader().getFirstValue(TRANSFER_ENCODING));
-        assertEquals(  "bar",exc.getRequest().getHeader().getFirstValue(CONTENT_ENCODING));
 
         // take out
         assertNull(exc.getRequest().getHeader().getFirstValue(SERVER));
