@@ -38,16 +38,19 @@ class CallInterceptorTest {
     @Test
     void filterHeaders() {
         exc.setResponse(Response.ok()
-                .header(TRANSFER_ENCODING, "dummy")
-                .header(CONTENT_ENCODING, "dummy")
+                .header(TRANSFER_ENCODING, "foo")
+                .header(CONTENT_ENCODING, "bar")
                 .header(SERVER, "dummy")
                 .header("X-FOO", "42").build());
 
         copyHeadersFromResponseToRequest(exc, exc);
 
+        // preserve
         assertEquals("42",exc.getRequest().getHeader().getFirstValue("X-FOO"));
-        assertNull(exc.getRequest().getHeader().getFirstValue(TRANSFER_ENCODING));
-        assertNull(exc.getRequest().getHeader().getFirstValue(CONTENT_ENCODING));
+        assertEquals("foo",exc.getRequest().getHeader().getFirstValue(TRANSFER_ENCODING));
+        assertEquals(  "bar",exc.getRequest().getHeader().getFirstValue(CONTENT_ENCODING));
+
+        // take out
         assertNull(exc.getRequest().getHeader().getFirstValue(SERVER));
     }
 

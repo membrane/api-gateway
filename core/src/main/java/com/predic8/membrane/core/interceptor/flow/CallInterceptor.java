@@ -53,7 +53,7 @@ public class CallInterceptor extends AbstractExchangeExpressionInterceptor {
      * and are not added to the current message.
      */
     private static final List<String> REMOVE_HEADERS = List.of(
-            SERVER, TRANSFER_ENCODING, CONTENT_ENCODING
+            SERVER
     );
 
     private String method = GET;
@@ -87,7 +87,11 @@ public class CallInterceptor extends AbstractExchangeExpressionInterceptor {
         }
 
         try {
-            exc.getRequest().setBodyContent(newExc.getResponse().getBodyAsStringDecoded().getBytes());
+            /**
+             * The content is copied from the response without decoding. The response headers like transfer-encoding are also copied. So
+             * when the content is later accessed using Stream or StringDecoded the decoding is done.
+             */
+            exc.getRequest().setBodyContent(newExc.getResponse().getBody().getContent());
             copyHeadersFromResponseToRequest(newExc, exc);
             return CONTINUE;
         } catch (Exception e) {
