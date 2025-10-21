@@ -36,9 +36,9 @@ public class Util {
         return createServiceProxy(listenPort,null,interceptors);
     }
 
-    public static Proxy createServiceProxy(int listenPort, AbstractServiceProxy.Target target, Interceptor... interceptors){
+    public static Proxy createServiceProxy(int listenPort, Target target, Interceptor... interceptors){
         if (target == null)
-            target = new AbstractServiceProxy.Target(null, -1);
+            target = new Target(null, -1);
 
         ServiceProxy sp = new ServiceProxy(new ServiceProxyKey(listenPort), null, -1);
         sp.setTarget(target);

@@ -92,4 +92,17 @@ public class ChildElementInfo extends AbstractJavadocedInfo implements Comparabl
 	public void setList(boolean list) {
 		this.list = list;
 	}
+
+    @Override
+    public String toString() {
+        return "ChildElementInfo{" +
+               "ei=" + ei +
+               ", e=" + e +
+               ", typeDeclaration=" + typeDeclaration +
+               ", annotation=" + annotation +
+               ", propertyName='" + propertyName + '\'' +
+               ", list=" + list +
+               ", required=" + required +
+               '}';
+    }
 }

@@ -374,7 +374,7 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
         var groups = new ArrayList<NameGroup>();
 
         for (ChildElementInfo cei : ii.getChildElementSpecs()) {
-            List<String> names = new ArrayList<>();
+            var names = new ArrayList<String>();
             if (cei.isList()) {
                 // e.g. api.interceptors
                 names.add(cei.getPropertyName());

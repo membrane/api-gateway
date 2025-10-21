@@ -19,7 +19,7 @@ import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
-import com.predic8.membrane.core.proxies.AbstractServiceProxy.Target;
+import com.predic8.membrane.core.proxies.*;
 import com.predic8.membrane.core.transport.http.HttpClient;
 import com.predic8.membrane.core.util.URIFactory;
 import org.slf4j.Logger;

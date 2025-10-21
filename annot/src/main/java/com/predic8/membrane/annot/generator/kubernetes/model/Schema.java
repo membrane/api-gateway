@@ -52,7 +52,7 @@ public class Schema implements ISchema {
         if (definitions.isEmpty())
             return "";
 
-        return ",\"definitions\":{" + definitions.stream()
+        return ",\"$defs\":{" + definitions.stream()
                 .map(Objects::toString)
                 .collect(Collectors.joining(",")) +
                 "}";
@@ -74,8 +74,8 @@ public class Schema implements ISchema {
     @Override
     public String toString() {
         return "{" +
-                "\"id\": \"https://membrane-soa.org/" + name.toLowerCase() + ".schema.json\"," +
-                "\"$schema\": \"https://json-schema.org/draft-04/schema#\"," +
+                "\"$id\": \"https://membrane-soa.org/" + name.toLowerCase() + ".schema.json\"," +
+                "\"$schema\": \"https://json-schema.org/draft/2020-12/schema\"," +
                 "\"title\": \"" + name + "\"," +
                 "\"type\": \"object\"" +
                 printDefinitions() +

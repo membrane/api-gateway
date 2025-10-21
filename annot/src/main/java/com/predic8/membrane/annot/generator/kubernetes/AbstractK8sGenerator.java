@@ -53,7 +53,7 @@ public abstract class AbstractK8sGenerator {
     }
 
     protected abstract String fileName();
-    protected abstract void write(Model m);
+    protected abstract void write(Model m) throws IOException;
 
     protected WritableNames getElementNames(ElementInfo ei) {
         return new WritableNames(ei);

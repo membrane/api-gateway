@@ -59,7 +59,7 @@ public class UnavailableSoapProxyTest {
 
 		sp3 = new ServiceProxy();
 		sp3.setPort(2000);
-		sp3.setTarget(new AbstractServiceProxy.Target("localhost", 2001));
+		sp3.setTarget(new Target("localhost", 2001));
 		ValidatorInterceptor v = new ValidatorInterceptor(); // Calling init on interceptor will break test!
 		v.setWsdl("http://localhost:2001?wsdl");
 		sp3.getFlow().add(v);

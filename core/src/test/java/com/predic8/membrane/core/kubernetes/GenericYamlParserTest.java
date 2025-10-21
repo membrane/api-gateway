@@ -23,7 +23,7 @@ import com.predic8.membrane.core.interceptor.ratelimit.RateLimitInterceptor;
 import com.predic8.membrane.core.interceptor.rewrite.RewriteInterceptor;
 import com.predic8.membrane.core.interceptor.xml.Xml2JsonInterceptor;
 import com.predic8.membrane.core.openapi.serviceproxy.APIProxy;
-import com.predic8.membrane.core.proxies.AbstractServiceProxy;
+import com.predic8.membrane.core.proxies.*;
 import com.predic8.membrane.core.util.MemcachedConnector;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.TestInstance;
@@ -65,7 +65,7 @@ class GenericYamlParserMembraneTest {
         }};
         BeanRegistry memReg = new TestRegistry().with("mem", mem);
 
-        AbstractServiceProxy.Target target = new AbstractServiceProxy.Target() {{
+        Target target = new Target() {{
             setUrl("https://ref.example");
         }};
         BeanRegistry targetReg = new TestRegistry().with("target", target);
