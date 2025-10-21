@@ -1,3 +1,5 @@
-This example shows OAuth2 authorization with OpenID-Connect and OpenID-Discovery. It uses Google as an authorization server.
+# OAuth2 with OpenID Connect and Discovery Tutorial
+
+Membrane connects to Google as an external OpenID provider.
 
 See [OAuth2 / OpenID Connect (External Providers)](https://www.membrane-api.io/tutorials/oauth2/oauth2-openid.html)
