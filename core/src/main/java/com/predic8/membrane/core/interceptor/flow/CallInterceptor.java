@@ -53,7 +53,7 @@ public class CallInterceptor extends AbstractExchangeExpressionInterceptor {
      * and are not added to the current message.
      */
     private static final List<String> REMOVE_HEADERS = List.of(
-            SERVER
+            SERVER, CONTENT_ENCODING, TRANSFER_ENCODING
     );
 
     private String method = GET;

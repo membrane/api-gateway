@@ -50,6 +50,8 @@ class CallInterceptorTest {
 
         // take out
         assertNull(exc.getRequest().getHeader().getFirstValue(SERVER));
+        assertNull(exc.getRequest().getHeader().getFirstValue(TRANSFER_ENCODING));
+        assertNull(exc.getRequest().getHeader().getFirstValue(CONTENT_ENCODING));
     }
 
 }
