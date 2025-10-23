@@ -40,6 +40,12 @@ import static com.predic8.membrane.core.interceptor.balancer.Node.Status.UP;
 import static com.predic8.membrane.core.openapi.util.Utils.joinByComma;
 import static java.util.stream.Collectors.toList;
 
+/**
+ * @description Exposes some of Membrane's internal metrics in the Prometheus format.
+ *
+ * See also examples/monitoring-tracing/prometheus for a demo, including a screenshot.
+ * @topic 4. Monitoring, Logging and Statistics
+ */
 @MCElement(name = "prometheus")
 public class PrometheusInterceptor extends AbstractInterceptor {
 
