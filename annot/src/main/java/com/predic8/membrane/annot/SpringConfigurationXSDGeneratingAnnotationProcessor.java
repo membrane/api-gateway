@@ -156,8 +156,6 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
 		return result;
 	}
 
-	boolean done;
-
 	@Override
 	public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
 		// An instance is create per compiler call and not kept for the next incremental compilation.
@@ -214,7 +212,7 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
 						throw new ProcessingException("Duplicate element id \"" + ii.getId() + "\". Please assign one using @MCElement(id=\"...\").", e, main.getIds().get(ii.getId()).getElement());
 					main.getIds().put(ii.getId(), ii);
 
-					scan(m, main, ii);
+					scan(main, ii);
 
                     if (ii.getAnnotation().noEnvelope()) {
                         if (ii.getAnnotation().topLevel())
@@ -413,14 +411,14 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
 
     private static final String REQUIRED = "com.predic8.membrane.annot.Required";
 
-	private void scan(Model m, MainInfo main, ElementInfo ii) {
-		scan(m, main, ii, ii.getElement());
+	private void scan(MainInfo main, ElementInfo ii) {
+		scan(main, ii, ii.getElement());
 	}
 
-	private void scan(Model m, MainInfo main, ElementInfo ii, TypeElement te) {
+	private void scan(MainInfo main, ElementInfo ii, TypeElement te) {
 		TypeMirror superclass = te.getSuperclass();
 		if (superclass instanceof DeclaredType)
-			scan(m, main, ii, (TypeElement) ((DeclaredType)superclass).asElement());
+			scan(main, ii, (TypeElement) ((DeclaredType)superclass).asElement());
 
 		for (Element e2 : te.getEnclosedElements()) {
 			MCAttribute a = e2.getAnnotation(MCAttribute.class);

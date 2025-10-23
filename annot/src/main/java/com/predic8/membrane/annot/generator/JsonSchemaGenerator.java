@@ -34,7 +34,7 @@ public class JsonSchemaGenerator extends AbstractK8sGenerator {
     }
 
     private boolean flowDefCreated = false;
-    private Schema schema = new Schema("membrane");
+    private final Schema schema = new Schema("membrane");
 
     private static final String[] excludeFromFlow = {
             "httpClient",
@@ -245,11 +245,8 @@ public class JsonSchemaGenerator extends AbstractK8sGenerator {
             SchemaObject sop1 = new SchemaObject(cei.getPropertyName());
             sop1.addAttribute("type", "array");
 
-            var oneOfs = new ArrayList<SchemaObject>();
-            oneOfs.addAll(sos);
-
             var oF = new SchemaObject("items");
-            oF.addAttribute("anyOf", oneOfs);
+            oF.addAttribute("anyOf", new ArrayList<>(sos));
 
             sop1.addAttribute("items", oF);
             schema.addDefinition(sop1);

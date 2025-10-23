@@ -56,7 +56,7 @@ public class K8sJsonSchemaGenerator extends AbstractK8sGenerator {
     }
 
     private void assembleBase(Model m, Writer w, MainInfo main, ElementInfo i) throws IOException {
-        if (i.getAnnotation().mixed() && i.getChildElementSpecs().size() > 0) {
+        if (i.getAnnotation().mixed() && !i.getChildElementSpecs().isEmpty()) {
             throw new ProcessingException(
                     "@MCElement(..., mixed=true) and @MCTextContent is not compatible with @MCChildElement.",
                     i.getElement()

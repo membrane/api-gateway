@@ -14,9 +14,9 @@
 package com.predic8.membrane.annot.generator.kubernetes.model;
 
 import java.util.*;
-import java.util.stream.*;
 
 import static com.predic8.membrane.annot.generator.kubernetes.model.SchemaUtils.*;
+import static java.util.stream.Collectors.*;
 
 public class SchemaObject implements ISchema {
 
@@ -36,18 +36,16 @@ public class SchemaObject implements ISchema {
 
     @Override
     public String toString() {
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         if (name != null) {
             sb.append("\"")
                     .append(name)
                     .append("\":");
         }
 
-        sb.append("{")
-                .append(attributes.entrySet().stream()
-                       .map(SchemaUtils::entryToJson)
-                       .collect(Collectors.joining(",")) +
-               printProperties())
+        sb.append("{").append(attributes.entrySet().stream()
+                        .map(SchemaUtils::entryToJson)
+                        .collect(joining(","))).append(printProperties())
                 .append("}");
         return sb.toString();
     }
@@ -69,7 +67,7 @@ public class SchemaObject implements ISchema {
             return "";
 
         return ",\"properties\": {" +
-               properties.stream().map(SchemaObject::toString).collect(Collectors.joining(",")) +
+               properties.stream().map(SchemaObject::toString).collect(joining(",")) +
                "}" +
                printRequired(properties)
                 ;
