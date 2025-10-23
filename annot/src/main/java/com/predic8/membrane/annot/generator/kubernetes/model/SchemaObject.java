@@ -38,15 +38,19 @@ public class SchemaObject implements ISchema {
     public String toString() {
         StringBuilder sb = new StringBuilder();
         if (name != null) {
-            sb.append("\"")
-                    .append(name)
-                    .append("\":");
-        }
-
-        sb.append("{").append(attributes.entrySet().stream()
-                        .map(SchemaUtils::entryToJson)
-                        .collect(joining(","))).append(printProperties())
-                .append("}");
+                sb.append("\"").append(name).append("\":");
+            }
+        sb.append("{");
+        String attrs = attributes.entrySet().stream()
+                                        .map(SchemaUtils::entryToJson)
+                                                          .collect(joining(","));
+        sb.append(attrs);
+        String props = printProperties();
+        if (!props.isEmpty()) {
+                if (!attrs.isEmpty()) sb.append(",");
+                sb.append(props);
+            }
+        sb.append("}");
         return sb.toString();
     }
 
@@ -66,11 +70,13 @@ public class SchemaObject implements ISchema {
         if (properties.isEmpty())
             return "";
 
-        return ",\"properties\": {" +
-               properties.stream().map(SchemaObject::toString).collect(joining(",")) +
-               "}" +
-               printRequired(properties)
-                ;
+        return """
+               "properties": {%s} %s""".formatted(getPropertiesJoined(),printRequired(properties));
+
+    }
+
+    private String getPropertiesJoined() {
+        return properties.stream().map(SchemaObject::toString).collect(joining(","));
     }
 
     public boolean isRequired() {

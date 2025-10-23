@@ -5,8 +5,7 @@
 					    http://membrane-soa.org/proxies/1/ http://membrane-soa.org/schemas/proxies-1.xsd">
 
 	<router>
-		<proxy name="HTTP proxy" port="3090" blockRequest="true"
-			blockResponse="false" />
+		<proxy name="HTTP proxy" port="3090"/>
 		<serviceProxy name="thomas-bayer.com" port="3000">
 			<target host="thomas-bayer.com" port="80" />
 		</serviceProxy>

@@ -2,9 +2,16 @@
 
 # YAML Support
 
+- Rename json schema document:
+  - Short name to keep schema ref in YAML instance documents short
+  - Ideas:
+    - membrane-v1.schema.json
+    - membrane-v1.json
+    - v1.json
 - Name from metadata/name or spec/name?
 - Correct YAML example on github README
 - Rename in apis.yaml
+
 
 # 7.0.0
 

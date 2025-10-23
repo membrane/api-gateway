@@ -1,3 +1,17 @@
+/* Copyright 2025 predic8 GmbH, www.predic8.com
+
+   Licensed under the Apache License, Version 2.0 (the "License");
+   you may not use this file except in compliance with the License.
+   You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License. */
+
 package com.predic8.membrane.core.proxies;
 
 import com.predic8.membrane.annot.*;
@@ -5,9 +19,10 @@ import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.config.security.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.interceptor.Interceptor.*;
 import com.predic8.membrane.core.lang.*;
 
-import static com.predic8.membrane.core.lang.ExchangeExpression.Language.SPEL;
+import static com.predic8.membrane.core.lang.ExchangeExpression.Language.*;
 
 /**
  * @description <p>
@@ -21,7 +36,7 @@ public class Target {
     private String host;
     private int port = -1;
     private String method;
-    protected String url;
+    private String url;
     private boolean adjustHostHeader = true;
     private ExchangeExpression.Language language = SPEL;
     private ExchangeExpression exchangeExpression;
@@ -32,16 +47,15 @@ public class Target {
         if (url != null) exchangeExpression = TemplateExchangeExpression.newInstance(router, language, url);
     }
 
-    public String compileUrl(Exchange exc, Interceptor.Flow flow) {
+    public String compileUrl(Exchange exc, Flow flow) {
         /**
          * Will always evaluate on every call. This is fine as SpEL is fast enough and performs its own optimizations.
          * 1.000.000 calls ~10ms
          */
         if (exchangeExpression != null) {
             return exchangeExpression.evaluate(exc, flow, String.class);
-        } else {
-            return url;
         }
+        return url;
     }
 
     public Target() {
@@ -123,9 +137,9 @@ public class Target {
     }
 
     /**
+     * @param method
      * @description The method that should be used to make the call to the backend.
      * Overwrites the original method.
-     * @param method
      */
     @MCAttribute
     public void setMethod(String method) {

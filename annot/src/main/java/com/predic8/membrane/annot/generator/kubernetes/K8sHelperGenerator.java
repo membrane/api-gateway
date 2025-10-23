@@ -39,7 +39,7 @@ public class K8sHelperGenerator extends AbstractK8sGenerator {
     }
 
     @Override
-    protected void write(Model m) {
+    protected void write(Model m) throws IOException{
         m.getMains().forEach(main -> {
             try {
                 List<Element> sources = new ArrayList<>(main.getInterceptorElements());

@@ -170,8 +170,8 @@ public class APIProxy extends ServiceProxy implements Polyglot {
             try {
                 paths.put(UriUtil.getPathFromURL(router.getUriFactory(), url), rec);
             } catch (URISyntaxException e) {
-                log.error("Cannot parse URL {}", url);
-                throw new RuntimeException("Cannot parse URL %s".formatted(url));
+                log.error("Cannot parse URL {} Error: {}", url,e.getMessage());
+                throw new RuntimeException("Cannot parse URL %s Error: %s".formatted(url,e.getMessage()),e);
             }
         }));
         return paths;

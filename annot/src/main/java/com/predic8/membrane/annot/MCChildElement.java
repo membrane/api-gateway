@@ -28,7 +28,7 @@ public @interface MCChildElement {
 	int order() default 0;
 
     /**
-     * Allows the child to come from a schema other than Membrane core. Used for spring beans e.g. ref to ssl bean
+     * Allows the child to come from a schema other than Membrane core. Used for spring beans, e.g. ref to ssl bean
      */
 	boolean allowForeign() default false;
 }

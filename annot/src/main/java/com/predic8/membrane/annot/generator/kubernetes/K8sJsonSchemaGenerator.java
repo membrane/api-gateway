@@ -35,7 +35,7 @@ public class K8sJsonSchemaGenerator extends AbstractK8sGenerator {
         super(processingEnv);
     }
 
-    public void write(Model m) {
+    public void write(Model m) throws IOException {
         try {
             for (MainInfo main : m.getMains()) {
                 assemble(m, main);
@@ -162,7 +162,7 @@ public class K8sJsonSchemaGenerator extends AbstractK8sGenerator {
                 SchemaObject sop = new SchemaObject(ei.getAnnotation().name());
                 //sop.setRequired(cei.isRequired());
                 // TODO only one is required, not all
-                sop.addAttribute("$ref", "#/definitions/" + ei.getXSDTypeName(m));
+                sop.addAttribute("$ref", "#/$defs/" + ei.getXSDTypeName(m));
                 parent2.addProperty(sop);
             }
         }
