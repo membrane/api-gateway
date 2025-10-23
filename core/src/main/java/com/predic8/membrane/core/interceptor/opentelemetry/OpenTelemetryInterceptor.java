@@ -51,6 +51,13 @@ import static io.opentelemetry.api.trace.StatusCode.ERROR;
 import static io.opentelemetry.api.trace.StatusCode.OK;
 import static io.opentelemetry.context.Context.current;
 
+/**
+ * @description Creates an OpenTelemetry span for each HTTP request passing through. Sends the tracing data to the
+ * speficied OpenTelemetry collector.
+ *
+ * See also examples/monitoring-tracing/opentelemetry for a demo, including screenshots.
+ * @topic 4. Monitoring, Logging and Statistics
+ */
 @MCElement(name = "openTelemetry")
 public class OpenTelemetryInterceptor extends AbstractInterceptor {
     private double sampleRate = 1.0;
