@@ -238,7 +238,7 @@ public class JsonSchemaGenerator extends AbstractK8sGenerator {
         return items;
     }
 
-    private SchemaObject processFlowElement(ISchema so, ChildElementInfo cei, ArrayList<SchemaObject> sos) {
+    private void processFlowElement(ISchema so, ChildElementInfo cei, ArrayList<SchemaObject> sos) {
         if (!flowDefCreated) {
             SchemaObject prop = new SchemaObject(cei.getPropertyName());
             prop.addAttribute("type", "array");
@@ -253,7 +253,6 @@ public class JsonSchemaGenerator extends AbstractK8sGenerator {
         SchemaObject flow = new SchemaObject("flow");
         flow.addAttribute("$ref", "#/$defs/flow");
         so.addProperty(flow);
-        return null;
     }
 
     private static void addChildsAsProperties(Model m, MainInfo main, ChildElementInfo cei, ISchema parent2) {
@@ -317,10 +316,12 @@ public class JsonSchemaGenerator extends AbstractK8sGenerator {
         };
     }
 
+    // For description. Probably we'll include that later. (Temporarily deactivated!)
     private String getDescriptionAsText(AbstractJavadocedInfo elementInfo) {
         return escapeJsonContent(getDescriptionContent(elementInfo).replaceAll("<[^>]+>", "").replaceAll("\\s+", " ").trim());
     }
 
+    // For description. Probably we'll include that later. (Temporarily deactivated!
     private String getDescriptionAsHtml(AbstractJavadocedInfo elementInfo) {
         return escapeJsonContent(getDescriptionContent(elementInfo).replaceAll("\\s+", " ").trim());
     }
