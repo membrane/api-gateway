@@ -1,3 +1,5 @@
-This example shows the OAuth2 password flow. A client requests an access token and the token is verified through a token validator.
+# OAuth2 Password Flow Tutorial
 
-Please follow https://www.membrane-soa.org/api-gateway-doc/current/security/oauth2-credentials-flow.html
+A client requests an access token that will be verified through a token validator.
+
+See [OAuth2 Client Credentials Flow (API Access)](https://www.membrane-api.io/tutorials/oauth2/oauth2-credentials-flow.html)

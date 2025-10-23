@@ -39,6 +39,7 @@ public abstract class AbstractParameterParser implements ParameterParser {
         boolean explode = isExplode(parameter);
 
         AbstractParameterParser paramParser = switch (type) {
+            case STRING -> new StringParameterParser();
             case ARRAY -> {
                 if (explode)
                     yield new ExplodedArrayParameterParser();

@@ -76,6 +76,7 @@ public class TutorialRestStepsExampleTest extends AbstractSampleMembraneStartSto
 
     @Test
     public void step2() {
+        // @formatter:off
         get("http://localhost:2001/shop/v2/products/")
                 .then()
                 .assertThat()
@@ -84,10 +85,12 @@ public class TutorialRestStepsExampleTest extends AbstractSampleMembraneStartSto
 
         get("http://localhost:2002/restnames/name.groovy?name=Pia")
                 .then()
+                .log().ifValidationFails()
                 .assertThat()
                 .contentType(APPLICATION_XML)
                 .statusCode(200)
                 .body("restnames.nameinfo.name", equalTo("Pia"));
+        // @formatter:on
     }
 
     @Test

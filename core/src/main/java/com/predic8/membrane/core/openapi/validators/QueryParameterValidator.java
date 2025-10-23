@@ -27,6 +27,7 @@ import io.swagger.v3.oas.models.parameters.*;
 import io.swagger.v3.oas.models.security.*;
 import org.jetbrains.annotations.*;
 
+import java.net.*;
 import java.util.*;
 import java.util.concurrent.atomic.*;
 import java.util.regex.*;
@@ -66,13 +67,19 @@ public class QueryParameterValidator extends AbstractParameterValidator {
         final var ctx = validationContext.entityType(QUERY_PARAMETER).statusCode(400);
 
         var errors = new ValidationErrors();
-        var parameterMap = getParameterMapFromQuery(getQueryString(request));
+        Map<String, List<String>> parameterMap = null;
+        try {
+            parameterMap = getParameterMapFromQuery(getQueryString(request));
+        } catch (Exception e) {
+            return errors.add(ctx, "Invalid query string: " + (e.getCause() != null ? e.getCause().getMessage() : e.getMessage()));
+        }
         var fields = new LinkedHashSet<>(parameterMap.keySet());
 
         errors.add(checkMissingRequiredFields(operation, parameterMap, ctx));
 
+        Map<String, List<String>> finalParameterMap = parameterMap;
         getAllQueryParameters(operation).forEach(p -> {
-            errors.add(validateParameter(ctx, p.getName(), parameterMap, p));
+            errors.add(validateParameter(ctx, p.getName(), finalParameterMap, p));
             fields.remove(p.getName());
         });
 
@@ -86,7 +93,7 @@ public class QueryParameterValidator extends AbstractParameterValidator {
             if (validFieldNamesFromObjects.contains(f)) {
                 return;
             }
-            errors.add(ctx, "Unknown query parameter '%s' is invalid!".formatted(f));
+            errors.add(ctx.parameter(f), "Unknown query parameter '%s' is invalid!".formatted(f));
         });
 
         return errors;
