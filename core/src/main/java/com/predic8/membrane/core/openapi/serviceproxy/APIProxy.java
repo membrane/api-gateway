@@ -161,7 +161,7 @@ public class APIProxy extends ServiceProxy implements Polyglot {
     }
 
     private Map<String, OpenAPIRecord> getOpenAPIMap() {
-        Map<String, OpenAPIRecord> paths = new HashMap<>();
+        Map<String, OpenAPIRecord> paths = new LinkedHashMap<>();
         apiRecords.forEach((id, rec) -> rec.api.getServers().forEach(server -> {
             String url = server.getUrl();
             if (rec.spec.getRewrite() != null && rec.spec.getRewrite().basePath != null) {

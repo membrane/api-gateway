@@ -1,5 +1,11 @@
 # Membrane Roadmap
 
+# YAML Support
+
+- Name from metadata/name or spec/name?
+- Correct YAML example on github README
+- Rename in apis.yaml
+
 # 7.0.0
 
 - Remove WADLInterceptor

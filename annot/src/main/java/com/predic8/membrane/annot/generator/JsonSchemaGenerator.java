@@ -25,6 +25,8 @@ import javax.tools.*;
 import java.io.*;
 import java.util.*;
 
+import static javax.tools.StandardLocation.CLASS_OUTPUT;
+
 public class JsonSchemaGenerator extends AbstractK8sGenerator {
 
     public JsonSchemaGenerator(ProcessingEnvironment processingEnv) {
@@ -32,7 +34,7 @@ public class JsonSchemaGenerator extends AbstractK8sGenerator {
     }
 
     private boolean flowDefCreated = false;
-    Schema schema = new Schema("membrane");
+    private Schema schema = new Schema("membrane");
 
     private static final String[] excludeFromFlow = {
             "httpClient",
@@ -49,7 +51,6 @@ public class JsonSchemaGenerator extends AbstractK8sGenerator {
             "dispatching",
             "groovyTemplate"
     };
-
 
     public void write(Model m) throws IOException {
         for (MainInfo main : m.getMains()) {
@@ -70,24 +71,16 @@ public class JsonSchemaGenerator extends AbstractK8sGenerator {
                 );
             }
 
-            SchemaObject parser = new SchemaObject(elementInfo.getXSDTypeName(m));
-            parser.addAttribute("type", elementInfo.getAnnotation().noEnvelope() ? "array" : "object");
-            parser.addAttribute("additionalProperties", false);
-            //      parser.addAttribute("description", getDescriptionAsText(elementInfo));
-            //       parser.addAttribute("x-intellij-html-description", getDescriptionAsHtml(elementInfo));
-            collectProperties(m, main, elementInfo, parser);
+            SchemaObject parser = createParser(m, main, elementInfo);
 
+            // Only generate JSON for api
             if (elementInfo.getAnnotation().topLevel() && "com.predic8.membrane.core.openapi.serviceproxy.APIProxy".equals(elementInfo.getElement().getQualifiedName().toString())) {
-
                 SchemaObject envelope = createEnvelopeSchema(m, elementInfo, parser);
-
                 schema.addDefinition(envelope);
-
                 oneOfArray.add(new RefObj("#/$defs/" + envelope.getName()));
             }
 
             schema.addDefinition(parser);
-
         }
 
         // Temporary fallback to 'anyOf' since several YAMLs lack a 'kind' field.
@@ -96,6 +89,16 @@ public class JsonSchemaGenerator extends AbstractK8sGenerator {
         schema.addAttribute("oneOf", oneOfArray);
 
         writeSchema(main, schema);
+    }
+
+    private SchemaObject createParser(Model m, MainInfo main, ElementInfo elementInfo) {
+        SchemaObject parser = new SchemaObject(elementInfo.getXSDTypeName(m));
+        parser.addAttribute("type", elementInfo.getAnnotation().noEnvelope() ? "array" : "object");
+        parser.addAttribute("additionalProperties", false);
+        //      parser.addAttribute("description", getDescriptionAsText(elementInfo));
+        //       parser.addAttribute("x-intellij-html-description", getDescriptionAsHtml(elementInfo));
+        collectProperties(m, main, elementInfo, parser);
+        return parser;
     }
 
     private static SchemaObject createEnvelopeSchema(Model m, ElementInfo elementInfo, SchemaObject parser) {
@@ -138,28 +141,17 @@ public class JsonSchemaGenerator extends AbstractK8sGenerator {
                 .findFirst().orElse("");
     }
 
-    private String getDescriptionAsText(AbstractJavadocedInfo elementInfo) {
-        return escapeJsonContent(getDescriptionContent(elementInfo).replaceAll("<[^>]+>", "").replaceAll("\\s+", " ").trim());
-    }
-
-    private String getDescriptionAsHtml(AbstractJavadocedInfo elementInfo) {
-        return escapeJsonContent(getDescriptionContent(elementInfo).replaceAll("\\s+", " ").trim());
-    }
-
-
     private FileObject createFile(MainInfo main) throws IOException {
         List<Element> sources = new ArrayList<>(main.getInterceptorElements());
         sources.add(main.getElement());
-
         return processingEnv.getFiler()
                 .createResource(
-                        StandardLocation.CLASS_OUTPUT,
+                        CLASS_OUTPUT,
                         "com.predic8.membrane.core.config.json",
                         "membrane.schema.json",
                         sources.toArray(new Element[0])
                 );
     }
-
 
     private void collectAttributes(ElementInfo i, ISchema so) {
         i.getAis().stream()
@@ -202,7 +194,7 @@ public class JsonSchemaGenerator extends AbstractK8sGenerator {
                     for (ElementInfo ei : main.getChildElementDeclarations().get(cei.getTypeDeclaration()).getElementInfo()) {
                         if (!filter(cei.getPropertyName(), ei.getAnnotation().name()))
                             continue;
-                        SchemaObject sop = new SchemaObject(null);
+                        var sop = new SchemaObject(null);
                         sop.addAttribute("type", "object");
                         sop.addAttribute("additionalProperties", false);
                         SchemaObject prop = new SchemaObject(ei.getAnnotation().name());
@@ -211,30 +203,17 @@ public class JsonSchemaGenerator extends AbstractK8sGenerator {
                         sos.add(sop);
                     }
                     processList(i, so, cei, sos);
-                    return;
+                    continue;
                 }
                 parent2 = processList(i, so, cei, null);
             } else {
-                if (cei.getAnnotation().allowForeign())
-                    parent2.setAdditionalProperties(true);
+                if (cei.getAnnotation().allowForeign()) {
+                    var ref = new SchemaObject("$ref");
+                    ref.addAttribute("type", "string");
+                    parent2.addProperty(ref);
+                }
             }
-
             addChildsAsProperties(m, main, cei, parent2);
-            
-            
-
-//            for (ElementInfo ei : main.getChildElementDeclarations().get(cei.getTypeDeclaration()).getElementInfo()) {
-//
-//            }
-
-            if ("target".equals(cei.getPropertyName())) {
-                System.out.println("m2 = " + main.getChildElementDeclarations().get(cei.getTypeDeclaration()).getElementInfo());
-                System.out.println("cei.getEi().getChildElementSpecs() = " + cei.getEi().getChildElementSpecs());
-                
-                System.out.println("cei = " + cei);
-                System.out.println("parent2 = " + parent2);
-                System.out.println("=====#");
-            }
         }
     }
 
@@ -243,32 +222,10 @@ public class JsonSchemaGenerator extends AbstractK8sGenerator {
         SchemaObject items = new SchemaObject("items");
 
         if ("flow".equals(cei.getPropertyName())) {
-            if (!flowDefCreated) {
-                SchemaObject sop1 = new SchemaObject(cei.getPropertyName());
-                sop1.addAttribute("type", "array");
-
-                List<SchemaObject> oneOfs = new ArrayList<>();
-                SchemaObject annonym = new SchemaObject(null);
-                annonym.addAttribute("type", "object");
-                annonym.setAdditionalProperties(false);
-                oneOfs.addAll(sos);
-
-                SchemaObject oF = new SchemaObject("items");
-                oF.addAttribute("anyOf", oneOfs);
-
-                sop1.addAttribute("items", oF);
-                schema.addDefinition(sop1);
-                flowDefCreated = true;
-                return oF;
-            }
-            SchemaObject flow = new SchemaObject("flow");
-            flow.addAttribute("$ref", "#/$defs/flow");
-            so.addProperty(flow);
+            SchemaObject oF = processFlowElement(so, cei, sos);
+            if (oF != null) return oF;
             return items;
         }
-
-
-        ISchema parent2;
 
         items.addAttribute("type", "object");
         items.addAttribute("additionalProperties", cei.getAnnotation().allowForeign());
@@ -280,8 +237,29 @@ public class JsonSchemaGenerator extends AbstractK8sGenerator {
             so.addProperty(sop);
         }
 
-        parent2 = items;
-        return parent2;
+        return items;
+    }
+
+    private SchemaObject processFlowElement(ISchema so, ChildElementInfo cei, ArrayList<SchemaObject> sos) {
+        if (!flowDefCreated) {
+            SchemaObject sop1 = new SchemaObject(cei.getPropertyName());
+            sop1.addAttribute("type", "array");
+
+            var oneOfs = new ArrayList<SchemaObject>();
+            oneOfs.addAll(sos);
+
+            var oF = new SchemaObject("items");
+            oF.addAttribute("anyOf", oneOfs);
+
+            sop1.addAttribute("items", oF);
+            schema.addDefinition(sop1);
+            flowDefCreated = true;
+            return oF;
+        }
+        SchemaObject flow = new SchemaObject("flow");
+        flow.addAttribute("$ref", "#/$defs/flow");
+        so.addProperty(flow);
+        return null;
     }
 
     private static void addChildsAsProperties(Model m, MainInfo main, ChildElementInfo cei, ISchema parent2) {
@@ -328,34 +306,33 @@ public class JsonSchemaGenerator extends AbstractK8sGenerator {
     private static String escapeJsonContent(String s) {
         StringBuilder sb = new StringBuilder();
         for (char c : s.toCharArray()) {
-            switch (c) {
-                case '"':
-                    sb.append("\\\"");
-                    break;
-                case '\\':
-                    sb.append("\\\\");
-                    break;
-                case '\b':
-                    sb.append("\\b");
-                    break;
-                case '\f':
-                    sb.append("\\f");
-                    break;
-                case '\n':
-                    sb.append("\\n");
-                    break;
-                case '\r':
-                    sb.append("\\r");
-                    break;
-                case '\t':
-                    sb.append("\\t");
-                    break;
-                default:
-                    if (c < 0x20) sb.append(String.format("\\u%04x", (int) c));
-                    else sb.append(c);
-            }
+            sb.append(escape(c));
         }
         return sb.toString();
+    }
+
+    public static String escape(char c) {
+        return switch (c) {
+            case '"' -> "\\\"";
+            case '\\' -> "\\\\";
+            case '\b' -> "\\b";
+            case '\f'-> "\\f";
+            case '\n' -> "\\n";
+            case '\r' -> "\\r";
+            case '\t' -> "\\t";
+            default -> {
+                if (c < 0x20) yield String.format("\\u%04x", (int) c);
+                else yield String.valueOf(c);
+            }
+        };
+    }
+
+    private String getDescriptionAsText(AbstractJavadocedInfo elementInfo) {
+        return escapeJsonContent(getDescriptionContent(elementInfo).replaceAll("<[^>]+>", "").replaceAll("\\s+", " ").trim());
+    }
+
+    private String getDescriptionAsHtml(AbstractJavadocedInfo elementInfo) {
+        return escapeJsonContent(getDescriptionContent(elementInfo).replaceAll("\\s+", " ").trim());
     }
 
 }

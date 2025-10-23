@@ -90,7 +90,7 @@ public class K8sJsonSchemaGenerator extends AbstractK8sGenerator {
     }
 
     private void collectDefinitions(Model m, MainInfo main, ElementInfo i, Schema schema) {
-        Map<String, ElementInfo> all = new HashMap<>();
+        Map<String, ElementInfo> all = new LinkedHashMap<>();
 
         Stack<ElementInfo> stack = new Stack<>();
         stack.push(i);

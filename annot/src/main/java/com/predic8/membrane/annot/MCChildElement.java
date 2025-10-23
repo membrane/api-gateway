@@ -21,6 +21,14 @@ import java.lang.annotation.Target;
 @Target(ElementType.METHOD)
 @Retention(RetentionPolicy.RUNTIME)
 public @interface MCChildElement {
+
+    /**
+     * Order of the child elements. Must be unique. Lower values come first.
+     */
 	int order() default 0;
+
+    /**
+     * Allows the child to come from a schema other than Membrane core. Used for spring beans e.g. ref to ssl bean
+     */
 	boolean allowForeign() default false;
 }
