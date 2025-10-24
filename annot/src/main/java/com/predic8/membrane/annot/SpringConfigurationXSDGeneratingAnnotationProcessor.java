@@ -21,16 +21,13 @@ import javax.annotation.processing.*;
 import javax.lang.model.*;
 import javax.lang.model.element.*;
 import javax.lang.model.type.*;
-import javax.lang.model.util.Elements;
-import javax.lang.model.util.Types;
 import javax.tools.Diagnostic.*;
 import javax.tools.*;
 import java.io.*;
 import java.lang.annotation.*;
 import java.util.*;
-import java.util.function.Function;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
+import java.util.function.*;
+import java.util.stream.*;
 
 import static javax.tools.StandardLocation.*;
 
@@ -159,8 +156,6 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
 		return result;
 	}
 
-	boolean done;
-
 	@Override
 	public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
 		// An instance is create per compiler call and not kept for the next incremental compilation.
@@ -217,7 +212,7 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
 						throw new ProcessingException("Duplicate element id \"" + ii.getId() + "\". Please assign one using @MCElement(id=\"...\").", e, main.getIds().get(ii.getId()).getElement());
 					main.getIds().put(ii.getId(), ii);
 
-					scan(m, main, ii);
+					scan(main, ii);
 
                     if (ii.getAnnotation().noEnvelope()) {
                         if (ii.getAnnotation().topLevel())
@@ -374,7 +369,7 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
         var groups = new ArrayList<NameGroup>();
 
         for (ChildElementInfo cei : ii.getChildElementSpecs()) {
-            List<String> names = new ArrayList<>();
+            var names = new ArrayList<String>();
             if (cei.isList()) {
                 // e.g. api.interceptors
                 names.add(cei.getPropertyName());
@@ -416,14 +411,14 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
 
     private static final String REQUIRED = "com.predic8.membrane.annot.Required";
 
-	private void scan(Model m, MainInfo main, ElementInfo ii) {
-		scan(m, main, ii, ii.getElement());
+	private void scan(MainInfo main, ElementInfo ii) {
+		scan(main, ii, ii.getElement());
 	}
 
-	private void scan(Model m, MainInfo main, ElementInfo ii, TypeElement te) {
+	private void scan(MainInfo main, ElementInfo ii, TypeElement te) {
 		TypeMirror superclass = te.getSuperclass();
 		if (superclass instanceof DeclaredType)
-			scan(m, main, ii, (TypeElement) ((DeclaredType)superclass).asElement());
+			scan(main, ii, (TypeElement) ((DeclaredType)superclass).asElement());
 
 		for (Element e2 : te.getEnclosedElements()) {
 			MCAttribute a = e2.getAnnotation(MCAttribute.class);

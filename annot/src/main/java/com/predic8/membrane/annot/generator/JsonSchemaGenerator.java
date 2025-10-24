@@ -13,45 +13,64 @@
    limitations under the License. */
 package com.predic8.membrane.annot.generator;
 
-import com.predic8.membrane.annot.ProcessingException;
-import com.predic8.membrane.annot.generator.kubernetes.AbstractK8sGenerator;
-import com.predic8.membrane.annot.generator.kubernetes.model.ISchema;
-import com.predic8.membrane.annot.generator.kubernetes.model.RefObj;
-import com.predic8.membrane.annot.generator.kubernetes.model.Schema;
-import com.predic8.membrane.annot.generator.kubernetes.model.SchemaObject;
+import com.predic8.membrane.annot.*;
+import com.predic8.membrane.annot.generator.kubernetes.*;
+import com.predic8.membrane.annot.generator.kubernetes.model.*;
 import com.predic8.membrane.annot.model.*;
-import com.predic8.membrane.annot.model.doc.Doc;
+import com.predic8.membrane.annot.model.doc.*;
 
-import javax.annotation.processing.ProcessingEnvironment;
-import javax.lang.model.element.Element;
-import javax.tools.Diagnostic;
-import javax.tools.FileObject;
-import javax.tools.StandardLocation;
-import java.io.BufferedWriter;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.stream.Collectors;
+import javax.annotation.processing.*;
+import javax.lang.model.element.*;
+import javax.tools.*;
+import java.io.*;
+import java.util.*;
 
+import static com.predic8.membrane.annot.generator.kubernetes.model.SchemaObject.string;
+import static javax.tools.StandardLocation.*;
+
+/**
+ * TODOs:
+ * - A required property with a base type needs all the subtypes to be present in the schema. See CacheParser
+ * - ports are strings
+ */
 public class JsonSchemaGenerator extends AbstractK8sGenerator {
+
+    private Map<String,Boolean> topLevelAdded = new HashMap<>();
 
     public JsonSchemaGenerator(ProcessingEnvironment processingEnv) {
         super(processingEnv);
     }
 
-    public void write(Model m) {
-        try {
-            for (MainInfo main : m.getMains()) {
-                assemble(m, main);
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
+    private boolean flowDefCreated = false;
+    private Schema schema;
+
+    private static final Set<String> excludeFromFlow = Set.of(
+            "httpClient",
+            "ruleMatching",
+            "wadlRewriter",
+            "global",
+            "exchangeStore",
+            "accountRegistration",
+            "userFeature",
+            "tcp",
+            "wsaEndpointRewriter",
+            "flowInitiator",
+            "kubernetesValidation",
+            "dispatching",
+            "groovyTemplate",
+            "adminApi"
+    );
+
+    public void write(Model m) throws IOException {
+        for (MainInfo main : m.getMains()) {
+            assemble(m, main);
         }
     }
 
     private void assemble(Model m, MainInfo main) throws IOException {
-        Schema schema = new Schema("membrane");
-        List<RefObj> oneOfArray = new ArrayList<>();
+        // Reset so multiple calls would be possible
+        flowDefCreated = false;
+        schema = new Schema("membrane");
 
         for (ElementInfo elementInfo : main.getElements().values()) {
 
@@ -62,52 +81,42 @@ public class JsonSchemaGenerator extends AbstractK8sGenerator {
                 );
             }
 
-            SchemaObject parser = new SchemaObject(elementInfo.getXSDTypeName(m));
-            parser.addAttribute("type", elementInfo.getAnnotation().noEnvelope() ? "array" : "object");
-            parser.addAttribute("additionalProperties", elementInfo.getOai() != null);
-            parser.addAttribute("description", getDescriptionAsText(elementInfo));
-            parser.addAttribute("x-intellij-html-description", getDescriptionAsHtml(elementInfo));
-            collectProperties(m, main, elementInfo, parser);
-
-            if (elementInfo.getAnnotation().topLevel()) {
-
-                SchemaObject envelope = new SchemaObject(elementInfo.getXSDTypeName(m).replaceFirst("Parser$", "Envelope"));
-
-                envelope.addAttribute("additionalProperties", false);
-                envelope.addAttribute("required", List.of("\"spec\""));
-                envelope.addProperty(
-                        new SchemaObject("apiVersion") {{
-                            addAttribute("type", "string");
-                        }});
-                envelope.addProperty(new SchemaObject("kind") {{
-                    addAttribute("type", "string");
-                    addAttribute("enum", List.of("\"" + elementInfo.getAnnotation().name() + "\""));
-                }});
-                envelope.addProperty(new SchemaObject("metadata") {{
-                    addAttribute("type", "object");
-                }});
-                envelope.addProperty(new SchemaObject("spec") {{
-                    addAttribute("$ref", "#/definitions/" + parser.getName());
-                }});
-
-                schema.addDefinition(envelope);
-
-                oneOfArray.add(new RefObj("#/definitions/" + envelope.getName()));
-            }
+            SchemaObject parser = createParser(m, main, elementInfo);
 
             schema.addDefinition(parser);
+        }
+        schema.addProperty(string("kind").enumeration(List.of("api")));
+        schema.addProperty(new SchemaObject("spec").ref("#/$defs/com.predic8.membrane.core.config.spring.ApiParser"));
+        schema.required(List.of("\"spec\""));
 
+        writeSchema(main, schema);
+    }
+
+    private SchemaObject createParser(Model m, MainInfo main, ElementInfo elementInfo) {
+        SchemaObject parser = new SchemaObject(elementInfo.getXSDTypeName(m));
+
+        // e.g. to prevent a request from needing a flow child noEnvelope=true is used
+        if (elementInfo.getAnnotation().noEnvelope()) {
+            // With noEnvelope=true, there should be exactly one child element
+            var childName = elementInfo.getChildElementSpecs().getFirst().getPropertyName();
+            parser.ref("#/$defs/%sParser".formatted(childName));
+
+            if (!topLevelAdded.containsKey(childName) && !"flow".equals(childName)) {
+                SchemaArray array = new SchemaArray(childName + "Parser");
+                collectChildElements(m, main, elementInfo.getChildElementSpecs().getFirst().getEi(), array);
+                schema.addDefinition(array);
+                topLevelAdded.put(childName, true);
+            }
+
+            return parser;
+        } else {
+            parser.type("object").additionalProperties( false);
         }
 
-        // Temporary fallback to 'anyOf' since several YAMLs lack a 'kind' field.
-        // 'anyOf' allows multiple matching schemas and may hide config errors that 'oneOf' would detect.
-        // TODO: Revert to 'oneOf' once missing 'kind' cases are resolved.
-        schema.addAttribute("anyOf", oneOfArray);
-
-        FileObject fo = createFile(main);
-        try (BufferedWriter w = new BufferedWriter(fo.openWriter())) {
-            w.write(schema.toString());
-        }
+        //      parser.addAttribute("description", getDescriptionAsText(elementInfo));
+        //       parser.addAttribute("x-intellij-html-description", getDescriptionAsHtml(elementInfo));
+        collectProperties(m, main, elementInfo, parser);
+        return parser;
     }
 
     private String getDescriptionContent(AbstractJavadocedInfo elementInfo) {
@@ -121,56 +130,26 @@ public class JsonSchemaGenerator extends AbstractK8sGenerator {
                 .findFirst().orElse("");
     }
 
-    private String getDescriptionAsText(AbstractJavadocedInfo elementInfo) {
-        return escapeJsonContent(getDescriptionContent(elementInfo).replaceAll("<[^>]+>", "").replaceAll("\\s+", " ").trim());
-    }
-
-    private String getDescriptionAsHtml(AbstractJavadocedInfo elementInfo) {
-        return escapeJsonContent(getDescriptionContent(elementInfo).replaceAll("\\s+", " ").trim());
-    }
-
-    private static String escapeJsonContent(String s) {
-        StringBuilder sb = new StringBuilder();
-        for (char c : s.toCharArray()) {
-            switch (c) {
-                case '"':  sb.append("\\\""); break;
-                case '\\': sb.append("\\\\"); break;
-                case '\b': sb.append("\\b");  break;
-                case '\f': sb.append("\\f");  break;
-                case '\n': sb.append("\\n");  break;
-                case '\r': sb.append("\\r");  break;
-                case '\t': sb.append("\\t");  break;
-                default:
-                    if (c < 0x20) sb.append(String.format("\\u%04x",(int)c));
-                    else          sb.append(c);
-            }
-        }
-        return sb.toString();
-    }
-
-
     private FileObject createFile(MainInfo main) throws IOException {
         List<Element> sources = new ArrayList<>(main.getInterceptorElements());
         sources.add(main.getElement());
-
         return processingEnv.getFiler()
                 .createResource(
-                        StandardLocation.CLASS_OUTPUT,
+                        CLASS_OUTPUT,
                         "com.predic8.membrane.core.config.json",
                         "membrane.schema.json",
                         sources.toArray(new Element[0])
                 );
     }
 
-
-    private void collectAttributes(ElementInfo i, ISchema so) {
+    private void collectAttributes(ElementInfo i, SchemaObject so) {
         i.getAis().stream()
                 .filter(ai -> !ai.getXMLName().equals("id"))
                 .forEach(ai -> {
                     SchemaObject sop = new SchemaObject(ai.getXMLName());
-                    sop.addAttribute("description", getDescriptionAsText(ai));
-                    sop.addAttribute("x-intellij-html-description", getDescriptionAsHtml(ai));
-                    sop.addAttribute("type", ai.getSchemaType(processingEnv.getTypeUtils()));
+                    //             sop.addAttribute("description", getDescriptionAsText(ai));
+                    //             sop.addAttribute("x-intellij-html-description", getDescriptionAsHtml(ai));
+                    sop.type(ai.getSchemaType(processingEnv.getTypeUtils()));
                     sop.setRequired(ai.isRequired());
                     so.addProperty(sop);
                 });
@@ -182,61 +161,154 @@ public class JsonSchemaGenerator extends AbstractK8sGenerator {
         collectChildElements(m, main, i, schema);
     }
 
-    private void collectTextContent(ElementInfo i, ISchema so) {
+    private void collectTextContent(ElementInfo i, SchemaObject so) {
         if (i.getTci() == null)
             return;
 
-        SchemaObject sop = new SchemaObject(i.getTci().getPropertyName());
-        sop.addAttribute("description", getDescriptionAsText(i));
-        sop.addAttribute("x-intellij-html-description", getDescriptionAsHtml(i));
-        sop.addAttribute("type", "string");
+        SchemaObject sop = string(i.getTci().getPropertyName());
+        //       sop.addAttribute("description", getDescriptionAsText(i));
+        //       sop.addAttribute("x-intellij-html-description", getDescriptionAsHtml(i));
         so.addProperty(sop);
     }
 
-    private void collectChildElements(Model m, MainInfo main, ElementInfo i, ISchema so) {
+    private void collectChildElements(Model m, MainInfo main, ElementInfo i, AbstractSchema so) {
         for (ChildElementInfo cei : i.getChildElementSpecs()) {
-            boolean isList = cei.isList();
 
-            ISchema parent2 = so;
+            AbstractSchema parent2 = so;
 
-            if (isList) {
-                SchemaObject items = new SchemaObject("items");
-                items.addAttribute("type", "object");
-                items.addAttribute("additionalProperties", cei.getAnnotation().allowForeign());
+            if (cei.isList()) {
+                if ("flow".equals(cei.getPropertyName())) {
+                    var sos = new ArrayList<SchemaObject>();
+                    for (ElementInfo ei : main.getChildElementDeclarations().get(cei.getTypeDeclaration()).getElementInfo()) {
+                        if (!filter(cei.getPropertyName(), ei.getAnnotation().name()))
+                            continue;
+                        SchemaObject s = new SchemaObject(null)
+                                .type( "object")
+                                .additionalProperties(false);
 
-                if (i.getAnnotation().noEnvelope()) {
-                    so.addAttribute("items", items);
-                } else {
-                    SchemaObject sop = new SchemaObject(cei.getPropertyName());
-                    sop.setRequired(cei.isRequired());
-                    sop.addAttribute("description", getDescriptionAsText(cei));
-                    sop.addAttribute("x-intellij-html-description", getDescriptionAsHtml(cei));
-                    sop.addAttribute("type", "array");
-                    sop.addAttribute("additionalItems", false);
-                    sop.addAttribute("items", items);
-
-                    so.addProperty(sop);
+                        s.addProperty(new SchemaObject(ei.getAnnotation().name()).ref("#/$defs/" + ei.getXSDTypeName(m)));
+                        sos.add(s);
+                    }
+                    processList(i, so, cei, sos);
+                    continue;
                 }
-
-                parent2 = items;
+                parent2 = processList(i, so, cei, null);
             } else {
-                if (cei.getAnnotation().allowForeign())
-                    parent2.setAdditionalProperties(true);
+                // Check if we need a $ref or if it is allowed everywhere
+                if (cei.getAnnotation().allowForeign()) {
+                    // parent2.addProperty(new SchemaObject("$ref").attribute("type", "string"));
+                }
             }
+            addChildsAsProperties(m, main, cei, (SchemaObject) parent2);
+        }
+    }
 
-            for (ElementInfo ei : main.getChildElementDeclarations().get(cei.getTypeDeclaration()).getElementInfo()) {
-                SchemaObject sop = new SchemaObject(ei.getAnnotation().name());
-                sop.addAttribute("description", getDescriptionAsText(ei));
-                sop.addAttribute("x-intellij-html-description", getDescriptionAsHtml(ei));
-                sop.setRequired(cei.isRequired());
-                sop.addAttribute("$ref", "#/definitions/" + ei.getXSDTypeName(m));
-                parent2.addProperty(sop);
+    private AbstractSchema processList(ElementInfo i, AbstractSchema so, ChildElementInfo cei, ArrayList<SchemaObject> sos) {
+
+        SchemaObject items = new SchemaObject("items");
+
+        if ("flow".equals(cei.getPropertyName())) {
+            processFlowElement((SchemaObject) so, sos);
+            return items;
+        }
+
+        items.type("object").additionalProperties(cei.getAnnotation().allowForeign());
+
+        if (i.getAnnotation().noEnvelope() && so instanceof SchemaArray sa) {
+            sa.items(items);
+        } else {
+            if (so instanceof SchemaObject sObj) {
+                sObj.addProperty(createFromChild(cei, items));
             }
         }
+
+        return items;
+    }
+
+    private void processFlowElement(SchemaObject so, ArrayList<SchemaObject> sos) {
+        if (!flowDefCreated) {
+            SchemaArray flow = new SchemaArray("flowParser");
+            var items = new SchemaObject("items")
+                    .attribute("anyOf", new ArrayList<>(sos));
+            flow.items(items);
+            schema.addDefinition(flow);
+            flowDefCreated = true;
+        }
+        so.addProperty(new SchemaObject("flow").ref("#/$defs/flowParser"));
+    }
+
+    private static void addChildsAsProperties(Model m, MainInfo main, ChildElementInfo cei, SchemaObject parent2) {
+        for (ElementInfo ei : getChildElementDeclarations(main).get(cei.getTypeDeclaration()).getElementInfo()) {
+            SchemaObject anno = new SchemaObject(ei.getAnnotation().name());
+            //       sop.addAttribute("description", getDescriptionAsText(ei));
+            //        sop.addAttribute("x-intellij-html-description", getDescriptionAsHtml(ei));
+            anno.setRequired(cei.isRequired());
+            anno.ref("#/$defs/" + ei.getXSDTypeName(m));
+            parent2.addProperty(anno);
+        }
+    }
+
+    private static Map<TypeElement, ChildElementDeclarationInfo> getChildElementDeclarations(MainInfo main) {
+        return main.getChildElementDeclarations();
+    }
+
+    private static boolean filter(String objectName, String propertyName) {
+        if (!objectName.equals("flow"))
+            return true;
+        return !excludeFromFlow.contains(propertyName);
+    }
+
+    private SchemaArray createFromChild(ChildElementInfo cei, SchemaObject items) {
+        SchemaArray prop = new SchemaArray(cei.getPropertyName()).items(items);
+        prop.setRequired(cei.isRequired());
+        //     sop.addAttribute("description", getDescriptionAsText(cei));
+        //       sop.addAttribute("x-intellij-html-description", getDescriptionAsHtml(cei));
+        //   sop.addAttribute("additionalItems", false); // Not 2020-12
+        return prop;
     }
 
     @Override
     protected String fileName() {
         return "";
+    }
+
+    private static String escapeJsonContent(String s) {
+        StringBuilder sb = new StringBuilder();
+        for (char c : s.toCharArray()) {
+            sb.append(escape(c));
+        }
+        return sb.toString();
+    }
+
+    public static String escape(char c) {
+        return switch (c) {
+            case '"' -> "\\\"";
+            case '\\' -> "\\\\";
+            case '\b' -> "\\b";
+            case '\f' -> "\\f";
+            case '\n' -> "\\n";
+            case '\r' -> "\\r";
+            case '\t' -> "\\t";
+            default -> {
+                if (c < 0x20) yield String.format("\\u%04x", (int) c);
+                else yield String.valueOf(c);
+            }
+        };
+    }
+
+    private void writeSchema(MainInfo main, Schema schema) throws IOException {
+        try (BufferedWriter w = new BufferedWriter(createFile(main).openWriter())) {
+            w.write(schema.toString());
+        }
+    }
+
+    // For description. Probably we'll include that later. (Temporarily deactivated!)
+    private String getDescriptionAsText(AbstractJavadocedInfo elementInfo) {
+        return escapeJsonContent(getDescriptionContent(elementInfo).replaceAll("<[^>]+>", "").replaceAll("\\s+", " ").trim());
+    }
+
+    // For description. Probably we'll include that later. (Temporarily deactivated!
+    private String getDescriptionAsHtml(AbstractJavadocedInfo elementInfo) {
+        return escapeJsonContent(getDescriptionContent(elementInfo).replaceAll("\\s+", " ").trim());
     }
 }

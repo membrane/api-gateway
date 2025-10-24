@@ -13,21 +13,17 @@
    limitations under the License. */
 package com.predic8.membrane.annot.generator.kubernetes;
 
-import com.predic8.membrane.annot.ProcessingException;
-import com.predic8.membrane.annot.generator.kubernetes.model.ISchema;
-import com.predic8.membrane.annot.generator.kubernetes.model.Schema;
-import com.predic8.membrane.annot.generator.kubernetes.model.SchemaObject;
+import com.predic8.membrane.annot.*;
+import com.predic8.membrane.annot.generator.kubernetes.model.*;
 import com.predic8.membrane.annot.model.*;
 
-import javax.annotation.processing.ProcessingEnvironment;
-import javax.tools.FileObject;
-import java.io.BufferedWriter;
-import java.io.IOException;
-import java.io.Writer;
+import javax.annotation.processing.*;
+import javax.tools.*;
+import java.io.*;
 import java.util.*;
 
 /**
- * Generates Json Schema draft 4 to validate kubernetetes CustomResourceDefinitions.
+ * Generates JSON Schema (draft 2019-09/2020-12) to validate Kubernetes CustomResourceDefinitions.
  */
 public class K8sJsonSchemaGenerator extends AbstractK8sGenerator {
 
@@ -35,7 +31,7 @@ public class K8sJsonSchemaGenerator extends AbstractK8sGenerator {
         super(processingEnv);
     }
 
-    public void write(Model m) {
+    public void write(Model m) throws IOException {
         try {
             for (MainInfo main : m.getMains()) {
                 assemble(m, main);
@@ -56,7 +52,7 @@ public class K8sJsonSchemaGenerator extends AbstractK8sGenerator {
     }
 
     private void assembleBase(Model m, Writer w, MainInfo main, ElementInfo i) throws IOException {
-        if (i.getAnnotation().mixed() && i.getChildElementSpecs().size() > 0) {
+        if (i.getAnnotation().mixed() && !i.getChildElementSpecs().isEmpty()) {
             throw new ProcessingException(
                     "@MCElement(..., mixed=true) and @MCTextContent is not compatible with @MCChildElement.",
                     i.getElement()
@@ -72,7 +68,7 @@ public class K8sJsonSchemaGenerator extends AbstractK8sGenerator {
         w.append(schema.toString());
     }
 
-    private void collectAttributes(ElementInfo i, ISchema so) {
+    private void collectAttributes(ElementInfo i, SchemaObject so) {
         i.getAis().stream()
                 .filter(ai -> !ai.getXMLName().equals("id"))
                 .forEach(ai -> {
@@ -83,14 +79,14 @@ public class K8sJsonSchemaGenerator extends AbstractK8sGenerator {
                 });
     }
 
-    private void collectProperties(Model m, MainInfo main, ElementInfo i, ISchema schema) {
+    private void collectProperties(Model m, MainInfo main, ElementInfo i, SchemaObject schema) {
         collectAttributes(i, schema);
         collectTextContent(i, schema);
         collectChildElements(m, main, i, schema);
     }
 
     private void collectDefinitions(Model m, MainInfo main, ElementInfo i, Schema schema) {
-        Map<String, ElementInfo> all = new HashMap<>();
+        Map<String, ElementInfo> all = new LinkedHashMap<>();
 
         Stack<ElementInfo> stack = new Stack<>();
         stack.push(i);
@@ -120,7 +116,7 @@ public class K8sJsonSchemaGenerator extends AbstractK8sGenerator {
         }
     }
 
-    private void collectTextContent(ElementInfo i, ISchema so) {
+    private void collectTextContent(ElementInfo i, SchemaObject so) {
         if (i.getTci() == null)
             return;
 
@@ -129,11 +125,11 @@ public class K8sJsonSchemaGenerator extends AbstractK8sGenerator {
         so.addProperty(sop);
     }
 
-    private void collectChildElements(Model m, MainInfo main, ElementInfo i, ISchema so) {
+    private void collectChildElements(Model m, MainInfo main, ElementInfo i, SchemaObject so) {
         for (ChildElementInfo cei : i.getChildElementSpecs()) {
             boolean isList = cei.isList();
 
-            ISchema parent2 = so;
+            SchemaObject parent2 = so;
 
             if (isList) {
                 SchemaObject items = new SchemaObject("items");
@@ -162,7 +158,7 @@ public class K8sJsonSchemaGenerator extends AbstractK8sGenerator {
                 SchemaObject sop = new SchemaObject(ei.getAnnotation().name());
                 //sop.setRequired(cei.isRequired());
                 // TODO only one is required, not all
-                sop.addAttribute("$ref", "#/definitions/" + ei.getXSDTypeName(m));
+                sop.addAttribute("$ref", "#/$defs/" + ei.getXSDTypeName(m));
                 parent2.addProperty(sop);
             }
         }

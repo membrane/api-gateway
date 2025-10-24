@@ -78,21 +78,17 @@ public class SoapAndInternalProxyTest {
     }
 
     private Proxy createInternalProxy() {
-        InternalProxy internalProxy = new InternalProxy();
-        internalProxy.setName("int");
-        AbstractServiceProxy.Target target = new AbstractServiceProxy.Target();
-        internalProxy.getFlow().add(new SampleSoapServiceInterceptor());
-        target.setHost("localhost");
-        target.setPort(9501);
-
-        internalProxy.setTarget(target);
-        return internalProxy;
+        InternalProxy ip = new InternalProxy();
+        ip.setName("int");
+        ip.getFlow().add(new SampleSoapServiceInterceptor());
+        ip.setTarget(new Target("localhost",9501));
+        return ip;
     }
 
     private Proxy createServiceProxyWithWSDLInterceptors() {
         ServiceProxy sp = new ServiceProxy();
         sp.setPort(3047);
-        AbstractServiceProxy.Target target = new AbstractServiceProxy.Target();
+        Target target = new Target();
         target.setUrl("internal://int");
         sp.setTarget(target);
 

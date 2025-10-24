@@ -14,39 +14,47 @@
 package com.predic8.membrane.annot.generator.kubernetes.model;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
-import static com.predic8.membrane.annot.generator.kubernetes.model.SchemaUtils.printRequired;
+import static com.predic8.membrane.annot.generator.kubernetes.model.SchemaUtils.*;
+import static java.util.stream.Collectors.*;
 
-public class SchemaObject implements ISchema {
-
-    private final String name;
-    private boolean required;
+public class SchemaObject extends AbstractSchema<SchemaObject> {
 
     private String description;
 
-    // Properties to be copied 1:1 to the JSON schema, e.g. "type": "string"
-    private final Map<String, Object> attributes = new HashMap<>();
     // Java Properties (@MCAttributes, @MCChildElement)
-    private final List<SchemaObject> properties = new ArrayList<>();
+    protected final List<AbstractSchema> properties = new ArrayList<>();
+
+    public SchemaObject() {
+        super();
+    }
 
     public SchemaObject(String name) {
-        this.name = name;
+        super(name);
+    }
+
+    public static SchemaObject string(String name) {
+        return new SchemaObject(name).type("string");
     }
 
     @Override
     public String toString() {
-        return "\"" + name + "\": {" +
-                attributes.entrySet().stream()
-                        .map(SchemaUtils::entryToJson)
-                        .collect(Collectors.joining(",")) +
-                printProperties() +
-                "}"
-                ;
-    }
-
-    public String getName() {
-        return name;
+        StringBuilder sb = new StringBuilder();
+        if (name != null) {
+                sb.append("\"").append(name).append("\":");
+            }
+        sb.append("{");
+        String attrs = attributes.entrySet().stream()
+                                        .map(SchemaUtils::entryToJson)
+                                                          .collect(joining(","));
+        sb.append(attrs);
+        String props = printProperties();
+        if (!props.isEmpty()) {
+                if (!attrs.isEmpty()) sb.append(",");
+                sb.append(props);
+            }
+        sb.append("}");
+        return sb.toString();
     }
 
     public String getDescription() {
@@ -57,36 +65,44 @@ public class SchemaObject implements ISchema {
         this.description = description;
     }
 
-    private String printProperties() {
+    protected String printProperties() {
         if (properties.isEmpty())
             return "";
 
-        return ",\"properties\": {" +
-                properties.stream().map(SchemaObject::toString).collect(Collectors.joining(",")) +
-                "}" +
-                printRequired(properties)
-                ;
+        return """
+               "properties": {%s} %s""".formatted(getPropertiesJoined(),printRequired(properties));
+
     }
 
-    public boolean isRequired() {
-        return required;
+    private String getPropertiesJoined() {
+        return properties.stream().map(AbstractSchema::toString).collect(joining(","));
     }
 
-    public void setRequired(boolean required) {
-        this.required = required;
-    }
-
-    @Override
-    public void addProperty(SchemaObject so) {
+    public void addProperty(AbstractSchema so) {
         properties.add(so);
     }
 
-    public void addAttribute(String key, Object value) {
-        attributes.put(key, value);
+     public void setAdditionalProperties(boolean additionalProperties) {
+        addAttribute("additionalProperties", additionalProperties);
     }
 
-    @Override
-    public void setAdditionalProperties(boolean additionalProperties) {
-        addAttribute("additionalProperties", additionalProperties);
+    public SchemaObject additionalProperties(boolean b) {
+        addAttribute("additionalProperties", b);
+        return this;
+    }
+
+    public SchemaObject required(List<String> required) {
+        addAttribute("required", required);
+        return this;
+    }
+
+    public SchemaObject ref(String ref) {
+        addAttribute("$ref", ref);
+        return this;
+    }
+
+    public SchemaObject enumeration(List<String> enumeration) {
+        attribute("enum", enumeration);
+        return this;
     }
 }

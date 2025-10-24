@@ -114,8 +114,6 @@ public class Http2ExchangeHandler implements Runnable {
     private void process() throws Exception {
         try {
             invokeHandlers();
-
-            exchange.blockResponseIfNeeded();
         } catch (AbortException e) {
             log.debug("Aborted");
             exchange.finishExchange(true, e.getMessage());

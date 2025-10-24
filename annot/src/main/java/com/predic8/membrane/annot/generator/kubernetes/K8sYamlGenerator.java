@@ -44,7 +44,7 @@ public class K8sYamlGenerator extends AbstractK8sGenerator {
     }
 
     @Override
-    protected void write(Model m) {
+    protected void write(Model m) throws IOException {
         try {
             for (MainInfo main : m.getMains()) {
                 FileObject fo = createFileObject(main, fileName());

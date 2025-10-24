@@ -46,7 +46,7 @@ class AbstractServiceProxyTest extends AbstractTestWithRouter {
         proxy.setKey(new ServiceProxyKey(2000));
         proxy.getFlow().add(A);
 
-        AbstractServiceProxy.Target target = new AbstractServiceProxy.Target() {
+        var target = new Target() {
         };
         target.setMethod("POST");
         target.setHost("localhost");

@@ -57,7 +57,7 @@ public class ServiceProxyWSDLInterceptorsTest {
         publisher.setWsdl(getPathFromResource("validation/ArticleService.wsdl"));
         sp.getFlow().add(publisher);
 
-        sp.setTarget(new AbstractServiceProxy.Target("localhost", 8888));
+        sp.setTarget(new Target("localhost", 8888));
 
         router.add(sp);
         router.start();

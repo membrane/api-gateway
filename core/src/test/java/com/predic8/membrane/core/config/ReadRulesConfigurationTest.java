@@ -46,16 +46,6 @@ public class ReadRulesConfigurationTest {
 	}
 
 	@Test
-	void testProxyRuleBlockRequest() {
-		assertTrue(proxies.getFirst().isBlockRequest());
-	}
-
-	@Test
-	void testProxyRuleBlockResponse() {
-		assertFalse(proxies.getFirst().isBlockResponse());
-	}
-
-	@Test
 	void testServiceProxyListenPort() {
 		assertEquals(3000, proxies.get(1).getKey().getPort());
 	}
@@ -78,16 +68,6 @@ public class ReadRulesConfigurationTest {
 	@Test
 	void testTestServiceProxyDefaultHost() {
 		assertEquals("*", proxies.get(1).getKey().getHost());
-	}
-
-	@Test
-	void testServiceProxyBlockRequest() {
-		assertFalse(proxies.get(1).isBlockRequest());
-	}
-
-	@Test
-	void testServiceProxyBlockResponse() {
-		assertTrue(proxies.get(1).isBlockResponse());
 	}
 
 	@Test

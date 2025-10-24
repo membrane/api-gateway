@@ -79,12 +79,6 @@ public class HTTPClientInterceptor extends AbstractInterceptor {
 
     @Override
     public Outcome handleRequest(Exchange exc) {
-        try {
-            exc.blockRequestIfNeeded();
-        } catch (TerminateException e) {
-            log.error("Could not block request.", e);
-        }
-
         changeMethod(exc);
 
         try {
