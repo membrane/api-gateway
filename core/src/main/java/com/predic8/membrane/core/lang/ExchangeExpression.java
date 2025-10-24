@@ -48,7 +48,7 @@ public interface ExchangeExpression {
      */
     <T> T evaluate(Exchange exchange, Interceptor.Flow flow, Class<T> type) throws ExchangeExpressionException;
 
-    static ExchangeExpression newInstance(Router router, Language language, String expression) {
+    static ExchangeExpression expression(Router router, Language language, String expression) {
         return switch (language) {
             case GROOVY -> new GroovyExchangeExpression(router, expression);
             case SPEL -> new SpELExchangeExpression(expression,null);

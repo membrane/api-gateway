@@ -140,6 +140,6 @@ public class JsonpathExchangeExpression extends AbstractExchangeExpression {
     }
 
     private Object execute(Exchange exchange, Flow flow) throws IOException {
-        return JsonPath.read(om.readValue(exchange.getMessage(flow).getBodyAsStream(), Map.class), expression);
+        return JsonPath.read(om.readValue(exchange.getMessage(flow).getBodyAsStreamDecoded(), Object.class), expression);
     }
 }

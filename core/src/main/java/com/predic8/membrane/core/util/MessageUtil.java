@@ -36,36 +36,36 @@ public class MessageUtil {
 		saxParserFactory.setValidating(false);
 	}
 
-	public static InputStream getContentAsStream(Message res) throws IOException {
-		if (res.isGzip()) {
-			return new GZIPInputStream(res.getBodyAsStream());
+	public static InputStream getContentAsStream(Message msg) throws IOException {
+		if (msg.isGzip()) {
+			return new GZIPInputStream(msg.getBodyAsStream());
 		}
-		if (res.isDeflate()) {
-			return new ByteArrayInputStream(getDecompressedData(res.getBody().getContent()));
+		if (msg.isDeflate()) {
+			return new ByteArrayInputStream(getDecompressedData(msg.getBody().getContent()));
 		}
-		if (res.isBrotli()) {
-			return new BrotliInputStream(res.getBodyAsStream());
+		if (msg.isBrotli()) {
+			return new BrotliInputStream(msg.getBodyAsStream());
 		}
-		return res.getBodyAsStream();
+		return msg.getBodyAsStream();
 	}
 	
-	public static byte[] getContent(Message res) throws Exception {
-		if (res.isGzip()) {
-			try (InputStream lInputStream = res.getBodyAsStream();
+	public static byte[] getContent(Message msg) throws Exception {
+		if (msg.isGzip()) {
+			try (InputStream lInputStream = msg.getBodyAsStream();
 				 GZIPInputStream lGZIPInputStream = new GZIPInputStream(lInputStream)) {
                 return lGZIPInputStream.readAllBytes();
             }
 		}
-		if (res.isDeflate()) {
-			return getDecompressedData(res.getBody().getContent());
+		if (msg.isDeflate()) {
+			return getDecompressedData(msg.getBody().getContent());
 		}
-		if (res.isBrotli()) {
-			try (InputStream lInputStream = res.getBodyAsStream();
+		if (msg.isBrotli()) {
+			try (InputStream lInputStream = msg.getBodyAsStream();
 				 BrotliInputStream lBrotliInputStream = new BrotliInputStream(lInputStream)) {
 				return lBrotliInputStream.readAllBytes();
 			}
 		}
-		return res.getBody().getContent();
+		return msg.getBody().getContent();
 	}
 	
 	public static Source getSOAPBody(InputStream stream) {

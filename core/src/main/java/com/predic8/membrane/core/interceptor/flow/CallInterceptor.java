@@ -53,7 +53,7 @@ public class CallInterceptor extends AbstractExchangeExpressionInterceptor {
      * and are not added to the current message.
      */
     private static final List<String> REMOVE_HEADERS = List.of(
-            SERVER, TRANSFER_ENCODING, CONTENT_ENCODING
+            SERVER, CONTENT_ENCODING, TRANSFER_ENCODING
     );
 
     private String method = GET;
@@ -87,7 +87,11 @@ public class CallInterceptor extends AbstractExchangeExpressionInterceptor {
         }
 
         try {
-            exc.getRequest().setBodyContent(newExc.getResponse().getBody().getContent());
+            /**
+             * The content is copied from the response with decoding. The response headers transfer-encoding
+             * and content-encoding are removed by the setBodyContent method.
+             */
+            exc.getRequest().setBodyContent(newExc.getResponse().getBodyAsStreamDecoded().readAllBytes());
             copyHeadersFromResponseToRequest(newExc, exc);
             return CONTINUE;
         } catch (Exception e) {
