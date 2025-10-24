@@ -18,34 +18,18 @@ import java.util.stream.Collectors;
 
 import static com.predic8.membrane.annot.generator.kubernetes.model.SchemaUtils.printRequired;
 
-public class Schema implements ISchema {
+public class Schema extends SchemaObject {
 
     private final String name;
 
-    private final List<SchemaObject> definitions = new ArrayList<>();
-    private final List<SchemaObject> properties = new ArrayList<>();
-    private final Map<String, Object> attributes = new HashMap<>();
-    private boolean additionalProperties;
+    private final List<ISchema> definitions = new ArrayList<>();
 
     public Schema(String name) {
         this.name = name;
     }
 
-    public void setAdditionalProperties(boolean additionalProperties) {
-        this.additionalProperties = additionalProperties;
-    }
-
-    public void addDefinition(SchemaObject definition) {
+    public void addDefinition(ISchema definition) {
         definitions.add(definition);
-    }
-
-    public void addAttribute(String key, Object value) {
-        attributes.put(key, value);
-    }
-
-    @Override
-    public void addProperty(SchemaObject property) {
-        properties.add(property);
     }
 
     private String printDefinitions() {
@@ -58,19 +42,6 @@ public class Schema implements ISchema {
                 "}";
     }
 
-    private String printProperties() {
-        if (properties.isEmpty())
-            return "";
-
-        return ",\"properties\":{\"spec\":{\"type\":\"object\",\"additionalProperties\":"+additionalProperties+",\"properties\":{" +
-                properties.stream()
-                        .map(Objects::toString)
-                        .collect(Collectors.joining(",")) +
-                "}}}";
-    }
-
-
-
     @Override
     public String toString() {
         return "{" +
@@ -78,9 +49,10 @@ public class Schema implements ISchema {
                 "\"$schema\": \"https://json-schema.org/draft/2020-12/schema\"," +
                 "\"title\": \"" + name + "\"," +
                 "\"type\": \"object\"" +
-                printDefinitions() +
-                printProperties() +
-                printRequired(properties)
+                "," +
+               printProperties() +
+               printDefinitions() +
+               printRequired(properties)
                 + (!attributes.isEmpty() ? "," : "") +
                 attributes.entrySet().stream()
                         .map(SchemaUtils::entryToJson)

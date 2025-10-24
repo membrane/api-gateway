@@ -9,7 +9,7 @@
     - membrane-v1.json
     - v1.json
 - Name from metadata/name or spec/name?
-- Correct YAML example on github README
+- Correct YAML example on GitHub README
 - Rename in apis.yaml
 
 

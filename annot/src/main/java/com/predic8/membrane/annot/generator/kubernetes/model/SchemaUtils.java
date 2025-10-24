@@ -14,31 +14,50 @@
 
 package com.predic8.membrane.annot.generator.kubernetes.model;
 
+import com.fasterxml.jackson.core.*;
+import com.fasterxml.jackson.databind.*;
+import com.fasterxml.jackson.databind.module.*;
+
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import static java.util.stream.Collectors.joining;
+
 public class SchemaUtils {
+
+    private final static ObjectMapper om = new ObjectMapper();
+
+    static {
+        SimpleModule module = new SimpleModule();
+        module.addSerializer(RefObj.class, new RefObjSerializer());
+        om.registerModule(module);
+    }
 
     public static String entryToJson(Map.Entry<String, Object> entry) {
         if (entry.getValue() instanceof SchemaObject)
             return entry.getValue().toString();
-        if (entry.getValue() instanceof String) {
-            return "\"" + entry.getKey() + "\": \"" + entry.getValue() + "\"";
+
+        try {
+            if ("enum".equals(entry.getKey()) || entry.getValue() instanceof Boolean || entry.getValue() instanceof String) {
+                return "\"" + entry.getKey() + "\":" + om.writeValueAsString(entry.getValue());
+            }
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
         }
+        // List needs to serialized with toString may migrate later to proper serialization
         return "\"" + entry.getKey() + "\": " + entry.getValue();
     }
 
-    public static String printRequired(List<SchemaObject> properties) {
+    public static String printRequired(List<AbstractSchema> properties) {
         String req = properties.stream()
-                .filter(SchemaObject::isRequired)
+                .filter(AbstractSchema::isRequired)
                 .map(so -> "\"" + so.getName() + "\"")
-                .collect(Collectors.joining(","));
+                .collect(joining(","));
 
         if (req.isEmpty())
             return "";
 
         return ",\"required\":[" + req + "]";
     }
-
 }

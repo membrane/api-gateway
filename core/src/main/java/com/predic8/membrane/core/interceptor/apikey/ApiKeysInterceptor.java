@@ -14,6 +14,7 @@
 package com.predic8.membrane.core.interceptor.apikey;
 
 import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.config.spring.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.interceptor.apikey.extractors.*;
@@ -83,8 +84,17 @@ public class ApiKeysInterceptor extends AbstractInterceptor {
     @Override
     public void init() {
         super.init();
-        stores.addAll(router.getBeanFactory().getBeansOfType(ApiKeyStore.class).values());
+        // At the moment the beanFactory is only there when the Membrane configuration was read from XML
+        if (router.getBeanFactory() != null) {
+            stores.addAll(router.getBeanFactory().getBeansOfType(ApiKeyStore.class).values());
+        }
         stores.forEach(s -> s.init(router));
+
+        // Add the default extractor if none is configured
+        if (extractors.isEmpty()) {
+            extractors.add(new ApiKeyHeaderExtractor());
+        }
+
         extractors.forEach(e -> e.init(router));
     }
 

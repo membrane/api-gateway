@@ -27,7 +27,7 @@ import java.io.Writer;
 import java.util.*;
 
 /**
- * Generates Json Schema draft 4 to validate kubernetetes CustomResourceDefinitions.
+ * Generates JSON Schema (draft 2019-09/2020-12) to validate Kubernetes CustomResourceDefinitions.
  */
 public class K8sJsonSchemaGenerator extends AbstractK8sGenerator {
 
@@ -72,7 +72,7 @@ public class K8sJsonSchemaGenerator extends AbstractK8sGenerator {
         w.append(schema.toString());
     }
 
-    private void collectAttributes(ElementInfo i, ISchema so) {
+    private void collectAttributes(ElementInfo i, SchemaObject so) {
         i.getAis().stream()
                 .filter(ai -> !ai.getXMLName().equals("id"))
                 .forEach(ai -> {
@@ -83,7 +83,7 @@ public class K8sJsonSchemaGenerator extends AbstractK8sGenerator {
                 });
     }
 
-    private void collectProperties(Model m, MainInfo main, ElementInfo i, ISchema schema) {
+    private void collectProperties(Model m, MainInfo main, ElementInfo i, SchemaObject schema) {
         collectAttributes(i, schema);
         collectTextContent(i, schema);
         collectChildElements(m, main, i, schema);
@@ -120,7 +120,7 @@ public class K8sJsonSchemaGenerator extends AbstractK8sGenerator {
         }
     }
 
-    private void collectTextContent(ElementInfo i, ISchema so) {
+    private void collectTextContent(ElementInfo i, SchemaObject so) {
         if (i.getTci() == null)
             return;
 
@@ -129,11 +129,11 @@ public class K8sJsonSchemaGenerator extends AbstractK8sGenerator {
         so.addProperty(sop);
     }
 
-    private void collectChildElements(Model m, MainInfo main, ElementInfo i, ISchema so) {
+    private void collectChildElements(Model m, MainInfo main, ElementInfo i, SchemaObject so) {
         for (ChildElementInfo cei : i.getChildElementSpecs()) {
             boolean isList = cei.isList();
 
-            ISchema parent2 = so;
+            SchemaObject parent2 = so;
 
             if (isList) {
                 SchemaObject items = new SchemaObject("items");

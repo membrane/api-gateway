@@ -22,6 +22,10 @@ public class RefObj {
         this.path = path;
     }
 
+    public String getPath() {
+        return path;
+    }
+
     @Override
     public String toString() {
         return "{\"$ref\":\"" + path + "\"}";
