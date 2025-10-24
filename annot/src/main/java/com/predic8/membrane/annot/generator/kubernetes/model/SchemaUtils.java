@@ -18,11 +18,9 @@ import com.fasterxml.jackson.core.*;
 import com.fasterxml.jackson.databind.*;
 import com.fasterxml.jackson.databind.module.*;
 
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
+import java.util.*;
 
-import static java.util.stream.Collectors.joining;
+import static java.util.stream.Collectors.*;
 
 public class SchemaUtils {
 

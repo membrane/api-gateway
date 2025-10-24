@@ -1,7 +1,5 @@
 package com.predic8.membrane.annot.generator.kubernetes.model;
 
-import java.util.*;
-
 public class SchemaArray extends AbstractSchema<SchemaArray> {
 
     public SchemaArray() {

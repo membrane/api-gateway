@@ -91,7 +91,7 @@ public class SchemaObject extends AbstractSchema<SchemaObject> {
         return this;
     }
 
-    public SchemaObject required(List required) {
+    public SchemaObject required(List<String> required) {
         addAttribute("required", required);
         return this;
     }
@@ -101,7 +101,7 @@ public class SchemaObject extends AbstractSchema<SchemaObject> {
         return this;
     }
 
-    public SchemaObject enumeration(List enumeration) {
+    public SchemaObject enumeration(List<String> enumeration) {
         attribute("enum", enumeration);
         return this;
     }

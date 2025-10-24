@@ -13,17 +13,13 @@
    limitations under the License. */
 package com.predic8.membrane.annot.generator.kubernetes;
 
-import com.predic8.membrane.annot.ProcessingException;
-import com.predic8.membrane.annot.generator.kubernetes.model.ISchema;
-import com.predic8.membrane.annot.generator.kubernetes.model.Schema;
-import com.predic8.membrane.annot.generator.kubernetes.model.SchemaObject;
+import com.predic8.membrane.annot.*;
+import com.predic8.membrane.annot.generator.kubernetes.model.*;
 import com.predic8.membrane.annot.model.*;
 
-import javax.annotation.processing.ProcessingEnvironment;
-import javax.tools.FileObject;
-import java.io.BufferedWriter;
-import java.io.IOException;
-import java.io.Writer;
+import javax.annotation.processing.*;
+import javax.tools.*;
+import java.io.*;
 import java.util.*;
 
 /**

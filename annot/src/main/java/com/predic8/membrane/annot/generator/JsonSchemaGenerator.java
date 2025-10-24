@@ -98,12 +98,12 @@ public class JsonSchemaGenerator extends AbstractK8sGenerator {
         // e.g. to prevent a request from needing a flow child noEnvelope=true is used
         if (elementInfo.getAnnotation().noEnvelope()) {
             // With noEnvelope=true, there should be exactly one child element
-            var childName = elementInfo.getChildElementSpecs().get(0).getPropertyName();
+            var childName = elementInfo.getChildElementSpecs().getFirst().getPropertyName();
             parser.ref("#/$defs/%sParser".formatted(childName));
 
             if (!topLevelAdded.containsKey(childName) && !"flow".equals(childName)) {
                 SchemaArray array = new SchemaArray(childName + "Parser");
-                collectChildElements(m, main, elementInfo.getChildElementSpecs().get(0).getEi(), array);
+                collectChildElements(m, main, elementInfo.getChildElementSpecs().getFirst().getEi(), array);
                 schema.addDefinition(array);
                 topLevelAdded.put(childName, true);
             }
@@ -117,19 +117,6 @@ public class JsonSchemaGenerator extends AbstractK8sGenerator {
         //       parser.addAttribute("x-intellij-html-description", getDescriptionAsHtml(elementInfo));
         collectProperties(m, main, elementInfo, parser);
         return parser;
-    }
-
-    private static SchemaObject createEnvelopeSchema(Model m, ElementInfo elementInfo, SchemaObject parser) {
-        SchemaObject env = new SchemaObject(elementInfo.getXSDTypeName(m).replaceFirst("Parser$", "Envelope"));
-
-        env.type("object")
-            .additionalProperties(false)
-            .required(List.of("\"spec\"")); // TODO
-        env.addProperty( string("apiVersion"));
-        env.addProperty(string("kind").enumeration( List.of(List.of(elementInfo.getAnnotation().name())));
-        env.addProperty(new SchemaObject("metadata").type("object"));
-        env.addProperty(new SchemaObject("spec").ref( "#/$defs/" + parser.getName()));
-        return env;
     }
 
     private String getDescriptionContent(AbstractJavadocedInfo elementInfo) {
