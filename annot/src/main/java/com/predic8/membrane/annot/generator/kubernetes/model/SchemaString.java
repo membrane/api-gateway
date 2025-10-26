@@ -24,7 +24,7 @@ public class SchemaString extends SchemaObject {
         if (!enumeration.isEmpty()) {
             ArrayNode enumNode = jnf.arrayNode();
             enumeration.forEach(enumNode::add);
-            node.put("enum", enumNode);
+            node.set("enum", enumNode);
         }
         return node;
     }

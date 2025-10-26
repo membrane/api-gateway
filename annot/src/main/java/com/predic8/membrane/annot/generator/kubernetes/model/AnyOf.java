@@ -7,7 +7,7 @@ import java.util.*;
 
 public class AnyOf extends SchemaObject {
 
-    private List<SchemaObject> anyOfs;
+    private final List<SchemaObject> anyOfs;
 
     AnyOf(List<SchemaObject> anyOfs) {
         super(null);
@@ -16,9 +16,7 @@ public class AnyOf extends SchemaObject {
 
     @Override
     public ObjectNode json(ObjectNode node) {
-        ObjectNode json = jnf.objectNode();
-        json.put("anyOf", getAnyNode());
-        return json;
+        return jnf.objectNode().set("anyOf", getAnyNode());
     }
 
     private ArrayNode getAnyNode() {

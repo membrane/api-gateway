@@ -4,9 +4,7 @@ import com.fasterxml.jackson.databind.*;
 import com.fasterxml.jackson.databind.node.*;
 import org.junit.jupiter.api.*;
 
-import static com.predic8.membrane.annot.generator.kubernetes.model.SchemaFactory.object;
-import static com.predic8.membrane.annot.generator.kubernetes.model.SchemaFactory.string;
-import static com.predic8.membrane.annot.generator.kubernetes.model.SchemaObject.*;
+import static com.predic8.membrane.annot.generator.kubernetes.model.SchemaFactory.*;
 
 class SchemaObjectTest {
 

@@ -21,7 +21,6 @@ import static com.predic8.membrane.annot.generator.kubernetes.model.SchemaFactor
 
 public class SchemaObject extends AbstractSchema<SchemaObject> {
 
-    private String ref;
     private boolean additionalProperties;
 
     // Java Properties (@MCAttributes, @MCChildElement)
@@ -45,10 +44,6 @@ public class SchemaObject extends AbstractSchema<SchemaObject> {
     public ObjectNode json(ObjectNode node) {
         super.json(node);
 
-        if (ref != null) {
-            node.put("$ref", ref);
-        }
-
         if (!additionalProperties && isObject()) {
             node.put("additionalProperties", false);
         }
@@ -63,16 +58,16 @@ public class SchemaObject extends AbstractSchema<SchemaObject> {
         if (!properties.isEmpty()) {
             ObjectNode propertiesNode = jnf.objectNode();
             for (AbstractSchema property : properties) {
-                propertiesNode.put(property.getName(), property.json(jnf.objectNode()));
+                propertiesNode.set(property.getName(), property.json(jnf.objectNode()));
                 if (property.isRequired())
                     required.add(property.getName());
             }
             if (!required.isEmpty()) {
                 var l = jnf.arrayNode();
                 required.forEach(l::add);
-                node.put("required",l);
+                node.set("required",l);
             }
-            node.put("properties", propertiesNode);
+            node.set("properties", propertiesNode);
         }
     }
 }

@@ -21,7 +21,6 @@ public class SchemaArray extends AbstractSchema<SchemaArray> {
     @Override
     public ObjectNode json(ObjectNode node) {
         super.json(node);
-        node.put("items", items.json(jnf.objectNode()));
-        return node;
+        return node.set("items", items.json(jnf.objectNode()));
     }
 }

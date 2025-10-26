@@ -37,13 +37,14 @@ import static javax.tools.StandardLocation.*;
  * - A required property with a base type needs all the subtypes to be present in the schema. See CacheParser
  * - ports are strings
  * - Choose/cases/case has one nesting to much
+ * - apiKey/extractors/expressionExtractor/expression => too much?
  */
 public class JsonSchemaGenerator extends AbstractK8sGenerator {
 
     private final ObjectMapper om = new ObjectMapper();
-    private ObjectWriter writer = om.writerWithDefaultPrettyPrinter();
+    private final ObjectWriter writer = om.writerWithDefaultPrettyPrinter();
 
-    private Map<String,Boolean> topLevelAdded = new HashMap<>();
+    private final Map<String,Boolean> topLevelAdded = new HashMap<>();
 
     public JsonSchemaGenerator(ProcessingEnvironment processingEnv) {
         super(processingEnv);
@@ -265,9 +266,7 @@ public class JsonSchemaGenerator extends AbstractK8sGenerator {
 
     private void writeSchema(MainInfo main, Schema schema) throws IOException {
         try (BufferedWriter w = new BufferedWriter(createFile(main).openWriter())) {
-            String prettyJson = writer.writeValueAsString(schema.json(JsonNodeFactory.instance.objectNode()));
-            w.write(prettyJson);
-            System.out.println(prettyJson);
+            w.write(writer.writeValueAsString(schema.json(JsonNodeFactory.instance.objectNode())));
         }
     }
 

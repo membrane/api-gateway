@@ -44,9 +44,9 @@ public class Schema extends SchemaObject {
         if (!definitions.isEmpty()) {
             ObjectNode defs = jnf.objectNode();
             for (ISchema def : definitions) {
-                defs.put(def.getName(), def.json(jnf.objectNode()));
+                defs.set(def.getName(), def.json(jnf.objectNode()));
             }
-            node.put("$defs", defs);
+            node.set("$defs", defs);
         }
         return node;
     }

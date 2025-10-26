@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.node.*;
 
 public abstract class AbstractSchema<T extends AbstractSchema<T>> implements ISchema {
 
-    protected final JsonNodeFactory jnf = JsonNodeFactory.instance;
+    protected static final JsonNodeFactory jnf = JsonNodeFactory.instance;
 
     protected String name;
     protected String type;
