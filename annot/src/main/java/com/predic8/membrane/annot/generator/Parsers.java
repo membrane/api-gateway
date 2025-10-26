@@ -42,7 +42,7 @@ public class Parsers {
 						sources.toArray(new Element[0]));
                 try (BufferedWriter bw = new BufferedWriter(o.openWriter())) {
                     String copyright = """
-                            /* Copyright 2012,2013 predic8 GmbH, www.predic8.com
+                            /* Copyright 2012-2025 predic8 GmbH, www.predic8.com
                             
                                Licensed under the Apache License, Version 2.0 (the "License");
                                you may not use this file except in compliance with the License.
