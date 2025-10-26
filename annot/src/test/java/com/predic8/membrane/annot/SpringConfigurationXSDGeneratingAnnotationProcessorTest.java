@@ -14,14 +14,16 @@
 package com.predic8.membrane.annot;
 
 import com.predic8.membrane.annot.util.CompilerHelper;
-import com.predic8.membrane.annot.util.CustomJavaFileManager;
 import com.predic8.membrane.annot.util.InMemoryJavaFile;
 import org.junit.jupiter.api.Test;
 
 import javax.tools.*;
-import java.net.URI;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
+import static com.predic8.membrane.annot.util.CompilerHelper.splitSources;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -29,7 +31,7 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessorTest {
 
     @Test
     public void simpleTest() {
-        JavaFileObject sourceObject1 = new InMemoryJavaFile("com.predic8.membrane.demo.Demo", """
+        List<JavaFileObject> sources = splitSources("""
                 package com.predic8.membrane.demo;
                 import com.predic8.membrane.annot.MCMain;
                 @MCMain(
@@ -38,10 +40,7 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessorTest {
                         targetNamespace = "http://membrane-soa.org/demo/1/")
                 public class Demo {
                 }
-                """);
-
-        JavaFileObject sourceObject2 = new InMemoryJavaFile("com.predic8.membrane.demo.NamespaceHandler",
-        """
+                ---
                 package com.predic8.membrane.demo.config.spring;
                 import com.predic8.membrane.annot.AbstractNamespaceHandler;
                 public class NamespaceHandler extends AbstractNamespaceHandler {
@@ -51,11 +50,10 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessorTest {
                 	}
                 }
                 """);
-
-
-        var result = CompilerHelper.run(List.of(sourceObject1, sourceObject2));
+        var result = CompilerHelper.compile(sources);
 
         assertEquals(0, result.diagnostics().getDiagnostics().size());
         assertTrue(result.compilationSuccess());
     }
+
 }

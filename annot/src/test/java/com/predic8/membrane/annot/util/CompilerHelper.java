@@ -15,10 +15,16 @@ package com.predic8.membrane.annot.util;
 
 import javax.tools.*;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Stream;
 
 public class CompilerHelper {
-    public static CompilerResult run(Iterable<? extends JavaFileObject> sources) {
+    public static CompilerResult compile(Iterable<? extends JavaFileObject> sources) {
         JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
+        if (compiler == null) {
+            throw new IllegalStateException("No system Java compiler found. Run tests with a JDK, not a JRE.");
+        }
         DiagnosticCollector<JavaFileObject> diagnostics = new DiagnosticCollector<>();
         JavaFileManager fileManager = new CustomJavaFileManager(compiler.getStandardFileManager(diagnostics, null, null));
 
@@ -37,4 +43,35 @@ public class CompilerHelper {
 
         return new CompilerResult(success, diagnostics);
     }
+
+    public static List<JavaFileObject> splitSources(String sources) {
+        return Stream.of(sources.split("---"))
+                .map(CompilerHelper::toInMemoryJavaFile)
+                .toList();
+    }
+
+    private static JavaFileObject toInMemoryJavaFile(String source) {
+        String pkg = extractPackage(source);
+        String cls = extractName(source);
+        System.out.println("PACKAGE: " + pkg);
+        System.out.println("CLASS: " + cls);
+        System.out.println("SOURCE: " + source);
+        return new InMemoryJavaFile(pkg + "." + cls, source);
+    }
+
+    private static String extractName(String source) {
+        Matcher m = Pattern.compile("class\\s+([^\\s]+)\\s").matcher(source);
+        if (!m.find())
+            throw new RuntimeException("No class name found in source:\n" + source);
+        return m.group(1);
+    }
+
+    private static String extractPackage(String source) {
+        Matcher m = Pattern.compile("package\\s+([^;]+)\\s*;").matcher(source);
+
+        if (!m.find())
+            throw new RuntimeException("No package found in source:\n" + source);
+        return m.group(1);
+    }
+
 }
