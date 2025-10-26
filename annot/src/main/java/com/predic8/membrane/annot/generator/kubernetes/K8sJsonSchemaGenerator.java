@@ -22,6 +22,9 @@ import javax.tools.*;
 import java.io.*;
 import java.util.*;
 
+import static com.predic8.membrane.annot.generator.kubernetes.model.SchemaFactory.*;
+import static com.predic8.membrane.annot.generator.kubernetes.model.SchemaFactory.schema;
+
 /**
  * Generates JSON Schema (draft 2019-09/2020-12) to validate Kubernetes CustomResourceDefinitions.
  */
@@ -61,7 +64,7 @@ public class K8sJsonSchemaGenerator extends AbstractK8sGenerator {
 
         String eleName = i.getAnnotation().name();
 
-        Schema schema = new Schema(eleName);
+        Schema schema = schema(eleName);
         collectDefinitions(m, main, i, schema);
         collectProperties(m, main, i, schema);
 
@@ -72,10 +75,11 @@ public class K8sJsonSchemaGenerator extends AbstractK8sGenerator {
         i.getAis().stream()
                 .filter(ai -> !ai.getXMLName().equals("id"))
                 .forEach(ai -> {
-                    SchemaObject sop = new SchemaObject(ai.getXMLName());
-                    sop.addAttribute("type", ai.getSchemaType(processingEnv.getTypeUtils()));
-                    sop.setRequired(ai.isRequired());
-                    so.addProperty(sop);
+                    SchemaObject sop = object(ai.getXMLName());
+                    sop.type(ai.getSchemaType(processingEnv.getTypeUtils()));
+//                    sop.addAttribute("type", ai.getSchemaType(processingEnv.getTypeUtils()));
+                    sop.required(ai.isRequired());
+                    so.property(sop);
                 });
     }
 
@@ -106,60 +110,53 @@ public class K8sJsonSchemaGenerator extends AbstractK8sGenerator {
             return;
 
         for (Map.Entry<String, ElementInfo> entry : all.entrySet()) {
-            SchemaObject so = new SchemaObject(entry.getKey());
-            so.addAttribute("type", entry.getValue().getAnnotation().noEnvelope() ? "array" : "object");
-            so.addAttribute("additionalProperties", entry.getValue().getOai() != null);
+            SchemaObject so = object(entry.getKey())
+                    .type(entry.getValue().getAnnotation().noEnvelope() ? "array" : "object")
+                            .additionalProperties(entry.getValue().getOai() != null);
 
             collectProperties(m, main, entry.getValue(), so);
 
-            schema.addDefinition(so);
+            schema.definition(so);
         }
     }
 
     private void collectTextContent(ElementInfo i, SchemaObject so) {
         if (i.getTci() == null)
             return;
-
-        SchemaObject sop = new SchemaObject(i.getTci().getPropertyName());
-        sop.addAttribute("type", "string");
-        so.addProperty(sop);
+        so.property(string(i.getTci().getPropertyName()));
     }
 
-    private void collectChildElements(Model m, MainInfo main, ElementInfo i, SchemaObject so) {
+    private void collectChildElements(Model m, MainInfo main, ElementInfo i, AbstractSchema so) {
         for (ChildElementInfo cei : i.getChildElementSpecs()) {
             boolean isList = cei.isList();
 
-            SchemaObject parent2 = so;
+            AbstractSchema parent2 = so;
 
             if (isList) {
-                SchemaObject items = new SchemaObject("items");
-                items.addAttribute("type", "object");
-                items.addAttribute("additionalProperties", cei.getAnnotation().allowForeign());
+                SchemaObject items =  object("items").additionalProperties( cei.getAnnotation().allowForeign());
 
-                if (i.getAnnotation().noEnvelope()) {
-                    so.addAttribute("items", items);
+                if (i.getAnnotation().noEnvelope() && so instanceof SchemaArray sa) {
+                    sa.items(items);
                 } else {
-                    SchemaObject sop = new SchemaObject(cei.getPropertyName());
-                    sop.setRequired(cei.isRequired());
-                    sop.addAttribute("type", "array");
-                    sop.addAttribute("additionalItems", false);
-                    sop.addAttribute("items", items);
+                    if (so instanceof SchemaObject sObj) {
+                        //sop.addAttribute("additionalItems", false);
+                        sObj.property(array(cei.getPropertyName()).required(cei.isRequired()));
+                    }
 
-                    so.addProperty(sop);
                 }
-
                 parent2 = items;
             } else {
-                if (cei.getAnnotation().allowForeign())
-                    parent2.setAdditionalProperties(true);
+                if (cei.getAnnotation().allowForeign()) {
+                   // parent2.setAdditionalProperties(true);
+                }
             }
 
             for (ElementInfo ei : main.getChildElementDeclarations().get(cei.getTypeDeclaration()).getElementInfo()) {
-                SchemaObject sop = new SchemaObject(ei.getAnnotation().name());
+                SchemaRef sop = ref(ei.getAnnotation().name());
                 //sop.setRequired(cei.isRequired());
                 // TODO only one is required, not all
-                sop.addAttribute("$ref", "#/$defs/" + ei.getXSDTypeName(m));
-                parent2.addProperty(sop);
+                sop.ref("#/$defs/" + ei.getXSDTypeName(m));
+                ((SchemaObject)parent2).property(sop);
             }
         }
     }

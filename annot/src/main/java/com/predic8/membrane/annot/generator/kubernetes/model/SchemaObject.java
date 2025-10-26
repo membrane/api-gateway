@@ -13,96 +13,66 @@
    limitations under the License. */
 package com.predic8.membrane.annot.generator.kubernetes.model;
 
+import com.fasterxml.jackson.databind.node.*;
+
 import java.util.*;
 
-import static com.predic8.membrane.annot.generator.kubernetes.model.SchemaUtils.*;
-import static java.util.stream.Collectors.*;
+import static com.predic8.membrane.annot.generator.kubernetes.model.SchemaFactory.OBJECT;
 
 public class SchemaObject extends AbstractSchema<SchemaObject> {
 
-    private String description;
+    private String ref;
+    private boolean additionalProperties;
 
     // Java Properties (@MCAttributes, @MCChildElement)
     protected final List<AbstractSchema> properties = new ArrayList<>();
 
-    public SchemaObject() {
-        super();
-    }
-
-    public SchemaObject(String name) {
+    SchemaObject(String name) {
         super(name);
+        type = OBJECT;
     }
 
-    public static SchemaObject string(String name) {
-        return new SchemaObject(name).type("string");
+    public SchemaObject property(AbstractSchema as) {
+        properties.add(as);
+        return this;
     }
 
-    @Override
-    public String toString() {
-        StringBuilder sb = new StringBuilder();
-        if (name != null) {
-                sb.append("\"").append(name).append("\":");
+    public SchemaObject additionalProperties(boolean additionalProperties) {
+        this.additionalProperties = additionalProperties;
+        return this;
+    }
+
+    public ObjectNode json(ObjectNode node) {
+        super.json(node);
+
+        if (ref != null) {
+            node.put("$ref", ref);
+        }
+
+        if (!additionalProperties && isObject()) {
+            node.put("additionalProperties", false);
+        }
+
+        jsonProperties(node);
+
+        return node;
+    }
+
+    private void jsonProperties(ObjectNode node) {
+        List<String> required = new ArrayList<>();
+        if (!properties.isEmpty()) {
+            ObjectNode propertiesNode = jnf.objectNode();
+            for (AbstractSchema property : properties) {
+                propertiesNode.put(property.getName(), property.json(jnf.objectNode()));
+                if (property.isRequired())
+                    required.add(property.getName());
             }
-        sb.append("{");
-        String attrs = attributes.entrySet().stream()
-                                        .map(SchemaUtils::entryToJson)
-                                                          .collect(joining(","));
-        sb.append(attrs);
-        String props = printProperties();
-        if (!props.isEmpty()) {
-                if (!attrs.isEmpty()) sb.append(",");
-                sb.append(props);
+            if (!required.isEmpty()) {
+                var l = jnf.arrayNode();
+                required.forEach(l::add);
+                node.put("required",l);
             }
-        sb.append("}");
-        return sb.toString();
-    }
-
-    public String getDescription() {
-        return description;
-    }
-
-    public void setDescription(String description) {
-        this.description = description;
-    }
-
-    protected String printProperties() {
-        if (properties.isEmpty())
-            return "";
-
-        return """
-               "properties": {%s} %s""".formatted(getPropertiesJoined(),printRequired(properties));
-
-    }
-
-    private String getPropertiesJoined() {
-        return properties.stream().map(AbstractSchema::toString).collect(joining(","));
-    }
-
-    public void addProperty(AbstractSchema so) {
-        properties.add(so);
-    }
-
-     public void setAdditionalProperties(boolean additionalProperties) {
-        addAttribute("additionalProperties", additionalProperties);
-    }
-
-    public SchemaObject additionalProperties(boolean b) {
-        addAttribute("additionalProperties", b);
-        return this;
-    }
-
-    public SchemaObject required(List<String> required) {
-        addAttribute("required", required);
-        return this;
-    }
-
-    public SchemaObject ref(String ref) {
-        addAttribute("$ref", ref);
-        return this;
-    }
-
-    public SchemaObject enumeration(List<String> enumeration) {
-        attribute("enum", enumeration);
-        return this;
+            node.put("properties", propertiesNode);
+        }
     }
 }

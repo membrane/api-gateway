@@ -13,51 +13,41 @@
    limitations under the License. */
 package com.predic8.membrane.annot.generator.kubernetes.model;
 
-import java.util.*;
-import java.util.stream.Collectors;
+import com.fasterxml.jackson.databind.*;
+import com.fasterxml.jackson.databind.node.*;
+import com.fasterxml.jackson.databind.util.*;
 
-import static com.predic8.membrane.annot.generator.kubernetes.model.SchemaUtils.printRequired;
+import java.util.*;
+
+import static com.predic8.membrane.annot.generator.kubernetes.model.SchemaFactory.OBJECT;
 
 public class Schema extends SchemaObject {
 
-    private final String name;
-
     private final List<ISchema> definitions = new ArrayList<>();
 
-    public Schema(String name) {
-        this.name = name;
+    Schema(String name) {
+        super(name);
+        type = OBJECT;
     }
 
-    public void addDefinition(ISchema definition) {
+    public Schema definition(ISchema definition) {
         definitions.add(definition);
-    }
-
-    private String printDefinitions() {
-        if (definitions.isEmpty())
-            return "";
-
-        return ",\"$defs\":{" + definitions.stream()
-                .map(Objects::toString)
-                .collect(Collectors.joining(",")) +
-                "}";
+        return this;
     }
 
     @Override
-    public String toString() {
-        return "{" +
-                "\"$id\": \"https://membrane-soa.org/" + name.toLowerCase() + ".schema.json\"," +
-                "\"$schema\": \"https://json-schema.org/draft/2020-12/schema\"," +
-                "\"title\": \"" + name + "\"," +
-                "\"type\": \"object\"" +
-                "," +
-               printProperties() +
-               printDefinitions() +
-               printRequired(properties)
-                + (!attributes.isEmpty() ? "," : "") +
-                attributes.entrySet().stream()
-                        .map(SchemaUtils::entryToJson)
-                        .collect(Collectors.joining(",")) +
-                "}"
-                ;
+    public ObjectNode json(ObjectNode node) {
+        node.put("$id", "https://membrane-soa.org/%s.schema.json".formatted(name));
+        node.put("$schema", "https://json-schema.org/draft/2020-12/schema");
+        node.put("title", name);
+        super.json(node);
+        if (!definitions.isEmpty()) {
+            ObjectNode defs = jnf.objectNode();
+            for (ISchema def : definitions) {
+                defs.put(def.getName(), def.json(jnf.objectNode()));
+            }
+            node.put("$defs", defs);
+        }
+        return node;
     }
 }

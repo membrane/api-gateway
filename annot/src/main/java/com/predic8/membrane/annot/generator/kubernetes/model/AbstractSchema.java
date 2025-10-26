@@ -1,17 +1,16 @@
 package com.predic8.membrane.annot.generator.kubernetes.model;
 
-import java.util.*;
-
-import static java.util.stream.Collectors.joining;
+import com.fasterxml.jackson.databind.node.*;
 
 public abstract class AbstractSchema<T extends AbstractSchema<T>> implements ISchema {
 
+    protected final JsonNodeFactory jnf = JsonNodeFactory.instance;
+
     protected String name;
+    protected String type;
+    protected String description;
 
     protected boolean required = false;
-
-    // Properties to be copied 1:1 to the JSON schema, e.g. "type": "string"
-    protected final Map<String, Object> attributes = new LinkedHashMap<>();
 
     public AbstractSchema() {
     }
@@ -25,25 +24,22 @@ public abstract class AbstractSchema<T extends AbstractSchema<T>> implements ISc
         return (T) this;
     }
 
+    @Override
     public String getName() {
         return name;
+    }
+
+    public T description(String description) {
+        this.description = description;
+        return self();
     }
 
     public boolean isRequired() {
         return required;
     }
 
-    public void setRequired(boolean required) {
-        this.required = required;
-    }
-
-    public void addAttribute(String key, Object value) {
-        attributes.put(key, value);
-    }
-
-
-    public T attribute(String key, Object value) {
-        addAttribute(key, value);
+    public T required(boolean b) {
+        required = b;
         return self();
     }
 
@@ -53,22 +49,18 @@ public abstract class AbstractSchema<T extends AbstractSchema<T>> implements ISc
     }
 
     public T type(String type) {
-        addAttribute("type", type);
+        this.type = type;
         return self();
     }
 
+    public boolean isObject() {
+        return "object".equals(type);
+    }
+
     @Override
-    public String toString() {
-        StringBuilder sb = new StringBuilder();
-        if (name != null) {
-            sb.append("\"").append(name).append("\":");
-        }
-        sb.append("{");
-        String attrs = attributes.entrySet().stream()
-                .map(SchemaUtils::entryToJson)
-                .collect(joining(","));
-        sb.append(attrs);
-        sb.append("}");
-        return sb.toString();
+    public ObjectNode json(ObjectNode node) {
+        if (type != null)
+            node.put("type", type);
+        return node;
     }
 }
