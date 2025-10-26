@@ -17,10 +17,6 @@ public class SchemaRef extends SchemaObject {
     }
 
     public ObjectNode json(ObjectNode node) {
-//        ObjectNode r = jnf.objectNode();
-        node.put("$ref", ref);
-//        node.put(name, r);
-        return node;
+        return node.put("$ref", ref);
     }
-
 }

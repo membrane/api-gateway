@@ -5,6 +5,8 @@ import com.fasterxml.jackson.databind.node.*;
 import org.junit.jupiter.api.*;
 
 import static com.predic8.membrane.annot.generator.kubernetes.model.SchemaFactory.*;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class SchemaTest {
 
@@ -15,7 +17,11 @@ class SchemaTest {
         var schema = new Schema("foo").property(string("bar"));
         var json = schema.json(jnf.objectNode());
 
-        prettyPrint(json);
+        assertNotNull(json);
+        assertTrue(json.has("properties"));
+        assertTrue(json.get("properties").has("bar"));
+
+//        prettyPrint(json);
     }
 
     private static void prettyPrint(JsonNode json) throws Exception {
