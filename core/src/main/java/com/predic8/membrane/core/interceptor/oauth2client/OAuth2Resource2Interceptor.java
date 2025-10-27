@@ -44,6 +44,10 @@ import static java.nio.charset.StandardCharsets.*;
 /**
  * @description Allows only authorized HTTP requests to pass through. Unauthorized requests get a redirect to the
  * authorization server as response.
+ *
+ * This interceptor does Session Management and can thereby translate Session IDs to OAuth2/OIDC Access Tokens.
+ *
+ * Beyond regular OIDC-compliant authorization servers, this interceptor can also be used with Azure B2C.
  * @topic 3. Security and Validation
  */
 @MCElement(name = "oauth2Resource2")
