@@ -11,18 +11,23 @@
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
    See the License for the specific language governing permissions and
    limitations under the License. */
-package com.predic8.membrane.core.lang.spel.spelable;
+package com.predic8.membrane.core.lang;
 
 import com.predic8.membrane.core.http.*;
 
-public class SpELBody {
+import java.io.*;
+
+/**
+ * Enables the use of ${body} in scripting environments without reading the body from InputStream when it is not needed.
+ */
+public class LazyBody {
 
     /**
      * Store message instead of body to be able to extract even zipped bodies
      */
     final Message message;
 
-    public SpELBody(Message msg) {
+    public LazyBody(Message msg) {
         message = msg;
     }
 
@@ -30,6 +35,10 @@ public class SpELBody {
         return message;
     }
 
+    /**
+     * This method is called in an expression like "Body ${body}".
+     * @return
+     */
     @Override
     public String toString() {
         return message.getBodyAsStringDecoded();
