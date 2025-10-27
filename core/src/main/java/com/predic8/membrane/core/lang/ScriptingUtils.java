@@ -84,12 +84,12 @@ public class ScriptingUtils {
             }
         }
 
-        /**
-         * properties does not work in Groovy based Template Interceptor!
-         * Reason: properties is a special built-in property in Groovy. Every Groovy object has a properties property
-         * that returns a Map of all the object's properties.
-         * But it can be accessed in Groovy Interceptor
-         * Decision: Keep it but change examples to use property, even for spel, ..
+        /*
+          properties does not work in Groovy based Template Interceptor!
+          Reason: properties is a special built-in property in Groovy. Every Groovy object has a properties property
+          that returns a Map of all the object's properties.
+          But it can be accessed in Groovy Interceptor
+          Decision: Keep it but change examples to use property, even for spel, ..
          */
         params.put("properties", exc.getProperties());
 

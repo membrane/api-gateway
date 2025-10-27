@@ -37,7 +37,6 @@ public class LazyBody {
 
     /**
      * This method is called in an expression like "Body ${body}".
-     * @return
      */
     @Override
     public String toString() {
