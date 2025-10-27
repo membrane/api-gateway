@@ -13,7 +13,7 @@ class SchemaTest {
     JsonNodeFactory jnf = new JsonNodeFactory(false);
 
     @Test
-    void test() throws Exception {
+    void test() {
         var schema = new Schema("foo").property(string("bar"));
         var json = schema.json(jnf.objectNode());
 

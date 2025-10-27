@@ -41,9 +41,6 @@ import static javax.tools.StandardLocation.*;
  */
 public class JsonSchemaGenerator extends AbstractK8sGenerator {
 
-    private final ObjectMapper om = new ObjectMapper();
-    private final ObjectWriter writer = om.writerWithDefaultPrettyPrinter();
-
     private final Map<String,Boolean> topLevelAdded = new HashMap<>();
 
     public JsonSchemaGenerator(ProcessingEnvironment processingEnv) {

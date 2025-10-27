@@ -13,6 +13,7 @@
    limitations under the License. */
 package com.predic8.membrane.annot.generator.kubernetes;
 
+import com.fasterxml.jackson.databind.node.*;
 import com.predic8.membrane.annot.*;
 import com.predic8.membrane.annot.generator.kubernetes.model.*;
 import com.predic8.membrane.annot.model.*;
@@ -68,7 +69,7 @@ public class K8sJsonSchemaGenerator extends AbstractK8sGenerator {
         collectDefinitions(m, main, i, schema);
         collectProperties(m, main, i, schema);
 
-        w.append(schema.toString());
+        w.append( writer.writeValueAsString(schema.json(JsonNodeFactory.instance.objectNode())));
     }
 
     private void collectAttributes(ElementInfo i, SchemaObject so) {

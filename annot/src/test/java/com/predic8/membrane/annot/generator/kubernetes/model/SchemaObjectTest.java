@@ -14,7 +14,7 @@ class SchemaObjectTest {
     JsonNodeFactory jnf = JsonNodeFactory.instance;
 
     @Test
-    void toJson() throws Exception {
+    void toJson() {
         var so = object("person")
                 .property(string("name").required(true))
                 .property(object("address")
