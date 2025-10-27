@@ -15,8 +15,6 @@ package com.predic8.membrane.core.lang;
 
 import com.predic8.membrane.core.http.*;
 
-import java.io.*;
-
 /**
  * Enables the use of ${body} in scripting environments without reading the body from InputStream when it is not needed.
  */
