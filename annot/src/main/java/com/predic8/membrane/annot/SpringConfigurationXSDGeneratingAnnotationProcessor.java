@@ -21,8 +21,6 @@ import javax.annotation.processing.*;
 import javax.lang.model.*;
 import javax.lang.model.element.*;
 import javax.lang.model.type.*;
-import javax.lang.model.util.Elements;
-import javax.lang.model.util.Types;
 import javax.tools.Diagnostic.*;
 import javax.tools.*;
 import java.io.*;
@@ -211,13 +209,14 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
 					main.getIis().add(ii);
 
 					main.getElements().put(ii.getElement(), ii);
-					if (main.getGlobals().containsKey(ii.getAnnotation().name()))
-						throw new ProcessingException("Duplicate global @MCElement name.", main.getGlobals().get(ii.getAnnotation().name()).getElement(), ii.getElement());
 					if (main.getIds().containsKey(ii.getId()))
 						throw new ProcessingException("Duplicate element id \"" + ii.getId() + "\". Please assign one using @MCElement(id=\"...\").", e, main.getIds().get(ii.getId()).getElement());
 					main.getIds().put(ii.getId(), ii);
 
 					scan(m, main, ii);
+
+                    if (ii.getAnnotation().topLevel())
+                        main.getTopLevels().put(ii.getAnnotation().name(), ii);
 
                     if (ii.getAnnotation().noEnvelope()) {
                         if (ii.getAnnotation().topLevel())
@@ -271,6 +270,10 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
 
                 for (MainInfo main : m.getMains()) {
                     for (Map.Entry<TypeElement, ElementInfo> f : main.getElements().entrySet()) {
+                        ElementInfo ei2 = main.getTopLevels().get(f.getKey().getAnnotation(MCElement.class).name());
+                        if (ei2 != null && f.getValue() != ei2 && f.getValue().getAnnotation().topLevel())
+                            throw new ProcessingException("Duplicate top-level @MCElement name. Make at least one @MCElement(topLevel=false,...) .", f.getKey(), ei2.getElement());
+
                         List < String > uniquenessErrors = getUniquenessError(f.getValue(), main);
                         if (!uniquenessErrors.isEmpty())
                             throw new ProcessingException(String.join(System.lineSeparator(), uniquenessErrors), f.getValue().getElement());

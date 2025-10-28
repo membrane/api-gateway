@@ -125,11 +125,12 @@ public class Parsers {
                                 "\r\n" +
                                 "package " + main.getAnnotation().outputPackage() + ";\r\n" +
                                 "\r\n" +
+                                "import com.predic8.membrane.annot.AbstractParser;\r\n" +
                                 "import org.w3c.dom.Element;\r\n" +
                                 "import org.springframework.beans.factory.xml.ParserContext;\r\n" +
                                 "import org.springframework.beans.factory.support.BeanDefinitionBuilder;\r\n");
-                        if (!main.getAnnotation().outputPackage().equals("com.predic8.membrane.core.config.spring"))
-                            bw.write("import com.predic8.membrane.core.config.spring.*;\r\n");
+//                        if (!main.getAnnotation().outputPackage().equals("com.predic8.membrane.core.config.spring"))
+//                            bw.write("import com.predic8.membrane.core.config.spring.*;\r\n");
                         bw.write(
                                 "\r\n" +
                                         "/**\r\n" +

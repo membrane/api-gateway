@@ -13,14 +13,22 @@
    limitations under the License. */
 package com.predic8.membrane.annot.util;
 
+import org.hamcrest.BaseMatcher;
+import org.hamcrest.Description;
+import org.hamcrest.collection.IsIterableContainingInAnyOrder;
+
 import javax.tools.*;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 public class CompilerHelper {
-    public static CompilerResult compile(Iterable<? extends JavaFileObject> sources) {
+    public static CompilerResult compile(Iterable<? extends JavaFileObject> sources, boolean logCompilerOutput) {
         JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
         if (compiler == null) {
             throw new IllegalStateException("No system Java compiler found. Run tests with a JDK, not a JRE.");
@@ -39,13 +47,15 @@ public class CompilerHelper {
 
         boolean success = task.call();
 
-        diagnostics.getDiagnostics().forEach(System.err::println);
+        if (logCompilerOutput)
+            diagnostics.getDiagnostics().forEach(System.err::println);
 
         return new CompilerResult(success, diagnostics);
     }
 
     public static List<JavaFileObject> splitSources(String sources) {
         return Stream.of(sources.split("---"))
+                .filter(s -> !s.isBlank())
                 .map(CompilerHelper::toInMemoryJavaFile)
                 .toList();
     }
@@ -53,9 +63,6 @@ public class CompilerHelper {
     private static JavaFileObject toInMemoryJavaFile(String source) {
         String pkg = extractPackage(source);
         String cls = extractName(source);
-        System.out.println("PACKAGE: " + pkg);
-        System.out.println("CLASS: " + cls);
-        System.out.println("SOURCE: " + source);
         return new InMemoryJavaFile(pkg + "." + cls, source);
     }
 
@@ -72,6 +79,46 @@ public class CompilerHelper {
         if (!m.find())
             throw new RuntimeException("No package found in source:\n" + source);
         return m.group(1);
+    }
+
+    public static void assertCompilerResult(boolean success, CompilerResult result) {
+        assertCompilerResult(success, new ArrayList<>(), result);
+    }
+
+    public static void assertCompilerResult(boolean success,
+                                            List<org.hamcrest.Matcher<? super Diagnostic<?>>> expectedDiagnostics,
+                                            CompilerResult result) {
+        assertThat("expected errors and warnings match.",
+                result.diagnostics().getDiagnostics(),
+                new IsIterableContainingInAnyOrder<Diagnostic<?>>(expectedDiagnostics));
+        assertEquals(success, result.compilationSuccess());
+    }
+
+    public static org.hamcrest.Matcher<Diagnostic<?>> warning(String text) {
+        return compilerResult(Diagnostic.Kind.WARNING, text);
+    }
+
+    public static org.hamcrest.Matcher<Diagnostic<?>> error(String text) {
+        return compilerResult(Diagnostic.Kind.ERROR, text);
+    }
+
+    public static org.hamcrest.Matcher<Diagnostic<?>> compilerResult(Diagnostic.Kind kind, String text) {
+        return new BaseMatcher<Diagnostic<?>>() {
+
+            @Override
+            public void describeTo(Description description) {
+                description.appendText("is '" + text + "'");
+            }
+
+            @Override
+            public boolean matches(Object o) {
+                if (o instanceof Diagnostic<?> d) {
+                    return d.getKind() == kind && d.getMessage(null).equals(text);
+                }
+                return false;
+            }
+
+        };
     }
 
 }
