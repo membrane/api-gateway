@@ -45,7 +45,13 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessorTest {
 
     @Test
     public void simpleTest() {
-        List<JavaFileObject> sources = splitSources(MC_MAIN_DEMO);
+        List<JavaFileObject> sources = splitSources(MC_MAIN_DEMO + """
+                package com.predic8.membrane.demo;
+                import com.predic8.membrane.annot.MCElement;
+                @MCElement(name="demo")
+                public class DemoElement {
+                }
+                """);
         var result = compile(sources, false);
         assertCompilerResult(true, result);
     }
