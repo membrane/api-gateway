@@ -312,4 +312,63 @@ public class SpringConfigXSDErrorsTest {
         }
 
     }
+
+    @Test
+    public void noConcreteChildMcElement() {
+        List<JavaFileObject> sources = splitSources(MC_MAIN_DEMO + """
+        package com.predic8.membrane.demo;
+        import com.predic8.membrane.annot.*;
+        import java.util.List;
+        @MCElement(name="demo")
+        public class DemoElement {
+            @MCChildElement
+            public void setChild1(List<AbstractDemoChildElement> s) {}
+        }
+        ---
+        package com.predic8.membrane.demo;
+        public abstract class AbstractDemoChildElement {
+        }
+        """);
+        var result = CompilerHelper.compile(sources, false);
+
+        assertCompilerResult(false, of(
+                error("@MCChildElement references com.predic8.membrane.demo.AbstractDemoChildElement, but there is no @MCElement among it and its subclasses.")
+        ), result);
+    }
+
+    @Test
+    public void childNameNotUnique() {
+        List<JavaFileObject> sources = splitSources(MC_MAIN_DEMO + """
+        package com.predic8.membrane.demo;
+        import com.predic8.membrane.annot.*;
+        import java.util.List;
+        @MCElement(name="demo")
+        public class DemoElement {
+            @MCChildElement
+            public void setChild(AbstractDemoChildElement s) {}
+        }
+        ---
+        package com.predic8.membrane.demo;
+        public abstract class AbstractDemoChildElement {
+        }
+        ---
+        package com.predic8.membrane.demo;
+        import com.predic8.membrane.annot.*;
+        @MCElement(name="child", topLevel=false, id="child1")
+        public class Child1 extends AbstractDemoChildElement {
+        }
+        ---
+        package com.predic8.membrane.demo;
+        import com.predic8.membrane.annot.*;
+        @MCElement(name="child", topLevel=false, id="child2")
+        public class Child2 extends AbstractDemoChildElement {
+        }
+        """);
+        var result = CompilerHelper.compile(sources, false);
+
+        assertCompilerResult(false, of(
+                error("Duplicate childElement 'child': child")
+        ), result);
+    }
+
 }
