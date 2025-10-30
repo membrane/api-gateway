@@ -12,6 +12,13 @@ paths:
           explode: false
           schema:
             $ref: "#/components/schemas/Numbers"
+        - name: not-null
+          in: query
+          explode: false
+          schema:
+            type: array
+            items:
+              type: number
         - name: string
           in: query
           explode: false

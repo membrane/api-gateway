@@ -26,7 +26,7 @@ public class ChooseInterceptorTest extends AbstractInterceptorFlowTest {
     void caseA() throws Exception {
         assertFlow(">a>b<b<a",
             A,
-            CHOICE(
+            CHOOSE(
                 OTHERWISE(D),
                 CASE(
                     TRUE,
@@ -44,7 +44,7 @@ public class ChooseInterceptorTest extends AbstractInterceptorFlowTest {
     void caseB() throws Exception {
         assertFlow(">a>c<c<a",
             A,
-            CHOICE(
+            CHOOSE(
                 OTHERWISE(D),
                 CASE(
                     FALSE,
@@ -62,7 +62,7 @@ public class ChooseInterceptorTest extends AbstractInterceptorFlowTest {
     void caseOtherwise() throws Exception {
         assertFlow(">a>d<d<a",
             A,
-            CHOICE(
+            CHOOSE(
                 OTHERWISE(D),
                 CASE(
                     FALSE,

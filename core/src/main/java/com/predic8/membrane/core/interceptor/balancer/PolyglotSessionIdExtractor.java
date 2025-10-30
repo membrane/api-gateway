@@ -24,6 +24,8 @@ import com.predic8.membrane.core.interceptor.lang.Polyglot;
 import com.predic8.membrane.core.lang.ExchangeExpression;
 import com.predic8.membrane.core.lang.ExchangeExpression.Language;
 
+import static com.predic8.membrane.core.lang.ExchangeExpression.expression;
+
 @MCElement(name = "sessionIdExtractor")
 public class PolyglotSessionIdExtractor extends AbstractXmlElement implements SessionIdExtractor, Polyglot {
 
@@ -33,7 +35,7 @@ public class PolyglotSessionIdExtractor extends AbstractXmlElement implements Se
 
     public void init(Router router) {
         if (sessionSource != null && !sessionSource.isEmpty()) {
-            exchangeExpression = ExchangeExpression.newInstance(router, language, sessionSource);
+            exchangeExpression = expression(router, language, sessionSource);
         }
     }
 

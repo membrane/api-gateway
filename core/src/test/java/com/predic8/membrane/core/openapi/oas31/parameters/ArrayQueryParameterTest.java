@@ -85,6 +85,11 @@ public class ArrayQueryParameterTest {
                 assertEquals(0, validator.validate(get().path("/array?const=foo,%C3%A4%3D%23,baz")).size());
             }
 
+            @Test
+            void numberArrayWithNullValue() {
+                assertEquals(0, validator.validate(get().path("/array?number=1,null,3")).size());
+            }
+
             @Nested
             class Invalid {
 
@@ -96,10 +101,20 @@ public class ArrayQueryParameterTest {
                 }
 
                 @Test
-                void nullValue() {
-                    var err = validator.validate(get().path("/array?string=blue,null,brown"));
+                void numberNotNull() {
+                    var err = validator.validate(get().path("/array?not-null=1,null,3"));
                     assertEquals(1, err.size());
-                    assertTrue(err.get(0).getMessage().contains("null is of type"));
+                    assertTrue(err.get(0).getMessage().contains("not match"));
+                    assertTrue(err.get(0).getMessage().contains("number"));
+                }
+
+                /**
+                 * We treat null in a query string as normal string value
+                 */
+                @Test
+                void nullValueForStringInQuery() {
+                    var err = validator.validate(get().path("/array?string=blue,null,brown"));
+                    assertEquals(0, err.size());
                 }
 
                 @Test

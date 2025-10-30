@@ -30,6 +30,7 @@ import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static com.predic8.membrane.core.lang.ExchangeExpression.expression;
 import static com.predic8.membrane.core.util.HttpUtil.*;
 import static java.lang.String.*;
 
@@ -93,7 +94,7 @@ public class RateLimitInterceptor extends AbstractExchangeExpressionInterceptor 
         // If there is no expression use the client IP
         if (expression.isEmpty())
             return null;
-        return ExchangeExpression.newInstance(router, language, expression);
+        return expression(router, language, expression);
     }
 
     @Override

@@ -29,6 +29,7 @@ import java.util.List;
 import java.util.stream.Stream;
 
 import static com.predic8.membrane.core.lang.ExchangeExpression.Language.SPEL;
+import static com.predic8.membrane.core.lang.ExchangeExpression.expression;
 import static com.predic8.membrane.test.TestUtil.assembleExchange;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.junit.jupiter.params.provider.Arguments.of;
@@ -54,7 +55,7 @@ class APIProxyKeyComplexMatchTest {
     @Test
     void complexMatchExpressionFalse() throws URISyntaxException {
         var key = new APIProxyKey("", "", 80, null,"*",
-                ExchangeExpression.newInstance(null, SPEL,"1 == 2"), false);
+                expression(null, SPEL,"1 == 2"), false);
         assertFalse(key.complexMatch(new Builder().get("").buildExchange()));
     }
 
@@ -68,11 +69,11 @@ class APIProxyKeyComplexMatchTest {
     @Test
     void complexMatchExpressionQueryParam() throws URISyntaxException {
         var key = new APIProxyKey("", "", 80, null,"*",
-                ExchangeExpression.newInstance(null, SPEL,"param.foo == 'bar'"),false);
+                expression(null, SPEL,"param.foo == 'bar'"),false);
         assertTrue(key.complexMatch(new Builder().get("/baz?foo=bar").buildExchange()));
 
         key = new APIProxyKey("", "", 80, null,"*",
-                ExchangeExpression.newInstance(null, SPEL,"param.foo == 'wrong'"),false);
+                expression(null, SPEL,"param.foo == 'wrong'"),false);
         assertFalse(key.complexMatch(new Builder().get("/baz?foo=bar").buildExchange()));
     }
 

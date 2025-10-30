@@ -87,7 +87,7 @@ public class CallInterceptor extends AbstractExchangeExpressionInterceptor {
         }
 
         try {
-            exc.getRequest().setBodyContent(newExc.getResponse().getBody().getContent());
+            exc.getRequest().setBodyContent(newExc.getResponse().getBodyAsStringDecoded().getBytes());
             copyHeadersFromResponseToRequest(newExc, exc);
             return CONTINUE;
         } catch (Exception e) {
