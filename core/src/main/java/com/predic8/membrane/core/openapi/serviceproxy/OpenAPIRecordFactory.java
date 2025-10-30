@@ -261,7 +261,7 @@ public class OpenAPIRecordFactory {
     }
 
     private boolean toYesNo(OpenAPISpec.YesNoOpenAPIOption option) {
-        return option == YES;
+        return option == YES || option == TRUE;
     }
 
     private File[] getOpenAPIFiles(String directoryName) {

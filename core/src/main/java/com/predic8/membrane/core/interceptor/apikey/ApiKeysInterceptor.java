@@ -27,6 +27,7 @@ import java.util.stream.*;
 
 import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static java.util.stream.Collectors.joining;
 import static java.util.stream.Stream.*;
 
 /**
@@ -78,7 +79,7 @@ public class ApiKeysInterceptor extends AbstractInterceptor {
     public String getLongDescription() {
         return getShortDescription() + "<br/>" + extractors.stream()
                 .map(extractor -> extractor.getDescription() + "<br/>")
-                .collect(Collectors.joining());
+                .collect(joining());
     }
 
     @Override

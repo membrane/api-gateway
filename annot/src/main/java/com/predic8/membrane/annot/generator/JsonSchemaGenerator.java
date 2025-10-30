@@ -13,7 +13,6 @@
    limitations under the License. */
 package com.predic8.membrane.annot.generator;
 
-import com.fasterxml.jackson.databind.*;
 import com.fasterxml.jackson.databind.node.*;
 import com.predic8.membrane.annot.*;
 import com.predic8.membrane.annot.generator.kubernetes.*;
@@ -79,6 +78,21 @@ public class JsonSchemaGenerator extends AbstractK8sGenerator {
         schema = schema("membrane");
         topLevelAdded.clear();
 
+        addParserDefinitions(m, main);
+        addTopLevelProperties();
+
+        writeSchema(main, schema);
+    }
+
+    private void addTopLevelProperties() {
+        schema.additionalProperties(false)
+            .property( string("kind").enumeration(List.of("api")))
+            .property( ref("spec").ref("#/$defs/com.predic8.membrane.core.config.spring.ApiParser").required(true))
+            .property(object("metadata")
+                    .property(string("name")));
+    }
+
+    private void addParserDefinitions(Model m, MainInfo main) {
         for (ElementInfo elementInfo : main.getElements().values()) {
 
             if (elementInfo.getAnnotation().mixed() && !elementInfo.getChildElementSpecs().isEmpty()) {
@@ -90,15 +104,10 @@ public class JsonSchemaGenerator extends AbstractK8sGenerator {
 
             schema.definition(createParser(m, main, elementInfo));
         }
-        schema.additionalProperties(false)
-            .property( string("kind").enumeration(List.of("api")))
-            .property( ref("spec").ref("#/$defs/com.predic8.membrane.core.config.spring.ApiParser").required(true));
-
-        writeSchema(main, schema);
     }
 
     private SchemaObject createParser(Model m, MainInfo main, ElementInfo elementInfo) {
-        String name = elementInfo.getXSDTypeName(m);
+        String parserName = elementInfo.getXSDTypeName(m);
 
         // e.g. to prevent a request from needing a flow child noEnvelope=true is used
         if (elementInfo.getAnnotation().noEnvelope()) {
@@ -108,15 +117,16 @@ public class JsonSchemaGenerator extends AbstractK8sGenerator {
 
             if (!topLevelAdded.containsKey(childName) && !"flow".equals(childName)) {
                 SchemaArray array = array(childName + "Parser");
-                collectChildElements(m, main, elementInfo.getChildElementSpecs().getFirst().getEi(), array);
+                processMCChilds(m, main, elementInfo.getChildElementSpecs().getFirst().getEi(), array);
                 schema.definition(array);
                 topLevelAdded.put(childName, true);
             }
 
-            return ref(name).ref("#/$defs/%sParser".formatted(childName));
+            return ref(parserName).ref("#/$defs/%sParser".formatted(childName));
         }
 
-        SchemaObject parser = object(name).additionalProperties( false)
+        SchemaObject parser = object(parserName)
+            .additionalProperties( false)
             .description( getDescriptionContent(elementInfo));
         collectProperties(m, main, elementInfo, parser);
         return parser;
@@ -145,7 +155,7 @@ public class JsonSchemaGenerator extends AbstractK8sGenerator {
                 );
     }
 
-    private void collectAttributes(ElementInfo i, SchemaObject so) {
+    private void processMCAttributes(ElementInfo i, SchemaObject so) {
         i.getAis().stream()
                 .filter(ai -> !ai.getXMLName().equals("id"))
                 .forEach(ai -> so.property(object(ai.getXMLName())
@@ -155,9 +165,9 @@ public class JsonSchemaGenerator extends AbstractK8sGenerator {
     }
 
     private void collectProperties(Model m, MainInfo main, ElementInfo i, SchemaObject schema) {
-        collectAttributes(i, schema);
+        processMCAttributes(i, schema);
         collectTextContent(i, schema);
-        collectChildElements(m, main, i, schema);
+        processMCChilds(m, main, i, schema);
     }
 
     private void collectTextContent(ElementInfo i, SchemaObject so) {
@@ -170,13 +180,13 @@ public class JsonSchemaGenerator extends AbstractK8sGenerator {
         so.property(sop);
     }
 
-    private void collectChildElements(Model m, MainInfo main, ElementInfo i, AbstractSchema so) {
+    private void processMCChilds(Model m, MainInfo main, ElementInfo i, AbstractSchema so) {
         for (ChildElementInfo cei : i.getChildElementSpecs()) {
 
             AbstractSchema parent2 = so;
 
             if (cei.isList()) {
-                if ("flow".equals(cei.getPropertyName())) {
+                if ("flow".equals(cei.getPropertyName()) && !isFlowFromWebSocket( cei)) {
                     var sos = new ArrayList<SchemaObject>();
                     for (ElementInfo ei : main.getChildElementDeclarations().get(cei.getTypeDeclaration()).getElementInfo()) {
                         if (!filter(cei.getPropertyName(), ei.getAnnotation().name()))
@@ -199,12 +209,17 @@ public class JsonSchemaGenerator extends AbstractK8sGenerator {
         }
     }
 
+    boolean isFlowFromWebSocket(ChildElementInfo cei) {
+        // String had to be used cause for class we need dependency to core that is otherwise not needed.
+        return "com.predic8.membrane.core.transport.ws.WebSocketInterceptorInterface".equals(cei.getTypeDeclaration().getQualifiedName().toString());
+    }
+
     private AbstractSchema processList(ElementInfo i, AbstractSchema so, ChildElementInfo cei, ArrayList<SchemaObject> sos) {
 
         SchemaObject items = object("items");
 
         if ("flow".equals(cei.getPropertyName())) {
-            processFlowElement((SchemaObject) so, sos);
+            addFlowParserRef((SchemaObject) so, sos);
             return items;
         }
 
@@ -221,7 +236,7 @@ public class JsonSchemaGenerator extends AbstractK8sGenerator {
         return items;
     }
 
-    private void processFlowElement(SchemaObject so, List<SchemaObject> sos) {
+    private void addFlowParserRef(SchemaObject so, List<SchemaObject> sos) {
         if (!flowDefCreated) {
             schema.definition( array("flowParser").items( anyOf(sos)));
             flowDefCreated = true;
@@ -230,13 +245,17 @@ public class JsonSchemaGenerator extends AbstractK8sGenerator {
     }
 
     private void addChildsAsProperties(Model m, MainInfo main, ChildElementInfo cei, SchemaObject parent2) {
-        for (ElementInfo ei : getChildElementDeclarations(main).get(cei.getTypeDeclaration()).getElementInfo()) {
+        for (ElementInfo ei : getChildElementDeclarationInfo(main, cei).getElementInfo()) {
             parent2.property(ref(ei.getAnnotation().name())
                 .ref("#/$defs/" + ei.getXSDTypeName(m)))
                 .description(getDescriptionContent(ei))
                 .required(cei.isRequired());
 
         }
+    }
+
+    private static ChildElementDeclarationInfo getChildElementDeclarationInfo(MainInfo main, ChildElementInfo cei) {
+        return getChildElementDeclarations(main).get(cei.getTypeDeclaration());
     }
 
     private static Map<TypeElement, ChildElementDeclarationInfo> getChildElementDeclarations(MainInfo main) {

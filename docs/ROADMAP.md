@@ -15,6 +15,8 @@
 
 # 7.0.0
 
+## (Breaking) Interface Changes
+
 - Remove WADLInterceptor
 - HttpClient
   - Change Signature: public Exchange call(Exchange exc) throws Exception
@@ -24,11 +26,21 @@
 - Remove HttpUtil.getHTMLErrorBody()
 - LogInterceptor:
   - Remove: headerOnly
-- Rewrite JSONAssert Tests with RESTAssured
 - ValidatorInterceptor: remove FailureHandler
   - Predominantly used for logging; move logging into validators.
   - Migration: replace FailureHandler usages with validator-level logging; ensure correlation IDs/Exchange context remain available for logs.
   - Check if it is used by customer installations
+
+## Minor
+ - Rewrite JSONAssert Tests with RESTAssured
+
+## Discussion
+
+- YAML:
+  - apiKey:
+    - simple method for specifying a couple of keys in the YAML 
+    - SimpleKeyStore: scope feels strange in YAML. Maybe not TextContent for Value
+
 
 # 6.5.0
 
