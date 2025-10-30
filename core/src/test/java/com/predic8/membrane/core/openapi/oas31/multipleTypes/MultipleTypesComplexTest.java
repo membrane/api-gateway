@@ -107,7 +107,7 @@ public class MultipleTypesComplexTest {
 
     @ParameterizedTest
     @MethodSource("requestBodyProvider")
-    void testComplexRequestBody(String requestBody, int expectedErrorSize, String errMsg1, String errMsg2) throws ParseException {
+    void complexRequestBody(String requestBody, int expectedErrorSize, String errMsg1, String errMsg2) throws ParseException {
         ValidationErrors errors = validator.validate(
                 Request.post().path("/complex").body(requestBody).mediaType(APPLICATION_JSON)
         );
