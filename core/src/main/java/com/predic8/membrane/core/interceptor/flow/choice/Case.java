@@ -25,6 +25,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import static com.predic8.membrane.core.lang.ExchangeExpression.Language.SPEL;
+import static com.predic8.membrane.core.lang.ExchangeExpression.expression;
 
 @MCElement(name = "case", topLevel = false)
 public class Case extends InterceptorContainer {
@@ -36,7 +37,7 @@ public class Case extends InterceptorContainer {
     private ExchangeExpression exchangeExpression;
 
     public void init(Router router) {
-        exchangeExpression = ExchangeExpression.newInstance(router, language, test);
+        exchangeExpression = expression(router, language, test);
     }
 
     boolean evaluate(Exchange exc, Flow flow) {
