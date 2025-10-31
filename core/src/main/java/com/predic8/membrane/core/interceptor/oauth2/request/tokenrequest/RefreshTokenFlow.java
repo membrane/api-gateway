@@ -90,7 +90,7 @@ public class RefreshTokenFlow extends TokenRequest {
         SessionManager.Session session = authServer.getSessionFinder().getSessionForRefreshToken(getRefreshToken());
         if(session == null) {
             // client sends unknown refresh token
-            return OAuth2Util.createParameterizedJsonErrorResponse("error", "invalid_request");
+            return OAuth2Util.createParameterizedJsonErrorResponse("error", "invalid_grant");
         }
         synchronized(session) {
             session.getUserAttributes().put(ACCESS_TOKEN, token);
