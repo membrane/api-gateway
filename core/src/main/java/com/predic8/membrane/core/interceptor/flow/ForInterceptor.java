@@ -29,6 +29,7 @@ import static com.predic8.membrane.core.interceptor.Interceptor.Flow.RESPONSE;
 import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 import static com.predic8.membrane.core.lang.ExchangeExpression.Language.SPEL;
+import static com.predic8.membrane.core.lang.ExchangeExpression.expression;
 
 /**
  * @description Iterates over a collection extracted from the <code>Exchange</code> and applies
@@ -56,7 +57,7 @@ public class ForInterceptor extends AbstractFlowWithChildrenInterceptor {
     public void init() {
         super.init();
         try {
-            exchangeExpression = ExchangeExpression.newInstance(router, language, in);
+            exchangeExpression = expression(router, language, in);
         } catch (ConfigurationException ce) {
             throw new ConfigurationException(ce.getMessage() + """
                     

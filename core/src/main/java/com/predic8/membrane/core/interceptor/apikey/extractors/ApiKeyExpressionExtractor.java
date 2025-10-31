@@ -25,6 +25,7 @@ import java.util.Optional;
 
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
 import static com.predic8.membrane.core.lang.ExchangeExpression.Language.SPEL;
+import static com.predic8.membrane.core.lang.ExchangeExpression.expression;
 import static com.predic8.membrane.core.security.ApiKeySecurityScheme.In.EXPRESSION;
 
 /**
@@ -53,7 +54,7 @@ public class ApiKeyExpressionExtractor implements ApiKeyExtractor, Polyglot {
 
     @Override
     public void init(Router router) {
-        exchangeExpression = ExchangeExpression.newInstance(router, language, expression);
+        exchangeExpression = expression(router, language, expression);
     }
 
     @Override
