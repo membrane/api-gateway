@@ -162,7 +162,7 @@ public class APIProxy extends ServiceProxy implements Polyglot {
     }
 
     private Map<String, OpenAPIRecord> getOpenAPIMap() {
-        Map<String, OpenAPIRecord> paths = new HashMap<>();
+        Map<String, OpenAPIRecord> paths = new LinkedHashMap<>();
         apiRecords.forEach((id, rec) -> rec.api.getServers().forEach(server -> {
             String url = server.getUrl();
             if (rec.spec.getRewrite() != null && rec.spec.getRewrite().basePath != null) {
@@ -171,8 +171,8 @@ public class APIProxy extends ServiceProxy implements Polyglot {
             try {
                 paths.put(UriUtil.getPathFromURL(router.getUriFactory(), url), rec);
             } catch (URISyntaxException e) {
-                log.error("Cannot parse URL {}", url);
-                throw new RuntimeException("Cannot parse URL %s".formatted(url));
+                log.error("Cannot parse URL {} Error: {}", url,e.getMessage());
+                throw new RuntimeException("Cannot parse URL %s Error: %s".formatted(url,e.getMessage()),e);
             }
         }));
         return paths;

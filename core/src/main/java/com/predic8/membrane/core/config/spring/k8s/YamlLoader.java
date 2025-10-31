@@ -42,8 +42,8 @@ public class YamlLoader {
 
     public static String readString(Iterator<Event> events) {
         Event event = events.next();
-        if (event instanceof ScalarEvent)
-            return ((ScalarEvent)event).getValue();
+        if (event instanceof ScalarEvent se)
+            return se.getValue();
         throw new IllegalStateException("Expected string in line " + event.getStartMark().getLine() + " column " + event.getStartMark().getColumn());
     }
 

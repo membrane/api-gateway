@@ -13,80 +13,61 @@
    limitations under the License. */
 package com.predic8.membrane.annot.generator.kubernetes.model;
 
+import com.fasterxml.jackson.databind.node.*;
+
 import java.util.*;
-import java.util.stream.Collectors;
 
-import static com.predic8.membrane.annot.generator.kubernetes.model.SchemaUtils.printRequired;
+import static com.predic8.membrane.annot.generator.kubernetes.model.SchemaFactory.OBJECT;
 
-public class SchemaObject implements ISchema {
+public class SchemaObject extends AbstractSchema<SchemaObject> {
 
-    private final String name;
-    private boolean required;
+    private boolean additionalProperties;
 
-    private String description;
-
-    // Properties to be copied 1:1 to the JSON schema, e.g. "type": "string"
-    private final Map<String, Object> attributes = new HashMap<>();
     // Java Properties (@MCAttributes, @MCChildElement)
-    private final List<SchemaObject> properties = new ArrayList<>();
+    protected final List<AbstractSchema> properties = new ArrayList<>();
 
-    public SchemaObject(String name) {
-        this.name = name;
+    SchemaObject(String name) {
+        super(name);
+        type = OBJECT;
     }
 
-    @Override
-    public String toString() {
-        return "\"" + name + "\": {" +
-                attributes.entrySet().stream()
-                        .map(SchemaUtils::entryToJson)
-                        .collect(Collectors.joining(",")) +
-                printProperties() +
-                "}"
-                ;
+    public SchemaObject property(AbstractSchema as) {
+        properties.add(as);
+        return this;
     }
 
-    public String getName() {
-        return name;
+    public SchemaObject additionalProperties(boolean additionalProperties) {
+        this.additionalProperties = additionalProperties;
+        return this;
     }
 
-    public String getDescription() {
-        return description;
+    public ObjectNode json(ObjectNode node) {
+        super.json(node);
+
+        if (!additionalProperties && isObject()) {
+            node.put("additionalProperties", false);
+        }
+
+        jsonProperties(node);
+
+        return node;
     }
 
-    public void setDescription(String description) {
-        this.description = description;
-    }
-
-    private String printProperties() {
-        if (properties.isEmpty())
-            return "";
-
-        return ",\"properties\": {" +
-                properties.stream().map(SchemaObject::toString).collect(Collectors.joining(",")) +
-                "}" +
-                printRequired(properties)
-                ;
-    }
-
-    public boolean isRequired() {
-        return required;
-    }
-
-    public void setRequired(boolean required) {
-        this.required = required;
-    }
-
-    @Override
-    public void addProperty(SchemaObject so) {
-        properties.add(so);
-    }
-
-    public void addAttribute(String key, Object value) {
-        attributes.put(key, value);
-    }
-
-    @Override
-    public void setAdditionalProperties(boolean additionalProperties) {
-        addAttribute("additionalProperties", additionalProperties);
+    private void jsonProperties(ObjectNode node) {
+        List<String> required = new ArrayList<>();
+        if (!properties.isEmpty()) {
+            ObjectNode propertiesNode = jnf.objectNode();
+            for (AbstractSchema property : properties) {
+                propertiesNode.set(property.getName(), property.json(jnf.objectNode()));
+                if (property.isRequired())
+                    required.add(property.getName());
+            }
+            if (!required.isEmpty()) {
+                var l = jnf.arrayNode();
+                required.forEach(l::add);
+                node.set("required",l);
+            }
+            node.set("properties", propertiesNode);
+        }
     }
 }

@@ -188,9 +188,8 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
     }
 
     private ValidationErrors validateRequest(OpenAPIRecord rec, Exchange exc) throws IOException, ParseException {
-        ValidationErrors errors = new ValidationErrors();
         if (!shouldValidate(rec.getApi(), REQUESTS))
-            return errors;
+            return new ValidationErrors();
 
         return new OpenAPIValidator(router.getUriFactory(), rec).validate(getOpenapiValidatorRequest(exc));
     }

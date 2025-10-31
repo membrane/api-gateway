@@ -13,6 +13,9 @@
    limitations under the License. */
 package com.predic8.membrane.annot.generator.kubernetes;
 
+import com.fasterxml.jackson.databind.*;
+import com.fasterxml.jackson.databind.node.*;
+import com.predic8.membrane.annot.generator.kubernetes.model.*;
 import com.predic8.membrane.annot.model.ElementInfo;
 import com.predic8.membrane.annot.model.MainInfo;
 import com.predic8.membrane.annot.model.Model;
@@ -21,8 +24,7 @@ import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.Element;
 import javax.tools.FileObject;
 import javax.tools.StandardLocation;
-import java.io.IOException;
-import java.io.Writer;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -33,6 +35,9 @@ import java.util.stream.Stream;
  * Bundles functionality for kubernetes file generation
  */
 public abstract class AbstractK8sGenerator {
+
+    protected final ObjectMapper om = new ObjectMapper();
+    protected final ObjectWriter writer = om.writerWithDefaultPrettyPrinter();
 
     protected final ProcessingEnvironment processingEnv;
 
@@ -53,7 +58,7 @@ public abstract class AbstractK8sGenerator {
     }
 
     protected abstract String fileName();
-    protected abstract void write(Model m);
+    protected abstract void write(Model m) throws IOException;
 
     protected WritableNames getElementNames(ElementInfo ei) {
         return new WritableNames(ei);
@@ -107,4 +112,5 @@ public abstract class AbstractK8sGenerator {
         passed[lines.length] = "";
         w.append(String.join(System.lineSeparator(), passed));
     }
+
 }

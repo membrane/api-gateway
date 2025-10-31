@@ -119,17 +119,6 @@ public class SSLProxy implements Proxy {
         this.sslInterceptors = sslInterceptors;
     }
 
-
-    @Override
-    public boolean isBlockRequest() {
-        return false;
-    }
-
-    @Override
-    public boolean isBlockResponse() {
-        return false;
-    }
-
     int port;
 
     public int getPort() {
@@ -188,22 +177,11 @@ public class SSLProxy implements Proxy {
     }
 
     @Override
-    public void setBlockRequest(boolean blockStatus) {
-
-    }
-
-    @Override
-    public void setBlockResponse(boolean blockStatus) {
-
-    }
-
-    @Override
     public RuleStatisticCollector getStatisticCollector() {
         return ruleStatisticCollector;
     }
 
     ConnectionManager cm;
-
 
     public SSLContext getSslInboundContext() {
         return new ForwardingStaticSSLContext();

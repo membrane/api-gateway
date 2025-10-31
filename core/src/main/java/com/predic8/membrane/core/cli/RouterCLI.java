@@ -56,6 +56,8 @@ public class RouterCLI {
 
     private static final Logger log = LoggerFactory.getLogger(RouterCLI.class);
 
+    private static final ObjectMapper om = new ObjectMapper();
+
     public static void main(String[] args) {
         MembraneCommandLine commandLine = getMembraneCommandLine(args);
         if (commandLine.getCommand().isOptionSet("h")) {
@@ -169,16 +171,21 @@ public class RouterCLI {
 
     private static void sendYamlToBeanCache(String location, BeanCache beanCache) throws IOException {
         try (YAMLParser parser = new YAMLFactory().createParser(new File(location))) {
-            var om = new ObjectMapper();
             int count = 0;
+
             while (!parser.isClosed()) {
-                Map<?, ?> m = om.readValue(parser, Map.class);
+                Map<Object, Object> m = om.readValue(parser, Map.class);
+                if (m == null) {
+                    log.debug("Skipping empty document. Maybe there are two --- separators but no configuration in between.");
+                    parser.nextToken();
+                    continue;
+                }
                 Map<Object, Object> meta = (Map<Object, Object>) m.get("metadata");
 
                 if (meta == null) {
                     // generate name, if it doesnt exist
-                    meta = new HashMap<>();
-                    ((Map<Object, Object>) m).put("metadata", meta);
+                    meta = new TreeMap<>();
+                    m.put("metadata", meta);
                     meta.put("name", "artifact" + ++count);
                     meta.put("uid", UUID.randomUUID().toString());
                 } else {

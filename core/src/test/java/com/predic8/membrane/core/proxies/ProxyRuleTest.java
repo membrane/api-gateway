@@ -34,7 +34,6 @@ public class ProxyRuleTest {
 		proxy = new ProxyRule(new ProxyRuleKey(8888));
 		proxy.setName("Rule 1");
 		// TODO: this is not possible anymore rule.setInboundTLS(true);
-		proxy.setBlockResponse(true);
 		proxy.setFlow(getFlow());
 
 	}
@@ -55,9 +54,6 @@ public class ProxyRuleTest {
 		List<Interceptor> inters = proxy.getFlow();
 		assertFalse(inters.isEmpty());
         assertEquals(2, inters.size());
-
-        assertTrue(proxy.isBlockResponse());
-		assertFalse(proxy.isBlockRequest());
 	}
 
 	private static List<Interceptor> getFlow() {

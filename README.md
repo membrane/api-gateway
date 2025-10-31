@@ -806,45 +806,6 @@ Replace `5XX` error messages from a backend:
 </api>
 ```
 
-# Writing Extensions with Groovy or Javascript
-
-Dynamically manipulate and monitor messages with Groovy:
-
-```xml
-
-<api port="2000">
-    <response>
-        <groovy>
-            header.add("X-Groovy", "Hello from Groovy!")
-            println("Status: ${message.statusCode}")
-            CONTINUE
-        </groovy>
-    </response>
-    <target url="https://api.predic8.de"/>
-</api>
-```
-
-Create a response with Javascript:
-
-```xml
-
-<api port="2000">
-    <response>
-        <javascript>
-            var body = JSON.stringify({
-            foo: 7,
-            bar: 42
-            });
-
-            Response.ok(body).contentType("application/json").build();
-        </javascript>
-    </response>
-    <return/> <!-- Do not forward, return immediately -->
-</api>
-```
-
-Also try the [Groovy](distribution/examples/scripting/groovy) and [Javascript example](distribution/examples/scripting/javascript).
-
 # Security
 
 Membrane offers lots of security features to protect backend servers.
@@ -906,13 +867,13 @@ Use OAuth2/OpenID to secure endpoints against Google, Azure AD, GitHub, Keycloak
 
 ```xml
 <api port="2001">
-  <oauth2Resource>
+  <oauth2Resource2>
     <membrane src="https://accounts.google.com"
               clientId="INSERT_CLIENT_ID"
               clientSecret="INSERT_CLIENT_SECRET"
               scope="email profile"
               subject="sub"/>
-  </oauth2Resource>
+  </oauth2Resource2>
   <groovy>
     // Get email from OAuth2 and forward it to the backend
     def oauth2 = exc.properties.'membrane.oauth2'

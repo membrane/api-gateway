@@ -1,6 +1,21 @@
 # Membrane Roadmap
 
+# YAML Support
+
+- Rename json schema document:
+  - Short name to keep schema ref in YAML instance documents short
+  - Ideas:
+    - membrane-v1.schema.json
+    - membrane-v1.json
+    - v1.json
+- Name from metadata/name or spec/name?
+- Correct YAML example on GitHub README
+- Rename in apis.yaml
+
+
 # 7.0.0
+
+## (Breaking) Interface Changes
 
 - Remove WADLInterceptor
 - HttpClient
@@ -11,11 +26,21 @@
 - Remove HttpUtil.getHTMLErrorBody()
 - LogInterceptor:
   - Remove: headerOnly
-- Rewrite JSONAssert Tests with RESTAssured
 - ValidatorInterceptor: remove FailureHandler
   - Predominantly used for logging; move logging into validators.
   - Migration: replace FailureHandler usages with validator-level logging; ensure correlation IDs/Exchange context remain available for logs.
   - Check if it is used by customer installations
+
+## Minor
+ - Rewrite JSONAssert Tests with RESTAssured
+
+## Discussion
+
+- YAML:
+  - apiKey:
+    - simple method for specifying a couple of keys in the YAML 
+    - SimpleKeyStore: scope feels strange in YAML. Maybe not TextContent for Value
+
 
 # 6.5.0
 

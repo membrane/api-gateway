@@ -155,7 +155,7 @@ class DispatchingInterceptorTest {
 		@Test
 		void invalidUriErrorMessage() throws Exception {
 			APIProxy api = new APIProxy();
-			api.setTarget(new AbstractServiceProxy.Target() {{
+			api.setTarget(new Target() {{
 				setHost("localhost");
 			}});
 
