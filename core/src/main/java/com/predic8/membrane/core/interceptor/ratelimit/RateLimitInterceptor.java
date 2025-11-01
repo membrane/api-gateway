@@ -93,7 +93,7 @@ public class RateLimitInterceptor extends AbstractExchangeExpressionInterceptor 
         // If there is no expression use the client IP
         if (expression.isEmpty())
             return null;
-        return ExchangeExpression.newInstance(router, language, expression);
+        return ExchangeExpression.newInstance(this, language, expression);
     }
 
     @Override

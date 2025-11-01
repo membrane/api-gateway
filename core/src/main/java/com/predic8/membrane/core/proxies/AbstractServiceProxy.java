@@ -19,9 +19,12 @@ import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.config.*;
 import com.predic8.membrane.core.config.security.*;
 import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.interceptor.Interceptor;
+import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.interceptor.lang.*;
 import com.predic8.membrane.core.lang.ExchangeExpression;
+import com.predic8.membrane.core.lang.ExchangeExpression.*;
 import com.predic8.membrane.core.lang.TemplateExchangeExpression;
+import com.predic8.membrane.core.lang.xpath.*;
 import com.predic8.membrane.core.transport.ssl.*;
 
 import static com.predic8.membrane.core.lang.ExchangeExpression.Language.*;
@@ -96,7 +99,7 @@ public abstract class AbstractServiceProxy extends SSLableProxy {
      * </p>
      */
     @MCElement(name = "target", topLevel = false)
-    public static class Target {
+    public static class Target implements XMLNamespaceSupport {
         private String host;
         private int port = -1;
         private String method;
@@ -107,8 +110,13 @@ public abstract class AbstractServiceProxy extends SSLableProxy {
 
         private SSLParser sslParser;
 
+        protected Namespaces namespaces;
+
         public void init(Router router) {
-            if (url != null) exchangeExpression = TemplateExchangeExpression.newInstance(router, language, url);
+            if (url != null) {
+                exchangeExpression = TemplateExchangeExpression.newInstance(new InterceptorAdapter(router,namespaces), language, url);
+            }
+
         }
 
         public String compileUrl(Exchange exc, Interceptor.Flow flow) {
@@ -227,6 +235,15 @@ public abstract class AbstractServiceProxy extends SSLableProxy {
         @MCAttribute
         public void setLanguage(ExchangeExpression.Language language) {
             this.language = language;
+        }
+
+        @MCChildElement(allowForeign = true, order = 100)
+        public void setNamespaces(Namespaces namespaces) {
+            this.namespaces = namespaces;
+        }
+
+        public Namespaces getNamespaces() {
+            return namespaces;
         }
     }
 

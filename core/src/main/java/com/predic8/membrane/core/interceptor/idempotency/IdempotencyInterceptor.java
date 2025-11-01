@@ -22,6 +22,7 @@ import com.predic8.membrane.annot.Required;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
+import com.predic8.membrane.core.interceptor.lang.*;
 import com.predic8.membrane.core.lang.ExchangeExpression;
 import com.predic8.membrane.core.lang.ExchangeExpression.Language;
 
@@ -43,18 +44,17 @@ import static com.predic8.membrane.core.lang.ExchangeExpression.Language.SPEL;
  * @topic 3. Security and Validation
  */
 @MCElement(name = "idempotency")
-public class IdempotencyInterceptor extends AbstractInterceptor {
+public class IdempotencyInterceptor extends AbstractLanguageInterceptor {
 
     private String key;
     private ExchangeExpression exchangeExpression;
-    private Language language = SPEL;
     private int expiration = 3600;
     private Cache<String, Boolean> processedKeys;
 
     @Override
     public void init() {
         super.init();
-        exchangeExpression = ExchangeExpression.newInstance(router, language, key);
+        exchangeExpression = ExchangeExpression.newInstance(this, language, key);
         processedKeys = CacheBuilder.newBuilder()
                 .maximumSize(10000)
                 .expireAfterWrite(expiration, TimeUnit.SECONDS)
@@ -105,17 +105,6 @@ public class IdempotencyInterceptor extends AbstractInterceptor {
     }
 
     /**
-     * @description Language used to interpret the expression (e.g., spel, jsonpath, xpath).
-     * Determines how the key string will be evaluated.
-     * @default SpEL
-     * @example jsonpath
-     */
-    @MCAttribute
-    public void setLanguage(Language language) {
-        this.language = language;
-    }
-
-    /**
      * @description Time in seconds after which idempotency keys automatically expire.
      * Useful to avoid memory leaks in long-running systems.
      * Common values:
@@ -134,10 +123,6 @@ public class IdempotencyInterceptor extends AbstractInterceptor {
 
     public String getKey() {
         return key;
-    }
-
-    public Language getLanguage() {
-        return language;
     }
 
     public int getExpiration() {

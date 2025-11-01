@@ -56,7 +56,7 @@ public class ForInterceptor extends AbstractFlowWithChildrenInterceptor {
     public void init() {
         super.init();
         try {
-            exchangeExpression = ExchangeExpression.newInstance(router, language, in);
+            exchangeExpression = ExchangeExpression.newInstance(this, language, in);
         } catch (ConfigurationException ce) {
             throw new ConfigurationException(ce.getMessage() + """
                     

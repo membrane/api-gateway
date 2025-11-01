@@ -14,6 +14,9 @@
 
 package com.predic8.membrane.core.lang.xpath;
 
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.interceptor.lang.*;
 import com.predic8.membrane.core.lang.*;
 import com.predic8.membrane.core.lang.ExchangeExpression.*;
 import org.junit.jupiter.api.*;
@@ -23,7 +26,9 @@ import java.net.*;
 
 import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.http.Request.*;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
 import static com.predic8.membrane.core.lang.ExchangeExpression.Language.*;
+import static com.predic8.membrane.core.lang.ExchangeExpression.newInstance;
 import static org.junit.jupiter.api.Assertions.*;
 
 class XPathExchangeExpressionTest extends AbstractExchangeExpressionTest {
@@ -110,4 +115,25 @@ class XPathExchangeExpressionTest extends AbstractExchangeExpressionTest {
         assertEquals("John Doe",evalString("/persons/name[1]"));
     }
 
+    @Nested
+    class Namespaces {
+
+        Exchange pExc;
+
+        @BeforeEach
+        void setup() throws URISyntaxException {
+            pExc = Request.post("/person").xml("""
+                    <p8:person xmlns:p8="https://predic8.de">
+                        <p8:firstname>Trevor</p8:firstname>
+                    </p8:person>
+                    """).buildExchange();
+        }
+
+        @Test
+        void localName() {
+            assertEquals("Trevor", newInstance( new InterceptorAdapter(router),getLanguage(),
+                    "//*[local-name()='firstname']")
+                    .evaluate(pExc, REQUEST, String.class));
+        }
+    }
 }

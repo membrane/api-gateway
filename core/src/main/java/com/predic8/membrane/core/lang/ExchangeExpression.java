@@ -17,6 +17,7 @@ package com.predic8.membrane.core.lang;
 import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.interceptor.lang.*;
 import com.predic8.membrane.core.lang.groovy.*;
 import com.predic8.membrane.core.lang.jsonpath.*;
 import com.predic8.membrane.core.lang.spel.*;
@@ -48,12 +49,46 @@ public interface ExchangeExpression {
      */
     <T> T evaluate(Exchange exchange, Interceptor.Flow flow, Class<T> type) throws ExchangeExpressionException;
 
-    static ExchangeExpression newInstance(Router router, Language language, String expression) {
+    /**
+     * Clients of this class should pass an interceptor if possible. Otherwise use the InterceptorAdapter to wrap it.
+     * There is no convenience method on purpose to make the clients pass the interceptor. From the interceptor you can always get the router.
+     * @param interceptor
+     * @param language
+     * @param expression
+     * @return
+     */
+    static ExchangeExpression newInstance(Interceptor interceptor, Language language, String expression) {
         return switch (language) {
-            case GROOVY -> new GroovyExchangeExpression(router, expression);
+            case GROOVY -> new GroovyExchangeExpression(interceptor, expression);
             case SPEL -> new SpELExchangeExpression(expression,null);
-            case XPATH -> new XPathExchangeExpression(expression);
+            case XPATH -> new XPathExchangeExpression(interceptor,expression);
             case JSONPATH -> new JsonpathExchangeExpression(expression);
         };
+    }
+    /**
+     * Allows to pass an Interceptor as an argument where there is no interceptor e.g. Target
+     */
+    class InterceptorAdapter extends AbstractInterceptor implements XMLNamespaceSupport{
+
+        private Namespaces namespaces;
+
+        public InterceptorAdapter(Router router) {
+            this.router = router;
+        }
+
+        public InterceptorAdapter(Router router, Namespaces namespaces) {
+            this.router = router;
+            this.namespaces = namespaces;
+        }
+
+        @Override
+        public void setNamespaces(Namespaces namespaces) {
+            this.namespaces = namespaces;
+        }
+
+        @Override
+        public Namespaces getNamespaces() {
+            return namespaces;
+        }
     }
 }

@@ -42,7 +42,7 @@ class TemplateExchangeExpressionTest {
 
     @Test
     void text() {
-        assertIterableEquals(List.of(new Text("aaa")), parseTokens(router,language,"aaa"));
+        assertIterableEquals(List.of(new Text("aaa")), parseTokens(new InterceptorAdapter(router),language,"aaa"));
     }
 
     @Test
@@ -66,6 +66,6 @@ class TemplateExchangeExpressionTest {
     }
 
     private static String eval(String expr) {
-        return new TemplateExchangeExpression(router, language, expr).evaluate(exc, REQUEST,String.class);
+        return new TemplateExchangeExpression(new InterceptorAdapter(router), language, expr).evaluate(exc, REQUEST,String.class);
     }
 }

@@ -17,8 +17,10 @@ package com.predic8.membrane.core.interceptor.flow;
 import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.interceptor.lang.*;
 import com.predic8.membrane.core.lang.*;
 import com.predic8.membrane.core.lang.ExchangeExpression.*;
+import com.predic8.membrane.core.lang.xpath.*;
 import org.slf4j.*;
 
 import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
@@ -37,7 +39,7 @@ import static com.predic8.membrane.core.lang.ExchangeExpression.Language.*;
  * @topic 1. Proxies and Flow
  */
 @MCElement(name = "if")
-public class IfInterceptor extends AbstractFlowWithChildrenInterceptor {
+public class IfInterceptor extends AbstractFlowWithChildrenInterceptor implements XMLNamespaceSupport {
     private static final Logger log = LoggerFactory.getLogger(IfInterceptor.class);
 
     private String test;
@@ -52,7 +54,7 @@ public class IfInterceptor extends AbstractFlowWithChildrenInterceptor {
     @Override
     public void init() {
         super.init();
-        exchangeExpression = ExchangeExpression.newInstance(router, language, test);
+        exchangeExpression = ExchangeExpression.newInstance(this, language, test);
     }
 
     @Override
@@ -129,5 +131,19 @@ public class IfInterceptor extends AbstractFlowWithChildrenInterceptor {
         }
         ret.append("<br/>}");
         return ret.toString();
+    }
+
+    /**
+     * XML namespaces to be used in expressions.
+     */
+    protected Namespaces namespaces;
+
+    @MCChildElement(allowForeign = true,order = 10)
+    public void setNamespaces(Namespaces namespaces) {
+        this.namespaces = namespaces;
+    }
+
+    public Namespaces getNamespaces() {
+        return namespaces;
     }
 }

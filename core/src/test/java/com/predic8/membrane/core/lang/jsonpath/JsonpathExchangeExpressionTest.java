@@ -116,12 +116,12 @@ class JsonpathExchangeExpressionTest extends AbstractExchangeExpressionTest {
 
     @Test
     void wrongContentType() throws URISyntaxException {
-        assertEquals("", ExchangeExpression.newInstance(router, JSONPATH, "$")
+        assertEquals("", ExchangeExpression.newInstance(new InterceptorAdapter(router), JSONPATH, "$")
                 .evaluate(Request.post("/foo").contentType(TEXT_XML).buildExchange(), REQUEST, String.class));
     }
 
     private static <T> T evaluateWithEmptyBodyFor(Class<T> type) throws URISyntaxException {
-        return ExchangeExpression.newInstance(router, JSONPATH, "$")
+        return ExchangeExpression.newInstance(new InterceptorAdapter(router), JSONPATH, "$")
                 .evaluate(get("/foo").buildExchange(), REQUEST, type);
     }
 }

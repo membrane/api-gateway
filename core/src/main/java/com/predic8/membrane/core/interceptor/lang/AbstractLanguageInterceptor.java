@@ -14,15 +14,15 @@
 
 package com.predic8.membrane.core.interceptor.lang;
 
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.core.interceptor.AbstractInterceptor;
+import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.lang.ExchangeExpression.Language;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import static com.predic8.membrane.core.lang.ExchangeExpression.Language.SPEL;
 
-abstract class AbstractLanguageInterceptor extends AbstractInterceptor implements Polyglot{
+public abstract class AbstractLanguageInterceptor extends AbstractInterceptor implements Polyglot, XMLNamespaceSupport {
 
     private static final Logger log = LoggerFactory.getLogger(AbstractLanguageInterceptor.class);
 
@@ -30,6 +30,7 @@ abstract class AbstractLanguageInterceptor extends AbstractInterceptor implement
      * SpEL is default
      */
     protected Language language = SPEL;
+    protected Namespaces namespaces;
 
     public String getLanguage() {
         return language.name();
@@ -43,5 +44,18 @@ abstract class AbstractLanguageInterceptor extends AbstractInterceptor implement
     @MCAttribute
     public void setLanguage(Language language) {
         this.language = language;
+    }
+
+    /**
+     * Declaration of XML namespaces for XPath expressions.
+     * @param namespaces
+     */
+    @MCChildElement(allowForeign = true)
+    public void setNamespaces(Namespaces namespaces) {
+        this.namespaces = namespaces;
+    }
+
+    public Namespaces getNamespaces() {
+        return namespaces;
     }
 }

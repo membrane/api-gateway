@@ -13,30 +13,31 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.flow.choice;
 
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.annot.Required;
+import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.interceptor.Interceptor.Flow;
-import com.predic8.membrane.core.lang.ExchangeExpression;
-import com.predic8.membrane.core.lang.ExchangeExpression.Language;
+import com.predic8.membrane.core.interceptor.lang.*;
+import com.predic8.membrane.core.lang.*;
+import com.predic8.membrane.core.lang.ExchangeExpression.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import static com.predic8.membrane.core.lang.ExchangeExpression.Language.SPEL;
 
 @MCElement(name = "case", topLevel = false)
-public class Case extends InterceptorContainer {
+public class Case extends InterceptorContainer implements XMLNamespaceSupport {
 
     private static final Logger log = LoggerFactory.getLogger(Case.class);
 
     private String test;
     private Language language = SPEL;
     private ExchangeExpression exchangeExpression;
+    private Namespaces namespaces;
 
     public void init(Router router) {
-        exchangeExpression = ExchangeExpression.newInstance(router, language, test);
+        exchangeExpression = ExchangeExpression.newInstance( new InterceptorAdapter(router,namespaces), language, test);
     }
 
     boolean evaluate(Exchange exc, Flow flow) {
@@ -75,5 +76,18 @@ public class Case extends InterceptorContainer {
     @MCAttribute
     public void setTest(String test) {
         this.test = test;
+    }
+
+    /**
+     * Declaration of XML namespaces for XPath expressions.
+     * @param namespaces
+     */
+    @MCChildElement(allowForeign = true,order = 10)
+    public void setNamespaces(Namespaces namespaces) {
+        this.namespaces = namespaces;
+    }
+
+    public Namespaces getNamespaces() {
+        return namespaces;
     }
 }
