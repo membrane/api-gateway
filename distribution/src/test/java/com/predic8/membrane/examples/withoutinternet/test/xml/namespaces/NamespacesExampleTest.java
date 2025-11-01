@@ -14,9 +14,6 @@ limitations under the License. */
 package com.predic8.membrane.examples.withoutinternet.test.xml.namespaces;
 
 import com.predic8.membrane.examples.util.*;
-import org.junit.jupiter.api.*;
-
-import static io.restassured.RestAssured.*;
 
 public class NamespacesExampleTest extends AbstractSampleMembraneStartStopTestcase {
 

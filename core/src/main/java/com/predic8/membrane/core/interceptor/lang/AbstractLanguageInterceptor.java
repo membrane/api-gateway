@@ -24,8 +24,6 @@ import static com.predic8.membrane.core.lang.ExchangeExpression.Language.SPEL;
 
 public abstract class AbstractLanguageInterceptor extends AbstractInterceptor implements Polyglot, XMLNamespaceSupport {
 
-    private static final Logger log = LoggerFactory.getLogger(AbstractLanguageInterceptor.class);
-
     /**
      * SpEL is default
      */

@@ -29,7 +29,7 @@ import static javax.xml.XMLConstants.FEATURE_SECURE_PROCESSING;
  */
 public final class HardenedXmlParser implements XmlParser {
 
-    private final DocumentBuilderFactory factory = createFactory(true);
+    private final DocumentBuilderFactory factory = createFactory();
 
     private static XmlParser INSTANCE;
 
@@ -44,9 +44,9 @@ public final class HardenedXmlParser implements XmlParser {
         return INSTANCE;
     }
 
-    private static DocumentBuilderFactory createFactory(boolean namespaceAware) {
+    private static DocumentBuilderFactory createFactory() {
         DocumentBuilderFactory f = DocumentBuilderFactory.newInstance();
-        f.setNamespaceAware(namespaceAware);
+        f.setNamespaceAware(true);
 
         try {
             // XXE protection and secure defaults

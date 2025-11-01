@@ -120,7 +120,7 @@ public abstract class AbstractServiceProxy extends SSLableProxy {
         }
 
         public String compileUrl(Exchange exc, Interceptor.Flow flow) {
-            /**
+            /*
              * Will always evaluate on every call. This is fine as SpEL is fast enough and performs its own optimizations.
              * 1.000.000 calls ~10ms
              */

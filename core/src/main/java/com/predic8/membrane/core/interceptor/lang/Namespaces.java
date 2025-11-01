@@ -26,7 +26,7 @@ public class Namespaces {
 
     //NamespaceContext nsContext;
     private List<Namespace> namespaces;
-    private NamespaceContextImpl nsContext = new NamespaceContextImpl();
+    private final NamespaceContextImpl nsContext = new NamespaceContextImpl();
 
     public NamespaceContext getNamespaceContext() {
         return nsContext;

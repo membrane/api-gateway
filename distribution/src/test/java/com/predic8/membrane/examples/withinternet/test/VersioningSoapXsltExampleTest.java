@@ -14,13 +14,12 @@
 package com.predic8.membrane.examples.withinternet.test;
 
 import com.predic8.membrane.examples.util.*;
-import io.restassured.filter.log.*;
 import org.junit.jupiter.api.*;
 
 import java.io.*;
 
 import static io.restassured.RestAssured.*;
-import static io.restassured.filter.log.LogDetail.ALL;
+import static io.restassured.filter.log.LogDetail.*;
 import static org.hamcrest.Matchers.*;
 
 public class VersioningSoapXsltExampleTest extends DistributionExtractingTestcase {
