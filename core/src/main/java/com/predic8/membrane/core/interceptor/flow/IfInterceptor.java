@@ -26,6 +26,7 @@ import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
 import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.lang.ExchangeExpression.Language.*;
+import static com.predic8.membrane.core.lang.ExchangeExpression.expression;
 
 /**
  * @description <p>
@@ -52,7 +53,7 @@ public class IfInterceptor extends AbstractFlowWithChildrenInterceptor {
     @Override
     public void init() {
         super.init();
-        exchangeExpression = ExchangeExpression.newInstance(router, language, test);
+        exchangeExpression = expression(router, language, test);
     }
 
     @Override
