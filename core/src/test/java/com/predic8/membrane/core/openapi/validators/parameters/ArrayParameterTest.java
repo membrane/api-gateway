@@ -45,7 +45,7 @@ class ArrayParameterTest extends AbstractValidatorTest {
     }
 
     @Test
-    void normal() throws Exception {
+    void normal() {
         Map<String, List<String>> params = Map.of("number",List.of("1","2","3"),"cuckoo",List.of("ignore"));
         parameter.setValues(params);
         var items = parameter.getJson();
@@ -56,7 +56,7 @@ class ArrayParameterTest extends AbstractValidatorTest {
     }
 
     @Test
-    void single_null() throws Exception {
+    void single_null() {
         parameter.setValues(Map.of("number",List.of("null")));
         JsonNode json = parameter.getJson();
         assertEquals(1, json.size());
@@ -64,7 +64,7 @@ class ArrayParameterTest extends AbstractValidatorTest {
     }
 
     @Test
-    void single_null_values() throws Exception {
+    void single_null_values() {
         parameter.setValues(Map.of("number", emptyList()));
         assertEquals(0, parameter.getJson().size());
     }

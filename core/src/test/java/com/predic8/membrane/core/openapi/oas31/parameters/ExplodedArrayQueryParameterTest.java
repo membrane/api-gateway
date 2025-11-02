@@ -86,9 +86,7 @@ public class ExplodedArrayQueryParameterTest {
             @ParameterizedTest(name = "{index}: {0}")
             @MethodSource("valid")
             void zeroErrors(String name, String path) {
-                ValidationErrors e = validator.validate(get().path(path));
-                System.out.println("e = " + e);
-                assertTrue(e.isEmpty(), () -> name + " should have 0 errors");
+                assertTrue(validator.validate(get().path(path)).isEmpty(), () -> name + " should have 0 errors");
             }
         }
 
