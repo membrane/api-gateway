@@ -12,13 +12,20 @@ paths:
           explode: false
           schema:
             $ref: "#/components/schemas/Numbers"
+        - name: not-null
+          in: query
+          explode: false
+          schema:
+            type: array
+            items:
+              type: number
         - name: string
           in: query
           explode: false
           schema:
             type: array
             items:
-              type: string
+              type: [string,null]
         - name: const
           in: query
           explode: false
@@ -62,9 +69,9 @@ components:
       minimum: 0
       maximum: 255
     Numbers:
-      type: [array, "null"]
+      type: array
       items:
-        type: number
+        type: [number,null]
     Booleans:
       type: array
       items:

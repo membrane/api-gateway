@@ -35,6 +35,7 @@ import java.net.URISyntaxException;
 import java.util.*;
 
 import static com.predic8.membrane.core.lang.ExchangeExpression.Language.SPEL;
+import static com.predic8.membrane.core.lang.ExchangeExpression.expression;
 
 /**
  * @description The api proxy extends the serviceProxy with API related functions like OpenAPI support and path parameters.
@@ -83,7 +84,11 @@ public class APIProxy extends ServiceProxy implements Polyglot {
     public void init() {
         super.init();
         if (test != null && !test.isEmpty()) {
+<<<<<<< HEAD
             exchangeExpression = ExchangeExpression.newInstance(new InterceptorAdapter(router,namespaces), language, test);
+=======
+            exchangeExpression = expression(router, language, test);
+>>>>>>> f78bb2c5a6937831602bd693024f03f9f2acad2d
         }
         key = new APIProxyKey(key, exchangeExpression, !specs.isEmpty());
         initOpenAPI();

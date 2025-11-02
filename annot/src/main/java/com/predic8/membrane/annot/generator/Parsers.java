@@ -42,7 +42,7 @@ public class Parsers {
 						sources.toArray(new Element[0]));
                 try (BufferedWriter bw = new BufferedWriter(o.openWriter())) {
                     String copyright = """
-                            /* Copyright 2012,2013 predic8 GmbH, www.predic8.com
+                            /* Copyright 2012-2025 predic8 GmbH, www.predic8.com
                             
                                Licensed under the Apache License, Version 2.0 (the "License");
                                you may not use this file except in compliance with the License.
@@ -125,11 +125,12 @@ public class Parsers {
                                 "\r\n" +
                                 "package " + main.getAnnotation().outputPackage() + ";\r\n" +
                                 "\r\n" +
+                                "import com.predic8.membrane.annot.AbstractParser;\r\n" +
                                 "import org.w3c.dom.Element;\r\n" +
                                 "import org.springframework.beans.factory.xml.ParserContext;\r\n" +
                                 "import org.springframework.beans.factory.support.BeanDefinitionBuilder;\r\n");
-                        if (!main.getAnnotation().outputPackage().equals("com.predic8.membrane.core.config.spring"))
-                            bw.write("import com.predic8.membrane.core.config.spring.*;\r\n");
+//                        if (!main.getAnnotation().outputPackage().equals("com.predic8.membrane.core.config.spring"))
+//                            bw.write("import com.predic8.membrane.core.config.spring.*;\r\n");
                         bw.write(
                                 "\r\n" +
                                         "/**\r\n" +

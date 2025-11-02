@@ -25,6 +25,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import static com.predic8.membrane.core.lang.ExchangeExpression.Language.SPEL;
+import static com.predic8.membrane.core.lang.ExchangeExpression.expression;
 
 @MCElement(name = "case", topLevel = false)
 public class Case extends InterceptorContainer implements XMLNamespaceSupport {
@@ -37,7 +38,11 @@ public class Case extends InterceptorContainer implements XMLNamespaceSupport {
     private Namespaces namespaces;
 
     public void init(Router router) {
+<<<<<<< HEAD
         exchangeExpression = ExchangeExpression.newInstance( new InterceptorAdapter(router,namespaces), language, test);
+=======
+        exchangeExpression = expression(router, language, test);
+>>>>>>> f78bb2c5a6937831602bd693024f03f9f2acad2d
     }
 
     boolean evaluate(Exchange exc, Flow flow) {

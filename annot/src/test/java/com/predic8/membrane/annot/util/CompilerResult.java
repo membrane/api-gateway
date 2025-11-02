@@ -11,22 +11,12 @@
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
    See the License for the specific language governing permissions and
    limitations under the License. */
-package com.predic8.membrane.core.lang.spel.spelable;
+package com.predic8.membrane.annot.util;
 
-import com.predic8.membrane.core.http.*;
+import javax.tools.DiagnosticCollector;
+import javax.tools.JavaFileObject;
 
-public class SpELBody {
-
-    /**
-     * Store message instead of body to be able to extract even zipped bodies
-     */
-    final Message message;
-
-    public SpELBody(Message msg) {
-        message = msg;
-    }
-
-    public Message getMessage() {
-        return message;
-    }
+public record CompilerResult(
+        boolean compilationSuccess,
+        DiagnosticCollector<JavaFileObject> diagnostics) {
 }

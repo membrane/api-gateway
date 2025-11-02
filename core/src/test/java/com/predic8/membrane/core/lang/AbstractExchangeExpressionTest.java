@@ -26,6 +26,7 @@ import java.util.*;
 
 import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
+import static com.predic8.membrane.core.lang.ExchangeExpression.expression;
 
 public abstract class AbstractExchangeExpressionTest {
 
@@ -65,6 +66,7 @@ public abstract class AbstractExchangeExpressionTest {
     protected abstract Language getLanguage();
 
     protected Object evalObject(String expression) {
+<<<<<<< HEAD
         return ExchangeExpression.newInstance(new InterceptorAdapter(router), getLanguage(),expression)
                 .evaluate(exchange,flow, Object.class);
     }
@@ -77,5 +79,16 @@ public abstract class AbstractExchangeExpressionTest {
     protected String evalString(String expression) {
         return ExchangeExpression.newInstance(new InterceptorAdapter(router), getLanguage(),expression)
                 .evaluate(exchange,flow, String.class);
+=======
+        return expression(router, getLanguage(),expression).evaluate(exchange,flow, Object.class);
+    }
+
+    protected boolean evalBool(String expression) {
+        return expression(router, getLanguage(),expression).evaluate(exchange,flow, Boolean.class);
+    }
+
+    protected String evalString(String expression) {
+        return expression(router, getLanguage(),expression).evaluate(exchange,flow, String.class);
+>>>>>>> f78bb2c5a6937831602bd693024f03f9f2acad2d
     }
 }

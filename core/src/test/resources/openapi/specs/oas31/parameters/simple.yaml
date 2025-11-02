@@ -12,6 +12,11 @@ paths:
           explode: true
           schema:
             $ref: "#/components/schemas/Numbers"
+        - name: number-and-null
+          in: query
+          explode: true
+          schema:
+            $ref: "#/components/schemas/NumbersAndNull"
         - name: string
           description: String param
           in: query
@@ -19,7 +24,7 @@ paths:
           schema:
             type: array
             items:
-              type: string
+              type: [string,null]
         - name: const
           in: query
           explode: true
@@ -81,6 +86,10 @@ components:
       type: array
       items:
         type: number
+    NumbersAndNull:
+      type: array
+      items:
+        type: [number,null]
     Booleans:
       type: array
       items:

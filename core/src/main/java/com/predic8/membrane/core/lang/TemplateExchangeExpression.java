@@ -25,6 +25,7 @@ import java.util.*;
 import java.util.regex.*;
 
 import static com.predic8.membrane.core.lang.ExchangeExpression.Language.*;
+import static com.predic8.membrane.core.lang.ExchangeExpression.expression;
 
 public class TemplateExchangeExpression extends AbstractExchangeExpression {
 
@@ -96,7 +97,11 @@ public class TemplateExchangeExpression extends AbstractExchangeExpression {
             }
             String expr = m.group(3);
             if (expr != null) {
+<<<<<<< HEAD
                 tokens.add(new Expression(ExchangeExpression.newInstance(interceptor, language, expr)));
+=======
+                tokens.add(new Expression(expression(router, language, expr)));
+>>>>>>> f78bb2c5a6937831602bd693024f03f9f2acad2d
             }
         }
         log.debug("Tokens: {}", tokens);

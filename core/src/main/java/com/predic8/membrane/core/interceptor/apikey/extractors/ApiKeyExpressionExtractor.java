@@ -25,9 +25,11 @@ import java.util.Optional;
 
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
 import static com.predic8.membrane.core.lang.ExchangeExpression.Language.SPEL;
+import static com.predic8.membrane.core.lang.ExchangeExpression.expression;
 import static com.predic8.membrane.core.security.ApiKeySecurityScheme.In.EXPRESSION;
 
 /**
+ * @deprecated Set the expression directly on the apiKey plugin.
  * @description Extracts an API key by evaluating an expression on the incoming request.
  * The result (a string) is treated as the API key. The expression is evaluated in the configured language
  * (default: <code>SPEL</code>) during the request flow.
@@ -54,7 +56,11 @@ public class ApiKeyExpressionExtractor implements ApiKeyExtractor, Polyglot, XML
 
     @Override
     public void init(Router router) {
+<<<<<<< HEAD
         exchangeExpression = ExchangeExpression.newInstance(new InterceptorAdapter(router,namespaces), language, expression);
+=======
+        exchangeExpression = expression(router, language, expression);
+>>>>>>> f78bb2c5a6937831602bd693024f03f9f2acad2d
     }
 
     @Override
