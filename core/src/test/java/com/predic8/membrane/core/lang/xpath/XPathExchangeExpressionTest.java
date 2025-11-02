@@ -28,7 +28,7 @@ import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.http.Request.*;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
 import static com.predic8.membrane.core.lang.ExchangeExpression.Language.*;
-import static com.predic8.membrane.core.lang.ExchangeExpression.newInstance;
+import static com.predic8.membrane.core.lang.ExchangeExpression.expression;
 import static org.junit.jupiter.api.Assertions.*;
 
 class XPathExchangeExpressionTest extends AbstractExchangeExpressionTest {
@@ -131,7 +131,7 @@ class XPathExchangeExpressionTest extends AbstractExchangeExpressionTest {
 
         @Test
         void localName() {
-            assertEquals("Trevor", newInstance( new InterceptorAdapter(router),getLanguage(),
+            assertEquals("Trevor", expression( new InterceptorAdapter(router),getLanguage(),
                     "//*[local-name()='firstname']")
                     .evaluate(pExc, REQUEST, String.class));
         }

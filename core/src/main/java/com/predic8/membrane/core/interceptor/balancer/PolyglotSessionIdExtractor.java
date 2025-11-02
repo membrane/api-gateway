@@ -35,11 +35,7 @@ public class PolyglotSessionIdExtractor extends AbstractXmlElement implements Se
 
     public void init(Router router) {
         if (sessionSource != null && !sessionSource.isEmpty()) {
-<<<<<<< HEAD
-            exchangeExpression = ExchangeExpression.newInstance(new InterceptorAdapter(router), language, sessionSource);
-=======
-            exchangeExpression = expression(router, language, sessionSource);
->>>>>>> f78bb2c5a6937831602bd693024f03f9f2acad2d
+            exchangeExpression = ExchangeExpression.expression(new InterceptorAdapter(router), language, sessionSource);
         }
     }
 

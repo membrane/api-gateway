@@ -84,11 +84,7 @@ public class APIProxy extends ServiceProxy implements Polyglot {
     public void init() {
         super.init();
         if (test != null && !test.isEmpty()) {
-<<<<<<< HEAD
-            exchangeExpression = ExchangeExpression.newInstance(new InterceptorAdapter(router,namespaces), language, test);
-=======
-            exchangeExpression = expression(router, language, test);
->>>>>>> f78bb2c5a6937831602bd693024f03f9f2acad2d
+            exchangeExpression = expression(new InterceptorAdapter(router,namespaces), language, test);
         }
         key = new APIProxyKey(key, exchangeExpression, !specs.isEmpty());
         initOpenAPI();

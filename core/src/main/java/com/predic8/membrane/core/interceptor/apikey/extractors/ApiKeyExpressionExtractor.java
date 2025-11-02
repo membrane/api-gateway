@@ -56,11 +56,7 @@ public class ApiKeyExpressionExtractor implements ApiKeyExtractor, Polyglot, XML
 
     @Override
     public void init(Router router) {
-<<<<<<< HEAD
-        exchangeExpression = ExchangeExpression.newInstance(new InterceptorAdapter(router,namespaces), language, expression);
-=======
-        exchangeExpression = expression(router, language, expression);
->>>>>>> f78bb2c5a6937831602bd693024f03f9f2acad2d
+        exchangeExpression = expression(new InterceptorAdapter(router,namespaces), language, expression);
     }
 
     @Override

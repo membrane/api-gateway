@@ -49,7 +49,6 @@ public interface ExchangeExpression {
      */
     <T> T evaluate(Exchange exchange, Interceptor.Flow flow, Class<T> type) throws ExchangeExpressionException;
 
-<<<<<<< HEAD
     /**
      * Clients of this class should pass an interceptor if possible. Otherwise use the InterceptorAdapter to wrap it.
      * There is no convenience method on purpose to make the clients pass the interceptor. From the interceptor you can always get the router.
@@ -58,10 +57,7 @@ public interface ExchangeExpression {
      * @param expression
      * @return
      */
-    static ExchangeExpression newInstance(Interceptor interceptor, Language language, String expression) {
-=======
-    static ExchangeExpression expression(Router router, Language language, String expression) {
->>>>>>> f78bb2c5a6937831602bd693024f03f9f2acad2d
+    static ExchangeExpression expression(Interceptor interceptor, Language language, String expression) {
         return switch (language) {
             case GROOVY -> new GroovyExchangeExpression(interceptor, expression);
             case SPEL -> new SpELExchangeExpression(expression,null);

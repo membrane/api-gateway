@@ -27,12 +27,8 @@ import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
-<<<<<<< HEAD
-=======
-import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
-import static com.predic8.membrane.core.lang.ExchangeExpression.Language.SPEL;
-import static com.predic8.membrane.core.lang.ExchangeExpression.expression;
->>>>>>> f78bb2c5a6937831602bd693024f03f9f2acad2d
+import static com.predic8.membrane.core.lang.ExchangeExpression.*;
+
 
 /**
  * @description <p>Prevents duplicate request processing based on a dynamic idempotency key.</p>
@@ -54,11 +50,8 @@ public class IdempotencyInterceptor extends AbstractLanguageInterceptor {
     @Override
     public void init() {
         super.init();
-<<<<<<< HEAD
-        exchangeExpression = ExchangeExpression.newInstance(this, language, key);
-=======
-        exchangeExpression = expression(router, language, key);
->>>>>>> f78bb2c5a6937831602bd693024f03f9f2acad2d
+
+        exchangeExpression = expression(this, language, key);
         processedKeys = CacheBuilder.newBuilder()
                 .maximumSize(10000)
                 .expireAfterWrite(expiration, TimeUnit.SECONDS)

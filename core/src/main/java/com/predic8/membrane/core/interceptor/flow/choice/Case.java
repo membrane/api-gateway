@@ -15,6 +15,7 @@ package com.predic8.membrane.core.interceptor.flow.choice;
 
 import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.Router;
+import com.predic8.membrane.core.config.spring.*;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.interceptor.Interceptor.Flow;
@@ -38,11 +39,7 @@ public class Case extends InterceptorContainer implements XMLNamespaceSupport {
     private Namespaces namespaces;
 
     public void init(Router router) {
-<<<<<<< HEAD
-        exchangeExpression = ExchangeExpression.newInstance( new InterceptorAdapter(router,namespaces), language, test);
-=======
-        exchangeExpression = expression(router, language, test);
->>>>>>> f78bb2c5a6937831602bd693024f03f9f2acad2d
+        exchangeExpression = ExchangeExpression.expression( new InterceptorAdapter(router,namespaces), language, test);
     }
 
     boolean evaluate(Exchange exc, Flow flow) {
