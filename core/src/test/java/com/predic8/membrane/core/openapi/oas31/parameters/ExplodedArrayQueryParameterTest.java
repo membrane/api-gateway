@@ -76,7 +76,7 @@ public class ExplodedArrayQueryParameterTest {
                         arguments("single exp", "/array?number-and-null=3e7"),
 
                         // Null and co
-                        arguments("no =", "/array"),
+                        arguments("no=", "/array?number-and-null"),
                         arguments("empty value", "/array?number-and-null="),
                         arguments("single null", "/array?number-and-null=null"),
                         arguments("array of nulls", "/array?number-and-null=null&number-and-null=null&number-and-null=null")
