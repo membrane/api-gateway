@@ -14,18 +14,16 @@
 package com.predic8.membrane.core.interceptor.flow.choice;
 
 import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.Router;
-import com.predic8.membrane.core.config.spring.*;
-import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.interceptor.Interceptor.*;
 import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.interceptor.Interceptor.Flow;
 import com.predic8.membrane.core.interceptor.lang.*;
 import com.predic8.membrane.core.lang.*;
 import com.predic8.membrane.core.lang.ExchangeExpression.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.slf4j.*;
 
-import static com.predic8.membrane.core.lang.ExchangeExpression.Language.SPEL;
+import static com.predic8.membrane.core.lang.ExchangeExpression.Language.*;
 import static com.predic8.membrane.core.lang.ExchangeExpression.expression;
 
 @MCElement(name = "case", topLevel = false)
@@ -39,7 +37,7 @@ public class Case extends InterceptorContainer implements XMLNamespaceSupport {
     private Namespaces namespaces;
 
     public void init(Router router) {
-        exchangeExpression = ExchangeExpression.expression( new InterceptorAdapter(router,namespaces), language, test);
+        exchangeExpression = expression( new InterceptorAdapter(router,namespaces), language, test);
     }
 
     boolean evaluate(Exchange exc, Flow flow) {

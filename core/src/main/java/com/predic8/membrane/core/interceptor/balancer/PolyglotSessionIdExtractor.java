@@ -13,14 +13,12 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.balancer;
 
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.annot.Required;
-import com.predic8.membrane.core.Router;
-import com.predic8.membrane.core.config.AbstractXmlElement;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.interceptor.Interceptor.Flow;
-import com.predic8.membrane.core.interceptor.lang.Polyglot;
+import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.config.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.interceptor.Interceptor.*;
+import com.predic8.membrane.core.interceptor.lang.*;
 import com.predic8.membrane.core.lang.*;
 import com.predic8.membrane.core.lang.ExchangeExpression.*;
 
@@ -35,7 +33,7 @@ public class PolyglotSessionIdExtractor extends AbstractXmlElement implements Se
 
     public void init(Router router) {
         if (sessionSource != null && !sessionSource.isEmpty()) {
-            exchangeExpression = ExchangeExpression.expression(new InterceptorAdapter(router), language, sessionSource);
+            exchangeExpression = expression(new InterceptorAdapter(router), language, sessionSource);
         }
     }
 
