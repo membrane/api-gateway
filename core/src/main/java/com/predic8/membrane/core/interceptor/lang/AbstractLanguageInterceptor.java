@@ -30,8 +30,8 @@ public abstract class AbstractLanguageInterceptor extends AbstractInterceptor im
     protected Language language = SPEL;
     protected Namespaces namespaces;
 
-    public String getLanguage() {
-        return language.name();
+    public Language getLanguage() {
+        return language;
     }
 
     /**

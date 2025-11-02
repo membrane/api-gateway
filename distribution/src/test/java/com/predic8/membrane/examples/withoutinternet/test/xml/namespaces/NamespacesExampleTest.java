@@ -31,7 +31,7 @@ public class NamespacesExampleTest extends AbstractSampleMembraneStartStopTestca
     // TODO implement other cases as well
 
     @Test
-    void namespaceAwareXPathExtraction() throws Exception {
+    void namespaceAwareXPathExtraction() {
         String xmlBody = """
             <per:person id="77" xmlns:per="https://predic8.de/person">
               <per:name>Hans</per:name>
@@ -54,7 +54,7 @@ public class NamespacesExampleTest extends AbstractSampleMembraneStartStopTestca
     }
 
     @Test
-    void differentCity() throws Exception {
+    void differentCity() {
         String xmlBody = """
             <per:person id="42" xmlns:per="https://predic8.de/person">
               <per:name>Maria</per:name>

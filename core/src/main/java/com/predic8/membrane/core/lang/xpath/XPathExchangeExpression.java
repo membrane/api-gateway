@@ -33,7 +33,7 @@ public class XPathExchangeExpression extends AbstractExchangeExpression {
 
     private static final Logger log = LoggerFactory.getLogger(XPathExchangeExpression.class.getName());
 
-    private static XmlParser parser = HardenedXmlParser.getInstance();
+    private static final XmlParser parser = HardenedXmlParser.getInstance();
 
     private Namespaces namespaces;
 
