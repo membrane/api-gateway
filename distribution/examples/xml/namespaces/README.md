@@ -1,7 +1,7 @@
 # XML Namespaces Example
 
-Namespaces are a powerful XML feature. Unfortunately, they can be a bit tricky to use. This example shows
-how to declare and use namespaces. The namespace decarations can be used in:
+Namespaces are a powerful XML feature. Unfortunately, they can be a bit tricky to use. This example shows 
+how to declare and use namespaces. The namespace declarations can be used in:
 
 - setProperty
 - setHeader

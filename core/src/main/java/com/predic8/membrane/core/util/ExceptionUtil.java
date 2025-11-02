@@ -13,10 +13,6 @@
    limitations under the License. */
 package com.predic8.membrane.core.util;
 
-import com.predic8.membrane.core.util.xml.parser.*;
-
-import java.util.*;
-
 public class ExceptionUtil {
 
     public static String concatMessageAndCauseMessages(Throwable throwable) {

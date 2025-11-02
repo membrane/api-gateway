@@ -41,10 +41,13 @@ public final class HardenedXmlParser implements XmlParser {
 
     public static XmlParser getInstance() {
         if (INSTANCE == null) {
-            INSTANCE = new HardenedXmlParser();
-            return INSTANCE;
+            // Multiple threads can reach this point at the same time, therefore we need to synchronize
+            synchronized (HardenedXmlParser.class) {
+                if (INSTANCE == null) {
+                    INSTANCE = new HardenedXmlParser();
+                }
+            }
         }
-
         return INSTANCE;
     }
 
