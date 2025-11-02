@@ -70,6 +70,10 @@ public final class HardenedXmlParser implements XmlParser {
         return f;
     }
 
+    /**
+     * Creates a new DocumentBuilder for XML parsing. Access is not thread-safe!
+     * @return
+     */
     private DocumentBuilder newBuilder() {
         try {
             DocumentBuilder builder = factory.newDocumentBuilder();

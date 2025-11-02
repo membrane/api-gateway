@@ -65,6 +65,7 @@ public interface ExchangeExpression {
             case JSONPATH -> new JsonpathExchangeExpression(expression);
         };
     }
+
     /**
      * Allows to pass an Interceptor as an argument where there is no interceptor e.g. Target
      */
