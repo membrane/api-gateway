@@ -29,6 +29,7 @@ import static com.predic8.membrane.core.lang.ExchangeExpression.expression;
 import static com.predic8.membrane.core.security.ApiKeySecurityScheme.In.EXPRESSION;
 
 /**
+ * @deprecated Set the expression directly on the apiKey plugin.
  * @description Extracts an API key by evaluating an expression on the incoming request.
  * The result (a string) is treated as the API key. The expression is evaluated in the configured language
  * (default: <code>SPEL</code>) during the request flow.
