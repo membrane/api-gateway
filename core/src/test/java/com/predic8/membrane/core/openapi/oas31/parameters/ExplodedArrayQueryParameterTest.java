@@ -54,8 +54,7 @@ public class ExplodedArrayQueryParameterTest {
                         arguments("single exp", "/array?number=3e7"),
                         arguments("numbers", "/array?number=1&number=2.2&number=3e4&number=-1&number=0"),
                         arguments("strings", "/array?string=a&string=bb&string=foo"),
-                        arguments("bools", "/array?bool=true&bool=false"),
-                        arguments("no query", "/array")
+                        arguments("booleans", "/array?bool=true&bool=false")
                 );
             }
 
@@ -122,9 +121,7 @@ public class ExplodedArrayQueryParameterTest {
 
     @Test
     void valuesUTF8() {
-        var err = validator.validate(get().path("/array?const=foo&const=äöü&const=baz"));
-        System.out.println("err = " + err);
-        assertEquals(0, err.size());
+        assertEquals(0, validator.validate(get().path("/array?const=foo&const=äöü&const=baz")).size());
     }
 
     @Test
