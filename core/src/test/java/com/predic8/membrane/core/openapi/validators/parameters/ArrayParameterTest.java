@@ -14,6 +14,7 @@
 
 package com.predic8.membrane.core.openapi.validators.parameters;
 
+import com.fasterxml.jackson.databind.*;
 import com.predic8.membrane.core.openapi.util.*;
 import com.predic8.membrane.core.openapi.validators.*;
 import io.swagger.v3.oas.models.parameters.*;
@@ -23,6 +24,7 @@ import java.util.*;
 
 import static com.predic8.membrane.core.openapi.validators.JsonSchemaValidator.ARRAY;
 import static com.predic8.membrane.core.openapi.validators.JsonSchemaValidator.NUMBER;
+import static java.util.Collections.emptyList;
 import static org.junit.jupiter.api.Assertions.*;
 
 class ArrayParameterTest extends AbstractValidatorTest {
@@ -55,15 +57,15 @@ class ArrayParameterTest extends AbstractValidatorTest {
 
     @Test
     void single_null() throws Exception {
-        Map<String, List<String>> params = Map.of("number",List.of("null"));
-        parameter.setValues(params);
-        assertEquals(0, parameter.getJson().size());
+        parameter.setValues(Map.of("number",List.of("null")));
+        JsonNode json = parameter.getJson();
+        assertEquals(1, json.size());
+        assertTrue(json.get(0).isNull());
     }
 
     @Test
     void single_null_values() throws Exception {
-        Map<String, List<String>> params = Map.of("number",Collections.emptyList());
-        parameter.setValues(params);
+        parameter.setValues(Map.of("number", emptyList()));
         assertEquals(0, parameter.getJson().size());
     }
 }

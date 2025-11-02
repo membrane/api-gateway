@@ -39,30 +39,88 @@ public class ExplodedArrayQueryParameterTest {
         validator = new OpenAPIValidator(new URIFactory(), new OpenAPIRecord(getApi(this, OPENAPI_PATH), new OpenAPISpec()));
     }
 
+    @Nested
+    class Valid {
 
-    static Stream<Arguments> valid() {
-        return Stream.of(
-                arguments("numbers", "/array?number=1&number=2.2&number=3e4&number=-1&number=0"),
-                arguments("strings", "/array?string=a&string=bb&string=foo"),
-                arguments("bools", "/array?bool=true&bool=false"),
-                arguments("no query", "/array")
-        );
+        @Nested
+        @DisplayName("Not allowing null values")
+        class NotNull {
+
+            static Stream<Arguments> valid() {
+                return Stream.of(
+                        arguments("no value", "/array"),
+                        arguments("single", "/array?number=8"),
+                        arguments("single negative", "/array?number=-1"),
+                        arguments("single exp", "/array?number=3e7"),
+                        arguments("numbers", "/array?number=1&number=2.2&number=3e4&number=-1&number=0"),
+                        arguments("strings", "/array?string=a&string=bb&string=foo"),
+                        arguments("bools", "/array?bool=true&bool=false"),
+                        arguments("no query", "/array")
+                );
+            }
+
+            @ParameterizedTest(name = "{index}: {0}")
+            @MethodSource("valid")
+            void zeroErrors(String name, String path) {
+                assertTrue(validator.validate(get().path(path)).isEmpty(), () -> name + " should have 0 errors");
+            }
+        }
+
+        @Nested
+        @DisplayName("Allowing null values. type: [number,null]")
+        class NullAllowed {
+            static Stream<Arguments> valid() {
+                return Stream.of(
+                        arguments("single", "/array?number-and-null=8"),
+                        arguments("single negative", "/array?number-and-null=-1"),
+                        arguments("single exp", "/array?number-and-null=3e7"),
+
+                        // Null and co
+                        arguments("no =", "/array"),
+                        arguments("empty value", "/array?number-and-null="),
+                        arguments("single null", "/array?number-and-null=null"),
+                        arguments("array of nulls", "/array?number-and-null=null&number-and-null=null&number-and-null=null")
+                );
+            }
+
+            @ParameterizedTest(name = "{index}: {0}")
+            @MethodSource("valid")
+            void zeroErrors(String name, String path) {
+                ValidationErrors e = validator.validate(get().path(path));
+                System.out.println("e = " + e);
+                assertTrue(e.isEmpty(), () -> name + " should have 0 errors");
+            }
+        }
+
+        static Stream<Arguments> strings() {
+            return Stream.of(
+
+                    // List of size one
+                    arguments("single", "/array?string=foo"),
+
+                    // Null ...
+                    arguments("empty number", "/array?string="),
+                    arguments("null value number", "/array?string=null"),
+                    arguments("array of nulls", "/array?string=null,null,null"),
+                    arguments("mixed", "/array?string=foo,null,baz,,bak"),
+                    arguments("no =", "/array?string"),
+
+                    // Lists
+                    arguments("multiple strings", "/array?string=blue,black,brown"),
+
+                    // Booleans
+                    arguments("multiple booleans", "/array?bool=true&bool=false&bool=true"),
+                    arguments("const", "/array?const=baz&const=foo&const=bar")
+            );
+        }
+
+        @ParameterizedTest(name = "{index}: {0}")
+        @MethodSource("strings")
+        void zeroErrorsForValidStrings(String caseName, String path) {
+            assertEquals(0, validator.validate(get().path(path)).size(), () -> caseName + " should have 0 errors");
+        }
+
     }
-
-    @ParameterizedTest(name = "{index}: {0}")
-    @MethodSource("valid")
-    void zeroErrors(String name, String path) {
-        assertTrue(validator.validate(get().path(path)).isEmpty(), () -> name + " should have 0 errors");
-    }
-
-    @Test
-    void numberAllowsNullAndEmpty() {
-        // Aligns with SimpleNullTest expectations for exploded arrays.
-        var err = validator.validate(get().path("/array?"));
-        assertEquals(0, err.size());
-        assertTrue(validator.validate(get().path("/array?number=")).isEmpty());
-    }
-
 
     @Test
     void valuesUTF8() {
@@ -74,7 +132,6 @@ public class ExplodedArrayQueryParameterTest {
     @Test
     void valuesAreDecoded() {
         ValidationErrors err = validator.validate(get().path("/array?const=foo&const=%C3%A4%3D%23&const=baz"));
-        System.out.println("err = " + err);
         assertEquals(0, err.size());
     }
 
@@ -84,6 +141,13 @@ public class ExplodedArrayQueryParameterTest {
         @Test
         void notNumber() {
             ValidationErrors err = validator.validate(get().path("/array?number=1&number=foo&number=3"));
+            assertEquals(1, err.size());
+            assertTrue(err.get(0).getMessage().contains("does not match any of [number]"));
+        }
+
+        @Test
+        void emptyStringNotNumber() {
+            ValidationErrors err = validator.validate(get().path("/array?number=1&number=&number=3"));
             assertEquals(1, err.size());
             assertTrue(err.get(0).getMessage().contains("does not match any of [number]"));
         }
