@@ -69,9 +69,9 @@ components:
       minimum: 0
       maximum: 255
     Numbers:
-      type: [array, "null"]
+      type: array
       items:
-        type: number
+        type: [number,null]
     Booleans:
       type: array
       items:
