@@ -14,6 +14,12 @@ limitations under the License. */
 package com.predic8.membrane.examples.withoutinternet.test.xml.namespaces;
 
 import com.predic8.membrane.examples.util.*;
+import org.junit.jupiter.api.*;
+
+import static com.predic8.membrane.core.http.MimeType.TEXT_XML;
+import static io.restassured.RestAssured.given;
+import static io.restassured.filter.log.LogDetail.ALL;
+import static org.hamcrest.Matchers.containsString;
 
 public class NamespacesExampleTest extends AbstractSampleMembraneStartStopTestcase {
 
@@ -22,7 +28,52 @@ public class NamespacesExampleTest extends AbstractSampleMembraneStartStopTestca
         return "xml/namespaces";
     }
 
-    // TODO Implement
+    // TODO implement other cases as well
 
+    @Test
+    void namespaceAwareXPathExtraction() throws Exception {
+        String xmlBody = """
+            <per:person id="77" xmlns:per="https://predic8.de/person">
+              <per:name>Hans</per:name>
+              <ns1:address xmlns:ns1="https://predic8.de/address">
+                <ns1:city>Cologne</ns1:city>
+              </ns1:address>
+            </per:person>
+            """;
+
+        // @formatter:off
+        given()
+            .contentType(TEXT_XML)
+            .body(xmlBody)
+            .post("http://localhost:2000")
+        .then()
+            .log().ifValidationFails(ALL)
+            .statusCode(200)
+            .body(containsString("Hans from Cologne"));
+        // @formatter:on
+    }
+
+    @Test
+    void differentCity() throws Exception {
+        String xmlBody = """
+            <per:person id="42" xmlns:per="https://predic8.de/person">
+              <per:name>Maria</per:name>
+              <ns1:address xmlns:ns1="https://predic8.de/address">
+                <ns1:city>Berlin</ns1:city>
+              </ns1:address>
+            </per:person>
+            """;
+
+        // @formatter:off
+        given()
+            .contentType(TEXT_XML)
+            .body(xmlBody)
+            .post("http://localhost:2000")
+        .then()
+            .log().ifValidationFails(ALL)
+            .statusCode(200)
+            .body(containsString("Maria from Berlin"));
+        // @formatter:on
+    }
 
 }

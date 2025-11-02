@@ -24,7 +24,6 @@ import static javax.xml.XMLConstants.NULL_NS_URI;
 @MCElement(name="namespaces", topLevel = true)
 public class Namespaces {
 
-    //NamespaceContext nsContext;
     private List<Namespace> namespaces;
     private final NamespaceContextImpl nsContext = new NamespaceContextImpl();
 

@@ -18,6 +18,7 @@ import com.predic8.membrane.core.util.xml.parser.*;
 import java.util.*;
 
 public class ExceptionUtil {
+
     public static String concatMessageAndCauseMessages(Throwable throwable) {
         StringBuilder sb = new StringBuilder();
         do {
@@ -31,6 +32,8 @@ public class ExceptionUtil {
     }
 
     public static Throwable getRootCause(Throwable t) {
+        if (t == null)
+            return null;
         Throwable cause = t;
         while (cause.getCause() != null && cause.getCause() != cause) {
             cause = cause.getCause();

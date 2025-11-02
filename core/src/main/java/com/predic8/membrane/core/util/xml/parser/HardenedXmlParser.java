@@ -31,7 +31,11 @@ public final class HardenedXmlParser implements XmlParser {
 
     private final DocumentBuilderFactory factory = createFactory();
 
-    private static XmlParser INSTANCE;
+    /**
+     * Singleton instance. volatile is needed to against a reordering of instructions
+     * allowing another thread to see a partially constructed object
+     */
+    private static volatile XmlParser INSTANCE;
 
     private HardenedXmlParser() {}
 
