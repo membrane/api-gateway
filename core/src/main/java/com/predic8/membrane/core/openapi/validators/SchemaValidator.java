@@ -16,24 +16,20 @@
 
 package com.predic8.membrane.core.openapi.validators;
 
-import com.fasterxml.jackson.databind.node.NullNode;
-import com.predic8.membrane.core.openapi.OpenAPIParsingException;
-import com.predic8.membrane.core.openapi.model.Body;
-import com.predic8.membrane.core.openapi.util.SchemaUtil;
-import io.swagger.v3.oas.models.OpenAPI;
-import io.swagger.v3.oas.models.media.Schema;
-import org.jetbrains.annotations.Nullable;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.fasterxml.jackson.databind.node.*;
+import com.predic8.membrane.core.openapi.*;
+import com.predic8.membrane.core.openapi.model.*;
+import com.predic8.membrane.core.openapi.util.*;
+import io.swagger.v3.oas.models.*;
+import io.swagger.v3.oas.models.media.*;
+import org.jetbrains.annotations.*;
+import org.slf4j.*;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
+import java.io.*;
+import java.util.*;
 
-import static com.predic8.membrane.core.openapi.util.SchemaUtil.getSchemaNameFromRef;
-import static com.predic8.membrane.core.openapi.validators.ValidationContext.ValidatedEntityType.BODY;
+import static com.predic8.membrane.core.openapi.util.SchemaUtil.*;
+import static com.predic8.membrane.core.openapi.validators.ValidationContext.ValidatedEntityType.*;
 
 public class SchemaValidator implements JsonSchemaValidator {
 
@@ -137,17 +133,27 @@ public class SchemaValidator implements JsonSchemaValidator {
      * For example, if the types are ["number", "null"] and the value is "Manila" (a string),
      * a validation error is returned.
      *
-     * @param types the list of allowed types in the schema, e.g., ["number", "null"]
-     * @param ctx the validation context
-     * @param value the value being validated
+     * @param types       the list of allowed types in the schema, e.g., ["number", "null"]
+     * @param ctx         the validation context
+     * @param value       the value being validated
      * @param typeOfValue the determined type of the value
      * @return a ValidationErrors object if there is a type mismatch, or null if the type is valid
      */
-    private @Nullable ValidationErrors getTypeNotMatchError(List<String> types, ValidationContext ctx, Object value, String typeOfValue) {
-        if (typeOfValue == null || !types.contains(typeOfValue)) {
-            return ValidationErrors.error(ctx,"%s is of type %s which does not match any of %s".formatted( value, typeOfValue, types));
+    @Nullable ValidationErrors getTypeNotMatchError(List<String> types, ValidationContext ctx, Object value, String typeOfValue) {
+
+        for (String type : types) {
+            if (type.equals(typeOfValue))
+                return null;
+            // In a query parameter, there are no quotes for strings e.g. ?q=foo so even a number ?q=123 is a valid string
+            // Since this method can be called for query strings and bodies the ctx is used to determine the entity type
+            if (QUERY_PARAMETER.equals(ctx.getValidatedEntityType())) {
+                if ("string".equals(type)) {
+                    return null;
+                }
+            }
         }
-        return null;
+
+        return ValidationErrors.error(ctx, "%s is of type %s which does not match any of %s".formatted(value, typeOfValue, types));
     }
 
     /**

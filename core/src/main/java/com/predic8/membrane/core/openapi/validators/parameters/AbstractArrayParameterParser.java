@@ -21,6 +21,7 @@ import java.net.*;
 import java.util.stream.*;
 
 import static com.predic8.membrane.core.util.JsonUtil.*;
+import static java.net.URLDecoder.decode;
 import static java.nio.charset.StandardCharsets.*;
 
 public abstract class AbstractArrayParameterParser extends AbstractParameterParser {
@@ -33,9 +34,9 @@ public abstract class AbstractArrayParameterParser extends AbstractParameterPars
         Stream<String> items = getItems();
         // e.g. foo=null
         if (items == null) {
-            return FACTORY.nullNode();
+            return an.add(FACTORY.nullNode()); // Put null in an array, cause the OpenAPI wants an array.
         }
-        items.forEach(s -> an.add( scalarAsJson(URLDecoder.decode(s, UTF_8))));
+        items.forEach(s -> an.add(scalarAsJson(decode(s, UTF_8))));
         return an;
     }
 
