@@ -17,6 +17,7 @@ import org.junit.platform.suite.api.*;
 
 @Suite
 @SelectPackages({"com.predic8"})
+@ExcludePackages("com.predic8.membrane.integration")
 @ExcludeClassNamePatterns({
         "com.predic8.membrane.AllTests", // Replaced with package scan
         "com.predic8.membrane.core.transport.http.ConnectionTest", // #2180 should fix it
