@@ -35,12 +35,14 @@
                 <setHeader name="id" value="${/per:person/@id}" language="xpath">
                     <spring:ref bean="ns"/>
                 </setHeader>
+                <setProperty name="reqIdHeader" value="${header.id}"/>
                 <if test="//ns1:city = 'Cologne'" language="xpath">
                     <spring:ref bean="ns"/>
                     <log message="Nice."/>
                 </if>
             </request>
             <response>
+                <setHeader name="x-seen-request-id" value="${property.reqIdHeader}"/>
                 <template pretty="true">
                     ${property.name} from ${property.city}
                 </template>
