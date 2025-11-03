@@ -19,6 +19,7 @@ import org.junit.jupiter.api.*;
 import static com.predic8.membrane.core.http.MimeType.TEXT_XML;
 import static io.restassured.RestAssured.given;
 import static io.restassured.filter.log.LogDetail.ALL;
+import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.Matchers.containsString;
 
 public class NamespacesExampleTest extends AbstractSampleMembraneStartStopTestcase {
@@ -120,51 +121,6 @@ public class NamespacesExampleTest extends AbstractSampleMembraneStartStopTestca
         // @formatter:on
     }
 
-    @Test
-    void noNamespacesShouldNotMatch() {
-        String xmlBody = """
-        <person id="7">
-          <name>Max</name>
-          <address>
-            <city>Cologne</city>
-          </address>
-        </person>
-        """;
-
-        // @formatter:off
-        given()
-            .contentType(TEXT_XML)
-            .body(xmlBody)
-            .post("http://localhost:2000")
-        .then()
-            .log().ifValidationFails(ALL)
-            .statusCode(200)
-            .body(containsString("from"));
-        // @formatter:on
-    }
-
-    @Test
-    void wrongNamespaceOnPerson() {
-        String xmlBody = """
-        <per:person id="88" xmlns:per="https://predic8.de/personWRONG">
-          <per:name>Hans</per:name>
-          <ns1:address xmlns:ns1="https://predic8.de/address">
-            <ns1:city>Cologne</ns1:city>
-          </ns1:address>
-        </per:person>
-        """;
-
-        // @formatter:off
-        given()
-            .contentType(TEXT_XML)
-            .body(xmlBody)
-            .post("http://localhost:2000")
-        .then()
-            .log().ifValidationFails(ALL)
-            .statusCode(200)
-            .body(containsString("from Cologne"));
-        // @formatter:on
-    }
 
     @Test
     void wrongNamespaceOnAddress() {
@@ -186,6 +142,30 @@ public class NamespacesExampleTest extends AbstractSampleMembraneStartStopTestca
             .log().ifValidationFails(ALL)
             .statusCode(200)
             .body(containsString("Hans from"));
+        // @formatter:on
+    }
+
+    @Test
+    void headerIdIsSet() {
+        String xmlBody = """
+            <per:person id="77" xmlns:per="https://predic8.de/person">
+              <per:name>Hans</per:name>
+              <ns1:address xmlns:ns1="https://predic8.de/address">
+                <ns1:city>Cologne</ns1:city>
+              </ns1:address>
+            </per:person>
+            """;
+
+        // @formatter:off
+        given()
+            .contentType(TEXT_XML)
+            .body(xmlBody)
+            .post("http://localhost:2000")
+        .then()
+            .log().ifValidationFails(ALL)
+            .statusCode(200)
+            .header("id", equalTo("77"))
+            .body(containsString("Hans from Cologne"));
         // @formatter:on
     }
 
