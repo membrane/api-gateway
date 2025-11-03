@@ -11,9 +11,10 @@
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
    See the License for the specific language governing permissions and
    limitations under the License. */
-package com.predic8.membrane.core.interceptor.beautifier;
+package com.predic8.membrane.integration.withoutinternet.interceptor;
 
 import com.predic8.membrane.*;
+import com.predic8.membrane.core.interceptor.beautifier.BeautifierInterceptor;
 import com.predic8.membrane.core.interceptor.flow.*;
 import com.predic8.membrane.core.openapi.serviceproxy.*;
 import org.junit.jupiter.api.*;

@@ -11,8 +11,10 @@
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
    See the License for the specific language governing permissions and
    limitations under the License. */
-package com.predic8.membrane.core;
+package com.predic8.membrane.integration.withoutinternet.interceptor;
 
+import com.predic8.membrane.core.HttpRouter;
+import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.interceptor.flow.*;
 import com.predic8.membrane.core.interceptor.log.*;
 import com.predic8.membrane.core.openapi.serviceproxy.*;

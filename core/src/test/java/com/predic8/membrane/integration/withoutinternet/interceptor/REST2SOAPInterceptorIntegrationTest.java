@@ -11,9 +11,10 @@
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
    See the License for the specific language governing permissions and
    limitations under the License. */
-package com.predic8.membrane.core.interceptor.rest;
+package com.predic8.membrane.integration.withoutinternet.interceptor;
 
 import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.interceptor.rest.REST2SOAPInterceptor;
 import com.predic8.membrane.core.interceptor.rest.REST2SOAPInterceptor.*;
 import com.predic8.membrane.core.interceptor.soap.*;
 import com.predic8.membrane.core.proxies.*;
