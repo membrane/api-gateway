@@ -31,7 +31,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class SetPropertyInterceptorXPathTest {
 
-    private ObjectMapper om = new ObjectMapper();
     private Exchange exc;
 
     @Nested
@@ -96,7 +95,7 @@ class SetPropertyInterceptorXPathTest {
         }
 
         @Test
-        void unknownPrefix() throws Exception {
+        void unknownPrefix() {
             var interceptor = getInterceptor(getNamespaces(),"${//unknown:firstname}");
             assertEquals(ABORT, interceptor.handleRequest(exc));
             assertEquals(500, exc.getResponse().getStatusCode());
