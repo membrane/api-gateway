@@ -164,7 +164,7 @@ public class NamespacesExampleTest extends AbstractSampleMembraneStartStopTestca
         .then()
             .log().ifValidationFails(ALL)
             .statusCode(200)
-            .header("id", equalTo("77"))
+            .header("x-seen-request-id", equalTo("77"))
             .body(containsString("Hans from Cologne"));
         // @formatter:on
     }
