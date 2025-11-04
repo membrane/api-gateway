@@ -45,16 +45,8 @@ public class XPathExchangeExpression extends AbstractExchangeExpression {
     public <T> T evaluate(Exchange exchange, Interceptor.Flow flow, Class<T> type) {
         Message msg = exchange.getMessage(flow);
 
-        // Guard against empty body and other Content-Types
-        try {
-            if (msg.isBodyEmpty() || !msg.isXML()) {
-                log.info("Body is empty or Content-Type not XML. Nothing to evaluate for expression: {}", expression);
-                return resultForNoEvaluation(type);
-            }
-        } catch (IOException e) {
-            log.error("Error checking if body is empty", e);
-            return resultForNoEvaluation(type);
-        }
+        T check = checkContentTypeAndBody(exchange.getMessage(flow), type, Message::isXML, "XML", log);
+        if (check != null) return check;
 
         try {
             if (Boolean.class.isAssignableFrom(type)) {
@@ -91,13 +83,4 @@ public class XPathExchangeExpression extends AbstractExchangeExpression {
         return factory.newXPath().evaluate(expression, getInputSource(msg), xmlType);
     }
 
-    private <T> T resultForNoEvaluation(Class<T> type) {
-        if (String.class.isAssignableFrom(type)) {
-            return type.cast("");
-        }
-        if (Boolean.class.isAssignableFrom(type)) {
-            return type.cast(FALSE);
-        }
-        return type.cast(new Object());
-    }
 }

@@ -13,6 +13,14 @@
    limitations under the License. */
 package com.predic8.membrane.core.lang;
 
+import com.predic8.membrane.core.http.Message;
+import org.slf4j.Logger;
+
+import java.io.IOException;
+import java.util.function.Predicate;
+
+import static java.lang.Boolean.FALSE;
+
 public abstract class AbstractExchangeExpression implements ExchangeExpression {
 
     /**
@@ -52,5 +60,33 @@ public abstract class AbstractExchangeExpression implements ExchangeExpression {
     @Override
     public int hashCode() {
         return getClass().hashCode() + expression.hashCode();
+    }
+
+    protected <T> T checkContentTypeAndBody(Message msg, Class<T> type, Predicate<Message> contentTypeOk, String contentTypeLabel, Logger log) {
+        // Guard against empty body and other Content-Types
+        try {
+            if (msg.isBodyEmpty()) {
+                log.info("Body is empty. Nothing to evaluate for expression: {}", expression);
+                return resultForNoEvaluation(type);
+            }
+            if (!contentTypeOk.test(msg)) {
+                log.info("Content-Type not {}. Nothing to evaluate for expression: {}", contentTypeLabel, expression);
+                return resultForNoEvaluation(type);
+            }
+        } catch (IOException e) {
+            log.error("Error checking if body is empty", e);
+            return resultForNoEvaluation(type);
+        }
+        return null;
+    }
+
+    private <T> T resultForNoEvaluation(Class<T> type) {
+        if (String.class.isAssignableFrom(type)) {
+            return type.cast("");
+        }
+        if (Boolean.class.isAssignableFrom(type)) {
+            return type.cast(FALSE);
+        }
+        return null;
     }
 }

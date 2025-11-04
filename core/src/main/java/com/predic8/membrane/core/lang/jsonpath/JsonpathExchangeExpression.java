@@ -18,6 +18,7 @@ import com.fasterxml.jackson.databind.*;
 import com.fasterxml.jackson.databind.exc.*;
 import com.jayway.jsonpath.*;
 import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.Message;
 import com.predic8.membrane.core.interceptor.Interceptor.*;
 import com.predic8.membrane.core.lang.*;
 import com.predic8.membrane.core.util.*;
@@ -63,16 +64,8 @@ public class JsonpathExchangeExpression extends AbstractExchangeExpression {
     @Override
     public <T> T evaluate(Exchange exchange, Flow flow, Class<T> type) {
 
-        // Guard against empty body and other Content-Types
-        try {
-            if (exchange.getMessage(flow).isBodyEmpty() || !exchange.getMessage(flow).isJSON()) {
-                log.info("Body is empty or Content-Type not JSON. Nothing to evaluate for expression: {}", expression); // Normal
-                return resultForNoEvaluation(type);
-            }
-        } catch (IOException e) {
-            log.error("Error checking if body is empty", e);
-            return resultForNoEvaluation(type);
-        }
+        T check = checkContentTypeAndBody(exchange.getMessage(flow), type, Message::isJSON, "JSON", log);
+        if (check != null) return check;
 
         try {
             return castType(exchange, flow, type);
@@ -123,16 +116,6 @@ public class JsonpathExchangeExpression extends AbstractExchangeExpression {
         }
         // Map and List are covered by the next line
         return type.cast(o);
-    }
-
-    private <T> T resultForNoEvaluation(Class<T> type) {
-        if (String.class.isAssignableFrom(type)) {
-            return type.cast("");
-        }
-        if (Boolean.class.isAssignableFrom(type)) {
-            return type.cast(FALSE);
-        }
-        return type.cast(new Object());
     }
 
     private boolean convertToBoolean(Object o) {
