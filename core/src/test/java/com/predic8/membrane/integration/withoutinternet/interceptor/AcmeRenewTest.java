@@ -11,7 +11,7 @@
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
    See the License for the specific language governing permissions and
    limitations under the License. */
-package com.predic8.membrane.core.transport.ssl.acme;
+package com.predic8.membrane.integration.withoutinternet.interceptor;
 
 import com.google.common.collect.*;
 import com.predic8.membrane.core.*;
@@ -24,6 +24,7 @@ import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.proxies.*;
 import com.predic8.membrane.core.transport.http.*;
 import com.predic8.membrane.core.transport.ssl.*;
+import com.predic8.membrane.core.transport.ssl.acme.AcmeServerSimulator;
 import org.bouncycastle.jce.provider.*;
 import org.junit.jupiter.api.*;
 
