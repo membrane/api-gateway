@@ -25,7 +25,10 @@ import org.w3c.dom.*;
 import javax.xml.namespace.*;
 import javax.xml.xpath.*;
 
+import java.io.IOException;
+
 import static com.predic8.membrane.core.util.XMLUtil.*;
+import static java.lang.Boolean.FALSE;
 import static javax.xml.xpath.XPathConstants.*;
 
 public class XPathExchangeExpression extends AbstractExchangeExpression {
@@ -41,6 +44,18 @@ public class XPathExchangeExpression extends AbstractExchangeExpression {
     @Override
     public <T> T evaluate(Exchange exchange, Interceptor.Flow flow, Class<T> type) {
         Message msg = exchange.getMessage(flow);
+
+        // Guard against empty body and other Content-Types
+        try {
+            if (msg.isBodyEmpty() || !msg.isXML()) {
+                log.debug("Body is empty or Content-Type not XML. Nothing to evaluate for expression: {}", expression);
+                return resultForNoEvaluation(type);
+            }
+        } catch (IOException e) {
+            log.error("Error checking if body is empty", e);
+            return resultForNoEvaluation(type);
+        }
+
         try {
             if (Boolean.class.isAssignableFrom(type)) {
                 return type.cast( evalutateAndCast(msg, BOOLEAN));
@@ -74,5 +89,15 @@ public class XPathExchangeExpression extends AbstractExchangeExpression {
         }
         // XPath is not thread safe! Therefore every time the factory is called!
         return factory.newXPath().evaluate(expression, getInputSource(msg), xmlType);
+    }
+
+    private <T> T resultForNoEvaluation(Class<T> type) {
+        if (String.class.isAssignableFrom(type)) {
+            return type.cast("");
+        }
+        if (Boolean.class.isAssignableFrom(type)) {
+            return type.cast(FALSE);
+        }
+        return type.cast(new Object());
     }
 }
