@@ -11,14 +11,14 @@
  *    limitations under the License.
  */
 
-package com.predic8.membrane.core.interceptor.oauth2;
+package com.predic8.membrane.integration.withoutinternet.interceptor.oauth2;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Named;
 
 import java.util.stream.Stream;
 
-public class AuthWithoutSessionRequestTest extends RequestParameterizedTest{
+public class AuthWithoutSessionRequestTest extends RequestParameterizedTest {
 
     @BeforeEach
     public void setUp() throws Exception{

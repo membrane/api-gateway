@@ -11,9 +11,10 @@
  *    limitations under the License.
  */
 
-package com.predic8.membrane.core.interceptor.oauth2;
+package com.predic8.membrane.integration.withoutinternet.interceptor.oauth2;
 
 import com.predic8.membrane.core.interceptor.authentication.session.SessionManager;
+import com.predic8.membrane.core.interceptor.oauth2.ParamNames;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Named;
 
@@ -21,7 +22,7 @@ import java.util.Map;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
-public class AuthWithoutSessionOpenidRequestTest extends RequestParameterizedTest{
+public class AuthWithoutSessionOpenidRequestTest extends RequestParameterizedTest {
     @BeforeEach
     public void setUp() throws Exception{
         super.setUp();

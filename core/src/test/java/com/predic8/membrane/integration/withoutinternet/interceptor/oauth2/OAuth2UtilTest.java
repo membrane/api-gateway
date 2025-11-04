@@ -12,8 +12,10 @@
    See the License for the specific language governing permissions and
    limitations under the License. */
 
-package com.predic8.membrane.core.interceptor.oauth2;
+package com.predic8.membrane.integration.withoutinternet.interceptor.oauth2;
 
+import com.predic8.membrane.core.interceptor.oauth2.OAuth2Util;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.params.*;
 import org.junit.jupiter.params.provider.*;
 
@@ -24,7 +26,7 @@ class OAuth2UtilTest {
     @ParameterizedTest
     @ValueSource(strings = {"openid", "openid foo", "foo openid", "foo openid bar"})
     void isOpenIdScope(String scope) {
-        assertTrue(OAuth2Util.isOpenIdScope(scope));
+        Assertions.assertTrue(OAuth2Util.isOpenIdScope(scope));
     }
 
     @ParameterizedTest

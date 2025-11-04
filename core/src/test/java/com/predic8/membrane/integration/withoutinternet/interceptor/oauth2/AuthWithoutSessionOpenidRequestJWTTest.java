@@ -10,11 +10,13 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package com.predic8.membrane.core.interceptor.oauth2;
+package com.predic8.membrane.integration.withoutinternet.interceptor.oauth2;
 
-import static com.predic8.membrane.core.interceptor.oauth2.OAuth2TestUtil.useJWTForAccessTokensAndRefreshTokens;
+import com.predic8.membrane.core.interceptor.oauth2.OAuth2AuthorizationServerInterceptor;
 
-public class AuthWithSessionRequestJWTTest extends AuthWithSessionRequestTest {
+import static com.predic8.membrane.integration.withoutinternet.interceptor.oauth2.OAuth2TestUtil.useJWTForAccessTokensAndRefreshTokens;
+
+public class AuthWithoutSessionOpenidRequestJWTTest extends AuthWithoutSessionOpenidRequestTest {
     @Override
     public void configureOASI(OAuth2AuthorizationServerInterceptor oasi) {
         useJWTForAccessTokensAndRefreshTokens(oasi);

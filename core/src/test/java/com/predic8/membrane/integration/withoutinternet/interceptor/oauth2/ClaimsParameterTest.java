@@ -11,7 +11,7 @@
  *    limitations under the License.
  */
 
-package com.predic8.membrane.core.interceptor.oauth2;
+package com.predic8.membrane.integration.withoutinternet.interceptor.oauth2;
 
 import com.predic8.membrane.core.interceptor.oauth2.parameter.ClaimsParameter;
 import org.junit.jupiter.api.Test;

@@ -14,14 +14,13 @@
  *    limitations under the License.
  */
 
-package com.predic8.membrane.core.interceptor.oauth2;
+package com.predic8.membrane.integration.withoutinternet.interceptor.oauth2;
 
+import com.predic8.membrane.core.interceptor.oauth2.RevocationRequestJWTTest;
+import com.predic8.membrane.core.interceptor.oauth2.WellknownFileTest;
 import com.predic8.membrane.core.interceptor.oauth2.client.InMemSMOAuth2R2Test;
 import com.predic8.membrane.core.interceptor.oauth2.client.JwtSMOAuth2R2Test;
 import com.predic8.membrane.core.interceptor.oauth2.client.SyncSMOAuth2R2Test;
-import com.predic8.membrane.core.interceptor.oauth2.client.b2c.InMemB2CResourceTest;
-import com.predic8.membrane.core.interceptor.oauth2.client.b2c.JwtB2CResourceTest;
-import com.predic8.membrane.core.interceptor.oauth2.client.b2c.SyncB2CResourceTest;
 import org.junit.platform.suite.api.SelectClasses;
 import org.junit.platform.suite.api.Suite;
 
@@ -46,9 +45,12 @@ import org.junit.platform.suite.api.Suite;
         InMemSMOAuth2R2Test.class,
         JwtSMOAuth2R2Test.class,
         SyncSMOAuth2R2Test.class,
-        InMemB2CResourceTest.class,
-        JwtB2CResourceTest.class,
-        SyncB2CResourceTest.class,
+        InMemB2CResourceIntegrationTest.class,
+        InMemSMOAuth2R2Test.class,
+        JwtB2CResourceIntegrationTest.class,
+        JwtSMOAuth2R2Test.class,
+        SyncB2CResourceIntegrationTest.class,
+        SyncSMOAuth2R2Test.class,
         PasswordGrantTest.class,
         PasswordGrantJWTTest.class,
         RevocationRequestTest.class,

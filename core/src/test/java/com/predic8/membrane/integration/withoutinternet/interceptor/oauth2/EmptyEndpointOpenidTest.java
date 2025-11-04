@@ -11,7 +11,7 @@
  *    limitations under the License.
  */
 
-package com.predic8.membrane.core.interceptor.oauth2;
+package com.predic8.membrane.integration.withoutinternet.interceptor.oauth2;
 
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.authentication.session.SessionManager;
@@ -22,7 +22,7 @@ import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.stream.Stream;
 
-public class EmptyEndpointOpenidTest extends RequestParameterizedTest{
+public class EmptyEndpointOpenidTest extends RequestParameterizedTest {
     @BeforeEach
     public void setUp() throws Exception{
         super.setUp();
