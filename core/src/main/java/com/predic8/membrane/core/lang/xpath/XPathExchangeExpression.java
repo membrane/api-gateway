@@ -48,7 +48,7 @@ public class XPathExchangeExpression extends AbstractExchangeExpression {
         // Guard against empty body and other Content-Types
         try {
             if (msg.isBodyEmpty() || !msg.isXML()) {
-                log.debug("Body is empty or Content-Type not XML. Nothing to evaluate for expression: {}", expression);
+                log.info("Body is empty or Content-Type not XML. Nothing to evaluate for expression: {}", expression);
                 return resultForNoEvaluation(type);
             }
         } catch (IOException e) {
