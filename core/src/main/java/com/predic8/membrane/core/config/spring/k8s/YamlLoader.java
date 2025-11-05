@@ -31,12 +31,8 @@ public class YamlLoader {
     }
 
     public Envelope load(Reader reader, BeanRegistry registry) throws IOException {
-        Yaml yaml = new Yaml();
-        Iterable<Event> iterable = yaml.parse(reader);
-        Iterator<Event> i = iterable.iterator();
-
         Envelope e = new Envelope();
-        e.parse(i, registry);
+        e.parse(new Yaml().parse(reader).iterator(), registry);
         return e;
     }
 
@@ -50,8 +46,8 @@ public class YamlLoader {
     public static Object readObj(Iterator<Event> events) {
         while (true) {
             Event event = events.next();
-            if (event instanceof ScalarEvent)
-                return ((ScalarEvent)event).getValue();
+            if (event instanceof ScalarEvent se)
+                return se.getValue();
             else if (event instanceof MappingStartEvent)
                 return readMap(events);
             else if (event instanceof SequenceStartEvent)
@@ -65,9 +61,8 @@ public class YamlLoader {
         List res = new ArrayList();
         while (true) {
             Event event = events.next();
-            if (event instanceof ScalarEvent) {
-                String value = ((ScalarEvent) event).getValue();
-                res.add(value);
+            if (event instanceof ScalarEvent se) {
+                res.add(se.getValue());
             } else if (event instanceof MappingStartEvent) {
                 res.add(readMap(events));
             } else if (event instanceof SequenceStartEvent) {
@@ -85,10 +80,8 @@ public class YamlLoader {
         Map res = new HashMap();
         while (true) {
             Event event = events.next();
-            if (event instanceof ScalarEvent) {
-                String key = ((ScalarEvent) event).getValue();
-                Object value = readObj(events);
-                res.put(key, value);
+            if (event instanceof ScalarEvent se) {
+                res.put(se.getValue(), readObj(events));
             } else if (event instanceof MappingEndEvent) {
                 break;
             } else {

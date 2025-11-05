@@ -41,7 +41,6 @@
     - simple method for specifying a couple of keys in the YAML 
     - SimpleKeyStore: scope feels strange in YAML. Maybe not TextContent for Value
 
-
 # 6.5.0
 
 - Data Masking
@@ -111,3 +110,8 @@
   - Return guarantee Response is there
 
 - Wenn Exception/Abort passiert sofort Response mit Error setzen.
+
+
+- Refactor
+  - RouterCli:
+    - Extract JWT functions

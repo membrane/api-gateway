@@ -27,7 +27,7 @@ public class BeanDefinition {
     private final String name;
     private final String namespace;
     private final String uid;
-    private final Map m;
+    private final Map<String,Object> m;
     private final WatchAction action;
     private Envelope envelope;
 

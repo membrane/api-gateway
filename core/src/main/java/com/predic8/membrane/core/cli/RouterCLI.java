@@ -49,6 +49,7 @@ import static com.predic8.membrane.core.util.ExceptionUtil.*;
 import static com.predic8.membrane.core.util.OSUtil.*;
 import static com.predic8.membrane.core.util.URIUtil.*;
 import static java.lang.Integer.*;
+import static java.util.UUID.randomUUID;
 import static org.apache.commons.lang3.exception.ExceptionUtils.getMessage;
 import static org.apache.commons.lang3.exception.ExceptionUtils.getRootCauseMessage;
 
@@ -67,16 +68,7 @@ public class RouterCLI {
 
         // Dry run
         if (commandLine.noCommand() && commandLine.getCommand().isOptionSet("t")) {
-            try {
-                String proxies = getRulesFile(commandLine);
-                TrackingFileSystemXmlApplicationContext bf =
-                        new TrackingFileSystemXmlApplicationContext(new String[]{proxies}, false);
-                bf.refresh();
-            } catch (Throwable e) {
-                System.err.println(getExceptionMessageWithCauses(e));
-                System.exit(1);
-            }
-            System.exit(0);
+            dryRun(commandLine);
         }
 
         if (commandLine.getCommand().getName().equals("generate-jwk")) {
@@ -85,16 +77,7 @@ public class RouterCLI {
         }
 
         if (commandLine.getCommand().getName().equals("private-jwk-to-public")) {
-            String input = commandLine.getCommand().getOptionValue("i");
-            String output = commandLine.getCommand().getOptionValue("o");
-            if (input == null || output == null) {
-                log.error("Both input (-i) and output (-o) files must be specified.");
-                System.exit(1);
-            }
-            privateJWKtoPublic(
-                    input,
-                    output);
-            System.exit(0);
+            privateJwkToPublic(commandLine);
         }
 
         try {
@@ -102,6 +85,29 @@ public class RouterCLI {
         } catch (InterruptedException e) {
             // do nothing
         }
+    }
+
+    private static void privateJwkToPublic(MembraneCommandLine commandLine) {
+        String input = commandLine.getCommand().getOptionValue("i");
+        String output = commandLine.getCommand().getOptionValue("o");
+        if (input == null || output == null) {
+            log.error("Both input (-i) and output (-o) files must be specified.");
+            System.exit(1);
+        }
+        privateJWKtoPublic(
+                input,
+                output);
+        System.exit(0);
+    }
+
+    private static void dryRun(MembraneCommandLine commandLine) {
+        try {
+            new TrackingFileSystemXmlApplicationContext(new String[]{getRulesFile(commandLine)}, false).refresh();
+        } catch (Throwable e) {
+            System.err.println(getExceptionMessageWithCauses(e));
+            System.exit(1);
+        }
+        System.exit(0);
     }
 
     public static String getExceptionMessageWithCauses(Throwable throwable) {
@@ -174,20 +180,20 @@ public class RouterCLI {
             int count = 0;
 
             while (!parser.isClosed()) {
-                Map<Object, Object> m = om.readValue(parser, Map.class);
+                Map m = om.readValue(parser, Map.class);
                 if (m == null) {
                     log.debug("Skipping empty document. Maybe there are two --- separators but no configuration in between.");
                     parser.nextToken();
                     continue;
                 }
-                Map<Object, Object> meta = (Map<Object, Object>) m.get("metadata");
 
+                Map<String, Object> meta = (Map<String, Object>) m.get("metadata");
                 if (meta == null) {
                     // generate name, if it doesnt exist
                     meta = new TreeMap<>();
                     m.put("metadata", meta);
                     meta.put("name", "artifact" + ++count);
-                    meta.put("uid", UUID.randomUUID().toString());
+                    meta.put("uid", randomUUID().toString());
                 } else {
                     // fake UID
                     meta.put("uid", location + "-" + meta.get("name"));
