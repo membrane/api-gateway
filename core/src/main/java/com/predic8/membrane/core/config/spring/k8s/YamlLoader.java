@@ -13,20 +13,15 @@
    limitations under the License. */
 package com.predic8.membrane.core.config.spring.k8s;
 
-import com.google.common.io.*;
 import com.predic8.membrane.core.kubernetes.*;
+import org.jetbrains.annotations.*;
 import org.yaml.snakeyaml.*;
 import org.yaml.snakeyaml.events.*;
 
 import java.io.*;
-import java.nio.charset.*;
 import java.util.*;
 
 public class YamlLoader {
-    public Envelope loadResource(String resource, BeanRegistry registry) throws IOException {
-        BufferedReader br = Resources.asCharSource(Resources.getResource(resource), StandardCharsets.UTF_8).openBufferedStream();
-        return load(br, registry);
-    }
 
     public Envelope load(Reader reader, BeanRegistry registry) throws IOException {
         Envelope e = new Envelope();
@@ -50,7 +45,7 @@ public class YamlLoader {
         if (event instanceof SequenceStartEvent)
             return readSequence(events);
 
-        throw new IllegalStateException("Expected scalar, map or sequence in line " + event.getStartMark().getLine() + " column " + event.getStartMark().getColumn());
+        throw new IllegalStateException(parsingErrorMessage("Expected scalar, map or sequence in line ", event));
     }
 
     public static List readSequence(Iterator<Event> events) {
@@ -66,14 +61,14 @@ public class YamlLoader {
             } else if (event instanceof SequenceEndEvent) {
                 break;
             } else {
-                throw new IllegalStateException("Expected scalar or end-of-map in line " + event.getStartMark().getLine() + " column " + event.getStartMark().getColumn());
+                throw new IllegalStateException(parsingErrorMessage("Expected scalar or end-of-map in line ", event));
             }
         }
         return res;
     }
 
-    public static Map readMap(Iterator<Event> events) {
-        Map res = new HashMap();
+    public static Map<String,Object> readMap(Iterator<Event> events) {
+        Map<String,Object> res = new TreeMap<>();
         while (true) {
             Event event = events.next();
             if (event instanceof ScalarEvent se) {
@@ -81,9 +76,13 @@ public class YamlLoader {
             } else if (event instanceof MappingEndEvent) {
                 break;
             } else {
-                throw new IllegalStateException("Expected scalar or end-of-map in line " + event.getStartMark().getLine() + " column " + event.getStartMark().getColumn());
+                throw new IllegalStateException(parsingErrorMessage("Expected scalar or end-of-map in line ", event));
             }
         }
         return res;
+    }
+
+    private static @NotNull String parsingErrorMessage(String x, Event event) {
+        return x + event.getStartMark().getLine() + " column " + event.getStartMark().getColumn();
     }
 }
