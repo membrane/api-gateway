@@ -11,22 +11,14 @@
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
    See the License for the specific language governing permissions and
    limitations under the License. */
-package com.predic8.membrane.core.interceptor.lang;
 
-import com.predic8.membrane.core.lang.*;
+package com.predic8.membrane.core.interceptor;
 
-public class AbstractExchangeExpressionInterceptor extends AbstractLanguageInterceptor {
+import com.predic8.membrane.core.config.xml.*;
 
-    protected ExchangeExpression exchangeExpression;
-    protected String expression = ""; // default if there is no expression
+public interface XMLSupport {
 
-    @Override
-    public void init() {
-        super.init();
-        exchangeExpression = getExchangeExpression();
-    }
+    void setXmlConfig(XmlConfig xmlConfig);
 
-    protected ExchangeExpression getExchangeExpression() {
-        return TemplateExchangeExpression.newInstance(this, language, expression);
-    }
+    XmlConfig getXmlConfig();
 }

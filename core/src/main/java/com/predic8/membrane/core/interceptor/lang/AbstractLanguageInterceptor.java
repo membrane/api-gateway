@@ -14,25 +14,23 @@
 
 package com.predic8.membrane.core.interceptor.lang;
 
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.core.interceptor.AbstractInterceptor;
-import com.predic8.membrane.core.lang.ExchangeExpression.Language;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.config.xml.*;
+import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.lang.ExchangeExpression.*;
 
-import static com.predic8.membrane.core.lang.ExchangeExpression.Language.SPEL;
+import static com.predic8.membrane.core.lang.ExchangeExpression.Language.*;
 
-abstract class AbstractLanguageInterceptor extends AbstractInterceptor implements Polyglot{
-
-    private static final Logger log = LoggerFactory.getLogger(AbstractLanguageInterceptor.class);
+public abstract class AbstractLanguageInterceptor extends AbstractInterceptor implements Polyglot, XMLSupport {
 
     /**
      * SpEL is default
      */
     protected Language language = SPEL;
+    protected XmlConfig xmlConfig;
 
-    public String getLanguage() {
-        return language.name();
+    public Language getLanguage() {
+        return language;
     }
 
     /**
@@ -43,5 +41,20 @@ abstract class AbstractLanguageInterceptor extends AbstractInterceptor implement
     @MCAttribute
     public void setLanguage(Language language) {
         this.language = language;
+    }
+
+    /**
+     * XML Configuration e.g. declaration of XML namespaces for XPath expressions, ...
+     * @param xmlConfig
+     */
+    @Override
+    @MCChildElement(allowForeign = true,order = 10)
+    public void setXmlConfig(XmlConfig xmlConfig) {
+        this.xmlConfig = xmlConfig;
+    }
+
+    @Override
+    public XmlConfig getXmlConfig() {
+        return xmlConfig;
     }
 }
