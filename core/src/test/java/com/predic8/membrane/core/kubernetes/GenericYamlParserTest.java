@@ -24,6 +24,7 @@ import com.predic8.membrane.core.interceptor.rewrite.RewriteInterceptor;
 import com.predic8.membrane.core.interceptor.xml.Xml2JsonInterceptor;
 import com.predic8.membrane.core.openapi.serviceproxy.APIProxy;
 import com.predic8.membrane.core.proxies.*;
+import com.predic8.membrane.core.proxies.AbstractServiceProxy.*;
 import com.predic8.membrane.core.util.MemcachedConnector;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.TestInstance;
