@@ -2,6 +2,15 @@ package com.predic8.membrane.core.util;
 
 public class YamlUtil {
 
+    /**
+      * Removes the first YAML document start marker (---) from the input.
+      * <p>
+      * Note: This method normalizes line endings to \n and ensures the output
+      * ends with a newline character.
+      *
+      * @param yaml the YAML string to process
+      * @return the processed YAML with the first marker removed, or null if input is null
+      */
     public static String removeFirstYamlDocStartMarker(String yaml) {
         if (yaml == null) return null;
 

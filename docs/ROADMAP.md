@@ -117,3 +117,4 @@
 - Refactor
   - RouterCli:
     - Extract JWT functions
+  - SpringConfigurationXSDGeneratingAnnotationProcessor
