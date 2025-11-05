@@ -32,7 +32,7 @@ public class Namespaces {
     }
 
     /**
-     * @description Defines a regex and a replacement for the rewriting of the URI.
+     * @description Defines XML namespace mappings (prefix to URI) for use in XPath expressions.
      */
     @MCChildElement(allowForeign = false)
     public void setNamespace(List<Namespace> namespace) {

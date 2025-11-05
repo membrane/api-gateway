@@ -86,7 +86,7 @@ public class XPathExchangeExpression extends AbstractExchangeExpression {
         // XPath is not thread safe! Therefore, every time the factory is called!
         XPath xPath = factory.newXPath();
 
-        if (xmlConfig != null) {
+        if (xmlConfig != null && xmlConfig.getNamespaces() != null) {
             xPath.setNamespaceContext(xmlConfig.getNamespaces().getNamespaceContext());
         }
 
