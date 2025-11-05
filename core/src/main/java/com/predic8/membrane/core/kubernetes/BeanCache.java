@@ -20,6 +20,7 @@ import com.predic8.membrane.core.config.spring.k8s.Envelope;
 import com.predic8.membrane.core.config.spring.k8s.YamlLoader;
 import com.predic8.membrane.core.kubernetes.client.WatchAction;
 import com.predic8.membrane.core.proxies.Proxy;
+import com.predic8.membrane.core.util.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -28,6 +29,8 @@ import java.io.StringReader;
 import java.util.*;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
+
+import static com.predic8.membrane.core.util.YamlUtil.removeYamlDocStartMarkers;
 
 public class BeanCache implements BeanRegistry {
     private static final Logger LOG = LoggerFactory.getLogger(BeanCache.class);
@@ -42,8 +45,8 @@ public class BeanCache implements BeanRegistry {
     record StaticConfigurationLoaded() implements ChangeEvent {}
 
     // uid -> bean definition
-    private final Map<String, BeanDefinition> bds = new HashMap<>();
-    private final Set<String> uidsToActivate = new HashSet<>();
+    private final Map<String, BeanDefinition> bds = new ConcurrentHashMap<>();
+    private final Set<String> uidsToActivate = ConcurrentHashMap.newKeySet();
 
     public BeanCache(Router router) {
         this.router = router;
@@ -77,7 +80,7 @@ public class BeanCache implements BeanRegistry {
     }
 
     public Envelope define(Map<String,Object> map) throws IOException {
-        String s = mapper.writeValueAsString(map).substring(4); // TODO Why do we first parse than serialize than parse again?
+        String s = removeYamlDocStartMarkers( mapper.writeValueAsString(map)); // TODO Why do we first parse than serialize than parse again?
         if (LOG.isDebugEnabled())
             LOG.debug("defining bean: {}", s);
         return new YamlLoader().load(new StringReader(s), this);
