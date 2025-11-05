@@ -30,7 +30,7 @@ import java.util.*;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 
-import static com.predic8.membrane.core.util.YamlUtil.removeYamlDocStartMarkers;
+import static com.predic8.membrane.core.util.YamlUtil.removeFirstYamlDocStartMarker;
 
 public class BeanCache implements BeanRegistry {
     private static final Logger LOG = LoggerFactory.getLogger(BeanCache.class);
@@ -80,7 +80,7 @@ public class BeanCache implements BeanRegistry {
     }
 
     public Envelope define(Map<String,Object> map) throws IOException {
-        String s = removeYamlDocStartMarkers( mapper.writeValueAsString(map)); // TODO Why do we first parse than serialize than parse again?
+        String s = removeFirstYamlDocStartMarker( mapper.writeValueAsString(map)); // TODO Why do we first parse than serialize than parse again?
         if (LOG.isDebugEnabled())
             LOG.debug("defining bean: {}", s);
         return new YamlLoader().load(new StringReader(s), this);

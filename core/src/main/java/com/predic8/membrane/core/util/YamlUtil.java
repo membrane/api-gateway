@@ -1,16 +1,23 @@
 package com.predic8.membrane.core.util;
 
-import static java.util.stream.Collectors.*;
-
 public class YamlUtil {
 
-    public static String removeYamlDocStartMarkers(String yaml) {
+    public static String removeFirstYamlDocStartMarker(String yaml) {
         if (yaml == null) return null;
 
-        return yaml
-                .lines()
-                .filter(line -> !line.stripLeading().startsWith("---"))
-                .collect(joining("\n"));
+        String[] lines = yaml.split("\\R"); // split on any line break
+        StringBuilder sb = new StringBuilder();
+
+        boolean removed = false;
+        for (String line : lines) {
+            if (!removed && line.stripLeading().startsWith("---")) {
+                removed = true; // skip the first such line
+                continue;
+            }
+            sb.append(line).append("\n");
+        }
+
+        return sb.toString();
     }
 
 }

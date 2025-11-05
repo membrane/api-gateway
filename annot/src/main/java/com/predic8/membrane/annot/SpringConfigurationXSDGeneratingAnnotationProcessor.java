@@ -26,9 +26,13 @@ import javax.tools.*;
 import java.io.*;
 import java.lang.annotation.*;
 import java.util.*;
+import java.util.Map.*;
 import java.util.function.*;
 import java.util.stream.*;
 
+import static java.util.function.Function.identity;
+import static java.util.stream.Collectors.counting;
+import static java.util.stream.Collectors.groupingBy;
 import static javax.tools.StandardLocation.*;
 
 /**
@@ -120,7 +124,7 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
 			try (BufferedWriter bw = new BufferedWriter(o.openWriter())) {
 				bw.write("1\n");
 
-				for (Map.Entry<Class<? extends Annotation>, HashSet<Element>> e : cache.entrySet()) {
+				for (Entry<Class<? extends Annotation>, HashSet<Element>> e : cache.entrySet()) {
 					bw.write(e.getKey().getName());
 					bw.write("\n");
 					for (Element f : e.getValue()) {
@@ -238,7 +242,7 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
 
 				for (MainInfo main : m.getMains()) {
 
-					for (Map.Entry<TypeElement, ChildElementDeclarationInfo> f : main.getChildElementDeclarations().entrySet()) {
+					for (Entry<TypeElement, ChildElementDeclarationInfo> f : main.getChildElementDeclarations().entrySet()) {
 						ChildElementDeclarationInfo cedi = f.getValue();
 						ElementInfo ei = main.getElements().get(f.getKey());
 
@@ -247,7 +251,7 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
 						else {
                             boolean targetIsObject = processingEnv.getTypeUtils().isSameType(f.getKey().asType(), processingEnv.getElementUtils().getTypeElement("java.lang.Object").asType());
                             // e.g. AuthorizationService
-                            for (Map.Entry<TypeElement, ElementInfo> e : main.getElements().entrySet()) {
+                            for (Entry<TypeElement, ElementInfo> e : main.getElements().entrySet()) {
                                 if (!processingEnv.getTypeUtils().isAssignable(e.getKey().asType(), f.getKey().asType())) continue;
                                 if (targetIsObject && !isTopLevelMCElement(e.getKey())) continue; // only allow topLevel MCElements for Object
                                 cedi.getElementInfo().add(e.getValue());
@@ -265,7 +269,7 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
 				}
 
                 for (MainInfo main : m.getMains()) {
-                    for (Map.Entry<TypeElement, ElementInfo> f : main.getElements().entrySet()) {
+                    for (Entry<TypeElement, ElementInfo> f : main.getElements().entrySet()) {
                         List < String > uniquenessErrors = getUniquenessError(f.getValue(), main);
                         if (!uniquenessErrors.isEmpty())
                             throw new ProcessingException(String.join(System.lineSeparator(), uniquenessErrors), f.getValue().getElement());
@@ -349,10 +353,10 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
 
     private List<String> duplicates(Collection<String> names) {
         return names.stream()
-                .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()))
+                .collect(groupingBy(identity(), counting()))
                 .entrySet().stream()
                 .filter(e -> e.getValue() > 1)
-                .map(Map.Entry::getKey)
+                .map(Entry::getKey)
                 .sorted()
                 .toList();
     }
@@ -375,20 +379,7 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
                 names.add(cei.getPropertyName());
                 var decl = main.getChildElementDeclarations().get(cei.getTypeDeclaration());
                 if (decl != null) {
-                    var dupes = decl.getElementInfo().stream()
-                            .map(ei -> {
-                                var ann = ei.getAnnotation();
-                                return ann == null ? null : ann.name();
-                            })
-                            .filter(n -> n != null && !n.isBlank())
-                            .map(String::trim)
-                            .collect(java.util.stream.Collectors.groupingBy(java.util.function.Function.identity(),
-                                    java.util.stream.Collectors.counting()))
-                            .entrySet().stream()
-                            .filter(e -> e.getValue() > 1)
-                            .map(java.util.Map.Entry::getKey)
-                            .sorted()
-                            .toList();
+                    var dupes = getDupes(decl);
                     if (!dupes.isEmpty()) {
                         throw new ProcessingException(
                                 "Duplicate child names for setter '" + cei.getPropertyName() + "': "
@@ -406,6 +397,23 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
             groups.add(new NameGroup("childElement '" + cei.getPropertyName() + "'", names));
         }
         return groups;
+    }
+
+    private static List<String> getDupes(ChildElementDeclarationInfo decl) {
+        return decl.getElementInfo().stream()
+                .map(ei -> {
+                    var ann = ei.getAnnotation();
+                    return ann == null ? null : ann.name();
+                })
+                .filter(n -> n != null && !n.isBlank())
+                .map(String::trim)
+                .collect(groupingBy(identity(),
+                        counting()))
+                .entrySet().stream()
+                .filter(e -> e.getValue() > 1)
+                .map(Entry::getKey)
+                .sorted()
+                .toList();
     }
 
 
