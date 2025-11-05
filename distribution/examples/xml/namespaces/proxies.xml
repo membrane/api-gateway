@@ -1,0 +1,64 @@
+<spring:beans xmlns="http://membrane-soa.org/proxies/1/"
+              xmlns:spring="http://www.springframework.org/schema/beans"
+              xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+              xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+					    http://membrane-soa.org/proxies/1/ http://membrane-soa.org/schemas/proxies-1.xsd">
+
+    <!-- Reference with <spring:ref bean="ns"/> -->
+    <xmlConfig id="ns">
+        <namespaces>
+            <namespace prefix="per" uri="https://predic8.de/person"/>
+            <namespace prefix="ns1" uri="https://predic8.de/address"/>
+        </namespaces>
+    </xmlConfig>
+
+    <router>
+
+        <api port="2000">
+            <path>/person</path>
+            <log message="Path: ${path}"/>
+            <return />
+        </api>
+
+        <api port="2000">
+            <rateLimiter language="xpath" requestLimit="10" keyExpression="withNs(ns,//per:person/@id)">
+                <!-- Local declaration of namespaces -->
+                <xmlConfig>
+                    <namespaces id="ns">
+                        <namespace prefix="per" uri="https://predic8.de/person"/>
+                        <namespace prefix="ns1" uri="https://predic8.de/address"/>
+                    </namespaces>
+                </xmlConfig>
+            </rateLimiter>
+            <request>
+                <log message="Id: ${/per:person/@id}" language="xpath">
+                    <spring:ref bean="ns"/> <!-- References the xmlConfig declaration at the top of this file -->
+                </log>
+                <setProperty name="name" value="${/per:person/per:name}" language="xpath">
+                    <spring:ref bean="ns"/>
+                </setProperty>
+                <setProperty name="city" value="${//ns1:city}" language="xpath">
+                    <spring:ref bean="ns"/>
+                </setProperty>
+                <setHeader name="id" value="${/per:person/@id}" language="xpath">
+                    <spring:ref bean="ns"/>
+                </setHeader>
+                <setProperty name="reqIdHeader" value="${header.id}"/>
+                <if test="//ns1:city = 'Cologne'" language="xpath">
+                    <spring:ref bean="ns"/>
+                    <log message="Nice."/>
+                </if>
+            </request>
+            <response>
+                <setHeader name="x-seen-request-id" value="${property.reqIdHeader}"/>
+                <template pretty="true">
+                    ${property.name} from ${property.city}
+                </template>
+            </response>
+            <target url="http://localhost:2000/person/${/per:person/@id}" language="xpath">
+                <spring:ref bean="ns"/>
+            </target>
+        </api>
+
+    </router>
+</spring:beans>
