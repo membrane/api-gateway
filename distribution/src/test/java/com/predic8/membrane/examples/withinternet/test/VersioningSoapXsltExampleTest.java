@@ -19,6 +19,7 @@ import org.junit.jupiter.api.*;
 import java.io.*;
 
 import static io.restassured.RestAssured.*;
+import static io.restassured.filter.log.LogDetail.*;
 import static org.hamcrest.Matchers.*;
 
 public class VersioningSoapXsltExampleTest extends DistributionExtractingTestcase {
@@ -53,6 +54,7 @@ public class VersioningSoapXsltExampleTest extends DistributionExtractingTestcas
                 .body(request_old)
                 .post("http://localhost:2000/city-service")
             .then()
+                .log().ifValidationFails(ALL)
                 .statusCode(200)
                 .body("Envelope.Body.getCityResponse.country", equalTo("Germany"));
             // @formatter:on

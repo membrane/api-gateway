@@ -55,6 +55,7 @@
 
 # 6.4.0
 
+- SessionManagerTest: refactor, too slow for Unittest. Move to integration tests. 
 - Refactor: Cookie maybe centralize Cookie Handling in a Cookie class
 - Loadbalancing description with pacemaker
 - JSONBody
@@ -69,6 +70,7 @@
       - public abstract void init() throws Exception;
       - getEndSessionEndpoint() throws Exception
       - doDynamicRegistration(List<String> callbackURLs) throws Exception
+      
 ## Release Notes:
 
 - JSON Schema validation support for JSON Schema 2019-09 and 2020-12 (via networknt json-schema-validator).

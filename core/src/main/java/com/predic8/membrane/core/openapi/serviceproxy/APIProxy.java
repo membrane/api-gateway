@@ -20,13 +20,16 @@ import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.annot.MCTextContent;
-import com.predic8.membrane.core.interceptor.lang.Polyglot;
-import com.predic8.membrane.core.lang.ExchangeExpression;
-import com.predic8.membrane.core.lang.ExchangeExpression.Language;
+import com.predic8.membrane.core.config.xml.*;
+import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.interceptor.lang.*;
+import com.predic8.membrane.core.lang.*;
+import com.predic8.membrane.core.lang.ExchangeExpression.*;
 import com.predic8.membrane.core.openapi.util.UriUtil;
 import com.predic8.membrane.core.proxies.ServiceProxy;
 import com.predic8.membrane.core.util.ConfigurationException;
 import com.predic8.membrane.core.util.URIFactory;
+import com.predic8.membrane.core.util.xml.*;
 import io.swagger.v3.oas.models.servers.Server;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,13 +38,14 @@ import java.net.URISyntaxException;
 import java.util.*;
 
 import static com.predic8.membrane.core.lang.ExchangeExpression.Language.SPEL;
+import static com.predic8.membrane.core.lang.ExchangeExpression.expression;
 
 /**
  * @description The api proxy extends the serviceProxy with API related functions like OpenAPI support and path parameters.
  * @topic 1. Proxies and Flow
  */
 @MCElement(name = "api")
-public class APIProxy extends ServiceProxy implements Polyglot {
+public class APIProxy extends ServiceProxy implements Polyglot, XMLSupport {
 
     private static final Logger log = LoggerFactory.getLogger(APIProxy.class.getName());
 
@@ -57,6 +61,7 @@ public class APIProxy extends ServiceProxy implements Polyglot {
     private String test;
     private String id;
     private ApiDescription description;
+    private XmlConfig xmlConfig;
 
     protected Map<String, OpenAPIRecord> apiRecords = new LinkedHashMap<>();
 
@@ -82,7 +87,7 @@ public class APIProxy extends ServiceProxy implements Polyglot {
     public void init() {
         super.init();
         if (test != null && !test.isEmpty()) {
-            exchangeExpression = ExchangeExpression.newInstance(router, language, test);
+            exchangeExpression = expression(new InterceptorAdapter(router, xmlConfig), language, test);
         }
         key = new APIProxyKey(key, exchangeExpression, !specs.isEmpty());
         initOpenAPI();
@@ -235,4 +240,18 @@ public class APIProxy extends ServiceProxy implements Polyglot {
             return content;
         }
     }
+
+    /**
+     * XML Configuration e.g. declaration of XML namespaces for XPath expressions, ...
+     * @param xmlConfig
+     */
+    @MCChildElement(allowForeign = true,order = 10)
+    public void setXmlConfig(XmlConfig xmlConfig) {
+        this.xmlConfig = xmlConfig;
+    }
+
+    public XmlConfig getXmlConfig() {
+        return xmlConfig;
+    }
+
 }

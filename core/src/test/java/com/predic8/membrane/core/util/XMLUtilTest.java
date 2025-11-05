@@ -13,6 +13,7 @@
    limitations under the License. */
 package com.predic8.membrane.core.util;
 
+import com.predic8.membrane.core.util.xml.*;
 import org.junit.jupiter.api.*;
 
 import javax.xml.namespace.*;

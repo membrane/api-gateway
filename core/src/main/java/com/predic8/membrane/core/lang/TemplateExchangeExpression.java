@@ -15,6 +15,7 @@ package com.predic8.membrane.core.lang;
 
 import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.interceptor.Interceptor.*;
 import com.predic8.membrane.core.lang.spel.*;
 
@@ -24,6 +25,7 @@ import java.util.*;
 import java.util.regex.*;
 
 import static com.predic8.membrane.core.lang.ExchangeExpression.Language.*;
+import static com.predic8.membrane.core.lang.ExchangeExpression.expression;
 
 public class TemplateExchangeExpression extends AbstractExchangeExpression {
 
@@ -36,17 +38,17 @@ public class TemplateExchangeExpression extends AbstractExchangeExpression {
 
     private final List<Token> tokens;
 
-    public static ExchangeExpression newInstance(Router router, Language language, String expression) {
+    public static ExchangeExpression newInstance(Interceptor interceptor, Language language, String expression) {
         // SpEL comes with its own templating
         if (language == SPEL) {
             return new SpELExchangeExpression(expression, new SpELExchangeExpression.DollarBracketTemplateParserContext());
         }
-        return new TemplateExchangeExpression(router, language, expression);
+        return new TemplateExchangeExpression(interceptor, language, expression);
     }
 
-    protected TemplateExchangeExpression(Router router, Language language, String expression) {
+    protected TemplateExchangeExpression(Interceptor interceptor, Language language, String expression) {
         super(expression);
-        tokens = parseTokens(router,language, expression);
+        tokens = parseTokens(interceptor,language, expression);
     }
 
     @Override
@@ -83,7 +85,7 @@ public class TemplateExchangeExpression extends AbstractExchangeExpression {
         return line.toString();
     }
 
-    protected static List<Token> parseTokens(Router router, Language language, String expression) {
+    protected static List<Token> parseTokens(Interceptor interceptor, Language language, String expression) {
         log.debug("Parsing: {}",expression);
 
         List<Token> tokens = new ArrayList<>();
@@ -95,7 +97,7 @@ public class TemplateExchangeExpression extends AbstractExchangeExpression {
             }
             String expr = m.group(3);
             if (expr != null) {
-                tokens.add(new Expression(ExchangeExpression.newInstance(router, language, expr)));
+                tokens.add(new Expression(expression(interceptor, language, expr)));
             }
         }
         log.debug("Tokens: {}", tokens);
