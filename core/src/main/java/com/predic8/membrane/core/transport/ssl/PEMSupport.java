@@ -36,8 +36,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
 
-import static com.predic8.membrane.core.util.TextUtil.unifyIndent;
-
 public abstract class PEMSupport {
 
     private static final Logger log = LoggerFactory.getLogger(PEMSupport.class.getName());
@@ -158,5 +156,13 @@ public abstract class PEMSupport {
             }
             throw new InvalidParameterException("Expected KeyPair or Key, got " + o.getClass().getName());
         }
+    }
+
+    private static String unifyIndent(String pem) {
+        if (pem == null) return null;
+        return pem.strip().replace("\r\n", "\n").replace('\r', '\n').lines()
+                .map(String::strip)
+                .filter(l -> !l.isEmpty())
+                .collect(java.util.stream.Collectors.joining("\n"));
     }
 }
