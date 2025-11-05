@@ -120,8 +120,6 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
     private final KubernetesClientFactory kubernetesClientFactory = new KubernetesClientFactory(httpClientFactory);
     private boolean asynchronousInitialization = false;
 
-    private String beanName;
-
     public Router() {
         ruleManager.setRouter(this);
         resolverMap = new ResolverMap(httpClientFactory, kubernetesClientFactory);

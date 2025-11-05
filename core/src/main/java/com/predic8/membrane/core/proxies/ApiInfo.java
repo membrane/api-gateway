@@ -57,14 +57,6 @@ public class ApiInfo {
         return "";
     }
 
-    private static @NotNull String getIP(Proxy proxy) {
-        String ip = proxy.getKey().getIp();
-        if (ip == null) {
-            return  "0.0.0.0";
-        }
-        return ip;
-    }
-
     private static String formatLocationInfo(Map<String, OpenAPIRecord> specs) {
         return specs.entrySet().stream()
                 .map(e -> " ".repeat(INDENT) + "- \"%s\" @ %s".formatted(

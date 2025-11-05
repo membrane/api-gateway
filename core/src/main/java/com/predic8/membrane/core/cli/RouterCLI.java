@@ -223,7 +223,7 @@ public class RouterCLI {
             System.exit(1);
         }
 
-        RsaJsonWebKey rsaJsonWebKey = null;
+        RsaJsonWebKey rsaJsonWebKey;
         try {
             rsaJsonWebKey = RsaJwkGenerator.generateJwk(bits);
         } catch (JoseException e) {

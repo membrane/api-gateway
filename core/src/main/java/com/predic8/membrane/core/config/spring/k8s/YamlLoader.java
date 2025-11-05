@@ -13,15 +13,13 @@
    limitations under the License. */
 package com.predic8.membrane.core.config.spring.k8s;
 
-import com.google.common.io.Resources;
-import com.predic8.membrane.core.kubernetes.BeanRegistry;
-import org.yaml.snakeyaml.Yaml;
+import com.google.common.io.*;
+import com.predic8.membrane.core.kubernetes.*;
+import org.yaml.snakeyaml.*;
 import org.yaml.snakeyaml.events.*;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.Reader;
-import java.nio.charset.StandardCharsets;
+import java.io.*;
+import java.nio.charset.*;
 import java.util.*;
 
 public class YamlLoader {
@@ -44,17 +42,15 @@ public class YamlLoader {
     }
 
     public static Object readObj(Iterator<Event> events) {
-        while (true) {
-            Event event = events.next();
-            if (event instanceof ScalarEvent se)
-                return se.getValue();
-            else if (event instanceof MappingStartEvent)
-                return readMap(events);
-            else if (event instanceof SequenceStartEvent)
-                return readSequence(events);
-            else
-                throw new IllegalStateException("Expected scalar, map or sequence in line " + event.getStartMark().getLine() + " column " + event.getStartMark().getColumn());
-        }
+        Event event = events.next();
+        if (event instanceof ScalarEvent se)
+            return se.getValue();
+        if (event instanceof MappingStartEvent)
+            return readMap(events);
+        if (event instanceof SequenceStartEvent)
+            return readSequence(events);
+
+        throw new IllegalStateException("Expected scalar, map or sequence in line " + event.getStartMark().getLine() + " column " + event.getStartMark().getColumn());
     }
 
     public static List readSequence(Iterator<Event> events) {
