@@ -25,7 +25,10 @@ import org.w3c.dom.*;
 import javax.xml.namespace.*;
 import javax.xml.xpath.*;
 
+import java.io.IOException;
+
 import static com.predic8.membrane.core.util.XMLUtil.*;
+import static java.lang.Boolean.FALSE;
 import static javax.xml.xpath.XPathConstants.*;
 
 public class XPathExchangeExpression extends AbstractExchangeExpression {
@@ -41,6 +44,10 @@ public class XPathExchangeExpression extends AbstractExchangeExpression {
     @Override
     public <T> T evaluate(Exchange exchange, Interceptor.Flow flow, Class<T> type) {
         Message msg = exchange.getMessage(flow);
+
+        T fallback = checkContentTypeAndBody(exchange.getMessage(flow), type, Message::isXML, "XML", log);
+        if (fallback != null) return fallback;
+
         try {
             if (Boolean.class.isAssignableFrom(type)) {
                 return type.cast( evalutateAndCast(msg, BOOLEAN));
@@ -75,4 +82,5 @@ public class XPathExchangeExpression extends AbstractExchangeExpression {
         // XPath is not thread safe! Therefore every time the factory is called!
         return factory.newXPath().evaluate(expression, getInputSource(msg), xmlType);
     }
+
 }
