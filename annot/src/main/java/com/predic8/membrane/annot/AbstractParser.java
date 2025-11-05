@@ -12,9 +12,10 @@
    See the License for the specific language governing permissions and
    limitations under the License. */
 
-package com.predic8.membrane.core.config.spring;
+package com.predic8.membrane.annot;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Set;
 
 import org.springframework.beans.factory.config.BeanDefinition;
@@ -31,7 +32,7 @@ import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
-import com.google.common.collect.Sets;
+import static java.util.List.of;
 
 public abstract class AbstractParser extends AbstractSingleBeanDefinitionParser {
 
@@ -49,7 +50,7 @@ public abstract class AbstractParser extends AbstractSingleBeanDefinitionParser 
 
 	protected void setIdIfNeeded(Element element, ParserContext parserContext, String defaultId) {
 		if ( !isInlined() && !element.hasAttribute("id") ) {
-			Set<String> names = Sets.newHashSet(parserContext.getRegistry().getBeanDefinitionNames());
+			Set<String> names = new HashSet<>(of(parserContext.getRegistry().getBeanDefinitionNames()));
 			for (int i = 0; ; i++) {
 				String id = defaultId + (i == 0 ? "" : i);
 				if (!names.contains(id)) {

@@ -240,7 +240,7 @@ class QueryParameterValidatorTest extends AbstractValidatorTest {
             var pathItem = getPathItem("/array");
             var qpv = new QueryParameterValidator(null, pathItem);
             var qp = qpv.getAllQueryParameters(pathItem.getGet());
-            assertEquals(4, qp.size());
+            assertEquals(5, qp.size());
             assertTrue(qp.stream().allMatch(OpenAPIUtil::isQueryParameter));
         }
 

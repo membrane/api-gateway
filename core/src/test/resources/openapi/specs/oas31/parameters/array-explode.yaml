@@ -1,0 +1,28 @@
+openapi: 3.1.0
+info:
+  title: Array Explode Test API
+  version: "1.0.0"
+
+paths:
+  /foo:
+    get:
+      parameters:
+        - name: numbers
+          in: query
+          style: form
+          explode: true
+          schema:
+            type: array
+            items:
+              type: number
+        - name: strings
+          in: query
+          style: form
+          explode: true
+          schema:
+            type: array
+            items:
+              type: string
+      responses:
+        "200":
+          description: Ok

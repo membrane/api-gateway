@@ -24,7 +24,7 @@ import static com.predic8.membrane.core.Constants.SoapVersion.*;
 import static com.predic8.membrane.core.Constants.WSDL_SOAP11_NS;
 import static com.predic8.membrane.core.Constants.WSDL_SOAP12_NS;
 import static com.predic8.membrane.core.util.WSDLUtil.Direction.*;
-import static com.predic8.membrane.core.util.XMLUtil.groovyToJavaxQName;
+import static com.predic8.membrane.core.util.xml.XMLUtil.groovyToJavaxQName;
 
 public class WSDLUtil {
 

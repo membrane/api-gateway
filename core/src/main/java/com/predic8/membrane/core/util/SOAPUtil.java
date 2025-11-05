@@ -29,7 +29,7 @@ import java.util.*;
 
 import static com.predic8.membrane.core.Constants.*;
 import static com.predic8.membrane.core.http.MimeType.*;
-import static com.predic8.membrane.core.util.XMLUtil.*;
+import static com.predic8.membrane.core.util.xml.XMLUtil.*;
 import static java.nio.charset.StandardCharsets.*;
 import static javax.xml.stream.XMLInputFactory.IS_REPLACING_ENTITY_REFERENCES;
 import static javax.xml.stream.XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES;

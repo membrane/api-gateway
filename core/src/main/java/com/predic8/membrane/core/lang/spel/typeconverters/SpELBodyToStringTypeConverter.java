@@ -13,17 +13,17 @@
    limitations under the License. */
 package com.predic8.membrane.core.lang.spel.typeconverters;
 
-import com.predic8.membrane.core.lang.spel.spelable.*;
+import com.predic8.membrane.core.lang.*;
 import com.predic8.membrane.core.util.*;
 import org.slf4j.*;
 import org.springframework.core.convert.converter.*;
 
-public class SpELBodyToStringTypeConverter implements Converter<SpELBody, String> {
+public class SpELBodyToStringTypeConverter implements Converter<LazyBody, String> {
 
     private static final Logger log = LoggerFactory.getLogger(SpELBodyToStringTypeConverter.class.getName());
 
     @Override
-    public String convert(SpELBody body) {
+    public String convert(LazyBody body) {
         try {
             return new String(MessageUtil.getContent(body.getMessage()));
         } catch (Exception e) {

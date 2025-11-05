@@ -14,6 +14,7 @@
 package com.predic8.membrane.core.util;
 
 public class ExceptionUtil {
+
     public static String concatMessageAndCauseMessages(Throwable throwable) {
         StringBuilder sb = new StringBuilder();
         do {
@@ -24,5 +25,15 @@ public class ExceptionUtil {
             }
         } while (throwable != null);
         return sb.toString();
+    }
+
+    public static Throwable getRootCause(Throwable t) {
+        if (t == null)
+            return null;
+        Throwable cause = t;
+        while (cause.getCause() != null && cause.getCause() != cause) {
+            cause = cause.getCause();
+        }
+        return cause;
     }
 }
