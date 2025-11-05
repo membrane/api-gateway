@@ -89,7 +89,7 @@ public class BeanCache implements BeanRegistry {
     /**
      * May be called from multiple threads.
      */
-    public void handle(WatchAction action, Map m) {
+    public void handle(WatchAction action, Map<String,Object> m) {
         changeEvents.add(new BeanDefinitionChanged(new BeanDefinition(action, m)));
     }
 

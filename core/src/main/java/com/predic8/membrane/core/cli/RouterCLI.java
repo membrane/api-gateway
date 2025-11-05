@@ -180,7 +180,7 @@ public class RouterCLI {
             int count = 0;
 
             while (!parser.isClosed()) {
-                Map m = om.readValue(parser, Map.class);
+                Map<String,Object> m = om.readValue(parser, Map.class);
                 if (m == null) {
                     log.debug("Skipping empty document. Maybe there are two --- separators but no configuration in between.");
                     parser.nextToken();
