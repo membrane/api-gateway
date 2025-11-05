@@ -15,6 +15,7 @@ package com.predic8.membrane.core.interceptor.apikey.extractors;
 
 import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.Router;
+import com.predic8.membrane.core.config.xml.*;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.interceptor.lang.*;
@@ -47,16 +48,16 @@ import static com.predic8.membrane.core.security.ApiKeySecurityScheme.In.EXPRESS
  * @topic 3. Security and Validation
  */
 @MCElement(name="expressionExtractor", topLevel = false)
-public class ApiKeyExpressionExtractor implements ApiKeyExtractor, Polyglot, XMLNamespaceSupport {
+public class ApiKeyExpressionExtractor implements ApiKeyExtractor, Polyglot, XMLSupport {
 
     private String expression = "";
     private Language language = SPEL;
     private ExchangeExpression exchangeExpression;
-    private Namespaces namespaces;
+    private XmlConfig xmlConfig;
 
     @Override
     public void init(Router router) {
-        exchangeExpression = expression(new InterceptorAdapter(router,namespaces), language, expression);
+        exchangeExpression = expression(new InterceptorAdapter(router, xmlConfig), language, expression);
     }
 
     @Override
@@ -98,15 +99,17 @@ public class ApiKeyExpressionExtractor implements ApiKeyExtractor, Polyglot, XML
     }
 
     /**
-     * Declaration of XML namespaces for XPath expressions.
-     * @param namespaces
+     * XML Configuration e.g. declaration of XML namespaces for XPath expressions, ...
+     * @param xmlConfig
      */
+    @Override
     @MCChildElement(allowForeign = true)
-    public void setNamespaces(Namespaces namespaces) {
-        this.namespaces = namespaces;
+    public void setXmlConfig(XmlConfig xmlConfig) {
+        this.xmlConfig = xmlConfig;
     }
 
-    public Namespaces getNamespaces() {
-        return namespaces;
+    @Override
+    public XmlConfig getXmlConfig() {
+        return xmlConfig;
     }
 }

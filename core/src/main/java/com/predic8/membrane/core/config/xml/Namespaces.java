@@ -12,7 +12,7 @@
    See the License for the specific language governing permissions and
    limitations under the License. */
 
-package com.predic8.membrane.core.interceptor.lang;
+package com.predic8.membrane.core.config.xml;
 
 import com.predic8.membrane.annot.*;
 
@@ -21,7 +21,7 @@ import java.util.*;
 
 import static javax.xml.XMLConstants.NULL_NS_URI;
 
-@MCElement(name="namespaces", topLevel = true)
+@MCElement(name="namespaces", topLevel = false)
 public class Namespaces {
 
     private List<Namespace> namespaces;

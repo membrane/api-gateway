@@ -15,10 +15,10 @@ package com.predic8.membrane.core.interceptor.flow.choice;
 
 import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.config.xml.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.interceptor.Interceptor.*;
 import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.interceptor.lang.*;
 import com.predic8.membrane.core.lang.*;
 import com.predic8.membrane.core.lang.ExchangeExpression.*;
 import org.slf4j.*;
@@ -27,17 +27,17 @@ import static com.predic8.membrane.core.lang.ExchangeExpression.Language.*;
 import static com.predic8.membrane.core.lang.ExchangeExpression.expression;
 
 @MCElement(name = "case", topLevel = false)
-public class Case extends InterceptorContainer implements XMLNamespaceSupport {
+public class Case extends InterceptorContainer implements XMLSupport {
 
     private static final Logger log = LoggerFactory.getLogger(Case.class);
 
     private String test;
     private Language language = SPEL;
     private ExchangeExpression exchangeExpression;
-    private Namespaces namespaces;
+    private XmlConfig xmlConfig;
 
     public void init(Router router) {
-        exchangeExpression = expression( new InterceptorAdapter(router,namespaces), language, test);
+        exchangeExpression = expression( new InterceptorAdapter(router,xmlConfig), language, test);
     }
 
     boolean evaluate(Exchange exc, Flow flow) {
@@ -79,15 +79,17 @@ public class Case extends InterceptorContainer implements XMLNamespaceSupport {
     }
 
     /**
-     * Declaration of XML namespaces for XPath expressions.
-     * @param namespaces
+     * XML Configuration e.g. declaration of XML namespaces for XPath expressions, ...
+     * @param xmlConfig
      */
+    @Override
     @MCChildElement(allowForeign = true,order = 10)
-    public void setNamespaces(Namespaces namespaces) {
-        this.namespaces = namespaces;
+    public void setXmlConfig(XmlConfig xmlConfig) {
+        this.xmlConfig = xmlConfig;
     }
 
-    public Namespaces getNamespaces() {
-        return namespaces;
+    @Override
+    public XmlConfig getXmlConfig() {
+        return xmlConfig;
     }
 }

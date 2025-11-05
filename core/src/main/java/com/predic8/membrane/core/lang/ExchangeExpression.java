@@ -14,10 +14,11 @@
 
 package com.predic8.membrane.core.lang;
 
+import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.config.xml.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.interceptor.lang.*;
 import com.predic8.membrane.core.lang.groovy.*;
 import com.predic8.membrane.core.lang.jsonpath.*;
 import com.predic8.membrane.core.lang.spel.*;
@@ -69,27 +70,32 @@ public interface ExchangeExpression {
     /**
      * Allows to pass an Interceptor as an argument where there is no interceptor e.g. Target
      */
-    class InterceptorAdapter extends AbstractInterceptor implements XMLNamespaceSupport{
+    class InterceptorAdapter extends AbstractInterceptor implements XMLSupport {
 
-        private Namespaces namespaces;
+        private XmlConfig xmlConfig;
 
         public InterceptorAdapter(Router router) {
             this.router = router;
         }
 
-        public InterceptorAdapter(Router router, Namespaces namespaces) {
+        public InterceptorAdapter(Router router, XmlConfig xmlConfig) {
             this.router = router;
-            this.namespaces = namespaces;
+            this.xmlConfig = xmlConfig;
+        }
+
+        /**
+         * XML Configuration e.g. declaration of XML namespaces for XPath expressions, ...
+         * @param xmlConfig
+         */
+        @Override
+        @MCChildElement(allowForeign = true,order = 10)
+        public void setXmlConfig(XmlConfig xmlConfig) {
+            this.xmlConfig = xmlConfig;
         }
 
         @Override
-        public void setNamespaces(Namespaces namespaces) {
-            this.namespaces = namespaces;
-        }
-
-        @Override
-        public Namespaces getNamespaces() {
-            return namespaces;
+        public XmlConfig getXmlConfig() {
+            return xmlConfig;
         }
     }
 }

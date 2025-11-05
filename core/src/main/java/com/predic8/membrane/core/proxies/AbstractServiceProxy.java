@@ -18,13 +18,12 @@ import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.config.*;
 import com.predic8.membrane.core.config.security.*;
+import com.predic8.membrane.core.config.xml.*;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.interceptor.lang.*;
 import com.predic8.membrane.core.lang.ExchangeExpression;
 import com.predic8.membrane.core.lang.ExchangeExpression.*;
 import com.predic8.membrane.core.lang.TemplateExchangeExpression;
-import com.predic8.membrane.core.lang.xpath.*;
 import com.predic8.membrane.core.transport.ssl.*;
 
 import static com.predic8.membrane.core.lang.ExchangeExpression.Language.*;
@@ -99,7 +98,7 @@ public abstract class AbstractServiceProxy extends SSLableProxy {
      * </p>
      */
     @MCElement(name = "target", topLevel = false)
-    public static class Target implements XMLNamespaceSupport {
+    public static class Target implements XMLSupport {
         private String host;
         private int port = -1;
         private String method;
@@ -110,11 +109,11 @@ public abstract class AbstractServiceProxy extends SSLableProxy {
 
         private SSLParser sslParser;
 
-        protected Namespaces namespaces;
+        protected XmlConfig xmlConfig;
 
         public void init(Router router) {
             if (url != null) {
-                exchangeExpression = TemplateExchangeExpression.newInstance(new InterceptorAdapter(router,namespaces), language, url);
+                exchangeExpression = TemplateExchangeExpression.newInstance(new InterceptorAdapter(router,xmlConfig), language, url);
             }
 
         }
@@ -237,13 +236,19 @@ public abstract class AbstractServiceProxy extends SSLableProxy {
             this.language = language;
         }
 
-        @MCChildElement(allowForeign = true, order = 100)
-        public void setNamespaces(Namespaces namespaces) {
-            this.namespaces = namespaces;
+        /**
+         * XML Configuration e.g. declaration of XML namespaces for XPath expressions, ...
+         * @param xmlConfig
+         */
+        @Override
+        @MCChildElement(allowForeign = true,order = 10)
+        public void setXmlConfig(XmlConfig xmlConfig) {
+            this.xmlConfig = xmlConfig;
         }
 
-        public Namespaces getNamespaces() {
-            return namespaces;
+        @Override
+        public XmlConfig getXmlConfig() {
+            return xmlConfig;
         }
     }
 

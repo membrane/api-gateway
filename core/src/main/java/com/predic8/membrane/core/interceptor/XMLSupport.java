@@ -14,11 +14,11 @@
 
 package com.predic8.membrane.core.interceptor;
 
-import com.predic8.membrane.core.interceptor.lang.*;
+import com.predic8.membrane.core.config.xml.*;
 
-public interface XMLNamespaceSupport {
+public interface XMLSupport {
 
-    void setNamespaces(Namespaces namespaces);
+    void setXmlConfig(XmlConfig xmlConfig);
 
-    Namespaces getNamespaces();
+    XmlConfig getXmlConfig();
 }

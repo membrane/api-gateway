@@ -15,18 +15,19 @@
 package com.predic8.membrane.core.interceptor.lang;
 
 import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.config.xml.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.lang.ExchangeExpression.*;
 
 import static com.predic8.membrane.core.lang.ExchangeExpression.Language.*;
 
-public abstract class AbstractLanguageInterceptor extends AbstractInterceptor implements Polyglot, XMLNamespaceSupport {
+public abstract class AbstractLanguageInterceptor extends AbstractInterceptor implements Polyglot, XMLSupport {
 
     /**
      * SpEL is default
      */
     protected Language language = SPEL;
-    protected Namespaces namespaces;
+    protected XmlConfig xmlConfig;
 
     public Language getLanguage() {
         return language;
@@ -43,15 +44,17 @@ public abstract class AbstractLanguageInterceptor extends AbstractInterceptor im
     }
 
     /**
-     * Declaration of XML namespaces for XPath expressions.
-     * @param namespaces
+     * XML Configuration e.g. declaration of XML namespaces for XPath expressions, ...
+     * @param xmlConfig
      */
-    @MCChildElement(allowForeign = true)
-    public void setNamespaces(Namespaces namespaces) {
-        this.namespaces = namespaces;
+    @Override
+    @MCChildElement(allowForeign = true,order = 10)
+    public void setXmlConfig(XmlConfig xmlConfig) {
+        this.xmlConfig = xmlConfig;
     }
 
-    public Namespaces getNamespaces() {
-        return namespaces;
+    @Override
+    public XmlConfig getXmlConfig() {
+        return xmlConfig;
     }
 }

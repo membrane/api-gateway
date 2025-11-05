@@ -14,9 +14,10 @@
 
 package com.predic8.membrane.core.lang.xpath;
 
-import com.fasterxml.jackson.databind.*;
 import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.config.xml.*;
 import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.interceptor.lang.*;
 import org.jetbrains.annotations.*;
 import org.junit.jupiter.api.*;
@@ -107,7 +108,9 @@ class SetPropertyInterceptorXPathTest {
 
     private static @NotNull SetPropertyInterceptor getInterceptor(Namespaces namespaces, String value) {
         var i = new SetPropertyInterceptor();
-        i.setNamespaces(namespaces);
+        XmlConfig xc = new XmlConfig();
+        xc.setNamespaces(namespaces);
+        i.setXmlConfig(xc);
         i.setLanguage(XPATH);
         i.setFieldName("firstname");
         i.setValue(value);

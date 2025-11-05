@@ -14,10 +14,10 @@
 
 package com.predic8.membrane.core.lang.xpath;
 
+import com.predic8.membrane.core.config.xml.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.interceptor.lang.*;
 import com.predic8.membrane.core.lang.*;
 import com.predic8.membrane.core.util.xml.*;
 import com.predic8.membrane.core.util.xml.parser.*;
@@ -35,7 +35,7 @@ public class XPathExchangeExpression extends AbstractExchangeExpression {
 
     private static final XmlParser parser = HardenedXmlParser.getInstance();
 
-    private Namespaces namespaces;
+    private XmlConfig xmlConfig;
 
     // Let all expressions share the same XPathFactory.
     private static final XPathFactory factory = XPathFactory.newInstance();
@@ -43,8 +43,8 @@ public class XPathExchangeExpression extends AbstractExchangeExpression {
     public XPathExchangeExpression(Interceptor interceptor, String xpath) {
         super(xpath);
 
-        if (interceptor instanceof XMLNamespaceSupport xns) {
-            namespaces = xns.getNamespaces();
+        if (interceptor instanceof XMLSupport xns) {
+            xmlConfig = xns.getXmlConfig();
         }
     }
 
@@ -86,14 +86,14 @@ public class XPathExchangeExpression extends AbstractExchangeExpression {
         // XPath is not thread safe! Therefore, every time the factory is called!
         XPath xPath = factory.newXPath();
 
-        if (namespaces != null) {
-            xPath.setNamespaceContext(namespaces.getNamespaceContext());
+        if (xmlConfig != null) {
+            xPath.setNamespaceContext(xmlConfig.getNamespaces().getNamespaceContext());
         }
 
         return xPath.evaluate(expression, parser.parse(XMLUtil.getInputSource(msg)), xmlType);
     }
 
-    public void setNamespaces(Namespaces namespaces) {
-        this.namespaces = namespaces;
+    public void setXmlConfig(XmlConfig xmlConfig) {
+        this.xmlConfig = xmlConfig;
     }
 }

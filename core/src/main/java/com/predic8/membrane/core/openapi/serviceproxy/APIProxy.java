@@ -20,6 +20,8 @@ import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.annot.MCTextContent;
+import com.predic8.membrane.core.config.xml.*;
+import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.interceptor.lang.*;
 import com.predic8.membrane.core.lang.*;
 import com.predic8.membrane.core.lang.ExchangeExpression.*;
@@ -27,6 +29,7 @@ import com.predic8.membrane.core.openapi.util.UriUtil;
 import com.predic8.membrane.core.proxies.ServiceProxy;
 import com.predic8.membrane.core.util.ConfigurationException;
 import com.predic8.membrane.core.util.URIFactory;
+import com.predic8.membrane.core.util.xml.*;
 import io.swagger.v3.oas.models.servers.Server;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -42,7 +45,7 @@ import static com.predic8.membrane.core.lang.ExchangeExpression.expression;
  * @topic 1. Proxies and Flow
  */
 @MCElement(name = "api")
-public class APIProxy extends ServiceProxy implements Polyglot {
+public class APIProxy extends ServiceProxy implements Polyglot, XMLSupport {
 
     private static final Logger log = LoggerFactory.getLogger(APIProxy.class.getName());
 
@@ -58,7 +61,7 @@ public class APIProxy extends ServiceProxy implements Polyglot {
     private String test;
     private String id;
     private ApiDescription description;
-    private Namespaces namespaces;
+    private XmlConfig xmlConfig;
 
     protected Map<String, OpenAPIRecord> apiRecords = new LinkedHashMap<>();
 
@@ -84,7 +87,7 @@ public class APIProxy extends ServiceProxy implements Polyglot {
     public void init() {
         super.init();
         if (test != null && !test.isEmpty()) {
-            exchangeExpression = expression(new InterceptorAdapter(router,namespaces), language, test);
+            exchangeExpression = expression(new InterceptorAdapter(router, xmlConfig), language, test);
         }
         key = new APIProxyKey(key, exchangeExpression, !specs.isEmpty());
         initOpenAPI();
@@ -239,15 +242,16 @@ public class APIProxy extends ServiceProxy implements Polyglot {
     }
 
     /**
-     * Declaration of XML namespaces for XPath expressions.
-     * @param namespaces
+     * XML Configuration e.g. declaration of XML namespaces for XPath expressions, ...
+     * @param xmlConfig
      */
-    @MCChildElement(allowForeign = true, order = 10)
-    public void setNamespaces(Namespaces namespaces) {
-        this.namespaces = namespaces;
+    @MCChildElement(allowForeign = true,order = 10)
+    public void setXmlConfig(XmlConfig xmlConfig) {
+        this.xmlConfig = xmlConfig;
     }
 
-    public Namespaces getNamespaces() {
-        return namespaces;
+    public XmlConfig getXmlConfig() {
+        return xmlConfig;
     }
+
 }

@@ -14,6 +14,7 @@
 
 package com.predic8.membrane.core.interceptor.lang;
 
+import com.predic8.membrane.core.config.xml.*;
 import com.predic8.membrane.core.util.*;
 import org.junit.jupiter.api.*;
 
