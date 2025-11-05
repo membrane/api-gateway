@@ -14,13 +14,15 @@
 
 package com.predic8.membrane.core.interceptor.lang;
 
+import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.lang.*;
 import org.junit.jupiter.api.*;
 
 import java.util.*;
 
-import static com.predic8.membrane.core.lang.ExchangeExpression.Language.SPEL;
+import static com.predic8.membrane.core.http.Request.*;
+import static com.predic8.membrane.core.lang.ExchangeExpression.Language.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 class SetPropertyInterceptorSpELTest extends AbstractSetPropertyInterceptorTest {
@@ -79,5 +81,15 @@ class SetPropertyInterceptorSpELTest extends AbstractSetPropertyInterceptorTest 
         interceptor.init(router);
         interceptor.handleRequest(exc);
         assertInstanceOf(Map.class, exc.getProperty("m"));
+    }
+
+    @Test
+    void body() throws Exception {
+        interceptor.setFieldName("body");
+        interceptor.setValue("Body:${body}");
+        interceptor.init(router);
+        Exchange e1 = post("/foo").body("foo").buildExchange();
+        interceptor.handleRequest(e1);
+        assertEquals("Body:foo", e1.getProperty("body"));
     }
 }

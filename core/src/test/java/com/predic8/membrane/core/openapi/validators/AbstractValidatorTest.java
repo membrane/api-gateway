@@ -26,7 +26,7 @@ import java.io.*;
 import java.util.*;
 
 import static com.predic8.membrane.core.openapi.serviceproxy.APIProxy.*;
-import static com.predic8.membrane.core.openapi.util.TestUtils.*;
+import static com.predic8.membrane.core.openapi.util.OpenAPITestUtils.*;
 
 public abstract class AbstractValidatorTest {
 
@@ -34,9 +34,12 @@ public abstract class AbstractValidatorTest {
 
     protected OpenAPIValidator validator;
 
+    /**
+     * protected to allow subclasses to call setUp
+     * @throws Exception
+     */
     @BeforeEach
-    void setUp() throws Exception {
-
+    protected void setUp() throws Exception {
         validator = new OpenAPIValidator(new URIFactory(), new OpenAPIRecord(parseOpenAPI(getResourceAsStream(getOpenAPIFileName())),new OpenAPISpec()));
         validator.getApi().setExtensions(new HashMap<>() {{
             put(X_MEMBRANE_VALIDATION, new HashMap<>() {{

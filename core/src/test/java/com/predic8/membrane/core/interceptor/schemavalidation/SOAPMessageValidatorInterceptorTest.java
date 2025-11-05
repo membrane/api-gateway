@@ -43,7 +43,7 @@ public class SOAPMessageValidatorInterceptorTest {
 	}
 
 	@Test
-	public void testHandleRequestValidBLZMessage() throws Exception {
+	void handleRequestValidBLZMessage() throws Exception {
 		Exchange exc = post("http://thomas-bayer.com")
 				.body(getContent("/getBank.xml"))
 				.buildExchange();
@@ -60,7 +60,7 @@ public class SOAPMessageValidatorInterceptorTest {
 		String body = exc.getResponse().getBodyAsStringDecoded();
 				System.out.println("body = " + body);
 		assertTrue(body.contains(WSDL_MESSAGE_VALIDATION_FAILED));
-		assertTrue(body.contains("No child element is expected"));
+		assertTrue(body.contains("cvc-complex-type.2.4.d"));
 		assertTrue(body.contains("line"));
 		assertTrue(body.contains("column"));
 	}
@@ -74,22 +74,22 @@ public class SOAPMessageValidatorInterceptorTest {
 	}
 
 	@Test
-	public void testHandleRequestInvalidArticleMessage() throws Exception {
+	void handleRequestInvalidArticleMessage() throws Exception {
 		Exchange exc = post("http://thomas-bayer.com")
 				.body(getContent("/validation/articleRequestInvalid.xml"))
 				.buildExchange();
 		assertEquals(ABORT, createValidatorInterceptor(ARTICLE_SERVICE_WSDL).handleRequest(exc));
 		assertEquals(200, exc.getResponse().getStatusCode());
 
-		String body = exc.getResponse().getBodyAsStringDecoded();
+		var body = exc.getResponse().getBodyAsStringDecoded();
 		assertTrue(body.contains(WSDL_MESSAGE_VALIDATION_FAILED));
-		assertTrue(body.contains("must have no character"));
+		assertTrue(body.contains("cvc-complex-type.2.1"));
 		assertTrue(body.contains("line"));
 		assertTrue(body.contains("column"));
 	}
 
 	@Test
-	public void testHandleRequestValidEmailMessage() throws Exception {
+	void handleRequestValidEmailMessage() throws Exception {
 		Exchange exc = post("http://ws.xwebservices.com")
 				.body(getContent("/validation/validEmail.xml"))
 				.buildExchange();
@@ -97,63 +97,59 @@ public class SOAPMessageValidatorInterceptorTest {
 	}
 
 	@Test
-	public void testHandleRequestInvalidEmailMessageDoubleEMailElement() throws Exception {
-		Exchange exc = post("http://ws.xwebservices.com")
+	void testHandleRequestInvalidEmailMessageDoubleEMailElement() throws Exception {
+		var exc = post("http://ws.xwebservices.com")
 				.body(getContent("/validation/invalidEmail.xml"))
 				.buildExchange();
 		assertEquals(ABORT, createValidatorInterceptor(E_MAIL_SERVICE_WSDL).handleRequest(exc));
 
-		String body = exc.getResponse().getBodyAsStringDecoded();
-		System.out.println("body = " + body);
+		var body = exc.getResponse().getBodyAsStringDecoded();
 		assertTrue(body.contains(WSDL_MESSAGE_VALIDATION_FAILED));
-		assertTrue(body.contains("Invalid content"));
+		assertTrue(body.contains("cvc-complex-type.2.4.d"));
 		assertTrue(body.contains("Email"));
 		assertTrue(body.contains("line"));
 		assertTrue(body.contains("column"));
 	}
 
 	@Test
-	public void testHandleRequestInvalidEmailMessageDoubleRequestElement() throws Exception {
+	void testHandleRequestInvalidEmailMessageDoubleRequestElement() throws Exception {
 		Exchange exc = post("http://ws.xwebservices.com")
 				.body(getContent("/validation/invalidEmail2.xml"))
 				.buildExchange();
 		assertEquals(ABORT, createValidatorInterceptor(E_MAIL_SERVICE_WSDL).handleRequest(exc));
 
-		String body = exc.getResponse().getBodyAsStringDecoded();
-//		System.out.println("body = " + body);
+		var body = exc.getResponse().getBodyAsStringDecoded();
 		assertTrue(body.contains(WSDL_MESSAGE_VALIDATION_FAILED));
-		assertTrue(body.contains("Invalid content"));
+		assertTrue(body.contains("cvc-complex-type.2.4.d"));
 		assertTrue(body.contains("ValidateEmailRequest"));
 		assertTrue(body.contains("line"));
 		assertTrue(body.contains("column"));
 	}
 
 	@Test
-	public void testHandleRequestInvalidEmailMessageUnknownElement() throws Exception {
+	void handleRequestInvalidEmailMessageUnknownElement() throws Exception {
 		Exchange exc = post("http://ws.xwebservices.com")
 				.body(getContent("/validation/invalidEmail3.xml"))
 				.buildExchange();
 		assertEquals(ABORT, createValidatorInterceptor(E_MAIL_SERVICE_WSDL).handleRequest(exc));
 
-		String body = exc.getResponse().getBodyAsStringDecoded();
-//		System.out.println("body = " + body);
+		var body = exc.getResponse().getBodyAsStringDecoded();
 		assertTrue(body.contains(WSDL_MESSAGE_VALIDATION_FAILED));
-		assertTrue(body.contains("Invalid content"));
+		assertTrue(body.contains("cvc-complex-type.2.4.a"));
 		assertTrue(body.contains("line"));
 		assertTrue(body.contains("column"));
 	}
 
 	@Test
-	public void testInlineSchemaWithAnyType() throws Exception {
-		Exchange exc = post("http://ws.xwebservices.com")
+	void inlineSchemaWithAnyType() throws Exception {
+		var exc = post("http://ws.xwebservices.com")
 				.body(getContent("/validation/invalidEmail3.xml"))
 				.buildExchange();
 		assertEquals(ABORT, createValidatorInterceptor(INLINE_ANYTYPE_WSDL).handleRequest(exc));
 
-		String body = exc.getResponse().getBodyAsStringDecoded();
-//		System.out.println("body = " + body);
+		var body = exc.getResponse().getBodyAsStringDecoded();
 		assertTrue(body.contains(WSDL_MESSAGE_VALIDATION_FAILED));
-		assertTrue(body.contains("Cannot find the declaration"));
+		assertTrue(body.contains("cvc-elt.1.a"));
 		assertTrue(body.contains("line"));
 		assertTrue(body.contains("column"));
 	}

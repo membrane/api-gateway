@@ -33,7 +33,6 @@ import com.predic8.membrane.core.transport.ssl.PEMSupport;
 import com.predic8.membrane.core.transport.ssl.SSLContext;
 import com.predic8.membrane.core.transport.ssl.StaticSSLContext;
 import jakarta.mail.internet.ParseException;
-import org.apache.commons.codec.binary.Base64;
 import org.jose4j.jwt.JwtClaims;
 import org.jose4j.jwt.MalformedClaimException;
 import org.jose4j.jwt.NumericDate;
@@ -45,7 +44,6 @@ import javax.annotation.Nullable;
 import javax.annotation.concurrent.GuardedBy;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URLEncoder;
 import java.util.List;
 import java.util.UUID;
 
@@ -56,8 +54,6 @@ import static com.predic8.membrane.core.http.MimeType.APPLICATION_X_WWW_FORM_URL
 import static com.predic8.membrane.core.interceptor.oauth2.OAuth2TokenBody.authorizationCodeBodyBuilder;
 import static com.predic8.membrane.core.interceptor.oauth2.OAuth2TokenBody.refreshTokenBodyBuilder;
 import static com.predic8.membrane.core.interceptor.oauth2client.rf.JsonUtils.isJson;
-import static java.net.URLEncoder.encode;
-import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.apache.commons.codec.binary.Base64.encodeBase64;
 
 public abstract class AuthorizationService {
@@ -79,7 +75,7 @@ public abstract class AuthorizationService {
     private SSLContext sslContext;
     private boolean useJWTForClientAuth;
     private final LogHelper logHelper = new LogHelper();
-    private ClientAuthorization clientAuthorization = ClientAuthorization.client_secret_basic;
+    private ClientAuthorization clientAuthorization = ClientAuthorization.CLIENT_SECRET_BASIC;
 
     protected boolean supportsDynamicRegistration = false;
 
@@ -259,7 +255,7 @@ public abstract class AuthorizationService {
         if (clientSecret == null) {
             return requestBuilder.body(body.clientId(getClientId()).build());
         }
-        if (clientAuthorization == ClientAuthorization.client_secret_basic) {
+        if (clientAuthorization == ClientAuthorization.CLIENT_SECRET_BASIC) {
             return requestBuilder.header(AUTHORIZATION, "Basic " + new String(encodeBase64((getClientId() + ":" + clientSecret).getBytes()))).body(body.build());
         }
         return requestBuilder.body(body.clientId(getClientId()).clientSecret(clientSecret).build());

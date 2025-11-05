@@ -26,6 +26,9 @@ import javax.tools.*;
 import java.io.*;
 import java.lang.annotation.*;
 import java.util.*;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static javax.tools.StandardLocation.*;
 
@@ -86,7 +89,7 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
 						}
 						if (element != null) {
 							if (element.getAnnotation(annotationClass) != null)
-								currentSet.add(element);
+								Objects.requireNonNull(currentSet).add(element);
 						}
 					} else {
 						try {
@@ -206,17 +209,15 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
 					main.getIis().add(ii);
 
 					main.getElements().put(ii.getElement(), ii);
-					if (main.getGlobals().containsKey(ii.getAnnotation().name()))
-						throw new ProcessingException("Duplicate global @MCElement name.", main.getGlobals().get(ii.getAnnotation().name()).getElement(), ii.getElement());
 					if (main.getIds().containsKey(ii.getId()))
 						throw new ProcessingException("Duplicate element id \"" + ii.getId() + "\". Please assign one using @MCElement(id=\"...\").", e, main.getIds().get(ii.getId()).getElement());
 					main.getIds().put(ii.getId(), ii);
 
 					scan(m, main, ii);
 
-					String uniquenessError = getUniquenessError(ii);
-					if (uniquenessError != null)
-						throw new ProcessingException(uniquenessError, ii.getElement());
+                    if (ii.getAnnotation().topLevel())
+                        main.getTopLevels().put(ii.getAnnotation().name(), ii);
+
                     if (ii.getAnnotation().noEnvelope()) {
                         if (ii.getAnnotation().topLevel())
                             throw new ProcessingException("@MCElement(..., noEnvelope=true, topLevel=true) is invalid.", ii.getElement());
@@ -224,7 +225,7 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
                             throw new ProcessingException("@MCElement(..., noEnvelope=true, mixed=true) is invalid.", ii.getElement());
                         if (ii.getChildElementSpecs().size() != 1)
                             throw new ProcessingException("@MCElement(noEnvelope=true) requires exactly one @MCChildElement.", ii.getElement());
-                        if (!ii.getChildElementSpecs().get(0).isList())
+                        if (!ii.getChildElementSpecs().getFirst().isList())
                             throw new ProcessingException("@MCElement(noEnvelope=true) requires its @MCChildElement() to be a List or Collection.", ii.getElement());
                         if (!ii.getAis().isEmpty())
                             throw new ProcessingException("@MCElement(noEnvelope=true) requires @MCAttribute to be not present.", ii.getElement());
@@ -246,12 +247,16 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
 						ElementInfo ei = main.getElements().get(f.getKey());
 
 						if (ei != null)
-							cedi.getElementInfo().add(ei);
+							cedi.getElementInfo().add(ei); // e.g. SSLParser
 						else {
-							for (Map.Entry<TypeElement, ElementInfo> e : main.getElements().entrySet())
-								if (processingEnv.getTypeUtils().isAssignable(e.getKey().asType(), f.getKey().asType()))
-									cedi.getElementInfo().add(e.getValue());
-						}
+                            boolean targetIsObject = processingEnv.getTypeUtils().isSameType(f.getKey().asType(), processingEnv.getElementUtils().getTypeElement("java.lang.Object").asType());
+                            // e.g. AuthorizationService
+                            for (Map.Entry<TypeElement, ElementInfo> e : main.getElements().entrySet()) {
+                                if (!processingEnv.getTypeUtils().isAssignable(e.getKey().asType(), f.getKey().asType())) continue;
+                                if (targetIsObject && !isTopLevelMCElement(e.getKey())) continue; // only allow topLevel MCElements for Object
+                                cedi.getElementInfo().add(e.getValue());
+                            }
+                        }
 
 						for (ElementInfo ei2 : cedi.getElementInfo())
 							ei2.addUsedBy(f.getValue());
@@ -263,11 +268,22 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
 					}
 				}
 
+                for (MainInfo main : m.getMains()) {
+                    for (Map.Entry<TypeElement, ElementInfo> f : main.getElements().entrySet()) {
+                        ElementInfo ei2 = main.getTopLevels().get(f.getKey().getAnnotation(MCElement.class).name());
+                        if (ei2 != null && f.getValue() != ei2 && f.getValue().getAnnotation().topLevel())
+                            throw new ProcessingException("Duplicate top-level @MCElement name. Make at least one @MCElement(topLevel=false,...) .", f.getKey(), ei2.getElement());
 
-				if (mcmains.isEmpty()) {
-					processingEnv.getMessager().printMessage(Kind.ERROR, "@MCMain but no @MCElement found.", mcmains.iterator().next());
-					return true;
-				}
+                        List < String > uniquenessErrors = getUniquenessError(f.getValue(), main);
+                        if (!uniquenessErrors.isEmpty())
+                            throw new ProcessingException(String.join(System.lineSeparator(), uniquenessErrors), f.getValue().getElement());
+                    }
+                    if (main.getElements().isEmpty()) {
+                        processingEnv.getMessager().printMessage(Kind.ERROR, "@MCMain but no @MCElement found.", mcmains.iterator().next());
+                        return true;
+                    }
+                }
+
 				process(m);
 			}
 
@@ -281,12 +297,126 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
 		}
 	}
 
-	private String getUniquenessError(ElementInfo ii) {
-		// TODO ii.getChildElementSpecs().map(::getPropertyName) aber isList siehe JsonSchemaGenerator:140
-		return null;
-	}
+    private boolean isTopLevelMCElement(TypeElement type) {
+        MCElement mcElement = type.getAnnotation(MCElement.class);
+        return (mcElement != null) && mcElement.topLevel();
+    }
 
-	private static final String REQUIRED = "com.predic8.membrane.annot.Required";
+    private List<String> getUniquenessError(ElementInfo ii, MainInfo main) {
+        List<String> errors = new ArrayList<>();
+        var groups = collectNameGroups(ii, main);
+
+        // Check for duplicates within a group
+        for (var g : groups) {
+            var dups = duplicates(g.names());
+            if (!dups.isEmpty()) {
+                errors.add("Duplicate " + g.label() + ": " + String.join(", ", dups));
+            }
+        }
+
+        Map<String, Set<String>> index = new TreeMap<>();
+        for (var g : groups) {
+            // use a set to avoid inflating clashes due to internal duplicates
+            for (String n : new TreeSet<>(g.names())) {
+                index.computeIfAbsent(n, __ -> new TreeSet<>()).add(g.label());
+            }
+        }
+        index.forEach((name, usedIn) -> {
+            if (usedIn.size() > 1) {
+                errors.add("Name clash: '" + name + "' used by " + String.join(" & ", usedIn));
+            }
+        });
+
+        return errors;
+    }
+
+    private List<NameGroup> collectNameGroups(ElementInfo ii, MainInfo main) {
+        var groups = new ArrayList<NameGroup>();
+        groups.add(group("attributes", attributeNames(ii)));
+        groups.add(group("textContent", textContentNames(ii)));
+        groups.addAll(childElementNames(ii, main));
+        return groups.stream().filter(g -> !g.names().isEmpty()).toList();
+    }
+
+    private Stream<String> textContentNames(ElementInfo ii) {
+        if (ii.getTci() != null) {
+            return ii.getTci().getPropertyName().lines();
+        }
+        return Stream.<String>builder().build();
+    }
+
+    private NameGroup group(String label, Stream<String> names) {
+        return new NameGroup(
+                label,
+                names.filter(Objects::nonNull).map(String::trim).filter(s -> !s.isEmpty()).toList()
+        );
+    }
+
+    private record NameGroup(String label, List<String> names) {}
+
+    private List<String> duplicates(Collection<String> names) {
+        return names.stream()
+                .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()))
+                .entrySet().stream()
+                .filter(e -> e.getValue() > 1)
+                .map(Map.Entry::getKey)
+                .sorted()
+                .toList();
+    }
+
+
+    private Stream<String> attributeNames(ElementInfo ii) {
+        return ii.getAis().stream()
+                .map(AttributeInfo::getXMLName)
+                .filter(n -> n != null && !n.isBlank())
+                .map(String::trim);
+    }
+
+    private ArrayList<NameGroup> childElementNames(ElementInfo ii, MainInfo main) {
+        var groups = new ArrayList<NameGroup>();
+
+        for (ChildElementInfo cei : ii.getChildElementSpecs()) {
+            List<String> names = new ArrayList<>();
+            if (cei.isList()) {
+                // e.g. api.interceptors
+                names.add(cei.getPropertyName());
+                var decl = main.getChildElementDeclarations().get(cei.getTypeDeclaration());
+                if (decl != null) {
+                    var dupes = decl.getElementInfo().stream()
+                            .map(ei -> {
+                                var ann = ei.getAnnotation();
+                                return ann == null ? null : ann.name();
+                            })
+                            .filter(n -> n != null && !n.isBlank())
+                            .map(String::trim)
+                            .collect(java.util.stream.Collectors.groupingBy(java.util.function.Function.identity(),
+                                    java.util.stream.Collectors.counting()))
+                            .entrySet().stream()
+                            .filter(e -> e.getValue() > 1)
+                            .map(java.util.Map.Entry::getKey)
+                            .sorted()
+                            .toList();
+                    if (!dupes.isEmpty()) {
+                        throw new ProcessingException(
+                                "Duplicate child names for setter '" + cei.getPropertyName() + "': "
+                                        + String.join(", ", dupes),
+                                cei.getTypeDeclaration());
+                    }
+                }
+            } else {
+                // e.g. api.path, oauth2resource2.google
+                for (ElementInfo ei : main.getChildElementDeclarations().get(cei.getTypeDeclaration()).getElementInfo()) {
+                    names.add(ei.getAnnotation().name());
+                }
+            }
+
+            groups.add(new NameGroup("childElement '" + cei.getPropertyName() + "'", names));
+        }
+        return groups;
+    }
+
+
+    private static final String REQUIRED = "com.predic8.membrane.annot.Required";
 
 	private void scan(Model m, MainInfo main, ElementInfo ii) {
 		scan(m, main, ii, ii.getElement());
@@ -306,6 +436,8 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
 				ai.setRequired(isRequired(e2));
 				ii.getAis().add(ai);
 				ii.setHasIdField(ii.isHasIdField() || ai.getXMLName().equals("id"));
+
+                validateEnumAttribute(ai);
 			}
 			MCOtherAttributes d = e2.getAnnotation(MCOtherAttributes.class);
 			if (d != null) {
@@ -385,4 +517,30 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
 			new BlueprintParsers(processingEnv).writeParsers(m);
 		}
 	}
+
+    private void validateEnumAttribute(AttributeInfo ai) {
+        List<? extends VariableElement> params = ai.getE().getParameters();
+        if (params.size() != 1) return;
+        var paramType = params.getFirst().asType();
+        if (paramType.getKind() != TypeKind.DECLARED) return;
+        TypeElement paramTypeElement = (TypeElement) processingEnv.getTypeUtils().asElement(paramType);
+        if (paramTypeElement.getSuperclass().getKind() == TypeKind.DECLARED) {
+            TypeElement superClass = (TypeElement) processingEnv.getTypeUtils().asElement(paramTypeElement.getSuperclass());
+            if ("java.lang.Enum".equals(superClass.getQualifiedName().toString())) {
+                validateEnumConstantsUppercase(paramTypeElement);
+            }
+        }
+    }
+
+    private void validateEnumConstantsUppercase(TypeElement enumType) {
+        for (Element enclosed : enumType.getEnclosedElements()) {
+            if (enclosed.getKind() == ElementKind.ENUM_CONSTANT) {
+                String name = enclosed.getSimpleName().toString();
+                if (!name.equals(name.toUpperCase(Locale.ROOT))) {
+                    throw new IllegalArgumentException("Enum constant '" + name + "' in " + enumType.getQualifiedName() +
+                            " must be uppercase. Found: " + name + ", expected: " + name.toUpperCase(Locale.ROOT));
+                }
+            }
+        }
+    }
 }

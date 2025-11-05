@@ -26,6 +26,12 @@ public class ValidationContext {
     private String path;
     private String uriTemplate;
     private String jsonPointer = "";
+
+    /**
+     * Query, path, (matrix) parameter name
+     */
+    private String parameter;
+
     private String schemaType;
     private String complexType;
     private ValidatedEntityType validatedEntityType;
@@ -50,6 +56,7 @@ public class ValidationContext {
         this.validatedEntityType = ctx.validatedEntityType;
         this.validatedEntity = ctx.validatedEntity;
         this.statusCode = ctx.statusCode;
+        this.parameter = ctx.parameter;
     }
 
     public ValidationContext() {
@@ -69,6 +76,10 @@ public class ValidationContext {
 
     public String getMethod() {
         return method;
+    }
+
+    public String getParameter() {
+        return parameter;
     }
 
     public ValidatedEntityType getValidatedEntityType() {
@@ -103,10 +114,7 @@ public class ValidationContext {
         if(validatedEntityType == null)
             return sb.toString();
 
-        if (validatedEntityType.equals(QUERY_PARAMETER)) {
-            sb.append(validatedEntityType.name());
-            appendValidatedEntity(sb);
-        } else if (validatedEntityType.equals(PATH_PARAMETER)) {
+        if (validatedEntityType.equals(QUERY_PARAMETER) || validatedEntityType.equals(PATH_PARAMETER)) {
             sb.append(validatedEntityType.name());
             appendValidatedEntity(sb);
         } else if (validatedEntityType.equals(MEDIA_TYPE)) {
@@ -138,6 +146,12 @@ public class ValidationContext {
     public ValidationContext method(String method) {
         ValidationContext ctx = this.deepCopy();
         ctx.method = method;
+        return ctx;
+    }
+
+    public ValidationContext parameter(String parameter) {
+        ValidationContext ctx = this.deepCopy();
+        ctx.parameter = parameter;
         return ctx;
     }
 
@@ -202,8 +216,6 @@ public class ValidationContext {
         QUERY_PARAMETER("query parameter"),
         HEADER_PARAMETER("header parameter"),
         BODY("body"),
-        FIELD("field"),
-        PROPERTY("property"),
         MEDIA_TYPE("media type");
 
         public final String name;
@@ -217,6 +229,7 @@ public class ValidationContext {
         return "ValidationContext{" +
                 "method='" + method + '\'' +
                 ", path='" + path + '\'' +
+                ", parameter='" + parameter + '\'' +
                 ", uriTemplate='" + uriTemplate + '\'' +
                 ", xpointer='" + jsonPointer + '\'' +
                 ", schemaType='" + schemaType + '\'' +

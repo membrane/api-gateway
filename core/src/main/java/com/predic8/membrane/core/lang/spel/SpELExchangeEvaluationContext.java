@@ -18,6 +18,7 @@ import com.fasterxml.jackson.databind.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.Interceptor.*;
+import com.predic8.membrane.core.lang.*;
 import com.predic8.membrane.core.lang.spel.functions.*;
 import com.predic8.membrane.core.lang.spel.spelable.*;
 import com.predic8.membrane.core.lang.spel.typeconverters.*;
@@ -39,7 +40,7 @@ public class SpELExchangeEvaluationContext extends StandardEvaluationContext {
 
     private final Exchange exchange;
     private final Message message;
-    private final SpELBody body; // Is used by SpEL in scripts
+    private final LazyBody body; // Is used by SpEL in scripts
 
     // Avoid the common plural error
     private final SpELLablePropertyAware headers;
@@ -70,7 +71,7 @@ public class SpELExchangeEvaluationContext extends StandardEvaluationContext {
         this.exchange = exchange;
         this.flow = flow;
         this.message = exchange.getMessage(flow);
-        this.body = new SpELBody(message);
+        this.body = new LazyBody(message);
 
         pathParam = new SpELPathParameters(exchange);
         properties = new SpELProperties(exchange.getProperties());
@@ -174,7 +175,7 @@ public class SpELExchangeEvaluationContext extends StandardEvaluationContext {
         return message;
     }
 
-    public SpELBody getBody() { return body; }
+    public LazyBody getBody() { return body; }
 
     public String getPath() {
         return path;

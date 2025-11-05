@@ -157,7 +157,7 @@ public class LogInterceptor extends AbstractExchangeExpressionInterceptor {
     /**
      * @description Whether to include message bodies in logs.
      *
-     * <p><strong>Warning:</strong> Body logging can expose secrets or personal data. Prefer {@code false}
+     * <p><strong>Warning:</strong> Body logging can expose secrets or personal data. Prefer <code>false</code>
      * in production.</p>
      * @default true
      */
@@ -213,7 +213,7 @@ public class LogInterceptor extends AbstractExchangeExpressionInterceptor {
     /**
      * @description Logger category to use.
      * <p>Allows routing logs into different appenders/targets via Logback/Log4j configuration.</p>
-     * @default Fully qualified class name of {@code LogInterceptor} com.predic8.membrane.core.interceptor.log.LogInterceptor
+     * @default Fully qualified class name of <code>LogInterceptor</code> com.predic8.membrane.core.interceptor.log.LogInterceptor
      */
     @SuppressWarnings("unused")
     @MCAttribute

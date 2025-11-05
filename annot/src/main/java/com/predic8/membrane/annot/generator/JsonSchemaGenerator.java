@@ -99,7 +99,10 @@ public class JsonSchemaGenerator extends AbstractK8sGenerator {
 
         }
 
-        schema.addAttribute("oneOf", oneOfArray);
+        // Temporary fallback to 'anyOf' since several YAMLs lack a 'kind' field.
+        // 'anyOf' allows multiple matching schemas and may hide config errors that 'oneOf' would detect.
+        // TODO: Revert to 'oneOf' once missing 'kind' cases are resolved.
+        schema.addAttribute("anyOf", oneOfArray);
 
         FileObject fo = createFile(main);
         try (BufferedWriter w = new BufferedWriter(fo.openWriter())) {

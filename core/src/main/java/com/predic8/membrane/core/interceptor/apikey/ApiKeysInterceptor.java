@@ -31,13 +31,12 @@ import static java.util.stream.Stream.*;
 /**
  * @description Validates API keys extracted from incoming requests and looks up permissions (scopes) via configured key stores.
  * Extractors can read the keys from HTTP headers, query parameters and may other message part. When validation succeeds, the interceptor adds an
- * {@code ApiKeySecurityScheme} with the resolved scopes to the {@code Exchange}. Scopes can be checked in later plugins
- * using the SpEL function {@code hasScope("...")}.
+ * <code>ApiKeySecurityScheme</code> with the resolved scopes to the <code>Exchange</code>. Scopes can be checked in later plugins
+ * using the SpEL function <code>hasScope("...")</code>.
  * <p>
  * Typical configuration:
  * </p>
- * <pre>
- * &lt;api&gt;
+ * <pre><code>&lt;api&gt;
  *   &lt;apiKey required="true"&gt;
  *     &lt;!-- one or more key stores --&gt;
  *     ...
@@ -45,11 +44,10 @@ import static java.util.stream.Stream.*;
  *     &lt;!-- optional: customize extraction (header/query) --&gt;
  *     &lt;headerExtractor name="X-Api-Key"/&gt;
  *   &lt;/apiKey&gt;
- * &lt;/api&gt;
- * </pre>
+ * &lt;/api&gt;</code></pre>
  * <p>
  * On missing or invalid keys, a Problem Details response is generated (401 for missing, 403 for invalid) unless
- * {@code required="false"} is set.
+ * <code>required="false"</code> is set.
  * </p>
  * @topic 3. Security and Validation
  */
@@ -153,8 +151,8 @@ public class ApiKeysInterceptor extends AbstractInterceptor {
     }
 
     /**
-     * @description Controls whether API key validation is enforced. If set to {@code false}, the interceptor still extracts
-     * keys and loads scopes so they remain available for downstream checks (e.g., via {@code hasScope("...")}), but requests
+     * @description Controls whether API key validation is enforced. If set to <code>false</code>, the interceptor still extracts
+     * keys and loads scopes so they remain available for downstream checks (e.g., via <code>hasScope("...")</code>), but requests
      * without a valid key are allowed to pass.
      * @default true
      * @example false
@@ -175,13 +173,11 @@ public class ApiKeysInterceptor extends AbstractInterceptor {
      * <p>
      * Example:
      * </p>
-     * <pre>
-     * &lt;apiKey&gt;
-     *   &lt;!-- store elements; order does not matter --&gt;
-     *   &lt;yourFileStore src="classpath:keys.txt"/&gt;
-     *   &lt;yourXmlStore  ref="sharedKeysBean"/&gt;
-     * &lt;/apiKey&gt;
-     * </pre>
+     * <pre><code><apiKey>
+     *   <!-- store elements; order does not matter -->
+     *   <yourFileStore src="classpath:keys.txt"/>
+     *   <yourXmlStore  ref="sharedKeysBean"/>;
+     * </apiKey></code></pre>
      */
     @MCChildElement(allowForeign = true)
     public void setStores(List<ApiKeyStore> stores) {
@@ -194,23 +190,21 @@ public class ApiKeysInterceptor extends AbstractInterceptor {
 
     /**
      * @description Configures how and where API keys are extracted from requests (e.g., HTTP header or URL query parameter).
-     * Provide one or more extractor elements. If omitted, a header extractor using {@code X-Api-Key} is used.
-     * @default &lt;headerExtractor /&gt; (header name {@code X-Api-Key})
+     * Provide one or more extractor elements. If omitted, a header extractor using <code>X-Api-Key</code> is used.
+     * @default <headerExtractor /> (header name <code>X-Api-Key</code>)
      * <p>
      * Examples:
      * </p>
-     * <pre>
-     * &lt;apiKey&gt;
-     *   &lt;!-- header: X-Api-Key (default) --&gt;
-     *   &lt;headerExtractor /&gt;
+     * <pre><code><apiKey>
+     *   <!-- header: X-Api-Key (default) -->
+     *   <headerExtractor />
      *
-     *   &lt;!-- custom header --&gt;
-     *   &lt;headerExtractor name="Authorization" prefix="Api-Key "/&gt;
+     *   <!-- custom header -->
+     *   <headerExtractor name="Authorization" prefix="Api-Key "/>
      *
-     *   &lt;!-- query parameter --&gt;
-     *   &lt;queryParamExtractor name="api_key"/&gt;
-     * &lt;/apiKey&gt;
-     * </pre>
+     *   <!-- query parameter -->
+     *   <queryParamExtractor name="api_key"/>
+     * </apiKey></code></pre>
      */
     @MCChildElement(allowForeign = true, order = 1)
     public void setExtractors(List<ApiKeyExtractor> extractors) {

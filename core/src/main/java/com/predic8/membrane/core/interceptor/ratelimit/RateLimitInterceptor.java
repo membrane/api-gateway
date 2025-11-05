@@ -30,6 +30,7 @@ import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static com.predic8.membrane.core.lang.ExchangeExpression.expression;
 import static com.predic8.membrane.core.util.HttpUtil.*;
 import static java.lang.String.*;
 
@@ -47,6 +48,7 @@ import static java.lang.String.*;
  * reachable directly. Only activate this feature when you know what you are doing.
  * </p>
  * @see <a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-Forwarded-For">X-Forwarded-For &#64;Mozilla</a>
+ * @topic 3. Security and Validation
  */
 @MCElement(name = "rateLimiter")
 public class RateLimitInterceptor extends AbstractExchangeExpressionInterceptor {
@@ -92,7 +94,7 @@ public class RateLimitInterceptor extends AbstractExchangeExpressionInterceptor 
         // If there is no expression use the client IP
         if (expression.isEmpty())
             return null;
-        return ExchangeExpression.newInstance(router, language, expression);
+        return expression(router, language, expression);
     }
 
     @Override
@@ -241,7 +243,7 @@ public class RateLimitInterceptor extends AbstractExchangeExpressionInterceptor 
      * @description Duration after the limit is reset in the <i>ISO 8600 Duration</i> format, e.g. PT10S for 10 seconds,
      * PT5M for 5 minutes or PT8H for eight hours.
      * @default PT3600S
-     * @see <a href="https://en.wikipedia.org/wiki/ISO_8601#Durations">ISO 8601 Durations</a>
+     * <p>see: <a href="https://en.wikipedia.org/wiki/ISO_8601#Durations">ISO 8601 Durations</a></p>
      */
     @MCAttribute
     public void setRequestLimitDuration(String duration) {

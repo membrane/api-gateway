@@ -11,22 +11,19 @@
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
    See the License for the specific language governing permissions and
    limitations under the License. */
-package com.predic8.membrane.core.lang.spel.spelable;
 
-import com.predic8.membrane.core.http.*;
+package com.predic8.membrane.core.openapi.validators.parameters;
 
-public class SpELBody {
+import com.fasterxml.jackson.databind.*;
 
-    /**
-     * Store message instead of body to be able to extract even zipped bodies
-     */
-    final Message message;
+import static com.predic8.membrane.core.util.JsonUtil.*;
+import static java.net.URLDecoder.*;
+import static java.nio.charset.StandardCharsets.*;
 
-    public SpELBody(Message msg) {
-        message = msg;
-    }
+public class ScalarParameterParser extends AbstractParameterParser {
 
-    public Message getMessage() {
-        return message;
+    @Override
+    public JsonNode getJson() throws ParameterParsingException {
+        return scalarAsJson(decode(getValue(), UTF_8));
     }
 }

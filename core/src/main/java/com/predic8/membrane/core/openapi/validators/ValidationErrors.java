@@ -28,7 +28,7 @@ public class ValidationErrors {
 
     public enum Direction { REQUEST, RESPONSE }
 
-    public static ValidationErrors create(ValidationContext ctx, String message) {
+    public static ValidationErrors error(ValidationContext ctx, String message) {
         ValidationErrors ve = new ValidationErrors();
         ve.add(ctx, message);
         return ve;
@@ -93,6 +93,8 @@ public class ValidationErrors {
         setFieldIfNotNull(root, "method", ctx.getMethod());
         setFieldIfNotNull(root, "uriTemplate", ctx.getUriTemplate());
         setFieldIfNotNull(root, "path", ctx.getPath());
+        setFieldIfNotNull(root, "parameter", ctx.getParameter());
+        setFieldIfNotNull(root, "schemaType", ctx.getSchemaType());
         root.put("errors", m);
         return root;
     }

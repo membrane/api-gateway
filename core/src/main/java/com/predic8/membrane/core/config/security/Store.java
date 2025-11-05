@@ -85,7 +85,7 @@ public abstract class Store {
 	}
 
 	/**
-	 * @description Keystore type (e.g., {@code PKCS12}, {@code JKS}).
+	 * @description Keystore type (e.g., <code>PKCS12</code>, <code>JKS</code>).
 	 */
 	@MCAttribute
 	public void setType(String type) {

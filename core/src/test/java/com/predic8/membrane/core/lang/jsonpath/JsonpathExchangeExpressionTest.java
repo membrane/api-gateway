@@ -25,6 +25,7 @@ import static com.predic8.membrane.core.http.MimeType.TEXT_XML;
 import static com.predic8.membrane.core.http.Request.*;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
 import static com.predic8.membrane.core.lang.ExchangeExpression.Language.*;
+import static com.predic8.membrane.core.lang.ExchangeExpression.expression;
 import static java.lang.Boolean.FALSE;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -116,12 +117,24 @@ class JsonpathExchangeExpressionTest extends AbstractExchangeExpressionTest {
 
     @Test
     void wrongContentType() throws URISyntaxException {
-        assertEquals("", ExchangeExpression.newInstance(router, JSONPATH, "$")
-                .evaluate(Request.post("/foo").contentType(TEXT_XML).buildExchange(), REQUEST, String.class));
+        assertEquals("", expression(router, JSONPATH, "$")
+                .evaluate(post("/foo").contentType(TEXT_XML).buildExchange(), REQUEST, String.class));
+    }
+
+    @Test
+    void array() throws URISyntaxException {
+        var expr = expression(router, JSONPATH, "$[0]");
+        assertEquals(1, expr.evaluate(post("/foo").json("[1,2,3]").buildExchange(), REQUEST, Integer.class));
+    }
+
+    @Test
+    void number() throws URISyntaxException {
+        var expr = expression(router, JSONPATH, "$");
+        assertEquals(314, expr.evaluate(post("/foo").json("314").buildExchange(), REQUEST, Integer.class));
     }
 
     private static <T> T evaluateWithEmptyBodyFor(Class<T> type) throws URISyntaxException {
-        return ExchangeExpression.newInstance(router, JSONPATH, "$")
+        return expression(router, JSONPATH, "$")
                 .evaluate(get("/foo").buildExchange(), REQUEST, type);
     }
 }

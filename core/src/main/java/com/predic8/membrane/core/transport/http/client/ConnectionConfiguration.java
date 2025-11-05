@@ -27,11 +27,11 @@ import java.util.Objects;
  *              &lt;connection keepAliveTimeout="30000" timeout="10000" soTimeout="5000" localAddr="192.168.1.100"/&gt;
  *
  *              YAML (experimental):
- *              connection:
+ *              <pre><code>connection:
  *                keepAliveTimeout: 30000
  *                timeout: 10000
  *                soTimeout: 5000
- *                localAddr: "192.168.1.100"
+ *                localAddr: "192.168.1.100"</code></pre>
  *
  * @topic 4. Transports and Clients
  */
