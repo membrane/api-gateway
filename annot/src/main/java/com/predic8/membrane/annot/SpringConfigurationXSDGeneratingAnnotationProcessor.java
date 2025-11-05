@@ -26,6 +26,7 @@ import javax.tools.*;
 import java.io.*;
 import java.lang.annotation.*;
 import java.util.*;
+import java.util.Map.*;
 import java.util.function.*;
 import java.util.stream.*;
 
@@ -270,7 +271,6 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
 
                 for (MainInfo main : m.getMains()) {
                     for (Entry<TypeElement, ElementInfo> f : main.getElements().entrySet()) {
-                    for (Map.Entry<TypeElement, ElementInfo> f : main.getElements().entrySet()) {
                         ElementInfo ei2 = main.getTopLevels().get(f.getKey().getAnnotation(MCElement.class).name());
                         if (ei2 != null && f.getValue() != ei2 && f.getValue().getAnnotation().topLevel())
                             throw new ProcessingException("Duplicate top-level @MCElement name. Make at least one @MCElement(topLevel=false,...) .", f.getKey(), ei2.getElement());
