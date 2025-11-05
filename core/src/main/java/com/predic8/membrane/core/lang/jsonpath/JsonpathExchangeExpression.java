@@ -64,8 +64,8 @@ public class JsonpathExchangeExpression extends AbstractExchangeExpression {
     @Override
     public <T> T evaluate(Exchange exchange, Flow flow, Class<T> type) {
 
-        T check = checkContentTypeAndBody(exchange.getMessage(flow), type, Message::isJSON, "JSON", log);
-        if (check != null) return check;
+        T fallback = checkContentTypeAndBody(exchange.getMessage(flow), type, Message::isJSON, "JSON", log);
+        if (fallback != null) return fallback;
 
         try {
             return castType(exchange, flow, type);

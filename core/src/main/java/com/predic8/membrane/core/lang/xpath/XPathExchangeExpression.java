@@ -45,8 +45,8 @@ public class XPathExchangeExpression extends AbstractExchangeExpression {
     public <T> T evaluate(Exchange exchange, Interceptor.Flow flow, Class<T> type) {
         Message msg = exchange.getMessage(flow);
 
-        T check = checkContentTypeAndBody(exchange.getMessage(flow), type, Message::isXML, "XML", log);
-        if (check != null) return check;
+        T fallback = checkContentTypeAndBody(exchange.getMessage(flow), type, Message::isXML, "XML", log);
+        if (fallback != null) return fallback;
 
         try {
             if (Boolean.class.isAssignableFrom(type)) {

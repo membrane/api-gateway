@@ -70,7 +70,7 @@ public abstract class AbstractExchangeExpression implements ExchangeExpression {
                 return resultForNoEvaluation(type);
             }
             if (!contentTypeOk.test(msg)) {
-                log.info("Content-Type not {}. Nothing to evaluate for expression: {}", contentTypeLabel, expression);
+                log.info("Content-Type is not {}. Nothing to evaluate for expression: {}", contentTypeLabel, expression);
                 return resultForNoEvaluation(type);
             }
         } catch (IOException e) {
