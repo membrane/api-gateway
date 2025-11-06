@@ -937,7 +937,7 @@ Secure endpoints with SSL/TLS:
 
 ```xml
 
-<api port="443">
+<api port="8443">
   <ssl>
     <keystore location="membrane.p12" password="secret" keyPassword="secret" />
     <truststore location="membrane.p12" password="secret" />

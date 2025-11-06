@@ -13,10 +13,12 @@
    limitations under the License. */
 
 
-package com.predic8.membrane.core.interceptor.log;
+package com.predic8.membrane.core.interceptor.log.access;
 
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.interceptor.log.AccessLogInterceptor;
+import com.predic8.membrane.core.interceptor.log.AdditionalVariable;
 import com.predic8.membrane.core.lang.spel.*;
 import org.slf4j.*;
 
