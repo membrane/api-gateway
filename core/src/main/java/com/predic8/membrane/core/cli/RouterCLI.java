@@ -14,6 +14,8 @@
 
 package com.predic8.membrane.core.cli;
 
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.core.StreamReadFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.fasterxml.jackson.dataformat.yaml.YAMLParser;
@@ -168,7 +170,10 @@ public class RouterCLI {
     }
 
     private static void sendYamlToBeanCache(String location, BeanCache beanCache) throws IOException {
-        try (YAMLParser parser = new YAMLFactory().createParser(new File(location))) {
+        final YAMLFactory yamlFactory = YAMLFactory.builder()
+                .enable(StreamReadFeature.STRICT_DUPLICATE_DETECTION)
+                .build();
+        try (YAMLParser parser = yamlFactory.createParser(new File(location))) {
             var om = new ObjectMapper();
             int count = 0;
             while (!parser.isClosed()) {
@@ -191,6 +196,13 @@ public class RouterCLI {
             }
 
             beanCache.fireConfigurationLoaded();
+        } catch (JsonParseException e) {
+            throw new IOException(
+                    "Invalid YAML: multiple configurations must be separated by '---' "
+                            + "(at line " + e.getLocation().getLineNr()
+                            + ", column " + e.getLocation().getColumnNr() + ").",
+                    e
+            );
         }
     }
 
