@@ -78,15 +78,16 @@ public class K8sJsonSchemaGenerator extends AbstractK8sGenerator {
                 .forEach(ai -> {
                     SchemaObject sop = object(ai.getXMLName());
                     sop.type(ai.getSchemaType(processingEnv.getTypeUtils()));
-//                    sop.addAttribute("type", ai.getSchemaType(processingEnv.getTypeUtils()));
                     sop.required(ai.isRequired());
                     so.property(sop);
                 });
     }
 
-    private void collectProperties(Model m, MainInfo main, ElementInfo i, SchemaObject schema) {
-        collectAttributes(i, schema);
-        collectTextContent(i, schema);
+    private void collectProperties(Model m, MainInfo main, ElementInfo i, AbstractSchema schema) {
+        if (schema instanceof SchemaObject sop) {
+            collectAttributes(i, sop);
+            collectTextContent(i, sop);
+        }
         collectChildElements(m, main, i, schema);
     }
 
@@ -111,13 +112,17 @@ public class K8sJsonSchemaGenerator extends AbstractK8sGenerator {
             return;
 
         for (Map.Entry<String, ElementInfo> entry : all.entrySet()) {
-            SchemaObject so = object(entry.getKey())
-                    .type(entry.getValue().getAnnotation().noEnvelope() ? "array" : "object")
-                            .additionalProperties(entry.getValue().getOai() != null);
+            boolean noEnvelope = entry.getValue().getAnnotation().noEnvelope();
+            AbstractSchema as;
+            if (noEnvelope) {
+                as = array(entry.getKey());
+            } else {
+                as = object(entry.getKey());
+                ((SchemaObject) as).additionalProperties(entry.getValue().getOai() != null);
+            }
+            collectProperties(m, main, entry.getValue(), as);
 
-            collectProperties(m, main, entry.getValue(), so);
-
-            schema.definition(so);
+            schema.definition(as);
         }
     }
 
@@ -136,19 +141,28 @@ public class K8sJsonSchemaGenerator extends AbstractK8sGenerator {
             if (isList) {
                 SchemaObject items =  object("items").additionalProperties( cei.getAnnotation().allowForeign());
 
-                if (i.getAnnotation().noEnvelope() && so instanceof SchemaArray sa) {
-                    sa.items(items);
+                if (i.getAnnotation().noEnvelope()) {
+                    if (so instanceof SchemaArray sa)
+                        sa.items(items);
+                    else
+                        throw new ProcessingException("@MCElement(noEnvelope=true) is not an array. Implementation error?", i.getElement());
                 } else {
                     if (so instanceof SchemaObject sObj) {
-                        //sop.addAttribute("additionalItems", false);
-                        sObj.property(array(cei.getPropertyName()).required(cei.isRequired()));
+                        SchemaArray array = array(cei.getPropertyName());
+                        array.items(items);
+                        sObj.property(array.required(cei.isRequired()));
+                    } else {
+                        throw new ProcessingException("@MCElement(noEnvelope=false) is not an object. Implementation error?", i.getElement());
                     }
-
                 }
                 parent2 = items;
             } else {
                 if (cei.getAnnotation().allowForeign()) {
-                   // parent2.setAdditionalProperties(true);
+                    if (parent2 instanceof SchemaObject sObj) {
+                        sObj.additionalProperties(true);
+                    } else {
+                        throw new ProcessingException("@MCChildElement(allowForeign=true) is not an object. Implementation error?", i.getElement());
+                    }
                 }
             }
 

@@ -52,6 +52,7 @@
 - OpenAPIValidator:
   - <openapi unknownQueryParameters="accept|report|block" .../>
     Default: accept
+- YAML: JsonSchemaGenerator enable description fields for editor
 
 # 6.4.0
 

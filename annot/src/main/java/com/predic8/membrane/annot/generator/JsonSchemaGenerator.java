@@ -86,10 +86,11 @@ public class JsonSchemaGenerator extends AbstractK8sGenerator {
 
     private void addTopLevelProperties() {
         schema.additionalProperties(false)
+            .property(string("apiVersion"))
             .property( string("kind").enumeration(List.of("api")))
             .property( ref("spec").ref("#/$defs/com.predic8.membrane.core.config.spring.ApiParser").required(true))
             .property(object("metadata")
-                    .property(string("name")));
+                .property(string("name")));
     }
 
     private void addParserDefinitions(Model m, MainInfo main) {
@@ -113,11 +114,12 @@ public class JsonSchemaGenerator extends AbstractK8sGenerator {
         if (elementInfo.getAnnotation().noEnvelope()) {
             // With noEnvelope=true, there should be exactly one child element
 
-            var childName = elementInfo.getChildElementSpecs().getFirst().getPropertyName();
+            ChildElementInfo child = elementInfo.getChildElementSpecs().getFirst();
+            var childName = child.getPropertyName();
 
-            if (!topLevelAdded.containsKey(childName) && !"flow".equals(childName)) {
+            if (!topLevelAdded.containsKey(childName) && !shouldGenerateParserType(child) ) {
                 SchemaArray array = array(childName + "Parser");
-                processMCChilds(m, main, elementInfo.getChildElementSpecs().getFirst().getEi(), array);
+                processMCChilds(m, main, child.getEi(), array);
                 schema.definition(array);
                 topLevelAdded.put(childName, true);
             }
@@ -186,10 +188,10 @@ public class JsonSchemaGenerator extends AbstractK8sGenerator {
             AbstractSchema parent2 = so;
 
             if (cei.isList()) {
-                if ("flow".equals(cei.getPropertyName()) && !isFlowFromWebSocket( cei)) {
+                if (shouldGenerateParserType(cei)) {
                     var sos = new ArrayList<SchemaObject>();
                     for (ElementInfo ei : main.getChildElementDeclarations().get(cei.getTypeDeclaration()).getElementInfo()) {
-                        if (!filter(cei.getPropertyName(), ei.getAnnotation().name()))
+                        if (excludeFromFlow.contains(ei.getAnnotation().name()))
                             continue;
                         sos.add(object()
                                 .additionalProperties(false)
@@ -209,6 +211,10 @@ public class JsonSchemaGenerator extends AbstractK8sGenerator {
         }
     }
 
+    private boolean shouldGenerateParserType(ChildElementInfo cei) {
+        return "flow".equals(cei.getPropertyName()) && !isFlowFromWebSocket(cei);
+    }
+
     boolean isFlowFromWebSocket(ChildElementInfo cei) {
         // String had to be used cause for class we need dependency to core that is otherwise not needed.
         return "com.predic8.membrane.core.transport.ws.WebSocketInterceptorInterface".equals(cei.getTypeDeclaration().getQualifiedName().toString());
@@ -218,8 +224,8 @@ public class JsonSchemaGenerator extends AbstractK8sGenerator {
 
         SchemaObject items = object("items");
 
-        if ("flow".equals(cei.getPropertyName())) {
-            addFlowParserRef((SchemaObject) so, sos);
+        if (shouldGenerateParserType(cei)) {
+            addFlowParserRef(so, sos);
             return items;
         }
 
@@ -236,12 +242,17 @@ public class JsonSchemaGenerator extends AbstractK8sGenerator {
         return items;
     }
 
-    private void addFlowParserRef(SchemaObject so, List<SchemaObject> sos) {
+    private void addFlowParserRef(AbstractSchema so, List<SchemaObject> sos) {
         if (!flowDefCreated) {
             schema.definition( array("flowParser").items( anyOf(sos)));
             flowDefCreated = true;
         }
-        so.property(ref("flow").ref("#/$defs/flowParser"));
+        SchemaRef ref = ref("flow").ref("#/$defs/flowParser");
+        if (so instanceof SchemaArray sa) {
+            sa.items(ref);
+        } else if (so instanceof SchemaObject sObj) {
+            sObj.property(ref);
+        }
     }
 
     private void addChildsAsProperties(Model m, MainInfo main, ChildElementInfo cei, SchemaObject parent2) {
@@ -260,12 +271,6 @@ public class JsonSchemaGenerator extends AbstractK8sGenerator {
 
     private static Map<TypeElement, ChildElementDeclarationInfo> getChildElementDeclarations(MainInfo main) {
         return main.getChildElementDeclarations();
-    }
-
-    private static boolean filter(String objectName, String propertyName) {
-        if (!objectName.equals("flow"))
-            return true;
-        return !excludeFromFlow.contains(propertyName);
     }
 
     private SchemaArray createFromChild(ChildElementInfo cei, SchemaObject items) {

@@ -279,12 +279,12 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
                         List<String> uniquenessErrors = getUniquenessError(f.getValue(), main);
                         if (!uniquenessErrors.isEmpty())
                             throw new ProcessingException(String.join(System.lineSeparator(), uniquenessErrors), f.getValue().getElement());
-                    }
-                }
 
-                if (!areThereMCElementsForTheMCMain(m)) {
-                    processingEnv.getMessager().printMessage(ERROR, "@MCMain but no @MCElement found.", mcmains.iterator().next());
-                    return true;
+                        if (!areThereMCElementsForTheMCMain(m)) {
+                            processingEnv.getMessager().printMessage(ERROR, "@MCMain but no @MCElement found.", mcmains.iterator().next());
+                            return true;
+                        }
+                    }
                 }
 
                 process(m);
