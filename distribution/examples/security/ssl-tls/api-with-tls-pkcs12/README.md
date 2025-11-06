@@ -8,21 +8,21 @@ This example describes how to secure an API with SSL/TLS using a keystore in the
 1. Run `membrane.cmd` or `membrane.sh`
 2. Open the following URL in your browser. Please do not forget to use `https` instead of `http`.
 
-    `https://localhost/`
+    `https://localhost:8443/`
 
     You should get a warning that the certificate is not trustworthy. Here you can ignore the warning. In production, you should use your own certificates.
 
 3. You can also access the API using `curl`. The option `-k` suppresses the check for self-signed certificates.
 
 ```                                                                                                    
-curl -k -v https://localhost/
+curl -k -v https://localhost:8443/
 ```
 
 The output should look like this:
 
 ```
-*   Trying 127.0.0.1:443...
-* Connected to localhost (127.0.0.1) port 443 (#0)
+*   Trying 127.0.0.1:8443...
+* Connected to localhost (127.0.0.1) port 8443 (#0)
 * ALPN, offering h2
 * ALPN, offering http/1.1
 * successfully set certificate verify locations:
@@ -59,7 +59,7 @@ The output should look like this:
 Just put an SSL element into a proxy. See the [documentation](https://www.membrane-soa.org/service-proxy-doc/4.4/configuration/reference/ssl.htm).
 
 ```xml
-<serviceProxy port="443">
+<serviceProxy port="8443">
   <ssl>
     <keystore location="<<your keystore>>" password="<<your pwd>>" keyPassword="<<your pwd>>" />
     <truststore location="<<your truststore>>" password="<<your pwd>>" />
