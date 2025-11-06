@@ -110,7 +110,7 @@ public class Process2 implements AutoCloseable {
 				throw new IllegalStateException("line not set");
 
 			line += " " + parameters;
-			System.out.println("Starting: " + line);
+            log.info("Starting: " + line);
 			return new Process2(baseDir, id, line, watchers, waitAfterStartFor, env);
 		}
 	}

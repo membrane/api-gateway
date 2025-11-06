@@ -70,6 +70,7 @@
       - public abstract void init() throws Exception;
       - getEndSessionEndpoint() throws Exception
       - doDynamicRegistration(List<String> callbackURLs) throws Exception
+- Reduce compiler warnings when building the project with maven
       
 ## Release Notes:
 
@@ -78,16 +79,8 @@
 
 # 6.3.0
 
-- Convert to UTF-8 source and outputEncoding to UTF-8 (TB)
-- TemplateInterceptor Refactoring (TB)
-- Template/Static Interceptor: Pretty for text/* (Refactor first) (TB)
-  - Pretty on text should trim whitespace incl. linebreaks at start and end
 - Refactor: Beautifier to use the Code from above
 - Describe RPM Setup (TP)
-- examples/routing-traffic/outgoing-api-gateway (TB)
-- Cook Book: outgoing-api-gateway (TB) done
-- READMEs in example folders listing the examples (TB)
-- Refactor HttpClient (TB)
 - Refactor: interceptor.session
 
 ### Internal

@@ -104,8 +104,7 @@ class GenericYamlParserMembraneTest {
                         flow:
                           - rateLimiter:
                               requestLimit: 3
-                          - rewriter:
-                              mappings: []
+                          - rewriter: []
                           - response: []
                         """,
                         a -> assertAll(
@@ -133,10 +132,9 @@ class GenericYamlParserMembraneTest {
                         """
                         flow:
                           - rewriter:
-                              mappings:
-                                - map:
-                                    from: ^/names/(.*)
-                                    to: /restnames/name\\.groovy\\?name=$1
+                            - map:
+                                from: ^/names/(.*)
+                                to: /restnames/name\\.groovy\\?name=$1
                         """,
                         a -> assertAll(
                                 () -> assertEquals("^/names/(.*)", ((RewriteInterceptor) a.getFlow().getFirst()).getMappings().getFirst().getFrom()),
