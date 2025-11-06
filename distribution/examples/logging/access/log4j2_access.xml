@@ -16,7 +16,7 @@
         </RollingFile>
     </Appenders>
     <Loggers>
-        <Logger name="com.predic8.membrane.core.interceptor.log" level="info" additivity="false">
+        <Logger name="com.predic8.membrane.core.interceptor.log.access" level="info" additivity="false">
             <AppenderRef ref="ACCESS" />
             <AppenderRef ref="ACCESS_FILE" />
         </Logger>
