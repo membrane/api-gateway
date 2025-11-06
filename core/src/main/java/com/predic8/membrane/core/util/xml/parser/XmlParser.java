@@ -11,22 +11,24 @@
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
    See the License for the specific language governing permissions and
    limitations under the License. */
-package com.predic8.membrane.core.interceptor.lang;
 
-import com.predic8.membrane.core.lang.*;
+package com.predic8.membrane.core.util.xml.parser;
 
-public class AbstractExchangeExpressionInterceptor extends AbstractLanguageInterceptor {
+import org.w3c.dom.Document;
+import org.xml.sax.InputSource;
 
-    protected ExchangeExpression exchangeExpression;
-    protected String expression = ""; // default if there is no expression
+/**
+ * Strategy interface for XML parsing.
+ * Implementations are expected to be thread-safe and XXE-hardened.
+ */
+public interface XmlParser {
 
-    @Override
-    public void init() {
-        super.init();
-        exchangeExpression = getExchangeExpression();
-    }
-
-    protected ExchangeExpression getExchangeExpression() {
-        return TemplateExchangeExpression.newInstance(this, language, expression);
-    }
+    /**
+     * Parses the given XML input source into a DOM document.
+     *
+     * @param source the XML input source to parse
+     * @return a DOM {@link Document}
+     * @throws XmlParseException if parsing fails
+     */
+    Document parse(InputSource source) throws XmlParseException;
 }

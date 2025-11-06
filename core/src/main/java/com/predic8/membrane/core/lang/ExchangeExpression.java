@@ -14,7 +14,9 @@
 
 package com.predic8.membrane.core.lang;
 
+import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.config.xml.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.lang.groovy.*;
@@ -48,12 +50,52 @@ public interface ExchangeExpression {
      */
     <T> T evaluate(Exchange exchange, Interceptor.Flow flow, Class<T> type) throws ExchangeExpressionException;
 
-    static ExchangeExpression expression(Router router, Language language, String expression) {
+    /**
+     * Clients of this class should pass an interceptor if possible. Otherwise use the InterceptorAdapter to wrap it.
+     * There is no convenience method on purpose to make the clients pass the interceptor. From the interceptor you can always get the router.
+     * @param interceptor
+     * @param language
+     * @param expression
+     * @return
+     */
+    static ExchangeExpression expression(Interceptor interceptor, Language language, String expression) {
         return switch (language) {
-            case GROOVY -> new GroovyExchangeExpression(router, expression);
+            case GROOVY -> new GroovyExchangeExpression(interceptor, expression);
             case SPEL -> new SpELExchangeExpression(expression,null);
-            case XPATH -> new XPathExchangeExpression(expression);
+            case XPATH -> new XPathExchangeExpression(interceptor,expression);
             case JSONPATH -> new JsonpathExchangeExpression(expression);
         };
+    }
+
+    /**
+     * Allows to pass an Interceptor as an argument where there is no interceptor e.g. Target
+     */
+    class InterceptorAdapter extends AbstractInterceptor implements XMLSupport {
+
+        private XmlConfig xmlConfig;
+
+        public InterceptorAdapter(Router router) {
+            this.router = router;
+        }
+
+        public InterceptorAdapter(Router router, XmlConfig xmlConfig) {
+            this.router = router;
+            this.xmlConfig = xmlConfig;
+        }
+
+        /**
+         * XML Configuration e.g. declaration of XML namespaces for XPath expressions, ...
+         * @param xmlConfig
+         */
+        @Override
+        @MCChildElement(allowForeign = true,order = 10)
+        public void setXmlConfig(XmlConfig xmlConfig) {
+            this.xmlConfig = xmlConfig;
+        }
+
+        @Override
+        public XmlConfig getXmlConfig() {
+            return xmlConfig;
+        }
     }
 }

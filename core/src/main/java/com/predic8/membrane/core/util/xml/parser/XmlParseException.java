@@ -11,22 +11,24 @@
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
    See the License for the specific language governing permissions and
    limitations under the License. */
-package com.predic8.membrane.core.interceptor.lang;
 
-import com.predic8.membrane.core.lang.*;
+package com.predic8.membrane.core.util.xml.parser;
 
-public class AbstractExchangeExpressionInterceptor extends AbstractLanguageInterceptor {
 
-    protected ExchangeExpression exchangeExpression;
-    protected String expression = ""; // default if there is no expression
+/**
+ * Unchecked exception thrown when XML parsing fails.
+ * This avoids forcing callers to handle {@link org.xml.sax.SAXException}
+ * or {@link java.io.IOException} explicitly.
+ */
+public class XmlParseException extends RuntimeException {
 
-    @Override
-    public void init() {
-        super.init();
-        exchangeExpression = getExchangeExpression();
+    public XmlParseException(String message) {
+        super(message);
     }
 
-    protected ExchangeExpression getExchangeExpression() {
-        return TemplateExchangeExpression.newInstance(this, language, expression);
+    public XmlParseException(String message, Throwable cause) {
+        super(message, cause);
     }
+
 }
+
