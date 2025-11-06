@@ -16,7 +16,7 @@ package com.predic8.membrane.core.interceptor.oauth2.client.b2c;
 import com.predic8.membrane.core.interceptor.session.InMemorySessionManager;
 import com.predic8.membrane.core.interceptor.session.SessionManager;
 
-public class InMemB2CResourceTest extends OAuth2ResourceB2CTest {
+public class InMemB2CResourceTest extends OAuth2ResourceB2CUnitTest {
     @Override
     protected SessionManager createSessionManager() {
         return new InMemorySessionManager();

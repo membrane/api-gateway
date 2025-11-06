@@ -1,0 +1,62 @@
+/*
+ *  Copyright 2017 predic8 GmbH, www.predic8.com
+ *
+ *    Licensed under the Apache License, Version 2.0 (the "License");
+ *    you may not use this file except in compliance with the License.
+ *    You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *    Unless required by applicable law or agreed to in writing, software
+ *    distributed under the License is distributed on an "AS IS" BASIS,
+ *    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *    See the License for the specific language governing permissions and
+ *    limitations under the License.
+ */
+
+package com.predic8.membrane.integration.withoutinternet.interceptor.oauth2;
+
+import com.predic8.membrane.core.interceptor.oauth2.RevocationRequestJWTTest;
+import com.predic8.membrane.core.interceptor.oauth2.WellknownFileTest;
+import com.predic8.membrane.core.interceptor.oauth2.client.InMemSMOAuth2R2Test;
+import com.predic8.membrane.core.interceptor.oauth2.client.JwtSMOAuth2R2Test;
+import com.predic8.membrane.core.interceptor.oauth2.client.SyncSMOAuth2R2Test;
+import org.junit.platform.suite.api.SelectClasses;
+import org.junit.platform.suite.api.Suite;
+
+@Suite
+@SelectClasses({
+        AuthWithoutSessionOpenidRequestTest.class,
+        AuthWithoutSessionOpenidRequestJWTTest.class,
+        AuthWithSessionRequestTest.class,
+        AuthWithSessionRequestJWTTest.class,
+        AuthWithoutSessionRequestTest.class,
+        AuthWithoutSessionRequestJWTTest.class,
+        ClaimsParameterTest.class,
+        EmptyEndpointTest.class,
+        EmptyEndpointJWTTest.class,
+        EmptyEndpointOpenidTest.class,
+        EmptyEndpointOpenidJWTTest.class,
+        OAuth2AuthorizationServerInterceptorNormalTest.class,
+        OAuth2AuthorizationServerInterceptorNormalJWTTest.class,
+        OAuth2AuthorizationServerInterceptorOpenidTest.class,
+        OAuth2AuthorizationServerInterceptorOpenidJWTTest.class,
+        OAuth2Test.class,
+        InMemSMOAuth2R2Test.class,
+        JwtSMOAuth2R2Test.class,
+        SyncSMOAuth2R2Test.class,
+        InMemSMOAuth2R2Test.class,
+        JwtSMOAuth2R2Test.class,
+        SyncSMOAuth2R2Test.class,
+        PasswordGrantTest.class,
+        PasswordGrantJWTTest.class,
+        RevocationRequestTest.class,
+        RevocationRequestJWTTest.class,
+        TokenRequestTest.class,
+        TokenRequestJWTTest.class,
+        UserinfoRequestTest.class,
+        UserinfoRequestJWTTest.class,
+        WellknownFileTest.class})
+public class OAuth2UnitTests {
+}
+

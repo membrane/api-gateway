@@ -14,15 +14,16 @@
 
 package com.predic8.membrane.examples.withinternet.config;
 
-import com.predic8.membrane.examples.util.*;
-import org.junit.jupiter.api.*;
-import org.skyscreamer.jsonassert.*;
+import com.predic8.membrane.examples.util.AbstractSampleMembraneStartStopTestcase;
+import com.predic8.membrane.examples.util.Process2;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
-import java.io.*;
+import java.io.IOException;
 
-import static com.predic8.membrane.core.http.Header.*;
-import static com.predic8.membrane.core.http.MimeType.*;
-import static io.restassured.RestAssured.*;
+import static com.predic8.membrane.core.http.Header.CONTENT_TYPE;
+import static com.predic8.membrane.core.http.MimeType.TEXT_HTML;
+import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.*;
 
 class ProxiesYAMLExampleTest extends AbstractSampleMembraneStartStopTestcase {
@@ -38,18 +39,22 @@ class ProxiesYAMLExampleTest extends AbstractSampleMembraneStartStopTestcase {
     }
 
     @Test
-    void api_doc() {
-            JSONAssert.assertEquals("""
-                {
-                  "fruitshop-v1-1" : {
-                    "openapi" : "3.0.2",
-                    "title" : "Fruit Shop API",
-                    "version" : "1.1",
-                    "openapi_link" : "/api-docs/fruitshop-v1-1",
-                    "ui_link" : "/api-docs/ui/fruitshop-v1-1"
-                  }
-                }
-                """, get(LOCALHOST_2000 + "/api-docs").asString(), true);
+    void api_doc_with_rest_assured() {
+        // @formatter:off
+        given()
+        .when()
+            .get(LOCALHOST_2000 + "/api-docs")
+        .then()
+            .statusCode(200)
+            .body("$", aMapWithSize(1))
+            .body("$", hasKey("fruitshop-v1-1"))
+            .body("'fruitshop-v1-1'.openapi", equalTo("3.0.2"))
+            .body("'fruitshop-v1-1'.title", equalTo("Fruit Shop API"))
+            .body("'fruitshop-v1-1'.version", equalTo("1.1"))
+            .body("'fruitshop-v1-1'.openapi_link", equalTo("/api-docs/fruitshop-v1-1"))
+            .body("'fruitshop-v1-1'.ui_link", equalTo("/api-docs/ui/fruitshop-v1-1"))
+            .body("'fruitshop-v1-1'", aMapWithSize(5));
+        // @formatter:on
     }
 
     @Test
