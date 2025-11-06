@@ -12,7 +12,7 @@
    See the License for the specific language governing permissions and
    limitations under the License. */
 
-package com.predic8.membrane.integration.withoutinternet.interceptor.oauth2;
+package com.predic8.membrane.core.transport.ssl;
 
 import com.predic8.membrane.core.interceptor.oauth2.OAuth2Util;
 import org.junit.jupiter.api.Assertions;
