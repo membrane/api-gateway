@@ -16,6 +16,13 @@ package com.predic8.membrane.core.kubernetes;
 
 import org.yaml.snakeyaml.error.*;
 
+/**
+ * Public wrapper for SnakeYAML's MarkedYAMLException that exposes the protected constructor
+ * for use by YAML parsing components in the Kubernetes integration.
+ * <p>
+ * This exception provides detailed error context including source marks for both
+ * the context and problem locations in YAML files.
+ */
 public class PublicMarkedYAMLException extends MarkedYAMLException {
     protected PublicMarkedYAMLException(String context, Mark contextMark, String problem, Mark problemMark, String note) {
         super(context, contextMark, problem, problemMark, note);
