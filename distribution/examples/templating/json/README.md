@@ -12,9 +12,9 @@ Execute the following steps:
 
 2. Have a look at `proxies.xml`.
 
-2. Open a commandline and execute `membrane.sh` or `membrane.cmd` 
+3. Open a commandline and execute `membrane.sh` or `membrane.cmd` 
 
-3. Run this command from a second commandline: 
+4. Run this command from a second commandline: 
 
    ```bash
    curl "http://localhost:2000/json?answer=42"
@@ -26,7 +26,7 @@ Execute the following steps:
    { "answer": 42 }
    ```
 
-4. Then execute:
+5. Then execute:
 
    ```bash
    curl -d '{"city":"Berlin"}' -H "Content-Type: application/json" "http://localhost:2000"

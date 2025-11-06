@@ -311,6 +311,12 @@ public class Request extends Message {
 			return this;
 		}
 
+        public Builder xml(String body) {
+            req.setBodyContent(body.getBytes(UTF_8));
+            req.header.setContentType(APPLICATION_XML);
+            return this;
+        }
+
 		public Builder post(URIFactory uriFactory, String url) throws URISyntaxException {
 			return method(Request.METHOD_POST).url(uriFactory, url);
 		}

@@ -66,14 +66,14 @@ public abstract class AbstractExchangeExpressionTest {
     protected abstract Language getLanguage();
 
     protected Object evalObject(String expression) {
-        return expression(router, getLanguage(),expression).evaluate(exchange,flow, Object.class);
+        return expression(new InterceptorAdapter(router), getLanguage(),expression).evaluate(exchange,flow, Object.class);
     }
 
     protected boolean evalBool(String expression) {
-        return expression(router, getLanguage(),expression).evaluate(exchange,flow, Boolean.class);
+        return expression(new InterceptorAdapter(router), getLanguage(),expression).evaluate(exchange,flow, Boolean.class);
     }
 
     protected String evalString(String expression) {
-        return expression(router, getLanguage(),expression).evaluate(exchange,flow, String.class);
+        return expression(new InterceptorAdapter(router), getLanguage(),expression).evaluate(exchange,flow, String.class);
     }
 }

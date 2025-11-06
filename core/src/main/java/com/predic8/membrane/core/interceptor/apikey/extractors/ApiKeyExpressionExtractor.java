@@ -13,13 +13,14 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.apikey.extractors;
 
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.Router;
+import com.predic8.membrane.core.config.xml.*;
 import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.interceptor.lang.Polyglot;
-import com.predic8.membrane.core.lang.ExchangeExpression;
-import com.predic8.membrane.core.lang.ExchangeExpression.Language;
+import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.interceptor.lang.*;
+import com.predic8.membrane.core.lang.*;
+import com.predic8.membrane.core.lang.ExchangeExpression.*;
 
 import java.util.Optional;
 
@@ -47,15 +48,16 @@ import static com.predic8.membrane.core.security.ApiKeySecurityScheme.In.EXPRESS
  * @topic 3. Security and Validation
  */
 @MCElement(name="expressionExtractor", topLevel = false)
-public class ApiKeyExpressionExtractor implements ApiKeyExtractor, Polyglot {
+public class ApiKeyExpressionExtractor implements ApiKeyExtractor, Polyglot, XMLSupport {
 
     private String expression = "";
     private Language language = SPEL;
     private ExchangeExpression exchangeExpression;
+    private XmlConfig xmlConfig;
 
     @Override
     public void init(Router router) {
-        exchangeExpression = expression(router, language, expression);
+        exchangeExpression = expression(new InterceptorAdapter(router, xmlConfig), language, expression);
     }
 
     @Override
@@ -94,5 +96,20 @@ public class ApiKeyExpressionExtractor implements ApiKeyExtractor, Polyglot {
     @MCAttribute
     public void setExpression(String expression) {
         this.expression = expression;
+    }
+
+    /**
+     * XML Configuration e.g. declaration of XML namespaces for XPath expressions, ...
+     * @param xmlConfig
+     */
+    @Override
+    @MCChildElement(allowForeign = true)
+    public void setXmlConfig(XmlConfig xmlConfig) {
+        this.xmlConfig = xmlConfig;
+    }
+
+    @Override
+    public XmlConfig getXmlConfig() {
+        return xmlConfig;
     }
 }
