@@ -17,12 +17,13 @@ package com.predic8.membrane.core.interceptor.lang;
 import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.util.*;
 import org.slf4j.*;
 
 import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
-import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 
 public abstract class AbstractSetterInterceptor extends AbstractExchangeExpressionInterceptor {
 
@@ -50,19 +51,21 @@ public abstract class AbstractSetterInterceptor extends AbstractExchangeExpressi
         try {
             setValue(exchange, flow, exchangeExpression.evaluate(exchange, flow, getExpressionReturnType()));
         } catch (Exception e) {
-            log.error("While evaluating expression {} for field {}: {}", expression, fieldName,e.getMessage());
+            var root = ExceptionUtil.getRootCause(e);
+            var message = "While evaluating expression %s for field %s: %s".formatted(expression, fieldName, root.getMessage());
+            log.info(message);
+
             if (failOnError) {
-                internal(getRouter().isProduction(),getDisplayName())
+                internal(getRouter().isProduction(), getDisplayName())
                         .title("Error evaluating expression!")
                         .internal("field", fieldName)
                         .internal("value", expression)
-                        .exception(e)
+                        .exception(root)
                         .stacktrace(false)
                         .buildAndSetResponse(exchange);
                 return ABORT;
-            } else {
-                log.info("Error evaluating {} but 'FailOnError' is false therefore ignoring. Exception :{}", expression,e);
             }
+            log.info("Error evaluating {} but 'FailOnError' is false therefore ignoring: {}", expression, message);
         }
         return CONTINUE;
     }

@@ -34,7 +34,7 @@ import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.http.Response.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.openapi.util.Utils.*;
-import static com.predic8.membrane.core.util.XMLUtil.*;
+import static com.predic8.membrane.core.util.xml.XMLUtil.*;
 import static java.util.Objects.*;
 import static javax.xml.stream.XMLStreamConstants.*;
 

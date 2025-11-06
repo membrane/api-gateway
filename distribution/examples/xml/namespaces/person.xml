@@ -1,0 +1,6 @@
+<per:person id="77" xmlns:per="https://predic8.de/person">
+    <per:name>Hans</per:name>
+    <ns1:address xmlns:ns1="https://predic8.de/address">
+        <ns1:city>Cologne</ns1:city>
+    </ns1:address>
+</per:person>

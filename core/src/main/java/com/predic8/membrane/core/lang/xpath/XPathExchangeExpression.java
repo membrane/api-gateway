@@ -14,28 +14,38 @@
 
 package com.predic8.membrane.core.lang.xpath;
 
+import com.predic8.membrane.core.config.xml.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.lang.*;
 import com.predic8.membrane.core.util.xml.*;
+import com.predic8.membrane.core.util.xml.parser.*;
 import org.slf4j.*;
 import org.w3c.dom.*;
 
 import javax.xml.namespace.*;
 import javax.xml.xpath.*;
 
-import static com.predic8.membrane.core.util.XMLUtil.*;
 import static javax.xml.xpath.XPathConstants.*;
 
 public class XPathExchangeExpression extends AbstractExchangeExpression {
 
     private static final Logger log = LoggerFactory.getLogger(XPathExchangeExpression.class.getName());
 
+    private static final XmlParser parser = HardenedXmlParser.getInstance();
+
+    private XmlConfig xmlConfig;
+
+    // Let all expressions share the same XPathFactory.
     private static final XPathFactory factory = XPathFactory.newInstance();
 
-    public XPathExchangeExpression(String xpath) {
+    public XPathExchangeExpression(Interceptor interceptor, String xpath) {
         super(xpath);
+
+        if (interceptor instanceof XMLSupport xns) {
+            xmlConfig = xns.getXmlConfig();
+        }
     }
 
     @Override
@@ -72,7 +82,18 @@ public class XPathExchangeExpression extends AbstractExchangeExpression {
             log.debug("Evaluating: {}", expression);
             log.debug("Body: {}", msg.getBodyAsStringDecoded()); // is expensive!
         }
-        // XPath is not thread safe! Therefore every time the factory is called!
-        return factory.newXPath().evaluate(expression, getInputSource(msg), xmlType);
+
+        // XPath is not thread safe! Therefore, every time the factory is called!
+        XPath xPath = factory.newXPath();
+
+        if (xmlConfig != null && xmlConfig.getNamespaces() != null) {
+            xPath.setNamespaceContext(xmlConfig.getNamespaces().getNamespaceContext());
+        }
+
+        return xPath.evaluate(expression, parser.parse(XMLUtil.getInputSource(msg)), xmlType);
+    }
+
+    public void setXmlConfig(XmlConfig xmlConfig) {
+        this.xmlConfig = xmlConfig;
     }
 }
