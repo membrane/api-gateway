@@ -35,9 +35,9 @@ public class GroovyExchangeExpression extends AbstractExchangeExpression {
     private final Function<Map<String, Object>, Object> script;
     private final Router router;
 
-    public GroovyExchangeExpression(Router router, String source) {
+    public GroovyExchangeExpression(Interceptor interceptor, String source) {
         super(source);
-        this.router = router;
+        this.router = interceptor.getRouter();
         try {
             script = new GroovyLanguageSupport().compileScript(router.getBackgroundInitializer(), null, source);
         } catch (MultipleCompilationErrorsException e) {
