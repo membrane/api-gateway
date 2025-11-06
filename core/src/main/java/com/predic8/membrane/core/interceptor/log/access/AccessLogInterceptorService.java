@@ -33,7 +33,7 @@ import static com.predic8.membrane.core.util.TextUtil.*;
 
 public class AccessLogInterceptorService {
 
-    private static final Logger log = LoggerFactory.getLogger(AccessLogInterceptor.class);
+    private static final Logger log = LoggerFactory.getLogger(AccessLogInterceptorService.class);
 
     private final SimpleDateFormat dateTimeFormat;
     private final String defaultValue;
