@@ -43,6 +43,7 @@ import java.nio.file.Paths;
 import java.security.SecureRandom;
 import java.util.*;
 
+import static com.fasterxml.jackson.core.StreamReadFeature.STRICT_DUPLICATE_DETECTION;
 import static com.predic8.membrane.core.Constants.*;
 import static com.predic8.membrane.core.config.spring.TrackingFileSystemXmlApplicationContext.*;
 import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPISpec.YesNoOpenAPIOption.*;
@@ -171,7 +172,7 @@ public class RouterCLI {
 
     private static void sendYamlToBeanCache(String location, BeanCache beanCache) throws IOException {
         final YAMLFactory yamlFactory = YAMLFactory.builder()
-                .enable(StreamReadFeature.STRICT_DUPLICATE_DETECTION)
+                .enable(STRICT_DUPLICATE_DETECTION)
                 .build();
         try (YAMLParser parser = yamlFactory.createParser(new File(location))) {
             var om = new ObjectMapper();
