@@ -299,10 +299,6 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
         }
     }
 
-    private static boolean areThereMCElementsForTheMCMain(Model m) {
-        return m.getMains().stream().anyMatch(main -> !main.getElements().isEmpty());
-    }
-
     private boolean isTopLevelMCElement(TypeElement type) {
         MCElement mcElement = type.getAnnotation(MCElement.class);
         return (mcElement != null) && mcElement.topLevel();
