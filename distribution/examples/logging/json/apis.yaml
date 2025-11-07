@@ -1,0 +1,7 @@
+spec:
+  port: 2000
+  flow:
+    - statisticsCSV:
+        file: ./log.csv
+  target:
+    url: https://api.predic8.de

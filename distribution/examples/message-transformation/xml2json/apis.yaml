@@ -1,0 +1,16 @@
+spec:
+  port: 2000
+  flow:
+    - request:
+        - xml2Json: {}
+  target:
+    url: http://localhost:3000
+
+---
+
+spec:
+  name: echo
+  port: 3000
+  flow:
+    - log: {}
+    - return: {}

@@ -1,0 +1,76 @@
+# Transformation of a JSON document to one in a different format
+spec:
+  port: 2000
+  path:
+    uri: /flight
+  flow:
+    - request:
+        - javascript:
+            src: |
+              ({
+                  flight: json.from + " to " + json.to
+              })
+  target:
+    url: http://localhost:3000
+
+---
+# Transformation of a GET request with query parameters into a post with a JSON body.
+#
+# curl "localhost:2000/search?limit=10&page=2" -v
+spec:
+  port: 2000
+  path:
+    uri: /search
+  flow:
+    - request:
+        - javascript:
+            src: |
+              // Change the method of the request from GET to POST. This needed to pass the
+              // body further to the next API listening on port 3000.
+              message.method = "POST";
+
+              ({
+              "limit": params.get("limit"),
+              "page": params.get("page")
+              })
+  target:
+    url: http://localhost:3000
+
+---
+# Complex transformation with functions and computations
+spec:
+  port: 2000
+  path:
+    uri: /orders
+  flow:
+    - request:
+        - javascript:
+            src: |
+              function computeTotal(items) {
+              	return items.map(i => i.price * i.quantity).reduce((a,b) => a+b);
+              }
+
+              function item2pos(item) {
+              	return {
+              		"product": item.article,
+              		"pieces": item.quantity,
+              		"amount": item.price
+              	};
+              }
+
+              ({
+              	number: json.id,
+              	positions: json.items.map(item2pos),
+              	total: computeTotal(json.items)
+              })
+  target:
+    url: http://localhost:3000
+
+---
+# Log and return the request as response
+spec:
+  name: echo
+  port: 3000
+  flow:
+    - log: {}
+    - return: {}
