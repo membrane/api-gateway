@@ -118,7 +118,8 @@ public class APIProxy extends ServiceProxy implements Polyglot, XMLSupport {
 
     void assignOpenAPIName() {
         if (name.isEmpty() && !apiRecords.isEmpty()) {
-            String title = apiRecords.get(apiRecords.keySet().iterator().next()).getApi().getInfo().getTitle();
+            var info = apiRecords.values().iterator().next().getApi().getInfo();
+            String title = info != null ? info.getTitle() : null;
             if (title != null && !title.isBlank()) {
                 name = title.replaceAll("[^a-zA-Z0-9-_]", "").trim();
                 if (name.length() > 32)
