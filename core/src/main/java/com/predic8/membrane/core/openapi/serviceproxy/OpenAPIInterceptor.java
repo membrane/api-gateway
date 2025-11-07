@@ -119,11 +119,10 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
                     .buildAndSetResponse(exc);
             return RETURN;
         } catch (ReadingBodyException e) {
-            log.warn("Could not get body as stream: %s".formatted(e.getMessage()));
             user(router.isProduction(), getDisplayName())
                     .addSubSee("reading-body")
                     .flow(REQUEST)
-                    .detail("Connection problem. Maybe the peer or the network closed the connection?")
+                    .detail("Connection problem: %s . Maybe the peer or the network closed the connection?".formatted(e.getMessage()))
                     .buildAndSetResponse(exc);
 
             return RETURN;
