@@ -90,6 +90,7 @@ public class JsonSchemaGenerator extends AbstractK8sGenerator {
             .property( string("kind").enumeration(List.of("api")))
             .property( ref("spec").ref("#/$defs/com.predic8.membrane.core.config.spring.ApiParser").required(true))
             .property(object("metadata")
+                .additionalProperties(true)
                 .property(string("name")));
     }
 
