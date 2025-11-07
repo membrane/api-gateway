@@ -99,7 +99,7 @@ public abstract class Message {
 			return body.getContentAsStream();
 		} catch (IOException e) {
 			log.error("Could not get body as stream", e);
-			throw new RuntimeException("Could not get body as stream", e);
+			throw new ReadingBodyException(e);
 		}
 	}
 
@@ -140,7 +140,7 @@ public abstract class Message {
 		try {
 			return new String(MessageUtil.getContent(this), getCharsetOrDefault());
 		} catch (Exception e) {
-			throw new RuntimeException(e);
+			throw new ReadingBodyException(e);
 		}
 	}
 
