@@ -122,7 +122,7 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
             user(router.isProduction(), getDisplayName())
                     .addSubSee("reading-body")
                     .flow(REQUEST)
-                    .detail("Connection problem: %s. Maybe the peer or the network closed the connection?".formatted(e.getMessage()))
+                    .detail("Connection problem: %s . Maybe the peer or the network closed the connection?".formatted(e.getMessage()))
                     .buildAndSetResponse(exc);
 
             return RETURN;
