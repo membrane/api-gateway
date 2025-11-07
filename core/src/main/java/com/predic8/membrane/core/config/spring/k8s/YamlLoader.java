@@ -13,61 +13,47 @@
    limitations under the License. */
 package com.predic8.membrane.core.config.spring.k8s;
 
-import com.google.common.io.Resources;
-import com.predic8.membrane.core.kubernetes.BeanRegistry;
-import org.yaml.snakeyaml.Yaml;
+import com.predic8.membrane.core.kubernetes.*;
+import org.jetbrains.annotations.*;
+import org.yaml.snakeyaml.*;
 import org.yaml.snakeyaml.events.*;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.Reader;
-import java.nio.charset.StandardCharsets;
+import java.io.*;
 import java.util.*;
 
 public class YamlLoader {
-    public Envelope loadResource(String resource, BeanRegistry registry) throws IOException {
-        BufferedReader br = Resources.asCharSource(Resources.getResource(resource), StandardCharsets.UTF_8).openBufferedStream();
-        return load(br, registry);
-    }
 
     public Envelope load(Reader reader, BeanRegistry registry) throws IOException {
-        Yaml yaml = new Yaml();
-        Iterable<Event> iterable = yaml.parse(reader);
-        Iterator<Event> i = iterable.iterator();
-
         Envelope e = new Envelope();
-        e.parse(i, registry);
+        e.parse(new Yaml().parse(reader).iterator(), registry);
         return e;
     }
 
     public static String readString(Iterator<Event> events) {
         Event event = events.next();
-        if (event instanceof ScalarEvent)
-            return ((ScalarEvent)event).getValue();
+        if (event instanceof ScalarEvent se)
+            return se.getValue();
         throw new IllegalStateException("Expected string in line " + event.getStartMark().getLine() + " column " + event.getStartMark().getColumn());
     }
 
     public static Object readObj(Iterator<Event> events) {
-        while (true) {
-            Event event = events.next();
-            if (event instanceof ScalarEvent)
-                return ((ScalarEvent)event).getValue();
-            else if (event instanceof MappingStartEvent)
-                return readMap(events);
-            else if (event instanceof SequenceStartEvent)
-                return readSequence(events);
-            else
-                throw new IllegalStateException("Expected scalar, map or sequence in line " + event.getStartMark().getLine() + " column " + event.getStartMark().getColumn());
-        }
+        Event event = events.next();
+        if (event instanceof ScalarEvent se)
+            return se.getValue();
+        if (event instanceof MappingStartEvent)
+            return readMap(events);
+        if (event instanceof SequenceStartEvent)
+            return readSequence(events);
+
+        throw new IllegalStateException(parsingErrorMessage("Expected scalar, map or sequence in line ", event));
     }
 
     public static List readSequence(Iterator<Event> events) {
         List res = new ArrayList();
         while (true) {
             Event event = events.next();
-            if (event instanceof ScalarEvent) {
-                String value = ((ScalarEvent) event).getValue();
-                res.add(value);
+            if (event instanceof ScalarEvent se) {
+                res.add(se.getValue());
             } else if (event instanceof MappingStartEvent) {
                 res.add(readMap(events));
             } else if (event instanceof SequenceStartEvent) {
@@ -75,26 +61,28 @@ public class YamlLoader {
             } else if (event instanceof SequenceEndEvent) {
                 break;
             } else {
-                throw new IllegalStateException("Expected scalar or end-of-map in line " + event.getStartMark().getLine() + " column " + event.getStartMark().getColumn());
+                throw new IllegalStateException(parsingErrorMessage("Expected scalar or end-of-map in line ", event));
             }
         }
         return res;
     }
 
-    public static Map readMap(Iterator<Event> events) {
-        Map res = new HashMap();
+    public static Map<String,Object> readMap(Iterator<Event> events) {
+        Map<String,Object> res = new TreeMap<>();
         while (true) {
             Event event = events.next();
-            if (event instanceof ScalarEvent) {
-                String key = ((ScalarEvent) event).getValue();
-                Object value = readObj(events);
-                res.put(key, value);
+            if (event instanceof ScalarEvent se) {
+                res.put(se.getValue(), readObj(events));
             } else if (event instanceof MappingEndEvent) {
                 break;
             } else {
-                throw new IllegalStateException("Expected scalar or end-of-map in line " + event.getStartMark().getLine() + " column " + event.getStartMark().getColumn());
+                throw new IllegalStateException(parsingErrorMessage("Expected scalar or end-of-map in line ", event));
             }
         }
         return res;
+    }
+
+    private static @NotNull String parsingErrorMessage(String x, Event event) {
+        return x + event.getStartMark().getLine() + " column " + event.getStartMark().getColumn();
     }
 }

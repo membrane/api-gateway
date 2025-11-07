@@ -20,6 +20,7 @@ import com.predic8.membrane.core.config.spring.k8s.Envelope;
 import com.predic8.membrane.core.config.spring.k8s.YamlLoader;
 import com.predic8.membrane.core.kubernetes.client.WatchAction;
 import com.predic8.membrane.core.proxies.Proxy;
+import com.predic8.membrane.core.util.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -29,8 +30,10 @@ import java.util.*;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 
+import static com.predic8.membrane.core.util.YamlUtil.removeFirstYamlDocStartMarker;
+
 public class BeanCache implements BeanRegistry {
-    private static final Logger LOG = LoggerFactory.getLogger(KubernetesWatcher.class);
+    private static final Logger LOG = LoggerFactory.getLogger(BeanCache.class);
     private final Router router;
     private final ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
     private final ConcurrentHashMap<String, Object> uuidMap = new ConcurrentHashMap<>();
@@ -40,6 +43,10 @@ public class BeanCache implements BeanRegistry {
     interface ChangeEvent {}
     record BeanDefinitionChanged(BeanDefinition bd) implements ChangeEvent {}
     record StaticConfigurationLoaded() implements ChangeEvent {}
+
+    // uid -> bean definition
+    private final Map<String, BeanDefinition> bds = new ConcurrentHashMap<>();
+    private final Set<String> uidsToActivate = ConcurrentHashMap.newKeySet();
 
     public BeanCache(Router router) {
         this.router = router;
@@ -72,20 +79,17 @@ public class BeanCache implements BeanRegistry {
             thread.interrupt();
     }
 
-    public Envelope define(Map map) throws IOException {
-        String s = mapper.writeValueAsString(map).substring(4);
+    public Envelope define(Map<String,Object> map) throws IOException {
+        String s = removeFirstYamlDocStartMarker( mapper.writeValueAsString(map)); // TODO Why do we first parse than serialize than parse again?
         if (LOG.isDebugEnabled())
             LOG.debug("defining bean: {}", s);
-        YamlLoader y = new YamlLoader();
-        Envelope envelope = y.load(new StringReader(s), this);
-        System.err.println("SUCCESS.");
-        return envelope;
+        return new YamlLoader().load(new StringReader(s), this);
     }
 
     /**
      * May be called from multiple threads.
      */
-    public void handle(WatchAction action, Map m) {
+    public void handle(WatchAction action, Map<String,Object> m) {
         changeEvents.add(new BeanDefinitionChanged(new BeanDefinition(action, m)));
     }
 
@@ -97,9 +101,6 @@ public class BeanCache implements BeanRegistry {
         changeEvents.add(new StaticConfigurationLoaded());
     }
 
-    // uid -> bean definition
-    final Map<String, BeanDefinition> bds = new HashMap<>();
-    final Set<String> uidsToActivate = new HashSet<>();
 
     void handle(BeanDefinition bd) {
         if (bd.getAction() == WatchAction.DELETED)
@@ -115,7 +116,6 @@ public class BeanCache implements BeanRegistry {
     }
 
     public void activationRun() {
-        System.err.println("---");
         Set<String> uidsToRemove = new HashSet<>();
         for (String uid : uidsToActivate) {
             BeanDefinition bd = bds.get(uid);
@@ -124,7 +124,8 @@ public class BeanCache implements BeanRegistry {
                 bd.setEnvelope(envelope);
                 Proxy newProxy = (Proxy) envelope.getSpec();
                 try {
-                    newProxy.setName(bd.getName());
+                    if (newProxy.getName() == null)
+                        newProxy.setName(bd.getName());
                     newProxy.init(router);
                 } catch (Exception e) {
                     throw new RuntimeException("Could not init rule.", e);

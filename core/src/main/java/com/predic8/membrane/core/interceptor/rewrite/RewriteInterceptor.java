@@ -39,8 +39,10 @@ import static com.predic8.membrane.core.util.TextUtil.*;
  * </p>
  * @topic 6. Misc
  */
-@MCElement(name = "rewriter")
+@MCElement(name = "rewriter", noEnvelope = true, topLevel = false)
 public class RewriteInterceptor extends AbstractInterceptor {
+
+    private static final Logger log = LoggerFactory.getLogger(RewriteInterceptor.class.getName());
 
     public enum Type {
         REWRITE,
@@ -128,11 +130,7 @@ public class RewriteInterceptor extends AbstractInterceptor {
         public void setDo(Type do_) {
             this.do_ = do_;
         }
-
-
     }
-
-    private static final Logger log = LoggerFactory.getLogger(RewriteInterceptor.class.getName());
 
     private List<Mapping> mappings = new ArrayList<>();
 

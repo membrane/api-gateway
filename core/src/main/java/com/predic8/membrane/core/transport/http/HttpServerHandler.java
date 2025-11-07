@@ -280,10 +280,7 @@ public class HttpServerHandler extends AbstractHttpHandler implements Runnable, 
                 final Request request = exchange.getRequest();
                 request.addObserver(new Expect100ContinueObserver(request));
             }
-
             invokeHandlers();
-
-            exchange.blockResponseIfNeeded();
         } catch (AbortException e) {
             log.debug("Aborted");
             exchange.finishExchange(true, e.getMessage());

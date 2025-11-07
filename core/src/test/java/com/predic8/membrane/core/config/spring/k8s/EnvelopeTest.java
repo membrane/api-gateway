@@ -63,10 +63,9 @@ class EnvelopeTest {
                 requestLimit: 3
                 requestLimitDuration: PT30S
             - rewriter:
-                mappings:
-                  - map:
-                      from: ^/names/(.*)
-                      to: /restnames/name\\.groovy\\?name=$1
+              - map:
+                  from: ^/names/(.*)
+                  to: /restnames/name\\.groovy\\?name=$1
             - response:
               - beautifier: {}
               - xml2Json: {}

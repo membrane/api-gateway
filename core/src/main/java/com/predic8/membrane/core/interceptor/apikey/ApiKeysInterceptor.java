@@ -14,6 +14,7 @@
 package com.predic8.membrane.core.interceptor.apikey;
 
 import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.config.spring.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.interceptor.apikey.extractors.*;
@@ -26,6 +27,7 @@ import java.util.stream.*;
 
 import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static java.util.stream.Collectors.joining;
 import static java.util.stream.Stream.*;
 
 /**
@@ -77,14 +79,23 @@ public class ApiKeysInterceptor extends AbstractInterceptor {
     public String getLongDescription() {
         return getShortDescription() + "<br/>" + extractors.stream()
                 .map(extractor -> extractor.getDescription() + "<br/>")
-                .collect(Collectors.joining());
+                .collect(joining());
     }
 
     @Override
     public void init() {
         super.init();
-        stores.addAll(router.getBeanFactory().getBeansOfType(ApiKeyStore.class).values());
+        // At the moment the beanFactory is only there when the Membrane configuration was read from XML
+        if (router.getBeanFactory() != null) {
+            stores.addAll(router.getBeanFactory().getBeansOfType(ApiKeyStore.class).values());
+        }
         stores.forEach(s -> s.init(router));
+
+        // Add the default extractor if none is configured
+        if (extractors.isEmpty()) {
+            extractors.add(new ApiKeyHeaderExtractor());
+        }
+
         extractors.forEach(e -> e.init(router));
     }
 

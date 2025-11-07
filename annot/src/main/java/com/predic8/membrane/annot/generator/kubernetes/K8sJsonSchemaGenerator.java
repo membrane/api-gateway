@@ -13,21 +13,21 @@
    limitations under the License. */
 package com.predic8.membrane.annot.generator.kubernetes;
 
-import com.predic8.membrane.annot.ProcessingException;
-import com.predic8.membrane.annot.generator.kubernetes.model.ISchema;
-import com.predic8.membrane.annot.generator.kubernetes.model.Schema;
-import com.predic8.membrane.annot.generator.kubernetes.model.SchemaObject;
+import com.fasterxml.jackson.databind.node.*;
+import com.predic8.membrane.annot.*;
+import com.predic8.membrane.annot.generator.kubernetes.model.*;
 import com.predic8.membrane.annot.model.*;
 
-import javax.annotation.processing.ProcessingEnvironment;
-import javax.tools.FileObject;
-import java.io.BufferedWriter;
-import java.io.IOException;
-import java.io.Writer;
+import javax.annotation.processing.*;
+import javax.tools.*;
+import java.io.*;
 import java.util.*;
 
+import static com.predic8.membrane.annot.generator.kubernetes.model.SchemaFactory.*;
+import static com.predic8.membrane.annot.generator.kubernetes.model.SchemaFactory.schema;
+
 /**
- * Generates Json Schema draft 4 to validate kubernetetes CustomResourceDefinitions.
+ * Generates JSON Schema (draft 2019-09/2020-12) to validate Kubernetes CustomResourceDefinitions.
  */
 public class K8sJsonSchemaGenerator extends AbstractK8sGenerator {
 
@@ -35,7 +35,7 @@ public class K8sJsonSchemaGenerator extends AbstractK8sGenerator {
         super(processingEnv);
     }
 
-    public void write(Model m) {
+    public void write(Model m) throws IOException {
         try {
             for (MainInfo main : m.getMains()) {
                 assemble(m, main);
@@ -56,7 +56,7 @@ public class K8sJsonSchemaGenerator extends AbstractK8sGenerator {
     }
 
     private void assembleBase(Model m, Writer w, MainInfo main, ElementInfo i) throws IOException {
-        if (i.getAnnotation().mixed() && i.getChildElementSpecs().size() > 0) {
+        if (i.getAnnotation().mixed() && !i.getChildElementSpecs().isEmpty()) {
             throw new ProcessingException(
                     "@MCElement(..., mixed=true) and @MCTextContent is not compatible with @MCChildElement.",
                     i.getElement()
@@ -65,32 +65,34 @@ public class K8sJsonSchemaGenerator extends AbstractK8sGenerator {
 
         String eleName = i.getAnnotation().name();
 
-        Schema schema = new Schema(eleName);
+        Schema schema = schema(eleName);
         collectDefinitions(m, main, i, schema);
         collectProperties(m, main, i, schema);
 
-        w.append(schema.toString());
+        w.append( writer.writeValueAsString(schema.json(JsonNodeFactory.instance.objectNode())));
     }
 
-    private void collectAttributes(ElementInfo i, ISchema so) {
+    private void collectAttributes(ElementInfo i, SchemaObject so) {
         i.getAis().stream()
                 .filter(ai -> !ai.getXMLName().equals("id"))
                 .forEach(ai -> {
-                    SchemaObject sop = new SchemaObject(ai.getXMLName());
-                    sop.addAttribute("type", ai.getSchemaType(processingEnv.getTypeUtils()));
-                    sop.setRequired(ai.isRequired());
-                    so.addProperty(sop);
+                    SchemaObject sop = object(ai.getXMLName());
+                    sop.type(ai.getSchemaType(processingEnv.getTypeUtils()));
+                    sop.required(ai.isRequired());
+                    so.property(sop);
                 });
     }
 
-    private void collectProperties(Model m, MainInfo main, ElementInfo i, ISchema schema) {
-        collectAttributes(i, schema);
-        collectTextContent(i, schema);
+    private void collectProperties(Model m, MainInfo main, ElementInfo i, AbstractSchema schema) {
+        if (schema instanceof SchemaObject sop) {
+            collectAttributes(i, sop);
+            collectTextContent(i, sop);
+        }
         collectChildElements(m, main, i, schema);
     }
 
     private void collectDefinitions(Model m, MainInfo main, ElementInfo i, Schema schema) {
-        Map<String, ElementInfo> all = new HashMap<>();
+        Map<String, ElementInfo> all = new LinkedHashMap<>();
 
         Stack<ElementInfo> stack = new Stack<>();
         stack.push(i);
@@ -110,60 +112,66 @@ public class K8sJsonSchemaGenerator extends AbstractK8sGenerator {
             return;
 
         for (Map.Entry<String, ElementInfo> entry : all.entrySet()) {
-            SchemaObject so = new SchemaObject(entry.getKey());
-            so.addAttribute("type", entry.getValue().getAnnotation().noEnvelope() ? "array" : "object");
-            so.addAttribute("additionalProperties", entry.getValue().getOai() != null);
+            boolean noEnvelope = entry.getValue().getAnnotation().noEnvelope();
+            AbstractSchema as;
+            if (noEnvelope) {
+                as = array(entry.getKey());
+            } else {
+                as = object(entry.getKey());
+                ((SchemaObject) as).additionalProperties(entry.getValue().getOai() != null);
+            }
+            collectProperties(m, main, entry.getValue(), as);
 
-            collectProperties(m, main, entry.getValue(), so);
-
-            schema.addDefinition(so);
+            schema.definition(as);
         }
     }
 
-    private void collectTextContent(ElementInfo i, ISchema so) {
+    private void collectTextContent(ElementInfo i, SchemaObject so) {
         if (i.getTci() == null)
             return;
-
-        SchemaObject sop = new SchemaObject(i.getTci().getPropertyName());
-        sop.addAttribute("type", "string");
-        so.addProperty(sop);
+        so.property(string(i.getTci().getPropertyName()));
     }
 
-    private void collectChildElements(Model m, MainInfo main, ElementInfo i, ISchema so) {
+    private void collectChildElements(Model m, MainInfo main, ElementInfo i, AbstractSchema so) {
         for (ChildElementInfo cei : i.getChildElementSpecs()) {
             boolean isList = cei.isList();
 
-            ISchema parent2 = so;
+            AbstractSchema parent2 = so;
 
             if (isList) {
-                SchemaObject items = new SchemaObject("items");
-                items.addAttribute("type", "object");
-                items.addAttribute("additionalProperties", cei.getAnnotation().allowForeign());
+                SchemaObject items =  object("items").additionalProperties( cei.getAnnotation().allowForeign());
 
                 if (i.getAnnotation().noEnvelope()) {
-                    so.addAttribute("items", items);
+                    if (so instanceof SchemaArray sa)
+                        sa.items(items);
+                    else
+                        throw new ProcessingException("@MCElement(noEnvelope=true) is not an array. Implementation error?", i.getElement());
                 } else {
-                    SchemaObject sop = new SchemaObject(cei.getPropertyName());
-                    sop.setRequired(cei.isRequired());
-                    sop.addAttribute("type", "array");
-                    sop.addAttribute("additionalItems", false);
-                    sop.addAttribute("items", items);
-
-                    so.addProperty(sop);
+                    if (so instanceof SchemaObject sObj) {
+                        SchemaArray array = array(cei.getPropertyName());
+                        array.items(items);
+                        sObj.property(array.required(cei.isRequired()));
+                    } else {
+                        throw new ProcessingException("@MCElement(noEnvelope=false) is not an object. Implementation error?", i.getElement());
+                    }
                 }
-
                 parent2 = items;
             } else {
-                if (cei.getAnnotation().allowForeign())
-                    parent2.setAdditionalProperties(true);
+                if (cei.getAnnotation().allowForeign()) {
+                    if (parent2 instanceof SchemaObject sObj) {
+                        sObj.additionalProperties(true);
+                    } else {
+                        throw new ProcessingException("@MCChildElement(allowForeign=true) is not an object. Implementation error?", i.getElement());
+                    }
+                }
             }
 
             for (ElementInfo ei : main.getChildElementDeclarations().get(cei.getTypeDeclaration()).getElementInfo()) {
-                SchemaObject sop = new SchemaObject(ei.getAnnotation().name());
+                SchemaRef sop = ref(ei.getAnnotation().name());
                 //sop.setRequired(cei.isRequired());
                 // TODO only one is required, not all
-                sop.addAttribute("$ref", "#/definitions/" + ei.getXSDTypeName(m));
-                parent2.addProperty(sop);
+                sop.ref("#/$defs/" + ei.getXSDTypeName(m));
+                ((SchemaObject)parent2).property(sop);
             }
         }
     }
