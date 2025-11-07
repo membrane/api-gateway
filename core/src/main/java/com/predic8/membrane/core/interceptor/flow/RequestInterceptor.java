@@ -40,7 +40,7 @@ public class RequestInterceptor extends AbstractFlowWithChildrenInterceptor {
 
     @Override
     public Outcome handleRequest(Exchange exc) {
-        // The behaviour here differs from FlowController. Here after RETURN
+        // The behavior here differs from FlowController. Here after RETURN
         // the previous interceptors inside <request> should not execute
         // handleResponse().
         for (Interceptor i : getFlow()) {

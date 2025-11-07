@@ -20,7 +20,9 @@ import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.lang.*;
 import com.predic8.membrane.core.util.*;
+import org.jetbrains.annotations.*;
 import org.slf4j.*;
+import org.springframework.context.*;
 
 import java.io.*;
 import java.util.*;
@@ -88,8 +90,16 @@ public abstract  class LanguageAdapter {
             https://repo1.maven.org/maven2/org/mozilla/rhino-engine/""");
     }
 
-    public Function<Map<String, Object>, Object> compileScript(String script) throws IOException, ClassNotFoundException {
-        return languageSupport.compileScript(router.getBackgroundInitializer(), router.getBeanFactory().getClassLoader(), prepareScript(script));
+    public Function<Map<String, Object>, Object> compileScript(String script) {
+        return languageSupport.compileScript(router.getBackgroundInitializer(), getClassLoader(), prepareScript(script));
+    }
+
+    private @Nullable ClassLoader getClassLoader() {
+        ApplicationContext bf = router.getBeanFactory();
+        if (bf == null) {
+           return this.getClass().getClassLoader();
+        }
+        return bf.getClassLoader();
     }
 
     public abstract ProblemDetails getProblemDetails(Exception e);

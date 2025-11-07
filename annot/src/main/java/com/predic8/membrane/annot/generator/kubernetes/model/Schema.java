@@ -13,79 +13,41 @@
    limitations under the License. */
 package com.predic8.membrane.annot.generator.kubernetes.model;
 
+import com.fasterxml.jackson.databind.*;
+import com.fasterxml.jackson.databind.node.*;
+import com.fasterxml.jackson.databind.util.*;
+
 import java.util.*;
-import java.util.stream.Collectors;
 
-import static com.predic8.membrane.annot.generator.kubernetes.model.SchemaUtils.printRequired;
+import static com.predic8.membrane.annot.generator.kubernetes.model.SchemaFactory.OBJECT;
 
-public class Schema implements ISchema {
+public class Schema extends SchemaObject {
 
-    private final String name;
+    private final List<ISchema> definitions = new ArrayList<>();
 
-    private final List<SchemaObject> definitions = new ArrayList<>();
-    private final List<SchemaObject> properties = new ArrayList<>();
-    private final Map<String, Object> attributes = new HashMap<>();
-    private boolean additionalProperties;
-
-    public Schema(String name) {
-        this.name = name;
+    Schema(String name) {
+        super(name);
+        type = OBJECT;
     }
 
-    public void setAdditionalProperties(boolean additionalProperties) {
-        this.additionalProperties = additionalProperties;
-    }
-
-    public void addDefinition(SchemaObject definition) {
+    public Schema definition(ISchema definition) {
         definitions.add(definition);
-    }
-
-    public void addAttribute(String key, Object value) {
-        attributes.put(key, value);
+        return this;
     }
 
     @Override
-    public void addProperty(SchemaObject property) {
-        properties.add(property);
-    }
-
-    private String printDefinitions() {
-        if (definitions.isEmpty())
-            return "";
-
-        return ",\"definitions\":{" + definitions.stream()
-                .map(Objects::toString)
-                .collect(Collectors.joining(",")) +
-                "}";
-    }
-
-    private String printProperties() {
-        if (properties.isEmpty())
-            return "";
-
-        return ",\"properties\":{\"spec\":{\"type\":\"object\",\"additionalProperties\":"+additionalProperties+",\"properties\":{" +
-                properties.stream()
-                        .map(Objects::toString)
-                        .collect(Collectors.joining(",")) +
-                "}}}";
-    }
-
-
-
-    @Override
-    public String toString() {
-        return "{" +
-                "\"id\": \"https://membrane-soa.org/" + name.toLowerCase() + ".schema.json\"," +
-                "\"$schema\": \"https://json-schema.org/draft-04/schema#\"," +
-                "\"title\": \"" + name + "\"," +
-                "\"type\": \"object\"" +
-                printDefinitions() +
-                printProperties() +
-                printRequired(properties)
-                + (!attributes.isEmpty() ? "," : "") +
-                attributes.entrySet().stream()
-                        .map(SchemaUtils::entryToJson)
-                        .collect(Collectors.joining(",")) +
-                "}"
-                ;
+    public ObjectNode json(ObjectNode node) {
+        node.put("$id", "https://membrane-soa.org/%s.schema.json".formatted(name));
+        node.put("$schema", "https://json-schema.org/draft/2020-12/schema");
+        node.put("title", name);
+        super.json(node);
+        if (!definitions.isEmpty()) {
+            ObjectNode defs = jnf.objectNode();
+            for (ISchema def : definitions) {
+                defs.set(def.getName(), def.json(jnf.objectNode()));
+            }
+            node.set("$defs", defs);
+        }
+        return node;
     }
 }
