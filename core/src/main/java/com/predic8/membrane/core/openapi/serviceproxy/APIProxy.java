@@ -112,6 +112,25 @@ public class APIProxy extends ServiceProxy implements Polyglot, XMLSupport {
         if (getFirstInterceptorOfType(OpenAPIPublisherInterceptor.class).isEmpty()) {
             interceptors.addFirst(new OpenAPIPublisherInterceptor(apiRecords));
         }
+
+        assignOpenAPIName();
+    }
+
+    void assignOpenAPIName() {
+        if (name.isEmpty() && !apiRecords.isEmpty()) {
+            String title = apiRecords.get(apiRecords.keySet().iterator().next()).getApi().getInfo().getTitle();
+            if (title != null && !title.isBlank()) {
+                name = title.replaceAll("[^a-zA-Z0-9-_]", "").trim();
+                if (name.length() > 32)
+                    name = name.substring(0, 32);
+            } else {
+                name = "Unnamed OpenAPI";
+            }
+            if (apiRecords.size() > 1) {
+                name += " +%s more".formatted(apiRecords.size() - 1);
+            }
+        }
+
     }
 
     /**
