@@ -1,0 +1,22 @@
+# yaml-language-server: $schema=../../../core/target/classes/com/predic8/membrane/core/config/json/membrane.schema.json
+#
+# Membrane Tutorial: Logging
+#
+# A useful tool for API development, debugging and operation is logging of information about the requests and responses flowing through Membrane.
+# The log feature is a plugin that can be enabled in the message flow. For each call the log plugin is called twice. Once for the request and once for the response.
+#
+# You can configure the log plugin to log different information.
+# - log: Hello!
+#
+# - log:
+#    message: Path ${path} Content-Type ${header.contentType}
+#
+#
+# Take a look at the example/logging folder for logging configuration, access log, ...
+
+spec:
+  port: 2000
+  flow:
+    - log: {} # Logs method, path, status code, headers and body from request and response
+  target:
+    url: https://api.predic8.de
