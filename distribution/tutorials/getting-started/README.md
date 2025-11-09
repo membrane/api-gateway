@@ -12,12 +12,12 @@
 
 
 - Header
-- Espression Language SPEL
+- Expression Language SPEL
 - Properties
 - Templating
 - JSONPath
 - Advanced Routing
-- Routing Rewritting
+- Routing Rewriting
 - Routing Redirect
 - CORS
 

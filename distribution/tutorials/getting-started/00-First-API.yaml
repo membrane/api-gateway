@@ -9,9 +9,9 @@
 #    Open a terminal in the folder containing this file, then run:
 #
 #    Linux/Mac:
-#      membrane.sh -c 100-Routing.yaml
+#      membrane.sh -c 00-First-API.yaml
 #    Windows:
-#      membrane.bat -c 100-Routing.yaml
+#      membrane.bat -c 00-First-API.yaml
 #
 #    Membrane should log that the API is running.
 #

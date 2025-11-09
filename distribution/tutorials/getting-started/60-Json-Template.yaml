@@ -25,12 +25,14 @@ spec:
             pretty: true
             src: |
               {
-                "number": ${property.id}
+                "number": ${property.id},
                 "positions": [
                   <% for (item in property.items) { %>
+                  {
                     "product": "<%= item.article %>",
                     "quantity": <%= item.quantity %>,
                     "amount": <%= item.quantity * item.price %>,
+                  }
                   <% } %>
                 ]
               }
