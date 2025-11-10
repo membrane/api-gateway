@@ -1,0 +1,10 @@
+spec:
+  port: 2000
+  specs:
+    - openapi:
+        location: demo-api-v1.yml
+        validateRequests: yes
+        rewrite:
+          host: predic8.de
+          port: 3000
+          basePath: /foo

@@ -1,0 +1,11 @@
+spec:
+  port: 2000
+  flow:
+    - rewriter:
+        - map:
+            from: ^/store/(.*)
+            to: /shop/v2/$1
+  target:
+    host: api.predic8.de
+    port: 443
+    ssl: {}
