@@ -62,12 +62,7 @@ public class SchemaObject extends AbstractSchema<SchemaObject> {
         ObjectNode propertiesNode = jnf.objectNode();
         for (AbstractSchema property : properties) {
 
-            ObjectNode json = property.json(jnf.objectNode());
-            if (property.enumValues != null && !property.enumValues.isEmpty()) {
-                json.put("enum", getEnumNode(property));
-            }
-
-            propertiesNode.set(property.getName(), json);
+            propertiesNode.set(property.getName(), createPropertyNode(property));
             if (property.isRequired())
                 required.add(property.getName());
         }
@@ -77,6 +72,14 @@ public class SchemaObject extends AbstractSchema<SchemaObject> {
             node.set("required", l);
         }
         node.set("properties", propertiesNode);
+    }
+
+    private static ObjectNode createPropertyNode(AbstractSchema property) {
+        ObjectNode propertyNode = property.json(jnf.objectNode());
+        if (property.getEnumValues() != null && !property.getEnumValues().isEmpty()) {
+            propertyNode.set("enum", getEnumNode(property));
+        }
+        return propertyNode;
     }
 
     private static ArrayNode getEnumNode(AbstractSchema property) {

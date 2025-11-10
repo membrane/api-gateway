@@ -87,7 +87,7 @@ public class JsonSchemaGenerator extends AbstractK8sGenerator {
         schema.additionalProperties(false)
                 .property(string("apiVersion"))
                 .property(string("kind").enumeration(List.of("api")))
-                .property(ref("spec").ref("#/$defs/com.predic8.membrane.core.config.spring.ApiParser").required(true))
+                .property(ref("spec").ref("#/$defs/com_predic8_membrane_core_config_spring_ApiParser").required(true))
                 .property(object("metadata")
                         .additionalProperties(true)
                         .property(string("name")));
@@ -160,20 +160,31 @@ public class JsonSchemaGenerator extends AbstractK8sGenerator {
     private void processMCAttributes(ElementInfo i, SchemaObject so) {
         i.getAis().stream()
                 .filter(ai -> !ai.getXMLName().equals("id"))
-                .forEach(ai -> {
-                    so.property(createProperty(ai));
-                });
+                .forEach(ai -> so.property(createProperty(ai)));
     }
 
-    private SchemaObject createProperty(AttributeInfo ai) {
-        SchemaObject property = object(ai.getXMLName())
+    private AbstractSchema createProperty(AttributeInfo ai) {
+        AbstractSchema s = SchemaFactory.from(ai.getSchemaType(processingEnv.getTypeUtils()))
+                .name(ai.getXMLName())
                 .description(getDescriptionContent(ai))
                 .type(ai.getSchemaType(processingEnv.getTypeUtils()))
                 .required(ai.isRequired());
         if (ai.isEnum(processingEnv.getTypeUtils())) {
-            property.enumValues(ai.getEnumValues());
+            if (isEnumBoolean(ai)) {
+                s.type("boolean"); // Change type from String with enum to boolean
+            } else {
+                s.enumValues(toLowerCaseList(ai));
+            }
         }
-        return property;
+        return s;
+    }
+
+    private static boolean isEnumBoolean(AttributeInfo ai) {
+        return ai.getEnumValues().contains("TRUE") && ai.getEnumValues().contains("FALSE");
+    }
+
+    private static List<String> toLowerCaseList(AttributeInfo ai) {
+        return ai.getEnumValues().stream().map(String::toLowerCase).toList();
     }
 
     private void collectProperties(Model m, MainInfo main, ElementInfo i, SchemaObject schema) {
@@ -186,7 +197,7 @@ public class JsonSchemaGenerator extends AbstractK8sGenerator {
         if (i.getTci() == null)
             return;
 
-        SchemaObject sop = string(i.getTci().getPropertyName());
+        var sop = string(i.getTci().getPropertyName());
         //       sop.addAttribute("description", getDescriptionAsText(i));
         //       sop.addAttribute("x-intellij-html-description", getDescriptionAsHtml(i));
         so.property(sop);

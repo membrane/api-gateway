@@ -92,7 +92,8 @@ public class ElementInfo extends AbstractJavadocedInfo {
 	}
 
 	public String getXSDTypeName(Model m) {
-		return getClassName(m);
+        // There are JSON Schema parsers that do not accept names like a.b.c
+		return getClassName(m).replace(".","_");
 	}
 
 	public MCElement getAnnotation() {

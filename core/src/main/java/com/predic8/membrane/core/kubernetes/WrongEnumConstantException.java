@@ -4,8 +4,8 @@ import java.util.*;
 
 public class WrongEnumConstantException extends Exception {
 
-    private List<String> constants;
-    private String value;
+    private final List<String> constants;
+    private final String value;
 
     public WrongEnumConstantException(Class<?> clazz, String value) {
 

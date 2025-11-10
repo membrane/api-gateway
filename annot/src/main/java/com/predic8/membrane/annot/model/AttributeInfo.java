@@ -13,19 +13,14 @@
    limitations under the License. */
 package com.predic8.membrane.annot.model;
 
+import com.predic8.membrane.annot.*;
+
 import javax.lang.model.element.*;
-import javax.lang.model.type.TypeKind;
-import javax.lang.model.util.Types;
-
-import com.predic8.membrane.annot.AnnotUtils;
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.ProcessingException;
-
+import javax.lang.model.util.*;
 import java.util.*;
 
-import static javax.lang.model.element.ElementKind.ENUM;
-import static javax.lang.model.element.ElementKind.ENUM_CONSTANT;
-import static javax.lang.model.type.TypeKind.DECLARED;
+import static javax.lang.model.element.ElementKind.*;
+import static javax.lang.model.type.TypeKind.*;
 
 /**
  * Mirrors {@link MCAttribute}.
@@ -45,7 +40,7 @@ public class AttributeInfo extends AbstractJavadocedInfo {
     }
 
     public String getXMLName() {
-		if (getAnnotation().attributeName().length() == 0)
+		if (getAnnotation().attributeName().isEmpty())
 			return getSpringName();
 		else
 			return getAnnotation().attributeName();
@@ -60,19 +55,10 @@ public class AttributeInfo extends AbstractJavadocedInfo {
 	}
 
     public String getSchemaType(Types typeUtils) {
-        String xsdType = getXSDType(typeUtils);
-
-        return switch (xsdType) {
-            case "spel_number"  -> "integer";
-            case "xsd:double", "xsd:float", "xsd:decimal"   -> "number";
+        return switch (getXSDType(typeUtils)) {
+            case "spel_number", "xsd:double", "xsd:float", "xsd:decimal"   -> "number";
             case "spel_boolean","xsd:boolean" -> "boolean";
-            case "xsd:string"   -> "string";
-
-            // More common types
             case "xsd:int", "xsd:integer", "xsd:long" -> "integer";
-            case "xsd:date" -> "string";       // optional: add format
-            case "xsd:dateTime" -> "string";   // optional: add format
-
             default -> "string";
         };
     }
@@ -98,7 +84,7 @@ public class AttributeInfo extends AbstractJavadocedInfo {
 
 		if (getE().getParameters().size() != 1)
 			throw new ProcessingException("Setter is supposed to have 1 parameter.", getE());
-		VariableElement ve = getE().getParameters().get(0);
+		VariableElement ve = getE().getParameters().getFirst();
 
 		switch (ve.asType().getKind()) {
             case INT, LONG:

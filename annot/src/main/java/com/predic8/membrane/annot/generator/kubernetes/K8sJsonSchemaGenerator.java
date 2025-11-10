@@ -76,10 +76,10 @@ public class K8sJsonSchemaGenerator extends AbstractK8sGenerator {
         i.getAis().stream()
                 .filter(ai -> !ai.getXMLName().equals("id"))
                 .forEach(ai -> {
-                    SchemaObject sop = object(ai.getXMLName());
-                    sop.type(ai.getSchemaType(processingEnv.getTypeUtils()));
-                    sop.required(ai.isRequired());
-                    so.property(sop);
+                    AbstractSchema schema = SchemaFactory.from(ai.getSchemaType(processingEnv.getTypeUtils()));
+                    schema.name(ai.getXMLName());
+                    schema.required(ai.isRequired());
+                    so.property(schema);
                 });
     }
 

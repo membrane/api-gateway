@@ -73,14 +73,12 @@ public class RewriteInterceptor extends AbstractInterceptor {
                 return getDo();
 
             String what = do_.toLowerCase(US);
-            if (what.equals("rewrite"))
-                return REWRITE;
-            if (what.equals("redirect") || what.equals("redirect-temporary"))
-                return REDIRECT_TEMPORARY;
-            if (what.equals("redirect-permanent"))
-                return REDIRECT_PERMANENT;
-
-            throw new IllegalArgumentException("Unknown value '%s' for rewriter/@do.".formatted(what));
+            return switch (what) {
+                case "rewrite" -> REWRITE;
+                case "redirect", "redirect-temporary" -> REDIRECT_TEMPORARY;
+                case "redirect-permanent" -> REDIRECT_PERMANENT;
+                default -> throw new IllegalArgumentException("Unknown value '%s' for rewriter/@do.".formatted(what));
+            };
         }
 
         public boolean matches(String uri) {

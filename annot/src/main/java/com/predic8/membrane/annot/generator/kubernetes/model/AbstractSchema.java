@@ -15,8 +15,7 @@ public abstract class AbstractSchema<T extends AbstractSchema<T>> implements ISc
 
     protected boolean required = false;
 
-    public AbstractSchema() {
-    }
+    public AbstractSchema() {}
 
     public AbstractSchema(String name) {
         this.name = name;
@@ -30,6 +29,10 @@ public abstract class AbstractSchema<T extends AbstractSchema<T>> implements ISc
     @Override
     public String getName() {
         return name;
+    }
+
+    public List<String> getEnumValues() {
+        return enumValues;
     }
 
     public T description(String description) {

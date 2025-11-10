@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.node.*;
 
 import java.util.*;
 
-public class SchemaString extends SchemaObject {
+public class SchemaString extends BasicSchema {
 
     private List<String> enumeration = new ArrayList<>();
 
