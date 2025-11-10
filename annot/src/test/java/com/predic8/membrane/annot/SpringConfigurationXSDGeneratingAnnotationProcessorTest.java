@@ -23,6 +23,12 @@ import static com.predic8.membrane.annot.util.CompilerHelper.*;
 public class SpringConfigurationXSDGeneratingAnnotationProcessorTest {
 
     public static final String MC_MAIN_DEMO = """
+            resource META-INF/spring.handlers
+            http\\://membrane-soa.org/demo/1/=com.predic8.membrane.demo.config.spring.NamespaceHandler
+            ---
+            resource META-INF/spring.schemas
+            http\\://membrane-soa.org/schemas/demo-1.xsd=com/predic8/membrane/demo/config/spring/router-conf.xsd
+            ---
             package com.predic8.membrane.demo;
             import com.predic8.membrane.annot.MCMain;
             @MCMain(
@@ -45,7 +51,7 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessorTest {
 
     @Test
     public void simpleTest() {
-        List<JavaFileObject> sources = splitSources(MC_MAIN_DEMO + """
+        var sources = splitSources(MC_MAIN_DEMO + """
                 package com.predic8.membrane.demo;
                 import com.predic8.membrane.annot.MCElement;
                 @MCElement(name="demo")
