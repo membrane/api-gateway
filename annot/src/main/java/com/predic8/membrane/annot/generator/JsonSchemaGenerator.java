@@ -163,8 +163,8 @@ public class JsonSchemaGenerator extends AbstractK8sGenerator {
                 .forEach(ai -> so.property(createProperty(ai)));
     }
 
-    private AbstractSchema createProperty(AttributeInfo ai) {
-        AbstractSchema s = SchemaFactory.from(ai.getSchemaType(processingEnv.getTypeUtils()))
+    private AbstractSchema<?> createProperty(AttributeInfo ai) {
+        AbstractSchema<?> s = SchemaFactory.from(ai.getSchemaType(processingEnv.getTypeUtils()))
                 .name(ai.getXMLName())
                 .description(getDescriptionContent(ai))
                 .type(ai.getSchemaType(processingEnv.getTypeUtils()))
@@ -209,10 +209,10 @@ public class JsonSchemaGenerator extends AbstractK8sGenerator {
         so.property(sop);
     }
 
-    private void processMCChilds(Model m, MainInfo main, ElementInfo i, AbstractSchema so) {
+    private void processMCChilds(Model m, MainInfo main, ElementInfo i, AbstractSchema<?> so) {
         for (ChildElementInfo cei : i.getChildElementSpecs()) {
 
-            AbstractSchema parent2 = so;
+            AbstractSchema<?> parent2 = so;
 
             if (cei.isList()) {
                 if (shouldGenerateParserType(cei)) {
@@ -247,7 +247,7 @@ public class JsonSchemaGenerator extends AbstractK8sGenerator {
         return "com.predic8.membrane.core.transport.ws.WebSocketInterceptorInterface".equals(cei.getTypeDeclaration().getQualifiedName().toString());
     }
 
-    private AbstractSchema processList(ElementInfo i, AbstractSchema so, ChildElementInfo cei, ArrayList<SchemaObject> sos) {
+    private AbstractSchema<?> processList(ElementInfo i, AbstractSchema<?> so, ChildElementInfo cei, ArrayList<SchemaObject> sos) {
 
         SchemaObject items = object("items");
 
@@ -269,7 +269,7 @@ public class JsonSchemaGenerator extends AbstractK8sGenerator {
         return items;
     }
 
-    private void addFlowParserRef(AbstractSchema so, List<SchemaObject> sos) {
+    private void addFlowParserRef(AbstractSchema<?> so, List<SchemaObject> sos) {
         if (!flowDefCreated) {
             schema.definition(array("flowParser").items(anyOf(sos)));
             flowDefCreated = true;

@@ -75,14 +75,14 @@ public class K8sJsonSchemaGenerator extends AbstractK8sGenerator {
         i.getAis().stream()
                 .filter(ai -> !ai.getXMLName().equals("id"))
                 .forEach(ai -> {
-                    AbstractSchema schema = SchemaFactory.from(ai.getSchemaType(processingEnv.getTypeUtils()));
+                    AbstractSchema<?> schema = SchemaFactory.from(ai.getSchemaType(processingEnv.getTypeUtils()));
                     schema.name(ai.getXMLName());
                     schema.required(ai.isRequired());
                     so.property(schema);
                 });
     }
 
-    private void collectProperties(Model m, MainInfo main, ElementInfo i, AbstractSchema schema) {
+    private void collectProperties(Model m, MainInfo main, ElementInfo i, AbstractSchema<?> schema) {
         if (schema instanceof SchemaObject sop) {
             collectAttributes(i, sop);
             collectTextContent(i, sop);
@@ -112,7 +112,7 @@ public class K8sJsonSchemaGenerator extends AbstractK8sGenerator {
 
         for (Map.Entry<String, ElementInfo> entry : all.entrySet()) {
             boolean noEnvelope = entry.getValue().getAnnotation().noEnvelope();
-            AbstractSchema as;
+            AbstractSchema<?> as;
             if (noEnvelope) {
                 as = array(entry.getKey());
             } else {
@@ -131,7 +131,7 @@ public class K8sJsonSchemaGenerator extends AbstractK8sGenerator {
         so.property(string(i.getTci().getPropertyName()));
     }
 
-    private void collectChildElements(Model m, MainInfo main, ElementInfo i, AbstractSchema so) {
+    private void collectChildElements(Model m, MainInfo main, ElementInfo i, AbstractSchema<?> so) {
         for (ChildElementInfo cei : i.getChildElementSpecs()) {
             boolean isList = cei.isList();
 

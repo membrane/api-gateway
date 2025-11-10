@@ -77,7 +77,6 @@ public class ElementInfo extends AbstractJavadocedInfo {
 
 	public MainInfo getMain(Model m) {
 		for (MainInfo main : m.getMains()) {
-			getAnnotation().configPackage();
 			if (main.getAnnotation().outputPackage().equals(getAnnotation().configPackage()))
 				return main;
 		}

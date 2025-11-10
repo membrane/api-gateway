@@ -24,14 +24,14 @@ public class SchemaObject extends AbstractSchema<SchemaObject> {
     private boolean additionalProperties;
 
     // Java Properties (@MCAttributes, @MCChildElement)
-    protected final List<AbstractSchema> properties = new ArrayList<>();
+    protected final List<AbstractSchema<?>> properties = new ArrayList<>();
 
     SchemaObject(String name) {
         super(name);
         type = OBJECT;
     }
 
-    public SchemaObject property(AbstractSchema as) {
+    public SchemaObject property(AbstractSchema<?> as) {
         properties.add(as);
         return this;
     }
@@ -60,7 +60,7 @@ public class SchemaObject extends AbstractSchema<SchemaObject> {
         List<String> required = new ArrayList<>();
 
         ObjectNode propertiesNode = jnf.objectNode();
-        for (AbstractSchema property : properties) {
+        for (AbstractSchema<?> property : properties) {
 
             propertiesNode.set(property.getName(), createPropertyNode(property));
             if (property.isRequired())

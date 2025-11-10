@@ -195,7 +195,7 @@ public class GenericYamlParser {
         }
     }
 
-    private static List parseListIncludingStartEvent(String context, Iterator<Event> events, BeanRegistry registry) {
+    private static List<?> parseListIncludingStartEvent(String context, Iterator<Event> events, BeanRegistry registry) {
         Event event = events.next();
         if (!(event instanceof SequenceStartEvent)) {
             throw new IllegalStateException("Expected start-of-sequence in line " + event.getStartMark().getLine() + " column " + event.getStartMark().getColumn());
@@ -203,7 +203,7 @@ public class GenericYamlParser {
         return parseListExcludingStartEvent(context, events, registry);
     }
 
-    private static @NotNull ArrayList parseListExcludingStartEvent(String context, Iterator<Event> events, BeanRegistry registry) {
+    private static @NotNull ArrayList<?> parseListExcludingStartEvent(String context, Iterator<Event> events, BeanRegistry registry) {
         Event event;
         ArrayList res = new ArrayList();
         while (true) {
