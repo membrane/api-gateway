@@ -152,9 +152,9 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
             exc.setProperty(Exchange.OAUTH2, session.getOAuth2AnswerParameters(wantedScope));
         }
 
-        accessTokenRefresher.refreshIfNeeded(session, exc);
-
         try {
+            accessTokenRefresher.refreshIfNeeded(session, exc);
+
             if (wasCallback(exc)) {
                 oAuth2CallbackRequestHandler.handleRequest(exc, session);
                 if (exc.getResponse().getStatusCode() >= 400) {
