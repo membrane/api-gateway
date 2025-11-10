@@ -24,7 +24,6 @@ import java.io.*;
 import java.util.*;
 
 import static com.predic8.membrane.annot.generator.kubernetes.model.SchemaFactory.*;
-import static com.predic8.membrane.annot.generator.kubernetes.model.SchemaFactory.schema;
 
 /**
  * Generates JSON Schema (draft 2019-09/2020-12) to validate Kubernetes CustomResourceDefinitions.
@@ -69,7 +68,7 @@ public class K8sJsonSchemaGenerator extends AbstractK8sGenerator {
         collectDefinitions(m, main, i, schema);
         collectProperties(m, main, i, schema);
 
-        w.append( writer.writeValueAsString(schema.json(JsonNodeFactory.instance.objectNode())));
+        w.append(writer.writeValueAsString(schema.json(JsonNodeFactory.instance.objectNode())));
     }
 
     private void collectAttributes(ElementInfo i, SchemaObject so) {
@@ -139,7 +138,7 @@ public class K8sJsonSchemaGenerator extends AbstractK8sGenerator {
             AbstractSchema parent2 = so;
 
             if (isList) {
-                SchemaObject items =  object("items").additionalProperties( cei.getAnnotation().allowForeign());
+                SchemaObject items = object("items").additionalProperties(cei.getAnnotation().allowForeign());
 
                 if (i.getAnnotation().noEnvelope()) {
                     if (so instanceof SchemaArray sa)
@@ -171,7 +170,7 @@ public class K8sJsonSchemaGenerator extends AbstractK8sGenerator {
                 //sop.setRequired(cei.isRequired());
                 // TODO only one is required, not all
                 sop.ref("#/$defs/" + ei.getXSDTypeName(m));
-                ((SchemaObject)parent2).property(sop);
+                ((SchemaObject) parent2).property(sop);
             }
         }
     }

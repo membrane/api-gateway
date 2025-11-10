@@ -77,7 +77,7 @@ public class RewriteInterceptor extends AbstractInterceptor {
                 case "rewrite" -> REWRITE;
                 case "redirect", "redirect-temporary" -> REDIRECT_TEMPORARY;
                 case "redirect-permanent" -> REDIRECT_PERMANENT;
-                default -> throw new IllegalArgumentException("Unknown value '%s' for rewriter/@do.".formatted(what));
+                default -> throw new IllegalArgumentException("Unknown value '%s' for rewriter/@do.".formatted(do_));
             };
         }
 

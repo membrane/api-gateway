@@ -74,7 +74,7 @@ public class SchemaObject extends AbstractSchema<SchemaObject> {
         node.set("properties", propertiesNode);
     }
 
-    private static ObjectNode createPropertyNode(AbstractSchema property) {
+    private static ObjectNode createPropertyNode(AbstractSchema<?>property) {
         ObjectNode propertyNode = property.json(jnf.objectNode());
         if (property.getEnumValues() != null && !property.getEnumValues().isEmpty()) {
             propertyNode.set("enum", getEnumNode(property));
@@ -82,9 +82,9 @@ public class SchemaObject extends AbstractSchema<SchemaObject> {
         return propertyNode;
     }
 
-    private static ArrayNode getEnumNode(AbstractSchema property) {
+    private static ArrayNode getEnumNode(AbstractSchema<?> property) {
         var enumValues = jnf.arrayNode();
-        property.enumValues.forEach(v -> enumValues.add((String) v));
+        property.getEnumValues().forEach(enumValues::add);
         return enumValues;
     }
 

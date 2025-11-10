@@ -11,7 +11,7 @@ public abstract class AbstractSchema<T extends AbstractSchema<T>> implements ISc
     protected String name;
     protected String type;
     protected String description;
-    protected List<String> enumValues;
+    private List<String> enumValues;
 
     protected boolean required = false;
 

@@ -1,6 +1,6 @@
 # yaml-language-server: $schema=../../core/target/classes/com/predic8/membrane/core/config/json/membrane.schema.json
 #
-# Membrane Tutorial: OpenAPI Deplyment
+# Membrane Tutorial: OpenAPI Deployment
 #
 # 1.) Open the api-docs overview in the browser.
 #     http://localhost:2000/api-docs

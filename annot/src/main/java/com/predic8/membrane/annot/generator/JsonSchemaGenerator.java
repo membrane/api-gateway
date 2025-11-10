@@ -173,17 +173,23 @@ public class JsonSchemaGenerator extends AbstractK8sGenerator {
             if (isEnumBoolean(ai)) {
                 s.type("boolean"); // Change type from String with enum to boolean
             } else {
-                s.enumValues(toLowerCaseList(ai));
+                s.enumValues(enumsAsLowerCaseList(ai));
             }
         }
         return s;
     }
 
+    /**
+     * It is not checked how many values the enum has. There are enums link validateRequests of OpenAPIValidator
+     * that have more than 2 values but they are also booleans at the configuration level
+     * @param ai
+     * @return
+     */
     private static boolean isEnumBoolean(AttributeInfo ai) {
         return ai.getEnumValues().contains("TRUE") && ai.getEnumValues().contains("FALSE");
     }
 
-    private static List<String> toLowerCaseList(AttributeInfo ai) {
+    private static List<String> enumsAsLowerCaseList(AttributeInfo ai) {
         return ai.getEnumValues().stream().map(String::toLowerCase).toList();
     }
 

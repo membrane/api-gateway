@@ -26,7 +26,7 @@ import com.predic8.membrane.annot.MCElement;
  */
 public class ElementInfo extends AbstractJavadocedInfo {
 	private MCElement annotation;
-	private List<ChildElementDeclarationInfo> usedBy = new ArrayList<>();
+	private final List<ChildElementDeclarationInfo> usedBy = new ArrayList<>();
 
 
 	private TypeElement element;
@@ -77,14 +77,11 @@ public class ElementInfo extends AbstractJavadocedInfo {
 
 	public MainInfo getMain(Model m) {
 		for (MainInfo main : m.getMains()) {
-			main.getAnnotation();
-			main.getAnnotation().outputPackage();
-			main.getAnnotation().outputPackage().equals("");
 			getAnnotation().configPackage();
 			if (main.getAnnotation().outputPackage().equals(getAnnotation().configPackage()))
 				return main;
 		}
-		return m.getMains().get(0);
+		return m.getMains().getFirst();
 	}
 
 	public String getClassName(Model m) {
@@ -113,7 +110,7 @@ public class ElementInfo extends AbstractJavadocedInfo {
 	}
 
 	public String getId() {
-		if (annotation.id().length() > 0)
+		if (!annotation.id().isEmpty())
 			return annotation.id();
 		return annotation.name();
 	}
@@ -128,10 +125,9 @@ public class ElementInfo extends AbstractJavadocedInfo {
 
 	@Override
 	public boolean equals(Object obj) {
-		if (!(obj instanceof ElementInfo))
+		if (!(obj instanceof ElementInfo other))
 			return false;
-		ElementInfo other = (ElementInfo) obj;
-		return element.equals(other.element);
+        return element.equals(other.element);
 	}
 
 	@Override

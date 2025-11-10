@@ -26,13 +26,13 @@ import static javax.lang.model.type.TypeKind.*;
  * Mirrors {@link MCAttribute}.
  */
 public class AttributeInfo extends AbstractJavadocedInfo {
-	private MCAttribute annotation;
-	private ExecutableElement e;
-	private boolean required;
+    private MCAttribute annotation;
+    private ExecutableElement e;
+    private boolean required;
 
-	private String xsdType;
-	private boolean isEnum;
-	private boolean isBeanReference;
+    private String xsdType;
+    private boolean isEnum;
+    private boolean isBeanReference;
     private List<String> enumValues;
 
     public List<String> getEnumValues() {
@@ -40,103 +40,111 @@ public class AttributeInfo extends AbstractJavadocedInfo {
     }
 
     public String getXMLName() {
-		if (getAnnotation().attributeName().isEmpty())
-			return getSpringName();
-		else
-			return getAnnotation().attributeName();
-	}
+        if (getAnnotation().attributeName().isEmpty())
+            return getSpringName();
+        else
+            return getAnnotation().attributeName();
+    }
 
-	public String getSpringName() {
-		String s = getE().getSimpleName().toString();
-		if (!s.startsWith("set"))
-			throw new ProcessingException("Setter method name is supposed to start with 'set'.", getE());
-		s = s.substring(3);
-		return AnnotUtils.dejavaify(s);
-	}
+    public String getSpringName() {
+        String s = getE().getSimpleName().toString();
+        if (!s.startsWith("set"))
+            throw new ProcessingException("Setter method name is supposed to start with 'set'.", getE());
+        s = s.substring(3);
+        return AnnotUtils.dejavaify(s);
+    }
 
     public String getSchemaType(Types typeUtils) {
         return switch (getXSDType(typeUtils)) {
-            case "spel_number", "xsd:double", "xsd:float", "xsd:decimal"   -> "number";
-            case "spel_boolean","xsd:boolean" -> "boolean";
+            case "spel_number", "xsd:double", "xsd:float", "xsd:decimal" -> "number";
+            case "spel_boolean", "xsd:boolean" -> "boolean";
             case "xsd:int", "xsd:integer", "xsd:long" -> "integer";
             default -> "string";
         };
     }
 
-	public String getXSDType(Types typeUtils) {
-		analyze(typeUtils);
-		return xsdType;
-	}
+    public String getXSDType(Types typeUtils) {
+        analyze(typeUtils);
+        return xsdType;
+    }
 
-	public boolean isEnum(Types typeUtils) {
-		analyze(typeUtils);
-		return isEnum;
-	}
+    public boolean isEnum(Types typeUtils) {
+        analyze(typeUtils);
+        return isEnum;
+    }
 
-	public boolean isBeanReference(Types typeUtils) {
-		analyze(typeUtils);
-		return isBeanReference;
-	}
+    public boolean isBeanReference(Types typeUtils) {
+        analyze(typeUtils);
+        return isBeanReference;
+    }
 
-	private void analyze(Types typeUtils) {
-		if (xsdType != null) // already analyzed?
-			return;
+    /**
+     * Sets as side effect instance variables e.g. xsdType, isEnum, isBeanReference.
+     * @param typeUtils
+     */
+    private void analyze(Types typeUtils) {
+        if (xsdType != null) // already analyzed?
+            return;
 
-		if (getE().getParameters().size() != 1)
-			throw new ProcessingException("Setter is supposed to have 1 parameter.", getE());
-		VariableElement ve = getE().getParameters().getFirst();
+        if (getE().getParameters().size() != 1)
+            throw new ProcessingException("Setter is supposed to have 1 parameter.", getE());
 
-		switch (ve.asType().getKind()) {
+        VariableElement ve = getE().getParameters().getFirst();
+
+        switch (ve.asType().getKind()) {
             case INT, LONG:
-			xsdType = "spel_number";
-			return;
-		case DOUBLE:
-			xsdType = "xsd:double";
-			return;
-		case BOOLEAN:
-			xsdType = "spel_boolean";
-			return;
-		case DECLARED:
-			TypeElement e = (TypeElement) typeUtils.asElement(ve.asType());
-
-            if (ENUM.equals(e.getKind())) {
-                isEnum = true;
-                enumValues = getEnumValues(e);
-                xsdType = "xsd:string"; // or enumeration restriction
+                xsdType = "spel_number";
                 return;
-            }
+            case DOUBLE:
+                xsdType =  "xsd:double";
+                return;
+            case FLOAT:
+                xsdType = "xsd:float";
+                return;
+            case BOOLEAN:
+                xsdType = "spel_boolean";
+                return;
+            case DECLARED:
+                TypeElement e = (TypeElement) typeUtils.asElement(ve.asType());
 
-			if (e.getQualifiedName().toString().equals("java.lang.String")) {
-				xsdType = "xsd:string";
-				return;
-			}
+                if (ENUM.equals(e.getKind())) {
+                    isEnum = true;
+                    enumValues = getEnumValues(e);
+                    xsdType = "xsd:string"; // or enumeration restriction
+                    return;
+                }
 
-			if (e.getSuperclass().getKind() == DECLARED) {
-				TypeElement superClass = ((TypeElement)typeUtils.asElement(e.getSuperclass()));
-				if (superClass.getQualifiedName().toString().equals("java.lang.Enum")) {
-					isEnum = true;
-					xsdType = "xsd:string"; // TODO: restriction, but be carefull about Spring EL usage, for example "#{config.XXX}"
-					/*
-					 *	<xsd:attribute name=\"target\" use=\"optional\" default=\"body\">\r\n" +
-					 *		<xsd:simpleType>\r\n" +
-					 *			<xsd:restriction base=\"xsd:string\">\r\n" +
-					 *				<xsd:enumeration value=\"body\" />\r\n" +
-					 *				<xsd:enumeration value=\"header\" />\r\n" +
-					 *			</xsd:restriction>\r\n" +
-					 *		</xsd:simpleType>\r\n" +
-					 *	</xsd:attribute>\r\n"
-					 */
-					return;
-				}
-			}
+                if (e.getQualifiedName().toString().equals("java.lang.String")) {
+                    xsdType = "xsd:string";
+                    return;
+                }
 
-			isBeanReference = true;
-			xsdType = "xsd:string";
-			return;
-		default:
-			throw new ProcessingException("Not implemented: XSD type for " + ve.asType().getKind().toString(), this.getE());
-		}
-	}
+                if (e.getSuperclass().getKind() == DECLARED) {
+                    TypeElement superClass = ((TypeElement) typeUtils.asElement(e.getSuperclass()));
+                    if (superClass.getQualifiedName().toString().equals("java.lang.Enum")) {
+                        isEnum = true;
+                        xsdType = "xsd:string"; // TODO: restriction, but be carefull about Spring EL usage, for example "#{config.XXX}"
+                        /*
+                         *	<xsd:attribute name=\"target\" use=\"optional\" default=\"body\">\r\n" +
+                         *		<xsd:simpleType>\r\n" +
+                         *			<xsd:restriction base=\"xsd:string\">\r\n" +
+                         *				<xsd:enumeration value=\"body\" />\r\n" +
+                         *				<xsd:enumeration value=\"header\" />\r\n" +
+                         *			</xsd:restriction>\r\n" +
+                         *		</xsd:simpleType>\r\n" +
+                         *	</xsd:attribute>\r\n"
+                         */
+                        return;
+                    }
+                }
+
+                isBeanReference = true;
+                xsdType = "xsd:string";
+                return;
+            default:
+                throw new ProcessingException("Not implemented: XSD type for " + ve.asType().getKind().toString(), this.getE());
+        }
+    }
 
     private static List<String> getEnumValues(TypeElement te) {
         return te.getEnclosedElements().stream()
@@ -146,27 +154,27 @@ public class AttributeInfo extends AbstractJavadocedInfo {
     }
 
     public MCAttribute getAnnotation() {
-		return annotation;
-	}
+        return annotation;
+    }
 
-	public void setAnnotation(MCAttribute annotation) {
-		this.annotation = annotation;
-	}
+    public void setAnnotation(MCAttribute annotation) {
+        this.annotation = annotation;
+    }
 
-	public ExecutableElement getE() {
-		return e;
-	}
+    public ExecutableElement getE() {
+        return e;
+    }
 
-	public void setE(ExecutableElement e) {
-		this.e = e;
-		setDocedE(e);
-	}
+    public void setE(ExecutableElement e) {
+        this.e = e;
+        setDocedE(e);
+    }
 
-	public boolean isRequired() {
-		return required;
-	}
+    public boolean isRequired() {
+        return required;
+    }
 
-	public void setRequired(boolean required) {
-		this.required = required;
-	}
+    public void setRequired(boolean required) {
+        this.required = required;
+    }
 }
