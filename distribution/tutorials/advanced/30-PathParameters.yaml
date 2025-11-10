@@ -1,0 +1,18 @@
+# yaml-language-server: $schema=../../../core/target/classes/com/predic8/membrane/core/config/json/membrane.schema.json
+#
+# Membrane Tutorial: Path Parameters
+#
+# curl localhost:2000/customer/7/account/55
+#
+
+spec:
+  port: 2000
+  path:
+    uri: /customer/{id}/account/{accountNumber}
+  flow:
+    - template:
+        src: |
+          Customer: ${pathParam.id}
+          Account: ${pathParam.accountNumber}
+    - return:
+        statusCode: 200

@@ -30,6 +30,7 @@ import java.util.*;
 import static com.google.api.client.util.Types.newInstance;
 import static com.predic8.membrane.core.config.spring.k8s.YamlLoader.readString;
 import static com.predic8.membrane.core.kubernetes.ParserHelper.*;
+import static java.util.Locale.ROOT;
 import static org.springframework.core.annotation.AnnotationUtils.findAnnotation;
 
 public class GenericYamlParser {
@@ -135,12 +136,18 @@ public class GenericYamlParser {
     }
 
     @SuppressWarnings({"rawtypes", "unchecked"})
-    private static Object resolveSetterValue(Class<?> wanted, Method setter, String context, Iterator<Event> events, BeanRegistry registry, String key, Class clazz2, Event event) {
+    private static Object resolveSetterValue(Class<?> wanted, Method setter, String context, Iterator<Event> events, BeanRegistry registry, String key, Class clazz2, Event event) throws WrongEnumConstantException {
         if (wanted.equals(List.class) || wanted.equals(Collection.class)) {
             return parseListIncludingStartEvent(context, events, registry);
         }
         if (wanted.isEnum()) {
-           return Enum.valueOf((Class<Enum>) wanted, readString(events).toUpperCase(Locale.ROOT));
+            String value = readString(events).toUpperCase(ROOT);
+            try {
+                return Enum.valueOf((Class<Enum>) wanted, value);
+            }
+            catch (IllegalArgumentException e) {
+                throw new WrongEnumConstantException(wanted, value);
+            }
         }
         if (wanted.equals(String.class)) {
             return readString(events);

@@ -17,7 +17,7 @@ import com.fasterxml.jackson.databind.node.*;
 
 import java.util.*;
 
-import static com.predic8.membrane.annot.generator.kubernetes.model.SchemaFactory.OBJECT;
+import static com.predic8.membrane.annot.generator.kubernetes.model.SchemaFactory.*;
 
 public class SchemaObject extends AbstractSchema<SchemaObject> {
 
@@ -54,20 +54,39 @@ public class SchemaObject extends AbstractSchema<SchemaObject> {
     }
 
     private void jsonProperties(ObjectNode node) {
+        if (properties.isEmpty())
+            return;
+
         List<String> required = new ArrayList<>();
-        if (!properties.isEmpty()) {
-            ObjectNode propertiesNode = jnf.objectNode();
-            for (AbstractSchema property : properties) {
-                propertiesNode.set(property.getName(), property.json(jnf.objectNode()));
-                if (property.isRequired())
-                    required.add(property.getName());
+
+        ObjectNode propertiesNode = jnf.objectNode();
+        for (AbstractSchema property : properties) {
+
+            ObjectNode json = property.json(jnf.objectNode());
+            if (property.enumValues != null && !property.enumValues.isEmpty()) {
+                json.put("enum", getEnumNode(property));
             }
-            if (!required.isEmpty()) {
-                var l = jnf.arrayNode();
-                required.forEach(l::add);
-                node.set("required",l);
-            }
-            node.set("properties", propertiesNode);
+
+            propertiesNode.set(property.getName(), json);
+            if (property.isRequired())
+                required.add(property.getName());
         }
+        if (!required.isEmpty()) {
+            var l = jnf.arrayNode();
+            required.forEach(l::add);
+            node.set("required", l);
+        }
+        node.set("properties", propertiesNode);
+    }
+
+    private static ArrayNode getEnumNode(AbstractSchema property) {
+        var enumValues = jnf.arrayNode();
+        property.enumValues.forEach(v -> enumValues.add((String) v));
+        return enumValues;
+    }
+
+    @Override
+    public boolean isObject() {
+        return true;
     }
 }

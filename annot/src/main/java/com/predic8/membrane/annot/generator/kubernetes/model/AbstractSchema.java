@@ -2,6 +2,8 @@ package com.predic8.membrane.annot.generator.kubernetes.model;
 
 import com.fasterxml.jackson.databind.node.*;
 
+import java.util.*;
+
 public abstract class AbstractSchema<T extends AbstractSchema<T>> implements ISchema {
 
     protected static final JsonNodeFactory jnf = JsonNodeFactory.instance;
@@ -9,6 +11,7 @@ public abstract class AbstractSchema<T extends AbstractSchema<T>> implements ISc
     protected String name;
     protected String type;
     protected String description;
+    protected List<String> enumValues;
 
     protected boolean required = false;
 
@@ -50,6 +53,11 @@ public abstract class AbstractSchema<T extends AbstractSchema<T>> implements ISc
 
     public T type(String type) {
         this.type = type;
+        return self();
+    }
+
+    public T enumValues(List<String> enumValues) {
+        this.enumValues = enumValues;
         return self();
     }
 

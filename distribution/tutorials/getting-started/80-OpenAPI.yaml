@@ -1,0 +1,16 @@
+# yaml-language-server: $schema=../../core/target/classes/com/predic8/membrane/core/config/json/membrane.schema.json
+#
+# Membrane Tutorial: OpenAPI Deplyment
+#
+# 1.) Open the api-docs overview in the browser.
+#     http://localhost:2000/api-docs
+# 2.) Click on Fruit Shop API to open the Swagger UI.
+# 3.) Try out the API in the Swagger UI.
+# 4.) Call the API with curl.
+# curl http://localhost:2000/shop/v2/products
+
+spec:
+  port: 2000
+  specs:
+    - openapi:
+        location: ../../distribution/conf/fruitshop-api.yml # TODO

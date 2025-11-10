@@ -20,12 +20,32 @@
 #   http://localhost:9000
 #   Click on the API `Message Flow Logging` and take a look at the diagram
 
+metadata:
+  name: Message Flow Logging
 spec:
-  port: 2000
+  port: 2001
   flow:
-    # log is executed at the request and response flow
-    - log:
-        message: Path ${path} Status ${statusCode}
+    - request: # executed at the request flow from top to bottom
+        - log:
+            message: 1
+        - log:
+            message: 2 Path ${path}
+        - log:
+            message: 3
+    - response: # executed at the response flow from bottom to top
+        - log:
+            message: 6
+        - log:
+            message: 5 Status ${statusCode}
+        - log:
+            message: 4
   target:
     url: https://api.predic8.de
 
+---
+# Admin Console
+spec:
+  port: 9000
+  flow:
+    - adminConsole:
+        readOnly: true

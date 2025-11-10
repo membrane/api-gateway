@@ -26,4 +26,9 @@ public class SchemaArray extends AbstractSchema<SchemaArray> {
         }
         return node;
     }
+
+    @Override
+    public boolean isObject() {
+        return false;
+    }
 }

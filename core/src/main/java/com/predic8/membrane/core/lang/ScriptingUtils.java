@@ -53,8 +53,12 @@ public class ScriptingUtils {
         params.put("exc", exc);
         params.put("exchange", exc);
         params.put("flow", flow);
-        params.put("method", exc.getRequest().getMethod());
-        params.put("path", exc.getRequest().getUri());
+
+        // Null check is needed cause there are tests that don't set a request
+        if (exc.getRequest() != null) {
+            params.put("method", exc.getRequest().getMethod());
+            params.put("path", exc.getRequest().getUri());
+        }
 
         if (flow == REQUEST) {
             try {

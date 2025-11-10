@@ -31,8 +31,8 @@ spec:
                   {
                     "product": "<%= item.article %>",
                     "quantity": <%= item.quantity %>,
-                    "amount": <%= item.quantity * item.price %>,
-                  }
+                    "amount": <%= item.quantity * item.price %>
+                  },
                   <% } %>
                 ]
               }

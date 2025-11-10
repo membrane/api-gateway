@@ -4,7 +4,7 @@
 #
 #
 # Basic
-# To get a basic understanding have a look at the following tutorials:
+# To get a basic understanding take a look at the following tutorials:
 #
 # Advanced:
 #
