@@ -19,6 +19,8 @@ import javax.tools.*;
 import java.io.*;
 import java.util.*;
 
+import static org.slf4j.LoggerFactory.getLogger;
+
 /**
  * This implementation of JavaFileManager can either proxy the standard JavaFileManager
  * (<code>USE_IN_MEM=false</code>) logging API calls but modifying the existing file system,
@@ -35,7 +37,7 @@ public class LoggingInMemoryJavaFileManager implements JavaFileManager {
      */
     private static final boolean USE_IN_MEM = true;
 
-    private static final Logger log = org.slf4j.LoggerFactory.getLogger(LoggingInMemoryJavaFileManager.class);
+    private static final Logger log = getLogger(LoggingInMemoryJavaFileManager.class);
 
     private final JavaFileManager fm;
 
