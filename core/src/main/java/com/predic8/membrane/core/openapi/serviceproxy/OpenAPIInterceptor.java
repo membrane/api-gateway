@@ -18,6 +18,7 @@ package com.predic8.membrane.core.openapi.serviceproxy;
 
 import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.ReadingBodyException;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.openapi.*;
 import com.predic8.membrane.core.openapi.validators.*;
@@ -116,6 +117,14 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
                     .detail(detail)
                     .exception(e)
                     .buildAndSetResponse(exc);
+            return RETURN;
+        } catch (ReadingBodyException e) {
+            user(router.isProduction(), getDisplayName())
+                    .addSubSee("reading-body")
+                    .flow(REQUEST)
+                    .detail("Connection problem: %s . Maybe the peer or the network closed the connection?".formatted(e.getMessage()))
+                    .buildAndSetResponse(exc);
+
             return RETURN;
         } catch (Throwable t /* On purpose! Catch absolutely all */) {
             final String LOG_MESSAGE = "Message could not be validated against OpenAPI cause of an error during validation. Please check the OpenAPI with title %s.";
