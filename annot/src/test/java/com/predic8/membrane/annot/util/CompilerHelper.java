@@ -71,6 +71,7 @@ public class CompilerHelper {
      * Parse the given XML Spring config.
      */
     public static void parse(CompilerResult cr, String xmlSpringConfig) {
+        ClassLoader originalClassloader = Thread.currentThread().getContextClassLoader();
         try {
             InMemoryClassLoader loaderA = (InMemoryClassLoader) cr.classLoader();
             loaderA.defineOverlay(new OverlayInMemoryFile("/demo.xml", xmlSpringConfig));
@@ -80,6 +81,8 @@ public class CompilerHelper {
             c.getConstructor(String.class).newInstance("/demo.xml");
         } catch (Exception e) {
             throw new RuntimeException(e);
+        } finally {
+            Thread.currentThread().setContextClassLoader(originalClassloader);
         }
     }
 
@@ -125,6 +128,8 @@ public class CompilerHelper {
         String[] parts;
         while(true) {
             parts = content.split("\n", 2);
+            if (parts.length != 2)
+                throw new RuntimeException("Invalid resource file: " + content + ". The resource is expected to have the format 'resource <path>\n<content>'.");
             if (!parts[0].isEmpty())
                 break;
             content = parts[1];

@@ -73,14 +73,13 @@ class InMemoryClassLoader extends ClassLoader {
         byte[] bytes = data.content.get(uri);
         if (bytes == null) {
             if (!delegateToRootClassLoader(name)) {
-                java.io.InputStream is = this.getClass().getResourceAsStream(uri.toString().replaceAll("string://", ""));
-                if (is != null) {
-                    try {
+                try (java.io.InputStream is = this.getClass().getResourceAsStream(uri.toString().replaceAll("string://", ""))) {
+                    if (is != null) {
                         byte[] buffer = copyToByteArray(is);
                         return defineClass(name, buffer, 0, buffer.length);
-                    } catch (IOException e) {
-                        throw new RuntimeException(e);
                     }
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
                 }
             }
             return super.findClass(name);

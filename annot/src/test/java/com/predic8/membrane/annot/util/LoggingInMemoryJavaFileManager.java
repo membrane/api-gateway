@@ -58,7 +58,7 @@ public class LoggingInMemoryJavaFileManager implements JavaFileManager {
 
     @Override
     public Iterable<JavaFileObject> list(Location location, String packageName, Set<JavaFileObject.Kind> kinds, boolean recurse) throws IOException {
-        StringBuilder l = new StringBuilder("list(" + location + ", " + packageName + ", " + kinds + ", " + recurse + ") -> ");
+        StringBuilder l = new StringBuilder("list(%s, %s, %s, %s) -> ".formatted(location, packageName, kinds, recurse));
         Iterable<JavaFileObject> res = fm.list(location, packageName, kinds, recurse);
         l.append("[");
         for (JavaFileObject re : res) {
@@ -94,7 +94,7 @@ public class LoggingInMemoryJavaFileManager implements JavaFileManager {
 
     @Override
     public JavaFileObject getJavaFileForInput(Location location, String className, JavaFileObject.Kind kind) throws IOException {
-        String l = ("getJavaFileForInput(" + location + ", " + className + ", " + kind + ") -> ");
+        String l = "getJavaFileForInput(%s, %s, %s) -> ".formatted(location, className, kind);
         JavaFileObject res = fm.getJavaFileForInput(location, className, kind);
         log.debug("{}{}", l, res);
         return res;
@@ -102,7 +102,7 @@ public class LoggingInMemoryJavaFileManager implements JavaFileManager {
 
     @Override
     public JavaFileObject getJavaFileForOutput(Location location, String className, JavaFileObject.Kind kind, FileObject sibling) throws IOException {
-        String l = ("getJavaFileForOutput(" + location + ", " + className + ", " + kind + ", " + sibling + ") -> ");
+        String l = "getJavaFileForOutput(%s, %s, %s, %s) -> ".formatted(location, className, kind, sibling);
         JavaFileObject res = USE_IN_MEM ?
                 new InMemoryJavaFileObject(data, className.replace('.', '/') + kind.extension, kind) :
                 new LoggingJavaFileObject(fm.getJavaFileForOutput(location, className, kind, sibling));
@@ -112,7 +112,7 @@ public class LoggingInMemoryJavaFileManager implements JavaFileManager {
 
     @Override
     public FileObject getFileForInput(Location location, String packageName, String relativeName) throws IOException {
-        String l = ("getFileForInput(" + location + ", " + packageName + ", " + relativeName + ") -> ");
+        String l = "getFileForInput(%s, %s, %s) -> ".formatted(location, packageName, relativeName);
         FileObject res = fm.getFileForInput(location, packageName, relativeName);
         log.debug("{}{}", l, res);
         return res;
@@ -120,7 +120,7 @@ public class LoggingInMemoryJavaFileManager implements JavaFileManager {
 
     @Override
     public FileObject getFileForOutput(Location location, String packageName, String relativeName, FileObject sibling) throws IOException {
-        String l = ("getFileForOutput(" + location + ", " + packageName + ", " + relativeName + ", " + sibling + ") -> ");
+        String l = "getFileForOutput(%s, %s, %s, %s) -> ".formatted(location, packageName, relativeName, sibling);
         String path = packageName.isEmpty() ? "" : packageName.replace('.', '/') + "/";
         FileObject res = USE_IN_MEM ? new InMemoryFileObject(data, path + relativeName) :
                 new LoggingFileObject(fm.getFileForOutput(location, packageName, relativeName, sibling));
