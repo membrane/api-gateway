@@ -18,7 +18,7 @@
         <dependency>
             <groupId>org.membrane-soa</groupId>
             <artifactId>service-proxy-core</artifactId>
-            <version>6.3.7-SNAPSHOT</version>
+            <version>6.3.10-SNAPSHOT</version>
         </dependency>
     </dependencies>
 
