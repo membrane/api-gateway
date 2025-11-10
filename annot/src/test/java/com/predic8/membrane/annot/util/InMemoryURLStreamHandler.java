@@ -17,7 +17,7 @@ public class InMemoryURLStreamHandler extends URLStreamHandler {
     private static InMemoryData data, overlay;
 
     static {
-        URL.setURLStreamHandlerFactory(protocol -> new InMemoryURLStreamHandler());
+        URL.setURLStreamHandlerFactory(protocol -> "string".equals(protocol) ? new InMemoryURLStreamHandler() : null);
     }
 
     public static void activate(InMemoryData data) {
