@@ -19,6 +19,7 @@ import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.util.*;
+import groovy.text.*;
 import org.apache.commons.io.*;
 import org.slf4j.*;
 
@@ -97,7 +98,7 @@ public abstract class AbstractTemplateInterceptor extends AbstractInterceptor {
      * @param exchange
      * @param flow
      */
-    protected final void process(Exchange exchange, Flow flow) {
+    protected final void process(Exchange exchange, Flow flow) throws TemplateExecutionException {
         Message msg = exchange.getMessage(flow);
         msg.setBodyContent(prettify(getContent(exchange,flow)));
         msg.getHeader().setContentType(contentType);

@@ -72,8 +72,10 @@ public class OpenAPIPublisherInterceptor extends AbstractInterceptor {
     private Template swaggerUiHtmlTemplate;
     private Template apiOverviewHtmlTemplate;
 
-    public OpenAPIPublisherInterceptor() {
-    }
+    /**
+     * Needed for instantiation from Spring
+     */
+    public OpenAPIPublisherInterceptor() {}
 
     public OpenAPIPublisherInterceptor(Map<String, OpenAPIRecord> apis) {
         this.apis = apis;
@@ -189,7 +191,7 @@ public class OpenAPIPublisherInterceptor extends AbstractInterceptor {
         // /api-doc/ui/(.*)
         String id = m.group(1);
 
-        log.info("OpenAPI with id {} requested", id);
+        log.debug("OpenAPI with id {} requested", id);
 
         OpenAPIRecord record = apis.get(id);
         if (record == null) {

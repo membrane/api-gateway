@@ -24,6 +24,9 @@ import java.util.*;
 
 import static com.predic8.membrane.core.http.Request.*;
 import static com.predic8.membrane.core.lang.ExchangeExpression.Language.*;
+import static com.predic8.membrane.core.lang.spel.SpELExchangeExpression.toBoolean;
+import static java.lang.Boolean.FALSE;
+import static java.lang.Boolean.TRUE;
 import static org.junit.jupiter.api.Assertions.*;
 
 @SuppressWarnings("rawtypes")
@@ -180,5 +183,23 @@ class SpELExchangeExpressionTest extends AbstractExchangeExpressionTest {
     void pathParameters() {
         assertEquals("7", evalString("pathParam['fid']"));
         assertEquals("9", evalString("pathParam['gid']"));
+    }
+
+    @Test
+    void booleanConversion() {
+        assertEquals(TRUE, toBoolean("true"));
+        assertEquals(TRUE, toBoolean("TRUE"));
+        assertEquals(FALSE, toBoolean("false"));
+        assertEquals(FALSE, toBoolean("False"));
+        assertEquals(FALSE, toBoolean(""));
+        assertEquals(FALSE, toBoolean(null));
+        assertEquals(TRUE, toBoolean("abc"));
+        assertEquals(FALSE, toBoolean("0"));
+        assertEquals(TRUE, toBoolean("1"));
+        assertEquals(TRUE, toBoolean("yes"));
+        assertEquals(FALSE, toBoolean("no"));
+
+        assertEquals(FALSE, toBoolean(Boolean.FALSE));
+        assertEquals(TRUE, toBoolean(TRUE));
     }
 }

@@ -1,0 +1,24 @@
+# yaml-language-server: $schema=../../core/target/classes/com/predic8/membrane/core/config/json/membrane.schema.json
+#
+# Membrane Tutorial: SetHeader
+#
+# 1.) Try the requests:
+#
+#       curl -v http://localhost:2000
+#       curl -v -X POST http://localhost:2000
+#
+#     Check the response header 'X-Powered-By' and 'X-Method'.
+#
+
+spec:
+  port: 2000
+  flow:
+    - response:
+        - setHeader:
+            name: X-Powered-By
+            value: Membrane # Static value
+        - setHeader:
+            name: X-Method
+            value: ${method} # Variable or computed value
+    - return:
+        statusCode: 200
