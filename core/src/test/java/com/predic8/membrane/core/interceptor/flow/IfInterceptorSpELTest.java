@@ -117,7 +117,7 @@ public class IfInterceptorSpELTest extends ConditionalEvaluationTestContext {
         verify(createMock(exc), never()).handleRequest(exc);
     }
 
-    private static @NotNull Interceptor createMock(Exchange exc) throws Exception {
+    private static @NotNull Interceptor createMock(Exchange exc) {
         Interceptor mi = mock(Interceptor.class);
         when(mi.handlesRequests()).thenReturn(true);
         IfInterceptor i = new IfInterceptor();
