@@ -135,7 +135,7 @@ public class K8sJsonSchemaGenerator extends AbstractK8sGenerator {
         for (ChildElementInfo cei : i.getChildElementSpecs()) {
             boolean isList = cei.isList();
 
-            AbstractSchema parent2 = so;
+            AbstractSchema<?> parent2 = so;
 
             if (isList) {
                 SchemaObject items = object("items").additionalProperties(cei.getAnnotation().allowForeign());

@@ -72,9 +72,6 @@ public class OpenAPIPublisherInterceptor extends AbstractInterceptor {
     private Template swaggerUiHtmlTemplate;
     private Template apiOverviewHtmlTemplate;
 
-    public OpenAPIPublisherInterceptor() {
-    }
-
     public OpenAPIPublisherInterceptor(Map<String, OpenAPIRecord> apis) {
         this.apis = apis;
     }
