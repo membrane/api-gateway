@@ -1,4 +1,4 @@
-FROM openjdk:21-bookworm
+FROM eclipse-temurin:25-jdk
 LABEL authors="info@predic8.de"
 ARG USERNAME=membrane
 ARG USER_UID=1000
