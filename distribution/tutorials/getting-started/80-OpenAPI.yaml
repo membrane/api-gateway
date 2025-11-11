@@ -8,11 +8,13 @@
 # 3.) Try out the API in the Swagger UI.
 # 4.) Call the API with curl.
 # curl http://localhost:2000/shop/v2/products
+#
+
 
 spec:
   port: 2000
   specs:
     - openapi:
-        location: ../../distribution/conf/fruitshop-api.yml # TODO
-    - openapi:
         location: https://api.predic8.de/api-docs/dlp-field-information-api-v1-0-0
+    - openapi:
+        location: ../../distribution/conf/fruitshdop-api.yml # TODO

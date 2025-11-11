@@ -127,15 +127,16 @@ public class SpELExchangeExpression extends AbstractExchangeExpression {
         return o.toString();
     }
 
-    private static boolean toBoolean(Object o) {
+    static boolean toBoolean(Object o) {
         if (o == null) {
             return FALSE;
         }
         switch (o) {
             case String s: {
-                if (s.isEmpty())
-                    return FALSE;
-                return Boolean.parseBoolean(s);
+                return switch (s.toLowerCase()) {
+                    case "", "false","no","0" -> FALSE;
+                    default -> TRUE;
+                };
             }
             case SpELLablePropertyAware spa:
                 return spa.getValue() != null;

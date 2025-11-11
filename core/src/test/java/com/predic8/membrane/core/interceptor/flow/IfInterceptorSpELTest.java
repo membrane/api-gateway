@@ -44,7 +44,7 @@ public class IfInterceptorSpELTest extends ConditionalEvaluationTestContext {
     }
 
     @Test
-    void simpleRequestTrue() throws Exception {
+    void requestTrue() throws Exception {
         assertEquals(CONTINUE,eval("true", new Builder()));
     }
 

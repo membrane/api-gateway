@@ -1,0 +1,20 @@
+# yaml-language-server: $schema=../../core/target/classes/com/predic8/membrane/core/config/json/membrane.schema.json
+#
+# Membrane Tutorial: OpenAPI Validation
+#
+# 2.) Try to create a new product with a negative price.
+# curl "http://localhost:2000/shop/v2/products" -H 'Content-Type: application/json' -d '{ "name": "Figs", "price": -2.7}'
+#
+# 3.) Take a look at the validation error response
+#
+# See also:
+#
+
+spec:
+  port: 2000
+  specs:
+    - openapi:
+        location: ../../distribution/conf/fruitshop-api.yml # TODO
+        validateRequests: true
+        validateResponses: true
+        validationDetails: true

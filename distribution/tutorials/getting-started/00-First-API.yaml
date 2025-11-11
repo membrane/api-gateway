@@ -2,29 +2,32 @@
 #
 # Membrane Tutorial: First API
 #
-# This example starts a simple API that forwards all requests from your computer
+# This example starts a simple API that forwards requests from your machine
 # to a public API.
 #
 # 1) Start Membrane:
-#    Open a terminal in the folder containing this file, then run:
+#    Open a terminal in the folder that contains this file and run:
 #
 #    Linux/Mac:
 #      membrane.sh -c 00-First-API.yaml
 #    Windows:
 #      membrane.bat -c 00-First-API.yaml
 #
-#    Membrane should log that the API is running.
+#    Membrane will print a log message indicating that the API is running.
 #
 # 2) Test:
-#    Open http://localhost:2000 in your browser, or run:
+#    Open http://localhost:2000 in your browser or run:
+#
 #      curl http://localhost:2000
 #
 #    You should see the list of public APIs from api.predic8.de.
 #
-# Troubleshooting:
-#    Verify that your machine can reach the public API:
-#      curl https://api.predic8.de
+#  3) Stop Membrane:
 #
+# Troubleshooting:
+#    Check if your machine can reach the public API:
+#
+#      curl https://api.predic8.de
 
 spec:
   port: 2000 # Listing port

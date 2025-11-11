@@ -1,0 +1,51 @@
+# yaml-language-server: $schema=../../core/target/classes/com/predic8/membrane/core/config/json/membrane.schema.json
+#
+# Membrane Tutorial: Groovy Scripting
+#
+#
+# 2.) Try the endpoints:
+# curl localhost:2000/groovy
+# curl localhost:2000/random
+# curl localhost:2000/response
+spec:
+  port: 2000
+  path:
+    uri: /groovy
+  flow:
+    - groovy:
+        src: |
+          println "I'm executed in the ${flow} flow"
+    - return:
+        statusCode: 200
+
+---
+
+spec:
+  port: 2000
+  path:
+    uri: /random
+  flow:
+    - groovy:
+        src: |
+          sites = ["https://api.predic8.de","https://httpbin.org/json","https://bored-api.appbrewery.com/random"]
+          Collections.shuffle sites
+          exchange.setDestinations(sites)
+
+---
+spec:
+  port: 2000
+  path:
+    uri: /response
+  flow:
+    - groovy:
+        src: |
+          Response.ok()
+            .contentType("application/json")
+            .header("X-Foo", "bar")
+            .body("""
+              {
+                "success": true
+              }
+              """)
+          .build()
+

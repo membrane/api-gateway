@@ -72,6 +72,11 @@ public class OpenAPIPublisherInterceptor extends AbstractInterceptor {
     private Template swaggerUiHtmlTemplate;
     private Template apiOverviewHtmlTemplate;
 
+    /**
+     * Needed for instanciation from Spring
+     */
+    public OpenAPIPublisherInterceptor() {}
+
     public OpenAPIPublisherInterceptor(Map<String, OpenAPIRecord> apis) {
         this.apis = apis;
     }
