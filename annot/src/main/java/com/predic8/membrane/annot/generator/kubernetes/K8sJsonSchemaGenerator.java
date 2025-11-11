@@ -24,7 +24,6 @@ import java.io.*;
 import java.util.*;
 
 import static com.predic8.membrane.annot.generator.kubernetes.model.SchemaFactory.*;
-import static com.predic8.membrane.annot.generator.kubernetes.model.SchemaFactory.schema;
 
 /**
  * Generates JSON Schema (draft 2019-09/2020-12) to validate Kubernetes CustomResourceDefinitions.
@@ -69,21 +68,21 @@ public class K8sJsonSchemaGenerator extends AbstractK8sGenerator {
         collectDefinitions(m, main, i, schema);
         collectProperties(m, main, i, schema);
 
-        w.append( writer.writeValueAsString(schema.json(JsonNodeFactory.instance.objectNode())));
+        w.append(writer.writeValueAsString(schema.json(JsonNodeFactory.instance.objectNode())));
     }
 
     private void collectAttributes(ElementInfo i, SchemaObject so) {
         i.getAis().stream()
                 .filter(ai -> !ai.getXMLName().equals("id"))
                 .forEach(ai -> {
-                    SchemaObject sop = object(ai.getXMLName());
-                    sop.type(ai.getSchemaType(processingEnv.getTypeUtils()));
-                    sop.required(ai.isRequired());
-                    so.property(sop);
+                    AbstractSchema<?> schema = SchemaFactory.from(ai.getSchemaType(processingEnv.getTypeUtils()));
+                    schema.name(ai.getXMLName());
+                    schema.required(ai.isRequired());
+                    so.property(schema);
                 });
     }
 
-    private void collectProperties(Model m, MainInfo main, ElementInfo i, AbstractSchema schema) {
+    private void collectProperties(Model m, MainInfo main, ElementInfo i, AbstractSchema<?> schema) {
         if (schema instanceof SchemaObject sop) {
             collectAttributes(i, sop);
             collectTextContent(i, sop);
@@ -113,7 +112,7 @@ public class K8sJsonSchemaGenerator extends AbstractK8sGenerator {
 
         for (Map.Entry<String, ElementInfo> entry : all.entrySet()) {
             boolean noEnvelope = entry.getValue().getAnnotation().noEnvelope();
-            AbstractSchema as;
+            AbstractSchema<?> as;
             if (noEnvelope) {
                 as = array(entry.getKey());
             } else {
@@ -132,14 +131,14 @@ public class K8sJsonSchemaGenerator extends AbstractK8sGenerator {
         so.property(string(i.getTci().getPropertyName()));
     }
 
-    private void collectChildElements(Model m, MainInfo main, ElementInfo i, AbstractSchema so) {
+    private void collectChildElements(Model m, MainInfo main, ElementInfo i, AbstractSchema<?> so) {
         for (ChildElementInfo cei : i.getChildElementSpecs()) {
             boolean isList = cei.isList();
 
-            AbstractSchema parent2 = so;
+            AbstractSchema<?> parent2 = so;
 
             if (isList) {
-                SchemaObject items =  object("items").additionalProperties( cei.getAnnotation().allowForeign());
+                SchemaObject items = object("items").additionalProperties(cei.getAnnotation().allowForeign());
 
                 if (i.getAnnotation().noEnvelope()) {
                     if (so instanceof SchemaArray sa)
@@ -171,7 +170,7 @@ public class K8sJsonSchemaGenerator extends AbstractK8sGenerator {
                 //sop.setRequired(cei.isRequired());
                 // TODO only one is required, not all
                 sop.ref("#/$defs/" + ei.getXSDTypeName(m));
-                ((SchemaObject)parent2).property(sop);
+                ((SchemaObject) parent2).property(sop);
             }
         }
     }

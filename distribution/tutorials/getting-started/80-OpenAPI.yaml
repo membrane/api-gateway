@@ -1,0 +1,26 @@
+# yaml-language-server: $schema=../../core/target/classes/com/predic8/membrane/core/config/json/membrane.schema.json
+#
+# Membrane Tutorial: OpenAPI
+#
+# 1.) Start this configuration.
+#
+# 2.) Open /api-docs in the browser:
+#
+#       http://localhost:2000/api-docs
+#
+# 3.) Click on 'Fruit Shop API' to open the Swagger UI.
+#
+# 4.) Try out the API in the Swagger UI.
+#
+# 5.) Call the APIs:
+#
+#       curl http://localhost:2000/shop/v2/products
+#       curl http://localhost:2000/dlp/fields/city
+
+spec:
+  port: 2000
+  specs:
+    - openapi:
+        location: https://api.predic8.de/api-docs/dlp-field-information-api-v1-0-0
+    - openapi:
+        location: ../../conf/fruitshop-api.yml

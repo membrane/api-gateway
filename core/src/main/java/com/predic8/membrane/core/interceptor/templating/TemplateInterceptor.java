@@ -15,6 +15,7 @@
 package com.predic8.membrane.core.interceptor.templating;
 
 import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.util.*;
@@ -74,8 +75,34 @@ public class TemplateInterceptor extends AbstractTemplateInterceptor {
                     .stacktrace(false)
                     .buildAndSetResponse(exc);
             return ABORT;
+        } catch (TemplateExecutionException tee) {
+            ProblemDetails pd = internal(router.isProduction(), getDisplayName())
+                    .topLevel("line",tee.getLineNumber())
+                    .topLevel("message", tee.getMessage())
+                    .addSubSee("template");
+            Throwable root = ExceptionUtil.getRootCause(tee);
+            if (root instanceof MissingPropertyException mpe) {
+                log.warn("{}\n{}" ,root.getMessage(),tee.getMessage());
+                pd.detail(root.getMessage())
+                        .topLevel("property", mpe.getProperty())
+                        .buildAndSetResponse(exc);
+                return ABORT;
+            }
+            if (root instanceof MissingMethodException mme) {
+                log.warn("{}\n{}" ,root.getMessage(),tee.getMessage());
+                pd.detail(root.getMessage())
+                        .topLevel("method", mme.getMethod())
+                        .buildAndSetResponse(exc);
+                return ABORT;
+            }
+            log.warn(tee.getMessage());
+            pd.exception(tee)
+                    .addSubSee("template")
+                    .buildAndSetResponse(exc);
+            return ABORT;
         } catch (Exception e) {
             log.warn("Error executing template.", e);
+
             internal(router.isProduction(), getDisplayName())
                     .addSubSee("template")
                     .exception(e)
