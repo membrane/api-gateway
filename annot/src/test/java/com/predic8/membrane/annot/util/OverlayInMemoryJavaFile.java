@@ -16,10 +16,10 @@ package com.predic8.membrane.annot.util;
 import javax.tools.SimpleJavaFileObject;
 import java.net.URI;
 
-public class InMemoryJavaFile extends SimpleJavaFileObject {
+public class OverlayInMemoryJavaFile extends SimpleJavaFileObject {
     private final String code;
 
-    public InMemoryJavaFile(String name, String code) {
+    public OverlayInMemoryJavaFile(String name, String code) {
         super(URI.create("string:///" + name.replace('.', '/') + Kind.SOURCE.extension),
                 Kind.SOURCE);
         this.code = code;

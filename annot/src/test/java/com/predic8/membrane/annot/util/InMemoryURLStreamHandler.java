@@ -1,0 +1,58 @@
+package com.predic8.membrane.annot.util;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.ByteArrayInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.*;
+
+/**
+ * Helper to serve resources from the in-memory file system (and potentially its overlay file system).
+ */
+public class InMemoryURLStreamHandler extends URLStreamHandler {
+    private static final Logger log = LoggerFactory.getLogger(InMemoryURLStreamHandler.class);
+    private static InMemoryData data, overlay;
+
+    static {
+        URL.setURLStreamHandlerFactory(protocol -> "string".equals(protocol) ? new InMemoryURLStreamHandler() : null);
+    }
+
+    public static void activate(InMemoryData data) {
+        InMemoryURLStreamHandler.data = data;
+    }
+
+    public static void activateOverlay(InMemoryData overlay) {
+        InMemoryURLStreamHandler.overlay = overlay;
+    }
+
+    @Override
+    protected URLConnection openConnection(URL u) throws IOException {
+        log.debug("openConnection({})", u);
+        return new URLConnection(u) {
+            @Override
+            public void connect() throws IOException {
+
+            }
+
+            @Override
+            public InputStream getInputStream() throws IOException {
+                try {
+                    URI uri = u.toURI();
+                    if (overlay != null && overlay.content.containsKey(uri)) {
+                        byte[] buffer = overlay.content.get(uri);
+                        if (buffer == null)
+                            throw new FileNotFoundException("No in-memory resource for " + uri);
+                        return new ByteArrayInputStream(buffer);
+                    }
+                    return new ByteArrayInputStream(data.content.get(uri));
+                } catch (URISyntaxException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        };
+    }
+
+}
