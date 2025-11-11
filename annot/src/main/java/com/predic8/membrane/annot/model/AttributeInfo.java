@@ -61,7 +61,7 @@ public class AttributeInfo extends AbstractJavadocedInfo {
 
     public String getSchemaType(Types typeUtils) {
         analyze(typeUtils);
-        if (isEnum && isEnumBoolean()) {
+        if (isEnum && isEnumBoolean(typeUtils)) {
             return "boolean";
         }
         return switch (getXSDType(typeUtils)) {
@@ -77,8 +77,8 @@ public class AttributeInfo extends AbstractJavadocedInfo {
      * that have more than 2 values but they are also booleans at the configuration level
      * @return
      */
-    private boolean isEnumBoolean() {
-        return getEnumValues().contains("TRUE") && getEnumValues().contains("FALSE");
+    private boolean isEnumBoolean(Types typeUtils) {
+        return getEnumValues(typeUtils).contains("TRUE") && getEnumValues(typeUtils).contains("FALSE");
     }
 
     public String getXSDType(Types typeUtils) {
