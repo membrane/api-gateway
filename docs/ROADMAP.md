@@ -30,6 +30,9 @@
   - Predominantly used for logging; move logging into validators.
   - Migration: replace FailureHandler usages with validator-level logging; ensure correlation IDs/Exchange context remain available for logs.
   - Check if it is used by customer installations
+- Groovy:
+  - ScriptingUtils: Variable bindings: headers references message.headers with the headers class instead of a map<String,Object>.
+    - Difference to SpEL
 
 ## Minor
  - Rewrite JSONAssert Tests with RESTAssured

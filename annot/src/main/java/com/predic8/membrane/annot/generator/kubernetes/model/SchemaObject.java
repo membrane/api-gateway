@@ -17,21 +17,21 @@ import com.fasterxml.jackson.databind.node.*;
 
 import java.util.*;
 
-import static com.predic8.membrane.annot.generator.kubernetes.model.SchemaFactory.OBJECT;
+import static com.predic8.membrane.annot.generator.kubernetes.model.SchemaFactory.*;
 
 public class SchemaObject extends AbstractSchema<SchemaObject> {
 
     private boolean additionalProperties;
 
     // Java Properties (@MCAttributes, @MCChildElement)
-    protected final List<AbstractSchema> properties = new ArrayList<>();
+    protected final List<AbstractSchema<?>> properties = new ArrayList<>();
 
     SchemaObject(String name) {
         super(name);
         type = OBJECT;
     }
 
-    public SchemaObject property(AbstractSchema as) {
+    public SchemaObject property(AbstractSchema<?> as) {
         properties.add(as);
         return this;
     }
@@ -54,20 +54,42 @@ public class SchemaObject extends AbstractSchema<SchemaObject> {
     }
 
     private void jsonProperties(ObjectNode node) {
+        if (properties.isEmpty())
+            return;
+
         List<String> required = new ArrayList<>();
-        if (!properties.isEmpty()) {
-            ObjectNode propertiesNode = jnf.objectNode();
-            for (AbstractSchema property : properties) {
-                propertiesNode.set(property.getName(), property.json(jnf.objectNode()));
-                if (property.isRequired())
-                    required.add(property.getName());
-            }
-            if (!required.isEmpty()) {
-                var l = jnf.arrayNode();
-                required.forEach(l::add);
-                node.set("required",l);
-            }
-            node.set("properties", propertiesNode);
+
+        ObjectNode propertiesNode = jnf.objectNode();
+        for (AbstractSchema<?> property : properties) {
+
+            propertiesNode.set(property.getName(), createPropertyNode(property));
+            if (property.isRequired())
+                required.add(property.getName());
         }
+        if (!required.isEmpty()) {
+            var l = jnf.arrayNode();
+            required.forEach(l::add);
+            node.set("required", l);
+        }
+        node.set("properties", propertiesNode);
+    }
+
+    private static ObjectNode createPropertyNode(AbstractSchema<?>property) {
+        ObjectNode propertyNode = property.json(jnf.objectNode());
+        if (property.getEnumValues() != null && !property.getEnumValues().isEmpty()) {
+            propertyNode.set("enum", getEnumNode(property));
+        }
+        return propertyNode;
+    }
+
+    private static ArrayNode getEnumNode(AbstractSchema<?> property) {
+        var enumValues = jnf.arrayNode();
+        property.getEnumValues().forEach(enumValues::add);
+        return enumValues;
+    }
+
+    @Override
+    public boolean isObject() {
+        return true;
     }
 }
