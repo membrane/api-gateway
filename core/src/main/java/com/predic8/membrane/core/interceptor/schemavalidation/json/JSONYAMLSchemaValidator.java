@@ -14,10 +14,13 @@
 
 package com.predic8.membrane.core.interceptor.schemavalidation.json;
 
-import com.github.fge.jsonschema.*;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import com.fasterxml.jackson.dataformat.yaml.YAMLParser;
 import com.networknt.schema.*;
+import com.networknt.schema.serialization.YamlMapperFactory;
 import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.Interceptor.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.interceptor.schemavalidation.*;
@@ -26,11 +29,14 @@ import com.predic8.membrane.core.resolver.*;
 import org.jetbrains.annotations.*;
 import org.slf4j.*;
 
+import java.io.IOException;
 import java.nio.charset.*;
 import java.util.*;
 import java.util.concurrent.atomic.*;
 
+import static com.fasterxml.jackson.core.StreamReadFeature.STRICT_DUPLICATE_DETECTION;
 import static com.networknt.schema.InputFormat.JSON;
+import static com.networknt.schema.InputFormat.YAML;
 import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static java.nio.charset.StandardCharsets.*;
@@ -38,6 +44,10 @@ import static java.nio.charset.StandardCharsets.*;
 public class JSONYAMLSchemaValidator extends AbstractMessageValidator {
 
     private static final Logger log = LoggerFactory.getLogger(JSONYAMLSchemaValidator.class);
+    private final YAMLFactory factory = YAMLFactory.builder().enable(STRICT_DUPLICATE_DETECTION).build();
+    private final ObjectMapper objectMapper = new ObjectMapper(factory);
+
+    public static final String SCHEMA_VERSION_2020_12 = "2020-12";
 
     private final Resolver resolver;
     private final String jsonSchema;
@@ -59,15 +69,22 @@ public class JSONYAMLSchemaValidator extends AbstractMessageValidator {
      */
     JsonSchema schema;
 
-    public JSONYAMLSchemaValidator(Resolver resolver, String jsonSchema, FailureHandler failureHandler, String schemaVersion) {
+    InputFormat inputFormat;
+
+    public JSONYAMLSchemaValidator(Resolver resolver, String jsonSchema, FailureHandler failureHandler, String schemaVersion, InputFormat inputFormat) {
         this.resolver = resolver;
         this.jsonSchema = jsonSchema;
         this.failureHandler = failureHandler;
         this.schemaId = JSONSchemaVersionParser.parse( schemaVersion);
+        this.inputFormat = inputFormat;
+    }
+
+    public JSONYAMLSchemaValidator(Resolver resolver, String jsonSchema, FailureHandler failureHandler, String schemaVersion) {
+        this(resolver, jsonSchema, failureHandler, schemaVersion, JSON);
     }
 
     public JSONYAMLSchemaValidator(Resolver resolver, String jsonSchema, FailureHandler failureHandler) {
-        this(resolver, jsonSchema, failureHandler, "2020-12");
+        this(resolver, jsonSchema, failureHandler, SCHEMA_VERSION_2020_12);
     }
 
     @Override
@@ -103,7 +120,9 @@ public class JSONYAMLSchemaValidator extends AbstractMessageValidator {
 
     public Outcome validateMessage(Exchange exc, Flow flow, Charset ignored) throws Exception {
 
-        Set<ValidationMessage> assertions = schema.validate(exc.getMessage(flow).getBodyAsStringDecoded(), JSON);
+        Set<ValidationMessage> assertions = inputFormat == YAML ?
+            handleMultipleYAMLDocuments(exc, flow) :
+            schema.validate(exc.getMessage(flow).getBodyAsStringDecoded(), inputFormat);
 
         if (assertions.isEmpty()) {
             valid.incrementAndGet();
@@ -126,6 +145,21 @@ public class JSONYAMLSchemaValidator extends AbstractMessageValidator {
                 .buildAndSetResponse(exc);
 
         return ABORT;
+    }
+
+    /**
+     * If you call schema.validate(..) on a multi-document YAML, only the first document is validated. Therefore, we have
+     * to loop here ourselves.
+     */
+    private @NotNull Set<ValidationMessage> handleMultipleYAMLDocuments(Exchange exc, Flow flow) throws IOException {
+        Set<ValidationMessage> assertions;
+        assertions = new LinkedHashSet<>();
+        YAMLParser parser = factory.createParser(exc.getMessage(flow).getBodyAsStreamDecoded());
+        while (!parser.isClosed()) {
+            assertions.addAll(schema.validate(objectMapper.readTree(parser)));
+            parser.nextToken();
+        }
+        return assertions;
     }
 
     private @NotNull List<Map<String, Object>> getMapForProblemDetails(Set<ValidationMessage> assertions) {
