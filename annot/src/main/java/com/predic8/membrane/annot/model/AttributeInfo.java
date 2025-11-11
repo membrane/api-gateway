@@ -35,8 +35,13 @@ public class AttributeInfo extends AbstractJavadocedInfo {
     private boolean isBeanReference;
     private List<String> enumValues;
 
-    public List<String> getEnumValues() {
+    public List<String> getEnumValues(Types typeUtils) {
+        analyze(typeUtils);
         return enumValues;
+    }
+
+    public List<String> enumsAsLowerCaseList(Types typeUtils) {
+        return getEnumValues(typeUtils).stream().map(String::toLowerCase).toList();
     }
 
     public String getXMLName() {

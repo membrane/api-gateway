@@ -172,14 +172,11 @@ public class JsonSchemaGenerator extends AbstractK8sGenerator {
                 .required(ai.isRequired());
         // Add enum values if the type is an enum. If it is an enum for a boolean value, rely on the "boolean" type.
         if (ai.isEnum(processingEnv.getTypeUtils()) && !"boolean".equals(type)) {
-            s.enumValues(enumsAsLowerCaseList(ai));
+            s.enumValues(ai.enumsAsLowerCaseList(processingEnv.getTypeUtils()));
         }
         return s;
     }
 
-    private static List<String> enumsAsLowerCaseList(AttributeInfo ai) {
-        return ai.getEnumValues().stream().map(String::toLowerCase).toList();
-    }
 
     private void collectProperties(Model m, MainInfo main, ElementInfo i, SchemaObject schema) {
         processMCAttributes(i, schema);
