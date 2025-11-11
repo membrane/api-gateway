@@ -14,36 +14,20 @@
 
 package com.predic8.membrane.core.cli;
 
-import com.fasterxml.jackson.core.JsonParseException;
-import com.fasterxml.jackson.core.StreamReadFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
-import com.fasterxml.jackson.dataformat.yaml.YAMLParser;
 import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.config.spring.TrackingFileSystemXmlApplicationContext;
 import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.kubernetes.BeanCache;
-import com.predic8.membrane.core.kubernetes.client.WatchAction;
 import com.predic8.membrane.core.openapi.serviceproxy.*;
 import com.predic8.membrane.core.resolver.*;
 import org.apache.commons.cli.*;
 import org.jetbrains.annotations.*;
-import org.jose4j.jwk.JsonWebKey;
-import org.jose4j.jwk.RsaJsonWebKey;
-import org.jose4j.jwk.RsaJwkGenerator;
-import org.jose4j.lang.JoseException;
 import org.slf4j.*;
 import org.springframework.beans.factory.xml.*;
 
 import java.io.*;
-import java.math.BigInteger;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.security.SecureRandom;
 import java.util.*;
 
-import static com.fasterxml.jackson.core.StreamReadFeature.STRICT_DUPLICATE_DETECTION;
 import static com.predic8.membrane.core.Constants.*;
 import static com.predic8.membrane.core.cli.util.JwkGenerator.generateJWK;
 import static com.predic8.membrane.core.cli.util.JwkGenerator.privateJWKtoPublic;
@@ -55,7 +39,6 @@ import static com.predic8.membrane.core.util.ExceptionUtil.*;
 import static com.predic8.membrane.core.util.OSUtil.*;
 import static com.predic8.membrane.core.util.URIUtil.*;
 import static java.lang.Integer.*;
-import static java.util.UUID.randomUUID;
 import static org.apache.commons.lang3.exception.ExceptionUtils.getMessage;
 import static org.apache.commons.lang3.exception.ExceptionUtils.getRootCauseMessage;
 
