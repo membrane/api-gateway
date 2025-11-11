@@ -1,0 +1,9 @@
+spec:
+  port: 80
+  flow:
+    - ntlm:
+        user: X-Username
+        pass: X-Password
+  target:
+    host: localhost
+    port: 8111
