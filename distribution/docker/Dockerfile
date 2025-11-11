@@ -1,7 +1,7 @@
 FROM eclipse-temurin:25-jdk
 LABEL authors="info@predic8.de"
 ARG USERNAME=membrane
-ARG USER_UID=1000
+ARG USER_UID=1001
 ARG USER_GID=$USER_UID
 
 COPY release-bin .

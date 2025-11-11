@@ -15,6 +15,26 @@ public class SchemaFactory {
         return new SchemaObject(name);
     }
 
+    public static BasicSchema basic(String name) {
+        return new BasicSchema(name);
+    }
+
+    public static AbstractSchema from(String type) {
+        if ("object".equals(type)) {
+            return object();
+        }
+        if ("array".equals(type)) {
+            return array();
+        }
+        BasicSchema bs = new BasicSchema();
+        bs.type = type;
+        return bs;
+    }
+
+    public static SchemaArray array() {
+        return array(null);
+    }
+
     public static SchemaArray array(String name) {
         return new SchemaArray(name);
     }

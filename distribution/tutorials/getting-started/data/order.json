@@ -1,0 +1,20 @@
+{
+  "id": 324,
+  "items": [
+    {
+      "article": "Tea",
+      "quantity": 2,
+      "price": 1.87
+    },
+    {
+      "article": "Butter",
+      "quantity": 12,
+      "price": 0.99
+    },
+    {
+      "article": "Coffee",
+      "quantity": 3,
+      "price": 5.20
+    }
+  ]
+}

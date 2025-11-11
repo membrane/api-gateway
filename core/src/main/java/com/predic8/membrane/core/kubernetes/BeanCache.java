@@ -18,6 +18,7 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.config.spring.k8s.Envelope;
 import com.predic8.membrane.core.config.spring.k8s.YamlLoader;
+import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.kubernetes.client.WatchAction;
 import com.predic8.membrane.core.proxies.Proxy;
 import com.predic8.membrane.core.util.*;
@@ -30,10 +31,11 @@ import java.util.*;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 
+import static com.predic8.membrane.core.exceptions.SpringConfigurationErrorHandler.handleRootCause;
 import static com.predic8.membrane.core.util.YamlUtil.removeFirstYamlDocStartMarker;
 
 public class BeanCache implements BeanRegistry {
-    private static final Logger LOG = LoggerFactory.getLogger(BeanCache.class);
+    private static final Logger log = LoggerFactory.getLogger(BeanCache.class);
     private final Router router;
     private final ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
     private final ConcurrentHashMap<String, Object> uuidMap = new ConcurrentHashMap<>();
@@ -81,8 +83,8 @@ public class BeanCache implements BeanRegistry {
 
     public Envelope define(Map<String,Object> map) throws IOException {
         String s = removeFirstYamlDocStartMarker( mapper.writeValueAsString(map)); // TODO Why do we first parse than serialize than parse again?
-        if (LOG.isDebugEnabled())
-            LOG.debug("defining bean: {}", s);
+        if (log.isDebugEnabled())
+            log.debug("defining bean: {}", s);
         return new YamlLoader().load(new StringReader(s), this);
     }
 
@@ -127,7 +129,12 @@ public class BeanCache implements BeanRegistry {
                     if (newProxy.getName() == null)
                         newProxy.setName(bd.getName());
                     newProxy.init(router);
-                } catch (Exception e) {
+                }
+                catch (ConfigurationException e) {
+                    handleRootCause(e, log);
+                    System.exit(1);
+                }
+                catch (Exception e) {
                     throw new RuntimeException("Could not init rule.", e);
                 }
 
@@ -147,8 +154,12 @@ public class BeanCache implements BeanRegistry {
                 if (bd.getAction() == WatchAction.DELETED)
                     uuidMap.remove(bd.getUid());
                 uidsToRemove.add(bd.getUid());
-            } catch (Throwable e) {
-                LOG.error("Could not handle " + bd.getAction() + " " + bd.getNamespace() + "/" + bd.getName(), e);
+            }
+            catch (ConfigurationException e) {
+                throw e;
+            }
+            catch (Throwable e) {
+                log.error("Could not handle {} {}/{}",bd.getAction(),bd.getNamespace(),bd.getName(), e);
             }
         }
         for (String uid : uidsToRemove)
