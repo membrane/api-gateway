@@ -15,7 +15,7 @@
 #
 #    Membrane will print a log message indicating that the API is running.
 #
-# 2) Test:
+# 2) Call the API:
 #    Open http://localhost:2000 in your browser or run:
 #
 #      curl http://localhost:2000
@@ -23,6 +23,7 @@
 #    You should see the list of public APIs from api.predic8.de.
 #
 #  3) Stop Membrane:
+#     Press Ctrl+C in the terminal.
 #
 # Troubleshooting:
 #    Check if your machine can reach the public API:

@@ -164,29 +164,17 @@ public class JsonSchemaGenerator extends AbstractK8sGenerator {
     }
 
     private AbstractSchema<?> createProperty(AttributeInfo ai) {
-        AbstractSchema<?> s = SchemaFactory.from(ai.getSchemaType(processingEnv.getTypeUtils()))
+        String type = ai.getSchemaType(processingEnv.getTypeUtils());
+        AbstractSchema<?> s = SchemaFactory.from(type)
                 .name(ai.getXMLName())
                 .description(getDescriptionContent(ai))
-                .type(ai.getSchemaType(processingEnv.getTypeUtils()))
+                .type(type)
                 .required(ai.isRequired());
-        if (ai.isEnum(processingEnv.getTypeUtils())) {
-            if (isEnumBoolean(ai)) {
-                s.type("boolean"); // Change type from String with enum to boolean
-            } else {
-                s.enumValues(enumsAsLowerCaseList(ai));
-            }
+        // Add enum values if the type is an enum. If it is an enum for a boolean value, rely on the "boolean" type.
+        if (ai.isEnum(processingEnv.getTypeUtils()) && !"boolean".equals(type)) {
+            s.enumValues(enumsAsLowerCaseList(ai));
         }
         return s;
-    }
-
-    /**
-     * It is not checked how many values the enum has. There are enums link validateRequests of OpenAPIValidator
-     * that have more than 2 values but they are also booleans at the configuration level
-     * @param ai
-     * @return
-     */
-    private static boolean isEnumBoolean(AttributeInfo ai) {
-        return ai.getEnumValues().contains("TRUE") && ai.getEnumValues().contains("FALSE");
     }
 
     private static List<String> enumsAsLowerCaseList(AttributeInfo ai) {
@@ -285,7 +273,7 @@ public class JsonSchemaGenerator extends AbstractK8sGenerator {
     private void addChildsAsProperties(Model m, MainInfo main, ChildElementInfo cei, SchemaObject parent2) {
         for (ElementInfo ei : getChildElementDeclarationInfo(main, cei).getElementInfo()) {
             parent2.property(ref(ei.getAnnotation().name())
-                    .ref("#/$defs/" + ei.getXSDTypeName(m)))
+                            .ref("#/$defs/" + ei.getXSDTypeName(m)))
                     .description(getDescriptionContent(ei))
                     .required(cei.isRequired());
 

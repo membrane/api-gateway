@@ -1,16 +1,14 @@
 # yaml-language-server: $schema=../../core/target/classes/com/predic8/membrane/core/config/json/membrane.schema.json
 #
-# Membrane Tutorial:
+# Membrane Tutorial: Path Parameter Routing
 #
-# curl localhost:2000/fruits/7
+# Try:
 #
+#   curl http://localhost:2000/fruits/7
 
 spec:
   port: 2000
   path:
     uri: /fruits/{id}
-  flow:
-    - log:
-        message: ${pathParam.id}
   target:
     url: https://api.predic8.de/shop/v2/products/${pathParam.id}

@@ -2,8 +2,15 @@
 #
 # Membrane Tutorial: Path Parameters
 #
-# curl localhost:2000/customer/7/account/55
+# 1.) Start Membrane:
 #
+#     membrane.sh -c 10-PathParameters.yaml
+#
+# 2.) Call the API:
+#
+#       curl localhost:2000/customer/7/account/55
+#
+#     Observe the console output.
 
 spec:
   port: 2000

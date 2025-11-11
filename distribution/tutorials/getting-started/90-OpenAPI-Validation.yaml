@@ -2,19 +2,17 @@
 #
 # Membrane Tutorial: OpenAPI Validation
 #
-# 2.) Try to create a new product with a negative price.
-# curl "http://localhost:2000/shop/v2/products" -H 'Content-Type: application/json' -d '{ "name": "Figs", "price": -2.7}'
+# 1) Try creating a new product with a negative price:
 #
-# 3.) Take a look at the validation error response
+#      curl "http://localhost:2000/shop/v2/products" -H 'Content-Type: application/json' -d '{ "name": "Figs", "price": -2.7}'
 #
-# See also:
-#
+#    Check the validation error in the response.
 
 spec:
   port: 2000
   specs:
     - openapi:
-        location: ../../distribution/conf/fruitshop-api.yml # TODO
+        location: ../../conf/fruitshop-api.yml
         validateRequests: true
         validateResponses: true
         validationDetails: true

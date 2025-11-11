@@ -2,8 +2,11 @@
 #
 # Membrane Tutorial: Path Rewriting
 #
-# curl localhost:2000/fruits/7
+# Try:
 #
+#   curl http://localhost:2000/fruits/7
+#
+# Observe the log output.
 
 spec:
   port: 2000
@@ -13,6 +16,7 @@ spec:
           message: Requested ${path}
       - rewriter:
           - map:
+              # Put values in quotes when using special characters
               from: "/fruits/(.*)"
               to: "/shop/v2/products/$1"
       - log:

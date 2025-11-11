@@ -55,12 +55,25 @@ public class AttributeInfo extends AbstractJavadocedInfo {
     }
 
     public String getSchemaType(Types typeUtils) {
+        analyze(typeUtils);
+        if (isEnum && isEnumBoolean()) {
+            return "boolean";
+        }
         return switch (getXSDType(typeUtils)) {
             case "spel_number", "xsd:double", "xsd:float", "xsd:decimal" -> "number";
             case "spel_boolean", "xsd:boolean" -> "boolean";
             case "xsd:int", "xsd:integer", "xsd:long" -> "integer";
             default -> "string";
         };
+    }
+
+    /**
+     * It is not checked how many values the enum has. There are enums link validateRequests of OpenAPIValidator
+     * that have more than 2 values but they are also booleans at the configuration level
+     * @return
+     */
+    private boolean isEnumBoolean() {
+        return getEnumValues().contains("TRUE") && getEnumValues().contains("FALSE");
     }
 
     public String getXSDType(Types typeUtils) {

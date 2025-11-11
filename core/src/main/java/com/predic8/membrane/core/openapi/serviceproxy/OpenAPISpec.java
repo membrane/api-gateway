@@ -149,9 +149,6 @@ public class OpenAPISpec implements Cloneable {
         // To allow reading from YAML with yes and no without quotes
         TRUE,
         FALSE;
-
-
-
     }
 
     @Override

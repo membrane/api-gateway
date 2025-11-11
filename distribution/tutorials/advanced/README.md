@@ -1,8 +1,10 @@
 # Advanced Membrane Tutorial
 
-In this tutorial, you'll learn advanced features of Membrane like:
+In this tutorial you will learn advanced features of Membrane, including:
 
-- Path Parameters
+- Path parameters
 - Routing
+- Rewriting of paths
+- Redirects
 
-Before starting, we recommend working through the [Getting Started](../getting-started) tutorial.
+Before starting, we recommend completing the [Getting Started](../getting-started) tutorial.

@@ -73,7 +73,7 @@ public class OpenAPIPublisherInterceptor extends AbstractInterceptor {
     private Template apiOverviewHtmlTemplate;
 
     /**
-     * Needed for instanciation from Spring
+     * Needed for instantiation from Spring
      */
     public OpenAPIPublisherInterceptor() {}
 

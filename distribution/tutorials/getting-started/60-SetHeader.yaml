@@ -1,11 +1,15 @@
 # yaml-language-server: $schema=../../core/target/classes/com/predic8/membrane/core/config/json/membrane.schema.json
 #
-# Membrane Tutorial:
+# Membrane Tutorial: SetHeader
 #
-#  curl -v localhost:2000
-# Take a look at the response header X-Powered-By
+# 1.) Try the requests:
 #
-#  curl -v -d '' localhost:2000
+#       curl -v http://localhost:2000
+#       curl -v -X POST http://localhost:2000
+#
+#     Check the response header 'X-Powered-By' and 'X-Method'.
+#
+
 spec:
   port: 2000
   flow:

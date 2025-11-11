@@ -24,6 +24,7 @@ import java.util.*;
 
 import static com.predic8.membrane.core.http.Request.*;
 import static com.predic8.membrane.core.lang.ExchangeExpression.Language.*;
+import static com.predic8.membrane.core.lang.spel.SpELExchangeExpression.toBoolean;
 import static java.lang.Boolean.FALSE;
 import static java.lang.Boolean.TRUE;
 import static org.junit.jupiter.api.Assertions.*;
@@ -186,14 +187,19 @@ class SpELExchangeExpressionTest extends AbstractExchangeExpressionTest {
 
     @Test
     void booleanConversion() {
-        assertEquals(TRUE, SpELExchangeExpression.toBoolean("true"));
-        assertEquals(FALSE, SpELExchangeExpression.toBoolean("false"));
-        assertEquals(FALSE, SpELExchangeExpression.toBoolean(""));
-        assertEquals(FALSE, SpELExchangeExpression.toBoolean(null));
-        assertEquals(TRUE, SpELExchangeExpression.toBoolean("abc"));
-        assertEquals(FALSE, SpELExchangeExpression.toBoolean("0"));
-        assertEquals(TRUE, SpELExchangeExpression.toBoolean("1"));
-        assertEquals(TRUE, SpELExchangeExpression.toBoolean("yes"));
-        assertEquals(FALSE, SpELExchangeExpression.toBoolean("no"));
+        assertEquals(TRUE, toBoolean("true"));
+        assertEquals(TRUE, toBoolean("TRUE"));
+        assertEquals(FALSE, toBoolean("false"));
+        assertEquals(FALSE, toBoolean("False"));
+        assertEquals(FALSE, toBoolean(""));
+        assertEquals(FALSE, toBoolean(null));
+        assertEquals(TRUE, toBoolean("abc"));
+        assertEquals(FALSE, toBoolean("0"));
+        assertEquals(TRUE, toBoolean("1"));
+        assertEquals(TRUE, toBoolean("yes"));
+        assertEquals(FALSE, toBoolean("no"));
+
+        assertEquals(FALSE, toBoolean(Boolean.FALSE));
+        assertEquals(TRUE, toBoolean(TRUE));
     }
 }
