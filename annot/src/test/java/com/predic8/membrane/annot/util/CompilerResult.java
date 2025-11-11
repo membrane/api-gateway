@@ -18,5 +18,6 @@ import javax.tools.JavaFileObject;
 
 public record CompilerResult(
         boolean compilationSuccess,
-        DiagnosticCollector<JavaFileObject> diagnostics) {
+        DiagnosticCollector<JavaFileObject> diagnostics,
+        ClassLoader classLoader) {
 }
