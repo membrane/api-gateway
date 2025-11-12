@@ -37,7 +37,7 @@ import static com.predic8.membrane.core.openapi.serviceproxy.APIProxy.*;
 import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPISpec.YesNoOpenAPIOption.*;
 import static com.predic8.membrane.core.openapi.util.OpenAPIUtil.*;
 import static com.predic8.membrane.core.util.FileUtil.*;
-import static com.predic8.membrane.core.util.URIUtil.convertPath2FilePathString;
+import static com.predic8.membrane.core.util.URIUtil.*;
 import static java.lang.String.*;
 
 public class OpenAPIRecordFactory {
@@ -66,10 +66,10 @@ public class OpenAPIRecordFactory {
         if (spec.dir == null)
             return;
 
-        log.info("Parsing specs from dir {}",spec.dir);
+        log.info("Parsing specs from dir {}", spec.dir);
         File[] files = getOpenAPIFiles(spec.dir);
         if (files == null) {
-            log.warn("Directory {} does not contain any OpenAPI documents.",spec.dir);
+            log.warn("Directory {} does not contain any OpenAPI documents.", spec.dir);
             return;
         }
         for (File file : files) {
@@ -86,7 +86,7 @@ public class OpenAPIRecordFactory {
             return;
 
         try {
-            log.debug("Parsing spec {}",spec.location);
+            log.debug("Parsing spec {}", spec.location);
             OpenAPIRecord rec = create(spec);
             apiRecords.put(getUniqueId(apiRecords, rec), rec);
         } catch (Exception e) {
@@ -106,10 +106,10 @@ public class OpenAPIRecordFactory {
                         Could not read or parse OpenAPI Document from location: %s
                         
                         Have a look at your proxies.xml configuration.
-                        """, pe.getLocation()),pe);
+                        """, pe.getLocation()), pe);
             }
             if (root instanceof FileNotFoundException fnf) {
-                throw new ConfigurationException("Cannot read OpenAPI specification from location: " + spec.location,fnf);
+                throw new ConfigurationException("Cannot read OpenAPI specification from location: " + spec.location, fnf);
             }
             String msg = "While parsing spec %s .".formatted(spec.location);
             log.error(msg, e);
@@ -119,8 +119,9 @@ public class OpenAPIRecordFactory {
 
     /**
      * Gets an unique id for an API
+     *
      * @param apiRecords Map with OpenAPIRecords to test for collisions
-     * @param rec Record with an parsed OpenAPI
+     * @param rec        Record with an parsed OpenAPI
      * @return Guaranteed unique id within the provided apiRecords
      */
     String getUniqueId(Map<String, OpenAPIRecord> apiRecords, OpenAPIRecord rec) {
@@ -128,7 +129,7 @@ public class OpenAPIRecordFactory {
         if (apiRecords.get(id) != null) {
             log.warn("There are multiple OpenAPI documents with the id {}. The id is computed from the title {} and version {}. Please make sure that the documents are different or use the x-membrane-id field.",
                     id, rec.api.getInfo().getTitle(), rec.api.getInfo().getVersion());
-           // Add -0 until unique
+            // Add -0 until unique
             while (apiRecords.get(id) != null)
                 id += "-0";
             log.warn("Changing the id to {} in order to make them unique.", id);
@@ -136,27 +137,27 @@ public class OpenAPIRecordFactory {
         return id;
     }
 
-    private OpenAPIRecord create(OpenAPISpec spec) {
+    private OpenAPIRecord create(OpenAPISpec spec) throws IOException {
         OpenAPIRecord record = new OpenAPIRecord(getOpenAPI(spec), spec);
         setExtensionOnAPI(spec, record.api);
         return record;
     }
 
     private OpenAPIRecord create(OpenAPISpec spec, File file) {
-        OpenAPIRecord record = new OpenAPIRecord(parseFileAsOpenAPI(file),  spec);
+        OpenAPIRecord record = new OpenAPIRecord(parseFileAsOpenAPI(file), spec);
         setExtensionOnAPI(spec, record.api);
         return record;
     }
 
-    private OpenAPI getOpenAPI(OpenAPISpec spec) {
-        String path = resolve(spec.location);
-        try {
-            OpenAPI openAPI = new OpenAPIParser().readLocation(convertPathToFileUriPathIfNeeded(path), null, getParseOptions()).getOpenAPI();
-            addConversionNoticeIfSwagger2(openAPI, omYaml.readTree(getInputStreamForLocation(spec.location)));
-            return openAPI;
-        } catch (IOException e) {
-            throw new OpenAPIParsingException("Could not read OpenAPI: " + e.getMessage(), path);
-        }
+    private OpenAPI getOpenAPI(OpenAPISpec spec) throws IOException {
+        OpenAPI openAPI = parseFromLocation(spec);
+        addConversionNoticeIfSwagger2(openAPI, omYaml.readTree(getInputStreamForLocation(spec.location)));
+        return openAPI;
+
+    }
+
+    private OpenAPI parseFromLocation(OpenAPISpec spec) {
+        return new OpenAPIParser().readLocation(convertPathToFileUriPathIfNeeded(resolve(spec.location)), null, getParseOptions()).getOpenAPI();
     }
 
     private static @NotNull String convertPathToFileUriPathIfNeeded(String path) {
@@ -198,7 +199,7 @@ public class OpenAPIRecordFactory {
         builder.append("***Note:*** *This OpenAPI description was converted from Swagger 2 to OAS 3 by Membrane API Gateway!*");
         api.getInfo().setDescription(builder.toString());
     }
-    
+
     private String resolve(String filepath) {
         return ResolverMap.combine(router.getBaseLocation(), filepath);
     }
@@ -246,7 +247,7 @@ public class OpenAPIRecordFactory {
         if (spec.validateSecurity != ASINOPENAPI)
             extension.put(SECURITY, toYesNo(spec.validateSecurity));
 
-        if(spec.validateSecurity == YES && spec.validateRequests == NO)
+        if (spec.validateSecurity == YES && spec.validateRequests == NO)
             log.warn("Automatically enabled request validation; which is required by security validation.");
 
         extension.putIfAbsent(SECURITY, false);

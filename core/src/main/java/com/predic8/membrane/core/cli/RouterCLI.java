@@ -14,37 +14,24 @@
 
 package com.predic8.membrane.core.cli;
 
-import com.fasterxml.jackson.core.JsonParseException;
-import com.fasterxml.jackson.core.StreamReadFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
-import com.fasterxml.jackson.dataformat.yaml.YAMLParser;
 import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.config.spring.TrackingFileSystemXmlApplicationContext;
 import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.kubernetes.BeanCache;
-import com.predic8.membrane.core.kubernetes.client.WatchAction;
 import com.predic8.membrane.core.openapi.serviceproxy.*;
 import com.predic8.membrane.core.resolver.*;
 import org.apache.commons.cli.*;
 import org.jetbrains.annotations.*;
-import org.jose4j.jwk.JsonWebKey;
-import org.jose4j.jwk.RsaJsonWebKey;
-import org.jose4j.jwk.RsaJwkGenerator;
-import org.jose4j.lang.JoseException;
 import org.slf4j.*;
 import org.springframework.beans.factory.xml.*;
 
 import java.io.*;
-import java.math.BigInteger;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.security.SecureRandom;
 import java.util.*;
 
-import static com.fasterxml.jackson.core.StreamReadFeature.STRICT_DUPLICATE_DETECTION;
 import static com.predic8.membrane.core.Constants.*;
+import static com.predic8.membrane.core.cli.util.JwkGenerator.generateJWK;
+import static com.predic8.membrane.core.cli.util.JwkGenerator.privateJWKtoPublic;
+import static com.predic8.membrane.core.cli.util.YamlLoader.sendYamlToBeanCache;
 import static com.predic8.membrane.core.config.spring.TrackingFileSystemXmlApplicationContext.*;
 import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPISpec.YesNoOpenAPIOption.*;
 import static com.predic8.membrane.core.openapi.util.OpenAPIUtil.isOpenAPIMisplacedError;
@@ -52,15 +39,12 @@ import static com.predic8.membrane.core.util.ExceptionUtil.*;
 import static com.predic8.membrane.core.util.OSUtil.*;
 import static com.predic8.membrane.core.util.URIUtil.*;
 import static java.lang.Integer.*;
-import static java.util.UUID.randomUUID;
 import static org.apache.commons.lang3.exception.ExceptionUtils.getMessage;
 import static org.apache.commons.lang3.exception.ExceptionUtils.getRootCauseMessage;
 
 public class RouterCLI {
 
     private static final Logger log = LoggerFactory.getLogger(RouterCLI.class);
-
-    private static final ObjectMapper om = new ObjectMapper();
 
     public static void main(String[] args) {
         MembraneCommandLine commandLine = getMembraneCommandLine(args);
@@ -174,100 +158,8 @@ public class RouterCLI {
 
         var beanCache = new BeanCache(router);
         beanCache.start();
-        sendYamlToBeanCache(location, beanCache);
+        sendYamlToBeanCache(router, location, beanCache);
         return router;
-    }
-
-    private static void sendYamlToBeanCache(String location, BeanCache beanCache) throws IOException {
-        final YAMLFactory yamlFactory = YAMLFactory.builder()
-                .enable(STRICT_DUPLICATE_DETECTION)
-                .build();
-        try (YAMLParser parser = yamlFactory.createParser(new File(location))) {
-            int count = 0;
-
-            while (!parser.isClosed()) {
-                Map<String,Object> m = om.readValue(parser, Map.class);
-                if (m == null) {
-                    log.debug("Skipping empty document. Maybe there are two --- separators but no configuration in between.");
-                    parser.nextToken();
-                    continue;
-                }
-
-                Map<String, Object> meta = (Map<String, Object>) m.get("metadata");
-                if (meta == null) {
-                    // generate name, if it doesnt exist
-                    meta = new TreeMap<>();
-                    m.put("metadata", meta);
-                    meta.put("name", "artifact" + ++count);
-                    meta.put("uid", randomUUID().toString());
-                } else {
-                    // fake UID
-                    meta.put("uid", location + "-" + meta.get("name"));
-                }
-
-                beanCache.handle(WatchAction.ADDED, m);
-                parser.nextToken();
-            }
-
-            beanCache.fireConfigurationLoaded();
-        } catch (JsonParseException e) {
-            throw new IOException(
-                    "Invalid YAML: multiple configurations must be separated by '---' "
-                            + "(at line " + e.getLocation().getLineNr()
-                            + ", column " + e.getLocation().getColumnNr() + ").",
-                    e
-            );
-        }
-    }
-
-    private static void generateJWK(MembraneCommandLine commandLine) {
-        int bits = 2048;
-        String bitsArg = commandLine.getCommand().getOptionValue("b");
-        if (bitsArg != null) {
-            bits = Integer.parseInt(bitsArg);
-        }
-
-        boolean overwrite = commandLine.getCommand().isOptionSet("overwrite");
-        String outputFile = commandLine.getCommand().getOptionValue("o");
-
-        if (outputFile == null) {
-            log.error("Missing required option: -o <output file>");
-            commandLine.getCommand().printHelp();
-            System.exit(1);
-        }
-
-        RsaJsonWebKey rsaJsonWebKey;
-        try {
-            rsaJsonWebKey = RsaJwkGenerator.generateJwk(bits);
-        } catch (JoseException e) {
-            throw new RuntimeException(e);
-        }
-        rsaJsonWebKey.setKeyId(new BigInteger(130, new SecureRandom()).toString(32));
-        rsaJsonWebKey.setUse("sig");
-        rsaJsonWebKey.setAlgorithm("RS256");
-
-        Path path = Paths.get(outputFile);
-        if (path.toFile().exists() && !overwrite) {
-            log.error("Output file ({}) already exists.", outputFile);
-            System.exit(1);
-        }
-        try {
-            Files.writeString(path, rsaJsonWebKey.toJson(JsonWebKey.OutputControlLevel.INCLUDE_PRIVATE));
-        } catch (IOException e) {
-            log.error(e.getMessage());
-            System.exit(1);
-        }
-    }
-
-    private static void privateJWKtoPublic(String input, String output) {
-        try {
-            Map map = new ObjectMapper().readValue(new File(input), Map.class);
-            RsaJsonWebKey rsa = new RsaJsonWebKey(map);
-            Files.writeString(Paths.get(output), rsa.toJson(JsonWebKey.OutputControlLevel.PUBLIC_ONLY));
-        } catch (IOException | JoseException e) {
-            log.error(e.getMessage());
-            System.exit(1);
-        }
     }
 
     private static @NotNull APIProxy getApiProxy(MembraneCommandLine commandLine) {

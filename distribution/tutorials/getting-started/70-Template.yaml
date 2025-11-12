@@ -1,0 +1,27 @@
+# yaml-language-server: $schema=../../core/target/classes/com/predic8/membrane/core/config/json/membrane.schema.json
+#
+# Membrane Tutorial: Template
+#
+# The 'static' plugin replaces the response body with a constant string.
+# The 'template' plugin renders a template instead, allowing you to use
+# Groovy expressions inside the template.
+#
+# 1.) Try:
+#
+#       curl localhost:2000/foo
+#
+#     Observe the response.
+
+spec:
+  port: 2000
+  flow:
+    - response:
+        - template:
+            contentType: text/plain
+            pretty: true
+            src: | # multiline string
+              Method: ${method},
+              Path: ${path},
+              Date: ${new Date()}
+    - return:
+        statusCode: 200

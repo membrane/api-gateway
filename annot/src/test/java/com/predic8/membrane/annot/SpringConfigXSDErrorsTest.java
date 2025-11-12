@@ -27,7 +27,7 @@ import static java.util.List.of;
 public class SpringConfigXSDErrorsTest {
     @Test
     public void mcMainMissing() {
-        List<JavaFileObject> sources = splitSources("""
+        var sources = splitSources("""
             package com.predic8.membrane.demo;
             public class Demo {
             }
@@ -47,7 +47,7 @@ public class SpringConfigXSDErrorsTest {
 
     @Test
     public void mcElementNameMissing() {
-        List<JavaFileObject> sources = splitSources("""
+        var sources = splitSources("""
             package com.predic8.membrane.demo;
             import com.predic8.membrane.annot.MCElement;
             @MCElement
@@ -63,7 +63,7 @@ public class SpringConfigXSDErrorsTest {
 
     @Test
     public void mcElementMissing() {
-        List<JavaFileObject> sources = splitSources(MC_MAIN_DEMO);
+        var sources = splitSources(MC_MAIN_DEMO);
         var result = CompilerHelper.compile(sources, false);
 
         assertCompilerResult(false, of(
@@ -74,7 +74,7 @@ public class SpringConfigXSDErrorsTest {
 
     @Test
     public void duplicateMcElementId() {
-        List<JavaFileObject> sources = splitSources(MC_MAIN_DEMO + """
+        var sources = splitSources(MC_MAIN_DEMO + """
             package com.predic8.membrane.demo;
             import com.predic8.membrane.annot.MCElement;
             @MCElement(name="demo")
@@ -97,7 +97,7 @@ public class SpringConfigXSDErrorsTest {
 
     @Test
     public void duplicateMcElementName() {
-        List<JavaFileObject> sources = splitSources(MC_MAIN_DEMO + """
+        var sources = splitSources(MC_MAIN_DEMO + """
             package com.predic8.membrane.demo;
             import com.predic8.membrane.annot.MCElement;
             @MCElement(name="demo", id="demo1")
@@ -123,7 +123,7 @@ public class SpringConfigXSDErrorsTest {
 
         @Test
         public void topLevel() {
-            List<JavaFileObject> sources = splitSources(MC_MAIN_DEMO + """
+            var sources = splitSources(MC_MAIN_DEMO + """
             package com.predic8.membrane.demo;
             import com.predic8.membrane.annot.MCElement;
             @MCElement(name="demo", noEnvelope=true)
@@ -139,7 +139,7 @@ public class SpringConfigXSDErrorsTest {
 
         @Test
         public void mixed() {
-            List<JavaFileObject> sources = splitSources(MC_MAIN_DEMO + """
+            var sources = splitSources(MC_MAIN_DEMO + """
             package com.predic8.membrane.demo;
             import com.predic8.membrane.annot.MCElement;
             @MCElement(name="demo", noEnvelope=true, topLevel=false, mixed=true)
@@ -155,7 +155,7 @@ public class SpringConfigXSDErrorsTest {
 
         @Test
         public void noChildElements() {
-            List<JavaFileObject> sources = splitSources(MC_MAIN_DEMO + """
+            var sources = splitSources(MC_MAIN_DEMO + """
             package com.predic8.membrane.demo;
             import com.predic8.membrane.annot.MCElement;
             @MCElement(name="demo", noEnvelope=true, topLevel=false)
@@ -171,7 +171,7 @@ public class SpringConfigXSDErrorsTest {
 
         @Test
         public void twoChildElements() {
-            List<JavaFileObject> sources = splitSources(MC_MAIN_DEMO + """
+            var sources = splitSources(MC_MAIN_DEMO + """
             package com.predic8.membrane.demo;
             import com.predic8.membrane.annot.MCElement;
             import com.predic8.membrane.annot.MCChildElement;
@@ -193,7 +193,7 @@ public class SpringConfigXSDErrorsTest {
 
         @Test
         public void childIsNotAList() {
-            List<JavaFileObject> sources = splitSources(MC_MAIN_DEMO + """
+            var sources = splitSources(MC_MAIN_DEMO + """
             package com.predic8.membrane.demo;
             import com.predic8.membrane.annot.MCElement;
             import com.predic8.membrane.annot.MCChildElement;
@@ -212,7 +212,7 @@ public class SpringConfigXSDErrorsTest {
 
         @Test
         public void hasAttributes() {
-            List<JavaFileObject> sources = splitSources(MC_MAIN_DEMO + """
+            var sources = splitSources(MC_MAIN_DEMO + """
             package com.predic8.membrane.demo;
             import com.predic8.membrane.annot.*;
             import java.util.List;
@@ -233,7 +233,7 @@ public class SpringConfigXSDErrorsTest {
 
         @Test
         public void otherAttributes() {
-            List<JavaFileObject> sources = splitSources(MC_MAIN_DEMO + """
+            var sources = splitSources(MC_MAIN_DEMO + """
             package com.predic8.membrane.demo;
             import com.predic8.membrane.annot.*;
             import java.util.List;
@@ -255,7 +255,7 @@ public class SpringConfigXSDErrorsTest {
 
         @Test
         public void textContent() {
-            List<JavaFileObject> sources = splitSources(MC_MAIN_DEMO + """
+            var sources = splitSources(MC_MAIN_DEMO + """
             package com.predic8.membrane.demo;
             import com.predic8.membrane.annot.*;
             import java.util.List;
@@ -280,7 +280,7 @@ public class SpringConfigXSDErrorsTest {
     class TextContent {
         @Test
         public void mcTextContentMissing() {
-            List<JavaFileObject> sources = splitSources(MC_MAIN_DEMO + """
+            var sources = splitSources(MC_MAIN_DEMO + """
             package com.predic8.membrane.demo;
             import com.predic8.membrane.annot.*;
             @MCElement(name="demo", mixed=true)
@@ -295,7 +295,7 @@ public class SpringConfigXSDErrorsTest {
         }
         @Test
         public void mixedMissing() {
-            List<JavaFileObject> sources = splitSources(MC_MAIN_DEMO + """
+            var sources = splitSources(MC_MAIN_DEMO + """
             package com.predic8.membrane.demo;
             import com.predic8.membrane.annot.*;
             @MCElement(name="demo")
@@ -315,7 +315,7 @@ public class SpringConfigXSDErrorsTest {
 
     @Test
     public void noConcreteChildMcElement() {
-        List<JavaFileObject> sources = splitSources(MC_MAIN_DEMO + """
+        var sources = splitSources(MC_MAIN_DEMO + """
         package com.predic8.membrane.demo;
         import com.predic8.membrane.annot.*;
         import java.util.List;
@@ -338,7 +338,7 @@ public class SpringConfigXSDErrorsTest {
 
     @Test
     public void childNameNotUnique() {
-        List<JavaFileObject> sources = splitSources(MC_MAIN_DEMO + """
+        var sources = splitSources(MC_MAIN_DEMO + """
         package com.predic8.membrane.demo;
         import com.predic8.membrane.annot.*;
         import java.util.List;

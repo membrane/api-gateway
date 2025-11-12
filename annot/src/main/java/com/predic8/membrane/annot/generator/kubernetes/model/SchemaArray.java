@@ -6,14 +6,14 @@ import static com.predic8.membrane.annot.generator.kubernetes.model.SchemaFactor
 
 public class SchemaArray extends AbstractSchema<SchemaArray> {
 
-    SchemaObject items;
+    AbstractSchema items;
 
     SchemaArray(String name) {
         super(name);
         type(ARRAY);
     }
 
-    public SchemaArray items(SchemaObject items) {
+    public SchemaArray items(AbstractSchema items) {
         this.items = items;
         return this;
     }
@@ -25,5 +25,10 @@ public class SchemaArray extends AbstractSchema<SchemaArray> {
             node.set("items", items.json(jnf.objectNode()));
         }
         return node;
+    }
+
+    @Override
+    public boolean isObject() {
+        return false;
     }
 }

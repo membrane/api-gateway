@@ -1,0 +1,28 @@
+# yaml-language-server: $schema=../../core/target/classes/com/predic8/membrane/core/config/json/membrane.schema.json
+#
+# Membrane Tutorial: Message Flow
+#
+# API Gateways gain their flexibility through plugins. Each plugin performs its function
+# at a specific point in the request or response flow.
+#
+# 1.) Start Membrane:
+#
+#     membrane.sh -c 20-Message-Flow.yaml
+#
+# 2.) Call the API:
+#
+#     curl localhost:2000
+#
+#    Watch the console output. The message is printed twice: once during the
+#    request and once during the response flow. The status code appears
+#    only in the second log message, after the backend has responded.
+
+spec:
+  port: 2000
+  flow:
+    # executed during the request and response flow
+    - log:
+        message: Path ${path} Status ${statusCode}
+  target:
+    url: https://api.predic8.de
+

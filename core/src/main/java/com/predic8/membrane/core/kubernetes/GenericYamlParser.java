@@ -30,6 +30,7 @@ import java.util.*;
 import static com.google.api.client.util.Types.newInstance;
 import static com.predic8.membrane.core.config.spring.k8s.YamlLoader.readString;
 import static com.predic8.membrane.core.kubernetes.ParserHelper.*;
+import static java.util.Locale.ROOT;
 import static org.springframework.core.annotation.AnnotationUtils.findAnnotation;
 
 public class GenericYamlParser {
@@ -43,9 +44,7 @@ public class GenericYamlParser {
             event = events.next();
             if (event instanceof SequenceStartEvent) {
                 // when this is a list, we are on a @MCElement(..., noEnvelope=true)
-                List value = parseListExcludingStartEvent(context, events, registry);
-                Method setter = getSingleChildSetter(clazz);
-                setSetter(obj, setter, value);
+                setSetter(obj, getSingleChildSetter(clazz), parseListExcludingStartEvent(context, events, registry));
                 return obj;
             }
             ensureMappingStart(event);
@@ -125,7 +124,7 @@ public class GenericYamlParser {
         if (childSetters.size() > 1) {
             throw new RuntimeException("Multiple @MCChildElement setters found in " + clazz.getName() + ". Only one is allowed when noEnvelope=true.");
         }
-        Method setter = childSetters.get(0);
+        Method setter = childSetters.getFirst();
         Class<?> paramType = setter.getParameterTypes()[0];
         if (!java.util.Collection.class.isAssignableFrom(paramType)) {
             throw new RuntimeException("The single @MCChildElement setter in " + clazz.getName() +
@@ -135,12 +134,18 @@ public class GenericYamlParser {
     }
 
     @SuppressWarnings({"rawtypes", "unchecked"})
-    private static Object resolveSetterValue(Class<?> wanted, Method setter, String context, Iterator<Event> events, BeanRegistry registry, String key, Class clazz2, Event event) {
+    private static Object resolveSetterValue(Class<?> wanted, Method setter, String context, Iterator<Event> events, BeanRegistry registry, String key, Class clazz2, Event event) throws WrongEnumConstantException {
         if (wanted.equals(List.class) || wanted.equals(Collection.class)) {
             return parseListIncludingStartEvent(context, events, registry);
         }
         if (wanted.isEnum()) {
-           return Enum.valueOf((Class<Enum>) wanted, readString(events).toUpperCase(Locale.ROOT));
+            String value = readString(events).toUpperCase(ROOT);
+            try {
+                return Enum.valueOf((Class<Enum>) wanted, value);
+            }
+            catch (IllegalArgumentException e) {
+                throw new WrongEnumConstantException(wanted, value);
+            }
         }
         if (wanted.equals(String.class)) {
             return readString(events);
@@ -174,8 +179,7 @@ public class GenericYamlParser {
         if (!(event instanceof ScalarEvent))
             throw new IllegalStateException("Expected a string after the '$ref' key.");
         Object o = registry.resolveReference(((ScalarEvent) event).getValue());
-        Method setter = getChildSetter(clazz, o.getClass());
-        setSetter(obj, setter, o);
+        setSetter(obj, getChildSetter(clazz, o.getClass()), o);
     }
 
     private static String getScalarKey(Event event) {
@@ -191,7 +195,7 @@ public class GenericYamlParser {
         }
     }
 
-    private static List parseListIncludingStartEvent(String context, Iterator<Event> events, BeanRegistry registry) {
+    private static List<?> parseListIncludingStartEvent(String context, Iterator<Event> events, BeanRegistry registry) {
         Event event = events.next();
         if (!(event instanceof SequenceStartEvent)) {
             throw new IllegalStateException("Expected start-of-sequence in line " + event.getStartMark().getLine() + " column " + event.getStartMark().getColumn());
@@ -199,7 +203,7 @@ public class GenericYamlParser {
         return parseListExcludingStartEvent(context, events, registry);
     }
 
-    private static @NotNull ArrayList parseListExcludingStartEvent(String context, Iterator<Event> events, BeanRegistry registry) {
+    private static @NotNull ArrayList<?> parseListExcludingStartEvent(String context, Iterator<Event> events, BeanRegistry registry) {
         Event event;
         ArrayList res = new ArrayList();
         while (true) {
@@ -208,8 +212,7 @@ public class GenericYamlParser {
                 break;
             else if (!(event instanceof MappingStartEvent))
                 throw new IllegalStateException("Expected end-of-sequence or begin-of-map in line " + event.getStartMark().getLine() + " column " + event.getStartMark().getColumn());
-            Object o = parseMapToObj(context, events, registry);
-            res.add(o);
+            res.add(parseMapToObj(context, events, registry));
         }
 
         return res;
@@ -230,16 +233,20 @@ public class GenericYamlParser {
         String key = ((ScalarEvent) event).getValue();
         if ("$ref".equals(key)) {
             event = events.next();
-            if (!(event instanceof ScalarEvent))
+            if (!(event instanceof ScalarEvent se))
                 throw new IllegalStateException("Expected a string after the '$ref' key.");
-            return registry.resolveReference(((ScalarEvent)event).getValue());
+            return registry.resolveReference(se.getValue());
         }
+        return parse(key, getAClass(context, key), events, registry);
+    }
+
+    private static @NotNull Class<?> getAClass(String context, String key) {
         Class<?> clazz = K8sHelperGeneratorAutoGenerated.getLocal(context, key);
         if (clazz == null)
             clazz = K8sHelperGeneratorAutoGenerated.elementMapping.get(key);
         if (clazz == null)
             throw new RuntimeException("Did not find java class for key '" + key + "'.");
-        return GenericYamlParser.parse(key, clazz, events, registry);
+        return clazz;
     }
 
     private static <T> Method getSetter(Class<T> clazz, String key) {
