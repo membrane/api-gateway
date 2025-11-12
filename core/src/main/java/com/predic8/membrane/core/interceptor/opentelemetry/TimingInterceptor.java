@@ -5,7 +5,6 @@ import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.flow.AbstractFlowWithChildrenInterceptor;
-import io.opentelemetry.api.GlobalOpenTelemetry;
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.SpanKind;
 import io.opentelemetry.api.trace.Tracer;
@@ -20,6 +19,20 @@ import java.util.concurrent.atomic.LongAdder;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.RESPONSE;
 
+/**
+ * @description Measures the end-to-end processing time of the child interceptor flow and logs an aligned summary.
+ * If an OpenTelemetry parent Span is present on the {@link Exchange}, a child sub-span is created
+ * around the measured section so timing data is exported to OTel as well.
+ *
+ * @example
+ * <api port="2000">
+ *   <time label="flow-timing">
+ *       <!-- plugins to be measured -->
+ *   </time>
+ * </api>
+ *
+ * @topic 4. Monitoring, Logging and Statistics
+ */
 @MCElement(name = "time")
 public class TimingInterceptor extends AbstractFlowWithChildrenInterceptor {
 
@@ -31,8 +44,6 @@ public class TimingInterceptor extends AbstractFlowWithChildrenInterceptor {
     private final AtomicLong maxTime = new AtomicLong(0);
 
     private String label;
-
-    private final Tracer tracer = GlobalOpenTelemetry.getTracer("MEMBRANE-TIME");
 
     @Override
     public Outcome handleRequest(Exchange exc) {
@@ -48,19 +59,15 @@ public class TimingInterceptor extends AbstractFlowWithChildrenInterceptor {
         long startNs = System.nanoTime();
 
         Span parent = exc.getProperty("span", Span.class);
-        boolean createSubspan = parent != null;
 
         Span sub = null;
         Scope parentScope = null;
         Scope subScope = null;
 
         try {
-            if (createSubspan) {
+            if (parent != null) {
                 parentScope = parent.makeCurrent();
-                sub = exc.getProperty("tracer", Tracer.class).spanBuilder("TimingInterceptor " + flow.name())
-                        .setSpanKind(SpanKind.INTERNAL)
-                        .setParent(Context.current())
-                        .startSpan();
+                sub = getSpan(exc, flow);
                 subScope = sub.makeCurrent();
             }
 
@@ -101,10 +108,21 @@ public class TimingInterceptor extends AbstractFlowWithChildrenInterceptor {
         }
     }
 
+    private static Span getSpan(Exchange exc, Flow flow) {
+        return exc.getProperty("tracer", Tracer.class).spanBuilder("TimingInterceptor " + flow.name())
+                .setSpanKind(SpanKind.INTERNAL)
+                .setParent(Context.current())
+                .startSpan();
+    }
+
     public String getLabel() {
         return label;
     }
 
+    /**
+     * @description Optional label prefix for log lines. Use it to distinguish logs from multiple <time /> blocks.
+     * @example "Validation"
+     */
     @MCAttribute
     public void setLabel(String label) {
         this.label = label;
