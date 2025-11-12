@@ -23,8 +23,8 @@ import java.io.IOException;
  */
 public class CompositeClassLoader extends ClassLoader {
 
-    private ClassLoader loaderA;
-    private ClassLoader loaderB;
+    private final ClassLoader loaderA;
+    private final ClassLoader loaderB;
 
     public CompositeClassLoader(ClassLoader loaderA, ClassLoader loaderB) {
         super(null);
@@ -52,7 +52,7 @@ public class CompositeClassLoader extends ClassLoader {
 
     @Override
     protected Enumeration<URL> findResources(String name) throws IOException {
-        return new Enumeration<URL>() {
+        return new Enumeration<>() {
             private final Enumeration<URL> enumA = loaderA.getResources(name);
             private final Enumeration<URL> enumB = loaderB.getResources(name);
 

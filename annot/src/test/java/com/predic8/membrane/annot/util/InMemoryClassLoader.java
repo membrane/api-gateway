@@ -162,7 +162,7 @@ class InMemoryClassLoader extends ClassLoader {
         URI uri2 = uri;
 
         Enumeration<URL> r = super.getResources(name);
-        return new ConcatenatingEnumeration<URL>(uri2 == null ? new URL[0] : new URL[] { uri2.toURL() }, r);
+        return new ConcatenatingEnumeration<>(uri2 == null ? new URL[0] : new URL[]{uri2.toURL()}, r);
     }
 
     public void defineOverlay(OverlayInMemoryFile... files) {
