@@ -9,11 +9,11 @@
 #     You should be redirected to:
 #       https://api.predic8.de/shop/v2/products/7
 #
-# 2.) Examine response:
+# 2.) Examine the response:
 #
 #       curl -v localhost:2000/fruits/7
 #
-#     Check the HTTP "Location" header.
+#     Check the HTTP 'Location' header.
 
 spec:
   port: 2000

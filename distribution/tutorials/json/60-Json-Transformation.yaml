@@ -1,11 +1,19 @@
 # yaml-language-server: $schema=../../core/target/classes/com/predic8/membrane/core/config/json/membrane.schema.json
 #
-# Membrane Tutorial: Jsonpath
+# Membrane Tutorial: JSON Template
 #
-# curl -d @data/order.json -H "Content-Type: application/json" localhost:2000
+# Using a template, you can transform incoming JSON into a different JSON shape.
+#
+# 1.) Inspect ../data/order.json
+#   Notice it contains an "items" array.
+#
+# 2.) Send a request with a sample payload
+#   curl -d @../data/order.json -H "Content-Type: application/json" http://localhost:2000
+#
+# 3.) Observe how the response structure has changed.
 #
 # Troubleshooting:
-#   Do not forget the Content-Type header with value application/json!
+#   Always send the header: Content-Type: application/json
 
 spec:
   port: 2000
@@ -27,12 +35,17 @@ spec:
               {
                 "number": ${property.id},
                 "positions": [
-                  <% for (item in property.items) { %>
+                  <%
+                    def list = property.items
+                    for (i = 0; i < list.size(); i++) {
+                      def item = list[i]
+                  %>
                   {
                     "product": "<%= item.article %>",
                     "quantity": <%= item.quantity %>,
                     "amount": <%= item.quantity * item.price %>
-                  },
+                  }
+                  <%= i < list.size()-1 ? ',' : '' /* Add trailing comma if not last item */ %> 
                   <% } %>
                 ]
               }

@@ -2,9 +2,8 @@
 #
 # Membrane Tutorial: if
 #
-# 1.) Start Membrane:
-#     membrane.sh -c
-# 2.) Try the endpoints:
+# Try:
+#
 #     curl http://localhost:2000
 #     curl http://localhost:2000/foo -H "X-Id: 7"
 #     curl http://localhost:2000/get -H "X-Id: 7"
@@ -14,7 +13,8 @@ spec:
   flow:
     - request:
         - if:
-            test: header['X-Id'] == null  # default language: spel
+            # default language: spel
+            test: header['X-Id'] == null
             flow:
               - static:
                   src: Please set X-Id header
@@ -29,7 +29,6 @@ spec:
     - response:
         - if:
             test: statusCode matches '4\d\d'
-            language: spel
             flow:
               - static:
                   src: User error!

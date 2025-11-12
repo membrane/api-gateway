@@ -2,11 +2,12 @@
 #
 # Membrane Tutorial: Groovy Scripting
 #
+# Try:
 #
-# 2.) Try the endpoints:
-# curl localhost:2000/groovy
-# curl localhost:2000/random
-# curl localhost:2000/response
+#   curl http://localhost:2000/groovy
+#   curl http://localhost:2000/random
+#   curl http://localhost:2000/response
+
 spec:
   port: 2000
   path:
@@ -19,7 +20,6 @@ spec:
         statusCode: 200
 
 ---
-
 spec:
   port: 2000
   path:

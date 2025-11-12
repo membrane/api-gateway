@@ -230,7 +230,7 @@ public class TemplateInterceptorTest {
 
         ti.setContentType(APPLICATION_JSON);
         ti.setSrc(inputJson);
-        ti.setPretty( TRUE.toString());
+        ti.setPretty( TRUE);
         ti.init();
         assertArrayEquals(expectedPrettyJson.getBytes(UTF_8), ti.prettify(inputJson.getBytes(UTF_8)));
     }
@@ -240,7 +240,7 @@ public class TemplateInterceptorTest {
         String invalid = "{name:\"John,age:30}";
         ti.setContentType(APPLICATION_JSON);
         ti.setSrc(invalid);
-        ti.setPretty("true");
+        ti.setPretty(TRUE);
         ti.init(router);
         ti.handleRequest(exc);
 
