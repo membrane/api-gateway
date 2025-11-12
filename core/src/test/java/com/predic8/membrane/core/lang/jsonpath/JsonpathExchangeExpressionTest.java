@@ -50,7 +50,13 @@ class JsonpathExchangeExpressionTest extends AbstractExchangeExpressionTest {
                     "world": {
                         "country": "US",
                         "continent": "Europe"
-                    }
+                    },
+                    "numbers": [1,2,3],
+                    "objects": [
+                        {"foo": "bar"},
+                        {"foo": "baz"},
+                        {"foo": "qux"}
+                    ]
                 }
                 """);
     }
@@ -71,6 +77,25 @@ class JsonpathExchangeExpressionTest extends AbstractExchangeExpressionTest {
         assertTrue(evalBool("$.fish"));
         assertFalse(evalBool("$.insect"));
         assertFalse(evalBool("$.wings"));
+    }
+
+    @Test
+    void evalString() {
+        assertEquals("747", evalString("$.id"));
+        
+        var tags = evalString("$.tags");
+        assertTrue(tags.contains("animal"));
+        assertTrue(tags.contains("water"));
+
+        var numbes = evalString("$.numbers");
+        assertTrue(numbes.contains("1"));
+        assertTrue(numbes.contains("2"));
+        assertTrue(numbes.contains("3"));
+
+        var objects = evalString("$.objects");
+        assertTrue(objects.contains("foo"));
+        assertTrue(objects.contains("baz"));
+        assertTrue(objects.contains("qux"));
     }
 
     @Test

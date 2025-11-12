@@ -15,15 +15,14 @@
 package com.predic8.membrane.core.proxies;
 
 import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.Router;
+import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.config.*;
 import com.predic8.membrane.core.config.security.*;
 import com.predic8.membrane.core.config.xml.*;
-import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.lang.ExchangeExpression;
+import com.predic8.membrane.core.lang.*;
 import com.predic8.membrane.core.lang.ExchangeExpression.*;
-import com.predic8.membrane.core.lang.TemplateExchangeExpression;
 import com.predic8.membrane.core.transport.ssl.*;
 
 import static com.predic8.membrane.core.lang.ExchangeExpression.Language.*;
@@ -113,7 +112,7 @@ public abstract class AbstractServiceProxy extends SSLableProxy {
 
         public void init(Router router) {
             if (url != null) {
-                exchangeExpression = TemplateExchangeExpression.newInstance(new InterceptorAdapter(router,xmlConfig), language, url);
+                exchangeExpression = TemplateExchangeExpression.newInstance(new InterceptorAdapter(router, xmlConfig), language, url);
             }
 
         }
@@ -125,9 +124,8 @@ public abstract class AbstractServiceProxy extends SSLableProxy {
              */
             if (exchangeExpression != null) {
                 return exchangeExpression.evaluate(exc, flow, String.class);
-            } else {
-                return url;
             }
+            return url;
         }
 
         public Target() {

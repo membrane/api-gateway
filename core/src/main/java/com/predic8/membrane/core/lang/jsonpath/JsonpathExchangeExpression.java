@@ -111,7 +111,7 @@ public class JsonpathExchangeExpression extends AbstractExchangeExpression {
         }
         if (String.class.isAssignableFrom(type)) {
             if (o instanceof List l) {
-                return type.cast(l.getFirst().toString());
+                return type.cast(l.toString()); // Render list as [1,2,3]
             }
             if (o instanceof JSONAware ja) {
                 return type.cast(ja.toJSONString());

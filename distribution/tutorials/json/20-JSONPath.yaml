@@ -1,0 +1,50 @@
+# yaml-language-server: $schema=../../core/target/classes/com/predic8/membrane/core/config/json/membrane.schema.json
+#
+# Membrane Tutorial: JSONPath
+#
+# Use JSONPath to extract data from JSON documents.
+#
+# Try:
+#
+#   curl -v -d @../data/animals.json -H "Content-Type: application/json" http://localhost:2000
+#     Inspect the console log.
+#
+#   curl -d "{}" -H "Content-Type: application/json" http://localhost:2000
+#     Should return 404, because the document does not contain an "animals" property
+
+spec:
+  port: 2000
+  test: $.animals # Only accept requests whose JSON has an "animals" property
+  language: jsonpath   # Use JSONPath for the routing test above
+  flow:
+    - request:
+      - setHeader:
+          name: X-Number
+          value: ${$.number} # Embed the JSONPath expression inside ${}
+          language: jsonpath
+      - log:
+          message: "Names: ${$.animals[*].name}"
+          language: jsonpath
+      - if:
+          test: $.animals[?(@.species == 'cat')]
+          language: jsonpath
+          flow:
+            - log:
+                message: "Cat found!"
+    - response:
+        - beautifier: {} # Format JSON
+  target:
+    # JSONPath to construct the target URL
+    url: http://localhost:2001/zoo?animal=${$.animals[0].name}
+    language: jsonpath
+
+---
+spec:
+  port: 2001
+  flow:
+    - request:
+      - log:
+          # Log the query parameter
+          message: "First: ${params.animal}"
+      - return:
+          statusCode: 200
