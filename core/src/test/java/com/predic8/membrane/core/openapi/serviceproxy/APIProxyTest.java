@@ -60,7 +60,7 @@ class APIProxyTest {
     @Test
     void testAssignOpenAPIName_singleAPI() {
         var p = new APIProxy();
-        p.apiRecords = Map.of("id1", new OpenAPIRecord(new OpenAPI().info(new Info().title("Test-API!@#")), new OpenAPISpec()));
+        p.apiRecords = Map.of("id1", new OpenAPIRecord(new OpenAPI().info(new Info().title("Test-API")), new OpenAPISpec()));
         p.assignOpenAPIName();
         assertEquals("Test-API", p.getName());
     }
@@ -69,8 +69,8 @@ class APIProxyTest {
     void testAssignOpenAPIName_multipleAPIs() {
         var p = new APIProxy();
         p.apiRecords = Map.of(
-                "id1", new OpenAPIRecord(new OpenAPI().info(new Info().title("Test-API!@#")), new OpenAPISpec()),
-                "id2", new OpenAPIRecord(new OpenAPI().info(new Info().title("Test-API!@#")), new OpenAPISpec())
+                "id1", new OpenAPIRecord(new OpenAPI().info(new Info().title("Test-API")), new OpenAPISpec()),
+                "id2", new OpenAPIRecord(new OpenAPI().info(new Info().title("Test-API")), new OpenAPISpec())
         );
         p.assignOpenAPIName();
         assertEquals("Test-API +1 more", p.getName());

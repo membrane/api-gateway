@@ -39,6 +39,7 @@ import java.util.*;
 
 import static com.predic8.membrane.core.lang.ExchangeExpression.Language.SPEL;
 import static com.predic8.membrane.core.lang.ExchangeExpression.expression;
+import static com.predic8.membrane.core.util.StringUtil.maskNonPrintableCharacters;
 
 /**
  * @description The api proxy extends the serviceProxy with API related functions like OpenAPI support and path parameters.
@@ -117,21 +118,20 @@ public class APIProxy extends ServiceProxy implements Polyglot, XMLSupport {
     }
 
     void assignOpenAPIName() {
-        if (name.isEmpty() && !apiRecords.isEmpty()) {
-            var info = apiRecords.values().iterator().next().getApi().getInfo();
-            String title = info != null ? info.getTitle() : null;
-            if (title != null && !title.isBlank()) {
-                name = title.replaceAll("[^a-zA-Z0-9-_]", "").trim();
-                if (name.length() > 32)
-                    name = name.substring(0, 32);
-            } else {
-                name = "Unnamed OpenAPI";
-            }
-            if (apiRecords.size() > 1) {
-                name += " +%s more".formatted(apiRecords.size() - 1);
-            }
-        }
+        if(!name.isEmpty() || apiRecords.isEmpty()) return;
 
+        var info = apiRecords.values().iterator().next().getApi().getInfo();
+        String title = info != null ? info.getTitle() : null;
+        if (title != null && !title.isBlank()) {
+            name = maskNonPrintableCharacters(title);
+            if (name.length() > 32)
+                name = name.substring(0, 32);
+        } else {
+            name = "Unnamed OpenAPI";
+        }
+        if (apiRecords.size() > 1) {
+            name += " +%s more".formatted(apiRecords.size() - 1);
+        }
     }
 
     /**
