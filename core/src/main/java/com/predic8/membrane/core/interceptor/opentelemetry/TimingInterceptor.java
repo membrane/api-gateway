@@ -18,6 +18,9 @@ import java.util.concurrent.atomic.LongAdder;
 
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.RESPONSE;
+import static com.predic8.membrane.core.interceptor.opentelemetry.OpenTelemetryInterceptor.MEMBRANE_OTEL_SPAN;
+import static com.predic8.membrane.core.interceptor.opentelemetry.OpenTelemetryInterceptor.MEMBRANE_OTEL_TRACER;
+import static java.lang.Long.MAX_VALUE;
 
 /**
  * @description Measures the end-to-end processing time of the child interceptor flow and logs an aligned summary.
@@ -40,7 +43,7 @@ public class TimingInterceptor extends AbstractFlowWithChildrenInterceptor {
 
     private final LongAdder callCount = new LongAdder();
     private final LongAdder totalTime = new LongAdder();
-    private final AtomicLong minTime = new AtomicLong(Long.MAX_VALUE);
+    private final AtomicLong minTime = new AtomicLong(MAX_VALUE);
     private final AtomicLong maxTime = new AtomicLong(0);
 
     private String label;
@@ -58,7 +61,7 @@ public class TimingInterceptor extends AbstractFlowWithChildrenInterceptor {
     private Outcome handleInternal(Exchange exc, Flow flow) {
         long startNs = System.nanoTime();
 
-        Span parent = exc.getProperty("span", Span.class);
+        Span parent = exc.getProperty(MEMBRANE_OTEL_SPAN, Span.class);
 
         Span sub = null;
         Scope parentScope = null;
@@ -78,41 +81,54 @@ public class TimingInterceptor extends AbstractFlowWithChildrenInterceptor {
             };
         } finally {
             long durationMs = (System.nanoTime() - startNs) / 1_000_000;
-
-            callCount.increment();
-            totalTime.add(durationMs);
-            minTime.getAndUpdate(prev -> Math.min(prev, durationMs));
-            maxTime.getAndUpdate(prev -> Math.max(prev, durationMs));
-            long calls = callCount.sum();
-            long avg = totalTime.sum() / calls;
+            updateStats(durationMs);
+            long avg = totalTime.sum() / callCount.sum();
 
             log.info("{} duration: {} ms | calls: {} | min: {} ms | max: {} ms | avg: {} ms",
                     label != null ? label + ": " : "", durationMs, callCount.sum(), minTime.get(), maxTime.get(), avg
             );
 
-            if (sub != null) {
-                try {
-                    sub.setAttribute("membrane.interceptor", "TimingInterceptor");
-                    sub.setAttribute("flow.direction", flow.name());
-                    sub.setAttribute("time.ms", durationMs);
-                    sub.setAttribute("time.min.ms", minTime.get());
-                    sub.setAttribute("time.max.ms", maxTime.get());
-                    sub.setAttribute("time.avg.ms", avg);
-                    sub.setAttribute("calls.total", calls);
-                } finally {
-                    sub.end();
-                    if (subScope != null) subScope.close();
-                    if (parentScope != null) parentScope.close();
-                }
+            if (sub == null) {
+                closeScope(subScope);
+                closeScope(parentScope);
+            } else {
+                endSubspan(sub, subScope, parentScope, flow, durationMs, avg);
             }
         }
     }
 
+    private void updateStats(long durationMs) {
+        callCount.increment();
+        totalTime.add(durationMs);
+        minTime.getAndUpdate(prev -> Math.min(prev, durationMs));
+        maxTime.getAndUpdate(prev -> Math.max(prev, durationMs));
+    }
+
     private static Span getSpan(Exchange exc, Flow flow) {
-        return exc.getProperty("tracer", Tracer.class).spanBuilder("TimingInterceptor " + flow.name())
+        return exc.getProperty(MEMBRANE_OTEL_TRACER, Tracer.class).spanBuilder("TimingInterceptor " + flow.name())
                 .setSpanKind(SpanKind.INTERNAL)
                 .setParent(Context.current())
                 .startSpan();
+    }
+
+    private void endSubspan(Span sub, Scope subScope, Scope parentScope, Flow flow, long durationMs, long avg) {
+        try {
+            sub.setAttribute("membrane.interceptor", "TimingInterceptor");
+            sub.setAttribute("flow.direction", flow.name());
+            sub.setAttribute("time.ms", durationMs);
+            sub.setAttribute("time.min.ms", minTime.get());
+            sub.setAttribute("time.max.ms", maxTime.get());
+            sub.setAttribute("time.avg.ms", avg);
+            sub.setAttribute("calls.total", callCount.sum());
+        } finally {
+            sub.end();
+            closeScope(subScope);
+            closeScope(parentScope);
+        }
+    }
+
+    private static void closeScope(Scope s) {
+        if (s != null) s.close();
     }
 
     public String getLabel() {
