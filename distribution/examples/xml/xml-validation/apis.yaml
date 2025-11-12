@@ -1,0 +1,21 @@
+spec:
+  port: 2000
+  flow:
+    - request:
+        - validator:
+            schema: year.xsd
+    - response:
+        - formValidation:
+            schema: amount.xsd
+  target:
+    host: localhost
+    port: 2001
+
+---
+
+spec:
+  flow:
+    - template:
+        contentType: application/xml
+        src: <amount>100</amount>
+    - return: {}
