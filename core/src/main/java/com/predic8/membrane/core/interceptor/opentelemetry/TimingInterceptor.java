@@ -105,7 +105,11 @@ public class TimingInterceptor extends AbstractFlowWithChildrenInterceptor {
     }
 
     private static Span getSpan(Exchange exc, Flow flow) {
-        return exc.getProperty(MEMBRANE_OTEL_TRACER, Tracer.class).spanBuilder("TimingInterceptor " + flow.name())
+        Tracer tracer = exc.getProperty(MEMBRANE_OTEL_TRACER, Tracer.class);
+        if(tracer == null) {
+            throw new RuntimeException("OTel tracer not available");
+        }
+        return tracer.spanBuilder("TimingInterceptor " + flow.name())
                 .setSpanKind(SpanKind.INTERNAL)
                 .setParent(Context.current())
                 .startSpan();
