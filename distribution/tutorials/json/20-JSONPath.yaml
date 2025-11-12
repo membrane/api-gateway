@@ -4,7 +4,9 @@
 #
 # Use JSONPath to extract data from JSON documents.
 #
-# Try:
+# 1.) Take a look at ../data/animals.json
+#
+# 2.) Try:
 #
 #   curl -v -d @../data/animals.json -H "Content-Type: application/json" http://localhost:2000
 #     Inspect the console log.
@@ -26,6 +28,7 @@ spec:
           message: "Names: ${$.animals[*].name}"
           language: jsonpath
       - if:
+          # Surrounding ${} not needed
           test: $.animals[?(@.species == 'cat')]
           language: jsonpath
           flow:

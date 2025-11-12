@@ -1,0 +1,21 @@
+# yaml-language-server: $schema=../../core/target/classes/com/predic8/membrane/core/config/json/membrane.schema.json
+#
+# Membrane Tutorial: JSON to XML
+#
+# Convert a JSON body into XML.
+#
+# Try:
+#
+#   curl -d @../data/animals.json -H "Content-Type: application/json" http://localhost:2000
+#
+# Tip: Make sure the request header Content-Type is set to application/json.
+
+spec:
+  port: 2000
+  flow:
+    - request:
+        - json2Xml:
+            root: zoo # XML root element
+        - beautifier: {} # Format
+    - return:
+        statusCode: 200

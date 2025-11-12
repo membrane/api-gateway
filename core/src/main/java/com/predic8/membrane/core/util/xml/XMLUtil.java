@@ -18,6 +18,7 @@ import org.jetbrains.annotations.*;
 import org.w3c.dom.*;
 import org.xml.sax.*;
 
+import javax.xml.*;
 import javax.xml.namespace.*;
 import javax.xml.transform.*;
 import javax.xml.transform.dom.*;
@@ -25,20 +26,47 @@ import javax.xml.transform.stream.*;
 import java.io.*;
 import java.util.*;
 
+import static javax.xml.XMLConstants.*;
 import static javax.xml.transform.OutputKeys.*;
 
 public class XMLUtil {
 
-    public static String xml2string(Node doc) throws TransformerException {
-        TransformerFactory tfFactory = TransformerFactory.newInstance(); // Comment ThreadSafe? with URL
-        Transformer tf = tfFactory.newTransformer();
-        tf.setOutputProperty(OMIT_XML_DECLARATION, "yes");
+    // TransformerFactory is *not* specified as thread-safe.
+    // We keep one instance per thread. See:
+    // https://docs.oracle.com/javase/8/docs/api/javax/xml/transform/TransformerFactory.html
+    private static final ThreadLocal<TransformerFactory> TF = ThreadLocal.withInitial(() -> {
+        TransformerFactory f = TransformerFactory.newInstance();
+        try {
+            // Enable secure processing (limits entity expansion etc.)
+            f.setFeature(FEATURE_SECURE_PROCESSING, true);
+        } catch (TransformerConfigurationException | TransformerFactoryConfigurationError e) {
+            // Log if you want, but do not fail hard because of missing feature
+        }
 
-        tf.setOutputProperty(INDENT, "yes");
-        tf.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "2");
+        try {
+            // Disallow access to external DTDs and stylesheets (JAXP 1.5+)
+            f.setAttribute(ACCESS_EXTERNAL_DTD, "");
+            f.setAttribute(ACCESS_EXTERNAL_STYLESHEET, "");
+        } catch (IllegalArgumentException ignored) {
+            // Attributes not supported by all implementations
+        }
+
+        return f;
+    });
+
+
+    public static String xmlNode2String(Node node) throws TransformerException {
+        if (node == null) {
+            return "";
+        }
+
+        Transformer tf = TF.get().newTransformer();
+        tf.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "yes");
+        tf.setOutputProperty(OutputKeys.METHOD, "xml");
+        tf.setOutputProperty(OutputKeys.INDENT, "yes");
 
         StringWriter writer = new StringWriter();
-        tf.transform(new DOMSource(doc), new StreamResult(writer));
+        tf.transform(new DOMSource(node), new StreamResult(writer));
         return writer.toString();
     }
 

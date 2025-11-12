@@ -87,6 +87,8 @@ class JsonpathExchangeExpressionTest extends AbstractExchangeExpressionTest {
         assertTrue(tags.contains("animal"));
         assertTrue(tags.contains("water"));
 
+        // The behavior is different from XPath where you get the value of the first node as String. But
+        // it is consistent with most JSONPath implementations.
         var numbes = evalString("$.numbers");
         assertTrue(numbes.contains("1"));
         assertTrue(numbes.contains("2"));

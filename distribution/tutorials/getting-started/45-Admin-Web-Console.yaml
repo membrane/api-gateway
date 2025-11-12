@@ -1,0 +1,48 @@
+# yaml-language-server: $schema=../../core/target/classes/com/predic8/membrane/core/config/json/membrane.schema.json
+#
+# Membrane Tutorial: Admin Console
+#
+# The Admin Console gives you a live view of all running APIs,
+# including traffic statistics, configuration details, and message traces.
+#
+# 1.) Start this configuration.
+#
+# 2.) Open the Admin Console in your browser:
+#
+#       http://localhost:9000
+#
+#     Username: admin
+#     Password: admin
+spec:
+  port: 9000
+  flow:
+    # Protect the Admin Console using authentication (Basic, OAuth2, ACL, or none).
+    - basicAuthentication:
+        users:
+          - user:
+              username: admin
+              password: admin
+    - adminConsole:
+        readOnly: true
+
+---
+spec:
+  port: 2000
+  path:
+    uri: /jokes
+  target:
+    url: https://api.chucknorris.io/jokes/random
+
+---
+spec:
+  port: 2000
+  path:
+    uri: /api
+  target:
+    url: https://yesno.wtf/api
+
+---
+spec:
+  port: 2000
+  target:
+    url: https://api.adviceslip.com/advice

@@ -3,7 +3,7 @@
 # Membrane Tutorial: Short Circuit
 #
 # Normally an API forwards requests to a backend. Sometimes, however,
-# you may want to short-circuit the request and return a response immediately
+# you may want to short-circuit and return a response immediately
 # without calling the backend. This is useful for testing, debugging or
 # security.
 #
@@ -13,14 +13,18 @@
 #
 #       curl -v http://localhost:2000
 #
-#     Observe the returned status code.
+#     Observe the status code.
 #
+# 3) Send a request with a body:
+#
+#       curl -d "Bonjour" http://localhost:2000
+#
+#     Observe the response body.
 
 spec:
   port: 2000
   flow:
-    - response:
-        - static: # Set a static response body
-            src: Under maintenance!
+    # Reverses the flow.
+    # If there is no response yet it will copy the body from the request.
     - return:
-        statusCode: 503
+        statusCode: 200
