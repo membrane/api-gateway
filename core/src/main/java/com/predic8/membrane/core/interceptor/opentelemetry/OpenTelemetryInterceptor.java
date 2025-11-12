@@ -200,6 +200,7 @@ public class OpenTelemetryInterceptor extends AbstractInterceptor {
             try(Scope ignored = membraneSpan.makeCurrent()) {
                 setExchangeHeader(exc);
                 exc.setProperty("span", membraneSpan);
+                exc.setProperty("tracer", tracer);
             }
         }
     }

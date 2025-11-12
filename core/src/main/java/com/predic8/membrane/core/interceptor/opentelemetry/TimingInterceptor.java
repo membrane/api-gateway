@@ -1,6 +1,5 @@
 package com.predic8.membrane.core.interceptor.opentelemetry;
 
-import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.Outcome;
@@ -9,6 +8,7 @@ import io.opentelemetry.api.GlobalOpenTelemetry;
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.SpanKind;
 import io.opentelemetry.api.trace.Tracer;
+import io.opentelemetry.context.Context;
 import io.opentelemetry.context.Scope;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -54,8 +54,9 @@ public class TimingInterceptor extends AbstractFlowWithChildrenInterceptor {
         try {
             if (createSubspan) {
                 parentScope = parent.makeCurrent();
-                sub = tracer.spanBuilder("TimingInterceptor " + flow.name())
+                sub = exc.getProperty("tracer", Tracer.class).spanBuilder("TimingInterceptor " + flow.name())
                         .setSpanKind(SpanKind.INTERNAL)
+                        .setParent(Context.current())
                         .startSpan();
                 subScope = sub.makeCurrent();
             }
