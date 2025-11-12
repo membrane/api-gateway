@@ -1,5 +1,6 @@
 package com.predic8.membrane.core.interceptor.opentelemetry;
 
+import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.Outcome;
@@ -28,6 +29,8 @@ public class TimingInterceptor extends AbstractFlowWithChildrenInterceptor {
     private final LongAdder totalTime = new LongAdder();
     private final AtomicLong minTime = new AtomicLong(Long.MAX_VALUE);
     private final AtomicLong maxTime = new AtomicLong(0);
+
+    private String label;
 
     private final Tracer tracer = GlobalOpenTelemetry.getTracer("MEMBRANE-TIME");
 
@@ -76,8 +79,8 @@ public class TimingInterceptor extends AbstractFlowWithChildrenInterceptor {
             long calls = callCount.sum();
             long avg = totalTime.sum() / calls;
 
-            log.info("Timing Summary: duration: {} ms | calls: {} | min: {} ms | max: {} ms | avg: {} ms",
-                    durationMs, callCount.sum(), minTime.get(), maxTime.get(), avg
+            log.info("{} duration: {} ms | calls: {} | min: {} ms | max: {} ms | avg: {} ms",
+                    label != null ? label + ": " : "", durationMs, callCount.sum(), minTime.get(), maxTime.get(), avg
             );
 
             if (sub != null) {
@@ -96,5 +99,14 @@ public class TimingInterceptor extends AbstractFlowWithChildrenInterceptor {
                 }
             }
         }
+    }
+
+    public String getLabel() {
+        return label;
+    }
+
+    @MCAttribute
+    public void setLabel(String label) {
+        this.label = label;
     }
 }
