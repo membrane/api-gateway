@@ -1,7 +1,7 @@
 Starting Membrane
 ==================
 
-Make Java 21 or higher is installed. Then open a terminal and execute in this folder:
+Make sure Java 21 or higher is installed. Then open a terminal and execute in this folder:
 
 * On Linux:
   ./membrane.sh

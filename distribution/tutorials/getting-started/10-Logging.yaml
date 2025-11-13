@@ -3,7 +3,7 @@
 # Membrane Tutorial: Logging
 #
 # Logging is helpful during API development, debugging and operation.
-# Engaged in the message flow, the plugin logs the request and
+# Integrated in the message flow, the plugin logs the request and
 # the response.
 #
 # 1.) Start Membrane:
