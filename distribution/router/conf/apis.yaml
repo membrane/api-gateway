@@ -1,0 +1,51 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v6.3.11.json
+#
+# Sample API Configuration
+# ========================
+#
+# Try this configuration by starting Membrane with:
+#   ./membrane.sh or membrane.cmd
+#
+# Next steps:
+#  - Complete getting-started in the tutorials folder
+#  - Run the samples in examples/*
+#  - Download the free API Gateway book https://www.membrane-api.io/api-gateway-ebook.html
+#  - Look at https://www.membrane-api.io/docs/
+#
+# Troubleshooting:
+#   You need direct Internet access to run this configuration. If you are behind a corporate proxy,
+#   run the offline sample at examples/offline
+
+# API forwarding requests starting with /ip
+# Try: curl http://localhost:2000/ip
+spec:
+  port: 2000
+  path:
+    uri: /ip
+  target:
+    url: https://httpbin.org
+
+---
+# API deployment from OpenAPI
+# Open in your browser: http://localhost:2000/api-docs
+# Try: curl http://localhost:2000/shop/v2/products/12
+spec:
+  port: 2000
+  specs:
+    - openapi:
+        location: ../router/conf/openapi/fruitshop-v2-2-0.oas.yml
+        validateRequests: true
+
+---
+# Admin Web Console
+# Open in your browser: http://localhost:9000 and login with admin admin
+spec:
+  port: 9000
+  flow:
+    # Protect the Admin Console using authentication (Basic, OAuth2, ACL, or none).
+    - basicAuthentication:
+        users:
+          - user:
+              username: admin
+              password: admin
+    - adminConsole: {}
