@@ -50,7 +50,7 @@ public class BasicPathRoutingTutorialTest extends AbstractGettingStartedTutorial
         // @formatter:off
         given()
         .when()
-            .get("https://catfact.ninja/fact")
+            .get("http://localhost:2000/fact")
         .then()
             .statusCode(200)
             .body("fact", notNullValue())
@@ -63,10 +63,10 @@ public class BasicPathRoutingTutorialTest extends AbstractGettingStartedTutorial
         // @formatter:off
         given()
         .when()
-            .get("https://httpbin.org/get")
+            .get("http://localhost:2000/get")
         .then()
             .statusCode(200)
-            .body("url", equalTo("https://httpbin.org/get"))
+            .body("url", equalTo("https://localhost:2000/get"))
             .body("headers", notNullValue())
             .body("origin", notNullValue());
         // @formatter:on
