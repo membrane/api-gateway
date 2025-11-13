@@ -20,30 +20,31 @@ public class PathRewritingTutorialTest extends AbstractAdvancedTutorialTest{
 
     @Test
     void consoleLogs() {
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
-        PrintStream original = System.out;
-        System.setOut(new PrintStream(out));
+        synchronized (System.out) {
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            PrintStream original = System.out;
+            System.setOut(new PrintStream(out));
 
-        try {
-            // @formatter:off
-            given()
-            .when()
-                .get("http://localhost:2000/fruits/7")
-            .then()
-                .statusCode(200)
-                .body("id", equalTo(7))
-                .body("name",  notNullValue())
-                .body("modified_at", notNullValue());
-            // @formatter:on
-        } finally {
-            System.setOut(original);
+            try {
+                // @formatter:off
+                given()
+                .when()
+                    .get("http://localhost:2000/fruits/7")
+                .then()
+                    .statusCode(200)
+                    .body("id", equalTo(7))
+                    .body("name",  notNullValue())
+                    .body("modified_at", notNullValue());
+                // @formatter:on
+            } finally {
+                System.setOut(original);
+            }
+
+            String console = out.toString();
+            System.out.println(console);
+            assertTrue(console.contains("INFO LogInterceptor"));
+            assertTrue(console.contains("Requested /fruits/7"));
+            assertTrue(console.contains("Rewritten /shop/v2/products/7"));
         }
-
-        String console = out.toString();
-        System.out.println(console);
-        assertTrue(console.contains("INFO LogInterceptor"));
-        assertTrue(console.contains("Requested /fruits/7"));
-        assertTrue(console.contains("Rewritten /shop/v2/products/7"));
     }
-
 }

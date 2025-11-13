@@ -31,27 +31,29 @@ public class IfTutorialTest extends AbstractAdvancedTutorialTest {
 
     @Test
     void fooLogs() {
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
-        PrintStream original = System.out;
-        System.setOut(new PrintStream(out));
+        synchronized (System.out) {
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            PrintStream original = System.out;
+            System.setOut(new PrintStream(out));
 
-        try {
-            // @formatter:off
-            given()
-                .header("X-Id", "7")
-            .when()
-                .get("http://localhost:2000/foo")
-            .then()
-                .statusCode(404)
-                .body(equalTo("User error!"));
-            // @formatter:on
-        } finally {
-            System.setOut(original);
+            try {
+                // @formatter:off
+                given()
+                    .header("X-Id", "7")
+                .when()
+                    .get("http://localhost:2000/foo")
+                .then()
+                    .statusCode(404)
+                    .body(equalTo("User error!"));
+                // @formatter:on
+            } finally {
+                System.setOut(original);
+            }
+
+            String console = out.toString();
+            assertTrue(console.contains("INFO LogInterceptor"));
+            assertTrue(console.contains("Foo"));
         }
-
-        String console = out.toString();
-        assertTrue(console.contains("INFO LogInterceptor"));
-        assertTrue(console.contains("Foo"));
     }
 
     @Test

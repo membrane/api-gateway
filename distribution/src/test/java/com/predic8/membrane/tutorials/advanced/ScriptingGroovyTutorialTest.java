@@ -20,25 +20,27 @@ public class ScriptingGroovyTutorialTest extends AbstractAdvancedTutorialTest {
 
     @Test
     void groovyEndpointLogs() {
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
-        PrintStream original = System.out;
-        System.setOut(new PrintStream(out));
+        synchronized (System.out) {
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            PrintStream original = System.out;
+            System.setOut(new PrintStream(out));
 
-        try {
-            // @formatter:off
-            given()
-            .when()
-                .get("http://localhost:2000/groovy")
-            .then()
-                .statusCode(200);
-            // @formatter:on
-        } finally {
-            System.setOut(original);
+            try {
+                // @formatter:off
+                given()
+                .when()
+                    .get("http://localhost:2000/groovy")
+                .then()
+                    .statusCode(200);
+                // @formatter:on
+            } finally {
+                System.setOut(original);
+            }
+
+            String console = out.toString();
+            assertTrue(console.contains("I'm executed in the REQUEST flow"));
+            assertTrue(console.contains("I'm executed in the RESPONSE flow"));
         }
-
-        String console = out.toString();
-        assertTrue(console.contains("I'm executed in the REQUEST flow"));
-        assertTrue(console.contains("I'm executed in the RESPONSE flow"));
     }
 
     @Test

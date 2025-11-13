@@ -25,6 +25,4 @@ public class RedirectsTutorialTest extends AbstractAdvancedTutorialTest{
             .header("Location", equalTo("https://api.predic8.de/shop/v2/products/7"));
         // @formatter:on
     }
-
-
 }

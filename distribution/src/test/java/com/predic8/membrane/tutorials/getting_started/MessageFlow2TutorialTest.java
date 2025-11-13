@@ -32,30 +32,31 @@ public class MessageFlow2TutorialTest extends AbstractGettingStartedTutorialTest
 
     @Test
     void flowLogs() {
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
-        PrintStream original = System.out;
-        System.setOut(new PrintStream(out));
+        synchronized (System.out) {
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            PrintStream original = System.out;
+            System.setOut(new PrintStream(out));
 
-        try {
-            // @formatter:off
-            given()
-            .when()
-                .get("http://localhost:2000")
-            .then()
-                .statusCode(200)
-                .body(containsString("Shop API Showcase"));
-            // @formatter:on
-        } finally {
-            System.setOut(original);
+            try {
+                // @formatter:off
+                given()
+                .when()
+                    .get("http://localhost:2000")
+                .then()
+                    .statusCode(200)
+                    .body(containsString("Shop API Showcase"));
+                // @formatter:on
+            } finally {
+                System.setOut(original);
+            }
+
+            String console = out.toString();
+            System.out.println(console);
+            assertTrue(console.contains("TODO"));
+            assertTrue(console.contains("TODO"));
+            assertTrue(console.contains("TODO"));
         }
-
-        String console = out.toString();
-        System.out.println(console);
-        assertTrue(console.contains("TODO"));
-        assertTrue(console.contains("TODO"));
-        assertTrue(console.contains("TODO"));
     }
-
     // TODO Example currently not working. Fix yaml issues, then adjust test
 
 }
