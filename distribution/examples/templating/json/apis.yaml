@@ -1,0 +1,60 @@
+# JSON template with a variable
+spec:
+  port: 2000
+  method: GET
+  flow:
+    - request:
+        - template:
+            contentType: application/json
+            pretty: yes
+            src: |
+              {
+                "answer": "${params.answer}"
+              }
+    # To forward to backend use target below instead of return
+    - return:
+        statusCode: 200
+  # target:
+  #   host: YourBackendHost
+  #   port: YourBackendPort
+
+---
+# JSON input is converted to XML and directed to logger, the response is then converted back to JSON and returned.
+spec:
+  port: 2000
+  method: POST
+  flow:
+    - request:
+        # Value of "city" field of the incoming JSON is inserted into XML
+        - template:
+            contentType: application/xml
+            src: <city>${json.city}</city>
+    # setProperty extracts the "city" from the XML.
+    # The extracted value is placed inside a JSON template.
+    # Note: Consider that the response flow is going from bottom to top.
+    - response:
+        - template:
+            contentType: application/json
+            src: |
+              {
+                "city": "${property.city}"
+              }
+        # Is executed on the way back
+        - setProperty:
+            name: city
+            value: ${/city}
+            language: xpath
+  # Calls logger API below
+  target:
+    host: localhost
+    port: 3000
+
+---
+
+spec:
+  name: logger
+  port: 3000
+  flow:
+    - request:
+        # Logs the incoming messages
+        - log: {}

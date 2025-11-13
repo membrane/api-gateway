@@ -1,0 +1,24 @@
+spec:
+  port: 2000
+  flow:
+    - basicAuthentication:
+        users:
+          - user:
+              username: alice
+              password: membrane
+          - user:
+              username: bob
+              password: membrane2025
+  target:
+    url: https://api.predic8.de
+
+---
+
+spec:
+  port: 3000
+  flow:
+    - basicAuthentication:
+        fileUserDataProvider:
+          htpasswdPath: ./.htpasswd
+  target:
+    url: https://api.predic8.de

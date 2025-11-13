@@ -1,0 +1,49 @@
+spec:
+  port: 2000
+  name: Balancer
+  flow:
+    - balancer: {}
+
+---
+# Mock nodes for testing. Remove them in production.
+
+spec:
+  port: 4000
+  name: Node 1
+  flow:
+    - counter:
+        name: Node 1
+
+---
+
+spec:
+  port: 4001
+  name: Node 2
+  flow:
+    - counter:
+        name: Node 2
+
+---
+
+spec:
+  port: 4002
+  name: Node 3
+  flow:
+    - counter:
+        name: Node 3
+
+---
+# Admin console (Optional)
+spec:
+  port: 9000
+  name: Administration
+  flow:
+    - adminConsole: {}
+
+---
+# API to add and remove nodes (Optional)
+spec:
+  port: 9010
+  name: Balancer Management
+  flow:
+    - clusterNotification: {}

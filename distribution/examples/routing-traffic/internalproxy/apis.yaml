@@ -1,0 +1,31 @@
+spec:
+  port: 2000
+  flow:
+    - request:
+        # If 'true' set destination to internal proxy 'express'
+        - if:
+            test: //order[@express='yes']
+            language: xpath
+            flow:
+              - destination:
+                  url: internal://express
+
+---
+# An internalProxy is like a function or subroutine for an API.
+kind: internal
+spec:
+  name: express
+  flow:
+    - static:
+        src: Express processing!
+    - return: {}
+
+---
+
+kind: internal
+spec:
+  name: normal
+  flow:
+    - static:
+        src: Normal processing!
+    - return: {}

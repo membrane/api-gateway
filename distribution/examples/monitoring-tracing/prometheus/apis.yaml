@@ -1,0 +1,28 @@
+spec:
+  port: 2000
+  flow:
+    - prometheus: {}
+
+---
+
+spec:
+  port: 2001
+  flow:
+    - return:
+        statusCode: 200
+
+---
+
+spec:
+  port: 2002
+  flow:
+    - return:
+        statusCode: 404
+
+---
+
+spec:
+  port: 2003
+  flow:
+    - return:
+        statusCode: 500

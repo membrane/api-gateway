@@ -11,12 +11,12 @@ Membrane can be configured with YAML files instead of using the traditional XML 
    - On **Linux/macOS**:
 
       ```bash
-      membrane.sh yaml -l proxies.yaml
+      membrane.sh yaml -l apis.yaml
       ```
    - On **Windows**:
 
       ```cmd
-      membrane.cmd yaml -l proxies.yaml
+      membrane.cmd yaml -l apis.yaml
       ```
 2. Open [http://localhost:2000/api-docs](http://localhost:2000/api-docs) in the Web Browser.
 3. Open [http://localhost:9000/](http://localhost:9000/) in the Web Browser.

@@ -1,0 +1,21 @@
+spec:
+  port: 2001
+  flow:
+    - cors:
+        allowAll: true # Handles preflight requests and adds CORS headers
+    - static:
+        src: Hello from API 1!
+    - return: {}
+
+---
+
+spec:
+  port: 2002
+  flow:
+    - cors:
+        origins: "null"
+        methods: GET, POST
+        headers: Content-Type, X-Foo
+    - static:
+        src: Hello from API 2!
+    - return: {}

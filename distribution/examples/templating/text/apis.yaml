@@ -1,0 +1,47 @@
+# Simple text template with a variable
+spec:
+  port: 2000
+  path:
+    uri: /text
+  flow:
+    - request:
+        - template:
+            contentType: text/plain
+            src: Hello ${params.name}!
+    # To send messages to backend use target below instead of return
+    - return:
+        statusCode: 200
+  # target:
+  #   host: YourBackendHost
+  #   port: YourBackendPort
+
+---
+# Shows variable usage
+spec:
+  port: 2000
+  path:
+    uri: /variables
+  flow:
+    - request:
+        - template:
+            contentType: text/plain
+            src: |
+              Header:
+              <% for(h in header.allHeaderFields) { %>
+                 <%= h.headerName %> : <%= h.value %>
+              <% } %>
+
+              Exchange: <%= exc %>
+              Flow: <%= flow %>
+              Message.version: <%= message.version %>
+              Body: <%= message.body %>
+
+              Exchange Properties:
+              <% for(p in props) { %>
+                 Key: <%= p.key %> : <%= p.value %>
+              <% } %>
+
+              Query Params:
+              <% for(p in params) { %>
+                  <%= p.key %> : <%= p.value %>
+              <% } %>

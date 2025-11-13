@@ -1,0 +1,7 @@
+spec:
+  port: 2000
+  flow:
+    - log: {}
+  target:
+    host: api.predic8.de
+    ssl: {}

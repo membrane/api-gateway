@@ -26,7 +26,7 @@ import static com.predic8.membrane.core.http.MimeType.TEXT_HTML;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.*;
 
-class ProxiesYAMLExampleTest extends AbstractSampleMembraneStartStopTestcase {
+class ApisYAMLExampleTest extends AbstractSampleMembraneStartStopTestcase {
 
     @Override
     protected String getExampleDirName() {
@@ -35,7 +35,7 @@ class ProxiesYAMLExampleTest extends AbstractSampleMembraneStartStopTestcase {
 
     @BeforeEach
     void startMembrane() throws IOException, InterruptedException {
-        process = new Process2.Builder().in(baseDir).script("membrane").parameters("yaml -l proxies.yaml").waitForMembrane().start();
+        process = new Process2.Builder().in(baseDir).script("membrane").parameters("yaml -l apis.yaml").waitForMembrane().start();
     }
 
     @Test

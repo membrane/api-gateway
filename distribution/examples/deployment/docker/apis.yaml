@@ -1,0 +1,12 @@
+spec:
+  port: 2000
+  specs:
+    - openapi:
+        location: "https://api.predic8.de/shop/v2/api-docs"
+
+---
+
+spec:
+  port: 2000
+  target:
+    url: "https://api.predic8.de"

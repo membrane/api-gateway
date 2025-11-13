@@ -1,0 +1,16 @@
+spec:
+  port: 2000
+  flow:
+    - request:
+        # Gets the latest product by ID
+        - call:
+            url: https://api.predic8.de/shop/v2/products?sort=id&amp;order=desc&amp;limit=1
+        # Extracts the ID of the newest product
+        - setProperty:
+            name: id
+            value: ${$.products[0].id}
+            language: jsonpath
+        #  Fetches the full product details using the extracted ID
+        - call:
+            url: https://api.predic8.de/shop/v2/products/${properties.id}
+    - return: {}

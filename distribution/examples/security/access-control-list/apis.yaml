@@ -1,0 +1,7 @@
+spec:
+  port: 2000
+  flow:
+    - accessControl:
+        file: ./acl.xml
+  target:
+    url: https://predic8.com

@@ -1,0 +1,44 @@
+# If caller provides a valid API key it will receive a signed JWT.
+spec:
+  port: 2000
+  name: Token Server
+  flow:
+    - apiKey:
+        required: true
+        stores:
+          - apiKeyFileStore:
+              location: demo-keys.txt
+        extractors:
+          - headerExtractor: {}
+    - request:
+        - setProperty:
+            name: scopes
+            value: ${scopes()}
+        - template:
+            src: |
+              {
+                "sub": "user@example.com",
+                "aud": "order",
+                "scope": "${property.scopes}"
+              }
+        - jwtSign:
+            jwk:
+              location: jwk.json
+
+---
+
+spec:
+  port: 2001
+  name: Protected Resource
+  flow:
+    - jwtAuth:
+        expectedAud: order
+        jwks:
+          jwks:
+            - jwk:
+                location: jwk.json
+    - template:
+        src: |
+          You accessed protected content!
+          JWT Scopes: ${property.jwt.get("scope")}
+    - return: {}
