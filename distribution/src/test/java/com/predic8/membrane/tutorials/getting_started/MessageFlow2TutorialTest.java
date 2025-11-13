@@ -51,12 +51,19 @@ public class MessageFlow2TutorialTest extends AbstractGettingStartedTutorialTest
             }
 
             String console = out.toString();
-            System.out.println(console);
-            assertTrue(console.contains("TODO"));
-            assertTrue(console.contains("TODO"));
-            assertTrue(console.contains("TODO"));
+            assertTrue(console.contains("Step 1"));
+            assertTrue(console.contains("Step 2 Path /"));
+            assertTrue(console.contains("Step 3"));
+            assertTrue(console.contains("Step 4"));
+            assertTrue(console.contains("Step 5 Status 200"));
+            assertTrue(console.contains("Step 6"));
+
+            assertTrue(console.indexOf("Step 1") < console.indexOf("Step 2 Path"));
+            assertTrue(console.indexOf("Step 2 Path") < console.indexOf("Step 3"));
+            assertTrue(console.indexOf("Step 3") < console.indexOf("Step 4"));
+            assertTrue(console.indexOf("Step 4") < console.indexOf("Step 5 Status"));
+            assertTrue(console.indexOf("Step 5 Status") < console.indexOf("Step 6"));
         }
     }
-    // TODO Example currently not working. Fix yaml issues, then adjust test
 
 }
