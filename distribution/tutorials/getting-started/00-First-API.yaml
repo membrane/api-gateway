@@ -1,4 +1,4 @@
-# yaml-language-server: $schema=../../core/target/classes/com/predic8/membrane/core/config/json/membrane.schema.json
+# yaml-language-server: $schema=https://www.membrane-api.io/v6.3.11.json
 #
 # Membrane Tutorial: First API
 #
