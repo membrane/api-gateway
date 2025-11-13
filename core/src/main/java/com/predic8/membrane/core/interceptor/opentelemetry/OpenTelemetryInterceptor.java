@@ -60,8 +60,8 @@ import static io.opentelemetry.context.Context.current;
  */
 @MCElement(name = "openTelemetry")
 public class OpenTelemetryInterceptor extends AbstractInterceptor {
-    public static final String MEMBRANE_OTEL_SPAN = "span";
-    public static final String MEMBRANE_OTEL_TRACER = "tracer";
+    public static final String MEMBRANE_OTEL_SPAN = "membrane.otel.span";
+    public static final String MEMBRANE_OTEL_TRACER = "membrane.otel.tracer";
     private double sampleRate = 1.0;
     private OtelExporter exporter = new OtlpExporter();
     private OpenTelemetry otel;

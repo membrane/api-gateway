@@ -10,6 +10,7 @@ import io.opentelemetry.api.trace.SpanKind;
 import io.opentelemetry.api.trace.Tracer;
 import io.opentelemetry.context.Context;
 import io.opentelemetry.context.Scope;
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -85,7 +86,7 @@ public class TimingInterceptor extends AbstractFlowWithChildrenInterceptor {
             long avg = totalTime.sum() / callCount.sum();
 
             log.info("{} duration: {} ms | calls: {} | min: {} ms | max: {} ms | avg: {} ms",
-                    label != null ? label + ": " : "", durationMs, callCount.sum(), minTime.get(), maxTime.get(), avg
+                    getLabelPrefix(), durationMs, callCount.sum(), minTime.get(), maxTime.get(), avg
             );
 
             if (sub == null) {
@@ -95,6 +96,10 @@ public class TimingInterceptor extends AbstractFlowWithChildrenInterceptor {
                 endSubspan(sub, subScope, parentScope, flow, durationMs, avg);
             }
         }
+    }
+
+    private @NotNull String getLabelPrefix() {
+        return label != null ? label + ": " : "";
     }
 
     private void updateStats(long durationMs) {
