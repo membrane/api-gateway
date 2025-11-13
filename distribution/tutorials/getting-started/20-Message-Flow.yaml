@@ -14,8 +14,8 @@
 #     curl localhost:2000
 #
 #    Watch the console output. The message is printed twice: once during the
-#    request and once during the response flow. The status code appears
-#    only in the second log message, after the backend has responded.
+#    request and once during the response flow. A valid status code appears
+#    only in the second log message after the backend has responded.
 
 spec:
   port: 2000

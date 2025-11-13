@@ -24,7 +24,7 @@ public class BooleanValidator implements JsonSchemaValidator {
 
     @Override
     public String canValidate(Object obj) {
-        String str = getStringValue(obj);
+        String str = getStringValue(obj).toLowerCase(ROOT);
         if (obj instanceof BooleanNode || str.equals("true") || str.equals("false") || str.equals("yes") || str.equals("no"))
             return BOOLEAN;
         return null;
