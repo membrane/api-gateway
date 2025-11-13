@@ -18,7 +18,6 @@ import org.jetbrains.annotations.*;
 import org.w3c.dom.*;
 import org.xml.sax.*;
 
-import javax.xml.*;
 import javax.xml.namespace.*;
 import javax.xml.transform.*;
 import javax.xml.transform.dom.*;
@@ -27,7 +26,6 @@ import java.io.*;
 import java.util.*;
 
 import static javax.xml.XMLConstants.*;
-import static javax.xml.transform.OutputKeys.*;
 
 public class XMLUtil {
 

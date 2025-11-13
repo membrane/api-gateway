@@ -25,7 +25,7 @@ public class BooleanValidator implements JsonSchemaValidator {
     @Override
     public String canValidate(Object obj) {
         String str = getStringValue(obj);
-        if (obj instanceof BooleanNode || str.equals("true") || str.equals("false"))
+        if (obj instanceof BooleanNode || str.equals("true") || str.equals("false") || str.equals("yes") || str.equals("no"))
             return BOOLEAN;
         return null;
     }
@@ -36,7 +36,7 @@ public class BooleanValidator implements JsonSchemaValidator {
             return null;
 
         String str = getStringValue(value).toLowerCase(ROOT);
-        if (str.equals("true") || str.equals("false"))
+        if (str.equals("true") || str.equals("false") || str.equals("yes") || str.equals("no"))
             return null;
 
         return ValidationErrors.error(ctx.schemaType("boolean"), String.format("Value '%s' is not a boolean (true/false).", value));
