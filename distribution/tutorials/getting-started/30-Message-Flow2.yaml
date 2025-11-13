@@ -31,7 +31,7 @@ spec:
         - log:
             message: Step 1
         - log:
-            message: Step 2 Path ${path}"
+            message: Step 2 Path ${path}
         - log:
             message: Step 3
     - response: # executed during response flow from bottom to top

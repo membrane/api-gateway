@@ -23,4 +23,4 @@ spec:
     - openapi:
         location: https://api.predic8.de/api-docs/dlp-field-information-api-v1-0-0
     - openapi:
-        location: ../../conf/fruitshop-api.yml
+        location: ../../conf/openapi/fruitshop-v2-2-0.oas.yml
