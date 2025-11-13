@@ -11,7 +11,7 @@
 #     Linux/Mac:
 #       membrane.sh -c 10-Logging.yaml
 #     Windows:
-#       membrane.bat -c 10-Logging.yaml
+#       membrane.cmd -c 10-Logging.yaml
 #
 # 2.) Call the API:
 #

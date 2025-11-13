@@ -11,7 +11,7 @@
 #    Linux/Mac:
 #      membrane.sh -c 00-First-API.yaml
 #    Windows:
-#      membrane.bat -c 00-First-API.yaml
+#      membrane.cmd -c 00-First-API.yaml
 #
 #    Membrane will print a log message indicating that the API is running.
 #
