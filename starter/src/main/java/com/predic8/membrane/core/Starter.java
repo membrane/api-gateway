@@ -14,59 +14,107 @@
 
 package com.predic8.membrane.core;
 
-import java.lang.reflect.*;
-import java.net.*;
+import static java.lang.Integer.parseInt;
 
-import static java.lang.Integer.*;
-
-/**
- * Main class for memrouter.bat file.
- */
 public class Starter {
 
-	public static void main(String[] args) throws Exception {
+    private static final int DEFAULT_REQUIRED = 21;
 
-		if (getJavaVersion() < 17) {
-			System.err.println("---------------------------------------");
-			System.err.println();
-			System.err.println("Wrong Java Version!");
-			System.err.println();
-			System.err.println("Membrane requires Java 17 or newer. The current Java version is " + System.getProperty("java.version") + ".");
-			System.err.println("You can check with:");
-			System.err.println();
-			System.err.println("java -version");
-			if (System.getProperty("os.name").contains("Windows")) {
-				System.err.println("echo %JAVA_JOME%");
-			} else {
-				System.err.println("echo $JAVA_JOME");
-			}
-			System.err.println("---------------------------------------");
-			System.exit(1);
-		}
+    public static void main(String[] args) throws Exception {
 
-		getMainMethod().invoke(null, new Object[]{args});
-	}
+        int required = resolveRequiredMajorVersion();
+        int current;
 
-	private static Method getMainMethod() throws NoSuchMethodException, ClassNotFoundException {
-		return getRouterCLIClass().getDeclaredMethod("main", String[].class);
-	}
+        try {
+            current = currentFeatureVersion();
+        } catch (Exception e) {
+            System.err.println("WARNING: Could not determine Java version. Proceeding anyway...");
+            current = required;
+        }
 
-	private static Class<?> getRouterCLIClass() throws ClassNotFoundException {
-		return getLoader().loadClass("com.predic8.membrane.core.cli.RouterCLI");
-	}
+        if (current < required) {
+            System.err.println("---------------------------------------");
+            System.err.println();
+            System.err.println("Wrong Java Version!");
+            System.err.println();
+            System.err.println("Membrane requires Java " + required + " or newer.");
+            System.err.println("The current Java feature version is " + current +
+                    " (java.version=" + System.getProperty("java.version") + ").");
+            System.err.println();
+            System.err.println("You can check with:");
+            System.err.println();
+            System.err.println("java -version");
+            if (System.getProperty("os.name", "").contains("Windows")) {
+                System.err.println("echo %JAVA_HOME%");
+            } else {
+                System.err.println("echo $JAVA_HOME");
+            }
+            System.err.println("---------------------------------------");
+            System.exit(1);
+        }
+    }
 
-	private static URLClassLoader getLoader() {
-		return ClassloaderUtil.getExternalClassloader("file:" + System.getenv("MEMBRANE_HOME"));
-	}
+    private static int resolveRequiredMajorVersion() {
+        String env = System.getenv("MEMBRANE_REQUIRED_JAVA_VERSION");
+        if (env == null || env.isBlank())
+            return DEFAULT_REQUIRED;
 
-	private static int getJavaVersion() {
-		String version = System.getProperty("java.version");
-		if(version.startsWith("1."))
-			return parseInt(version.substring(2, 3));
+        try {
+            return parseInt(env.trim());
+        } catch (NumberFormatException e) {
+            return DEFAULT_REQUIRED;
+        }
+    }
 
-		if(version.contains(".")) {
-			return parseInt(version.substring(0, version.indexOf(".")));
-		}
-		return parseInt(version);
-	}
+    private static int currentFeatureVersion() {
+        // Prefer Java 9+ Runtime.version()
+        try {
+            Object v = Runtime.class.getMethod("version")
+                    .invoke(Runtime.getRuntime());
+            try {
+                // Java 10+: feature(), Java 9: major()
+                return (Integer) v.getClass().getMethod("feature").invoke(v);
+            } catch (NoSuchMethodException e) {
+                return (Integer) v.getClass().getMethod("major").invoke(v);
+            }
+        } catch (Throwable ignored) {
+            // On Java 8 or any failure: fall back to java.version parsing
+        }
+        return parseMajorFromJavaVersion(System.getProperty("java.version", ""));
+    }
+
+    /**
+     * Parses values like:
+     * - "1.8.0_371" -> 8
+     * - "17.0.10"   -> 17
+     * - "23.0.2"    -> 23
+     * - "23-ea"     -> 23
+     */
+    private static int parseMajorFromJavaVersion(String version) {
+        if (version == null || version.isBlank())
+            throw new IllegalArgumentException("Empty java.version");
+
+        String v = version.trim();
+        int start = 0;
+        while (start < v.length() && !Character.isDigit(v.charAt(start))) {
+            start++;
+        }
+        int end = start;
+        while (end < v.length()) {
+            char c = v.charAt(end);
+            if (Character.isDigit(c) || c == '.' || c == '_' || c == '-') {
+                end++;
+            } else {
+                break;
+            }
+        }
+        if (start >= end)
+            throw new IllegalArgumentException("No numeric token in java.version: " + version);
+
+        String[] parts = v.substring(start, end).split("[._-]+");
+        if (parts.length == 0)
+            throw new IllegalArgumentException("Cannot split java.version: " + version);
+
+        return parseInt(("1".equals(parts[0]) && parts.length > 1) ? parts[1] : parts[0]);
+    }
 }
