@@ -21,10 +21,10 @@ find_membrane_directory() {
 
 homeSet() {
     echo "MEMBRANE_HOME variable is now set"
-    CLASSPATH="$MEMBRANE_HOME/conf:$MEMBRANE_HOME/starter.jar:$MEMBRANE_HOME/lib/*"
+    CLASSPATH="$MEMBRANE_HOME/conf:$MEMBRANE_HOME/lib/*"
     export CLASSPATH
     echo "Membrane Router running..."
-    java -classpath "$CLASSPATH" com.predic8.membrane.core.Starter -c proxiesSSL.xml
+    java -classpath "$CLASSPATH" com.predic8.membrane.core.cli.RouterCLI -c proxiesSSL.xml
 }
 
 
