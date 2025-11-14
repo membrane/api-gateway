@@ -64,7 +64,6 @@
 	<modules>
 		<module>annot</module>
 		<module>core</module>
-		<module>starter</module>
 		<module>distribution</module>
 		<module>war</module>
 		<module>test</module>
@@ -367,21 +366,6 @@
 				<configuration>
 					<source>${javac.source}</source>
 					<target>${javac.target}</target>
-				</configuration>
-			</plugin>
-
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-jar-plugin</artifactId>
-				<configuration>
-					<archive>
-						<manifest>
-							<mainClass>com.predic8.membrane.core.Starter</mainClass>
-						</manifest>
-						<manifestEntries>
-							<Bundle-License>https://www.apache.org/licenses/LICENSE-2.0.html</Bundle-License>
-						</manifestEntries>
-					</archive>
 				</configuration>
 			</plugin>
 
