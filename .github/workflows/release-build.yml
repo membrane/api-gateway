@@ -93,3 +93,16 @@ jobs:
           bodyFile: "distribution/release-notes/${{ steps.get_version.outputs.VERSION }}.md"
           artifacts: "core/target/classes/com/predic8/membrane/core/config/json/membrane.schema.json,distribution/target/membrane-api-gateway-${{ steps.get_version.outputs.VERSION }}.zip,distribution/target/membrane-api-gateway-${{ steps.get_version.outputs.VERSION }}.zip.asc"
           token: ${{ secrets.PAT }}
+      - name: Trigger website pipeline on GitLab
+        env:
+          GITLAB_TRIGGER_TOKEN: ${{ secrets.GITLAB_TRIGGER_TOKEN }}
+        run: |
+          VERSION='${{ steps.get_version.outputs.VERSION }}'
+          echo "Triggering GitLab pipeline for membrane-api.io with VERSION=${VERSION}"
+
+          curl -X POST --fail --timeout 10 \
+            -F token="${GITLAB_TRIGGER_TOKEN}" \
+            -F ref=main \
+            -F "variables[MEMBRANE_VERSION]=${VERSION}" \
+            https://gitlab.predic8.de/api/v4/projects/prod%2Fmembrane-api.io/trigger/pipeline
+
