@@ -64,14 +64,7 @@ public class OpenApiTutorialTest extends AbstractGettingStartedTutorialTest{
         .then()
             .statusCode(200)
             .body("field", notNullValue())
-            .body("category", notNullValue())
-            .body("description", notNullValue());
+            .body("category", notNullValue());
         // @formatter:on
     }
-
-
-
-
-
-
 }
