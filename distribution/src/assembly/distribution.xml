@@ -82,11 +82,6 @@
     </fileSets>
     <files>
         <file>
-            <source>../starter/target/starter-${project.version}.jar</source>
-            <outputDirectory>/</outputDirectory>
-            <destName>starter.jar</destName>
-        </file>
-        <file>
             <source>target/bom.json</source>
             <outputDirectory>/</outputDirectory>
         </file>
