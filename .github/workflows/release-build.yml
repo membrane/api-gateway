@@ -25,6 +25,17 @@ jobs:
       - uses: actions/checkout@v3
         with:
           ref: ${{ github.ref }}
+
+      - name: Update $schema URL in YAML files
+        run: |
+          VERSION='${{ steps.get_version.outputs.VERSION }}'
+          echo "Updating schema URLs in YAML files to v${VERSION}.json"
+
+          find . \( -name "apis.yaml" -o -name "apis.yml" \) -print0 | while IFS= read -r -d '' file; do
+            echo "Fixing $file"
+            sed -i "s|\$schema=https://www\.membrane-api\.io/v[0-9\.]\+\.json|\$schema=https://www.membrane-api.io/v${VERSION}.json|g" "$file"
+          done
+
       - id: compile-membrane
         name: Compile Membrane
         run: |
