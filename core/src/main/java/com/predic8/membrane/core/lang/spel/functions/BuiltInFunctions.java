@@ -16,6 +16,7 @@ package com.predic8.membrane.core.lang.spel.functions;
 import com.fasterxml.jackson.databind.*;
 import com.jayway.jsonpath.*;
 import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.lang.*;
 import com.predic8.membrane.core.lang.spel.*;
 import com.predic8.membrane.core.security.*;
 import org.slf4j.*;
@@ -106,19 +107,27 @@ public class BuiltInFunctions {
         return scopesContainsByPredicate(ctx, it -> it.containsAll(scopes));
     }
 
+    public static String user(SpELExchangeEvaluationContext ctx) {
+        return CommonBuiltInFunctions.user(ctx.getExchange());
+    }
+
     private static Boolean scopesContainsByPredicate(SpELExchangeEvaluationContext ctx, Predicate<List<String>> predicate) {
         return predicate.test(getSchemeScopes(all(), ctx));
     }
 
     @SuppressWarnings("unchecked")
     private static List<String> getSchemeScopes(Predicate<SecurityScheme> predicate, SpELExchangeEvaluationContext ctx) {
-        return Optional.ofNullable((List<SecurityScheme>) ctx.getExchange().getProperty(SECURITY_SCHEMES))
+        return Optional.ofNullable(getSecuritySchemes(ctx))
                 .map(list -> list.stream()
                         .filter(predicate)
                         .map(SecurityScheme::getScopes)
                         .flatMap(Collection::stream)
                         .toList())
                 .orElse(emptyList());
+    }
+
+    private static List<SecurityScheme> getSecuritySchemes(SpELExchangeEvaluationContext ctx) {
+        return (List<SecurityScheme>) ctx.getExchange().getProperty(SECURITY_SCHEMES);
     }
 
     private static Predicate<SecurityScheme> all() {

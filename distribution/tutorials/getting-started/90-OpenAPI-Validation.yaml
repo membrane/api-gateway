@@ -1,4 +1,4 @@
-# yaml-language-server: $schema=../../core/target/classes/com/predic8/membrane/core/config/json/membrane.schema.json
+# yaml-language-server: $schema=https://www.membrane-api.io/v6.3.11.json
 #
 # Membrane Tutorial: OpenAPI Validation
 #
@@ -12,7 +12,7 @@ spec:
   port: 2000
   specs:
     - openapi:
-        location: ../../conf/fruitshop-api.yml
+        location: ../../conf/openapi/fruitshop-v2-2-0.oas.yml
         validateRequests: true
         validateResponses: true
         validationDetails: true

@@ -97,7 +97,7 @@ public class Process2 implements AutoCloseable {
 		}
 
 		public Builder waitForMembrane() {
-			waitAfterStartFor("listening at");
+			waitAfterStartFor("up and running!");
 			return this;
 		}
 

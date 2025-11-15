@@ -1,17 +1,17 @@
-# yaml-language-server: $schema=../../../core/target/classes/com/predic8/membrane/core/config/json/membrane.schema.json
+# yaml-language-server: $schema=../https://www.membrane-api.io/v6.3.11.json
 #
 # Membrane Tutorial: Logging
 #
-# Logging is a helpful tool during API development, debugging and operation.
-# The log feature is a plugin that you enable in the message flow. For each call,
-# the plugin logs once for the request and once for the response.
+# Logging is helpful during API development, debugging and operation.
+# Integrated in the message flow, the plugin logs the request and
+# the response.
 #
 # 1.) Start Membrane:
 #
 #     Linux/Mac:
 #       membrane.sh -c 10-Logging.yaml
 #     Windows:
-#       membrane.bat -c 10-Logging.yaml
+#       membrane.cmd -c 10-Logging.yaml
 #
 # 2.) Call the API:
 #

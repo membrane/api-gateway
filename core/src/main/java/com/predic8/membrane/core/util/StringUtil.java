@@ -48,5 +48,18 @@ public class StringUtil {
         return sb.toString();
     }
 
+    /**
+     * Adds lines numbers like a code listing
+     * @param s
+     * @return
+     */
+    public static String addLineNumbers(String s) {
+        StringBuilder sb = new StringBuilder();
+        int i = 1;
+        for (String line : s.split("\n")) {
+            sb.append(String.format("%4d: %s\n", i++, line));
+        }
+        return sb.toString();
+    }
 
 }

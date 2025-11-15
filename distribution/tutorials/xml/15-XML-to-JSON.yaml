@@ -1,0 +1,20 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v6.3.11.json
+#
+# Membrane Tutorial: XML to JSON
+#
+# Convert an XML body into JSON.
+#
+# Try:
+#
+#   curl -d @../data/animals.xml -H "Content-Type: text/xml" http://localhost:2000
+#
+# Tip: Make sure the request header Content-Type is set to text/xml.
+
+spec:
+  port: 2000
+  flow:
+    - request:
+        - xml2Json: {}
+        - beautifier: {} # Format
+    - return:
+        statusCode: 200

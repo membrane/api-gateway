@@ -55,8 +55,6 @@ public class RuleMatchingInterceptor extends AbstractInterceptor {
                     .title("Invalid path or method")
                     .detail("The requested path or HTTP method is not supported.")
 					.buildAndSetResponse(exc);
-//                    .internal("method", exc.getRequest().getMethod())
-//                    .internal("uri", exc.getRequest().getUri()).buildAndSetResponse(exc);
 			return ABORT;
 		}
 

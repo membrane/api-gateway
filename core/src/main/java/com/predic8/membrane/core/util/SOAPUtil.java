@@ -64,7 +64,7 @@ public class SOAPUtil {
     public static Response createSOAPFaultResponse(FaultCode code, String faultstring, Map<String,Object> details) {
         Response response = createRawSOAPErrorResponse();
         try {
-            response.setBodyContent(xml2string(createSOAP11Fault(code, faultstring, details)).getBytes(UTF_8));
+            response.setBodyContent(xmlNode2String(createSOAP11Fault(code, faultstring, details)).getBytes(UTF_8));
             return response;
         } catch (Exception e) {
             throw new RuntimeException("Should not happen", e);

@@ -44,7 +44,7 @@ public abstract class AbstractTemplateInterceptor extends AbstractInterceptor {
 
     protected String contentType = TEXT_PLAIN;
 
-    protected Boolean pretty = false;
+    protected boolean pretty = false;
     protected Prettifier prettifier = NullPrettifier.INSTANCE;
 
     protected Charset charset = UTF_8;
@@ -124,7 +124,7 @@ public abstract class AbstractTemplateInterceptor extends AbstractInterceptor {
         try (InputStream is = getRouter().getResolverMap().resolve(combine(getRouter().getBaseLocation(), location))) {
             return IOUtils.toString(is, charset); // TODO Encoding
         } catch (Exception e) {
-            throw new ConfigurationException("Could not create template from " + location, e);
+            throw new ConfigurationException("Could not read template from %s".formatted( location), e);
         }
     }
 
@@ -174,7 +174,7 @@ public abstract class AbstractTemplateInterceptor extends AbstractInterceptor {
         this.contentType = contentType;
     }
 
-    public Boolean getPretty() {
+    public boolean getPretty() {
         return pretty;
     }
 
@@ -184,8 +184,8 @@ public abstract class AbstractTemplateInterceptor extends AbstractInterceptor {
      * @example true
      */
     @MCAttribute
-    public void setPretty(String pretty) {
-        this.pretty = Boolean.valueOf(pretty);
+    public void setPretty(boolean pretty) {
+        this.pretty = pretty;
     }
 
     public String getCharset() {

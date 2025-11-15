@@ -1,13 +1,13 @@
 <!--
 	 *** Membrane Configuration ***
 
+	 Try the new experimental YAML configuration in apis.yaml!
+
+	 Stay with the XML in case you have complicated setups with beans till YAML supports all the functions of Membrane.
+
 	 For more see:
-	 - proxies-*.xml files in this folder
 	 - The examples/* folders with working samples
 	 - Configuration Reference: https://www.membrane-api.io/docs/
-
-	 Direct Internet access is needed to run this configuration!
-     Otherwise, see proxies-offline.xml
 
      Use an XML editor with XML Schema syntax completion for easy editing like
 	 Visual Studio Code or Intellij.
@@ -22,12 +22,12 @@
 
 	<router>
 
-		<!-- 
+		<!--
 			 Reads the configuration from an OpenAPI document
 			 Open http://localhost:2000/api-doc and use the Swagger UI there
 		-->
 		<api port="2000">
-			<openapi location="fruitshop-api.yml" validateRequests="yes"/>
+			<openapi location="openapi/fruitshop-v2-2-0.oas.yml" validateRequests="yes"/>
 		</api>
 
 		<!--
@@ -39,7 +39,7 @@
 			<rateLimiter requestLimit="3" requestLimitDuration="PT30S"/>
 			<rewriter>
 				<map from="^/names/(.*)" to="/restnames/name\.groovy\?name=$1" />
-			</rewriter> 
+			</rewriter>
 			<response>
 				<beautifier/>
 				<log/> <!-- See console for logs -->
@@ -49,7 +49,7 @@
 			<target url="https://api.predic8.de"/>
 		</api>
 
-		<!-- 
+		<!--
 			 Dump HTTP headers and respond with an error
 			 Open: localhost:2000/header and look at the console
 		-->
@@ -59,7 +59,7 @@
 				<groovy>
 					println "Request headers:"
 					header.allHeaderFields.each {
-						print it 
+						print it
 					}
 					CONTINUE
 				</groovy>
@@ -73,9 +73,9 @@
 			<target url="https://api.predic8.de"/>
 		</api>
 
-		<!-- 
+		<!--
 			 Administration UI
-             Open http://localhost:9000 
+             Open http://localhost:9000
 
              Secure access for production: See proxies-secure-sample.xml
 		-->

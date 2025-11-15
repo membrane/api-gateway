@@ -3,14 +3,6 @@
 
 CLASSPATH="$MEMBRANE_HOME/conf:$MEMBRANE_HOME/lib/*"
 
-if [ $# -eq 0 ]; then
-  if [ -n "${MEMBRANE_CALLER_DIR:-}" ] && [ -f "$MEMBRANE_CALLER_DIR/proxies.xml" ]; then
-    set -- -c "$MEMBRANE_CALLER_DIR/proxies.xml" "$@"
-  elif [ -f "$MEMBRANE_HOME/conf/proxies.xml" ]; then
-    set -- -c "$MEMBRANE_HOME/conf/proxies.xml" "$@"
-  fi
-fi
-
 normalize_java_opts() {
   [ -n "${JAVA_OPTS:-}" ] || return 0
 

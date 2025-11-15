@@ -1,0 +1,15 @@
+{
+  "number": 2,
+  "animals": [
+    {
+      "name": "Skye",
+      "species": "dog",
+      "legs": 4
+    },
+    {
+      "name": "Molly",
+      "species": "cat",
+      "legs": 4
+    }
+  ]
+}

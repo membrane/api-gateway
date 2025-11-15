@@ -31,6 +31,7 @@ import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.lang.ScriptingUtils.*;
 import static com.predic8.membrane.core.util.FileUtil.*;
+import static com.predic8.membrane.core.util.StringUtil.addLineNumbers;
 import static java.nio.charset.StandardCharsets.*;
 
 /**
@@ -133,7 +134,7 @@ public class TemplateInterceptor extends AbstractTemplateInterceptor {
         try {
             return createTemplateEngine().createTemplate(new StringReader(src));
         } catch (Exception e) {
-            throw new ConfigurationException("Could not create template from " + getTemplateLocation(), e);
+            throw new ConfigurationException("Could not create template from %s:\n\n%s".formatted(getTemplateLocation(), addLineNumbers( src)), e);
         }
     }
 
