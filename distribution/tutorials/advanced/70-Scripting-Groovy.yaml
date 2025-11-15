@@ -3,7 +3,6 @@
 # Membrane Tutorial: Groovy Scripting
 #
 # Try:
-#
 #   curl http://localhost:2000/groovy
 #   curl http://localhost:2000/random
 #   curl http://localhost:2000/response
