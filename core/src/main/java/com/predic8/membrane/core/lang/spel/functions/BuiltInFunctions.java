@@ -115,7 +115,6 @@ public class BuiltInFunctions {
         return predicate.test(getSchemeScopes(all(), ctx));
     }
 
-    @SuppressWarnings("unchecked")
     private static List<String> getSchemeScopes(Predicate<SecurityScheme> predicate, SpELExchangeEvaluationContext ctx) {
         return Optional.ofNullable(getSecuritySchemes(ctx))
                 .map(list -> list.stream()
@@ -127,7 +126,7 @@ public class BuiltInFunctions {
     }
 
     private static List<SecurityScheme> getSecuritySchemes(SpELExchangeEvaluationContext ctx) {
-        return (List<SecurityScheme>) ctx.getExchange().getProperty(SECURITY_SCHEMES);
+        return ctx.getExchange().getProperty(SECURITY_SCHEMES, List.class);
     }
 
     private static Predicate<SecurityScheme> all() {

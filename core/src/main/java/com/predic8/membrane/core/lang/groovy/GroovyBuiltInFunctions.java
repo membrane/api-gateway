@@ -6,13 +6,11 @@ import groovy.lang.*;
 
 /**
  * Helper class for built-in functions that delegates to the implementation CommonBuiltInFunctions.
- *
  * TODO Wrap the other functions here too, so that we have the same as for SpEL. Difference: The function are called with ${fn.functionname()} instead of ${functionname()} in the template interceptor
- *
  */
 public class GroovyBuiltInFunctions extends GroovyObjectSupport {
 
-    private Exchange exchange;
+    private final Exchange exchange;
 
     public GroovyBuiltInFunctions(Exchange exchange) {
         this.exchange = exchange;
