@@ -145,8 +145,8 @@ public class LogInterceptor extends AbstractExchangeExpressionInterceptor {
 
     @Override
     public String getShortDescription() {
-        return "Logs the " + (body ? "headers of " : "") + "requests and responses" +
-                " using Log4J's " + level.toString() + " level.";
+        return !getMessage().isEmpty() ? "Logs: '%s'".formatted(getMessage()) :
+                "Logs the " + (body ? "headers of " : "") + "requests and responses" +" using Log4J's " + level.toString() + " level.";
     }
 
     @Override

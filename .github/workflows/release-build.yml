@@ -25,6 +25,17 @@ jobs:
       - uses: actions/checkout@v3
         with:
           ref: ${{ github.ref }}
+
+      - name: Update $schema URL in YAML files
+        run: |
+          VERSION='${{ steps.get_version.outputs.VERSION }}'
+          echo "Updating schema URLs in YAML files to v${VERSION}.json"
+
+          find . \( -name "apis.yaml" -o -name "apis.yml" \) -print0 | while IFS= read -r -d '' file; do
+            echo "Fixing $file"
+            sed -i "s|\$schema=https://www\.membrane-api\.io/v[0-9\.]\+\.json|\$schema=https://www.membrane-api.io/v${VERSION}.json|g" "$file"
+          done
+
       - id: compile-membrane
         name: Compile Membrane
         run: |
@@ -93,3 +104,16 @@ jobs:
           bodyFile: "distribution/release-notes/${{ steps.get_version.outputs.VERSION }}.md"
           artifacts: "core/target/classes/com/predic8/membrane/core/config/json/membrane.schema.json,distribution/target/membrane-api-gateway-${{ steps.get_version.outputs.VERSION }}.zip,distribution/target/membrane-api-gateway-${{ steps.get_version.outputs.VERSION }}.zip.asc"
           token: ${{ secrets.PAT }}
+      - name: Trigger website pipeline on GitLab
+        env:
+          GITLAB_TRIGGER_TOKEN: ${{ secrets.GITLAB_TRIGGER_TOKEN }}
+        run: |
+          VERSION='${{ steps.get_version.outputs.VERSION }}'
+          echo "Triggering GitLab pipeline for membrane-api.io with VERSION=${VERSION}"
+
+          curl -X POST --fail --timeout 10 \
+            -F token="${GITLAB_TRIGGER_TOKEN}" \
+            -F ref=main \
+            -F "variables[MEMBRANE_VERSION]=${VERSION}" \
+            https://gitlab.predic8.de/api/v4/projects/prod%2Fmembrane-api.io/trigger/pipeline
+
