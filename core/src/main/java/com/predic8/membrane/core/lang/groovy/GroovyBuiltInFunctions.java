@@ -9,7 +9,8 @@ import java.util.List;
 
 /**
  * Helper class for built-in functions that delegates to the implementation CommonBuiltInFunctions.
- * TODO Wrap the other functions here too, so that we have the same as for SpEL. Difference: The function are called with ${fn.functionname()} instead of ${functionname()} in the template interceptor
+ *  Difference to SpEL:
+ *  The functions are called with ${fn.functionname()} instead of ${functionname()} in the template interceptor
  */
 public class GroovyBuiltInFunctions extends GroovyObjectSupport {
 
