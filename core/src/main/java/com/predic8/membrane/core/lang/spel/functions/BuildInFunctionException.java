@@ -13,11 +13,11 @@
    limitations under the License. */
 package com.predic8.membrane.core.lang.spel.functions;
 
-public class BuiltInFunctionException extends RuntimeException {
+public class BuildInFunctionException extends RuntimeException {
 
     private final String function;
 
-    public BuiltInFunctionException(String message, String function, Throwable cause) {
+    public BuildInFunctionException(String message, String function, Throwable cause) {
         super(message, cause);
         this.function = function;
     }
