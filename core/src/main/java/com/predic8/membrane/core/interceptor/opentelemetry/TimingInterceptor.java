@@ -31,7 +31,7 @@ import static java.lang.Long.MAX_VALUE;
  * @example <pre><code>
  * <api port="2000">
  *   <time label="flow-timing">
- *       <!-- plugins to be measured -->
+ *        <setHeader name="foo" language="jsonpath">$.data.bar</setHeader>
  *   </time>
  * </api>
  *</code></pre>

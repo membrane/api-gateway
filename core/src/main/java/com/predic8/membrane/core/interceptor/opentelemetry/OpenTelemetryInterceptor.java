@@ -158,7 +158,7 @@ public class OpenTelemetryInterceptor extends AbstractInterceptor {
     }
 
     private static Span getExchangeSpan(Exchange exc) {
-        return exc.getProperty("span", Span.class);
+        return exc.getProperty(MEMBRANE_OTEL_SPAN, Span.class);
     }
 
     private static void setSpanHttpHeaderAttributes(Header header, Span span) {
