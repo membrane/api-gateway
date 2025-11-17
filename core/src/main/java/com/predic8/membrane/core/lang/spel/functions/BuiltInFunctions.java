@@ -82,70 +82,38 @@ public class BuiltInFunctions {
     }
 
     public static List<String> scopes(SpELExchangeEvaluationContext ctx) {
-        return getSchemeScopes(all(), ctx);
+        return CommonBuiltInFunctions.scopes(ctx.getExchange());
     }
 
-    /**
-     * @param securityScheme Name of the scheme like http, apiKey, oauth2. See: SecurityScheme.getName()
-     * @param ctx
-     * @return
-     */
     public static List<String> scopes(String securityScheme, SpELExchangeEvaluationContext ctx) {
-        return getSchemeScopes(name(securityScheme), ctx);
+        return CommonBuiltInFunctions.scopes(securityScheme, ctx.getExchange());
     }
 
     public static boolean hasScope(String scope, SpELExchangeEvaluationContext ctx) {
-        return scopesContainsByPredicate(ctx, it -> it.contains(scope));
+        return CommonBuiltInFunctions.hasScope(scope, ctx.getExchange());
     }
 
     public static boolean hasScope(SpELExchangeEvaluationContext ctx) {
-        return scopesContainsByPredicate(ctx, it -> !it.isEmpty());
+        return CommonBuiltInFunctions.hasScope(ctx.getExchange());
     }
 
-    @SuppressWarnings({"SlowListContainsAll"})
     public static boolean hasScope(List<String> scopes, SpELExchangeEvaluationContext ctx) {
-        return scopesContainsByPredicate(ctx, it -> it.containsAll(scopes));
+        return CommonBuiltInFunctions.hasScope(scopes, ctx.getExchange());
     }
 
     public static String user(SpELExchangeEvaluationContext ctx) {
         return CommonBuiltInFunctions.user(ctx.getExchange());
     }
 
-    private static Boolean scopesContainsByPredicate(SpELExchangeEvaluationContext ctx, Predicate<List<String>> predicate) {
-        return predicate.test(getSchemeScopes(all(), ctx));
-    }
-
-    private static List<String> getSchemeScopes(Predicate<SecurityScheme> predicate, SpELExchangeEvaluationContext ctx) {
-        return Optional.ofNullable(getSecuritySchemes(ctx))
-                .map(list -> list.stream()
-                        .filter(predicate)
-                        .map(SecurityScheme::getScopes)
-                        .flatMap(Collection::stream)
-                        .toList())
-                .orElse(emptyList());
-    }
-
-    private static List<SecurityScheme> getSecuritySchemes(SpELExchangeEvaluationContext ctx) {
-        return ctx.getExchange().getProperty(SECURITY_SCHEMES, List.class);
-    }
-
-    private static Predicate<SecurityScheme> all() {
-        return ignored -> true;
-    }
-
-    private static Predicate<SecurityScheme> name(String name) {
-        return scheme -> scheme.getName().equalsIgnoreCase(name);
-    }
-
     public static boolean isXML(SpELExchangeEvaluationContext ctx) {
-        return ctx.getMessage().isXML();
+        return CommonBuiltInFunctions.isXML(ctx.getExchange(), ctx.getFlow());
     }
 
     public static boolean isJSON(SpELExchangeEvaluationContext ctx) {
-        return ctx.getMessage().isJSON();
+        return CommonBuiltInFunctions.isJSON(ctx.getExchange(), ctx.getFlow());
     }
 
-    public static String base64Encode(String s, SpELExchangeEvaluationContext ctx) {
-        return java.util.Base64.getEncoder().encodeToString(s.getBytes(UTF_8));
+    public static String base64Encode(String s, SpELExchangeEvaluationContext ignored) {
+        return CommonBuiltInFunctions.base64Encode(s);
     }
 }
