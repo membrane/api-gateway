@@ -19,6 +19,7 @@ import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.resolver.*;
+import com.predic8.membrane.core.security.BasicHttpSecurityScheme;
 import com.predic8.membrane.core.util.*;
 import org.json.*;
 import org.junit.jupiter.api.*;
@@ -31,6 +32,7 @@ import java.io.*;
 import java.nio.file.*;
 import java.util.*;
 
+import static com.predic8.membrane.core.exchange.Exchange.SECURITY_SCHEMES;
 import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.http.Request.*;
 import static java.lang.Boolean.*;
@@ -247,6 +249,20 @@ public class TemplateInterceptorTest {
         // Because JSON is invalid it should not change anything
         assertEquals(invalid, exc.getRequest().getBodyAsStringDecoded());
     }
+
+    @Test
+    void builtInFunctions() {
+        exc.setProperty(SECURITY_SCHEMES, List.of(new BasicHttpSecurityScheme().username("alice")));
+        ti.setContentType(APPLICATION_JSON);
+        ti.setSrc("""
+        { "foo": "${fn.user()}" }
+        """);
+        ti.init(router);
+        ti.handleRequest(exc);
+
+        assertTrue(exc.getRequest().getBodyAsStringDecoded().contains("\"foo\": \"alice\""));
+    }
+
 
     private void setAndHandleRequest(String location) {
         ti.setLocation(Paths.get("src/test/resources/" + location).toString());
