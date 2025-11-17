@@ -27,7 +27,7 @@ public class BuiltInFunctionResolver implements MethodResolver {
 
     public BuiltInFunctionResolver() {
         super();
-        functions = new ReflectiveMethodHandler(BuiltInFunctions.class);
+        functions = new ReflectiveMethodHandler(SpELBuiltInFunctions.class);
     }
 
     /**

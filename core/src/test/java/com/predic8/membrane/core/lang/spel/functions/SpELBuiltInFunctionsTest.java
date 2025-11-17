@@ -24,12 +24,12 @@ import static com.predic8.membrane.core.exchange.Exchange.*;
 import static com.predic8.membrane.core.http.Header.*;
 import static com.predic8.membrane.core.http.Request.*;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
-import static com.predic8.membrane.core.lang.spel.functions.BuiltInFunctions.*;
+import static com.predic8.membrane.core.lang.spel.functions.SpELBuiltInFunctions.*;
 import static com.predic8.membrane.core.security.ApiKeySecurityScheme.In.*;
 import static java.util.List.*;
 import static org.junit.jupiter.api.Assertions.*;
 
-public class BuiltInFunctionsTest {
+public class SpELBuiltInFunctionsTest {
 
     static SpELExchangeEvaluationContext ctx;
 
@@ -47,8 +47,8 @@ public class BuiltInFunctionsTest {
 
     @Test
     void testJsonPath() {
-        assertEquals("John", BuiltInFunctions.jsonPath("$.name", ctx));
-        assertNull(BuiltInFunctions.jsonPath("$.foo", ctx));
+        assertEquals("John", SpELBuiltInFunctions.jsonPath("$.name", ctx));
+        assertNull(SpELBuiltInFunctions.jsonPath("$.foo", ctx));
     }
 
     @Test
@@ -60,67 +60,67 @@ public class BuiltInFunctionsTest {
 
     @Test
     public void testHasScope() {
-        assertTrue(BuiltInFunctions.hasScope("test", ctx));
+        assertTrue(SpELBuiltInFunctions.hasScope("test", ctx));
     }
 
     @Test
     public void testHasScopes() {
-        assertTrue(BuiltInFunctions.hasScope(ctx));
+        assertTrue(SpELBuiltInFunctions.hasScope(ctx));
     }
 
     @Test
     public void testContainsScopes() {
-        assertTrue(BuiltInFunctions.hasScope(of("demo", "test"), ctx));
+        assertTrue(SpELBuiltInFunctions.hasScope(of("demo", "test"), ctx));
     }
 
     @Test
     public void testNotContainsScopes() {
-        assertFalse(BuiltInFunctions.hasScope(of("quux"), ctx));
+        assertFalse(SpELBuiltInFunctions.hasScope(of("quux"), ctx));
     }
 
     @Test
     public void testNullScopes() throws URISyntaxException {
         var exc2 = get("foo").buildExchange();
         SpELExchangeEvaluationContext ctxWithoutScopes = new SpELExchangeEvaluationContext(exc2, REQUEST);
-        assertFalse(BuiltInFunctions.hasScope(ctxWithoutScopes));
-        assertFalse(BuiltInFunctions.hasScope(of("foo"), ctxWithoutScopes));
+        assertFalse(SpELBuiltInFunctions.hasScope(ctxWithoutScopes));
+        assertFalse(SpELBuiltInFunctions.hasScope(of("foo"), ctxWithoutScopes));
     }
 
     @Test
     public void testGetAllScopes() {
-        assertEquals(List.of("test", "demo", "bar", "foo"), BuiltInFunctions.scopes(ctx));
+        assertEquals(List.of("test", "demo", "bar", "foo"), SpELBuiltInFunctions.scopes(ctx));
     }
 
     @Test
     public void testGetSchemeSpecificScopes() {
-        assertEquals(List.of("bar", "foo"), BuiltInFunctions.scopes("http", ctx));
+        assertEquals(List.of("bar", "foo"), SpELBuiltInFunctions.scopes("http", ctx));
     }
 
     @Test
     public void testHasBearerAuth() throws URISyntaxException {
         var exc2 = get("foo").header(AUTHORIZATION, "Bearer 8w458934pj5u9843").buildExchange();
         SpELExchangeEvaluationContext ctxWithoutScopes = new SpELExchangeEvaluationContext(exc2,REQUEST);
-        assertTrue(BuiltInFunctions.isBearerAuthorization(ctxWithoutScopes));
+        assertTrue(SpELBuiltInFunctions.isBearerAuthorization(ctxWithoutScopes));
     }
 
     @Test
     public void testHasOtherAuth() throws URISyntaxException {
         var exc2 = get("foo").header(AUTHORIZATION, "Other 8w458934pj5u9843").buildExchange();
         SpELExchangeEvaluationContext ctxWithoutScopes = new SpELExchangeEvaluationContext(exc2, REQUEST);
-        assertFalse(BuiltInFunctions.isBearerAuthorization(ctxWithoutScopes));
+        assertFalse(SpELBuiltInFunctions.isBearerAuthorization(ctxWithoutScopes));
     }
 
     @Test
     public void testHasNoAuth() throws URISyntaxException {
         var exc2 = get("foo").buildExchange();
         SpELExchangeEvaluationContext ctxWithoutScopes = new SpELExchangeEvaluationContext(exc2, REQUEST);
-        assertFalse(BuiltInFunctions.isBearerAuthorization(ctxWithoutScopes));
+        assertFalse(SpELBuiltInFunctions.isBearerAuthorization(ctxWithoutScopes));
     }
 
     public double calculateRate(double weightInPercent) {
         int executedCount = 0;
         for (int i = 0; i < 1000000; i++) {
-            if (BuiltInFunctions.weight(weightInPercent, null)) {
+            if (SpELBuiltInFunctions.weight(weightInPercent, null)) {
                 executedCount++;
             }
         }

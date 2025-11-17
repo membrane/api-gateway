@@ -26,7 +26,7 @@ import java.util.List;
  * 3. An ExchangeEvaluationContext object must be included as the last parameter in every method, even if it's the sole parameter.
  * The ExchangeEvaluationContext provides a specialized Membrane SpEL context, enabling access to the Exchange and other relevant data.
  */
-public class BuiltInFunctions {
+public class SpELBuiltInFunctions {
 
     public static Object jsonPath(String jsonPath, SpELExchangeEvaluationContext ctx) {
         return CommonBuiltInFunctions.jsonPath(jsonPath, ctx.getMessage());
