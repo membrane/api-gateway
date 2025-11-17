@@ -84,14 +84,36 @@ public class JsonSchemaGenerator extends AbstractK8sGenerator {
     }
 
     private void addTopLevelProperties() {
-        schema.additionalProperties(false)
+        SchemaObject apiVariant = object()
+                .additionalProperties(false)
                 .property(string("apiVersion"))
-                .property(string("kind").enumeration(List.of("api")))
-                .property(ref("spec").ref("#/$defs/com_predic8_membrane_core_config_spring_ApiParser").required(true))
+                .property(string("kind")
+                        .enumeration(List.of("api"))
+                        .required(true))
+                .property(ref("spec")
+                        .ref("#/$defs/com_predic8_membrane_core_config_spring_ApiParser")
+                        .required(true))
                 .property(object("metadata")
                         .additionalProperties(true)
                         .property(string("name")));
+
+        SchemaObject beanVariant = object()
+                .additionalProperties(false)
+                .property(string("apiVersion"))
+                .property(string("kind")
+                        .enumeration(List.of("bean"))
+                        .required(true))
+                .property(ref("spec")
+                        .ref("#/$defs/com_predic8_membrane_core_config_spring_BeanParser")
+                        .required(true))
+                .property(object("metadata")
+                        .additionalProperties(true)
+                        .property(string("name")));
+
+        schema.additionalProperties(false)
+                .anyOf(List.of(apiVariant, beanVariant));
     }
+
 
     private void addParserDefinitions(Model m, MainInfo main) {
         for (ElementInfo elementInfo : main.getElements().values()) {
