@@ -263,7 +263,6 @@ public class TemplateInterceptorTest {
         assertTrue(exc.getRequest().getBodyAsStringDecoded().contains("\"foo\": \"alice\""));
     }
 
-
     private void setAndHandleRequest(String location) {
         ti.setLocation(Paths.get("src/test/resources/" + location).toString());
         ti.init(router);
