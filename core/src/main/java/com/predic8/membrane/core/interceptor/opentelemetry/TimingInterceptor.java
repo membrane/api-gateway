@@ -31,7 +31,7 @@ import static java.lang.Long.MAX_VALUE;
  * @example <pre><code>
  * <api port="2000">
  *   <time label="flow-timing">
- *        <setHeader name="foo" language="jsonpath">$.data.bar</setHeader>
+ *        <setHeader name="foo" value="$.data.bar" language="jsonpath" />
  *   </time>
  * </api>
  *</code></pre>
