@@ -3,7 +3,6 @@ package com.predic8.membrane.core.lang.groovy;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.Interceptor.Flow;
 import com.predic8.membrane.core.lang.CommonBuiltInFunctions;
-import com.predic8.membrane.core.lang.spel.SpELExchangeEvaluationContext;
 import groovy.lang.GroovyObjectSupport;
 
 import java.util.List;
@@ -62,4 +61,21 @@ public class GroovyBuiltInFunctions extends GroovyObjectSupport {
     public String base64Encode(String s) {
         return CommonBuiltInFunctions.base64Encode(s);
     }
+
+    public boolean isBearerAuthorization() {
+        return CommonBuiltInFunctions.isBearerAuthorization(exchange);
+    }
+
+    public boolean weight(double weightInPercent) {
+        return CommonBuiltInFunctions.weight(weightInPercent);
+    }
+
+    public boolean isLoggedIn(String beanName) {
+        return CommonBuiltInFunctions.isLoggedIn(beanName, exchange);
+    }
+
+    public long getDefaultSessionLifetime(String beanName) {
+        return CommonBuiltInFunctions.getDefaultSessionLifetime(beanName, exchange);
+    }
+
 }

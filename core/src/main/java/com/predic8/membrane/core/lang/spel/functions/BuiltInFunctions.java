@@ -13,23 +13,10 @@
    limitations under the License. */
 package com.predic8.membrane.core.lang.spel.functions;
 
-import com.fasterxml.jackson.databind.*;
-import com.jayway.jsonpath.*;
-import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.lang.*;
-import com.predic8.membrane.core.lang.spel.*;
-import com.predic8.membrane.core.security.*;
-import org.slf4j.*;
+import com.predic8.membrane.core.lang.CommonBuiltInFunctions;
+import com.predic8.membrane.core.lang.spel.SpELExchangeEvaluationContext;
 
-import java.util.*;
-import java.util.concurrent.*;
-import java.util.function.Predicate;
-
-import static com.predic8.membrane.core.exchange.Exchange.*;
-import static com.predic8.membrane.core.http.Header.*;
-import static java.nio.charset.StandardCharsets.*;
-import static java.util.Collections.*;
-import static java.util.Objects.*;
+import java.util.List;
 
 /**
  * This class's public methods are automatically registered in the SpEL context by the BuiltInFunctionResolver.
@@ -40,45 +27,25 @@ import static java.util.Objects.*;
  * The ExchangeEvaluationContext provides a specialized Membrane SpEL context, enabling access to the Exchange and other relevant data.
  */
 public class BuiltInFunctions {
-    private static final Logger log = LoggerFactory.getLogger(BuiltInFunctions.class);
-
-    private static final ObjectMapper objectMapper = new ObjectMapper();
 
     public static Object jsonPath(String jsonPath, SpELExchangeEvaluationContext ctx) {
-        try {
-            return JsonPath.read(objectMapper.readValue(ctx.getMessage().getBodyAsStringDecoded(), Map.class), jsonPath);
-        } catch (Exception ignored) {
-            return null;
-        }
+        return CommonBuiltInFunctions.jsonPath(jsonPath, ctx.getMessage());
     }
 
     public static boolean weight(double weightInPercent, SpELExchangeEvaluationContext ignored) {
-        return Math.max(0, Math.min(1, weightInPercent / 100.0)) > ThreadLocalRandom.current().nextDouble();
+        return CommonBuiltInFunctions.weight(weightInPercent);
     }
 
     public static boolean isLoggedIn(String beanName, SpELExchangeEvaluationContext ctx) {
-        try {
-            return ((AbstractInterceptorWithSession) requireNonNull(ctx.getExchange().getHandler().getTransport().getRouter().getBeanFactory()).getBean(beanName))
-                    .getSessionManager().getSession(ctx.getExchange()).isVerified();
-        } catch (Exception e) {
-            log.info("Failed to resolve bean with name '{}'", beanName);
-            return false;
-        }
+        return CommonBuiltInFunctions.isLoggedIn(beanName, ctx.getExchange());
     }
 
     public static long getDefaultSessionLifetime(String beanName, SpELExchangeEvaluationContext ctx) {
-        try {
-            return ((AbstractInterceptorWithSession) requireNonNull(ctx.getExchange().getHandler().getTransport().getRouter().getBeanFactory()).getBean(beanName))
-                    .getSessionManager().getExpiresAfterSeconds();
-        } catch (Exception e) {
-            log.info("Failed to resolve bean with name '{}'", beanName);
-            return -1;
-        }
+        return CommonBuiltInFunctions.getDefaultSessionLifetime(beanName, ctx.getExchange());
     }
 
     public static boolean isBearerAuthorization(SpELExchangeEvaluationContext ctx) {
-        return ctx.getExchange().getRequest().getHeader().contains(AUTHORIZATION)
-                && ctx.getExchange().getRequest().getHeader().getFirstValue(AUTHORIZATION).startsWith("Bearer");
+        return CommonBuiltInFunctions.isBearerAuthorization(ctx.getExchange());
     }
 
     public static List<String> scopes(SpELExchangeEvaluationContext ctx) {
