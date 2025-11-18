@@ -14,6 +14,7 @@
 package com.predic8.membrane.core.interceptor.apikey;
 
 import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.config.spring.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.interceptor.apikey.extractors.*;
@@ -26,10 +27,30 @@ import java.util.stream.*;
 
 import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static java.util.stream.Collectors.joining;
 import static java.util.stream.Stream.*;
 
 /**
- * @description Secures APIs by validating keys stored in either files or proxies.xml. Keys can be received from clients via HTTP headers or URL query parameters. Additional permission checks are possible through scope validation - scopes are loaded into an Exchange property and can be checked using the "hasScope()" SpEL function.
+ * @description Validates API keys extracted from incoming requests and looks up permissions (scopes) via configured key stores.
+ * Extractors can read the keys from HTTP headers, query parameters and may other message part. When validation succeeds, the interceptor adds an
+ * <code>ApiKeySecurityScheme</code> with the resolved scopes to the <code>Exchange</code>. Scopes can be checked in later plugins
+ * using the SpEL function <code>hasScope("...")</code>.
+ * <p>
+ * Typical configuration:
+ * </p>
+ * <pre><code>&lt;api&gt;
+ *   &lt;apiKey required="true"&gt;
+ *     &lt;!-- one or more key stores --&gt;
+ *     ...
+ *
+ *     &lt;!-- optional: customize extraction (header/query) --&gt;
+ *     &lt;headerExtractor name="X-Api-Key"/&gt;
+ *   &lt;/apiKey&gt;
+ * &lt;/api&gt;</code></pre>
+ * <p>
+ * On missing or invalid keys, a Problem Details response is generated (401 for missing, 403 for invalid) unless
+ * <code>required="false"</code> is set.
+ * </p>
  * @topic 3. Security and Validation
  */
 @MCElement(name = "apiKey")
@@ -58,14 +79,23 @@ public class ApiKeysInterceptor extends AbstractInterceptor {
     public String getLongDescription() {
         return getShortDescription() + "<br/>" + extractors.stream()
                 .map(extractor -> extractor.getDescription() + "<br/>")
-                .collect(Collectors.joining());
+                .collect(joining());
     }
 
     @Override
     public void init() {
         super.init();
-        stores.addAll(router.getBeanFactory().getBeansOfType(ApiKeyStore.class).values());
+        // At the moment the beanFactory is only there when the Membrane configuration was read from XML
+        if (router.getBeanFactory() != null) {
+            stores.addAll(router.getBeanFactory().getBeansOfType(ApiKeyStore.class).values());
+        }
         stores.forEach(s -> s.init(router));
+
+        // Add the default extractor if none is configured
+        if (extractors.isEmpty()) {
+            extractors.add(new ApiKeyHeaderExtractor());
+        }
+
         extractors.forEach(e -> e.init(router));
     }
 
@@ -76,7 +106,7 @@ public class ApiKeysInterceptor extends AbstractInterceptor {
             log.warn("Tried access apiKey protected resource without key. Uri: {}", exc.getRequestURI());
             security(false, getDisplayName())
                     .title(TITLE_4XX)
-                    .statusCode(401)
+                    .status(401)
                     .addSubType(TYPE_4XX)
                     .detail("Tried to access API key protected resource without key.")
                     .buildAndSetResponse(exc);
@@ -91,10 +121,10 @@ public class ApiKeysInterceptor extends AbstractInterceptor {
                 if (!required) {
                     return CONTINUE;
                 }
-                log.warn("The provided API {} key is invalid.", key.get());
+                log.warn("API key is invalid.");
                 security(false, getDisplayName())
                         .title(TITLE_4XX)
-                        .statusCode(403)
+                        .status(403)
                         .addSubType(TYPE_4XX)
                         .detail("The provided API key is invalid.")
                         .buildAndSetResponse(exc);
@@ -132,7 +162,9 @@ public class ApiKeysInterceptor extends AbstractInterceptor {
     }
 
     /**
-     * @description Controls whether API key validation is enforced or optional. Optional will still load scopes and make them available for checking through SpEL function "hasScope()".
+     * @description Controls whether API key validation is enforced. If set to <code>false</code>, the interceptor still extracts
+     * keys and loads scopes so they remain available for downstream checks (e.g., via <code>hasScope("...")</code>), but requests
+     * without a valid key are allowed to pass.
      * @default true
      * @example false
      */
@@ -147,7 +179,16 @@ public class ApiKeysInterceptor extends AbstractInterceptor {
     }
 
     /**
-     * @description API key stores to validate keys against
+     * @description Defines the API key stores used to resolve and authorize keys. Provide one or more child elements that
+     * implement a store (e.g., file-based, in-memory. jdbc or mongodb). Scopes from multiple stores are combined.
+     * <p>
+     * Example:
+     * </p>
+     * <pre><code><apiKey>
+     *   <!-- store elements; order does not matter -->
+     *   <yourFileStore src="classpath:keys.txt"/>
+     *   <yourXmlStore  ref="sharedKeysBean"/>;
+     * </apiKey></code></pre>
      */
     @MCChildElement(allowForeign = true)
     public void setStores(List<ApiKeyStore> stores) {
@@ -159,8 +200,22 @@ public class ApiKeysInterceptor extends AbstractInterceptor {
     }
 
     /**
-     * @description Extractors that define where and how to extract API keys from requests
-     * @default <headerExtractor /> (Using default header "X-Api-Key")
+     * @description Configures how and where API keys are extracted from requests (e.g., HTTP header or URL query parameter).
+     * Provide one or more extractor elements. If omitted, a header extractor using <code>X-Api-Key</code> is used.
+     * @default <headerExtractor /> (header name <code>X-Api-Key</code>)
+     * <p>
+     * Examples:
+     * </p>
+     * <pre><code><apiKey>
+     *   <!-- header: X-Api-Key (default) -->
+     *   <headerExtractor />
+     *
+     *   <!-- custom header -->
+     *   <headerExtractor name="Authorization" prefix="Api-Key "/>
+     *
+     *   <!-- query parameter -->
+     *   <queryParamExtractor name="api_key"/>
+     * </apiKey></code></pre>
      */
     @MCChildElement(allowForeign = true, order = 1)
     public void setExtractors(List<ApiKeyExtractor> extractors) {

@@ -85,24 +85,6 @@ public class Exchange extends AbstractExchange {
         return originalHostHeader.replaceFirst(":.*", "");
     }
 
-    public void blockRequestIfNeeded() throws TerminateException {
-        if (getProxy().isBlockRequest()) {
-            synchronized (getRequest()) {
-                setStopped();
-                block(getRequest());
-            }
-        }
-    }
-
-    public void blockResponseIfNeeded() throws TerminateException {
-        if (getProxy().isBlockResponse()) {
-            synchronized (getResponse()) {
-                setStopped();
-                block(getResponse());
-            }
-        }
-    }
-
     public void block(Message msg) throws TerminateException {
         try {
             log.debug("Message thread waits");

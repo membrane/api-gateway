@@ -49,7 +49,7 @@ class ShadowingInterceptorTest {
 
     @BeforeEach
     void setUp() throws Exception {
-        header = new Header(){{
+        header = new Header() {{
             add(CONTENT_TYPE, APPLICATION_JSON);
         }};
         exc = ShadowingInterceptor.buildExchange(
@@ -78,7 +78,7 @@ class ShadowingInterceptorTest {
             setHost("localhost");
             setPort(3000);
         }}));
-        interceptorProxy.setInterceptors(List.of(
+        interceptorProxy.setFlow(List.of(
                 shadowingInterceptor,
                 new SetHeaderInterceptor() {{
                     setFieldName("foo");
@@ -99,7 +99,7 @@ class ShadowingInterceptorTest {
         shadowingProxy = new ServiceProxy(new ServiceProxyKey("localhost", "*", ".*", 3000), null, 0);
         returnInterceptorMock = Mockito.spy(new ReturnInterceptor());
         returnInterceptorMock.setStatusCode(200);
-        shadowingProxy.setInterceptors(List.of(returnInterceptorMock));
+        shadowingProxy.setFlow(List.of(returnInterceptorMock));
 
         shadowingRouter.getRuleManager().addProxyAndOpenPortIfNew(shadowingProxy);
         shadowingRouter.init();
@@ -119,7 +119,7 @@ class ShadowingInterceptorTest {
     @Test
     void testIfShadowTargetIsCalled() throws Exception {
         given().when().get("http://localhost:2000").then().statusCode(200);
-        verify(returnInterceptorMock, times(1)).handleRequest(any(Exchange.class));
+        verify(returnInterceptorMock, timeout(10000).times(1)).handleRequest(any(Exchange.class));
     }
 
     /**

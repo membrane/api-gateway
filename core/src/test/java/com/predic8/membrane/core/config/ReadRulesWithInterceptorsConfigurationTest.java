@@ -41,25 +41,25 @@ public class ReadRulesWithInterceptorsConfigurationTest {
 
 	@Test
 	void testRuleInterceptorSize() {
-        assertEquals(1, proxies.getFirst().getInterceptors().size());
+        assertEquals(1, proxies.getFirst().getFlow().size());
 	}
 
 	@Test
 	void ruleInterceptorsHaveRouterReference() {
-        for (Interceptor i : proxies.getFirst().getInterceptors()) {
+        for (Interceptor i : proxies.getFirst().getFlow()) {
 			assertNotNull(i.getRouter());
 		}
 	}
 
 	@Test
 	void ruleInterceptorIDs() {
-		List<Interceptor> interceptors = proxies.getFirst().getInterceptors();
+		List<Interceptor> interceptors = proxies.getFirst().getFlow();
 		assertEquals("accessControlInterceptor", ((SpringInterceptor) interceptors.getFirst()).getRefId());
 	}
 
 	@Test
 	void ruleInterceptorDisplayNames() {
-		List<Interceptor> interceptors = proxies.getFirst().getInterceptors();
+		List<Interceptor> interceptors = proxies.getFirst().getFlow();
 		assertEquals("Access Control List Interceptor", interceptors.getFirst().getDisplayName());
 	}
 

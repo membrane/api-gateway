@@ -91,8 +91,8 @@ public class Doc {
 	HashSet<String> keys = new HashSet<>();
 	List<Entry> entries = new ArrayList<>();
 
-	static final List<String> POSITIVE = Arrays.asList("topic", "description", "example", "default", "explanation");
-	static final List<String> NEGATIVE = Arrays.asList("author", "param");
+	static final List<String> POSITIVE = Arrays.asList("topic", "description", "example", "default", "explanation", "deprecated");
+	static final List<String> NEGATIVE = Arrays.asList("author", "param", "see");
 
 	private void handle(String key, String value) {
 		value = value.trim();
@@ -112,6 +112,10 @@ public class Doc {
 			processingEnv.getMessager().printMessage(Kind.WARNING, "Duplicate JavaDoc tag: " + key, e);
 			return;
 		}
+
+        if (value.contains("{@code")) {
+            processingEnv.getMessager().printMessage(Kind.ERROR, "@code not allowed!", e);
+        }
 
 		keys.add(key);
 		entries.add(new Entry(key, value));

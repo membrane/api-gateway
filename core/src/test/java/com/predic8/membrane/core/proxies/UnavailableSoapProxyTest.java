@@ -16,6 +16,7 @@ package com.predic8.membrane.core.proxies;
 import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.interceptor.schemavalidation.*;
 import com.predic8.membrane.core.interceptor.soap.*;
+import com.predic8.membrane.core.proxies.AbstractServiceProxy.*;
 import com.predic8.membrane.core.transport.http.client.*;
 import org.junit.jupiter.api.*;
 
@@ -33,7 +34,7 @@ public class UnavailableSoapProxyTest {
 	@BeforeAll
 	static void setup() throws Exception {
 		ServiceProxy cityAPI = new ServiceProxy(new ServiceProxyKey(4000), null, 0);
-		cityAPI.getInterceptors().add(new SampleSoapServiceInterceptor());
+		cityAPI.getFlow().add(new SampleSoapServiceInterceptor());
 		backendRouter = new HttpRouter();
 		backendRouter.getRuleManager().addProxyAndOpenPortIfNew(cityAPI);
 		backendRouter.init();
@@ -59,10 +60,10 @@ public class UnavailableSoapProxyTest {
 
 		sp3 = new ServiceProxy();
 		sp3.setPort(2000);
-		sp3.setTarget(new AbstractServiceProxy.Target("localhost", 2001));
+		sp3.setTarget(new Target("localhost", 2001));
 		ValidatorInterceptor v = new ValidatorInterceptor(); // Calling init on interceptor will break test!
 		v.setWsdl("http://localhost:2001?wsdl");
-		sp3.getInterceptors().add(v);
+		sp3.getFlow().add(v);
 
 		SOAPProxy sp2 = new SOAPProxy();
 		sp2.setPort(2001);
@@ -105,7 +106,7 @@ public class UnavailableSoapProxyTest {
 
 	@Test
 	void checkWSDLDownloadFailureInSoapProxyAndValidator() {
-		sp.getInterceptors().add(new ValidatorInterceptor());
+		sp.getFlow().add(new ValidatorInterceptor());
 		r.getRules().add(sp);
 		test();
 	}

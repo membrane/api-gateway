@@ -13,33 +13,50 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.apikey.stores;
 
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.Router;
-import com.predic8.membrane.core.util.ConfigurationException;
+import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.util.*;
 
-import java.io.IOException;
-import java.util.AbstractMap.SimpleEntry;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.stream.Stream;
+import java.io.*;
+import java.util.AbstractMap.*;
+import java.util.*;
+import java.util.stream.*;
 
-import static com.predic8.membrane.core.interceptor.apikey.ApiKeyUtils.readFile;
-import static java.util.Arrays.stream;
-import static java.util.Optional.empty;
+import static com.predic8.membrane.core.interceptor.apikey.ApiKeyUtils.*;
+import static java.util.Arrays.*;
 import static java.util.Optional.of;
-import static java.util.stream.Collectors.toMap;
+import static java.util.Optional.*;
+import static java.util.stream.Collectors.*;
 
 /**
- * @description Loads api keys from a file. File has to be one key per line, blank lines for formatting are allowed. Optionally, a comma separated list of scopes after the key and a colon in between the two. Hash symbol can be used for comments at the end of each line, including empty lines.
- * @example See: https://github.com/membrane/api-gateway/blob/master/distribution/examples/security/api-key/simple/demo-keys.txt
+ * @description Loads API keys and optional scopes from a text file. Each non-empty line must contain a key.
+ * <ul>
+ *   <li>Blank lines are ignored.</li>
+ *   <li>A hash sign (<code> #</code>) starts a comment (line or end-of-line).</li>
+ *   <li>Scopes can follow the key, separated by a colon. Multiple scopes are comma-separated.</li>
+ * </ul>
+ * <p>
+ * Example file:
+ * </p>
+ * <pre>
+ * # demo API keys
+ * 123456                 # key without scopes
+ * 7890:read,write        # key with two scopes
+ *
+ * # another valid key
+ * abcd:admin
+ * </pre>
+ * @example See:
+ * <a href="https://github.com/membrane/api-gateway/blob/master/distribution/examples/security/api-key/simple/demo-keys.txt" target="_blank">
+ * GitHub example file
+ * </a>
+ * @topic 3. Security and Validation
  */
 @MCElement(name = "apiKeyFileStore")
 public class ApiKeyFileStore implements ApiKeyStore {
 
     private String location;
-    private Map<String, Optional<List<String>>> scopes;
+    private Map<String, Optional<Set<String>>> scopes;
 
     @Override
     public void init(Router router) {
@@ -50,8 +67,8 @@ public class ApiKeyFileStore implements ApiKeyStore {
         }
     }
 
-    public static Map<String, Optional<List<String>>> readKeyData(Stream<String> lines) throws IOException {
-        Map<String, Optional<List<String>>> collect;
+    public static Map<String, Optional<Set<String>>> readKeyData(Stream<String> lines) throws IOException {
+        Map<String, Optional<Set<String>>> collect;
         try {
             collect = lines
                     .map(ApiKeyFileStore::extractKeyBeforeHash)
@@ -70,27 +87,27 @@ public class ApiKeyFileStore implements ApiKeyStore {
         return line.split("#", 2)[0];
     }
 
-    static SimpleEntry<String, Optional<List<String>>> parseLine(String line) {
+    static SimpleEntry<String, Optional<Set<String>>> parseLine(String line) {
         List<String> parts = getParts(line);
-        return new SimpleEntry<>(parts.get(0), getValue(parts));
+        return new SimpleEntry<>(parts.getFirst(), getValue(parts));
     }
 
     private static List<String> getParts(String line) {
         return stream(line.split(":", 2)).map(String::trim).toList();
     }
 
-    private static Optional<List<String>> getValue(List<String> parts) {
+    private static Optional<Set<String>> getValue(List<String> parts) {
         return (parts.size() > 1 && !parts.get(1).isEmpty()) ? of(parseValues(parts.get(1))) : empty();
     }
 
-    static List<String> parseValues(String valuesPart) {
+    static Set<String> parseValues(String valuesPart) {
         return stream(valuesPart.split(","))
                 .map(String::trim)
-                .toList();
+                .collect(toSet());
     }
 
     @Override
-    public Optional<List<String>> getScopes(String key) throws UnauthorizedApiKeyException {
+    public Optional<Set<String>> getScopes(String key) throws UnauthorizedApiKeyException {
         if (scopes.containsKey(key)) {
             return scopes.get(key);
         } else {
@@ -99,7 +116,8 @@ public class ApiKeyFileStore implements ApiKeyStore {
     }
 
     /**
-     * @description Path/URL to the api key file.
+     * @description Path or URL to the API key file. Can point to local files or classpath resources.
+     * @example classpath:demo-keys.txt
      */
     @MCAttribute
     public void setLocation(String location) {

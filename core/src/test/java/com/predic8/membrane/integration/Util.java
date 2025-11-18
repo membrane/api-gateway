@@ -17,6 +17,7 @@ package com.predic8.membrane.integration;
 import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.proxies.*;
+import com.predic8.membrane.core.proxies.AbstractServiceProxy.*;
 
 import java.util.*;
 
@@ -36,15 +37,15 @@ public class Util {
         return createServiceProxy(listenPort,null,interceptors);
     }
 
-    public static Proxy createServiceProxy(int listenPort, AbstractServiceProxy.Target target, Interceptor... interceptors){
+    public static Proxy createServiceProxy(int listenPort, Target target, Interceptor... interceptors){
         if (target == null)
-            target = new AbstractServiceProxy.Target(null, -1);
+            target = new Target(null, -1);
 
         ServiceProxy sp = new ServiceProxy(new ServiceProxyKey(listenPort), null, -1);
         sp.setTarget(target);
 
         for (Interceptor interceptor : interceptors)
-            sp.getInterceptors().add(interceptor);
+            sp.getFlow().add(interceptor);
 
         return sp;
     }

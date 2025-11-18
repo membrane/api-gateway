@@ -38,7 +38,7 @@ public class RuleMatchingInterceptor extends AbstractInterceptor {
 
 	public RuleMatchingInterceptor() {
 		name = "rule matching interceptor";
-		setFlow(REQUEST_FLOW);
+		setAppliedFlow(REQUEST_FLOW);
 	}
 
 	@Override
@@ -50,12 +50,13 @@ public class RuleMatchingInterceptor extends AbstractInterceptor {
 
 		if (proxy instanceof NullProxy) {
 			// Do not log. 404 is too common
-            user(router.isProduction(),"routing")
-                    .statusCode(404)
-                    .title("Wrong path or method")
-                    .detail("This request was not accepted by Membrane. Please check HTTP method and path.")
-                    .internal("method", exc.getRequest().getMethod())
-                    .internal("uri", exc.getRequest().getUri()).buildAndSetResponse(exc);
+            user(getRouter().isProduction(), "routing")
+                    .status(404)
+                    .title("Invalid path or method")
+                    .detail("The requested path or HTTP method is not supported.")
+					.buildAndSetResponse(exc);
+//                    .internal("method", exc.getRequest().getMethod())
+//                    .internal("uri", exc.getRequest().getUri()).buildAndSetResponse(exc);
 			return ABORT;
 		}
 

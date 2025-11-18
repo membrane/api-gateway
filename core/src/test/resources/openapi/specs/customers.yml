@@ -43,6 +43,7 @@ paths:
                     type: string
                 minLength: 3
   /customers/{cid}:
+    description: Single paths
     parameters:
       - in: path
         name: cid
@@ -65,6 +66,7 @@ paths:
           type: integer
           minimum: 0
         required: true
+        description: Id of image
     get:
       responses:
         '200':

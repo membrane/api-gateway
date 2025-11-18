@@ -17,6 +17,7 @@ import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.interceptor.server.*;
 import com.predic8.membrane.core.proxies.*;
+import com.predic8.membrane.core.proxies.AbstractServiceProxy.*;
 import org.jetbrains.annotations.*;
 import org.junit.jupiter.api.*;
 
@@ -78,21 +79,17 @@ public class SoapAndInternalProxyTest {
     }
 
     private Proxy createInternalProxy() {
-        InternalProxy internalProxy = new InternalProxy();
-        internalProxy.setName("int");
-        AbstractServiceProxy.Target target = new AbstractServiceProxy.Target();
-        internalProxy.getInterceptors().add(new SampleSoapServiceInterceptor());
-        target.setHost("localhost");
-        target.setPort(9501);
-
-        internalProxy.setTarget(target);
-        return internalProxy;
+        InternalProxy ip = new InternalProxy();
+        ip.setName("int");
+        ip.getFlow().add(new SampleSoapServiceInterceptor());
+        ip.setTarget(new Target("localhost",9501));
+        return ip;
     }
 
     private Proxy createServiceProxyWithWSDLInterceptors() {
         ServiceProxy sp = new ServiceProxy();
         sp.setPort(3047);
-        AbstractServiceProxy.Target target = new AbstractServiceProxy.Target();
+        Target target = new Target();
         target.setUrl("internal://int");
         sp.setTarget(target);
 
@@ -100,11 +97,11 @@ public class SoapAndInternalProxyTest {
         e.setPort("443");
         e.setProtocol("https");
         e.setHost("a.b.local");
-        sp.getInterceptors().add(e);
+        sp.getFlow().add(e);
 
         WSDLPublisherInterceptor publisher = new WSDLPublisherInterceptor();
         publisher.setWsdl("internal://int/?wsdl");
-        sp.getInterceptors().add(publisher);
+        sp.getFlow().add(publisher);
         return sp;
     }
 }

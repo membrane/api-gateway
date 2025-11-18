@@ -47,11 +47,11 @@ public class FlowTestInterceptors {
     public static IfInterceptor IF(String test, Interceptor... nestedInterceptors) {
         return new IfInterceptor() {{
             setTest(test);
-            setInterceptors(asList(nestedInterceptors));
+            setFlow(asList(nestedInterceptors));
         }};
     }
 
-    public static ChooseInterceptor CHOICE(Otherwise otherwise, Case... cases) {
+    public static ChooseInterceptor CHOOSE(Otherwise otherwise, Case... cases) {
         return new ChooseInterceptor() {{
             setOtherwise(otherwise);
             setCases(asList(cases));
@@ -61,13 +61,13 @@ public class FlowTestInterceptors {
     public static Case CASE(String test, Interceptor... nestedInterceptors) {
         return new Case() {{
             setTest(test);
-            setInterceptors(List.of(nestedInterceptors));
+            setFlow(List.of(nestedInterceptors));
         }};
     }
 
     public static Otherwise OTHERWISE(Interceptor... nestedInterceptors) {
         return new Otherwise() {{
-            setInterceptors(List.of(nestedInterceptors));
+            setFlow(List.of(nestedInterceptors));
         }};
     }
 
@@ -81,19 +81,19 @@ public class FlowTestInterceptors {
 
     public static RequestInterceptor REQUEST(Interceptor... interceptors) {
         RequestInterceptor ai = new RequestInterceptor();
-        ai.setInterceptors(asList(interceptors));
+        ai.setFlow(asList(interceptors));
         return ai;
     }
 
     public static ResponseInterceptor RESPONSE(Interceptor... interceptors) {
         ResponseInterceptor ai = new ResponseInterceptor();
-        ai.setInterceptors(asList(interceptors));
+        ai.setFlow(asList(interceptors));
         return ai;
     }
 
     public static AbortInterceptor ABORT(Interceptor... interceptors) {
         AbortInterceptor ai = new AbortInterceptor();
-        ai.setInterceptors(asList(interceptors));
+        ai.setFlow(asList(interceptors));
         return ai;
     }
 }

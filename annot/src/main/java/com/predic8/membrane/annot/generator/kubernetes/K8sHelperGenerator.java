@@ -39,7 +39,7 @@ public class K8sHelperGenerator extends AbstractK8sGenerator {
     }
 
     @Override
-    protected void write(Model m) {
+    protected void write(Model m) throws IOException{
         m.getMains().forEach(main -> {
             try {
                 List<Element> sources = new ArrayList<>(main.getInterceptorElements());
@@ -86,9 +86,6 @@ public class K8sHelperGenerator extends AbstractK8sGenerator {
         appendLine(w,
                 "",
                 "package " + mainInfo.getAnnotation().outputPackage() + ";",
-                "",
-                "import com.predic8.membrane.core.proxies.Proxy;",
-                "import com.predic8.membrane.core.interceptor.Interceptor;",
                 "",
                 "import java.util.Map;",
                 "import java.util.List;",

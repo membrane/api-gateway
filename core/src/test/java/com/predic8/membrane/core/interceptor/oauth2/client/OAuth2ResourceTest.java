@@ -164,7 +164,7 @@ public abstract class OAuth2ResourceTest {
         // state 0: the attacker aborts the OAuth2 flow at the AS
         // state 1: the helpless user continues using the same link
 
-        mockAuthServer.getTransport().getInterceptors().add(2, new AbstractInterceptor() {
+        mockAuthServer.getTransport().getFlow().add(2, new AbstractInterceptor() {
             @Override
             public Outcome handleRequest(Exchange exc) {
                 if (state.get() == 0) {
@@ -193,7 +193,7 @@ public abstract class OAuth2ResourceTest {
     @Test
     public void testCSRFProblem() throws Exception {
         AtomicBoolean blocked = new AtomicBoolean(true);
-        mockAuthServer.getTransport().getInterceptors().add(2, new AbstractInterceptor() {
+        mockAuthServer.getTransport().getFlow().add(2, new AbstractInterceptor() {
             @Override
             public Outcome handleRequest(Exchange exc) {
                 if (blocked.get()) {
@@ -263,7 +263,7 @@ public abstract class OAuth2ResourceTest {
         WellknownFile wkf = getWellknownFile();
         wkf.init();
 
-        sp.getInterceptors().add(new AbstractInterceptor() {
+        sp.getFlow().add(new AbstractInterceptor() {
 
             final SecureRandom rand = new SecureRandom();
 
@@ -354,7 +354,7 @@ public abstract class OAuth2ResourceTest {
                 withValue
         ));
 
-        sp.getInterceptors().add(new AbstractInterceptor() {
+        sp.getFlow().add(new AbstractInterceptor() {
             @Override
             public Outcome handleRequest(Exchange exc) {
                 if (!exc.getRequest().getUri().contains("is-logged-in"))
@@ -366,8 +366,8 @@ public abstract class OAuth2ResourceTest {
                 return Outcome.RETURN;
             }
         });
-        sp.getInterceptors().add(oAuth2ResourceInterceptor);
-        sp.getInterceptors().add(new AbstractInterceptor() {
+        sp.getFlow().add(oAuth2ResourceInterceptor);
+        sp.getFlow().add(new AbstractInterceptor() {
             @Override
             public Outcome handleRequest(Exchange exc) {
                 try {

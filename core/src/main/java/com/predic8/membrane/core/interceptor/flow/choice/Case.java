@@ -13,30 +13,31 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.flow.choice;
 
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.annot.Required;
-import com.predic8.membrane.core.Router;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.interceptor.Interceptor.Flow;
-import com.predic8.membrane.core.lang.ExchangeExpression;
-import com.predic8.membrane.core.lang.ExchangeExpression.Language;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.config.xml.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.interceptor.Interceptor.*;
+import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.lang.*;
+import com.predic8.membrane.core.lang.ExchangeExpression.*;
+import org.slf4j.*;
 
-import static com.predic8.membrane.core.lang.ExchangeExpression.Language.SPEL;
+import static com.predic8.membrane.core.lang.ExchangeExpression.Language.*;
+import static com.predic8.membrane.core.lang.ExchangeExpression.expression;
 
 @MCElement(name = "case", topLevel = false)
-public class Case extends InterceptorContainer {
+public class Case extends InterceptorContainer implements XMLSupport {
 
     private static final Logger log = LoggerFactory.getLogger(Case.class);
 
     private String test;
     private Language language = SPEL;
     private ExchangeExpression exchangeExpression;
+    private XmlConfig xmlConfig;
 
     public void init(Router router) {
-        exchangeExpression = ExchangeExpression.newInstance(router, language, test);
+        exchangeExpression = expression( new InterceptorAdapter(router,xmlConfig), language, test);
     }
 
     boolean evaluate(Exchange exc, Flow flow) {
@@ -75,5 +76,20 @@ public class Case extends InterceptorContainer {
     @MCAttribute
     public void setTest(String test) {
         this.test = test;
+    }
+
+    /**
+     * XML Configuration e.g. declaration of XML namespaces for XPath expressions, ...
+     * @param xmlConfig
+     */
+    @Override
+    @MCChildElement(allowForeign = true,order = 10)
+    public void setXmlConfig(XmlConfig xmlConfig) {
+        this.xmlConfig = xmlConfig;
+    }
+
+    @Override
+    public XmlConfig getXmlConfig() {
+        return xmlConfig;
     }
 }

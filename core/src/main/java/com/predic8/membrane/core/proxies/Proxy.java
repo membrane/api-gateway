@@ -24,13 +24,9 @@ import java.util.*;
  */
 public interface Proxy extends Cloneable {
 
-	List<Interceptor> getInterceptors();
+	List<Interceptor> getFlow();
 
-	void setInterceptors(List<Interceptor> interceptors);
-
-	boolean isBlockRequest();
-
-	boolean isBlockResponse();
+	void setFlow(List<Interceptor> interceptors);
 
 	RuleKey getKey();
 
@@ -39,10 +35,6 @@ public interface Proxy extends Cloneable {
 	void setName(String name);
 
 	String getName();
-
-	void setBlockRequest(boolean blockStatus);
-
-	void setBlockResponse(boolean blockStatus);
 
 	RuleStatisticCollector getStatisticCollector();
 

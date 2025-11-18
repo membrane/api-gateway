@@ -1,3 +1,3 @@
-This example shows OAuth2 authorization with help of github as authorization server.
+# OAuth2 with GitHub as Authorization Server Tutorial
 
-Please follow https://www.membrane-soa.org/api-gateway-doc/current/oauth2-github.html
+See [OAuth2 with GitHub (Login Integration)](https://www.membrane-api.io/tutorials/oauth2/oauth2-github.html)

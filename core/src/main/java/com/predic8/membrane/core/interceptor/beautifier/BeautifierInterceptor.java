@@ -28,7 +28,7 @@ import java.nio.charset.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 
 /**
- * @description Beautifies request and response bodies. Supported are the Formats: JSON, JSON5, XML, TEXT
+ * @description Beautifies request and response bodies. Supported are the Formats: <b>JSON</b>, <b>JSON5</b>, <b>XML</b>, <b>TEXT</b>
  * @topic 2. Enterprise Integration Patterns
  */
 @MCElement(name = "beautifier")

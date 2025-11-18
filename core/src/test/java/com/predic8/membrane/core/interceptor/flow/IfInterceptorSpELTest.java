@@ -44,7 +44,7 @@ public class IfInterceptorSpELTest extends ConditionalEvaluationTestContext {
     }
 
     @Test
-    void simpleRequestTrue() throws Exception {
+    void requestTrue() throws Exception {
         assertEquals(CONTINUE,eval("true", new Builder()));
     }
 
@@ -117,12 +117,12 @@ public class IfInterceptorSpELTest extends ConditionalEvaluationTestContext {
         verify(createMock(exc), never()).handleRequest(exc);
     }
 
-    private static @NotNull Interceptor createMock(Exchange exc) throws Exception {
+    private static @NotNull Interceptor createMock(Exchange exc) {
         Interceptor mi = mock(Interceptor.class);
         when(mi.handlesRequests()).thenReturn(true);
         IfInterceptor i = new IfInterceptor();
         i.setTest("isXML()");
-        i.getInterceptors().add(mi);
+        i.getFlow().add(mi);
         i.init(router);
         i.handleRequest(exc);
         return mi;

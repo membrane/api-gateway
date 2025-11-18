@@ -13,30 +13,51 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.apikey.extractors;
 
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.Router;
+import com.predic8.membrane.core.config.xml.*;
 import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.interceptor.lang.Polyglot;
-import com.predic8.membrane.core.lang.ExchangeExpression;
-import com.predic8.membrane.core.lang.ExchangeExpression.Language;
+import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.interceptor.lang.*;
+import com.predic8.membrane.core.lang.*;
+import com.predic8.membrane.core.lang.ExchangeExpression.*;
 
 import java.util.Optional;
 
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
 import static com.predic8.membrane.core.lang.ExchangeExpression.Language.SPEL;
+import static com.predic8.membrane.core.lang.ExchangeExpression.expression;
 import static com.predic8.membrane.core.security.ApiKeySecurityScheme.In.EXPRESSION;
 
+/**
+ * @deprecated Set the expression directly on the apiKey plugin.
+ * @description Extracts an API key by evaluating an expression on the incoming request.
+ * The result (a string) is treated as the API key. The expression is evaluated in the configured language
+ * (default: <code>SPEL</code>) during the request flow.
+ * <p>
+ * Typical usage inside <code>&lt;apiKey&gt;</code>:
+ * </p>
+ * <pre><code><apiKey>
+ *   <expressionExtractor
+ *       language="SPEL"
+ *       expression="request.headers['X-Api-Key']"/>
+ * </apiKey></code></pre>
+ * <p>
+ * If the expression evaluates to <code>null</code> or an empty string, no key is extracted.
+ * </p>
+ * @topic 3. Security and Validation
+ */
 @MCElement(name="expressionExtractor", topLevel = false)
-public class ApiKeyExpressionExtractor implements ApiKeyExtractor, Polyglot {
+public class ApiKeyExpressionExtractor implements ApiKeyExtractor, Polyglot, XMLSupport {
 
     private String expression = "";
     private Language language = SPEL;
     private ExchangeExpression exchangeExpression;
+    private XmlConfig xmlConfig;
 
     @Override
     public void init(Router router) {
-        exchangeExpression = ExchangeExpression.newInstance(router, language, expression);
+        exchangeExpression = expression(new InterceptorAdapter(router, xmlConfig), language, expression);
     }
 
     @Override
@@ -63,8 +84,32 @@ public class ApiKeyExpressionExtractor implements ApiKeyExtractor, Polyglot {
         return expression;
     }
 
+    /**
+     * @description The expression evaluated against the message. It must resolve to a String
+     * containing the API key. Empty or null results mean “no key found”.
+     * <p>
+     * Examples (SPEL):
+     * </p>
+     * <pre><code>expression="request.headers['X-Api-Key']"
+     *  expression="request.query['api_key']"</code></pre>
+     */
     @MCAttribute
     public void setExpression(String expression) {
         this.expression = expression;
+    }
+
+    /**
+     * XML Configuration e.g. declaration of XML namespaces for XPath expressions, ...
+     * @param xmlConfig
+     */
+    @Override
+    @MCChildElement(allowForeign = true)
+    public void setXmlConfig(XmlConfig xmlConfig) {
+        this.xmlConfig = xmlConfig;
+    }
+
+    @Override
+    public XmlConfig getXmlConfig() {
+        return xmlConfig;
     }
 }

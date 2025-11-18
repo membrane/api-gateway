@@ -133,7 +133,7 @@ public class ExchangeStoreInterceptor extends AbstractInterceptor implements App
 		for (Proxy r : router.getRuleManager().getRules()) {
 			if (!(r instanceof AbstractServiceProxy)) continue;
 
-			for (Interceptor i : r.getInterceptors()) {
+			for (Interceptor i : r.getFlow()) {
 				if (i instanceof AdminConsoleInterceptor) {
 					serviceProxiesContainingAdminConsole.add((AbstractServiceProxy)r);
 				}

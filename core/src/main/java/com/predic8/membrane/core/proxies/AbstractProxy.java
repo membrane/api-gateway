@@ -55,13 +55,13 @@ public abstract class AbstractProxy implements Proxy {
         return InterceptorUtil.getFirstInterceptorOfType(interceptors, type);
     }
 
-    public List<Interceptor> getInterceptors() {
+    public List<Interceptor> getFlow() {
         return interceptors;
     }
 
     @MCChildElement(allowForeign = true, order = 100)
-    public void setInterceptors(List<Interceptor> interceptors) {
-        this.interceptors = interceptors;
+    public void setFlow(List<Interceptor> flow) {
+        this.interceptors = flow;
     }
 
     public String getName() {
@@ -70,14 +70,6 @@ public abstract class AbstractProxy implements Proxy {
 
     public RuleKey getKey() {
         return key;
-    }
-
-    public boolean isBlockRequest() {
-        return blockRequest;
-    }
-
-    public boolean isBlockResponse() {
-        return blockResponse;
     }
 
     /**
@@ -92,25 +84,6 @@ public abstract class AbstractProxy implements Proxy {
     public void setKey(RuleKey ruleKey) {
         this.key = ruleKey;
     }
-
-    /**
-     * @description <i>legacy attribute</i> for usage by Membrane Monitor
-     * @default false
-     */
-    @MCAttribute
-    public void setBlockRequest(boolean blockStatus) {
-        this.blockRequest = blockStatus;
-    }
-
-    /**
-     * @description <i>legacy attribute</i> for usage by Membrane Monitor
-     * @default false
-     */
-    @MCAttribute
-    public void setBlockResponse(boolean blockStatus) {
-        this.blockResponse = blockStatus;
-    }
-
 
     /**
      * Called after parsing is complete and this has been added to the object tree (whose root is Router).

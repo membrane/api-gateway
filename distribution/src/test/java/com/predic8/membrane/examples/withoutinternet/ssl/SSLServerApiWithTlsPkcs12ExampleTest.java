@@ -30,11 +30,9 @@ public class SSLServerApiWithTlsPkcs12ExampleTest extends DistributionExtracting
 
 	@Test
 	void test() throws Exception {
-		replaceInFile2("proxies.xml", "443", "3023");
-
 		try(Process2 ignored = startServiceProxyScript(); HttpAssertions ha = new HttpAssertions()) {
-			ha.trustAnyHTTPSServer(3023);
-			assertContains("success", ha.getAndAssert200("https://localhost:3023/axis2/services/BLZService?wsdl"));
+			ha.trustAnyHTTPSServer(8443);
+			assertContains("success", ha.getAndAssert200("https://localhost:8443/axis2/services/BLZService?wsdl"));
 		}
 	}
 }

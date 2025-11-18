@@ -124,3 +124,5 @@ maven-plugin/target/surefire/
 .DS_Store
 /distribution/docker/release-bin/
 /docs/router-conf.xsd
+.vscode/
+/core/derby.log

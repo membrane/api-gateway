@@ -13,8 +13,12 @@
    limitations under the License. */
 package com.predic8.membrane.annot.generator.kubernetes.model;
 
-public interface ISchema {
-    void addProperty(SchemaObject so);
+import com.fasterxml.jackson.databind.node.*;
 
-    void setAdditionalProperties(boolean additionalProperties);
+public interface ISchema {
+
+    String getName();
+
+    ObjectNode json(ObjectNode node);
+
 }

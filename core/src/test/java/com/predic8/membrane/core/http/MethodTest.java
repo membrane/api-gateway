@@ -32,7 +32,7 @@ public class MethodTest {
 	@BeforeAll
 	public static void setUp() throws Exception {
 		ServiceProxy proxy = new ServiceProxy(new ServiceProxyKey("localhost", "*", ".*", 2000), "dummy", 80);
-		proxy.getInterceptors().add(new AbstractInterceptor() {
+		proxy.getFlow().add(new AbstractInterceptor() {
 			@Override
 			public Outcome handleRequest(Exchange exc) {
 				if (exc.getRequest().getMethod().equals("DELETE")) {
@@ -42,7 +42,7 @@ public class MethodTest {
 				return super.handleRequest(exc);
 			}
 		});
-		proxy.getInterceptors().add(new ExceptionTestInterceptor()); // Cause exception
+		proxy.getFlow().add(new ExceptionTestInterceptor()); // Cause exception
 		router = new HttpRouter();
 		router.getRuleManager().addProxyAndOpenPortIfNew(proxy);
 		router.init();

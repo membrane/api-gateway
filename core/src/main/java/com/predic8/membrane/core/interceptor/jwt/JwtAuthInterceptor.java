@@ -17,12 +17,10 @@ import com.fasterxml.jackson.databind.*;
 import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.exceptions.ProblemDetails;
 import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.security.*;
 import org.jose4j.jwk.*;
 import org.jose4j.jwt.consumer.*;
-import org.slf4j.*;
 
 import java.util.*;
 
@@ -62,7 +60,7 @@ public class JwtAuthInterceptor extends AbstractInterceptor {
 
     public JwtAuthInterceptor() {
         name = "jwt checker.";
-        setFlow(of(REQUEST));
+        setAppliedFlow(of(REQUEST));
     }
 
     @Override
@@ -96,7 +94,7 @@ public class JwtAuthInterceptor extends AbstractInterceptor {
             ProblemDetails.security(router.isProduction(), "jwt-auth")
                     .detail(e.getMessage())
                     .stacktrace(true)
-                    .statusCode(400)
+                    .status(400)
                     .buildAndSetResponse(exc);
             return RETURN;
         } catch (JsonProcessingException e) {
@@ -104,7 +102,7 @@ public class JwtAuthInterceptor extends AbstractInterceptor {
                     .detail(ERROR_DECODED_HEADER_NOT_JSON)
                     .addSubSee(ERROR_DECODED_HEADER_NOT_JSON_ID)
                     .stacktrace(true)
-                    .statusCode(400)
+                    .status(400)
                     .buildAndSetResponse(exc);
             return RETURN;
         } catch (InvalidJwtException e) {
@@ -112,7 +110,7 @@ public class JwtAuthInterceptor extends AbstractInterceptor {
                     .detail(ERROR_VALIDATION_FAILED)
                     .addSubSee(ERROR_VALIDATION_FAILED_ID)
                     .stacktrace(false)
-                    .statusCode(400)
+                    .status(400)
                     .buildAndSetResponse(exc);
             return RETURN;
         } catch (Exception e) {
@@ -120,7 +118,7 @@ public class JwtAuthInterceptor extends AbstractInterceptor {
                     .detail(ERROR_JWT_NOT_FOUND)
                     .addSubSee(ERROR_JWT_NOT_FOUND_ID)
                     .stacktrace(true)
-                    .statusCode(400)
+                    .status(400)
                     .buildAndSetResponse(exc);
             return RETURN;
         }

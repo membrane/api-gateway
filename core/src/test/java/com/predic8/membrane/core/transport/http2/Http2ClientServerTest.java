@@ -55,7 +55,7 @@ public class Http2ClientServerTest {
         router.setHotDeploy(false);
         ServiceProxy sp = new ServiceProxy(new ServiceProxyKey(3049), "localhost", 80);
         sp.setSslInboundParser(sslParser);
-        sp.getInterceptors().add(new AbstractInterceptor() {
+        sp.getFlow().add(new AbstractInterceptor() {
             @Override
             public Outcome handleRequest(Exchange exc) {
                 handler = exc.getHandler();

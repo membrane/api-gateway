@@ -1,4 +1,4 @@
-apiVersion: membrane-soa.org/v1beta1
+apiVersion: membrane-api.io/v1beta2
 kind: api
 metadata:
   name: fruitshop-demo
@@ -10,24 +10,24 @@ spec:
 
 ---
 
-apiVersion: membrane-soa.org/v1beta1
-kind: serviceProxy
+apiVersion: membrane-api.io/v1beta2
+kind: api
 metadata:
   name: admin-console
 spec:
   port: 9000
-  interceptors:
+  flow:
     - adminConsole: {}
 
 ---
 
-apiVersion: membrane-soa.org/v1beta1
+apiVersion: membrane-api.io/v1beta2
 kind: api
 metadata:
   name: log
 spec:
   port: 2000
-  interceptors:
+  flow:
     - log:
         message: Header ${header}
   target:

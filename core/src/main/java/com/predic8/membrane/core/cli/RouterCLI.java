@@ -14,35 +14,24 @@
 
 package com.predic8.membrane.core.cli;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
-import com.fasterxml.jackson.dataformat.yaml.YAMLParser;
 import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.config.spring.TrackingFileSystemXmlApplicationContext;
 import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.kubernetes.BeanCache;
-import com.predic8.membrane.core.kubernetes.client.WatchAction;
 import com.predic8.membrane.core.openapi.serviceproxy.*;
 import com.predic8.membrane.core.resolver.*;
 import org.apache.commons.cli.*;
-import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.jetbrains.annotations.*;
-import org.jose4j.jwk.JsonWebKey;
-import org.jose4j.jwk.RsaJsonWebKey;
-import org.jose4j.jwk.RsaJwkGenerator;
-import org.jose4j.lang.JoseException;
 import org.slf4j.*;
 import org.springframework.beans.factory.xml.*;
 
 import java.io.*;
-import java.math.BigInteger;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.security.SecureRandom;
 import java.util.*;
 
 import static com.predic8.membrane.core.Constants.*;
+import static com.predic8.membrane.core.cli.util.JwkGenerator.generateJWK;
+import static com.predic8.membrane.core.cli.util.JwkGenerator.privateJWKtoPublic;
+import static com.predic8.membrane.core.cli.util.YamlLoader.sendYamlToBeanCache;
 import static com.predic8.membrane.core.config.spring.TrackingFileSystemXmlApplicationContext.*;
 import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPISpec.YesNoOpenAPIOption.*;
 import static com.predic8.membrane.core.openapi.util.OpenAPIUtil.isOpenAPIMisplacedError;
@@ -66,16 +55,7 @@ public class RouterCLI {
 
         // Dry run
         if (commandLine.noCommand() && commandLine.getCommand().isOptionSet("t")) {
-            try {
-                String proxies = getRulesFile(commandLine);
-                TrackingFileSystemXmlApplicationContext bf =
-                        new TrackingFileSystemXmlApplicationContext(new String[]{proxies}, false);
-                bf.refresh();
-            } catch (Throwable e) {
-                System.err.println(getExceptionMessageWithCauses(e));
-                System.exit(1);
-            }
-            System.exit(0);
+            dryRun(commandLine);
         }
 
         if (commandLine.getCommand().getName().equals("generate-jwk")) {
@@ -84,16 +64,7 @@ public class RouterCLI {
         }
 
         if (commandLine.getCommand().getName().equals("private-jwk-to-public")) {
-            String input = commandLine.getCommand().getOptionValue("i");
-            String output = commandLine.getCommand().getOptionValue("o");
-            if (input == null || output == null) {
-                log.error("Both input (-i) and output (-o) files must be specified.");
-                System.exit(1);
-            }
-            privateJWKtoPublic(
-                    input,
-                    output);
-            System.exit(0);
+            privateJwkToPublic(commandLine);
         }
 
         try {
@@ -101,6 +72,29 @@ public class RouterCLI {
         } catch (InterruptedException e) {
             // do nothing
         }
+    }
+
+    private static void privateJwkToPublic(MembraneCommandLine commandLine) {
+        String input = commandLine.getCommand().getOptionValue("i");
+        String output = commandLine.getCommand().getOptionValue("o");
+        if (input == null || output == null) {
+            log.error("Both input (-i) and output (-o) files must be specified.");
+            System.exit(1);
+        }
+        privateJWKtoPublic(
+                input,
+                output);
+        System.exit(0);
+    }
+
+    private static void dryRun(MembraneCommandLine commandLine) {
+        try {
+            new TrackingFileSystemXmlApplicationContext(new String[]{getRulesFile(commandLine)}, false).refresh();
+        } catch (Throwable e) {
+            System.err.println(getExceptionMessageWithCauses(e));
+            System.exit(1);
+        }
+        System.exit(0);
     }
 
     public static String getExceptionMessageWithCauses(Throwable throwable) {
@@ -117,7 +111,7 @@ public class RouterCLI {
         try {
             return switch (commandLine.getCommand().getName()) {
                 case "oas" -> initRouterByOpenApiSpec(commandLine);
-                case "yaml" -> initRouterByYAML(commandLine);
+                case "yaml" -> initRouterByYAML(commandLine, "l");
                 default -> initRouterByConfig(commandLine);
             };
         } catch (InvalidConfigurationException e) {
@@ -135,6 +129,17 @@ public class RouterCLI {
         return null;
     }
 
+    private static Router initRouterByConfig(MembraneCommandLine commandLine) throws Exception {
+        String config = getRulesFile(commandLine);
+        if(config.endsWith(".xml")) {
+            return initRouterByXml(commandLine);
+        }
+        if (config.endsWith(".yaml") || config.endsWith(".yml")) {
+            return initRouterByYAML(commandLine, "c");
+        }
+        throw new RuntimeException("Unsupported file extension.");
+    }
+
     private static Router initRouterByOpenApiSpec(MembraneCommandLine commandLine) throws Exception {
         Router router = new HttpRouter();
         router.getRuleManager().addProxyAndOpenPortIfNew(getApiProxy(commandLine));
@@ -142,82 +147,19 @@ public class RouterCLI {
         return router;
     }
 
-    private static Router initRouterByYAML(MembraneCommandLine commandLine) throws Exception {
-        String location = commandLine.getCommand().getOptionValue("l");
-        var fileReader = new FileReader(location);
+    private static Router initRouterByYAML(MembraneCommandLine commandLine, String option) throws Exception {
+        String location = commandLine.getCommand().getOptionValue(option);
 
         var router = new HttpRouter();
         router.setBaseLocation(location);
         router.setHotDeploy(false);
+        router.setAsynchronousInitialization(true);
         router.start();
 
         var beanCache = new BeanCache(router);
         beanCache.start();
-
-        YAMLParser parser = new YAMLFactory().createParser(new File(location));
-        var om = new ObjectMapper();
-        while (!parser.isClosed()) {
-            Map<?, ?> m = om.readValue(parser, Map.class);
-            Map<Object, Object> meta = (Map<Object, Object>) m.get("metadata");
-
-            // fake UID
-            meta.put("uid", location + "-" + meta.get("name"));
-
-            beanCache.handle(WatchAction.ADDED, m);
-            parser.nextToken();
-        }
-
+        sendYamlToBeanCache(router, location, beanCache);
         return router;
-    }
-
-    private static void generateJWK(MembraneCommandLine commandLine) {
-        int bits = 2048;
-        String bitsArg = commandLine.getCommand().getOptionValue("b");
-        if (bitsArg != null) {
-            bits = Integer.parseInt(bitsArg);
-        }
-
-        boolean overwrite = commandLine.getCommand().isOptionSet("overwrite");
-        String outputFile = commandLine.getCommand().getOptionValue("o");
-
-        if (outputFile == null) {
-            log.error("Missing required option: -o <output file>");
-            commandLine.getCommand().printHelp();
-            System.exit(1);
-        }
-
-        RsaJsonWebKey rsaJsonWebKey = null;
-        try {
-            rsaJsonWebKey = RsaJwkGenerator.generateJwk(bits);
-        } catch (JoseException e) {
-            throw new RuntimeException(e);
-        }
-        rsaJsonWebKey.setKeyId(new BigInteger(130, new SecureRandom()).toString(32));
-        rsaJsonWebKey.setUse("sig");
-        rsaJsonWebKey.setAlgorithm("RS256");
-
-        Path path = Paths.get(outputFile);
-        if (path.toFile().exists() && !overwrite) {
-            log.error("Output file ({}) already exists.", outputFile);
-            System.exit(1);
-        }
-        try {
-            Files.writeString(path, rsaJsonWebKey.toJson(JsonWebKey.OutputControlLevel.INCLUDE_PRIVATE));
-        } catch (IOException e) {
-            log.error(e.getMessage());
-            System.exit(1);
-        }
-    }
-
-    private static void privateJWKtoPublic(String input, String output) {
-        try {
-            Map map = new ObjectMapper().readValue(new File(input), Map.class);
-            RsaJsonWebKey rsa = new RsaJsonWebKey(map);
-            Files.writeString(Paths.get(output), rsa.toJson(JsonWebKey.OutputControlLevel.PUBLIC_ONLY));
-        } catch (IOException | JoseException e) {
-            log.error(e.getMessage());
-            System.exit(1);
-        }
     }
 
     private static @NotNull APIProxy getApiProxy(MembraneCommandLine commandLine) {
@@ -238,7 +180,7 @@ public class RouterCLI {
         return spec;
     }
 
-    private static Router initRouterByConfig(MembraneCommandLine commandLine) throws Exception {
+    private static Router initRouterByXml(MembraneCommandLine commandLine) throws Exception {
         try {
             return Router.init(getRulesFile(commandLine));
         } catch (XmlBeanDefinitionStoreException e) {

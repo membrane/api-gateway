@@ -24,229 +24,220 @@ import java.util.*;
 
 /**
  * @description Configuration container for Membrane's HTTP client.
- *              Allows defining proxy, connection, authentication, TLS, and retry behavior.
- *              Can be used as a reusable bean and referenced via &lt;spring:bean&gt;.
- *              Most of its sub-elements are optional.
- *
- *              Example XML:
- *              &lt;httpClientConfig maxRetries="5" adjustHostHeader="true"&gt;
- *                  &lt;connection timeout="10000"/&gt;
- *                  &lt;proxy host="proxy.example.com" port="3128"/&gt;
- *                  &lt;authentication type="basic" user="user" password="pass"/&gt;
- *                  &lt;ssl keystoreLocation="classpath:client.jks" keystorePassword="secret"/&gt;
- *              &lt;/httpClientConfig&gt;
- *
- *              YAML:
- *              httpClientConfig:
- *                maxRetries: 5
- *                adjustHostHeader: true
- *                connection:
- *                  timeout: 10000
- *                proxy:
- *                  host: proxy.example.com
- *                  port: 3128
- *                authentication:
- *                  type: basic
- *                  user: user
- *                  password: pass
- *                ssl:
- *                  keystoreLocation: classpath:client.jks
- *                  keystorePassword: secret
- *
+ * Allows defining proxy, connection, authentication, TLS, and retry behavior.
+ * Can be used as a reusable bean and referenced via &lt;spring:bean&gt;.
+ * Most of its sub-elements are optional.
+ * <p>YAML:</p>
+ * <pre><code>httpClientConfig:
+ *   maxRetries: 5
+ *   adjustHostHeader: true
+ *   connection:
+ *     timeout: 10000
+ *   proxy:
+ *     host: proxy.example.com
+ *     port: 3128
+ *   authentication:
+ *     type: basic
+ *     user: user
+ *     password: pass
+ *   ssl:
+ *     keystoreLocation: classpath:client.jks
+ *     keystorePassword: secret
+ * </code></pre>
  * @topic 4. Transports and Clients
  */
-@MCElement(name="httpClientConfig")
+@MCElement(name = "httpClientConfig")
 public class HttpClientConfiguration implements ApplicationContextAware {
 
-	/**
-	 * Settings for low-level connection behavior such as timeouts and pooling.
-	 */
-	private ConnectionConfiguration connection = new ConnectionConfiguration();
+    /**
+     * Settings for low-level connection behavior such as timeouts and pooling.
+     */
+    private ConnectionConfiguration connection = new ConnectionConfiguration();
 
-	/**
-	 * Optional proxy server configuration.
-	 */
-	private ProxyConfiguration proxy;
+    /**
+     * Optional proxy server configuration.
+     */
+    private ProxyConfiguration proxy;
 
-	/**
-	 * Optional authentication configuration (e.g. basic auth).
-	 */
-	private AuthenticationConfiguration authentication;
+    /**
+     * Optional authentication configuration (e.g. basic auth).
+     */
+    private AuthenticationConfiguration authentication;
 
-	/**
-	 * Optional TLS/SSL configuration for secure communication.
-	 */
-	private SSLParser sslParser;
+    /**
+     * Optional TLS/SSL configuration for secure communication.
+     */
+    private SSLParser sslParser;
 
-	/**
-	 * Optional base location for resolving relative paths, e.g. to certificates.
-	 * Set automatically by Spring when using BaseLocationApplicationContext.
-	 */
-	private String baseLocation;
+    /**
+     * Optional base location for resolving relative paths, e.g. to certificates.
+     * Set automatically by Spring when using BaseLocationApplicationContext.
+     */
+    private String baseLocation;
 
-	/**
-	 * Whether the Host header should be rewritten to match the target host.
-	 * Default: true
-	 */
-	private boolean adjustHostHeader = true;
+    /**
+     * Whether the Host header should be rewritten to match the target host.
+     * Default: true
+     */
+    private boolean adjustHostHeader = true;
 
-	/**
-	 * Enables experimental HTTP/2 support if true.
-	 */
-	private boolean useExperimentalHttp2;
+    /**
+     * Enables experimental HTTP/2 support if true.
+     */
+    private boolean useExperimentalHttp2;
 
-	private RetryHandler retryHandler = new RetryHandler();
+    private RetryHandler retryHandler = new RetryHandler();
 
-	public HttpClientConfiguration() {
-	}
+    public HttpClientConfiguration() {
+    }
 
-	public ConnectionConfiguration getConnection() {
-		return connection;
-	}
+    public ConnectionConfiguration getConnection() {
+        return connection;
+    }
 
-	/**
-	 * @description Connection-related configuration such as timeouts and connection pooling.
-	 *              Cannot be null.
-	 */
-	@MCChildElement(order=1)
-	public void setConnection(ConnectionConfiguration connection) {
-		if (connection == null)
-			throw new InvalidParameterException("'connection' parameter cannot be null.");
-		this.connection = connection;
-	}
+    /**
+     * @description Connection-related configuration such as timeouts and connection pooling.
+     * Cannot be null.
+     */
+    @MCChildElement(order = 1)
+    public void setConnection(ConnectionConfiguration connection) {
+        if (connection == null)
+            throw new InvalidParameterException("'connection' parameter cannot be null.");
+        this.connection = connection;
+    }
 
-	public ProxyConfiguration getProxy() {
-		return proxy;
-	}
+    public ProxyConfiguration getProxy() {
+        return proxy;
+    }
 
-	/**
-	 * @description Optional proxy configuration for outbound connections.
-	 */
-	@MCChildElement(order=2)
-	public void setProxy(ProxyConfiguration proxy) {
-		this.proxy = proxy;
-	}
+    /**
+     * @description Optional proxy configuration for outbound connections.
+     */
+    @MCChildElement(order = 2)
+    public void setProxy(ProxyConfiguration proxy) {
+        this.proxy = proxy;
+    }
 
-	public AuthenticationConfiguration getAuthentication() {
-		return authentication;
-	}
+    public AuthenticationConfiguration getAuthentication() {
+        return authentication;
+    }
 
-	/**
-	 * @description Optional authentication mechanism (e.g., basic auth).
-	 */
-	@MCChildElement(order=3)
-	public void setAuthentication(AuthenticationConfiguration authentication) {
-		this.authentication = authentication;
-	}
+    /**
+     * @description Optional authentication mechanism (e.g., basic auth).
+     */
+    @MCChildElement(order = 3)
+    public void setAuthentication(AuthenticationConfiguration authentication) {
+        this.authentication = authentication;
+    }
 
-	public int getMaxRetries() {
-		return retryHandler.getRetries();
-	}
+    public int getMaxRetries() {
+        return retryHandler.getRetries();
+    }
 
-	/**
-	 * @description Total number of connection attempts before giving up.
-	 *              This includes the first attempt, so 5 means 1 try + 4 retries.
-	 *              Used for failover and load balancing logic.
-	 * @default 2
-	 * @example 3
-	 */
-	@MCAttribute
-	public void setMaxRetries(int maxRetries) {
-		this.retryHandler.setRetries(maxRetries);
-	}
+    /**
+     * @description Total number of connection attempts before giving up.
+     * This includes the first attempt, so 5 means 1 try + 4 retries.
+     * Used for failover and load balancing logic.
+     * @default 2
+     * @example 3
+     */
+    @MCAttribute
+    public void setMaxRetries(int maxRetries) {
+        this.retryHandler.setRetries(maxRetries);
+    }
 
-	public SSLParser getSslParser() {
-		return sslParser;
-	}
+    public SSLParser getSslParser() {
+        return sslParser;
+    }
 
-	/**
-	 * @description SSL/TLS configuration for secure connections.
-	 *              Accepts both standard and external SSL configurations.
-	 */
-	@MCChildElement(order=4, allowForeign = true)
-	public void setSslParser(SSLParser sslParser) {
-		this.sslParser = sslParser;
-	}
+    /**
+     * @description SSL/TLS configuration for secure connections.
+     * Accepts both standard and external SSL configurations.
+     */
+    @MCChildElement(order = 4, allowForeign = true)
+    public void setSslParser(SSLParser sslParser) {
+        this.sslParser = sslParser;
+    }
 
-	@Override
-	public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
-		if (applicationContext instanceof BaseLocationApplicationContext)
-			setBaseLocation(((BaseLocationApplicationContext)applicationContext).getBaseLocation());
-	}
+    @Override
+    public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
+        if (applicationContext instanceof BaseLocationApplicationContext)
+            setBaseLocation(((BaseLocationApplicationContext) applicationContext).getBaseLocation());
+    }
 
-	public String getBaseLocation() {
-		return baseLocation;
-	}
+    public String getBaseLocation() {
+        return baseLocation;
+    }
 
-	public void setBaseLocation(String baseLocation) {
-		this.baseLocation = baseLocation;
-	}
+    public void setBaseLocation(String baseLocation) {
+        this.baseLocation = baseLocation;
+    }
 
-	public boolean isUseExperimentalHttp2() {
-		return useExperimentalHttp2;
-	}
+    public boolean isUseExperimentalHttp2() {
+        return useExperimentalHttp2;
+    }
 
-	/**
-	 * @description Enables experimental support for HTTP/2.
-	 *              When true, HTTP/2 connections are attempted when possible.
-	 * @default false
-	 */
-	@MCAttribute
-	public void setUseExperimentalHttp2(boolean useExperimentalHttp2) {
-		this.useExperimentalHttp2 = useExperimentalHttp2;
-	}
+    /**
+     * @description Enables experimental support for HTTP/2.
+     * When true, HTTP/2 connections are attempted when possible.
+     * @default false
+     */
+    @MCAttribute
+    public void setUseExperimentalHttp2(boolean useExperimentalHttp2) {
+        this.useExperimentalHttp2 = useExperimentalHttp2;
+    }
 
-	public RetryHandler getRetryHandler() {
-		return retryHandler;
-	}
+    public RetryHandler getRetryHandler() {
+        return retryHandler;
+    }
 
-	/**
-	 * @description Advanced configuration for retry behavior.
-	 *              Allows detailed retry logic beyond the simple maxRetries setting.
-	 */
-	@MCChildElement
-	public void setRetryHandler(RetryHandler retryHandler) {
-		this.retryHandler = retryHandler;
-	}
+    /**
+     * @description Advanced configuration for retry behavior.
+     * Allows detailed retry logic beyond the simple maxRetries setting.
+     */
+    @MCChildElement
+    public void setRetryHandler(RetryHandler retryHandler) {
+        this.retryHandler = retryHandler;
+    }
 
-	public boolean isAdjustHostHeader() {
-		return adjustHostHeader;
-	}
+    public boolean isAdjustHostHeader() {
+        return adjustHostHeader;
+    }
 
-	/**
-	 * @description Whether to automatically rewrite the Host header to match the target address.
-	 *              This is useful when routing requests to internal systems where the Host header must match the backend.
-	 * @default true
-	 */
-	@MCAttribute
-	public void setAdjustHostHeader(boolean adjustHostHeader) {
-		this.adjustHostHeader = adjustHostHeader;
-	}
+    /**
+     * @description Whether to automatically rewrite the Host header to match the target address.
+     * This is useful when routing requests to internal systems where the Host header must match the backend.
+     * @default true
+     */
+    @MCAttribute
+    public void setAdjustHostHeader(boolean adjustHostHeader) {
+        this.adjustHostHeader = adjustHostHeader;
+    }
 
-	@Override
-	public boolean equals(Object o) {
-		if (this == o) return true;
-		if (o == null || getClass() != o.getClass()) return false;
-		HttpClientConfiguration that = (HttpClientConfiguration) o;
-		return  Objects.equals(retryHandler, that.getRetryHandler())
-			   && useExperimentalHttp2 == that.useExperimentalHttp2
-			   && adjustHostHeader == that.adjustHostHeader
-			   && Objects.equals(connection, that.connection)
-			   && Objects.equals(proxy, that.proxy)
-			   && Objects.equals(authentication, that.authentication)
-			   && Objects.equals(sslParser, that.sslParser)
-			   && Objects.equals(baseLocation, that.baseLocation);
-	}
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        HttpClientConfiguration that = (HttpClientConfiguration) o;
+        return Objects.equals(retryHandler, that.getRetryHandler())
+                && useExperimentalHttp2 == that.useExperimentalHttp2
+                && adjustHostHeader == that.adjustHostHeader
+                && Objects.equals(connection, that.connection)
+                && Objects.equals(proxy, that.proxy)
+                && Objects.equals(authentication, that.authentication)
+                && Objects.equals(sslParser, that.sslParser)
+                && Objects.equals(baseLocation, that.baseLocation);
+    }
 
-	@Override
-	public int hashCode() {
-		return Objects.hash(retryHandler,
-				connection,
-				proxy,
-				authentication,
-				sslParser,
-				adjustHostHeader,
-				baseLocation,
-				useExperimentalHttp2);
-	}
+    @Override
+    public int hashCode() {
+        return Objects.hash(retryHandler,
+                connection,
+                proxy,
+                authentication,
+                sslParser,
+                adjustHostHeader,
+                baseLocation,
+                useExperimentalHttp2);
+    }
 }

@@ -46,7 +46,7 @@ public class BasicAuthenticationInterceptor extends AbstractInterceptor {
 
 	public BasicAuthenticationInterceptor() {
 		name = "basic authenticator";
-		setFlow(REQUEST_FLOW);
+		setAppliedFlow(REQUEST_FLOW);
 	}
 
 	@Override
@@ -80,7 +80,7 @@ public class BasicAuthenticationInterceptor extends AbstractInterceptor {
 
 	private Outcome deny(Exchange exc) {
 		security(router.isProduction(),getDisplayName())
-						.statusCode(401)
+						.status(401)
 						.title("Unauthorized")
 						.buildAndSetResponse(exc);
 		exc.getResponse().setHeader(HttpUtil.createHeaders(null, "WWW-Authenticate", "Basic realm=\"%s Authentication\"".formatted(PRODUCT_NAME)));

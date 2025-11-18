@@ -50,7 +50,7 @@ public class HttpKeepAliveTest {
 		service1 = new HttpRouter();
 		sp1 = new ServiceProxy(new ServiceProxyKey("localhost",
 				METHOD_POST, ".*", 2003), "thomas-bayer.com", 80);
-		sp1.getInterceptors().add(new AbstractInterceptor(){
+		sp1.getFlow().add(new AbstractInterceptor(){
 			@Override
 			public Outcome handleRequest(Exchange exc) {
                 try {
@@ -114,7 +114,7 @@ public class HttpKeepAliveTest {
 	public void testTimeoutDefault() throws Exception {
 		HttpClient client = createHttpClient(1000);
 
-		sp1.getInterceptors().addFirst(new AbstractInterceptor() {
+		sp1.getFlow().addFirst(new AbstractInterceptor() {
 			@Override
 			public Outcome handleResponse(Exchange exc) {
 				exc.getResponse().getHeader().add(KEEP_ALIVE, "max=2");
@@ -135,7 +135,7 @@ public class HttpKeepAliveTest {
 	void connectionClose() throws Exception {
 		HttpClient client = createHttpClient(500);
 
-		sp1.getInterceptors().addFirst(new AbstractInterceptor() {
+		sp1.getFlow().addFirst(new AbstractInterceptor() {
 			@Override
 			public Outcome handleResponse(Exchange exc) {
 				exc.getResponse().getHeader().add(KEEP_ALIVE, "max=2");
@@ -164,7 +164,7 @@ public class HttpKeepAliveTest {
 	void timeoutCustom() throws Exception {
 		HttpClient client = createHttpClient(1000);
 
-		sp1.getInterceptors().addFirst(new AbstractInterceptor() {
+		sp1.getFlow().addFirst(new AbstractInterceptor() {
 			@Override
 			public Outcome handleResponse(Exchange exc) {
 				exc.getResponse().getHeader().add(KEEP_ALIVE, "timeout=1,max=2");
@@ -191,7 +191,7 @@ public class HttpKeepAliveTest {
 	public void testMaxParameter() throws Exception {
 		HttpClient client = new HttpClient();
 
-		sp1.getInterceptors().addFirst(new AbstractInterceptor() {
+		sp1.getFlow().addFirst(new AbstractInterceptor() {
 			@Override
 			public Outcome handleResponse(Exchange exc) {
 				exc.getResponse().getHeader().add(KEEP_ALIVE, "max=2");

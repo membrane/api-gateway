@@ -101,12 +101,12 @@ public class SSLProxy implements Proxy {
     }
 
     @Override
-    public List<Interceptor> getInterceptors() {
+    public List<Interceptor> getFlow() {
         return null;
     }
 
     @Override
-    public void setInterceptors(List<Interceptor> interceptors) {
+    public void setFlow(List<Interceptor> flow) {
 
     }
 
@@ -117,17 +117,6 @@ public class SSLProxy implements Proxy {
     @MCChildElement(allowForeign=true, order=50)
     public void setSslInterceptors(List<SSLInterceptor> sslInterceptors) {
         this.sslInterceptors = sslInterceptors;
-    }
-
-
-    @Override
-    public boolean isBlockRequest() {
-        return false;
-    }
-
-    @Override
-    public boolean isBlockResponse() {
-        return false;
     }
 
     int port;
@@ -188,22 +177,11 @@ public class SSLProxy implements Proxy {
     }
 
     @Override
-    public void setBlockRequest(boolean blockStatus) {
-
-    }
-
-    @Override
-    public void setBlockResponse(boolean blockStatus) {
-
-    }
-
-    @Override
     public RuleStatisticCollector getStatisticCollector() {
         return ruleStatisticCollector;
     }
 
     ConnectionManager cm;
-
 
     public SSLContext getSslInboundContext() {
         return new ForwardingStaticSSLContext();

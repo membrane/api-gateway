@@ -19,6 +19,7 @@ package com.predic8.membrane.core.openapi.serviceproxy;
 import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.interceptor.flow.*;
 import com.predic8.membrane.core.interceptor.templating.*;
+import com.predic8.membrane.core.proxies.*;
 import com.predic8.membrane.core.proxies.AbstractServiceProxy.*;
 import com.predic8.membrane.core.transport.http.*;
 import com.predic8.membrane.core.util.*;
@@ -64,8 +65,8 @@ public class Swagger20Test {
     private @NotNull APIProxy getTargetProxy() {
         APIProxy tp = new APIProxy();
         tp.setKey(new APIProxyKey(2001));
-        tp.getInterceptors().add(new StaticInterceptor() {{ textTemplate = "Hi!"; }});
-        tp.getInterceptors().add(new ReturnInterceptor());
+        tp.getFlow().add(new StaticInterceptor() {{ src = "Hi!"; }});
+        tp.getFlow().add(new ReturnInterceptor());
         tp.init(router);
         return tp;
     }

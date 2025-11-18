@@ -23,6 +23,7 @@ import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.oauth2.OAuth2TokenBody;
 import com.predic8.membrane.core.interceptor.oauth2.tokengenerators.JwtGenerator;
 import com.predic8.membrane.core.interceptor.oauth2client.rf.LogHelper;
+import com.predic8.membrane.core.interceptor.oauth2client.rf.OAuth2Exception;
 import com.predic8.membrane.core.interceptor.oauth2client.rf.OAuth2TokenResponseBody;
 import com.predic8.membrane.core.interceptor.oauth2client.rf.token.JWSSigner;
 import com.predic8.membrane.core.interceptor.session.Session;
@@ -33,7 +34,6 @@ import com.predic8.membrane.core.transport.ssl.PEMSupport;
 import com.predic8.membrane.core.transport.ssl.SSLContext;
 import com.predic8.membrane.core.transport.ssl.StaticSSLContext;
 import jakarta.mail.internet.ParseException;
-import org.apache.commons.codec.binary.Base64;
 import org.jose4j.jwt.JwtClaims;
 import org.jose4j.jwt.MalformedClaimException;
 import org.jose4j.jwt.NumericDate;
@@ -45,7 +45,6 @@ import javax.annotation.Nullable;
 import javax.annotation.concurrent.GuardedBy;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URLEncoder;
 import java.util.List;
 import java.util.UUID;
 
@@ -53,14 +52,18 @@ import static com.predic8.membrane.core.Constants.USERAGENT;
 import static com.predic8.membrane.core.http.Header.*;
 import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
 import static com.predic8.membrane.core.http.MimeType.APPLICATION_X_WWW_FORM_URLENCODED;
+import static com.predic8.membrane.core.http.Response.badRequest;
+import static com.predic8.membrane.core.http.Response.internalServerError;
 import static com.predic8.membrane.core.interceptor.oauth2.OAuth2TokenBody.authorizationCodeBodyBuilder;
 import static com.predic8.membrane.core.interceptor.oauth2.OAuth2TokenBody.refreshTokenBodyBuilder;
 import static com.predic8.membrane.core.interceptor.oauth2client.rf.JsonUtils.isJson;
-import static java.net.URLEncoder.encode;
-import static java.nio.charset.StandardCharsets.UTF_8;
+import static com.predic8.membrane.core.interceptor.oauth2client.rf.OAuth2CallbackRequestHandler.MEMBRANE_MISSING_SESSION_DESCRIPTION;
 import static org.apache.commons.codec.binary.Base64.encodeBase64;
 
 public abstract class AuthorizationService {
+
+    public static final String MEMBRANE_OAUTH2_SERVER_COMMUNICATION_ERROR_DESCRIPTION = "Error contacting the OAuth2 Authorization Server.";
+    public static final String MEMBRANE_OAUTH2_SERVER_COMMUNICATION_ERROR = "MEMBRANE_OAUTH2_SERVER_COMMUNICATION_ERROR";
 
     protected Logger log;
 
@@ -79,7 +82,7 @@ public abstract class AuthorizationService {
     private SSLContext sslContext;
     private boolean useJWTForClientAuth;
     private final LogHelper logHelper = new LogHelper();
-    private ClientAuthorization clientAuthorization = ClientAuthorization.client_secret_basic;
+    private ClientAuthorization clientAuthorization = ClientAuthorization.CLIENT_SECRET_BASIC;
 
     protected boolean supportsDynamicRegistration = false;
 
@@ -259,7 +262,7 @@ public abstract class AuthorizationService {
         if (clientSecret == null) {
             return requestBuilder.body(body.clientId(getClientId()).build());
         }
-        if (clientAuthorization == ClientAuthorization.client_secret_basic) {
+        if (clientAuthorization == ClientAuthorization.CLIENT_SECRET_BASIC) {
             return requestBuilder.header(AUTHORIZATION, "Basic " + new String(encodeBase64((getClientId() + ":" + clientSecret).getBytes()))).body(body.build());
         }
         return requestBuilder.body(body.clientId(getClientId()).clientSecret(clientSecret).build());
@@ -327,23 +330,43 @@ public abstract class AuthorizationService {
 
     public OAuth2TokenResponseBody refreshTokenRequest(Session session, String wantedScope, String refreshToken) throws Exception {
         FlowContext fc = FlowContext.fromSession(session);
-        return parseTokenResponse(checkTokenResponse(doRequest(applyAuth(
-                new Request.Builder().post(getTokenEndpoint(fc))
-                        .contentType(APPLICATION_X_WWW_FORM_URLENCODED)
-                        .header(ACCEPT, APPLICATION_JSON)
-                        .header(USER_AGENT, USERAGENT),
-                refreshTokenBodyBuilder(refreshToken).scope(wantedScope), fc)
-                .buildExchange())));
+        Response response;
+        try {
+            response = doRequest(applyAuth(
+                    new Request.Builder().post(getTokenEndpoint(fc))
+                            .contentType(APPLICATION_X_WWW_FORM_URLENCODED)
+                            .header(ACCEPT, APPLICATION_JSON)
+                            .header(USER_AGENT, USERAGENT),
+                    refreshTokenBodyBuilder(refreshToken).scope(wantedScope), fc)
+                    .buildExchange());
+        } catch (Exception e) {
+            log.warn("Error contacting OAuth2 Authorization Server during refresh request: {}", e.getMessage());
+            throw new OAuth2Exception(
+                    MEMBRANE_OAUTH2_SERVER_COMMUNICATION_ERROR,
+                    MEMBRANE_OAUTH2_SERVER_COMMUNICATION_ERROR_DESCRIPTION,
+                    internalServerError().body(MEMBRANE_OAUTH2_SERVER_COMMUNICATION_ERROR_DESCRIPTION).build());
+        }
+        return parseTokenResponse(checkTokenResponse(response));
     }
 
     public OAuth2TokenResponseBody codeTokenRequest(String redirectUri, String code, String verifier, FlowContext flowContext) throws Exception {
-        return parseTokenResponse(checkTokenResponse(doRequest(applyAuth(
-                new Request.Builder()
-                        .post(getTokenEndpoint(flowContext))
-                        .contentType(APPLICATION_X_WWW_FORM_URLENCODED)
-                        .header(ACCEPT, APPLICATION_JSON)
-                        .header(USER_AGENT, USERAGENT),
-                authorizationCodeBodyBuilder(code, verifier).redirectUri(redirectUri), flowContext).buildExchange())));
+        Response response;
+        try {
+            response = doRequest(applyAuth(
+                    new Request.Builder()
+                            .post(getTokenEndpoint(flowContext))
+                            .contentType(APPLICATION_X_WWW_FORM_URLENCODED)
+                            .header(ACCEPT, APPLICATION_JSON)
+                            .header(USER_AGENT, USERAGENT),
+                    authorizationCodeBodyBuilder(code, verifier).redirectUri(redirectUri), flowContext).buildExchange());
+        } catch (Exception e) {
+            log.warn("Error contacting OAuth2 Authorization Server during code request: {}", e.getMessage());
+            throw new OAuth2Exception(
+                    MEMBRANE_OAUTH2_SERVER_COMMUNICATION_ERROR,
+                    MEMBRANE_OAUTH2_SERVER_COMMUNICATION_ERROR_DESCRIPTION,
+                    internalServerError().body(MEMBRANE_OAUTH2_SERVER_COMMUNICATION_ERROR_DESCRIPTION).build());
+        }
+        return parseTokenResponse(checkTokenResponse(response));
     }
 
     private OAuth2TokenResponseBody parseTokenResponse(Response response) throws IOException {

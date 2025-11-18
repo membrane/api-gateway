@@ -34,7 +34,7 @@ import org.junit.jupiter.api.*;
 import java.util.*;
 
 import static com.predic8.membrane.core.exchange.Exchange.SECURITY_SCHEMES;
-import static com.predic8.membrane.core.openapi.util.TestUtils.*;
+import static com.predic8.membrane.core.openapi.util.OpenAPITestUtils.*;
 import static com.predic8.membrane.test.TestUtil.getPathFromResource;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -55,7 +55,7 @@ public class JWTInterceptorAndSecurityValidatorTest {
         privateKey = RsaJwkGenerator.generateJwk(2048);
         privateKey.setKeyId("membrane");
 
-        proxy.getInterceptors().add(getJwtAuthInterceptor(router));
+        proxy.getFlow().add(getJwtAuthInterceptor(router));
 
         router.setTransport(new HttpTransport());
         router.setExchangeStore(new ForgetfulExchangeStore());
@@ -81,7 +81,7 @@ public class JWTInterceptorAndSecurityValidatorTest {
     }
 
     private void callInterceptorChain(Exchange exc) {
-        proxy.getInterceptors().forEach(interceptor -> {
+        proxy.getFlow().forEach(interceptor -> {
             try {
                 interceptor.handleRequest(exc);
             } catch (Exception e) {

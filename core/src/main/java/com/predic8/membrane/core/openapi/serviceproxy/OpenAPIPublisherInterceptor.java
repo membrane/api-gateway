@@ -72,8 +72,10 @@ public class OpenAPIPublisherInterceptor extends AbstractInterceptor {
     private Template swaggerUiHtmlTemplate;
     private Template apiOverviewHtmlTemplate;
 
-    public OpenAPIPublisherInterceptor() {
-    }
+    /**
+     * Needed for instantiation from Spring
+     */
+    public OpenAPIPublisherInterceptor() {}
 
     public OpenAPIPublisherInterceptor(Map<String, OpenAPIRecord> apis) {
         this.apis = apis;
@@ -154,7 +156,7 @@ public class OpenAPIPublisherInterceptor extends AbstractInterceptor {
         // Do not log. Too common!
         user(false, getDisplayName())
                 .title("OpenAPI not found")
-                .statusCode(404)
+                .status(404)
                 .addSubType("openapi")
                 .addSubSee("wrong-id")
                 .detail("OpenAPI document with the id %s not found.".formatted(id))
@@ -178,7 +180,7 @@ public class OpenAPIPublisherInterceptor extends AbstractInterceptor {
             // Do not log! Too common.
             user(false, getDisplayName())
                     .title("No OpenAPI document id")
-                    .statusCode(404)
+                    .status(404)
                     .addSubType("openapi")
                     .addSubSee("wrong-id")
                     .detail("Please specify an id of an OpenAPI document. Path should match this pattern: /api-docs/ui/<<id>>")
@@ -189,7 +191,7 @@ public class OpenAPIPublisherInterceptor extends AbstractInterceptor {
         // /api-doc/ui/(.*)
         String id = m.group(1);
 
-        log.info("OpenAPI with id {} requested", id);
+        log.debug("OpenAPI with id {} requested", id);
 
         OpenAPIRecord record = apis.get(id);
         if (record == null) {
@@ -283,7 +285,7 @@ public class OpenAPIPublisherInterceptor extends AbstractInterceptor {
     }
 
     @Override
-    public EnumSet<Flow> getFlow() {
+    public EnumSet<Flow> getAppliedFlow() {
         return REQUEST_FLOW;
     }
 }

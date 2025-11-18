@@ -46,10 +46,10 @@ public class SOAPProxyTest {
         APIProxy backend = new APIProxy();
         backend.setKey(new APIProxyKey(2001));
         StaticInterceptor e = new StaticInterceptor();
-        e.setTextTemplate("<foo></foo>");
+        e.setSrc("<foo></foo>");
         e.setContentType(TEXT_XML);
-        backend.getInterceptors().add(e);
-        backend.getInterceptors().add(new ReturnInterceptor());
+        backend.getFlow().add(e);
+        backend.getFlow().add(new ReturnInterceptor());
         router.add(backend);
     }
 
@@ -97,7 +97,7 @@ public class SOAPProxyTest {
 
         // @formatter: off
         given().when()
-            .body(TestUtils.getResourceAsStream(this, "/soap-sample/soap-request-bonn.xml"))
+            .body(OpenAPITestUtils.getResourceAsStream(this, "/soap-sample/soap-request-bonn.xml"))
             .post("http://localhost:2000/city-service")
         .then()
             .log().ifValidationFails(ALL)

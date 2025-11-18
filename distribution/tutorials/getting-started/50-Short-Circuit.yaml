@@ -1,0 +1,26 @@
+# yaml-language-server: $schema=../../core/target/classes/com/predic8/membrane/core/config/json/membrane.schema.json
+#
+# Membrane Tutorial: Short Circuit
+#
+# Normally an API forwards requests to a backend. Sometimes, however,
+# you may want to short-circuit the request and return a response immediately
+# without calling the backend. This is useful for testing, debugging or
+# security.
+#
+# 1.) Start this configuration.
+#
+# 2.) Call the API:
+#
+#       curl -v http://localhost:2000
+#
+#     Observe the returned status code.
+#
+
+spec:
+  port: 2000
+  flow:
+    - response:
+        - static: # Set a static response body
+            src: Under maintenance!
+    - return:
+        statusCode: 503

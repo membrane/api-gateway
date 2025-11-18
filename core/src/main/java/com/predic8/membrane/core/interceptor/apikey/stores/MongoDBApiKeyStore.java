@@ -14,20 +14,40 @@
 
 package com.predic8.membrane.core.interceptor.apikey.stores;
 
-import com.mongodb.client.MongoClient;
-import com.mongodb.client.MongoClients;
-import com.mongodb.client.MongoDatabase;
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.Router;
-import com.predic8.membrane.core.util.ConfigurationException;
-import org.bson.Document;
+import com.mongodb.client.*;
+import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.util.*;
+import org.bson.*;
 
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
-import static com.mongodb.client.model.Filters.eq;
+import static com.mongodb.client.model.Filters.*;
 
+/**
+ * @description Uses a MongoDB collection as a store for API keys and their scopes.
+ * Each document in the collection must use the API key as its <code>_id}</code>
+ * and may define an array field <code>scopes</code> listing the allowed scopes.
+ * <p>
+ * Example MongoDB document:
+ * </p>
+ * <pre>
+ * {
+ *   "_id": "123456",
+ *   "scopes": ["read", "write"]
+ * }
+ * </pre>
+ * <p>
+ * Configuration example:
+ * </p>
+ * <pre><code><apiKey>
+ *   <mongoDBApiKeyStore
+ *       connection="mongodb://localhost:27017"
+ *       database="security"
+ *       collection="apikeys"/>
+ * </apiKey></code></pre>
+ * @topic 3. Security and Validation
+ */
 @MCElement(name = "mongoDBApiKeyStore")
 public class MongoDBApiKeyStore implements ApiKeyStore {
 
@@ -35,14 +55,12 @@ public class MongoDBApiKeyStore implements ApiKeyStore {
     private String database;
     private String collection;
 
-    private MongoClient mongoClient;
     private MongoDatabase mongoDatabase;
 
     @Override
     public void init(Router router) {
         try {
-            mongoClient = MongoClients.create(connection);
-            mongoDatabase = mongoClient.getDatabase(database);
+            mongoDatabase = MongoClients.create(connection).getDatabase(database);
         } catch (Exception e) {
             throw new ConfigurationException("""
                             Failed to initialize MongoDB connection.
@@ -52,26 +70,38 @@ public class MongoDBApiKeyStore implements ApiKeyStore {
     }
 
     @Override
-    public Optional<List<String>> getScopes(String apiKey) throws UnauthorizedApiKeyException {
+    public Optional<Set<String>> getScopes(String apiKey) throws UnauthorizedApiKeyException {
         Document apiKeyDoc = mongoDatabase.getCollection(collection).find(eq("_id", apiKey)).first();
 
         if (apiKeyDoc == null) {
             throw new UnauthorizedApiKeyException();
         }
 
-        return Optional.ofNullable(apiKeyDoc.getList("scopes", String.class));
+        return Optional.of(new HashSet<>(apiKeyDoc.getList("scopes", String.class)));
     }
 
+    /**
+     * @description MongoDB connection string.
+     * @example mongodb://localhost:27017
+     */
     @MCAttribute()
     public void setConnection(String connection) {
         this.connection = connection;
     }
 
+    /**
+     * @description The database name where API keys are stored.
+     * @example security
+     */
     @MCAttribute()
     public void setDatabase(String database) {
         this.database = database;
     }
 
+    /**
+     * @description The collection name within the database containing the API key documents.
+     * @example apikeys
+     */
     @MCAttribute()
     public void setCollection(String collection) {
         this.collection = collection;

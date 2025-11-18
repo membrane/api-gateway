@@ -1,0 +1,40 @@
+# yaml-language-server: $schema=../../../core/target/classes/com/predic8/membrane/core/config/json/membrane.schema.json
+#
+# Membrane Tutorial: Basic Path Routing
+#
+# Membrane can host multiple APIs on the same TCP port. Incoming requests are
+# matched against the declared APIs from top to bottom. The first API whose
+# path matches the request is used.
+#
+# 1.) Start this configuration.
+#
+# 2.) Call the APIs:
+#
+#       curl localhost:2000/shop/v2/products
+#       curl localhost:2000/fact
+#       curl localhost:2000/get
+
+spec:
+  port: 2000
+  path:
+    uri: /shop # Matches requests starting with /shop
+  target:
+    url: https://api.predic8.de
+
+---
+# A line beginning with --- separates multiple API definitions
+
+spec:
+  port: 2000
+  path:
+    uri: /fact
+  target:
+    url: https://catfact.ninja/fact
+
+---
+# No path: matches all remaining requests
+
+spec:
+  port: 2000
+  target:
+    url: https://httpbin.org

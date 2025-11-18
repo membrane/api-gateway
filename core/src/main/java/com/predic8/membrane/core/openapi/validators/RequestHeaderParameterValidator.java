@@ -20,6 +20,8 @@ import com.predic8.membrane.core.openapi.model.*;
 import io.swagger.v3.oas.models.*;
 import io.swagger.v3.oas.models.parameters.*;
 
+import java.util.*;
+
 import static com.predic8.membrane.core.openapi.validators.ValidationContext.ValidatedEntityType.*;
 import static java.lang.String.*;
 
@@ -29,7 +31,7 @@ public class RequestHeaderParameterValidator extends AbstractParameterValidator{
         super(api, pathItem);
     }
 
-    ValidationErrors validateHeaderParameters(ValidationContext ctx, Request request, Operation operation)  {
+    ValidationErrors validateHeaderParameters(ValidationContext ctx, Request<?> request, Operation operation)  {
 
         return getParametersOfType(operation, HeaderParameter.class)
                 .map(param -> {
@@ -51,11 +53,12 @@ public class RequestHeaderParameterValidator extends AbstractParameterValidator{
                                     , value);
                         }
                     } else if (param.getRequired()) {
-                        return ValidationErrors.create(ctx.entity(param.getName()).entityType(HEADER_PARAMETER), format("Missing required header %s.", param.getName()));
+                        return ValidationErrors.error(ctx.statusCode(400)
+                                .entity(param.getName()).entityType(HEADER_PARAMETER), format("Missing required header %s.", param.getName()));
                     }
-
-                    return new ValidationErrors();
+                    return null;
                 })
+                .filter(Objects::nonNull)
                 .reduce(ValidationErrors::add)
                 .orElse(new ValidationErrors());
     }

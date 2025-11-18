@@ -88,16 +88,16 @@ public class APIProxyKeyTest {
     private static void registerApiProxy(String path, String body) throws IOException {
         router.getRuleManager().addProxyAndOpenPortIfNew(new APIProxy() {{
             setKey(new APIProxyKey("127.0.0.1", "localhost", 3000, path, "*", null,false));
-            getInterceptors().add(new TemplateInterceptor() {{
-                setTextTemplate(body);
+            getFlow().add(new TemplateInterceptor() {{
+                setSrc(body);
             }});
             if (path != null) {
                 Path p = new Path();
-                p.setValue(path);
+                p.setUri(path);
                 p.setRegExp(false);
                 setPath(p);
             }
-            getInterceptors().add(new ReturnInterceptor());
+            getFlow().add(new ReturnInterceptor());
         }});
     }
 }

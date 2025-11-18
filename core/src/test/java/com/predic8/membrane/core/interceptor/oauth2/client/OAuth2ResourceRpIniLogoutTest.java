@@ -183,7 +183,7 @@ public class OAuth2ResourceRpIniLogoutTest {
         WellknownFile wkf = getWellknownFile();
         wkf.init();
 
-        sp.getInterceptors().add(new AbstractInterceptor() {
+        sp.getFlow().add(new AbstractInterceptor() {
 
             final SecureRandom rand = new SecureRandom();
 
@@ -269,7 +269,7 @@ public class OAuth2ResourceRpIniLogoutTest {
 
         OAuth2Resource2Interceptor oAuth2ResourceInterceptor = getoAuth2Resource2Interceptor();
 
-        sp.getInterceptors().add(new AbstractInterceptor() {
+        sp.getFlow().add(new AbstractInterceptor() {
             @Override
             public Outcome handleRequest(Exchange exc) {
                 if (exc.getRequest().getUri().equals("/after-logout")) {
@@ -279,7 +279,7 @@ public class OAuth2ResourceRpIniLogoutTest {
                 return Outcome.CONTINUE;
             }
         });
-        sp.getInterceptors().add(new AbstractInterceptor() {
+        sp.getFlow().add(new AbstractInterceptor() {
             @Override
             public Outcome handleRequest(Exchange exc) {
                 if (!exc.getRequest().getUri().contains("is-logged-in"))
@@ -291,8 +291,8 @@ public class OAuth2ResourceRpIniLogoutTest {
                 return RETURN;
             }
         });
-        sp.getInterceptors().add(oAuth2ResourceInterceptor);
-        sp.getInterceptors().add(new AbstractInterceptor() {
+        sp.getFlow().add(oAuth2ResourceInterceptor);
+        sp.getFlow().add(new AbstractInterceptor() {
             @Override
             public Outcome handleRequest(Exchange exc) {
                 try {

@@ -15,6 +15,7 @@
 package com.predic8.membrane.core.interceptor.flow;
 
 import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.config.xml.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.lang.*;
@@ -26,26 +27,26 @@ import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
 import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.lang.ExchangeExpression.Language.*;
+import static com.predic8.membrane.core.lang.ExchangeExpression.expression;
 
 /**
  * @description <p>
- * The "if" interceptor supports conditional execution of nested plugins.
+ * if allows conditional execution of nested interceptors.
  * </p>
- * See:
- * - com.predic8.membrane.core.interceptor.flow.IfInterceptorSpELTest
- * - com.predic8.membrane.core.interceptor.flow.IfInterceptorGroovyTest
- * - com.predic8.membrane.core.interceptor.flow.IfInterceptorJsonpathTest
- * - com.predic8.membrane.core.interceptor.flow.IfInterceptorXPathTest
+ * <pre><code><if test="method == 'POST'" language="SpEL">
+ *         ...
+ * </if></code></pre>
  * @topic 1. Proxies and Flow
  */
 @MCElement(name = "if")
-public class IfInterceptor extends AbstractFlowWithChildrenInterceptor {
+public class IfInterceptor extends AbstractFlowWithChildrenInterceptor implements XMLSupport {
     private static final Logger log = LoggerFactory.getLogger(IfInterceptor.class);
 
     private String test;
     private Language language = SPEL;
 
     private ExchangeExpression exchangeExpression;
+    private XmlConfig xmlConfig;
 
     public IfInterceptor() {
         name = "if";
@@ -54,7 +55,7 @@ public class IfInterceptor extends AbstractFlowWithChildrenInterceptor {
     @Override
     public void init() {
         super.init();
-        exchangeExpression = ExchangeExpression.newInstance(router, language, test);
+        exchangeExpression = expression(this, language, test);
     }
 
     @Override
@@ -89,8 +90,8 @@ public class IfInterceptor extends AbstractFlowWithChildrenInterceptor {
             return CONTINUE;
 
         return switch (flow) {
-            case REQUEST -> getFlowController().invokeRequestHandlers(exc, getInterceptors());
-            case RESPONSE -> getFlowController().invokeResponseHandlers(exc, getInterceptors());
+            case REQUEST -> getFlowController().invokeRequestHandlers(exc, getFlow());
+            case RESPONSE -> getFlowController().invokeResponseHandlers(exc, getFlow());
             default -> throw new RuntimeException("Should never happen");
         };
     }
@@ -100,8 +101,8 @@ public class IfInterceptor extends AbstractFlowWithChildrenInterceptor {
     }
 
     /**
-     * @description the language of the 'test' condition
-     * @default groovy
+     * @description Language of the 'test' condition
+     * @default SpEL
      * @example SpEL, groovy, jsonpath, xpath
      */
     @MCAttribute
@@ -114,8 +115,8 @@ public class IfInterceptor extends AbstractFlowWithChildrenInterceptor {
     }
 
     /**
-     * @description the condition to be tested
-     * @example exc.request.header.userAgentSupportsSNI
+     * @description Condition to be tested
+     * @example <ul><li>request.isJSON()</li><li>params['limit'] >= 0</li><li>statusCode matches '[45]\d\d'</li></ul>
      */
     @Required
     @MCAttribute
@@ -126,10 +127,25 @@ public class IfInterceptor extends AbstractFlowWithChildrenInterceptor {
     @Override
     public String getShortDescription() {
         StringBuilder ret = new StringBuilder("if (" + test + ") {");
-        for (Interceptor i : getInterceptors()) {
+        for (Interceptor i : getFlow()) {
             ret.append("<br/>&nbsp;&nbsp;&nbsp;&nbsp;").append(i.getDisplayName());
         }
         ret.append("<br/>}");
         return ret.toString();
+    }
+
+    /**
+     * XML Configuration e.g. declaration of XML namespaces for XPath expressions, ...
+     * @param xmlConfig
+     */
+    @Override
+    @MCChildElement(allowForeign = true,order = 10)
+    public void setXmlConfig(XmlConfig xmlConfig) {
+        this.xmlConfig = xmlConfig;
+    }
+
+    @Override
+    public XmlConfig getXmlConfig() {
+        return xmlConfig;
     }
 }

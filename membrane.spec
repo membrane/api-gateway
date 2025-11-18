@@ -4,7 +4,7 @@
 %global logdir %{_var}/log/%{name}
 
 Name:             membrane
-Version:          6.3.2-SNAPSHOT
+Version:          6.3.11-SNAPSHOT
 Release:          1%{?dist}
 URL:              https://github.com/membrane/api-gateway
 Summary:          Membrane - Open Source API Gateway written in Java for REST APIs, WebSockets, STOMP and legacy Web Services
@@ -138,6 +138,7 @@ exit 0
 %{__rm} -f %{buildroot}%{homedir}/build-install-wrapper.xml
 
 # TODO use %{confdir} macro here, does not get replaced currently
+if [ -e %{buildroot}%{homedir}/scripts/start_router.sh ] ; then sed -i 's#CLASSPATH="$MEMBRANE_HOME/conf#CLASSPATH="/etc/membrane#' %{buildroot}%{homedir}/scripts/start_router.sh ; fi
 sed -i 's#CLASSPATH="$MEMBRANE_HOME/conf"#CLASSPATH="/etc/membrane"#' %{buildroot}%{homedir}/membrane.sh
 sed -i 's#CLASSPATH="$membrane_home/conf:#CLASSPATH="/etc/membrane:#' %{buildroot}%{homedir}/membrane.sh
 

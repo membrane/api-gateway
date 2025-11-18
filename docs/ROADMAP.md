@@ -1,6 +1,21 @@
 # Membrane Roadmap
 
+# YAML Support
+
+- Rename json schema document:
+  - Short name to keep schema ref in YAML instance documents short
+  - Ideas:
+    - membrane-v1.schema.json
+    - membrane-v1.json
+    - v1.json
+- Name from metadata/name or spec/name?
+- Correct YAML example on GitHub README
+- Rename in apis.yaml
+
+
 # 7.0.0
+
+## (Breaking) Interface Changes
 
 - Remove WADLInterceptor
 - HttpClient
@@ -9,6 +24,25 @@
 - Remove HttpClientInterceptor.setAdjustHeader(boolean) it is already in HttpClientConfiguration
 - Remove xmlSessionIdExtractor if we have a replacement with language 
 - Remove HttpUtil.getHTMLErrorBody()
+- LogInterceptor:
+  - Remove: headerOnly
+- ValidatorInterceptor: remove FailureHandler
+  - Predominantly used for logging; move logging into validators.
+  - Migration: replace FailureHandler usages with validator-level logging; ensure correlation IDs/Exchange context remain available for logs.
+  - Check if it is used by customer installations
+- Groovy:
+  - ScriptingUtils: Variable bindings: headers references message.headers with the headers class instead of a map<String,Object>.
+    - Difference to SpEL
+
+## Minor
+ - Rewrite JSONAssert Tests with RESTAssured
+
+## Discussion
+
+- YAML:
+  - apiKey:
+    - simple method for specifying a couple of keys in the YAML 
+    - SimpleKeyStore: scope feels strange in YAML. Maybe not TextContent for Value
 
 # 6.5.0
 
@@ -18,9 +52,14 @@
 - <apiKey/>
     <scriptXX>${json[key]}</scriptXX>
   - See: RateLimitInterceptor
+- OpenAPIValidator:
+  - <openapi unknownQueryParameters="accept|report|block" .../>
+    Default: accept
+- YAML: JsonSchemaGenerator enable description fields for editor
 
 # 6.4.0
 
+- SessionManagerTest: refactor, too slow for Unittest. Move to integration tests. 
 - Refactor: Cookie maybe centralize Cookie Handling in a Cookie class
 - Loadbalancing description with pacemaker
 - JSONBody
@@ -35,19 +74,17 @@
       - public abstract void init() throws Exception;
       - getEndSessionEndpoint() throws Exception
       - doDynamicRegistration(List<String> callbackURLs) throws Exception
+- Reduce compiler warnings when building the project with maven
+      
+## Release Notes:
+
+- JSON Schema validation support for JSON Schema 2019-09 and 2020-12 (via networknt json-schema-validator).
+  - Document how to select the schema version (e.g., schemaVersion attribute) and the "format" behavior (annotation vs assertion), with a link to usage docs/examples.
 
 # 6.3.0
 
-- Convert to UTF-8 source and outputEncoding to UTF-8 (TB)
-- TemplateInterceptor Refactoring (TB)
-- Template/Static Interceptor: Pretty for text/* (Refactor first) (TB)
-  - Pretty on text should trim whitespace incl. linebreaks at start and end
 - Refactor: Beautifier to use the Code from above
 - Describe RPM Setup (TP)
-- examples/routing-traffic/outgoing-api-gateway (TB)
-- Cook Book: outgoing-api-gateway (TB) done
-- READMEs in example folders listing the examples (TB)
-- Refactor HttpClient (TB)
 - Refactor: interceptor.session
 
 ### Internal
@@ -72,3 +109,9 @@
   - Return guarantee Response is there
 
 - Wenn Exception/Abort passiert sofort Response mit Error setzen.
+
+
+- Refactor
+  - RouterCli:
+    - Extract JWT functions
+  - SpringConfigurationXSDGeneratingAnnotationProcessor

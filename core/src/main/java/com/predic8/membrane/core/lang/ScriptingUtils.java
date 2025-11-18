@@ -52,8 +52,13 @@ public class ScriptingUtils {
         // support both
         params.put("exc", exc);
         params.put("exchange", exc);
-
         params.put("flow", flow);
+
+        // Null check is needed cause there are tests that don't set a request
+        if (exc.getRequest() != null) {
+            params.put("method", exc.getRequest().getMethod());
+            params.put("path", exc.getRequest().getUri());
+        }
 
         if (flow == REQUEST) {
             try {
@@ -71,28 +76,26 @@ public class ScriptingUtils {
 
         if (msg != null) {
             params.put("message", msg);
+            params.put("body", new LazyBody(msg));
             params.put("header", msg.getHeader());
             params.put("headers", msg.getHeader());
             if (includeJsonObject) {
                 try {
                     log.info("Parsing body as JSON for scripting plugins");
-                    params.put("json",om.readValue(readInputStream(msg.getBodyAsStream()),Map.class));
+                    params.put("json", om.readValue(readInputStream(msg.getBodyAsStreamDecoded()), Map.class));
                 } catch (Exception e) {
                     log.warn("Can't parse body as JSON", e);
                 }
             }
         }
 
-        /**
-         properties does not work in Groovy based Template Interceptor!
-
-         Reason: properties is a special built-in property in Groovy. Every Groovy object has a properties property
-         that returns a Map of all the object's properties.
-
-         But it can be accessed in Groovy Interceptor
-
-         Decision: Keep it but change examples to use property, even for spel, ..
-        */
+        /*
+          properties does not work in Groovy based Template Interceptor!
+          Reason: properties is a special built-in property in Groovy. Every Groovy object has a properties property
+          that returns a Map of all the object's properties.
+          But it can be accessed in Groovy Interceptor
+          Decision: Keep it but change examples to use property, even for spel, ..
+         */
         params.put("properties", exc.getProperties());
 
         // Also expose properties unter props and property
@@ -109,10 +112,10 @@ public class ScriptingUtils {
             return emptyMap();
 
         try {
-            return new HashMap<>(matchTemplate(ap.getPath().getValue(), exchange.getRequestURI())); // Make lazy!
+            return new HashMap<>(matchTemplate(ap.getPath().getUri(), exchange.getRequestURI())); // Make lazy!
         } catch (PathDoesNotMatchException ignore) {
             // Log does only show up if path parameters are used in an expression
-            log.info("No path parameters extracted: uriTemplate {}, path {}", ap.getPath().getValue(), exchange.getRequestURI());
+            log.info("No path parameters extracted: uriTemplate {}, path {}", ap.getPath().getUri(), exchange.getRequestURI());
         }
         // Add map to avoid a second parsing
         return emptyMap();

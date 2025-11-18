@@ -18,6 +18,7 @@ package com.predic8.membrane.core.openapi.serviceproxy;
 
 import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.ReadingBodyException;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.openapi.*;
 import com.predic8.membrane.core.openapi.validators.*;
@@ -84,7 +85,7 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
             // Do not log: 404 is too common
             user(false, getDisplayName())
                     .title("No matching API found!")
-                    .statusCode(404)
+                    .status(404)
                     .addSubSee("not-found")
                     .detail("There is no API on the path %s deployed. Please check the path.".formatted(exc.getOriginalRequestUri()))
                     .topLevel("path", exc.getOriginalRequestUri())
@@ -116,6 +117,14 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
                     .detail(detail)
                     .exception(e)
                     .buildAndSetResponse(exc);
+            return RETURN;
+        } catch (ReadingBodyException e) {
+            user(router.isProduction(), getDisplayName())
+                    .addSubSee("reading-body")
+                    .flow(REQUEST)
+                    .detail("Connection problem: %s . Maybe the peer or the network closed the connection?".formatted(e.getMessage()))
+                    .buildAndSetResponse(exc);
+
             return RETURN;
         } catch (Throwable t /* On purpose! Catch absolutely all */) {
             final String LOG_MESSAGE = "Message could not be validated against OpenAPI cause of an error during validation. Please check the OpenAPI with title %s.";
@@ -188,9 +197,8 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
     }
 
     private ValidationErrors validateRequest(OpenAPIRecord rec, Exchange exc) throws IOException, ParseException {
-        ValidationErrors errors = new ValidationErrors();
         if (!shouldValidate(rec.getApi(), REQUESTS))
-            return errors;
+            return new ValidationErrors();
 
         return new OpenAPIValidator(router.getUriFactory(), rec).validate(getOpenapiValidatorRequest(exc));
     }
@@ -348,7 +356,7 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
         user(router.isProduction(), getDisplayName())
                 .title("OpenAPI message validation failed")
                 .addSubType("validation")
-                .statusCode(errors.get(0).getContext().getStatusCode())
+                .status(errors.get(0).getContext().getStatusCode())
                 .flow(getFlowFromDirection(direction))
                 .topLevel("validation", getErrorMap(errors, direction, validationDetails))
                 .buildAndSetResponse(exc);
@@ -371,7 +379,7 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
     }
 
     @Override
-    public EnumSet<Flow> getFlow() {
+    public EnumSet<Flow> getAppliedFlow() {
         return REQUEST_RESPONSE_FLOW;
     }
 }

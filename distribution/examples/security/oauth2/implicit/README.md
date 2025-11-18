@@ -1,3 +1,3 @@
-This example shows the OAuth2 implicit flow. It uses a Javascript client.
+# OAuth2 Implicit Flow with JavaScript Client Tutorial
 
-Please follow https://www.membrane-soa.org/api-gateway-doc/current/oauth2-implicit-flow-example.html
+See [OAuth2 Implicit Flow (Browser Clients)](https://www.membrane-api.io/tutorials/oauth2/oauth2-implicit-flow-example.html)

@@ -18,11 +18,14 @@ import com.predic8.membrane.core.interceptor.soap.*;
 import com.predic8.membrane.core.proxies.*;
 import org.apache.commons.httpclient.*;
 import org.apache.commons.httpclient.methods.*;
-import org.apache.http.params.*;
 import org.junit.jupiter.api.*;
 
 import java.io.*;
 
+import static com.predic8.membrane.core.http.Header.*;
+import static com.predic8.membrane.core.http.MimeType.*;
+import static org.apache.commons.httpclient.HttpVersion.HTTP_1_0;
+import static org.apache.http.params.CoreProtocolPNames.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 @SuppressWarnings("deprecation")
@@ -33,7 +36,7 @@ public class Http10Test {
 	@BeforeAll
 	public static void setUp() throws Exception {
 		ServiceProxy proxy2 = new ServiceProxy(new ServiceProxyKey("localhost", "POST", ".*", 2000), null, 0);
-		proxy2.getInterceptors().add(new SampleSoapServiceInterceptor());
+		proxy2.getFlow().add(new SampleSoapServiceInterceptor());
         router2 = new HttpRouter();
 		router2.getRuleManager().addProxyAndOpenPortIfNew(proxy2);
 		router2.init();
@@ -50,21 +53,23 @@ public class Http10Test {
 	}
 
 	@Test
-	public void testPost() throws Exception {
+	void post() throws Exception {
 
 		HttpClient client = new HttpClient();
-		client.getParams().setParameter(HttpProtocolParams.PROTOCOL_VERSION, HttpVersion.HTTP_1_0);
+		client.getParams().setParameter(PROTOCOL_VERSION, HTTP_1_0);
 
 		PostMethod post = new PostMethod("http://localhost:3000/");
 		InputStream stream = this.getClass().getResourceAsStream("/get-city.xml");
 
-
         assert stream != null;
         InputStreamRequestEntity entity = new InputStreamRequestEntity(stream);
 		post.setRequestEntity(entity);
-		post.setRequestHeader(Header.CONTENT_TYPE, MimeType.TEXT_XML_UTF8);
-		post.setRequestHeader(Header.SOAP_ACTION, "\"\"");
+		post.setRequestHeader(CONTENT_TYPE, TEXT_XML_UTF8);
+		post.setRequestHeader(SOAP_ACTION, "\"\"");
 		int status = client.executeMethod(post);
+
+		System.out.println(post.getResponseBodyAsString());
+
 		assertTrue(post.getResponseBodyAsString().contains("population"));
 		assertEquals(200, status);
 		assertEquals("HTTP/1.1", post.getStatusLine().getHttpVersion());
@@ -76,9 +81,9 @@ public class Http10Test {
 
 
 	@Test
-	public void testMultiplePost() throws Exception {
+	void testMultiplePost() throws Exception {
 		HttpClient client = new HttpClient();
-		client.getParams().setParameter(HttpProtocolParams.PROTOCOL_VERSION, HttpVersion.HTTP_1_0);
+		client.getParams().setParameter(PROTOCOL_VERSION, HTTP_1_0);
 
 		PostMethod post = new PostMethod("http://localhost:3000/");
 		InputStream stream = this.getClass().getResourceAsStream("/get-city.xml");
@@ -87,8 +92,8 @@ public class Http10Test {
         assert stream != null;
         InputStreamRequestEntity entity = new InputStreamRequestEntity(stream);
 		post.setRequestEntity(entity);
-		post.setRequestHeader(Header.CONTENT_TYPE, MimeType.TEXT_XML_UTF8);
-		post.setRequestHeader(Header.SOAP_ACTION, "\"\"");
+		post.setRequestHeader(CONTENT_TYPE, TEXT_XML_UTF8);
+		post.setRequestHeader(SOAP_ACTION, "\"\"");
 
 		for (int i = 0; i < 100; i ++) {
 			int status = client.executeMethod(post);
@@ -98,8 +103,5 @@ public class Http10Test {
 			assertNotNull(response);
             assertFalse(response.isEmpty());
 		}
-
 	}
-
-
 }
