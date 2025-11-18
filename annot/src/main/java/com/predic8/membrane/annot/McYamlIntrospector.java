@@ -6,9 +6,6 @@ import java.util.List;
 
 import static org.springframework.core.annotation.AnnotationUtils.findAnnotation;
 
-/**
- * Runtime helper for inspecting MC* annotations for YAML binding.
- */
 public final class McYamlIntrospector {
 
     public static boolean isNoEnvelope(Class<?> clazz) {
@@ -31,22 +28,20 @@ public final class McYamlIntrospector {
     }
 
     private static boolean matchesJsonChildElementKey(Method method, String key) {
-        MCChildElement annotation = findAnnotation(method, MCChildElement.class);
-        return annotation != null && method.getName().substring(3).equalsIgnoreCase(key);
+        return findAnnotation(method, MCChildElement.class) != null
+                && method.getName().substring(3).equalsIgnoreCase(key);
     }
 
     private static boolean equalsTextContent(Method method, String key) {
-        MCTextContent annotation = findAnnotation(method, MCTextContent.class);
-        return annotation != null && method.getName().substring(3).equalsIgnoreCase(key);
+        return findAnnotation(method, MCTextContent.class) != null && method.getName().substring(3).equalsIgnoreCase(key);
     }
 
     private static boolean equalsAttributeName(Method method, String key) {
         MCAttribute annotation = findAnnotation(method, MCAttribute.class);
         if (annotation == null)
             return false;
-        boolean baseNameMatches = method.getName().substring(3).equalsIgnoreCase(key) && "".equals(annotation.attributeName());
-        boolean explicitNameMatches = annotation.attributeName().equals(key);
-        return baseNameMatches || explicitNameMatches;
+        return method.getName().substring(3).equalsIgnoreCase(key) && "".equals(annotation.attributeName())
+                || annotation.attributeName().equals(key);
     }
 
     public static <T> Method getSingleChildSetter(Class<T> clazz) {
@@ -105,11 +100,9 @@ public final class McYamlIntrospector {
     }
 
     public static boolean isReferenceAttribute(Method setter) {
-        MCAttribute attr = findAnnotation(setter, MCAttribute.class);
-        if (attr == null)
+        if (findAnnotation(setter, MCAttribute.class) == null)
             return false;
-        Class<?> paramType = setter.getParameterTypes()[0];
-        return findAnnotation(paramType, MCElement.class) != null;
+        return findAnnotation(setter.getParameterTypes()[0], MCElement.class) != null;
     }
 
     public static boolean hasOtherAttributes(Method setter) {
