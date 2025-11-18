@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="934"
+   height="934"
+   viewBox="0 0 247.12083 247.12083"
+   version="1.1"
+   id="svg1"
+   sodipodi:docname="membrane-logo.svg"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview1"
+     pagecolor="#50505000"
+     bordercolor="#ffffffff"
+     borderopacity="1"
+     inkscape:showpageshadow="0"
+     inkscape:pageopacity="0"
+     inkscape:pagecheckerboard="1"
+     inkscape:deskcolor="#505050ff"
+     inkscape:document-units="mm"
+     showgrid="false"
+     inkscape:zoom="0.75633418"
+     inkscape:cx="428.38207"
+     inkscape:cy="466.06383"
+     inkscape:window-width="2048"
+     inkscape:window-height="1019"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="layer1" />
+  <defs
+     id="defs1" />
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1">
+    <g
+       id="g5">
+      <path
+         style="fill:#2eccf1"
+         d="m 131.28516,236.75186 -9.03521,0.0696 v -33.31892 -33.31893 l 0.30503,-0.10167 0.30503,-0.10168 16.32208,-79.890683 16.32208,-79.890683 33.77602,-0.06715 33.77601,-0.06715 v 86.779871 86.779868 l 6.72593,0.0706 6.72593,0.0706 -16.79379,25.79687 -16.79379,25.79688 -0.46894,0.73715 -0.46893,0.73715 -17.20136,-26.53403 -17.20136,-26.53402 6.83607,-0.0705 6.83607,-0.0705 V 119.73202 55.839539 l -0.33073,0.0011 -0.33073,0.0011 -20.13509,90.420219 -20.1351,90.42022 z"
+         id="path6" />
+      <path
+         style="fill:#2f93f1"
+         d="M 42.874951,236.81454 H 21.972868 V 123.43958 10.064618 l 33.932812,0.06715 33.932812,0.06715 16.186138,79.904166 16.18613,79.90417 0.0196,33.40721 0.0196,33.40721 -8.7725,-0.0697 -8.77251,-0.0697 -20.133222,-90.41973 -20.133226,-90.419741 -0.330729,-0.0016 -0.330729,-0.0016 v 90.487501 90.4875 z"
+         id="path5" />
+    </g>
+  </g>
+</svg>
