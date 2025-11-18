@@ -1,4 +1,4 @@
-![Membrane Logo](distribution/media/membrane-logo-m-text.png)
+![Membrane Logo](distribution/media/membrane-logo-m-text.svg)
 
 # API Gateway
 
