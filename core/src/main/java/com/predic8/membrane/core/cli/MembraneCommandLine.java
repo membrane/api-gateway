@@ -29,8 +29,8 @@ public class MembraneCommandLine {
 
     private static Options getRootOptions() {
         return new Options().addOption(builder("h").longOpt("help").desc("Display this text").build())
-                .addOption(builder("c").longOpt("config").argName("proxies.xml location").hasArg().desc("Location of the proxies configuration file").build())
-                .addOption(builder("t").longOpt("test").argName("proxies.xml location").hasArg().desc("Verifies configuration file and terminates").build());
+                .addOption(builder("c").longOpt("config").argName("apis.yaml or proxies.xml").hasArg().desc("Location of the configuration file").build())
+                .addOption(builder("t").longOpt("test").argName("apis.yaml or proxies.xml").hasArg().desc("Verifies configuration file and terminates").build());
     }
 
     private static @NotNull CliCommand getRootNamespace(Options rootOptions) {
@@ -38,11 +38,11 @@ public class MembraneCommandLine {
         return new CliCommand("membrane." + ext, "Membrane Service Proxy") {{
             setOptions(rootOptions);
 
-            addExample("Start gateway with its default configuration file in conf/proxies.xml",
+            addExample("Start gateway with its default configuration file in conf/apis.yaml",
                 "membrane." + ext)
-                    .addExample("Start gateway configured from OpenAPI file",
+                    .addExample("Start gateway configured from OpenAPI",
                             "membrane." + ext + " oas -l conf/fruitshop-api.yml")
-                    .addExample("Start gateway configured from OpenAPI URL and validate requests",
+                    .addExample("Start with configuration from OpenAPI URL and validate requests",
                             "membrane." + ext + " oas -v -l https://api.predic8.de/shop/v2/api-docs");
 
             addSubcommand(new CliCommand("start", " (Default) Same function as command omitted. Start gateway with configuration from proxies.xml") {{
@@ -56,10 +56,6 @@ public class MembraneCommandLine {
                         .addOption(builder("v").longOpt("validate-requests").desc("Validate requests against OpenAPI").build())
                         .addOption(builder("V").longOpt("validate-responses").desc("Validate responses against OpenAPI").build());
 
-            }});
-
-            addSubcommand(new CliCommand("yaml", "Use a YAML-based configuration file.") {{
-                addOption(builder("l").longOpt("location").argName("YAML config location").hasArg().required().desc("(Required) Set URL or path to a YAML configuration file").build());
             }});
 
             addSubcommand(new CliCommand("generate-jwk", "Generate a JSON Web Key and write it to a file") {{
