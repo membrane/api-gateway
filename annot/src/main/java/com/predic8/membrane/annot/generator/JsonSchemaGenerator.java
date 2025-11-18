@@ -84,13 +84,28 @@ public class JsonSchemaGenerator extends AbstractK8sGenerator {
     }
 
     private void addTopLevelProperties() {
-        schema.additionalProperties(false)
-                .property(string("apiVersion"))
-                .property(string("kind").enumeration(List.of("api")))
-                .property(ref("spec").ref("#/$defs/com_predic8_membrane_core_config_spring_ApiParser").required(true))
-                .property(object("metadata")
-                        .additionalProperties(true)
-                        .property(string("name")));
+        schema
+                .property(string("kind")
+                        .enumeration(List.of("api", "bean", "serviceProxy", "internal"))
+                        .required(true));
+
+        SchemaObject apiVariant = object()
+                .additionalProperties(false)
+                .property(string("kind")
+                        .enumeration(List.of("api")))
+                .property(ref("spec")
+                        .ref("#/$defs/com_predic8_membrane_core_config_spring_ApiParser")
+                        .required(true));
+
+        SchemaObject beanVariant = object()
+                .additionalProperties(false)
+                .property(string("kind")
+                        .enumeration(List.of("bean")))
+                .property(ref("bean")
+                        .ref("#/$defs/com_predic8_membrane_core_config_spring_BeanParser")
+                        .required(true));
+
+        schema.oneOf(List.of(apiVariant, beanVariant));
     }
 
     private void addParserDefinitions(Model m, MainInfo main) {
