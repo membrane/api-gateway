@@ -14,7 +14,7 @@
 package com.predic8.membrane.core.kubernetes;
 
 import com.google.common.collect.ImmutableMap;
-import com.predic8.membrane.annot.*;
+import com.predic8.membrane.annot.K8sHelperGenerator;
 import org.jetbrains.annotations.NotNull;
 import org.yaml.snakeyaml.error.Mark;
 import org.yaml.snakeyaml.events.*;
@@ -24,10 +24,9 @@ import java.lang.reflect.Method;
 import java.util.*;
 
 import static com.google.api.client.util.Types.newInstance;
+import static com.predic8.membrane.annot.McYamlIntrospector.*;
 import static com.predic8.membrane.core.config.spring.k8s.YamlLoader.readString;
-import static com.predic8.membrane.core.kubernetes.ParserHelper.*;
 import static java.util.Locale.ROOT;
-import static org.springframework.core.annotation.AnnotationUtils.findAnnotation;
 
 public class GenericYamlParser {
 
@@ -44,7 +43,7 @@ public class GenericYamlParser {
                 return obj;
             }
             ensureMappingStart(event);
-            if (clazz.getAnnotation(MCElement.class) != null && clazz.getAnnotation(MCElement.class).noEnvelope())
+            if (isNoEnvelope(clazz))
                 throw new RuntimeException("Class " + clazz.getName() + " is annotated with @MCElement(noEnvelope=true), but the YAML/JSON structure does not contain a list.");
 
             while (true) {
@@ -100,37 +99,8 @@ public class GenericYamlParser {
 
     }
 
-    private static <T> Method getSingleChildSetter(Class<T> clazz) {
-        MCElement annotation = clazz.getAnnotation(MCElement.class);
-        if (annotation == null || !annotation.noEnvelope()) {
-            throw new RuntimeException("Class " + clazz.getName() + " has properties, and is not a list.");
-        }
-        if (Arrays.stream(clazz.getMethods())
-                .filter(ParserHelper::isSetter)
-                .anyMatch(method -> findAnnotation(method, MCAttribute.class) != null)) {
-            throw new RuntimeException("Class " + clazz.getName() + " should not have any @MCAttribute setters, because it is a @MCElement with noEnvelope=true .");
-        }
-        List<Method> childSetters = Arrays.stream(clazz.getMethods())
-                .filter(ParserHelper::isSetter)
-                .filter(method -> findAnnotation(method, MCChildElement.class) != null)
-                .toList();
-        if (childSetters.isEmpty()) {
-            throw new RuntimeException("No @MCChildElement setter found in " + clazz.getName());
-        }
-        if (childSetters.size() > 1) {
-            throw new RuntimeException("Multiple @MCChildElement setters found in " + clazz.getName() + ". Only one is allowed when noEnvelope=true.");
-        }
-        Method setter = childSetters.getFirst();
-        Class<?> paramType = setter.getParameterTypes()[0];
-        if (!java.util.Collection.class.isAssignableFrom(paramType)) {
-            throw new RuntimeException("The single @MCChildElement setter in " + clazz.getName() +
-                 " must accept a Collection/List when noEnvelope=true, but found: " + paramType.getName());
-        }
-        return setter;
-    }
-
     @SuppressWarnings({"rawtypes", "unchecked"})
-    private static Object resolveSetterValue(Class<?> wanted, Method setter, String context, Iterator<Event> events, BeanRegistry registry, String key, Class clazz2, Event event, K8sHelperGenerator k8sHelperGenerator) throws WrongEnumConstantException {
+    private static Object resolveSetterValue(Class<?> wanted, Method setter, String context, Iterator<Event> events, BeanRegistry registry, String key, Class<?> clazz2, Event event, K8sHelperGenerator k8sHelperGenerator) throws WrongEnumConstantException {
         if (wanted.equals(List.class) || wanted.equals(Collection.class)) {
             return parseListIncludingStartEvent(context, events, registry, k8sHelperGenerator);
         }
@@ -155,16 +125,17 @@ public class GenericYamlParser {
         if (wanted.equals(Boolean.TYPE)) {
             return Boolean.parseBoolean(readString(events));
         }
-        if (wanted.equals(Map.class) && findAnnotation(setter, MCOtherAttributes.class) != null) {
+        if (wanted.equals(Map.class) && hasOtherAttributes(setter)) {
             return ImmutableMap.of(key, readString(events));
         }
         if (isStructured(setter)) {
-            if (clazz2 != null)
+            if (clazz2 != null) {
                 return parseMapToObj(context, events, event, registry, k8sHelperGenerator);
-            else
+            } else {
                 return parse(context, wanted, events, registry, k8sHelperGenerator);
+            }
         }
-        if (findAnnotation(setter, MCAttribute.class) != null && findAnnotation(setter.getParameterTypes()[0], MCElement.class) != null) {
+        if (isReferenceAttribute(setter)) {
             return registry.resolveReference(readString(events));
         }
         throw new RuntimeException("Not implemented setter type " + wanted);
@@ -246,29 +217,9 @@ public class GenericYamlParser {
         return clazz;
     }
 
-    private static <T> Method getSetter(Class<T> clazz, String key) {
-        return Arrays.stream(clazz.getMethods())
-                .filter(ParserHelper::isSetter)
-                .filter(method -> matchesJsonKey(method, key))
-                .findFirst()
-                .orElse(null);
-    }
-
-    private static <T> Method getAnySetter(Class<T> clazz) {
-        return Arrays.stream(clazz.getMethods())
-                .filter(ParserHelper::isSetter)
-                .filter(method -> findAnnotation(method, MCOtherAttributes.class) != null)
-                .findFirst()
-                .orElse(null);
-    }
-
-    private static <T> Method getChildSetter(Class<T> clazz, Class<?> valueClass) {
-        return Arrays.stream(clazz.getMethods())
-                .filter(ParserHelper::isSetter)
-                .filter(method -> method.getParameterTypes().length == 1)
-                .filter(method -> method.getParameterTypes()[0].isAssignableFrom(valueClass))
-                .findFirst()
-                .orElseThrow(() -> new RuntimeException("Could not find child setter on " + clazz.getName() + " for value of type " + valueClass.getName()));
+    private static <T> void setSetter(T instance, Method method, Object value)
+            throws InvocationTargetException, IllegalAccessException {
+        method.invoke(instance, value);
     }
 
 }
