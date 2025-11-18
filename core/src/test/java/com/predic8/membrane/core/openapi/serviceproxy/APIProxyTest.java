@@ -58,21 +58,33 @@ class APIProxyTest {
     }
 
     @Test
-    void testAssignOpenAPIName_singleAPI() {
+    void assignOpenAPIName_singleAPI() {
         var p = new APIProxy();
         p.apiRecords = Map.of("id1", new OpenAPIRecord(new OpenAPI().info(new Info().title("Test-API")), new OpenAPISpec()));
-        p.assignOpenAPIName();
+        p.setName(p.assignOpenAPIName());
         assertEquals("Test-API", p.getName());
     }
 
     @Test
-    void testAssignOpenAPIName_multipleAPIs() {
+    void assignOpenAPIName_multipleAPIs() {
         var p = new APIProxy();
         p.apiRecords = Map.of(
                 "id1", new OpenAPIRecord(new OpenAPI().info(new Info().title("Test-API")), new OpenAPISpec()),
                 "id2", new OpenAPIRecord(new OpenAPI().info(new Info().title("Test-API")), new OpenAPISpec())
         );
-        p.assignOpenAPIName();
+        p.setName(p.assignOpenAPIName());
         assertEquals("Test-API +1 more", p.getName());
+    }
+
+    @Test
+    void xApiId() {
+        var p = new APIProxy();
+        p.apiRecords = Map.of(
+                "id1", new OpenAPIRecord(new OpenAPI().info(new Info().title("Test-API")), new OpenAPISpec()),
+                "id2", new OpenAPIRecord(new OpenAPI().info(new Info().title("Test-API")), new OpenAPISpec())
+        );
+        p.apiRecords.values().iterator().next().getApi().getInfo().addExtension("x-api-id", "Foo");
+        p.setName(p.assignOpenAPIName());
+        assertEquals("Foo", p.getName());
     }
 }
