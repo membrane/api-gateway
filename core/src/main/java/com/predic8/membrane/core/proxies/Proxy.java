@@ -28,10 +28,6 @@ public interface Proxy extends Cloneable {
 
 	void setFlow(List<Interceptor> interceptors);
 
-	boolean isBlockRequest();
-
-	boolean isBlockResponse();
-
 	RuleKey getKey();
 
 	void setKey(RuleKey ruleKey);
@@ -39,10 +35,6 @@ public interface Proxy extends Cloneable {
 	void setName(String name);
 
 	String getName();
-
-	void setBlockRequest(boolean blockStatus);
-
-	void setBlockResponse(boolean blockStatus);
 
 	RuleStatisticCollector getStatisticCollector();
 

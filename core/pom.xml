@@ -23,7 +23,7 @@
         <groupId>org.membrane-soa</groupId>
         <artifactId>service-proxy-parent</artifactId>
         <relativePath>../pom.xml</relativePath>
-        <version>6.3.6</version>
+        <version>6.3.11-SNAPSHOT</version>
     </parent>
 
     <!-- Open Telemetry -->
@@ -288,7 +288,7 @@
         <dependency>
             <groupId>com.github.spotbugs</groupId>
             <artifactId>spotbugs-annotations</artifactId>
-            <version>4.9.6</version>
+            <version>4.9.8</version>
         </dependency>
         <!-- fallback parser for documents based on older Swagger standards -->
         <dependency>

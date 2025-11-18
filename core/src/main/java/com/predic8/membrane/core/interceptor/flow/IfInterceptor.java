@@ -15,6 +15,7 @@
 package com.predic8.membrane.core.interceptor.flow;
 
 import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.config.xml.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.lang.*;
@@ -38,13 +39,14 @@ import static com.predic8.membrane.core.lang.ExchangeExpression.expression;
  * @topic 1. Proxies and Flow
  */
 @MCElement(name = "if")
-public class IfInterceptor extends AbstractFlowWithChildrenInterceptor {
+public class IfInterceptor extends AbstractFlowWithChildrenInterceptor implements XMLSupport {
     private static final Logger log = LoggerFactory.getLogger(IfInterceptor.class);
 
     private String test;
     private Language language = SPEL;
 
     private ExchangeExpression exchangeExpression;
+    private XmlConfig xmlConfig;
 
     public IfInterceptor() {
         name = "if";
@@ -53,7 +55,7 @@ public class IfInterceptor extends AbstractFlowWithChildrenInterceptor {
     @Override
     public void init() {
         super.init();
-        exchangeExpression = expression(router, language, test);
+        exchangeExpression = expression(this, language, test);
     }
 
     @Override
@@ -130,5 +132,20 @@ public class IfInterceptor extends AbstractFlowWithChildrenInterceptor {
         }
         ret.append("<br/>}");
         return ret.toString();
+    }
+
+    /**
+     * XML Configuration e.g. declaration of XML namespaces for XPath expressions, ...
+     * @param xmlConfig
+     */
+    @Override
+    @MCChildElement(allowForeign = true,order = 10)
+    public void setXmlConfig(XmlConfig xmlConfig) {
+        this.xmlConfig = xmlConfig;
+    }
+
+    @Override
+    public XmlConfig getXmlConfig() {
+        return xmlConfig;
     }
 }

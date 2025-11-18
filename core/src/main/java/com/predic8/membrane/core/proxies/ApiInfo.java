@@ -28,9 +28,13 @@ public class ApiInfo {
     private static final int INDENT = 55;
 
     public static void logInfosAboutStartedProxies(RuleManager manager) {
+        if (manager.getRules().isEmpty()) {
+            // Nothing started yet. Happens when the router is started with YAML configuration or on K8S startup.
+            return;
+        }
         log.info("Started {} API{}:", manager.getRules().size(), (manager.getRules().size() > 1 ? "s" : ""));
         manager.getRules().forEach(proxy ->
-                log.info("  {} {}{}", proxyDisplayName(proxy), proxy.getName(), additionalProxyInfo(proxy))
+                log.info("  {} {}{}", proxyKind(proxy), proxy.getName(), additionalProxyInfo(proxy))
         );
     }
 
@@ -53,24 +57,6 @@ public class ApiInfo {
         return "";
     }
 
-    private static @NotNull String getPath(Proxy proxy) {
-        String path = proxy.getKey().getPath();
-        return path != null ? path : "";
-    }
-
-    private static @Nullable String getHost(Proxy proxy) {
-        String host = proxy.getKey().getHost();
-        return Objects.equals(host, "*") ? getIP(proxy) : host;
-    }
-
-    private static @NotNull String getIP(Proxy proxy) {
-        String ip = proxy.getKey().getIp();
-        if (ip == null) {
-            return  "0.0.0.0";
-        }
-        return ip;
-    }
-
     private static String formatLocationInfo(Map<String, OpenAPIRecord> specs) {
         return specs.entrySet().stream()
                 .map(e -> " ".repeat(INDENT) + "- \"%s\" @ %s".formatted(
@@ -80,14 +66,17 @@ public class ApiInfo {
                 .collect(joining("\n"));
     }
 
-    private static String proxyDisplayName(Proxy proxy) {
+    private static String proxyKind(Proxy proxy) {
         if (proxy instanceof APIProxy) {
             return "API";
-        } else if (proxy instanceof ServiceProxy) {
+        }
+        if (proxy instanceof ServiceProxy) {
             return "Service";
-        } else if (proxy instanceof SOAPProxy) {
+        }
+        if (proxy instanceof SOAPProxy) {
             return "SOAP";
-        } else if (proxy instanceof InternalProxy) {
+        }
+        if (proxy instanceof InternalProxy) {
             return "Internal";
         }
         return "Proxy";

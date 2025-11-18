@@ -17,6 +17,7 @@ import com.predic8.membrane.*;
 import com.predic8.membrane.core.interceptor.flow.*;
 import com.predic8.membrane.core.interceptor.lang.*;
 import com.predic8.membrane.core.openapi.serviceproxy.*;
+import com.predic8.membrane.core.proxies.AbstractServiceProxy.*;
 import org.jetbrains.annotations.*;
 import org.junit.jupiter.api.*;
 
@@ -46,7 +47,7 @@ class AbstractServiceProxyTest extends AbstractTestWithRouter {
         proxy.setKey(new ServiceProxyKey(2000));
         proxy.getFlow().add(A);
 
-        AbstractServiceProxy.Target target = new AbstractServiceProxy.Target() {
+        var target = new Target() {
         };
         target.setMethod("POST");
         target.setHost("localhost");

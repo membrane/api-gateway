@@ -18,9 +18,11 @@ import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.config.*;
 import com.predic8.membrane.core.config.security.*;
+import com.predic8.membrane.core.config.xml.*;
 import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.interceptor.Interceptor;
+import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.lang.ExchangeExpression;
+import com.predic8.membrane.core.lang.ExchangeExpression.*;
 import com.predic8.membrane.core.lang.TemplateExchangeExpression;
 import com.predic8.membrane.core.transport.ssl.*;
 
@@ -31,8 +33,8 @@ public abstract class AbstractServiceProxy extends SSLableProxy {
     @Override
     public void init() {
         super.init();
-        if (target.port == -1)
-            target.port = target.getSslParser() != null ? 443 : 80;
+        if (target.getPort() == -1)
+            target.setPort(target.getSslParser() != null ? 443 : 80);
         if (target.getSslParser() != null)
             setSslOutboundContext(new StaticSSLContext(target.getSslParser(), router.getResolverMap(), router.getBaseLocation()));
         target.init(router);
@@ -96,7 +98,7 @@ public abstract class AbstractServiceProxy extends SSLableProxy {
      * </p>
      */
     @MCElement(name = "target", topLevel = false)
-    public static class Target {
+    public static class Target implements XMLSupport {
         private String host;
         private int port = -1;
         private String method;
@@ -107,12 +109,17 @@ public abstract class AbstractServiceProxy extends SSLableProxy {
 
         private SSLParser sslParser;
 
+        protected XmlConfig xmlConfig;
+
         public void init(Router router) {
-            if (url != null) exchangeExpression = TemplateExchangeExpression.newInstance(router, language, url);
+            if (url != null) {
+                exchangeExpression = TemplateExchangeExpression.newInstance(new InterceptorAdapter(router,xmlConfig), language, url);
+            }
+
         }
 
         public String compileUrl(Exchange exc, Interceptor.Flow flow) {
-            /**
+            /*
              * Will always evaluate on every call. This is fine as SpEL is fast enough and performs its own optimizations.
              * 1.000.000 calls ~10ms
              */
@@ -227,6 +234,21 @@ public abstract class AbstractServiceProxy extends SSLableProxy {
         @MCAttribute
         public void setLanguage(ExchangeExpression.Language language) {
             this.language = language;
+        }
+
+        /**
+         * XML Configuration e.g. declaration of XML namespaces for XPath expressions, ...
+         * @param xmlConfig
+         */
+        @Override
+        @MCChildElement(allowForeign = true,order = 10)
+        public void setXmlConfig(XmlConfig xmlConfig) {
+            this.xmlConfig = xmlConfig;
+        }
+
+        @Override
+        public XmlConfig getXmlConfig() {
+            return xmlConfig;
         }
     }
 

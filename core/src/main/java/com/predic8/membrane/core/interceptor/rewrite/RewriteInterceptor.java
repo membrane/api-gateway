@@ -19,7 +19,6 @@ import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.util.*;
-import org.apache.commons.lang3.*;
 import org.slf4j.*;
 
 import java.io.*;
@@ -32,6 +31,7 @@ import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.interceptor.rewrite.RewriteInterceptor.Type.*;
 import static com.predic8.membrane.core.util.TextUtil.*;
+import static java.util.Locale.US;
 
 /**
  * @description <p>
@@ -39,8 +39,10 @@ import static com.predic8.membrane.core.util.TextUtil.*;
  * </p>
  * @topic 6. Misc
  */
-@MCElement(name = "rewriter")
+@MCElement(name = "rewriter", noEnvelope = true, topLevel = false)
 public class RewriteInterceptor extends AbstractInterceptor {
+
+    private static final Logger log = LoggerFactory.getLogger(RewriteInterceptor.class.getName());
 
     public enum Type {
         REWRITE,
@@ -62,19 +64,21 @@ public class RewriteInterceptor extends AbstractInterceptor {
         public Mapping(String from, String to, String do_) {
             this.from = from;
             this.to = to;
-
-            if (StringUtils.isEmpty(do_))
-                this.do_ = getDo();
-            else if (do_.equals("rewrite"))
-                this.do_ = REWRITE;
-            else if (do_.equals("redirect") || do_.equals("redirect-temporary"))
-                this.do_ = REDIRECT_TEMPORARY;
-            else if (do_.equals("redirect-permanent"))
-                this.do_ = REDIRECT_PERMANENT;
-            else
-                throw new IllegalArgumentException("Unknown value '" + do_ + "' for rewriter/@do.");
-
+            this.do_= parseDo(do_);
             pattern = Pattern.compile(from);
+        }
+
+        private Type parseDo(String do_) {
+            if (do_ == null || do_.isEmpty())
+                return getDo();
+
+            String what = do_.toLowerCase(US);
+            return switch (what) {
+                case "rewrite" -> REWRITE;
+                case "redirect", "redirect-temporary" -> REDIRECT_TEMPORARY;
+                case "redirect-permanent" -> REDIRECT_PERMANENT;
+                default -> throw new IllegalArgumentException("Unknown value '%s' for rewriter/@do.".formatted(do_));
+            };
         }
 
         public boolean matches(String uri) {
@@ -128,11 +132,7 @@ public class RewriteInterceptor extends AbstractInterceptor {
         public void setDo(Type do_) {
             this.do_ = do_;
         }
-
-
     }
-
-    private static final Logger log = LoggerFactory.getLogger(RewriteInterceptor.class.getName());
 
     private List<Mapping> mappings = new ArrayList<>();
 

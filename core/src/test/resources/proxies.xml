@@ -5,14 +5,12 @@
 					    http://membrane-soa.org/proxies/1/ http://membrane-soa.org/schemas/proxies-1.xsd">
 
 	<router>
-		<proxy name="HTTP proxy" port="3090" blockRequest="true"
-			blockResponse="false" />
-		<serviceProxy name="thomas-bayer.com" port="3000"
-			blockRequest="false" blockResponse="true">
+		<proxy name="HTTP proxy" port="3090"/>
+		<serviceProxy name="thomas-bayer.com" port="3000">
 			<target host="thomas-bayer.com" port="80" />
 		</serviceProxy>
 		<serviceProxy name="localhost" port="2000"
-			method="GET" blockRequest="false" blockResponse="false" host="localhost">
+			method="GET" host="localhost">
 			<target host="localhost" port="3011" />
 		</serviceProxy>
 	</router>

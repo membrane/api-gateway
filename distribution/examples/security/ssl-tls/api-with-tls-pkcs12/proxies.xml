@@ -6,7 +6,7 @@
 
 	<router>
 
-		<serviceProxy port="443">
+		<serviceProxy port="8443">
 			<ssl showSSLExceptions="true">
 				<!-- Please replace keystore for production! -->
 				<keystore location="../../../../conf/membrane.p12" password="secret" keyPassword="secret" />

@@ -117,24 +117,23 @@ class JsonpathExchangeExpressionTest extends AbstractExchangeExpressionTest {
 
     @Test
     void wrongContentType() throws URISyntaxException {
-        assertEquals("", expression(router, JSONPATH, "$")
-                .evaluate(post("/foo").contentType(TEXT_XML).buildExchange(), REQUEST, String.class));
+        assertEquals("", expression(new InterceptorAdapter(router), JSONPATH, "$")
+                .evaluate(Request.post("/foo").contentType(TEXT_XML).buildExchange(), REQUEST, String.class));
     }
 
     @Test
     void array() throws URISyntaxException {
-        var expr = expression(router, JSONPATH, "$[0]");
+        var expr = expression( new InterceptorAdapter(router), JSONPATH, "$[0]");
         assertEquals(1, expr.evaluate(post("/foo").json("[1,2,3]").buildExchange(), REQUEST, Integer.class));
     }
 
     @Test
     void number() throws URISyntaxException {
-        var expr = expression(router, JSONPATH, "$");
+        var expr = expression(new InterceptorAdapter(router), JSONPATH, "$");
         assertEquals(314, expr.evaluate(post("/foo").json("314").buildExchange(), REQUEST, Integer.class));
     }
 
     private static <T> T evaluateWithEmptyBodyFor(Class<T> type) throws URISyntaxException {
-        return expression(router, JSONPATH, "$")
-                .evaluate(get("/foo").buildExchange(), REQUEST, type);
+        return expression(new InterceptorAdapter(router), JSONPATH, "$").evaluate(get("/foo").buildExchange(), REQUEST, type);
     }
 }

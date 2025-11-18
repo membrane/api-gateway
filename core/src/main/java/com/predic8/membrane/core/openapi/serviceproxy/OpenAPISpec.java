@@ -16,6 +16,7 @@
 
 package com.predic8.membrane.core.openapi.serviceproxy;
 
+import com.fasterxml.jackson.annotation.*;
 import com.predic8.membrane.annot.*;
 
 import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPISpec.YesNoOpenAPIOption.ASINOPENAPI;
@@ -143,7 +144,11 @@ public class OpenAPISpec implements Cloneable {
     public enum YesNoOpenAPIOption {
         YES,
         NO,
-        ASINOPENAPI
+        ASINOPENAPI,
+
+        // To allow reading from YAML with yes and no without quotes
+        TRUE,
+        FALSE
     }
 
     @Override
