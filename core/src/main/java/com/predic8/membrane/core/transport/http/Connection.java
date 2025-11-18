@@ -158,9 +158,16 @@ public class Connection implements Closeable, MessageObserver, NonRelevantBodyOb
 		this.proxySSLProvider = proxySSLProvider;
     }
 
-	public boolean isSame(String host, int port) {
-		return socket != null && host.equals(this.host) && port == socket.getPort();
-	}
+    /**
+     * Checks whether the (host,port) combination matches this combination.
+     *
+     * This does not directly check whether the same proxy is used, but that is actually irrelevant, since
+     * proxyConfiguration is constant per HttpClient and ergo per ConnectionManager. Since only Connections
+     * opened by the same HttpClient are managed by the same ConnectionManager, this is sufficient.
+     */
+    public boolean isSame(String host, int port) {
+        return socket != null && host.equals(this.host) && port == socket.getPort();
+    }
 
 	public void close() throws IOException {
 		if (socket == null)
