@@ -105,8 +105,7 @@ public class ScriptingUtils {
         params.put("pathParam", new PathParametersMap(exc));
 
         // Allow to invoke functions in groovy with ${fn.functionname()}
-        // TODO Implement tests of the built in functions for Groovy- and Templateinterceptor
-        params.put("fn", new GroovyBuiltInFunctions(exc));
+        params.put("fn", new GroovyBuiltInFunctions(exc, flow));
 
         return params;
     }

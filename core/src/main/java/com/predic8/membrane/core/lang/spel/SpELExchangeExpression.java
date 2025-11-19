@@ -96,7 +96,7 @@ public class SpELExchangeExpression extends AbstractExchangeExpression {
     private @Nullable Object evaluate(Exchange exchange, Flow flow) {
         try {
             return spelExpression.getValue(new SpELExchangeEvaluationContext(exchange, flow), Object.class);
-        } catch (BuildInFunctionException e) {
+        } catch (BuiltInFunctionException e) {
             throw new ExchangeExpressionException(expression, e).extension("function", e.getFunction());
         }
     }

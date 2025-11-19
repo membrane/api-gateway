@@ -35,7 +35,7 @@ class ProxiesYAMLExampleTest extends AbstractSampleMembraneStartStopTestcase {
 
     @BeforeEach
     void startMembrane() throws IOException, InterruptedException {
-        process = new Process2.Builder().in(baseDir).script("membrane").parameters("yaml -l proxies.yaml").waitForMembrane().start();
+        process = new Process2.Builder().in(baseDir).script("membrane").parameters("-c proxies.yaml").waitForMembrane().start();
     }
 
     @Test
