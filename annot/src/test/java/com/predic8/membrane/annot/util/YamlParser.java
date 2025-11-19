@@ -1,13 +1,13 @@
 package com.predic8.membrane.annot.util;
 
 import com.predic8.membrane.annot.K8sHelperGenerator;
-import com.predic8.membrane.annot.yaml.BeanRegistry;
-import com.predic8.membrane.annot.yaml.GenericYamlParser;
+import com.predic8.membrane.annot.yaml.*;
 import org.yaml.snakeyaml.Yaml;
 
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.lang.reflect.InvocationTargetException;
+import java.util.concurrent.CountDownLatch;
 
 import static java.util.Objects.requireNonNull;
 
@@ -20,8 +20,25 @@ public class YamlParser {
                 .getConstructor()
                 .newInstance();
 
-        beanRegistry = GenericYamlParser.parseMembraneResources(getClass().getResourceAsStream(resourceName), generator);
+        CountDownLatch cdl = new CountDownLatch(1);
+        beanRegistry = GenericYamlParser.parseMembraneResources(getClass().getResourceAsStream(resourceName), generator,
+                new BeanCacheObserver() {
+                    @Override
+                    public void handleAsynchronousInitializationResult(boolean empty) {
+                        cdl.countDown();
+                    }
 
+                    @Override
+                    public void handleBeanEvent(BeanDefinition bd, Object bean, Object oldBean, WatchAction action) throws IOException {
+
+                    }
+
+                    @Override
+                    public boolean isActivatable(BeanDefinition bd) {
+                        return true;
+                    }
+                });
+        cdl.await();
     }
 
     public BeanRegistry getBeanRegistry() {

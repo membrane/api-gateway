@@ -48,24 +48,8 @@ import static java.util.Locale.ROOT;
 public class GenericYamlParser {
     private static final Logger log = LoggerFactory.getLogger(GenericYamlParser.class);
 
-    public static BeanRegistry parseMembraneResources(@NotNull InputStream resource, K8sHelperGenerator generator) throws IOException, InterruptedException {
-        CountDownLatch cdl = new CountDownLatch(1);
-        BeanCache registry = new BeanCache(new BeanCacheObserver() {
-            @Override
-            public void handleAsynchronousInitializationResult(boolean empty) {
-                cdl.countDown();
-            }
-
-            @Override
-            public void handleBeanEvent(BeanDefinition bd, Object bean, Object oldBean, WatchAction action) throws IOException {
-
-            }
-
-            @Override
-            public boolean isActivatable(BeanDefinition bd) {
-                return true;
-            }
-        }, generator);
+    public static BeanRegistry parseMembraneResources(@NotNull InputStream resource, K8sHelperGenerator generator, BeanCacheObserver observer) throws IOException, InterruptedException {
+        BeanCache registry = new BeanCache(observer, generator);
         registry.start();
 
         final YAMLFactory yamlFactory = builder().enable(STRICT_DUPLICATE_DETECTION).build();
@@ -102,7 +86,6 @@ public class GenericYamlParser {
             );
         }
 
-        cdl.await();
         return registry;
     }
 
