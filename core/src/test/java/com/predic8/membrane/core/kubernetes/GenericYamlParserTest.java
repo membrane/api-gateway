@@ -332,6 +332,16 @@ class GenericYamlParserTest {
         private final Map<String, Object> refs = new HashMap<>();
         TestRegistry with(String key, Object v) { refs.put(key, v); return this; }
         @Override public Object resolveReference(String ref) { return refs.get(ref); }
+
+        @Override
+        public List<Object> getBeans() {
+            return List.of();
+        }
+
+        @Override
+        public <T> List<T> getBeansOfType(Class<T> clazz) {
+            return List.of();
+        }
     }
 
     private static APIProxy parse(String yaml, BeanRegistry reg) {

@@ -1,6 +1,7 @@
 package com.predic8.membrane.annot.util;
 
 import com.predic8.membrane.annot.K8sHelperGenerator;
+import com.predic8.membrane.annot.yaml.BeanRegistry;
 import com.predic8.membrane.annot.yaml.GenericYamlParser;
 import org.yaml.snakeyaml.Yaml;
 
@@ -11,7 +12,7 @@ import java.lang.reflect.InvocationTargetException;
 import static java.util.Objects.requireNonNull;
 
 public class YamlParser {
-    private final Object result;
+    private final BeanRegistry beanRegistry;
 
     public YamlParser(String resourceName) throws ClassNotFoundException, NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException, IOException {
         K8sHelperGenerator generator = (K8sHelperGenerator) getClass().getClassLoader()
@@ -19,17 +20,11 @@ public class YamlParser {
                 .getConstructor()
                 .newInstance();
 
-        try (InputStreamReader reader = new InputStreamReader(
-                requireNonNull(getClass().getResourceAsStream(resourceName)),
-                java.nio.charset.StandardCharsets.UTF_8)) {
-            this.result = GenericYamlParser.parseMembraneObject(
-                    new Yaml().parse(reader).iterator(),
-                    generator,
-                    null);
-        }
+        beanRegistry = GenericYamlParser.parseMembraneResources(getClass().getResourceAsStream(resourceName), generator);
+
     }
 
-    public Object getResult() {
-        return result;
+    public BeanRegistry getBeanRegistry() {
+        return beanRegistry;
     }
 }

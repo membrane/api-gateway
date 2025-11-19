@@ -13,44 +13,110 @@
    limitations under the License. */
 package com.predic8.membrane.annot.yaml;
 
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import com.fasterxml.jackson.dataformat.yaml.YAMLParser;
+import com.networknt.schema.Error;
+import com.networknt.schema.InputFormat;
+import com.networknt.schema.SchemaLocation;
+import com.networknt.schema.SchemaRegistry;
+import com.networknt.schema.SpecificationVersion;
+import com.networknt.schema.resource.SchemaLoader;
 import com.predic8.membrane.annot.K8sHelperGenerator;
 import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.error.Mark;
 import org.yaml.snakeyaml.events.*;
 
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.*;
 
+import static com.fasterxml.jackson.core.StreamReadFeature.STRICT_DUPLICATE_DETECTION;
+import static com.fasterxml.jackson.dataformat.yaml.YAMLFactory.builder;
+import static com.networknt.schema.SpecificationVersion.DRAFT_2020_12;
 import static com.predic8.membrane.annot.yaml.McYamlIntrospector.*;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Locale.ROOT;
 
 public class GenericYamlParser {
+    private static final Logger log = LoggerFactory.getLogger(GenericYamlParser.class);
 
-    public static Object parseMembraneObject(Iterator<Event> events, K8sHelperGenerator generator, BeanRegistry registry) {
-        int state = 0;
-        while (events.hasNext()) {
-            Event event = events.next();
-            switch (state) {
-                case 0:
-                    if (event instanceof MappingStartEvent)
-                        state = 1;
-                    break;
-                case 1:
-                    if (event instanceof ScalarEvent se) {
-                        String value = se.getValue();
-                        return readMembraneObject(value, generator, events, registry);
-                    } else if (event instanceof MappingEndEvent) {
-                        throw new IllegalStateException("Not handled: MappingEndEvent"); // TODO: ?
-                    } else {
-                        throw new IllegalStateException("Expected scalar or end-of-map in line " + event.getStartMark().getLine() + " column " + event.getStartMark().getColumn());
-                    }
+    public static BeanRegistry parseMembraneResources(@NotNull InputStream resource, K8sHelperGenerator generator) throws IOException {
+        BeanCache registry = new BeanCache(new BeanCacheObserver() {
+            @Override
+            public void handleAsynchronousInitializationResult(boolean empty) {
+
             }
+
+            @Override
+            public void handleBeanEvent(BeanDefinition bd, Object bean, Object oldBean, WatchAction action) throws IOException {
+
+            }
+
+            @Override
+            public boolean isActivatable(BeanDefinition bd) {
+                return true;
+            }
+        }, generator);
+
+        final YAMLFactory yamlFactory = builder().enable(STRICT_DUPLICATE_DETECTION).build();
+
+        ObjectMapper om = new ObjectMapper(yamlFactory);
+        String content = new String(resource.readAllBytes(), UTF_8);
+        try (YAMLParser parser = yamlFactory.createParser(content)) {
+            int count = 0;
+
+            while (!parser.isClosed()) {
+                JsonNode node = om.readTree(parser);
+                validate(generator, node);
+
+                Map<String,Object> m = om.convertValue(node, Map.class);
+                if (m == null) {
+                    log.debug("Skipping empty document. Maybe there are two --- separators but no configuration in between.");
+                    parser.nextToken();
+                    continue;
+                }
+                count++;
+
+                registry.handle(WatchAction.ADDED, new BeanDefinition(
+                        m.keySet().stream().findFirst().get(), "bean-" + count, "default", UUID.randomUUID().toString(), m));
+                parser.nextToken();
+            }
+
+            registry.fireConfigurationLoaded();
+        } catch (JsonParseException e) {
+            throw new IOException(
+                    "Invalid YAML: multiple configurations must be separated by '---' "
+                            + "(at line " + e.getLocation().getLineNr()
+                            + ", column " + e.getLocation().getColumnNr() + ").",
+                    e
+            );
         }
-        return null;
+
+        return registry;
     }
 
-    private static Object readMembraneObject(String kind, K8sHelperGenerator generator, Iterator<Event> events, BeanRegistry registry) {
+    public static void validate(K8sHelperGenerator generator, JsonNode input) {
+        var jsonSchemaFactory = SchemaRegistry.withDefaultDialect(DRAFT_2020_12, builder -> {});
+        var schema=  jsonSchemaFactory.getSchema(SchemaLocation.of(generator.getSchemaLocation()));
+        schema.initializeValidators();
+
+        List<Error> errors = schema.validate(input);
+        if (errors.size() > 0)
+            throw new RuntimeException("Invalid YAML: " + errors);
+    }
+
+
+    public static Object readMembraneObject(String kind, K8sHelperGenerator generator, Iterator<Event> events, BeanRegistry registry) {
         Class clazz = generator.getElement(kind);
         if (clazz == null)
             throw new RuntimeException("Did not find java class for kind '%s'.".formatted(kind));

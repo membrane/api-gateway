@@ -203,7 +203,7 @@ public class JsonSchemaGenerator extends AbstractK8sGenerator {
         return processingEnv.getFiler()
                 .createResource(
                         CLASS_OUTPUT,
-                        "com.predic8.membrane.core.config.json",
+                        main.getAnnotation().outputPackage().replaceAll("spring", "json"),
                         "membrane.schema.json",
                         sources.toArray(new Element[0])
                 );

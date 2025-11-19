@@ -103,7 +103,8 @@ class InMemoryClassLoader extends ClassLoader {
 
     private boolean delegateToRootClassLoader(String name) {
         return name.startsWith("java.") || name.startsWith("javax.")
-                || name.startsWith("org.xml.sax") || name.startsWith("org.w3c.dom");
+                || name.startsWith("org.xml.sax") || name.startsWith("org.w3c.dom")
+                || name.equals("com.predic8.membrane.annot.yaml.BeanRegistry");
     }
 
     @Override

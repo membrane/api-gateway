@@ -13,6 +13,10 @@
    limitations under the License. */
 package com.predic8.membrane.annot.yaml;
 
+import java.util.List;
+
 public interface BeanRegistry {
     Object resolveReference(String url);
+    List<Object> getBeans();
+    <T> List<T> getBeansOfType(Class<T> clazz);
 }

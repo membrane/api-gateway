@@ -22,8 +22,8 @@ import com.networknt.schema.InputFormat;
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.interceptor.Interceptor;
 import com.predic8.membrane.core.interceptor.schemavalidation.json.JSONYAMLSchemaValidator;
-import com.predic8.membrane.core.kubernetes.BeanCache;
-import com.predic8.membrane.core.kubernetes.client.WatchAction;
+import com.predic8.membrane.annot.yaml.BeanCache;
+import com.predic8.membrane.annot.yaml.WatchAction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
