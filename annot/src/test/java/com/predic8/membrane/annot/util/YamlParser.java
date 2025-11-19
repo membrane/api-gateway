@@ -32,5 +32,3 @@ public class YamlParser {
         return result;
     }
 }
-
-}
