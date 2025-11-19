@@ -19,6 +19,7 @@ import org.json.JSONException;
 import org.junit.jupiter.api.*;
 import org.skyscreamer.jsonassert.*;
 
+import java.io.IOException;
 import java.util.concurrent.atomic.*;
 
 import static com.predic8.membrane.core.http.MimeType.*;
@@ -31,6 +32,11 @@ public class ProxiesXMLExampleTest extends AbstractSampleMembraneStartStopTestca
     @Override
     protected String getExampleDirName() {
         return "..";
+    }
+
+    @BeforeEach
+    void startMembrane() throws IOException, InterruptedException {
+        process = new Process2.Builder().in(baseDir).script("membrane").parameters("-c conf/proxies.xml").waitForMembrane().start();
     }
 
     @SuppressWarnings("JsonSchemaCompliance")

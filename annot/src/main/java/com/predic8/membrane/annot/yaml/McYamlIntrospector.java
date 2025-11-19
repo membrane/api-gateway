@@ -1,7 +1,18 @@
-package com.predic8.membrane.annot.yaml;
+/* Copyright 2025 predic8 GmbH, www.predic8.com
 
-import com.predic8.membrane.annot.*;
-import org.springframework.core.annotation.AnnotationUtils;
+   Licensed under the Apache License, Version 2.0 (the "License");
+   you may not use this file except in compliance with the License.
+   You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License. */
+
+package com.predic8.membrane.annot;
 
 import java.lang.reflect.Method;
 import java.util.Arrays;
@@ -21,7 +32,7 @@ public final class McYamlIntrospector {
     }
 
     public static boolean isStructured(Method method) {
-        return AnnotationUtils.findAnnotation(method, MCChildElement.class) != null;
+        return findAnnotation(method, MCChildElement.class) != null;
     }
 
     public static boolean matchesJsonKey(Method method, String key) {
@@ -36,7 +47,7 @@ public final class McYamlIntrospector {
     }
 
     private static boolean equalsTextContent(Method method, String key) {
-        return AnnotationUtils.findAnnotation(method, MCTextContent.class) != null && method.getName().substring(3).equalsIgnoreCase(key);
+        return findAnnotation(method, MCTextContent.class) != null && method.getName().substring(3).equalsIgnoreCase(key);
     }
 
     private static boolean equalsAttributeName(Method method, String key) {
@@ -87,7 +98,7 @@ public final class McYamlIntrospector {
     public static <T> Method getAnySetter(Class<T> clazz) {
         return Arrays.stream(clazz.getMethods())
                 .filter(McYamlIntrospector::isSetter)
-                .filter(method -> AnnotationUtils.findAnnotation(method, MCOtherAttributes.class) != null)
+                .filter(method -> findAnnotation(method, MCOtherAttributes.class) != null)
                 .findFirst()
                 .orElse(null);
     }
