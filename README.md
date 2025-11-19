@@ -1,4 +1,4 @@
-![Membrane Logo](distribution/media/membrane-logo-m-text.svg)
+![Membrane Logo](distribution/media/membrane-logo-m-text.png)
 
 # API Gateway
 
@@ -260,11 +260,13 @@ For even more samples have a look at the `examples` folder.
 ### Define an API Route
 To forward requests from the API Gateway to a backend, use a simple `api` configuration. The example below routes requests received on port `2000` with a path starting with `/shop` to the backend at `https://api.predic8.de`:
 
-```xml
-<api port="2000">
-  <path>/shop</path>
-  <target url="https://api.predic8.de"/>
-</api>
+```yaml
+spec:
+  port: 2000
+  path:
+    uri: /shop
+  target:
+    url: https://api.predic8.de
 ```
 
 ### Testing the Configuration
@@ -279,12 +281,15 @@ Membrane natively supports OpenAPI, allowing you to easily configure the gateway
 Membrane allows you to configure APIs directly from OpenAPI documents in the `proxies.xml` file. Backend addresses and other details are automatically derived from the OpenAPI description.
 
 #### Example Configuration
-The snippet below shows how to deploy an API using an OpenAPI (`fruitshop-api.yml`) with request validation enabled:
+The snippet below shows how to deploy an API using an OpenAPI (`fruitshop.oas.yml`) with request validation enabled:
 
-```xml
-<api port="2000">
-    <openapi location="fruitshop-api.yml" validateRequests="yes"/>
-</api>
+```yaml
+spec:
+  port: 2000
+  specs:
+    - openapi:
+        location: fruitshop.oas.yml
+        validateRequests: true
 ```  
 
 #### Viewing Deployed APIs
@@ -306,43 +311,49 @@ Membrane provides versatile routing with a fallthrough mechanism that applies on
 
 The configuration below demonstrates several routing rules:
 
-```xml
-<!-- Block POST -->
-<api port="2000" method="POST">
-    <response>
-        <static>POST is blocked!</static>
-    </response>
-    <return statusCode="405"/>
-</api>
-
-<!-- Paths matching "/shop/v2/products/.*" -->
-<api port="2000">
-    <path isRegExp="true">/shop/v2/products/.*</path>
-    <target url="https://api.predic8.de" />
-</api>
-
-<!-- All other requests to "/shop" -->
-<api port="2000">
-    <path>/shop</path>
-    <target url="https://api.predic8.de" />
-</api>
-
-<!-- HOST header of "www.predic8.de" -->
-<api port="2000" host="www.predic8.de">
-    <response>
-        <static>Homepage</static>
-    </response>
-    <return/>
-</api>
-
-<!-- Query parameter ?city=Paris -->
-<api port="2000" test="params.city =='Paris'">
-   <response>
-      <static>Oui!</static>
-   </response>
-   <return/>
-</api>
-```  
+```yaml
+# POST requests
+spec:
+  port: 2000
+  method: POST 
+  flow:
+    - response:
+        - static:
+            src: POST is blocked!
+    - return:
+        statusCode: 405
+---
+# Regex path matching
+spec:
+  port: 2000
+  path:
+    uri: /shop/v2/products/.*
+    isRegExp: true
+  target:
+    url: https://api.predic8.de
+---
+# Requests whose HOST header is "www.predic8.de"
+spec:
+  port: 2000
+  host: www.predic8.de
+  flow:
+    - response:
+        - static:
+            src: "<html>Homepage</html>"
+    - return:
+        statusCode: 200
+---
+# Requests with a query parameter city and value Paris
+spec:
+  port: 2000
+  test: params.city == 'Paris'
+  flow:
+    - response:
+        - static:
+            src: Oui!
+    - return:
+        statusCode: 200
+```
 
 ### Configuration Options
 
@@ -363,14 +374,17 @@ Membrane lets you create endpoints that return immediately without forwarding re
 #### Example: Health Check
 The following configuration creates a health check endpoint that responds to requests at [http://localhost:2000/health](http://localhost:2000/health):
 
-```xml
-<api port="2000">
-  <path>/health</path>
-  <response>
-    <static>I'm good.</static>
-  </response>
-  <return statusCode="200"/>
-</api>
+```yaml
+spec:
+  port: 2000
+  path:
+    uri: /health
+  flow:
+    - response:
+      - static:
+          src: I'm good.
+    - return:
+        statusCode: 200
 ```
 
 #### Example: Blocking Specific Paths
@@ -378,21 +392,26 @@ Block paths (e.g., `/nothing`) while allowing other calls to pass through.
 
 **Routing Note:** APIs are matched from top to bottom. When multiple APIs share the same port, place the APIs with stricter routing conditions higher in the configuration.
 
-```xml
-<api port="2000"> <!-- Calls to /nothing are blocked with 404 -->
-  <path>/nothing</path>
-  <response>
-    <static>Nothing to see!</static>
-  </response>
-  <return statusCode="404"/>
-</api>
-
-<api port="2000">
-  <response>
-    <static>Other call to port 2000</static>
-  </response>
-  <return/>
-</api>
+```yaml
+spec:
+  port: 2000
+  path:
+    uri: /nothing
+  flow:
+    - response:
+        - static:
+            src: "Nothing to see here!"
+    - return:
+        statusCode: 404
+---
+# yaml-language-server: $schema=https://www.membrane-api.io/v6.3.11.json
+spec:
+  port: 2000
+  flow:
+    - static:
+        src: Other calls
+    - return:
+        statusCode: 200
 ```
 
 ### URL Rewriting
