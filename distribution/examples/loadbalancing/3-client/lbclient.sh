@@ -20,14 +20,14 @@ terminate() {
 
 find_membrane_directory() {
     candidate=${MEMBRANE_HOME:-$membrane_home}
-    if [ -n "$candidate" ] && [ -f "$candidate/starter.jar" ]; then
+    if [ -n "$candidate" ] && [ -f "$candidate/LICENSE.txt" ]; then
         echo "$candidate"
         return 0
     fi
 
     current="${1:-$(pwd)}"
     while [ "$current" != "/" ]; do
-        if [ -f "$current/starter.jar" ]; then
+        if [ -f "$current/LICENSE.txt" ]; then
             echo "$current"
             return 0
         fi
