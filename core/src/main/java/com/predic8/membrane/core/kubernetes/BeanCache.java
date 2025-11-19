@@ -15,10 +15,10 @@ package com.predic8.membrane.core.kubernetes;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import com.predic8.membrane.annot.yaml.BeanRegistry;
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.config.spring.k8s.Envelope;
 import com.predic8.membrane.core.config.spring.k8s.YamlLoader;
-import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.kubernetes.client.WatchAction;
 import com.predic8.membrane.core.proxies.Proxy;
 import com.predic8.membrane.core.util.*;
