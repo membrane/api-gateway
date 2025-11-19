@@ -70,7 +70,7 @@ public class OpenAPISpec implements Cloneable {
      * @description Filename or URL pointing to an OpenAPI document. Relative filenames use the %MEMBRANE_HOME%/conf folder as base directory.
      * @example openapi/fruitstore-v1.yaml, <a href="https://api.predic8.de/shop/swagger">https://api.predic8.de/shop/swagger</a>
      */
-    @MCAttribute()
+    @MCAttribute
     public void setLocation(String location) {
         this.location = location;
     }
@@ -83,7 +83,7 @@ public class OpenAPISpec implements Cloneable {
      * @description Directory containing OpenAPI definitions to deploy.
      * @example openapi
      */
-    @MCAttribute()
+    @MCAttribute
     public void setDir(String dir) {
         this.dir = dir;
     }
@@ -112,7 +112,7 @@ public class OpenAPISpec implements Cloneable {
      * @example yes
      * @default no
      */
-    @MCAttribute()
+    @MCAttribute
     public void setValidateResponses(YesNoOpenAPIOption validateResponses) {
         this.validateResponses = validateResponses;
     }
@@ -122,7 +122,7 @@ public class OpenAPISpec implements Cloneable {
      * @example yes
      * @default no
      */
-    @MCAttribute()
+    @MCAttribute
     public void setValidationDetails(YesNoOpenAPIOption validationDetails) {
         this.validationDetails = validationDetails;
     }
