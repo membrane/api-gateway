@@ -19,12 +19,17 @@ import com.predic8.membrane.annot.K8sHelperGenerator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.yaml.snakeyaml.Yaml;
+import org.yaml.snakeyaml.events.DocumentStartEvent;
+import org.yaml.snakeyaml.events.Event;
+import org.yaml.snakeyaml.events.StreamStartEvent;
 
 import java.io.IOException;
 import java.io.StringReader;
 import java.util.*;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
+
+import static com.predic8.membrane.annot.yaml.YamlUtil.removeFirstYamlDocStartMarker;
 
 public class BeanCache implements BeanRegistry {
     private static final Logger log = LoggerFactory.getLogger(BeanCache.class);
@@ -76,14 +81,12 @@ public class BeanCache implements BeanRegistry {
     }
 
     public Object define(BeanDefinition bd) throws IOException {
-        String s = mapper.writeValueAsString(bd.getMap()); // TODO Why do we first parse than serialize than parse again?
-        if (log.isDebugEnabled())
-            log.debug("defining bean: {}", s);
-        //return new YamlLoader().load(new StringReader(s), this);
+        String yaml = removeFirstYamlDocStartMarker(mapper.writeValueAsString(bd.getMap())); // TODO Why do we first parse than serialize than parse again?
+        log.debug("defining bean: {}", yaml);
 
         return GenericYamlParser.readMembraneObject(bd.getKind(),
                 k8sHelperGenerator,
-                new Yaml().parse(new StringReader(s)).iterator(),
+                yaml,
                 this);
     }
 

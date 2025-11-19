@@ -78,69 +78,25 @@ public class JsonSchemaGenerator extends AbstractK8sGenerator {
         topLevelAdded.clear();
 
         addParserDefinitions(m, main);
-        addTopLevelProperties();
+        addTopLevelProperties(m, main);
 
         writeSchema(main, schema);
     }
 
-    private void addTopLevelProperties() {
-        schema.additionalProperties(false)
-                .property(ref("soapProxy")
-                        .ref("#/$defs/com_predic8_membrane_core_config_spring_SoapProxyParser"))
-                .property(ref("internal")
-                        .ref("#/$defs/com_predic8_membrane_core_config_spring_InternalParser"))
-                .property(ref("proxy")
-                        .ref("#/$defs/com_predic8_membrane_core_config_spring_ProxyParser"))
-                .property(ref("api")
-                        .ref("#/$defs/com_predic8_membrane_core_config_spring_ApiParser"))
-                .property(ref("stompProxy")
-                        .ref("#/$defs/com_predic8_membrane_core_config_spring_StompProxyParser"))
-                .property(ref("sslProxy")
-                        .ref("#/$defs/com_predic8_membrane_core_config_spring_SslProxyParser"));
-
+    private void addTopLevelProperties(Model m, MainInfo main) {
+        schema.additionalProperties(false);
         List<SchemaObject> kinds = new ArrayList<>();
+        main.getElements().values().forEach(e -> {
+            if (e.getAnnotation().topLevel())
+                schema.property(ref(e.getAnnotation().name())
+                      .ref("#/$defs/" + e.getXSDTypeName(m)));
 
-        kinds.add(object()
-                .additionalProperties(false)
-                .property(ref("api")
-                        .ref("#/$defs/com_predic8_membrane_core_config_spring_ApiParser")
-                        .required(true)));
-
-        kinds.add(object()
-                .additionalProperties(false)
-                .property(ref("soapProxy")
-                        .ref("#/$defs/com_predic8_membrane_core_config_spring_SoapProxyParser")
-                        .required(true)));
-
-        kinds.add(object()
-                .additionalProperties(false)
-                .property(ref("internal")
-                        .ref("#/$defs/com_predic8_membrane_core_config_spring_InternalParser")
-                        .required(true)));
-
-        kinds.add(object()
-                .additionalProperties(false)
-                .property(ref("proxy")
-                        .ref("#/$defs/com_predic8_membrane_core_config_spring_ProxyParser")
-                        .required(true)));
-
-        kinds.add(object()
-                .additionalProperties(false)
-                .property(ref("stompProxy")
-                        .ref("#/$defs/com_predic8_membrane_core_config_spring_StompProxyParser")
-                        .required(true)));
-
-        kinds.add(object()
-                .additionalProperties(false)
-                .property(ref("sslProxy")
-                        .ref("#/$defs/com_predic8_membrane_core_config_spring_SslProxyParser")
-                        .required(true)));
-
-        kinds.add(object()
-                .additionalProperties(false)
-                .property(ref("bean")
-                        .ref("#/$defs/com_predic8_membrane_core_config_spring_BeanParser")
-                        .required(true)));
+            kinds.add(object()
+                    .additionalProperties(false)
+                    .property(ref(e.getAnnotation().name())
+                            .ref("#/$defs/" + e.getXSDTypeName(m))
+                            .required(true)));
+        });
 
         schema.oneOf(new ArrayList<>(kinds));
     }

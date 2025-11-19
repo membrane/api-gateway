@@ -6,10 +6,10 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class StructureAssertionUtil {
-    public static void assertStructure(BeanRegistry o1, Asserter... asserter) {
-        assertEquals(o1.getBeans().size(), asserter.length);
+    public static void assertStructure(BeanRegistry registry, Asserter... asserter) {
+        assertEquals(registry.getBeans().size(), asserter.length);
         for (int i = 0; i < asserter.length; i++) {
-            asserter[i].assertStructure(o1.getBeans().get(i));
+            asserter[i].assertStructure(registry.getBeans().get(i));
         }
     }
 

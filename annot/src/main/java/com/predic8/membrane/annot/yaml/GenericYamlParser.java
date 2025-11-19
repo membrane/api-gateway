@@ -32,13 +32,11 @@ import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.error.Mark;
 import org.yaml.snakeyaml.events.*;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.*;
+import java.util.concurrent.CountDownLatch;
 
 import static com.fasterxml.jackson.core.StreamReadFeature.STRICT_DUPLICATE_DETECTION;
 import static com.fasterxml.jackson.dataformat.yaml.YAMLFactory.builder;
@@ -50,11 +48,12 @@ import static java.util.Locale.ROOT;
 public class GenericYamlParser {
     private static final Logger log = LoggerFactory.getLogger(GenericYamlParser.class);
 
-    public static BeanRegistry parseMembraneResources(@NotNull InputStream resource, K8sHelperGenerator generator) throws IOException {
+    public static BeanRegistry parseMembraneResources(@NotNull InputStream resource, K8sHelperGenerator generator) throws IOException, InterruptedException {
+        CountDownLatch cdl = new CountDownLatch(1);
         BeanCache registry = new BeanCache(new BeanCacheObserver() {
             @Override
             public void handleAsynchronousInitializationResult(boolean empty) {
-
+                cdl.countDown();
             }
 
             @Override
@@ -67,6 +66,7 @@ public class GenericYamlParser {
                 return true;
             }
         }, generator);
+        registry.start();
 
         final YAMLFactory yamlFactory = builder().enable(STRICT_DUPLICATE_DETECTION).build();
 
@@ -102,25 +102,51 @@ public class GenericYamlParser {
             );
         }
 
+        cdl.await();
         return registry;
     }
 
-    public static void validate(K8sHelperGenerator generator, JsonNode input) {
+    public static void validate(K8sHelperGenerator generator, JsonNode input) throws IOException {
         var jsonSchemaFactory = SchemaRegistry.withDefaultDialect(DRAFT_2020_12, builder -> {});
         var schema=  jsonSchemaFactory.getSchema(SchemaLocation.of(generator.getSchemaLocation()));
         schema.initializeValidators();
-
         List<Error> errors = schema.validate(input);
-        if (errors.size() > 0)
+        if (!errors.isEmpty())
             throw new RuntimeException("Invalid YAML: " + errors);
     }
 
 
-    public static Object readMembraneObject(String kind, K8sHelperGenerator generator, Iterator<Event> events, BeanRegistry registry) {
+    public static Object readMembraneObject(String kind, K8sHelperGenerator generator, String yaml, BeanRegistry registry) {
+
+        Iterator<Event> events = new Yaml().parse(new StringReader(yaml)).iterator();
+        Event event = events.next();
+        if (!(event instanceof StreamStartEvent))
+            throw new IllegalStateException("Expected StreamStartEvent in line " + event.getStartMark().getLine() + " column " + event.getStartMark().getColumn());
+        event = events.next();
+        if (!(event instanceof DocumentStartEvent))
+            throw new IllegalStateException("Expected DocumentStartEvent in line " + event.getStartMark().getLine() + " column " + event.getStartMark().getColumn());
+        event = events.next();
+        ensureMappingStart(event);
+        event = events.next();
+        if (!(event instanceof ScalarEvent se))
+            throw new IllegalStateException("Expected scalar in line " + event.getStartMark().getLine() + " column " + event.getStartMark().getColumn());
+
         Class clazz = generator.getElement(kind);
         if (clazz == null)
-            throw new RuntimeException("Did not find java class for kind '%s'.".formatted(kind));
-        return GenericYamlParser.parse(kind, clazz, events, registry, generator);
+            throw new RuntimeException("Did not find java class for kind '%s' in line %d column %d.".formatted(kind, event.getStartMark().getLine(), event.getStartMark().getColumn()));
+        Object result = GenericYamlParser.parse(kind, clazz, events, registry, generator);
+
+        event = events.next();
+        if (!(event instanceof MappingEndEvent))
+            throw new IllegalStateException("Expected MappingEndEvent in line " + event.getStartMark().getLine() + " column " + event.getStartMark().getColumn());
+        event = events.next();
+        if (!(event instanceof DocumentEndEvent))
+            throw new IllegalStateException("Expected DocumentEndEvent in line " + event.getStartMark().getLine() + " column " + event.getStartMark().getColumn());
+        event = events.next();
+        if (!(event instanceof StreamEndEvent))
+            throw new IllegalStateException("Expected StreamEndEvent in line " + event.getStartMark().getLine() + " column " + event.getStartMark().getColumn());
+
+        return result;
     }
 
 
