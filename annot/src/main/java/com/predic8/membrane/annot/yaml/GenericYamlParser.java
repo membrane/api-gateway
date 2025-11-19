@@ -11,9 +11,8 @@
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
    See the License for the specific language governing permissions and
    limitations under the License. */
-package com.predic8.membrane.core.kubernetes;
+package com.predic8.membrane.annot.yaml;
 
-import com.google.common.collect.ImmutableMap;
 import com.predic8.membrane.annot.K8sHelperGenerator;
 import org.jetbrains.annotations.NotNull;
 import org.yaml.snakeyaml.error.Mark;
@@ -23,19 +22,49 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.*;
 
-import static com.google.api.client.util.Types.newInstance;
-import static com.predic8.membrane.annot.McYamlIntrospector.*;
-import static com.predic8.membrane.core.config.spring.k8s.YamlLoader.readString;
+import static com.predic8.membrane.annot.yaml.McYamlIntrospector.*;
 import static java.util.Locale.ROOT;
 
 public class GenericYamlParser {
+
+    public static Object parseMembraneObject(Iterator<Event> events, K8sHelperGenerator generator, BeanRegistry registry) {
+        int state = 0;
+        while (events.hasNext()) {
+            Event event = events.next();
+            switch (state) {
+                case 0:
+                    if (event instanceof MappingStartEvent)
+                        state = 1;
+                    break;
+                case 1:
+                    if (event instanceof ScalarEvent se) {
+                        String value = se.getValue();
+                        return readMembraneObject(value, generator, events, registry);
+                    } else if (event instanceof MappingEndEvent) {
+                        throw new IllegalStateException("Not handled: MappingEndEvent"); // TODO: ?
+                    } else {
+                        throw new IllegalStateException("Expected scalar or end-of-map in line " + event.getStartMark().getLine() + " column " + event.getStartMark().getColumn());
+                    }
+            }
+        }
+        return null;
+    }
+
+    private static Object readMembraneObject(String kind, K8sHelperGenerator generator, Iterator<Event> events, BeanRegistry registry) {
+        Class clazz = generator.getElement(kind);
+        if (clazz == null)
+            throw new RuntimeException("Did not find java class for kind '%s'.".formatted(kind));
+        return GenericYamlParser.parse(kind, clazz, events, registry, generator);
+    }
+
+
 
     @SuppressWarnings({"rawtypes"})
     public static <T> T parse(String context, Class<T> clazz, Iterator<Event> events, BeanRegistry registry, K8sHelperGenerator k8sHelperGenerator) {
         Event event = null;
         Mark lastContextMark = null;
         try {
-            T obj = newInstance(clazz);
+            T obj = clazz.getConstructor().newInstance();
             event = events.next();
             if (event instanceof SequenceStartEvent) {
                 // when this is a list, we are on a @MCElement(..., noEnvelope=true)
@@ -105,7 +134,7 @@ public class GenericYamlParser {
             return parseListIncludingStartEvent(context, events, registry, k8sHelperGenerator);
         }
         if (wanted.isEnum()) {
-            String value = readString(events).toUpperCase(ROOT);
+            String value = YamlLoader.readString(events).toUpperCase(ROOT);
             try {
                 return Enum.valueOf((Class<Enum>) wanted, value);
             }
@@ -114,19 +143,19 @@ public class GenericYamlParser {
             }
         }
         if (wanted.equals(String.class)) {
-            return readString(events);
+            return YamlLoader.readString(events);
         }
         if (wanted.equals(Integer.TYPE)) {
-            return Integer.parseInt(readString(events));
+            return Integer.parseInt(YamlLoader.readString(events));
         }
         if (wanted.equals(Long.TYPE)) {
-            return Long.parseLong(readString(events));
+            return Long.parseLong(YamlLoader.readString(events));
         }
         if (wanted.equals(Boolean.TYPE)) {
-            return Boolean.parseBoolean(readString(events));
+            return Boolean.parseBoolean(YamlLoader.readString(events));
         }
         if (wanted.equals(Map.class) && hasOtherAttributes(setter)) {
-            return ImmutableMap.of(key, readString(events));
+            return Map.of(key, YamlLoader.readString(events));
         }
         if (isStructured(setter)) {
             if (clazz2 != null) {
@@ -136,7 +165,7 @@ public class GenericYamlParser {
             }
         }
         if (isReferenceAttribute(setter)) {
-            return registry.resolveReference(readString(events));
+            return registry.resolveReference(YamlLoader.readString(events));
         }
         throw new RuntimeException("Not implemented setter type " + wanted);
     }

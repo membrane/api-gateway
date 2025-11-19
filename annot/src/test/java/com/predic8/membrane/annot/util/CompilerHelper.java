@@ -67,6 +67,23 @@ public class CompilerHelper {
         return new CompilerResult(success, diagnostics, fileManager.getClassLoader(CLASS_OUTPUT));
     }
 
+    public static Object parseYAML(CompilerResult cr, String yamlConfig) {
+        ClassLoader originalClassloader = Thread.currentThread().getContextClassLoader();
+        try {
+            InMemoryClassLoader loaderA = (InMemoryClassLoader) cr.classLoader();
+            loaderA.defineOverlay(new OverlayInMemoryFile("/demo.yaml", yamlConfig));
+            CompositeClassLoader cl = new CompositeClassLoader(loaderA, CompilerHelper.class.getClassLoader());
+            Thread.currentThread().setContextClassLoader(cl);
+            Class<?> c = cl.loadClass("com.predic8.membrane.annot.util.YamlParser");
+            Object parser = c.getConstructor(String.class).newInstance("/demo.yaml");
+            return c.getMethod("getResult").invoke(parser);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        } finally {
+            Thread.currentThread().setContextClassLoader(originalClassloader);
+        }
+    }
+
     /**
      * Parse the given XML Spring config.
      */

@@ -1,4 +1,7 @@
-package com.predic8.membrane.annot;
+package com.predic8.membrane.annot.yaml;
+
+import com.predic8.membrane.annot.*;
+import org.springframework.core.annotation.AnnotationUtils;
 
 import java.lang.reflect.Method;
 import java.util.Arrays;
@@ -18,7 +21,7 @@ public final class McYamlIntrospector {
     }
 
     public static boolean isStructured(Method method) {
-        return findAnnotation(method, MCChildElement.class) != null;
+        return AnnotationUtils.findAnnotation(method, MCChildElement.class) != null;
     }
 
     public static boolean matchesJsonKey(Method method, String key) {
@@ -33,7 +36,7 @@ public final class McYamlIntrospector {
     }
 
     private static boolean equalsTextContent(Method method, String key) {
-        return findAnnotation(method, MCTextContent.class) != null && method.getName().substring(3).equalsIgnoreCase(key);
+        return AnnotationUtils.findAnnotation(method, MCTextContent.class) != null && method.getName().substring(3).equalsIgnoreCase(key);
     }
 
     private static boolean equalsAttributeName(Method method, String key) {
@@ -84,7 +87,7 @@ public final class McYamlIntrospector {
     public static <T> Method getAnySetter(Class<T> clazz) {
         return Arrays.stream(clazz.getMethods())
                 .filter(McYamlIntrospector::isSetter)
-                .filter(method -> findAnnotation(method, MCOtherAttributes.class) != null)
+                .filter(method -> AnnotationUtils.findAnnotation(method, MCOtherAttributes.class) != null)
                 .findFirst()
                 .orElse(null);
     }
