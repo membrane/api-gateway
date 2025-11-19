@@ -26,8 +26,6 @@ public class SchemaObject extends AbstractSchema<SchemaObject> {
     // Java Properties (@MCAttributes, @MCChildElement)
     protected final List<AbstractSchema<?>> properties = new ArrayList<>();
 
-    private List<AbstractSchema<?>> oneOf;
-
     SchemaObject(String name) {
         super(name);
         type = OBJECT;
@@ -51,14 +49,6 @@ public class SchemaObject extends AbstractSchema<SchemaObject> {
         }
 
         jsonProperties(node);
-
-        if (oneOf != null && !oneOf.isEmpty()) {
-            var oneOfArray = jnf.arrayNode();
-            for (AbstractSchema<?> schema : oneOf) {
-                oneOfArray.add(schema.json(jnf.objectNode()));
-            }
-            node.set("oneOf", oneOfArray);
-        }
 
         return node;
     }
@@ -101,10 +91,5 @@ public class SchemaObject extends AbstractSchema<SchemaObject> {
     @Override
     public boolean isObject() {
         return true;
-    }
-
-    public SchemaObject oneOf(List<AbstractSchema<?>> oneOf) {
-        this.oneOf = oneOf;
-        return this;
     }
 }
