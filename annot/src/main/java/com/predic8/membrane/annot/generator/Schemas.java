@@ -72,7 +72,7 @@ public class Schemas {
 				
 				<xsd:simpleType name="spel_boolean">
 				    <xsd:restriction base="xsd:string">
-				        <xsd:pattern value="[01]|true|false|\\#\\{.*\\}|\\$\\{.*\\}"></xsd:pattern>
+				        <xsd:pattern value="[01]|true|false|yes|no|\\#\\{.*\\}|\\$\\{.*\\}"></xsd:pattern>
 				    </xsd:restriction>
 				</xsd:simpleType>
 				

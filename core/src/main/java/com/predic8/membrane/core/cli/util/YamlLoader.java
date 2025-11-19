@@ -100,9 +100,7 @@ public class YamlLoader {
         var validator = new JSONYAMLSchemaValidator(
                 router.getResolverMap(),
                 "classpath:/com/predic8/membrane/core/config/json/membrane.schema.json",
-                (message, exc) -> {
-                    log.error(message);
-                },
+                (message, exc) -> log.error(message),
                 SCHEMA_VERSION_2020_12,
                 InputFormat.YAML
         );

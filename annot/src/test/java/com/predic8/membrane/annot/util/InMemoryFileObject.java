@@ -26,16 +26,13 @@ import java.net.URI;
 public class InMemoryFileObject implements FileObject {
     private static final Logger log = LoggerFactory.getLogger(InMemoryFileObject.class);
 
-    private final InMemoryData data;
     protected final SimpleJavaFileObject inner;
 
     public InMemoryFileObject(InMemoryData data, String path) {
-        this.data = data;
         inner = new InnerFileObject(data, URI.create("string:///" + path), JavaFileObject.Kind.OTHER);
     }
 
     public InMemoryFileObject(InMemoryData data, String path, JavaFileObject.Kind kind) {
-        this.data = data;
         inner = new InnerFileObject(data, URI.create("string:///" + path), kind);
     }
 
