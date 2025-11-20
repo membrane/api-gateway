@@ -44,6 +44,7 @@ import java.util.*;
 import java.util.concurrent.*;
 
 import static com.predic8.membrane.core.Constants.*;
+import static com.predic8.membrane.core.cli.util.NetStackUtil.logIfStackLimited;
 import static com.predic8.membrane.core.util.DLPUtil.*;
 import static com.predic8.membrane.core.jmx.JmxExporter.*;
 import static java.util.concurrent.Executors.*;
@@ -339,8 +340,10 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
         }
 
         ApiInfo.logInfosAboutStartedProxies(ruleManager);
-        if (!asynchronousInitialization)
+        if (!asynchronousInitialization) {
             log.info("{} {} up and running!", PRODUCT_NAME, VERSION);
+            logIfStackLimited(log);
+        }
     }
 
     private void startJmx() {
@@ -671,6 +674,7 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
             System.exit(1);
         ApiInfo.logInfosAboutStartedProxies(ruleManager);
         log.info("{} {} up and running!", PRODUCT_NAME, VERSION);
+        logIfStackLimited(log);
         setAsynchronousInitialization(false);
     }
 }

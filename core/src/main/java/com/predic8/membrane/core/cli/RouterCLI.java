@@ -14,31 +14,38 @@
 
 package com.predic8.membrane.core.cli;
 
-import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.HttpRouter;
+import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.config.spring.TrackingFileSystemXmlApplicationContext;
-import com.predic8.membrane.core.exceptions.*;
+import com.predic8.membrane.core.exceptions.SpringConfigurationErrorHandler;
 import com.predic8.membrane.core.kubernetes.BeanCache;
-import com.predic8.membrane.core.openapi.serviceproxy.*;
-import com.predic8.membrane.core.resolver.*;
-import org.apache.commons.cli.*;
-import org.jetbrains.annotations.*;
-import org.slf4j.*;
-import org.springframework.beans.factory.xml.*;
+import com.predic8.membrane.core.openapi.serviceproxy.APIProxy;
+import com.predic8.membrane.core.openapi.serviceproxy.OpenAPISpec;
+import com.predic8.membrane.core.resolver.ResolverMap;
+import com.predic8.membrane.core.resolver.ResourceRetrievalException;
+import org.apache.commons.cli.ParseException;
+import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.xml.XmlBeanDefinitionStoreException;
 
-import java.io.*;
-import java.util.*;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.List;
 
-import static com.predic8.membrane.core.Constants.*;
+import static com.predic8.membrane.core.Constants.MEMBRANE_HOME;
 import static com.predic8.membrane.core.cli.util.JwkGenerator.generateJWK;
 import static com.predic8.membrane.core.cli.util.JwkGenerator.privateJWKtoPublic;
 import static com.predic8.membrane.core.cli.util.YamlLoader.sendYamlToBeanCache;
-import static com.predic8.membrane.core.config.spring.TrackingFileSystemXmlApplicationContext.*;
-import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPISpec.YesNoOpenAPIOption.*;
+import static com.predic8.membrane.core.config.spring.TrackingFileSystemXmlApplicationContext.InvalidConfigurationException;
+import static com.predic8.membrane.core.config.spring.TrackingFileSystemXmlApplicationContext.handleXmlBeanDefinitionStoreException;
+import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPISpec.YesNoOpenAPIOption.YES;
 import static com.predic8.membrane.core.openapi.util.OpenAPIUtil.isOpenAPIMisplacedError;
-import static com.predic8.membrane.core.util.ExceptionUtil.*;
-import static com.predic8.membrane.core.util.OSUtil.*;
-import static com.predic8.membrane.core.util.URIUtil.*;
-import static java.lang.Integer.*;
+import static com.predic8.membrane.core.util.ExceptionUtil.concatMessageAndCauseMessages;
+import static com.predic8.membrane.core.util.OSUtil.fixBackslashes;
+import static com.predic8.membrane.core.util.URIUtil.pathFromFileURI;
+import static java.lang.Integer.parseInt;
 import static org.apache.commons.lang3.exception.ExceptionUtils.getMessage;
 import static org.apache.commons.lang3.exception.ExceptionUtils.getRootCauseMessage;
 
