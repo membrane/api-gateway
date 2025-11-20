@@ -3,7 +3,7 @@ setlocal
 set "SCRIPTS_DIR=%~dp0"
 if not defined MEMBRANE_HOME set "MEMBRANE_HOME=%SCRIPTS_DIR%\.."
 for %%A in ("%MEMBRANE_HOME%") do set "MEMBRANE_HOME=%%~fA"
-if not exist "%MEMBRANE_HOME%\starter.jar" (
+if not exist "%MEMBRANE_HOME%\LICENSE.txt" (
   set "MEMBRANE_HOME=%SCRIPTS_DIR%\.."
   for %%A in ("%MEMBRANE_HOME%") do set "MEMBRANE_HOME=%%~fA"
 )

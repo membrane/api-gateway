@@ -7,7 +7,7 @@ if "%SCRIPT_DIR:~-1%"=="\" set "SCRIPT_DIR=%SCRIPT_DIR:~0,-1%"
 set "dir=%SCRIPT_DIR%"
 
 :search_up
-if exist "%dir%\starter.jar" if exist "%dir%\scripts\run-membrane.cmd" goto found
+if exist "%dir%\LICENSE.txt" if exist "%dir%\scripts\run-membrane.cmd" goto found
 for %%A in ("%dir%\..") do set "next=%%~fA"
 if /I "%next%"=="%dir%" goto notfound
 set "dir=%next%"

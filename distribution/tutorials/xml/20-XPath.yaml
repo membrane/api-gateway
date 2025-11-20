@@ -1,0 +1,53 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v6.3.11.json
+#
+# Membrane Tutorial: XPath
+#
+# Use XPath to extract data from XML documents.
+#
+# 1.) Inspect ../data/animals.xml
+#
+# 2.) Try:
+#
+#   curl -d @../data/animals.xml -H "Content-Type: text/xml" http://localhost:2000
+#     Inspect the console log and the response
+#
+
+spec:
+  port: 2000
+  flow:
+    - response:
+        - template:
+            contentType: text/xml
+            src: |
+               Names: ${property.names}
+               ${property.name}
+    - request:
+      - setProperty:
+          name: names
+          # Result: NodeList with all names
+          # Expression must be in ${}
+          value: ${//animal/@name}
+          language: xpath
+      - setProperty:
+          name: name
+          # Result: String containing first element of NodeList
+          value: "Name: ${//animal/@name}"
+          language: xpath
+      - log:
+          language: xpath
+          message: |
+            Number of Animals: ${count(//animal)}
+      - setHeader:
+          name: X-Sunny
+          value: Sunny is a ${//animal[@name='Sunny']/@species}
+          language: xpath
+      - if:
+          # No surrounding ${} because test expects an expression
+          test: //animal[@species='dog']
+          language: xpath
+          flow:
+            - log:
+                message: Dog found!
+      - return:
+          statusCode: 200
+          contentType: application/xml

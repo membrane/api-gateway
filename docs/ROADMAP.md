@@ -59,6 +59,13 @@
 
 # 6.4.0
 
+Breaking Changes:
+- JSONPath:
+  List-to-String conversion now renders full list instead of first element only. Behavior is now different from XPath that returns the first element of a nodelist but it is more consistent with most of JSONPath implementations.
+
+- Migraton Nots:
+  - Check JSONPath expressions when returning lists.
+
 - SessionManagerTest: refactor, too slow for Unittest. Move to integration tests. 
 - Refactor: Cookie maybe centralize Cookie Handling in a Cookie class
 - Loadbalancing description with pacemaker

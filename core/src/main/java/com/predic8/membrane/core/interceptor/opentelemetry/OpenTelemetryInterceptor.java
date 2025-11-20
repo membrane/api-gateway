@@ -60,6 +60,8 @@ import static io.opentelemetry.context.Context.current;
  */
 @MCElement(name = "openTelemetry")
 public class OpenTelemetryInterceptor extends AbstractInterceptor {
+    public static final String MEMBRANE_OTEL_SPAN = "membrane.otel.span";
+    public static final String MEMBRANE_OTEL_TRACER = "membrane.otel.tracer";
     private double sampleRate = 1.0;
     private OtelExporter exporter = new OtlpExporter();
     private OpenTelemetry otel;
@@ -156,7 +158,7 @@ public class OpenTelemetryInterceptor extends AbstractInterceptor {
     }
 
     private static Span getExchangeSpan(Exchange exc) {
-        return exc.getProperty("span", Span.class);
+        return exc.getProperty(MEMBRANE_OTEL_SPAN, Span.class);
     }
 
     private static void setSpanHttpHeaderAttributes(Header header, Span span) {
@@ -199,7 +201,8 @@ public class OpenTelemetryInterceptor extends AbstractInterceptor {
 
             try(Scope ignored = membraneSpan.makeCurrent()) {
                 setExchangeHeader(exc);
-                exc.setProperty("span", membraneSpan);
+                exc.setProperty(MEMBRANE_OTEL_SPAN, membraneSpan);
+                exc.setProperty(MEMBRANE_OTEL_TRACER, tracer);
             }
         }
     }

@@ -35,7 +35,7 @@ class ProxiesYAMLExampleTest extends AbstractSampleMembraneStartStopTestcase {
 
     @BeforeEach
     void startMembrane() throws IOException, InterruptedException {
-        process = new Process2.Builder().in(baseDir).script("membrane").parameters("yaml -l proxies.yaml").waitForMembrane().start();
+        process = new Process2.Builder().in(baseDir).script("membrane").parameters("-c proxies.yaml").waitForMembrane().start();
     }
 
     @Test
@@ -47,13 +47,13 @@ class ProxiesYAMLExampleTest extends AbstractSampleMembraneStartStopTestcase {
         .then()
             .statusCode(200)
             .body("$", aMapWithSize(1))
-            .body("$", hasKey("fruitshop-v1-1"))
-            .body("'fruitshop-v1-1'.openapi", equalTo("3.0.2"))
-            .body("'fruitshop-v1-1'.title", equalTo("Fruit Shop API"))
-            .body("'fruitshop-v1-1'.version", equalTo("1.1"))
-            .body("'fruitshop-v1-1'.openapi_link", equalTo("/api-docs/fruitshop-v1-1"))
-            .body("'fruitshop-v1-1'.ui_link", equalTo("/api-docs/ui/fruitshop-v1-1"))
-            .body("'fruitshop-v1-1'", aMapWithSize(5));
+            .body("$", hasKey("fruit-shop-api-v2-2-0"))
+            .body("fruit-shop-api-v2-2-0.openapi", equalTo("3.0.3"))
+            .body("fruit-shop-api-v2-2-0.title", equalTo("Fruit Shop API"))
+            .body("fruit-shop-api-v2-2-0.version", equalTo("2.2.0"))
+            .body("fruit-shop-api-v2-2-0.openapi_link", equalTo("/api-docs/fruit-shop-api-v2-2-0"))
+            .body("fruit-shop-api-v2-2-0.ui_link", equalTo("/api-docs/ui/fruit-shop-api-v2-2-0"))
+            .body("fruit-shop-api-v2-2-0", aMapWithSize(5));
         // @formatter:on
     }
 
