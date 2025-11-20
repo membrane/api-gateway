@@ -10,7 +10,7 @@ import static com.predic8.membrane.annot.util.StructureAssertionUtil.clazz;
 
 public class YAMLParsingTest {
     @Test
-    public void simple() throws ClassNotFoundException {
+    public void simple() {
         var sources = splitSources(MC_MAIN_DEMO + """
         package com.predic8.membrane.demo;
         import com.predic8.membrane.annot.*;
@@ -31,7 +31,7 @@ public class YAMLParsingTest {
     }
 
     @Test
-    public void twoObjects() throws ClassNotFoundException {
+    public void twoObjects() {
         var sources = splitSources(MC_MAIN_DEMO + """
         package com.predic8.membrane.demo;
         import com.predic8.membrane.annot.*;
