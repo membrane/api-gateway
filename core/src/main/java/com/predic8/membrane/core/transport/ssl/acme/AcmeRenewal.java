@@ -15,7 +15,6 @@ package com.predic8.membrane.core.transport.ssl.acme;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.joda.JodaModule;
 import com.predic8.membrane.core.transport.ssl.PEMSupport;
 import org.joda.time.DateTime;
 import org.slf4j.Logger;
@@ -51,7 +50,7 @@ public class AcmeRenewal {
         this.client = client;
         asse = client.getAsse();
         this.hosts = hosts;
-        om = new ObjectMapper().registerModule(new JodaModule());
+        om = new ObjectMapper();
     }
 
     public void doWork() {

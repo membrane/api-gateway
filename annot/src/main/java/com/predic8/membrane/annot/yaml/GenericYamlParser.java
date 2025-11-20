@@ -15,8 +15,8 @@ package com.predic8.membrane.annot.yaml;
 
 import com.predic8.membrane.annot.K8sHelperGenerator;
 import org.jetbrains.annotations.NotNull;
-import org.yaml.snakeyaml.error.Mark;
-import org.yaml.snakeyaml.events.*;
+import org.snakeyaml.engine.v2.events.*;
+import org.snakeyaml.engine.v2.exceptions.Mark;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -43,7 +43,7 @@ public class GenericYamlParser {
                     } else if (event instanceof MappingEndEvent) {
                         throw new IllegalStateException("Not handled: MappingEndEvent"); // TODO: ?
                     } else {
-                        throw new IllegalStateException("Expected scalar or end-of-map in line " + event.getStartMark().getLine() + " column " + event.getStartMark().getColumn());
+                        throw new IllegalStateException("Expected scalar or end-of-map in line " + event.getStartMark().orElseThrow().getLine() + " column " + event.getStartMark().orElseThrow().getColumn());
                     }
             }
         }
@@ -62,7 +62,7 @@ public class GenericYamlParser {
     @SuppressWarnings({"rawtypes"})
     public static <T> T parse(String context, Class<T> clazz, Iterator<Event> events, BeanRegistry registry, K8sHelperGenerator k8sHelperGenerator) {
         Event event = null;
-        Mark lastContextMark = null;
+        Optional<Mark> lastContextMark = null;
         try {
             T obj = clazz.getConstructor().newInstance();
             event = events.next();
@@ -110,7 +110,7 @@ public class GenericYamlParser {
             }
             return obj;
         } catch (Throwable cause) {
-            Mark problemMark = event != null ? event.getStartMark() : null;
+            Optional<Mark> problemMark = event != null ? event.getStartMark() : null;
             // Fall back if we don't have marks
             if (problemMark == null && lastContextMark == null) {
                 throw new RuntimeException("YAML parse error: " + cause.getMessage(), cause);
@@ -180,21 +180,21 @@ public class GenericYamlParser {
 
     private static String getScalarKey(Event event) {
         if (!(event instanceof ScalarEvent)) {
-            throw new IllegalStateException("Expected scalar or end-of-map in line " + event.getStartMark().getLine() + " column " + event.getStartMark().getColumn());
+            throw new IllegalStateException("Expected scalar or end-of-map in line " + event.getStartMark().orElseThrow().getLine() + " column " + event.getStartMark().orElseThrow().getColumn());
         }
         return ((ScalarEvent)event).getValue();
     }
 
     private static void ensureMappingStart(Event event) {
         if (!(event instanceof MappingStartEvent)) {
-            throw new IllegalStateException("Expected start-of-map in line " + event.getStartMark().getLine() + " column " + event.getStartMark().getColumn());
+            throw new IllegalStateException("Expected start-of-map in line " + event.getStartMark().orElseThrow().getLine() + " column " + event.getStartMark().orElseThrow().getColumn());
         }
     }
 
     private static List<?> parseListIncludingStartEvent(String context, Iterator<Event> events, BeanRegistry registry, K8sHelperGenerator k8sHelperGenerator) {
         Event event = events.next();
         if (!(event instanceof SequenceStartEvent)) {
-            throw new IllegalStateException("Expected start-of-sequence in line " + event.getStartMark().getLine() + " column " + event.getStartMark().getColumn());
+            throw new IllegalStateException("Expected start-of-sequence in line " + event.getStartMark().orElseThrow().getLine() + " column " + event.getStartMark().orElseThrow().getColumn());
         }
         return parseListExcludingStartEvent(context, events, registry, k8sHelperGenerator);
     }
@@ -207,7 +207,7 @@ public class GenericYamlParser {
             if (event instanceof SequenceEndEvent)
                 break;
             else if (!(event instanceof MappingStartEvent))
-                throw new IllegalStateException("Expected end-of-sequence or begin-of-map in line " + event.getStartMark().getLine() + " column " + event.getStartMark().getColumn());
+                throw new IllegalStateException("Expected end-of-sequence or begin-of-map in line " + event.getStartMark().orElseThrow().getLine() + " column " + event.getStartMark().orElseThrow().getColumn());
             res.add(parseMapToObj(context, events, registry, k8sHelperGenerator));
         }
 
@@ -218,11 +218,11 @@ public class GenericYamlParser {
     private static Object parseMapToObj(String context, Iterator<Event> events, BeanRegistry registry, K8sHelperGenerator k8sHelperGenerator) {
         Event event = events.next();
         if (!(event instanceof ScalarEvent))
-            throw new IllegalStateException("Expected scalar in line " + event.getStartMark().getLine() + " column " + event.getStartMark().getColumn());
+            throw new IllegalStateException("Expected scalar in line " + event.getStartMark().orElseThrow().getLine() + " column " + event.getStartMark().orElseThrow().getColumn());
         Object o = parseMapToObj(context, events, event, registry, k8sHelperGenerator);
         event = events.next();
         if (!(event instanceof MappingEndEvent))
-            throw new IllegalStateException("Expected end-of-map or begin-of-map in line " + event.getStartMark().getLine() + " column " + event.getStartMark().getColumn());
+            throw new IllegalStateException("Expected end-of-map or begin-of-map in line " + event.getStartMark().orElseThrow().getLine() + " column " + event.getStartMark().orElseThrow().getColumn());
         return o;
     }
 

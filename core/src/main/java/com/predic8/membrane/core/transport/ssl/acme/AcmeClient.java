@@ -13,9 +13,7 @@
    limitations under the License. */
 package com.predic8.membrane.core.transport.ssl.acme;
 
-import com.fasterxml.jackson.core.*;
-import com.fasterxml.jackson.databind.*;
-import com.fasterxml.jackson.datatype.joda.*;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.collect.*;
 import com.predic8.membrane.core.azure.*;
 import com.predic8.membrane.core.azure.api.dns.*;
@@ -48,6 +46,8 @@ import org.jose4j.keys.*;
 import org.jose4j.lang.*;
 import org.slf4j.Logger;
 import org.slf4j.*;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.module.SimpleModule;
 
 import javax.annotation.Nullable;
 import javax.security.auth.x500.*;
@@ -113,8 +113,6 @@ public class AcmeClient {
         validity = acme.getValidityDuration();
         this.acmeValidation = acme.getValidationMethod();
         challengeType = acme.getValidationMethod() != null && acme.getValidationMethod().useDnsValidation() ? TYPE_DNS_01 : TYPE_HTTP_01;
-
-        om.registerModule(new JodaModule());
 
         if (!acme.isExperimental())
             throw new RuntimeException("The ACME client is still experimental, please set <acme experimental=\"true\" ... /> to acknowledge.");

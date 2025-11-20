@@ -13,15 +13,22 @@
    limitations under the License. */
 package com.predic8.membrane.annot.generator.kubernetes;
 
-import com.fasterxml.jackson.databind.node.*;
-import com.predic8.membrane.annot.*;
+import com.predic8.membrane.annot.ProcessingException;
 import com.predic8.membrane.annot.generator.kubernetes.model.*;
-import com.predic8.membrane.annot.model.*;
+import com.predic8.membrane.annot.model.ChildElementInfo;
+import com.predic8.membrane.annot.model.ElementInfo;
+import com.predic8.membrane.annot.model.MainInfo;
+import com.predic8.membrane.annot.model.Model;
+import tools.jackson.databind.node.JsonNodeFactory;
 
-import javax.annotation.processing.*;
-import javax.tools.*;
-import java.io.*;
-import java.util.*;
+import javax.annotation.processing.ProcessingEnvironment;
+import javax.tools.FileObject;
+import java.io.BufferedWriter;
+import java.io.IOException;
+import java.io.Writer;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.Stack;
 
 import static com.predic8.membrane.annot.generator.kubernetes.model.SchemaFactory.*;
 

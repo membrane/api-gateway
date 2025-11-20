@@ -14,9 +14,11 @@
 
 package com.predic8.membrane.annot.generator.kubernetes.model;
 
-import com.fasterxml.jackson.databind.node.*;
+import tools.jackson.databind.node.ArrayNode;
+import tools.jackson.databind.node.ObjectNode;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
 
 public class SchemaString extends BasicSchema {
 

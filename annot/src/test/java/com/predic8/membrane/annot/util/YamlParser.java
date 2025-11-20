@@ -2,11 +2,13 @@ package com.predic8.membrane.annot.util;
 
 import com.predic8.membrane.annot.K8sHelperGenerator;
 import com.predic8.membrane.annot.yaml.GenericYamlParser;
-import org.yaml.snakeyaml.Yaml;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.dataformat.yaml.YAMLFactory;
 
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.lang.reflect.InvocationTargetException;
+import java.util.Iterator;
 
 import static java.util.Objects.requireNonNull;
 
@@ -23,7 +25,7 @@ public class YamlParser {
                 requireNonNull(getClass().getResourceAsStream(resourceName)),
                 java.nio.charset.StandardCharsets.UTF_8)) {
             this.result = GenericYamlParser.parseMembraneObject(
-                    new Yaml().parse(reader).iterator(),
+                    new ObjectMapper(new YAMLFactory()).readerFor(Object.class).readValues(reader),
                     generator,
                     null);
         }
