@@ -35,6 +35,15 @@ public class StructureAssertionUtil {
         };
     }
 
+    public static Asserter value(Object value) {
+        return new Asserter() {
+            @Override
+            public void assertStructure(Object bean) {
+                assertEquals(value, bean);
+            }
+        };
+    }
+
     public static Property property(String name, Asserter asserter) {
         return new Property() {
             @Override
