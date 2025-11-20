@@ -13,22 +13,24 @@
    limitations under the License. */
 package com.predic8.membrane.annot.generator;
 
-import com.fasterxml.jackson.databind.node.*;
-import com.predic8.membrane.annot.*;
-import com.predic8.membrane.annot.generator.kubernetes.*;
+import com.predic8.membrane.annot.ProcessingException;
+import com.predic8.membrane.annot.generator.kubernetes.AbstractK8sGenerator;
 import com.predic8.membrane.annot.generator.kubernetes.model.*;
 import com.predic8.membrane.annot.model.*;
-import com.predic8.membrane.annot.model.doc.*;
+import com.predic8.membrane.annot.model.doc.Doc;
+import tools.jackson.databind.node.JsonNodeFactory;
 
-import javax.annotation.processing.*;
-import javax.lang.model.element.*;
-import javax.tools.*;
-import java.io.*;
+import javax.annotation.processing.ProcessingEnvironment;
+import javax.lang.model.element.Element;
+import javax.lang.model.element.TypeElement;
+import javax.tools.FileObject;
+import java.io.BufferedWriter;
+import java.io.IOException;
 import java.util.*;
 
 import static com.predic8.membrane.annot.generator.kubernetes.model.SchemaFactory.*;
-import static com.predic8.membrane.annot.generator.util.SchemaGeneratorUtil.*;
-import static javax.tools.StandardLocation.*;
+import static com.predic8.membrane.annot.generator.util.SchemaGeneratorUtil.escapeJsonContent;
+import static javax.tools.StandardLocation.CLASS_OUTPUT;
 
 /**
  * TODOs:

@@ -14,7 +14,10 @@
 
 package com.predic8.membrane.annot.yaml;
 
-import org.yaml.snakeyaml.error.*;
+import org.snakeyaml.engine.v2.exceptions.Mark;
+import org.snakeyaml.engine.v2.exceptions.MarkedYamlEngineException;
+
+import java.util.Optional;
 
 /**
  * Public wrapper for SnakeYAML's MarkedYAMLException that exposes the protected constructor
@@ -23,8 +26,8 @@ import org.yaml.snakeyaml.error.*;
  * This exception provides detailed error context including source marks for both
  * the context and problem locations in YAML files.
  */
-public class PublicMarkedYAMLException extends MarkedYAMLException {
-    protected PublicMarkedYAMLException(String context, Mark contextMark, String problem, Mark problemMark, String note) {
-        super(context, contextMark, problem, problemMark, note);
+public class PublicMarkedYAMLException extends MarkedYamlEngineException {
+    protected PublicMarkedYAMLException(String context, Optional<Mark> contextMark, String problem, Optional<Mark> problemMark, String note) {
+        super(context, contextMark, problem, problemMark, new Throwable(note));
     }
 }

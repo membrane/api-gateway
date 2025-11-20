@@ -15,8 +15,8 @@ package com.predic8.membrane.core.config.spring.k8s;
 
 import com.predic8.membrane.annot.yaml.BeanRegistry;
 import org.jetbrains.annotations.*;
-import org.yaml.snakeyaml.*;
-import org.yaml.snakeyaml.events.*;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.dataformat.yaml.YAMLFactory;
 
 import java.io.*;
 import java.util.*;
@@ -25,7 +25,7 @@ public class YamlLoader {
 
     public Envelope load(Reader reader, BeanRegistry registry) throws IOException {
         Envelope e = new Envelope();
-        e.parse(new Yaml().parse(reader).iterator(), registry);
+        e.parse(new ObjectMapper(new YAMLFactory()).readerFor(Object.class).readValues(reader), registry);
         return e;
     }
 

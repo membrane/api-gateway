@@ -13,11 +13,10 @@
    limitations under the License. */
 package com.predic8.membrane.annot.generator.kubernetes.model;
 
-import com.fasterxml.jackson.databind.*;
-import com.fasterxml.jackson.databind.node.*;
-import com.fasterxml.jackson.databind.util.*;
+import tools.jackson.databind.node.ObjectNode;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
 
 import static com.predic8.membrane.annot.generator.kubernetes.model.SchemaFactory.OBJECT;
 

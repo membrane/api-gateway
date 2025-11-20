@@ -14,9 +14,10 @@
 
 package com.predic8.membrane.annot.generator.kubernetes.model;
 
-import com.fasterxml.jackson.databind.node.*;
+import tools.jackson.databind.node.JsonNodeFactory;
+import tools.jackson.databind.node.ObjectNode;
 
-import java.util.*;
+import java.util.List;
 
 public abstract class AbstractSchema<T extends AbstractSchema<T>> implements ISchema {
 

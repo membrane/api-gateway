@@ -14,9 +14,12 @@
 
 package com.predic8.membrane.annot.generator.kubernetes.model;
 
-import com.fasterxml.jackson.databind.*;
-import com.fasterxml.jackson.databind.node.*;
 import org.junit.jupiter.api.*;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectWriter;
+import tools.jackson.databind.node.JsonNodeFactory;
+import tools.jackson.databind.node.ObjectNode;
 
 import static com.predic8.membrane.annot.generator.kubernetes.model.SchemaFactory.*;
 import static org.junit.jupiter.api.Assertions.*;

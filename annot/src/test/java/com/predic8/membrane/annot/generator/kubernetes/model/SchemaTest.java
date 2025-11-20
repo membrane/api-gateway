@@ -14,17 +14,19 @@
 
 package com.predic8.membrane.annot.generator.kubernetes.model;
 
-import com.fasterxml.jackson.databind.*;
-import com.fasterxml.jackson.databind.node.*;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.Test;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectWriter;
+import tools.jackson.databind.node.JsonNodeFactory;
 
-import static com.predic8.membrane.annot.generator.kubernetes.model.SchemaFactory.*;
+import static com.predic8.membrane.annot.generator.kubernetes.model.SchemaFactory.string;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class SchemaTest {
 
-    JsonNodeFactory jnf = new JsonNodeFactory(false);
+    JsonNodeFactory jnf = new JsonNodeFactory();
 
     @Test
     void test() {

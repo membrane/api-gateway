@@ -34,8 +34,9 @@ import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
-import org.yaml.snakeyaml.Yaml;
-import org.yaml.snakeyaml.events.*;
+import org.snakeyaml.engine.v2.events.*;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.dataformat.yaml.YAMLFactory;
 
 import java.io.StringReader;
 import java.util.*;
@@ -339,7 +340,7 @@ class GenericYamlParserTest {
     }
 
     private static Iterator<Event> events(String yaml) {
-        Iterable<Event> iterable = new Yaml().parse(new StringReader(yaml));
+        Iterable<Event> iterable = new ObjectMapper(new YAMLFactory()).readerFor(Object.class).readValues(new StringReader(yaml));
         List<Event> filtered = new ArrayList<>();
         for (Event e : iterable) {
             if (e instanceof StreamStartEvent || e instanceof DocumentStartEvent) continue;
