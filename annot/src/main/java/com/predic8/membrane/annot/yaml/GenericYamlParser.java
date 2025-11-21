@@ -104,15 +104,15 @@ public class GenericYamlParser {
         Iterator<Event> events = new Yaml().parse(new StringReader(yaml)).iterator();
         Event event = events.next();
         if (!(event instanceof StreamStartEvent))
-            throw new IllegalStateException("Expected StreamStartEvent in line " + event.getStartMark().getLine() + " column " + event.getStartMark().getColumn());
+            throw new IllegalStateException("Expected StreamStartEvent in line %d column %d".formatted(event.getStartMark().getLine(), event.getStartMark().getColumn()));
         event = events.next();
         if (!(event instanceof DocumentStartEvent))
-            throw new IllegalStateException("Expected DocumentStartEvent in line " + event.getStartMark().getLine() + " column " + event.getStartMark().getColumn());
+            throw new IllegalStateException("Expected DocumentStartEvent in line %d column %d".formatted(event.getStartMark().getLine(), event.getStartMark().getColumn()));
         event = events.next();
         ensureMappingStart(event);
         event = events.next();
-        if (!(event instanceof ScalarEvent se))
-            throw new IllegalStateException("Expected scalar in line " + event.getStartMark().getLine() + " column " + event.getStartMark().getColumn());
+        if (!(event instanceof ScalarEvent))
+            throw new IllegalStateException("Expected scalar in line %d column %d".formatted(event.getStartMark().getLine(), event.getStartMark().getColumn()));
 
         Class clazz = generator.getElement(kind);
         if (clazz == null)
@@ -121,18 +121,16 @@ public class GenericYamlParser {
 
         event = events.next();
         if (!(event instanceof MappingEndEvent))
-            throw new IllegalStateException("Expected MappingEndEvent in line " + event.getStartMark().getLine() + " column " + event.getStartMark().getColumn());
+            throw new IllegalStateException("Expected MappingEndEvent in line %d column %d".formatted(event.getStartMark().getLine(), event.getStartMark().getColumn()));
         event = events.next();
         if (!(event instanceof DocumentEndEvent))
-            throw new IllegalStateException("Expected DocumentEndEvent in line " + event.getStartMark().getLine() + " column " + event.getStartMark().getColumn());
+            throw new IllegalStateException("Expected DocumentEndEvent in line %d column %d".formatted(event.getStartMark().getLine(), event.getStartMark().getColumn()));
         event = events.next();
         if (!(event instanceof StreamEndEvent))
-            throw new IllegalStateException("Expected StreamEndEvent in line " + event.getStartMark().getLine() + " column " + event.getStartMark().getColumn());
+            throw new IllegalStateException("Expected StreamEndEvent in line %d column %d".formatted(event.getStartMark().getLine(), event.getStartMark().getColumn()));
 
         return result;
     }
-
-
 
     @SuppressWarnings({"rawtypes"})
     public static <T> T parse(String context, Class<T> clazz, Iterator<Event> events, BeanRegistry registry, K8sHelperGenerator k8sHelperGenerator) {
