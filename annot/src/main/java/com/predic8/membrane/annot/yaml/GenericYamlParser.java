@@ -19,11 +19,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.fasterxml.jackson.dataformat.yaml.YAMLParser;
 import com.networknt.schema.Error;
-import com.networknt.schema.InputFormat;
 import com.networknt.schema.SchemaLocation;
 import com.networknt.schema.SchemaRegistry;
-import com.networknt.schema.SpecificationVersion;
-import com.networknt.schema.resource.SchemaLoader;
 import com.predic8.membrane.annot.K8sHelperGenerator;
 import com.predic8.membrane.annot.MCChildElement;
 import org.jetbrains.annotations.NotNull;
@@ -33,11 +30,12 @@ import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.error.Mark;
 import org.yaml.snakeyaml.events.*;
 
-import java.io.*;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.StringReader;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.*;
-import java.util.concurrent.CountDownLatch;
 
 import static com.fasterxml.jackson.core.StreamReadFeature.STRICT_DUPLICATE_DETECTION;
 import static com.fasterxml.jackson.dataformat.yaml.YAMLFactory.builder;
@@ -48,6 +46,7 @@ import static java.util.Locale.ROOT;
 
 public class GenericYamlParser {
     private static final Logger log = LoggerFactory.getLogger(GenericYamlParser.class);
+    private static final String EMPTY_DOCUMENT_WARNING = "Skipping empty document. Maybe there are two --- separators but no configuration in between.";
 
     public static BeanRegistry parseMembraneResources(@NotNull InputStream resource, K8sHelperGenerator generator, BeanCacheObserver observer) throws IOException, InterruptedException {
         BeanCache registry = new BeanCache(observer, generator);
@@ -62,11 +61,16 @@ public class GenericYamlParser {
 
             while (!parser.isClosed()) {
                 JsonNode node = om.readTree(parser);
+                if (node == null || node.isNull()) {
+                    log.debug(EMPTY_DOCUMENT_WARNING);
+                    parser.nextToken();
+                    continue;
+                }
                 validate(generator, node);
 
-                Map<String,Object> m = om.convertValue(node, Map.class);
+                Map<String, Object> m = om.convertValue(node, Map.class);
                 if (m == null) {
-                    log.debug("Skipping empty document. Maybe there are two --- separators but no configuration in between.");
+                    log.debug(EMPTY_DOCUMENT_WARNING);
                     parser.nextToken();
                     continue;
                 }
@@ -91,8 +95,9 @@ public class GenericYamlParser {
     }
 
     public static void validate(K8sHelperGenerator generator, JsonNode input) throws IOException {
-        var jsonSchemaFactory = SchemaRegistry.withDefaultDialect(DRAFT_2020_12, builder -> {});
-        var schema=  jsonSchemaFactory.getSchema(SchemaLocation.of(generator.getSchemaLocation()));
+        var jsonSchemaFactory = SchemaRegistry.withDefaultDialect(DRAFT_2020_12, builder -> {
+        });
+        var schema = jsonSchemaFactory.getSchema(SchemaLocation.of(generator.getSchemaLocation()));
         schema.initializeValidators();
         List<Error> errors = schema.validate(input);
         if (!errors.isEmpty())
@@ -215,8 +220,7 @@ public class GenericYamlParser {
             String value = YamlLoader.readString(events).toUpperCase(ROOT);
             try {
                 return Enum.valueOf((Class<Enum>) wanted, value);
-            }
-            catch (IllegalArgumentException e) {
+            } catch (IllegalArgumentException e) {
                 throw new WrongEnumConstantException(wanted, value);
             }
         }
@@ -260,7 +264,7 @@ public class GenericYamlParser {
         if (!(event instanceof ScalarEvent)) {
             throw new IllegalStateException("Expected scalar or end-of-map in line " + event.getStartMark().getLine() + " column " + event.getStartMark().getColumn());
         }
-        return ((ScalarEvent)event).getValue();
+        return ((ScalarEvent) event).getValue();
     }
 
     private static void ensureMappingStart(Event event) {
