@@ -17,9 +17,9 @@ package com.predic8.membrane.annot.util;
 import com.predic8.membrane.annot.yaml.BeanRegistry;
 
 import java.lang.reflect.Method;
+import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class StructureAssertionUtil {
     public static void assertStructure(BeanRegistry registry, Asserter... asserter) {
@@ -54,6 +54,20 @@ public class StructureAssertionUtil {
             @Override
             public void assertStructure(Object bean) {
                 assertEquals(value, bean);
+            }
+        };
+    }
+
+    public static Asserter list(Asserter... asserters) {
+        return new Asserter() {
+            @Override
+            public void assertStructure(Object bean) {
+                assertInstanceOf(List.class, bean);
+                List<?> list = (List<?>) bean;
+                assertEquals(list.size(), asserters.length);
+                for (int i = 0; i < asserters.length; i++) {
+                    asserters[i].assertStructure(list.get(i));
+                }
             }
         };
     }
