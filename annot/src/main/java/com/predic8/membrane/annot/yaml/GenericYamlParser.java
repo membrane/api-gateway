@@ -48,15 +48,22 @@ public class GenericYamlParser {
     private static final Logger log = LoggerFactory.getLogger(GenericYamlParser.class);
     private static final String EMPTY_DOCUMENT_WARNING = "Skipping empty document. Maybe there are two --- separators but no configuration in between.";
 
+    private static final YAMLFactory yamlFactory = builder().enable(STRICT_DUPLICATE_DETECTION).build();
+    private static final ObjectMapper om = new ObjectMapper(yamlFactory);
+
+
+    /**
+      * Parses Membrane resources from a YAML input stream.
+      * @param resource the input stream to parse
+      * @param generator the K8s helper generator
+      * @param observer the bean cache observer
+      * @return the bean registry
+      */
     public static BeanRegistry parseMembraneResources(@NotNull InputStream resource, K8sHelperGenerator generator, BeanCacheObserver observer) throws IOException, InterruptedException {
         BeanCache registry = new BeanCache(observer, generator);
         registry.start();
 
-        final YAMLFactory yamlFactory = builder().enable(STRICT_DUPLICATE_DETECTION).build();
-
-        ObjectMapper om = new ObjectMapper(yamlFactory);
-        String content = new String(resource.readAllBytes(), UTF_8);
-        try (YAMLParser parser = yamlFactory.createParser(content)) {
+        try (resource; YAMLParser parser = yamlFactory.createParser(new String(resource.readAllBytes(), UTF_8))) {
             int count = 0;
 
             while (!parser.isClosed()) {
