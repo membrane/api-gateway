@@ -20,6 +20,7 @@ import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.kubernetes.BeanCache;
 import com.predic8.membrane.core.openapi.serviceproxy.*;
 import com.predic8.membrane.core.resolver.*;
+import com.predic8.membrane.core.util.ConfigurationException;
 import org.apache.commons.cli.*;
 import org.jetbrains.annotations.*;
 import org.slf4j.*;
@@ -184,17 +185,16 @@ public class RouterCLI {
         return spec;
     }
 
-    private static @Nullable String getLocation(MembraneCommandLine commandLine) throws IOException {
+    private static String getLocation(MembraneCommandLine commandLine) throws IOException {
         String location = commandLine.getCommand().getOptionValue("l");
 
-        if (location != null && !location.isEmpty() && !location.startsWith("http://") && !location.startsWith("https://")) {
-            File locFile = new File(location);
-            if (!locFile.isAbsolute()) {
-                locFile = new File(getUserDir(), location);
-            }
-            location = locFile.getCanonicalPath();
-        }
-        return location;
+        if (location == null || location.isEmpty()) throw new RuntimeException(); // unreachable
+        if (location.startsWith("http://") || location.startsWith("https://")) return location;
+
+        File locFile = new File(location);
+        if (locFile.isAbsolute()) return locFile.getCanonicalPath();
+
+        return new File(getUserDir(), location).getCanonicalPath();
     }
 
     private static Router initRouterByXml(String config) throws Exception {
