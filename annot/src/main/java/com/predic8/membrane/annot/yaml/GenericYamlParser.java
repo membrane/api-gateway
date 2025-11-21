@@ -25,6 +25,7 @@ import com.networknt.schema.SchemaRegistry;
 import com.networknt.schema.SpecificationVersion;
 import com.networknt.schema.resource.SchemaLoader;
 import com.predic8.membrane.annot.K8sHelperGenerator;
+import com.predic8.membrane.annot.MCChildElement;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -164,6 +165,10 @@ public class GenericYamlParser {
                 }
 
                 Method setter = getSetter(clazz, key);
+                if (setter.getAnnotation(MCChildElement.class) != null) {
+                    if (!List.class.isAssignableFrom(setter.getParameterTypes()[0]))
+                        setter = null;
+                }
                 Class clazz2 = null;
                 if (setter == null) {
                     try {
@@ -191,14 +196,14 @@ public class GenericYamlParser {
                 throw new RuntimeException("YAML parse error: " + cause.getMessage(), cause);
             }
             // This exception type prints a caret + snippet automatically
-            throw new PublicMarkedYAMLException(
-                    "while parsing " + clazz.getSimpleName(),
-                    lastContextMark,
-                    cause.getMessage(),
-                    problemMark,
-                    cause.getMessage()
-            );
-//            throw new RuntimeException(e);
+//            throw new PublicMarkedYAMLException(
+//                    "while parsing " + clazz.getSimpleName(),
+//                    lastContextMark,
+//                    cause.getMessage(),
+//                    problemMark,
+//                    cause.getMessage()
+//            );
+            throw new RuntimeException(cause);
         }
 
     }

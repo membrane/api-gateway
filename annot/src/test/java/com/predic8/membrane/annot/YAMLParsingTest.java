@@ -265,4 +265,105 @@ public class YAMLParsingTest {
                                         property("attr", value("here")))))))));
     }
 
+    @Test
+    public void nestedListOfChildsWithAttr2() {
+        var sources = splitSources(MC_MAIN_DEMO + """
+        package com.predic8.membrane.demo;
+        import com.predic8.membrane.annot.*;
+        import java.util.List;
+        @MCElement(name="outer")
+        public class OuterElement {
+            List<DemoElement> child;
+        
+            public List<DemoElement> getFlow() {
+                return child;
+            }
+        
+            @MCChildElement
+            public void setFlow(List<DemoElement> child) {
+                this.child = child;
+            }
+        }
+        ---
+        package com.predic8.membrane.demo;
+        import com.predic8.membrane.annot.*;
+        import java.util.List;
+        @MCElement(name="demo")
+        public class DemoElement {
+            Child1Element child;
+        
+            public Child1Element getChild() {
+                return child;
+            }
+        
+            @MCChildElement
+            public void setChild(Child1Element child) {
+                this.child = child;
+            }
+        }
+        ---
+        package com.predic8.membrane.demo;
+        import com.predic8.membrane.annot.*;
+        import java.util.List;
+        @MCElement(name="child")
+        public class Child1Element {
+            List<Child2Element> child;
+        
+            public List<Child2Element> getChild() {
+                return child;
+            }
+        
+            @MCChildElement
+            public void setChild(List<Child2Element> child) {
+                this.child = child;
+            }
+        
+            @MCElement(name="child2", mixed=true, topLevel=false)
+            public static class Child2Element {
+                public String attr;
+                public String content;
+        
+                public String getAttr() {
+                    return attr;
+                }
+        
+                @MCAttribute
+                public void setAttr(String attr) {
+                    this.attr = attr;
+                }
+                public String getContent() {
+                    return content;
+                }
+                @MCTextContent
+                public void setContent(String content) {
+                    this.content = content;
+                }
+            }
+
+        }
+        """);
+        var result = CompilerHelper.compile(sources, false);
+        assertCompilerResult(true, result);
+
+        assertStructure(
+                parseYAML(result, """
+                outer:
+                  flow:
+                  - demo:
+                      child:
+                        child:
+                        - child2:
+                            attr: here
+                            content: here2
+                """),
+                clazz("OuterElement",
+                        property("flow", list(
+                            clazz("DemoElement",
+                                    property("child", clazz("Child1Element",
+                                            property("child", list( clazz("Child2Element",
+                                                    property("attr", value("here")),
+                                                    property("content", value("here2"))
+                                            ))))))))));
+    }
+
 }
