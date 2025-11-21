@@ -1,4 +1,4 @@
-spec:
+api:
   port: 8080
   flow:
     - balancer:
@@ -24,7 +24,7 @@ spec:
 ---
 # Mock nodes for testing. Remove them in production.
 
-spec:
+api:
   port: 4000
   name: Node 1
   flow:
@@ -33,7 +33,7 @@ spec:
 
 ---
 
-spec:
+api:
   port: 4001
   name: Node 2
   flow:
@@ -42,7 +42,7 @@ spec:
 
 ---
 
-spec:
+api:
   port: 4002
   name: Node 3
   flow:
@@ -51,7 +51,7 @@ spec:
 
 ---
 
-spec:
+api:
   port: 9000
   name: Administration
   flow:

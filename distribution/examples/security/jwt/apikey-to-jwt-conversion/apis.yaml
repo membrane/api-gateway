@@ -1,5 +1,5 @@
 # If caller provides a valid API key it will receive a signed JWT.
-spec:
+api:
   port: 2000
   name: Token Server
   flow:
@@ -27,7 +27,7 @@ spec:
 
 ---
 
-spec:
+api:
   port: 2001
   name: Protected Resource
   flow:

@@ -1,4 +1,4 @@
-spec:
+api:
   name: predic8.com
   port: 2000
   flow:

@@ -168,7 +168,7 @@ public class GenericYamlParser {
                 }
 
                 Method setter = getSetter(clazz, key);
-                if (setter.getAnnotation(MCChildElement.class) != null) {
+                if (setter != null && setter.getAnnotation(MCChildElement.class) != null) {
                     if (!List.class.isAssignableFrom(setter.getParameterTypes()[0]))
                         setter = null;
                 }
