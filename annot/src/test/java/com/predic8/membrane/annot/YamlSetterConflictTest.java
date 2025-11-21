@@ -35,7 +35,6 @@ public class YamlSetterConflictTest {
         """);
         var result = CompilerHelper.compile(sources, false);
 
-        // assertCompilerResult(true, of(error("...")), result); TODO
         assertTrue(result.compilationSuccess());
     }
 
@@ -83,7 +82,6 @@ public class YamlSetterConflictTest {
         """);
         var result = CompilerHelper.compile(sources, false);
 
-        // assertCompilerResult(false, of(error("...")), result); TODO
         assertTrue(result.compilationSuccess());
     }
 
@@ -117,7 +115,6 @@ public class YamlSetterConflictTest {
         """);
         var result = CompilerHelper.compile(sources, false);
 
-        // assertCompilerResult(false, of(error("Duplicate childElement 'child': child")), result); TODO
         assertTrue(result.compilationSuccess());
     }
 
@@ -300,6 +297,35 @@ public class YamlSetterConflictTest {
         var result = CompilerHelper.compile(sources, false);
 
         assertCompilerResult(false, of(error("Duplicate childElement 'child': child")), result);
+    }
+
+    @Test
+    public void sameChildNameAsSetter() {
+        var sources = splitSources(MC_MAIN_DEMO + """
+        package com.predic8.membrane.demo;
+        import com.predic8.membrane.annot.*;
+        import java.util.List;
+
+        @MCElement(name="demo")
+        public class DemoElement {
+            @MCChildElement(order = 1)
+            public void setA(List<Child> c) {}
+
+            @MCChildElement(order = 2)
+            public void setB(Child c) {}
+
+        }
+        ---
+        package com.predic8.membrane.demo;
+        import com.predic8.membrane.annot.*;
+
+        @MCElement(name="a", topLevel = false, id = "child")
+        public class Child {
+        }
+        """);
+        var result = CompilerHelper.compile(sources, false);
+
+        assertCompilerResult(false, of(error("Name clash: 'a' used by childElement 'a' & childElement 'b'")), result);
     }
 
 }
