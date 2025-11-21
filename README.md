@@ -52,7 +52,7 @@ See: [YAML configuration](distribution/examples/yaml-configuration#YAML-Configur
 
 **Issue JSON Web Tokens for API Keys:**
 
-Simple implementation of a token server. A request is authenticated by API key and a JWT for the user is created, signed and returned. By changing the template you can decide whats included in the JWT. 
+Simple implementation of a token server. A request is authenticated by API key and a JWT for the user is created, signed and returned. By changing the template you can decide whats included in the JWT.
 
 ```xml
 <api port="2000">
