@@ -12,78 +12,71 @@ Lightweight **API Gateway** for **REST**, **GraphQL** and **legacy SOAP Web Serv
 Solve even complex custom API requirements with simple configurations.
 
 **Forwarding Requests from Port 2000 to a Backend:** 
-```yaml
-spec:
-  port: 2000
-  target:
-    url: https://api.predic8.de
+```xml
+<api port="2000">
+  <target url="https://api.predic8.de"/>
+</api>
 ```
 
 **Path Rewriting with an URI Template:**
-```yaml
-spec:
-  port: 2000
-  path:
-    uri: /fruit/{id}
-  target:
-    url: https://api.predic8.de/shop/v2/products/${pathParam.id}
+```xml
+<api port="2000">
+    <path>/fruit/{id}</path>
+    <target url="https://api.predic8.de/shop/v2/products/${pathParam.id}"/>
+</api>
 ```
 
-**Deploy OpenAPI and enable Request Validation:**
+**Deploy OpenAPI and enable Request Validation:** 
+```xml
+<api port="2000">
+    <openapi location="fruitshop-api.yml" validateRequests="yes"/>
+</api>
+```
+
+**YAML Configuration (beta):**
 ```yaml
+apiVersion: membrane-api.io/v1beta2
+kind: api
+metadata:
+  name: log
 spec:
   port: 2000
-  specs:
-    - openapi:
-        location: https://api.predic8.de/api-docs/fruit-shop-api-v2-2-0
-        validateRequests: true
+  interceptors:
+    - log:
+        message: Header ${header}
+  target:
+    url: https://api.predic8.de
 ```
 
 See: [YAML configuration](distribution/examples/yaml-configuration#YAML-Configuration)
 
 **Issue JSON Web Tokens for API Keys:**
 
-Simple implementation of a token server. For requests with the right username and password a JWT is created, signed and returned. With the template you can decide whats included in the JWT. 
+Simple implementation of a token server. A request is authenticated by API key and a JWT for the user is created, signed and returned. By changing the template you can decide whats included in the JWT. 
 
-```yaml
-spec:
-  port: 2000
-  flow:
-    - basicAuthentication:
-        fileUserDataProvider:
-          htpasswdPath: .htpasswd
-    - request:
-      - template:
-          src: |
-            {
-              "sub": "${fn.user()}",
-              "scope": "read"
-            }
-      - jwtSign:
-          jwk:
-            location: jwk.json
-      - return:
-          statusCode: 200
+```xml
+<api port="2000">
+   <apiKey required="true">
+       <apiKeyFileStore location="keys.txt" />
+   </apiKey>
+   <request>
+       <setProperty name="scopes" value="${scopes()}"/> 
+       <template>
+           {
+              "sub": "user@example.com",
+              "aud": "order",
+              "scope": "${property.scopes}"   <!-- Scopes defined in keys.txt -->
+           }
+       </template>
+       <jwtSign>
+           <jwk location="jwk.json"/> <!-- Sign with RS256 -->
+       </jwtSign>
+   </request>
+   <return /> <!-- return token-->
+</api>
 ```
 
-The API returns tokens like this:
-
-```json
-{
-  "typ": "JWT",
-  "alg": "RS256"
-}
-```
-.
-```json
-{
-  "sub": "alice",
-  "scope": "read",
-  "iat": 1763218414,
-  "exp": 1763218714,
-  "nbf": 1763218294
-}
-```
+These are just a few examples; see the descriptions below for more.
 
 ## API Gateway eBook
 
