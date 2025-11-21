@@ -78,19 +78,27 @@ public class JsonSchemaGenerator extends AbstractK8sGenerator {
         topLevelAdded.clear();
 
         addParserDefinitions(m, main);
-        addTopLevelProperties();
+        addTopLevelProperties(m, main);
 
         writeSchema(main, schema);
     }
 
-    private void addTopLevelProperties() {
-        schema.additionalProperties(false)
-                .property(string("apiVersion"))
-                .property(string("kind").enumeration(List.of("api")))
-                .property(ref("spec").ref("#/$defs/com_predic8_membrane_core_config_spring_ApiParser").required(true))
-                .property(object("metadata")
-                        .additionalProperties(true)
-                        .property(string("name")));
+    private void addTopLevelProperties(Model m, MainInfo main) {
+        schema.additionalProperties(false);
+        List<SchemaObject> kinds = new ArrayList<>();
+        main.getElements().values().forEach(e -> {
+            if (e.getAnnotation().topLevel())
+                schema.property(ref(e.getAnnotation().name())
+                      .ref("#/$defs/" + e.getXSDTypeName(m)));
+
+            kinds.add(object()
+                    .additionalProperties(false)
+                    .property(ref(e.getAnnotation().name())
+                            .ref("#/$defs/" + e.getXSDTypeName(m))
+                            .required(true)));
+        });
+
+        schema.oneOf(new ArrayList<>(kinds));
     }
 
     private void addParserDefinitions(Model m, MainInfo main) {
@@ -151,7 +159,7 @@ public class JsonSchemaGenerator extends AbstractK8sGenerator {
         return processingEnv.getFiler()
                 .createResource(
                         CLASS_OUTPUT,
-                        "com.predic8.membrane.core.config.json",
+                        main.getAnnotation().outputPackage().replaceAll("spring", "json"),
                         "membrane.schema.json",
                         sources.toArray(new Element[0])
                 );

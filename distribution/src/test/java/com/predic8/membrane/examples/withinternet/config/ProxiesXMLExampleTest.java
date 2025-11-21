@@ -19,6 +19,7 @@ import org.json.JSONException;
 import org.junit.jupiter.api.*;
 import org.skyscreamer.jsonassert.*;
 
+import java.io.IOException;
 import java.util.concurrent.atomic.*;
 
 import static com.predic8.membrane.core.http.MimeType.*;
@@ -33,17 +34,22 @@ public class ProxiesXMLExampleTest extends AbstractSampleMembraneStartStopTestca
         return "..";
     }
 
+    @BeforeEach
+    void startMembrane() throws IOException, InterruptedException {
+        process = new Process2.Builder().in(baseDir).script("membrane").parameters("-c conf/proxies.xml").waitForMembrane().start();
+    }
+
     @SuppressWarnings("JsonSchemaCompliance")
     @Test
     void api_doc() throws JSONException {
         JSONAssert.assertEquals("""
                 {
-                  "fruitshop-v1-1" : {
-                    "openapi" : "3.0.2",
+                  "fruit-shop-api-v2-2-0" : {
+                    "openapi" : "3.0.3",
                     "title" : "Fruit Shop API",
-                    "version" : "1.1",
-                    "openapi_link" : "/api-docs/fruitshop-v1-1",
-                    "ui_link" : "/api-docs/ui/fruitshop-v1-1"
+                    "version" : "2.2.0",
+                    "openapi_link" : "/api-docs/fruit-shop-api-v2-2-0",
+                    "ui_link" : "/api-docs/ui/fruit-shop-api-v2-2-0"
                   }
                 }
                 """, get(LOCALHOST_2000 + "/api-docs").asString(), true);
@@ -52,7 +58,7 @@ public class ProxiesXMLExampleTest extends AbstractSampleMembraneStartStopTestca
     @Test
     void rewrittenOpenAPIFromUI() {
         given()
-                .get("http://localhost:2000/api-docs/fruitshop-v1-1")
+                .get("http://localhost:2000/api-docs/fruit-shop-api-v2-2-0")
         .then()
                 .body(containsString("http://localhost:2000/shop/v2"));
     }
