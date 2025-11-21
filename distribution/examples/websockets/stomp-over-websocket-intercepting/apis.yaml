@@ -1,0 +1,40 @@
+spec:
+  port: 9998
+  flow:
+    # Membrane does not support WebSocket Extensions for now, so we remove the header
+    - groovy:
+        src: |
+          if(exc.getRequest() != null)
+          exc.getRequest().getHeader().removeFields("Sec-WebSocket-Extensions");
+          if(exc.getResponse() != null)
+          exc.getResponse().getHeader().removeFields("Sec-WebSocket-Extensions");
+    # WebSocket intercepting starts here
+    - webSocket:
+        url: http://localhost:61614/
+        flow:
+          # the wsStompReassembler take a STOMP over WebSocket frame and constructs an exchange from it
+          - wsStompReassembler:
+              flow:
+                # modify the exchange to have a "[MEMBRANE]:" prefix
+                - groovy:
+                    src: |
+                      def method = exc.getRequest().getMethod();
+                      def header = exc.getRequest().getHeader();
+                      def body = exc.getRequest().getBodyAsStringDecoded();
+                      if(exc.getRequest().getMethod() == "SEND")
+                      body = "[MEMBRANE]: " + exc.getRequest().getBodyAsStringDecoded();
+                      exc.setRequest(new Request.Builder().method(method).header(header).body(body).build());
+          # logs the content of a WebSocket frame to the console
+          - wsLog: {}
+  target:
+    host: localhost
+    port: 9999
+
+---
+
+spec:
+  port: 9999
+  flow:
+    - webServer:
+        docBase: .
+        index: index.html

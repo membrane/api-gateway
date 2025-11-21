@@ -1,0 +1,7 @@
+spec:
+  port: 2000
+  target:
+    host: api.predic8.de
+    port: 443
+    ssl:
+      showSSLExceptions: true

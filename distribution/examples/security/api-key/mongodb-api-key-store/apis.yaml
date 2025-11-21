@@ -1,0 +1,11 @@
+spec:
+  port: 2000
+  flow:
+    - apiKey:
+        stores:
+          - mongoDBApiKeyStore:
+              connection: mongodb://localhost:27017/
+              database: apiKeyDB
+              collection: apikey
+  target:
+    url: https://api.predic8.de

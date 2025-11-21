@@ -1,0 +1,24 @@
+# Endpoint can accept request from old and new clients
+spec:
+  port: 2000
+  flow:
+    - request:
+        # If it is a request with the old namespace convert it to the new
+        - if:
+            test: //*[namespace-uri() = 'https://predic8.de/old']
+            language: xpath
+            flow:
+              - transform:
+                  xslt: convert-request-to-new-version.xslt
+              # Mark as converted
+              - setProperty:
+                  name: converted
+                  value: true
+    - response:
+        #  When it was converted transform response body back to old
+        - if:
+            test: properties['converted'] == 'true'
+        - transform:
+            xslt: convert-response-to-old-version.xslt
+    # SOAP service implementation for new version
+    - sampleSoapService: {}

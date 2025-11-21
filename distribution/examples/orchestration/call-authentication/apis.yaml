@@ -1,0 +1,47 @@
+# API on port 2000: fetch login cookie then proxy to backend
+spec:
+  port: 2000
+  flow:
+    - request:
+        # Call auth service to obtain SESSION cookie
+        - call:
+            url: http://localhost:3000/login
+        # Inject received Set-Cookie header as Cookie
+        - setHeader:
+            name: Cookie
+            value: ${header['set-cookie']}
+  # Forward request (with cookie) to protected backend
+  target:
+    url: http://localhost:3001
+
+---
+# Simulated authentication service on port 3000
+spec:
+  port: 3000
+  path:
+    uri: /login
+  flow:
+    - response:
+        # Return a static SESSION cookie
+        - setHeader:
+            name: Set-Cookie
+            value: SESSION=akj34
+    - return: {}
+
+---
+# Protected backend on port 3001
+spec:
+  port: 3001
+  flow:
+    # If correct SESSION cookie present, succeed
+    - if:
+        test: cookie.SESSION == 'akj34'
+        flow:
+          - static:
+              src: Success!
+          - return: {}
+    # Otherwise, ask to log in with 401 status
+    - static:
+        src: Please log in!
+    - return:
+        statusCode: 401

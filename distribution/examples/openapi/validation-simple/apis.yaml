@@ -1,0 +1,25 @@
+# Configures Membrane as an API Gateway for the specified OpenAPI specifications
+api:
+  port: 2000
+  specs:
+    - openapi:
+        location: contacts-api-v1.yml
+        validateRequests: yes
+
+---
+# This proxy provides a mock backend implementation for the API.
+# Instead of the mock you can use the backend for your API.
+api:
+  port: 3000
+  path:
+    uri: /persons
+  flow:
+    - response:
+        - template:
+            pretty: true
+            contentType: application/json
+            src: '{ "success": true }'
+    - return:
+        statusCode: 201
+
+# See examples/openapi-validator for a more detailed example

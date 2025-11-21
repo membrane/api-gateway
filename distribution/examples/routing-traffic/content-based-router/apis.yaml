@@ -1,0 +1,54 @@
+api:
+  name: Router
+  port: 2000
+  flow:
+    - request:
+        # Attention: The last matching if will win!
+        - if:
+            test: //order
+            language: xpath
+            flow:
+              - destination:
+                  url: internal://order
+        - if:
+            test: //order[@express='yes']
+            language: xpath
+            flow:
+              - destination:
+                  url: internal://express
+        - if:
+            test: //order/items/item[@id='7']
+            language: xpath
+            flow:
+              - destination:
+                  url: internal://import-items
+
+---
+# Instead of returning a response you can forward to a remote target
+api:
+  name: import-items
+  port: 3000
+  flow:
+    - static:
+        src: Order contains import items.
+    - return: {}
+
+---
+
+kind: internal
+api:
+  name: order
+  flow:
+    - static:
+        src: Normal order received.
+    - return: {}
+
+---
+
+kind: internal
+api:
+  name: express
+  flow:
+    - static:
+        src: Express order received.
+    - return: {}

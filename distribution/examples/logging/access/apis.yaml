@@ -1,0 +1,13 @@
+api:
+  port: 2000
+  flow:
+    - accessLog:
+        additionalPatternList:
+          - additionalVariable:
+              name: res.contentType
+              expression: response?.headers.contentType
+          - additionalVariable:
+              name: forwarded
+              expression: headers['x-forwarded-for']
+  target:
+    ssl: {}

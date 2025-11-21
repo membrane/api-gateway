@@ -1,0 +1,33 @@
+spec:
+  name: Token Validator
+  port: 2000
+  flow:
+    # Validates tokens against authorization server - blocks request on invalid tokens
+    - tokenValidator:
+        endpoint: http://localhost:7007/oauth2/userinfo
+  # Forwards the request if the token is valid
+  target:
+    host: localhost
+    port: 3000
+
+---
+# Simulates the backend that should be protected
+spec:
+  port: 3000
+  flow:
+    - response:
+        - template:
+            contentType: application/json
+            pretty: yes
+            src: |
+              {
+                "success": true
+              }
+    - return: {}
+
+---
+
+spec:
+  port: 9001
+  flow:
+    - adminConsole: {}

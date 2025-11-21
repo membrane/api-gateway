@@ -10,7 +10,7 @@
 #     Check the response header 'X-Powered-By' and 'X-Method'.
 #
 
-spec:
+api:
   port: 2000
   flow:
     - response:

@@ -168,7 +168,7 @@ public class GenericYamlParser {
                 }
 
                 Method setter = getSetter(clazz, key);
-                if (setter.getAnnotation(MCChildElement.class) != null) {
+                if (setter != null && setter.getAnnotation(MCChildElement.class) != null) {
                     if (!List.class.isAssignableFrom(setter.getParameterTypes()[0]))
                         setter = null;
                 }
@@ -199,14 +199,13 @@ public class GenericYamlParser {
                 throw new RuntimeException("YAML parse error: " + cause.getMessage(), cause);
             }
             // This exception type prints a caret + snippet automatically
-//            throw new PublicMarkedYAMLException(
-//                    "while parsing " + clazz.getSimpleName(),
-//                    lastContextMark,
-//                    cause.getMessage(),
-//                    problemMark,
-//                    cause.getMessage()
-//            );
-            throw new RuntimeException(cause);
+            throw new PublicMarkedYAMLException(
+                    "while parsing " + clazz.getSimpleName(),
+                    lastContextMark,
+                    cause.getMessage(),
+                    problemMark,
+                    cause.getMessage()
+            );
         }
 
     }

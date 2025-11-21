@@ -1,0 +1,35 @@
+api:
+  port: 2000
+  method: GET
+  path:
+    uri: /cities/{city}
+  flow:
+    - request:
+        - soapBody:
+            version: '1.1'
+            src: |
+              <getCity xmlns="https://predic8.de/cities">
+                  <name>${pathParam.city}</name>
+              </getCity>
+        - setHeader:
+            name: SOAPAction
+            value: https://predic8.de/cities/get
+    - response:
+        - template:
+            contentType: application/json
+            src: |
+              {
+              	"country": "${property.country}",
+              	"population": ${property.population}
+              }
+        - setProperty:
+            name: country
+            value: ${//country}
+            language: xpath
+        - setProperty:
+            name: population
+            value: ${//population}
+            language: xpath
+  target:
+    method: POST
+    url: https://www.predic8.de/city-service

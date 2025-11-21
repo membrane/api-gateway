@@ -1,0 +1,41 @@
+spec:
+  name: Membrane Resource service
+  port: 2000
+  flow:
+    - log: {}
+    # Protects a resource with OAuth2 - blocks on invalid login
+    - oauth2Resource2:
+        membrane:
+          src: https://accounts.google.com
+          clientId: YOUR CLIENT ID HERE
+          clientSecret: OUR CLIENT SECRET HERE
+          scope: openid email profile
+          claims: name
+          claimsIdt: email
+    # Use the information from the authentication server and pass it to the resource server (optional)
+    - groovy:
+        src: |
+          def oauth2 = exc.properties.'membrane.oauth2'
+          <!-- Put the eMail into the header X-EMAIL and pass it to the protected server. -->
+          exc.request.getHeader().setValue('X-EMAIL',oauth2.userinfo.email)
+          CONTINUE
+  target:
+    host: localhost
+    port: 3000
+
+---
+
+spec:
+  port: 3000
+  flow:
+    - groovy:
+        src: |
+          exc.setResponse(Response.ok("You accessed the protected resource! Hello " + exc.request.header.getFirstValue("X-EMAIL")).build())
+          RETURN
+
+---
+
+spec:
+  port: 9001
+  flow:
+    - adminConsole: {}

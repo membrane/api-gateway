@@ -1,0 +1,64 @@
+# Configures Membrane as an API Gateway for the given OpenAPI specification
+api:
+  port: 2000
+  specs:
+    - openapi:
+        location: contacts-xxl-api-v1.yml
+        validateRequests: yes
+        validateResponses: no
+        validationDetails: yes
+
+---
+# These proxies provides mock backend implementations for the API in this demo.
+# Instead of mocks use the backends for your API.
+api:
+  port: 3000
+  path:
+    isRegExp: true
+    uri: /demo-api/v2/persons/.*
+  flow:
+    - response:
+        - template:
+            pretty: true
+            contentType: application/json
+            src: |
+              {
+                  "id": "12358",
+                  "name": "Bo",
+                  "email": "foo@baz.org"
+              }
+    - return:
+        statusCode: 201
+
+---
+
+api:
+  port: 3000
+  method: GET
+  path:
+    uri: /demo-api/v2/persons
+  flow:
+    - response:
+        - template:
+            pretty: true
+            contentType: application/json
+            src: |
+              { "persons": [
+                  {
+                      "id": "12358",
+                      "name": "Bo",
+                      "email": "foo@baz.org"
+                  }
+              ] }
+    - return:
+        statusCode: 200
+
+---
+# Monitoring endpoint for prometheus
+api:
+  name: Prometheus Monitoring
+  port: 8888
+  path:
+    uri: /metrics
+  flow:
+    - prometheus: {}

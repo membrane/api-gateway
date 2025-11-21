@@ -1,0 +1,32 @@
+spec:
+  port: 8443
+  ssl:
+    showSSLExceptions: true
+    # Please replace keystore for production!
+    keystore:
+      location: ../../../../conf/membrane.p12
+      password: secret
+      keyPassword: secret
+    truststore:
+      location: ../../../../conf/membrane.p12
+      password: secret
+  # Route here to your target
+  target:
+    host: localhost
+    port: 2000
+
+---
+# Serves as a backend APi mock
+spec:
+  port: 2000
+  flow:
+    - response:
+        - template:
+            pretty: true
+            contentType: application/json
+            src: |
+              {
+                "success": true 
+              }
+    - return:
+        statusCode: 200

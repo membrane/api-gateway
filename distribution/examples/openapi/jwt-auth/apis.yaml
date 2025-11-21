@@ -1,0 +1,33 @@
+api:
+  name: Token Server
+  port: 2000
+  flow:
+    - request:
+        - template:
+            src: |
+              {
+                "sub": "user@example.com",
+                "aud": "shop",
+                "scp": "inventory"
+              }
+        - jwtSign:
+            jwk:
+              location: jwk.json
+
+---
+
+api:
+  name: Protected API
+  port: 2001
+  specs:
+    - openapi:
+        location: secure-shop-api.yml
+        validateSecurity: true
+  flow:
+    - jwtAuth:
+        expectedAud: shop
+        jwks:
+          jwks:
+            - jwk:
+                location: jwk.json
+    - openapiValidator: {}

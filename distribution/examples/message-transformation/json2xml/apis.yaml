@@ -1,0 +1,16 @@
+api:
+  port: 2000
+  flow:
+    - request:
+        - json2Xml: {}
+  target:
+    url: http://localhost:3000
+
+---
+
+api:
+  name: echo
+  port: 3000
+  flow:
+    - log: {}
+    - return: {}

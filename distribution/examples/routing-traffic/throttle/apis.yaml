@@ -1,0 +1,16 @@
+api:
+  port: 2000
+  flow:
+    - throttle:
+        delay: 1000
+  target:
+    host: api.predic8.de
+    port: 443
+
+---
+
+api:
+  port: 3000
+  target:
+    host: api.predic8.de
+    port: 443
