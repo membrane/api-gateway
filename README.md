@@ -48,7 +48,7 @@ spec:
     url: https://api.predic8.de
 ```
 
-See: [YAML configuration](distribution/examples/yaml-configuration#YAML-Configuration)
+See: [YAML configuration](distribution/examples/yaml-configuration#yaml-configuration)
 
 **Issue JSON Web Tokens for API Keys:**
 
