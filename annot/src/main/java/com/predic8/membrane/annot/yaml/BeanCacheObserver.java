@@ -16,10 +16,38 @@ package com.predic8.membrane.annot.yaml;
 
 import java.io.IOException;
 
+/**
+ * Observer for {@link BeanCache} events.
+ * <p>
+ * Implementations are notified when the cache has finished its asynchronous
+ * initial load and whenever a bean is added, modified, or deleted.
+ */
 public interface BeanCacheObserver {
+    /**
+     * Called when the cache finished its asynchronous initial load.
+     *
+     * @param empty {@code true} if no activatable beans are present afterwards,
+     *              {@code false} otherwise
+     */
     void handleAsynchronousInitializationResult(boolean empty);
 
+    /**
+     * Called for an add/modify/delete event of a bean.
+     *
+     * @param bd      the bean definition
+     * @param bean    the current instance (on ADD/MODIFY) or {@code null} (on DELETE)
+     * @param oldBean the previous instance (on MODIFY) or {@code null}
+     * @param action  the change type
+     * @throws IOException if handling the event performs I/O and it fails
+     */
     void handleBeanEvent(BeanDefinition bd, Object bean, Object oldBean, WatchAction action) throws IOException;
 
+    /**
+     * Whether beans of the given definition should be considered activatable/usable
+     * by the runtime.
+     *
+     * @param bd the bean definition
+     * @return {@code true} if activatable, {@code false} otherwise
+     */
     boolean isActivatable(BeanDefinition bd);
 }
