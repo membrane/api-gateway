@@ -15,6 +15,7 @@
 package com.predic8.membrane.annot.util;
 
 import com.predic8.membrane.annot.yaml.BeanRegistry;
+import org.junit.jupiter.api.Assertions;
 
 import java.lang.reflect.Method;
 import java.util.List;
@@ -38,51 +39,35 @@ public class StructureAssertionUtil {
     }
 
     public static Asserter clazz(String clazzName, Property... properties) {
-        return new Asserter() {
-            @Override
-            public void assertStructure(Object bean) {
-                assertTrue(bean.getClass().getSimpleName().equals(clazzName));
-                for (Property p : properties) {
-                    p.assertStructure(bean);
-                }
+        return bean -> {
+            assertEquals(bean.getClass().getSimpleName(), clazzName);
+            for (Property p : properties) {
+                p.assertStructure(bean);
             }
         };
     }
 
     public static Asserter value(Object value) {
-        return new Asserter() {
-            @Override
-            public void assertStructure(Object bean) {
-                assertEquals(value, bean);
-            }
-        };
+        return bean -> Assertions.assertEquals(value, bean);
     }
 
     public static Asserter list(Asserter... asserters) {
-        return new Asserter() {
-            @Override
-            public void assertStructure(Object bean) {
-                assertInstanceOf(List.class, bean);
-                List<?> list = (List<?>) bean;
-                assertEquals(list.size(), asserters.length);
-                for (int i = 0; i < asserters.length; i++) {
-                    asserters[i].assertStructure(list.get(i));
-                }
+        return bean -> {
+            assertInstanceOf(List.class, bean);
+            List<?> list = (List<?>) bean;
+            assertEquals(list.size(), asserters.length);
+            for (int i = 0; i < asserters.length; i++) {
+                asserters[i].assertStructure(list.get(i));
             }
         };
     }
 
     public static Property property(String name, Asserter asserter) {
-        return new Property() {
-            @Override
-            public void assertStructure(Object bean) {
-                try {
-                    Method getter = bean.getClass().getMethod("get" + Character.toUpperCase(name.charAt(0)) + name.substring(1));
-                    Object propertyValue = getter.invoke(bean);
-                    asserter.assertStructure(propertyValue);
-                } catch (NoSuchMethodException | IllegalAccessException | java.lang.reflect.InvocationTargetException e) {
-                    throw new RuntimeException(e);
-                }
+        return bean -> {
+            try {
+                asserter.assertStructure(bean.getClass().getMethod("get" + Character.toUpperCase(name.charAt(0)) + name.substring(1)).invoke(bean));
+            } catch (NoSuchMethodException | IllegalAccessException | java.lang.reflect.InvocationTargetException e) {
+                throw new RuntimeException(e);
             }
         };
     }

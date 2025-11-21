@@ -131,17 +131,17 @@ public class BeanCache implements BeanRegistry {
         for (String uid : uidsToActivate) {
             BeanDefinition bd = bds.get(uid);
             try {
-                Object o = define(bd);
-                bd.setBean(o);
+                Object bean = define(bd);
+                bd.setBean(bean);
 
                 Object oldBean = null;
                 if (bd.getAction() == WatchAction.MODIFIED || bd.getAction() == WatchAction.DELETED)
                     oldBean = uuidMap.get(bd.getUid());
 
-                router.handleBeanEvent(bd, o, oldBean, bd.getAction());
+                router.handleBeanEvent(bd, bean, oldBean, bd.getAction());
 
                 if (bd.getAction() == WatchAction.ADDED || bd.getAction() == WatchAction.MODIFIED)
-                    uuidMap.put(bd.getUid(), o);
+                    uuidMap.put(bd.getUid(), bean);
                 if (bd.getAction() == WatchAction.DELETED)
                     uuidMap.remove(bd.getUid());
                 uidsToRemove.add(bd.getUid());
