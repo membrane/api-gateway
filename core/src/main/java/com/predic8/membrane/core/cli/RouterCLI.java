@@ -165,7 +165,7 @@ public class RouterCLI {
         return router;
     }
 
-    private static @NotNull APIProxy getApiProxy(MembraneCommandLine commandLine) {
+    private static @NotNull APIProxy getApiProxy(MembraneCommandLine commandLine) throws IOException {
         APIProxy api = new APIProxy();
         api.setPort(commandLine.getCommand().isOptionSet("p") ?
                 parseInt(commandLine.getCommand().getOptionValue("p")) : 2000);
@@ -173,14 +173,28 @@ public class RouterCLI {
         return api;
     }
 
-    private static @NotNull OpenAPISpec getOpenAPISpec(MembraneCommandLine commandLine) {
+    private static @NotNull OpenAPISpec getOpenAPISpec(MembraneCommandLine commandLine) throws IOException {
         OpenAPISpec spec = new OpenAPISpec();
-        spec.location = commandLine.getCommand().getOptionValue("l");
+        spec.location = getLocation(commandLine);
+
         if (commandLine.getCommand().isOptionSet("v"))
             spec.setValidateRequests(YES);
         if (commandLine.getCommand().isOptionSet("V"))
             spec.setValidateResponses(YES);
         return spec;
+    }
+
+    private static @Nullable String getLocation(MembraneCommandLine commandLine) throws IOException {
+        String location = commandLine.getCommand().getOptionValue("l");
+
+        if (location != null && !location.isEmpty() && !location.startsWith("http://") && !location.startsWith("https://")) {
+            File locFile = new File(location);
+            if (!locFile.isAbsolute()) {
+                locFile = new File(getUserDir(), location);
+            }
+            location = locFile.getCanonicalPath();
+        }
+        return location;
     }
 
     private static Router initRouterByXml(String config) throws Exception {
