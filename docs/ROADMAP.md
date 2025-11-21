@@ -15,6 +15,8 @@
 
 # 7.0.0
 
+- Register JSON Schema for YAML at: https://www.schemastore.org/
+
 ## (Breaking) Interface Changes
 
 - Remove WADLInterceptor
