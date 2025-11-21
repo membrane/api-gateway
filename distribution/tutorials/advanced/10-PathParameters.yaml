@@ -12,7 +12,7 @@
 #
 #     Observe the console output.
 
-spec:
+api:
   port: 2000
   path:
     uri: /customer/{id}/account/{accountNumber}

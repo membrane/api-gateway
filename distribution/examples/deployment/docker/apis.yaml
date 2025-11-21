@@ -1,4 +1,4 @@
-spec:
+api:
   port: 2000
   specs:
     - openapi:
@@ -6,7 +6,7 @@ spec:
 
 ---
 
-spec:
+api:
   port: 2000
   target:
     url: "https://api.predic8.de"

@@ -17,7 +17,7 @@
 #    request and once during the response flow. A valid status code appears
 #    only in the second log message after the backend has responded.
 
-spec:
+api:
   port: 2000
   flow:
     # executed during the request and response flow

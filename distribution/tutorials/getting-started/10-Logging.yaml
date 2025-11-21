@@ -22,7 +22,7 @@
 # See also:
 #  - example/logging folder for additional logging configurations and access logs
 
-spec:
+api:
   port: 2000
   flow:
     - log: {} # Logs method, path, status code, headers and body from request and response

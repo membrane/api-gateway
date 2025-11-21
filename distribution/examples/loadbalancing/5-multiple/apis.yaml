@@ -1,4 +1,4 @@
-spec:
+api:
   port: 8080
   name: Balancer 1
   path:
@@ -20,7 +20,7 @@ spec:
 
 ---
 
-spec:
+api:
   port: 8081
   name: Balancer 2
   path:

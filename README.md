@@ -13,7 +13,7 @@ Solve even complex custom API requirements with simple configurations.
 
 **Forwarding Requests from Port 2000 to a Backend:** 
 ```yaml
-spec:
+api:
   port: 2000
   target:
     url: https://api.predic8.de
@@ -21,7 +21,7 @@ spec:
 
 **Path Rewriting with an URI Template:**
 ```yaml
-spec:
+api:
   port: 2000
   path:
     uri: /fruit/{id}
@@ -31,7 +31,7 @@ spec:
 
 **Deploy OpenAPI and enable Request Validation:**
 ```yaml
-spec:
+api:
   port: 2000
   specs:
     - openapi:
@@ -46,7 +46,7 @@ See: [YAML configuration](distribution/examples/yaml-configuration#YAML-Configur
 Simple implementation of a token server. For requests with the right username and password a JWT is created, signed and returned. With the template you can decide whats included in the JWT. 
 
 ```yaml
-spec:
+api:
   port: 2000
   flow:
     - basicAuthentication:
