@@ -1,5 +1,5 @@
 # Configures Membrane as an API Gateway for the given OpenAPI specification
-spec:
+api:
   port: 2000
   specs:
     - openapi:
@@ -11,7 +11,7 @@ spec:
 ---
 # These proxies provides mock backend implementations for the API in this demo.
 # Instead of mocks use the backends for your API.
-spec:
+api:
   port: 3000
   path:
     isRegExp: true
@@ -32,7 +32,7 @@ spec:
 
 ---
 
-spec:
+api:
   port: 3000
   method: GET
   path:
@@ -55,7 +55,7 @@ spec:
 
 ---
 # Monitoring endpoint for prometheus
-spec:
+api:
   name: Prometheus Monitoring
   port: 8888
   path:

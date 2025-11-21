@@ -1,4 +1,4 @@
-spec:
+api:
   port: 2000
   flow:
     - request:
@@ -8,7 +8,7 @@ spec:
 
 ---
 
-spec:
+api:
   name: echo
   port: 3000
   flow:

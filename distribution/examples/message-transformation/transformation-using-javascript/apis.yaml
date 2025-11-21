@@ -1,5 +1,5 @@
 # Transformation of a JSON document to one in a different format
-spec:
+api:
   port: 2000
   path:
     uri: /flight
@@ -17,7 +17,7 @@ spec:
 # Transformation of a GET request with query parameters into a post with a JSON body.
 #
 # curl "localhost:2000/search?limit=10&page=2" -v
-spec:
+api:
   port: 2000
   path:
     uri: /search
@@ -38,7 +38,7 @@ spec:
 
 ---
 # Complex transformation with functions and computations
-spec:
+api:
   port: 2000
   path:
     uri: /orders
@@ -68,7 +68,7 @@ spec:
 
 ---
 # Log and return the request as response
-spec:
+api:
   name: echo
   port: 3000
   flow:

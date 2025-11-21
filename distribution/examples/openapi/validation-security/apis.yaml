@@ -1,4 +1,4 @@
-spec:
+api:
   port: 2000
   specs:
     - openapi:
@@ -22,7 +22,7 @@ spec:
 
 ---
 
-spec:
+api:
   port: 2000
   flow:
     - template:

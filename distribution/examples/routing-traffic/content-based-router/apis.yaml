@@ -1,4 +1,4 @@
-spec:
+api:
   name: Router
   port: 2000
   flow:
@@ -25,7 +25,7 @@ spec:
 
 ---
 # Instead of returning a response you can forward to a remote target
-spec:
+api:
   name: import-items
   port: 3000
   flow:
@@ -36,7 +36,7 @@ spec:
 ---
 
 kind: internal
-spec:
+api:
   name: order
   flow:
     - static:
@@ -46,7 +46,7 @@ spec:
 ---
 
 kind: internal
-spec:
+api:
   name: express
   flow:
     - static:

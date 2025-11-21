@@ -1,4 +1,4 @@
-spec:
+api:
   name: Router
   port: 2000
   path:

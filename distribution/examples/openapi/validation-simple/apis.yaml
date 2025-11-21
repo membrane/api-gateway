@@ -1,5 +1,5 @@
 # Configures Membrane as an API Gateway for the specified OpenAPI specifications
-spec:
+api:
   port: 2000
   specs:
     - openapi:
@@ -9,7 +9,7 @@ spec:
 ---
 # This proxy provides a mock backend implementation for the API.
 # Instead of the mock you can use the backend for your API.
-spec:
+api:
   port: 3000
   path:
     uri: /persons

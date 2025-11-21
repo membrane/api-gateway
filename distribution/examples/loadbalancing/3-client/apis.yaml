@@ -42,7 +42,7 @@ api:
 
 ---
 
-spec:
+api:
   port: 9000
   name: Administration
   flow:
