@@ -11,19 +11,17 @@
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
    See the License for the specific language governing permissions and
    limitations under the License. */
-package com.predic8.membrane.core.kubernetes;
+package com.predic8.membrane.annot.yaml;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
-import com.predic8.membrane.annot.yaml.BeanRegistry;
-import com.predic8.membrane.core.Router;
-import com.predic8.membrane.core.config.spring.k8s.Envelope;
-import com.predic8.membrane.core.config.spring.k8s.YamlLoader;
-import com.predic8.membrane.core.kubernetes.client.WatchAction;
-import com.predic8.membrane.core.proxies.Proxy;
-import com.predic8.membrane.core.util.*;
+import com.predic8.membrane.annot.K8sHelperGenerator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.yaml.snakeyaml.Yaml;
+import org.yaml.snakeyaml.events.DocumentStartEvent;
+import org.yaml.snakeyaml.events.Event;
+import org.yaml.snakeyaml.events.StreamStartEvent;
 
 import java.io.IOException;
 import java.io.StringReader;
@@ -31,12 +29,12 @@ import java.util.*;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 
-import static com.predic8.membrane.core.exceptions.SpringConfigurationErrorHandler.handleRootCause;
-import static com.predic8.membrane.core.util.YamlUtil.removeFirstYamlDocStartMarker;
+import static com.predic8.membrane.annot.yaml.YamlUtil.removeFirstYamlDocStartMarker;
 
 public class BeanCache implements BeanRegistry {
     private static final Logger log = LoggerFactory.getLogger(BeanCache.class);
-    private final Router router;
+    private final BeanCacheObserver router;
+    private final K8sHelperGenerator k8sHelperGenerator;
     private final ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
     private final ConcurrentHashMap<String, Object> uuidMap = new ConcurrentHashMap<>();
     private final ArrayBlockingQueue<ChangeEvent> changeEvents = new ArrayBlockingQueue<>(1000);
@@ -50,8 +48,9 @@ public class BeanCache implements BeanRegistry {
     private final Map<String, BeanDefinition> bds = new ConcurrentHashMap<>();
     private final Set<String> uidsToActivate = ConcurrentHashMap.newKeySet();
 
-    public BeanCache(Router router) {
+    public BeanCache(BeanCacheObserver router, K8sHelperGenerator k8sHelperGenerator) {
         this.router = router;
+        this.k8sHelperGenerator = k8sHelperGenerator;
     }
 
     public void start() {
@@ -81,11 +80,14 @@ public class BeanCache implements BeanRegistry {
             thread.interrupt();
     }
 
-    public Envelope define(Map<String,Object> map) throws IOException {
-        String s = removeFirstYamlDocStartMarker( mapper.writeValueAsString(map)); // TODO Why do we first parse than serialize than parse again?
-        if (log.isDebugEnabled())
-            log.debug("defining bean: {}", s);
-        return new YamlLoader().load(new StringReader(s), this);
+    public Object define(BeanDefinition bd) throws IOException {
+        String yaml = removeFirstYamlDocStartMarker(mapper.writeValueAsString(bd.getMap())); // TODO Why do we first parse than serialize than parse again?
+        log.debug("defining bean: {}", yaml);
+
+        return GenericYamlParser.readMembraneObject(bd.getKind(),
+                k8sHelperGenerator,
+                yaml,
+                this);
     }
 
     /**
@@ -93,6 +95,13 @@ public class BeanCache implements BeanRegistry {
      */
     public void handle(WatchAction action, Map<String,Object> m) {
         changeEvents.add(new BeanDefinitionChanged(new BeanDefinition(action, m)));
+    }
+
+    /**
+     * May be called from multiple threads.
+     */
+    public void handle(WatchAction action, BeanDefinition bd) {
+        changeEvents.add(new BeanDefinitionChanged(bd));
     }
 
     /**
@@ -110,7 +119,7 @@ public class BeanCache implements BeanRegistry {
         else
             bds.put(bd.getUid(), bd);
 
-        if (bd.isRule())
+        if (router.isActivatable(bd))
             uidsToActivate.add(bd.getUid());
 
         if (changeEvents.isEmpty())
@@ -122,41 +131,20 @@ public class BeanCache implements BeanRegistry {
         for (String uid : uidsToActivate) {
             BeanDefinition bd = bds.get(uid);
             try {
-                Envelope envelope = define(bd.getMap());
-                bd.setEnvelope(envelope);
-                Proxy newProxy = (Proxy) envelope.getSpec();
-                try {
-                    if (newProxy.getName() == null)
-                        newProxy.setName(bd.getName());
-                    newProxy.init(router);
-                }
-                catch (ConfigurationException e) {
-                    handleRootCause(e, log);
-                    System.exit(1);
-                }
-                catch (Exception e) {
-                    throw new RuntimeException("Could not init rule.", e);
-                }
+                Object bean = define(bd);
+                bd.setBean(bean);
 
-                Proxy oldProxy = null;
+                Object oldBean = null;
                 if (bd.getAction() == WatchAction.MODIFIED || bd.getAction() == WatchAction.DELETED)
-                    oldProxy = (Proxy) uuidMap.get(bd.getUid());
+                    oldBean = uuidMap.get(bd.getUid());
 
-                if (bd.getAction() == WatchAction.ADDED)
-                    router.add(newProxy);
-                else if (bd.getAction() == WatchAction.DELETED)
-                    router.getRuleManager().removeRule(oldProxy);
-                else if (bd.getAction() == WatchAction.MODIFIED)
-                    router.getRuleManager().replaceRule(oldProxy, newProxy);
+                router.handleBeanEvent(bd, bean, oldBean);
 
                 if (bd.getAction() == WatchAction.ADDED || bd.getAction() == WatchAction.MODIFIED)
-                    uuidMap.put(bd.getUid(), newProxy);
+                    uuidMap.put(bd.getUid(), bean);
                 if (bd.getAction() == WatchAction.DELETED)
                     uuidMap.remove(bd.getUid());
                 uidsToRemove.add(bd.getUid());
-            }
-            catch (ConfigurationException e) {
-                throw e;
             }
             catch (Throwable e) {
                 log.error("Could not handle {} {}/{}",bd.getAction(),bd.getNamespace(),bd.getName(), e);
@@ -171,23 +159,34 @@ public class BeanCache implements BeanRegistry {
         Optional<BeanDefinition> obd = bds.values().stream().filter(bd -> bd.getName().equals(url)).findFirst();
         if (obd.isPresent()) {
             BeanDefinition bd = obd.get();
-            Envelope envelope = null;
-            if (bd.getEnvelope() != null)
-                envelope = bd.getEnvelope();
+            Object envelope = null;
+            if (bd.getBean() != null)
+                envelope = bd.getBean();
             if (envelope == null) {
                 try {
-                    envelope = define(bd.getMap());
+                    envelope = define(bd);
                 } catch (IOException e) {
                     throw new RuntimeException(e);
                 }
                 if (!"prototype".equals(bd.getScope()))
-                    bd.setEnvelope(envelope);
+                    bd.setBean(envelope);
             }
-            Object spec = envelope.getSpec();
-            if (spec instanceof Bean)
-                return ((Bean) spec).getBean();
+            Object spec = envelope;
+            // TODO
+//            if (spec instanceof Bean)
+//                return ((Bean) spec).getBean();
             return spec;
         }
         throw new RuntimeException("Reference " + url + " not found");
+    }
+
+    @Override
+    public List<Object> getBeans() {
+        return bds.values().stream().map(BeanDefinition::getBean).filter(Objects::nonNull).toList();
+    }
+
+    @Override
+    public <T> List<T> getBeansOfType(Class<T> clazz) {
+        return getBeans().stream().filter(clazz::isInstance).map(clazz::cast).toList();
     }
 }

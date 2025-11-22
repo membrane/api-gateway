@@ -14,6 +14,7 @@
 package com.predic8.membrane.core.kubernetes.client;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.predic8.membrane.annot.yaml.WatchAction;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.MimeType;
 import com.predic8.membrane.core.http.Request;

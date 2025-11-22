@@ -7,7 +7,7 @@
 #   curl http://localhost:2000/random
 #   curl http://localhost:2000/response
 
-spec:
+api:
   port: 2000
   path:
     uri: /groovy
@@ -19,7 +19,7 @@ spec:
         statusCode: 200
 
 ---
-spec:
+api:
   port: 2000
   path:
     uri: /random
@@ -31,7 +31,7 @@ spec:
           exchange.setDestinations(sites)
 
 ---
-spec:
+api:
   port: 2000
   path:
     uri: /response

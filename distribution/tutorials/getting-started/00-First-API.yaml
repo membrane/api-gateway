@@ -30,7 +30,7 @@
 #
 #      curl https://api.predic8.de
 
-spec:
+api:
   port: 2000 # Listing port
   target:
     url: https://api.predic8.de

@@ -17,7 +17,7 @@
 #       curl http://localhost:2000/shop/v2/products
 #       curl http://localhost:2000/dlp/fields/city
 
-spec:
+api:
   port: 2000
   specs:
     - openapi:

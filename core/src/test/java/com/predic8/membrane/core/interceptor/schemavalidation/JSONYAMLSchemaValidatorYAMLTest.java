@@ -36,7 +36,7 @@ class JSONYAMLSchemaValidatorYAMLTest {
 
     @BeforeEach
     void setup() {
-        validator = new JSONYAMLSchemaValidator(new ClasspathSchemaResolver(), "/validation/json-schema/simple-schema.json", (a,b) -> {}, SCHEMA_VERSION_2020_12, YAML);
+        validator = new JSONYAMLSchemaValidator(new ClasspathSchemaResolver(), "classpath:/validation/json-schema/simple-schema.json", (a,b) -> {}, SCHEMA_VERSION_2020_12, YAML);
         validator.init();
     }
 

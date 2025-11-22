@@ -1,0 +1,115 @@
+api:
+  port: 2000
+  path:
+    uri: /service
+  flow:
+    - response:
+        - beautifier: {}
+        - if:
+            test: not isXML()
+            flow:
+              - if:
+                  test: statusCode >= 400
+                  flow:
+                    - template:
+                        contentType: application/xml
+                        src: |
+                          <error>
+                            <case>c</case>
+                            <statusCode>${statusCode}</statusCode>
+                            <message>Ordinary Error!</message>
+                          </error>
+        - if:
+            test: isXML()
+            flow:
+              - if:
+                  language: xpath
+                  test: //*[local-name() = 'Fault' and namespace-uri() = 'http://schemas.xmlsoap.org/soap/envelope/']
+                  flow:
+                    - template:
+                        contentType: application/xml
+                        src: |
+                          <error>
+                                <case>e</case>
+                                <statusCode>${statusCode}</statusCode>
+                                <message>SOAP Fault!</message>
+                                <fault>${property.faultstring}</fault>
+                            </error>
+                    - setProperty:
+                        name: faultstring
+                        value: ${//faultstring}
+                        language: xpath
+              - if:
+                  language: xpath
+                  test: statusCode >= 400
+                  flow:
+                    - if:
+                        language: xpath
+                        test: /*[not(local-name() = 'Envelope')]
+                        flow:
+                          - template:
+                              contentType: application/xml
+                              src: |
+                                <error>
+                                    <case>d</case>
+                                    <statusCode>${statusCode}</statusCode>
+                                    <message>${property.description}!</message>
+                                </error>
+    - abort:
+        - if:
+            test: header['X-Protection'] != null
+            flow:
+              - template:
+                  contentType: application/xml
+                  src: |
+                    <error>
+                        <case>a</case>
+                        <message>"XML Protection: Invalid XML!"</message>
+                    </error>
+        - if:
+            test: header['X-Validation-Error-Source'] != null
+            flow:
+              - template:
+                  contentType: application/xml
+                  src: |
+                    <error>
+                        <case>b</case>
+                        <message>WSDL validation of ${headers.getFirstValue('X-Validation-Error-Source')} failed!</message>
+                    </error>
+    - request:
+        - if:
+            # XML protection
+            test: param.case == 'a'
+            flow:
+              - xmlProtection:
+                  removeDTD: false
+                  maxElementNameLength: 100
+                  maxAttributeCount: 10
+        - if:
+            # WSDL validation
+            test: param.case == 'b'
+            flow:
+              - validator:
+                  wsdl: cities.wsdl
+                  skipFaults: true
+        - if:
+            test: param.case == 'c'
+            flow:
+              - template:
+                  contentType: text/plain
+                  src: Ordinary error!
+              - return:
+                  statusCode: 500
+        - if:
+            test: param.case == 'd'
+            flow:
+              - template:
+                  contentType: application/xml
+                  src: |
+                    <failure>
+                        <description>XML Fehler Meldung vom Backend!</description>
+                    </failure>
+              - return:
+                  statusCode: 500
+    # SOAP Service Mock for Debugging
+    - sampleSoapService: {}

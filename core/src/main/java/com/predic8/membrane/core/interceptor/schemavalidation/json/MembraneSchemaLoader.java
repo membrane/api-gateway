@@ -18,7 +18,7 @@ import com.networknt.schema.*;
 import com.networknt.schema.resource.*;
 import com.predic8.membrane.core.resolver.*;
 
-public class MembraneSchemaLoader implements SchemaLoader {
+public class MembraneSchemaLoader implements ResourceLoader {
 
     private final Resolver resolver;
 
@@ -27,7 +27,7 @@ public class MembraneSchemaLoader implements SchemaLoader {
     }
 
     @Override
-    public InputStreamSource getSchema(AbsoluteIri absoluteIri) {
+    public InputStreamSource getResource(AbsoluteIri absoluteIri) {
         return () -> resolver.resolve(absoluteIri.toString());
     }
 }

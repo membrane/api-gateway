@@ -13,51 +13,144 @@
    limitations under the License. */
 package com.predic8.membrane.annot.yaml;
 
+import com.fasterxml.jackson.core.JsonLocation;
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.networknt.schema.Error;
+import com.networknt.schema.SchemaLocation;
+import com.networknt.schema.SchemaRegistry;
 import com.predic8.membrane.annot.K8sHelperGenerator;
+import com.predic8.membrane.annot.MCChildElement;
 import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.error.Mark;
 import org.yaml.snakeyaml.events.*;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.StringReader;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.*;
 
+import static com.networknt.schema.SpecificationVersion.DRAFT_2020_12;
 import static com.predic8.membrane.annot.yaml.McYamlIntrospector.*;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Locale.ROOT;
 
 public class GenericYamlParser {
+    private static final Logger log = LoggerFactory.getLogger(GenericYamlParser.class);
+    private static final String EMPTY_DOCUMENT_WARNING = "Skipping empty document. Maybe there are two --- separators but no configuration in between.";
 
-    public static Object parseMembraneObject(Iterator<Event> events, K8sHelperGenerator generator, BeanRegistry registry) {
-        int state = 0;
-        while (events.hasNext()) {
-            Event event = events.next();
-            switch (state) {
-                case 0:
-                    if (event instanceof MappingStartEvent)
-                        state = 1;
-                    break;
-                case 1:
-                    if (event instanceof ScalarEvent se) {
-                        String value = se.getValue();
-                        return readMembraneObject(value, generator, events, registry);
-                    } else if (event instanceof MappingEndEvent) {
-                        throw new IllegalStateException("Not handled: MappingEndEvent"); // TODO: ?
-                    } else {
-                        throw new IllegalStateException("Expected scalar or end-of-map in line " + event.getStartMark().getLine() + " column " + event.getStartMark().getColumn());
-                    }
+    private static final ObjectMapper om = new ObjectMapper();
+
+    /**
+      * Parses Membrane resources from a YAML input stream.
+      * @param resource the input stream to parse
+      * @param generator the K8s helper generator
+      * @param observer the bean cache observer
+      * @return the bean registry
+      */
+    public static BeanRegistry parseMembraneResources(@NotNull InputStream resource, K8sHelperGenerator generator, BeanCacheObserver observer) throws IOException, YamlSchemaValidationException {
+        BeanCache registry = new BeanCache(observer, generator);
+        registry.start();
+
+        try (resource) {
+            JsonLocationMap jsonLocationMap = new JsonLocationMap();
+            List<JsonNode> rootNodes = jsonLocationMap.parseWithLocations(new String(resource.readAllBytes(), UTF_8));
+            int count = 0;
+
+            for (int i = 0; i < rootNodes.size(); i++) {
+                if (rootNodes.get(i) == null) {
+                    log.debug(EMPTY_DOCUMENT_WARNING);
+                    rootNodes.remove(i);
+                    i--;
+                    continue;
+                }
+                try {
+                    validate(generator, rootNodes.get(i));
+                } catch (YamlSchemaValidationException e) {
+                    JsonLocation location = jsonLocationMap.getLocationMap().get(
+                            e.getErrors().getFirst().getInstanceNode());
+                    throw new IOException("Invalid YAML: %s at line %d, column %d.".formatted(
+                            e.getErrors().getFirst().getMessage(),
+                            location.getLineNr(),
+                            location.getColumnNr()), e);
+                }
+                Map<String, Object> m = om.convertValue(rootNodes.get(i), Map.class);
+
+                registry.handle(WatchAction.ADDED, new BeanDefinition(
+                        getBeanType(rootNodes.get(i)), "bean-" + count, "default", UUID.randomUUID().toString(), m));
             }
+
+            registry.fireConfigurationLoaded();
+        } catch (JsonParseException e) {
+            throw new IOException(
+                    "Invalid YAML: multiple configurations must be separated by '---' "
+                            + "(at line " + e.getLocation().getLineNr()
+                            + ", column " + e.getLocation().getColumnNr() + ").",
+                    e
+            );
         }
-        return null;
+
+        return registry;
     }
 
-    private static Object readMembraneObject(String kind, K8sHelperGenerator generator, Iterator<Event> events, BeanRegistry registry) {
+    private static String getBeanType(JsonNode jsonNode) {
+        if (!jsonNode.isObject())
+            throw new IllegalArgumentException("Expected object node.");
+        if (jsonNode.size() != 1)
+            throw new IllegalArgumentException("Expected exactly one key.");
+        return jsonNode.fieldNames().next();
+    }
+
+    public static void validate(K8sHelperGenerator generator, JsonNode input) throws IOException, YamlSchemaValidationException {
+        var jsonSchemaFactory = SchemaRegistry.withDefaultDialect(DRAFT_2020_12, builder -> {
+        });
+        var schema = jsonSchemaFactory.getSchema(SchemaLocation.of(generator.getSchemaLocation()));
+        schema.initializeValidators();
+        List<Error> errors = schema.validate(input);
+        if (!errors.isEmpty()) {
+            throw new YamlSchemaValidationException("Invalid YAML.", errors);
+        }
+    }
+
+
+    public static Object readMembraneObject(String kind, K8sHelperGenerator generator, String yaml, BeanRegistry registry) {
+
+        Iterator<Event> events = new Yaml().parse(new StringReader(yaml)).iterator();
+        Event event = events.next();
+        if (!(event instanceof StreamStartEvent))
+            throw new IllegalStateException("Expected StreamStartEvent in line %d column %d".formatted(event.getStartMark().getLine(), event.getStartMark().getColumn()));
+        event = events.next();
+        if (!(event instanceof DocumentStartEvent))
+            throw new IllegalStateException("Expected DocumentStartEvent in line %d column %d".formatted(event.getStartMark().getLine(), event.getStartMark().getColumn()));
+        event = events.next();
+        ensureMappingStart(event);
+        event = events.next();
+        if (!(event instanceof ScalarEvent))
+            throw new IllegalStateException("Expected scalar in line %d column %d".formatted(event.getStartMark().getLine(), event.getStartMark().getColumn()));
+
         Class clazz = generator.getElement(kind);
         if (clazz == null)
-            throw new RuntimeException("Did not find java class for kind '%s'.".formatted(kind));
-        return GenericYamlParser.parse(kind, clazz, events, registry, generator);
+            throw new RuntimeException("Did not find java class for kind '%s' in line %d column %d.".formatted(kind, event.getStartMark().getLine(), event.getStartMark().getColumn()));
+        Object result = GenericYamlParser.parse(kind, clazz, events, registry, generator);
+
+        event = events.next();
+        if (!(event instanceof MappingEndEvent))
+            throw new IllegalStateException("Expected MappingEndEvent in line %d column %d".formatted(event.getStartMark().getLine(), event.getStartMark().getColumn()));
+        event = events.next();
+        if (!(event instanceof DocumentEndEvent))
+            throw new IllegalStateException("Expected DocumentEndEvent in line %d column %d".formatted(event.getStartMark().getLine(), event.getStartMark().getColumn()));
+        event = events.next();
+        if (!(event instanceof StreamEndEvent))
+            throw new IllegalStateException("Expected StreamEndEvent in line %d column %d".formatted(event.getStartMark().getLine(), event.getStartMark().getColumn()));
+
+        return result;
     }
-
-
 
     @SuppressWarnings({"rawtypes"})
     public static <T> T parse(String context, Class<T> clazz, Iterator<Event> events, BeanRegistry registry, K8sHelperGenerator k8sHelperGenerator) {
@@ -89,6 +182,12 @@ public class GenericYamlParser {
                 }
 
                 Method setter = getSetter(clazz, key);
+                // MCChildElements which are not lists are directly declared as beans,
+                // their name should be interpreted as an element name
+                if (setter != null && setter.getAnnotation(MCChildElement.class) != null) {
+                    if (!List.class.isAssignableFrom(setter.getParameterTypes()[0]))
+                        setter = null;
+                }
                 Class clazz2 = null;
                 if (setter == null) {
                     try {
@@ -123,7 +222,6 @@ public class GenericYamlParser {
                     problemMark,
                     cause.getMessage()
             );
-//            throw new RuntimeException(e);
         }
 
     }
@@ -137,8 +235,7 @@ public class GenericYamlParser {
             String value = YamlLoader.readString(events).toUpperCase(ROOT);
             try {
                 return Enum.valueOf((Class<Enum>) wanted, value);
-            }
-            catch (IllegalArgumentException e) {
+            } catch (IllegalArgumentException e) {
                 throw new WrongEnumConstantException(wanted, value);
             }
         }
@@ -182,7 +279,7 @@ public class GenericYamlParser {
         if (!(event instanceof ScalarEvent)) {
             throw new IllegalStateException("Expected scalar or end-of-map in line " + event.getStartMark().getLine() + " column " + event.getStartMark().getColumn());
         }
-        return ((ScalarEvent)event).getValue();
+        return ((ScalarEvent) event).getValue();
     }
 
     private static void ensureMappingStart(Event event) {

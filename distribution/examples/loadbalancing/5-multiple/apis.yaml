@@ -1,0 +1,97 @@
+api:
+  port: 8080
+  name: Balancer 1
+  path:
+    uri: /service
+  flow:
+    - balancer:
+        name: balancer1
+        clustersFromSpring:
+          - clusters:
+              - cluster:
+                  name: Default
+                  nodes: # target 1 and 2 that are balanced by balancer 1
+                    - node:
+                        host: localhost
+                        port: 4000
+                    - node:
+                        host: localhost
+                        port: 4001
+
+---
+
+api:
+  port: 8081
+  name: Balancer 2
+  path:
+    uri: /service
+  flow:
+    - balancer:
+        name: balancer2
+        clustersFromSpring:
+          - clusters:
+              - cluster:
+                  name: Default
+                  nodes: # target 3 and 4 that are balanced by balancer 2
+                    - node:
+                        host: localhost
+                        port: 4002
+                    - node:
+                        host: localhost
+                        port: 4003
+
+---
+
+api:
+  port: 9010
+  name: Up/Down Push Interface
+  flow:
+    - clusterNotification: {}
+
+---
+
+
+
+# Mock nodes for testing. Remove them in production.
+
+api:
+  port: 4000
+  name: Mock Node 1
+  flow:
+    - counter:
+        name: Mock Node 1
+
+---
+
+api:
+  port: 4001
+  name: Mock Node 2
+  flow:
+    - counter:
+        name: Mock Node 2
+
+---
+
+api:
+  port: 4002
+  name: Mock Node 3
+  flow:
+    - counter:
+        name: Mock Node 3
+
+---
+
+api:
+  port: 4003
+  name: Mock Node 4
+  flow:
+    - counter:
+        name: Mock Node 4
+
+---
+
+api:
+  port: 9000
+  name: Administration
+  flow:
+    - adminConsole: {}

@@ -1,0 +1,17 @@
+api:
+  name: predic8.com
+  port: 2000
+  flow:
+    - login:
+        path: /login/
+        location: ./dialog
+        staticUserDataProvider:
+          users:
+            - user:
+                username: john
+                password: password
+                secret: abcdefghijklmnop
+        totpTokenProvider: {}
+  target:
+    host: membrane-soa.org
+    port: 80

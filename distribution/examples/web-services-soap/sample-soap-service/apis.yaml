@@ -1,0 +1,4 @@
+spec:
+  port: 2000
+  flow:
+    - sampleSoapService: {}

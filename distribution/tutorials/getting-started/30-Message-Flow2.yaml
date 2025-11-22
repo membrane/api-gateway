@@ -24,7 +24,7 @@
 
 metadata:
   name: Message Flow Logging
-spec:
+api:
   port: 2000
   flow:
     - request: # executed during request flow from top to bottom
@@ -46,7 +46,7 @@ spec:
 
 ---
 # Admin Console
-spec:
+api:
   port: 9000
   flow:
     - adminConsole:

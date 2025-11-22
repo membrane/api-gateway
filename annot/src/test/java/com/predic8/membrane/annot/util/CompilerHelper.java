@@ -13,6 +13,7 @@
    limitations under the License. */
 package com.predic8.membrane.annot.util;
 
+import com.predic8.membrane.annot.yaml.BeanRegistry;
 import org.hamcrest.BaseMatcher;
 import org.hamcrest.Description;
 import org.hamcrest.collection.IsIterableContainingInAnyOrder;
@@ -67,7 +68,7 @@ public class CompilerHelper {
         return new CompilerResult(success, diagnostics, fileManager.getClassLoader(CLASS_OUTPUT));
     }
 
-    public static Object parseYAML(CompilerResult cr, String yamlConfig) {
+    public static BeanRegistry parseYAML(CompilerResult cr, String yamlConfig) {
         ClassLoader originalClassloader = Thread.currentThread().getContextClassLoader();
         try {
             InMemoryClassLoader loaderA = (InMemoryClassLoader) cr.classLoader();
@@ -76,7 +77,7 @@ public class CompilerHelper {
             Thread.currentThread().setContextClassLoader(cl);
             Class<?> c = cl.loadClass("com.predic8.membrane.annot.util.YamlParser");
             Object parser = c.getConstructor(String.class).newInstance("/demo.yaml");
-            return c.getMethod("getResult").invoke(parser);
+            return (BeanRegistry) c.getMethod("getBeanRegistry").invoke(parser);
         } catch (Exception e) {
             throw new RuntimeException(e);
         } finally {

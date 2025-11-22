@@ -12,7 +12,7 @@
 #
 #     Observe the response.
 
-spec:
+api:
   port: 2000
   flow:
     - response:

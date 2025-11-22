@@ -8,7 +8,7 @@
 #
 #    Check the validation error in the response.
 
-spec:
+api:
   port: 2000
   specs:
     - openapi:

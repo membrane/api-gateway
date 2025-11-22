@@ -24,4 +24,5 @@ public interface K8sHelperGenerator {
 
     List<String> getCrdSingularNames();
 
+    String getSchemaLocation();
 }

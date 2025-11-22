@@ -1,0 +1,11 @@
+api:
+  port: 2000
+  flow:
+    - response:
+        - beautifier: {}
+        - greaser:
+            strategies:
+              - greaseJson:
+                  shuffleFields: true
+                  additionalProperties: true
+    - return: {}

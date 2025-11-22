@@ -13,6 +13,8 @@
    limitations under the License. */
 package com.predic8.membrane.core.kubernetes.client;
 
+import com.predic8.membrane.annot.yaml.WatchAction;
+
 import javax.annotation.Nullable;
 import javax.validation.constraints.NotNull;
 import java.util.Map;

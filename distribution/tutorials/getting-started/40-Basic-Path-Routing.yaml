@@ -14,7 +14,7 @@
 #       curl localhost:2000/fact
 #       curl localhost:2000/get
 
-spec:
+api:
   port: 2000
   path:
     uri: /shop # Matches requests starting with /shop
@@ -24,7 +24,7 @@ spec:
 ---
 # A line beginning with --- separates multiple API definitions
 
-spec:
+api:
   port: 2000
   path:
     uri: /fact
@@ -34,7 +34,7 @@ spec:
 ---
 # No path: matches all remaining requests
 
-spec:
+api:
   port: 2000
   target:
     url: https://httpbin.org

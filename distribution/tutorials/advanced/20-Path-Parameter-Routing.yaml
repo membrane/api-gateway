@@ -6,7 +6,7 @@
 #
 #   curl http://localhost:2000/fruits/7
 
-spec:
+api:
   port: 2000
   path:
     uri: /fruits/{id}

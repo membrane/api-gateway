@@ -1,0 +1,17 @@
+spec:
+  name: membrane resource service
+  port: 2000
+  path:
+    uri: /oauth2callback
+  flow:
+    - groovy:
+        src: Response.ok(new File("..\\JavaScriptClient.html").text).build()
+
+---
+
+spec:
+  name: Membrane Resource service
+  port: 2000
+  flow:
+    - groovy:
+        src: Response.ok(new File("..\\JavaScriptClient.html").text).build()

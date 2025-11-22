@@ -1,0 +1,39 @@
+spec:
+  port: 4443
+  ssl:
+    keystore:
+      location: membrane.p12
+      password: secret
+      keyPassword: secret
+    truststore:
+      location: membrane.p12
+      password: secret
+  flow:
+    - log: {}
+    - webSocket:
+        url: http://localhost:61614/
+  target:
+    host: localhost
+    port: 4444
+
+---
+
+spec:
+  port: 4444
+  flow:
+    - webServer:
+        docBase: .
+        index: index.html
+
+---
+
+spec:
+  name: Console
+  port: 9000
+  flow:
+    - basicAuthentication:
+        users:
+          - user:
+              username: admin
+              password: membrane
+    - adminConsole: {}

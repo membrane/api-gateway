@@ -1,0 +1,71 @@
+api:
+  port: 2000
+  flow:
+    - request:
+        - if:
+            test: request.isJSON()
+            language: SpEL
+            flow:
+              - log:
+                  message: JSON Request!
+              - if:
+                  test: $.name
+                  language: jsonpath
+                  flow:
+                    - log:
+                        message: The JSON request contains the key 'name' with the value 'foo'.
+        - if:
+            test: method == 'POST'
+            flow:
+              - log:
+                  message: Request method was POST.
+        - if:
+            test: params['param1'] == 'value2'
+            flow:
+              - log:
+                  message: Query Parameter Given!
+        - if:
+            test: headers['X-Test-Header'] != null and headers['X-Test-Header'] matches '.*bar.*'
+            flow:
+              - log:
+                  message: X-Test-Header contains 'bar'
+        - if:
+            test: request.getBody.getLength gt 64
+            flow:
+              - log:
+                  message: Long body
+        - if:
+            test: request.isXML()
+            flow:
+              - log:
+                  message: XML Request!
+              - if:
+                  test: //foo
+                  language: xpath
+                  flow:
+                    - log:
+                        message: Has foo element!
+    - response:
+        - if:
+            test: statusCode matches '[45]\d\d'
+            flow:
+              - template:
+                  pretty: yes
+                  contentType: application/json
+                  src: |
+                    {
+                      "type": "https://membrane-api.io/error/",
+                      "title": "${exc.response.statusMessage}",
+                      "status": ${exc.response.statusCode}
+                    }
+        - if:
+            test: statusCode == 302
+            flow:
+              - groovy:
+                  src: |
+                    println("Status code changed")
+                    exc.getResponse().setStatusCode(404)
+    - template:
+        src: Success
+    - return:
+        statusCode: 302
