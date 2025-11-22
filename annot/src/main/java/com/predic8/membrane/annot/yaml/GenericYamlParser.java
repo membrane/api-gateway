@@ -13,11 +13,10 @@
    limitations under the License. */
 package com.predic8.membrane.annot.yaml;
 
+import com.fasterxml.jackson.core.JsonLocation;
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
-import com.fasterxml.jackson.dataformat.yaml.YAMLParser;
 import com.networknt.schema.Error;
 import com.networknt.schema.SchemaLocation;
 import com.networknt.schema.SchemaRegistry;
@@ -37,8 +36,6 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.*;
 
-import static com.fasterxml.jackson.core.StreamReadFeature.STRICT_DUPLICATE_DETECTION;
-import static com.fasterxml.jackson.dataformat.yaml.YAMLFactory.builder;
 import static com.networknt.schema.SpecificationVersion.DRAFT_2020_12;
 import static com.predic8.membrane.annot.yaml.McYamlIntrospector.*;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -48,9 +45,7 @@ public class GenericYamlParser {
     private static final Logger log = LoggerFactory.getLogger(GenericYamlParser.class);
     private static final String EMPTY_DOCUMENT_WARNING = "Skipping empty document. Maybe there are two --- separators but no configuration in between.";
 
-    private static final YAMLFactory yamlFactory = builder().enable(STRICT_DUPLICATE_DETECTION).build();
-    private static final ObjectMapper om = new ObjectMapper(yamlFactory);
-
+    private static final ObjectMapper om = new ObjectMapper();
 
     /**
       * Parses Membrane resources from a YAML input stream.
@@ -63,29 +58,32 @@ public class GenericYamlParser {
         BeanCache registry = new BeanCache(observer, generator);
         registry.start();
 
-        try (resource; YAMLParser parser = yamlFactory.createParser(new String(resource.readAllBytes(), UTF_8))) {
+        try (resource) {
+            JsonLocationMap jsonLocationMap = new JsonLocationMap();
+            List<JsonNode> rootNodes = jsonLocationMap.parseWithLocations(new String(resource.readAllBytes(), UTF_8));
             int count = 0;
 
-            while (!parser.isClosed()) {
-                JsonNode node = om.readTree(parser);
-                if (node == null || node.isNull()) {
+            for (int i = 0; i < rootNodes.size(); i++) {
+                if (rootNodes.get(i) == null) {
                     log.debug(EMPTY_DOCUMENT_WARNING);
-                    parser.nextToken();
+                    rootNodes.remove(i);
+                    i--;
                     continue;
                 }
-                validate(generator, node);
-
-                Map<String, Object> m = om.convertValue(node, Map.class);
-                if (m == null || m.isEmpty()) {
-                    log.debug(EMPTY_DOCUMENT_WARNING);
-                    parser.nextToken();
-                    continue;
+                try {
+                    validate(generator, rootNodes.get(i));
+                } catch (YamlSchemaValidationException e) {
+                    JsonLocation location = jsonLocationMap.getLocationMap().get(
+                            e.getErrors().getFirst().getInstanceNode());
+                    throw new IOException("Invalid YAML: %s at line %d, column %d.".formatted(
+                            e.getErrors().getFirst().getMessage(),
+                            location.getLineNr(),
+                            location.getColumnNr()), e);
                 }
-                count++;
+                Map<String, Object> m = om.convertValue(rootNodes.get(i), Map.class);
 
                 registry.handle(WatchAction.ADDED, new BeanDefinition(
-                        m.keySet().stream().findFirst().get(), "bean-" + count, "default", UUID.randomUUID().toString(), m));
-                parser.nextToken();
+                        getBeanType(rootNodes.get(i)), "bean-" + count, "default", UUID.randomUUID().toString(), m));
             }
 
             registry.fireConfigurationLoaded();
@@ -99,6 +97,14 @@ public class GenericYamlParser {
         }
 
         return registry;
+    }
+
+    private static String getBeanType(JsonNode jsonNode) {
+        if (!jsonNode.isObject())
+            throw new IllegalArgumentException("Expected object node.");
+        if (jsonNode.size() != 1)
+            throw new IllegalArgumentException("Expected exactly one key.");
+        return jsonNode.fieldNames().next();
     }
 
     public static void validate(K8sHelperGenerator generator, JsonNode input) throws IOException, YamlSchemaValidationException {
