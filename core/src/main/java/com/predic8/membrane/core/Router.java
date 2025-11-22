@@ -679,7 +679,11 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
     }
 
     @Override
-    public void handleBeanEvent(BeanDefinition bd, Object bean, Object oldBean, WatchAction action) throws IOException {
+    public void handleBeanEvent(BeanDefinition bd, Object bean, Object oldBean) throws IOException {
+        if (!(bean instanceof Proxy)) {
+            throw new IllegalArgumentException("Bean must be a Proxy instance, but got: " + bean.getClass().getName());
+        }
+
         Proxy newProxy = (Proxy) bean;
         if (newProxy.getName() == null)
             newProxy.setName(bd.getName());

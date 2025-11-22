@@ -138,7 +138,7 @@ public class BeanCache implements BeanRegistry {
                 if (bd.getAction() == WatchAction.MODIFIED || bd.getAction() == WatchAction.DELETED)
                     oldBean = uuidMap.get(bd.getUid());
 
-                router.handleBeanEvent(bd, bean, oldBean, bd.getAction());
+                router.handleBeanEvent(bd, bean, oldBean);
 
                 if (bd.getAction() == WatchAction.ADDED || bd.getAction() == WatchAction.MODIFIED)
                     uuidMap.put(bd.getUid(), bean);

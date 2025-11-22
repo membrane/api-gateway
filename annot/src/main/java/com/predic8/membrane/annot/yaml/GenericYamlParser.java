@@ -59,7 +59,7 @@ public class GenericYamlParser {
       * @param observer the bean cache observer
       * @return the bean registry
       */
-    public static BeanRegistry parseMembraneResources(@NotNull InputStream resource, K8sHelperGenerator generator, BeanCacheObserver observer) throws IOException, InterruptedException {
+    public static BeanRegistry parseMembraneResources(@NotNull InputStream resource, K8sHelperGenerator generator, BeanCacheObserver observer) throws IOException, YamlSchemaValidationException {
         BeanCache registry = new BeanCache(observer, generator);
         registry.start();
 
@@ -76,7 +76,7 @@ public class GenericYamlParser {
                 validate(generator, node);
 
                 Map<String, Object> m = om.convertValue(node, Map.class);
-                if (m == null) {
+                if (m == null || m.isEmpty()) {
                     log.debug(EMPTY_DOCUMENT_WARNING);
                     parser.nextToken();
                     continue;
@@ -101,14 +101,15 @@ public class GenericYamlParser {
         return registry;
     }
 
-    public static void validate(K8sHelperGenerator generator, JsonNode input) throws IOException {
+    public static void validate(K8sHelperGenerator generator, JsonNode input) throws IOException, YamlSchemaValidationException {
         var jsonSchemaFactory = SchemaRegistry.withDefaultDialect(DRAFT_2020_12, builder -> {
         });
         var schema = jsonSchemaFactory.getSchema(SchemaLocation.of(generator.getSchemaLocation()));
         schema.initializeValidators();
         List<Error> errors = schema.validate(input);
-        if (!errors.isEmpty())
-            throw new RuntimeException("Invalid YAML: " + errors);
+        if (!errors.isEmpty()) {
+            throw new YamlSchemaValidationException("Invalid YAML.", errors);
+        }
     }
 
 
@@ -175,6 +176,8 @@ public class GenericYamlParser {
                 }
 
                 Method setter = getSetter(clazz, key);
+                // MCChildElements which are not lists are directly declared as beans,
+                // their name should be interpreted as an element name
                 if (setter != null && setter.getAnnotation(MCChildElement.class) != null) {
                     if (!List.class.isAssignableFrom(setter.getParameterTypes()[0]))
                         setter = null;

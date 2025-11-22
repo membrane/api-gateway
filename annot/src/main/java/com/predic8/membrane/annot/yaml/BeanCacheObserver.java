@@ -37,10 +37,9 @@ public interface BeanCacheObserver {
      * @param bd      the bean definition
      * @param bean    the current instance (on ADD/MODIFY) or {@code null} (on DELETE)
      * @param oldBean the previous instance (on MODIFY) or {@code null}
-     * @param action  the change type
      * @throws IOException if handling the event performs I/O and it fails
      */
-    void handleBeanEvent(BeanDefinition bd, Object bean, Object oldBean, WatchAction action) throws IOException;
+    void handleBeanEvent(BeanDefinition bd, Object bean, Object oldBean) throws IOException;
 
     /**
      * Whether beans of the given definition should be considered activatable/usable
