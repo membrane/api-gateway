@@ -141,7 +141,7 @@ public class YAMLParsingTest {
     }
 
     @Test
-    public void nestedChilds() {
+    public void nestedChildren() {
         var sources = splitSources(MC_MAIN_DEMO + """
         package com.predic8.membrane.demo;
         import com.predic8.membrane.annot.*;

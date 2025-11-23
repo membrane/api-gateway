@@ -140,7 +140,7 @@ public class K8sHelperGenerator extends AbstractK8sGenerator {
                 K8sHelperGenerator.class.getName(),
                 fileName(),
                 mainInfo.getAnnotation().outputPackage()
-                        .replaceAll("spring", "json")
+                        .replaceAll(".spring$", ".json")
                         .replaceAll("\\.", "/")
         ));
 

@@ -49,20 +49,19 @@ public class GenericYamlParser {
 
     /**
       * Parses Membrane resources from a YAML input stream.
-      * @param resource the input stream to parse
+      * @param resource the input stream to parse. The method takes care of closing the stream.
       * @param generator the K8s helper generator
       * @param observer the bean cache observer
       * @return the bean registry
       */
     public static BeanRegistry parseMembraneResources(@NotNull InputStream resource, K8sHelperGenerator generator, BeanCacheObserver observer) throws IOException, YamlSchemaValidationException {
-        BeanCache registry = new BeanCache(observer, generator);
-        registry.start();
-
+        BeanCache registry;
         try (resource) {
+            registry = new BeanCache(observer, generator);
+            registry.start();
+
             JsonLocationMap jsonLocationMap = new JsonLocationMap();
             List<JsonNode> rootNodes = jsonLocationMap.parseWithLocations(new String(resource.readAllBytes(), UTF_8));
-            int count = 0;
-
             for (int i = 0; i < rootNodes.size(); i++) {
                 if (rootNodes.get(i) == null) {
                     log.debug(EMPTY_DOCUMENT_WARNING);
@@ -83,7 +82,7 @@ public class GenericYamlParser {
                 Map<String, Object> m = om.convertValue(rootNodes.get(i), Map.class);
 
                 registry.handle(WatchAction.ADDED, new BeanDefinition(
-                        getBeanType(rootNodes.get(i)), "bean-" + count, "default", UUID.randomUUID().toString(), m));
+                        getBeanType(rootNodes.get(i)), "bean-" + i, "default", UUID.randomUUID().toString(), m));
             }
 
             registry.fireConfigurationLoaded();

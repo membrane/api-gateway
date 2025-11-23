@@ -6,7 +6,6 @@ import org.junit.jupiter.api.Test;
 import static com.predic8.membrane.annot.SpringConfigurationXSDGeneratingAnnotationProcessorTest.MC_MAIN_DEMO;
 import static com.predic8.membrane.annot.util.CompilerHelper.*;
 import static java.util.List.of;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class YamlSetterConflictTest {
 
@@ -35,7 +34,7 @@ public class YamlSetterConflictTest {
         """);
         var result = CompilerHelper.compile(sources, false);
 
-        assertTrue(result.compilationSuccess());
+        assertCompilerResult(true, result);
     }
 
     @Test
@@ -82,7 +81,7 @@ public class YamlSetterConflictTest {
         """);
         var result = CompilerHelper.compile(sources, false);
 
-        assertTrue(result.compilationSuccess());
+        assertCompilerResult(true, result);
     }
 
     @Test
@@ -115,7 +114,7 @@ public class YamlSetterConflictTest {
         """);
         var result = CompilerHelper.compile(sources, false);
 
-        assertTrue(result.compilationSuccess());
+        assertCompilerResult(true, result);
     }
 
     @Test

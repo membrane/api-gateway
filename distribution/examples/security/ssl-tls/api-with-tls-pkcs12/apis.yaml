@@ -26,7 +26,7 @@ spec:
             contentType: application/json
             src: |
               {
-                "success": true 
+                "success": true
               }
     - return:
         statusCode: 200

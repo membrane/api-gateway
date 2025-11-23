@@ -114,10 +114,9 @@ public class BeanCache implements BeanRegistry {
 
 
     void handle(BeanDefinition bd) {
-        if (bd.getAction() == WatchAction.DELETED)
-            bds.remove(bd.getUid());
-        else
-            bds.put(bd.getUid(), bd);
+        // Keep the latest BeanDefinition for all actions so activationRun
+        // can see both metadata and the action (including DELETED).
+        bds.put(bd.getUid(), bd);
 
         if (router.isActivatable(bd))
             uidsToActivate.add(bd.getUid());
@@ -142,8 +141,10 @@ public class BeanCache implements BeanRegistry {
 
                 if (bd.getAction() == WatchAction.ADDED || bd.getAction() == WatchAction.MODIFIED)
                     uuidMap.put(bd.getUid(), bean);
-                if (bd.getAction() == WatchAction.DELETED)
+                if (bd.getAction() == WatchAction.DELETED) {
                     uuidMap.remove(bd.getUid());
+                    bds.remove(bd.getUid());
+                }
                 uidsToRemove.add(bd.getUid());
             }
             catch (Throwable e) {

@@ -35,7 +35,8 @@ public class YamlParser {
                 .newInstance();
 
         CountDownLatch cdl = new CountDownLatch(1);
-        beanRegistry = GenericYamlParser.parseMembraneResources(getClass().getResourceAsStream(resourceName), generator,
+        beanRegistry = GenericYamlParser.parseMembraneResources(
+                requireNonNull(getClass().getResourceAsStream(resourceName)), generator,
                 new BeanCacheObserver() {
                     @Override
                     public void handleAsynchronousInitializationResult(boolean empty) {
