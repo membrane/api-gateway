@@ -14,7 +14,7 @@ api:
               # Mark as converted
               - setProperty:
                   name: converted
-                  value: true
+                  value: 'true'
     - response:
         #  When it was converted transform response body back to old
         - if:
