@@ -1,3 +1,4 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v6.3.11.json
 api:
   name: Router
   port: 2000
@@ -35,7 +36,7 @@ api:
 
 ---
 
-kind: internal
+# TODO kind: internal
 api:
   name: order
   flow:
@@ -45,7 +46,7 @@ api:
 
 ---
 
-kind: internal
+# TODO kind: internal
 api:
   name: express
   flow:

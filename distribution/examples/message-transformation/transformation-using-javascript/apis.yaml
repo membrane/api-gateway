@@ -1,3 +1,4 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v6.3.11.json
 # Transformation of a JSON document to one in a different format
 api:
   port: 2000

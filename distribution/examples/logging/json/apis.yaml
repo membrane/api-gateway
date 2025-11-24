@@ -1,7 +1,10 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v6.3.11.json
 api:
+  name: predic8.com
   port: 2000
   flow:
-    - statisticsCSV:
-        file: ./log.csv
+    - log:
+        level: WARN
   target:
-    url: https://api.predic8.de
+    host: membrane-soa.org
+    port: 80

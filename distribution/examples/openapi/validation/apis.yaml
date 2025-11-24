@@ -1,3 +1,4 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v6.3.11.json
 # Configures Membrane as an API Gateway for the given OpenAPI specification
 api:
   port: 2000

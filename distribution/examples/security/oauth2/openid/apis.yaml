@@ -1,3 +1,4 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v6.3.11.json
 api:
   name: Membrane Resource service
   port: 2000
@@ -16,7 +17,7 @@ api:
     - groovy:
         src: |
           def oauth2 = exc.properties.'membrane.oauth2'
-          <!-- Put the eMail into the header X-EMAIL and pass it to the protected server. -->
+          // Put the eMail into the header X-EMAIL and pass it to the protected server.
           exc.request.getHeader().setValue('X-EMAIL',oauth2.userinfo.email)
           CONTINUE
   target:

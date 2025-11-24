@@ -1,10 +1,11 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v6.3.11.json
 api:
   port: 2000
   flow:
     - request:
         # Gets the latest product by ID
         - call:
-            url: https://api.predic8.de/shop/v2/products?sort=id&amp;order=desc&amp;limit=1
+            url: https://api.predic8.de/shop/v2/products?sort=id&order=desc&limit=1
         # Extracts the ID of the newest product
         - setProperty:
             name: id

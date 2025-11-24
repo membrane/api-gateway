@@ -21,9 +21,6 @@
 #     Open in your browser: http://localhost:9000
 #
 #     Click on the API 'Message Flow Logging' and view the diagram
-
-metadata:
-  name: Message Flow Logging
 api:
   port: 2000
   flow:

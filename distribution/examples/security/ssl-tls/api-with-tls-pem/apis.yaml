@@ -1,3 +1,4 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v6.3.11.json
 api:
   port: 8443
   ssl:
@@ -14,7 +15,7 @@ api:
     port: 2000
 
 ---
-# Serves as a backend APi mock
+# Serves as a backend API mock
 api:
   port: 2000
   flow:
@@ -24,7 +25,7 @@ api:
             contentType: application/json
             src: |
               {
-                "success": true 
+                "success": true
               }
     - return:
         statusCode: 200

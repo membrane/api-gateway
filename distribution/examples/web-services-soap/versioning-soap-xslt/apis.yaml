@@ -1,3 +1,4 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v6.3.11.json
 # Endpoint can accept request from old and new clients
 api:
   port: 2000
@@ -18,7 +19,8 @@ api:
         #  When it was converted transform response body back to old
         - if:
             test: properties['converted'] == 'true'
-        - transform:
-            xslt: convert-response-to-old-version.xslt
+            flow:
+              - transform:
+                  xslt: convert-response-to-old-version.xslt
     # SOAP service implementation for new version
     - sampleSoapService: {}

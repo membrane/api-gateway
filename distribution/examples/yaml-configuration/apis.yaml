@@ -1,7 +1,3 @@
-apiVersion: membrane-api.io/v1beta2
-kind: api
-metadata:
-  name: fruitshop-demo
 api:
   port: 2000
   specs:
@@ -9,22 +5,12 @@ api:
         location: ../../conf/openapi/fruitshop-v2-2-0.oas.yml
 
 ---
-
-apiVersion: membrane-api.io/v1beta2
-kind: api
-metadata:
-  name: admin-console
 api:
   port: 9000
   flow:
     - adminConsole: {}
 
 ---
-
-apiVersion: membrane-api.io/v1beta2
-kind: api
-metadata:
-  name: log
 api:
   port: 2000
   flow:

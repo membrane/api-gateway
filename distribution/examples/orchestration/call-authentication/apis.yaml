@@ -1,3 +1,4 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v6.3.11.json
 # API on port 2000: fetch login cookie then proxy to backend
 api:
   port: 2000

@@ -1,3 +1,4 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v6.3.11.json
 api:
   port: 8080
   flow:
@@ -11,5 +12,7 @@ api:
           def email = exc.properties.'membrane.oauth2'.userinfo.username
           exc.response = Response.ok("Hello " + email + ".").build()
           RETURN
-    # Use the <target> instead of the <groovy> interceptor to forward requests to another host:
-    # <target host="membrane-soa.org" port="80"
+    # Use the 'target' instead of the 'groovy' interceptor to forward requests to another host:
+    # target:
+    #   host: membrane-soa.org
+    #   port: 80
