@@ -12,7 +12,7 @@
 #     Inspect the console log and the response
 #
 
-spec:
+api:
   port: 2000
   flow:
     - response:

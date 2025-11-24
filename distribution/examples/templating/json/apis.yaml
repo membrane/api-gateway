@@ -1,5 +1,5 @@
 # JSON template with a variable
-spec:
+api:
   port: 2000
   method: GET
   flow:
@@ -20,7 +20,7 @@ spec:
 
 ---
 # JSON input is converted to XML and directed to logger, the response is then converted back to JSON and returned.
-spec:
+api:
   port: 2000
   method: POST
   flow:
@@ -51,7 +51,7 @@ spec:
 
 ---
 
-spec:
+api:
   name: logger
   port: 3000
   flow:

@@ -1,4 +1,4 @@
-spec:
+api:
   port: 80
   flow:
     - ntlm:

@@ -1,4 +1,4 @@
-spec:
+api:
   name: Resource Server
   port: 2000
   flow:
@@ -25,7 +25,7 @@ spec:
 
 ---
 
-spec:
+api:
   port: 3000
   flow:
     - groovy:
@@ -35,7 +35,7 @@ spec:
 
 ---
 
-spec:
+api:
   port: 9001
   flow:
     - adminConsole: {}

@@ -19,7 +19,7 @@ api:
 
 ---
 
-spec:
+api:
   port: 3000
   flow:
     - log: {}
@@ -28,7 +28,7 @@ spec:
 
 ---
 
-spec:
+api:
   port: 3001
   flow:
     - log: {}
@@ -37,7 +37,7 @@ spec:
 
 ---
 
-spec:
+api:
   port: 3002
   flow:
     - log: {}

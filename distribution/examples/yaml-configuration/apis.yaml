@@ -2,7 +2,7 @@ apiVersion: membrane-api.io/v1beta2
 kind: api
 metadata:
   name: fruitshop-demo
-spec:
+api:
   port: 2000
   specs:
     - openapi:
@@ -14,7 +14,7 @@ apiVersion: membrane-api.io/v1beta2
 kind: api
 metadata:
   name: admin-console
-spec:
+api:
   port: 9000
   flow:
     - adminConsole: {}
@@ -25,7 +25,7 @@ apiVersion: membrane-api.io/v1beta2
 kind: api
 metadata:
   name: log
-spec:
+api:
   port: 2000
   flow:
     - log:

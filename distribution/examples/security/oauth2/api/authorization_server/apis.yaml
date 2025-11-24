@@ -1,4 +1,4 @@
-spec:
+api:
   name: Authorization Server
   port: 7007
   flow:
@@ -30,7 +30,7 @@ spec:
 
 ---
 
-spec:
+api:
   port: 9000
   flow:
     - adminConsole: {}

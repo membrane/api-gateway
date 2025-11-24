@@ -1,4 +1,4 @@
-spec:
+api:
   port: 8443
   ssl:
     showSSLExceptions: true
@@ -17,7 +17,7 @@ spec:
 
 ---
 # Serves as a backend APi mock
-spec:
+api:
   port: 2000
   flow:
     - response:

@@ -1,4 +1,4 @@
-spec:
+api:
   port: 9998
   flow:
     # Membrane does not support WebSocket Extensions for now, so we remove the header
@@ -32,7 +32,7 @@ spec:
 
 ---
 
-spec:
+api:
   port: 9999
   flow:
     - webServer:

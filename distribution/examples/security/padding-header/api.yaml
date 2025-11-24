@@ -1,4 +1,4 @@
-spec:
+api:
   port: 2000
   flow:
     - paddingHeader:

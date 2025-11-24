@@ -1,4 +1,4 @@
-spec:
+api:
   port: 2000
   flow:
     - basicAuthentication:
@@ -14,7 +14,7 @@ spec:
 
 ---
 
-spec:
+api:
   port: 3000
   flow:
     - basicAuthentication:

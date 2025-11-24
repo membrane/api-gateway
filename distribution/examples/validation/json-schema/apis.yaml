@@ -1,4 +1,4 @@
-spec:
+api:
   port: 2000
   flow:
     - request:
@@ -10,7 +10,7 @@ spec:
 
 ---
 
-spec:
+api:
   port: 2001
   flow:
     - request:
@@ -22,7 +22,7 @@ spec:
 
 ---
 
-spec:
+api:
   port: 2002
   flow:
     - groovy:

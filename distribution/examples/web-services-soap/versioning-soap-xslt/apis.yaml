@@ -1,5 +1,5 @@
 # Endpoint can accept request from old and new clients
-spec:
+api:
   port: 2000
   flow:
     - request:

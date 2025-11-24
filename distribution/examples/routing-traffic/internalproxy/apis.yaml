@@ -1,4 +1,4 @@
-spec:
+api:
   port: 2000
   flow:
     - request:
@@ -13,7 +13,7 @@ spec:
 ---
 # An internalProxy is like a function or subroutine for an API.
 kind: internal
-spec:
+api:
   name: express
   flow:
     - static:
@@ -23,7 +23,7 @@ spec:
 ---
 
 kind: internal
-spec:
+api:
   name: normal
   flow:
     - static:

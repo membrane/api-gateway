@@ -1,4 +1,4 @@
-spec:
+api:
   name: membrane resource service
   port: 2000
   path:
@@ -9,7 +9,7 @@ spec:
 
 ---
 
-spec:
+api:
   name: Membrane Resource service
   port: 2000
   flow:

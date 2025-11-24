@@ -1,4 +1,4 @@
-spec:
+api:
   port: 8443
   ssl:
     # Please replace key and certificate for production!
@@ -15,7 +15,7 @@ spec:
 
 ---
 # Serves as a backend APi mock
-spec:
+api:
   port: 2000
   flow:
     - response:

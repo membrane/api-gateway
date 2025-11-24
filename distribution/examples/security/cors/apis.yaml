@@ -1,4 +1,4 @@
-spec:
+api:
   port: 2001
   flow:
     - cors:
@@ -9,7 +9,7 @@ spec:
 
 ---
 
-spec:
+api:
   port: 2002
   flow:
     - cors:
