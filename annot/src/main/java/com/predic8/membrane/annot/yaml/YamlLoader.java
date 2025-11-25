@@ -24,8 +24,17 @@ public class YamlLoader {
     public static String readString(Iterator<Event> events) {
         Event event = events.next();
         if (event instanceof ScalarEvent se)
-            return se.getValue();
+            return getValue(se);
         throw new IllegalStateException("Expected string in line " + event.getStartMark().getLine() + " column " + event.getStartMark().getColumn());
+    }
+
+    private static String getValue(ScalarEvent se) {
+        String value = se.getValue();
+        // remove the last newline (if present)
+        if (value.endsWith("\n")) {
+            value = value.substring(0, value.length() - 1);
+        }
+        return value;
     }
 
     public static Object readObj(Iterator<Event> events) {
