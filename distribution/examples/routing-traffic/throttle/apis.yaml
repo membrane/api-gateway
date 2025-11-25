@@ -5,13 +5,11 @@ api:
     - throttle:
         delay: 1000
   target:
-    host: api.predic8.de
-    port: 443
+    url: https://predic8.de
 
 ---
 
 api:
   port: 3000
   target:
-    host: api.predic8.de
-    port: 443
+    url: https://predic8.de

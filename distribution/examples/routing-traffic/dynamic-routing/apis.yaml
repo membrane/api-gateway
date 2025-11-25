@@ -3,6 +3,6 @@ api:
   name: Router
   port: 2000
   path:
-    uri: /path/{page}
+    uri: /market/{page}
   target:
     url: https://api.predic8.de/shop/v2/${pathParam.page}

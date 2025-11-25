@@ -25,6 +25,7 @@ api:
         - jwtSign:
             jwk:
               location: jwk.json
+    - return: {}
 
 ---
 
