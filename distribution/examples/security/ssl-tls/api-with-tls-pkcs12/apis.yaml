@@ -5,11 +5,11 @@ api:
     showSSLExceptions: true
     # Please replace keystore for production!
     keystore:
-      location: ../../../../conf/membrane.p12
+      location: membrane.p12
       password: secret
       keyPassword: secret
     truststore:
-      location: ../../../../conf/membrane.p12
+      location: membrane.p12
       password: secret
   # Route here to your target
   target:

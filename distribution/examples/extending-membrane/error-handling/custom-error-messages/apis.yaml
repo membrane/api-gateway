@@ -41,7 +41,6 @@ api:
                         value: ${//faultstring}
                         language: xpath
               - if:
-                  language: xpath
                   test: statusCode >= 400
                   flow:
                     - if:
@@ -56,6 +55,10 @@ api:
                                     <statusCode>${statusCode}</statusCode>
                                     <message>${property.description}!</message>
                                 </error>
+                          - setProperty:
+                              name: description
+                              value: ${/failure/description}
+                              language: xpath
     - abort:
         - if:
             test: header['X-Protection'] != null
