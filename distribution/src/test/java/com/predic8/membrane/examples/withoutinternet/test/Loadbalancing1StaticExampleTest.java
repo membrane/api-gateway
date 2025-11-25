@@ -31,6 +31,7 @@ public class Loadbalancing1StaticExampleTest extends DistributionExtractingTestc
 	public void test() throws Exception {
 
 		replaceInFile2("proxies.xml", "8080", "3023");
+		replaceInFile2("apis.yaml", "8080", "3023");
 
 		try(Process2 ignored = startServiceProxyScript()) {
 
