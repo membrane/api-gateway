@@ -10,7 +10,7 @@ api:
             pretty: yes
             src: |
               {
-                "answer": "${params.answer}"
+                "answer": ${params.answer}
               }
     # To forward to backend use target below instead of return
     - return:
@@ -43,7 +43,7 @@ api:
         # Is executed on the way back
         - setProperty:
             name: city
-            value: ${/city}
+            value: '${/city}'
             language: xpath
   # Calls logger API below
   target:
@@ -59,3 +59,4 @@ api:
     - request:
         # Logs the incoming messages
         - log: {}
+    - return: {}

@@ -1,6 +1,6 @@
 # yaml-language-server: $schema=https://www.membrane-api.io/v6.3.11.json
 api:
-  port: 2000
+  port: 8080
   name: Balancer
   flow:
     - balancer: {}

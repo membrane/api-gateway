@@ -10,8 +10,7 @@ api:
             contentType: text/plain
             src: Hello ${params.name}!
     # To send messages to backend use target below instead of return
-    - return:
-        statusCode: 200
+    - return: {}
   # target:
   #   host: YourBackendHost
   #   port: YourBackendPort
@@ -46,3 +45,4 @@ api:
               <% for(p in params) { %>
                   <%= p.key %> : <%= p.value %>
               <% } %>
+    - return: {}
