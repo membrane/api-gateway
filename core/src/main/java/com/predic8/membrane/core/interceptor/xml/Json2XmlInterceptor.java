@@ -43,8 +43,6 @@ import static java.nio.charset.StandardCharsets.*;
 @MCElement(name = "json2Xml")
 public class Json2XmlInterceptor extends AbstractInterceptor {
 
-    private static final Logger log = LoggerFactory.getLogger(Json2XmlInterceptor.class);
-
     // Prolog is needed to provide the UTF-8 encoding
     private static final String PROLOG = """
             <?xml version="1.0" encoding="UTF-8"?>""";
@@ -110,8 +108,6 @@ public class Json2XmlInterceptor extends AbstractInterceptor {
         }
 
         // org.json only supports objects and arrays. IMHO we do not have to support other JSON types.
-
-        // Should not be reached!
         throw new RuntimeException("Error parsing JSON");
     }
 
@@ -150,7 +146,7 @@ public class Json2XmlInterceptor extends AbstractInterceptor {
      * The converter therefore wraps the document into a root element if necessary. With this property you can set the name of the root element.
      *
      * @param root Name of the element to wrap the content in
-     * @default root
+     * @default "root" for objects and "array" for arrays
      */
     @MCAttribute
     public void setRoot(String root) {
