@@ -122,9 +122,50 @@ public class Json2XmlInterceptorTest {
         assertTrue(exc.getResponse().getBodyAsStringDecoded().contains("Error parsing JSON"));
     }
 
-    private static String xPath(String body, String expression) throws XPathExpressionException {
-        System.out.println("body = " + body);
-        return xPathFactory.newXPath().evaluate(expression, new InputSource(new StringReader(body)));
+    @Test
+    void array() throws URISyntaxException, XPathExpressionException {
+        Exchange exc = put("/array").json("[1,2,3]").buildExchange();
+        assertEquals(CONTINUE,  interceptor.handleRequest(exc));
+        Message msg = exc.getRequest();
+        assertEquals("1", xPath(msg.getBodyAsStringDecoded(), "/array/item[1]"));
+        assertEquals("2", xPath(msg.getBodyAsStringDecoded(), "/array/item[2]"));
+        assertEquals("3", xPath(msg.getBodyAsStringDecoded(), "/array/item[3]"));
     }
 
+    @Test
+    void arrayWithRoot() throws URISyntaxException, XPathExpressionException {
+        interceptor.setRoot("myRoot");
+        Exchange exc = put("/array").json("[1,2,3]").buildExchange();
+        assertEquals(CONTINUE,  interceptor.handleRequest(exc));
+        Message msg = exc.getRequest();
+        assertEquals("1", xPath(msg.getBodyAsStringDecoded(), "/myRoot/item[1]"));
+        assertEquals("2", xPath(msg.getBodyAsStringDecoded(), "/myRoot/item[2]"));
+        assertEquals("3", xPath(msg.getBodyAsStringDecoded(), "/myRoot/item[3]"));
+    }
+
+    @Test
+    void arrayOneElement() throws URISyntaxException, XPathExpressionException {
+        Exchange exc = put("/array").json("[1]").buildExchange();
+        assertEquals(CONTINUE,  interceptor.handleRequest(exc));
+        Message msg = exc.getRequest();
+        assertEquals("1", xPath(msg.getBodyAsStringDecoded(), "/array/item[1]"));
+    }
+
+    @Test
+    void unsupportedJsonType() throws URISyntaxException {
+        Exchange exc = put("/number").json("1").buildExchange();
+        assertEquals(ABORT,  interceptor.handleRequest(exc));
+        assertTrue(exc.getResponse().getBodyAsStringDecoded().contains("NUMBER as JSON document is not supported"));
+    }
+
+    @Test
+    void invalid() throws URISyntaxException {
+        Exchange exc = put("/invalid").json("$").buildExchange();
+        assertEquals(ABORT,  interceptor.handleRequest(exc));
+        assertTrue(exc.getResponse().getBodyAsStringDecoded().contains("not a valid JSON"));
+    }
+
+    private static String xPath(String body, String expression) throws XPathExpressionException {
+        return xPathFactory.newXPath().evaluate(expression, new InputSource(new StringReader(body)));
+    }
 }
