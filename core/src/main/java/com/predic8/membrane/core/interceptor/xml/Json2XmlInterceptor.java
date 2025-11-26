@@ -123,6 +123,7 @@ public class Json2XmlInterceptor extends AbstractInterceptor {
     /**
      * XML always needs a single root element. A JSON object can have multiple properties or an array can have multiple items.
      * The converter therefore wraps the document into a root element if necessary. With this property you can set the name of the root element.
+     * If the property is set, the XML is always wrapped into an element with the given name.
      *
      * @param root Name of the element to wrap the content in
      * @default "root" for objects and "array" for arrays
@@ -134,7 +135,7 @@ public class Json2XmlInterceptor extends AbstractInterceptor {
 
     /**
      * Sets the XML tag name used to represent JSON arrays.
-     * Default is "list".
+     * @default "array"
      */
     @MCAttribute
     public void setArray(String array) {
