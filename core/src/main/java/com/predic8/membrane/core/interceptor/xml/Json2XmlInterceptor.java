@@ -21,7 +21,6 @@ import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.util.*;
 import org.jetbrains.annotations.*;
 import org.json.*;
-import org.slf4j.*;
 
 import java.io.*;
 
@@ -103,11 +102,11 @@ public class Json2XmlInterceptor extends AbstractInterceptor {
 
         if (obj instanceof JSONArray) {
             JSONObject wrapper = new JSONObject();
-            wrapper.put("item",obj );
+            wrapper.put("item",obj);
             return wrapWithRoot(root != null ? root: "array", wrapper);
         }
 
-        // org.json only supports objects and arrays. IMHO we do not have to support other JSON types.
+        // Should never reach here as getJSONObject only returns JSONObject or JSONArray
         throw new RuntimeException("Error parsing JSON");
     }
 
