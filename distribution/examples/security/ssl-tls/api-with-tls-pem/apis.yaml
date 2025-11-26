@@ -2,6 +2,7 @@
 api:
   port: 8443
   ssl:
+    showSSLExceptions: true
     # Please replace key and certificate for production!
     key:
       private:
