@@ -90,15 +90,18 @@ class JsonToXmlListStyleTest {
         @Test
         void singleProperty() {
             conv.setRootName(null);
+
             String xml = conv.toXml("""
-                    {
-                        "person": {
-                            "name": "John",
-                            "age": 30
-                        }
+                {
+                    "person": {
+                        "name": "John",
+                        "age": 30
                     }
-                    """);
-            System.out.println(xml);
+                }
+                """);
+            XmlPath xp = new XmlPath(xml);
+            assertEquals("John", xp.getString("person.name"));
+            assertEquals("30",  xp.getString("person.age"));
         }
 
     }
