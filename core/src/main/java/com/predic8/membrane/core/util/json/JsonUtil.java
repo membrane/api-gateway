@@ -17,14 +17,7 @@ package com.predic8.membrane.core.util.json;
 import com.fasterxml.jackson.databind.*;
 import com.fasterxml.jackson.databind.node.*;
 
-import java.io.*;
 import java.math.*;
-
-import static com.predic8.membrane.core.util.json.JsonUtil.JsonType.*;
-import static com.predic8.membrane.core.util.json.JsonUtil.JsonType.NULL;
-import static com.predic8.membrane.core.util.json.JsonUtil.JsonType.NUMBER;
-import static com.predic8.membrane.core.util.json.JsonUtil.JsonType.UNKNOWN;
-import static java.lang.Character.isDigit;
 
 public class JsonUtil {
 
@@ -82,50 +75,4 @@ public class JsonUtil {
 
         return FACTORY.textNode(value);
     }
-
-    public enum JsonType {
-        OBJECT, ARRAY, STRING, NUMBER, BOOLEAN, NULL, UNKNOWN
-    }
-
-    /**
-     * Detects the JSON type by inspecting the first non-whitespace character
-     * of the given string. Behaves identically to the InputStream-based version
-     * but does not consume any stream.
-     *
-     * @param text JSON document as string
-     * @return detected JsonType
-     */
-    public static JsonType detectJsonType(String text) {
-        if (text == null)
-            return JsonType.UNKNOWN;
-
-        int len = text.length();
-        int i = 0;
-
-        // Skip leading whitespace
-        while (i < len && Character.isWhitespace(text.charAt(i))) {
-            i++;
-        }
-
-        if (i >= len)
-            return JsonType.UNKNOWN;
-
-        char c = text.charAt(i);
-
-        return switch (c) {
-            case '{' -> JsonType.OBJECT;
-            case '[' -> JsonType.ARRAY;
-            case '"' -> JsonType.STRING;
-            case 't', 'f' -> JsonType.BOOLEAN; // true/false
-            case 'n' -> JsonType.NULL; // null
-            default -> {
-                // simple number check
-                if (Character.isDigit(c) || c == '-' || c == '+')
-                    yield JsonType.NUMBER;
-                yield JsonType.UNKNOWN;
-            }
-        };
-    }
-
-
 }
