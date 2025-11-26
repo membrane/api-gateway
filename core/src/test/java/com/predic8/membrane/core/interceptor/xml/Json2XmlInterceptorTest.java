@@ -16,6 +16,8 @@ package com.predic8.membrane.core.interceptor.xml;
 import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
+import io.restassured.path.json.*;
+import io.restassured.path.xml.*;
 import org.junit.jupiter.api.*;
 import org.xml.sax.*;
 
@@ -95,6 +97,34 @@ public class Json2XmlInterceptorTest {
     }
 
     @Test
+    void nested() throws URISyntaxException {
+        Exchange exc = put("/nested").json("""
+            {
+                "one": [1],
+                "nested": [[2]],
+                "three": [[[3]]]
+            }
+            """).buildExchange();
+
+        assertEquals(CONTINUE, interceptor.handleRequest(exc));
+
+        String xml = exc.getRequest().getBodyAsStringDecoded();
+        XmlPath xp = new XmlPath(xml);
+
+        // one = [1]
+        assertEquals(1, xp.getInt("root.one.array.item"));
+        assertEquals(1, xp.getList("root.one.array.item").size());
+
+        // nested = [[2]]
+        assertEquals(2, xp.getInt("root.nested.array.item.array.item"));
+        assertEquals(1, xp.getList("root.nested.array.item.array.item").size());
+
+        // three = [[[3]]]
+        assertEquals(3, xp.getInt("root.three.array.item.array.item.array.item"));
+        assertEquals(1, xp.getList("root.three.array.item.array.item.array.item").size());
+    }
+
+    @Test
     void noRoot() throws Exception {
         Exchange exc = put("/no-root").json(noRoot).buildExchange();
         assertEquals(CONTINUE,  interceptor.handleRequest(exc));
@@ -138,13 +168,13 @@ public class Json2XmlInterceptorTest {
         Exchange exc = put("/array").json("[1,2,3]").buildExchange();
         assertEquals(CONTINUE,  interceptor.handleRequest(exc));
         Message msg = exc.getRequest();
-        assertEquals("1", xPath(msg.getBodyAsStringDecoded(), "/myRoot/item[1]"));
-        assertEquals("2", xPath(msg.getBodyAsStringDecoded(), "/myRoot/item[2]"));
-        assertEquals("3", xPath(msg.getBodyAsStringDecoded(), "/myRoot/item[3]"));
+        assertEquals("1", xPath(msg.getBodyAsStringDecoded(), "/myRoot/array/item[1]"));
+        assertEquals("2", xPath(msg.getBodyAsStringDecoded(), "/myRoot/array/item[2]"));
+        assertEquals("3", xPath(msg.getBodyAsStringDecoded(), "/myRoot/array/item[3]"));
     }
 
     @Test
-    void arrayOneElement() throws URISyntaxException, XPathExpressionException {
+    void arrayOneElement() throws Exception {
         Exchange exc = put("/array").json("[1]").buildExchange();
         assertEquals(CONTINUE,  interceptor.handleRequest(exc));
         Message msg = exc.getRequest();
@@ -152,17 +182,21 @@ public class Json2XmlInterceptorTest {
     }
 
     @Test
-    void unsupportedJsonType() throws URISyntaxException {
+    void number() throws Exception {
         Exchange exc = put("/number").json("1").buildExchange();
-        assertEquals(ABORT,  interceptor.handleRequest(exc));
-        assertTrue(exc.getResponse().getBodyAsStringDecoded().contains("NUMBER as JSON document is not supported"));
+        assertEquals(CONTINUE,  interceptor.handleRequest(exc));
+        Message msg = exc.getRequest();
+        System.out.println(msg.getBodyAsStringDecoded());
+        assertEquals("1", xPath(msg.getBodyAsStringDecoded(), "/root"));
     }
 
     @Test
     void invalid() throws URISyntaxException {
-        Exchange exc = put("/invalid").json("$").buildExchange();
+        Exchange exc = put("/invalid").json("{").buildExchange();
         assertEquals(ABORT,  interceptor.handleRequest(exc));
-        assertTrue(exc.getResponse().getBodyAsStringDecoded().contains("not a valid JSON"));
+        Response res = exc.getResponse();
+        assertEquals(500, res.getStatusCode());
+        assertEquals("Error parsing JSON",     new JsonPath(res.getBodyAsStringDecoded()).get("title"));
     }
 
     private static String xPath(String body, String expression) throws XPathExpressionException {

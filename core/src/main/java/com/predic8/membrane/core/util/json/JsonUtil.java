@@ -12,7 +12,7 @@
    See the License for the specific language governing permissions and
    limitations under the License. */
 
-package com.predic8.membrane.core.util;
+package com.predic8.membrane.core.util.json;
 
 import com.fasterxml.jackson.databind.*;
 import com.fasterxml.jackson.databind.node.*;
@@ -20,10 +20,10 @@ import com.fasterxml.jackson.databind.node.*;
 import java.io.*;
 import java.math.*;
 
-import static com.predic8.membrane.core.util.JsonUtil.JsonType.*;
-import static com.predic8.membrane.core.util.JsonUtil.JsonType.NULL;
-import static com.predic8.membrane.core.util.JsonUtil.JsonType.NUMBER;
-import static com.predic8.membrane.core.util.JsonUtil.JsonType.UNKNOWN;
+import static com.predic8.membrane.core.util.json.JsonUtil.JsonType.*;
+import static com.predic8.membrane.core.util.json.JsonUtil.JsonType.NULL;
+import static com.predic8.membrane.core.util.json.JsonUtil.JsonType.NUMBER;
+import static com.predic8.membrane.core.util.json.JsonUtil.JsonType.UNKNOWN;
 import static java.lang.Character.isDigit;
 
 public class JsonUtil {
@@ -88,39 +88,44 @@ public class JsonUtil {
     }
 
     /**
-     * Detects the JSON type of the first non-whitespace character in the stream.
-     * Stream is consumed and cannot be read again!
-     * @param in
-     * @return
-     * @throws IOException
+     * Detects the JSON type by inspecting the first non-whitespace character
+     * of the given string. Behaves identically to the InputStream-based version
+     * but does not consume any stream.
+     *
+     * @param text JSON document as string
+     * @return detected JsonType
      */
-    public static JsonType detectJsonType(InputStream in) throws IOException {
+    public static JsonType detectJsonType(String text) {
+        if (text == null)
+            return JsonType.UNKNOWN;
 
-        int b;
-        do {
-            b = in.read();
-        } while (b != -1 && Character.isWhitespace(b));
+        int len = text.length();
+        int i = 0;
 
-        if (b == -1) {
-            return UNKNOWN;
+        // Skip leading whitespace
+        while (i < len && Character.isWhitespace(text.charAt(i))) {
+            i++;
         }
 
-        char c = (char) b;
+        if (i >= len)
+            return JsonType.UNKNOWN;
+
+        char c = text.charAt(i);
 
         return switch (c) {
-            case '{' -> OBJECT;
-            case '[' -> ARRAY;
-            case '"' -> STRING;
-            case 't', 'f' -> BOOLEAN; // boolean
-            case 'n' -> NULL; // null
+            case '{' -> JsonType.OBJECT;
+            case '[' -> JsonType.ARRAY;
+            case '"' -> JsonType.STRING;
+            case 't', 'f' -> JsonType.BOOLEAN; // true/false
+            case 'n' -> JsonType.NULL; // null
             default -> {
-                // number test (very loose)
-                if (isDigit(c) || c == '-' || c == '+') {
-                    yield NUMBER;
-                }
-                yield UNKNOWN;
+                // simple number check
+                if (Character.isDigit(c) || c == '-' || c == '+')
+                    yield JsonType.NUMBER;
+                yield JsonType.UNKNOWN;
             }
         };
     }
+
 
 }
