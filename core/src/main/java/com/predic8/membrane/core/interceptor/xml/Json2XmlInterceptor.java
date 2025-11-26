@@ -28,13 +28,15 @@ import java.io.*;
 import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
 import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
-import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
+import static com.predic8.membrane.core.util.JsonUtil.*;
+import static com.predic8.membrane.core.util.StringUtil.*;
 import static java.nio.charset.StandardCharsets.*;
 
 
 /**
- * @description Converts body payload from JSON to XML. The JSON must be an object other JSON documents e.g. arrays are not supported.
+ * @description Converts the body payload from JSON to XML. The JSON document must be an object or array.
  * @explanation Resulting XML will be in UTF-8 encoding.
  * @topic 2. Enterprise Integration Patterns
  */
@@ -42,7 +44,6 @@ import static java.nio.charset.StandardCharsets.*;
 public class Json2XmlInterceptor extends AbstractInterceptor {
 
     private static final Logger log = LoggerFactory.getLogger(Json2XmlInterceptor.class);
-
 
     // Prolog is needed to provide the UTF-8 encoding
     private static final String PROLOG = """
@@ -66,27 +67,15 @@ public class Json2XmlInterceptor extends AbstractInterceptor {
             return CONTINUE;
 
         try {
-            msg.setBodyContent(json2Xml(msg.getBodyAsStream()));
-        } catch (JSONException e) {
-            log.info("Error parsing JSON: {}",e.getMessage());
-            user(router.isProduction(), getDisplayName())
-                    .title("Error parsing JSON")
-                    .addSubType("validation/json")
-                    .exception(e)
-                    .stacktrace(false)
-                    .internal("flow", flow)
-                    .internal("body", StringUtil.truncateAfter(msg.getBodyAsStringDecoded(), 200))
-                    .buildAndSetResponse(exchange);
-            return ABORT;
-        }
-        catch (Exception e) {
+            msg.setBodyContent(json2Xml(msg));
+        } catch (Exception e) {
             internal(router.isProduction(), getDisplayName())
                     .title("Error parsing JSON")
                     .addSubType("validation/json")
-                    .exception(e)
-                    .stacktrace(true)
+                    .exception(e) // Message contains a meaningful error message
+                    .stacktrace(false)
                     .internal("flow", flow)
-                    .internal("body", StringUtil.truncateAfter(msg.getBodyAsStringDecoded(), 200))
+                    .internal("body", truncateAfter(msg.getBodyAsStringDecoded(), 200))
                     .buildAndSetResponse(exchange);
             return ABORT;
         }
@@ -95,33 +84,51 @@ public class Json2XmlInterceptor extends AbstractInterceptor {
         return CONTINUE;
     }
 
-    private byte[] json2Xml(InputStream body) {
-        return (PROLOG + XML.toString(getJSONRoot(body))).getBytes(UTF_8);
+    private byte[] json2Xml(Message body) throws IOException {
+        return (PROLOG + XML.toString(getBodyAsXML(body))).getBytes(UTF_8);
     }
 
-    private @NotNull JSONObject getJSONRoot(InputStream body) {
-        if (root != null) {
-            return createRoot(root, convertToJsonObject(body));
-        }
-        JSONObject json = convertToJsonObject(body);
+    private @NotNull Object getBodyAsXML(Message msg) throws IOException {
 
-        // If there is exactly one element, then we can use that as root
-        if (json.length() == 1) {
-            return json;
-        } else {
+        Object obj = getJSONObject(msg, detectJsonType(msg.getBodyAsStreamDecoded()));
+
+        if (obj instanceof JSONObject jsonObject) {
+            if (root != null) {
+                return wrapWithRoot(root, jsonObject);
+            }
+            if (jsonObject.length() == 1) {
+                return jsonObject;
+            }
             // Otherwise we must wrap the fields into a single root element
-            return createRoot("root", json);
+            return wrapWithRoot("root", jsonObject);
         }
+
+        if (obj instanceof JSONArray) {
+            JSONObject wrapper = new JSONObject();
+            wrapper.put("item",obj );
+            return wrapWithRoot(root != null ? root: "array", wrapper);
+        }
+
+        // org.json only supports objects and arrays. IMHO we do not have to support other JSON types.
+
+        // Should not be reached!
+        throw new RuntimeException("Error parsing JSON");
     }
 
-    private JSONObject createRoot(String name, JSONObject jsonObject) {
+    private static Object getJSONObject(Message msg, JsonUtil.JsonType type) {
+        return switch (type) {
+            case OBJECT -> new JSONObject(new JSONTokener(msg.getBodyAsStreamDecoded()));
+            case ARRAY -> new JSONArray(new JSONTokener(msg.getBodyAsStreamDecoded()));
+            case UNKNOWN -> throw new IllegalArgumentException("Body is not a valid JSON document.");
+            default ->
+                    throw new IllegalArgumentException("%s as JSON document is not supported. Use object or array.".formatted(type));
+        };
+    }
+
+    private JSONObject wrapWithRoot(String name, Object node) {
         JSONObject root = new JSONObject();
-        root.put(name, jsonObject);
+        root.put(name, node);
         return root;
-    }
-
-    private JSONObject convertToJsonObject(InputStream body) {
-        return new JSONObject(new JSONTokener(new InputStreamReader(body, UTF_8)));
     }
 
     @Override
@@ -139,10 +146,11 @@ public class Json2XmlInterceptor extends AbstractInterceptor {
     }
 
     /**
-     * A JSON object can have multiple keys. When transforming that to XML a single root element is needed.
-     * If set a root element with this name will wrap the content.
+     * XML always needs a single root element. A JSON object can have multiple properties or an array can have multiple items.
+     * The converter therefore wraps the document into a root element if necessary. With this property you can set the name of the root element.
      *
      * @param root Name of the element to wrap the content in
+     * @default root
      */
     @MCAttribute
     public void setRoot(String root) {

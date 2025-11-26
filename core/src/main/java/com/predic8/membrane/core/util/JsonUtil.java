@@ -17,7 +17,14 @@ package com.predic8.membrane.core.util;
 import com.fasterxml.jackson.databind.*;
 import com.fasterxml.jackson.databind.node.*;
 
+import java.io.*;
 import java.math.*;
+
+import static com.predic8.membrane.core.util.JsonUtil.JsonType.*;
+import static com.predic8.membrane.core.util.JsonUtil.JsonType.NULL;
+import static com.predic8.membrane.core.util.JsonUtil.JsonType.NUMBER;
+import static com.predic8.membrane.core.util.JsonUtil.JsonType.UNKNOWN;
+import static java.lang.Character.isDigit;
 
 public class JsonUtil {
 
@@ -75,4 +82,45 @@ public class JsonUtil {
 
         return FACTORY.textNode(value);
     }
+
+    public enum JsonType {
+        OBJECT, ARRAY, STRING, NUMBER, BOOLEAN, NULL, UNKNOWN
+    }
+
+    /**
+     * Detects the JSON type of the first non-whitespace character in the stream.
+     * Stream is consumed and cannot be read again!
+     * @param in
+     * @return
+     * @throws IOException
+     */
+    public static JsonType detectJsonType(InputStream in) throws IOException {
+
+        int b;
+        do {
+            b = in.read();
+        } while (b != -1 && Character.isWhitespace(b));
+
+        if (b == -1) {
+            return UNKNOWN;
+        }
+
+        char c = (char) b;
+
+        return switch (c) {
+            case '{' -> OBJECT;
+            case '[' -> ARRAY;
+            case '"' -> STRING; // true
+            case 't', 'f' -> BOOLEAN; // false
+            case 'n' -> NULL; // null
+            default -> {
+                // number test (very loose)
+                if (isDigit(c) || c == '-' || c == '+') {
+                    yield NUMBER;
+                }
+                yield UNKNOWN;
+            }
+        };
+    }
+
 }
