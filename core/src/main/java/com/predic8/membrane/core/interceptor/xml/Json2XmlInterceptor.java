@@ -28,7 +28,6 @@ import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 import static com.predic8.membrane.core.util.StringUtil.*;
-import static com.predic8.membrane.core.util.json.JsonUtil.JsonType.ARRAY;
 import static java.nio.charset.StandardCharsets.*;
 
 /**
@@ -64,6 +63,7 @@ public class Json2XmlInterceptor extends AbstractInterceptor {
 
         converter.setArrayName(array);
         converter.setItemName(item);
+        converter.setRootName(root);
 
         // root gets handled dynamically at runtime because it depends on json document type
         // unless explicitly set via @MCAttribute
@@ -102,20 +102,8 @@ public class Json2XmlInterceptor extends AbstractInterceptor {
         return CONTINUE;
     }
 
-    private byte[] json2Xml(Message msg) throws IOException {
-        String json = msg.getBodyAsStringDecoded().trim();
-
-        // If root is explicitly configured, use it.
-//        if (root != null) {
-//            converter.setRootName(root);
-//        } else {
-//            // Auto-root behavior:
-//            // JSON array → root="array", JSON object → root="root"
-//            converter.setRootName(JsonUtil.detectJsonType(json) == ARRAY ? "array" : "root");
-//        }
-        converter.setRootName(root);
-
-        return (PROLOG + converter.toXml(json)).getBytes(UTF_8);
+    private byte[] json2Xml(Message msg) {
+        return (PROLOG + converter.toXml(msg.getBodyAsStringDecoded())).getBytes(UTF_8);
     }
 
     @Override

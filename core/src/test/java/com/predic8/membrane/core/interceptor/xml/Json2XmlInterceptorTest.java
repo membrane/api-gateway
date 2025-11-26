@@ -137,6 +137,7 @@ public class Json2XmlInterceptorTest {
     @Test
     void noRootWithRootNameSpecified() throws Exception {
         interceptor.setRoot("top");
+        interceptor.init();
         Exchange exc = put("/no-root").json(noRoot).buildExchange();
         assertEquals(CONTINUE,  interceptor.handleRequest(exc));
         Message msg = exc.getRequest();
@@ -165,6 +166,7 @@ public class Json2XmlInterceptorTest {
     @Test
     void arrayWithRoot() throws URISyntaxException, XPathExpressionException {
         interceptor.setRoot("myRoot");
+        interceptor.init();
         Exchange exc = put("/array").json("[1,2,3]").buildExchange();
         assertEquals(CONTINUE,  interceptor.handleRequest(exc));
         Message msg = exc.getRequest();

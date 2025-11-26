@@ -2,6 +2,10 @@ package com.predic8.membrane.core.util.json;
 
 import org.json.*;
 
+import static java.lang.Boolean.FALSE;
+import static java.lang.Boolean.TRUE;
+import static org.json.JSONObject.NULL;
+
 public class JsonToXmlListStyle {
 
     private String rootName = null;
@@ -75,9 +79,17 @@ public class JsonToXmlListStyle {
 
         if (t.startsWith("{")) return new JSONObject(t);
         if (t.startsWith("[")) return new JSONArray(t);
-        if ("true".equals(t)) return Boolean.TRUE;
-        if ("false".equals(t)) return Boolean.FALSE;
-        if ("null".equals(t)) return JSONObject.NULL;
+        switch (t) {
+            case "true" -> {
+                return TRUE;
+            }
+            case "false" -> {
+                return FALSE;
+            }
+            case "null" -> {
+                return NULL;
+            }
+        }
 
         if (t.matches("-?\\d+")) return Integer.valueOf(t);
         if (t.matches("-?\\d+\\.\\d+")) return Double.valueOf(t);
@@ -111,7 +123,7 @@ public class JsonToXmlListStyle {
             return;
         }
 
-        if (value == null || value == JSONObject.NULL) {
+        if (value == null || value == NULL) {
             return;
         }
 
