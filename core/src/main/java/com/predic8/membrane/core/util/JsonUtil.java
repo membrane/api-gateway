@@ -110,8 +110,8 @@ public class JsonUtil {
         return switch (c) {
             case '{' -> OBJECT;
             case '[' -> ARRAY;
-            case '"' -> STRING; // true
-            case 't', 'f' -> BOOLEAN; // false
+            case '"' -> STRING;
+            case 't', 'f' -> BOOLEAN; // boolean
             case 'n' -> NULL; // null
             default -> {
                 // number test (very loose)
