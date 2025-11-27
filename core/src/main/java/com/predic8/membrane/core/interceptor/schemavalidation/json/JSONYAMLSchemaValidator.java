@@ -33,7 +33,11 @@ import org.jetbrains.annotations.*;
 import org.slf4j.*;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.charset.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.atomic.*;
 
@@ -47,8 +51,10 @@ import static java.nio.charset.StandardCharsets.*;
 public class JSONYAMLSchemaValidator extends AbstractMessageValidator {
 
     private static final Logger log = LoggerFactory.getLogger(JSONYAMLSchemaValidator.class);
+
     private final YAMLFactory factory = YAMLFactory.builder().enable(STRICT_DUPLICATE_DETECTION).build();
-    private final ObjectMapper objectMapper = new ObjectMapper(factory);
+    private final ObjectMapper yamlObjectMapper = new ObjectMapper(factory);
+    private final ObjectMapper jsonObjectMapper = new ObjectMapper();
 
     public static final String SCHEMA_VERSION_2020_12 = "2020-12";
 
@@ -100,10 +106,12 @@ public class JSONYAMLSchemaValidator extends AbstractMessageValidator {
         jsonSchemaFactory = SchemaRegistry.withDefaultDialect(schemaId, builder ->
                 builder.schemaLoader(loaders -> new MembraneSchemaLoader(resolver)));
 
-        // If the schema data does not specify an $id the absolute IRI of the schema location will be used as the $id.
-        schema=  jsonSchemaFactory.getSchema(SchemaLocation.of( jsonSchema));
-        schema.initializeValidators();
-
+        try (InputStream in = resolver.resolve(jsonSchema)) {
+            schema = jsonSchemaFactory.getSchema((jsonSchema.endsWith(".yaml") || jsonSchema.endsWith(".yml") ? yamlObjectMapper: jsonObjectMapper).readTree(in));
+            schema.initializeValidators();
+        } catch (IOException e) {
+            throw new RuntimeException("Cannot read JSON Schema from: " + jsonSchema, e);
+        }
     }
 
     public Outcome validateMessage(Exchange exc, Flow flow) throws Exception {
@@ -148,7 +156,7 @@ public class JSONYAMLSchemaValidator extends AbstractMessageValidator {
         assertions = new ArrayList<>();
         YAMLParser parser = factory.createParser(exc.getMessage(flow).getBodyAsStreamDecoded());
         while (!parser.isClosed()) {
-            assertions.addAll(schema.validate(objectMapper.readTree(parser)));
+            assertions.addAll(schema.validate(yamlObjectMapper.readTree(parser)));
             parser.nextToken();
         }
         return assertions;
