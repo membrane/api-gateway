@@ -85,20 +85,26 @@ public class JsonSchemaGenerator extends AbstractK8sGenerator {
 
     private void addTopLevelProperties(Model m, MainInfo main) {
         schema.additionalProperties(false);
-        List<SchemaObject> kinds = new ArrayList<>();
+        List<AbstractSchema<?>> kinds = new ArrayList<>();
+
         main.getElements().values().forEach(e -> {
-            if (e.getAnnotation().topLevel())
-                schema.property(ref(e.getAnnotation().name())
-                      .ref("#/$defs/" + e.getXSDTypeName(m)));
+            if (!e.getAnnotation().topLevel())
+                return;
+
+            String name = e.getAnnotation().name();
+            String refName = "#/$defs/" + e.getXSDTypeName(m);
+
+            schema.property(ref(name).ref(refName));
 
             kinds.add(object()
                     .additionalProperties(false)
-                    .property(ref(e.getAnnotation().name())
-                            .ref("#/$defs/" + e.getXSDTypeName(m))
+                    .property(ref(name)
+                            .ref(refName)
                             .required(true)));
         });
 
-        schema.oneOf(new ArrayList<>(kinds));
+        if (!kinds.isEmpty())
+            schema.oneOf(kinds);
     }
 
     private void addParserDefinitions(Model m, MainInfo main) {
