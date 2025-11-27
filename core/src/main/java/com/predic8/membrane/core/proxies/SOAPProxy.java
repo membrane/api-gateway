@@ -19,6 +19,7 @@ import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.config.security.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.interceptor.rewrite.*;
+import com.predic8.membrane.core.interceptor.schemavalidation.ValidatorInterceptor;
 import com.predic8.membrane.core.interceptor.server.*;
 import com.predic8.membrane.core.interceptor.soap.*;
 import com.predic8.membrane.core.openapi.serviceproxy.OpenAPIInterceptor;
@@ -90,6 +91,8 @@ public class SOAPProxy extends AbstractServiceProxy {
         for(Interceptor interceptor: interceptors) {
             if(interceptor instanceof WSDLPublisherInterceptor wpi) {
                 wpi.setSoapProxy(this);
+            } else if (interceptor instanceof ValidatorInterceptor vi) {
+                vi.setSoapProxy(this);
             }
         }
     }

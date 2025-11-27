@@ -318,7 +318,7 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
 
     private String getSwaggerProtocol(String host) {
         if (!(host.contains("http://") || host.contains("https://"))) {
-            return router.getParentProxy(this).getProtocol();
+            return apiProxy.getProtocol();
         }
         return "";
     }
@@ -337,7 +337,7 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
     }
 
     private RuleKey getKey() {
-        return router.getParentProxy(this).getKey();
+        return apiProxy.getKey();
     }
 
     private String buildValidationPropertiesDescription(Map<String, Object> props) {
