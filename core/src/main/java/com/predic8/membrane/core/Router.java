@@ -688,13 +688,6 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
         if (newProxy.getName() == null)
             newProxy.setName(bd.getName());
 
-        if (bd.getAction() == WatchAction.ADDED)
-            add(newProxy);
-        else if (bd.getAction() == WatchAction.DELETED)
-            getRuleManager().removeRule((Proxy) oldBean);
-        else if (bd.getAction() == WatchAction.MODIFIED)
-            getRuleManager().replaceRule((Proxy) oldBean, newProxy);
-
         try {
             newProxy.init(this);
         }
@@ -705,6 +698,13 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
         catch (Exception e) {
             throw new RuntimeException("Could not init rule.", e);
         }
+
+        if (bd.getAction() == WatchAction.ADDED)
+            add(newProxy);
+        else if (bd.getAction() == WatchAction.DELETED)
+            getRuleManager().removeRule((Proxy) oldBean);
+        else if (bd.getAction() == WatchAction.MODIFIED)
+            getRuleManager().replaceRule((Proxy) oldBean, newProxy);
     }
 
     @Override

@@ -21,6 +21,7 @@ import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.interceptor.rewrite.*;
 import com.predic8.membrane.core.interceptor.server.*;
 import com.predic8.membrane.core.interceptor.soap.*;
+import com.predic8.membrane.core.openapi.serviceproxy.OpenAPIInterceptor;
 import com.predic8.membrane.core.openapi.util.*;
 import com.predic8.membrane.core.resolver.*;
 import com.predic8.membrane.core.transport.http.client.*;
@@ -85,6 +86,12 @@ public class SOAPProxy extends AbstractServiceProxy {
         }
         configureFromWSDL();
         super.init(); // Must be called last! Otherwise, SSL will not be configured!
+
+        for(Interceptor interceptor: interceptors) {
+            if(interceptor instanceof WSDLPublisherInterceptor wpi) {
+                wpi.setSoapProxy(this);
+            }
+        }
     }
 
     protected void configureFromWSDL() {
