@@ -318,7 +318,7 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
 
     private String getSwaggerProtocol(String host) {
         if (!(host.contains("http://") || host.contains("https://"))) {
-            return apiProxy.getProtocol();
+            return apiProxy.getProtocol() + "://";
         }
         return "";
     }

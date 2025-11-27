@@ -704,7 +704,7 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
         }
         catch (ConfigurationException e) {
             SpringConfigurationErrorHandler.handleRootCause(e, log);
-            System.exit(1);
+            throw e;
         }
         catch (Exception e) {
             throw new RuntimeException("Could not init rule.", e);
