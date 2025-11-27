@@ -97,7 +97,7 @@ public abstract class AbstractProxy implements Proxy {
                 if(i instanceof ProxyAware pa) {
                     pa.setProxy(this);
                 }
-                i.init(router);
+                i.init(router, this);
             }
             active = true;
         } catch (Exception e) {
