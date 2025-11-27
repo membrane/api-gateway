@@ -136,7 +136,7 @@ public class JsonSchemaGenerator extends AbstractK8sGenerator {
         }
 
         SchemaObject parser = object(parserName)
-                .additionalProperties(false)
+                .additionalProperties(elementInfo.getOai() != null)
                 .description(getDescriptionContent(elementInfo));
         collectProperties(m, main, elementInfo, parser);
         return parser;
