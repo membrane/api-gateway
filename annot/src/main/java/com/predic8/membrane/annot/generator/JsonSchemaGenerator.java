@@ -166,9 +166,13 @@ public class JsonSchemaGenerator extends AbstractK8sGenerator {
     }
 
     private void processMCAttributes(ElementInfo i, SchemaObject so) {
-        i.getAis().stream()
-                .filter(ai -> !ai.getXMLName().equals("id"))
-                .forEach(ai -> so.property(createProperty(ai)));
+        i.getAis().forEach(ai -> {
+            // hide id only on top-level elements
+            if ("id".equals(ai.getXMLName()) && i.getAnnotation().topLevel()) {
+                return;
+            }
+            so.property(createProperty(ai));
+        });
     }
 
     private AbstractSchema<?> createProperty(AttributeInfo ai) {
