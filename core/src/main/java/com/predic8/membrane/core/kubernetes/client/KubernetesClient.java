@@ -13,6 +13,7 @@
    limitations under the License. */
 package com.predic8.membrane.core.kubernetes.client;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.predic8.membrane.annot.yaml.WatchAction;
 import com.predic8.membrane.core.exchange.Exchange;
@@ -188,10 +189,9 @@ public class KubernetesClient {
                             String line = br.readLine();
                             if (line == null)
                                 break;
-                            Map envelope = om.readValue(line, Map.class);
-                            WatchAction action = WatchAction.valueOf((String) envelope.get("type"));
-                            Map o = (Map) envelope.get("object");
-                            watcher.onEvent(action, o);
+                            JsonNode envelope = om.readTree(line);
+                            WatchAction action = WatchAction.valueOf(envelope.get("type").asText());
+                            watcher.onEvent(action, envelope.get("object"));
                         }
                         watcher.onClosed(null);
                     }

@@ -25,13 +25,10 @@ import com.predic8.membrane.annot.MCChildElement;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.yaml.snakeyaml.Yaml;
-import org.yaml.snakeyaml.error.Mark;
 import org.yaml.snakeyaml.events.*;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.StringReader;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.*;
@@ -60,30 +57,11 @@ public class GenericYamlParser {
             registry = new BeanCache(observer, generator);
             registry.start();
 
-            JsonLocationMap jsonLocationMap = new JsonLocationMap();
-            List<JsonNode> rootNodes = jsonLocationMap.parseWithLocations(new String(resource.readAllBytes(), UTF_8));
-            for (int i = 0; i < rootNodes.size(); i++) {
-                if (rootNodes.get(i) == null) {
-                    log.debug(EMPTY_DOCUMENT_WARNING);
-                    rootNodes.remove(i);
-                    i--;
-                    continue;
-                }
-                try {
-                    validate(generator, rootNodes.get(i));
-                } catch (YamlSchemaValidationException e) {
-                    JsonLocation location = jsonLocationMap.getLocationMap().get(
-                            e.getErrors().getFirst().getInstanceNode());
-                    throw new IOException("Invalid YAML: %s at line %d, column %d.".formatted(
-                            e.getErrors().getFirst().getMessage(),
-                            location.getLineNr(),
-                            location.getColumnNr()), e);
-                }
-                Map<String, Object> m = om.convertValue(rootNodes.get(i), Map.class);
-
-                registry.handle(WatchAction.ADDED, new BeanDefinition(
-                        getBeanType(rootNodes.get(i)), "bean-" + i, "default", UUID.randomUUID().toString(), m));
-            }
+            new GenericYamlParser(generator, new String(resource.readAllBytes(), UTF_8))
+                    .getBeanDefinitions()
+                    .forEach(bd -> {
+                        registry.handle(WatchAction.ADDED, bd);
+                    });
 
             registry.fireConfigurationLoaded();
         } catch (JsonParseException e) {
@@ -96,6 +74,42 @@ public class GenericYamlParser {
         }
 
         return registry;
+    }
+
+    List<BeanDefinition> beanDefs = new ArrayList<>();
+
+    public GenericYamlParser(K8sHelperGenerator generator, String yaml) throws IOException {
+        JsonLocationMap jsonLocationMap = new JsonLocationMap();
+        List<JsonNode> rootNodes = jsonLocationMap.parseWithLocations(yaml);
+        for (int i = 0; i < rootNodes.size(); i++) {
+            if (rootNodes.get(i) == null) {
+                log.debug(GenericYamlParser.EMPTY_DOCUMENT_WARNING);
+                rootNodes.remove(i);
+                i--;
+                continue;
+            }
+            try {
+                validate(generator, rootNodes.get(i));
+            } catch (YamlSchemaValidationException e) {
+                JsonLocation location = jsonLocationMap.getLocationMap().get(
+                        e.getErrors().getFirst().getInstanceNode());
+                throw new IOException("Invalid YAML: %s at line %d, column %d.".formatted(
+                        e.getErrors().getFirst().getMessage(),
+                        location.getLineNr(),
+                        location.getColumnNr()), e);
+            }
+
+            beanDefs.add(new BeanDefinition(
+                    getBeanType(rootNodes.get(i)),
+                    "bean-" + i,
+                    "default",
+                    UUID.randomUUID().toString(),
+                    rootNodes.get(i)));
+        }
+    }
+
+    public List<BeanDefinition> getBeanDefinitions() {
+        return beanDefs;
     }
 
     private static String getBeanType(JsonNode jsonNode) {
@@ -118,120 +132,86 @@ public class GenericYamlParser {
     }
 
 
-    public static Object readMembraneObject(String kind, K8sHelperGenerator generator, String yaml, BeanRegistry registry) {
+    public static Object readMembraneObject(String kind, K8sHelperGenerator generator, JsonNode node, BeanRegistry registry) throws ParsingException {
 
-        Iterator<Event> events = new Yaml().parse(new StringReader(yaml)).iterator();
-        Event event = events.next();
-        if (!(event instanceof StreamStartEvent))
-            throw new IllegalStateException("Expected StreamStartEvent in line %d column %d".formatted(event.getStartMark().getLine(), event.getStartMark().getColumn()));
-        event = events.next();
-        if (!(event instanceof DocumentStartEvent))
-            throw new IllegalStateException("Expected DocumentStartEvent in line %d column %d".formatted(event.getStartMark().getLine(), event.getStartMark().getColumn()));
-        event = events.next();
-        ensureMappingStart(event);
-        event = events.next();
-        if (!(event instanceof ScalarEvent))
-            throw new IllegalStateException("Expected scalar in line %d column %d".formatted(event.getStartMark().getLine(), event.getStartMark().getColumn()));
+        ensureMappingStart(node);
+
+        if (node.size() > 1)
+            throw new ParsingException("Expected exactly one key.", node);
 
         Class clazz = generator.getElement(kind);
         if (clazz == null)
-            throw new RuntimeException("Did not find java class for kind '%s' in line %d column %d.".formatted(kind, event.getStartMark().getLine(), event.getStartMark().getColumn()));
-        Object result = GenericYamlParser.parse(kind, clazz, events, registry, generator);
-
-        event = events.next();
-        if (!(event instanceof MappingEndEvent))
-            throw new IllegalStateException("Expected MappingEndEvent in line %d column %d".formatted(event.getStartMark().getLine(), event.getStartMark().getColumn()));
-        event = events.next();
-        if (!(event instanceof DocumentEndEvent))
-            throw new IllegalStateException("Expected DocumentEndEvent in line %d column %d".formatted(event.getStartMark().getLine(), event.getStartMark().getColumn()));
-        event = events.next();
-        if (!(event instanceof StreamEndEvent))
-            throw new IllegalStateException("Expected StreamEndEvent in line %d column %d".formatted(event.getStartMark().getLine(), event.getStartMark().getColumn()));
+            throw new ParsingException("Did not find java class for kind '%s'.".formatted(kind), node);
+        Object result = GenericYamlParser.parse(kind, clazz, node.get(kind), registry, generator);
 
         return result;
     }
 
     @SuppressWarnings({"rawtypes"})
-    public static <T> T parse(String context, Class<T> clazz, Iterator<Event> events, BeanRegistry registry, K8sHelperGenerator k8sHelperGenerator) {
-        Event event = null;
-        Mark lastContextMark = null;
+    public static <T> T parse(String context, Class<T> clazz, JsonNode node, BeanRegistry registry, K8sHelperGenerator k8sHelperGenerator) throws ParsingException {
         try {
             T obj = clazz.getConstructor().newInstance();
-            event = events.next();
-            if (event instanceof SequenceStartEvent) {
+            if (node.isArray()) {
                 // when this is a list, we are on a @MCElement(..., noEnvelope=true)
-                setSetter(obj, getSingleChildSetter(clazz), parseListExcludingStartEvent(context, events, registry, k8sHelperGenerator));
+                setSetter(obj, getSingleChildSetter(clazz), parseListExcludingStartEvent(context, node, registry, k8sHelperGenerator));
                 return obj;
             }
-            ensureMappingStart(event);
+            ensureMappingStart(node);
             if (isNoEnvelope(clazz))
                 throw new RuntimeException("Class " + clazz.getName() + " is annotated with @MCElement(noEnvelope=true), but the YAML/JSON structure does not contain a list.");
 
-            while (true) {
-                event = events.next();
+            for (Iterator<String> it = node.fieldNames(); it.hasNext(); ) {
+                String key = it.next();
+                try {
 
-                if (event instanceof MappingEndEvent) break;
-
-                String key = getScalarKey(event);
-                lastContextMark = event.getStartMark();
-
-                if ("$ref".equals(key)) {
-                    handleTopLevelRefs(clazz, events, registry, obj);
-                    continue;
-                }
-
-                Method setter = getSetter(clazz, key);
-                // MCChildElements which are not lists are directly declared as beans,
-                // their name should be interpreted as an element name
-                if (setter != null && setter.getAnnotation(MCChildElement.class) != null) {
-                    if (!List.class.isAssignableFrom(setter.getParameterTypes()[0]))
-                        setter = null;
-                }
-                Class clazz2 = null;
-                if (setter == null) {
-                    try {
-                        clazz2 = k8sHelperGenerator.getLocal(context, key);
-                        if (clazz2 == null)
-                            clazz2 = k8sHelperGenerator.getElement(key);
-                        if (clazz2 != null)
-                            setter = getChildSetter(clazz, clazz2);
-                    } catch (Exception e) {
-                        throw new RuntimeException("Can't find method or bean for key: " + key + " in " + clazz.getName(), e);
+                    if ("$ref".equals(key)) {
+                        handleTopLevelRefs(clazz, node.get(key), registry, obj);
+                        continue;
                     }
-                    if (setter == null)
-                        setter = getAnySetter(clazz);
-                    if (clazz2 == null && setter == null)
-                        throw new RuntimeException("Can't find method or bean for key: " + key + " in " + clazz.getName());
-                }
 
-                setSetter(obj, setter, resolveSetterValue((Class) setter.getParameterTypes()[0], setter, context, events, registry, key, clazz2, event, k8sHelperGenerator));
+                    Method setter = getSetter(clazz, key);
+                    // MCChildElements which are not lists are directly declared as beans,
+                    // their name should be interpreted as an element name
+                    if (setter != null && setter.getAnnotation(MCChildElement.class) != null) {
+                        if (!List.class.isAssignableFrom(setter.getParameterTypes()[0]))
+                            setter = null;
+                    }
+                    Class clazz2 = null;
+                    if (setter == null) {
+                        try {
+                            clazz2 = k8sHelperGenerator.getLocal(context, key);
+                            if (clazz2 == null)
+                                clazz2 = k8sHelperGenerator.getElement(key);
+                            if (clazz2 != null)
+                                setter = getChildSetter(clazz, clazz2);
+                        } catch (Exception e) {
+                            throw new RuntimeException("Can't find method or bean for key: " + key + " in " + clazz.getName(), e);
+                        }
+                        if (setter == null)
+                            setter = getAnySetter(clazz);
+                        if (clazz2 == null && setter == null)
+                            throw new RuntimeException("Can't find method or bean for key: " + key + " in " + clazz.getName());
+                    }
+
+                    setSetter(obj, setter, resolveSetterValue((Class) setter.getParameterTypes()[0], setter, context, node.get(key), registry, key, clazz2, k8sHelperGenerator));
+                } catch (Throwable cause) {
+                    throw new ParsingException(cause, node.get(key));
+                }
             }
             return obj;
         } catch (Throwable cause) {
-            Mark problemMark = event != null ? event.getStartMark() : null;
-            // Fall back if we don't have marks
-            if (problemMark == null && lastContextMark == null) {
-                throw new RuntimeException("YAML parse error: " + cause.getMessage(), cause);
-            }
-            // This exception type prints a caret + snippet automatically
-            throw new PublicMarkedYAMLException(
-                    "while parsing " + clazz.getSimpleName(),
-                    lastContextMark,
-                    cause.getMessage(),
-                    problemMark,
-                    cause.getMessage()
-            );
+            throw new ParsingException(cause, node);
         }
 
     }
 
     @SuppressWarnings({"rawtypes", "unchecked"})
-    private static Object resolveSetterValue(Class<?> wanted, Method setter, String context, Iterator<Event> events, BeanRegistry registry, String key, Class<?> clazz2, Event event, K8sHelperGenerator k8sHelperGenerator) throws WrongEnumConstantException {
+    private static Object resolveSetterValue(Class<?> wanted, Method setter, String context, JsonNode node, BeanRegistry registry, String key, Class<?> clazz2, K8sHelperGenerator k8sHelperGenerator) throws WrongEnumConstantException, ParsingException {
         if (wanted.equals(List.class) || wanted.equals(Collection.class)) {
-            return parseListIncludingStartEvent(context, events, registry, k8sHelperGenerator);
+            return parseListIncludingStartEvent(context, node, registry, k8sHelperGenerator);
         }
         if (wanted.isEnum()) {
-            String value = YamlLoader.readString(events).toUpperCase(ROOT);
+            String value = readString(node).toUpperCase(ROOT);
             try {
                 return Enum.valueOf((Class<Enum>) wanted, value);
             } catch (IllegalArgumentException e) {
@@ -239,38 +219,37 @@ public class GenericYamlParser {
             }
         }
         if (wanted.equals(String.class)) {
-            return YamlLoader.readString(events);
+            return readString(node);
         }
         if (wanted.equals(Integer.TYPE)) {
-            return Integer.parseInt(YamlLoader.readString(events));
+            return Integer.parseInt(readString(node));
         }
         if (wanted.equals(Long.TYPE)) {
-            return Long.parseLong(YamlLoader.readString(events));
+            return Long.parseLong(readString(node));
         }
         if (wanted.equals(Boolean.TYPE)) {
-            return Boolean.parseBoolean(YamlLoader.readString(events));
+            return Boolean.parseBoolean(readString(node));
         }
         if (wanted.equals(Map.class) && hasOtherAttributes(setter)) {
-            return Map.of(key, YamlLoader.readString(events));
+            return Map.of(key, readString(node));
         }
         if (isStructured(setter)) {
             if (clazz2 != null) {
-                return parseMapToObj(context, events, event, registry, k8sHelperGenerator);
+                return parse(key, clazz2, node, registry, k8sHelperGenerator);
             } else {
-                return parse(context, wanted, events, registry, k8sHelperGenerator);
+                return parse(key, wanted, node, registry, k8sHelperGenerator);
             }
         }
         if (isReferenceAttribute(setter)) {
-            return registry.resolveReference(YamlLoader.readString(events));
+            return registry.resolveReference(readString(node));
         }
         throw new RuntimeException("Not implemented setter type " + wanted);
     }
 
-    private static <T> void handleTopLevelRefs(Class<T> clazz, Iterator<Event> events, BeanRegistry registry, T obj) throws InvocationTargetException, IllegalAccessException {
-        Event event = events.next();
-        if (!(event instanceof ScalarEvent))
+    private static <T> void handleTopLevelRefs(Class<T> clazz, JsonNode node, BeanRegistry registry, T obj) throws InvocationTargetException, IllegalAccessException {
+        if (!node.isTextual())
             throw new IllegalStateException("Expected a string after the '$ref' key.");
-        Object o = registry.resolveReference(((ScalarEvent) event).getValue());
+        Object o = registry.resolveReference(node.asText());
         setSetter(obj, getChildSetter(clazz, o.getClass()), o);
     }
 
@@ -287,50 +266,48 @@ public class GenericYamlParser {
         }
     }
 
-    private static List<?> parseListIncludingStartEvent(String context, Iterator<Event> events, BeanRegistry registry, K8sHelperGenerator k8sHelperGenerator) {
-        Event event = events.next();
-        if (!(event instanceof SequenceStartEvent)) {
-            throw new IllegalStateException("Expected start-of-sequence in line " + event.getStartMark().getLine() + " column " + event.getStartMark().getColumn());
+    private static void ensureMappingStart(JsonNode node) throws ParsingException {
+        if (!(node.isObject())) {
+            throw new ParsingException("Expected object", node);
         }
-        return parseListExcludingStartEvent(context, events, registry, k8sHelperGenerator);
     }
 
-    private static @NotNull ArrayList<?> parseListExcludingStartEvent(String context, Iterator<Event> events, BeanRegistry registry, K8sHelperGenerator k8sHelperGenerator) {
+    private static String readString(JsonNode node) {
+        return node.asText();
+    }
+
+    private static List<?> parseListIncludingStartEvent(String context, JsonNode node, BeanRegistry registry, K8sHelperGenerator k8sHelperGenerator) throws ParsingException {
+        if (!node.isArray()) {
+            throw new ParsingException("Expected list.", node);
+        }
+        return parseListExcludingStartEvent(context, node, registry, k8sHelperGenerator);
+    }
+
+    private static @NotNull ArrayList<?> parseListExcludingStartEvent(String context, JsonNode node, BeanRegistry registry, K8sHelperGenerator k8sHelperGenerator) throws ParsingException {
         Event event;
         ArrayList res = new ArrayList();
-        while (true) {
-            event = events.next();
-            if (event instanceof SequenceEndEvent)
-                break;
-            else if (!(event instanceof MappingStartEvent))
-                throw new IllegalStateException("Expected end-of-sequence or begin-of-map in line " + event.getStartMark().getLine() + " column " + event.getStartMark().getColumn());
-            res.add(parseMapToObj(context, events, registry, k8sHelperGenerator));
+        for (int i = 0; i < node.size(); i++) {
+            res.add(parseMapToObj(context, node.get(i), registry, k8sHelperGenerator));
         }
 
         return res;
     }
 
 
-    private static Object parseMapToObj(String context, Iterator<Event> events, BeanRegistry registry, K8sHelperGenerator k8sHelperGenerator) {
-        Event event = events.next();
-        if (!(event instanceof ScalarEvent))
-            throw new IllegalStateException("Expected scalar in line " + event.getStartMark().getLine() + " column " + event.getStartMark().getColumn());
-        Object o = parseMapToObj(context, events, event, registry, k8sHelperGenerator);
-        event = events.next();
-        if (!(event instanceof MappingEndEvent))
-            throw new IllegalStateException("Expected end-of-map or begin-of-map in line " + event.getStartMark().getLine() + " column " + event.getStartMark().getColumn());
-        return o;
+    private static Object parseMapToObj(String context, JsonNode node, BeanRegistry registry, K8sHelperGenerator k8sHelperGenerator) throws ParsingException {
+        if (!node.isObject())
+            throw new ParsingException("Expected object.", node);
+        if (node.size() != 1)
+            throw new ParsingException("Expected exactly one key.", node);
+        String key = node.fieldNames().next();
+        return parseMapToObj(context, node.get(key), key, registry, k8sHelperGenerator);
     }
 
-    private static Object parseMapToObj(String context, Iterator<Event> events, Event event, BeanRegistry registry, K8sHelperGenerator k8sHelperGenerator) {
-        String key = ((ScalarEvent) event).getValue();
+    private static Object parseMapToObj(String context, JsonNode node, String key, BeanRegistry registry, K8sHelperGenerator k8sHelperGenerator) throws ParsingException {
         if ("$ref".equals(key)) {
-            event = events.next();
-            if (!(event instanceof ScalarEvent se))
-                throw new IllegalStateException("Expected a string after the '$ref' key.");
-            return registry.resolveReference(se.getValue());
+            return registry.resolveReference(readString(node));
         }
-        return parse(key, getAClass(context, key, k8sHelperGenerator), events, registry, k8sHelperGenerator);
+        return parse(key, getAClass(context, key, k8sHelperGenerator), node, registry, k8sHelperGenerator);
     }
 
     private static @NotNull Class<?> getAClass(String context, String key, K8sHelperGenerator k8sHelperGenerator) {

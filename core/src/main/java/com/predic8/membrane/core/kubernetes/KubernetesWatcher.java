@@ -13,6 +13,7 @@
    limitations under the License. */
 package com.predic8.membrane.core.kubernetes;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.predic8.membrane.annot.yaml.BeanCache;
 import com.predic8.membrane.annot.yaml.WatchAction;
 import com.predic8.membrane.core.Router;
@@ -103,11 +104,13 @@ public class KubernetesWatcher {
         try {
             watches.put(namespace + "/" + crd, client.watch("membrane-api.io/v1beta2", crd, namespace, null, executors, new Watcher() {
                 @Override
-                public void onEvent(WatchAction action, Map m) {
+                public void onEvent(WatchAction action, JsonNode node) {
                     try {
-                        System.err.println(action + " " + crd + " " + ((Map)m.get("metadata")).get("namespace") + "/" + ((Map)m.get("metadata")).get("name"));
+                        System.err.println(action + " " + crd + " %s/%s".formatted(
+                                node.get("metadata").get("namespace").asText(),
+                                node.get("metadata").get("name").asText()));
 
-                        beanCache.handle(action, m);
+                        beanCache.handle(action, node.get("spec"));
                     } catch (Exception e) {
                         e.printStackTrace();
                     }

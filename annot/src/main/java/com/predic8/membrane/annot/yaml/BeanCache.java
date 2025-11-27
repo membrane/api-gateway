@@ -13,6 +13,7 @@
    limitations under the License. */
 package com.predic8.membrane.annot.yaml;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.predic8.membrane.annot.K8sHelperGenerator;
@@ -80,21 +81,20 @@ public class BeanCache implements BeanRegistry {
             thread.interrupt();
     }
 
-    public Object define(BeanDefinition bd) throws IOException {
-        String yaml = removeFirstYamlDocStartMarker(mapper.writeValueAsString(bd.getMap())); // TODO Why do we first parse than serialize than parse again?
-        log.debug("defining bean: {}", yaml);
+    public Object define(BeanDefinition bd) throws IOException, ParsingException {
+        log.debug("defining bean: {}", bd.getNode());
 
         return GenericYamlParser.readMembraneObject(bd.getKind(),
                 k8sHelperGenerator,
-                yaml,
+                bd.getNode(),
                 this);
     }
 
     /**
      * May be called from multiple threads.
      */
-    public void handle(WatchAction action, Map<String,Object> m) {
-        changeEvents.add(new BeanDefinitionChanged(new BeanDefinition(action, m)));
+    public void handle(WatchAction action, JsonNode node) {
+        changeEvents.add(new BeanDefinitionChanged(new BeanDefinition(action, node)));
     }
 
     /**
@@ -105,7 +105,7 @@ public class BeanCache implements BeanRegistry {
     }
 
     /**
-     * Signals that all {@link ChangeEvent}s have been passed to {@link #handle(WatchAction, Map)} which originate from
+     * Signals that all {@link ChangeEvent}s have been passed to {@link #handle(WatchAction, JsonNode)} which originate from
      * static configuration (e.g. a file).
      */
     public void fireConfigurationLoaded() {
