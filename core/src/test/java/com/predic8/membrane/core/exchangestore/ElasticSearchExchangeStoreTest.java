@@ -46,6 +46,7 @@ import static com.predic8.membrane.core.http.Header.CONTENT_TYPE;
 import static com.predic8.membrane.core.http.MimeType.TEXT_PLAIN;
 import static com.predic8.membrane.core.http.Response.ok;
 import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
+import static java.lang.System.currentTimeMillis;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -144,20 +145,22 @@ class ElasticSearchExchangeStoreTest {
     private static @NotNull Outcome getOutcome(Exchange exc, ObjectMapper om) {
         if (exc.getRequest().getMethod().equals("POST") && exc.getRequest().getUri().equals("/_bulk")) {
             for (String line : exc.getRequest().getBodyAsStringDecoded().split("\n")) {
+                if (line.isBlank())
+                    continue;
+
                 try {
                     JsonNode obj = om.readTree(line);
                     synchronized (insertedObjects) {
                         insertedObjects.add(obj);
                     }
                 } catch (JacksonException e) {
-                    throw new RuntimeException(e);
+                    throw new AssertionError("Invalid JSON line in bulk request: " + line, e);
                 }
             }
             exc.setResponse(ok("{}").build());
             return RETURN;
         }
-        exc.setResponse(ok("""
-                {}""").build());
+        exc.setResponse(ok("{}").build());
         return RETURN;
     }
 
@@ -214,19 +217,23 @@ class ElasticSearchExchangeStoreTest {
     }
 
     private void waitForExchangeStoreToFlush() {
-        while (true) {
+
+        while (currentTimeMillis() < currentTimeMillis() + (long) 10_000) {
             synchronized (es.shortTermMemoryForBatching) {
                 int size = es.shortTermMemoryForBatching.size();
-                if (size == 0 && !es.updateThreadWorking)
+                if (size == 0) { // do NOT depend on updateThreadWorking
                     return;
+                }
             }
             try {
                 //noinspection BusyWait
                 Thread.sleep(50);
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
+                return;
             }
         }
+        fail("Exchange store did not flush within timeout. size=" + es.shortTermMemoryForBatching.size());
     }
 
 }

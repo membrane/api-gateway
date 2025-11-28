@@ -27,6 +27,9 @@ import org.slf4j.LoggerFactory;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import io.swagger.v3.core.util.Json31;
+
 import java.io.IOException;
 import java.util.Objects;
 
@@ -42,6 +45,7 @@ public class OpenAPIUtil {
     private static final Logger log = LoggerFactory.getLogger(OpenAPIUtil.class.getName());
 
     private static final JsonMapper JSON_MAPPER = JsonMapper.builder().build();
+    private static final ObjectMapper SWAGGER_JSON = Json31.mapper();
 
     public static String getIdFromAPI(OpenAPI api) {
         if (api.getInfo().getExtensions() != null) {
@@ -75,7 +79,7 @@ public class OpenAPIUtil {
     }
 
     public static JsonNode convert2Json(OpenAPI api) throws IOException {
-        return JSON_MAPPER.readTree(JSON_MAPPER.writeValueAsBytes(api));
+        return JSON_MAPPER.readTree(SWAGGER_JSON.writeValueAsBytes(api));
     }
 
     public static boolean isOpenAPIMisplacedError(String errorMsg) {

@@ -33,6 +33,8 @@ import java.util.Map;
 @MCElement(name="jwks")
 public class Jwks {
 
+    private static final ObjectMapper MAPPER = new ObjectMapper();
+
     List<Jwk> jwks = new ArrayList<>();
     String jwksUris;
     AuthorizationService authorizationService;
@@ -58,15 +60,14 @@ public class Jwks {
     }
 
     public void init(ResolverMap resolverMap, String baseLocation) {
-        if(jwksUris == null || jwksUris.isEmpty())
+        if (jwksUris == null || jwksUris.isEmpty())
             return;
 
-        ObjectMapper mapper = new ObjectMapper();
         for (String uri : jwksUris.split(" ")) {
             try {
-                for (Object jwkRaw : parseJwksUriIntoList(resolverMap, baseLocation, mapper, uri)) {
+                for (Object jwkRaw : parseJwksUriIntoList(resolverMap, baseLocation, MAPPER, uri)) {
                     Jwk jwk = new Jwk();
-                    jwk.setContent(mapper.writeValueAsString(jwkRaw));
+                    jwk.setContent(MAPPER.writeValueAsString(jwkRaw));
                     this.jwks.add(jwk);
                 }
             } catch (Exception e) {
@@ -109,9 +110,9 @@ public class Jwks {
         public String getJwk(ResolverMap resolverMap, String baseLocation, ObjectMapper mapper) throws IOException {
             String maybeJwk = get(resolverMap, baseLocation);
 
-            Map<String,Object> mapped = mapper.readValue(maybeJwk, new TypeReference<>() {});
+            Map<String, Object> mapped = mapper.readValue(maybeJwk, new TypeReference<>() {});
 
-            if(mapped.containsKey("keys"))
+            if (mapped.containsKey("keys"))
                 return handleJwks(mapper, mapped);
 
             return maybeJwk;
