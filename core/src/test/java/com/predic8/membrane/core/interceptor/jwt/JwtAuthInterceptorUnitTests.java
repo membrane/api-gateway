@@ -13,8 +13,7 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.jwt;
 
-
-import tools.jackson.databind.core.JsonProcessingException;
+import tools.jackson.core.JacksonException;
 import tools.jackson.databind.ObjectMapper;
 import com.predic8.membrane.core.HttpRouter;
 import com.predic8.membrane.core.exchange.*;
@@ -46,7 +45,7 @@ public class JwtAuthInterceptorUnitTests {
         try {
             var map = new ObjectMapper().readValue(exc.getResponse().getBody().toString(), Map.class);
             return map.get("detail").toString();
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             throw new RuntimeException(e);
         }
     }

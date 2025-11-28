@@ -13,7 +13,8 @@
 
 package com.predic8.membrane.core.interceptor.jwt;
 
-import tools.jackson.databind.core.type.TypeReference;
+import tools.jackson.core.JacksonException;
+import tools.jackson.core.type.TypeReference;
 import tools.jackson.databind.ObjectMapper;
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.exchange.Exchange;
@@ -207,7 +208,7 @@ public class JwtAuthInterceptorTest{
         try {
             return new ObjectMapper().readValue(exc.getResponse().getBodyAsStream(), new TypeReference<>() {
             });
-        } catch (IOException e) {
+        } catch (JacksonException e) {
             throw new RuntimeException(e);
         }
     }

@@ -14,7 +14,6 @@
 
 package com.predic8.membrane.core.interceptor.oauth2.client.b2c;
 
-import tools.jackson.databind.core.JsonProcessingException;
 import com.predic8.membrane.core.exceptions.ProblemDetails;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Header;
@@ -28,6 +27,7 @@ import org.jose4j.jwt.JwtClaims;
 import org.jose4j.jwt.consumer.JwtConsumer;
 import org.jose4j.jwt.consumer.JwtConsumerBuilder;
 import org.junit.jupiter.api.Test;
+import tools.jackson.core.JacksonException;
 
 import java.net.URISyntaxException;
 import java.util.Arrays;
@@ -245,7 +245,7 @@ public abstract class OAuth2ResourceB2CUnitTest extends OAuth2ResourceB2CTestSet
         assertEquals("b2c_1_profile_editing", c2.getClaimValue("tfp"));
     }
 
-    private String getAccessToken(Exchange exc) throws JsonProcessingException {
+    private String getAccessToken(Exchange exc) throws JacksonException {
         return (String) om.readValue(exc.getResponse().getBodyAsStringDecoded(), Map.class).get("accessToken");
     }
 

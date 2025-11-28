@@ -13,32 +13,48 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.session;
 
-import tools.jackson.databind.core.*;
-import tools.jackson.databind.core.type.*;
-import tools.jackson.databind.*;
-import com.google.common.collect.*;
-import com.predic8.membrane.core.*;
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.proxies.*;
-import org.apache.commons.io.*;
-import org.apache.http.client.config.*;
-import org.apache.http.client.methods.*;
-import org.apache.http.impl.client.*;
-import org.apache.http.impl.conn.*;
-import org.apache.http.util.*;
-import org.junit.jupiter.api.*;
+import com.google.common.collect.ImmutableMap;
+import com.predic8.membrane.core.HttpRouter;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.HeaderField;
+import com.predic8.membrane.core.http.Message;
+import com.predic8.membrane.core.http.Response;
+import com.predic8.membrane.core.interceptor.AbstractInterceptor;
+import com.predic8.membrane.core.interceptor.AbstractInterceptorWithSession;
+import com.predic8.membrane.core.interceptor.Outcome;
+import com.predic8.membrane.core.proxies.ServiceProxy;
+import com.predic8.membrane.core.proxies.ServiceProxyKey;
+import org.apache.commons.io.IOUtils;
+import org.apache.http.client.config.CookieSpecs;
+import org.apache.http.client.config.RequestConfig;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClients;
+import org.apache.http.impl.conn.BasicHttpClientConnectionManager;
+import org.apache.http.util.EntityUtils;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
+import tools.jackson.core.JacksonException;
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.ObjectMapper;
 
-import java.io.*;
-import java.time.*;
-import java.util.*;
-import java.util.concurrent.atomic.*;
-import java.util.stream.*;
+import java.io.IOException;
+import java.time.Duration;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
-import static java.nio.charset.StandardCharsets.*;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class SessionInterceptorTest {
@@ -191,7 +207,7 @@ public class SessionInterceptorTest {
                     exc.setResponse(Response.ok().build());
                 try {
                     exc.getResponse().setBodyContent(createTestResponseBody(exc).getBytes());
-                } catch (JsonProcessingException e) {
+                } catch (JacksonException e) {
                     throw new RuntimeException(e);
                 }
                 return RETURN;
@@ -219,7 +235,7 @@ public class SessionInterceptorTest {
         };
     }
 
-    private String createTestResponseBody(Exchange exc) throws JsonProcessingException {
+    private String createTestResponseBody(Exchange exc) throws JacksonException {
         Map request = new HashMap();
         Map response = new HashMap();
 

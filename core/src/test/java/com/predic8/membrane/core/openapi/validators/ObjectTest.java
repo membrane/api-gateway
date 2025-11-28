@@ -16,7 +16,6 @@
 
 package com.predic8.membrane.core.openapi.validators;
 
-import tools.jackson.databind.core.*;
 import tools.jackson.databind.*;
 import com.predic8.membrane.core.openapi.model.*;
 import org.junit.jupiter.api.*;
@@ -36,7 +35,7 @@ public class ObjectTest extends AbstractValidatorTest{
     }
 
     @Test
-    public void numberAsObject() throws JsonProcessingException {
+    public void numberAsObject() {
 
         Request.post().path("/object").body(new JsonBody(""));
 

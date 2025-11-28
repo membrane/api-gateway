@@ -29,13 +29,21 @@ public class OAuth2TestUtil {
         try (var bufferedJsonGenerator = new BufferedJsonGenerator()) {
             var gen = bufferedJsonGenerator.getJsonGenerator();
             gen.writeStartObject();
-            gen.writeObjectFieldStart("userinfo");
-            gen.writeObjectField("email", null);
+
+            gen.writeName("userinfo");
+            gen.writeStartObject();
+            gen.writeName("email");
+            gen.writeNull();
             gen.writeEndObject();
-            gen.writeObjectFieldStart("id_token");
-            gen.writeObjectField("sub", null);
-            gen.writeObjectField("email", null);
+
+            gen.writeName("id_token");
+            gen.writeStartObject();
+            gen.writeName("sub");
+            gen.writeNull();
+            gen.writeName("email");
+            gen.writeNull();
             gen.writeEndObject();
+
             gen.writeEndObject();
             return bufferedJsonGenerator.getJson();
         }

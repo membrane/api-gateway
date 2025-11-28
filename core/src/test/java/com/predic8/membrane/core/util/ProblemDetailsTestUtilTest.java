@@ -14,7 +14,7 @@
 
 package com.predic8.membrane.core.util;
 
-import tools.jackson.databind.core.*;
+import tools.jackson.core.JacksonException;
 import com.predic8.membrane.core.exceptions.*;
 import org.junit.jupiter.api.*;
 
@@ -23,7 +23,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 class ProblemDetailsTestUtilTest {
 
     @Test
-    void parse() throws JsonProcessingException {
+    void parse() throws JacksonException {
         ProblemDetails pd = ProblemDetailsTestUtil.parse(ProblemDetails.user(false, "a")
                 .addSubType("validation")
                 .status(421)

@@ -10,7 +10,7 @@
 
 package com.predic8.membrane.core.kubernetes;
 
-import tools.jackson.databind.core.JsonProcessingException;
+import tools.jackson.core.JacksonException;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 import tools.jackson.dataformat.yaml.YAMLFactory;
@@ -352,7 +352,7 @@ public class GenericYamlParserTest {
     public static JsonNode parse(String yaml) {
         try {
             return new ObjectMapper(new YAMLFactory()).readTree(yaml);
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             throw new RuntimeException(e);
         }
     }

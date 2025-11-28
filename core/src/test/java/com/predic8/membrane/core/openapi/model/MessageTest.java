@@ -14,7 +14,7 @@
 package com.predic8.membrane.core.openapi.model;
 
 
-import tools.jackson.databind.core.*;
+import tools.jackson.core.JacksonException;
 import org.junit.jupiter.api.*;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -24,7 +24,7 @@ class MessageTest {
     private Message<JsonBody,?> message;
 
     @BeforeEach
-    void setup() throws JsonProcessingException {
+    void setup() throws JacksonException {
 
         message = Request.<JsonBody>post().path("/star-star").json().body(new JsonBody("{}"));
     }

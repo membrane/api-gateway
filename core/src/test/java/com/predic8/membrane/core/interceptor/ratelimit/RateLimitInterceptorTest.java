@@ -14,7 +14,6 @@
 
 package com.predic8.membrane.core.interceptor.ratelimit;
 
-import tools.jackson.databind.core.*;
 import tools.jackson.databind.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
@@ -125,7 +124,7 @@ public class RateLimitInterceptorTest {
 	}
 
 	@NotNull
-	private static Exchange prepareRequest(String value) throws URISyntaxException, JsonProcessingException {
+	private static Exchange prepareRequest(String value) throws URISyntaxException {
 		Exchange exc = new Request.Builder()
 				.method(value)
 				.url(new URIFactory(),"/" + value)

@@ -13,6 +13,7 @@
    limitations under the License. */
 package com.predic8.membrane.core.azure.api.tablestorage;
 
+import tools.jackson.core.JacksonException;
 import tools.jackson.databind.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
@@ -145,7 +146,7 @@ public class TableEntityCommandExecutor {
             JsonNode r;
             try {
                 r = new ObjectMapper().readTree(res.getBodyAsStreamDecoded());
-            } catch (IOException e) {
+            } catch (JacksonException e) {
                 throw new RuntimeException(e);
             }
 

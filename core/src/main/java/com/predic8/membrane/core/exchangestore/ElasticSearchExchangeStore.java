@@ -14,6 +14,7 @@
 
 package com.predic8.membrane.core.exchangestore;
 
+import tools.jackson.core.JacksonException;
 import tools.jackson.databind.*;
 import com.google.common.collect.*;
 import com.predic8.membrane.annot.*;
@@ -141,7 +142,7 @@ public class ElasticSearchExchangeStore extends AbstractPersistentExchangeStore 
             Map<String,String> value = mapper.readValue(mapper.writeValueAsString(exc),Map.class);
             value.put("issuer",documentPrefix);
             return mapper.writeValueAsString(value);
-        } catch (IOException e) {
+        } catch (JacksonException e) {
             log.error("While collecting data from {}", exc.getRequest().getUri(), e);
             return "";
         }
@@ -404,7 +405,7 @@ public class ElasticSearchExchangeStore extends AbstractPersistentExchangeStore 
         return sources.stream().map(source -> {
             try {
                 return mapper.readValue(mapper.writeValueAsString(source),AbstractExchangeSnapshot.class).toAbstractExchange();
-            } catch (IOException e) {
+            } catch (JacksonException e) {
                 throw new RuntimeException(e);
             }
         }).collect(Collectors.toList());

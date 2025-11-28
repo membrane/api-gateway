@@ -13,6 +13,7 @@
    limitations under the License. */
 package com.predic8.membrane.core.openapi.validators;
 
+import com.fasterxml.jackson.databind.node.TextNode;
 import tools.jackson.databind.node.*;
 import com.predic8.membrane.core.openapi.util.*;
 import io.swagger.v3.oas.models.*;
@@ -97,7 +98,7 @@ class QueryParameterValidatorTest extends AbstractValidatorTest {
     void validateParameterAdditionalQueryParametersValid() {
         assertTrue(citiesValidator.validateAdditionalQueryParameters(
                 ctx,
-                Map.of("api-key", new TextNode("234523")),
+                Map.of("api-key", new StringNode("234523")),
                 new OpenAPI().components(new Components() {{
                     addSecuritySchemes("schemaA", new SecurityScheme().type(APIKEY).name("api-key").in(QUERY));
                 }})
@@ -108,7 +109,7 @@ class QueryParameterValidatorTest extends AbstractValidatorTest {
     void validateParameterAdditionalQueryParametersInvalid() {
         assertFalse(citiesValidator.validateAdditionalQueryParameters(
                 ctx,
-                Map.of("bar", new TextNode("2315124")),
+                Map.of("bar", new StringNode("2315124")),
                 new OpenAPI().components(new Components() {{
                     addSecuritySchemes("schemaA", new SecurityScheme().type(APIKEY).name("api-key").in(QUERY));
                 }})

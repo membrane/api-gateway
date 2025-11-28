@@ -14,6 +14,7 @@
 
 package com.predic8.membrane.core.interceptor.registration;
 
+import tools.jackson.core.JacksonException;
 import tools.jackson.databind.*;
 import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.exchange.*;
@@ -55,7 +56,7 @@ public class RegistrationInterceptor extends AbstractInterceptor {
         User user;
         try {
             user = new ObjectMapper().readValue(request.getBodyAsStringDecoded(), User.class);
-        } catch (IOException e) {
+        } catch (JacksonException e) {
             return ErrorMessages.returnErrorBadRequest(exc);
         }
         //user.setConfirmed(false); DB setzt als Standardwert 'false' gesetzt

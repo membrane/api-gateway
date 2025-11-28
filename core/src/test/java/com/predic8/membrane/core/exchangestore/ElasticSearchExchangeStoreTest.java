@@ -14,7 +14,7 @@
 
 package com.predic8.membrane.core.exchangestore;
 
-import tools.jackson.databind.core.JsonProcessingException;
+import tools.jackson.core.JacksonException;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 import com.predic8.membrane.core.HttpRouter;
@@ -149,7 +149,7 @@ class ElasticSearchExchangeStoreTest {
                     synchronized (insertedObjects) {
                         insertedObjects.add(obj);
                     }
-                } catch (JsonProcessingException e) {
+                } catch (JacksonException e) {
                     throw new RuntimeException(e);
                 }
             }

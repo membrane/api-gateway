@@ -36,8 +36,10 @@ public class BufferedJsonGeneratorTest {
         try (var bufferedJsonGenerator = new BufferedJsonGenerator()) {
             var gen = bufferedJsonGenerator.getJsonGenerator();
             gen.writeStartObject();
-            for (int i = 0; i < params.length; i += 2)
-                gen.writeObjectField(params[i], params[i + 1]);
+            for (int i = 0; i < params.length; i += 2) {
+                gen.writeName(params[i]);
+                gen.writePOJO(params[i + 1]);
+            }
             gen.writeEndObject();
             return bufferedJsonGenerator.getJson();
         }

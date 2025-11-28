@@ -13,7 +13,7 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.oauth2client.rf.token;
 
-import tools.jackson.databind.core.type.TypeReference;
+import tools.jackson.core.type.TypeReference;
 import tools.jackson.databind.ObjectMapper;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
@@ -69,12 +69,12 @@ class JWSSignerTest {
     }
 
     @Test
-    void headerContainsFingerPrint() throws JoseException, IOException {
+    void headerContainsFingerPrint() throws JoseException {
         assertTrue(decodeJWTChunks(getJWTChunks(JWSSigner.generateSignedJWS(jwtClaims.toJson()))).get("header").containsKey("x5t"));
     }
 
     @Test
-    void headerContainsSub() throws JoseException, IOException {
+    void headerContainsSub() throws JoseException {
         assertTrue(decodeJWTChunks(getJWTChunks(JWSSigner.generateSignedJWS(jwtClaims.toJson()))).get("payload").containsKey("sub"));
     }
 
@@ -119,7 +119,7 @@ class JWSSignerTest {
         return jwt.split("\\.");
     }
 
-    private Map<String, Map<String, String>> decodeJWTChunks(String[] chunks) throws IOException {
+    private Map<String, Map<String, String>> decodeJWTChunks(String[] chunks) {
         Base64.Decoder decoder = Base64.getUrlDecoder();
         return Map.of("header", new ObjectMapper().readValue(decoder.decode(chunks[0]), new TypeReference<>() {
                 }),

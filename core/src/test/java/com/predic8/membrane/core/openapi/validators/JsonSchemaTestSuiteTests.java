@@ -14,10 +14,7 @@
 
 package com.predic8.membrane.core.openapi.validators;
 
-import tools.jackson.databind.core.JsonProcessingException;
-import tools.jackson.databind.ObjectMapper;
-import tools.jackson.dataformat.yaml.YAMLFactory;
-import tools.jackson.databind.dataformat.yaml.YAMLGenerator;
+import com.fasterxml.jackson.dataformat.yaml.YAMLGenerator;
 import com.predic8.membrane.core.openapi.OpenAPIValidator;
 import com.predic8.membrane.core.openapi.model.Body;
 import com.predic8.membrane.core.openapi.model.Request;
@@ -31,6 +28,9 @@ import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.dataformat.yaml.YAMLMapper;
+import tools.jackson.dataformat.yaml.YAMLWriteFeature;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -60,7 +60,9 @@ public class JsonSchemaTestSuiteTests {
                                                + "tests" + File.separator + "draft6";
 
     private final ObjectMapper objectMapper = new ObjectMapper();
-    private final ObjectMapper yamlMapper = new ObjectMapper(new YAMLFactory().disable(YAMLGenerator.Feature.WRITE_DOC_START_MARKER));
+    private final ObjectMapper yamlMapper = YAMLMapper.builder()
+            .configure(YAMLWriteFeature.WRITE_DOC_START_MARKER, false)
+            .build();
 
     int correct, incorrect, ignored;
 
@@ -114,7 +116,7 @@ public class JsonSchemaTestSuiteTests {
         }
     }
 
-    private @NotNull String generateOpenAPIForSchema(Object schema) throws JsonProcessingException {
+    private @NotNull String generateOpenAPIForSchema(Object schema) {
         Map openapi = new HashMap(of("openapi", "3.1.0", "paths", of("/test", of("post", of(
                 "requestBody", of("content", of("application/json", of("schema", schema))),
                 "responses", of("200", of("description", "OK")))))));
@@ -151,7 +153,7 @@ public class JsonSchemaTestSuiteTests {
         return null;
     }
 
-    private void runSingleTestRun(Map testRun, String ignoredReason, OpenAPIValidator validator) throws JsonProcessingException, ParseException {
+    private void runSingleTestRun(Map testRun, String ignoredReason, OpenAPIValidator validator) throws ParseException {
 
         log.info("  - testRun = {}", om.writeValueAsString(testRun));
 

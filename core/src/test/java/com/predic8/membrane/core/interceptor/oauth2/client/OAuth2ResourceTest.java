@@ -13,7 +13,7 @@
 
 package com.predic8.membrane.core.interceptor.oauth2.client;
 
-import tools.jackson.databind.core.type.TypeReference;
+import tools.jackson.core.type.TypeReference;
 import tools.jackson.databind.*;
 import com.google.code.yanf4j.util.ConcurrentHashSet;
 import com.predic8.membrane.core.*;
