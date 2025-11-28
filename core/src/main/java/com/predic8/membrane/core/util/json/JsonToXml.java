@@ -1,39 +1,42 @@
 package com.predic8.membrane.core.util.json;
 
+import org.jetbrains.annotations.*;
 import org.json.*;
 
 import static java.lang.Boolean.FALSE;
 import static java.lang.Boolean.TRUE;
 import static org.json.JSONObject.NULL;
 
-public class JsonToXmlListStyle {
+public class JsonToXml {
+
+    // Prolog is needed to provide the UTF-8 encoding
+    private static final String XML_PROLOG = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>";
 
     private String rootName = null;
     private String arrayName = "array";
     private String itemName = "item";
 
-    public void setRootName(String rootName) {
+    public JsonToXml rootName(String rootName) {
         this.rootName = rootName;
+        return this;
     }
 
-    public void setArrayName(String arrayName) {
+    public JsonToXml arrayName(String arrayName) {
         this.arrayName = arrayName;
+        return this;
     }
 
-    public void setItemName(String itemName) {
+    public JsonToXml itemName(String itemName) {
         this.itemName = itemName;
+        return this;
     }
 
-    public String toXml(String jsonText) {
-        Object json = parse(jsonText);
-        return toXmlInternal(json);
+    public String toXml(String json) {
+        return XML_PROLOG + toXmlInternal(json);
     }
 
-    public String toXml(Object input) {
-        return toXmlInternal(input);
-    }
-
-    private String toXmlInternal(Object input) {
+    public String toXmlInternal(String json) {
+        Object input = parse(json);
         StringBuilder sb = new StringBuilder();
 
         // --- Case 1: Single-property object ---
@@ -50,9 +53,9 @@ public class JsonToXmlListStyle {
 
         // --- Case 2: Top-level array without explicit root ---
         if (rootName == null && input instanceof JSONArray arr) {
-            sb.append("<").append(arrayName).append(">");
+            startArray(sb);
             buildArrayItemsOnly(arr, sb); // <- Important: NO nested array tag here
-            sb.append("</").append(arrayName).append(">");
+            endArray(sb);
             return sb.toString();
         }
 
@@ -65,35 +68,27 @@ public class JsonToXmlListStyle {
         return sb.toString();
     }
 
-    // Helper for top-level arrays
-    private void buildArrayItemsOnly(JSONArray array, StringBuilder sb) {
-        for (int i = 0; i < array.length(); i++) {
-            sb.append("<").append(itemName).append(">");
-            build(array.get(i), sb);
-            sb.append("</").append(itemName).append(">");
-        }
-    }
-
     private Object parse(String jsonText) {
         String t = jsonText.trim();
 
         if (t.startsWith("{")) return new JSONObject(t);
         if (t.startsWith("[")) return new JSONArray(t);
-        switch (t) {
-            case "true" -> {
-                return TRUE;
-            }
-            case "false" -> {
-                return FALSE;
-            }
-            case "null" -> {
-                return NULL;
-            }
-        }
+        return switch (t) {
+            case "true" -> TRUE;
+            case "false" -> FALSE;
+            case "null" -> NULL;
+            default -> parseLiteral(t);
 
+        };
+    }
+
+    private static @NotNull Object parseLiteral(String t) {
+
+        // Try numeric types
         if (t.matches("-?\\d+")) return Integer.valueOf(t);
         if (t.matches("-?\\d+\\.\\d+")) return Double.valueOf(t);
 
+        // Check for quoted strings
         if ((t.startsWith("\"") && t.endsWith("\"")) ||
             (t.startsWith("'") && t.endsWith("'")))
             return t.substring(1, t.length() - 1);
@@ -104,30 +99,54 @@ public class JsonToXmlListStyle {
     private void build(Object value, StringBuilder sb) {
 
         if (value instanceof JSONObject jsonObj) {
-            for (String key : jsonObj.keySet()) {
-                sb.append("<").append(key).append(">");
-                build(jsonObj.get(key), sb);
-                sb.append("</").append(key).append(">");
-            }
+            buildObject(sb, jsonObj);
             return;
         }
 
         if (value instanceof JSONArray array) {
-            sb.append("<").append(arrayName).append(">");
-            for (int i = 0; i < array.length(); i++) {
-                sb.append("<").append(itemName).append(">");
-                build(array.get(i), sb);
-                sb.append("</").append(itemName).append(">");
-            }
-            sb.append("</").append(arrayName).append(">");
+            buildArray(sb, array);
             return;
         }
 
         if (value == null || value == NULL) {
             return;
         }
-
         sb.append(escape(String.valueOf(value)));
+    }
+
+    private void buildArray(StringBuilder sb, JSONArray array) {
+        startArray(sb);
+        buildArrayItems(sb, array);
+        endArray(sb);
+    }
+
+    private void buildArrayItems(StringBuilder sb, JSONArray array) {
+        for (int i = 0; i < array.length(); i++) {
+            sb.append("<").append(itemName).append(">");
+            build(array.get(i), sb);
+            sb.append("</").append(itemName).append(">");
+        }
+    }
+
+    // Helper for top-level arrays
+    private void buildArrayItemsOnly(JSONArray array, StringBuilder sb) {
+        buildArrayItems(sb, array);
+    }
+
+    private void buildObject(StringBuilder sb, JSONObject jsonObj) {
+        for (String key : jsonObj.keySet()) {
+            sb.append("<").append(key).append(">");
+            build(jsonObj.get(key), sb);
+            sb.append("</").append(key).append(">");
+        }
+    }
+
+    private void endArray(StringBuilder sb) {
+        sb.append("</").append(arrayName).append(">");
+    }
+
+    private void startArray(StringBuilder sb) {
+        sb.append("<").append(arrayName).append(">");
     }
 
     private String escape(String v) {
