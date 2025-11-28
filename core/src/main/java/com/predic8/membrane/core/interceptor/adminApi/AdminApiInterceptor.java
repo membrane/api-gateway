@@ -141,58 +141,75 @@ public class AdminApiInterceptor extends AbstractInterceptor {
 
         try {
             StringWriter writer = new StringWriter();
-            JsonGenerator gen = JSON_FACTORY.createGenerator(writer);
-            gen.writeStartArray();
-            IntStream.range(0, rules.size()).forEach(i -> {
-                AbstractServiceProxy p = rules.get(i);
-                try {
-                    gen.writeStartObject();
+            try (JsonGenerator gen = JSON_FACTORY.createGenerator(writer)) {
+                gen.writeStartArray();
+                IntStream.range(0, rules.size()).forEach(i -> {
+                    AbstractServiceProxy p = rules.get(i);
+                    try {
+                        gen.writeStartObject();
 
-                    gen.writeNumberField("order", i + 1);
-                    gen.writeStringField("name", p.toString());
-                    gen.writeBooleanField("active", p.isActive());
-                    if (!p.isActive())
-                        gen.writeStringField("error", p.getErrorState());
+                        gen.writeName("order");
+                        gen.writeNumber(i + 1);
 
-                    gen.writeObjectFieldStart("key");
-                    gen.writeStringField("method", p.getKey().getMethod());
-                    gen.writeStringField("path", p.getKey().getMethod());
-                    if (p.getKey().getHost() != null) {
-                        gen.writeStringField("host", p.getKey().getHost());
-                    } else {
-                        gen.writeStringField("address", p.getKey().getIp());
-                    }
-                    gen.writeStringField("port", String.valueOf(p.getKey().getPort()));
-                    gen.writeEndObject();
+                        gen.writeName("name");
+                        gen.writeString(p.toString());
 
-                    if (p.getTargetHost() != null || p.getTargetURL() != null) {
-                        gen.writeObjectFieldStart("target");
-
-                        if (p.getTargetHost() != null) {
-                            gen.writeStringField("host", p.getTargetHost());
-                            gen.writeNumberField("port", p.getTargetPort());
-                        } else {
-                            gen.writeStringField("url", p.getTargetURL());
+                        gen.writeName("active");
+                        gen.writeBoolean(p.isActive());
+                        if (!p.isActive()) {
+                            gen.writeName("error");
+                            gen.writeString(p.getErrorState());
                         }
 
+                        gen.writeName("key");
+                        gen.writeStartObject();
+                        gen.writeName("method");
+                        gen.writeString(p.getKey().getMethod());
+                        gen.writeName("path");
+                        gen.writeString(p.getKey().getMethod());
+                        if (p.getKey().getHost() != null) {
+                            gen.writeName("host");
+                            gen.writeString(p.getKey().getHost());
+                        } else {
+                            gen.writeName("address");
+                            gen.writeString(p.getKey().getIp());
+                        }
+                        gen.writeName("port");
+                        gen.writeString(String.valueOf(p.getKey().getPort()));
                         gen.writeEndObject();
-                    } else {
-                        gen.writeNullField("target");
+
+                        gen.writeName("target");
+                        if (p.getTargetHost() != null || p.getTargetURL() != null) {
+                            gen.writeStartObject();
+                            if (p.getTargetHost() != null) {
+                                gen.writeName("host");
+                                gen.writeString(p.getTargetHost());
+                                gen.writeName("port");
+                                gen.writeNumber(p.getTargetPort());
+                            } else {
+                                gen.writeName("url");
+                                gen.writeString(p.getTargetURL());
+                            }
+                            gen.writeEndObject();
+                        } else {
+                            gen.writeNull();
+                        }
+
+                        gen.writeName("stats");
+                        gen.writeStartObject();
+                        gen.writeName("count");
+                        gen.writeNumber(p.getStatisticCollector().getCount());
+                        gen.writeEndObject();
+
+                        gen.writeEndObject();
+                    } catch (JacksonException e2) {
+                        throw new RuntimeException(e2); //TODO is this okay?
                     }
-
-                    gen.writeObjectFieldStart("stats");
-                    gen.writeNumberField("count", p.getStatisticCollector().getCount());
-                    gen.writeEndObject();
-
-                    gen.writeEndObject();
-                } catch (IOException e) {
-                    throw new UncheckedIOException(e);
-                }
-            });
-            gen.writeEndArray();
-            gen.close();
+                });
+                gen.writeEndArray();
+            }
             exc.setResponse(Response.ok().body(writer.toString()).contentType(APPLICATION_JSON).build());
-        } catch (IOException e) {
+        } catch (JacksonException e) {
             throw new RuntimeException(e);
         }
         return RETURN;
@@ -223,7 +240,7 @@ public class AdminApiInterceptor extends AbstractInterceptor {
         }
     }
 
-    private void writePluginRow(List<Interceptor> plugins, Flow limitedFlow, JsonGenerator gen) throws IOException {
+    private void writePluginRow(List<Interceptor> plugins, Flow limitedFlow, JsonGenerator gen) {
         for (Interceptor p : plugins) {
             switch (p) {
                 case RequestInterceptor rqi -> writePluginRow(rqi.getFlow(), REQUEST, gen);
@@ -231,15 +248,25 @@ public class AdminApiInterceptor extends AbstractInterceptor {
                 case AbortInterceptor ai -> writePluginRow(ai.getFlow(), ABORT, gen);
                 default -> {
                     gen.writeStartObject();
-                    gen.writeStringField("flow", String.valueOf(limitedFlow != null ? limitedFlow : p.getAppliedFlow()));
-                    gen.writeStringField("name", p.getDisplayName());
-                    gen.writeStringField("shortDescription", p.getShortDescription());
-                    gen.writeStringField("longDescription", p.getLongDescription());
+
+                    gen.writeName("flow");
+                    gen.writeString(String.valueOf(limitedFlow != null ? limitedFlow : p.getAppliedFlow()));
+
+                    gen.writeName("name");
+                    gen.writeString(p.getDisplayName());
+
+                    gen.writeName("shortDescription");
+                    gen.writeString(p.getShortDescription());
+
+                    gen.writeName("longDescription");
+                    gen.writeString(p.getLongDescription());
+
                     gen.writeEndObject();
                 }
             }
         }
     }
+
 
     private Outcome handleCalls(Exchange exc) {
         ExchangeQueryResult res;
@@ -288,36 +315,52 @@ public class AdminApiInterceptor extends AbstractInterceptor {
     static void writeExchange(AbstractExchange exc, JsonGenerator gen) throws IOException {
         gen.writeStartObject();
 
-        gen.writeNumberField("id", exc.getId());
-        gen.writeStringField("api", exc.getProxy().toString());
+        gen.writeName("id");
+        gen.writeNumber(exc.getId());
 
-        gen.writeObjectFieldStart("request");
-        gen.writeNumberField("port", exc.getProxy().getKey().getPort());
-        gen.writeStringField("method", exc.getRequest().getMethod());
-        gen.writeStringField("path", exc.getRequest().getUri());
-        gen.writeStringField("client", getClientAddr(false, exc));
+        gen.writeName("api");
+        gen.writeString(exc.getProxy().toString());
+
+        gen.writeName("request");
+        gen.writeStartObject();
+        gen.writeName("port");
+        gen.writeNumber(exc.getProxy().getKey().getPort());
+        gen.writeName("method");
+        gen.writeString(exc.getRequest().getMethod());
+        gen.writeName("path");
+        gen.writeString(exc.getRequest().getUri());
+        gen.writeName("client");
+        gen.writeString(getClientAddr(false, exc));
         gen.writeEndObject();
 
+        gen.writeName("response");
         if (exc.getResponse() != null) {
-            gen.writeObjectFieldStart("response");
-            gen.writeNumberField("statusCode", exc.getResponse().getStatusCode());
+            gen.writeStartObject();
+            gen.writeName("statusCode");
+            gen.writeNumber(exc.getResponse().getStatusCode());
             gen.writeEndObject();
         } else {
-            gen.writeNullField("response");
+            gen.writeNull();
         }
 
+        gen.writeName("target");
         if (exc.getServer() != null) {
-            gen.writeObjectFieldStart("target");
-            gen.writeStringField("host", exc.getServer());
-            gen.writeNumberField("port",  getServerPort(exc));
+            gen.writeStartObject();
+            gen.writeName("host");
+            gen.writeString(exc.getServer());
+            gen.writeName("port");
+            gen.writeNumber(getServerPort(exc));
             gen.writeEndObject();
         } else {
-            gen.writeNullField("target");
+            gen.writeNull();
         }
 
-        gen.writeObjectFieldStart("stats");
-        gen.writeStringField("time", isoFormatter.format(exc.getTime().toInstant().atZone(ZoneId.systemDefault())));
-        gen.writeNumberField("duration", exc.getTimeResReceived() - exc.getTimeReqSent());
+        gen.writeName("stats");
+        gen.writeStartObject();
+        gen.writeName("time");
+        gen.writeString(isoFormatter.format(exc.getTime().toInstant().atZone(ZoneId.systemDefault())));
+        gen.writeName("duration");
+        gen.writeNumber(exc.getTimeResReceived() - exc.getTimeReqSent());
         gen.writeEndObject();
 
         gen.writeEndObject();
@@ -325,62 +368,90 @@ public class AdminApiInterceptor extends AbstractInterceptor {
 
     private void writeExchangeDetailed(AbstractExchange exc, JsonGenerator gen) throws IOException {
         gen.writeStartObject();
-        gen.writeObjectFieldStart("request");
+
+        gen.writeName("request");
+        gen.writeStartObject();
         if (exc.getRequest() != null) {
             Message request = exc.getRequest();
-            gen.writeStringField("protocol", exc.getProperty(HTTP2_SERVER) != null ? "HTTP/2" : request.getVersion());
-            gen.writeObjectFieldStart("headers");
+
+            gen.writeName("protocol");
+            gen.writeString(exc.getProperty(HTTP2_SERVER) != null ? "HTTP/2" : request.getVersion());
+
+            gen.writeName("headers");
+            gen.writeStartObject();
             for (HeaderField hf : request.getHeader().getAllHeaderFields()) {
-                gen.writeStringField(hf.getHeaderName().toString(), hf.getValue());
+                gen.writeName(hf.getHeaderName().toString());
+                gen.writeString(hf.getValue());
             }
             gen.writeEndObject();
-            gen.writeStringField("contentType", exc.getRequestContentType());
+
+            gen.writeName("contentType");
+            gen.writeString(exc.getRequestContentType());
+
+            gen.writeName("contentLength");
             if (exc.getRequestContentLength() != -1) {
-                gen.writeNumberField("contentLength", exc.getRequestContentLength());
+                gen.writeNumber(exc.getRequestContentLength());
             } else {
-                gen.writeNullField("contentLength");
+                gen.writeNull();
             }
+
+            gen.writeName("bodyRaw");
             if (!request.isBodyEmpty()) {
-                gen.writeStringField("bodyRaw", request.getBodyAsStringDecoded());
+                gen.writeString(request.getBodyAsStringDecoded());
             } else {
-                gen.writeNullField("bodyRaw");
+                gen.writeNull();
             }
         } else {
-            gen.writeNullField("protocol");
-            gen.writeNullField("headers");
-            gen.writeNullField("contentType");
-            gen.writeNullField("contentLength");
-            gen.writeNullField("bodyRaw");
+            gen.writeName("protocol");      gen.writeNull();
+            gen.writeName("headers");       gen.writeNull();
+            gen.writeName("contentType");   gen.writeNull();
+            gen.writeName("contentLength"); gen.writeNull();
+            gen.writeName("bodyRaw");       gen.writeNull();
         }
-        gen.writeEndObject();
-        gen.writeObjectFieldStart("response");
+        gen.writeEndObject(); // request
+
+        gen.writeName("response");
+        gen.writeStartObject();
         if (exc.getResponse() != null) {
-            gen.writeStringField("statusMessage", exc.getResponse().getStatusMessage());
-            gen.writeObjectFieldStart("headers");
+            gen.writeName("statusMessage");
+            gen.writeString(exc.getResponse().getStatusMessage());
+
+            gen.writeName("headers");
+            gen.writeStartObject();
             for (HeaderField hf : exc.getResponse().getHeader().getAllHeaderFields()) {
-                gen.writeStringField(hf.getHeaderName().toString(), hf.getValue());
+                gen.writeName(hf.getHeaderName().toString());
+                gen.writeString(hf.getValue());
             }
             gen.writeEndObject();
-            gen.writeStringField("contentType", exc.getResponseContentType());
+
+            gen.writeName("contentType");
+            gen.writeString(exc.getResponseContentType());
+
+            gen.writeName("contentLength");
             if (exc.getResponseContentLength() != -1) {
-                gen.writeNumberField("contentLength", exc.getResponseContentLength());
+                gen.writeNumber(exc.getResponseContentLength());
             } else {
-                gen.writeNullField("contentLength");
+                gen.writeNull();
             }
+
+            gen.writeName("bodyRaw");
             if (!exc.getResponse().isBodyEmpty()) {
-                gen.writeStringField("bodyRaw", exc.getResponse().getBodyAsStringDecoded());
+                gen.writeString(exc.getResponse().getBodyAsStringDecoded());
             } else {
-                gen.writeNullField("bodyRaw");
+                gen.writeNull();
             }
         } else {
-            gen.writeNullField("statusMessage");
-            gen.writeNullField("headers");
-            gen.writeNullField("contentType");
-            gen.writeNullField("contentLength");
-            gen.writeNullField("bodyRaw");
+            gen.writeName("statusMessage"); gen.writeNull();
+            gen.writeName("headers");       gen.writeNull();
+            gen.writeName("contentType");   gen.writeNull();
+            gen.writeName("contentLength"); gen.writeNull();
+            gen.writeName("bodyRaw");       gen.writeNull();
         }
-        gen.writeEndObject();
-        gen.writeStringField("state", exc.getStatus().toString());
+        gen.writeEndObject(); // response
+
+        gen.writeName("state");
+        gen.writeString(exc.getStatus().toString());
+
         gen.writeEndObject();
     }
 

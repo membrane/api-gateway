@@ -16,7 +16,7 @@
 
 package com.predic8.membrane.core.openapi.model;
 
-import tools.jackson.databind.core.*;
+import tools.jackson.core.JacksonException;
 import tools.jackson.databind.*;
 
 import java.io.*;
@@ -31,7 +31,7 @@ public class JsonBody implements Body {
         payload=s;
     }
 
-    public JsonBody(String s) throws JsonProcessingException {
+    public JsonBody(String s) throws JacksonException {
         payload = m.readTree(s);
     }
 

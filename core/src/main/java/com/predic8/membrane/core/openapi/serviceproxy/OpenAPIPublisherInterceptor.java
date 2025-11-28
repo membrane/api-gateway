@@ -16,8 +16,9 @@
 
 package com.predic8.membrane.core.openapi.serviceproxy;
 
-import tools.jackson.databind.core.*;
-import tools.jackson.databind.*;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 import tools.jackson.databind.node.*;
 import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.exchange.*;
@@ -27,6 +28,7 @@ import groovy.text.*;
 import io.swagger.v3.oas.models.*;
 import io.swagger.v3.parser.*;
 import org.slf4j.*;
+import tools.jackson.dataformat.yaml.YAMLMapper;
 
 import java.io.*;
 import java.net.*;
@@ -57,9 +59,8 @@ public class OpenAPIPublisherInterceptor extends AbstractInterceptor {
 
     private static final Logger log = LoggerFactory.getLogger(OpenAPIPublisherInterceptor.class.getName());
 
-    private final ObjectMapper om = new ObjectMapper();
-    private final ObjectWriter ow = new ObjectMapper().writerWithDefaultPrettyPrinter();
-    private final ObjectMapper omYaml = ObjectMapperFactory.createYaml();
+    private final ObjectMapper om = JsonMapper.builder().build();
+    private static final ObjectMapper omYaml = YAMLMapper.builder().build();
 
     public static final String PATH = "/api-docs";
     public static final String PATH_UI = "/api-docs/ui";
@@ -127,7 +128,7 @@ public class OpenAPIPublisherInterceptor extends AbstractInterceptor {
         }
     }
 
-    private Outcome handleOverviewOpenAPIDoc(Exchange exc) throws IOException, URISyntaxException {
+    private Outcome handleOverviewOpenAPIDoc(Exchange exc) throws URISyntaxException {
         Matcher m = PATTERN_META.matcher(exc.getRequest().getUri());
         if (!m.matches()) { // No id specified
             if (acceptsHtmlExplicit(exc)) {
@@ -145,8 +146,8 @@ public class OpenAPIPublisherInterceptor extends AbstractInterceptor {
         return returnOpenApiAsYaml(exc, rec);
     }
 
-    private Outcome returnJsonOverview(Exchange exc) throws JsonProcessingException {
-        exc.setResponse(ok().contentType(APPLICATION_JSON).body(ow.writeValueAsBytes(createDictionaryOfAPIs())).build());
+    private Outcome returnJsonOverview(Exchange exc) {
+        exc.setResponse(ok().contentType(APPLICATION_JSON).body(om.writeValueAsBytes(createDictionaryOfAPIs())).build());
         return RETURN;
     }
 
@@ -168,7 +169,7 @@ public class OpenAPIPublisherInterceptor extends AbstractInterceptor {
         return RETURN;
     }
 
-    private Outcome returnOpenApiAsYaml(Exchange exc, OpenAPIRecord rec) throws IOException, URISyntaxException {
+    private Outcome returnOpenApiAsYaml(Exchange exc, OpenAPIRecord rec) throws URISyntaxException {
         exc.setResponse(ok().yaml()
                 .body(omYaml.writeValueAsBytes(rec.rewriteOpenAPI(exc, getRouter().getUriFactory())))
                 .build());

@@ -13,11 +13,11 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.adminApi;
 
-import tools.jackson.databind.core.JsonProcessingException;
 import com.predic8.membrane.core.transport.ws.WebSocketConnectionCollection;
 import com.predic8.membrane.core.util.TimerManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import tools.jackson.core.JacksonException;
 
 import java.io.File;
 import java.util.TimerTask;
@@ -52,7 +52,7 @@ public class DiskWatcher {
                             )
                     )
             ));
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             LOG.error("", e); // should not happen
         }
     }
