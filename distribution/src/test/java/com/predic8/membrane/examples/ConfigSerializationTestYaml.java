@@ -14,14 +14,14 @@
 
 package com.predic8.membrane.examples;
 
-import tools.jackson.databind.MappingIterator;
-import tools.jackson.databind.ObjectMapper;
-import tools.jackson.dataformat.yaml.YAMLFactory;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.fge.jsonschema.core.report.ProcessingReport;
 import com.github.fge.jsonschema.main.JsonSchema;
 import com.github.fge.jsonschema.main.JsonSchemaFactory;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
+import tools.jackson.databind.MappingIterator;
+import tools.jackson.dataformat.yaml.YAMLMapper;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -39,7 +39,9 @@ import static org.hamcrest.Matchers.is;
 
 public class ConfigSerializationTestYaml {
 
-    private static final ObjectMapper YAML = new ObjectMapper(new YAMLFactory());
+    private static final tools.jackson.databind.ObjectMapper YAML =
+            YAMLMapper.builder().build();
+
     private static final ObjectMapper JSON = new ObjectMapper();
     private static final JsonSchemaFactory SCHEMA_FACTORY = JsonSchemaFactory.byDefault();
 
