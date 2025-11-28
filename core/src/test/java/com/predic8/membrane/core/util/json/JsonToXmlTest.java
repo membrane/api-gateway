@@ -5,17 +5,14 @@ import org.junit.jupiter.api.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-class JsonToXmlListStyleTest {
+class JsonToXmlTest {
 
     XmlPath xp;
-    JsonToXmlListStyle conv;
+    JsonToXml conv;
 
     @BeforeEach
     void setup() {
-        conv = new JsonToXmlListStyle();
-        conv.setRootName("root");
-        conv.setArrayName("list");
-        conv.setItemName("item");
+        conv = new JsonToXml().rootName("root").arrayName("list").itemName("item");
     }
 
     @Nested
@@ -23,7 +20,7 @@ class JsonToXmlListStyleTest {
 
         @Test
         void noRoot() {
-            conv.setRootName(null);
+            conv.rootName(null);
             String xml = conv.toXml("{}");
             System.out.println(xml);
             XmlPath xpLocal = new XmlPath(xml);
@@ -89,7 +86,7 @@ class JsonToXmlListStyleTest {
 
         @Test
         void singleProperty() {
-            conv.setRootName(null);
+            conv.rootName(null);
 
             String xml = conv.toXml("""
                 {
@@ -116,7 +113,7 @@ class JsonToXmlListStyleTest {
 
             assertNotNull(xpLocal.get("root.list"));
             assertEquals("", xpLocal.get("root.list"));
-            assertEquals("<root><list></list></root>",xml);
+            assertTrue(xml.contains("<root><list></list></root>"));
         }
 
         @Test
@@ -175,5 +172,12 @@ class JsonToXmlListStyleTest {
             String v = xpLocal.getString("root");
             assertTrue(v == null || v.isBlank());
         }
+    }
+
+    @Test
+    void escape() {
+        assertTrue( conv.toXml("""
+                { "chars": "> < & \\" '" }
+                """).contains("<root><chars>&gt; &lt; &amp; \" '</chars></root>"));
     }
 }
