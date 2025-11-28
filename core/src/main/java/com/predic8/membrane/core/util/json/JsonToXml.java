@@ -3,14 +3,13 @@ package com.predic8.membrane.core.util.json;
 import org.jetbrains.annotations.*;
 import org.json.*;
 
-import static java.lang.Boolean.FALSE;
-import static java.lang.Boolean.TRUE;
-import static org.json.JSONObject.NULL;
+import static java.lang.Boolean.*;
+import static org.json.JSONObject.*;
 
 public class JsonToXml {
 
     // Prolog is needed to provide the UTF-8 encoding
-    private static final String XML_PROLOG = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>";
+    static final String XML_PROLOG = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>";
 
     private String rootName = null;
     private String arrayName = "array";
@@ -35,7 +34,7 @@ public class JsonToXml {
         return XML_PROLOG + toXmlInternal(json);
     }
 
-    public String toXmlInternal(String json) {
+    String toXmlInternal(String json) {
         Object input = parse(json);
         StringBuilder sb = new StringBuilder();
 
@@ -45,9 +44,9 @@ public class JsonToXml {
             jsonObj.keySet().size() == 1) {
 
             String singleKey = jsonObj.keySet().iterator().next();
-            sb.append("<").append(singleKey).append(">");
+            startTag(sb, singleKey);
             build(jsonObj.get(singleKey), sb);
-            sb.append("</").append(singleKey).append(">");
+            endTag(sb, singleKey);
             return sb.toString();
         }
 
@@ -62,11 +61,51 @@ public class JsonToXml {
         // --- Case 3: Normal case (object/primitive with root) ---
         String effectiveRoot = rootName != null ? rootName : "root";
 
-        sb.append("<").append(effectiveRoot).append(">");
+        startTag(sb, effectiveRoot);
         build(input, sb);
-        sb.append("</").append(effectiveRoot).append(">");
+        endTag(sb, effectiveRoot);
         return sb.toString();
     }
+
+    private static void endTag(StringBuilder sb, String singleKey) {
+        sb.append("</").append(sanitizeXmlName( singleKey)).append(">");
+    }
+
+    private static void startTag(StringBuilder sb, String singleKey) {
+        sb.append("<").append(sanitizeXmlName( singleKey)).append(">");
+    }
+
+    static @NotNull Object parseLiteral(String t) {
+
+        // Try numeric types first (Double first to avoid Long overflow)
+        if (t.matches("-?\\d+(\\.\\d+)?([eE][+-]?\\d+)?")) {
+            try {
+                double d = Double.parseDouble(t);
+
+                // If integer without decimal/exponent → try Long if it fits
+                if (t.matches("-?\\d+")) {
+                    try {
+                        return Long.parseLong(t);
+                    } catch (NumberFormatException ignored) {
+                        // too large → keep as Double
+                    }
+                }
+
+                return d;
+
+            } catch (NumberFormatException e) {
+                // fallback: treat as string
+                return t;
+            }
+        }
+
+        // Check for quoted strings
+        if (t.startsWith("\"") && t.endsWith("\""))
+            return t.substring(1, t.length() - 1);
+
+        return t;
+    }
+
 
     private Object parse(String jsonText) {
         String t = jsonText.trim();
@@ -80,20 +119,6 @@ public class JsonToXml {
             default -> parseLiteral(t);
 
         };
-    }
-
-    private static @NotNull Object parseLiteral(String t) {
-
-        // Try numeric types
-        if (t.matches("-?\\d+")) return Integer.valueOf(t);
-        if (t.matches("-?\\d+\\.\\d+")) return Double.valueOf(t);
-
-        // Check for quoted strings
-        if ((t.startsWith("\"") && t.endsWith("\"")) ||
-            (t.startsWith("'") && t.endsWith("'")))
-            return t.substring(1, t.length() - 1);
-
-        return t;
     }
 
     private void build(Object value, StringBuilder sb) {
@@ -122,11 +147,27 @@ public class JsonToXml {
 
     private void buildArrayItems(StringBuilder sb, JSONArray array) {
         for (int i = 0; i < array.length(); i++) {
-            sb.append("<").append(itemName).append(">");
+            startTag(sb, itemName);
             build(array.get(i), sb);
-            sb.append("</").append(itemName).append(">");
+            endTag(sb, itemName);
         }
     }
+
+    private static String sanitizeXmlName(String key) {
+        // Replace spaces with underscores
+        String sanitized = key.replaceAll("\\s+", "_");
+
+        // Replace any illegal XML characters
+        sanitized = sanitized.replaceAll("[^A-Za-z0-9_.-]", "_");
+
+        // XML element must NOT start with number or dot or hyphen
+        if (!sanitized.matches("[A-Za-z_].*")) {
+            sanitized = "_" + sanitized;
+        }
+
+        return sanitized;
+    }
+
 
     // Helper for top-level arrays
     private void buildArrayItemsOnly(JSONArray array, StringBuilder sb) {
@@ -135,18 +176,18 @@ public class JsonToXml {
 
     private void buildObject(StringBuilder sb, JSONObject jsonObj) {
         for (String key : jsonObj.keySet()) {
-            sb.append("<").append(key).append(">");
+            startTag(sb, key);
             build(jsonObj.get(key), sb);
-            sb.append("</").append(key).append(">");
+            endTag(sb, key);
         }
     }
 
     private void endArray(StringBuilder sb) {
-        sb.append("</").append(arrayName).append(">");
+        endTag(sb, arrayName);
     }
 
     private void startArray(StringBuilder sb) {
-        sb.append("<").append(arrayName).append(">");
+        startTag(sb, arrayName);
     }
 
     private String escape(String v) {
