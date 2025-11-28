@@ -3,6 +3,8 @@ package com.predic8.membrane.core.util.json;
 import io.restassured.path.xml.*;
 import org.junit.jupiter.api.*;
 
+import static com.predic8.membrane.core.util.json.JsonToXml.XML_PROLOG;
+import static com.predic8.membrane.core.util.json.JsonToXml.parseLiteral;
 import static org.junit.jupiter.api.Assertions.*;
 
 class JsonToXmlTest {
@@ -21,10 +23,8 @@ class JsonToXmlTest {
         @Test
         void noRoot() {
             conv.rootName(null);
-            String xml = conv.toXml("{}");
-            System.out.println(xml);
-            XmlPath xpLocal = new XmlPath(xml);
-            assertEquals("", xpLocal.get("root"));
+            XmlPath xp = new XmlPath(conv.toXml("{}"));
+            assertEquals("", xp.get("root"));
         }
     }
 
@@ -109,39 +109,39 @@ class JsonToXmlTest {
         @Test
         void emptyArray_isConverted() {
             String xml = conv.toXml("[]");
-            XmlPath xpLocal = new XmlPath(xml);
+            XmlPath xp = new XmlPath(xml);
 
-            assertNotNull(xpLocal.get("root.list"));
-            assertEquals("", xpLocal.get("root.list"));
+            assertNotNull(xp.get("root.list"));
+            assertEquals("", xp.get("root.list"));
             assertTrue(xml.contains("<root><list></list></root>"));
         }
 
         @Test
         void singleElementArray_isConverted() {
             var xml = conv.toXml("[1]");
-            XmlPath xpLocal = new XmlPath(xml);
+            XmlPath xp = new XmlPath(xml);
 
-            assertEquals(1, xpLocal.getInt("root.list.item[0]"));
-            assertEquals(1, xpLocal.getList("root.list.item").size());
+            assertEquals(1, xp.getInt("root.list.item[0]"));
+            assertEquals(1, xp.getList("root.list.item").size());
         }
 
         @Test
         void flatArray_isConverted() {
-            XmlPath xpLocal = new XmlPath(conv.toXml("[1,2,3]"));
+            XmlPath xp = new XmlPath(conv.toXml("[1,2,3]"));
 
-            assertEquals(3, xpLocal.getList("root.list.item").size());
-            assertEquals(1, xpLocal.getInt("root.list.item[0]"));
-            assertEquals(2, xpLocal.getInt("root.list.item[1]"));
-            assertEquals(3, xpLocal.getInt("root.list.item[2]"));
+            assertEquals(3, xp.getList("root.list.item").size());
+            assertEquals(1, xp.getInt("root.list.item[0]"));
+            assertEquals(2, xp.getInt("root.list.item[1]"));
+            assertEquals(3, xp.getInt("root.list.item[2]"));
         }
 
         @Test
         void nestedArray_isConverted() {
-            XmlPath xpLocal = new XmlPath(conv.toXml("[1,[2],[[3]]]"));
+            XmlPath xp = new XmlPath(conv.toXml("[1,[2],[[3]]]"));
 
-            assertEquals(1, xpLocal.getInt("root.list.item[0]"));
-            assertEquals(2, xpLocal.getInt("root.list.item[1].list.item[0]"));
-            assertEquals(3, xpLocal.getInt("root.list.item[2].list.item[0].list.item[0]"));
+            assertEquals(1, xp.getInt("root.list.item[0]"));
+            assertEquals(2, xp.getInt("root.list.item[1].list.item[0]"));
+            assertEquals(3, xp.getInt("root.list.item[2].list.item[0].list.item[0]"));
         }
     }
 
@@ -150,26 +150,23 @@ class JsonToXmlTest {
 
         @Test
         void stringValue_isConverted() {
-            XmlPath xpLocal = new XmlPath(conv.toXml("\"hello\""));
-            assertEquals("hello", xpLocal.getString("root"));
+            assertEquals("hello", new XmlPath(conv.toXml("\"hello\"")).getString("root"));
         }
 
         @Test
         void numberValue_isConverted() {
-            XmlPath xpLocal = new XmlPath(conv.toXml("123"));
-            assertEquals(123, xpLocal.getInt("root"));
+            assertEquals(123, new XmlPath(conv.toXml("123")).getInt("root"));
         }
 
         @Test
         void booleanValue_isConverted() {
-            XmlPath xpLocal = new XmlPath(conv.toXml("true"));
-            assertTrue(xpLocal.getBoolean("root"));
+            assertTrue(new XmlPath(conv.toXml("true")).getBoolean("root"));
         }
 
         @Test
         void nullValue_isConvertedToEmptyNode() {
-            XmlPath xpLocal = new XmlPath(conv.toXml("null"));
-            String v = xpLocal.getString("root");
+            XmlPath xp = new XmlPath(conv.toXml("null"));
+            String v = xp.getString("root");
             assertTrue(v == null || v.isBlank());
         }
     }
@@ -179,5 +176,46 @@ class JsonToXmlTest {
         assertTrue( conv.toXml("""
                 { "chars": "> < & \\" '" }
                 """).contains("<root><chars>&gt; &lt; &amp; \" '</chars></root>"));
+    }
+
+    @Test
+    void strangeKeys() {
+        conv.rootName(null);
+        assertEquals( XML_PROLOG + "<a_b>1</a_b>",conv.toXml("""
+                { "a b": 1 }
+                """));
+        assertEquals( XML_PROLOG + "<_123>1</_123>",conv.toXml("""
+                { "123": 1 }
+                """));
+    }
+
+    @Test
+    void testParseLiteral() {
+        // Integer
+        assertEquals(42L, parseLiteral("42"));
+        assertEquals(-7L, parseLiteral("-7"));
+
+        // Float / Double
+        assertEquals(3.14d, parseLiteral("3.14"));
+        assertEquals(-0.1d, parseLiteral("-0.1"));
+        assertEquals(1.2e3d, parseLiteral("1.2e3"));
+        assertEquals(-5.6E-2d, parseLiteral("-5.6E-2"));
+
+        // Overflow case → stays Double
+        Object big = parseLiteral("999999999999999999999999");
+        assertTrue(big instanceof Double);
+
+        // Quoted strings
+        assertEquals("hello", parseLiteral("\"hello\""));
+        assertEquals("", parseLiteral("\"\""));
+
+        // Unquoted strings
+        assertEquals("abc", parseLiteral("abc"));
+        assertEquals("123abc", parseLiteral("123abc"));
+        assertEquals("true", parseLiteral("true")); // not converted to boolean
+
+        // Edge cases
+        assertEquals("-", parseLiteral("-"));     // not a number
+        assertEquals(".", parseLiteral("."));     // not a number
     }
 }
