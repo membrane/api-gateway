@@ -20,8 +20,6 @@ import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.util.json.*;
 
-import java.io.*;
-
 import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
 import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
@@ -44,26 +42,18 @@ import static java.nio.charset.StandardCharsets.*;
 @MCElement(name = "json2Xml")
 public class Json2XmlInterceptor extends AbstractInterceptor {
 
-    // Prolog is needed to provide the UTF-8 encoding
-    private static final String PROLOG = """
-            <?xml version="1.0" encoding="UTF-8"?>""";
-
     // --- Configuration properties ---
     private String root;
     private String array = "array";
     private String item = "item";
 
     // --- Converter instance (created once) ---
-    private JsonToXmlListStyle converter;
+    private JsonToXml converter;
 
     @Override
     public void init() {
         super.init();
-        converter = new JsonToXmlListStyle();
-
-        converter.setArrayName(array);
-        converter.setItemName(item);
-        converter.setRootName(root);
+        converter = new JsonToXml().arrayName(array).itemName(item).rootName(root);
 
         // root gets handled dynamically at runtime because it depends on json document type
         // unless explicitly set via @MCAttribute
@@ -103,7 +93,7 @@ public class Json2XmlInterceptor extends AbstractInterceptor {
     }
 
     private byte[] json2Xml(Message msg) {
-        return (PROLOG + converter.toXml(msg.getBodyAsStringDecoded())).getBytes(UTF_8);
+        return converter.toXml(msg.getBodyAsStringDecoded()).getBytes(UTF_8);
     }
 
     @Override
@@ -140,8 +130,6 @@ public class Json2XmlInterceptor extends AbstractInterceptor {
     @MCAttribute
     public void setArray(String array) {
         this.array = array;
-        if (converter != null)
-            converter.setArrayName(array);
     }
 
     public String getItem() {
@@ -155,8 +143,5 @@ public class Json2XmlInterceptor extends AbstractInterceptor {
     @MCAttribute
     public void setItem(String item) {
         this.item = item;
-        if (converter != null)
-            converter.setItemName(item);
     }
-
 }
