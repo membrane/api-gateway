@@ -16,7 +16,7 @@
 //import com.bornium.security.oauth2openid.Constants;
 //import com.bornium.security.oauth2openid.server.AuthorizationServer;
 //import com.bornium.security.oauth2openid.token.IdTokenProvider;
-//import com.fasterxml.jackson.databind.ObjectMapper;
+//import tools.jackson.databind.ObjectMapper;
 //import com.predic8.membrane.annot.MCAttribute;
 //import com.predic8.membrane.annot.MCChildElement;
 //import com.predic8.membrane.annot.MCElement;

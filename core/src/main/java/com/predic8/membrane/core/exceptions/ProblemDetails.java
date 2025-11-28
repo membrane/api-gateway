@@ -11,23 +11,29 @@
 
 package com.predic8.membrane.core.exceptions;
 
-import com.fasterxml.jackson.core.*;
-import com.fasterxml.jackson.databind.*;
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.interceptor.*;
-import org.jetbrains.annotations.*;
-import org.slf4j.*;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.Response;
+import com.predic8.membrane.core.interceptor.Interceptor;
+import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectWriter;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.Set;
 
-import static com.predic8.membrane.core.exceptions.ProblemDetailsXML.*;
-import static com.predic8.membrane.core.http.MimeType.*;
-import static com.predic8.membrane.core.http.Response.*;
-import static com.predic8.membrane.core.util.ExceptionUtil.*;
-import static java.nio.charset.StandardCharsets.*;
-import static java.util.Locale.*;
-import static java.util.UUID.*;
+import static com.predic8.membrane.core.exceptions.ProblemDetailsXML.createXMLContent;
+import static com.predic8.membrane.core.http.MimeType.APPLICATION_PROBLEM_JSON;
+import static com.predic8.membrane.core.http.MimeType.TEXT_PLAIN_UTF8;
+import static com.predic8.membrane.core.http.Response.statusCode;
+import static com.predic8.membrane.core.util.ExceptionUtil.concatMessageAndCauseMessages;
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.util.Locale.ROOT;
+import static java.util.UUID.randomUUID;
 
 
 /**
@@ -367,7 +373,7 @@ public class ProblemDetails {
         return accept.toLowerCase().contains("xml");
     }
 
-    private static void createJson(Map<String, Object> root, Response.ResponseBuilder builder) throws JsonProcessingException {
+    private static void createJson(Map<String, Object> root, Response.ResponseBuilder builder) {
         builder.body(ow.writeValueAsBytes(root));
         builder.contentType(APPLICATION_PROBLEM_JSON);
     }

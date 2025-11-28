@@ -14,7 +14,7 @@
 
 package com.predic8.membrane.core.interceptor.oauth2.client.b2c;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
+import tools.jackson.databind.core.JsonProcessingException;
 import com.predic8.membrane.core.exceptions.ProblemDetails;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Header;

@@ -14,10 +14,10 @@
 
 package com.predic8.membrane.core.interceptor.schemavalidation.json;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
-import com.fasterxml.jackson.dataformat.yaml.YAMLParser;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.dataformat.yaml.YAMLFactory;
+import tools.jackson.databind.dataformat.yaml.YAMLParser;
 import com.github.fge.jsonschema.main.JsonSchemaFactory;
 import com.networknt.schema.*;
 import com.networknt.schema.Error;
@@ -41,7 +41,7 @@ import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.atomic.*;
 
-import static com.fasterxml.jackson.core.StreamReadFeature.STRICT_DUPLICATE_DETECTION;
+import static tools.jackson.databind.core.StreamReadFeature.STRICT_DUPLICATE_DETECTION;
 import static com.networknt.schema.InputFormat.JSON;
 import static com.networknt.schema.InputFormat.YAML;
 import static com.predic8.membrane.core.exceptions.ProblemDetails.*;

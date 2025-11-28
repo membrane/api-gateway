@@ -14,7 +14,7 @@
 
 package com.predic8.membrane.core.util;
 
-import com.fasterxml.jackson.core.*;
+import tools.jackson.databind.core.*;
 import com.predic8.membrane.core.exceptions.*;
 import org.junit.jupiter.api.*;
 

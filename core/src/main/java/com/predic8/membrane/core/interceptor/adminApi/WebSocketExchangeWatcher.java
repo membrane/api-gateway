@@ -14,8 +14,8 @@
 
 package com.predic8.membrane.core.interceptor.adminApi;
 
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.core.JsonGenerator;
+import tools.jackson.databind.ObjectMapper;
 import com.predic8.membrane.core.exchange.AbstractExchange;
 import com.predic8.membrane.core.model.IExchangesStoreListener;
 import com.predic8.membrane.core.proxies.Proxy;

@@ -13,7 +13,7 @@
    limitations under the License. */
 package com.predic8.membrane.core.transport.ssl.acme;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import tools.jackson.databind.JsonNode;
 import com.predic8.membrane.core.azure.AzureDns;
 import com.predic8.membrane.core.azure.AzureTableStorage;
 import com.predic8.membrane.core.azure.api.dns.DnsProvisionable;

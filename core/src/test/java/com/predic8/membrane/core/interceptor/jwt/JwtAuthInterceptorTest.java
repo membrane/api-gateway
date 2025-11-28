@@ -13,8 +13,8 @@
 
 package com.predic8.membrane.core.interceptor.jwt;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.core.type.TypeReference;
+import tools.jackson.databind.ObjectMapper;
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Request;

@@ -14,7 +14,7 @@
 
 package com.predic8.membrane.core.interceptor.rest;
 
-import com.fasterxml.jackson.core.JsonGenerator;
+import tools.jackson.databind.core.JsonGenerator;
 
 public interface JSONContent {
 	void write(JsonGenerator jsonGen) throws Exception;

@@ -14,7 +14,7 @@
 
 package com.predic8.membrane.core.interceptor.schemavalidation;
 
-import com.fasterxml.jackson.databind.*;
+import tools.jackson.databind.*;
 import com.github.fge.jsonschema.core.report.*;
 import com.github.fge.jsonschema.main.*;
 import com.predic8.membrane.core.exchange.*;

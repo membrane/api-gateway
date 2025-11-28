@@ -13,10 +13,6 @@
    limitations under the License. */
 package com.predic8.membrane.annot.yaml;
 
-import com.fasterxml.jackson.core.JsonLocation;
-import com.fasterxml.jackson.core.JsonParseException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.networknt.schema.Error;
 import com.networknt.schema.SchemaLocation;
 import com.networknt.schema.SchemaRegistry;
@@ -25,7 +21,12 @@ import com.predic8.membrane.annot.MCChildElement;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.yaml.snakeyaml.events.*;
+import org.snakeyaml.engine.v2.events.Event;
+import org.snakeyaml.engine.v2.events.MappingStartEvent;
+import org.snakeyaml.engine.v2.events.ScalarEvent;
+import tools.jackson.core.TokenStreamLocation;
+import tools.jackson.core.exc.StreamReadException;
+import tools.jackson.databind.JsonNode;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -42,7 +43,7 @@ public class GenericYamlParser {
     private static final Logger log = LoggerFactory.getLogger(GenericYamlParser.class);
     private static final String EMPTY_DOCUMENT_WARNING = "Skipping empty document. Maybe there are two --- separators but no configuration in between.";
 
-    private static final ObjectMapper om = new ObjectMapper();
+    private static final com.fasterxml.jackson.databind.ObjectMapper legacyOm = new com.fasterxml.jackson.databind.ObjectMapper();
 
     /**
       * Parses Membrane resources from a YAML input stream.
@@ -51,7 +52,7 @@ public class GenericYamlParser {
       * @param observer the bean cache observer
       * @return the bean registry
       */
-    public static BeanRegistry parseMembraneResources(@NotNull InputStream resource, K8sHelperGenerator generator, BeanCacheObserver observer) throws IOException, YamlSchemaValidationException {
+    public static BeanRegistry parseMembraneResources(@NotNull InputStream resource, K8sHelperGenerator generator, BeanCacheObserver observer) throws IOException {
         BeanCache registry;
         try (resource) {
             registry = new BeanCache(observer, generator);
@@ -64,7 +65,7 @@ public class GenericYamlParser {
                     });
 
             registry.fireConfigurationLoaded();
-        } catch (JsonParseException e) {
+        } catch (StreamReadException e) {
             throw new IOException(
                     "Invalid YAML: multiple configurations must be separated by '---' "
                             + "(at line " + e.getLocation().getLineNr()
@@ -91,7 +92,7 @@ public class GenericYamlParser {
             try {
                 validate(generator, rootNodes.get(i));
             } catch (YamlSchemaValidationException e) {
-                JsonLocation location = jsonLocationMap.getLocationMap().get(
+                TokenStreamLocation location = jsonLocationMap.getLocationMap().get(
                         e.getErrors().getFirst().getInstanceNode());
                 throw new IOException("Invalid YAML: %s at line %d, column %d.".formatted(
                         e.getErrors().getFirst().getMessage(),
@@ -117,20 +118,22 @@ public class GenericYamlParser {
             throw new IllegalArgumentException("Expected object node.");
         if (jsonNode.size() != 1)
             throw new IllegalArgumentException("Expected exactly one key.");
-        return jsonNode.fieldNames().next();
+        return jsonNode.propertyNames().iterator().next();
     }
 
     public static void validate(K8sHelperGenerator generator, JsonNode input) throws IOException, YamlSchemaValidationException {
-        var jsonSchemaFactory = SchemaRegistry.withDefaultDialect(DRAFT_2020_12, builder -> {
-        });
+        var jsonSchemaFactory = SchemaRegistry.withDefaultDialect(DRAFT_2020_12, builder -> {});
         var schema = jsonSchemaFactory.getSchema(SchemaLocation.of(generator.getSchemaLocation()));
         schema.initializeValidators();
-        List<Error> errors = schema.validate(input);
+
+        // Bridge: tools.jackson.JsonNode -> com.fasterxml.jackson.databind.JsonNode
+        com.fasterxml.jackson.databind.JsonNode legacyInput = legacyOm.readTree(input.toString());
+
+        List<Error> errors = schema.validate(legacyInput);
         if (!errors.isEmpty()) {
             throw new YamlSchemaValidationException("Invalid YAML.", errors);
         }
     }
-
 
     public static Object readMembraneObject(String kind, K8sHelperGenerator generator, JsonNode node, BeanRegistry registry) throws ParsingException {
 
@@ -160,8 +163,7 @@ public class GenericYamlParser {
             if (isNoEnvelope(clazz))
                 throw new RuntimeException("Class " + clazz.getName() + " is annotated with @MCElement(noEnvelope=true), but the YAML/JSON structure does not contain a list.");
 
-            for (Iterator<String> it = node.fieldNames(); it.hasNext(); ) {
-                String key = it.next();
+            for (String key : node.propertyNames()) {
                 try {
 
                     if ("$ref".equals(key)) {
@@ -255,14 +257,14 @@ public class GenericYamlParser {
 
     private static String getScalarKey(Event event) {
         if (!(event instanceof ScalarEvent)) {
-            throw new IllegalStateException("Expected scalar or end-of-map in line " + event.getStartMark().getLine() + " column " + event.getStartMark().getColumn());
+            throw new IllegalStateException("Expected scalar or end-of-map in line " + event.getStartMark().orElseThrow().getLine() + " column " + event.getStartMark().orElseThrow().getColumn());
         }
         return ((ScalarEvent) event).getValue();
     }
 
     private static void ensureMappingStart(Event event) {
         if (!(event instanceof MappingStartEvent)) {
-            throw new IllegalStateException("Expected start-of-map in line " + event.getStartMark().getLine() + " column " + event.getStartMark().getColumn());
+            throw new IllegalStateException("Expected start-of-map in line " + event.getStartMark().orElseThrow().getLine() + " column " + event.getStartMark().orElseThrow().getColumn());
         }
     }
 
@@ -299,7 +301,7 @@ public class GenericYamlParser {
             throw new ParsingException("Expected object.", node);
         if (node.size() != 1)
             throw new ParsingException("Expected exactly one key.", node);
-        String key = node.fieldNames().next();
+        String key = node.propertyNames().iterator().next();
         return parseMapToObj(context, node.get(key), key, registry, k8sHelperGenerator);
     }
 

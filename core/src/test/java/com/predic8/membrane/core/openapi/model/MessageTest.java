@@ -14,7 +14,7 @@
 package com.predic8.membrane.core.openapi.model;
 
 
-import com.fasterxml.jackson.core.*;
+import tools.jackson.databind.core.*;
 import org.junit.jupiter.api.*;
 
 import static org.junit.jupiter.api.Assertions.*;

@@ -14,7 +14,7 @@
 
 package com.predic8.membrane.core.openapi.validators;
 
-import com.fasterxml.jackson.databind.node.*;
+import tools.jackson.databind.node.*;
 import org.junit.jupiter.api.*;
 
 class IntegerValidatorTest {

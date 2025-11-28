@@ -16,25 +16,30 @@
 
 package com.predic8.membrane.core.openapi.util;
 
-import com.fasterxml.jackson.databind.*;
-import com.predic8.membrane.core.*;
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.openapi.serviceproxy.*;
-import io.swagger.parser.*;
-import io.swagger.v3.oas.models.*;
-import io.swagger.v3.parser.*;
-import io.swagger.v3.parser.core.models.*;
+import com.predic8.membrane.core.Router;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.openapi.serviceproxy.APIProxy;
+import com.predic8.membrane.core.openapi.serviceproxy.APIProxyKey;
+import com.predic8.membrane.core.openapi.serviceproxy.OpenAPIRecord;
+import com.predic8.membrane.core.openapi.serviceproxy.OpenAPISpec;
+import io.swagger.parser.OpenAPIParser;
+import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.parser.core.models.ParseOptions;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.dataformat.yaml.YAMLMapper;
+import tools.jackson.datatype.joda.JodaModule;
 
 import java.io.*;
-import java.util.*;
+import java.util.Map;
 
-import static com.predic8.membrane.core.util.FileUtil.*;
-import static java.util.Collections.*;
+import static com.predic8.membrane.core.util.FileUtil.readInputStream;
+import static java.util.Collections.singletonList;
 
 public class OpenAPITestUtils {
 
     public static final ObjectMapper om = new ObjectMapper();
-    private static final ObjectMapper omYaml = ObjectMapperFactory.createYaml();
+    private static final ObjectMapper omYaml =  YAMLMapper.builder().addModule(new JodaModule()).build();
 
     public static InputStream toInputStrom(String s) {
         return new ByteArrayInputStream(s.getBytes());

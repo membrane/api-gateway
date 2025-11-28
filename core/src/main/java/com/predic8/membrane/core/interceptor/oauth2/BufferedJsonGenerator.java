@@ -13,8 +13,8 @@
 
 package com.predic8.membrane.core.interceptor.oauth2;
 
-import com.fasterxml.jackson.core.JsonFactory;
-import com.fasterxml.jackson.core.JsonGenerator;
+import tools.jackson.databind.core.JsonFactory;
+import tools.jackson.databind.core.JsonGenerator;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;

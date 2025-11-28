@@ -13,7 +13,7 @@
 
 package com.predic8.membrane.core.interceptor.oauth2;
 
-import com.fasterxml.jackson.core.JsonGenerator;
+import tools.jackson.databind.core.JsonGenerator;
 import com.predic8.membrane.core.resolver.ResolverMap;
 
 import java.io.IOException;

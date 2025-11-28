@@ -13,7 +13,7 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.oauth2.client;
 
-import com.fasterxml.jackson.core.type.TypeReference;
+import tools.jackson.databind.core.type.TypeReference;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;

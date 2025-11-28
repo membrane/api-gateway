@@ -14,14 +14,14 @@ limitations under the License. */
 
 package com.predic8.membrane.core.prettifier;
 
-import com.fasterxml.jackson.databind.*;
-import com.fasterxml.jackson.databind.json.*;
+import tools.jackson.databind.*;
+import tools.jackson.databind.json.*;
 import org.slf4j.*;
 
 import java.io.*;
 import java.nio.charset.*;
 
-import static com.fasterxml.jackson.core.json.JsonReadFeature.*;
+import static tools.jackson.databind.core.json.JsonReadFeature.*;
 
 public class JSONPrettifier implements Prettifier {
 

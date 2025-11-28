@@ -13,7 +13,7 @@
 
 package com.predic8.membrane.core.interceptor.oauth2.client.b2c;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 import com.predic8.membrane.core.interceptor.oauth2.client.BrowserMock;
 import com.predic8.membrane.core.interceptor.session.SessionManager;
 import org.junit.jupiter.api.AfterEach;

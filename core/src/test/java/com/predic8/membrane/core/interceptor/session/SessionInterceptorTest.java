@@ -13,9 +13,9 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.session;
 
-import com.fasterxml.jackson.core.*;
-import com.fasterxml.jackson.core.type.*;
-import com.fasterxml.jackson.databind.*;
+import tools.jackson.databind.core.*;
+import tools.jackson.databind.core.type.*;
+import tools.jackson.databind.*;
 import com.google.common.collect.*;
 import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.*;

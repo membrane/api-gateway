@@ -13,7 +13,7 @@
    limitations under the License. */
 package com.predic8.membrane.core.azure.api.dns;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 
 import java.util.ArrayList;
 import java.util.HashMap;

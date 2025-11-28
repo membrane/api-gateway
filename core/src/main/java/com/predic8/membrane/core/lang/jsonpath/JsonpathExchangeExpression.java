@@ -14,8 +14,8 @@
 
 package com.predic8.membrane.core.lang.jsonpath;
 
-import com.fasterxml.jackson.databind.*;
-import com.fasterxml.jackson.databind.exc.*;
+import tools.jackson.databind.*;
+import tools.jackson.databind.exc.*;
 import com.jayway.jsonpath.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.interceptor.Interceptor.*;

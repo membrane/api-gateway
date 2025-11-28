@@ -14,9 +14,9 @@
 
 package com.predic8.membrane.core.exchange.snapshots;
 
-import com.fasterxml.jackson.core.*;
-import com.fasterxml.jackson.databind.*;
-import com.fasterxml.jackson.databind.annotation.*;
+import tools.jackson.databind.core.*;
+import tools.jackson.databind.*;
+import tools.jackson.databind.annotation.*;
 import com.predic8.membrane.core.proxies.*;
 
 import java.io.*;

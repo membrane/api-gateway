@@ -13,8 +13,8 @@
    limitations under the License. */
 package com.predic8.membrane.core.kubernetes.client;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.dataformat.yaml.YAMLFactory;
 import com.google.common.base.Charsets;
 import com.google.common.io.Files;
 import com.predic8.membrane.core.config.security.Certificate;

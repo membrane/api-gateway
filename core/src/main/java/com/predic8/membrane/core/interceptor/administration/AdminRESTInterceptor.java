@@ -14,7 +14,7 @@
 
 package com.predic8.membrane.core.interceptor.administration;
 
-import com.fasterxml.jackson.core.*;
+import tools.jackson.databind.core.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.exchangestore.*;
 import com.predic8.membrane.core.http.*;

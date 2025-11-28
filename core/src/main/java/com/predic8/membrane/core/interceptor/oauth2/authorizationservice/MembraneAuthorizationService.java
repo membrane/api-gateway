@@ -13,8 +13,8 @@
 
 package com.predic8.membrane.core.interceptor.oauth2.authorizationservice;
 
-import com.fasterxml.jackson.core.type.*;
-import com.fasterxml.jackson.databind.*;
+import tools.jackson.databind.core.type.*;
+import tools.jackson.databind.*;
 import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.interceptor.oauth2.*;
 import com.predic8.membrane.core.interceptor.oauth2.parameter.*;

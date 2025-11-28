@@ -13,28 +13,36 @@
    limitations under the License. */
 package com.predic8.membrane.core.openapi.serviceproxy;
 
-import com.fasterxml.jackson.core.*;
-import com.fasterxml.jackson.databind.*;
-import com.fasterxml.jackson.databind.node.*;
-import com.predic8.membrane.core.*;
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.interceptor.*;
-import groovy.text.*;
-import io.swagger.v3.oas.models.*;
-import io.swagger.v3.parser.*;
-import org.slf4j.*;
+import com.predic8.membrane.core.Router;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.interceptor.Outcome;
+import groovy.text.StreamingTemplateEngine;
+import groovy.text.Template;
+import io.swagger.v3.oas.models.OpenAPI;
+import org.slf4j.Logger;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectWriter;
+import tools.jackson.databind.node.ObjectNode;
+import tools.jackson.dataformat.yaml.YAMLMapper;
 
-import java.io.*;
-import java.net.*;
-import java.util.*;
-import java.util.regex.*;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.net.URISyntaxException;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
-import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
-import static com.predic8.membrane.core.http.MimeType.*;
-import static com.predic8.membrane.core.http.Response.*;
-import static com.predic8.membrane.core.interceptor.Outcome.*;
-import static com.predic8.membrane.core.openapi.util.OpenAPIUtil.*;
-import static com.predic8.membrane.core.openapi.util.Utils.*;
+import static com.predic8.membrane.core.exceptions.ProblemDetails.user;
+import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
+import static com.predic8.membrane.core.http.MimeType.TEXT_HTML_UTF8;
+import static com.predic8.membrane.core.http.Response.ok;
+import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
+import static com.predic8.membrane.core.openapi.util.OpenAPIUtil.isOpenAPI3;
+import static com.predic8.membrane.core.openapi.util.OpenAPIUtil.isSwagger2;
+import static com.predic8.membrane.core.openapi.util.Utils.getResourceAsStream;
 
 public class OpenAPIPublisher {
 
@@ -48,8 +56,7 @@ public class OpenAPIPublisher {
 
     private final ObjectMapper om = new ObjectMapper();
     private final ObjectWriter ow = new ObjectMapper().writerWithDefaultPrettyPrinter();
-    private final ObjectMapper omYaml = ObjectMapperFactory.createYaml();
-
+    private final ObjectMapper omYaml = YAMLMapper.builder().build();
     protected final Map<String, OpenAPIRecord> apis;
 
     public OpenAPIPublisher(Map<String, OpenAPIRecord> apis) throws IOException, ClassNotFoundException {
@@ -111,7 +118,7 @@ public class OpenAPIPublisher {
         return exc.getRequest().getHeader().getAccept().contains("html");
     }
 
-    private Outcome returnJsonOverview(Exchange exc, Logger log) throws JsonProcessingException {
+    private Outcome returnJsonOverview(Exchange exc, Logger log) {
         exc.setResponse(ok().contentType(APPLICATION_JSON).body(ow.writeValueAsBytes(createDictionaryOfAPIs(log))).build());
         return RETURN;
     }

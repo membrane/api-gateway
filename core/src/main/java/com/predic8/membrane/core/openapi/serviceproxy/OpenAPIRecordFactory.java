@@ -16,7 +16,7 @@
 
 package com.predic8.membrane.core.openapi.serviceproxy;
 
-import com.fasterxml.jackson.databind.*;
+import tools.jackson.databind.*;
 import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.openapi.*;
 import com.predic8.membrane.core.resolver.*;

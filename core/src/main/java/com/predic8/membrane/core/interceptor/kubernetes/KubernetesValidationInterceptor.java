@@ -13,7 +13,7 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.kubernetes;
 
-import com.fasterxml.jackson.databind.*;
+import tools.jackson.databind.*;
 import com.google.common.collect.*;
 import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.exchange.*;

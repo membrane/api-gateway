@@ -13,7 +13,7 @@
    limitations under the License. */
 package com.predic8.membrane.core.http.xml;
 
-import com.fasterxml.jackson.core.*;
+import tools.jackson.databind.core.*;
 import com.predic8.membrane.core.config.*;
 import com.predic8.membrane.core.http.Message;
 

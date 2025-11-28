@@ -14,7 +14,7 @@
 
 package com.predic8.membrane.core.openapi.validators.parameters;
 
-import com.fasterxml.jackson.databind.*;
+import tools.jackson.databind.*;
 import com.predic8.membrane.core.openapi.util.*;
 import com.predic8.membrane.core.openapi.validators.*;
 import io.swagger.v3.oas.models.media.*;

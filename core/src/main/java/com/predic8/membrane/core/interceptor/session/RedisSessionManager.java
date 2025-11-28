@@ -14,8 +14,8 @@
 
 package com.predic8.membrane.core.interceptor.session;
 
-import com.fasterxml.jackson.core.*;
-import com.fasterxml.jackson.databind.*;
+import tools.jackson.databind.core.*;
+import tools.jackson.databind.*;
 import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.*;

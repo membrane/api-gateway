@@ -14,12 +14,13 @@
 
 package com.predic8.membrane.core.util;
 
-import com.fasterxml.jackson.core.JsonFactory;
-import com.fasterxml.jackson.core.JsonParser;
 import com.predic8.membrane.core.http.Response;
 import jakarta.mail.internet.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import tools.jackson.core.JsonParser;
+import tools.jackson.core.JsonToken;
+import tools.jackson.core.json.JsonFactory;
 
 import javax.net.ssl.SSLSocket;
 import java.io.IOException;
@@ -36,6 +37,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
+import static tools.jackson.core.JsonToken.*;
 
 public class Util {
 
@@ -69,12 +71,12 @@ public class Util {
 			final JsonParser jp = new JsonFactory().createParser(new InputStreamReader(g.getBodyAsStreamDecoded()));
 			String name = null;
 			while (jp.nextToken() != null) {
-				switch (jp.getCurrentToken()) {
-					case FIELD_NAME:
-						name = jp.getCurrentName();
+				switch (jp.currentToken()) {
+					case PROPERTY_NAME:
+						name = jp.currentName();
 						break;
 					case VALUE_STRING:
-						values.put(name, jp.getText());
+						values.put(name, jp.getString());
 						break;
 					case VALUE_NUMBER_INT:
 						values.put(name, "" + jp.getLongValue());

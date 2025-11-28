@@ -13,10 +13,10 @@
 
 package com.predic8.membrane.core.interceptor.oauth2.parameter;
 
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.core.JsonGenerator;
+import tools.jackson.databind.core.JsonProcessingException;
+import tools.jackson.databind.core.type.TypeReference;
+import tools.jackson.databind.ObjectMapper;
 import com.predic8.membrane.core.interceptor.oauth2.BufferedJsonGenerator;
 
 import java.io.IOException;

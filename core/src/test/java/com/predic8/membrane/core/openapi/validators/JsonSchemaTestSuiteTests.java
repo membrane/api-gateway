@@ -14,10 +14,10 @@
 
 package com.predic8.membrane.core.openapi.validators;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
-import com.fasterxml.jackson.dataformat.yaml.YAMLGenerator;
+import tools.jackson.databind.core.JsonProcessingException;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.dataformat.yaml.YAMLFactory;
+import tools.jackson.databind.dataformat.yaml.YAMLGenerator;
 import com.predic8.membrane.core.openapi.OpenAPIValidator;
 import com.predic8.membrane.core.openapi.model.Body;
 import com.predic8.membrane.core.openapi.model.Request;

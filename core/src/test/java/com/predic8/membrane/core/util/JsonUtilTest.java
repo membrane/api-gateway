@@ -14,7 +14,7 @@
 
 package com.predic8.membrane.core.util;
 
-import com.fasterxml.jackson.databind.*;
+import tools.jackson.databind.*;
 import org.junit.jupiter.api.*;
 
 import static com.predic8.membrane.core.util.JsonUtil.scalarAsJson;

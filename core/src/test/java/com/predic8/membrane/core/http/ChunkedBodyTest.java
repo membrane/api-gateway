@@ -14,7 +14,7 @@
 
 package com.predic8.membrane.core.http;
 
-import com.fasterxml.jackson.databind.*;
+import tools.jackson.databind.*;
 import com.google.common.io.*;
 import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.config.security.KeyStore;

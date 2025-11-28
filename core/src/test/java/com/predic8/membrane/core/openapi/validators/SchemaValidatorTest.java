@@ -13,8 +13,8 @@
    limitations under the License. */
 package com.predic8.membrane.core.openapi.validators;
 
-import com.fasterxml.jackson.databind.*;
-import com.fasterxml.jackson.databind.node.*;
+import tools.jackson.databind.*;
+import tools.jackson.databind.node.*;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.*;
 import org.junit.jupiter.params.provider.*;
@@ -22,7 +22,7 @@ import org.junit.jupiter.params.provider.*;
 import java.io.*;
 import java.util.stream.*;
 
-import static com.fasterxml.jackson.databind.node.BooleanNode.*;
+import static tools.jackson.databind.node.BooleanNode.*;
 import static com.predic8.membrane.core.openapi.validators.JsonSchemaValidator.*;
 import static java.io.InputStream.nullInputStream;
 import static org.junit.jupiter.api.Assertions.*;

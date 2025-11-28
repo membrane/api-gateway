@@ -13,7 +13,7 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.statistics;
 
-import com.fasterxml.jackson.core.*;
+import tools.jackson.databind.core.*;
 import com.google.common.collect.*;
 import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.exchange.*;

@@ -13,61 +13,76 @@
    limitations under the License. */
 package com.predic8.membrane.core.transport.ssl.acme;
 
-import com.fasterxml.jackson.core.*;
-import com.fasterxml.jackson.databind.*;
-import com.fasterxml.jackson.datatype.joda.*;
-import com.google.common.collect.*;
-import com.predic8.membrane.core.azure.*;
-import com.predic8.membrane.core.azure.api.dns.*;
+import com.google.common.collect.ImmutableMap;
+import com.predic8.membrane.core.azure.AzureDns;
+import com.predic8.membrane.core.azure.AzureTableStorage;
+import com.predic8.membrane.core.azure.api.dns.DnsProvisionable;
 import com.predic8.membrane.core.config.security.acme.*;
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.kubernetes.client.*;
-import com.predic8.membrane.core.transport.http.*;
-import com.predic8.membrane.core.util.*;
-import org.bouncycastle.asn1.*;
-import org.bouncycastle.asn1.pkcs.*;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.Request;
+import com.predic8.membrane.core.http.Response;
+import com.predic8.membrane.core.kubernetes.client.KubernetesClientFactory;
+import com.predic8.membrane.core.transport.http.HttpClient;
+import com.predic8.membrane.core.transport.http.HttpClientFactory;
+import com.predic8.membrane.core.util.Pair;
+import com.predic8.membrane.core.util.URIFactory;
+import org.bouncycastle.asn1.DERSequence;
+import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.x509.*;
-import org.bouncycastle.jcajce.provider.asymmetric.ec.*;
-import org.bouncycastle.jce.provider.*;
+import org.bouncycastle.jcajce.provider.asymmetric.ec.BCECPrivateKey;
+import org.bouncycastle.jcajce.provider.asymmetric.ec.BCECPublicKey;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.jce.spec.ECPublicKeySpec;
 import org.bouncycastle.math.ec.ECPoint;
-import org.bouncycastle.openssl.jcajce.*;
-import org.bouncycastle.operator.*;
-import org.bouncycastle.operator.jcajce.*;
-import org.bouncycastle.pkcs.*;
-import org.bouncycastle.pkcs.jcajce.*;
-import org.bouncycastle.util.io.pem.*;
-import org.jetbrains.annotations.*;
-import org.joda.time.*;
+import org.bouncycastle.openssl.jcajce.JcaPEMWriter;
+import org.bouncycastle.operator.OperatorCreationException;
+import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
+import org.bouncycastle.pkcs.PKCS10CertificationRequest;
+import org.bouncycastle.pkcs.jcajce.JcaPKCS10CertificationRequestBuilder;
+import org.bouncycastle.util.io.pem.PemObject;
+import org.bouncycastle.util.io.pem.PemReader;
+import org.jetbrains.annotations.NotNull;
+import org.joda.time.Duration;
 import org.jose4j.base64url.Base64;
 import org.jose4j.json.JsonUtil;
-import org.jose4j.jwk.*;
-import org.jose4j.jws.*;
-import org.jose4j.keys.*;
-import org.jose4j.lang.*;
+import org.jose4j.jwk.EcJwkGenerator;
+import org.jose4j.jwk.EllipticCurveJsonWebKey;
+import org.jose4j.jwk.JsonWebKey;
+import org.jose4j.jwk.PublicJsonWebKey;
+import org.jose4j.jws.AlgorithmIdentifiers;
+import org.jose4j.jws.JsonWebSignature;
+import org.jose4j.keys.EllipticCurves;
+import org.jose4j.lang.JoseException;
 import org.slf4j.Logger;
-import org.slf4j.*;
+import org.slf4j.LoggerFactory;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.datatype.joda.JodaModule;
 
 import javax.annotation.Nullable;
-import javax.security.auth.x500.*;
-import java.io.*;
-import java.math.*;
-import java.net.*;
+import javax.security.auth.x500.X500Principal;
+import java.io.IOException;
+import java.io.StringReader;
+import java.io.StringWriter;
+import java.math.BigInteger;
+import java.net.URISyntaxException;
 import java.security.*;
-import java.security.spec.*;
-import java.text.*;
+import java.security.spec.ECGenParameterSpec;
+import java.security.spec.InvalidKeySpecException;
+import java.security.spec.PKCS8EncodedKeySpec;
+import java.text.SimpleDateFormat;
 import java.util.*;
-import java.util.stream.*;
+import java.util.stream.Collectors;
 
-import static com.predic8.membrane.core.Constants.*;
+import static com.predic8.membrane.core.Constants.VERSION;
 import static com.predic8.membrane.core.http.Header.*;
 import static com.predic8.membrane.core.http.MimeType.*;
-import static com.predic8.membrane.core.transport.ssl.acme.Challenge.*;
-import static com.predic8.membrane.core.transport.ssl.acme.Identifier.*;
-import static java.lang.System.*;
-import static java.nio.charset.StandardCharsets.*;
-import static org.jose4j.lang.HashUtil.*;
+import static com.predic8.membrane.core.transport.ssl.acme.Challenge.TYPE_DNS_01;
+import static com.predic8.membrane.core.transport.ssl.acme.Challenge.TYPE_HTTP_01;
+import static com.predic8.membrane.core.transport.ssl.acme.Identifier.TYPE_DNS;
+import static java.lang.System.lineSeparator;
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.jose4j.lang.HashUtil.SHA_256;
 
 public class AcmeClient {
 
@@ -84,7 +99,7 @@ public class AcmeClient {
 
     private final String directoryUrl;
     private final HttpClient hc;
-    private final ObjectMapper om = new ObjectMapper();
+    private final ObjectMapper om = JsonMapper.builder().addModule(new JodaModule()).build();
     private final List<String> nonces = new ArrayList<>();
     private final String challengeType;
     private final AcmeSynchronizedStorage ass;
@@ -113,8 +128,6 @@ public class AcmeClient {
         validity = acme.getValidityDuration();
         this.acmeValidation = acme.getValidationMethod();
         challengeType = acme.getValidationMethod() != null && acme.getValidationMethod().useDnsValidation() ? TYPE_DNS_01 : TYPE_HTTP_01;
-
-        om.registerModule(new JodaModule());
 
         if (!acme.isExperimental())
             throw new RuntimeException("The ACME client is still experimental, please set <acme experimental=\"true\" ... /> to acknowledge.");
@@ -152,7 +165,7 @@ public class AcmeClient {
         // 'renewalInfo' not used
     }
 
-    private void handleError(Exchange e) throws IOException, AcmeException {
+    private void handleError(Exchange e) throws AcmeException {
         if (e.getResponse().getStatusCode() >= 300) {
 
             if (isOfMediaType(APPLICATION_PROBLEM_JSON, getContentType(e))) {
@@ -445,7 +458,7 @@ public class AcmeClient {
         return getOrderAndLocation(createExchange(accountUrl, hostnames, getNotBeforeNotAfter()));
     }
 
-    private @NotNull OrderAndLocation getOrderAndLocation(Exchange e) throws IOException {
+    private @NotNull OrderAndLocation getOrderAndLocation(Exchange e) {
         return new OrderAndLocation(parseOrder(e.getResponse()), e.getResponse().getHeader().getFirstValue(LOCATION));
     }
 
@@ -488,11 +501,11 @@ public class AcmeClient {
         return new OrderAndLocation(parseOrder(e.getResponse()), orderUrl);
     }
 
-    private Order parseOrder(Response response) throws IOException {
+    private Order parseOrder(Response response) {
         return om.readValue(response.getBodyAsStreamDecoded(), Order.class);
     }
 
-    private void parseChallenge(Response response) throws IOException {
+    private void parseChallenge(Response response) {
         om.readValue(response.getBodyAsStreamDecoded(), Challenge.class);
     }
 
@@ -516,7 +529,7 @@ public class AcmeClient {
         return parseAuthorization(e.getResponse());
     }
 
-    private Authorization parseAuthorization(Response response) throws IOException {
+    private Authorization parseAuthorization(Response response) {
         return om.readValue(response.getBodyAsStreamDecoded(), Authorization.class);
     }
 
@@ -598,22 +611,22 @@ public class AcmeClient {
         return contacts;
     }
 
-    public void setOALKey(String[] hosts, AcmeKeyPair key) throws JsonProcessingException {
+    public void setOALKey(String[] hosts, AcmeKeyPair key) {
         asse.setOALKey(hosts, om.writeValueAsString(key));
     }
 
-    public AcmeKeyPair getOALKey(String[] hosts) throws JsonProcessingException {
+    public AcmeKeyPair getOALKey(String[] hosts) {
         String key = asse.getOALKey(hosts);
         if (key == null)
             return null;
         return om.readValue(key, AcmeKeyPair.class);
     }
 
-    public void setOALError(String[] hosts, AcmeErrorLog acmeErrorLog) throws JsonProcessingException {
+    public void setOALError(String[] hosts, AcmeErrorLog acmeErrorLog) {
         asse.setOALError(hosts, om.writeValueAsString(acmeErrorLog));
     }
 
-    public AcmeErrorLog getOALError(String[] hosts) throws JsonProcessingException {
+    public AcmeErrorLog getOALError(String[] hosts) {
         String error = asse.getOALError(hosts);
         if (error == null)
             return null;

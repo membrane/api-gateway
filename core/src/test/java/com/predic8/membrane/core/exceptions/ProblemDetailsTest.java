@@ -11,7 +11,7 @@
 
 package com.predic8.membrane.core.exceptions;
 
-import com.fasterxml.jackson.databind.*;
+import tools.jackson.databind.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import org.junit.jupiter.api.*;

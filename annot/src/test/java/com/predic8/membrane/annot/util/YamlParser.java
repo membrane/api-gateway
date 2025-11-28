@@ -16,10 +16,8 @@ package com.predic8.membrane.annot.util;
 
 import com.predic8.membrane.annot.K8sHelperGenerator;
 import com.predic8.membrane.annot.yaml.*;
-import org.yaml.snakeyaml.Yaml;
 
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.lang.reflect.InvocationTargetException;
 import java.util.concurrent.CountDownLatch;
 

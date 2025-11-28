@@ -13,31 +13,35 @@
    limitations under the License. */
 package com.predic8.membrane.core.graphql;
 
-import com.fasterxml.jackson.core.*;
-import com.fasterxml.jackson.databind.*;
-import com.google.common.collect.*;
-import com.predic8.membrane.core.*;
-import com.predic8.membrane.core.exchange.*;
+import com.google.common.collect.ImmutableMap;
+import com.predic8.membrane.core.Router;
+import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.graphql.blocklist.FeatureBlocklist;
 import com.predic8.membrane.core.graphql.model.*;
-import com.predic8.membrane.core.http.*;
-import jakarta.mail.internet.*;
-import org.jetbrains.annotations.*;
-import org.slf4j.*;
+import com.predic8.membrane.core.http.HeaderField;
+import com.predic8.membrane.core.http.HeaderName;
+import jakarta.mail.internet.ContentType;
+import jakarta.mail.internet.ParseException;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import tools.jackson.databind.DeserializationFeature;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 
-import java.io.*;
-import java.net.*;
+import java.io.ByteArrayInputStream;
+import java.net.URISyntaxException;
 import java.util.*;
-import java.util.function.*;
+import java.util.function.Predicate;
 import java.util.stream.Stream;
 
-import static com.fasterxml.jackson.core.JsonParser.Feature.*;
-import static com.fasterxml.jackson.databind.DeserializationFeature.*;
-import static com.predic8.membrane.core.http.Header.*;
-import static com.predic8.membrane.core.http.MimeType.*;
-import static com.predic8.membrane.core.util.URLParamUtil.DuplicateKeyOrInvalidFormStrategy.*;
-import static com.predic8.membrane.core.util.URLParamUtil.*;
-import static java.nio.charset.StandardCharsets.*;
+import static com.predic8.membrane.core.http.Header.CONTENT_TYPE;
+import static com.predic8.membrane.core.http.MimeType.APPLICATION_GRAPHQL;
+import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
+import static com.predic8.membrane.core.util.URLParamUtil.DuplicateKeyOrInvalidFormStrategy.ERROR;
+import static com.predic8.membrane.core.util.URLParamUtil.parseQueryString;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 public class GraphQLoverHttpValidator {
     private static final Logger log = LoggerFactory.getLogger(GraphQLoverHttpValidator.class);
@@ -49,9 +53,7 @@ public class GraphQLoverHttpValidator {
     public static final String OPERATION_NAME = "operationName";
 
     private final GraphQLParser graphQLParser = new GraphQLParser();
-    private final ObjectMapper om = new ObjectMapper()
-            .configure(FAIL_ON_READING_DUP_TREE_KEY, true)
-            .configure(STRICT_DUPLICATE_DETECTION, true);
+    private final ObjectMapper om = JsonMapper.builder().enable(DeserializationFeature.FAIL_ON_READING_DUP_TREE_KEY).build();
 
     private final boolean allowExtensions;
     private final List<String> allowedMethods;
@@ -257,15 +259,11 @@ public class GraphQLoverHttpValidator {
         } catch (Exception e) {
             throw new GraphQLOverHttpValidationException("Error decoding query string.");
         }
-        try {
-            if (data.containsKey(VARIABLES))
-                data.put(VARIABLES, om.readValue((String) data.get(VARIABLES), Map.class));
-            if (data.containsKey(EXTENSIONS))
-                data.put(EXTENSIONS, om.readValue((String) data.get(EXTENSIONS), Map.class));
-            return data;
-        } catch (JsonProcessingException e) {
-            throw new GraphQLOverHttpValidationException(422, "Error parsing variables or extensions from request JSON.");
-        }
+        if (data.containsKey(VARIABLES))
+            data.put(VARIABLES, om.readValue((String) data.get(VARIABLES), Map.class));
+        if (data.containsKey(EXTENSIONS))
+            data.put(EXTENSIONS, om.readValue((String) data.get(EXTENSIONS), Map.class));
+        return data;
     }
 
     public static int countMutations(List<ExecutableDefinition> definitions) {

@@ -13,24 +13,17 @@
    limitations under the License. */
 package com.predic8.membrane.annot.yaml;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.dataformat.yaml.YAMLFactory;
 import com.predic8.membrane.annot.K8sHelperGenerator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.yaml.snakeyaml.Yaml;
-import org.yaml.snakeyaml.events.DocumentStartEvent;
-import org.yaml.snakeyaml.events.Event;
-import org.yaml.snakeyaml.events.StreamStartEvent;
 
 import java.io.IOException;
-import java.io.StringReader;
 import java.util.*;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
-
-import static com.predic8.membrane.annot.yaml.YamlUtil.removeFirstYamlDocStartMarker;
 
 public class BeanCache implements BeanRegistry {
     private static final Logger log = LoggerFactory.getLogger(BeanCache.class);

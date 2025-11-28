@@ -14,8 +14,8 @@
 
 package com.predic8.membrane.core.exchange.snapshots;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import tools.jackson.databind.annotation.JsonIgnore;
+import tools.jackson.databind.annotation.JsonIgnoreProperties;
 import com.predic8.membrane.core.exchange.AbstractExchange;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.exchange.ExchangeState;

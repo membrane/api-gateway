@@ -13,7 +13,7 @@
    limitations under the License. */
 package com.predic8.membrane.core.lang.spel.functions;
 
-import com.fasterxml.jackson.databind.*;
+import tools.jackson.databind.*;
 import com.jayway.jsonpath.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.lang.*;

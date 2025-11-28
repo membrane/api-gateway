@@ -13,14 +13,14 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.jwt;
 
-import com.fasterxml.jackson.databind.*;
+import tools.jackson.databind.*;
 import org.slf4j.*;
 
 import java.io.*;
 import java.util.*;
 
-import static com.fasterxml.jackson.core.JsonParser.Feature.STRICT_DUPLICATE_DETECTION;
-import static com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_READING_DUP_TREE_KEY;
+import static tools.jackson.databind.core.JsonParser.Feature.STRICT_DUPLICATE_DETECTION;
+import static tools.jackson.databind.DeserializationFeature.FAIL_ON_READING_DUP_TREE_KEY;
 import static com.predic8.membrane.core.interceptor.jwt.JwtAuthInterceptor.*;
 
 public class JsonWebToken {

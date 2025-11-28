@@ -14,8 +14,8 @@
 package com.predic8.membrane.core.transport.ssl.acme;
 
 
-import com.fasterxml.jackson.annotation.JsonAnyGetter;
-import com.fasterxml.jackson.annotation.JsonAnySetter;
+import tools.jackson.databind.annotation.JsonAnyGetter;
+import tools.jackson.databind.annotation.JsonAnySetter;
 
 import java.util.HashMap;
 import java.util.Map;

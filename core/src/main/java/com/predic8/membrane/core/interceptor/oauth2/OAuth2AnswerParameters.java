@@ -13,12 +13,12 @@
 
 package com.predic8.membrane.core.interceptor.oauth2;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.predic8.membrane.core.interceptor.oauth2client.rf.OAuth2TokenResponseBody;
 import org.jetbrains.annotations.NotNull;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.cfg.DateTimeFeature;
+import tools.jackson.databind.json.JsonMapper;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
@@ -75,7 +75,7 @@ public class OAuth2AnswerParameters {
         return tokenType;
     }
 
-    public String serialize() throws JsonProcessingException {
+    public String serialize() {
         return OAuth2Util.urlencode(om.writeValueAsString(this));
     }
 
@@ -84,10 +84,9 @@ public class OAuth2AnswerParameters {
     }
 
     private static ObjectMapper createObjectMapper() {
-        ObjectMapper mapper = new ObjectMapper();
-        mapper.registerModule(new JavaTimeModule());
-        mapper.enable(SerializationFeature.WRITE_DATES_WITH_ZONE_ID);
-        return mapper;
+        return JsonMapper.builder()
+                .enable(DateTimeFeature.WRITE_DATES_WITH_ZONE_ID)
+                .build();
     }
 
     public void setExpiration(String expiration) {
@@ -118,7 +117,7 @@ public class OAuth2AnswerParameters {
     public String toString() {
         try {
             return om.writeValueAsString(this);
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             return "";
         }
     }

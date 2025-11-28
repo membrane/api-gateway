@@ -15,7 +15,7 @@
 package com.predic8.membrane.annot.yaml;
 
 import org.jetbrains.annotations.NotNull;
-import org.yaml.snakeyaml.events.*;
+import org.snakeyaml.engine.v2.events.*;
 
 import java.util.*;
 
@@ -25,7 +25,7 @@ public class YamlLoader {
         Event event = events.next();
         if (event instanceof ScalarEvent se)
             return getValue(se);
-        throw new IllegalStateException("Expected string in line " + event.getStartMark().getLine() + " column " + event.getStartMark().getColumn());
+        throw new IllegalStateException("Expected string in line " + event.getStartMark().orElseThrow().getLine() + " column " + event.getStartMark().orElseThrow().getColumn());
     }
 
     private static String getValue(ScalarEvent se) {
@@ -84,6 +84,6 @@ public class YamlLoader {
     }
 
     private static @NotNull String parsingErrorMessage(String x, Event event) {
-        return x + event.getStartMark().getLine() + " column " + event.getStartMark().getColumn();
+        return x + event.getStartMark().orElseThrow().getLine() + " column " + event.getStartMark().orElseThrow().getColumn();
     }
 }

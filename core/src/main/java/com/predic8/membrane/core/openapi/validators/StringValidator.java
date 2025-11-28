@@ -16,8 +16,8 @@
 
 package com.predic8.membrane.core.openapi.validators;
 
-import com.fasterxml.jackson.databind.*;
-import com.fasterxml.jackson.databind.node.*;
+import tools.jackson.databind.*;
+import tools.jackson.databind.node.*;
 import io.swagger.v3.oas.models.media.*;
 import org.slf4j.*;
 
