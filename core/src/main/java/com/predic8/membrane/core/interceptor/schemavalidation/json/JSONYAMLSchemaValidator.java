@@ -14,47 +14,50 @@
 
 package com.predic8.membrane.core.interceptor.schemavalidation.json;
 
-import tools.jackson.databind.JsonNode;
-import tools.jackson.databind.ObjectMapper;
-import tools.jackson.dataformat.yaml.YAMLFactory;
-import tools.jackson.databind.dataformat.yaml.YAMLParser;
-import com.github.fge.jsonschema.main.JsonSchemaFactory;
 import com.networknt.schema.*;
 import com.networknt.schema.Error;
 import com.networknt.schema.path.NodePath;
-import com.networknt.schema.serialization.YamlMapperFactory;
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.interceptor.Interceptor.*;
-import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.interceptor.schemavalidation.*;
-import com.predic8.membrane.core.interceptor.schemavalidation.ValidatorInterceptor.*;
-import com.predic8.membrane.core.resolver.*;
-import org.jetbrains.annotations.*;
-import org.slf4j.*;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.interceptor.Interceptor.Flow;
+import com.predic8.membrane.core.interceptor.Outcome;
+import com.predic8.membrane.core.interceptor.schemavalidation.AbstractMessageValidator;
+import com.predic8.membrane.core.interceptor.schemavalidation.ValidatorInterceptor.FailureHandler;
+import com.predic8.membrane.core.resolver.Resolver;
+import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import tools.jackson.core.JsonParser;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.dataformat.yaml.YAMLFactory;
+import tools.jackson.dataformat.yaml.YAMLMapper;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.charset.*;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.*;
-import java.util.concurrent.atomic.*;
+import java.nio.charset.Charset;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicLong;
 
-import static tools.jackson.databind.core.StreamReadFeature.STRICT_DUPLICATE_DETECTION;
 import static com.networknt.schema.InputFormat.JSON;
 import static com.networknt.schema.InputFormat.YAML;
-import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
-import static com.predic8.membrane.core.interceptor.Outcome.*;
-import static java.nio.charset.StandardCharsets.*;
+import static com.predic8.membrane.core.exceptions.ProblemDetails.user;
+import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
+import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static tools.jackson.core.StreamReadFeature.STRICT_DUPLICATE_DETECTION;
 
 public class JSONYAMLSchemaValidator extends AbstractMessageValidator {
 
     private static final Logger log = LoggerFactory.getLogger(JSONYAMLSchemaValidator.class);
 
     private final YAMLFactory factory = YAMLFactory.builder().enable(STRICT_DUPLICATE_DETECTION).build();
-    private final ObjectMapper yamlObjectMapper = new ObjectMapper(factory);
-    private final ObjectMapper jsonObjectMapper = new ObjectMapper();
+    private final ObjectMapper yamlObjectMapper = YAMLMapper.builder(factory).build();
+    private final ObjectMapper jsonObjectMapper = JsonMapper.builder().build();
+
+    private static final com.fasterxml.jackson.databind.ObjectMapper legacyObjectMapper = new com.fasterxml.jackson.databind.ObjectMapper();
 
     public static final String SCHEMA_VERSION_2020_12 = "2020-12";
 
@@ -82,7 +85,7 @@ public class JSONYAMLSchemaValidator extends AbstractMessageValidator {
         this.resolver = resolver;
         this.jsonSchema = jsonSchema;
         this.failureHandler = failureHandler;
-        this.schemaId = JSONSchemaVersionParser.parse( schemaVersion);
+        this.schemaId = JSONSchemaVersionParser.parse(schemaVersion);
         this.inputFormat = inputFormat;
     }
 
@@ -107,7 +110,8 @@ public class JSONYAMLSchemaValidator extends AbstractMessageValidator {
                 builder.schemaLoader(loaders -> new MembraneSchemaLoader(resolver)));
 
         try (InputStream in = resolver.resolve(jsonSchema)) {
-            schema = jsonSchemaFactory.getSchema((jsonSchema.endsWith(".yaml") || jsonSchema.endsWith(".yml") ? yamlObjectMapper: jsonObjectMapper).readTree(in));
+            // Bridge to com.fasterxml for networknt
+            schema = jsonSchemaFactory.getSchema(legacyObjectMapper.readTree(((jsonSchema.endsWith(".yaml") || jsonSchema.endsWith(".yml")) ? yamlObjectMapper : jsonObjectMapper).readTree(in).toString()));
             schema.initializeValidators();
         } catch (IOException e) {
             throw new RuntimeException("Cannot read JSON Schema from: " + jsonSchema, e);
@@ -121,8 +125,8 @@ public class JSONYAMLSchemaValidator extends AbstractMessageValidator {
     public Outcome validateMessage(Exchange exc, Flow flow, Charset ignored) throws Exception {
 
         List<Error> assertions = inputFormat == YAML ?
-            handleMultipleYAMLDocuments(exc, flow) :
-            schema.validate(exc.getMessage(flow).getBodyAsStringDecoded(), inputFormat);
+                handleMultipleYAMLDocuments(exc, flow) :
+                schema.validate(exc.getMessage(flow).getBodyAsStringDecoded(), inputFormat);
 
         if (assertions.isEmpty()) {
             valid.incrementAndGet();
@@ -152,11 +156,14 @@ public class JSONYAMLSchemaValidator extends AbstractMessageValidator {
      * to loop here ourselves.
      */
     private @NotNull List<Error> handleMultipleYAMLDocuments(Exchange exc, Flow flow) throws IOException {
-        List<Error> assertions;
-        assertions = new ArrayList<>();
-        YAMLParser parser = factory.createParser(exc.getMessage(flow).getBodyAsStreamDecoded());
+        List<Error> assertions = new ArrayList<>();
+        JsonParser parser = factory.createParser(exc.getMessage(flow).getBodyAsStreamDecoded());
         while (!parser.isClosed()) {
-            assertions.addAll(schema.validate(yamlObjectMapper.readTree(parser)));
+            tools.jackson.databind.JsonNode node3 = yamlObjectMapper.readTree(parser);
+            if (node3 != null) {
+                // Bridge to com.fasterxml for networknt
+                assertions.addAll(schema.validate(legacyObjectMapper.readTree(node3.toString())));
+            }
             parser.nextToken();
         }
         return assertions;

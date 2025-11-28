@@ -13,9 +13,8 @@
    limitations under the License. */
 package com.predic8.membrane.core.transport.ssl.acme;
 
-
-import tools.jackson.databind.annotation.JsonAnyGetter;
-import tools.jackson.databind.annotation.JsonAnySetter;
+import com.fasterxml.jackson.annotation.JsonAnyGetter;
+import com.fasterxml.jackson.annotation.JsonAnySetter;
 
 import java.util.HashMap;
 import java.util.Map;

@@ -13,7 +13,7 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.oauth2client;
 
-import tools.jackson.databind.core.JsonProcessingException;
+import tools.jackson.core.JacksonException;
 import tools.jackson.databind.ObjectMapper;
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
@@ -52,7 +52,7 @@ public class MemcachedOriginalExchangeStore extends OriginalExchangeStore {
         try {
             String key = connector.getClient().get(state.getSecurityToken());
             return objectMapper.readValue(key, AbstractExchangeSnapshot.class);
-        } catch (TimeoutException | InterruptedException | MemcachedException | JsonProcessingException e) {
+        } catch (TimeoutException | InterruptedException | MemcachedException | JacksonException e) {
             throw new RuntimeException(e);
         }
     }

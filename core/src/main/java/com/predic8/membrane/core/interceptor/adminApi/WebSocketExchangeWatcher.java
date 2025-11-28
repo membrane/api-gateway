@@ -14,14 +14,14 @@
 
 package com.predic8.membrane.core.interceptor.adminApi;
 
-import tools.jackson.databind.core.JsonGenerator;
-import tools.jackson.databind.ObjectMapper;
 import com.predic8.membrane.core.exchange.AbstractExchange;
 import com.predic8.membrane.core.model.IExchangesStoreListener;
 import com.predic8.membrane.core.proxies.Proxy;
 import com.predic8.membrane.core.transport.ws.WebSocketConnectionCollection;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import tools.jackson.core.JsonGenerator;
+import tools.jackson.core.json.JsonFactory;
 
 import java.io.IOException;
 import java.io.StringWriter;
@@ -33,7 +33,7 @@ public class WebSocketExchangeWatcher implements IExchangesStoreListener {
 
     private final static Logger LOG = LoggerFactory.getLogger(WebSocketExchangeWatcher.class.getName());
 
-    private static final ObjectMapper om = new ObjectMapper();
+    private static final JsonFactory JSON_FACTORY = new JsonFactory();
 
     private WebSocketConnectionCollection connections;
 
@@ -43,23 +43,20 @@ public class WebSocketExchangeWatcher implements IExchangesStoreListener {
 
     @Override
     public void addExchange(Proxy proxy, AbstractExchange exc) {
-       if (connections != null) {
-            try {
-                StringWriter writer = new StringWriter();
+        if (connections == null || exc.getRequest() == null)
+            return;
+        try {
+            StringWriter writer = new StringWriter();
 
-                JsonGenerator gen = om.getFactory().createGenerator(writer);
-
-                if (exc.getRequest() == null) return;
-
+            try (JsonGenerator gen = JSON_FACTORY.createGenerator(writer)) {
                 writeExchange(exc, gen);
-                gen.close();
-
-                connections.broadcast(of(
-                        "subject", "liveUpdate",
-                        "data", writer.toString()));
-            } catch (IOException e) {
-                LOG.error("", e);
             }
+
+            connections.broadcast(of(
+                    "subject", "liveUpdate",
+                    "data", writer.toString()));
+        } catch (IOException e) {
+            LOG.error("", e);
         }
     }
 

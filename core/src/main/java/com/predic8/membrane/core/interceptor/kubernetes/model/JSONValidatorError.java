@@ -13,7 +13,8 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.kubernetes.model;
 
-import tools.jackson.databind.annotation.JsonIgnoreProperties;
+
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 import java.util.List;
 

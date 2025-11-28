@@ -14,9 +14,11 @@
 
 package com.predic8.membrane.core.exchange.snapshots;
 
-import tools.jackson.databind.core.*;
-import tools.jackson.databind.*;
-import tools.jackson.databind.annotation.*;
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.databind.*;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.predic8.membrane.core.proxies.*;
 
 import java.io.*;
@@ -37,7 +39,7 @@ public class FakeProxy extends AbstractProxy {
         this.key = new FakeKey(port);
     }
 
-    public static class Serializer extends JsonSerializer<FakeProxy>{
+    public static class Serializer extends JsonSerializer<FakeProxy> {
         @Override
         public void serialize(FakeProxy fakeRule, JsonGenerator jsonGenerator, SerializerProvider serializerProvider) throws IOException {
             jsonGenerator.writeStartObject();
@@ -47,7 +49,7 @@ public class FakeProxy extends AbstractProxy {
         }
     }
 
-    public static class Deserializer extends JsonDeserializer<FakeProxy>{
+    public static class Deserializer extends JsonDeserializer<FakeProxy> {
         @Override
         public FakeProxy deserialize(JsonParser jsonParser, DeserializationContext deserializationContext) throws IOException {
             JsonNode jsonNode = jsonParser.getCodec().<JsonNode>readTree(jsonParser);

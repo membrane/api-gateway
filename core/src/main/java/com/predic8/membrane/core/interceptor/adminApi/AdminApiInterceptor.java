@@ -13,7 +13,9 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.adminApi;
 
-import tools.jackson.databind.core.JsonGenerator;
+import tools.jackson.core.JacksonException;
+import tools.jackson.core.JsonGenerator;
+import tools.jackson.core.json.JsonFactory;
 import tools.jackson.databind.ObjectMapper;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.exchange.AbstractExchange;
@@ -58,7 +60,7 @@ public class AdminApiInterceptor extends AbstractInterceptor {
 
     static final DateTimeFormatter isoFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSXXX");
 
-    private static final ObjectMapper om = new ObjectMapper();
+    private static final JsonFactory JSON_FACTORY = new JsonFactory();
 
     private final MemoryWatcher memoryWatcher = new MemoryWatcher();
     private final DiskWatcher diskWatcher = new DiskWatcher();
@@ -105,13 +107,13 @@ public class AdminApiInterceptor extends AbstractInterceptor {
     private Outcome handleFilterSuggestions(Exchange exc, String field) {
         StringWriter writer = new StringWriter();
         try {
-            JsonGenerator gen = om.getFactory().createGenerator(writer);
+            JsonGenerator gen = JSON_FACTORY.createGenerator(writer);
             gen.writeStartArray();
 
             getRouter().getExchangeStore().getUniqueValuesOf(field).forEach(i -> {
                 try {
                     gen.writeString(i);
-                } catch (IOException e) {
+                } catch (JacksonException e) {
                     throw new RuntimeException(e);
                 }
             });
@@ -139,7 +141,7 @@ public class AdminApiInterceptor extends AbstractInterceptor {
 
         try {
             StringWriter writer = new StringWriter();
-            JsonGenerator gen = om.getFactory().createGenerator(writer);
+            JsonGenerator gen = JSON_FACTORY.createGenerator(writer);
             gen.writeStartArray();
             IntStream.range(0, rules.size()).forEach(i -> {
                 AbstractServiceProxy p = rules.get(i);
@@ -208,7 +210,7 @@ public class AdminApiInterceptor extends AbstractInterceptor {
             }
 
             StringWriter writer = new StringWriter();
-            JsonGenerator gen = om.getFactory().createGenerator(writer);
+            JsonGenerator gen = JSON_FACTORY.createGenerator(writer);
             gen.writeStartArray();
             writePluginRow(proxy.getFlow(), null, gen);
             gen.writeEndArray();
@@ -246,7 +248,7 @@ public class AdminApiInterceptor extends AbstractInterceptor {
             res = getRouter().getExchangeStore().getFilteredSortedPaged(qp, false);
 
             StringWriter writer = new StringWriter();
-            JsonGenerator gen = om.getFactory().createGenerator(writer);
+            JsonGenerator gen = JSON_FACTORY.createGenerator(writer);
             gen.writeStartArray();
             for (AbstractExchange e : res.getExchanges()) {
                 writeExchange(e, gen);
@@ -272,7 +274,7 @@ public class AdminApiInterceptor extends AbstractInterceptor {
             }
 
             StringWriter writer = new StringWriter();
-            JsonGenerator gen = om.getFactory().createGenerator(writer);
+            JsonGenerator gen = JSON_FACTORY.createGenerator(writer);
             writeExchangeDetailed(exchange, gen);
             gen.close();
 

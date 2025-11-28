@@ -14,7 +14,7 @@
 
 package com.predic8.membrane.core.interceptor.session;
 
-import tools.jackson.databind.core.*;
+import tools.jackson.core.JacksonException;
 import tools.jackson.databind.*;
 import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.*;
@@ -58,7 +58,7 @@ public class RedisSessionManager extends SessionManager{
                 return (!jedis.get(getKeyOfCookie(cookie)).equals("nil")) ?
                         jsonStringtoSession(jedis.getEx(getKeyOfCookie(cookie), connector.getParams())).get() : new Session(usernameKeyName, new HashMap<>()).get();
             }
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             log.debug("Cannot parse JSON in Cookie.",e);
         }
         return Collections.emptyMap();
@@ -79,12 +79,8 @@ public class RedisSessionManager extends SessionManager{
 
     private void addSessionToRedis(Session[] session) {
         Arrays.stream(session).forEach(s -> {
-            try {
-                try (Jedis jedis = connector.getJedisWithDb()) {
-                    jedis.setex(s.get(ID_NAME), getExpiresAfterSeconds(), sessionToJsonString(s));
-                }
-            } catch (JsonProcessingException e) {
-                log.debug("Cannot process JSON.",e);
+            try (Jedis jedis = connector.getJedisWithDb()) {
+                jedis.setex(s.get(ID_NAME), getExpiresAfterSeconds(), sessionToJsonString(s));
             }
         });
     }
@@ -99,11 +95,11 @@ public class RedisSessionManager extends SessionManager{
                 .forEach(s -> s.put(ID_NAME, cookieNamePrefix + "-" +UUID.randomUUID()));
     }
 
-    private String sessionToJsonString(Session session) throws JsonProcessingException {
+    private String sessionToJsonString(Session session)  {
         return objMapper.writeValueAsString(session);
     }
 
-    private Session jsonStringtoSession(String session) throws JsonProcessingException {
+    private Session jsonStringtoSession(String session) {
         return objMapper.readValue(session, Session.class);
     }
 

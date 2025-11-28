@@ -13,20 +13,30 @@
 
 package com.predic8.membrane.core.interceptor.oauth2.authorizationservice;
 
-import tools.jackson.databind.core.type.*;
-import tools.jackson.databind.*;
-import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.interceptor.oauth2.*;
-import com.predic8.membrane.core.interceptor.oauth2.parameter.*;
-import com.predic8.membrane.core.resolver.*;
-import com.predic8.membrane.core.util.*;
-import org.apache.commons.io.*;
-import org.jetbrains.annotations.*;
-import org.slf4j.*;
+import com.predic8.membrane.annot.MCAttribute;
+import com.predic8.membrane.annot.MCChildElement;
+import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.annot.Required;
+import com.predic8.membrane.core.interceptor.oauth2.ClaimRenamer;
+import com.predic8.membrane.core.interceptor.oauth2.Client;
+import com.predic8.membrane.core.interceptor.oauth2.OAuth2Util;
+import com.predic8.membrane.core.interceptor.oauth2.parameter.ClaimsParameter;
+import com.predic8.membrane.core.resolver.ResolverMap;
+import com.predic8.membrane.core.util.CollectionsUtil;
+import com.predic8.membrane.core.util.ConfigurationException;
+import com.predic8.membrane.core.util.StringList;
+import org.apache.commons.io.IOUtils;
+import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 
-import java.io.*;
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.URI;
-import java.util.*;
+import java.util.List;
 
 @MCElement(name="membrane")
 public class MembraneAuthorizationService extends AuthorizationService {

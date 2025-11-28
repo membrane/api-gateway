@@ -13,28 +13,36 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.oauth2client;
 
-import tools.jackson.databind.core.*;
-import tools.jackson.databind.*;
-import com.google.common.collect.*;
-import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.exchange.snapshots.*;
-import com.predic8.membrane.core.http.*;
+import com.google.common.collect.ImmutableList;
+import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.exchange.snapshots.AbstractExchangeSnapshot;
+import com.predic8.membrane.core.http.HeaderName;
 import com.predic8.membrane.core.interceptor.oauth2client.rf.StateManager;
-import com.predic8.membrane.core.interceptor.session.*;
-import com.predic8.membrane.core.proxies.*;
-import org.jetbrains.annotations.*;
-import org.slf4j.*;
+import com.predic8.membrane.core.interceptor.session.Session;
+import com.predic8.membrane.core.proxies.SSLableProxy;
+import org.jetbrains.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
 
-import java.io.*;
-import java.net.*;
-import java.time.*;
-import java.time.format.*;
-import java.util.*;
-import java.util.stream.*;
+import java.io.IOException;
+import java.net.URLDecoder;
+import java.net.URLEncoder;
+import java.time.Duration;
+import java.time.OffsetDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
-import static com.predic8.membrane.core.http.Header.*;
-import static java.nio.charset.StandardCharsets.*;
+import static com.predic8.membrane.core.http.Header.COOKIE;
+import static com.predic8.membrane.core.http.Header.SET_COOKIE;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.time.ZoneOffset.UTC;
 
 @MCElement(name = "cookieOriginalExchangeStore")
@@ -103,7 +111,7 @@ public class CookieOriginialExchangeStore extends OriginalExchangeStore {
                     .add(SET_COOKIE, currentSessionCookieValue
                                      + ";" + String.join(";", createCookieAttributes(exchange)));
 
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             throw new RuntimeException(e);
         }
 
@@ -136,7 +144,7 @@ public class CookieOriginialExchangeStore extends OriginalExchangeStore {
                     })
                     .findFirst().get();
             return new ObjectMapper().readValue(unescapeForCookie(value),AbstractExchangeSnapshot.class);
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             throw new RuntimeException(e);
         }
     }

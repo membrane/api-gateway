@@ -13,9 +13,9 @@
 
 package com.predic8.membrane.core.interceptor.oauth2.parameter;
 
-import tools.jackson.databind.core.JsonGenerator;
-import tools.jackson.databind.core.JsonProcessingException;
-import tools.jackson.databind.core.type.TypeReference;
+import tools.jackson.core.JacksonException;
+import tools.jackson.core.JsonGenerator;
+import tools.jackson.core.type.TypeReference;
 import tools.jackson.databind.ObjectMapper;
 import com.predic8.membrane.core.interceptor.oauth2.BufferedJsonGenerator;
 
@@ -64,18 +64,20 @@ public class ClaimsParameter {
         }
     }
 
-    static void writeSingleClaimsObject(JsonGenerator gen, String objectName, String... claims) throws IOException {
-        gen.writeObjectFieldStart(objectName);
-        for(String claim : claims)
-            gen.writeObjectField(claim,null);
+    static void writeSingleClaimsObject(JsonGenerator gen, String objectName, String... claims) {
+        gen.writeName(objectName);
+        gen.writeStartObject();
+        for (String claim : claims) {
+            gen.writeName(claim);
+            gen.writeNull();
+        }
         gen.writeEndObject();
     }
 
     private void parseClaimsParameter(String claimsParameter) {
         try {
             cleanedJson = getCleanedJson(new ObjectMapper().readValue(claimsParameter, new TypeReference<>() {}));
-        } catch (IOException e) {
-        }
+        } catch (JacksonException ignored) {}
     }
 
     private Map<String,Object> getCleanedJson(Map<String,Object> json){
@@ -108,7 +110,7 @@ public class ClaimsParameter {
         return cleanedJson != null;
     }
 
-    public String toJson() throws JsonProcessingException {
+    public String toJson() throws JacksonException {
         return new ObjectMapper().writeValueAsString(cleanedJson);
     }
 

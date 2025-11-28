@@ -13,8 +13,10 @@
 
 package com.predic8.membrane.core.interceptor.oauth2;
 
-import tools.jackson.databind.core.JsonFactory;
-import tools.jackson.databind.core.JsonGenerator;
+
+import tools.jackson.core.JacksonException;
+import tools.jackson.core.JsonGenerator;
+import tools.jackson.core.json.JsonFactory;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -27,7 +29,7 @@ public class BufferedJsonGenerator implements AutoCloseable{
         try {
             JsonFactory jsonFactory = new JsonFactory();
             jsonGenerator = jsonFactory.createGenerator(baos);
-        } catch (IOException e) {
+        } catch (JacksonException e) {
             throw new RuntimeException("Should not happen, as this is in-memory only.", e);
         }
     }
@@ -51,10 +53,6 @@ public class BufferedJsonGenerator implements AutoCloseable{
 
     @Override
     public void close() {
-        try {
-            jsonGenerator.close();
-        } catch (IOException e) {
-            throw new RuntimeException("Should not happen, as this is in-memory only.", e);
-        }
+        jsonGenerator.close();
     }
 }

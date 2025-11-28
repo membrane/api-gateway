@@ -13,9 +13,6 @@
 
 package com.predic8.membrane.core.interceptor.jwt;
 
-import tools.jackson.databind.core.JsonProcessingException;
-import tools.jackson.databind.core.type.TypeReference;
-import tools.jackson.databind.ObjectMapper;
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.MCElement;
@@ -23,6 +20,9 @@ import com.predic8.membrane.core.config.security.Blob;
 import com.predic8.membrane.core.interceptor.oauth2.authorizationservice.AuthorizationService;
 import com.predic8.membrane.core.resolver.ResolverMap;
 import com.predic8.membrane.core.util.TextUtil;
+import tools.jackson.core.JacksonException;
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.ObjectMapper;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -123,7 +123,7 @@ public class Jwks {
                     .map(m -> {
                         try {
                             return mapper.writeValueAsString(m);
-                        } catch (JsonProcessingException e) {
+                        } catch (JacksonException e) {
                             throw new RuntimeException(e);
                         }
                     })

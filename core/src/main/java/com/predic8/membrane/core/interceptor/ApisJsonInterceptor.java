@@ -13,7 +13,7 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor;
 
-import tools.jackson.databind.core.*;
+import tools.jackson.core.JacksonException;
 import tools.jackson.databind.*;
 import tools.jackson.databind.node.*;
 import com.predic8.membrane.annot.*;
@@ -58,7 +58,7 @@ public class ApisJsonInterceptor extends AbstractInterceptor {
         if (apisJson == null) {
             try {
                 initJson(router, exc);
-            } catch (JsonProcessingException e) {
+            } catch (JacksonException e) {
                 internal(router.isProduction(),getDisplayName())
                         .detail("Could not create APIs JSON!")
                         .exception(e)
@@ -70,7 +70,7 @@ public class ApisJsonInterceptor extends AbstractInterceptor {
         return RETURN;
     }
 
-    public void initJson(Router router, Exchange exc) throws JsonProcessingException {
+    public void initJson(Router router, Exchange exc) throws JacksonException {
         if (apisJson != null) {
             return;
         }

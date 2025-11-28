@@ -13,7 +13,7 @@
 
 package com.predic8.membrane.core.interceptor.oauth2;
 
-import tools.jackson.databind.core.type.*;
+import tools.jackson.core.type.TypeReference;
 import tools.jackson.databind.*;
 import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.resolver.*;
@@ -50,14 +50,14 @@ public class ConsentPageFile {
         parseFile(getFromUrl(ResolverMap.combine(router.getBaseLocation(),url)));
     }
 
-    private void parseFile(String consentPageFile) throws IOException {
+    private void parseFile(String consentPageFile) {
         parseJson(consentPageFile);
         parseProductAndLogo();
         parseScopes();
         parseClaims();
     }
 
-    private void parseJson(String consentPageFile) throws IOException {
+    private void parseJson(String consentPageFile) {
         json = new ObjectMapper().readValue(consentPageFile, new TypeReference<>() {});
     }
 

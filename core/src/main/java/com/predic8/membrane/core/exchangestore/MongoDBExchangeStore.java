@@ -14,9 +14,6 @@
 
 package com.predic8.membrane.core.exchangestore;
 
-import tools.jackson.databind.core.JsonProcessingException;
-import tools.jackson.databind.DeserializationFeature;
-import tools.jackson.databind.ObjectMapper;
 import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.model.ReplaceOptions;
@@ -31,12 +28,16 @@ import org.bson.Document;
 import org.bson.conversions.Bson;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
 import static com.mongodb.client.model.Filters.eq;
+import static tools.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES;
 
 
 @MCElement(name = "mongoDBExchangeStore")
@@ -47,8 +48,8 @@ public class MongoDBExchangeStore extends AbstractPersistentExchangeStore {
     private String database;
     private String collectionName;
     private MongoCollection<Document> collection;
-    private static final ObjectMapper objectMapper = new ObjectMapper()
-            .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+
+    private static final ObjectMapper objectMapper = JsonMapper.builder().disable(FAIL_ON_UNKNOWN_PROPERTIES).build();
 
     @Override
     public void init(Router router) {
@@ -81,7 +82,7 @@ public class MongoDBExchangeStore extends AbstractPersistentExchangeStore {
     private Document exchangeDoc(AbstractExchangeSnapshot exchange) {
         try {
             return Document.parse(objectMapper.writeValueAsString(exchange));
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             log.error("Error converting exchange to JSON", e);
             return null;
         }
