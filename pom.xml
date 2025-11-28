@@ -77,6 +77,8 @@
 		<javac.source>21</javac.source>
 		<javac.target>21</javac.target>
 		<jackson.version>3.0.2</jackson.version>
+		<!-- Jackson 2 (com.fasterxml.*) for Swagger/FGE/json-schema libs -->
+		<jackson2.version>2.17.2</jackson2.version>
 		<spring.version>6.2.12</spring.version>
 		<slf4j.version>2.0.17</slf4j.version>
 		<log4j.version>2.25.2</log4j.version>
@@ -164,13 +166,19 @@
 			</dependency>
 			<dependency>
 				<groupId>tools.jackson.core</groupId>
-				<artifactId>jackson-annotations</artifactId>
-				<version>${jackson.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>tools.jackson.core</groupId>
 				<artifactId>jackson-databind</artifactId>
 				<version>${jackson.version}</version>
+			</dependency>
+			<!-- Jackson 2 Stack for Swagger / FGE / json-schema-validator -->
+			<dependency>
+			  	<groupId>com.fasterxml.jackson.core</groupId>
+			  	<artifactId>jackson-core</artifactId>
+			  	<version>${jackson2.version}</version>
+			</dependency>
+			<dependency>
+			  	<groupId>com.fasterxml.jackson.core</groupId>
+			  	<artifactId>jackson-databind</artifactId>
+			 	<version>${jackson2.version}</version>
 			</dependency>
 			<dependency>
 				<groupId>org.apache.logging.log4j</groupId>
