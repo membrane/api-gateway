@@ -16,10 +16,11 @@
 
 package com.predic8.membrane.core.openapi.validators;
 
+import com.fasterxml.jackson.databind.node.TextNode;
+import io.swagger.v3.oas.models.media.Schema;
 import tools.jackson.databind.node.*;
-import io.swagger.v3.oas.models.media.*;
 
-import static java.lang.String.*;
+import static java.lang.String.format;
 
 public class StringRestrictionValidator {
 

@@ -13,10 +13,6 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.adminApi;
 
-import tools.jackson.core.JacksonException;
-import tools.jackson.core.JsonGenerator;
-import tools.jackson.core.json.JsonFactory;
-import tools.jackson.databind.ObjectMapper;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.exchange.AbstractExchange;
 import com.predic8.membrane.core.exchange.Exchange;
@@ -33,10 +29,12 @@ import com.predic8.membrane.core.openapi.util.PathDoesNotMatchException;
 import com.predic8.membrane.core.proxies.AbstractServiceProxy;
 import com.predic8.membrane.core.proxies.Proxy;
 import com.predic8.membrane.core.transport.ws.WebSocketConnectionCollection;
+import tools.jackson.core.JacksonException;
+import tools.jackson.core.JsonGenerator;
+import tools.jackson.core.json.JsonFactory;
 
 import java.io.IOException;
 import java.io.StringWriter;
-import java.io.UncheckedIOException;
 import java.net.URI;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;

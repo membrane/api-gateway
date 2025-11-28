@@ -79,7 +79,7 @@ public class UserinfoRequest extends ParameterizedRequest {
             gen.writeStartObject();
 
             for (var e : claims.entrySet()) {
-                gen.writeStringField(e.getKey(), e.getValue());
+                gen.writeStringProperty(e.getKey(), e.getValue());
             }
 
             gen.writeEndObject();

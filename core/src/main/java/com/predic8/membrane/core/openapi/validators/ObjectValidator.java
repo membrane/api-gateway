@@ -16,21 +16,22 @@
 
 package com.predic8.membrane.core.openapi.validators;
 
-import tools.jackson.databind.*;
-import tools.jackson.databind.node.*;
-import com.predic8.membrane.core.openapi.util.*;
-import io.swagger.v3.oas.models.*;
-import io.swagger.v3.oas.models.media.*;
-import org.jetbrains.annotations.*;
-import org.slf4j.*;
+import com.predic8.membrane.core.openapi.util.SchemaUtil;
+import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.oas.models.media.Schema;
+import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.node.ObjectNode;
 
 import java.util.*;
-import java.util.regex.*;
+import java.util.regex.Pattern;
 
-import static com.predic8.membrane.core.openapi.util.Utils.*;
+import static com.predic8.membrane.core.openapi.util.Utils.joinByComma;
 import static com.predic8.membrane.core.openapi.validators.ValidationErrors.error;
-import static java.lang.String.*;
-import static java.util.Collections.*;
+import static java.lang.String.format;
+import static java.util.Collections.emptySet;
 
 /**
  * Not supported:
@@ -186,8 +187,7 @@ public class ObjectValidator implements JsonSchemaValidator {
     private Map<String, JsonNode> getAdditionalProperties(JsonNode node) {
         Map<String, JsonNode> props = new HashMap<>();
         Set<String> regexes = getRegexes();
-        for (Iterator<String> it = node.fieldNames(); it.hasNext(); ) {
-            String propName = it.next();
+        for (String propName : node.propertyNames()) {
             boolean declared = schema.getProperties() != null && schema.getProperties().containsKey(propName);
             boolean matchesPattern = !regexes.isEmpty() && regexes.stream().anyMatch(r -> Pattern.compile(r).matcher(propName).matches());
             // Properties that match the pattern are not considered additional
@@ -278,8 +278,7 @@ public class ObjectValidator implements JsonSchemaValidator {
         getPatternPropertiesFromSchema().forEach((regex, propSchema) -> {
             Pattern pattern = Pattern.compile(regex);
 
-            for (Iterator<String> it = node.fieldNames(); it.hasNext(); ) {
-                String fieldName = it.next();
+            for (String fieldName : node.propertyNames()) {
                 if (pattern.matcher(fieldName).matches()) {
                     JsonNode childNode = node.get(fieldName);
                     errors.add(new SchemaValidator(api, propSchema)

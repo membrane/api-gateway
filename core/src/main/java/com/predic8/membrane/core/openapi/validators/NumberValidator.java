@@ -16,10 +16,10 @@
 
 package com.predic8.membrane.core.openapi.validators;
 
-import tools.jackson.databind.*;
-import tools.jackson.databind.node.*;
+import com.fasterxml.jackson.databind.node.TextNode;
+import tools.jackson.databind.JsonNode;
 
-import java.math.*;
+import java.math.BigDecimal;
 
 /**
  * When numbers appear in parameters, they enter as Strings (which is OK).

@@ -16,35 +16,42 @@
 
 package com.predic8.membrane.core.openapi.serviceproxy;
 
-import tools.jackson.databind.*;
-import com.predic8.membrane.core.*;
-import com.predic8.membrane.core.openapi.*;
-import com.predic8.membrane.core.resolver.*;
-import com.predic8.membrane.core.util.*;
-import io.swagger.parser.*;
-import io.swagger.v3.oas.models.*;
-import io.swagger.v3.parser.*;
-import io.swagger.v3.parser.core.models.*;
-import org.apache.commons.lang3.exception.*;
-import org.jetbrains.annotations.*;
-import org.slf4j.*;
+import com.predic8.membrane.core.Router;
+import com.predic8.membrane.core.openapi.OpenAPIParsingException;
+import com.predic8.membrane.core.resolver.ResolverMap;
+import com.predic8.membrane.core.resolver.ResourceRetrievalException;
+import com.predic8.membrane.core.util.ConfigurationException;
+import io.swagger.parser.OpenAPIParser;
+import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.parser.core.models.ParseOptions;
+import org.apache.commons.lang3.exception.ExceptionUtils;
+import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.dataformat.yaml.YAMLMapper;
 
 import java.io.*;
-import java.net.*;
-import java.util.*;
+import java.net.UnknownHostException;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 import static com.predic8.membrane.core.openapi.serviceproxy.APIProxy.*;
 import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPISpec.YesNoOpenAPIOption.*;
-import static com.predic8.membrane.core.openapi.util.OpenAPIUtil.*;
-import static com.predic8.membrane.core.util.FileUtil.*;
-import static com.predic8.membrane.core.util.URIUtil.*;
-import static java.lang.String.*;
+import static com.predic8.membrane.core.openapi.util.OpenAPIUtil.getIdFromAPI;
+import static com.predic8.membrane.core.openapi.util.OpenAPIUtil.isSwagger2;
+import static com.predic8.membrane.core.util.FileUtil.readInputStream;
+import static com.predic8.membrane.core.util.URIUtil.convertPath2FilePathString;
+import static java.lang.String.format;
 
 public class OpenAPIRecordFactory {
 
     private static final Logger log = LoggerFactory.getLogger(OpenAPIRecordFactory.class.getName());
 
-    private static final ObjectMapper omYaml = ObjectMapperFactory.createYaml();
+    private static final ObjectMapper omYaml = YAMLMapper.builder().build();
 
     private final Router router;
 

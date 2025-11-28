@@ -17,9 +17,11 @@
 package com.predic8.membrane.core.openapi.model;
 
 import tools.jackson.core.JacksonException;
-import tools.jackson.databind.*;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectReader;
 
-import java.io.*;
+import java.io.IOException;
 
 public class JsonBody implements Body {
 
