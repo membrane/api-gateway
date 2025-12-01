@@ -123,6 +123,10 @@ public class Json2XmlInterceptor extends AbstractInterceptor {
         this.root = root;
     }
 
+    public String getArray() {
+        return array;
+    }
+
     /**
      * Sets the XML tag name used to represent JSON arrays.
      * @default "array"

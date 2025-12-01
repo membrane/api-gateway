@@ -53,7 +53,7 @@ public class JsonToXml {
         // --- Case 2: Top-level array without explicit root ---
         if (rootName == null && input instanceof JSONArray arr) {
             startArray(sb);
-            buildArrayItemsOnly(arr, sb); // <- Important: NO nested array tag here
+            buildArrayItems(sb, arr); // <- Important: NO nested array tag here
             endArray(sb);
             return sb.toString();
         }
@@ -164,12 +164,6 @@ public class JsonToXml {
         }
 
         return sanitized;
-    }
-
-
-    // Helper for top-level arrays
-    private void buildArrayItemsOnly(JSONArray array, StringBuilder sb) {
-        buildArrayItems(sb, array);
     }
 
     private void buildObject(StringBuilder sb, JSONObject jsonObj) {
