@@ -13,16 +13,20 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.jwt;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import tools.jackson.core.JacksonException;
-import tools.jackson.databind.*;
-import org.slf4j.*;
+import tools.jackson.core.StreamReadFeature;
+import tools.jackson.databind.DeserializationFeature;
+import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.json.JsonMapper;
 
-import java.io.*;
-import java.util.*;
+import java.util.Base64;
+import java.util.Map;
 
-import static tools.jackson.databind.DeserializationFeature.FAIL_ON_READING_DUP_TREE_KEY;
 import static com.predic8.membrane.core.interceptor.jwt.JwtAuthInterceptor.*;
+import static tools.jackson.core.StreamReadFeature.STRICT_DUPLICATE_DETECTION;
+import static tools.jackson.databind.DeserializationFeature.FAIL_ON_READING_DUP_TREE_KEY;
 
 public class JsonWebToken {
 
@@ -61,7 +65,8 @@ public class JsonWebToken {
 
     private static Base64.Decoder decoder = Base64.getUrlDecoder();
     private static final ObjectMapper mapper = JsonMapper.builder()
-            .enable(DeserializationFeature.FAIL_ON_READING_DUP_TREE_KEY)
+            .enable(FAIL_ON_READING_DUP_TREE_KEY)
+            .enable(STRICT_DUPLICATE_DETECTION)
             .build();
 
     public JsonWebToken(String jwt) throws JWTException {

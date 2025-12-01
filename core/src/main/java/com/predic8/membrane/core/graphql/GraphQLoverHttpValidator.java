@@ -26,7 +26,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import tools.jackson.databind.DeserializationFeature;
 import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.json.JsonMapper;
 
@@ -42,6 +41,8 @@ import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
 import static com.predic8.membrane.core.util.URLParamUtil.DuplicateKeyOrInvalidFormStrategy.ERROR;
 import static com.predic8.membrane.core.util.URLParamUtil.parseQueryString;
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static tools.jackson.core.StreamReadFeature.STRICT_DUPLICATE_DETECTION;
+import static tools.jackson.databind.DeserializationFeature.FAIL_ON_READING_DUP_TREE_KEY;
 
 public class GraphQLoverHttpValidator {
     private static final Logger log = LoggerFactory.getLogger(GraphQLoverHttpValidator.class);
@@ -53,7 +54,7 @@ public class GraphQLoverHttpValidator {
     public static final String OPERATION_NAME = "operationName";
 
     private final GraphQLParser graphQLParser = new GraphQLParser();
-    private final ObjectMapper om = JsonMapper.builder().enable(DeserializationFeature.FAIL_ON_READING_DUP_TREE_KEY).build();
+    private final ObjectMapper om = JsonMapper.builder().enable(FAIL_ON_READING_DUP_TREE_KEY).enable(STRICT_DUPLICATE_DETECTION).build();
 
     private final boolean allowExtensions;
     private final List<String> allowedMethods;

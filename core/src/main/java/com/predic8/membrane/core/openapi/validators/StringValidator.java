@@ -39,7 +39,7 @@ public class StringValidator implements JsonSchemaValidator {
 
     @Override
     public String canValidate(Object obj) {
-        if (obj instanceof JsonNode node && JsonNodeType.STRING.equals(node.getNodeType())) {
+        if (obj instanceof JsonNode j && j.isString()) {
             return STRING;
         }
         if (obj instanceof String) {
@@ -65,7 +65,7 @@ public class StringValidator implements JsonSchemaValidator {
                 errors.add(ctx, format("String expected but got %s of type %s", node, node.getNodeType()));
                 return errors;
             }
-            value = node.textValue();
+            value = node.asString();
         } else if (obj instanceof String s) {
             value = s;
         } else {

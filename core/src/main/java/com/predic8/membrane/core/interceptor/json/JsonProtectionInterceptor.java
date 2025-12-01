@@ -43,6 +43,8 @@ import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
 import static java.util.EnumSet.of;
 import static tools.jackson.core.JsonTokenId.*;
+import static tools.jackson.core.StreamReadFeature.STRICT_DUPLICATE_DETECTION;
+import static tools.jackson.databind.DeserializationFeature.FAIL_ON_READING_DUP_TREE_KEY;
 
 /**
  * Enforces JSON restrictions in requests.
@@ -54,7 +56,7 @@ public class JsonProtectionInterceptor extends AbstractInterceptor {
 
     private static final Logger log = LoggerFactory.getLogger(JsonProtectionInterceptor.class);
 
-    private final ObjectMapper om = JsonMapper.builder().enable(DeserializationFeature.FAIL_ON_READING_DUP_TREE_KEY).enable(StreamReadFeature.STRICT_DUPLICATE_DETECTION).build();
+    private final ObjectMapper om = JsonMapper.builder().enable(FAIL_ON_READING_DUP_TREE_KEY).enable(STRICT_DUPLICATE_DETECTION).build();
 
     private Boolean reportError;
     private int maxTokens = 10000;
@@ -129,7 +131,7 @@ public class JsonProtectionInterceptor extends AbstractInterceptor {
 
     @Override
     public Outcome handleRequest(Exchange exc) {
-        if ("GET".equals(exc.getRequest().getMethod()))
+        if (exc.getRequest().isGETRequest())
             return CONTINUE;
         try {
             parseJson(new CountingInputStream(exc.getRequest().getBodyAsStreamDecoded()));
@@ -139,7 +141,20 @@ public class JsonProtectionInterceptor extends AbstractInterceptor {
             return RETURN;
         } catch (StreamReadException e) {
             log.debug(e.getMessage());
-            exc.setResponse(createErrorResponse(e.getMessage(), e.getLocation().getLineNr(), e.getLocation().getColumnNr()));
+
+            String msg = e.getOriginalMessage();
+            if (msg == null)
+                msg = e.getMessage();
+
+            if (msg != null && msg.startsWith("Duplicate Object property")) {
+                msg = "Duplicate field";
+            }
+
+            exc.setResponse(createErrorResponse(
+                    msg,
+                    e.getLocation().getLineNr(),
+                    e.getLocation().getColumnNr()
+            ));
             return RETURN;
         } catch (Throwable e) {
             log.debug(e.getMessage());

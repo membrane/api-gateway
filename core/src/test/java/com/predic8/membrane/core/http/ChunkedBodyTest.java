@@ -29,6 +29,7 @@ import okhttp3.OkHttpClient;
 import org.apache.commons.httpclient.methods.*;
 import org.jetbrains.annotations.*;
 import org.junit.jupiter.api.*;
+import tools.jackson.databind.json.JsonMapper;
 
 import javax.net.ssl.*;
 import java.io.*;
@@ -51,7 +52,9 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class ChunkedBodyTest {
 
-    private static final ObjectMapper om = new ObjectMapper();
+    private static final ObjectMapper om = JsonMapper.builder()
+            .disable(DeserializationFeature.FAIL_ON_TRAILING_TOKENS)
+            .build();
 
     @Test
     void testReadChunkSize() throws Exception {
