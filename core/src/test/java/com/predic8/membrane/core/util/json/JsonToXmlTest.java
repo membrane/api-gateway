@@ -21,12 +21,19 @@ class JsonToXmlTest {
     class Configuration {
 
         @Test
-        void noRoot() {
+        void noRootNameSet() {
             conv.rootName(null);
             XmlPath xp = new XmlPath(conv.toXml("{}"));
             assertEquals("", xp.get("root"));
         }
+
+        @Test
+        void topLevelArray_withoutRoot_usesArrayNameAsRoot() {
+            conv.rootName(null).arrayName("items");
+            assertEquals(2, new XmlPath(conv.toXml("[1,2]")).getList("items.item").size());
+        }
     }
+
 
     @Nested
     class ObjectsAndArrays {
@@ -203,7 +210,7 @@ class JsonToXmlTest {
 
         // Overflow case → stays Double
         Object big = parseLiteral("999999999999999999999999");
-        assertTrue(big instanceof Double);
+        assertInstanceOf(Double.class, big);
 
         // Quoted strings
         assertEquals("hello", parseLiteral("\"hello\""));
