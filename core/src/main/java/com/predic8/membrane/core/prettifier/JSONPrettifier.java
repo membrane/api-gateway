@@ -18,7 +18,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import tools.jackson.core.JacksonException;
 import tools.jackson.core.json.JsonFactory;
-import tools.jackson.core.json.JsonReadFeature;
 import tools.jackson.databind.ObjectMapper;
 
 import java.io.IOException;
@@ -26,7 +25,6 @@ import java.io.InputStream;
 import java.nio.charset.Charset;
 
 import static tools.jackson.core.json.JsonReadFeature.*;
-
 
 public class JSONPrettifier implements Prettifier {
 
@@ -36,9 +34,11 @@ public class JSONPrettifier implements Prettifier {
             .enable(ALLOW_JAVA_COMMENTS)
             .enable(ALLOW_TRAILING_COMMA)
             .enable(ALLOW_SINGLE_QUOTES)
+            .enable(ALLOW_UNQUOTED_PROPERTY_NAMES)
             .build();
 
     private static final ObjectMapper om = new ObjectMapper(JSON_FACTORY);
+
 
     public static final JSONPrettifier INSTANCE = new JSONPrettifier();
 
