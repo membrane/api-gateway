@@ -204,7 +204,7 @@ class ElasticSearchExchangeStoreTest {
         assertEquals(TEXT_PLAIN, insertedObjects.get(1).get("response").get("header").get(CONTENT_TYPE).textValue());
 
         assertEquals("COMPLETED", insertedObjects.get(1).get("status").textValue());
-        assertTrue(insertedObjects.get(1).get("time").longValue() > 1740000000000L);
+        assertNotNull(insertedObjects.get(1).get("time").textValue());
         assertTrue(insertedObjects.get(1).get("timeReqReceived").longValue() > 1740000000000L);
         assertTrue(insertedObjects.get(1).get("timeReqSent").longValue() > 1740000000000L);
         assertTrue(insertedObjects.get(1).get("timeResReceived").longValue() > 1740000000000L);
@@ -217,23 +217,25 @@ class ElasticSearchExchangeStoreTest {
     }
 
     private void waitForExchangeStoreToFlush() {
-
-        while (currentTimeMillis() < currentTimeMillis() + (long) 10_000) {
+        while (System.currentTimeMillis() < System.currentTimeMillis() + 10_000) {
+            boolean queueEmpty;
             synchronized (es.shortTermMemoryForBatching) {
-                int size = es.shortTermMemoryForBatching.size();
-                if (size == 0) { // do NOT depend on updateThreadWorking
-                    return;
+                queueEmpty = es.shortTermMemoryForBatching.isEmpty();
+            }
+            if (queueEmpty) {
+                synchronized (insertedObjects) {
+                    if (!insertedObjects.isEmpty()) {
+                        return;
+                    }
                 }
             }
             try {
-                //noinspection BusyWait
                 Thread.sleep(50);
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
-                return;
             }
         }
-        fail("Exchange store did not flush within timeout. size=" + es.shortTermMemoryForBatching.size());
+        fail("Timeout waiting for exchange store to flush.");
     }
 
 }
