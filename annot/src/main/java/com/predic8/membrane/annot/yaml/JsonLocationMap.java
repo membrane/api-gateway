@@ -33,6 +33,19 @@ import java.util.Map;
 import static com.fasterxml.jackson.core.StreamReadFeature.STRICT_DUPLICATE_DETECTION;
 import static com.fasterxml.jackson.dataformat.yaml.YAMLFactory.builder;
 
+/**
+ * A utility class for parsing YAML content into JSON nodes while preserving location information.
+ * This class leverages the Jackson library for YAML parsing and allows mapping each JSON node
+ * to its corresponding source location within the parsed YAML content.
+ *
+ * The class maintains an internal map that stores the locations of JSON nodes using their instance
+ * references. This is useful for tracking structural entities, such as objects and arrays, in relation
+ * to their positions in the source document.
+ *
+ * Implementation note: The 'normal' ObjectMapper JSON/YAML parser returns the *same* JsonNode instance,
+ * for example when 'false' occurs multiple times in the input. This class needs to distinguish between
+ * these instances.
+ */
 public class JsonLocationMap {
 
     private static final YAMLFactory yamlFactory = builder().enable(STRICT_DUPLICATE_DETECTION).build();

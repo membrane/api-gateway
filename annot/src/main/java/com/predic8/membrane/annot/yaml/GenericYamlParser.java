@@ -42,8 +42,6 @@ public class GenericYamlParser {
     private static final Logger log = LoggerFactory.getLogger(GenericYamlParser.class);
     private static final String EMPTY_DOCUMENT_WARNING = "Skipping empty document. Maybe there are two --- separators but no configuration in between.";
 
-    private static final ObjectMapper om = new ObjectMapper();
-
     /**
       * Parses Membrane resources from a YAML input stream.
       * @param resource the input stream to parse. The method takes care of closing the stream.
