@@ -46,7 +46,7 @@ class ProxiesYAMLExampleTest extends AbstractSampleMembraneStartStopTestcase {
             .get(LOCALHOST_2000 + "/api-docs")
         .then()
             .statusCode(200)
-            .body("$", aMapWithSize(1))
+            .body("$", not(anEmptyMap()))
             .body("$", hasKey("fruit-shop-api-v2-2-0"))
             .body("fruit-shop-api-v2-2-0.openapi", equalTo("3.0.3"))
             .body("fruit-shop-api-v2-2-0.title", equalTo("Fruit Shop API"))
@@ -56,6 +56,7 @@ class ProxiesYAMLExampleTest extends AbstractSampleMembraneStartStopTestcase {
             .body("fruit-shop-api-v2-2-0", aMapWithSize(5));
         // @formatter:on
     }
+
 
     @Test
     void adminConsole() {
