@@ -13,37 +13,35 @@
    limitations under the License. */
 package com.predic8.membrane.annot.yaml;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
-import com.predic8.membrane.annot.K8sHelperGenerator;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.yaml.snakeyaml.Yaml;
-import org.yaml.snakeyaml.events.DocumentStartEvent;
-import org.yaml.snakeyaml.events.Event;
-import org.yaml.snakeyaml.events.StreamStartEvent;
+import com.fasterxml.jackson.databind.*;
+import com.predic8.membrane.annot.*;
+import org.jetbrains.annotations.*;
+import org.slf4j.*;
 
-import java.io.IOException;
-import java.io.StringReader;
+import java.io.*;
 import java.util.*;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.*;
 
-import static com.predic8.membrane.annot.yaml.YamlUtil.removeFirstYamlDocStartMarker;
+import static com.predic8.membrane.annot.yaml.WatchAction.*;
 
 public class BeanCache implements BeanRegistry {
+
     private static final Logger log = LoggerFactory.getLogger(BeanCache.class);
+
     private final BeanCacheObserver router;
     private final K8sHelperGenerator k8sHelperGenerator;
-    private final ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
     private final ConcurrentHashMap<String, Object> uuidMap = new ConcurrentHashMap<>();
     private final ArrayBlockingQueue<ChangeEvent> changeEvents = new ArrayBlockingQueue<>(1000);
     private Thread thread;
 
-    interface ChangeEvent {}
-    record BeanDefinitionChanged(BeanDefinition bd) implements ChangeEvent {}
-    record StaticConfigurationLoaded() implements ChangeEvent {}
+    interface ChangeEvent {
+    }
+
+    record BeanDefinitionChanged(BeanDefinition bd) implements ChangeEvent {
+    }
+
+    record StaticConfigurationLoaded() implements ChangeEvent {
+    }
 
     // uid -> bean definition
     private final Map<String, BeanDefinition> bds = new ConcurrentHashMap<>();
@@ -134,21 +132,20 @@ public class BeanCache implements BeanRegistry {
                 bd.setBean(bean);
 
                 Object oldBean = null;
-                if (bd.getAction() == WatchAction.MODIFIED || bd.getAction() == WatchAction.DELETED)
+                if (bd.getAction() == MODIFIED || bd.getAction() == DELETED)
                     oldBean = uuidMap.get(bd.getUid());
 
                 router.handleBeanEvent(bd, bean, oldBean);
 
-                if (bd.getAction() == WatchAction.ADDED || bd.getAction() == WatchAction.MODIFIED)
+                if (bd.getAction() == WatchAction.ADDED || bd.getAction() == MODIFIED)
                     uuidMap.put(bd.getUid(), bean);
-                if (bd.getAction() == WatchAction.DELETED) {
+                if (bd.getAction() == DELETED) {
                     uuidMap.remove(bd.getUid());
                     bds.remove(bd.getUid());
                 }
                 uidsToRemove.add(bd.getUid());
-            }
-            catch (Throwable e) {
-                log.error("Could not handle {} {}/{}",bd.getAction(),bd.getNamespace(),bd.getName(), e);
+            } catch (Throwable e) {
+                log.error("Could not handle {} {}/{}", bd.getAction(), bd.getNamespace(), bd.getName(), e);
             }
         }
         for (String uid : uidsToRemove)
@@ -157,28 +154,31 @@ public class BeanCache implements BeanRegistry {
 
     @Override
     public Object resolveReference(String url) {
-        Optional<BeanDefinition> obd = bds.values().stream().filter(bd -> bd.getName().equals(url)).findFirst();
-        if (obd.isPresent()) {
-            BeanDefinition bd = obd.get();
-            Object envelope = null;
-            if (bd.getBean() != null)
-                envelope = bd.getBean();
-            if (envelope == null) {
-                try {
-                    envelope = define(bd);
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
-                if (!"prototype".equals(bd.getScope()))
-                    bd.setBean(envelope);
+        Optional<BeanDefinition> obd = getFirstByName(url);
+        if (!obd.isPresent())
+            throw new RuntimeException("Reference " + url + " not found");
+
+        BeanDefinition bd = obd.get();
+        Object envelope = null;
+        if (bd.getBean() != null)
+            envelope = bd.getBean();
+        if (envelope == null) {
+            try {
+                envelope = define(bd);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
             }
-            Object spec = envelope;
-            // TODO
+            if (!"prototype".equals(bd.getScope()))
+                bd.setBean(envelope);
+        }
+        return envelope;
+        // TODO
 //            if (spec instanceof Bean)
 //                return ((Bean) spec).getBean();
-            return spec;
-        }
-        throw new RuntimeException("Reference " + url + " not found");
+    }
+
+    private @NotNull Optional<BeanDefinition> getFirstByName(String url) {
+        return bds.values().stream().filter(bd -> bd.getName().equals(url)).findFirst();
     }
 
     @Override

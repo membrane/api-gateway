@@ -16,7 +16,6 @@ package com.predic8.membrane.annot.yaml;
 import com.fasterxml.jackson.core.JsonLocation;
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.networknt.schema.Error;
 import com.networknt.schema.SchemaLocation;
 import com.networknt.schema.SchemaRegistry;
@@ -140,18 +139,19 @@ public class GenericYamlParser {
         Class clazz = generator.getElement(kind);
         if (clazz == null)
             throw new ParsingException("Did not find java class for kind '%s'.".formatted(kind), node);
-        Object result = GenericYamlParser.parse(kind, clazz, node.get(kind), registry, generator);
+        ParsingContext parsingContext = new ParsingContext(kind, registry, generator);
+        Object result = GenericYamlParser.parse(parsingContext, clazz, node.get(kind));
 
         return result;
     }
 
     @SuppressWarnings({"rawtypes"})
-    public static <T> T parse(String context, Class<T> clazz, JsonNode node, BeanRegistry registry, K8sHelperGenerator k8sHelperGenerator) throws ParsingException {
+    public static <T> T parse(ParsingContext ctx, Class<T> clazz, JsonNode node) throws ParsingException {
         try {
             T obj = clazz.getConstructor().newInstance();
             if (node.isArray()) {
                 // when this is a list, we are on a @MCElement(..., noEnvelope=true)
-                setSetter(obj, getSingleChildSetter(clazz), parseListExcludingStartEvent(context, node, registry, k8sHelperGenerator));
+                setSetter(obj, getSingleChildSetter(clazz), parseListExcludingStartEvent(ctx.context(), node, ctx.registry(), ctx.k8sHelperGenerator()));
                 return obj;
             }
             ensureMappingStart(node);
@@ -163,35 +163,15 @@ public class GenericYamlParser {
                 try {
 
                     if ("$ref".equals(key)) {
-                        handleTopLevelRefs(clazz, node.get(key), registry, obj);
+                        handleTopLevelRefs(clazz, node.get(key), ctx.registry(), obj);
                         continue;
                     }
 
-                    Method setter = getSetter(clazz, key);
-                    // MCChildElements which are not lists are directly declared as beans,
-                    // their name should be interpreted as an element name
-                    if (setter != null && setter.getAnnotation(MCChildElement.class) != null) {
-                        if (!List.class.isAssignableFrom(setter.getParameterTypes()[0]))
-                            setter = null;
-                    }
-                    Class clazz2 = null;
-                    if (setter == null) {
-                        try {
-                            clazz2 = k8sHelperGenerator.getLocal(context, key);
-                            if (clazz2 == null)
-                                clazz2 = k8sHelperGenerator.getElement(key);
-                            if (clazz2 != null)
-                                setter = getChildSetter(clazz, clazz2);
-                        } catch (Exception e) {
-                            throw new RuntimeException("Can't find method or bean for key: " + key + " in " + clazz.getName(), e);
-                        }
-                        if (setter == null)
-                            setter = getAnySetter(clazz);
-                        if (clazz2 == null && setter == null)
-                            throw new RuntimeException("Can't find method or bean for key: " + key + " in " + clazz.getName());
-                    }
+                    MethodSetter setter = getMethodSetter(ctx, clazz, key);
 
-                    setSetter(obj, setter, resolveSetterValue((Class) setter.getParameterTypes()[0], setter, context, node.get(key), registry, key, clazz2, k8sHelperGenerator));
+                    setSetter(obj, setter.setter(), resolveSetterValue(
+                             setter, ctx.context(), node.get(key), ctx.registry(), key, ctx.k8sHelperGenerator())
+                    );
                 } catch (Throwable cause) {
                     throw new ParsingException(cause, node.get(key));
                 }
@@ -200,11 +180,44 @@ public class GenericYamlParser {
         } catch (Throwable cause) {
             throw new ParsingException(cause, node);
         }
-
     }
 
+    // TODO Move to MethodSetter class
+    private static <T> @NotNull MethodSetter getMethodSetter(ParsingContext ctx, Class<T> clazz, String key) {
+        Method setter = getSetter(clazz, key);
+        // MCChildElements which are not lists are directly declared as beans,
+        // their name should be interpreted as an element name
+        if (setter != null && setter.getAnnotation(MCChildElement.class) != null) {
+            if (!List.class.isAssignableFrom(setter.getParameterTypes()[0]))
+                setter = null;
+        }
+        Class beanClass = null;
+        if (setter == null) {
+            try {
+                beanClass = ctx.k8sHelperGenerator().getLocal(ctx.context(), key);
+                if (beanClass == null)
+                    beanClass = ctx.k8sHelperGenerator().getElement(key);
+                if (beanClass != null)
+                    setter = getChildSetter(clazz, beanClass);
+            } catch (Exception e) {
+                throw new RuntimeException("Can't find method or bean for key: " + key + " in " + clazz.getName(), e); // TODO formated
+            }
+            if (setter == null)
+                setter = getAnySetter(clazz);
+            if (beanClass == null && setter == null)
+                throw new RuntimeException("Can't find method or bean for key: " + key + " in " + clazz.getName()); // TODO formated
+        }
+        return new MethodSetter(setter, beanClass);
+    }
+
+    // TODO Transform to class. Move
+    private record MethodSetter(Method setter, Class<?> beanClass) { }
+
     @SuppressWarnings({"rawtypes", "unchecked"})
-    private static Object resolveSetterValue(Class<?> wanted, Method setter, String context, JsonNode node, BeanRegistry registry, String key, Class<?> clazz2, K8sHelperGenerator k8sHelperGenerator) throws WrongEnumConstantException, ParsingException {
+    private static Object resolveSetterValue(MethodSetter setter, String context, JsonNode node, BeanRegistry registry, String key, K8sHelperGenerator k8sHelperGenerator) throws WrongEnumConstantException, ParsingException {
+
+        Class<?> clazz2 = setter.beanClass();
+        Class<?> wanted = setter.setter().getParameterTypes()[0];
         if (wanted.equals(List.class) || wanted.equals(Collection.class)) {
             return parseListIncludingStartEvent(context, node, registry, k8sHelperGenerator);
         }
@@ -228,17 +241,18 @@ public class GenericYamlParser {
         if (wanted.equals(Boolean.TYPE)) {
             return Boolean.parseBoolean(readString(node));
         }
-        if (wanted.equals(Map.class) && hasOtherAttributes(setter)) {
+        if (wanted.equals(Map.class) && hasOtherAttributes(setter.setter())) {
             return Map.of(key, readString(node));
         }
-        if (isStructured(setter)) {
+        if (isStructured(setter.setter())) {
+            ParsingContext ctx = new ParsingContext(key, registry, k8sHelperGenerator); // key instead of context
             if (clazz2 != null) {
-                return parse(key, clazz2, node, registry, k8sHelperGenerator);
+                return parse( ctx, clazz2, node);
             } else {
-                return parse(key, wanted, node, registry, k8sHelperGenerator);
+                return parse(ctx, wanted, node);
             }
         }
-        if (isReferenceAttribute(setter)) {
+        if (isReferenceAttribute(setter.setter())) {
             return registry.resolveReference(readString(node));
         }
         throw new RuntimeException("Not implemented setter type " + wanted);
@@ -282,12 +296,10 @@ public class GenericYamlParser {
     }
 
     private static @NotNull ArrayList<?> parseListExcludingStartEvent(String context, JsonNode node, BeanRegistry registry, K8sHelperGenerator k8sHelperGenerator) throws ParsingException {
-        Event event;
         ArrayList res = new ArrayList();
         for (int i = 0; i < node.size(); i++) {
             res.add(parseMapToObj(context, node.get(i), registry, k8sHelperGenerator));
         }
-
         return res;
     }
 
@@ -298,16 +310,17 @@ public class GenericYamlParser {
         if (node.size() != 1)
             throw new ParsingException("Expected exactly one key.", node);
         String key = node.fieldNames().next();
-        return parseMapToObj(context, node.get(key), key, registry, k8sHelperGenerator);
+        return parseMapToObj(new ParsingContext(context, registry, k8sHelperGenerator), node.get(key), key);
     }
 
-    private static Object parseMapToObj(String context, JsonNode node, String key, BeanRegistry registry, K8sHelperGenerator k8sHelperGenerator) throws ParsingException {
+    private static Object parseMapToObj(ParsingContext ctx, JsonNode node, String key) throws ParsingException {
         if ("$ref".equals(key)) {
-            return registry.resolveReference(readString(node));
+            return ctx.registry().resolveReference(readString(node));
         }
-        return parse(key, getAClass(context, key, k8sHelperGenerator), node, registry, k8sHelperGenerator);
+        return parse(ctx.updateContext(key), getAClass(ctx.context(), key, ctx.k8sHelperGenerator()), node);
     }
 
+    // Use ParsingContext even only 2 Params
     private static @NotNull Class<?> getAClass(String context, String key, K8sHelperGenerator k8sHelperGenerator) {
         Class<?> clazz = k8sHelperGenerator.getLocal(context, key);
         if (clazz == null)
@@ -317,9 +330,9 @@ public class GenericYamlParser {
         return clazz;
     }
 
+    // TODO Move to MethodSetter
     private static <T> void setSetter(T instance, Method method, Object value)
             throws InvocationTargetException, IllegalAccessException {
         method.invoke(instance, value);
     }
-
 }
