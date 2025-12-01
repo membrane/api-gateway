@@ -47,7 +47,7 @@ public class JsonBody implements Body {
     }
 
     @Override
-    public JsonNode getJson() throws IOException {
+    public JsonNode getJson() throws JacksonException {
         return payload;
     }
 }

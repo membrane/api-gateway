@@ -27,6 +27,7 @@ import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import tools.jackson.core.JsonParser;
+import tools.jackson.databind.DeserializationFeature;
 import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.json.JsonMapper;
 import tools.jackson.dataformat.yaml.YAMLFactory;
@@ -48,13 +49,14 @@ import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static tools.jackson.core.StreamReadFeature.STRICT_DUPLICATE_DETECTION;
+import static tools.jackson.databind.DeserializationFeature.FAIL_ON_TRAILING_TOKENS;
 
 public class JSONYAMLSchemaValidator extends AbstractMessageValidator {
 
     private static final Logger log = LoggerFactory.getLogger(JSONYAMLSchemaValidator.class);
 
     private final YAMLFactory factory = YAMLFactory.builder().enable(STRICT_DUPLICATE_DETECTION).build();
-    private final ObjectMapper yamlObjectMapper = YAMLMapper.builder(factory).build();
+    private final ObjectMapper yamlObjectMapper = YAMLMapper.builder(factory).disable(FAIL_ON_TRAILING_TOKENS).build();
     private final ObjectMapper jsonObjectMapper = JsonMapper.builder().build();
 
     private static final com.fasterxml.jackson.databind.ObjectMapper legacyObjectMapper = new com.fasterxml.jackson.databind.ObjectMapper();

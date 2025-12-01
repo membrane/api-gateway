@@ -16,6 +16,7 @@
 
 package com.predic8.membrane.core.openapi.model;
 
+import tools.jackson.core.JacksonException;
 import tools.jackson.databind.*;
 
 import java.io.*;
@@ -26,5 +27,5 @@ public interface Body {
 
     String asString() throws IOException;
 
-    JsonNode getJson() throws IOException;
+    JsonNode getJson() throws JacksonException;
 }

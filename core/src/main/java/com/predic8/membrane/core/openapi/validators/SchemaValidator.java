@@ -16,6 +16,7 @@
 
 package com.predic8.membrane.core.openapi.validators;
 
+import tools.jackson.core.JacksonException;
 import tools.jackson.databind.node.*;
 import com.predic8.membrane.core.openapi.*;
 import com.predic8.membrane.core.openapi.model.*;
@@ -64,7 +65,7 @@ public class SchemaValidator implements JsonSchemaValidator {
         Object value;
         try {
             value = resolveValueAndParseJSON(obj);
-        } catch (IOException e) {
+        } catch (JacksonException e) {
             log.warn("Cannot parse body. " + e);
             return errors.add(new ValidationError(ctx.statusCode(400).entityType(BODY).entity("REQUEST"), "Request body cannot be parsed as JSON"));
         }
@@ -218,7 +219,7 @@ public class SchemaValidator implements JsonSchemaValidator {
     /**
      * Unwrap or read value in case of InputStream or Body objects
      */
-    private Object resolveValueAndParseJSON(Object obj) throws IOException {
+    private Object resolveValueAndParseJSON(Object obj) throws JacksonException {
         if (obj instanceof Body)
             return ((Body) obj).getJson();
 
