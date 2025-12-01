@@ -136,7 +136,7 @@ public class JsonToXml {
         if (value == null || value == NULL) {
             return;
         }
-        sb.append(escape(String.valueOf(value)));
+        sb.append(escapeTextContent(String.valueOf(value)));
     }
 
     private void buildArray(StringBuilder sb, JSONArray array) {
@@ -154,11 +154,9 @@ public class JsonToXml {
     }
 
     private static String sanitizeXmlName(String key) {
-        // Replace spaces with underscores
-        String sanitized = key.replaceAll("\\s+", "_");
 
         // Replace any illegal XML characters
-        sanitized = sanitized.replaceAll("[^A-Za-z0-9_.-]", "_");
+        String sanitized = key.replaceAll("[^A-Za-z0-9_.-]", "_");
 
         // XML element must NOT start with number or dot or hyphen
         if (!sanitized.matches("[A-Za-z_].*")) {
@@ -190,7 +188,10 @@ public class JsonToXml {
         startTag(sb, arrayName);
     }
 
-    private String escape(String v) {
+    /**
+     * Not suitable for attribute values cause " and ' must be escaped there
+     */
+    private String escapeTextContent(String v) {
         return v.replace("&", "&amp;")
                 .replace("<", "&lt;")
                 .replace(">", "&gt;");
