@@ -89,7 +89,7 @@ public final class McYamlIntrospector {
         return setter;
     }
 
-    public static <T> Method getSetter(Class<T> clazz, String key) {
+    public static <T> Method findSetterForKey(Class<T> clazz, String key) {
         return Arrays.stream(clazz.getMethods())
                 .filter(McYamlIntrospector::isSetter)
                 .filter(method -> matchesJsonKey(method, key))

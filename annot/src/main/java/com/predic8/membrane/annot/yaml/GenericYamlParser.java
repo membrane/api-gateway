@@ -20,20 +20,22 @@ import com.networknt.schema.Error;
 import com.networknt.schema.SchemaLocation;
 import com.networknt.schema.SchemaRegistry;
 import com.predic8.membrane.annot.K8sHelperGenerator;
-import com.predic8.membrane.annot.MCChildElement;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.yaml.snakeyaml.events.*;
+import org.yaml.snakeyaml.events.Event;
+import org.yaml.snakeyaml.events.MappingStartEvent;
+import org.yaml.snakeyaml.events.ScalarEvent;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.util.*;
 
 import static com.networknt.schema.SpecificationVersion.DRAFT_2020_12;
 import static com.predic8.membrane.annot.yaml.McYamlIntrospector.*;
+import static com.predic8.membrane.annot.yaml.MethodSetter.getMethodSetter;
+import static com.predic8.membrane.annot.yaml.MethodSetter.setSetter;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Locale.ROOT;
 
@@ -169,9 +171,7 @@ public class GenericYamlParser {
 
                     MethodSetter setter = getMethodSetter(ctx, clazz, key);
 
-                    setSetter(obj, setter.setter(), resolveSetterValue(
-                             setter, ctx, node.get(key), key)
-                    );
+                    setSetter(obj, setter.getSetter(), resolveSetterValue(setter, ctx, node.get(key), key));
                 } catch (Throwable cause) {
                     throw new ParsingException(cause, node.get(key));
                 }
@@ -182,42 +182,10 @@ public class GenericYamlParser {
         }
     }
 
-    // TODO Move to MethodSetter class
-    private static <T> @NotNull MethodSetter getMethodSetter(ParsingContext ctx, Class<T> clazz, String key) {
-        Method setter = getSetter(clazz, key);
-        // MCChildElements which are not lists are directly declared as beans,
-        // their name should be interpreted as an element name
-        if (setter != null && setter.getAnnotation(MCChildElement.class) != null) {
-            if (!List.class.isAssignableFrom(setter.getParameterTypes()[0]))
-                setter = null;
-        }
-        Class beanClass = null;
-        if (setter == null) {
-            try {
-                beanClass = ctx.k8sHelperGenerator().getLocal(ctx.context(), key);
-                if (beanClass == null)
-                    beanClass = ctx.k8sHelperGenerator().getElement(key);
-                if (beanClass != null)
-                    setter = getChildSetter(clazz, beanClass);
-            } catch (Exception e) {
-                throw new RuntimeException("Can't find method or bean for key: " + key + " in " + clazz.getName(), e); // TODO formated
-            }
-            if (setter == null)
-                setter = getAnySetter(clazz);
-            if (beanClass == null && setter == null)
-                throw new RuntimeException("Can't find method or bean for key: " + key + " in " + clazz.getName()); // TODO formated
-        }
-        return new MethodSetter(setter, beanClass);
-    }
-
-    // TODO Transform to class. Move
-    private record MethodSetter(Method setter, Class<?> beanClass) { }
-
-    @SuppressWarnings({"rawtypes", "unchecked"})
     private static Object resolveSetterValue(MethodSetter setter, ParsingContext ctx, JsonNode node, String key) throws WrongEnumConstantException, ParsingException {
 
-        Class<?> clazz2 = setter.beanClass();
-        Class<?> wanted = setter.setter().getParameterTypes()[0];
+        Class<?> clazz2 = setter.getBeanClass();
+        Class<?> wanted = setter.getSetter().getParameterTypes()[0];
         if (wanted.equals(List.class) || wanted.equals(Collection.class)) {
             return parseListIncludingStartEvent(ctx, node);
         }
@@ -241,17 +209,17 @@ public class GenericYamlParser {
         if (wanted.equals(Boolean.TYPE)) {
             return Boolean.parseBoolean(readString(node));
         }
-        if (wanted.equals(Map.class) && hasOtherAttributes(setter.setter())) {
+        if (wanted.equals(Map.class) && hasOtherAttributes(setter.getSetter())) {
             return Map.of(key, readString(node));
         }
-        if (isStructured(setter.setter())) {
+        if (isStructured(setter.getSetter())) {
             if (clazz2 != null) {
                 return parse( ctx, clazz2, node);
             } else {
                 return parse(ctx, wanted, node);
             }
         }
-        if (isReferenceAttribute(setter.setter())) {
+        if (isReferenceAttribute(setter.getSetter())) {
             return ctx.registry().resolveReference(readString(node));
         }
         throw new RuntimeException("Not implemented setter type " + wanted);
@@ -325,11 +293,5 @@ public class GenericYamlParser {
         if (clazz == null)
             throw new RuntimeException("Did not find java class for key '" + key + "'.");
         return clazz;
-    }
-
-    // TODO Move to MethodSetter
-    private static <T> void setSetter(T instance, Method method, Object value)
-            throws InvocationTargetException, IllegalAccessException {
-        method.invoke(instance, value);
     }
 }
