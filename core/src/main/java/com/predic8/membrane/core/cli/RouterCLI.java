@@ -20,6 +20,7 @@ import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.kubernetes.BeanCache;
 import com.predic8.membrane.core.openapi.serviceproxy.*;
 import com.predic8.membrane.core.resolver.*;
+import com.predic8.membrane.core.util.ConfigurationException;
 import org.apache.commons.cli.*;
 import org.jetbrains.annotations.*;
 import org.slf4j.*;
@@ -165,7 +166,7 @@ public class RouterCLI {
         return router;
     }
 
-    private static @NotNull APIProxy getApiProxy(MembraneCommandLine commandLine) {
+    private static @NotNull APIProxy getApiProxy(MembraneCommandLine commandLine) throws IOException {
         APIProxy api = new APIProxy();
         api.setPort(commandLine.getCommand().isOptionSet("p") ?
                 parseInt(commandLine.getCommand().getOptionValue("p")) : 2000);
@@ -173,14 +174,27 @@ public class RouterCLI {
         return api;
     }
 
-    private static @NotNull OpenAPISpec getOpenAPISpec(MembraneCommandLine commandLine) {
+    private static @NotNull OpenAPISpec getOpenAPISpec(MembraneCommandLine commandLine) throws IOException {
         OpenAPISpec spec = new OpenAPISpec();
-        spec.location = commandLine.getCommand().getOptionValue("l");
+        spec.location = getLocation(commandLine);
+
         if (commandLine.getCommand().isOptionSet("v"))
             spec.setValidateRequests(YES);
         if (commandLine.getCommand().isOptionSet("V"))
             spec.setValidateResponses(YES);
         return spec;
+    }
+
+    private static String getLocation(MembraneCommandLine commandLine) throws IOException {
+        String location = commandLine.getCommand().getOptionValue("l");
+
+        if (location == null || location.isEmpty()) throw new RuntimeException(); // unreachable
+        if (location.startsWith("http://") || location.startsWith("https://")) return location;
+
+        File locFile = new File(location);
+        if (locFile.isAbsolute()) return locFile.getCanonicalPath();
+
+        return new File(getUserDir(), location).getCanonicalPath();
     }
 
     private static Router initRouterByXml(String config) throws Exception {
