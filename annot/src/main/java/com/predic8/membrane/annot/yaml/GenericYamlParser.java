@@ -20,7 +20,7 @@ import com.networknt.schema.Error;
 import com.networknt.schema.Schema;
 import com.networknt.schema.SchemaLocation;
 import com.networknt.schema.SchemaRegistry;
-import com.predic8.membrane.annot.K8sHelperGenerator;
+import com.predic8.membrane.annot.Grammar;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -47,19 +47,27 @@ public class GenericYamlParser {
     private static final String EMPTY_DOCUMENT_WARNING = "Skipping empty document. Maybe there are two --- separators but no configuration in between.";
 
     /**
-      * Parses Membrane resources from a YAML input stream.
-      * @param resource the input stream to parse. The method takes care of closing the stream.
-      * @param generator the K8s helper generator
-      * @param observer the bean cache observer
-      * @return the bean registry
-      */
-    public static BeanRegistry parseMembraneResources(@NotNull InputStream resource, K8sHelperGenerator generator, BeanCacheObserver observer) throws IOException {
+     * Entry point used by the runtime to consume a YAML stream and turn it into
+     * a {@link BeanRegistry} that the router can work with.
+     * <ul>
+     *   <li>Reads the entire stream as UTF-8.</li>
+     *   <li>Splits multi-document YAML ("---" separators).</li>
+     *   <li>Validates each document against the JSON Schema provided by {@code grammar}.</li>
+     *   <li>Emits helpful line/column locations for malformed multi-document input.</li>
+     * </ul>
+     * The returned registry is fully populated and {@link BeanCache#fireConfigurationLoaded()} has been called.
+     * @param resource the input stream to parse. The method takes care of closing the stream.
+     * @param grammar the grammar to use for type resolution and schema location
+     * @param observer the bean cache observer
+     * @return the bean registry
+     */
+    public static BeanRegistry parseMembraneResources(@NotNull InputStream resource, Grammar grammar, BeanCacheObserver observer) throws IOException {
         BeanCache registry;
         try (resource) {
-            registry = new BeanCache(observer, generator);
+            registry = new BeanCache(observer, grammar);
             registry.start();
 
-            new GenericYamlParser(generator, new String(resource.readAllBytes(), UTF_8))
+            new GenericYamlParser(grammar, new String(resource.readAllBytes(), UTF_8))
                     .getBeanDefinitions()
                     .forEach(bd -> registry.handle(WatchAction.ADDED, bd));
 
@@ -78,7 +86,19 @@ public class GenericYamlParser {
 
     List<BeanDefinition> beanDefs = new ArrayList<>();
 
-    public GenericYamlParser(K8sHelperGenerator generator, String yaml) throws IOException {
+    /**
+     * Parses one or more YAML documents into bean definitions.
+     * <p>
+     * The input string may contain multiple YAML documents separated by '---'. Each non-empty
+     * document is validated against the schema provided by {@link Grammar} and then
+     * turned into a {@link BeanDefinition}. Validation errors are mapped back to line/column
+     * numbers using {@link JsonLocationMap} to produce helpful error messages.
+     * </p>
+     * @param grammar provides schema location and Java type resolution
+     * @param yaml the raw YAML content (may contain multi-document stream)
+     * @throws IOException if schema loading or validation fails
+     */
+    public GenericYamlParser(Grammar grammar, String yaml) throws IOException {
         JsonLocationMap jsonLocationMap = new JsonLocationMap();
         List<JsonNode> rootNodes = jsonLocationMap.parseWithLocations(yaml);
         for (int i = 0; i < rootNodes.size(); i++) {
@@ -89,7 +109,7 @@ public class GenericYamlParser {
                 continue;
             }
             try {
-                validate(generator, rootNodes.get(i));
+                validate(grammar, rootNodes.get(i));
             } catch (YamlSchemaValidationException e) {
                 JsonLocation location = jsonLocationMap.getLocationMap().get(
                         e.getErrors().getFirst().getInstanceNode());
@@ -117,8 +137,8 @@ public class GenericYamlParser {
         return jsonNode.fieldNames().next();
     }
 
-    public static void validate(K8sHelperGenerator generator, JsonNode input) throws IOException, YamlSchemaValidationException {
-        Schema schema = SchemaRegistry.withDefaultDialect(DRAFT_2020_12, builder -> {}).getSchema(SchemaLocation.of(generator.getSchemaLocation()));
+    public static void validate(Grammar grammar, JsonNode input) throws IOException, YamlSchemaValidationException {
+        Schema schema = SchemaRegistry.withDefaultDialect(DRAFT_2020_12, builder -> {}).getSchema(SchemaLocation.of(grammar.getSchemaLocation()));
         schema.initializeValidators();
         List<Error> errors = schema.validate(input);
         if (!errors.isEmpty()) {
@@ -127,14 +147,26 @@ public class GenericYamlParser {
     }
 
 
-    public static Object readMembraneObject(String kind, K8sHelperGenerator generator, JsonNode node, BeanRegistry registry) throws ParsingException {
+    /**
+     * Parse a top-level Membrane resource of the given {@code kind}.
+     * <p>Ensures the node contains exactly one key (the kind), resolves the Java class via the
+     * grammar and delegates to {@link #parse(ParsingContext, Class, JsonNode)}.</p>
+     */
+    public static Object readMembraneObject(String kind, Grammar grammar, JsonNode node, BeanRegistry registry) throws ParsingException {
         ensureSingleKey(node);
-        Class<?> clazz = generator.getElement(kind);
+        Class<?> clazz = grammar.getElement(kind);
         if (clazz == null)
             throw new ParsingException("Did not find java class for kind '%s'.".formatted(kind), node);
-        return GenericYamlParser.parse(new ParsingContext(kind, registry, generator), clazz, node.get(kind));
+        return GenericYamlParser.parse(new ParsingContext(kind, registry, grammar), clazz, node.get(kind));
     }
 
+    /**
+     * Creates and populates an instance of {@code clazz} from the given YAML/JSON node.
+     * - Arrays: only valid for {@code @MCElement(noEnvelope=true)}; items are parsed and passed to the single {@code @MCChildElement} list setter.
+     * - Objects: each field is mapped to a setter resolved by {@link MethodSetter#getMethodSetter(ParsingContext, Class, String)};
+     *   values are produced by {@link #resolveSetterValue(MethodSetter, ParsingContext, JsonNode, String)}. A top-level {@code "$ref"} injects a previously defined bean.
+     * All failures are wrapped in a {@link ParsingException} with location information.
+     */
     public static <T> T parse(ParsingContext ctx, Class<T> clazz, JsonNode node) throws ParsingException {
         try {
             T obj = clazz.getConstructor().newInstance();
@@ -207,6 +239,10 @@ public class GenericYamlParser {
         return res;
     }
 
+    /**
+     * Parses a single-item map node like { kind: {...} } by extracting the only key and
+     * delegating to {@link #parseMapToObj(ParsingContext, JsonNode, String)}.
+     */
     private static Object parseMapToObj(ParsingContext context, JsonNode node) throws ParsingException {
         ensureSingleKey(node);
         String key = node.fieldNames().next();

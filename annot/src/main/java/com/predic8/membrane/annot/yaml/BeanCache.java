@@ -29,7 +29,7 @@ public class BeanCache implements BeanRegistry {
     private static final Logger log = LoggerFactory.getLogger(BeanCache.class);
 
     private final BeanCacheObserver router;
-    private final K8sHelperGenerator k8sHelperGenerator;
+    private final Grammar grammar;
     private final ConcurrentHashMap<String, Object> uuidMap = new ConcurrentHashMap<>();
     private final ArrayBlockingQueue<ChangeEvent> changeEvents = new ArrayBlockingQueue<>(1000);
     private Thread thread;
@@ -47,9 +47,9 @@ public class BeanCache implements BeanRegistry {
     private final Map<String, BeanDefinition> bds = new ConcurrentHashMap<>();
     private final Set<String> uidsToActivate = ConcurrentHashMap.newKeySet();
 
-    public BeanCache(BeanCacheObserver router, K8sHelperGenerator k8sHelperGenerator) {
+    public BeanCache(BeanCacheObserver router, Grammar grammar) {
         this.router = router;
-        this.k8sHelperGenerator = k8sHelperGenerator;
+        this.grammar = grammar;
     }
 
     public void start() {
@@ -83,7 +83,7 @@ public class BeanCache implements BeanRegistry {
         log.debug("defining bean: {}", bd.getNode());
 
         return GenericYamlParser.readMembraneObject(bd.getKind(),
-                k8sHelperGenerator,
+                grammar,
                 bd.getNode(),
                 this);
     }

@@ -20,6 +20,11 @@ public class MethodSetter {
         this.beanClass = beanClass;
     }
 
+    /**
+     * Resolves which setter on {@code clazz} should handle the given YAML field {@code key} and,
+     * if needed, which bean class that field represents.
+     * Throws a {@link RuntimeException} if neither a matching setter nor a resolvable bean class can be found.
+     */
     public static <T> @NotNull MethodSetter getMethodSetter(ParsingContext ctx, Class<T> clazz, String key) {
         Method setter = findSetterForKey(clazz, key);
         // MCChildElements which are not lists are directly declared as beans,
@@ -31,9 +36,9 @@ public class MethodSetter {
         Class<?> beanClass = null;
         if (setter == null) {
             try {
-                beanClass = ctx.k8sHelperGenerator().getLocal(ctx.context(), key);
+                beanClass = ctx.grammar().getLocal(ctx.context(), key);
                 if (beanClass == null)
-                    beanClass = ctx.k8sHelperGenerator().getElement(key);
+                    beanClass = ctx.grammar().getElement(key);
                 if (beanClass != null)
                     setter = getChildSetter(clazz, beanClass);
             } catch (Exception e) {
