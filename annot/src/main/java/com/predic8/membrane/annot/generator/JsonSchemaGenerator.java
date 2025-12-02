@@ -37,7 +37,7 @@ import static javax.tools.StandardLocation.*;
  * - Choose/cases/case has one nesting to much
  * - apiKey/extractors/expressionExtractor/expression => too much?
  */
-public class JsonSchemaGenerator extends AbstractK8sGenerator {
+public class JsonSchemaGenerator extends AbstractGrammar {
 
     private final Map<String, Boolean> topLevelAdded = new HashMap<>();
 
