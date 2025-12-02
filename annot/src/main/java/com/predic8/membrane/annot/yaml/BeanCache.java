@@ -13,22 +13,19 @@
    limitations under the License. */
 package com.predic8.membrane.annot.yaml;
 
-import com.fasterxml.jackson.databind.*;
-import com.predic8.membrane.annot.*;
-import org.jetbrains.annotations.*;
-import org.slf4j.*;
-import tools.jackson.databind.JsonNode;
-import tools.jackson.databind.ObjectMapper;
-import tools.jackson.dataformat.yaml.YAMLFactory;
-import com.predic8.membrane.annot.K8sHelperGenerator;
+import com.predic8.membrane.annot.Grammar;
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import tools.jackson.databind.JsonNode;
 
-import java.io.*;
+import java.io.IOException;
 import java.util.*;
-import java.util.concurrent.*;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.ConcurrentHashMap;
 
-import static com.predic8.membrane.annot.yaml.WatchAction.*;
+import static com.predic8.membrane.annot.yaml.WatchAction.DELETED;
+import static com.predic8.membrane.annot.yaml.WatchAction.MODIFIED;
 
 public class BeanCache implements BeanRegistry {
     private static final Logger log = LoggerFactory.getLogger(BeanCache.class);

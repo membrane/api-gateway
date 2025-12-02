@@ -14,7 +14,7 @@
 
 package com.predic8.membrane.annot.yaml;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import tools.jackson.databind.JsonNode;
 
 public final class NodeValidationUtils {
 
@@ -28,7 +28,7 @@ public final class NodeValidationUtils {
     }
 
     public static void ensureTextual(JsonNode node, String message) throws ParsingException {
-        if (!node.isTextual()) throw new ParsingException(message, node);
+        if (!node.isString()) throw new ParsingException(message, node);
     }
 
     public static void ensureArray(JsonNode node, String message) throws ParsingException {

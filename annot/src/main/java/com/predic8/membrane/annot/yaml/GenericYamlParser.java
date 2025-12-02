@@ -13,10 +13,6 @@
    limitations under the License. */
 package com.predic8.membrane.annot.yaml;
 
-import com.fasterxml.jackson.core.JsonLocation;
-import com.fasterxml.jackson.core.JsonParseException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.networknt.schema.Error;
 import com.networknt.schema.SchemaLocation;
 import com.networknt.schema.SchemaRegistry;
@@ -24,9 +20,6 @@ import com.predic8.membrane.annot.Grammar;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.snakeyaml.engine.v2.events.Event;
-import org.snakeyaml.engine.v2.events.MappingStartEvent;
-import org.snakeyaml.engine.v2.events.ScalarEvent;
 import tools.jackson.core.TokenStreamLocation;
 import tools.jackson.core.exc.StreamReadException;
 import tools.jackson.databind.JsonNode;
@@ -34,8 +27,10 @@ import tools.jackson.databind.JsonNode;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
 
 import static com.networknt.schema.SpecificationVersion.DRAFT_2020_12;
 import static com.predic8.membrane.annot.yaml.McYamlIntrospector.*;
@@ -52,7 +47,7 @@ import static java.util.UUID.randomUUID;
 public class GenericYamlParser {
     private static final Logger log = LoggerFactory.getLogger(GenericYamlParser.class);
     private static final String EMPTY_DOCUMENT_WARNING = "Skipping empty document. Maybe there are two --- separators but no configuration in between.";
-
+    private static final com.fasterxml.jackson.databind.ObjectMapper legacyOm = new com.fasterxml.jackson.databind.ObjectMapper();
     /**
      * Entry point used by the runtime to consume a YAML stream and turn it into
      * a {@link BeanRegistry} that the router can work with.
@@ -141,10 +136,10 @@ public class GenericYamlParser {
 
     private static String getBeanType(JsonNode jsonNode) {
         ensureSingleKey(jsonNode);
-        return jsonNode.fieldNames().next();
+        return jsonNode.propertyNames().iterator().next();
     }
 
-    public static void validate(K8sHelperGenerator generator, JsonNode input) throws IOException, YamlSchemaValidationException {
+    public static void validate(Grammar generator, JsonNode input) throws IOException, YamlSchemaValidationException {
         var jsonSchemaFactory = SchemaRegistry.withDefaultDialect(DRAFT_2020_12, builder -> {});
         var schema = jsonSchemaFactory.getSchema(SchemaLocation.of(generator.getSchemaLocation()));
         schema.initializeValidators();
@@ -218,22 +213,22 @@ public class GenericYamlParser {
         if (wanted.equals(List.class) || wanted.equals(Collection.class)) return parseListIncludingStartEvent(ctx, node);
 
         if (wanted.isEnum()) return parseEnum(wanted, node);
-        if (wanted.equals(String.class)) return node.asText();
-        if (wanted.equals(Integer.TYPE)) return parseInt(node.asText());
-        if (wanted.equals(Long.TYPE)) return parseLong(node.asText());
-        if (wanted.equals(Boolean.TYPE)) return parseBoolean(node.asText());
-        if (wanted.equals(Map.class) && setter.hasOtherAttributes()) return Map.of(key, node.asText());
+        if (wanted.equals(String.class)) return node.asString();
+        if (wanted.equals(Integer.TYPE)) return parseInt(node.asString());
+        if (wanted.equals(Long.TYPE)) return parseLong(node.asString());
+        if (wanted.equals(Boolean.TYPE)) return parseBoolean(node.asString());
+        if (wanted.equals(Map.class) && setter.hasOtherAttributes()) return Map.of(key, node.asString());
         if (setter.isStructured()) {
             if (clazz2 != null) return parse(ctx.updateContext(key), clazz2, node);
             return parse(ctx.updateContext(key), wanted, node);
         }
-        if (setter.isReferenceAttribute()) return ctx.registry().resolveReference(node.asText());
+        if (setter.isReferenceAttribute()) return ctx.registry().resolveReference(node.asString());
         throw new RuntimeException("Not implemented setter type " + wanted);
     }
 
     private static <T> void handleTopLevelRefs(Class<T> clazz, JsonNode node, BeanRegistry registry, T obj) throws InvocationTargetException, IllegalAccessException {
         ensureTextual(node, "Expected a string after the '$ref' key.");
-        Object o = registry.resolveReference(node.asText());
+        Object o = registry.resolveReference(node.asString());
         setSetter(obj, getChildSetter(clazz, o.getClass()), o);
     }
 
@@ -256,17 +251,17 @@ public class GenericYamlParser {
      */
     private static Object parseMapToObj(ParsingContext context, JsonNode node) throws ParsingException {
         ensureSingleKey(node);
-        String key = node.fieldNames().next();
+        String key = node.propertyNames().iterator().next();
         return parseMapToObj(context, node.get(key), key);
     }
 
     private static Object parseMapToObj(ParsingContext ctx, JsonNode node, String key) throws ParsingException {
-        if ("$ref".equals(key)) return ctx.registry().resolveReference(node.asText());
+        if ("$ref".equals(key)) return ctx.registry().resolveReference(node.asString());
         return parse(ctx.updateContext(key), ctx.resolveClass(key), node);
     }
 
     private static <E extends Enum<E>> E parseEnum(Class<?> enumClass, JsonNode node) throws WrongEnumConstantException {
-        String value = node.asText().toUpperCase(ROOT);
+        String value = node.asString().toUpperCase(ROOT);
         @SuppressWarnings("unchecked")
         Class<E> castEnumClass = (Class<E>) enumClass;
         try {
