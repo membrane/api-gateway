@@ -47,6 +47,22 @@ public class MethodSetter {
         return new MethodSetter(setter, beanClass);
     }
 
+    public Class<?> getParameterType() {
+        return setter.getParameterTypes()[0];
+    }
+
+    public boolean isStructured() {
+        return com.predic8.membrane.annot.yaml.McYamlIntrospector.isStructured(setter);
+    }
+
+    public boolean isReferenceAttribute() {
+        return com.predic8.membrane.annot.yaml.McYamlIntrospector.isReferenceAttribute(setter);
+    }
+
+    public boolean hasOtherAttributes() {
+        return com.predic8.membrane.annot.yaml.McYamlIntrospector.hasOtherAttributes(setter);
+    }
+
     public static <T> void setSetter(T instance, Method method, Object value) throws InvocationTargetException, IllegalAccessException {
         method.invoke(instance, value);
     }
