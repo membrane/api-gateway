@@ -17,6 +17,7 @@ import com.fasterxml.jackson.core.JsonLocation;
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.networknt.schema.Error;
+import com.networknt.schema.Schema;
 import com.networknt.schema.SchemaLocation;
 import com.networknt.schema.SchemaRegistry;
 import com.predic8.membrane.annot.K8sHelperGenerator;
@@ -34,6 +35,9 @@ import static com.predic8.membrane.annot.yaml.McYamlIntrospector.*;
 import static com.predic8.membrane.annot.yaml.MethodSetter.getMethodSetter;
 import static com.predic8.membrane.annot.yaml.MethodSetter.setSetter;
 import static com.predic8.membrane.annot.yaml.NodeValidationUtils.*;
+import static java.lang.Boolean.parseBoolean;
+import static java.lang.Integer.parseInt;
+import static java.lang.Long.parseLong;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Locale.ROOT;
 import static java.util.UUID.randomUUID;
@@ -49,7 +53,7 @@ public class GenericYamlParser {
       * @param observer the bean cache observer
       * @return the bean registry
       */
-    public static BeanRegistry parseMembraneResources(@NotNull InputStream resource, K8sHelperGenerator generator, BeanCacheObserver observer) throws IOException, YamlSchemaValidationException {
+    public static BeanRegistry parseMembraneResources(@NotNull InputStream resource, K8sHelperGenerator generator, BeanCacheObserver observer) throws IOException {
         BeanCache registry;
         try (resource) {
             registry = new BeanCache(observer, generator);
@@ -57,9 +61,7 @@ public class GenericYamlParser {
 
             new GenericYamlParser(generator, new String(resource.readAllBytes(), UTF_8))
                     .getBeanDefinitions()
-                    .forEach(bd -> {
-                        registry.handle(WatchAction.ADDED, bd);
-                    });
+                    .forEach(bd -> registry.handle(WatchAction.ADDED, bd));
 
             registry.fireConfigurationLoaded();
         } catch (JsonParseException e) {
@@ -116,9 +118,7 @@ public class GenericYamlParser {
     }
 
     public static void validate(K8sHelperGenerator generator, JsonNode input) throws IOException, YamlSchemaValidationException {
-        var jsonSchemaFactory = SchemaRegistry.withDefaultDialect(DRAFT_2020_12, builder -> {
-        });
-        var schema = jsonSchemaFactory.getSchema(SchemaLocation.of(generator.getSchemaLocation()));
+        Schema schema = SchemaRegistry.withDefaultDialect(DRAFT_2020_12, builder -> {}).getSchema(SchemaLocation.of(generator.getSchemaLocation()));
         schema.initializeValidators();
         List<Error> errors = schema.validate(input);
         if (!errors.isEmpty()) {
@@ -129,17 +129,12 @@ public class GenericYamlParser {
 
     public static Object readMembraneObject(String kind, K8sHelperGenerator generator, JsonNode node, BeanRegistry registry) throws ParsingException {
         ensureSingleKey(node);
-
-        Class clazz = generator.getElement(kind);
+        Class<?> clazz = generator.getElement(kind);
         if (clazz == null)
             throw new ParsingException("Did not find java class for kind '%s'.".formatted(kind), node);
-        ParsingContext parsingContext = new ParsingContext(kind, registry, generator);
-        Object result = GenericYamlParser.parse(parsingContext, clazz, node.get(kind));
-
-        return result;
+        return GenericYamlParser.parse(new ParsingContext(kind, registry, generator), clazz, node.get(kind));
     }
 
-    @SuppressWarnings({"rawtypes"})
     public static <T> T parse(ParsingContext ctx, Class<T> clazz, JsonNode node) throws ParsingException {
         try {
             T obj = clazz.getConstructor().newInstance();
@@ -175,45 +170,22 @@ public class GenericYamlParser {
     }
 
     private static Object resolveSetterValue(MethodSetter setter, ParsingContext ctx, JsonNode node, String key) throws WrongEnumConstantException, ParsingException {
-
         Class<?> clazz2 = setter.getBeanClass();
         Class<?> wanted = setter.getSetter().getParameterTypes()[0];
         if (wanted.equals(List.class) || wanted.equals(Collection.class)) {
             return parseListIncludingStartEvent(ctx, node);
         }
-        if (wanted.isEnum()) {
-            String value = node.asText().toUpperCase(ROOT);
-            try {
-                return Enum.valueOf((Class<Enum>) wanted, value);
-            } catch (IllegalArgumentException e) {
-                throw new WrongEnumConstantException(wanted, value);
-            }
-        }
-        if (wanted.equals(String.class)) {
-            return node.asText();
-        }
-        if (wanted.equals(Integer.TYPE)) {
-            return Integer.parseInt(node.asText());
-        }
-        if (wanted.equals(Long.TYPE)) {
-            return Long.parseLong(node.asText());
-        }
-        if (wanted.equals(Boolean.TYPE)) {
-            return Boolean.parseBoolean(node.asText());
-        }
-        if (wanted.equals(Map.class) && hasOtherAttributes(setter.getSetter())) {
-            return Map.of(key, node.asText());
-        }
+        if (wanted.isEnum()) return parseEnum(wanted, node);
+        if (wanted.equals(String.class)) return node.asText();
+        if (wanted.equals(Integer.TYPE)) return parseInt(node.asText());
+        if (wanted.equals(Long.TYPE)) return parseLong(node.asText());
+        if (wanted.equals(Boolean.TYPE)) return parseBoolean(node.asText());
+        if (wanted.equals(Map.class) && hasOtherAttributes(setter.getSetter())) return Map.of(key, node.asText());
         if (isStructured(setter.getSetter())) {
-            if (clazz2 != null) {
-                return parse( ctx, clazz2, node);
-            } else {
-                return parse(ctx, wanted, node);
-            }
+            if (clazz2 != null) return parse( ctx, clazz2, node);
+            return parse(ctx, wanted, node);
         }
-        if (isReferenceAttribute(setter.getSetter())) {
-            return ctx.registry().resolveReference(node.asText());
-        }
+        if (isReferenceAttribute(setter.getSetter())) return ctx.registry().resolveReference(node.asText());
         throw new RuntimeException("Not implemented setter type " + wanted);
     }
 
@@ -223,13 +195,13 @@ public class GenericYamlParser {
         setSetter(obj, getChildSetter(clazz, o.getClass()), o);
     }
 
-    private static List<?> parseListIncludingStartEvent(ParsingContext context, JsonNode node) throws ParsingException {
+    private static List<Object> parseListIncludingStartEvent(ParsingContext context, JsonNode node) throws ParsingException {
         ensureArray(node);
         return parseListExcludingStartEvent(context, node);
     }
 
-    private static @NotNull ArrayList<?> parseListExcludingStartEvent(ParsingContext context, JsonNode node) throws ParsingException {
-        ArrayList res = new ArrayList<>();
+    private static @NotNull ArrayList<Object> parseListExcludingStartEvent(ParsingContext context, JsonNode node) throws ParsingException {
+        ArrayList<Object> res = new ArrayList<>();
         for (int i = 0; i < node.size(); i++) {
             res.add(parseMapToObj(context, node.get(i)));
         }
@@ -254,5 +226,16 @@ public class GenericYamlParser {
         if (clazz == null)
             throw new RuntimeException("Did not find java class for key '" + key + "'.");
         return clazz;
+    }
+
+    private static <E extends Enum<E>> E parseEnum(Class<?> enumClass, JsonNode node) throws WrongEnumConstantException {
+        String value = node.asText().toUpperCase(ROOT);
+        @SuppressWarnings("unchecked")
+        Class<E> castEnumClass = (Class<E>) enumClass;
+        try {
+            return Enum.valueOf(castEnumClass, value);
+        } catch (IllegalArgumentException e) {
+            throw new WrongEnumConstantException(enumClass, value);
+        }
     }
 }
