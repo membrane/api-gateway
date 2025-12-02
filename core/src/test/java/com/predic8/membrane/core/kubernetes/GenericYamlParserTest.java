@@ -339,13 +339,13 @@ public class GenericYamlParserTest {
         }
 
         @Override
-        public <T> List<T> getBeansOfType(Class<T> clazz) {
-            return List.of();
+        public void registerBeanDefinitions(List<BeanDefinition> beanDefinitions) {
+
         }
     }
 
     private static APIProxy parse(String yaml, BeanRegistry reg) {
-        return GenericYamlParser.parse(new ParsingContext("api", reg, K8S_HELPER), APIProxy.class, parse(yaml));
+        return GenericYamlParser.createAndPopulateNode(new ParsingContext("api", reg, K8S_HELPER), APIProxy.class, parse(yaml));
     }
 
     public static JsonNode parse(String yaml) {

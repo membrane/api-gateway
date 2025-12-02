@@ -21,45 +21,61 @@ import org.slf4j.*;
 import java.io.*;
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.*;
 
 import static com.predic8.membrane.annot.yaml.WatchAction.*;
 
-public class BeanCache implements BeanRegistry {
+public class BeanRegistryImplementation implements BeanRegistry {
 
-    private static final Logger log = LoggerFactory.getLogger(BeanCache.class);
+    private static final Logger log = LoggerFactory.getLogger(BeanRegistryImplementation.class);
 
-    private final BeanCacheObserver router;
+    private final BeanCacheObserver observer;
     private final Grammar grammar;
+
+    // To prevent multiple threads from starting the thread concurrently.
+    private final AtomicBoolean started = new AtomicBoolean();
+
+    /**
+     * TODO Rename give meaningful name
+     */
     private final ConcurrentHashMap<String, Object> uuidMap = new ConcurrentHashMap<>();
+
     private final ArrayBlockingQueue<ChangeEvent> changeEvents = new ArrayBlockingQueue<>(1000);
+
+    /**
+     * TODO Rename give meaningful name
+     */
     private Thread thread;
 
-    interface ChangeEvent {
-    }
-
-    record BeanDefinitionChanged(BeanDefinition bd) implements ChangeEvent {
-    }
-
-    record StaticConfigurationLoaded() implements ChangeEvent {
-    }
 
     // uid -> bean definition
     private final Map<String, BeanDefinition> bds = new ConcurrentHashMap<>();
     private final Set<String> uidsToActivate = ConcurrentHashMap.newKeySet();
 
-    public BeanCache(BeanCacheObserver router, Grammar grammar) {
-        this.router = router;
+    public BeanRegistryImplementation(BeanCacheObserver observer, Grammar grammar) {
+        this.observer = observer;
         this.grammar = grammar;
     }
 
+    public void registerBeanDefinitions(List<BeanDefinition> bds) {
+        start();
+        bds.forEach(bd -> handle(ADDED, bd));
+        fireConfigurationLoaded();
+    }
+
     public void start() {
-        thread = new Thread(() -> {
+        // TODO Do we really need a thread if we start from CLI?
+
+        if (!started.compareAndSet(false, true))
+            return;
+
+        thread = Thread.ofVirtual().name("bean-activator").start(() -> {
             while (!Thread.interrupted()) {
                 try {
                     ChangeEvent changeEvent = changeEvents.take();
                     if (changeEvent instanceof StaticConfigurationLoaded) {
                         activationRun();
-                        router.handleAsynchronousInitializationResult(uidsToActivate.isEmpty());
+                        observer.handleAsynchronousInitializationResult(uidsToActivate.isEmpty());
                         continue;
                     }
                     if (changeEvent instanceof BeanDefinitionChanged(BeanDefinition bd)) {
@@ -69,9 +85,7 @@ public class BeanCache implements BeanRegistry {
                     break;
                 }
             }
-
         });
-        thread.start();
     }
 
     public void stop() {
@@ -79,9 +93,8 @@ public class BeanCache implements BeanRegistry {
             thread.interrupt();
     }
 
-    public Object define(BeanDefinition bd) throws IOException, ParsingException {
+    private Object define(BeanDefinition bd) throws IOException, ParsingException {
         log.debug("defining bean: {}", bd.getNode());
-
         return GenericYamlParser.readMembraneObject(bd.getKind(),
                 grammar,
                 bd.getNode(),
@@ -116,17 +129,23 @@ public class BeanCache implements BeanRegistry {
         // can see both metadata and the action (including DELETED).
         bds.put(bd.getUid(), bd);
 
-        if (router.isActivatable(bd))
+        if (observer.isActivatable(bd))
             uidsToActivate.add(bd.getUid());
 
         if (changeEvents.isEmpty())
             activationRun();
     }
 
-    public void activationRun() {
+    // @TODO
+    // applies all pending activations. But:
+    // - It reads from shared maps modified in other threads without locking.
+    // - It does not check whether MODIFIED events require redefinition.
+    // Mixing ADD/MODIFY/DELETE logic is hard to follow.
+    // Should we Separate event processing from bean activation?
+    private void activationRun() {
         Set<String> uidsToRemove = new HashSet<>();
-        for (String uid : uidsToActivate) {
-            BeanDefinition bd = bds.get(uid);
+        for (String uid1 : uidsToActivate) {
+            BeanDefinition bd = bds.get(uid1);
             try {
                 Object bean = define(bd);
                 bd.setBean(bean);
@@ -135,9 +154,10 @@ public class BeanCache implements BeanRegistry {
                 if (bd.getAction() == MODIFIED || bd.getAction() == DELETED)
                     oldBean = uuidMap.get(bd.getUid());
 
-                router.handleBeanEvent(bd, bean, oldBean);
+                // e.g. inform router about new proxy
+                observer.handleBeanEvent(bd, bean, oldBean);
 
-                if (bd.getAction() == WatchAction.ADDED || bd.getAction() == MODIFIED)
+                if (bd.getAction() == ADDED || bd.getAction() == MODIFIED)
                     uuidMap.put(bd.getUid(), bean);
                 if (bd.getAction() == DELETED) {
                     uuidMap.remove(bd.getUid());
@@ -152,13 +172,14 @@ public class BeanCache implements BeanRegistry {
             uidsToActivate.remove(uid);
     }
 
+    /**
+     * TODO: Issues:
+     * - Defining bean lazily inside resolve - Hard to reason about lifecycle.
+     */
     @Override
     public Object resolveReference(String url) {
-        Optional<BeanDefinition> obd = getFirstByName(url);
-        if (!obd.isPresent())
-            throw new RuntimeException("Reference " + url + " not found");
+        BeanDefinition bd = getFirstByName(url).orElseThrow(() -> new RuntimeException("Reference %s not found".formatted(url)));
 
-        BeanDefinition bd = obd.get();
         Object envelope = null;
         if (bd.getBean() != null)
             envelope = bd.getBean();
@@ -168,7 +189,7 @@ public class BeanCache implements BeanRegistry {
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
-            if (!"prototype".equals(bd.getScope()))
+            if (!bd.isPrototype())
                 bd.setBean(envelope);
         }
         return envelope;
@@ -184,10 +205,5 @@ public class BeanCache implements BeanRegistry {
     @Override
     public List<Object> getBeans() {
         return bds.values().stream().map(BeanDefinition::getBean).filter(Objects::nonNull).toList();
-    }
-
-    @Override
-    public <T> List<T> getBeansOfType(Class<T> clazz) {
-        return getBeans().stream().filter(clazz::isInstance).map(clazz::cast).toList();
     }
 }

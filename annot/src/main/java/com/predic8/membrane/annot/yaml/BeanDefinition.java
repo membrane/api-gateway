@@ -19,6 +19,8 @@ import java.util.*;
 
 public class BeanDefinition {
 
+    public static String PROTOTYPE = "prototype";
+
     private final String name;
     private final String namespace;
     private final String uid;
@@ -30,7 +32,7 @@ public class BeanDefinition {
     public BeanDefinition(WatchAction action, JsonNode node) {
         this.action = action;
         this.node = node;
-        JsonNode metadata = node.get("metadata");
+        JsonNode metadata = node.get("metadata"); // TODO What if metadata is null?
         var kind2 = node.get("kind").asText();
         if (kind2 == null)
             kind2 = "api";
@@ -79,6 +81,7 @@ public class BeanDefinition {
         return bean;
     }
 
+    // TODO: Rest is immutable - can we make this also?
     public void setBean(Object bean) {
         this.bean = bean;
     }
@@ -91,5 +94,9 @@ public class BeanDefinition {
         if (annotations == null)
             return null;
         return annotations.get("membrane-soa.org/scope").asText(); // TODO migrate to membrane-api.io
+    }
+
+    public boolean isPrototype() {
+        return PROTOTYPE.equals(getScope());
     }
 }

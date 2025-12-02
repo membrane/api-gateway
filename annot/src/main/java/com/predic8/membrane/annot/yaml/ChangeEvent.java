@@ -1,4 +1,4 @@
-/* Copyright 2022 predic8 GmbH, www.predic8.com
+/* Copyright 2025 predic8 GmbH, www.predic8.com
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -11,16 +11,17 @@
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
    See the License for the specific language governing permissions and
    limitations under the License. */
+
 package com.predic8.membrane.annot.yaml;
 
-import java.util.List;
+sealed interface ChangeEvent permits BeanDefinitionChanged, StaticConfigurationLoaded {
+}
 
-public interface BeanRegistry {
+record BeanDefinitionChanged(BeanDefinition bd) implements ChangeEvent {
+}
 
-    Object resolveReference(String url);
-
-    List<Object> getBeans();
-
-    void registerBeanDefinitions(List<BeanDefinition> beanDefinitions);
-
+/**
+ * TODO What does this exactly mean? Is the complete configuration loaded?
+ */
+record StaticConfigurationLoaded() implements ChangeEvent {
 }
