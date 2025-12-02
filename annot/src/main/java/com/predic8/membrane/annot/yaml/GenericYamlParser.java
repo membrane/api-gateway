@@ -213,8 +213,8 @@ public class GenericYamlParser {
         if (wanted.equals(Boolean.TYPE)) return parseBoolean(node.asText());
         if (wanted.equals(Map.class) && setter.hasOtherAttributes()) return Map.of(key, node.asText());
         if (setter.isStructured()) {
-            if (clazz2 != null) return parse( ctx, clazz2, node);
-            return parse(ctx, wanted, node);
+            if (clazz2 != null) return parse(ctx.updateContext(key), clazz2, node);
+            return parse(ctx.updateContext(key), wanted, node);
         }
         if (setter.isReferenceAttribute()) return ctx.registry().resolveReference(node.asText());
         throw new RuntimeException("Not implemented setter type " + wanted);
