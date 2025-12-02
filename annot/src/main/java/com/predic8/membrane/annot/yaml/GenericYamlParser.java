@@ -172,18 +172,20 @@ public class GenericYamlParser {
     private static Object resolveSetterValue(MethodSetter setter, ParsingContext ctx, JsonNode node, String key) throws WrongEnumConstantException, ParsingException {
         Class<?> clazz2 = setter.getBeanClass();
         Class<?> wanted = setter.getSetter().getParameterTypes()[0];
+        if (wanted.equals(List.class) || wanted.equals(Collection.class)) {
+            return parseListIncludingStartEvent(ctx, node);
+        }
         if (wanted.isEnum()) return parseEnum(wanted, node);
-        if (wanted.equals(List.class) || wanted.equals(Collection.class)) return parseListIncludingStartEvent(ctx, node);
         if (wanted.equals(String.class)) return node.asText();
         if (wanted.equals(Integer.TYPE)) return parseInt(node.asText());
         if (wanted.equals(Long.TYPE)) return parseLong(node.asText());
         if (wanted.equals(Boolean.TYPE)) return parseBoolean(node.asText());
         if (wanted.equals(Map.class) && hasOtherAttributes(setter.getSetter())) return Map.of(key, node.asText());
-        if (isReferenceAttribute(setter.getSetter())) return ctx.registry().resolveReference(node.asText());
         if (isStructured(setter.getSetter())) {
             if (clazz2 != null) return parse( ctx, clazz2, node);
             return parse(ctx, wanted, node);
         }
+        if (isReferenceAttribute(setter.getSetter())) return ctx.registry().resolveReference(node.asText());
         throw new RuntimeException("Not implemented setter type " + wanted);
     }
 
