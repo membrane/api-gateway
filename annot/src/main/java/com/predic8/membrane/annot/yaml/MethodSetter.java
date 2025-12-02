@@ -37,12 +37,12 @@ public class MethodSetter {
                 if (beanClass != null)
                     setter = getChildSetter(clazz, beanClass);
             } catch (Exception e) {
-                throw new RuntimeException("Can't find method or bean for key: " + key + " in " + clazz.getName(), e); // TODO formated
+                throw new RuntimeException("Can't find method or bean for key '%s' in %s".formatted(key, clazz.getName()), e);
             }
             if (setter == null)
                 setter = getAnySetter(clazz);
             if (beanClass == null && setter == null)
-                throw new RuntimeException("Can't find method or bean for key: " + key + " in " + clazz.getName()); // TODO formated
+                throw new RuntimeException("Can't find method or bean for key '%s' in %s".formatted(key, clazz.getName()));
         }
         return new MethodSetter(setter, beanClass);
     }

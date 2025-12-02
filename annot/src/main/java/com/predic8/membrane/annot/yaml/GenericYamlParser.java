@@ -23,9 +23,6 @@ import com.predic8.membrane.annot.K8sHelperGenerator;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.yaml.snakeyaml.events.Event;
-import org.yaml.snakeyaml.events.MappingStartEvent;
-import org.yaml.snakeyaml.events.ScalarEvent;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -36,8 +33,10 @@ import static com.networknt.schema.SpecificationVersion.DRAFT_2020_12;
 import static com.predic8.membrane.annot.yaml.McYamlIntrospector.*;
 import static com.predic8.membrane.annot.yaml.MethodSetter.getMethodSetter;
 import static com.predic8.membrane.annot.yaml.MethodSetter.setSetter;
+import static com.predic8.membrane.annot.yaml.NodeValidationUtils.*;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Locale.ROOT;
+import static java.util.UUID.randomUUID;
 
 public class GenericYamlParser {
     private static final Logger log = LoggerFactory.getLogger(GenericYamlParser.class);
@@ -102,7 +101,7 @@ public class GenericYamlParser {
                     getBeanType(rootNodes.get(i)),
                     "bean-" + i,
                     "default",
-                    UUID.randomUUID().toString(),
+                    randomUUID().toString(),
                     rootNodes.get(i)));
         }
     }
@@ -112,10 +111,7 @@ public class GenericYamlParser {
     }
 
     private static String getBeanType(JsonNode jsonNode) {
-        if (!jsonNode.isObject())
-            throw new IllegalArgumentException("Expected object node.");
-        if (jsonNode.size() != 1)
-            throw new IllegalArgumentException("Expected exactly one key.");
+        ensureSingleKey(jsonNode);
         return jsonNode.fieldNames().next();
     }
 
@@ -132,11 +128,7 @@ public class GenericYamlParser {
 
 
     public static Object readMembraneObject(String kind, K8sHelperGenerator generator, JsonNode node, BeanRegistry registry) throws ParsingException {
-
-        ensureMappingStart(node);
-
-        if (node.size() > 1)
-            throw new ParsingException("Expected exactly one key.", node);
+        ensureSingleKey(node);
 
         Class clazz = generator.getElement(kind);
         if (clazz == null)
@@ -190,7 +182,7 @@ public class GenericYamlParser {
             return parseListIncludingStartEvent(ctx, node);
         }
         if (wanted.isEnum()) {
-            String value = readString(node).toUpperCase(ROOT);
+            String value = node.asText().toUpperCase(ROOT);
             try {
                 return Enum.valueOf((Class<Enum>) wanted, value);
             } catch (IllegalArgumentException e) {
@@ -198,19 +190,19 @@ public class GenericYamlParser {
             }
         }
         if (wanted.equals(String.class)) {
-            return readString(node);
+            return node.asText();
         }
         if (wanted.equals(Integer.TYPE)) {
-            return Integer.parseInt(readString(node));
+            return Integer.parseInt(node.asText());
         }
         if (wanted.equals(Long.TYPE)) {
-            return Long.parseLong(readString(node));
+            return Long.parseLong(node.asText());
         }
         if (wanted.equals(Boolean.TYPE)) {
-            return Boolean.parseBoolean(readString(node));
+            return Boolean.parseBoolean(node.asText());
         }
         if (wanted.equals(Map.class) && hasOtherAttributes(setter.getSetter())) {
-            return Map.of(key, readString(node));
+            return Map.of(key, node.asText());
         }
         if (isStructured(setter.getSetter())) {
             if (clazz2 != null) {
@@ -220,50 +212,24 @@ public class GenericYamlParser {
             }
         }
         if (isReferenceAttribute(setter.getSetter())) {
-            return ctx.registry().resolveReference(readString(node));
+            return ctx.registry().resolveReference(node.asText());
         }
         throw new RuntimeException("Not implemented setter type " + wanted);
     }
 
     private static <T> void handleTopLevelRefs(Class<T> clazz, JsonNode node, BeanRegistry registry, T obj) throws InvocationTargetException, IllegalAccessException {
-        if (!node.isTextual())
-            throw new IllegalStateException("Expected a string after the '$ref' key.");
+        ensureTextual(node, "Expected a string after the '$ref' key.");
         Object o = registry.resolveReference(node.asText());
         setSetter(obj, getChildSetter(clazz, o.getClass()), o);
     }
 
-    private static String getScalarKey(Event event) {
-        if (!(event instanceof ScalarEvent)) {
-            throw new IllegalStateException("Expected scalar or end-of-map in line " + event.getStartMark().getLine() + " column " + event.getStartMark().getColumn());
-        }
-        return ((ScalarEvent) event).getValue();
-    }
-
-    private static void ensureMappingStart(Event event) {
-        if (!(event instanceof MappingStartEvent)) {
-            throw new IllegalStateException("Expected start-of-map in line " + event.getStartMark().getLine() + " column " + event.getStartMark().getColumn());
-        }
-    }
-
-    private static void ensureMappingStart(JsonNode node) throws ParsingException {
-        if (!(node.isObject())) {
-            throw new ParsingException("Expected object", node);
-        }
-    }
-
-    private static String readString(JsonNode node) {
-        return node.asText();
-    }
-
     private static List<?> parseListIncludingStartEvent(ParsingContext context, JsonNode node) throws ParsingException {
-        if (!node.isArray()) {
-            throw new ParsingException("Expected list.", node);
-        }
+        ensureArray(node);
         return parseListExcludingStartEvent(context, node);
     }
 
     private static @NotNull ArrayList<?> parseListExcludingStartEvent(ParsingContext context, JsonNode node) throws ParsingException {
-        ArrayList res = new ArrayList();
+        ArrayList res = new ArrayList<>();
         for (int i = 0; i < node.size(); i++) {
             res.add(parseMapToObj(context, node.get(i)));
         }
@@ -271,18 +237,13 @@ public class GenericYamlParser {
     }
 
     private static Object parseMapToObj(ParsingContext context, JsonNode node) throws ParsingException {
-        if (!node.isObject())
-            throw new ParsingException("Expected object.", node);
-        if (node.size() != 1)
-            throw new ParsingException("Expected exactly one key.", node);
+        ensureSingleKey(node);
         String key = node.fieldNames().next();
         return parseMapToObj(context, node.get(key), key);
     }
 
     private static Object parseMapToObj(ParsingContext ctx, JsonNode node, String key) throws ParsingException {
-        if ("$ref".equals(key)) {
-            return ctx.registry().resolveReference(readString(node));
-        }
+        if ("$ref".equals(key)) return ctx.registry().resolveReference(node.asText());
         return parse(ctx.updateContext(key), getAClass(ctx, key), node);
     }
 
