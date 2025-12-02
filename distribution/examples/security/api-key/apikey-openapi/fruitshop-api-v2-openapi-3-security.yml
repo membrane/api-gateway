@@ -55,8 +55,7 @@ paths:
         '200':
           description: OK
           content:
-            application/yaml:
-              example: |
+            application/yaml: {}
   /swagger-ui:
     get:
       tags:
