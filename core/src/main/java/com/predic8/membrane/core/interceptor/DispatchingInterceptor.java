@@ -111,7 +111,7 @@ public class DispatchingInterceptor extends AbstractInterceptor {
             String targetURL = p.getTarget().compileUrl(exc, REQUEST);
             if (targetURL.startsWith("http") || targetURL.startsWith("internal")) {
                 String basePath = UriUtil.getPathFromURL(router.getUriFactory(), targetURL);
-                if (basePath.isEmpty() || "/".equals(basePath)) {
+                if (basePath == null || basePath.isEmpty() || "/".equals(basePath)) {
                     URI base = new URI(targetURL);
                     // Resolve and normalize slashes consistently with the branch below.
                     return base.resolve(getUri(exc)).toString();
