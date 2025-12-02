@@ -16,7 +16,7 @@ package com.predic8.membrane.annot;
 
 import java.util.List;
 
-public interface K8sHelperGenerator {
+public interface Grammar {
 
     Class<?> getElement(String key);
 

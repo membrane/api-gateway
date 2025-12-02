@@ -13,8 +13,8 @@
    limitations under the License. */
 package com.predic8.membrane.annot.generator.kubernetes;
 
-import tools.jackson.databind.*;
-import tools.jackson.databind.node.*;
+import com.fasterxml.jackson.databind.*;
+import com.fasterxml.jackson.databind.node.*;
 import com.predic8.membrane.annot.generator.kubernetes.model.*;
 import com.predic8.membrane.annot.model.ElementInfo;
 import com.predic8.membrane.annot.model.MainInfo;
@@ -34,7 +34,7 @@ import java.util.stream.Stream;
 /**
  * Bundles functionality for kubernetes file generation
  */
-public abstract class AbstractK8sGenerator {
+public abstract class AbstractGrammar {
 
     protected final ObjectMapper om = new ObjectMapper();
     protected final ObjectWriter writer = om.writerWithDefaultPrettyPrinter();
@@ -53,7 +53,7 @@ public abstract class AbstractK8sGenerator {
         }
     }
 
-    public AbstractK8sGenerator(final ProcessingEnvironment processingEnv) {
+    public AbstractGrammar(final ProcessingEnvironment processingEnv) {
         this.processingEnv = processingEnv;
     }
 

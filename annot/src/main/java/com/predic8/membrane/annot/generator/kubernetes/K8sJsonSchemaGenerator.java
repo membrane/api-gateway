@@ -28,7 +28,7 @@ import static com.predic8.membrane.annot.generator.kubernetes.model.SchemaFactor
 /**
  * Generates JSON Schema (draft 2019-09/2020-12) to validate Kubernetes CustomResourceDefinitions.
  */
-public class K8sJsonSchemaGenerator extends AbstractK8sGenerator {
+public class K8sJsonSchemaGenerator extends AbstractGrammar {
 
     public K8sJsonSchemaGenerator(ProcessingEnvironment processingEnv) {
         super(processingEnv);

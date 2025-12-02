@@ -13,11 +13,14 @@
    limitations under the License. */
 package com.predic8.membrane.annot.yaml;
 
+import com.fasterxml.jackson.core.JsonLocation;
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.networknt.schema.Error;
 import com.networknt.schema.SchemaLocation;
 import com.networknt.schema.SchemaRegistry;
-import com.predic8.membrane.annot.K8sHelperGenerator;
-import com.predic8.membrane.annot.MCChildElement;
+import com.predic8.membrane.annot.Grammar;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -36,33 +39,44 @@ import java.util.*;
 
 import static com.networknt.schema.SpecificationVersion.DRAFT_2020_12;
 import static com.predic8.membrane.annot.yaml.McYamlIntrospector.*;
+import static com.predic8.membrane.annot.yaml.MethodSetter.getMethodSetter;
+import static com.predic8.membrane.annot.yaml.MethodSetter.setSetter;
+import static com.predic8.membrane.annot.yaml.NodeValidationUtils.*;
+import static java.lang.Boolean.parseBoolean;
+import static java.lang.Integer.parseInt;
+import static java.lang.Long.parseLong;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Locale.ROOT;
+import static java.util.UUID.randomUUID;
 
 public class GenericYamlParser {
     private static final Logger log = LoggerFactory.getLogger(GenericYamlParser.class);
     private static final String EMPTY_DOCUMENT_WARNING = "Skipping empty document. Maybe there are two --- separators but no configuration in between.";
 
-    private static final com.fasterxml.jackson.databind.ObjectMapper legacyOm = new com.fasterxml.jackson.databind.ObjectMapper();
-
     /**
-      * Parses Membrane resources from a YAML input stream.
-      * @param resource the input stream to parse. The method takes care of closing the stream.
-      * @param generator the K8s helper generator
-      * @param observer the bean cache observer
-      * @return the bean registry
-      */
-    public static BeanRegistry parseMembraneResources(@NotNull InputStream resource, K8sHelperGenerator generator, BeanCacheObserver observer) throws IOException {
+     * Entry point used by the runtime to consume a YAML stream and turn it into
+     * a {@link BeanRegistry} that the router can work with.
+     * <ul>
+     *   <li>Reads the entire stream as UTF-8.</li>
+     *   <li>Splits multi-document YAML ("---" separators).</li>
+     *   <li>Validates each document against the JSON Schema provided by {@code grammar}.</li>
+     *   <li>Emits helpful line/column locations for malformed multi-document input.</li>
+     * </ul>
+     * The returned registry is fully populated and {@link BeanCache#fireConfigurationLoaded()} has been called.
+     * @param resource the input stream to parse. The method takes care of closing the stream.
+     * @param grammar the grammar to use for type resolution and schema location
+     * @param observer the bean cache observer
+     * @return the bean registry
+     */
+    public static BeanRegistry parseMembraneResources(@NotNull InputStream resource, Grammar grammar, BeanCacheObserver observer) throws IOException {
         BeanCache registry;
         try (resource) {
-            registry = new BeanCache(observer, generator);
+            registry = new BeanCache(observer, grammar);
             registry.start();
 
-            new GenericYamlParser(generator, new String(resource.readAllBytes(), UTF_8))
+            new GenericYamlParser(grammar, new String(resource.readAllBytes(), UTF_8))
                     .getBeanDefinitions()
-                    .forEach(bd -> {
-                        registry.handle(WatchAction.ADDED, bd);
-                    });
+                    .forEach(bd -> registry.handle(WatchAction.ADDED, bd));
 
             registry.fireConfigurationLoaded();
         } catch (StreamReadException e) {
@@ -79,7 +93,19 @@ public class GenericYamlParser {
 
     List<BeanDefinition> beanDefs = new ArrayList<>();
 
-    public GenericYamlParser(K8sHelperGenerator generator, String yaml) throws IOException {
+    /**
+     * Parses one or more YAML documents into bean definitions.
+     * <p>
+     * The input string may contain multiple YAML documents separated by '---'. Each non-empty
+     * document is validated against the schema provided by {@link Grammar} and then
+     * turned into a {@link BeanDefinition}. Validation errors are mapped back to line/column
+     * numbers using {@link JsonLocationMap} to produce helpful error messages.
+     * </p>
+     * @param grammar provides schema location and Java type resolution
+     * @param yaml the raw YAML content (may contain multi-document stream)
+     * @throws IOException if schema loading or validation fails
+     */
+    public GenericYamlParser(Grammar grammar, String yaml) throws IOException {
         JsonLocationMap jsonLocationMap = new JsonLocationMap();
         List<JsonNode> rootNodes = jsonLocationMap.parseWithLocations(yaml);
         for (int i = 0; i < rootNodes.size(); i++) {
@@ -90,7 +116,7 @@ public class GenericYamlParser {
                 continue;
             }
             try {
-                validate(generator, rootNodes.get(i));
+                validate(grammar, rootNodes.get(i));
             } catch (YamlSchemaValidationException e) {
                 TokenStreamLocation location = jsonLocationMap.getLocationMap().get(
                         e.getErrors().getFirst().getInstanceNode());
@@ -104,7 +130,7 @@ public class GenericYamlParser {
                     getBeanType(rootNodes.get(i)),
                     "bean-" + i,
                     "default",
-                    UUID.randomUUID().toString(),
+                    randomUUID().toString(),
                     rootNodes.get(i)));
         }
     }
@@ -114,11 +140,8 @@ public class GenericYamlParser {
     }
 
     private static String getBeanType(JsonNode jsonNode) {
-        if (!jsonNode.isObject())
-            throw new IllegalArgumentException("Expected object node.");
-        if (jsonNode.size() != 1)
-            throw new IllegalArgumentException("Expected exactly one key.");
-        return jsonNode.propertyNames().iterator().next();
+        ensureSingleKey(jsonNode);
+        return jsonNode.fieldNames().next();
     }
 
     public static void validate(K8sHelperGenerator generator, JsonNode input) throws IOException, YamlSchemaValidationException {
@@ -135,28 +158,33 @@ public class GenericYamlParser {
         }
     }
 
-    public static Object readMembraneObject(String kind, K8sHelperGenerator generator, JsonNode node, BeanRegistry registry) throws ParsingException {
 
-        ensureMappingStart(node);
-
-        if (node.size() > 1)
-            throw new ParsingException("Expected exactly one key.", node);
-
-        Class clazz = generator.getElement(kind);
+    /**
+     * Parse a top-level Membrane resource of the given {@code kind}.
+     * <p>Ensures the node contains exactly one key (the kind), resolves the Java class via the
+     * grammar and delegates to {@link #parse(ParsingContext, Class, JsonNode)}.</p>
+     */
+    public static Object readMembraneObject(String kind, Grammar grammar, JsonNode node, BeanRegistry registry) throws ParsingException {
+        ensureSingleKey(node);
+        Class<?> clazz = grammar.getElement(kind);
         if (clazz == null)
             throw new ParsingException("Did not find java class for kind '%s'.".formatted(kind), node);
-        Object result = GenericYamlParser.parse(kind, clazz, node.get(kind), registry, generator);
-
-        return result;
+        return GenericYamlParser.parse(new ParsingContext(kind, registry, grammar), clazz, node.get(kind));
     }
 
-    @SuppressWarnings({"rawtypes"})
-    public static <T> T parse(String context, Class<T> clazz, JsonNode node, BeanRegistry registry, K8sHelperGenerator k8sHelperGenerator) throws ParsingException {
+    /**
+     * Creates and populates an instance of {@code clazz} from the given YAML/JSON node.
+     * - Arrays: only valid for {@code @MCElement(noEnvelope=true)}; items are parsed and passed to the single {@code @MCChildElement} list setter.
+     * - Objects: each field is mapped to a setter resolved by {@link MethodSetter#getMethodSetter(ParsingContext, Class, String)};
+     *   values are produced by {@link #resolveSetterValue(MethodSetter, ParsingContext, JsonNode, String)}. A top-level {@code "$ref"} injects a previously defined bean.
+     * All failures are wrapped in a {@link ParsingException} with location information.
+     */
+    public static <T> T parse(ParsingContext ctx, Class<T> clazz, JsonNode node) throws ParsingException {
         try {
             T obj = clazz.getConstructor().newInstance();
             if (node.isArray()) {
                 // when this is a list, we are on a @MCElement(..., noEnvelope=true)
-                setSetter(obj, getSingleChildSetter(clazz), parseListExcludingStartEvent(context, node, registry, k8sHelperGenerator));
+                setSetter(obj, getSingleChildSetter(clazz), parseListExcludingStartEvent(ctx, node));
                 return obj;
             }
             ensureMappingStart(node);
@@ -167,35 +195,13 @@ public class GenericYamlParser {
                 try {
 
                     if ("$ref".equals(key)) {
-                        handleTopLevelRefs(clazz, node.get(key), registry, obj);
+                        handleTopLevelRefs(clazz, node.get(key), ctx.registry(), obj);
                         continue;
                     }
 
-                    Method setter = getSetter(clazz, key);
-                    // MCChildElements which are not lists are directly declared as beans,
-                    // their name should be interpreted as an element name
-                    if (setter != null && setter.getAnnotation(MCChildElement.class) != null) {
-                        if (!List.class.isAssignableFrom(setter.getParameterTypes()[0]))
-                            setter = null;
-                    }
-                    Class clazz2 = null;
-                    if (setter == null) {
-                        try {
-                            clazz2 = k8sHelperGenerator.getLocal(context, key);
-                            if (clazz2 == null)
-                                clazz2 = k8sHelperGenerator.getElement(key);
-                            if (clazz2 != null)
-                                setter = getChildSetter(clazz, clazz2);
-                        } catch (Exception e) {
-                            throw new RuntimeException("Can't find method or bean for key: " + key + " in " + clazz.getName(), e);
-                        }
-                        if (setter == null)
-                            setter = getAnySetter(clazz);
-                        if (clazz2 == null && setter == null)
-                            throw new RuntimeException("Can't find method or bean for key: " + key + " in " + clazz.getName());
-                    }
+                    MethodSetter setter = getMethodSetter(ctx, clazz, key);
 
-                    setSetter(obj, setter, resolveSetterValue((Class) setter.getParameterTypes()[0], setter, context, node.get(key), registry, key, clazz2, k8sHelperGenerator));
+                    setSetter(obj, setter.getSetter(), resolveSetterValue(setter, ctx, node.get(key), key));
                 } catch (Throwable cause) {
                     throw new ParsingException(cause, node.get(key));
                 }
@@ -204,126 +210,70 @@ public class GenericYamlParser {
         } catch (Throwable cause) {
             throw new ParsingException(cause, node);
         }
-
     }
 
-    @SuppressWarnings({"rawtypes", "unchecked"})
-    private static Object resolveSetterValue(Class<?> wanted, Method setter, String context, JsonNode node, BeanRegistry registry, String key, Class<?> clazz2, K8sHelperGenerator k8sHelperGenerator) throws WrongEnumConstantException, ParsingException {
-        if (wanted.equals(List.class) || wanted.equals(Collection.class)) {
-            return parseListIncludingStartEvent(context, node, registry, k8sHelperGenerator);
+    private static Object resolveSetterValue(MethodSetter setter, ParsingContext ctx, JsonNode node, String key) throws WrongEnumConstantException, ParsingException {
+        Class<?> clazz2 = setter.getBeanClass();
+        Class<?> wanted = setter.getParameterType();
+        if (wanted.equals(List.class) || wanted.equals(Collection.class)) return parseListIncludingStartEvent(ctx, node);
+
+        if (wanted.isEnum()) return parseEnum(wanted, node);
+        if (wanted.equals(String.class)) return node.asText();
+        if (wanted.equals(Integer.TYPE)) return parseInt(node.asText());
+        if (wanted.equals(Long.TYPE)) return parseLong(node.asText());
+        if (wanted.equals(Boolean.TYPE)) return parseBoolean(node.asText());
+        if (wanted.equals(Map.class) && setter.hasOtherAttributes()) return Map.of(key, node.asText());
+        if (setter.isStructured()) {
+            if (clazz2 != null) return parse(ctx.updateContext(key), clazz2, node);
+            return parse(ctx.updateContext(key), wanted, node);
         }
-        if (wanted.isEnum()) {
-            String value = readString(node).toUpperCase(ROOT);
-            try {
-                return Enum.valueOf((Class<Enum>) wanted, value);
-            } catch (IllegalArgumentException e) {
-                throw new WrongEnumConstantException(wanted, value);
-            }
-        }
-        if (wanted.equals(String.class)) {
-            return readString(node);
-        }
-        if (wanted.equals(Integer.TYPE)) {
-            return Integer.parseInt(readString(node));
-        }
-        if (wanted.equals(Long.TYPE)) {
-            return Long.parseLong(readString(node));
-        }
-        if (wanted.equals(Boolean.TYPE)) {
-            return Boolean.parseBoolean(readString(node));
-        }
-        if (wanted.equals(Map.class) && hasOtherAttributes(setter)) {
-            return Map.of(key, readString(node));
-        }
-        if (isStructured(setter)) {
-            if (clazz2 != null) {
-                return parse(key, clazz2, node, registry, k8sHelperGenerator);
-            } else {
-                return parse(key, wanted, node, registry, k8sHelperGenerator);
-            }
-        }
-        if (isReferenceAttribute(setter)) {
-            return registry.resolveReference(readString(node));
-        }
+        if (setter.isReferenceAttribute()) return ctx.registry().resolveReference(node.asText());
         throw new RuntimeException("Not implemented setter type " + wanted);
     }
 
     private static <T> void handleTopLevelRefs(Class<T> clazz, JsonNode node, BeanRegistry registry, T obj) throws InvocationTargetException, IllegalAccessException {
-        if (!node.isTextual())
-            throw new IllegalStateException("Expected a string after the '$ref' key.");
+        ensureTextual(node, "Expected a string after the '$ref' key.");
         Object o = registry.resolveReference(node.asText());
         setSetter(obj, getChildSetter(clazz, o.getClass()), o);
     }
 
-    private static String getScalarKey(Event event) {
-        if (!(event instanceof ScalarEvent)) {
-            throw new IllegalStateException("Expected scalar or end-of-map in line " + event.getStartMark().orElseThrow().getLine() + " column " + event.getStartMark().orElseThrow().getColumn());
-        }
-        return ((ScalarEvent) event).getValue();
+    private static List<Object> parseListIncludingStartEvent(ParsingContext context, JsonNode node) throws ParsingException {
+        ensureArray(node);
+        return parseListExcludingStartEvent(context, node);
     }
 
-    private static void ensureMappingStart(Event event) {
-        if (!(event instanceof MappingStartEvent)) {
-            throw new IllegalStateException("Expected start-of-map in line " + event.getStartMark().orElseThrow().getLine() + " column " + event.getStartMark().orElseThrow().getColumn());
-        }
-    }
-
-    private static void ensureMappingStart(JsonNode node) throws ParsingException {
-        if (!(node.isObject())) {
-            throw new ParsingException("Expected object", node);
-        }
-    }
-
-    private static String readString(JsonNode node) {
-        return node.asText();
-    }
-
-    private static List<?> parseListIncludingStartEvent(String context, JsonNode node, BeanRegistry registry, K8sHelperGenerator k8sHelperGenerator) throws ParsingException {
-        if (!node.isArray()) {
-            throw new ParsingException("Expected list.", node);
-        }
-        return parseListExcludingStartEvent(context, node, registry, k8sHelperGenerator);
-    }
-
-    private static @NotNull ArrayList<?> parseListExcludingStartEvent(String context, JsonNode node, BeanRegistry registry, K8sHelperGenerator k8sHelperGenerator) throws ParsingException {
-        Event event;
-        ArrayList res = new ArrayList();
+    private static @NotNull ArrayList<Object> parseListExcludingStartEvent(ParsingContext context, JsonNode node) throws ParsingException {
+        ArrayList<Object> res = new ArrayList<>();
         for (int i = 0; i < node.size(); i++) {
-            res.add(parseMapToObj(context, node.get(i), registry, k8sHelperGenerator));
+            res.add(parseMapToObj(context, node.get(i)));
         }
-
         return res;
     }
 
-
-    private static Object parseMapToObj(String context, JsonNode node, BeanRegistry registry, K8sHelperGenerator k8sHelperGenerator) throws ParsingException {
-        if (!node.isObject())
-            throw new ParsingException("Expected object.", node);
-        if (node.size() != 1)
-            throw new ParsingException("Expected exactly one key.", node);
-        String key = node.propertyNames().iterator().next();
-        return parseMapToObj(context, node.get(key), key, registry, k8sHelperGenerator);
+    /**
+     * Parses a single-item map node like { kind: {...} } by extracting the only key and
+     * delegating to {@link #parseMapToObj(ParsingContext, JsonNode, String)}.
+     */
+    private static Object parseMapToObj(ParsingContext context, JsonNode node) throws ParsingException {
+        ensureSingleKey(node);
+        String key = node.fieldNames().next();
+        return parseMapToObj(context, node.get(key), key);
     }
 
-    private static Object parseMapToObj(String context, JsonNode node, String key, BeanRegistry registry, K8sHelperGenerator k8sHelperGenerator) throws ParsingException {
-        if ("$ref".equals(key)) {
-            return registry.resolveReference(readString(node));
+    private static Object parseMapToObj(ParsingContext ctx, JsonNode node, String key) throws ParsingException {
+        if ("$ref".equals(key)) return ctx.registry().resolveReference(node.asText());
+        return parse(ctx.updateContext(key), ctx.resolveClass(key), node);
+    }
+
+    private static <E extends Enum<E>> E parseEnum(Class<?> enumClass, JsonNode node) throws WrongEnumConstantException {
+        String value = node.asText().toUpperCase(ROOT);
+        @SuppressWarnings("unchecked")
+        Class<E> castEnumClass = (Class<E>) enumClass;
+        try {
+            return Enum.valueOf(castEnumClass, value);
+        } catch (IllegalArgumentException e) {
+            throw new WrongEnumConstantException(enumClass, value);
         }
-        return parse(key, getAClass(context, key, k8sHelperGenerator), node, registry, k8sHelperGenerator);
-    }
-
-    private static @NotNull Class<?> getAClass(String context, String key, K8sHelperGenerator k8sHelperGenerator) {
-        Class<?> clazz = k8sHelperGenerator.getLocal(context, key);
-        if (clazz == null)
-            clazz = k8sHelperGenerator.getElement(key);
-        if (clazz == null)
-            throw new RuntimeException("Did not find java class for key '" + key + "'.");
-        return clazz;
-    }
-
-    private static <T> void setSetter(T instance, Method method, Object value)
-            throws InvocationTargetException, IllegalAccessException {
-        method.invoke(instance, value);
     }
 
 }
