@@ -76,7 +76,7 @@ public class CompilerHelper {
         ClassLoader originalClassloader = Thread.currentThread().getContextClassLoader();
         try {
             Thread.currentThread().setContextClassLoader(getCompositeClassLoader(cr, yamlConfig));
-            return getGetBeanRegistry(getCompositeClassLoader(cr, yamlConfig).loadClass(YAML_PARSER_CLASS_NAME).getMethod("getBeanRegistry").invoke(getYAMLParser(getCompositeClassLoader(cr, yamlConfig))));
+            return (BeanRegistry) getParserClass(cr, yamlConfig).getMethod("getBeanRegistry").invoke(getYAMLParser(getCompositeClassLoader(cr, yamlConfig)));
         } catch (Exception e) {
             throw new RuntimeException(e);
         } finally {
@@ -84,11 +84,14 @@ public class CompilerHelper {
         }
     }
 
+    private static Class<?> getParserClass(CompilerResult cr, String yamlConfig) throws ClassNotFoundException {
+        return getCompositeClassLoader(cr, yamlConfig).loadClass(YAML_PARSER_CLASS_NAME);
+    }
+
     private static @NotNull CompositeClassLoader getCompositeClassLoader(CompilerResult cr, String yamlConfig) {
         InMemoryClassLoader loaderA = (InMemoryClassLoader) cr.classLoader();
         loaderA.defineOverlay(new OverlayInMemoryFile("/demo.yaml", yamlConfig));
-        CompositeClassLoader cl = new CompositeClassLoader(CompilerHelper.class.getClassLoader(), loaderA);
-        return cl;
+        return new CompositeClassLoader(CompilerHelper.class.getClassLoader(), loaderA);
     }
 
     private static @NotNull Object getYAMLParser(CompositeClassLoader cl) throws InstantiationException, IllegalAccessException, InvocationTargetException, NoSuchMethodException, ClassNotFoundException {
@@ -97,10 +100,6 @@ public class CompilerHelper {
 
     private static @NotNull Object getParser(Class<?> c) throws InstantiationException, IllegalAccessException, InvocationTargetException, NoSuchMethodException {
         return c.getConstructor(String.class).newInstance("demo.yaml");
-    }
-
-    private static BeanRegistry getGetBeanRegistry(Object c) throws IllegalAccessException, InvocationTargetException, NoSuchMethodException {
-        return (BeanRegistry) c;
     }
 
     /**
@@ -138,21 +137,16 @@ public class CompilerHelper {
 
     private static void copyResourcesToOutput(List<? extends OverlayInMemoryFile> sources, JavaFileManager fileManager) {
         sources.forEach(i -> {
-            PrintWriter pw = getPrintWriter(fileManager, i);
+            PrintWriter pw;
+            try {
+                pw = new PrintWriter(fileManager.getFileForOutput(CLASS_OUTPUT, "", i.getName(), null)
+                        .openWriter());
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
             pw.write(i.getCharContent(true).toString());
             pw.close();
         });
-    }
-
-    private static @NotNull PrintWriter getPrintWriter(JavaFileManager fileManager, OverlayInMemoryFile i) {
-        PrintWriter pw;
-        try {
-            pw = new PrintWriter(fileManager.getFileForOutput(CLASS_OUTPUT, "", i.getName(), null)
-                    .openWriter());
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-        return pw;
     }
 
     public static List<FileObject> splitSources(String sources) {
@@ -176,7 +170,6 @@ public class CompilerHelper {
                 break;
             content = parts[1];
         }
-        ;
 
         String name = parts[0].substring(9).trim(); // TODO Refactor and give meaningful name
         return new OverlayInMemoryFile(name, parts[1]);
@@ -210,7 +203,7 @@ public class CompilerHelper {
                                             CompilerResult result) {
         assertThat("expected errors and warnings match.",
                 result.diagnostics().getDiagnostics(),
-                new IsIterableContainingInAnyOrder<Diagnostic<?>>(expectedDiagnostics));
+                new IsIterableContainingInAnyOrder<>(expectedDiagnostics));
         assertEquals(success, result.compilationSuccess());
     }
 
@@ -227,7 +220,7 @@ public class CompilerHelper {
 
             @Override
             public void describeTo(Description description) {
-                description.appendText("is '" + text + "'");
+                description.appendText("is '%s'".formatted(text));
             }
 
             @Override

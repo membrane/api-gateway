@@ -92,6 +92,8 @@ public class BeanRegistryImplementation implements BeanRegistry {
 
     /**
      * May be called from multiple threads.
+     *
+     * TODO remove action?
      */
     public void handle(WatchAction action, BeanDefinition bd) {
         changeEvents.add(new BeanDefinitionChanged(bd));

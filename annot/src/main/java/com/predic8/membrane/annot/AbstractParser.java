@@ -115,6 +115,7 @@ public abstract class AbstractParser extends AbstractSingleBeanDefinitionParser 
 		builder.addPropertyValue(prop, attrs);
 	}
 
+    // TODO @Tobias can that be deleted?
 	protected void parseElementToProperty(Element ele, ParserContext parserContext, BeanDefinitionBuilder builder, String property) {
 		BeanDefinitionParserDelegate delegate = parserContext.getDelegate();
 
@@ -174,6 +175,7 @@ public abstract class AbstractParser extends AbstractSingleBeanDefinitionParser 
 		return i;
 	}
 
+    // TODO needed?
 	protected boolean isMembraneNamespace(String namespace) {
 		return MEMBRANE_PROXIES_NAMESPACE.equals(namespace);
 	}
