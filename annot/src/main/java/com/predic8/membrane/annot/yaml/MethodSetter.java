@@ -32,8 +32,8 @@ import static java.util.Locale.ROOT;
 
 public class MethodSetter {
 
-    private Method setter;
-    private Class<?> beanClass;
+    private final Method setter;
+    private final Class<?> beanClass;
 
     public MethodSetter(Method setter, Class<?> beanClass) {
         this.setter = setter;
@@ -103,10 +103,6 @@ public class MethodSetter {
 
     public Method getSetter() {
         return setter;
-    }
-
-    public void setSetter(Method setter) {
-        this.setter = setter;
     }
 
     public Class<?> getBeanClass() {
