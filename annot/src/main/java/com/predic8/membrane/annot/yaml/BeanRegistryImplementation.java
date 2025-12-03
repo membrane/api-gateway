@@ -40,7 +40,7 @@ public class BeanRegistryImplementation implements BeanRegistry {
      */
     private final ConcurrentHashMap<String, Object> uuidMap = new ConcurrentHashMap<>();
 
-    private final ArrayBlockingQueue<ChangeEvent> changeEvents = new ArrayBlockingQueue<>(1000);
+    private final BlockingQueue<ChangeEvent> changeEvents = new LinkedBlockingDeque<>();
 
     /**
      * TODO Rename give meaningful name
@@ -58,19 +58,19 @@ public class BeanRegistryImplementation implements BeanRegistry {
     }
 
     public void registerBeanDefinitions(List<BeanDefinition> bds) {
-        start();
         bds.forEach(bd -> handle(ADDED, bd));
-        fireConfigurationLoaded();
+        fireConfigurationLoaded(); // Only put event in queue
+        start();
     }
 
     public void start() {
-        // TODO Do we really need a thread if we start from CLI?
+        // For CLI thread is not needed. Migrate thread into KubernetesWatcher
 
         if (!started.compareAndSet(false, true))
             return;
 
-        thread = Thread.ofVirtual().name("bean-activator").start(() -> {
-            while (!Thread.interrupted()) {
+ //       thread = Thread.ofVirtual().name("bean-activator").start(() -> {
+            while (!changeEvents.isEmpty()) {
                 try {
                     ChangeEvent changeEvent = changeEvents.take();
                     if (changeEvent instanceof StaticConfigurationLoaded) {
@@ -85,7 +85,7 @@ public class BeanRegistryImplementation implements BeanRegistry {
                     break;
                 }
             }
-        });
+   //     });
     }
 
     public void stop() {

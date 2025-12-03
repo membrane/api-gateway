@@ -29,6 +29,12 @@ public class BeanDefinition {
     private final String kind;
     private Object bean;
 
+    /**
+     * Only called from K8S.
+     * TODO Maybe change constructur to static create4Kubernetes
+     * @param action
+     * @param node
+     */
     public BeanDefinition(WatchAction action, JsonNode node) {
         this.action = action;
         this.node = node;

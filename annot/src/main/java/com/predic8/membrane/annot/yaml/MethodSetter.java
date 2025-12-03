@@ -76,18 +76,6 @@ public class MethodSetter {
         return setter.getParameterTypes()[0];
     }
 
-    public boolean isStructured() {
-        return com.predic8.membrane.annot.yaml.McYamlIntrospector.isStructured(setter);
-    }
-
-    public boolean isReferenceAttribute() {
-        return com.predic8.membrane.annot.yaml.McYamlIntrospector.isReferenceAttribute(setter);
-    }
-
-    public boolean hasOtherAttributes() {
-        return com.predic8.membrane.annot.yaml.McYamlIntrospector.hasOtherAttributes(setter);
-    }
-
     public <T> void setSetter(T instance, ParsingContext ctx, JsonNode node, String key) throws InvocationTargetException, IllegalAccessException, WrongEnumConstantException {
         setter.invoke(instance, resolveSetterValue(ctx, node.get(key), key));
     }
@@ -101,12 +89,12 @@ public class MethodSetter {
         if (wanted.equals(Integer.TYPE)) return parseInt(node.asText());
         if (wanted.equals(Long.TYPE)) return parseLong(node.asText());
         if (wanted.equals(Boolean.TYPE)) return parseBoolean(node.asText());
-        if (wanted.equals(Map.class) && hasOtherAttributes()) return Map.of(key, node.asText());
-        if (isStructured()) {
+        if (wanted.equals(Map.class) && McYamlIntrospector.hasOtherAttributes(setter)) return Map.of(key, node.asText());
+        if (McYamlIntrospector.isStructured(setter)) {
             if (beanClass != null) return createAndPopulateNode(ctx.updateContext(key), beanClass, node);
             return createAndPopulateNode(ctx.updateContext(key), wanted, node);
         }
-        if (isReferenceAttribute()) return ctx.registry().resolveReference(node.asText());
+        if (McYamlIntrospector.isReferenceAttribute(setter)) return ctx.registry().resolveReference(node.asText());
         throw new RuntimeException("Not implemented setter type " + wanted);
     }
 

@@ -60,17 +60,17 @@ public class GenericYamlParser {
     public GenericYamlParser(Grammar grammar, String yaml) throws IOException {
         JsonLocationMap jsonLocationMap = new JsonLocationMap();
         List<JsonNode> rootNodes = jsonLocationMap.parseWithLocations(yaml);
-        for (int i = 0; i < rootNodes.size(); i++) {
-            if (rootNodes.get(i) == null) {
+
+        var idx = 0;
+        for (JsonNode jsonNode : rootNodes) {
+            if (jsonNode == null) {
                 log.debug(GenericYamlParser.EMPTY_DOCUMENT_WARNING);
-                rootNodes.remove(i); // TODO Removing inside for loop. => for (JsonNode n : parsed) { if (n == null) continue;
-                i--;
                 continue;
             }
 
             // Validate YAML against JSON schema
             try {
-                validate(grammar, rootNodes.get(i));
+                validate(grammar, jsonNode);
             } catch (YamlSchemaValidationException e) {
                 JsonLocation location = jsonLocationMap.getLocationMap().get(
                         e.getErrors().getFirst().getInstanceNode());
@@ -81,11 +81,11 @@ public class GenericYamlParser {
             }
 
             beanDefs.add(new BeanDefinition(
-                    getBeanType(rootNodes.get(i)),
-                    "bean-" + i,
+                    getBeanType(jsonNode),
+                    "bean-" + idx++,
                     "default",
                     randomUUID().toString(),
-                    rootNodes.get(i)));
+                    jsonNode));
         }
     }
 
@@ -130,7 +130,7 @@ public class GenericYamlParser {
         return jsonNode.fieldNames().next();
     }
 
-    private static void validate(Grammar grammar, JsonNode input) throws IOException, YamlSchemaValidationException {
+    private static void validate(Grammar grammar, JsonNode input) throws YamlSchemaValidationException {
         Schema schema = SchemaRegistry.withDefaultDialect(DRAFT_2020_12, builder -> {}).getSchema(SchemaLocation.of(grammar.getSchemaLocation()));
         schema.initializeValidators();
         List<Error> errors = schema.validate(input);
@@ -150,14 +150,14 @@ public class GenericYamlParser {
         Class<?> clazz = grammar.getElement(kind);
         if (clazz == null)
             throw new ParsingException("Did not find java class for kind '%s'.".formatted(kind), node);
-        return GenericYamlParser.createAndPopulateNode(new ParsingContext(kind, registry, grammar), clazz, node.get(kind));
+        return createAndPopulateNode(new ParsingContext(kind, registry, grammar), clazz, node.get(kind));
     }
 
     /**
      * Creates and populates an instance of {@code clazz} from the given YAML/JSON node.
      * - Arrays: only valid for {@code @MCElement(noEnvelope=true)}; items are parsed and passed to the single {@code @MCChildElement} list setter.
      * - Objects: each field is mapped to a setter resolved by {@link MethodSetter#getMethodSetter(ParsingContext, Class, String)};
-     *   values are produced by {@link #resolveSetterValue(MethodSetter, ParsingContext, JsonNode, String)}. A top-level {@code "$ref"} injects a previously defined bean.
+     *   values are produced by {@link MethodSetter#getMethodSetter(ParsingContext, Class, String)}. A top-level {@code "$ref"} injects a previously defined bean.
      * All failures are wrapped in a {@link ParsingException} with location information.
      */
     public static <T> T createAndPopulateNode(ParsingContext ctx, Class<T> clazz, JsonNode node) throws ParsingException {
