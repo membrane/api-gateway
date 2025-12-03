@@ -13,6 +13,8 @@
    limitations under the License. */
 package com.predic8.membrane.annot.yaml;
 
+import com.predic8.membrane.annot.*;
+
 import java.util.List;
 
 public interface BeanRegistry {
@@ -22,5 +24,7 @@ public interface BeanRegistry {
     List<Object> getBeans();
 
     void registerBeanDefinitions(List<BeanDefinition> beanDefinitions);
+
+    Grammar getGrammar();
 
 }

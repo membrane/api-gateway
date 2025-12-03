@@ -82,13 +82,16 @@ public class MethodSetter {
 
     private Object resolveSetterValue(ParsingContext ctx, JsonNode node, String key) throws WrongEnumConstantException, ParsingException {
         Class<?> wanted = getParameterType();
-        if (wanted.equals(List.class) || wanted.equals(Collection.class)) return parseListIncludingStartEvent(ctx, node);
+        if (Collection.class.isAssignableFrom(wanted))
+            return parseListIncludingStartEvent(ctx, node);
 
         if (wanted.isEnum()) return parseEnum(wanted, node);
         if (wanted.equals(String.class)) return node.asText();
-        if (wanted.equals(Integer.TYPE)) return parseInt(node.asText());
-        if (wanted.equals(Long.TYPE)) return parseLong(node.asText());
-        if (wanted.equals(Boolean.TYPE)) return parseBoolean(node.asText());
+
+        if (wanted == Integer.TYPE || wanted == Integer.class) return parseInt(node.asText());
+        if (wanted == Long.TYPE || wanted == Long.class) return parseLong(node.asText());
+        if (wanted == Boolean.TYPE || wanted == Boolean.class) return parseBoolean(node.asText());
+
         if (wanted.equals(Map.class) && McYamlIntrospector.hasOtherAttributes(setter)) return Map.of(key, node.asText());
         if (McYamlIntrospector.isStructured(setter)) {
             if (beanClass != null) return createAndPopulateNode(ctx.updateContext(key), beanClass, node);

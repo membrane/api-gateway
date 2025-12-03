@@ -21,7 +21,8 @@ record BeanDefinitionChanged(BeanDefinition bd) implements ChangeEvent {
 }
 
 /**
- * TODO What does this exactly mean? Is the complete configuration loaded?
+ * Signals that all static configuration (e.g., from YAML files) has been
+ * passed to the registry and initial activation can proceed.
  */
 record StaticConfigurationLoaded() implements ChangeEvent {
 }

@@ -23,6 +23,7 @@ import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.*;
 
+import static com.predic8.membrane.annot.yaml.BeanDefinition.create4Kubernetes;
 import static com.predic8.membrane.annot.yaml.WatchAction.*;
 
 public class BeanRegistryImplementation implements BeanRegistry {
@@ -105,7 +106,7 @@ public class BeanRegistryImplementation implements BeanRegistry {
      * May be called from multiple threads.
      */
     public void handle(WatchAction action, JsonNode node) {
-        changeEvents.add(new BeanDefinitionChanged(new BeanDefinition(action, node)));
+        changeEvents.add(new BeanDefinitionChanged(create4Kubernetes(action, node)));
     }
 
     /**
@@ -164,7 +165,7 @@ public class BeanRegistryImplementation implements BeanRegistry {
                     bds.remove(bd.getUid());
                 }
                 uidsToRemove.add(bd.getUid());
-            } catch (Throwable e) {
+            } catch (Exception e) {
                 log.error("Could not handle {} {}/{}", bd.getAction(), bd.getNamespace(), bd.getName(), e);
             }
         }
@@ -205,5 +206,10 @@ public class BeanRegistryImplementation implements BeanRegistry {
     @Override
     public List<Object> getBeans() {
         return bds.values().stream().map(BeanDefinition::getBean).filter(Objects::nonNull).toList();
+    }
+
+    @Override
+    public Grammar getGrammar() {
+        return grammar;
     }
 }

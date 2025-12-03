@@ -19,7 +19,7 @@ import java.util.*;
 
 public class BeanDefinition {
 
-    public static String PROTOTYPE = "prototype";
+    public static final String PROTOTYPE = "prototype";
 
     private final String name;
     private final String namespace;
@@ -31,9 +31,8 @@ public class BeanDefinition {
 
     /**
      * Only called from K8S.
-     * TODO Maybe change constructur to static create4Kubernetes
      */
-    public BeanDefinition(WatchAction action, JsonNode node) {
+    private BeanDefinition(WatchAction action, JsonNode node) {
         this.action = action;
         this.node = node;
         JsonNode metadata = node.get("metadata"); // TODO What if metadata is null?
@@ -46,6 +45,10 @@ public class BeanDefinition {
             throw new IllegalArgumentException("name is null");
         namespace = metadata.get("namespace").asText();
         uid = metadata.get("uid").asText();
+    }
+
+    public static BeanDefinition create4Kubernetes(WatchAction action, JsonNode node) {
+        return new BeanDefinition(action, node);
     }
 
     public BeanDefinition(String kind, String name, String namespace, String uid, JsonNode node) {
