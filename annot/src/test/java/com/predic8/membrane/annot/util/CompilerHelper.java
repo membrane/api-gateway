@@ -28,6 +28,8 @@ import java.util.stream.*;
 
 import static java.util.List.*;
 import static java.util.stream.StreamSupport.*;
+import static javax.tools.Diagnostic.Kind.ERROR;
+import static javax.tools.Diagnostic.Kind.WARNING;
 import static javax.tools.StandardLocation.*;
 import static org.hamcrest.MatcherAssert.*;
 import static org.junit.jupiter.api.Assertions.*;
@@ -94,18 +96,10 @@ public class CompilerHelper {
                 .invoke(instance);
     }
 
-    private static Class<?> getParserClass(CompilerResult cr, String yamlConfig) throws ClassNotFoundException {
-        return getCompositeClassLoader(cr, yamlConfig).loadClass(YAML_PARSER_CLASS_NAME);
-    }
-
     private static @NotNull CompositeClassLoader getCompositeClassLoader(CompilerResult cr, String yamlConfig) {
         InMemoryClassLoader loaderA = (InMemoryClassLoader) cr.classLoader();
         loaderA.defineOverlay(new OverlayInMemoryFile("/demo.yaml", yamlConfig));
         return new CompositeClassLoader(CompilerHelper.class.getClassLoader(), loaderA);
-    }
-
-    private static @NotNull Object getYAMLParser(CompositeClassLoader cl) throws InstantiationException, IllegalAccessException, InvocationTargetException, NoSuchMethodException, ClassNotFoundException {
-        return getParser(cl.loadClass(YAML_PARSER_CLASS_NAME));
     }
 
     private static @NotNull Object getParser(Class<?> c) throws InstantiationException, IllegalAccessException, InvocationTargetException, NoSuchMethodException {
@@ -218,11 +212,11 @@ public class CompilerHelper {
     }
 
     public static org.hamcrest.Matcher<Diagnostic<?>> warning(String text) {
-        return compilerResult(Diagnostic.Kind.WARNING, text);
+        return compilerResult(WARNING, text);
     }
 
     public static org.hamcrest.Matcher<Diagnostic<?>> error(String text) {
-        return compilerResult(Diagnostic.Kind.ERROR, text);
+        return compilerResult(ERROR, text);
     }
 
     public static org.hamcrest.Matcher<Diagnostic<?>> compilerResult(Diagnostic.Kind kind, String text) {
