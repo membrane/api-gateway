@@ -57,7 +57,7 @@ public class IfTutorialTest extends AbstractAdvancedTutorialTest {
                 .when()
                     .get("http://localhost:2000/foo")
                 .then()
-                    .log().all()
+                    .log().ifValidationFails()
                     .statusCode(404)
                     .body(equalTo("User error!"));
                 // @formatter:on
