@@ -21,7 +21,6 @@ import org.slf4j.*;
 import java.io.*;
 import java.util.*;
 import java.util.concurrent.*;
-import java.util.concurrent.atomic.*;
 
 import static com.predic8.membrane.annot.yaml.BeanDefinition.*;
 import static com.predic8.membrane.annot.yaml.WatchAction.*;

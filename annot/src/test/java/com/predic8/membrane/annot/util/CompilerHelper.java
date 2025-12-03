@@ -13,31 +13,35 @@
    limitations under the License. */
 package com.predic8.membrane.annot.util;
 
-import com.predic8.membrane.annot.yaml.BeanRegistry;
-import org.hamcrest.BaseMatcher;
-import org.hamcrest.Description;
-import org.hamcrest.collection.IsIterableContainingInAnyOrder;
+import com.predic8.membrane.annot.yaml.*;
+import org.hamcrest.*;
+import org.hamcrest.collection.*;
+import org.jetbrains.annotations.*;
 
 import javax.tools.*;
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.util.ArrayList;
-import java.util.List;
+import java.io.*;
+import java.lang.reflect.*;
+import java.util.*;
+import java.util.regex.*;
 import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.util.stream.Stream;
+import java.util.stream.*;
 
-import static java.util.List.of;
-import static java.util.stream.StreamSupport.stream;
-import static javax.tools.StandardLocation.CLASS_OUTPUT;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static java.util.List.*;
+import static java.util.stream.StreamSupport.*;
+import static javax.tools.StandardLocation.*;
+import static org.hamcrest.MatcherAssert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class CompilerHelper {
+
+    public static final String YAML_PARSER_CLASS_NAME = "com.predic8.membrane.annot.util.YamlParser";
+    public static final Pattern PACKAGE_PATTERN = Pattern.compile("package\\s+([^;]+)\\s*;");
+    public static final Pattern CLASS_PATTERN = Pattern.compile("class\\s+([^\\s]+)\\s");
+
     /**
      * Compile the given source files.
      *
-     * @param sourceFiles the source files to compile
+     * @param sourceFiles       the source files to compile
      * @param logCompilerOutput if true, print the compiler output to stderr
      */
     public static CompilerResult compile(Iterable<? extends FileObject> sourceFiles, boolean logCompilerOutput) {
@@ -71,18 +75,32 @@ public class CompilerHelper {
     public static BeanRegistry parseYAML(CompilerResult cr, String yamlConfig) {
         ClassLoader originalClassloader = Thread.currentThread().getContextClassLoader();
         try {
-            InMemoryClassLoader loaderA = (InMemoryClassLoader) cr.classLoader();
-            loaderA.defineOverlay(new OverlayInMemoryFile("/demo.yaml", yamlConfig));
-            CompositeClassLoader cl = new CompositeClassLoader(loaderA, CompilerHelper.class.getClassLoader());
-            Thread.currentThread().setContextClassLoader(cl);
-            Class<?> c = cl.loadClass("com.predic8.membrane.annot.util.YamlParser");
-            Object parser = c.getConstructor(String.class).newInstance("/demo.yaml");
-            return (BeanRegistry) c.getMethod("getBeanRegistry").invoke(parser);
+            Thread.currentThread().setContextClassLoader(getCompositeClassLoader(cr, yamlConfig));
+            return getGetBeanRegistry(getCompositeClassLoader(cr, yamlConfig).loadClass(YAML_PARSER_CLASS_NAME).getMethod("getBeanRegistry").invoke(getYAMLParser(getCompositeClassLoader(cr, yamlConfig))));
         } catch (Exception e) {
             throw new RuntimeException(e);
         } finally {
             Thread.currentThread().setContextClassLoader(originalClassloader);
         }
+    }
+
+    private static @NotNull CompositeClassLoader getCompositeClassLoader(CompilerResult cr, String yamlConfig) {
+        InMemoryClassLoader loaderA = (InMemoryClassLoader) cr.classLoader();
+        loaderA.defineOverlay(new OverlayInMemoryFile("/demo.yaml", yamlConfig));
+        CompositeClassLoader cl = new CompositeClassLoader(CompilerHelper.class.getClassLoader(), loaderA);
+        return cl;
+    }
+
+    private static @NotNull Object getYAMLParser(CompositeClassLoader cl) throws InstantiationException, IllegalAccessException, InvocationTargetException, NoSuchMethodException, ClassNotFoundException {
+        return getParser(cl.loadClass(YAML_PARSER_CLASS_NAME));
+    }
+
+    private static @NotNull Object getParser(Class<?> c) throws InstantiationException, IllegalAccessException, InvocationTargetException, NoSuchMethodException {
+        return c.getConstructor(String.class).newInstance("demo.yaml");
+    }
+
+    private static BeanRegistry getGetBeanRegistry(Object c) throws IllegalAccessException, InvocationTargetException, NoSuchMethodException {
+        return (BeanRegistry) c;
     }
 
     /**
@@ -120,16 +138,21 @@ public class CompilerHelper {
 
     private static void copyResourcesToOutput(List<? extends OverlayInMemoryFile> sources, JavaFileManager fileManager) {
         sources.forEach(i -> {
-                    PrintWriter pw = null;
-                    try {
-                        pw = new PrintWriter(fileManager.getFileForOutput(CLASS_OUTPUT, "", i.getName(), null)
-                                .openWriter());
-                    } catch (IOException e) {
-                        throw new RuntimeException(e);
-                    }
-                    pw.write(i.getCharContent(true).toString());
-                    pw.close();
-                });
+            PrintWriter pw = getPrintWriter(fileManager, i);
+            pw.write(i.getCharContent(true).toString());
+            pw.close();
+        });
+    }
+
+    private static @NotNull PrintWriter getPrintWriter(JavaFileManager fileManager, OverlayInMemoryFile i) {
+        PrintWriter pw;
+        try {
+            pw = new PrintWriter(fileManager.getFileForOutput(CLASS_OUTPUT, "", i.getName(), null)
+                    .openWriter());
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        return pw;
     }
 
     public static List<FileObject> splitSources(String sources) {
@@ -139,39 +162,39 @@ public class CompilerHelper {
                 .toList();
     }
 
-    private static FileObject toFile( String content) {
+    private static FileObject toFile(String content) {
         if (!content.trim().startsWith("resource"))
             return toInMemoryJavaFile(content);
 
+        // TODO extract method
         String[] parts;
-        while(true) {
+        while (true) {
             parts = content.split("\n", 2);
             if (parts.length != 2)
-                throw new RuntimeException("Invalid resource file: " + content + ". The resource is expected to have the format 'resource <path>\n<content>'.");
+                throw new RuntimeException("Invalid resource file: %s. The resource is expected to have the format 'resource <path>\n<content>'.".formatted(content));
             if (!parts[0].isEmpty())
                 break;
             content = parts[1];
-        };
+        }
+        ;
 
-        String name = parts[0].substring(9).trim();
+        String name = parts[0].substring(9).trim(); // TODO Refactor and give meaningful name
         return new OverlayInMemoryFile(name, parts[1]);
     }
 
     private static JavaFileObject toInMemoryJavaFile(String source) {
-        String pkg = extractPackage(source);
-        String cls = extractName(source);
-        return new OverlayInMemoryJavaFile(pkg + "." + cls, source);
+        return new OverlayInMemoryJavaFile(extractPackage(source) + "." + extractName(source), source);
     }
 
     private static String extractName(String source) {
-        Matcher m = Pattern.compile("class\\s+([^\\s]+)\\s").matcher(source);
+        Matcher m = CLASS_PATTERN.matcher(source);
         if (!m.find())
             throw new RuntimeException("No class name found in source:\n" + source);
         return m.group(1);
     }
 
     private static String extractPackage(String source) {
-        Matcher m = Pattern.compile("package\\s+([^;]+)\\s*;").matcher(source);
+        Matcher m = PACKAGE_PATTERN.matcher(source);
 
         if (!m.find())
             throw new RuntimeException("No package found in source:\n" + source);
@@ -200,7 +223,7 @@ public class CompilerHelper {
     }
 
     public static org.hamcrest.Matcher<Diagnostic<?>> compilerResult(Diagnostic.Kind kind, String text) {
-        return new BaseMatcher<Diagnostic<?>>() {
+        return new BaseMatcher<>() {
 
             @Override
             public void describeTo(Description description) {
@@ -214,8 +237,6 @@ public class CompilerHelper {
                 }
                 return false;
             }
-
         };
     }
-
 }

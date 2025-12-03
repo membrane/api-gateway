@@ -32,7 +32,10 @@ import static org.springframework.util.StreamUtils.copyToByteArray;
  * define resources which should also appear in the file system.
  */
 class InMemoryClassLoader extends ClassLoader {
+
     private static final Logger log = LoggerFactory.getLogger(InMemoryClassLoader.class);
+
+    public static final String DEMO_YAML_PARSING_PACKAGE = "com.predic8.membrane.demo";
 
     private final InMemoryData data;
     private InMemoryData overlay =  new InMemoryData();
@@ -45,6 +48,10 @@ class InMemoryClassLoader extends ClassLoader {
     @Override
     public Class<?> loadClass(String name) throws ClassNotFoundException {
         synchronized (getClassLoadingLock(name)) {
+
+            if (!name.startsWith(DEMO_YAML_PARSING_PACKAGE)) {
+                return getParent().loadClass(name);
+            }
             // 1. Check if the class is already loaded
             Class<?> c = findLoadedClass(name);
             if (c != null) {
