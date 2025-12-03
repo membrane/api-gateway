@@ -113,10 +113,6 @@ public class MethodSetter {
         return beanClass;
     }
 
-    public void setBeanClass(Class<?> beanClass) {
-        this.beanClass = beanClass;
-    }
-
     private static <E extends Enum<E>> E parseEnum(Class<?> enumClass, JsonNode node) throws WrongEnumConstantException {
         String value = node.asText().toUpperCase(ROOT);
         @SuppressWarnings("unchecked")

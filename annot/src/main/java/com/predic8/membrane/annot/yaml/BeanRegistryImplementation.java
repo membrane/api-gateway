@@ -23,7 +23,7 @@ import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.*;
 
-import static com.predic8.membrane.annot.yaml.BeanDefinition.create4Kubernetes;
+import static com.predic8.membrane.annot.yaml.BeanDefinition.*;
 import static com.predic8.membrane.annot.yaml.WatchAction.*;
 
 public class BeanRegistryImplementation implements BeanRegistry {
@@ -33,21 +33,12 @@ public class BeanRegistryImplementation implements BeanRegistry {
     private final BeanCacheObserver observer;
     private final Grammar grammar;
 
-    // To prevent multiple threads from starting the thread concurrently.
-    private final AtomicBoolean started = new AtomicBoolean();
-
     /**
      * TODO Rename give meaningful name
      */
     private final ConcurrentHashMap<String, Object> uuidMap = new ConcurrentHashMap<>();
 
     private final BlockingQueue<ChangeEvent> changeEvents = new LinkedBlockingDeque<>();
-
-    /**
-     * TODO Remove
-     */
-    private Thread thread;
-
 
     // uid -> bean definition
     private final Map<String, BeanDefinition> bds = new ConcurrentHashMap<>();
@@ -60,38 +51,29 @@ public class BeanRegistryImplementation implements BeanRegistry {
 
     public void registerBeanDefinitions(List<BeanDefinition> bds) {
         bds.forEach(bd -> handle(ADDED, bd));
-        fireConfigurationLoaded(); // Only put event in queue
+        fireConfigurationLoaded(); // Only put event in the queue
         start();
     }
 
+    /**
+     * Blocks until all events have been processed. For Kubernets use that block in a separate thread e.g. in KubernetsWatcher.
+     */
     public void start() {
-        // For CLI thread is not needed. Migrate thread into KubernetesWatcher
-
-        if (!started.compareAndSet(false, true))
-            return;
-
- //       thread = Thread.ofVirtual().name("bean-activator").start(() -> {
-            while (!changeEvents.isEmpty()) {
-                try {
-                    ChangeEvent changeEvent = changeEvents.take();
-                    if (changeEvent instanceof StaticConfigurationLoaded) {
-                        activationRun();
-                        observer.handleAsynchronousInitializationResult(uidsToActivate.isEmpty());
-                        continue;
-                    }
-                    if (changeEvent instanceof BeanDefinitionChanged(BeanDefinition bd)) {
-                        handle(bd);
-                    }
-                } catch (InterruptedException e) {
-                    break;
+        while (!changeEvents.isEmpty()) {
+            try {
+                ChangeEvent changeEvent = changeEvents.take();
+                if (changeEvent instanceof StaticConfigurationLoaded) {
+                    activationRun();
+                    observer.handleAsynchronousInitializationResult(uidsToActivate.isEmpty());
+                    continue;
                 }
+                if (changeEvent instanceof BeanDefinitionChanged(BeanDefinition bd)) {
+                    handle(bd);
+                }
+            } catch (InterruptedException e) {
+                break;
             }
-   //     });
-    }
-
-    public void stop() {
-        if (thread != null)
-            thread.interrupt();
+        }
     }
 
     private Object define(BeanDefinition bd) throws IOException, ParsingException {
@@ -124,7 +106,6 @@ public class BeanRegistryImplementation implements BeanRegistry {
         changeEvents.add(new StaticConfigurationLoaded());
     }
 
-
     void handle(BeanDefinition bd) {
         // Keep the latest BeanDefinition for all actions so activationRun
         // can see both metadata and the action (including DELETED).
@@ -137,12 +118,6 @@ public class BeanRegistryImplementation implements BeanRegistry {
             activationRun();
     }
 
-    // @TODO
-    // applies all pending activations. But:
-    // - It reads from shared maps modified in other threads without locking.
-    // - It does not check whether MODIFIED events require redefinition.
-    // Mixing ADD/MODIFY/DELETE logic is hard to follow.
-    // Should we Separate event processing from bean activation?
     private void activationRun() {
         Set<String> uidsToRemove = new HashSet<>();
         for (String uid1 : uidsToActivate) {
@@ -173,10 +148,6 @@ public class BeanRegistryImplementation implements BeanRegistry {
             uidsToActivate.remove(uid);
     }
 
-    /**
-     * TODO: Issues:
-     * - Defining bean lazily inside resolve - Hard to reason about lifecycle.
-     */
     @Override
     public Object resolveReference(String url) {
         BeanDefinition bd = getFirstByName(url).orElseThrow(() -> new RuntimeException("Reference %s not found".formatted(url)));

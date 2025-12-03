@@ -146,8 +146,7 @@ public class RouterCLI {
     }
 
     private static Router initRouterByYAML(MembraneCommandLine commandLine, String option) throws Exception {
-        String location = commandLine.getCommand().getOptionValue(option);
-        return initRouterByYAML(location);
+        return initRouterByYAML(commandLine.getCommand().getOptionValue(option));
     }
 
     private static Router initRouterByYAML(String location) throws Exception {

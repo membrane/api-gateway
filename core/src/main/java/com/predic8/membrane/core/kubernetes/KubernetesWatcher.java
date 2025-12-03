@@ -78,7 +78,6 @@ public class KubernetesWatcher {
             } catch (IOException e) {
             }
         });
-        beanRegistry.stop();
     }
 
     private KubernetesClient getClient() {
@@ -129,17 +128,4 @@ public class KubernetesWatcher {
         }
     }
 
-    @SuppressWarnings("rawtypes")
-    private String getUid(JSONObject json) {
-        JSONObject metadata = new JSONObject((Map) json.get("metadata"));
-        return (String) metadata.get("uid");
-    }
-
-    private String lowerFirstChar(String str) {
-        if (str == null || str.isEmpty())
-            return "";
-        if (str.length() == 1)
-            return str.toLowerCase();
-        return str.substring(0, 1).toLowerCase() + str.substring(1);
-    }
 }

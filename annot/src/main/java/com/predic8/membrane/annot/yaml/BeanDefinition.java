@@ -35,7 +35,7 @@ public class BeanDefinition {
     private BeanDefinition(WatchAction action, JsonNode node) {
         this.action = action;
         this.node = node;
-        JsonNode metadata = node.get("metadata"); // TODO What if metadata is null?
+        JsonNode metadata = node.get("metadata");
         var kind2 = node.get("kind").asText();
         if (kind2 == null)
             kind2 = "api";
