@@ -234,10 +234,10 @@ public class RouterCLI {
             }
             return getRulesFileFromRelativeSpec(rm, filename, "");
         }
-        return getDefaultConfig(rm);
+        return getDefaultConfig();
     }
 
-    private static String getDefaultConfig(ResolverMap rm) {
+    private static String getDefaultConfig() {
         String callerDir = System.getenv("MEMBRANE_CALLER_DIR");
         if (callerDir == null || callerDir.isEmpty()) {
             callerDir = getUserDir();

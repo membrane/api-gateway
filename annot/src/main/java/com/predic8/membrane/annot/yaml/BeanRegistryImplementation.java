@@ -43,7 +43,7 @@ public class BeanRegistryImplementation implements BeanRegistry {
     private final BlockingQueue<ChangeEvent> changeEvents = new LinkedBlockingDeque<>();
 
     /**
-     * TODO Rename give meaningful name
+     * TODO Remove
      */
     private Thread thread;
 

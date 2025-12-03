@@ -13,31 +13,24 @@
    limitations under the License. */
 package com.predic8.membrane.annot.yaml;
 
-import com.fasterxml.jackson.core.JsonLocation;
-import com.fasterxml.jackson.core.JsonParseException;
-import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.core.*;
+import com.fasterxml.jackson.databind.*;
+import com.networknt.schema.*;
 import com.networknt.schema.Error;
-import com.networknt.schema.Schema;
-import com.networknt.schema.SchemaLocation;
-import com.networknt.schema.SchemaRegistry;
-import com.predic8.membrane.annot.Grammar;
-import org.jetbrains.annotations.NotNull;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.predic8.membrane.annot.*;
+import org.jetbrains.annotations.*;
+import org.slf4j.*;
 
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.lang.reflect.*;
 import java.util.*;
 
-import static com.networknt.schema.SpecificationVersion.DRAFT_2020_12;
+import static com.networknt.schema.SpecificationVersion.*;
 import static com.predic8.membrane.annot.yaml.McYamlIntrospector.*;
-import static com.predic8.membrane.annot.yaml.MethodSetter.getMethodSetter;
+import static com.predic8.membrane.annot.yaml.MethodSetter.*;
 import static com.predic8.membrane.annot.yaml.NodeValidationUtils.*;
-import static java.lang.Integer.parseInt;
-import static java.lang.Long.parseLong;
-import static java.nio.charset.StandardCharsets.UTF_8;
-import static java.util.UUID.randomUUID;
+import static java.nio.charset.StandardCharsets.*;
+import static java.util.UUID.*;
 
 public class GenericYamlParser {
     private static final Logger log = LoggerFactory.getLogger(GenericYamlParser.class);
