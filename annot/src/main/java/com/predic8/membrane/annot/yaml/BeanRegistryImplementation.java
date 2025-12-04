@@ -13,10 +13,10 @@
    limitations under the License. */
 package com.predic8.membrane.annot.yaml;
 
-import com.fasterxml.jackson.databind.*;
 import com.predic8.membrane.annot.*;
 import org.jetbrains.annotations.*;
 import org.slf4j.*;
+import tools.jackson.databind.JsonNode;
 
 import java.io.*;
 import java.util.*;

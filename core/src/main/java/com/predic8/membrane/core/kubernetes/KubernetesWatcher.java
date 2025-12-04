@@ -13,7 +13,6 @@
    limitations under the License. */
 package com.predic8.membrane.core.kubernetes;
 
-import com.fasterxml.jackson.databind.*;
 import com.predic8.membrane.annot.yaml.*;
 import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.config.spring.*;
@@ -21,6 +20,7 @@ import com.predic8.membrane.core.interceptor.kubernetes.*;
 import com.predic8.membrane.core.kubernetes.client.*;
 import com.predic8.membrane.core.proxies.*;
 import org.slf4j.*;
+import tools.jackson.databind.JsonNode;
 
 import javax.annotation.*;
 import java.io.*;

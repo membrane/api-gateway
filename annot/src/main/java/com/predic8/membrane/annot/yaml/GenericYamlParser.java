@@ -13,13 +13,14 @@
    limitations under the License. */
 package com.predic8.membrane.annot.yaml;
 
-import com.fasterxml.jackson.core.*;
-import com.fasterxml.jackson.databind.*;
 import com.networknt.schema.*;
 import com.networknt.schema.Error;
 import com.predic8.membrane.annot.*;
 import org.jetbrains.annotations.*;
 import org.slf4j.*;
+import tools.jackson.core.JacksonException;
+import tools.jackson.core.TokenStreamLocation;
+import tools.jackson.databind.JsonNode;
 
 import java.io.*;
 import java.lang.reflect.*;
@@ -65,7 +66,7 @@ public class GenericYamlParser {
             try {
                 validate(grammar, jsonNode);
             } catch (YamlSchemaValidationException e) {
-                JsonLocation location = jsonLocationMap.getLocationMap().get(
+                TokenStreamLocation location = jsonLocationMap.getLocationMap().get(
                         e.getErrors().getFirst().getInstanceNode());
                 throw new IOException("Invalid YAML: %s at line %d, column %d.".formatted(
                         e.getErrors().getFirst().getMessage(),
@@ -99,7 +100,7 @@ public class GenericYamlParser {
     public static List<BeanDefinition> parseMembraneResources(@NotNull InputStream resource, Grammar grammar) throws IOException {
         try (resource) {
             return parseToBeanDefinitions(resource, grammar);
-        } catch (JsonParseException e) {
+        } catch (JacksonException e) {
             throw new IOException(
                     "Invalid YAML: multiple configurations must be separated by '---' "
                             + "(at line " + e.getLocation().getLineNr()
@@ -120,13 +121,17 @@ public class GenericYamlParser {
 
     private static String getBeanType(JsonNode jsonNode) {
         ensureSingleKey(jsonNode);
-        return jsonNode.fieldNames().next();
+        return jsonNode.propertyNames().iterator().next();
     }
 
     private static void validate(Grammar grammar, JsonNode input) throws YamlSchemaValidationException {
         Schema schema = SchemaRegistry.withDefaultDialect(DRAFT_2020_12, builder -> {}).getSchema(SchemaLocation.of(grammar.getSchemaLocation()));
         schema.initializeValidators();
-        List<Error> errors = schema.validate(input);
+        List<Error> errors = schema.validate(
+                input.toString(),
+                InputFormat.JSON,
+                executionContext -> {}
+        );
         if (!errors.isEmpty()) {
             throw new YamlSchemaValidationException("Invalid YAML.", errors);
         }
@@ -167,8 +172,7 @@ public class GenericYamlParser {
             if (isNoEnvelope(clazz))
                 throw new RuntimeException("Class " + clazz.getName() + " is annotated with @MCElement(noEnvelope=true), but the YAML/JSON structure does not contain a list.");
 
-            for (Iterator<String> it = node.fieldNames(); it.hasNext(); ) {
-                String key = it.next();
+            for (String key : node.propertyNames()) {
                 try {
 
                     if ("$ref".equals(key)) {
@@ -176,7 +180,7 @@ public class GenericYamlParser {
                         continue;
                     }
 
-                    getMethodSetter(ctx, clazz, key).setSetter(configObj,ctx,node,key);
+                    getMethodSetter(ctx, clazz, key).setSetter(configObj, ctx, node, key);
                 } catch (Throwable cause) {
                     throw new ParsingException(cause, node.get(key));
                 }
@@ -189,7 +193,7 @@ public class GenericYamlParser {
 
     private static <T> void handleTopLevelRefs(Class<T> clazz, JsonNode node, BeanRegistry registry, T obj) throws InvocationTargetException, IllegalAccessException {
         ensureTextual(node, "Expected a string after the '$ref' key.");
-        Object o = registry.resolveReference(node.asText());
+        Object o = registry.resolveReference(node.asString());
         getChildSetter(clazz, o.getClass()).invoke(obj, o);
     }
 
@@ -212,13 +216,13 @@ public class GenericYamlParser {
      */
     private static Object parseMapToObj(ParsingContext context, JsonNode node) throws ParsingException {
         ensureSingleKey(node);
-        String key = node.fieldNames().next();
+        String key = node.propertyNames().iterator().next();
         return parseMapToObj(context, node.get(key), key);
     }
 
     private static Object parseMapToObj(ParsingContext ctx, JsonNode node, String key) throws ParsingException {
         if ("$ref".equals(key))
-            return ctx.registry().resolveReference(node.asText());
+            return ctx.registry().resolveReference(node.asString());
         return createAndPopulateNode(ctx.updateContext(key), ctx.resolveClass(key), node);
     }
 }
