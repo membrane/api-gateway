@@ -105,25 +105,9 @@ public class AbstractInterceptor implements Interceptor {
 		init();
 	}
 
-	public <T extends Proxy> T getProxy(){
-		return (T)getRouter()
-				.getRuleManager()
-				.getRules()
-				.stream()
-				.filter(proxy -> proxy
-						.getFlow() != null)
-				.filter(proxy -> proxy
-						.getFlow()
-						.stream().anyMatch(this::hasSameReferenceAs))
-				.findAny()
-				.get();
-	}
-
-	private boolean hasSameReferenceAs(Interceptor i){
-		if(i instanceof AbstractFlowWithChildrenInterceptor){
-			return ((AbstractFlowWithChildrenInterceptor) i).getFlow().stream().anyMatch(this::hasSameReferenceAs);
-		}
-		return i == this;
+	@Override
+	public void init(Router router, Proxy ignored) {
+		init(router);
 	}
 
 	public Router getRouter() { //wird von ReadRulesConfigurationTest aufgerufen.

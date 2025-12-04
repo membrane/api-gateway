@@ -13,7 +13,11 @@
    limitations under the License. */
 package com.predic8.membrane.core.openapi.serviceproxy;
 
+import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.oas.models.info.Info;
 import org.junit.jupiter.api.*;
+
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -51,5 +55,36 @@ class APIProxyTest {
         p.setTest("header.ContentType == 'text/plain'");
         p.init();
         assertEquals("0.0.0.0:80 header.ContentType == 'text/plain'",p.getName());
+    }
+
+    @Test
+    void assignOpenAPIName_singleAPI() {
+        var p = new APIProxy();
+        p.apiRecords = Map.of("id1", new OpenAPIRecord(new OpenAPI().info(new Info().title("Test-API")), new OpenAPISpec()));
+        p.setName(p.assignOpenAPIName());
+        assertEquals("Test-API", p.getName());
+    }
+
+    @Test
+    void assignOpenAPIName_multipleAPIs() {
+        var p = new APIProxy();
+        p.apiRecords = Map.of(
+                "id1", new OpenAPIRecord(new OpenAPI().info(new Info().title("Test-API")), new OpenAPISpec()),
+                "id2", new OpenAPIRecord(new OpenAPI().info(new Info().title("Test-API")), new OpenAPISpec())
+        );
+        p.setName(p.assignOpenAPIName());
+        assertEquals("Test-API +1 more", p.getName());
+    }
+
+    @Test
+    void xApiId() {
+        var p = new APIProxy();
+        p.apiRecords = Map.of(
+                "id1", new OpenAPIRecord(new OpenAPI().info(new Info().title("Test-API")), new OpenAPISpec()),
+                "id2", new OpenAPIRecord(new OpenAPI().info(new Info().title("Test-API")), new OpenAPISpec())
+        );
+        p.apiRecords.values().iterator().next().getApi().getInfo().addExtension("x-api-id", "Foo");
+        p.setName(p.assignOpenAPIName());
+        assertEquals("Foo", p.getName());
     }
 }

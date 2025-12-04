@@ -9,8 +9,8 @@
 		<serviceProxy port="8443">
 			<ssl showSSLExceptions="true">
 				<!-- Please replace keystore for production! -->
-				<keystore location="../../../../conf/membrane.p12" password="secret" keyPassword="secret" />
-				<truststore location="../../../../conf/membrane.p12" password="secret" />
+				<keystore location="membrane.p12" password="secret" keyPassword="secret" />
+				<truststore location="membrane.p12" password="secret" />
 			</ssl>
 			<target host="localhost" port="2000"/><!-- Route here to your target -->
 		</serviceProxy>

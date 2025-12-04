@@ -9,7 +9,7 @@ SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd -P)
 
 dir="$SCRIPT_DIR"
 while [ "$dir" != "/" ]; do
-  if [ -f "$dir/starter.jar" ] && [ -f "$dir/scripts/run-membrane.sh" ]; then
+  if [ -f "$dir/LICENSE.txt" ] && [ -f "$dir/scripts/run-membrane.sh" ]; then
     export MEMBRANE_HOME="$dir"
     export MEMBRANE_CALLER_DIR="$SCRIPT_DIR"
     exec sh "$dir/scripts/run-membrane.sh" "$@"

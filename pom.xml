@@ -64,7 +64,6 @@
 	<modules>
 		<module>annot</module>
 		<module>core</module>
-		<module>starter</module>
 		<module>distribution</module>
 		<module>war</module>
 		<module>test</module>
@@ -77,7 +76,7 @@
 		<gpg.keyname>5B8A65F6</gpg.keyname>
 		<javac.source>21</javac.source>
 		<javac.target>21</javac.target>
-		<jackson.version>2.20.0</jackson.version>
+		<jackson.version>2.20.1</jackson.version>
 		<spring.version>6.2.12</spring.version>
 		<slf4j.version>2.0.17</slf4j.version>
 		<log4j.version>2.25.2</log4j.version>
@@ -367,21 +366,6 @@
 				<configuration>
 					<source>${javac.source}</source>
 					<target>${javac.target}</target>
-				</configuration>
-			</plugin>
-
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-jar-plugin</artifactId>
-				<configuration>
-					<archive>
-						<manifest>
-							<mainClass>com.predic8.membrane.core.Starter</mainClass>
-						</manifest>
-						<manifestEntries>
-							<Bundle-License>https://www.apache.org/licenses/LICENSE-2.0.html</Bundle-License>
-						</manifestEntries>
-					</archive>
 				</configuration>
 			</plugin>
 

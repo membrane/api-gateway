@@ -104,6 +104,9 @@ public class ScriptingUtils {
 
         params.put("pathParam", new PathParametersMap(exc));
 
+        // Allow to invoke functions in groovy with ${fn.functionname()}
+        params.put("fn", new GroovyBuiltInFunctions(exc, flow));
+
         return params;
     }
 

@@ -1,0 +1,8 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v6.3.11.json
+api:
+  name: Router
+  port: 2000
+  path:
+    uri: /market/{page}
+  target:
+    url: https://api.predic8.de/shop/v2/${pathParam.page}

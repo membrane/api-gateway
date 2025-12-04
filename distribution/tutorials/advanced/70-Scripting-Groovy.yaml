@@ -1,13 +1,13 @@
-# yaml-language-server: $schema=../../core/target/classes/com/predic8/membrane/core/config/json/membrane.schema.json
+# yaml-language-server: $schema=https://www.membrane-api.io/v6.3.11.json
 #
 # Membrane Tutorial: Groovy Scripting
 #
-#
-# 2.) Try the endpoints:
-# curl localhost:2000/groovy
-# curl localhost:2000/random
-# curl localhost:2000/response
-spec:
+# Try:
+#   curl http://localhost:2000/groovy
+#   curl http://localhost:2000/random
+#   curl http://localhost:2000/response
+
+api:
   port: 2000
   path:
     uri: /groovy
@@ -19,8 +19,7 @@ spec:
         statusCode: 200
 
 ---
-
-spec:
+api:
   port: 2000
   path:
     uri: /random
@@ -32,7 +31,7 @@ spec:
           exchange.setDestinations(sites)
 
 ---
-spec:
+api:
   port: 2000
   path:
     uri: /response

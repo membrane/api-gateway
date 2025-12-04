@@ -1,0 +1,40 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v6.3.11.json
+api:
+  port: 4443
+  ssl:
+    keystore:
+      location: membrane.p12
+      password: secret
+      keyPassword: secret
+    truststore:
+      location: membrane.p12
+      password: secret
+  flow:
+    - log: {}
+    - webSocket:
+        url: http://localhost:61614/
+  target:
+    host: localhost
+    port: 4444
+
+---
+
+api:
+  port: 4444
+  flow:
+    - webServer:
+        docBase: .
+        index: index.html
+
+---
+
+api:
+  name: Console
+  port: 9000
+  flow:
+    - basicAuthentication:
+        users:
+          - user:
+              username: admin
+              password: membrane
+    - adminConsole: {}

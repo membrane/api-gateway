@@ -1,0 +1,38 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v6.3.11.json
+#
+# Membrane Tutorial: if
+#
+# Try:
+#
+#     curl http://localhost:2000
+#     curl http://localhost:2000/foo -H "X-Id: 7"
+#     curl http://localhost:2000/get -H "X-Id: 7"
+
+api:
+  port: 2000
+  flow:
+    - request:
+        - if:
+            # default language: spel
+            test: header['X-Id'] == null
+            flow:
+              - static:
+                  src: Please set X-Id header
+              - return:
+                  statusCode: 400
+        - if:
+            test: path.startsWith("/foo")
+            language: groovy
+            flow:
+              - log:
+                  message: "Foo"
+    - response:
+        - if:
+            test: statusCode matches '4\d\d'
+            flow:
+              - static:
+                  src: User error!
+  target:
+    url: https://httpbin.org
+
+

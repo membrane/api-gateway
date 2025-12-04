@@ -27,7 +27,7 @@ public class BuiltInFunctionResolver implements MethodResolver {
 
     public BuiltInFunctionResolver() {
         super();
-        functions = new ReflectiveMethodHandler(BuiltInFunctions.class);
+        functions = new ReflectiveMethodHandler(SpELBuiltInFunctions.class);
     }
 
     /**
@@ -41,7 +41,7 @@ public class BuiltInFunctionResolver implements MethodResolver {
                 try {
                     return invokeFunction(m, ctx, arguments);
                 } catch (InvocationTargetException | IllegalAccessException | NoSuchMethodException e) {
-                    throw new BuildInFunctionException("Cannot invoke built-in function " + name, name, e);
+                    throw new BuiltInFunctionException("Cannot invoke built-in function " + name, name, e);
                 }
             };
         } catch (NoSuchMethodException e) {

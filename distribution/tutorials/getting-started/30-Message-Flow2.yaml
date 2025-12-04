@@ -1,4 +1,4 @@
-# yaml-language-server: $schema=../../core/target/classes/com/predic8/membrane/core/config/json/membrane.schema.json
+# yaml-language-server: $schema=https://www.membrane-api.io/v6.3.11.json
 #
 # Membrane Tutorial: Message Flow 2
 #
@@ -21,32 +21,29 @@
 #     Open in your browser: http://localhost:9000
 #
 #     Click on the API 'Message Flow Logging' and view the diagram
-
-metadata:
-  name: Message Flow Logging
-spec:
+api:
   port: 2000
   flow:
     - request: # executed during request flow from top to bottom
         - log:
-            message: 1
+            message: Step 1
         - log:
-            message: 2 Path ${path}
+            message: Step 2 Path ${path}
         - log:
-            message: 3
+            message: Step 3
     - response: # executed during response flow from bottom to top
         - log:
-            message: 6
+            message: Step 6
         - log:
-            message: 5 Status ${statusCode}
+            message: Step 5 Status ${statusCode}
         - log:
-            message: 4
+            message: Step 4
   target:
     url: https://api.predic8.de
 
 ---
 # Admin Console
-spec:
+api:
   port: 9000
   flow:
     - adminConsole:

@@ -15,6 +15,8 @@
 
 # 7.0.0
 
+- Register JSON Schema for YAML at: https://www.schemastore.org/
+
 ## (Breaking) Interface Changes
 
 - Remove WADLInterceptor
@@ -33,6 +35,9 @@
 - Groovy:
   - ScriptingUtils: Variable bindings: headers references message.headers with the headers class instead of a map<String,Object>.
     - Difference to SpEL
+- Remove Starter:
+  -  External scripts using the `Starter.jar` to start membrane will no longer work.
+  -  Migration: use the `RouterCLI` to start membrane (e.g. see `distribution/scripts/start_router.sh`). 
 
 ## Minor
  - Rewrite JSONAssert Tests with RESTAssured
@@ -58,6 +63,13 @@
 - YAML: JsonSchemaGenerator enable description fields for editor
 
 # 6.4.0
+
+Breaking Changes:
+- JSONPath:
+  List-to-String conversion now renders full list instead of first element only. Behavior is now different from XPath that returns the first element of a nodelist but it is more consistent with most of JSONPath implementations.
+
+- Migraton Nots:
+  - Check JSONPath expressions when returning lists.
 
 - SessionManagerTest: refactor, too slow for Unittest. Move to integration tests. 
 - Refactor: Cookie maybe centralize Cookie Handling in a Cookie class

@@ -26,7 +26,7 @@ find_membrane_directory() {
     current="$1"
 
     while [ "$current" != "/" ]; do
-        if [ -f "$current/starter.jar" ]; then
+        if [ -f "$current/LICENSE.txt" ]; then
             echo "$current"
             return 0
         fi

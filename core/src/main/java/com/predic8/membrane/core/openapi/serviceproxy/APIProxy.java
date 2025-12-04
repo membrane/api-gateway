@@ -39,6 +39,7 @@ import java.util.*;
 
 import static com.predic8.membrane.core.lang.ExchangeExpression.Language.SPEL;
 import static com.predic8.membrane.core.lang.ExchangeExpression.expression;
+import static com.predic8.membrane.core.util.StringUtil.maskNonPrintableCharacters;
 
 /**
  * @description The api proxy extends the serviceProxy with API related functions like OpenAPI support and path parameters.
@@ -91,6 +92,14 @@ public class APIProxy extends ServiceProxy implements Polyglot, XMLSupport {
         }
         key = new APIProxyKey(key, exchangeExpression, !specs.isEmpty());
         initOpenAPI();
+
+        for(Interceptor interceptor: interceptors) {
+            if(interceptor instanceof OpenAPIInterceptor oai) {
+                oai.setApiProxy(this);
+            } else if(interceptor instanceof OpenAPIPublisherInterceptor opi) {
+                opi.setApiProxy(this);
+            }
+        }
     }
 
     private void initOpenAPI() {
@@ -112,6 +121,29 @@ public class APIProxy extends ServiceProxy implements Polyglot, XMLSupport {
         if (getFirstInterceptorOfType(OpenAPIPublisherInterceptor.class).isEmpty()) {
             interceptors.addFirst(new OpenAPIPublisherInterceptor(apiRecords));
         }
+
+        if(name.isEmpty() && !apiRecords.isEmpty())
+            name = assignOpenAPIName();
+    }
+
+    String assignOpenAPIName() {
+        var info = apiRecords.values().iterator().next().getApi().getInfo();
+
+        if(info.getExtensions() != null && info.getExtensions().containsKey("x-api-id"))
+            return info.getExtensions().get("x-api-id").toString();
+
+        String title = info.getTitle();
+        String apiName = "Unnamed OpenAPI";
+
+        if (title != null && !title.isBlank()) {
+            apiName = maskNonPrintableCharacters(title);
+            if (apiName.length() > 32)
+                apiName = apiName.substring(0, 32);
+        }
+        if (apiRecords.size() > 1) {
+            return "%s +%s more".formatted( apiName, apiRecords.size() - 1);
+        }
+        return apiName;
     }
 
     /**
