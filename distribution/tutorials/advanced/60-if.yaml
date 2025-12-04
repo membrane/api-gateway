@@ -8,7 +8,7 @@
 #     curl http://localhost:2000/foo -H "X-Id: 7"
 #     curl http://localhost:2000/get -H "X-Id: 7"
 
-spec:
+api:
   port: 2000
   flow:
     - request:

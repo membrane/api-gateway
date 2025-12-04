@@ -35,11 +35,7 @@ Solve even complex custom API requirements with simple configurations.
 
 **YAML Configuration (beta):**
 ```yaml
-apiVersion: membrane-api.io/v1beta2
-kind: api
-metadata:
-  name: log
-spec:
+api:
   port: 2000
   interceptors:
     - log:

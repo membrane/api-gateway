@@ -32,7 +32,7 @@ class JSONYAMLSchemaValidatorTest {
 
     @BeforeEach
     void setup() {
-        validator = new JSONYAMLSchemaValidator(new ClasspathSchemaResolver(), "/validation/json-schema/simple-schema.json", (a,b) -> {});
+        validator = new JSONYAMLSchemaValidator(new ClasspathSchemaResolver(), "classpath:/validation/json-schema/simple-schema.json", (a,b) -> {});
         validator.init();
     }
 

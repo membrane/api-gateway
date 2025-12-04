@@ -34,6 +34,8 @@ public class Loadbalancing5MultipleExampleTest extends DistributionExtractingTes
 
 		replaceInFile2("proxies.xml","8080", "3023");
 		replaceInFile2("proxies.xml","8081", "3024");
+		replaceInFile2("apis.yaml","8080", "3023");
+		replaceInFile2("apis.yaml","8081", "3024");
 
 		try(Process2 ignored = startServiceProxyScript(); HttpAssertions ha = new HttpAssertions()) {
 			checkWhatNodesAreResponding(new int[]{1,2});

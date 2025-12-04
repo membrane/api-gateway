@@ -1,4 +1,4 @@
-# yaml-language-server: $schema=../https://www.membrane-api.io/v6.3.11.json
+# yaml-language-server: $schema=https://www.membrane-api.io/v6.3.11.json
 #
 # Membrane Tutorial: Path Parameters
 #
@@ -12,7 +12,7 @@
 #
 #     Observe the console output.
 
-spec:
+api:
   port: 2000
   path:
     uri: /customer/{id}/account/{accountNumber}

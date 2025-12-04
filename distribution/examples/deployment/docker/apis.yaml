@@ -1,0 +1,13 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v6.3.11.json
+api:
+  port: 2000
+  specs:
+    - openapi:
+        location: "https://api.predic8.de/shop/v2/api-docs"
+
+---
+
+api:
+  port: 2000
+  target:
+    url: "https://api.predic8.de"

@@ -18,7 +18,7 @@
 
 # API forwarding requests starting with /ip
 # Try: curl http://localhost:2000/ip
-spec:
+api:
   port: 2000
   path:
     uri: /ip
@@ -29,7 +29,7 @@ spec:
 # API deployment from OpenAPI
 # Open in your browser: http://localhost:2000/api-docs
 # Try: curl http://localhost:2000/shop/v2/products/12
-spec:
+api:
   port: 2000
   specs:
     - openapi:
@@ -39,7 +39,7 @@ spec:
 ---
 # Admin Web Console
 # Open in your browser: http://localhost:9000 and login with admin admin
-spec:
+api:
   port: 9000
   flow:
     # Protect the Admin Console using authentication (Basic, OAuth2, ACL, or none).
