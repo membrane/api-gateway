@@ -34,7 +34,7 @@ public class ApiInfo {
         }
         log.info("Started {} API{}:", manager.getRules().size(), (manager.getRules().size() > 1 ? "s" : ""));
         manager.getRules().forEach(proxy ->
-                log.info("  {} {}{}", proxyKind(proxy), proxy.getName(), additionalProxyInfo(proxy))
+                log.info(" \u001B[92m{} {}\u001B[0m{}", proxyKind(proxy), proxy.getName(), additionalProxyInfo(proxy))
         );
     }
 
@@ -42,7 +42,7 @@ public class ApiInfo {
         if (proxy instanceof APIProxy a) {
             Map<String,OpenAPIRecord> recs = a.getApiRecords();
             if (!recs.isEmpty()) {
-                return " using OpenAPI specifications:\n" + formatLocationInfo(recs);
+                return "\n" + formatLocationInfo(recs);
             }
         } else if (proxy instanceof SOAPProxy s) {
             return " %s\n    using WSDL @ %s".formatted(getPathString(s),s.getWsdl());
@@ -68,17 +68,17 @@ public class ApiInfo {
 
     private static String proxyKind(Proxy proxy) {
         if (proxy instanceof APIProxy) {
-            return "API";
+            return "";
         }
         if (proxy instanceof ServiceProxy) {
-            return "Service";
+            return "Service:";
         }
         if (proxy instanceof SOAPProxy) {
-            return "SOAP";
+            return "SOAP:";
         }
         if (proxy instanceof InternalProxy) {
-            return "Internal";
+            return "Internal:";
         }
-        return "Proxy";
+        return "Proxy:";
     }
 }

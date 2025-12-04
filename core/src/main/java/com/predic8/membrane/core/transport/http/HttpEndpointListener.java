@@ -92,7 +92,7 @@ public class HttpEndpointListener extends Thread {
 
             final String s = p.toShortString();
             setName("Connection Acceptor " + s);
-            log.info("listening at {}", s);
+            log.info("listening at \u001B[91m{}\u001B[0m", s);
         } catch (BindException e) {
             throw new PortOccupiedException(p);
         }

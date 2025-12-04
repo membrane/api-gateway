@@ -355,7 +355,7 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
 
         ApiInfo.logInfosAboutStartedProxies(ruleManager);
         if (!asynchronousInitialization)
-            log.info("{} {} up and running!", PRODUCT_NAME, VERSION);
+            log.info("\u001B[94m{} {} up and running!\u001B[0m", PRODUCT_NAME, VERSION);
     }
 
     private void startJmx() {
@@ -685,7 +685,7 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
         if (!success && !retryInit)
             System.exit(1);
         ApiInfo.logInfosAboutStartedProxies(ruleManager);
-        log.info("{} {} up and running!", PRODUCT_NAME, VERSION);
+        log.info("\u001B[94m{} {} up and running!\u001B[0m", PRODUCT_NAME, VERSION);
         setAsynchronousInitialization(false);
     }
 
