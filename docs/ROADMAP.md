@@ -15,7 +15,11 @@
 
 # 7.0.0
 
+- Use colors in the startup log
 - Register JSON Schema for YAML at: https://www.schemastore.org/
+- Question: Why is there a bom in the distribution?
+  - -rw-r--r--    1 thomas  staff  363603  4 Dez 19:30 bom.json
+  
 
 ## (Breaking) Interface Changes
 
