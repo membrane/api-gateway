@@ -10,7 +10,7 @@
 #
 # Tip: Make sure the request header Content-Type is set to text/xml.
 
-spec:
+api:
   port: 2000
   flow:
     - request:

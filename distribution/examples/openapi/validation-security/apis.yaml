@@ -1,0 +1,32 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v6.3.11.json
+api:
+  port: 2000
+  specs:
+    - openapi:
+        location: security-api-v1.yml
+        validateRequests: yes
+        validateResponses: no
+        validationDetails: yes
+  flow:
+    - apiKey:
+        stores:
+          - keys:
+              - secret:
+                  value: demo-key-foobar
+        extractors:
+          - headerExtractor: {}
+          - queryParamExtractor:
+              name: X-Api-Key
+  target:
+    host: localhost
+    port: 2001
+
+---
+
+api:
+  port: 2000
+  flow:
+    - template:
+        src: Success!
+    - return:
+        statusCode: 200

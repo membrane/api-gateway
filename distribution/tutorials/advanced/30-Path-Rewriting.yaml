@@ -8,7 +8,7 @@
 #
 # Observe the log output.
 
-spec:
+api:
   port: 2000
   flow:
     - request:

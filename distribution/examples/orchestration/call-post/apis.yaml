@@ -1,0 +1,27 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v6.3.11.json
+api:
+  port: 2000
+  flow:
+    - request:
+        - call:
+            url: https://api.predic8.de/shop/v2/products/14
+        # Extracts name and price from the JSON response and add 1 to the price
+        - setProperty:
+            name: name
+            value: ${$.name}
+            language: jsonpath
+        - setProperty:
+            name: price
+            value: ${jsonPath('$.price')+1}
+        #  Creates a new JSON body with the name and modified price
+        - template:
+            contentType: application/json
+            src: |
+              {
+                "name": "${property.name} Big Pack",
+                "price": ${property.price}
+              }
+        - call:
+            method: POST
+            url: https://api.predic8.de/shop/v2/products
+    - return: {}

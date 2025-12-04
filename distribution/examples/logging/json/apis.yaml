@@ -1,0 +1,10 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v6.3.11.json
+api:
+  name: predic8.com
+  port: 2000
+  flow:
+    - log:
+        level: WARN
+  target:
+    host: membrane-soa.org
+    port: 80

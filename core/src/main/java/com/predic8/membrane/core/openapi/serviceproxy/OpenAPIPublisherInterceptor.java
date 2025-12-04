@@ -72,6 +72,8 @@ public class OpenAPIPublisherInterceptor extends AbstractInterceptor {
     private Template swaggerUiHtmlTemplate;
     private Template apiOverviewHtmlTemplate;
 
+    private APIProxy apiProxy;
+
     /**
      * Needed for instantiation from Spring
      */
@@ -84,9 +86,10 @@ public class OpenAPIPublisherInterceptor extends AbstractInterceptor {
     public void init() {
         super.init();
         if (apis == null) {
-            if (router.getParentProxy(this) instanceof APIProxy ap) {
-                apis = ap.apiRecords;
+            if(apiProxy == null) {
+                throw new ConfigurationException("<openapiPublisher> can only be used within an <api>");
             }
+            apis = apiProxy.apiRecords;
         }
 
         swaggerUiHtmlTemplate = createHTMLPageTemplate("/openapi/swagger-ui.html");
@@ -287,5 +290,9 @@ public class OpenAPIPublisherInterceptor extends AbstractInterceptor {
     @Override
     public EnumSet<Flow> getAppliedFlow() {
         return REQUEST_FLOW;
+    }
+
+    public void setApiProxy(APIProxy apiProxy) {
+        this.apiProxy = apiProxy;
     }
 }

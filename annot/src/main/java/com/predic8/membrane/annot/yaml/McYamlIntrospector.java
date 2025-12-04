@@ -60,6 +60,15 @@ public final class McYamlIntrospector {
                 || annotation.attributeName().equals(key);
     }
 
+    /**
+     * Returns the single {@code @MCChildElement} setter for a class annotated with
+     * {@code @MCElement(noEnvelope=true)}.
+     * <ul>
+     *   <li>Class must be {@code noEnvelope=true}.</li>
+     *   <li>No {@code @MCAttribute} setters are allowed.</li>
+     *   <li>Exactly one child setter must exist and it must accept a {@link java.util.Collection}.</li>
+     * </ul>
+     */
     public static <T> Method getSingleChildSetter(Class<T> clazz) {
         MCElement annotation = clazz.getAnnotation(MCElement.class);
         if (annotation == null || !annotation.noEnvelope()) {
@@ -89,7 +98,7 @@ public final class McYamlIntrospector {
         return setter;
     }
 
-    public static <T> Method getSetter(Class<T> clazz, String key) {
+    public static <T> Method findSetterForKey(Class<T> clazz, String key) {
         return Arrays.stream(clazz.getMethods())
                 .filter(McYamlIntrospector::isSetter)
                 .filter(method -> matchesJsonKey(method, key))
