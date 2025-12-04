@@ -194,20 +194,6 @@ public class HTTPClientInterceptor extends AbstractInterceptor {
         this.failOverOn5XX = failOverOn5XX;
     }
 
-    public boolean isAdjustHostHeader() {
-        return adjustHostHeader;
-    }
-
-    /**
-     * @description Whether the HTTP "Host" header should be set before the response will be forwarded to its destination.
-     * @explanation Set this to <i>false</i>, if the incoming HTTP "Host" header should not be modified.
-     * @default true
-     */
-    @MCAttribute
-    public void setAdjustHostHeader(boolean adjustHostHeader) {
-        this.adjustHostHeader = adjustHostHeader;
-    }
-
     public HttpClientConfiguration getHttpClientConfig() {
         return httpClientConfig;
     }
