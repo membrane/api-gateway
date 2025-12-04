@@ -1,34 +1,33 @@
 # yaml-language-server: $schema=https://www.membrane-api.io/v6.3.11.json
 #
-# Sample API Configuration
-# ========================
+# How to start this configuration:
+#   cd membrane-api-gateway...
+#   ./membrane.sh (or membrane.cmd on Windows)
 #
-# Try this configuration by starting Membrane with:
-#   ./membrane.sh or membrane.cmd
-#
-# Next steps:
-#  - Complete getting-started in the tutorials folder
-#  - Run the samples in examples/*
-#  - Download the free API Gateway book https://www.membrane-api.io/api-gateway-ebook.html
-#  - Look at https://www.membrane-api.io/docs/
+# Helpful resources:
+#   - Tutorials: tutorials/getting-started
+#   - Examples: examples/*
+#   - Free API Gateway Book: https://www.membrane-api.io/api-gateway-ebook.html
+#   - Documentation: https://www.membrane-api.io/docs/
 #
 # Troubleshooting:
-#   You need direct Internet access to run this configuration. If you are behind a corporate proxy,
-#   run the offline sample at examples/offline
+#   This configuration requires direct Internet access.
+#   If you are behind a corporate proxy, use examples/offline.
 
-# API forwarding requests starting with /ip
-# Try: curl http://localhost:2000/ip
+---
+# Forward requests starting with /fact
+# Try: curl http://localhost:2000/fact
 api:
   port: 2000
   path:
-    uri: /ip
+    uri: /fact
   target:
-    url: https://httpbin.org
+    url: https://catfact.ninja/fact
 
 ---
-# API deployment from OpenAPI
-# Open in your browser: http://localhost:2000/api-docs
-# Try: curl http://localhost:2000/shop/v2/products/12
+# Deploy an API from OpenAPI
+# API docs: http://localhost:2000/api-docs
+# Try: curl http://localhost:2000/shop/v2/products
 api:
   port: 2000
   specs:
@@ -38,7 +37,7 @@ api:
 
 ---
 # Admin Web Console
-# Open in your browser: http://localhost:9000 and login with admin admin
+# http://localhost:9000  (login: admin / admin)
 api:
   port: 9000
   flow:
