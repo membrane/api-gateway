@@ -1,0 +1,34 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v6.3.11.json
+api:
+  name: Token Validator
+  port: 2000
+  flow:
+    # Validates tokens against authorization server - blocks request on invalid tokens
+    - tokenValidator:
+        endpoint: http://localhost:7007/oauth2/userinfo
+  # Forwards the request if the token is valid
+  target:
+    host: localhost
+    port: 3000
+
+---
+# Simulates the backend that should be protected
+api:
+  port: 3000
+  flow:
+    - response:
+        - template:
+            contentType: application/json
+            pretty: yes
+            src: |
+              {
+                "success": true
+              }
+    - return: {}
+
+---
+
+api:
+  port: 9001
+  flow:
+    - adminConsole: {}

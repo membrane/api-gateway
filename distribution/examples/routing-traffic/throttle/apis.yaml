@@ -1,0 +1,15 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v6.3.11.json
+api:
+  port: 2000
+  flow:
+    - throttle:
+        delay: 1000
+  target:
+    url: https://predic8.de
+
+---
+
+api:
+  port: 3000
+  target:
+    url: https://predic8.de

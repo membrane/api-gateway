@@ -31,15 +31,10 @@ public class ToBackendExampleTest extends DistributionExtractingTestcase {
 		return "security/ssl-tls/to-backend";
 	}
 
-	@BeforeEach
-	void setup() throws IOException {
-		replaceInFile2("proxies.xml", "2000", "3023");
-	}
-
 	@Test
 	public void test() throws Exception {
 		try(Process2 ignore = startServiceProxyScript(); HttpAssertions ha = new HttpAssertions()) {
-			assertContains("shop", ha.getAndAssert200("http://localhost:3023/"));
+			assertContains("shop", ha.getAndAssert200("http://localhost:2000/"));
 		}
 	}
 }

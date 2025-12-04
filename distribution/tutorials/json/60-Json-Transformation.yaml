@@ -15,7 +15,7 @@
 # Troubleshooting:
 #   Always send the header: Content-Type: application/json
 
-spec:
+api:
   port: 2000
   flow:
     - request:

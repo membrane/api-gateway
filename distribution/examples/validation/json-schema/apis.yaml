@@ -1,0 +1,30 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v6.3.11.json
+api:
+  port: 2000
+  flow:
+    - request:
+        - validator:
+            jsonSchema: schema2000.json
+  target:
+    host: localhost
+    port: 2002
+
+---
+
+api:
+  port: 2001
+  flow:
+    - request:
+        - validator:
+            jsonSchema: schema2001.json
+  target:
+    host: localhost
+    port: 2002
+
+---
+
+api:
+  port: 2002
+  flow:
+    - groovy:
+        src: Response.ok("<response>good request</response>").build()

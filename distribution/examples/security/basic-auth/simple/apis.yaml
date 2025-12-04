@@ -1,0 +1,25 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v6.3.11.json
+api:
+  port: 2000
+  flow:
+    - basicAuthentication:
+        users:
+          - user:
+              username: alice
+              password: membrane
+          - user:
+              username: bob
+              password: membrane2025
+  target:
+    url: https://api.predic8.de
+
+---
+
+api:
+  port: 3000
+  flow:
+    - basicAuthentication:
+        fileUserDataProvider:
+          htpasswdPath: ./.htpasswd
+  target:
+    url: https://api.predic8.de

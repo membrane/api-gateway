@@ -1,0 +1,50 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v6.3.11.json
+api:
+  port: 8080
+  name: Balancer
+  flow:
+    - balancer: {}
+
+---
+# Mock nodes for testing. Remove them in production.
+
+api:
+  port: 4000
+  name: Node 1
+  flow:
+    - counter:
+        name: Node 1
+
+---
+
+api:
+  port: 4001
+  name: Node 2
+  flow:
+    - counter:
+        name: Node 2
+
+---
+
+api:
+  port: 4002
+  name: Node 3
+  flow:
+    - counter:
+        name: Node 3
+
+---
+# Admin console (Optional)
+api:
+  port: 9000
+  name: Administration
+  flow:
+    - adminConsole: {}
+
+---
+# API to add and remove nodes (Optional)
+api:
+  port: 9010
+  name: Balancer Management
+  flow:
+    - clusterNotification: {}
