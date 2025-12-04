@@ -13,20 +13,29 @@
 
 package com.predic8.membrane.core.interceptor.oauth2.authorizationservice;
 
-import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.*;
-import com.predic8.membrane.core.config.security.*;
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.interceptor.oauth2.*;
-import com.predic8.membrane.core.transport.http.*;
-import com.predic8.membrane.core.transport.http.client.*;
-import com.predic8.membrane.core.transport.ssl.*;
-import com.predic8.membrane.core.util.*;
+import com.predic8.membrane.annot.MCChildElement;
+import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.core.Router;
+import com.predic8.membrane.core.config.security.SSLParser;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.Header;
+import com.predic8.membrane.core.http.MimeType;
+import com.predic8.membrane.core.http.Request;
+import com.predic8.membrane.core.http.Response;
+import com.predic8.membrane.core.interceptor.Interceptor;
+import com.predic8.membrane.core.interceptor.oauth2.BufferedJsonGenerator;
+import com.predic8.membrane.core.interceptor.oauth2.Client;
+import com.predic8.membrane.core.transport.http.HttpClient;
+import com.predic8.membrane.core.transport.http.client.HttpClientConfiguration;
+import com.predic8.membrane.core.transport.ssl.SSLContext;
+import com.predic8.membrane.core.transport.ssl.StaticSSLContext;
+import com.predic8.membrane.core.util.Util;
 
-import java.io.*;
-import java.util.*;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 
 import static com.predic8.membrane.core.exchange.Exchange.SSL_CONTEXT;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
@@ -90,7 +99,7 @@ public class DynamicRegistration {
         try (var bufferedJsonGenerator = new BufferedJsonGenerator()) {
             var jg = bufferedJsonGenerator.getJsonGenerator();
             jg.writeStartObject();
-            jg.writeArrayFieldStart("redirect_uris");
+            jg.writeArrayPropertyStart("redirect_uris");
             for (String callbackUri : callbackUris)
                 jg.writeString(callbackUri);
             jg.writeEndArray();

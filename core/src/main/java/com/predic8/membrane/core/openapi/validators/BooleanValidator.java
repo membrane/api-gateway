@@ -16,9 +16,10 @@
 
 package com.predic8.membrane.core.openapi.validators;
 
-import com.fasterxml.jackson.databind.node.*;
+import com.fasterxml.jackson.databind.node.TextNode;
+import tools.jackson.databind.node.BooleanNode;
 
-import static java.util.Locale.*;
+import static java.util.Locale.ROOT;
 
 public class BooleanValidator implements JsonSchemaValidator {
 

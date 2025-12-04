@@ -13,8 +13,6 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.session;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.Router;
@@ -23,6 +21,8 @@ import com.predic8.membrane.core.http.HeaderField;
 import com.predic8.membrane.core.util.MemcachedConnector;
 import net.rubyeye.xmemcached.MemcachedClient;
 import net.rubyeye.xmemcached.exception.MemcachedException;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
 
 import java.util.*;
 import java.util.concurrent.TimeoutException;
@@ -58,7 +58,7 @@ public class MemcachedSessionManager extends SessionManager {
     private Session parse(String json) {
         try {
             return objectMapper.readValue(json, Session.class);
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             throw new RuntimeException(e);
         }
     }
@@ -87,7 +87,7 @@ public class MemcachedSessionManager extends SessionManager {
     protected String stringify(Session session) {
         try {
             return objectMapper.writeValueAsString(session);
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             throw new RuntimeException(e);
         }
     }

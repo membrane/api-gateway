@@ -13,9 +13,6 @@
 
 package com.predic8.membrane.core.interceptor.jwt;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.MCElement;
@@ -23,6 +20,9 @@ import com.predic8.membrane.core.config.security.Blob;
 import com.predic8.membrane.core.interceptor.oauth2.authorizationservice.AuthorizationService;
 import com.predic8.membrane.core.resolver.ResolverMap;
 import com.predic8.membrane.core.util.TextUtil;
+import tools.jackson.core.JacksonException;
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.ObjectMapper;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -32,6 +32,8 @@ import java.util.Map;
 
 @MCElement(name="jwks")
 public class Jwks {
+
+    private static final ObjectMapper MAPPER = new ObjectMapper();
 
     List<Jwk> jwks = new ArrayList<>();
     String jwksUris;
@@ -58,15 +60,14 @@ public class Jwks {
     }
 
     public void init(ResolverMap resolverMap, String baseLocation) {
-        if(jwksUris == null || jwksUris.isEmpty())
+        if (jwksUris == null || jwksUris.isEmpty())
             return;
 
-        ObjectMapper mapper = new ObjectMapper();
         for (String uri : jwksUris.split(" ")) {
             try {
-                for (Object jwkRaw : parseJwksUriIntoList(resolverMap, baseLocation, mapper, uri)) {
+                for (Object jwkRaw : parseJwksUriIntoList(resolverMap, baseLocation, MAPPER, uri)) {
                     Jwk jwk = new Jwk();
-                    jwk.setContent(mapper.writeValueAsString(jwkRaw));
+                    jwk.setContent(MAPPER.writeValueAsString(jwkRaw));
                     this.jwks.add(jwk);
                 }
             } catch (Exception e) {
@@ -109,9 +110,9 @@ public class Jwks {
         public String getJwk(ResolverMap resolverMap, String baseLocation, ObjectMapper mapper) throws IOException {
             String maybeJwk = get(resolverMap, baseLocation);
 
-            Map<String,Object> mapped = mapper.readValue(maybeJwk, new TypeReference<>() {});
+            Map<String, Object> mapped = mapper.readValue(maybeJwk, new TypeReference<>() {});
 
-            if(mapped.containsKey("keys"))
+            if (mapped.containsKey("keys"))
                 return handleJwks(mapper, mapped);
 
             return maybeJwk;
@@ -123,7 +124,7 @@ public class Jwks {
                     .map(m -> {
                         try {
                             return mapper.writeValueAsString(m);
-                        } catch (JsonProcessingException e) {
+                        } catch (JacksonException e) {
                             throw new RuntimeException(e);
                         }
                     })

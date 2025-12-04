@@ -16,10 +16,11 @@
 
 package com.predic8.membrane.core.openapi.validators;
 
-import com.fasterxml.jackson.databind.node.*;
-import io.swagger.v3.oas.models.media.*;
+import io.swagger.v3.oas.models.media.Schema;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.node.*;
 
-import static java.lang.String.*;
+import static java.lang.String.format;
 
 public class StringRestrictionValidator {
 
@@ -74,13 +75,12 @@ public class StringRestrictionValidator {
     }
 
     private String getStringValue(Object value) {
-        String str = null;
-        if (value instanceof String) {
-            str = (String) value;
+        if (value instanceof String s) {
+            return s;
         }
-        if (value instanceof TextNode) {
-            str = ((TextNode) value).asText();
+        if (value instanceof JsonNode node && node.isString()) {
+            return node.asString();
         }
-        return str;
+        return null;
     }
 }

@@ -14,7 +14,9 @@
 
 package com.predic8.membrane.core.interceptor.administration;
 
-import com.fasterxml.jackson.core.*;
+
+import tools.jackson.core.JsonGenerator;
+
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.exchangestore.*;
 import com.predic8.membrane.core.http.*;
@@ -58,19 +60,35 @@ public class AdminRESTInterceptor extends RESTInterceptor {
 
 		return json(gen -> {
 			gen.writeStartObject();
-			gen.writeArrayFieldStart("clients");
+
+			gen.writeName("clients");
+			gen.writeStartArray();
 			for (ClientStatistics s : clients.subList(offset,
 					Math.min(offset + getMax(params, clients), clients.size()))) {
 				gen.writeStartObject();
-				gen.writeStringField("name", s.getClient());
-				gen.writeNumberField("count", s.getCount());
-				gen.writeNumberField("min", s.getMinDuration());
-				gen.writeNumberField("max", s.getMaxDuration());
-				gen.writeNumberField("avg", s.getAvgDuration());
+
+				gen.writeName("name");
+				gen.writeString(s.getClient());
+
+				gen.writeName("count");
+				gen.writeNumber(s.getCount());
+
+				gen.writeName("min");
+				gen.writeNumber(s.getMinDuration());
+
+				gen.writeName("max");
+				gen.writeNumber(s.getMaxDuration());
+
+				gen.writeName("avg");
+				gen.writeNumber(s.getAvgDuration());
+
 				gen.writeEndObject();
 			}
 			gen.writeEndArray();
-			gen.writeNumberField("total", clients.size());
+
+			gen.writeName("total");
+			gen.writeNumber(clients.size());
+
 			gen.writeEndObject();
 		});
 	}
@@ -100,35 +118,71 @@ public class AdminRESTInterceptor extends RESTInterceptor {
 
 		return json(gen -> {
 			gen.writeStartObject();
-			gen.writeArrayFieldStart("proxies");
+
+			gen.writeName("proxies");
+			gen.writeStartArray();
 			int i = offset;
 			if (params.getString("order", "asc").equals("desc"))
 				i = proxies.size() - i + 1;
 			for (AbstractServiceProxy p : paginated) {
 				gen.writeStartObject();
-				gen.writeNumberField("order", i += params.getString("order", "asc").equals("desc") ? -1 : 1);
-				gen.writeStringField("name", p.toString());
-				gen.writeBooleanField("active", p.isActive());
-				if (!p.isActive())
-					gen.writeStringField("error", p.getErrorState());
-				gen.writeNumberField("listenPort", p.getKey().getPort());
-				gen.writeStringField("virtualHost", p.getKey().getHost());
-				gen.writeStringField("method", p.getKey().getMethod());
-				gen.writeStringField("path", p.getKey().getPath());
-				gen.writeStringField("targetHost", p.getTargetHost());
-				gen.writeNumberField("targetPort", p.getTargetPort());
-				gen.writeNumberField("count", p.getStatisticCollector().getCount());
-				gen.writeObjectFieldStart("actions");
-				if (!isReadOnly()) {
-					gen.writeStringField("delete", "/admin/service-proxy/delete?name="+URLEncoder.encode(RuleUtil.getRuleIdentifier(p), UTF_8));
+
+				gen.writeName("order");
+				gen.writeNumber(i += params.getString("order", "asc").equals("desc") ? -1 : 1);
+
+				gen.writeName("name");
+				gen.writeString(p.toString());
+
+				gen.writeName("active");
+				gen.writeBoolean(p.isActive());
+
+				if (!p.isActive()) {
+					gen.writeName("error");
+					gen.writeString(p.getErrorState());
 				}
-				if (!p.isActive())
-					gen.writeStringField("start", "/admin/service-proxy/start?name="+URLEncoder.encode(RuleUtil.getRuleIdentifier(p), UTF_8));
-				gen.writeEndObject();
-				gen.writeEndObject();
+
+				gen.writeName("listenPort");
+				gen.writeNumber(p.getKey().getPort());
+
+				gen.writeName("virtualHost");
+				gen.writeString(p.getKey().getHost());
+
+				gen.writeName("method");
+				gen.writeString(p.getKey().getMethod());
+
+				gen.writeName("path");
+				gen.writeString(p.getKey().getPath());
+
+				gen.writeName("targetHost");
+				gen.writeString(p.getTargetHost());
+
+				gen.writeName("targetPort");
+				gen.writeNumber(p.getTargetPort());
+
+				gen.writeName("count");
+				gen.writeNumber(p.getStatisticCollector().getCount());
+
+				gen.writeName("actions");
+				gen.writeStartObject();
+				if (!isReadOnly()) {
+					gen.writeName("delete");
+					gen.writeString("/admin/service-proxy/delete?name=" +
+							URLEncoder.encode(RuleUtil.getRuleIdentifier(p), UTF_8));
+				}
+				if (!p.isActive()) {
+					gen.writeName("start");
+					gen.writeString("/admin/service-proxy/start?name=" +
+							URLEncoder.encode(RuleUtil.getRuleIdentifier(p), UTF_8));
+				}
+				gen.writeEndObject(); // actions
+
+				gen.writeEndObject(); // proxy
 			}
 			gen.writeEndArray();
-			gen.writeNumberField("total", proxies.size());
+
+			gen.writeName("total");
+			gen.writeNumber(proxies.size());
+
 			gen.writeEndObject();
 		});
 	}
@@ -204,14 +258,22 @@ public class AdminRESTInterceptor extends RESTInterceptor {
 
 		return json(gen -> {
 			gen.writeStartObject();
-			gen.writeArrayFieldStart("headers");
+
+			gen.writeName("headers");
+			gen.writeStartArray();
 			for (HeaderField hf : msg.getHeader().getAllHeaderFields()) {
 				gen.writeStartObject();
-				gen.writeStringField("name", hf.getHeaderName().toString());
-				gen.writeStringField("value", hf.getValue());
+
+				gen.writeName("name");
+				gen.writeString(hf.getHeaderName().toString());
+
+				gen.writeName("value");
+				gen.writeString(hf.getValue());
+
 				gen.writeEndObject();
 			}
 			gen.writeEndArray();
+
 			gen.writeEndObject();
 		});
 	}
@@ -239,77 +301,136 @@ public class AdminRESTInterceptor extends RESTInterceptor {
 
 		return json(gen -> {
 			gen.writeStartObject();
-			gen.writeArrayFieldStart("exchanges");
+
+			gen.writeName("exchanges");
+			gen.writeStartArray();
 			for (AbstractExchange e : res.getExchanges()) {
 				writeExchange(e, gen);
 			}
 			gen.writeEndArray();
-			gen.writeNumberField("total", res.getCount());
-			gen.writeNumberField("lastModified", res.getLastModified());
+
+			gen.writeName("total");
+			gen.writeNumber(res.getCount());
+
+			gen.writeName("lastModified");
+			gen.writeNumber(res.getLastModified());
+
 			gen.writeEndObject();
 		});
 	}
 
-	private void writeExchange(AbstractExchange exc, JsonGenerator gen) throws IOException {
+	private void writeExchange(AbstractExchange exc, JsonGenerator gen) {
 		gen.writeStartObject();
-		gen.writeNumberField("id", exc.getId());
+
+		gen.writeName("id");
+		gen.writeNumber(exc.getId());
+
 		if (exc.getResponse() != null) {
-			gen.writeNumberField("statusCode", exc.getResponse().getStatusCode());
+			gen.writeName("statusCode");
+			gen.writeNumber(exc.getResponse().getStatusCode());
+
 			if (exc.getResponseContentLength() != -1) {
-				gen.writeNumberField("respContentLength", exc.getResponseContentLength());
+				gen.writeName("respContentLength");
+				gen.writeNumber(exc.getResponseContentLength());
 			} else {
-				gen.writeNullField("respContentLength");
+				gen.writeName("respContentLength");
+				gen.writeNull();
 			}
 		} else {
-			gen.writeNullField("statusCode");
-			gen.writeNullField("respContentLength");
+			gen.writeName("statusCode");
+			gen.writeNull();
+
+			gen.writeName("respContentLength");
+			gen.writeNull();
 		}
 
-		gen.writeStringField("time", ExchangesUtil.getTime(exc));
+		gen.writeName("time");
+		gen.writeString(ExchangesUtil.getTime(exc));
+
 		if (exc.getProxy() != null) {
-			gen.writeStringField("proxy", exc.getProxy().toString());
-			gen.writeNumberField("listenPort", exc.getProxy().getKey().getPort());
+			gen.writeName("proxy");
+			gen.writeString(exc.getProxy().toString());
+
+			gen.writeName("listenPort");
+			gen.writeNumber(exc.getProxy().getKey().getPort());
 		} else {
-			gen.writeStringField("proxy", "UNKNOWN");
-			gen.writeNullField("listenPort");
+			gen.writeName("proxy");
+			gen.writeString("UNKNOWN");
+
+			gen.writeName("listenPort");
+			gen.writeNull();
 		}
 
 		if (exc.getRequest() != null) {
-			gen.writeStringField("method", exc.getRequest().getMethod());
-			gen.writeStringField("path", exc.getRequest().getUri());
-			gen.writeStringField("reqContentType", exc.getRequestContentType());
-			gen.writeStringField("protocol", exc.getProperty(HTTP2_SERVER) != null ? "2" : exc.getRequest().getVersion());
+			gen.writeName("method");
+			gen.writeString(exc.getRequest().getMethod());
+
+			gen.writeName("path");
+			gen.writeString(exc.getRequest().getUri());
+
+			gen.writeName("reqContentType");
+			gen.writeString(exc.getRequestContentType());
+
+			gen.writeName("protocol");
+			gen.writeString(exc.getProperty(HTTP2_SERVER) != null ? "2" : exc.getRequest().getVersion());
 		} else {
-			gen.writeNullField("method");
-			gen.writeNullField("path");
-			gen.writeNullField("reqContentType");
-			gen.writeStringField("protocol", exc.getProperty(HTTP2_SERVER) != null ? "2" : null);
+			gen.writeName("method");
+			gen.writeNull();
+
+			gen.writeName("path");
+			gen.writeNull();
+
+			gen.writeName("reqContentType");
+			gen.writeNull();
+
+			gen.writeName("protocol");
+			String proto = exc.getProperty(HTTP2_SERVER) != null ? "2" : null;
+			if (proto == null) {
+				gen.writeNull();
+			} else {
+				gen.writeString(proto);
+			}
 		}
 
-		gen.writeStringField("client", getClientAddr(useXForwardedForAsClientAddr, exc));
-		gen.writeStringField("server", exc.getServer());
-		gen.writeNumberField("serverPort", getServerPort(exc));
+		gen.writeName("client");
+		gen.writeString(getClientAddr(useXForwardedForAsClientAddr, exc));
+
+		gen.writeName("server");
+		gen.writeString(exc.getServer());
+
+		gen.writeName("serverPort");
+		gen.writeNumber(getServerPort(exc));
 
 		if (exc.getRequest() != null && exc.getRequestContentLength() != -1) {
-			gen.writeNumberField("reqContentLength", exc.getRequestContentLength());
+			gen.writeName("reqContentLength");
+			gen.writeNumber(exc.getRequestContentLength());
 		} else {
-			gen.writeNullField("reqContentLength");
+			gen.writeName("reqContentLength");
+			gen.writeNull();
 		}
 
-		gen.writeStringField("respContentType", exc.getResponseContentType());
+		gen.writeName("respContentType");
+		gen.writeString(exc.getResponseContentType());
 
 		if (exc.getStatus() == ExchangeState.RECEIVED || exc.getStatus() == ExchangeState.COMPLETED) {
 			if (exc.getResponse() != null && exc.getResponseContentLength() != -1) {
-				gen.writeNumberField("respContentLength", exc.getResponseContentLength());
+				gen.writeName("respContentLength");
+				gen.writeNumber(exc.getResponseContentLength());
 			} else {
-				gen.writeNullField("respContentLength");
+				gen.writeName("respContentLength");
+				gen.writeNull();
 			}
 		} else {
-			gen.writeStringField("respContentLength", "Not finished");
+			gen.writeName("respContentLength");
+			gen.writeString("Not finished");
 		}
 
-		gen.writeNumberField("duration", exc.getTimeResReceived() - exc.getTimeReqSent());
-		gen.writeStringField("msgFilePath", JDBCUtil.getFilePath(exc));
+		gen.writeName("duration");
+		gen.writeNumber(exc.getTimeResReceived() - exc.getTimeReqSent());
+
+		gen.writeName("msgFilePath");
+		gen.writeString(JDBCUtil.getFilePath(exc));
+
 		gen.writeEndObject();
 	}
 

@@ -13,12 +13,11 @@
 
 package com.predic8.membrane.core.interceptor.oauth2;
 
-import com.fasterxml.jackson.core.JsonGenerator;
 import com.predic8.membrane.core.resolver.ResolverMap;
+import tools.jackson.core.JsonGenerator;
 
 import java.io.IOException;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import static java.util.stream.Collectors.joining;
 
@@ -88,20 +87,28 @@ public class WellknownFile {
     }
 
     public String getWellknown() {
-        try (var bufferedJsonGenerator = new BufferedJsonGenerator()) {
-            var jg = bufferedJsonGenerator.getJsonGenerator();
+        try (BufferedJsonGenerator bufferedJsonGenerator = new BufferedJsonGenerator()) {
+            JsonGenerator jg = bufferedJsonGenerator.getJsonGenerator();
             jg.writeStartObject();
-
-            jg.writeObjectField(ISSUER, getIssuer());
-            jg.writeObjectField(AUTHORIZATION_ENDPOINT, getAuthorizationEndpoint());
-            jg.writeObjectField(TOKEN_ENDPOINT, getTokenEndpoint());
-            jg.writeObjectField(USERINFO_ENDPOINT, getUserinfoEndpoint());
+            jg.writeName(ISSUER);
+            jg.writeString(getIssuer());
+            jg.writeName(AUTHORIZATION_ENDPOINT);
+            jg.writeString(getAuthorizationEndpoint());
+            jg.writeName(TOKEN_ENDPOINT);
+            jg.writeString(getTokenEndpoint());
+            jg.writeName(USERINFO_ENDPOINT);
+            jg.writeString(getUserinfoEndpoint());
             String revocationEndpoint1 = getRevocationEndpoint();
-            if (revocationEndpoint1 != null)
-                jg.writeObjectField(REVOCATION_ENDPOINT, revocationEndpoint1);
-            jg.writeObjectField(JWKS_URI, getJwksUri());
-            if (getEndSessionEndpoint() != null)
-                jg.writeObjectField(END_SESSION_ENDPOINT, getEndSessionEndpoint());
+            if (revocationEndpoint1 != null) {
+                jg.writeName(REVOCATION_ENDPOINT);
+                jg.writeString(revocationEndpoint1);
+            }
+            jg.writeName(JWKS_URI);
+            jg.writeString(getJwksUri());
+            if (getEndSessionEndpoint() != null) {
+                jg.writeName(END_SESSION_ENDPOINT);
+                jg.writeString(getEndSessionEndpoint());
+            }
             stringEnumToJson(jg, RESPONSE_TYPES_SUPPORTED, getSupportedResponseTypes().split(" "));
             if (supportedResponseModes != null)
                 stringEnumToJson(jg, RESPONSE_MODES_SUPPORTED, getSupportedResponseModes().split(" "));
@@ -118,8 +125,9 @@ public class WellknownFile {
         }
     }
 
-    private void stringEnumToJson(JsonGenerator jg, String name, String... enumeration) throws IOException {
-        jg.writeArrayFieldStart(name);
+    private static void stringEnumToJson(JsonGenerator jg, String fieldName, String[] enumeration) throws IOException {
+        jg.writeName(fieldName);
+        jg.writeStartArray();
         for(String value : enumeration)
             jg.writeString(OAuth2Util.urldecode(value));
         jg.writeEndArray();

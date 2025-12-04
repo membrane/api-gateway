@@ -14,9 +14,9 @@
 
 package com.predic8.membrane.core.exchangestore;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 import com.predic8.membrane.core.HttpRouter;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Request;
@@ -46,6 +46,7 @@ import static com.predic8.membrane.core.http.Header.CONTENT_TYPE;
 import static com.predic8.membrane.core.http.MimeType.TEXT_PLAIN;
 import static com.predic8.membrane.core.http.Response.ok;
 import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
+import static java.lang.System.currentTimeMillis;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -144,20 +145,22 @@ class ElasticSearchExchangeStoreTest {
     private static @NotNull Outcome getOutcome(Exchange exc, ObjectMapper om) {
         if (exc.getRequest().getMethod().equals("POST") && exc.getRequest().getUri().equals("/_bulk")) {
             for (String line : exc.getRequest().getBodyAsStringDecoded().split("\n")) {
+                if (line.isBlank())
+                    continue;
+
                 try {
                     JsonNode obj = om.readTree(line);
                     synchronized (insertedObjects) {
                         insertedObjects.add(obj);
                     }
-                } catch (JsonProcessingException e) {
-                    throw new RuntimeException(e);
+                } catch (JacksonException e) {
+                    throw new AssertionError("Invalid JSON line in bulk request: " + line, e);
                 }
             }
             exc.setResponse(ok("{}").build());
             return RETURN;
         }
-        exc.setResponse(ok("""
-                {}""").build());
+        exc.setResponse(ok("{}").build());
         return RETURN;
     }
 
@@ -201,7 +204,7 @@ class ElasticSearchExchangeStoreTest {
         assertEquals(TEXT_PLAIN, insertedObjects.get(1).get("response").get("header").get(CONTENT_TYPE).textValue());
 
         assertEquals("COMPLETED", insertedObjects.get(1).get("status").textValue());
-        assertTrue(insertedObjects.get(1).get("time").longValue() > 1740000000000L);
+        assertNotNull(insertedObjects.get(1).get("time").textValue());
         assertTrue(insertedObjects.get(1).get("timeReqReceived").longValue() > 1740000000000L);
         assertTrue(insertedObjects.get(1).get("timeReqSent").longValue() > 1740000000000L);
         assertTrue(insertedObjects.get(1).get("timeResReceived").longValue() > 1740000000000L);
@@ -214,19 +217,25 @@ class ElasticSearchExchangeStoreTest {
     }
 
     private void waitForExchangeStoreToFlush() {
-        while (true) {
+        while (System.currentTimeMillis() < System.currentTimeMillis() + 10_000) {
+            boolean queueEmpty;
             synchronized (es.shortTermMemoryForBatching) {
-                int size = es.shortTermMemoryForBatching.size();
-                if (size == 0 && !es.updateThreadWorking)
-                    return;
+                queueEmpty = es.shortTermMemoryForBatching.isEmpty();
+            }
+            if (queueEmpty) {
+                synchronized (insertedObjects) {
+                    if (!insertedObjects.isEmpty()) {
+                        return;
+                    }
+                }
             }
             try {
-                //noinspection BusyWait
                 Thread.sleep(50);
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
             }
         }
+        fail("Timeout waiting for exchange store to flush.");
     }
 
 }

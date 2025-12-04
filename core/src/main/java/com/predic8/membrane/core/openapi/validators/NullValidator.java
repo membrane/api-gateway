@@ -16,7 +16,7 @@
 
 package com.predic8.membrane.core.openapi.validators;
 
-import com.fasterxml.jackson.databind.node.NullNode;
+import tools.jackson.databind.node.NullNode;
 
 public class NullValidator implements JsonSchemaValidator {
 

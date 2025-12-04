@@ -14,7 +14,7 @@
 
 package com.predic8.membrane.core.lang.spel;
 
-import com.fasterxml.jackson.databind.*;
+import tools.jackson.databind.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.Interceptor.*;

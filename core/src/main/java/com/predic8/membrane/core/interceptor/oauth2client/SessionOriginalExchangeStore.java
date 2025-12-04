@@ -13,8 +13,8 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.oauth2client;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.exchange.Exchange;
@@ -38,7 +38,7 @@ public class SessionOriginalExchangeStore extends OriginalExchangeStore {
     public void store(Exchange exchange, Session session, StateManager state, Exchange exchangeToStore) throws IOException {
         try {
             session.put(originalRequestKeyNameInSession(state),new ObjectMapper().writeValueAsString(getTrimmedAbstractExchangeSnapshot(exchangeToStore, maxBodySize)));
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             throw new RuntimeException(e);
         }
     }
@@ -47,7 +47,7 @@ public class SessionOriginalExchangeStore extends OriginalExchangeStore {
     public AbstractExchangeSnapshot reconstruct(Exchange exchange, Session session, StateManager state) {
         try {
             return new ObjectMapper().readValue(session.get(originalRequestKeyNameInSession(state)).toString(),AbstractExchangeSnapshot.class);
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             throw new RuntimeException(e);
         }
     }

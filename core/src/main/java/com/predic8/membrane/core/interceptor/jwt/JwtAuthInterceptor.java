@@ -12,22 +12,29 @@
  */
 package com.predic8.membrane.core.interceptor.jwt;
 
-import com.fasterxml.jackson.core.*;
-import com.fasterxml.jackson.databind.*;
-import com.predic8.membrane.annot.*;
+import com.predic8.membrane.annot.MCAttribute;
+import com.predic8.membrane.annot.MCChildElement;
+import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.exceptions.ProblemDetails;
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.security.*;
-import org.jose4j.jwk.*;
-import org.jose4j.jwt.consumer.*;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.interceptor.AbstractInterceptor;
+import com.predic8.membrane.core.interceptor.Outcome;
+import com.predic8.membrane.core.security.JWTSecurityScheme;
+import org.jose4j.jwk.RsaJsonWebKey;
+import org.jose4j.jwt.consumer.InvalidJwtException;
+import org.jose4j.jwt.consumer.JwtConsumer;
+import org.jose4j.jwt.consumer.JwtConsumerBuilder;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.Map;
 
-import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
-import static com.predic8.membrane.core.interceptor.Outcome.*;
-import static java.util.EnumSet.*;
-import static org.apache.commons.text.StringEscapeUtils.*;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
+import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
+import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
+import static java.util.EnumSet.of;
+import static org.apache.commons.text.StringEscapeUtils.escapeHtml4;
 
 @MCElement(name = "jwtAuth")
 public class JwtAuthInterceptor extends AbstractInterceptor {
@@ -97,7 +104,7 @@ public class JwtAuthInterceptor extends AbstractInterceptor {
                     .status(400)
                     .buildAndSetResponse(exc);
             return RETURN;
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             ProblemDetails.security(router.isProduction(), "jwt-auth")
                     .detail(ERROR_DECODED_HEADER_NOT_JSON)
                     .addSubSee(ERROR_DECODED_HEADER_NOT_JSON_ID)
@@ -124,7 +131,7 @@ public class JwtAuthInterceptor extends AbstractInterceptor {
         }
     }
 
-    public Outcome handleJwt(Exchange exc, String jwt) throws JWTException, JsonProcessingException, InvalidJwtException {
+    public Outcome handleJwt(Exchange exc, String jwt) throws JWTException, JacksonException, InvalidJwtException {
         if (jwt == null)
             throw new JWTException(ERROR_JWT_NOT_FOUND, ERROR_JWT_NOT_FOUND_ID);
 

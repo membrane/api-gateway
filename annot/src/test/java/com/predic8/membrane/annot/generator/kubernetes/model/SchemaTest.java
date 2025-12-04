@@ -14,8 +14,8 @@
 
 package com.predic8.membrane.annot.generator.kubernetes.model;
 
-import com.fasterxml.jackson.databind.*;
-import com.fasterxml.jackson.databind.node.*;
+import tools.jackson.databind.*;
+import tools.jackson.databind.node.*;
 import org.junit.jupiter.api.*;
 
 import static com.predic8.membrane.annot.generator.kubernetes.model.SchemaFactory.*;
@@ -24,7 +24,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class SchemaTest {
 
-    JsonNodeFactory jnf = new JsonNodeFactory(false);
+    JsonNodeFactory jnf = new JsonNodeFactory();
 
     @Test
     void test() {

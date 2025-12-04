@@ -13,7 +13,8 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.statistics;
 
-import com.fasterxml.jackson.core.*;
+import tools.jackson.core.JsonGenerator;
+import tools.jackson.core.json.JsonFactory;
 import com.google.common.collect.*;
 import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.exchange.*;
@@ -118,52 +119,80 @@ public class StatisticsProvider extends AbstractInterceptor implements Applicati
 				.body(jsonTxt.toString()).build());
 	}
 
-	private void createJson(Exchange exc, ResultSet r, int offset, int max, int total) throws IOException,
-            SQLException {
+	private void createJson(Exchange exc, ResultSet r, int offset, int max, int total) throws SQLException {
 
 		StringWriter jsonTxt = new StringWriter();
 
-		JsonGenerator jsonGen = jsonFactory.createGenerator(jsonTxt);
-		jsonGen.writeStartObject();
-		jsonGen.writeArrayFieldStart("statistics");
-		int size = 0;
-		r.absolute(offset+1); //jdbc doesn't support paginating. This can be inefficient.
-		while (size < max && !r.isAfterLast()) {
-			size++;
-			writeRecord(r, jsonGen);
-			r.next();
+		try (JsonGenerator jsonGen = jsonFactory.createGenerator(jsonTxt)) {
+			jsonGen.writeStartObject();
+
+			jsonGen.writeName("statistics");
+			jsonGen.writeStartArray();
+
+			int size = 0;
+			r.absolute(offset + 1); // jdbc doesn't support paginating. This can be inefficient.
+			while (size < max && !r.isAfterLast()) {
+				size++;
+				writeRecord(r, jsonGen);
+				r.next();
+			}
+			jsonGen.writeEndArray();
+
+			jsonGen.writeName("total");
+			jsonGen.writeNumber(total);
+
+			jsonGen.writeEndObject();
 		}
-		jsonGen.writeEndArray();
-		jsonGen.writeNumberField("total", total);
-		jsonGen.writeEndObject();
-		jsonGen.flush();
 
 		createResponse(exc, jsonTxt);
 	}
 
-	private void writeRecord(ResultSet r, JsonGenerator jsonGen)
-			throws IOException, SQLException {
+	private void writeRecord(ResultSet r, JsonGenerator jsonGen) throws SQLException {
+
 		jsonGen.writeStartObject();
-		jsonGen.writeNumberField("statusCode", r.getInt(JDBCUtil.STATUS_CODE));
-		jsonGen.writeStringField("time", r.getString(JDBCUtil.TIME));
-		jsonGen.writeStringField("rule", r.getString(JDBCUtil.RULE));
-		jsonGen.writeStringField("method", r.getString(JDBCUtil.METHOD));
-		jsonGen.writeStringField("path", r.getString(JDBCUtil.PATH));
-		jsonGen.writeStringField("client", r.getString(JDBCUtil.CLIENT));
-		jsonGen.writeStringField("server", r.getString(JDBCUtil.SERVER));
-		jsonGen.writeStringField("reqContentType",
-				r.getString(JDBCUtil.REQUEST_CONTENT_TYPE));
-		jsonGen.writeNumberField("reqContentLenght",
-				r.getInt(JDBCUtil.REQUEST_CONTENT_LENGTH));
-		jsonGen.writeStringField("respContentType",
-				r.getString(JDBCUtil.RESPONSE_CONTENT_TYPE));
-		jsonGen.writeNumberField("respContentLenght",
-				r.getInt(JDBCUtil.RESPONSE_CONTENT_LENGTH));
-		jsonGen.writeNumberField("duration", r.getInt(JDBCUtil.DURATION));
-		jsonGen.writeStringField("msgFilePath",
-				r.getString(JDBCUtil.MSG_FILE_PATH));
+
+		jsonGen.writeName("statusCode");
+		jsonGen.writeNumber(r.getInt(JDBCUtil.STATUS_CODE));
+
+		jsonGen.writeName("time");
+		jsonGen.writeString(r.getString(JDBCUtil.TIME));
+
+		jsonGen.writeName("rule");
+		jsonGen.writeString(r.getString(JDBCUtil.RULE));
+
+		jsonGen.writeName("method");
+		jsonGen.writeString(r.getString(JDBCUtil.METHOD));
+
+		jsonGen.writeName("path");
+		jsonGen.writeString(r.getString(JDBCUtil.PATH));
+
+		jsonGen.writeName("client");
+		jsonGen.writeString(r.getString(JDBCUtil.CLIENT));
+
+		jsonGen.writeName("server");
+		jsonGen.writeString(r.getString(JDBCUtil.SERVER));
+
+		jsonGen.writeName("reqContentType");
+		jsonGen.writeString(r.getString(JDBCUtil.REQUEST_CONTENT_TYPE));
+
+		jsonGen.writeName("reqContentLenght");
+		jsonGen.writeNumber(r.getInt(JDBCUtil.REQUEST_CONTENT_LENGTH));
+
+		jsonGen.writeName("respContentType");
+		jsonGen.writeString(r.getString(JDBCUtil.RESPONSE_CONTENT_TYPE));
+
+		jsonGen.writeName("respContentLenght");
+		jsonGen.writeNumber(r.getInt(JDBCUtil.RESPONSE_CONTENT_LENGTH));
+
+		jsonGen.writeName("duration");
+		jsonGen.writeNumber(r.getInt(JDBCUtil.DURATION));
+
+		jsonGen.writeName("msgFilePath");
+		jsonGen.writeString(r.getString(JDBCUtil.MSG_FILE_PATH));
+
 		jsonGen.writeEndObject();
 	}
+
 
 	public DataSource getDataSource() {
 		return dataSource;

@@ -16,29 +16,36 @@
 
 package com.predic8.membrane.core.openapi.util;
 
-import com.fasterxml.jackson.databind.*;
-import io.swagger.v3.core.util.*;
-import io.swagger.v3.oas.models.*;
-import io.swagger.v3.oas.models.media.*;
-import io.swagger.v3.oas.models.parameters.*;
-import io.swagger.v3.parser.ObjectMapperFactory;
-import org.jetbrains.annotations.*;
-import org.slf4j.*;
+import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.oas.models.Operation;
+import io.swagger.v3.oas.models.PathItem;
+import io.swagger.v3.oas.models.media.Schema;
+import io.swagger.v3.oas.models.parameters.Parameter;
+import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.json.JsonMapper;
 
-import java.io.*;
-import java.util.*;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import io.swagger.v3.core.util.Json31;
 
-import static com.predic8.membrane.core.http.MimeType.*;
-import static com.predic8.membrane.core.openapi.serviceproxy.APIProxy.*;
-import static com.predic8.membrane.core.openapi.util.Utils.*;
-import static com.predic8.membrane.core.openapi.validators.JsonSchemaValidator.*;
+import java.io.IOException;
+import java.util.Objects;
+
+import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
+import static com.predic8.membrane.core.openapi.serviceproxy.APIProxy.X_MEMBRANE_ID;
+import static com.predic8.membrane.core.openapi.util.Utils.getComponentLocalNameFromRef;
+import static com.predic8.membrane.core.openapi.util.Utils.normalizeForId;
+import static com.predic8.membrane.core.openapi.validators.JsonSchemaValidator.OBJECT;
 import static io.swagger.v3.oas.models.parameters.Parameter.StyleEnum.*;
 
 public class OpenAPIUtil {
 
     private static final Logger log = LoggerFactory.getLogger(OpenAPIUtil.class.getName());
 
-    private static final ObjectMapper omYaml = ObjectMapperFactory.createYaml();
+    private static final JsonMapper JSON_MAPPER = JsonMapper.builder().build();
+    private static final ObjectMapper SWAGGER_JSON = Json31.mapper();
 
     public static String getIdFromAPI(OpenAPI api) {
         if (api.getInfo().getExtensions() != null) {
@@ -72,7 +79,7 @@ public class OpenAPIUtil {
     }
 
     public static JsonNode convert2Json(OpenAPI api) throws IOException {
-        return omYaml.readTree(Json31.mapper().writeValueAsBytes(api));
+        return JSON_MAPPER.readTree(SWAGGER_JSON.writeValueAsBytes(api));
     }
 
     public static boolean isOpenAPIMisplacedError(String errorMsg) {

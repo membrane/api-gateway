@@ -16,8 +16,7 @@
 
 package com.predic8.membrane.core.lang;
 
-import com.fasterxml.jackson.core.*;
-import com.fasterxml.jackson.databind.*;
+import tools.jackson.databind.*;
 import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
@@ -101,17 +100,8 @@ public abstract class AbstractScriptInterceptor extends AbstractInterceptor {
         if (res instanceof Map m) {
             msg = createResponseAndToExchangeIfThereIsNone(exc, flow, msg);
             msg.getHeader().setContentType(APPLICATION_JSON);
-            try {
-                msg.setBodyContent(om.writeValueAsBytes(m));
-            } catch (JsonProcessingException e) {
-                log.error("", e);
-                internal(router.isProduction(),getDisplayName())
-                        .addSubSee("json-processing-1")
-                        .detail("Error serializing Map to JSON")
-                        .exception(e)
-                        .buildAndSetResponse(exc);
-                return ABORT;
-            }
+            msg.setBodyContent(om.writeValueAsBytes(m));
+
             return CONTINUE;
         }
 
@@ -133,17 +123,7 @@ public abstract class AbstractScriptInterceptor extends AbstractInterceptor {
         if (res.getClass().getPackageName().startsWith("org.graalvm.polyglot") && res instanceof Value value) {
             Map m = value.as(Map.class);
             msg.getHeader().setContentType(APPLICATION_JSON);
-            try {
-                msg.setBodyContent(om.writeValueAsBytes(m));
-            } catch (JsonProcessingException e) {
-                log.error("", e);
-                internal(router.isProduction(),getDisplayName())
-                        .addSubSee("json-processing-2")
-                        .detail("Error serializing Map to JSON")
-                        .exception(e)
-                        .buildAndSetResponse(exc);
-                return ABORT;
-            }
+            msg.setBodyContent(om.writeValueAsBytes(m));
             return CONTINUE;
         }
         return CONTINUE;

@@ -14,26 +14,37 @@
 
 package com.predic8.membrane.core.interceptor.json;
 
-import com.fasterxml.jackson.core.*;
-import com.fasterxml.jackson.databind.*;
-import com.google.common.io.*;
-import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.exceptions.*;
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.interceptor.*;
-import org.slf4j.*;
+import com.google.common.io.CountingInputStream;
+import com.predic8.membrane.annot.MCAttribute;
+import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.core.exceptions.ProblemDetails;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.Response;
+import com.predic8.membrane.core.interceptor.AbstractInterceptor;
+import com.predic8.membrane.core.interceptor.Outcome;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import tools.jackson.core.JsonParser;
+import tools.jackson.core.JsonToken;
+import tools.jackson.core.StreamReadFeature;
+import tools.jackson.core.exc.StreamReadException;
+import tools.jackson.databind.DeserializationFeature;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 
-import java.io.*;
-import java.util.*;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
-import static com.fasterxml.jackson.core.JsonParser.Feature.*;
-import static com.fasterxml.jackson.core.JsonTokenId.*;
-import static com.fasterxml.jackson.databind.DeserializationFeature.*;
-import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
-import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
-import static com.predic8.membrane.core.interceptor.Outcome.*;
-import static java.util.EnumSet.*;
+import static com.fasterxml.jackson.core.JsonTokenId.ID_FIELD_NAME;
+import static com.predic8.membrane.core.exceptions.ProblemDetails.user;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
+import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
+import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
+import static java.util.EnumSet.of;
+import static tools.jackson.core.JsonTokenId.*;
+import static tools.jackson.core.StreamReadFeature.STRICT_DUPLICATE_DETECTION;
+import static tools.jackson.databind.DeserializationFeature.FAIL_ON_READING_DUP_TREE_KEY;
 
 /**
  * Enforces JSON restrictions in requests.
@@ -45,9 +56,7 @@ public class JsonProtectionInterceptor extends AbstractInterceptor {
 
     private static final Logger log = LoggerFactory.getLogger(JsonProtectionInterceptor.class);
 
-    private final ObjectMapper om = new ObjectMapper()
-            .configure(FAIL_ON_READING_DUP_TREE_KEY, true)
-            .configure(STRICT_DUPLICATE_DETECTION, true);
+    private final ObjectMapper om = JsonMapper.builder().enable(FAIL_ON_READING_DUP_TREE_KEY).enable(STRICT_DUPLICATE_DETECTION).build();
 
     private Boolean reportError;
     private int maxTokens = 10000;
@@ -85,7 +94,7 @@ public class JsonProtectionInterceptor extends AbstractInterceptor {
     private class ObjContext extends Context {
         int n;
         @Override
-        public void check(JsonToken jsonToken, JsonParser parser) throws JsonProtectionException, IOException {
+        public void check(JsonToken jsonToken, JsonParser parser) throws JsonProtectionException {
             if (jsonToken.id() == ID_END_OBJECT)
                 return;
             n++;
@@ -122,7 +131,7 @@ public class JsonProtectionInterceptor extends AbstractInterceptor {
 
     @Override
     public Outcome handleRequest(Exchange exc) {
-        if ("GET".equals(exc.getRequest().getMethod()))
+        if (exc.getRequest().isGETRequest())
             return CONTINUE;
         try {
             parseJson(new CountingInputStream(exc.getRequest().getBodyAsStreamDecoded()));
@@ -130,9 +139,22 @@ public class JsonProtectionInterceptor extends AbstractInterceptor {
             log.debug(e.getMessage());
             exc.setResponse(createErrorResponse(e.getMessage(), e.getLine(), e.getCol()));
             return RETURN;
-        } catch (JsonParseException e) {
+        } catch (StreamReadException e) {
             log.debug(e.getMessage());
-            exc.setResponse(createErrorResponse(e.getMessage(), e.getLocation().getLineNr(), e.getLocation().getColumnNr()));
+
+            String msg = e.getOriginalMessage();
+            if (msg == null)
+                msg = e.getMessage();
+
+            if (msg != null && msg.startsWith("Duplicate Object property")) {
+                msg = "Duplicate field";
+            }
+
+            exc.setResponse(createErrorResponse(
+                    msg,
+                    e.getLocation().getLineNr(),
+                    e.getLocation().getColumnNr()
+            ));
             return RETURN;
         } catch (Throwable e) {
             log.debug(e.getMessage());

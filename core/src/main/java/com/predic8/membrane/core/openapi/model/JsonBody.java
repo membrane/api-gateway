@@ -16,10 +16,12 @@
 
 package com.predic8.membrane.core.openapi.model;
 
-import com.fasterxml.jackson.core.*;
-import com.fasterxml.jackson.databind.*;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectReader;
 
-import java.io.*;
+import java.io.IOException;
 
 public class JsonBody implements Body {
 
@@ -31,7 +33,7 @@ public class JsonBody implements Body {
         payload=s;
     }
 
-    public JsonBody(String s) throws JsonProcessingException {
+    public JsonBody(String s) throws JacksonException {
         payload = m.readTree(s);
     }
 
@@ -45,7 +47,7 @@ public class JsonBody implements Body {
     }
 
     @Override
-    public JsonNode getJson() throws IOException {
+    public JsonNode getJson() throws JacksonException {
         return payload;
     }
 }

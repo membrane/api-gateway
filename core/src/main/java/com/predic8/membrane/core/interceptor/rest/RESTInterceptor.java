@@ -13,7 +13,9 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.rest;
 
-import com.fasterxml.jackson.core.*;
+import tools.jackson.core.JsonGenerator;
+import tools.jackson.core.json.JsonFactory;
+
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
@@ -65,9 +67,9 @@ public abstract class RESTInterceptor extends AbstractInterceptor {
 	protected Response json(JSONContent content) throws Exception {
 		StringWriter jsonTxt = new StringWriter();
 
-		JsonGenerator gen = jsonFactory.createGenerator(jsonTxt);
-		content.write(gen);
-		gen.flush();
+		try (JsonGenerator gen = jsonFactory.createGenerator(jsonTxt)) {
+			content.write(gen);
+		}
 
 		return Response.ok()
 				.header(CONTENT_TYPE, APPLICATION_JSON_UTF8)

@@ -16,7 +16,7 @@
 
 package com.predic8.membrane.core.openapi.model;
 
-import com.fasterxml.jackson.databind.*;
+import tools.jackson.databind.*;
 import jakarta.mail.internet.*;
 
 import java.io.*;

@@ -13,13 +13,13 @@
    limitations under the License. */
 package com.predic8.membrane.core.transport.ssl.acme;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.joda.JodaModule;
 import com.predic8.membrane.core.transport.ssl.PEMSupport;
 import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.datatype.joda.JodaModule;
 
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -45,13 +45,12 @@ public class AcmeRenewal {
     private final AcmeSynchronizedStorageEngine asse;
     private final String[] hosts;
     private final AcmeClient client;
-    private final ObjectMapper om;
+    private final ObjectMapper om = JsonMapper.builder().addModule(new JodaModule()).build();
 
     public AcmeRenewal(AcmeClient client, String[] hosts) {
         this.client = client;
         asse = client.getAsse();
         this.hosts = hosts;
-        om = new ObjectMapper().registerModule(new JodaModule());
     }
 
     public void doWork() {
@@ -210,7 +209,7 @@ public class AcmeRenewal {
         }
     }
 
-    private Challenge getChallenge(Authorization auth) throws JsonProcessingException, FatalAcmeException {
+    private Challenge getChallenge(Authorization auth) throws FatalAcmeException {
         Optional<Challenge> challenge = auth.getChallenges().stream().filter(c -> client.getChallengeType().equals(c.getType())).findAny();
         if (challenge.isEmpty())
             throw new FatalAcmeException("Could not find challenge of type "+client.getChallengeType()+": " + om.writeValueAsString(auth));
@@ -227,14 +226,14 @@ public class AcmeRenewal {
         }
     }
 
-    private OrderAndLocation getOAL() throws JsonProcessingException {
+    private OrderAndLocation getOAL() {
         String oal = asse.getOAL(hosts);
         if (oal == null)
             return null;
         return om.readValue(oal, OrderAndLocation.class);
     }
 
-    private void setOAL(OrderAndLocation oal) throws JsonProcessingException {
+    private void setOAL(OrderAndLocation oal) {
         asse.setOAL(hosts, om.writeValueAsString(oal));
     }
 
@@ -275,7 +274,7 @@ public class AcmeRenewal {
         }
     }
 
-    private boolean isOALExpiredOrError() throws JsonProcessingException {
+    private boolean isOALExpiredOrError() {
         OrderAndLocation oal = getOAL();
         if (oal != null && oal.getOrder().getExpires().isAfterNow())
             return true;

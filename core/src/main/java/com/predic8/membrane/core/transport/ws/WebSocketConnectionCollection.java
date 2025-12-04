@@ -13,8 +13,7 @@
    limitations under the License. */
 package com.predic8.membrane.core.transport.ws;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -36,7 +35,7 @@ public class WebSocketConnectionCollection {
     /**
      * Sends the 'data' as a JSON object to all connected WebSocket listeners.
      */
-    public void broadcast(Map<?, ?> data) throws JsonProcessingException {
+    public void broadcast(Map<?, ?> data)  {
         ArrayList<WebSocketConnection> connectionsToNotify;
         synchronized (connections) {
             connectionsToNotify = new ArrayList<>(connections);

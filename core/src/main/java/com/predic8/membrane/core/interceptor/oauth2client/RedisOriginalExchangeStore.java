@@ -13,8 +13,6 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.oauth2client;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.exchange.Exchange;
@@ -23,6 +21,8 @@ import com.predic8.membrane.core.interceptor.oauth2client.rf.StateManager;
 import com.predic8.membrane.core.interceptor.session.Session;
 import com.predic8.membrane.core.util.RedisConnector;
 import redis.clients.jedis.Jedis;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
 
 import java.io.IOException;
 
@@ -61,7 +61,7 @@ public class RedisOriginalExchangeStore extends OriginalExchangeStore {
             try(Jedis jedis = connector.getJedisWithDb()) {
                 return objMapper.readValue(jedis.get(originalRequestKeyNameInSession(state)), AbstractExchangeSnapshot.class);
             }
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             throw new RuntimeException(e);
         }
     }

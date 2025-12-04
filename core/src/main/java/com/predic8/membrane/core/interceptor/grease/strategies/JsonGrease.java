@@ -13,22 +13,29 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.grease.strategies;
 
-import com.fasterxml.jackson.databind.*;
-import com.fasterxml.jackson.databind.node.*;
-import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.http.*;
-import org.slf4j.*;
+import com.predic8.membrane.annot.MCAttribute;
+import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.core.http.Message;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.databind.node.ArrayNode;
+import tools.jackson.databind.node.ObjectNode;
 
-import java.io.*;
-import java.util.*;
-import java.util.function.*;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.function.Consumer;
 
 import static com.predic8.membrane.core.http.MimeType.isJson;
 
 @MCElement(name = "greaseJson", topLevel = false)
 public class JsonGrease extends Greaser {
 
-    private static final ObjectMapper om = new ObjectMapper();
+    private static final ObjectMapper om = JsonMapper.builder().build();
     private static final Logger log = LoggerFactory.getLogger(JsonGrease.class);
 
     boolean shuffleFields = true;
@@ -71,7 +78,7 @@ public class JsonGrease extends Greaser {
 
     static void processJson(ObjectNode jsonNode, Consumer<ObjectNode> action) {
         action.accept(jsonNode);
-        jsonNode.fieldNames().forEachRemaining(fieldName -> {
+        jsonNode.propertyNames().forEach(fieldName -> {
             JsonNode childNode = jsonNode.get(fieldName);
             if (childNode.isObject()) {
                 processJson((ObjectNode) childNode, action);
@@ -88,7 +95,7 @@ public class JsonGrease extends Greaser {
 
     static void shuffleNodeFields(ObjectNode objectNode) {
         List<String> fieldsOrdered = new ArrayList<>();
-        objectNode.fieldNames().forEachRemaining(fieldsOrdered::add);
+        fieldsOrdered.addAll(objectNode.propertyNames());
         List<String> fields = new ArrayList<>(fieldsOrdered);
         while (fields.equals(fieldsOrdered)) {
             Collections.shuffle(fields);

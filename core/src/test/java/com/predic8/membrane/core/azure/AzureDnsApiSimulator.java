@@ -13,8 +13,6 @@
    limitations under the License. */
 package com.predic8.membrane.core.azure;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.predic8.membrane.core.HttpRouter;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Response;
@@ -24,6 +22,7 @@ import com.predic8.membrane.core.proxies.ServiceProxy;
 import com.predic8.membrane.core.proxies.ServiceProxyKey;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import tools.jackson.databind.ObjectMapper;
 
 import java.io.IOException;
 import java.util.*;
@@ -123,7 +122,7 @@ public class AzureDnsApiSimulator {
         return Outcome.RETURN;
     }
 
-    private Outcome insertOrReplaceTableStorageEntity(Exchange exc) throws JsonProcessingException {
+    private Outcome insertOrReplaceTableStorageEntity(Exchange exc) {
         var data = new ObjectMapper()
                 .readTree(exc.getRequest().getBodyAsStringDecoded())
                 .get("data")
@@ -167,7 +166,7 @@ public class AzureDnsApiSimulator {
         return Outcome.RETURN;
     }
 
-    private Outcome getEntityFromTableStorage(Exchange exc) throws JsonProcessingException {
+    private Outcome getEntityFromTableStorage(Exchange exc) {
         var uriPayload = extractValuesFromUri(exc.getRequestURI());
 
         if (uriPayload == null) {
@@ -210,7 +209,7 @@ public class AzureDnsApiSimulator {
         return null;
     }
 
-    private Outcome createTableStorageTable(Exchange exc) throws JsonProcessingException {
+    private Outcome createTableStorageTable(Exchange exc) {
         var tableName = new ObjectMapper()
                 .readTree(exc.getRequest().getBodyAsStringDecoded())
                 .get("TableName")

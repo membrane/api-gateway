@@ -13,8 +13,9 @@
    limitations under the License. */
 package com.predic8.membrane.core.openapi.validators;
 
-import com.fasterxml.jackson.databind.*;
-import com.fasterxml.jackson.databind.node.*;
+import com.fasterxml.jackson.databind.node.TextNode;
+import tools.jackson.databind.*;
+import tools.jackson.databind.node.*;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.*;
 import org.junit.jupiter.params.provider.*;
@@ -22,7 +23,7 @@ import org.junit.jupiter.params.provider.*;
 import java.io.*;
 import java.util.stream.*;
 
-import static com.fasterxml.jackson.databind.node.BooleanNode.*;
+import static tools.jackson.databind.node.BooleanNode.*;
 import static com.predic8.membrane.core.openapi.validators.JsonSchemaValidator.*;
 import static java.io.InputStream.nullInputStream;
 import static org.junit.jupiter.api.Assertions.*;
@@ -60,8 +61,7 @@ public class SchemaValidatorTest {
 
     private static Stream<Arguments> validatorTestCases() {
         JsonNode nonArrayNode = mapper.createObjectNode().put("key", "value");
-        JsonNode stringNode = new TextNode("example");
-
+        JsonNode stringNode =  StringNode.valueOf("example");
         return Stream.of(
                 // ArrayValidator test cases
                 Arguments.of(arrayValidator, mapper.createArrayNode(), ARRAY),

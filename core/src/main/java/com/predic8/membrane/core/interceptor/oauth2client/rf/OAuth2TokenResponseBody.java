@@ -14,10 +14,11 @@
 
 package com.predic8.membrane.core.interceptor.oauth2client.rf;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.predic8.membrane.core.interceptor.oauth2.authorizationservice.AuthorizationService;
 import org.apache.commons.io.IOUtils;
+import tools.jackson.core.JacksonException;
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.ObjectMapper;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -34,7 +35,7 @@ public class OAuth2TokenResponseBody {
         try {
             json = new ObjectMapper().readValue(body, new TypeReference<>() {
             });
-        } catch (IOException e) {
+        } catch (JacksonException e) {
             // in case the ObjectMapper has not read the HTTP body completely,
             // we need to remove the body from the stream, so that the HTTPClient Connection Manager
             // can close the TCP connection.

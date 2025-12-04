@@ -14,25 +14,31 @@ limitations under the License. */
 
 package com.predic8.membrane.core.prettifier;
 
-import com.fasterxml.jackson.databind.*;
-import com.fasterxml.jackson.databind.json.*;
-import org.slf4j.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import tools.jackson.core.JacksonException;
+import tools.jackson.core.json.JsonFactory;
+import tools.jackson.databind.ObjectMapper;
 
-import java.io.*;
-import java.nio.charset.*;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.Charset;
 
-import static com.fasterxml.jackson.core.json.JsonReadFeature.*;
+import static tools.jackson.core.json.JsonReadFeature.*;
 
 public class JSONPrettifier implements Prettifier {
 
     private static final Logger log = LoggerFactory.getLogger(JSONPrettifier.class);
 
-    private static final ObjectMapper om = JsonMapper.builder()
+    private static final JsonFactory JSON_FACTORY = JsonFactory.builder()
             .enable(ALLOW_JAVA_COMMENTS)
             .enable(ALLOW_TRAILING_COMMA)
             .enable(ALLOW_SINGLE_QUOTES)
-            .enable(ALLOW_UNQUOTED_FIELD_NAMES)
+            .enable(ALLOW_UNQUOTED_PROPERTY_NAMES)
             .build();
+
+    private static final ObjectMapper om = new ObjectMapper(JSON_FACTORY);
+
 
     public static final JSONPrettifier INSTANCE = new JSONPrettifier();
 
@@ -47,7 +53,7 @@ public class JSONPrettifier implements Prettifier {
     public byte[] prettify(byte[] c, Charset charset) {
         try {
             return om.writerWithDefaultPrettyPrinter().writeValueAsBytes(om.readTree(c));
-        } catch (IOException e) {
+        } catch (JacksonException e) {
             log.debug("Failed to prettify JSON. Returning input unmodified.", e);
             return c;
         }

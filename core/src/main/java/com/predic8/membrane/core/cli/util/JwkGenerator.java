@@ -14,7 +14,7 @@
 
 package com.predic8.membrane.core.cli.util;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 import com.predic8.membrane.core.cli.MembraneCommandLine;
 import org.jose4j.jwk.RsaJsonWebKey;
 import org.jose4j.lang.JoseException;

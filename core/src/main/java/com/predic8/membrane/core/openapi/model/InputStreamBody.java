@@ -16,7 +16,8 @@
 
 package com.predic8.membrane.core.openapi.model;
 
-import com.fasterxml.jackson.databind.*;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.*;
 import com.predic8.membrane.core.openapi.model.*;
 
 import java.io.*;
@@ -42,7 +43,7 @@ public class InputStreamBody implements Body {
     }
 
     @Override
-    public JsonNode getJson() throws IOException {
+    public JsonNode getJson() throws JacksonException {
         if (node != null)
             return node;
 

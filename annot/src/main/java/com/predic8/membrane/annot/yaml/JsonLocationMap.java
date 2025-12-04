@@ -14,15 +14,16 @@
 
 package com.predic8.membrane.annot.yaml;
 
-import com.fasterxml.jackson.core.JsonLocation;
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.JsonToken;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.JsonNodeFactory;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import tools.jackson.core.JsonParser;
+import tools.jackson.core.JsonToken;
+import tools.jackson.core.TokenStreamLocation;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.node.ArrayNode;
+import tools.jackson.databind.node.JsonNodeFactory;
+import tools.jackson.databind.node.ObjectNode;
+import tools.jackson.dataformat.yaml.YAMLFactory;
+import tools.jackson.dataformat.yaml.YAMLMapper;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -30,8 +31,9 @@ import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 
-import static com.fasterxml.jackson.core.StreamReadFeature.STRICT_DUPLICATE_DETECTION;
-import static com.fasterxml.jackson.dataformat.yaml.YAMLFactory.builder;
+import static tools.jackson.core.StreamReadFeature.STRICT_DUPLICATE_DETECTION;
+import static tools.jackson.dataformat.yaml.YAMLFactory.builder;
+
 
 /**
  * A utility class for parsing YAML content into JSON nodes while preserving location information.
@@ -49,13 +51,15 @@ import static com.fasterxml.jackson.dataformat.yaml.YAMLFactory.builder;
 public class JsonLocationMap {
 
     private static final YAMLFactory yamlFactory = builder().enable(STRICT_DUPLICATE_DETECTION).build();
-    private static final ObjectMapper om = new ObjectMapper(yamlFactory);
+
+    // Use format-specific mapper instead of new ObjectMapper(YAMLFactory)
+    private static final ObjectMapper om = YAMLMapper.builder(yamlFactory).build();
 
     // We use IdentityHashMap because different nodes might have identical content
     // but we want to track the specific instance in the tree.
-    private final Map<JsonNode, JsonLocation> locationMap = new IdentityHashMap<>();
+    private final Map<JsonNode, TokenStreamLocation> locationMap = new IdentityHashMap<>();
 
-    public Map<JsonNode, JsonLocation> getLocationMap() {
+    public Map<JsonNode, TokenStreamLocation> getLocationMap() {
         return locationMap;
     }
 
@@ -78,7 +82,7 @@ public class JsonLocationMap {
 
         if (token == null) return null;
 
-        JsonLocation location = parser.currentLocation();
+        TokenStreamLocation location = parser.currentLocation();
 
         switch (token) {
             case START_OBJECT:

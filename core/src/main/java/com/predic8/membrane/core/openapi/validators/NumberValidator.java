@@ -16,10 +16,10 @@
 
 package com.predic8.membrane.core.openapi.validators;
 
-import com.fasterxml.jackson.databind.*;
-import com.fasterxml.jackson.databind.node.*;
+import com.fasterxml.jackson.databind.node.TextNode;
+import tools.jackson.databind.JsonNode;
 
-import java.math.*;
+import java.math.BigDecimal;
 
 /**
  * When numbers appear in parameters, they enter as Strings (which is OK).
@@ -38,15 +38,16 @@ public class NumberValidator implements JsonSchemaValidator {
                 return null;
             }
             if (value instanceof JsonNode jn) {
-                new BigDecimal((jn).asText());
-                return NUMBER;
+                if (jn.isNumber()) {
+                    return NUMBER;
+                }
+                return null;
             }
             if (value instanceof String s) {
                 new BigDecimal(s);
                 return NUMBER;
             }
-        } catch (NumberFormatException ignored) {
-        }
+        } catch (NumberFormatException ignored) {}
         return null;
     }
 
@@ -63,9 +64,10 @@ public class NumberValidator implements JsonSchemaValidator {
                 return ValidationErrors.error(ctx.schemaType(NUMBER), String.format("%s is not a number.", value));
             }
             if (value instanceof JsonNode jn) {
-                // Not using double prevents from losing fractions
-                new BigDecimal(jn.asText());
-                return null;
+                if (jn.isNumber()) {
+                    return null;
+                }
+                return ValidationErrors.error(ctx.schemaType(NUMBER), String.format("%s is not a number.", jn));
             }
             if (value instanceof String s) {
                 new BigDecimal(s);

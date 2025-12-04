@@ -13,7 +13,6 @@
    limitations under the License. */
 package com.predic8.membrane.core.transport.ssl.acme;
 
-
 import com.fasterxml.jackson.annotation.JsonAnyGetter;
 import com.fasterxml.jackson.annotation.JsonAnySetter;
 

@@ -13,8 +13,6 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.oauth2client.rf.token;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.predic8.membrane.core.http.Response;
@@ -23,8 +21,9 @@ import com.predic8.membrane.core.interceptor.oauth2.OAuth2Statistics;
 import com.predic8.membrane.core.interceptor.oauth2.authorizationservice.AuthorizationService;
 import com.predic8.membrane.core.interceptor.oauth2client.rf.JsonUtils;
 import com.predic8.membrane.core.interceptor.session.Session;
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.ObjectMapper;
 
-import java.io.IOException;
 import java.io.InputStream;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -70,7 +69,7 @@ public class AccessTokenRevalidator {
         return parseResponse(response.getBodyAsStreamDecoded());
     }
 
-    private static Map<String, Object> parseResponse(InputStream body) throws IOException {
+    private static Map<String, Object> parseResponse(InputStream body) {
         return new ObjectMapper().readValue(body, new TypeReference<>() {});
     }
 

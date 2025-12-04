@@ -14,9 +14,9 @@
 
 package com.predic8.membrane.annot.yaml;
 
-import com.fasterxml.jackson.databind.*;
 import com.predic8.membrane.annot.MCChildElement;
 import org.jetbrains.annotations.NotNull;
+import tools.jackson.databind.JsonNode;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -86,18 +86,18 @@ public class MethodSetter {
             return parseListIncludingStartEvent(ctx, node);
 
         if (wanted.isEnum()) return parseEnum(wanted, node);
-        if (wanted.equals(String.class)) return node.asText();
+        if (wanted.equals(String.class)) return node.asString();
 
-        if (wanted == Integer.TYPE || wanted == Integer.class) return parseInt(node.asText());
-        if (wanted == Long.TYPE || wanted == Long.class) return parseLong(node.asText());
-        if (wanted == Boolean.TYPE || wanted == Boolean.class) return parseBoolean(node.asText());
+        if (wanted == Integer.TYPE || wanted == Integer.class) return parseInt(node.asString());
+        if (wanted == Long.TYPE || wanted == Long.class) return parseLong(node.asString());
+        if (wanted == Boolean.TYPE || wanted == Boolean.class) return parseBoolean(node.asString());
 
-        if (wanted.equals(Map.class) && McYamlIntrospector.hasOtherAttributes(setter)) return Map.of(key, node.asText());
+        if (wanted.equals(Map.class) && McYamlIntrospector.hasOtherAttributes(setter)) return Map.of(key, node.asString());
         if (McYamlIntrospector.isStructured(setter)) {
             if (beanClass != null) return createAndPopulateNode(ctx.updateContext(key), beanClass, node);
             return createAndPopulateNode(ctx.updateContext(key), wanted, node);
         }
-        if (McYamlIntrospector.isReferenceAttribute(setter)) return ctx.registry().resolveReference(node.asText());
+        if (McYamlIntrospector.isReferenceAttribute(setter)) return ctx.registry().resolveReference(node.asString());
         throw new RuntimeException("Not implemented setter type " + wanted);
     }
 
@@ -110,7 +110,7 @@ public class MethodSetter {
     }
 
     private static <E extends Enum<E>> E parseEnum(Class<?> enumClass, JsonNode node) throws WrongEnumConstantException {
-        String value = node.asText().toUpperCase(ROOT);
+        String value = node.asString().toUpperCase(ROOT);
         @SuppressWarnings("unchecked")
         Class<E> castEnumClass = (Class<E>) enumClass;
         try {

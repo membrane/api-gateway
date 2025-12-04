@@ -13,24 +13,30 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.authentication.session;
 
-import com.fasterxml.jackson.core.*;
-import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.*;
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.transport.http.*;
-import com.predic8.membrane.core.util.*;
+import com.predic8.membrane.annot.MCAttribute;
+import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.annot.Required;
+import com.predic8.membrane.core.Constants;
+import com.predic8.membrane.core.Router;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.Request;
+import com.predic8.membrane.core.transport.http.HttpClient;
+import com.predic8.membrane.core.util.URLParamUtil;
+import com.predic8.membrane.core.util.Util;
 import org.apache.commons.codec.binary.Base64;
-import org.slf4j.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import tools.jackson.core.JsonGenerator;
+import tools.jackson.core.json.JsonFactory;
 
-import javax.annotation.concurrent.*;
-import java.io.*;
-import java.net.*;
-import java.util.*;
+import javax.annotation.concurrent.GuardedBy;
+import java.io.ByteArrayOutputStream;
+import java.net.URLEncoder;
+import java.util.HashMap;
 
 import static com.predic8.membrane.core.http.Header.*;
-import static com.predic8.membrane.core.http.MimeType.*;
-import static java.nio.charset.StandardCharsets.*;
+import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * @explanation A <i>token provider</i> using <i>Deutsche Telekom's</i> REST interface <a
@@ -111,21 +117,28 @@ public class TelekomSMSTokenProvider extends SMSTokenProvider {
 		try {
 			ByteArrayOutputStream baos = new ByteArrayOutputStream();
 			JsonFactory jsonFactory = new JsonFactory();
-			JsonGenerator jg = jsonFactory.createGenerator(baos, JsonEncoding.UTF8);
+			JsonGenerator jg = jsonFactory.createGenerator(baos);
 
+			jg.writeName("outboundSMSMessageRequest");
 			jg.writeStartObject();
-			jg.writeObjectFieldStart("outboundSMSMessageRequest");
-			jg.writeArrayFieldStart("address");
+			jg.writeName("address");
+			jg.writeStartArray();
 			jg.writeString("tel:" + recipientNumber);
 			jg.writeEndArray();
-			jg.writeStringField("senderAddress", senderAddress);
-			jg.writeObjectFieldStart("outboundSMSTextMessage");
-			jg.writeStringField("message", text);
+			jg.writeName("senderAddress");
+			jg.writeString(senderAddress);
+			jg.writeName("outboundSMSTextMessage");
+			jg.writeStartObject();
+			jg.writeName("message");
+			jg.writeString(text);
 			jg.writeEndObject();
-			jg.writeStringField("outboundEncoding", "7bitGSM");
-			jg.writeStringField("clientCorrelator", "" + ((long)(Math.random() * Long.MAX_VALUE)));
+			jg.writeName("outboundEncoding");
+			jg.writeString("7bitGSM");
+			jg.writeName("clientCorrelator");
+			jg.writeString(Long.toString((long) (Math.random() * Long.MAX_VALUE)));
 			if (senderName != null)
-				jg.writeStringField("senderName", senderName);
+				jg.writeName("senderName");
+			jg.writeString(senderName);
 			jg.writeEndObject();
 			jg.writeEndObject();
 

@@ -14,6 +14,8 @@
 package com.predic8.membrane.annot.generator.kubernetes;
 
 import com.fasterxml.jackson.databind.*;
+import com.fasterxml.jackson.databind.node.*;
+import com.predic8.membrane.annot.generator.kubernetes.model.*;
 import com.predic8.membrane.annot.model.ElementInfo;
 import com.predic8.membrane.annot.model.MainInfo;
 import com.predic8.membrane.annot.model.Model;

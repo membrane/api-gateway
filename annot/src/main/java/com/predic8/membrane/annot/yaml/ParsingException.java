@@ -14,7 +14,7 @@
 
 package com.predic8.membrane.annot.yaml;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import tools.jackson.databind.JsonNode;
 
 public class ParsingException extends RuntimeException {
     private final JsonNode node;

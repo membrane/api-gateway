@@ -13,7 +13,7 @@
    limitations under the License. */
 package com.predic8.membrane.core.azure.api.auth;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 import com.predic8.membrane.core.azure.AzureIdentity;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Request;

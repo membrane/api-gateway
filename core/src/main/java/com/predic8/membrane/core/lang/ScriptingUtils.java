@@ -16,7 +16,7 @@
 
 package com.predic8.membrane.core.lang;
 
-import com.fasterxml.jackson.databind.*;
+import tools.jackson.databind.*;
 import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;

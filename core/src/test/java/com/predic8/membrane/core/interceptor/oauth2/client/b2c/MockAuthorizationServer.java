@@ -13,37 +13,47 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.oauth2.client.b2c;
 
-import com.fasterxml.jackson.core.*;
-import com.fasterxml.jackson.databind.*;
-import com.google.common.collect.*;
-import com.predic8.membrane.core.*;
-import com.predic8.membrane.core.config.*;
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.interceptor.oauth2.*;
-import com.predic8.membrane.core.proxies.*;
-import com.predic8.membrane.core.util.*;
-import org.jetbrains.annotations.*;
-import org.jose4j.jwk.*;
-import org.jose4j.jws.*;
-import org.jose4j.jwt.*;
-import org.jose4j.lang.*;
+import com.google.common.collect.ImmutableSet;
+import com.predic8.membrane.core.HttpRouter;
+import com.predic8.membrane.core.Router;
+import com.predic8.membrane.core.config.Path;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.Response;
+import com.predic8.membrane.core.interceptor.AbstractInterceptor;
+import com.predic8.membrane.core.interceptor.Outcome;
+import com.predic8.membrane.core.interceptor.oauth2.WellknownFile;
+import com.predic8.membrane.core.proxies.ServiceProxy;
+import com.predic8.membrane.core.proxies.ServiceProxyKey;
+import com.predic8.membrane.core.util.URIFactory;
+import com.predic8.membrane.core.util.URLParamUtil;
+import org.jetbrains.annotations.NotNull;
+import org.jose4j.jwk.JsonWebKey;
+import org.jose4j.jwk.RsaJsonWebKey;
+import org.jose4j.jwk.RsaJwkGenerator;
+import org.jose4j.jws.JsonWebSignature;
+import org.jose4j.jwt.JwtClaims;
+import org.jose4j.jwt.NumericDate;
+import org.jose4j.lang.JoseException;
+import tools.jackson.databind.ObjectMapper;
 
-import java.io.*;
-import java.math.*;
-import java.security.*;
-import java.util.*;
+import java.io.IOException;
+import java.math.BigInteger;
+import java.security.Key;
+import java.security.SecureRandom;
+import java.util.Base64;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 
-import static com.predic8.membrane.core.RuleManager.RuleDefinitionSource.*;
-import static com.predic8.membrane.core.http.MimeType.*;
+import static com.predic8.membrane.core.RuleManager.RuleDefinitionSource.MANUAL;
+import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
 import static com.predic8.membrane.core.interceptor.oauth2.ParamNames.*;
 import static com.predic8.membrane.core.util.URLParamUtil.DuplicateKeyOrInvalidFormStrategy.ERROR;
 import static java.net.URLEncoder.encode;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class MockAuthorizationServer {
     public static final int SERVER_PORT = 21337;
@@ -184,7 +194,7 @@ public class MockAuthorizationServer {
                 .build();
     }
 
-    private @NotNull Map<String, Object> createTokenResponse(String flowId, Map<String, String> params) throws JoseException, JsonProcessingException {
+    private @NotNull Map<String, Object> createTokenResponse(String flowId, Map<String, String> params) throws JoseException {
         Map<String, Object> res = new HashMap<>();
 
         String scope = params.get(SCOPE);
@@ -211,7 +221,7 @@ public class MockAuthorizationServer {
         return res;
     }
 
-    private String urlEncode(Map<String, Object> map) throws JsonProcessingException {
+    private String urlEncode(Map<String, Object> map) {
         return Base64.getUrlEncoder().encodeToString(om.writeValueAsString(map).getBytes(UTF_8));
     }
 

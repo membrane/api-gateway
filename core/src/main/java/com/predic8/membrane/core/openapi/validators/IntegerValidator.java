@@ -16,7 +16,7 @@
 
 package com.predic8.membrane.core.openapi.validators;
 
-import com.fasterxml.jackson.databind.*;
+import tools.jackson.databind.*;
 import com.predic8.membrane.core.openapi.model.*;
 
 import java.math.*;

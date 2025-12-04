@@ -14,26 +14,32 @@
 
 package com.predic8.membrane.core.http;
 
-import com.fasterxml.jackson.core.*;
-import com.fasterxml.jackson.databind.*;
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.transport.http.*;
-import com.predic8.membrane.core.util.*;
-import org.apache.commons.text.*;
-import org.slf4j.*;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.transport.http.EOFWhileReadingFirstLineException;
+import com.predic8.membrane.core.transport.http.EOFWhileReadingLineException;
+import com.predic8.membrane.core.transport.http.NoResponseException;
+import com.predic8.membrane.core.util.EndOfStreamException;
+import com.predic8.membrane.core.util.HttpUtil;
+import org.apache.commons.text.StringEscapeUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import tools.jackson.databind.ObjectMapper;
 
-import java.io.*;
-import java.util.*;
-import java.util.regex.*;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
-import static com.predic8.membrane.core.Constants.*;
+import static com.predic8.membrane.core.Constants.CRLF;
+import static com.predic8.membrane.core.Constants.PRODUCT_NAME;
 import static com.predic8.membrane.core.http.Header.*;
 import static com.predic8.membrane.core.http.MimeType.*;
-import static com.predic8.membrane.core.http.Response.ResponseBuilder.*;
+import static com.predic8.membrane.core.http.Response.ResponseBuilder.newInstance;
 import static com.predic8.membrane.core.util.HttpUtil.*;
 import static java.lang.Integer.parseInt;
-import static java.nio.charset.StandardCharsets.*;
-import static org.apache.commons.text.StringEscapeUtils.*;
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.apache.commons.text.StringEscapeUtils.escapeXml11;
 
 public class Response extends Message {
 
@@ -84,7 +90,7 @@ public class Response extends Message {
 		 * Used for returning JSON from JavascriptInterceptor
 		 * JSON MAP
 		 */
-		public ResponseBuilder body(Map<String,Object> map) throws JsonProcessingException {
+		public ResponseBuilder body(Map<String,Object> map) {
 			res.setBodyContent(om.writeValueAsBytes(map));
 			res.getHeader().setContentType(APPLICATION_JSON);
 			return this;

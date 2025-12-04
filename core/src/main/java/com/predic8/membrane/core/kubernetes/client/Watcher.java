@@ -13,7 +13,7 @@
    limitations under the License. */
 package com.predic8.membrane.core.kubernetes.client;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import tools.jackson.databind.JsonNode;
 import com.predic8.membrane.annot.yaml.WatchAction;
 
 import javax.annotation.Nullable;

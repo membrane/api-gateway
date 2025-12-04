@@ -13,15 +13,20 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.jwt;
 
-import com.fasterxml.jackson.databind.*;
-import org.slf4j.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import tools.jackson.core.JacksonException;
+import tools.jackson.core.StreamReadFeature;
+import tools.jackson.databind.DeserializationFeature;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 
-import java.io.*;
-import java.util.*;
+import java.util.Base64;
+import java.util.Map;
 
-import static com.fasterxml.jackson.core.JsonParser.Feature.STRICT_DUPLICATE_DETECTION;
-import static com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_READING_DUP_TREE_KEY;
 import static com.predic8.membrane.core.interceptor.jwt.JwtAuthInterceptor.*;
+import static tools.jackson.core.StreamReadFeature.STRICT_DUPLICATE_DETECTION;
+import static tools.jackson.databind.DeserializationFeature.FAIL_ON_READING_DUP_TREE_KEY;
 
 public class JsonWebToken {
 
@@ -59,9 +64,10 @@ public class JsonWebToken {
     private final Payload payload;
 
     private static Base64.Decoder decoder = Base64.getUrlDecoder();
-    private static ObjectMapper mapper = new ObjectMapper()
-            .configure(FAIL_ON_READING_DUP_TREE_KEY, true)
-            .configure(STRICT_DUPLICATE_DETECTION, true);
+    private static final ObjectMapper mapper = JsonMapper.builder()
+            .enable(FAIL_ON_READING_DUP_TREE_KEY)
+            .enable(STRICT_DUPLICATE_DETECTION)
+            .build();
 
     public JsonWebToken(String jwt) throws JWTException {
         var chunks = jwt.split("\\.");
@@ -74,7 +80,7 @@ public class JsonWebToken {
         try {
             this.header = new Header(mapper.readValue(decoder.decode(chunks[0]), Map.class));
             this.payload = new Payload(mapper.readValue(decoder.decode(chunks[1]), Map.class));
-        } catch (IOException e) {
+        } catch (JacksonException e) {
             throw new JWTException(ERROR_DECODED_HEADER_NOT_JSON, ERROR_DECODED_HEADER_NOT_JSON_ID);
         }
     }

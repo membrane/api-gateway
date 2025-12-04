@@ -13,20 +13,32 @@
 
 package com.predic8.membrane.core.interceptor.oauth2.authorizationservice;
 
-import com.fasterxml.jackson.core.type.*;
-import com.fasterxml.jackson.databind.*;
-import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.interceptor.oauth2.*;
-import com.predic8.membrane.core.interceptor.oauth2.parameter.*;
-import com.predic8.membrane.core.resolver.*;
-import com.predic8.membrane.core.util.*;
-import org.apache.commons.io.*;
-import org.jetbrains.annotations.*;
-import org.slf4j.*;
+import com.predic8.membrane.annot.MCAttribute;
+import com.predic8.membrane.annot.MCChildElement;
+import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.annot.Required;
+import com.predic8.membrane.core.interceptor.oauth2.ClaimRenamer;
+import com.predic8.membrane.core.interceptor.oauth2.Client;
+import com.predic8.membrane.core.interceptor.oauth2.OAuth2Util;
+import com.predic8.membrane.core.interceptor.oauth2.parameter.ClaimsParameter;
+import com.predic8.membrane.core.resolver.ResolverMap;
+import com.predic8.membrane.core.util.CollectionsUtil;
+import com.predic8.membrane.core.util.ConfigurationException;
+import com.predic8.membrane.core.util.StringList;
+import org.apache.commons.io.IOUtils;
+import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 
-import java.io.*;
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.URI;
-import java.util.*;
+import java.util.List;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 @MCElement(name="membrane")
 public class MembraneAuthorizationService extends AuthorizationService {
@@ -151,25 +163,33 @@ public class MembraneAuthorizationService extends AuthorizationService {
 
     private void parseSrc(InputStream resolve) throws IOException {
         ObjectMapper mapper = new ObjectMapper();
-        JsonNode json = mapper.readTree(IOUtils.toString(resolve));
+        JsonNode json = mapper.readTree(IOUtils.toString(resolve, UTF_8));
 
-        // without checks
-        tokenEndpoint = json.path("token_endpoint").asText(null);
-        if (tokenEndpoint == null)
-            throw new RuntimeException("No token_endpoint could be detected.");
-        userInfoEndpoint = json.path("userinfo_endpoint").asText(null);
-        authorizationEndpoint = json.path("authorization_endpoint").asText();
-        revocationEndpoint = json.path("revocation_endpoint").asText();
-        registrationEndpoint = json.path("registration_endpoint").asText(null);
-        jwksEndpoint = json.path("jwks_uri").asText(null);
-        endSessionEndpoint = json.path("end_session_endpoint").asText(null);
-        issuer = json.path("issuer").asText(null);
+        tokenEndpoint = optString(json, "token_endpoint");
+        if (tokenEndpoint == null) throw new RuntimeException("No token_endpoint could be detected.");
+
+        userInfoEndpoint      = optString(json, "userinfo_endpoint");
+        authorizationEndpoint = optString(json, "authorization_endpoint");
+        revocationEndpoint    = optString(json, "revocation_endpoint");
+        registrationEndpoint  = optString(json, "registration_endpoint");
+        jwksEndpoint          = optString(json, "jwks_uri");
+        endSessionEndpoint    = optString(json, "end_session_endpoint");
+        issuer                = optString(json, "issuer");
 
         log.debug("Configured response modes: {}", responseModesSupported);
         List<String> responseModesOfferedFromServer = convertToListOfStrings(mapper, json.get("response_modes_supported"));
         log.debug("Server offered response modes: {}", responseModesOfferedFromServer);
         responseMode = negotiateResponseMode(responseModesOfferedFromServer);
         log.debug("Aggreed on response mode: {}", responseMode);
+    }
+
+    private static String optString(JsonNode json, String field) {
+        if (json == null)
+            return null;
+        JsonNode n = json.path(field);
+        if (n.isMissingNode() || n.isNull())
+            return null;
+        return n.asString();
     }
 
     private static List<String> convertToListOfStrings(ObjectMapper mapper, JsonNode json) {

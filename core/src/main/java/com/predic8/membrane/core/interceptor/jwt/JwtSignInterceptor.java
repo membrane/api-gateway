@@ -12,8 +12,8 @@
  */
 package com.predic8.membrane.core.interceptor.jwt;
 
-import com.fasterxml.jackson.databind.*;
-import com.fasterxml.jackson.databind.node.*;
+import tools.jackson.databind.*;
+import tools.jackson.databind.node.*;
 import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;

@@ -16,8 +16,9 @@ package com.predic8.membrane.core.interceptor.oauth2;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.MimeType;
 import com.predic8.membrane.core.http.Response;
-import com.predic8.membrane.core.proxies.*;
-import org.jetbrains.annotations.*;
+import com.predic8.membrane.core.proxies.Proxy;
+import com.predic8.membrane.core.proxies.SSLableProxy;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 import java.net.URLDecoder;
@@ -56,8 +57,11 @@ public class OAuth2Util {
         try (var bufferedJsonGenerator = new BufferedJsonGenerator()) {
             var gen = bufferedJsonGenerator.getJsonGenerator();
             gen.writeStartObject();
-            for (int i = 0; i < params.length; i += 2)
-                gen.writeObjectField(params[i], params[i + 1]);
+            for (int i = 0; i < params.length; i += 2) {
+                gen.writeName(params[i]);
+                gen.writePOJO(params[i + 1]);
+            }
+
             gen.writeEndObject();
             json = bufferedJsonGenerator.getJson();
         }

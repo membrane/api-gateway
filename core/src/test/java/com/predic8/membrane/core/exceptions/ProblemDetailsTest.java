@@ -11,20 +11,24 @@
 
 package com.predic8.membrane.core.exceptions;
 
-import com.fasterxml.jackson.databind.*;
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.*;
-import org.junit.jupiter.api.*;
-import org.xml.sax.*;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.Request;
+import com.predic8.membrane.core.http.Response;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
+import org.xml.sax.InputSource;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 
-import javax.xml.xpath.*;
-import java.io.*;
-import java.util.*;
+import javax.xml.xpath.XPathExpressionException;
+import javax.xml.xpath.XPathFactory;
+import java.io.StringReader;
+import java.util.List;
 
 import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
 import static com.predic8.membrane.core.http.MimeType.*;
-import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
-import static com.predic8.membrane.core.util.CollectionsUtil.*;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
+import static com.predic8.membrane.core.util.CollectionsUtil.toList;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class ProblemDetailsTest {
@@ -36,7 +40,7 @@ public class ProblemDetailsTest {
     class productionFalse {
 
         @Test
-        void simple() throws Exception {
+        void simple() {
 
             Response r = user(false, "component-a")
                     .addSubType("catastrophe")
@@ -51,11 +55,11 @@ public class ProblemDetailsTest {
             assertEquals("Something happened!", json.get(TITLE).asText());
             assertEquals("https://membrane-api.io/problems/user/catastrophe", json.get(TYPE).asText());
 
-            assertTrue(toList(json.fieldNames()).containsAll(List.of(TITLE, TYPE, STATUS, SEE, ATTENTION)));
+            assertTrue(toList(json.propertyNames().iterator()).containsAll(List.of(TITLE, TYPE, STATUS, SEE, ATTENTION)));
         }
 
         @Test
-        void internals() throws Exception {
+        void internals() {
 
             Response r = user(false, "a")
                     .addSubType("catastrophe")
@@ -70,7 +74,7 @@ public class ProblemDetailsTest {
         }
 
         @Test
-        void details() throws Exception {
+        void details() {
             Response r = user(false, "component-b")
                     .addSubType("catastrophe")
                     .title("Something happened!")
@@ -82,7 +86,7 @@ public class ProblemDetailsTest {
         }
 
         @Test
-        void extensions() throws Exception {
+        void extensions() {
             Response r = user(false, "component c")
                     .addSubType("catastrophe")
                     .title("Something happened!")
@@ -96,7 +100,7 @@ public class ProblemDetailsTest {
         }
 
         @Test
-        void nonProduction() throws Exception {
+        void nonProduction() {
             JsonNode j = parseJson(getResponseWithDetailsAndExtensions(false));
             assertTrue(j.hasNonNull(TITLE));
             assertTrue(j.hasNonNull(TYPE));
@@ -112,7 +116,7 @@ public class ProblemDetailsTest {
         }
 
         @Test
-        void see() throws Exception {
+        void see() {
             Response r = user(false, "component-b")
                     .title("Something happened!")
                     .flow(REQUEST)
@@ -136,7 +140,7 @@ public class ProblemDetailsTest {
         }
 
         @Test
-        void exceptionStacktrace() throws Exception {
+        void exceptionStacktrace() {
 
             Response r = user(false, "a")
                     .title("Something happened!")
@@ -150,7 +154,7 @@ public class ProblemDetailsTest {
         }
 
         @Test
-        void exceptionButNoStacktrace() throws Exception {
+        void exceptionButNoStacktrace() {
 
             Response r = user(false, "a")
                     .title("Something happened!")
@@ -168,16 +172,16 @@ public class ProblemDetailsTest {
     class production {
 
         @Test
-        void userDetailsException() throws Exception {
+        void userDetailsException() {
             JsonNode json = parseJson(getResponseWithDetailsAndExtensions(true));
             assertEquals(4, json.size());
-            assertTrue(toList(json.fieldNames()).containsAll(List.of(TITLE, TYPE, STATUS, DETAIL)));
+            assertTrue(toList(json.propertyNames().iterator()).containsAll(List.of(TITLE, TYPE, STATUS, DETAIL)));
             assertEquals("https://membrane-api.io/problems/user/catastrophe", json.get(TYPE).asText());
             assertEquals("Something happened!", json.get(TITLE).asText());
         }
 
         @Test
-        void hidesInternal() throws Exception {
+        void hidesInternal() {
             Response r = internal(true, "a b").addSubType("catastrophe")
                     .title("Something happened!")
                     .detail("A detailed description.")
@@ -189,7 +193,7 @@ public class ProblemDetailsTest {
             assertEquals(4, j.size());
             assertFalse(j.has("a"));
             assertFalse(j.has("b"));
-            assertTrue(toList(j.fieldNames()).containsAll(List.of(TITLE, TYPE, STATUS, DETAIL)));
+            assertTrue(toList(j.propertyNames().iterator()).containsAll(List.of(TITLE, TYPE, STATUS, DETAIL)));
             assertEquals("https://membrane-api.io/problems/internal", j.get(TYPE).asText());
             assertEquals(INTERNAL_SERVER_ERROR, j.get(TITLE).asText());
         }
@@ -198,7 +202,7 @@ public class ProblemDetailsTest {
         class status400 {
 
             @Test
-            void productionExceptionNoStacktraceStillHasDetail() throws Exception {
+            void productionExceptionNoStacktraceStillHasDetail() {
                 Response r = user(true, "x")
                         .title("Hidden")
                         .exception(new Exception("boom"))
@@ -212,7 +216,7 @@ public class ProblemDetailsTest {
             }
 
             @Test
-            void internals() throws Exception {
+            void internals() {
 
                 Response r = user(true, "a")
                         .addSubType("catastrophe")
@@ -229,7 +233,7 @@ public class ProblemDetailsTest {
             }
 
             @Test
-            void subType() throws Exception {
+            void subType() {
                 Response r = user(true, "a")
                         .title("Validation failed!")
                         .addSubType("validation")
@@ -285,7 +289,7 @@ public class ProblemDetailsTest {
         }
     }
 
-    private static JsonNode parseJson(Response r) throws Exception {
+    private static JsonNode parseJson(Response r) {
         return om.readTree(r.getBodyAsStringDecoded());
     }
 }

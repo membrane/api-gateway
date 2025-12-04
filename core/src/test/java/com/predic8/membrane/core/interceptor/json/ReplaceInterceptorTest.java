@@ -13,7 +13,7 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.json;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 import com.predic8.membrane.core.http.Message;
 import com.predic8.membrane.core.http.Request;
 import org.junit.jupiter.api.BeforeEach;

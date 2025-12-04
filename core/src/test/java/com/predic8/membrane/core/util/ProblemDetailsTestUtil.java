@@ -14,21 +14,22 @@
 
 package com.predic8.membrane.core.util;
 
-import com.fasterxml.jackson.core.*;
-import com.fasterxml.jackson.core.type.*;
-import com.fasterxml.jackson.databind.*;
-import com.predic8.membrane.core.exceptions.*;
-import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.exceptions.ProblemDetails;
+import com.predic8.membrane.core.http.Response;
+import tools.jackson.core.JacksonException;
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.ObjectMapper;
 
-import java.util.*;
+import java.util.Map;
 
-import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
+import static com.predic8.membrane.core.exceptions.ProblemDetails.DETAIL;
+import static com.predic8.membrane.core.exceptions.ProblemDetails.TITLE;
 import static com.predic8.membrane.core.http.MimeType.APPLICATION_PROBLEM_JSON;
 
 public class ProblemDetailsTestUtil {
 
     private final static ObjectMapper om = new ObjectMapper();
-    public static ProblemDetails parse(Response r) throws JsonProcessingException {
+    public static ProblemDetails parse(Response r) throws JacksonException {
 
         if (r.getHeader().getContentType() == null)
             throw new RuntimeException("No Content-Type in message with ProblemDetails!");
