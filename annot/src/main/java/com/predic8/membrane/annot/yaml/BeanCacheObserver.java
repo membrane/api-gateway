@@ -17,7 +17,7 @@ package com.predic8.membrane.annot.yaml;
 import java.io.IOException;
 
 /**
- * Observer for {@link BeanCache} events.
+ * Observer for {@link BeanRegistryImplementation} events.
  * <p>
  * Implementations are notified when the cache has finished its asynchronous
  * initial load and whenever a bean is added, modified, or deleted.
@@ -38,6 +38,10 @@ public interface BeanCacheObserver {
      * @param bean    the current instance (on ADD/MODIFY) or {@code null} (on DELETE)
      * @param oldBean the previous instance (on MODIFY) or {@code null}
      * @throws IOException if handling the event performs I/O and it fails
+     *
+     *
+     * TODO: Make event visible: enum and add to signature?
+     *
      */
     void handleBeanEvent(BeanDefinition bd, Object bean, Object oldBean) throws IOException;
 

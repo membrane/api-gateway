@@ -14,20 +14,26 @@
 
 package com.predic8.membrane.annot.yaml;
 
+import com.fasterxml.jackson.databind.*;
 import com.predic8.membrane.annot.MCChildElement;
 import org.jetbrains.annotations.NotNull;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.List;
+import java.util.*;
 
+import static com.predic8.membrane.annot.yaml.GenericYamlParser.*;
 import static com.predic8.membrane.annot.yaml.McYamlIntrospector.*;
 import static com.predic8.membrane.annot.yaml.McYamlIntrospector.findSetterForKey;
+import static java.lang.Boolean.parseBoolean;
+import static java.lang.Integer.parseInt;
+import static java.lang.Long.parseLong;
+import static java.util.Locale.ROOT;
 
 public class MethodSetter {
 
-    private Method setter;
-    private Class<?> beanClass;
+    private final Method setter;
+    private final Class<?> beanClass;
 
     public MethodSetter(Method setter, Class<?> beanClass) {
         this.setter = setter;
@@ -70,35 +76,47 @@ public class MethodSetter {
         return setter.getParameterTypes()[0];
     }
 
-    public boolean isStructured() {
-        return com.predic8.membrane.annot.yaml.McYamlIntrospector.isStructured(setter);
+    public <T> void setSetter(T instance, ParsingContext ctx, JsonNode node, String key) throws InvocationTargetException, IllegalAccessException, WrongEnumConstantException {
+        setter.invoke(instance, resolveSetterValue(ctx, node.get(key), key));
     }
 
-    public boolean isReferenceAttribute() {
-        return com.predic8.membrane.annot.yaml.McYamlIntrospector.isReferenceAttribute(setter);
-    }
+    private Object resolveSetterValue(ParsingContext ctx, JsonNode node, String key) throws WrongEnumConstantException, ParsingException {
+        Class<?> wanted = getParameterType();
+        if (Collection.class.isAssignableFrom(wanted))
+            return parseListIncludingStartEvent(ctx, node);
 
-    public boolean hasOtherAttributes() {
-        return com.predic8.membrane.annot.yaml.McYamlIntrospector.hasOtherAttributes(setter);
-    }
+        if (wanted.isEnum()) return parseEnum(wanted, node);
+        if (wanted.equals(String.class)) return node.asText();
 
-    public static <T> void setSetter(T instance, Method method, Object value) throws InvocationTargetException, IllegalAccessException {
-        method.invoke(instance, value);
+        if (wanted == Integer.TYPE || wanted == Integer.class) return parseInt(node.asText());
+        if (wanted == Long.TYPE || wanted == Long.class) return parseLong(node.asText());
+        if (wanted == Boolean.TYPE || wanted == Boolean.class) return parseBoolean(node.asText());
+
+        if (wanted.equals(Map.class) && McYamlIntrospector.hasOtherAttributes(setter)) return Map.of(key, node.asText());
+        if (McYamlIntrospector.isStructured(setter)) {
+            if (beanClass != null) return createAndPopulateNode(ctx.updateContext(key), beanClass, node);
+            return createAndPopulateNode(ctx.updateContext(key), wanted, node);
+        }
+        if (McYamlIntrospector.isReferenceAttribute(setter)) return ctx.registry().resolveReference(node.asText());
+        throw new RuntimeException("Not implemented setter type " + wanted);
     }
 
     public Method getSetter() {
         return setter;
     }
 
-    public void setSetter(Method setter) {
-        this.setter = setter;
-    }
-
     public Class<?> getBeanClass() {
         return beanClass;
     }
 
-    public void setBeanClass(Class<?> beanClass) {
-        this.beanClass = beanClass;
+    private static <E extends Enum<E>> E parseEnum(Class<?> enumClass, JsonNode node) throws WrongEnumConstantException {
+        String value = node.asText().toUpperCase(ROOT);
+        @SuppressWarnings("unchecked")
+        Class<E> castEnumClass = (Class<E>) enumClass;
+        try {
+            return Enum.valueOf(castEnumClass, value);
+        } catch (IllegalArgumentException e) {
+            throw new WrongEnumConstantException(enumClass, value);
+        }
     }
 }

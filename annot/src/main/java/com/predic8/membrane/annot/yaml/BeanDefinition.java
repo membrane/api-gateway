@@ -19,6 +19,8 @@ import java.util.*;
 
 public class BeanDefinition {
 
+    public static final String PROTOTYPE = "prototype";
+
     private final String name;
     private final String namespace;
     private final String uid;
@@ -27,7 +29,10 @@ public class BeanDefinition {
     private final String kind;
     private Object bean;
 
-    public BeanDefinition(WatchAction action, JsonNode node) {
+    /**
+     * Only called from K8S.
+     */
+    private BeanDefinition(WatchAction action, JsonNode node) {
         this.action = action;
         this.node = node;
         JsonNode metadata = node.get("metadata");
@@ -40,6 +45,10 @@ public class BeanDefinition {
             throw new IllegalArgumentException("name is null");
         namespace = metadata.get("namespace").asText();
         uid = metadata.get("uid").asText();
+    }
+
+    public static BeanDefinition create4Kubernetes(WatchAction action, JsonNode node) {
+        return new BeanDefinition(action, node);
     }
 
     public BeanDefinition(String kind, String name, String namespace, String uid, JsonNode node) {
@@ -79,6 +88,7 @@ public class BeanDefinition {
         return bean;
     }
 
+    // TODO: Rest is immutable - can we make this also?
     public void setBean(Object bean) {
         this.bean = bean;
     }
@@ -91,5 +101,9 @@ public class BeanDefinition {
         if (annotations == null)
             return null;
         return annotations.get("membrane-soa.org/scope").asText(); // TODO migrate to membrane-api.io
+    }
+
+    public boolean isPrototype() {
+        return PROTOTYPE.equals(getScope());
     }
 }

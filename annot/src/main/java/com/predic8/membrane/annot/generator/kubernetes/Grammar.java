@@ -140,7 +140,7 @@ public class Grammar extends AbstractGrammar {
                 Grammar.class.getName(),
                 fileName(),
                 mainInfo.getAnnotation().outputPackage()
-                        .replaceAll(".spring$", ".json")
+                        .replaceAll("\\.spring$", ".json")
                         .replaceAll("\\.", "/")
         ));
 

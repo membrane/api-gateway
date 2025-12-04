@@ -1,4 +1,4 @@
-/* Copyright 2022 predic8 GmbH, www.predic8.com
+/* Copyright 2025 predic8 GmbH, www.predic8.com
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -11,20 +11,23 @@
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
    See the License for the specific language governing permissions and
    limitations under the License. */
-package com.predic8.membrane.annot.yaml;
 
-import com.predic8.membrane.annot.*;
+package com.predic8.membrane.annot.util;
 
-import java.util.List;
+import org.junit.jupiter.api.*;
 
-public interface BeanRegistry {
+import static com.predic8.membrane.annot.util.CompilerHelper.YAML_PARSER_CLASS_NAME;
+import static org.junit.jupiter.api.Assertions.fail;
 
-    Object resolveReference(String url);
+public class ArchitectureTest {
 
-    List<Object> getBeans();
-
-    void registerBeanDefinitions(List<BeanDefinition> beanDefinitions);
-
-    Grammar getGrammar();
+    @Test
+    void yamlParser() {
+        try {
+            Class.forName(YAML_PARSER_CLASS_NAME);
+        } catch (ClassNotFoundException e) {
+            fail("Expected class %s to exist.".formatted(YAML_PARSER_CLASS_NAME));
+        }
+    }
 
 }
