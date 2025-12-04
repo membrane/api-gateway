@@ -35,6 +35,9 @@
 - Groovy:
   - ScriptingUtils: Variable bindings: headers references message.headers with the headers class instead of a map<String,Object>.
     - Difference to SpEL
+- Remove Starter:
+  -  External scripts using the `Starter.jar` to start membrane will no longer work.
+  -  Migration: use the `RouterCLI` to start membrane (e.g. see `distribution/scripts/start_router.sh`). 
 
 ## Minor
  - Rewrite JSONAssert Tests with RESTAssured
