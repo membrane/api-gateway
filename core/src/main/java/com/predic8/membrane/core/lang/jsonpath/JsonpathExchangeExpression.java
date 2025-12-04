@@ -111,7 +111,10 @@ public class JsonpathExchangeExpression extends AbstractExchangeExpression {
         }
         if (String.class.isAssignableFrom(type)) {
             if (o instanceof List l) {
-                return type.cast(l.getFirst().toString());
+                // Render list as String like: [ 1, 2, 3]
+                // That is different from XPath where you get the value of the first node as String. But
+                // it is consistent with most JSONPath implementations.
+                return type.cast(l.toString());
             }
             if (o instanceof JSONAware ja) {
                 return type.cast(ja.toJSONString());

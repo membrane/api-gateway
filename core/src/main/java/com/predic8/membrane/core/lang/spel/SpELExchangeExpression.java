@@ -60,7 +60,7 @@ public class SpELExchangeExpression extends AbstractExchangeExpression {
             exception = e;
         }
         throw new ConfigurationException("""
-                    Error in expression:
+                    Error in SpEL expression:
                     
                     %s
                     %s

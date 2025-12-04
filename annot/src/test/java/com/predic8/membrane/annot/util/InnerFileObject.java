@@ -36,7 +36,7 @@ public class InnerFileObject extends SimpleJavaFileObject {
     }
 
     @Override
-    public CharSequence getCharContent(boolean ignoreEncodingErrors) throws IOException {
+    public CharSequence getCharContent(boolean ignoreEncodingErrors) {
         byte[] bytes = data.content.get(toUri());
         if (bytes == null)
             return "";
@@ -44,7 +44,7 @@ public class InnerFileObject extends SimpleJavaFileObject {
     }
 
     @Override
-    public OutputStream openOutputStream() throws IOException {
+    public OutputStream openOutputStream() {
         return new ByteArrayOutputStream() {
             @Override
             public void flush() throws IOException {

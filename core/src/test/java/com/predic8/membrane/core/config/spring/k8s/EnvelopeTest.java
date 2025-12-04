@@ -22,7 +22,7 @@ import com.predic8.membrane.core.interceptor.ratelimit.RateLimitInterceptor;
 import com.predic8.membrane.core.interceptor.rewrite.RewriteInterceptor;
 import com.predic8.membrane.core.interceptor.templating.TemplateInterceptor;
 import com.predic8.membrane.core.interceptor.flow.ReturnInterceptor;
-import com.predic8.membrane.core.kubernetes.BeanRegistry;
+import com.predic8.membrane.annot.yaml.BeanRegistry;
 import com.predic8.membrane.core.openapi.serviceproxy.APIProxy;
 import org.junit.jupiter.api.Test;
 import org.yaml.snakeyaml.Yaml;

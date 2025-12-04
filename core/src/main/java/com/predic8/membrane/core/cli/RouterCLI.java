@@ -20,6 +20,7 @@ import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.kubernetes.BeanCache;
 import com.predic8.membrane.core.openapi.serviceproxy.*;
 import com.predic8.membrane.core.resolver.*;
+import com.predic8.membrane.core.util.ConfigurationException;
 import org.apache.commons.cli.*;
 import org.jetbrains.annotations.*;
 import org.slf4j.*;
@@ -132,10 +133,10 @@ public class RouterCLI {
     private static Router initRouterByConfig(MembraneCommandLine commandLine) throws Exception {
         String config = getRulesFile(commandLine);
         if(config.endsWith(".xml")) {
-            return initRouterByXml(commandLine);
+            return initRouterByXml(config);
         }
         if (config.endsWith(".yaml") || config.endsWith(".yml")) {
-            return initRouterByYAML(commandLine, "c");
+            return initRouterByYAML(config);
         }
         throw new RuntimeException("Unsupported file extension.");
     }
@@ -149,7 +150,10 @@ public class RouterCLI {
 
     private static Router initRouterByYAML(MembraneCommandLine commandLine, String option) throws Exception {
         String location = commandLine.getCommand().getOptionValue(option);
+        return initRouterByYAML(location);
+    }
 
+    private static Router initRouterByYAML(String location) throws Exception {
         var router = new HttpRouter();
         router.setBaseLocation(location);
         router.setHotDeploy(false);
@@ -162,7 +166,7 @@ public class RouterCLI {
         return router;
     }
 
-    private static @NotNull APIProxy getApiProxy(MembraneCommandLine commandLine) {
+    private static @NotNull APIProxy getApiProxy(MembraneCommandLine commandLine) throws IOException {
         APIProxy api = new APIProxy();
         api.setPort(commandLine.getCommand().isOptionSet("p") ?
                 parseInt(commandLine.getCommand().getOptionValue("p")) : 2000);
@@ -170,9 +174,10 @@ public class RouterCLI {
         return api;
     }
 
-    private static @NotNull OpenAPISpec getOpenAPISpec(MembraneCommandLine commandLine) {
+    private static @NotNull OpenAPISpec getOpenAPISpec(MembraneCommandLine commandLine) throws IOException {
         OpenAPISpec spec = new OpenAPISpec();
-        spec.location = commandLine.getCommand().getOptionValue("l");
+        spec.location = getLocation(commandLine);
+
         if (commandLine.getCommand().isOptionSet("v"))
             spec.setValidateRequests(YES);
         if (commandLine.getCommand().isOptionSet("V"))
@@ -180,9 +185,21 @@ public class RouterCLI {
         return spec;
     }
 
-    private static Router initRouterByXml(MembraneCommandLine commandLine) throws Exception {
+    private static String getLocation(MembraneCommandLine commandLine) throws IOException {
+        String location = commandLine.getCommand().getOptionValue("l");
+
+        if (location == null || location.isEmpty()) throw new RuntimeException(); // unreachable
+        if (location.startsWith("http://") || location.startsWith("https://")) return location;
+
+        File locFile = new File(location);
+        if (locFile.isAbsolute()) return locFile.getCanonicalPath();
+
+        return new File(getUserDir(), location).getCanonicalPath();
+    }
+
+    private static Router initRouterByXml(String config) throws Exception {
         try {
-            return Router.init(getRulesFile(commandLine));
+            return Router.init(config);
         } catch (XmlBeanDefinitionStoreException e) {
             handleXmlBeanDefinitionStoreException(e);
         }
@@ -221,7 +238,54 @@ public class RouterCLI {
             }
             return getRulesFileFromRelativeSpec(rm, filename, "");
         }
-        return getRulesFileFromRelativeSpec(rm, "conf/proxies.xml", getErrorNotice());
+        return getDefaultConfig(rm);
+    }
+
+    private static String getDefaultConfig(ResolverMap rm) {
+        String callerDir = System.getenv("MEMBRANE_CALLER_DIR");
+        if (callerDir == null || callerDir.isEmpty()) {
+            callerDir = getUserDir();
+        }
+
+        // Prio 1: dir/apis.yaml | dir/apis.yml
+        String config = tryConfig(callerDir, "apis.yaml");
+        if (config != null) return config;
+        config = tryConfig(callerDir, "apis.yml");
+        if (config != null) return config;
+
+        // Prio 2: dir/proxies.xml
+        config = tryConfig(callerDir, "proxies.xml");
+        if (config != null) return config;
+
+        String membraneHome = System.getenv(MEMBRANE_HOME);
+        if (membraneHome != null && !membraneHome.isEmpty()) {
+            String homeConf = membraneHome + File.separator + "conf";
+
+            // Prio 3: home/apis.yaml | home/apis.yml
+            config = tryConfig(homeConf, "apis.yaml");
+            if (config != null) return config;
+            config = tryConfig(homeConf, "apis.yml");
+            if (config != null) return config;
+
+            // Prio 4: home/proxies.xml
+            config = tryConfig(homeConf, "proxies.xml");
+            if (config != null) return config;
+        }
+
+        System.err.println("No configuration file found (apis.yaml, apis.yml or proxies.xml). Provide one of these or use -c <file>.");
+        System.exit(1);
+        throw new RuntimeException("No configuration file found."); // unreachable
+    }
+
+    private static String tryConfig(String dir, String fileName) {
+        if (dir == null || dir.isEmpty()) return null;
+        File f = new File(dir, fileName);
+        if (!f.isFile()) return null;
+        try {
+            return f.getCanonicalPath();
+        } catch (IOException e) {
+            return f.getAbsolutePath();
+        }
     }
 
     private static String getConfiguration(MembraneCommandLine cl) {
