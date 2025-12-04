@@ -1,0 +1,24 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v6.3.11.json
+api:
+  port: 2000
+  flow:
+    - request:
+        - validator:
+            schema: year.xsd
+    - response:
+        - validator:
+            schema: amount.xsd
+  target:
+    host: localhost
+    port: 2001
+
+---
+
+api:
+  port: 2001
+  flow:
+    - template:
+        contentType: application/xml
+        src: |
+          <amount>100</amount>
+    - return: {}

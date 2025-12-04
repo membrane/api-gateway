@@ -1,0 +1,32 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v6.3.11.json
+api:
+  port: 8443
+  ssl:
+    showSSLExceptions: true
+    # Please replace key and certificate for production!
+    key:
+      private:
+        location: membrane-key.pem
+      certificates:
+        - certificate:
+            location: membrane.pem
+  # Route here to your target
+  target:
+    host: localhost
+    port: 2000
+
+---
+# Serves as a backend API mock
+api:
+  port: 2000
+  flow:
+    - response:
+        - template:
+            pretty: true
+            contentType: application/json
+            src: |
+              {
+                "success": true
+              }
+    - return:
+        statusCode: 200

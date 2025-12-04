@@ -1,0 +1,32 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v6.3.11.json
+api:
+  port: 2000
+  flow:
+    - request:
+        # If 'true' set destination to internal proxy 'express'
+        - if:
+            test: //order[@express='yes']
+            language: xpath
+            flow:
+              - destination:
+                  url: internal://express
+
+---
+# An internalProxy is like a function or subroutine for an API.
+# TODO kind: internal
+api:
+  name: express
+  flow:
+    - static:
+        src: Express processing!
+    - return: {}
+
+---
+
+# TODO kind: internal
+api:
+  name: normal
+  flow:
+    - static:
+        src: Normal processing!
+    - return: {}

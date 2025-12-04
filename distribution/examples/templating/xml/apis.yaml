@@ -1,0 +1,29 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v6.3.11.json
+api:
+  port: 2000
+  flow:
+    - request:
+        - setProperty:
+            name: fn
+            value: ${/person/@firstname}
+            language: xpath
+        - template:
+            src: Buenas Noches, ${property.fn}sito!
+    # To forward to backend use target below instead of return
+    - return:
+        statusCode: 200
+        contentType: text/plain
+    # target:
+    #   host: YourBackendHost
+    #   port: YourBackendPort
+
+---
+
+api:
+  port: 2001
+  flow:
+    - request:
+        - template:
+            location: template.xml
+    - return:
+        statusCode: 200

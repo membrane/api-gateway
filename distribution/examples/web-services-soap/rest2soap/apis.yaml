@@ -1,0 +1,14 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v6.3.11.json
+api:
+  port: 2000
+  flow:
+    - rest2Soap:
+        mappings:
+          - mapping:
+              regex: /bank/.*
+              soapAction: ''
+              soapURI: /axis2/services/BLZService
+              requestXSLT: ./get2soap.xsl
+              responseXSLT: ./strip-env.xsl
+  target:
+    host: thomas-bayer.com

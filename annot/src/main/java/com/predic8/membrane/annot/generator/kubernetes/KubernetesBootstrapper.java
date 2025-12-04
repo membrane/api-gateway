@@ -32,6 +32,6 @@ public class KubernetesBootstrapper {
     public void boot(final Model model) throws IOException {
         new K8sYamlGenerator(processingEnv).write(model);
         new K8sJsonSchemaGenerator(processingEnv).write(model);
-        new K8sHelperGenerator(processingEnv).write(model);
+        new Grammar(processingEnv).write(model);
     }
 }

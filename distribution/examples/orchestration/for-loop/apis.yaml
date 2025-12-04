@@ -1,0 +1,40 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v6.3.11.json
+api:
+  port: 2000
+  flow:
+    - request:
+        # Fetch the complete list of products (limit set to avoid pagination)
+        - call:
+            url: https://api.predic8.de/shop/v2/products?limit=1000
+        - setProperty:
+            name: products
+            value: ${$.products}
+            language: jsonpath
+        # Iterate over each product to get additional details (price)
+        - for:
+            in: property.products
+            flow:
+              - call:
+                  url: https://api.predic8.de/shop/v2/products/${property.it['id']}
+              - setProperty:
+                  name: price
+                  value: ${$.price}
+                  language: jsonpath
+              - groovy:
+                  src: property.it.price = property.price
+        # Render a simplified JSON response with only product name and price
+        - template:
+            contentType: application/json
+            pretty: true
+            src: |
+              {
+                    "products": [
+                      <% property.products.eachWithIndex { p, idx -> %>
+                        {
+                            "name": "<%= p.name %>",
+                            "price": "<%= p.price %>"
+                        }<%= idx < property.products.size() - 1 ? ',' : '' %>
+                        <% } %>
+                  ]
+              }
+    - return: {}

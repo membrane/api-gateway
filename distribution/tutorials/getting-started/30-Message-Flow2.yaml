@@ -21,10 +21,7 @@
 #     Open in your browser: http://localhost:9000
 #
 #     Click on the API 'Message Flow Logging' and view the diagram
-
-metadata:
-  name: Message Flow Logging
-spec:
+api:
   port: 2000
   flow:
     - request: # executed during request flow from top to bottom
@@ -46,7 +43,7 @@ spec:
 
 ---
 # Admin Console
-spec:
+api:
   port: 9000
   flow:
     - adminConsole:

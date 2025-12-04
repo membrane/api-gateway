@@ -1,0 +1,20 @@
+api:
+  port: 2000
+  specs:
+    - openapi:
+        location: ../../conf/openapi/fruitshop-v2-2-0.oas.yml
+
+---
+api:
+  port: 9000
+  flow:
+    - adminConsole: {}
+
+---
+api:
+  port: 2000
+  flow:
+    - log:
+        message: Header ${header}
+  target:
+    url: https://api.predic8.de

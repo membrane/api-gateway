@@ -13,7 +13,7 @@
 #
 #     Username: admin
 #     Password: admin
-spec:
+api:
   port: 9000
   flow:
     # Protect the Admin Console using authentication (Basic, OAuth2, ACL, or none).
@@ -26,7 +26,7 @@ spec:
         readOnly: true
 
 ---
-spec:
+api:
   port: 2000
   path:
     uri: /jokes
@@ -34,7 +34,7 @@ spec:
     url: https://api.chucknorris.io/jokes/random
 
 ---
-spec:
+api:
   port: 2000
   path:
     uri: /api
@@ -42,7 +42,7 @@ spec:
     url: https://yesno.wtf/api
 
 ---
-spec:
+api:
   port: 2000
   target:
     url: https://api.adviceslip.com/advice
