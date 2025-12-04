@@ -15,8 +15,10 @@
 package com.predic8.membrane.core.interceptor.groovy;
 
 import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.config.ProxyAware;
 import com.predic8.membrane.core.lang.*;
 import com.predic8.membrane.core.lang.groovy.*;
+import com.predic8.membrane.core.proxies.Proxy;
 import com.predic8.membrane.core.util.ConfigurationException;
 import org.codehaus.groovy.control.*;
 import org.codehaus.groovy.control.messages.*;
@@ -36,13 +38,15 @@ import static org.apache.commons.text.StringEscapeUtils.*;
  * @topic 2. Enterprise Integration Patterns
  */
 @MCElement(name = "groovy", mixed = true)
-public class GroovyInterceptor extends AbstractScriptInterceptor {
+public class GroovyInterceptor extends AbstractScriptInterceptor implements ProxyAware {
 
     private static final Logger log = LoggerFactory.getLogger(GroovyInterceptor.class);
 
     public GroovyInterceptor() {
         name = "groovy";
     }
+
+    private Proxy proxy;
 
     @Override
     public EnumSet<Flow> getAppliedFlow() {
@@ -60,7 +64,7 @@ public class GroovyInterceptor extends AbstractScriptInterceptor {
     }
 
     private void logGroovyError(MultipleCompilationErrorsException e) {
-        log.error("Error in Groovy script in API '{}' with source: {}", getProxy().getName(),src);
+        log.error("Error in Groovy script in API '{}' with source: {}", proxy.getName(), src);
         for(Message error : e.getErrorCollector().getErrors()) {
             ByteArrayOutputStream bais = new ByteArrayOutputStream();
             PrintWriter pw = new PrintWriter(bais);
@@ -82,4 +86,10 @@ public class GroovyInterceptor extends AbstractScriptInterceptor {
                escapeHtml4(src.stripIndent()) +
                "</pre>";
     }
+
+    @Override
+    public void setProxy(Proxy proxy) {
+        this.proxy = proxy;
+    }
+
 }

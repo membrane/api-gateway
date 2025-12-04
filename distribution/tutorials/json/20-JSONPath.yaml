@@ -14,7 +14,7 @@
 #   curl -d "{}" -H "Content-Type: application/json" http://localhost:2000
 #     Should return 404, because the document does not contain an "animals" property
 
-spec:
+api:
   port: 2000
   test: $.animals # Only accept requests whose JSON has an "animals" property
   language: jsonpath   # Use JSONPath for the routing test above
@@ -42,7 +42,7 @@ spec:
     language: jsonpath
 
 ---
-spec:
+api:
   port: 2001
   flow:
     - request:

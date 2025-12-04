@@ -66,6 +66,8 @@ public class ValidatorInterceptor extends AbstractInterceptor implements Applica
     private ResolverMap resourceResolver;
     private ApplicationContext applicationContext;
 
+    private SOAPProxy soapProxy;
+
     public ValidatorInterceptor() {
         name = "validator";
     }
@@ -111,12 +113,10 @@ public class ValidatorInterceptor extends AbstractInterceptor implements Applica
     }
 
     private @Nullable WSDLValidator getWsdlValidatorFromSOAPProxy() {
-        if (router.getParentProxy(this) instanceof SOAPProxy sp) {
-            wsdl = sp.getWsdl();
-            name = "soap validator";
-            return new WSDLValidator(resourceResolver, combine(getBaseLocation(), wsdl), serviceName, createFailureHandler(), skipFaults);
-        }
-        return null;
+        if(soapProxy == null) return null;
+        wsdl = soapProxy.getWsdl();
+        name = "soap validator";
+        return new WSDLValidator(resourceResolver, combine(getBaseLocation(), wsdl), serviceName, createFailureHandler(), skipFaults);
     }
 
     private @Nullable String getBaseLocation() {
@@ -317,6 +317,10 @@ public class ValidatorInterceptor extends AbstractInterceptor implements Applica
         if (failureHandler.equals("log"))
             return (message, exc) -> log.info("Validation failure: {}", message);
         throw new IllegalArgumentException("Unknown failureHandler type: " + failureHandler);
+    }
+
+    public void setSoapProxy(SOAPProxy soapProxy) {
+        this.soapProxy = soapProxy;
     }
 
 }

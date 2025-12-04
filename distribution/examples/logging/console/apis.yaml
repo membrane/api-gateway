@@ -1,0 +1,8 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v6.3.11.json
+api:
+  port: 2000
+  flow:
+    - log: {}
+  target:
+    host: api.predic8.de
+    ssl: {}

@@ -43,6 +43,7 @@ public class Loadbalancing3ClientExampleTest extends DistributionExtractingTestc
 
 		replaceInFile2("proxies.xml", "8080", "3023");
 		replaceInFile2("lb-client-secured.proxies.xml", "8080", "3023");
+		replaceInFile2("apis.yaml", "8080", "3023");
 
 		try(Process2 ignored = startServiceProxyScript(); HttpAssertions ha = new HttpAssertions()) {
 			assertEquals(1, getRespondingNode("http://localhost:4000/"));

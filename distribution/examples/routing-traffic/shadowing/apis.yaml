@@ -1,0 +1,46 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v6.3.11.json
+api:
+  port: 2000
+  flow:
+    - shadowing:
+        targets:
+          - target:
+              host: localhost
+              port: 3000
+          - target:
+              host: localhost
+              port: 3001
+          - target:
+              host: localhost
+              port: 3002
+  target:
+    host: api.predic8.de
+    port: 443
+    ssl: {}
+
+---
+
+api:
+  port: 3000
+  flow:
+    - log: {}
+    - return:
+        statusCode: 200
+
+---
+
+api:
+  port: 3001
+  flow:
+    - log: {}
+    - return:
+        statusCode: 201
+
+---
+
+api:
+  port: 3002
+  flow:
+    - log: {}
+    - return:
+        statusCode: 202

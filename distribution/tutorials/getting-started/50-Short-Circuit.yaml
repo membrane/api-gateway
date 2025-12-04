@@ -21,7 +21,7 @@
 #
 #     Observe the response body.
 
-spec:
+api:
   port: 2000
   flow:
     # Reverses the flow.
