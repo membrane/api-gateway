@@ -173,6 +173,10 @@ class SpELExchangeExpressionTest extends AbstractExchangeExpressionTest {
         assertEquals("Tokio", evalString("header['x-city']"));
     }
 
+    @Test
+    void headerMultiple() {
+        assertEquals("foo, bar, baz", evalString("header.multiple"));
+    }
 
     @Test
     void param() {

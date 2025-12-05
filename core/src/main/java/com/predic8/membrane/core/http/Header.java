@@ -207,6 +207,16 @@ public class Header {
 				.toList();
 	}
 
+    /**
+     * Retrieves all header fields whose name matches the specified header name.
+     *
+     * @param name the header name used to filter header fields
+     * @return a list of header fields that match the provided header name; returns an empty list if none are found
+     */
+    public List<HeaderField> getValues(String name) {
+        return getValues(new HeaderName(name));
+    }
+
 	/**
 	 * Retrieves the first header value corresponding to the specified header name.
 	 *

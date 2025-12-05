@@ -13,11 +13,13 @@
    limitations under the License. */
 package com.predic8.membrane.core.lang.spel.spelable;
 
-import com.predic8.membrane.core.http.Header;
-import org.springframework.expression.EvaluationContext;
-import org.springframework.expression.TypedValue;
+import com.predic8.membrane.core.http.*;
+import org.jetbrains.annotations.*;
+import org.springframework.expression.*;
 
-import static com.predic8.membrane.core.util.TextUtil.camelToKebab;
+import java.util.*;
+
+import static com.predic8.membrane.core.util.TextUtil.*;
 
 public class SpELHeader implements SpELLablePropertyAware {
 
@@ -29,14 +31,20 @@ public class SpELHeader implements SpELLablePropertyAware {
 
     @Override
     public TypedValue read(EvaluationContext context, Object target, String name) {
-        var v = header.getFirstValue(name);
-        if (v != null)
-            return new TypedValue(v);
-        v = header.getFirstValue(camelToKebab(name));
-
-        // return v even if it is null
-        return new TypedValue(v);
+        List<HeaderField> values = header.getValues(name);
+        if (values == null || values.isEmpty()) {
+            values = header.getValues(camelToKebab(name));
+        }
+        if (values == null || values.isEmpty()) {
+            return new TypedValue(null);
+        }
+        return new TypedValue(String.join(", ", convertToStringList(values)));
     }
+
+    private static @NotNull List<String> convertToStringList(List<HeaderField> values) {
+        return values.stream().map(HeaderField::getValue).toList();
+    }
+
 
     @Override
     public Object getValue() {
