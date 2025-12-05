@@ -32,10 +32,10 @@ public class SpELHeader implements SpELLablePropertyAware {
     @Override
     public TypedValue read(EvaluationContext context, Object target, String name) {
         List<HeaderField> values = header.getValues(name);
-        if (values == null || values.isEmpty()) {
+        if (values.isEmpty()) {
             values = header.getValues(camelToKebab(name));
         }
-        if (values == null || values.isEmpty()) {
+        if (values.isEmpty()) {
             return new TypedValue(null);
         }
         return new TypedValue(String.join(", ", convertToStringList(values)));
