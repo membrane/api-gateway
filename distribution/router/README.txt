@@ -9,9 +9,9 @@ Make sure Java 21 or higher is installed. Then open a terminal and execute in th
 * On Windows:
   ./membrane.cmd
 
-By default the gateway uses the apis.yaml file in the conf folder as configuration.
+By default, the gateway uses the apis.yaml file in the conf folder as configuration.
 
-If you want to use a different configuration file, or to use the old XML configuration, use the -c option:
+If you want to use a different configuration file or to use the old XML configuration, use the -c option:
 
 ./membrane.sh -c conf/proxies.xml
 
@@ -39,14 +39,9 @@ If you find a bug, you can report it at:
 https://github.com/membrane/api-gateway/issues
 Please include the version of the Membrane and any details that may be necessary to reproduce the problem.
 
-For professional support contact us at info@predic8.de
-We offer support contracts and SLAs.
+For professional suppor see: https://www.membrane-api.io/api-gateway-pricing.html
+Or contact us at info@predic8.de
 
-
-License
-=======
-Membrane API Gateway is covered by the Apache License, Version 2.0, January 2004.
-For licenses of the libraries included, see the LICENSE.txt file.
 
 Enjoy using Membrane!
 The Membrane Team
