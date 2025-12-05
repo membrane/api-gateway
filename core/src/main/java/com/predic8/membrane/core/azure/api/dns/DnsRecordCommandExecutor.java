@@ -14,11 +14,15 @@
 package com.predic8.membrane.core.azure.api.dns;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.*;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
 
 public class DnsRecordCommandExecutor {
 
@@ -57,16 +61,13 @@ public class DnsRecordCommandExecutor {
 
         var payload = Map.of("properties", properties);
 
-        var response = api.http().call(
-                api.requestBuilder()
-                        .put(basePath)
-                        .contentType("application/json")
-                        .body(new ObjectMapper().writeValueAsString(payload))
-                        .buildExchange()
-                )
-                .getResponse();
-
-        new ObjectMapper().readTree(response.getBodyAsStringDecoded());
+        var exc1 = api.requestBuilder()
+                .put(basePath)
+                .contentType(APPLICATION_JSON)
+                .body(new ObjectMapper().writeValueAsString(payload))
+                .buildExchange();
+        api.http().call(exc1);
+        new ObjectMapper().readTree(exc1.getResponse().getBodyAsStringDecoded());
     }
 
     public TxtRecordBuilder addRecord() {

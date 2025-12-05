@@ -76,7 +76,8 @@ public class LBNotificationClient {
 			Exchange exc = new Exchange(null);
             exc.setRequest(post(getRequestURL()).build());
 			exc.getDestinations().add(getRequestURL());
-			return client.call(exc).getResponse();
+            client.call(exc);
+			return exc.getResponse();
 		}
 	}
 
