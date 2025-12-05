@@ -70,13 +70,13 @@ public class IfInterceptorSpELTest extends ConditionalEvaluationTestContext {
     }
 
     @Test
-    void headerNullTrue() throws Exception {
+    void headerNullTrue() {
         assertEquals(CONTINUE,performEval("headers['X-Does-Not-Exist'] == null",
                 new Builder().header("X-Foo-Bar", "Baz"),SPEL, true));
     }
 
     @Test
-    void headerNullFalse() throws Exception {
+    void headerNullFalse() {
         assertEquals(CONTINUE,performEval("headers['X-Foo-Bar'] == null", new Builder().header("X-Foo-Bar", "Baz"),SPEL,false));
     }
 
@@ -129,7 +129,7 @@ public class IfInterceptorSpELTest extends ConditionalEvaluationTestContext {
         return mi;
     }
 
-    private static Outcome eval(String condition, Object builder) throws Exception {
+    private static Outcome eval(String condition, Object builder) {
         return performEval(condition, builder, SPEL,true);
     }
 }

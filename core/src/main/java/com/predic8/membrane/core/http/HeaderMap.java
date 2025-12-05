@@ -132,7 +132,7 @@ public class HeaderMap implements Map<String, String> {
     public @NotNull Set<String> keySet() {
         return new AbstractSet<>() {
             @Override
-            public Iterator<String> iterator() {
+            public  @NotNull Iterator<String> iterator() {
                 return header.getUniqueHeaderNames().iterator();
             }
 
@@ -147,7 +147,7 @@ public class HeaderMap implements Map<String, String> {
     public @NotNull Collection<String> values() {
         return new AbstractCollection<>() {
             @Override
-            public Iterator<String> iterator() {
+            public  @NotNull Iterator<String> iterator() {
                 Iterator<String> keys = header.getUniqueHeaderNames().iterator();
                 return new Iterator<>() {
 
@@ -174,7 +174,7 @@ public class HeaderMap implements Map<String, String> {
     public @NotNull Set<Entry<String, String>> entrySet() {
         return new AbstractSet<>() {
             @Override
-            public Iterator<Entry<String, String>> iterator() {
+            public  @NotNull Iterator<Entry<String, String>> iterator() {
                 Iterator<String> keys = header.getUniqueHeaderNames().iterator();
 
                 return new Iterator<>() {

@@ -68,7 +68,7 @@ public class IfInterceptorGroovyTest extends ConditionalEvaluationTestContext {
         assertEquals(CONTINUE,eval("exchange != null", new Builder(),true));
     }
 
-    private static Outcome eval(String condition, Object builder, boolean shouldCallNested) throws Exception {
+    private static Outcome eval(String condition, Object builder, boolean shouldCallNested) {
         return performEval(condition, builder, GROOVY,shouldCallNested);
     }
 }
