@@ -25,7 +25,6 @@ public class YamlSchemaValidationException extends Exception {
     public YamlSchemaValidationException(String message, List<Error> errors) {
         super(message);
         this.errors = shortenErrorList(errors);
-//        this.errors = errors;
     }
 
     public List<Error> getErrors() {
