@@ -26,8 +26,6 @@
 - Remove HttpClientInterceptor.setAdjustHeader(boolean) it is already in HttpClientConfiguration
 - Remove xmlSessionIdExtractor if we have a replacement with language 
 - Remove HttpUtil.getHTMLErrorBody()
-- LogInterceptor: ✅
-  - Remove: headerOnly
 - ValidatorInterceptor: remove FailureHandler
   - Predominantly used for logging; move logging into validators.
   - Migration: replace FailureHandler usages with validator-level logging; ensure correlation IDs/Exchange context remain available for logs.
